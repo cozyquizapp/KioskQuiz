@@ -4582,9 +4582,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 a.y + a.h + pad <= b.y ||
                 b.y + b.h + pad <= a.y);
             const placedRects: Rect[] = [];
-            // Zielmarker-Rechteck (Avatar + Chip) oben gesperrt halten.
+            // Zielmarker sitzt jetzt ALS Pill direkt AUF der Rail —
+            // nur ein schmales Rect in Rail-Höhe sperren, damit Avatar-Chips
+            // oben/unten drumherum frei platziert werden können.
             const targetPx = (pctOf(target) / 100) * STAGE_W;
-            placedRects.push({ x: targetPx - 48, y: -300, w: 96, h: 250 });
+            placedRects.push({ x: targetPx - 70, y: -22, w: 140, h: 44 });
             // Alle Pin-Avatare als Rects für Kollision vormerken.
             parsed.forEach((p) => {
               const r = pinRows.get(p.teamId) ?? 0;
@@ -4675,8 +4677,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
-                // Oben: Target-Stack (-240 + Avatar 48 + Chip ~36 ≈ 305). Unten: far row (+180 + Avatar 41 + Chip 36 ≈ 250).
-                padding: '295px clamp(24px, 3vw, 48px) 235px',
+                // Oben/unten: weit-Row (180 + Avatar 41 + Chip 36 ≈ 250). Target sitzt jetzt ON-Rail.
+                padding: '235px clamp(24px, 3vw, 48px) 235px',
                 marginBottom: 'clamp(8px, 1vh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
@@ -4706,57 +4708,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontSize: 'clamp(18px, 1.8vw, 26px)', color: '#94a3b8', fontWeight: 800,
                   }}>{fmt(axMax)}</div>
 
-                  {/* Target marker — grün hervorgehoben ÜBER der Rail.
-                      Stack: Avatar → Wert-Chip → kurze gestrichelte Linie zur Rail.
-                      Animation nutzt pinRevealIn (CSS-Vars), damit das translate
-                      nicht von einem generischen revealWinnerIn zurückgesetzt wird. */}
+                  {/* Target marker — kompakte Pille direkt AUF der Rail.
+                      Klar erkennbar als "Ziel auf der Zeitleiste", blockiert
+                      keinen vertikalen Platz für Avatare oben/unten. */}
                   <div style={{
                     position: 'absolute', left: `${targetPct}%`, top: '50%',
-                    ['--pin-x' as any]: '0px',
-                    ['--pin-y' as any]: '-240px',
-                    transform: 'translate(-50%, calc(-50% - 240px))',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    transform: 'translate(-50%, -50%)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 18px 8px 10px',
+                    borderRadius: 999,
+                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                    boxShadow: '0 0 24px rgba(34,197,94,0.75), 0 4px 12px rgba(0,0,0,0.45)',
+                    border: '3px solid rgba(255,255,255,0.9)',
                     animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+                    ['--pin-x' as any]: '0px',
+                    ['--pin-y' as any]: '0px',
                     zIndex: 30,
+                    whiteSpace: 'nowrap',
                   }}>
-                    {/* Avatar-Button */}
-                    <div style={{
-                      width: 'clamp(72px, 7vw, 96px)',
-                      height: 'clamp(72px, 7vw, 96px)',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(38px, 4vw, 54px)',
-                      border: '3px solid rgba(255,255,255,0.9)',
-                      boxShadow: '0 0 28px rgba(34,197,94,0.8), 0 6px 16px rgba(0,0,0,0.4)',
-                    }}>🎯</div>
-                    {/* Wert-Chip direkt darunter */}
-                    <div style={{
-                      marginTop: 8,
-                      padding: '6px 18px', borderRadius: 999,
-                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                    <span style={{
+                      fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1,
+                    }}>🎯</span>
+                    <span style={{
                       color: '#fff', fontWeight: 900,
-                      fontSize: 'clamp(22px, 2.6vw, 32px)',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 3px 10px rgba(34,197,94,0.45)',
-                      border: '2px solid rgba(255,255,255,0.25)',
-                    }}>
-                      ✓ {fmt(target)}
-                    </div>
+                      fontSize: 'clamp(22px, 2.6vw, 32px)', lineHeight: 1,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    }}>{fmt(target)}</span>
                   </div>
-                  {/* Gestrichelte Vertikal-Linie Rail → Ziel-Chip — separat positioniert,
-                      Länge exakt passend (Rail bis Unterkante des Chips). */}
-                  <div style={{
-                    position: 'absolute', left: `${targetPct}%`, top: '50%',
-                    transform: 'translate(-50%, -100%)',
-                    width: 2, height: 150,
-                    backgroundImage: 'linear-gradient(to bottom, rgba(34,197,94,0.75) 50%, transparent 50%)',
-                    backgroundSize: '2px 8px',
-                    backgroundRepeat: 'repeat-y',
-                    zIndex: 25,
-                    animation: 'contentReveal 0.4s ease 0.7s both',
-                    pointerEvents: 'none',
-                  }} />
 
                   {/* Team pins — Avatar und Wert-Chip liegen als stack klar ÜBER bzw.
                       UNTER der Rail. Bei "oben" (negative yOffset) kommt der Chip

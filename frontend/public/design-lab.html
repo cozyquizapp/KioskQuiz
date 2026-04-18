@@ -311,6 +311,24 @@
             <input type="range" id="compRingSlider" min="5" max="14" step="0.5" value="9" style="width:100%">
           </div>
 
+          <!-- Zoom -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Figur-Zoom</div>
+              <div id="compZoomLabel" style="font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace">82%</div>
+            </div>
+            <input type="range" id="compZoomSlider" min="50" max="130" step="1" value="82" style="width:100%">
+          </div>
+
+          <!-- Y-Offset -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.08em;text-transform:uppercase">Y-Offset</div>
+              <div id="compYLabel" style="font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace">0%</div>
+            </div>
+            <input type="range" id="compYSlider" min="-25" max="25" step="1" value="0" style="width:100%">
+          </div>
+
           <!-- Download -->
           <button id="compDownload" style="
             background: #3B82F6; color: #fff;
@@ -631,6 +649,10 @@
     const compRingSlider = document.getElementById('compRingSlider');
     const compRingLabel = document.getElementById('compRingLabel');
     const compRingControls = document.getElementById('compRingControls');
+    const compZoomSlider = document.getElementById('compZoomSlider');
+    const compZoomLabel = document.getElementById('compZoomLabel');
+    const compYSlider = document.getElementById('compYSlider');
+    const compYLabel = document.getElementById('compYLabel');
     const compDownload = document.getElementById('compDownload');
 
     const COMP_MODES = [
@@ -707,6 +729,14 @@
       compRingLabel.textContent = compRingSlider.value + '%';
       drawComp();
     });
+    compZoomSlider.addEventListener('input', () => {
+      compZoomLabel.textContent = compZoomSlider.value + '%';
+      drawComp();
+    });
+    compYSlider.addEventListener('input', () => {
+      compYLabel.textContent = compYSlider.value + '%';
+      drawComp();
+    });
 
     // Core draw function — composites current image + team + mode onto canvas
     function drawComp() {
@@ -744,13 +774,15 @@
         }
         const iw = compImage.naturalWidth || compImage.width;
         const ih = compImage.naturalHeight || compImage.height;
-        const zoom = compMode.zoom || 1.0;
-        // Fit square image to cover the inner diameter (image IS square, so contain == cover)
+        const userZoom = parseFloat(compZoomSlider.value) / 100;
+        const modeZoom = compMode.zoom || 1.0;
+        const yOffset = (parseFloat(compYSlider.value) / 100) * innerR;
+        // Fit square image to the inner diameter, then apply user zoom + mode zoom
         const baseScale = (innerR * 2) / Math.max(iw, ih);
-        const scale = baseScale * zoom;
+        const scale = baseScale * userZoom * modeZoom;
         const dw = iw * scale;
         const dh = ih * scale;
-        compCtx.drawImage(compImage, cx - dw / 2, cy - dh / 2, dw, dh);
+        compCtx.drawImage(compImage, cx - dw / 2, cy - dh / 2 + yOffset, dw, dh);
         compCtx.restore();
       }
 

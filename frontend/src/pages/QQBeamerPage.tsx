@@ -3243,7 +3243,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       gap: 'clamp(14px, 1.8vh, 22px)',
-      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px) clamp(54px, 7vh, 80px)',
       animation: 'contentReveal 0.45s ease both',
       minHeight: 0,
     }}>
@@ -3566,7 +3566,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       gap: 'clamp(14px, 1.8vh, 22px)',
-      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px) clamp(54px, 7vh, 80px)',
       animation: 'contentReveal 0.45s ease both',
       minHeight: 0,
     }}>

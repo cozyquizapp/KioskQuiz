@@ -4010,6 +4010,135 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           </div>
         </div>
 
+        {/* Number-Line — Tipps relativ zum Target (Preis-ist-heiß-Look) */}
+        {ranked.length > 0 && (() => {
+          const tips = ranked.map(r => r.num);
+          const minVal = Math.min(target, ...tips);
+          const maxVal = Math.max(target, ...tips);
+          const rawRange = maxVal - minVal || 1;
+          const pad = rawRange * 0.12;
+          const axisMin = minVal - pad;
+          const axisMax = maxVal + pad;
+          const range = axisMax - axisMin;
+          const xOf = (v: number) => ((v - axisMin) / range) * 100;
+          const targetX = xOf(target);
+
+          // Greedy-Lanes: nahe Marker (< 5% Distanz) stapeln nach unten.
+          const positioned = [...ranked]
+            .map((r, originalIdx) => ({ ...r, originalIdx, x: xOf(r.num) }))
+            .sort((a, b) => a.x - b.x);
+          const laneLastX: number[] = [];
+          const laneOf = new Map<string, number>();
+          for (const p of positioned) {
+            let lane = 0;
+            while (laneLastX[lane] !== undefined && p.x - laneLastX[lane] < 5) lane++;
+            laneLastX[lane] = p.x;
+            laneOf.set(p.teamId, lane);
+          }
+          const maxLane = laneLastX.length;
+          const trackHeight = 24 + maxLane * 36;
+
+          return (
+            <div style={{
+              flexShrink: 0, position: 'relative',
+              padding: 'clamp(14px, 1.6vh, 22px) clamp(16px, 2vw, 28px) clamp(12px, 1.4vh, 18px)',
+              borderRadius: 22,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1.5px solid rgba(255,255,255,0.08)',
+              animation: 'contentReveal 0.5s ease 0.45s both',
+            }}>
+              <div style={{
+                fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
+                letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14,
+              }}>
+                📏 {lang === 'en' ? 'Tip distribution' : 'Tipp-Verteilung'}
+              </div>
+              <div style={{
+                position: 'relative',
+                height: trackHeight,
+                marginTop: 18,
+              }}>
+                {/* Achse */}
+                <div style={{
+                  position: 'absolute', top: 8, left: 0, right: 0,
+                  height: 3,
+                  background: 'linear-gradient(90deg, rgba(148,163,184,0.18), rgba(148,163,184,0.5) 50%, rgba(148,163,184,0.18))',
+                  borderRadius: 2,
+                }} />
+                {/* Achsen-Tick links/rechts */}
+                {[0, 100].map(p => (
+                  <div key={p} style={{
+                    position: 'absolute', left: `${p}%`, top: 4, width: 2, height: 11,
+                    background: 'rgba(148,163,184,0.55)', transform: 'translateX(-50%)',
+                  }} />
+                ))}
+                {/* Target-Linie über die ganze Höhe */}
+                <div style={{
+                  position: 'absolute', left: `${targetX}%`, top: -8, height: trackHeight + 8,
+                  width: 3,
+                  background: 'linear-gradient(180deg, rgba(34,197,94,0.95), rgba(34,197,94,0.25))',
+                  transform: 'translateX(-50%)',
+                  boxShadow: '0 0 16px rgba(34,197,94,0.55)',
+                  borderRadius: 2,
+                  animation: 'contentReveal 0.5s ease 0.55s both',
+                }} />
+                {/* Target-Label */}
+                <div style={{
+                  position: 'absolute', left: `${targetX}%`, top: -16,
+                  transform: 'translate(-50%, -100%)',
+                  padding: '3px 12px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.2)', border: '1.5px solid rgba(34,197,94,0.55)',
+                  color: '#86efac', fontWeight: 900, fontSize: 'clamp(11px, 1.1vw, 15px)',
+                  fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                  animation: 'contentReveal 0.5s ease 0.55s both',
+                }}>
+                  🎯 {fmt(target)}
+                </div>
+                {/* Team-Marker */}
+                {positioned.map(p => {
+                  const isVisible = p.originalIdx >= revealedMinIdx;
+                  const lane = laneOf.get(p.teamId) ?? 0;
+                  const isWinner = p.originalIdx === 0;
+                  const yPx = 26 + lane * 36;
+                  const dotSize = isWinner ? 'clamp(30px, 3.2vw, 44px)' : 'clamp(24px, 2.6vw, 34px)';
+                  return (
+                    <div key={p.teamId} style={{
+                      position: 'absolute',
+                      left: `${p.x}%`,
+                      top: yPx,
+                      transform: 'translate(-50%, 0)',
+                      opacity: isVisible ? 1 : 0,
+                      transition: 'opacity 0.5s ease, transform 0.5s ease',
+                    }}>
+                      <div style={{
+                        width: dotSize, height: dotSize,
+                        borderRadius: '50%',
+                        background: p.team.color,
+                        border: isWinner ? '2.5px solid #FBBF24' : '2px solid rgba(255,255,255,0.45)',
+                        boxShadow: isWinner ? '0 0 16px rgba(251,191,36,0.65)' : `0 2px 10px rgba(0,0,0,0.45)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: isWinner ? 'clamp(15px, 1.7vw, 24px)' : 'clamp(12px, 1.4vw, 18px)',
+                      }}>
+                        {qqGetAvatar(p.team.avatarId).emoji}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Achsen-Labels min/max */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                marginTop: 6,
+                fontSize: 'clamp(10px, 0.95vw, 13px)', fontWeight: 700,
+                color: '#64748b', fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span>{fmt(Math.round(axisMin))}</span>
+                <span>{fmt(Math.round(axisMax))}</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Winner-Card — füllt den Rest der linken Spalte */}
         <div style={{
           flex: 1,

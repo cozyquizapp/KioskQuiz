@@ -826,20 +826,20 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     title: 'So läuft es',
     color: '#8B5CF6',
     lines: [
-      'Frage → alle antworten gleichzeitig auf dem Handy.',
-      'Jedes richtige Team darf ein Feld setzen.',
-      'Bei Gleichstand entscheidet die Geschwindigkeit, wer zuerst wählen darf!',
+      'Frage → alle Teams antworten gleichzeitig auf dem Handy.',
+      'Jedes richtige Team darf ein Feld auf dem Spielfeld setzen.',
+      'Bei Gleichstand entscheidet die Geschwindigkeit, wer zuerst wählt!',
     ],
   },
   {
     icon: '⭐',
-    title: 'Joker — 2×2 Bonus',
+    title: 'Joker — 2×2-Bonus',
     color: '#F59E0B',
     lines: [
-      'Bildet ein 2×2-Quadrat in Teamfarbe und erhaltet ein Joker-Feld.',
-      'Joker-Felder geben Bonuspunkte am Ende!',
+      'Bildet ein 2×2-Quadrat in eurer Teamfarbe → ihr bekommt sofort ein Joker-Feld als Bonus-Platzierung.',
+      'Das Joker-Feld zählt wie ein normales Feld für euer Gebiet.',
     ],
-    extra: '⭐ 2×2-Quadrat bilden = Bonus-Jokerfeld!',
+    extra: '⭐ 2×2 bilden = 1 Bonus-Feld dazu!',
     grid: {
       cells: [
         ['A','A',null,null],
@@ -852,21 +852,22 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     },
   },
   {
+    icon: '🛡️',
+    title: 'Gut zu wissen',
+    color: '#10B981',
+    lines: [
+      'Gegnerische Felder könnt ihr klauen — auch Joker-Felder.',
+      'Gestapelte Felder (doppelt gesetzt) sind geschützt und können nicht geklaut werden.',
+      'Nur eure größte zusammenhängende Fläche zählt — einzelne Felder bringen nichts.',
+    ],
+  },
+  {
     icon: '🔄',
     title: 'Comeback-Chance',
     color: '#8B5CF6',
     lines: [
-      'Vor der letzten Runde bekommt das Team auf dem letzten Platz eine faire Chance.',
-      'Keine Sorge — wir erklären die Details, wenn es soweit ist!',
-    ],
-  },
-  {
-    icon: '🏆',
-    title: 'Ziel',
-    color: '#22C55E',
-    lines: [
-      'Baut das größte zusammenhängende Gebiet!',
-      'Jokerfelder geben zusätzliche Bonuspunkte.',
+      'Vor der letzten Runde bekommt das Team auf dem letzten Platz eine faire Aufholchance.',
+      'Keine Sorge — die Details erklären wir, wenn es soweit ist!',
     ],
     extra: 'Viel Spaß und möge das beste Team gewinnen! 🎉',
   },
@@ -887,7 +888,7 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     title: 'How It Works',
     color: '#8B5CF6',
     lines: [
-      'Question → everyone answers on their phone at once.',
+      'Question → all teams answer on their phones at once.',
       'Every correct team places a cell on the grid.',
       'On a tie, speed decides who picks first!',
     ],
@@ -897,10 +898,10 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     title: 'Joker — 2×2 Bonus',
     color: '#F59E0B',
     lines: [
-      'Form a 2×2 square in your team color to earn a Joker cell.',
-      'Joker cells grant bonus points at the end!',
+      'Form a 2×2 square in your team color → you instantly get a Joker cell as a bonus placement.',
+      'The Joker cell counts like a regular cell toward your territory.',
     ],
-    extra: '⭐ Form a 2×2 square = bonus Joker cell!',
+    extra: '⭐ Form a 2×2 = 1 bonus cell!',
     grid: {
       cells: [
         ['A','A',null,null],
@@ -913,21 +914,22 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     },
   },
   {
+    icon: '🛡️',
+    title: 'Good to Know',
+    color: '#10B981',
+    lines: [
+      'You can steal opponent cells — including Joker cells.',
+      'Stacked cells (placed twice) are protected and cannot be stolen.',
+      'Only your largest connected area counts — isolated cells don\'t help.',
+    ],
+  },
+  {
     icon: '🔄',
     title: 'Comeback Chance',
     color: '#8B5CF6',
     lines: [
-      'Before the final round, the team in last place gets a fair chance.',
+      'Before the final round, the team in last place gets a fair catch-up chance.',
       "Don't worry — we'll explain the details when the time comes!",
-    ],
-  },
-  {
-    icon: '🏆',
-    title: 'Goal',
-    color: '#22C55E',
-    lines: [
-      'Build the largest connected territory!',
-      'Joker cells grant extra bonus points.',
     ],
     extra: 'Good luck and may the best team win! 🎉',
   },
@@ -1391,9 +1393,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: teamCount > 4
-                ? 'repeat(2, minmax(0, 1fr))'
-                : 'repeat(auto-fill, minmax(200px, 1fr))',
+              // Immer 2-spaltig: 1-2 Teams = 2 Spalten (eine Zeile), 3-4 = 2×2,
+              // 5-8 = 2×3 / 2×4. Hält Karten schön breit statt quetschig-schmal.
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: teamCount > 6 ? 6 : 'clamp(8px, 1.2vw, 14px)',
             }}>
               {s.teams.map((t, i) => {
@@ -1419,12 +1421,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
-                        fontSize: compact ? 'clamp(20px, 2vw, 28px)' : 'clamp(22px, 2.3vw, 32px)',
+                        fontSize: compact ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(20px, 2.1vw, 30px)',
                         color: t.color,
-                        lineHeight: 1.15,
-                        wordBreak: 'break-word',
-                        overflowWrap: 'anywhere',
-                      }}>{t.name}</div>
+                        lineHeight: 1.1,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }} title={t.name}>
+                        {t.name.length > 12 ? t.name.slice(0, 11) + '…' : t.name}
+                      </div>
                       <div style={{
                         fontSize: compact ? 'clamp(13px, 1.2vw, 16px)' : 'clamp(13px, 1.25vw, 17px)',
                         fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',

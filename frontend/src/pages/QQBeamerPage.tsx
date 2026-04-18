@@ -1331,17 +1331,23 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         </div>
       </div>
 
-      {/* ── Center: 2-column layout — QR left, Teams right ── */}
+      {/* ── Center: 2-column layout — QR left, Teams right.
+          Symmetrische Ränder: QR bündig links, Teams-Grid bündig rechts,
+          gleicher Abstand zum Viewport-Rand auf beiden Seiten. ── */}
       <div style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 'clamp(32px, 5vw, 80px)', position: 'relative', zIndex: 5,
-        width: '100%', maxWidth: 1600, margin: '0 auto',
+        flex: 1, display: 'grid',
+        gridTemplateColumns: 'auto 1fr',
+        alignItems: 'center',
+        columnGap: 'clamp(24px, 3vw, 48px)',
+        position: 'relative', zIndex: 5,
+        width: '100%',
+        padding: '0 clamp(24px, 4vw, 80px)',
         minHeight: 0,
       }}>
         {/* Left: QR Code */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5vh, 18px)',
-          flexShrink: 0,
+          flexShrink: 0, justifySelf: 'start',
           animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
         }}>
           <div style={{
@@ -1370,9 +1376,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Right: Teams + status */}
+        {/* Right: Teams + status — nimmt verfügbare Breite voll aus */}
         <div style={{
-          flex: 1, minWidth: 0, maxWidth: 560,
+          minWidth: 0, width: '100%',
           display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 18px)',
           alignItems: 'stretch', justifyContent: 'center',
         }}>
@@ -1424,10 +1430,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
-                        fontSize: compact ? 'clamp(24px, 2.5vw, 32px)' : 'clamp(26px, 2.8vw, 36px)',
+                        fontSize: compact ? 'clamp(20px, 2vw, 28px)' : 'clamp(22px, 2.3vw, 32px)',
                         color: t.color,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        lineHeight: 1.1,
+                        lineHeight: 1.15,
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere',
                       }}>{t.name}</div>
                       <div style={{
                         fontSize: compact ? 'clamp(13px, 1.2vw, 16px)' : 'clamp(13px, 1.25vw, 17px)',

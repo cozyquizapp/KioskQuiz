@@ -541,36 +541,26 @@
       });
       return img;
     }
-    function composeWolfBadge(transImg, bgColor, ringColor) {
+    function composeWolfBadge(transImg, bgColor) {
+      // Trans-PNGs haben den team-farbigen Ring schon eingebrannt — wir
+      // füllen nur den Inner-Bereich hinter dem Charakter mit bgColor.
       const size = 1024;
       const cx = size / 2, cy = size / 2;
-      const ringW = size * 0.05; // 5% — matches existing -badge- look
       const outerR = size / 2 - 4;
-      const innerR = outerR - ringW;
+      const bgR = outerR * 0.92; // sitzt hinter dem Charakter, vor dem Ring
       const out = document.createElement('canvas');
       out.width = size; out.height = size;
       const ctx = out.getContext('2d');
-      // Inner-BG circle
+      // Inner-BG circle (hinter dem Charakter)
       ctx.beginPath();
-      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.arc(cx, cy, bgR, 0, Math.PI * 2);
       ctx.fillStyle = bgColor;
       ctx.fill();
-      // Character (clip to inner circle)
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-      ctx.clip();
+      // Character + Ring (Ring ist im trans-PNG schon drin)
       const iw = transImg.naturalWidth, ih = transImg.naturalHeight;
-      const scale = (innerR * 2) / Math.max(iw, ih);
+      const scale = size / Math.max(iw, ih);
       const dw = iw * scale, dh = ih * scale;
       ctx.drawImage(transImg, cx - dw / 2, cy - dh / 2, dw, dh);
-      ctx.restore();
-      // Colored ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, outerR - ringW / 2, 0, Math.PI * 2);
-      ctx.strokeStyle = ringColor;
-      ctx.lineWidth = ringW;
-      ctx.stroke();
       return out;
     }
     function applyWolfMode() {
@@ -590,10 +580,8 @@
         }
         const trans = loadTransImg(slug);
         if (!trans.complete || !trans.naturalWidth) return; // wait for trans load
-        const team = TEAMS.find(t => teamSlug(t.animal) === slug);
-        if (!team) return;
         try {
-          const canvas = composeWolfBadge(trans, activeWolfMode.color, team.body);
+          const canvas = composeWolfBadge(trans, activeWolfMode.color);
           const url = canvas.toDataURL('image/png');
           wolfModeCache.set(cacheKey, url);
           img.src = url;

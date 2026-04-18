@@ -3950,71 +3950,78 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         gap: 'clamp(14px, 1.8vh, 22px)',
         minHeight: 0, minWidth: 0,
       }}>
+        {/* Frage-Card — kompakt oben, OHNE Lösung */}
         <div style={{
           background: 'rgba(255,255,255,0.04)',
           border: '2px solid rgba(255,255,255,0.08)',
           borderRadius: 26,
-          padding: 'clamp(16px, 2vh, 26px) clamp(20px, 2.4vw, 36px)',
+          padding: 'clamp(14px, 1.8vh, 22px) clamp(20px, 2.4vw, 36px)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
           animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
           flexShrink: 0,
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
+            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
           }}>
             🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
           </div>
           <div key={lang} style={{
-            display: 'flex', flexDirection: 'column', gap: 12,
+            fontSize: qText.length > 120 ? 'clamp(20px, 1.9vw, 28px)' : 'clamp(22px, 2.2vw, 34px)',
+            fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+            minWidth: 0,
             animation: 'langFadeIn 0.4s ease both',
           }}>
-            <div style={{
-              fontSize: qText.length > 120 ? 'clamp(20px, 1.9vw, 28px)' : 'clamp(22px, 2.2vw, 34px)',
-              fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
-              minWidth: 0,
-            }}>
-              {qText}
-            </div>
-            <div style={{
-              alignSelf: 'flex-start',
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '10px 22px', borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.08))',
-              border: '2px solid rgba(34,197,94,0.55)',
-              boxShadow: '0 0 32px rgba(34,197,94,0.25)',
-              animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.25s both',
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>✓</span>
-              <span style={{
-                fontWeight: 900, color: '#86efac',
-                fontSize: 'clamp(26px, 3vw, 44px)', lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}>{fmt(target)}</span>
-            </div>
+            {qText}
+          </div>
+        </div>
+
+        {/* Lösungs-Hero — der Fokus der Folie */}
+        <div style={{
+          flexShrink: 0,
+          padding: 'clamp(20px, 3vh, 40px) clamp(20px, 2.4vw, 36px)',
+          borderRadius: 28,
+          background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
+          border: '3px solid rgba(34,197,94,0.55)',
+          boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
+          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, width: '60%', height: '100%',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+            animation: 'revealShimmer 0.9s ease 0.55s both',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#86efac',
+            letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75,
+          }}>
+            ✓ {lang === 'en' ? 'Answer' : 'Lösung'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(64px, 8vw, 140px)',
+            fontWeight: 900, color: '#86efac', lineHeight: 1,
+            fontVariantNumeric: 'tabular-nums',
+            textShadow: '0 0 28px rgba(34,197,94,0.35)',
+          }}>
+            {fmt(target)}
           </div>
         </div>
 
         {/* Winner-Card — füllt den Rest der linken Spalte */}
         <div style={{
           flex: 1,
-          background: winners.length > 0
-            ? `linear-gradient(135deg, ${winners[0].team.color}22, rgba(0,0,0,0.25))`
-            : 'rgba(239,68,68,0.06)',
-          border: winners.length > 0
-            ? `2px solid ${winners[0].team.color}55`
-            : '2px solid rgba(239,68,68,0.25)',
+          background: 'transparent',
+          border: 'none',
           borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
           opacity: revealedMinIdx === 0 ? 1 : 0.35,
           filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
           transition: 'opacity 0.7s ease, filter 0.7s ease',
-          boxShadow: revealedMinIdx === 0 && winners.length > 0
-            ? `0 0 60px ${winners[0].team.color}33`
-            : 'none',
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
@@ -4028,44 +4035,61 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {winners.map(w => (
-                <div key={w.teamId} style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
-                }}>
-                  <span style={{
-                    fontSize: 'clamp(48px, 6vw, 84px)', lineHeight: 1,
-                    width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
-                    borderRadius: '50%', background: w.team.color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, boxShadow: `0 0 30px ${w.team.color}66`,
-                    animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+          ) : (() => {
+            const wn = winners.length;
+            const avatarSize =
+              wn === 1 ? 'clamp(96px, 10vw, 150px)'
+              : wn === 2 ? 'clamp(80px, 8vw, 120px)'
+              : 'clamp(64px, 6.5vw, 96px)';
+            const emojiSize =
+              wn === 1 ? 'clamp(60px, 7vw, 100px)'
+              : wn === 2 ? 'clamp(50px, 5.6vw, 80px)'
+              : 'clamp(40px, 4.4vw, 62px)';
+            const nameSize =
+              wn === 1 ? 'clamp(36px, 4.2vw, 64px)'
+              : wn === 2 ? 'clamp(30px, 3.4vw, 50px)'
+              : 'clamp(26px, 2.8vw, 42px)';
+            const subSize =
+              wn === 1 ? 'clamp(18px, 2vw, 28px)'
+              : 'clamp(15px, 1.6vw, 22px)';
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: wn <= 2 ? 16 : 12 }}>
+                {winners.map(w => (
+                  <div key={w.teamId} style={{
+                    display: 'flex', alignItems: 'center', gap: wn <= 2 ? 18 : 14,
+                    animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
                   }}>
-                    {qqGetAvatar(w.team.avatarId).emoji}
-                  </span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{
-                      fontSize: 'clamp(26px, 3.2vw, 50px)', fontWeight: 900, color: w.team.color,
-                      textShadow: `0 0 20px ${w.team.color}44`, lineHeight: 1.1,
-                    }}>{w.team.name}</div>
-                    <div style={{
-                      fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
-                      fontVariantNumeric: 'tabular-nums',
+                    <span style={{
+                      fontSize: emojiSize, lineHeight: 1,
+                      width: avatarSize, height: avatarSize,
+                      borderRadius: '50%', background: w.team.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                      animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                     }}>
-                      {fmt(w.num)}
-                      <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 8 }}>
-                        {w.delta === 0
-                          ? (lang === 'en' ? '· exact!' : '· genau!')
-                          : `· Δ ${fmt(w.delta)}`}
-                      </span>
+                      {qqGetAvatar(w.team.avatarId).emoji}
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: nameSize, fontWeight: 900, color: w.team.color, lineHeight: 1.1,
+                      }}>{w.team.name}</div>
+                      <div style={{
+                        fontSize: subSize, fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        {fmt(w.num)}
+                        <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 8 }}>
+                          {w.delta === 0
+                            ? (lang === 'en' ? '· exact!' : '· genau!')
+                            : `· Δ ${fmt(w.delta)}`}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

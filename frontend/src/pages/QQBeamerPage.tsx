@@ -3705,6 +3705,315 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SchaetzchenReveal — Split-Screen (Top5-Style):
+// oben Frage + Lösung, links Gewinner-Card, rechts Rangliste bottom-up.
+// Ranking wird von schlechtester→bester Schätzung enthüllt (Trommelwirbel bis #1).
+// ═══════════════════════════════════════════════════════════════════════════════
+function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  const q = s.currentQuestion!;
+  const target = q.targetValue as number;
+
+  const fmt = (n: number) => {
+    const abs = Math.abs(n);
+    if (abs >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (abs >= 10000) return (n / 1000).toFixed(0) + 'k';
+    if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+    return n % 1 === 0 ? String(n) : n.toFixed(1);
+  };
+
+  // Parse + Distanz. Sort: bester (geringste |Δ|) zuerst → letzter zuletzt.
+  const ranked = useMemo(() => {
+    return s.answers
+      .map(a => {
+        const num = Number(String(a.text).replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+        const team = s.teams.find(t => t.id === a.teamId);
+        if (!team || !Number.isFinite(num)) return null;
+        return { teamId: a.teamId, num, team, delta: Math.abs(num - target) };
+      })
+      .filter((x): x is { teamId: string; num: number; team: NonNullable<ReturnType<typeof s.teams.find>>; delta: number } => !!x)
+      .sort((a, b) => a.delta - b.delta);
+  }, [s.answers, s.teams, target]);
+
+  const n = ranked.length;
+  const winnerDelta = ranked[0]?.delta ?? Infinity;
+  const winners = ranked.filter(r => r.delta === winnerDelta);
+
+  // Bottom-up reveal: Start mit n (keiner sichtbar). Dann n-1, n-2, …, 0.
+  // revealedMinIdx = kleinster Rank-Index (0-basiert), der bereits sichtbar ist.
+  // Rank 0 = bester, Rank n-1 = schlechtester. Wir zeigen zuerst Rank n-1 (schlechtester)
+  // und enthüllen dann nach oben bis #1 (bester).
+  const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const STEP_MS = 2000;
+  const INITIAL_DELAY_MS = 500;
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < n; i++) {
+      const targetIdx = n - 1 - i;
+      const t = setTimeout(() => {
+        setRevealedMinIdx(targetIdx);
+        if (!s.sfxMuted) {
+          if (targetIdx === 0) playFanfare(); else playReveal();
+        }
+      }, INITIAL_DELAY_MS + i * STEP_MS);
+      timers.push(t);
+    }
+    return () => { timers.forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(14px, 1.8vh, 22px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
+      animation: 'contentReveal 0.45s ease both',
+      minHeight: 0,
+    }}>
+      {/* ── Top: Frage + Lösung (volle Breite) ────────────────── */}
+      <div style={{
+        background: 'rgba(255,255,255,0.04)',
+        border: '2px solid rgba(255,255,255,0.08)',
+        borderRadius: 26,
+        padding: 'clamp(16px, 2vh, 26px) clamp(24px, 2.8vw, 42px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
+          letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
+        }}>
+          🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
+        </div>
+        <div key={lang} style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          gap: 'clamp(16px, 2.5vw, 36px)', flexWrap: 'wrap',
+        }}>
+          <div style={{
+            fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+            fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+            animation: 'langFadeIn 0.4s ease both',
+            flex: 1, minWidth: 0,
+          }}>
+            {qText}
+          </div>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            padding: '10px 22px', borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.08))',
+            border: '2px solid rgba(34,197,94,0.55)',
+            boxShadow: '0 0 32px rgba(34,197,94,0.25)',
+            animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.25s both',
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>✓</span>
+            <span style={{
+              fontWeight: 900, color: '#86efac',
+              fontSize: 'clamp(26px, 3vw, 44px)', lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+            }}>{fmt(target)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bottom: Winner (links) + Rangliste (rechts) ───────── */}
+      <div style={{
+        flex: 1, display: 'grid',
+        gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
+        gap: 'clamp(16px, 2.5vw, 36px)',
+        minHeight: 0,
+      }}>
+        {/* Winner-Card */}
+        <div style={{
+          height: '100%',
+          background: winners.length > 0
+            ? `linear-gradient(135deg, ${winners[0].team.color}22, rgba(0,0,0,0.25))`
+            : 'rgba(239,68,68,0.06)',
+          border: winners.length > 0
+            ? `2px solid ${winners[0].team.color}55`
+            : '2px solid rgba(239,68,68,0.25)',
+          borderRadius: 26,
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          gap: 14, minHeight: 0,
+          opacity: revealedMinIdx === 0 ? 1 : 0.35,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(3px)',
+          transition: 'opacity 0.7s ease, filter 0.7s ease',
+          boxShadow: revealedMinIdx === 0 && winners.length > 0
+            ? `0 0 60px ${winners[0].team.color}33`
+            : 'none',
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            🏆 {winners.length > 1
+              ? (lang === 'en' ? 'Closest (tie)' : 'Am nächsten (unentschieden)')
+              : (lang === 'en' ? 'Closest' : 'Am nächsten dran')}
+          </div>
+          {winners.length === 0 ? (
+            <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
+              {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {winners.map(w => (
+                <div key={w.teamId} style={{
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
+                }}>
+                  <span style={{
+                    fontSize: 'clamp(48px, 6vw, 84px)', lineHeight: 1,
+                    width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
+                    borderRadius: '50%', background: w.team.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, boxShadow: `0 0 30px ${w.team.color}66`,
+                    animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+                  }}>
+                    {qqGetAvatar(w.team.avatarId).emoji}
+                  </span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontSize: 'clamp(26px, 3.2vw, 50px)', fontWeight: 900, color: w.team.color,
+                      textShadow: `0 0 20px ${w.team.color}44`, lineHeight: 1.1,
+                    }}>{w.team.name}</div>
+                    <div style={{
+                      fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {fmt(w.num)}
+                      <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 8 }}>
+                        {w.delta === 0
+                          ? (lang === 'en' ? '· exact!' : '· genau!')
+                          : `· Δ ${fmt(w.delta)}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right column: Ranking bottom-up (schlechtester zuerst, bester zuletzt) */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
+          justifyContent: 'space-between',
+          minHeight: 0, height: '100%',
+        }}>
+          {ranked.map((r, idx) => {
+            const rank = idx + 1;
+            const isVisible = idx >= revealedMinIdx;
+            const isTop = rank === 1;
+            const rankGradient = rank === 1
+              ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
+              : rank === 2
+                ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
+                : rank === 3
+                  ? 'linear-gradient(135deg,#F97316,#B45309)'
+                  : 'linear-gradient(135deg,#475569,#334155)';
+            return (
+              <div
+                key={r.teamId}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto auto 1fr auto',
+                  alignItems: 'center',
+                  gap: 'clamp(10px, 1.2vw, 18px)',
+                  padding: 'clamp(10px, 1.4vh, 18px) clamp(14px, 1.6vw, 22px)',
+                  borderRadius: 18,
+                  background: isTop
+                    ? `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}08)`
+                    : 'rgba(148,163,184,0.06)',
+                  border: isTop
+                    ? `2px solid ${r.team.color}66`
+                    : '2px solid rgba(148,163,184,0.15)',
+                  visibility: isVisible ? 'visible' : 'hidden',
+                  animation: isVisible
+                    ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
+                    : 'none',
+                  flex: 1,
+                  minHeight: 'clamp(64px, 8vh, 92px)',
+                  boxShadow: isTop ? `0 0 28px ${r.team.color}33` : 'none',
+                }}
+              >
+                {/* Rank-Badge */}
+                <div style={{
+                  width: 'clamp(52px, 5vw, 72px)', height: 'clamp(52px, 5vw, 72px)',
+                  borderRadius: 16,
+                  background: rankGradient,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
+                  flexShrink: 0,
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.1s both' : 'none',
+                  boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
+                }}>
+                  #{rank}
+                </div>
+                {/* Avatar */}
+                <div style={{
+                  width: 'clamp(44px, 4.4vw, 62px)', height: 'clamp(44px, 4.4vw, 62px)',
+                  borderRadius: '50%', background: r.team.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 'clamp(24px, 2.6vw, 36px)',
+                  border: '2px solid rgba(0,0,0,0.25)',
+                  boxShadow: `0 0 14px ${r.team.color}66`,
+                  flexShrink: 0,
+                  animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both` : 'none',
+                }}>
+                  {qqGetAvatar(r.team.avatarId).emoji}
+                </div>
+                {/* Name + Schätzung */}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
+                    color: isTop ? r.team.color : '#e2e8f0',
+                    lineHeight: 1.1,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{r.team.name}</div>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
+                    color: '#94a3b8', marginTop: 2,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {fmt(r.num)}
+                  </div>
+                </div>
+                {/* Delta-Pille */}
+                <div style={{
+                  padding: '6px 14px', borderRadius: 999,
+                  background: isTop ? 'rgba(250,204,21,0.18)' : 'rgba(15,23,42,0.6)',
+                  border: isTop ? '2px solid rgba(250,204,21,0.5)' : '1.5px solid rgba(148,163,184,0.25)',
+                  fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
+                  color: isTop ? '#FDE68A' : '#cbd5e1',
+                  fontVariantNumeric: 'tabular-nums',
+                  flexShrink: 0,
+                  animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
+                }}>
+                  {r.delta === 0 ? '🎯 0' : `Δ ${fmt(r.delta)}`}
+                </div>
+              </div>
+            );
+          })}
+          {ranked.length === 0 && (
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#64748b', fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 700,
+            }}>
+              {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   const btt = (q.bunteTuete as any);
@@ -4007,6 +4316,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'order';
   if (isOrderReveal) {
     return <OrderReveal state={s} lang={lang} />;
+  }
+
+  // ── Schätzchen two-column reveal (Frage + Lösung oben, Winner + Rangliste) ──
+  const isSchaetzReveal = revealed && q.category === 'SCHAETZCHEN';
+  if (isSchaetzReveal) {
+    return <SchaetzchenReveal state={s} lang={lang} />;
   }
 
   // ── CHEESE "Overlay" layout ─────────────────────────────────────────────

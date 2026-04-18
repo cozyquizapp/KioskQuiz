@@ -6415,12 +6415,16 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
     return null;
   };
 
+  // Bei 8 Teams: space-between, damit alle Zeilen in die Grid-Höhe passen.
+  // Bei ≤6 Teams: mittig zentriert wie eine Rangliste, mit festem Row-Gap
+  // statt auseinandergezogen — wirkt sonst wie fehlende Daten.
+  const many = sorted.length >= 7;
+  const rowGap = dense ? 18 : 26;
   return (
-    // Die Liste füllt die volle Höhe ihres Parent-Flex-Childs und verteilt die
-    // Zeilen gleichmäßig — dadurch wirkt sie auf gleicher Höhe wie das Grid.
     <div style={{
       display: 'flex', flexDirection: 'column',
-      justifyContent: 'space-between',
+      justifyContent: many ? 'space-between' : 'center',
+      gap: many ? 0 : rowGap,
       width: '100%', maxWidth: 560, height: '100%',
       paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
     }}>

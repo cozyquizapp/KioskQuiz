@@ -314,7 +314,9 @@ export function qqStartGame(
   room.questionIndex  = 0;
   room.gamePhaseIndex = 1;
   room.phase          = 'RULES';
-  room.rulesSlideIndex = 0;
+  // -1 = Intro-Pseudo-Slide ("Willkommen beim BLOCK QUIZ / QUARTER QUIZ").
+  // Moderator schaltet per "Weiter" auf Slide 0 weiter (qqRulesNext erhöht).
+  room.rulesSlideIndex = -1;
   room.teamsRevealStartedAt = null;
   room.introStep      = 0;
   room.currentQuestion = questions[0];

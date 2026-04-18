@@ -69,31 +69,59 @@ darunter decken 8 distinkte Hue-Bereiche ab.
 
 ---
 
-## 📝 Einzel-Prompts
+## 📝 Einzel-Prompts (copy-paste ready)
+
+Jeder Prompt ist **komplett eigenständig** — Style Bible ist bereits
+eingearbeitet. Einfach den Code-Block kopieren und direkt in den
+Bild-Generator (Midjourney, ChatGPT/DALL·E, Leonardo, etc.) einfügen.
 
 ### 1. Waschbär — Team Teal
-> [Style Bible] + Raccoon character, saturated **teal** `#14B8A6` fur, signature black bandit-mask across the eyes (visible even with eyes closed), small rounded ears, tiny black nose. Wearing amber-orange hoodie `#F59E0B`. Teal circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Raccoon character, saturated teal #14B8A6 fur, signature black bandit-mask across the eyes (visible even with eyes closed), small rounded ears, tiny black nose. Wearing amber-orange hoodie #F59E0B. Teal circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 2. Faultier — Team Lime
-> [Style Bible] + Sloth character, bright **lime-green** `#84CC16` fur, slightly shaggy cheek tufts, tiny dark nose, dreamy closed-eye smile. Wearing deep burgundy hoodie `#7C2D12`. Lime-green circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Sloth character, bright lime-green #84CC16 fur, slightly shaggy cheek tufts, tiny dark nose, dreamy closed-eye smile. Wearing deep burgundy hoodie #7C2D12. Lime-green circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 3. Pinguin — Team Blue
-> [Style Bible] + Penguin character, saturated **royal blue** `#2563EB` body with a white belly peeking above the hoodie collar, small orange beak, rounded head. Wearing bright sun-yellow hoodie `#FDE047`. Royal-blue circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Penguin character, saturated royal blue #2563EB body with a white belly peeking above the hoodie collar, small orange beak, rounded head. Wearing bright sun-yellow hoodie #FDE047. Royal-blue circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 4. Kuh — Team Orange
-> [Style Bible] + Cow character, bright **orange** `#F97316` coat with irregular white spot patches on head, small pink muzzle, tiny rounded horns, floppy ears. Wearing deep plum hoodie `#581C87`. Orange circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Cow character, bright orange #F97316 coat with irregular white spot patches on head, small pink muzzle, tiny rounded horns, floppy ears. Wearing deep plum hoodie #581C87. Orange circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 5. Koala — Team Violet
-> [Style Bible] + Koala character, saturated **violet** `#8B5CF6` fur, big fluffy round ears, large pink heart-shaped nose, fuzzy cheeks. Wearing golden-yellow hoodie `#EAB308`. Violet circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Koala character, saturated violet #8B5CF6 fur, big fluffy round ears, large pink heart-shaped nose, fuzzy cheeks. Wearing golden-yellow hoodie #EAB308. Violet circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 6. Giraffe — Team Yellow
-> [Style Bible] + Giraffe character, bright **yellow** `#EAB308` coat with soft light-brown irregular patches, long slender neck emerging from hoodie collar, small ossicones (horn-stumps), tiny dark nose. Wearing deep-purple hoodie `#5B21B6`. Yellow circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Giraffe character, bright yellow #EAB308 coat with soft light-brown irregular patches, long slender neck emerging from hoodie collar, small ossicones (horn-stumps), tiny dark nose. Wearing deep-purple hoodie #5B21B6. Yellow circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 7. Capybara — Team Red
-> [Style Bible] + Capybara character, saturated **red** `#DC2626` fur, blunt rounded muzzle, tiny round ears, gentle smiling expression. Wearing forest-green hoodie `#166534`. Red circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Capybara character, saturated red #DC2626 fur, blunt rounded muzzle, tiny round ears, gentle smiling expression. Wearing forest-green hoodie #166534. Red circle ring matching the body color. Pure white background inside the ring.
+```
 
 ### 8. Shiba Inu — Team Pink
-> [Style Bible] + Shiba Inu dog character, saturated **hot pink** `#EC4899` fur with a white muzzle and white chest-patch peeking above the hoodie collar, small triangular upright ears, pointed fox-like snout, tiny black nose, curled-tail hint behind shoulder. Wearing sky-blue hoodie `#0EA5E9`. Hot-pink circle ring. White background.
+
+```
+Flat vector mascot illustration, front-facing 3/4 view, head and shoulders only. Cozy cartoon style: rounded soft shapes, no outlines, no gradients, no shading — only solid color fills. Eyes are closed as a gentle curved line with a subtle upward lash tip. Small peaceful smile. Character wears a chunky pullover hoodie visible from shoulders down, hood lying flat behind neck (not up). Composition centered inside a thick circular color ring on a pure white background. Ring color matches the animal's body color. Style matches the "CozyWolf" brand: minimalist, warm, friendly, zen. No text, no logo, square 1:1, 1024x1024. Shiba Inu dog character, saturated hot pink #EC4899 fur with a white muzzle and white chest-patch peeking above the hoodie collar, small triangular upright ears, pointed fox-like snout, tiny black nose, curled-tail hint behind shoulder. Wearing sky-blue hoodie #0EA5E9. Hot-pink circle ring matching the body color. Pure white background inside the ring.
+```
 
 ---
 

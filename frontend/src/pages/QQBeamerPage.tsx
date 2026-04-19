@@ -4724,9 +4724,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 36 : tc > 4 ? 42 : 46;
-                const gap = tc > 6 ? 8 : tc > 4 ? 10 : 12;
-                const emoji = tc > 6 ? 20 : tc > 4 ? 23 : 26;
+                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
+                const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
+                const emoji = tc > 6 ? 28 : tc > 4 ? 34 : 40;
                 return (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap }}>
                     {s.teams.map(tm => {
@@ -4737,7 +4737,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           width: av, height: av, borderRadius: '50%',
                           background: answered ? `${tm.color}25` : 'rgba(0,0,0,0.35)',
-                          border: `2.5px solid ${answered ? tm.color : 'rgba(255,255,255,0.18)'}`,
+                          border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.18)'}`,
                           transition: 'all 0.4s ease',
                           opacity: answered ? 1 : 0.55,
                           boxShadow: answered ? `0 0 14px ${tm.color}66` : '0 2px 8px rgba(0,0,0,0.5)',
@@ -4746,11 +4746,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           <QQTeamAvatar avatarId={tm.avatarId} size={emoji} />
                           {answered && (
                             <div style={{
-                              position: 'absolute', bottom: -3, right: -3,
-                              width: 18, height: 18, borderRadius: '50%',
+                              position: 'absolute', bottom: -4, right: -4,
+                              width: 26, height: 26, borderRadius: '50%',
                               background: '#22C55E', border: '2px solid #0D0A06',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 10, fontWeight: 900, color: '#fff',
+                              fontSize: 14, fontWeight: 900, color: '#fff',
                               animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
                             }}>✓</div>
                           )}
@@ -5026,6 +5026,54 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 animation: !revealed ? 'contentReveal 0.4s ease 0.3s both' : undefined,
               }}>
                 {lang === 'en' ? hint.en : hint.de}
+              </div>
+            );
+          })()}
+
+          {/* BUNTE_TÜTE order — Items während QUESTION_ACTIVE sichtbar
+              (Teams sortieren am Handy, Publikum muss wissen worum es geht) */}
+          {!revealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
+            const btt = q.bunteTuete as any;
+            const items: string[] = (lang === 'en' && btt.itemsEn?.length) ? btt.itemsEn : (btt.items ?? []);
+            const criteria: string | undefined = (lang === 'en' && btt.criteriaEn) ? btt.criteriaEn : btt.criteria;
+            if (items.length === 0) return null;
+            const cols = Math.min(items.length, items.length <= 4 ? items.length : items.length === 5 ? 5 : 3);
+            return (
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 14,
+                width: '100%', maxWidth: 1400, marginBottom: 16,
+                animation: 'contentReveal 0.35s ease 0.1s both',
+              }}>
+                {criteria && (
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 800,
+                    color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase',
+                    textAlign: 'center',
+                  }}>
+                    {lang === 'en' ? `Sort ${criteria}` : `Sortiert ${criteria}`}
+                  </div>
+                )}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                  gap: 14,
+                }}>
+                  {items.map((item, i) => (
+                    <div key={i} style={{
+                      borderRadius: 18, padding: '22px 24px',
+                      background: cardBg,
+                      border: '2px solid rgba(245,158,11,0.4)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 'clamp(20px, 2.4vw, 34px)', fontWeight: 800, color: '#F1F5F9',
+                      textAlign: 'center', lineHeight: 1.25,
+                      minHeight: 80,
+                      animation: `contentReveal 0.4s ease ${0.1 + i * 0.06}s both`,
+                    }}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })()}
@@ -5979,9 +6027,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {/* Avatar row */}
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 40 : tc > 4 ? 46 : 52;
-                const gap = tc > 6 ? 8 : tc > 4 ? 11 : 14;
-                const emoji = tc > 6 ? 22 : tc > 4 ? 25 : 28;
+                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
+                const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
+                const emoji = tc > 6 ? 28 : tc > 4 ? 34 : 40;
                 return (
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap,
@@ -6005,10 +6053,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,
-                              width: 22, height: 22, borderRadius: '50%',
+                              width: 26, height: 26, borderRadius: '50%',
                               background: '#22C55E', border: '2px solid #0D0A06',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 12, fontWeight: 900, color: '#fff',
+                              fontSize: 14, fontWeight: 900, color: '#fff',
                               animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
                             }}>✓</div>
                           )}

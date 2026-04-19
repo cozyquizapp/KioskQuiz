@@ -7361,7 +7361,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {isStuck ? '📌' : showStar ? '⭐' : (team && <QQTeamAvatar avatarId={team.avatarId} size={Math.max(8, cellSize * 0.72)} />)}
+                  {isStuck ? '📌' : showStar ? '⭐' : (team && <QQTeamAvatar avatarId={team.avatarId} size={Math.max(8, cellSize * 0.92)} />)}
                 </div>
               </div>
             );
@@ -7419,8 +7419,8 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
   // Bei vielen Teams (≥6) kompakter, sonst passen 8 Zeilen nicht nebeneinander.
   // Balken ist raus — Info steckt in der Zahl. Dafür Name + Wert deutlich größer.
   const dense = sorted.length >= 6;
-  const avatarSize = dense ? 52 : 62;
-  const avatarBox = dense ? 64 : 76;
+  const avatarSize = dense ? 64 : 78;
+  const avatarBox = dense ? 76 : 92;
   const nameFs = dense ? 34 : 42;
   const valFs = dense ? 42 : 54;
   const unitFs = dense ? 18 : 22;

@@ -297,26 +297,33 @@ function VariantA({ playKey }: { playKey: number }) {
 // VARIANT B — Zwischen Runden (nur Runde 1 + Runde 2 sichtbar)
 // ═════════════════════════════════════════════════════════════════════════════
 function VariantB({ playKey }: { playKey: number }) {
-  // Timeline (Gesamt ~3,4s):
-  //   0ms:   Alt-Folie groß sichtbar, Tree klein unten als Header
-  // 300ms:   Alt-Folie fadet hoch weg, Tree zoomt in Hero-Größe (scale 0.65→1.25)
-  // 1100ms:  Wolf-Sprung startet, weiter Arc über Phase-Connector, 1100ms Dauer
-  // 1650ms:  Mid-Air — alle Dots von Runde 1 kippen auf ✓, Runde-2-Label glüht
-  // 2200ms:  Wolf landet auf Dot 5 (Runde 2, Frage 1)
-  // 2500ms:  Tree zoomt zurück auf Header-Position
-  // 2900ms:  Neu-Folie fadet von unten rein
+  // Timeline (Gesamt ~4,4s, Prozente beziehen sich auf 4400ms):
+  //    0 ms  (  0 %): Alt-Folie stabil, Tree tiny unten
+  //   100 ms (  2 %): "Runde 1 geschafft!" Stempel knallt auf Alt-Folie
+  //   500 ms ( 11 %): Stempel sitzt (leicht gekippt -6°)
+  //   900 ms ( 20 %): Alt-Folie + Stempel faden + driften gemeinsam weg
+  //   800 ms ( 18 %): Tree zoomt zur Hero-Position hoch
+  //  1300 ms ( 30 %): Tree in Hero
+  //  1900 ms ( 43 %): Wolf-Sprung startet
+  //  2450 ms ( 56 %): Mid-Air — Runde-1-Dots kippen auf ✓, Runde-2-Label glüht
+  //  3000 ms ( 68 %): Wolf gelandet auf Runde-2-Dot 1
+  //  3100 ms ( 70 %): Tree zoomt zurück nach unten
+  //  3350 ms ( 76 %): Neu-Folie BG fadet rein
+  //  3750 ms ( 85 %): "Runde 2" Mega-Stempel knallt in Mitte der Neu-Folie
+  //  4100 ms ( 93 %): Stempel sitzt groß
+  //  4400 ms (100 %): Stempel schrumpft + rutscht als Badge nach oben, Tagline fadet rein
   const VISIBLE = [1, 2];
   const [phase, setPhase] = useState<'pre' | 'jumping' | 'post'>('pre');
   useEffect(() => {
     setPhase('pre');
-    const t1 = setTimeout(() => setPhase('jumping'), 1650);
-    const t2 = setTimeout(() => setPhase('post'), 2200);
+    const t1 = setTimeout(() => setPhase('jumping'), 2450);
+    const t2 = setTimeout(() => setPhase('post'), 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [playKey]);
 
-  const currentDot = phase === 'post' ? 5 : 4;
-  const doneThrough = phase === 'pre' ? 3 : phase === 'jumping' ? 3 : 4;
-  const highlightRound = phase === 'post' ? 2 : 1;
+  const currentDot = phase === 'pre' ? 4 : 5;
+  const doneThrough = phase === 'pre' ? 3 : 4;
+  const highlightRound = phase === 'pre' ? 1 : 2;
 
   const startL = dotLeftPct(4, VISIBLE);
   const endL = dotLeftPct(5, VISIBLE);
@@ -325,26 +332,49 @@ function VariantB({ playKey }: { playKey: number }) {
   return (
     <div key={playKey} style={STAGE_STYLE}>
       <style>{`
+        /* — Alt-Folie — */
         @keyframes vbOldSlideOut {
-          0%, 8%  { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-          30%     { opacity: 0; transform: translateY(-28px) scale(0.9); filter: blur(6px); }
-          100%    { opacity: 0; transform: translateY(-28px) scale(0.9); filter: blur(6px); }
+          0%, 20%  { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+          29%      { opacity: 0; transform: translateY(-30px) scale(0.92); filter: blur(6px); }
+          100%     { opacity: 0; transform: translateY(-30px) scale(0.92); filter: blur(6px); }
         }
-        @keyframes vbNewSlideIn {
-          0%, 82%   { opacity: 0; transform: translateY(28px) scale(0.9); filter: blur(6px); }
-          95%       { opacity: 1; transform: translateY(-4px) scale(1.02); filter: blur(0); }
+        @keyframes vbOldStamp {
+          0%, 2.2%  { opacity: 0; transform: translate(-50%,-50%) scale(2.4) rotate(-16deg); }
+          6%        { opacity: 1; transform: translate(-50%,-50%) scale(0.88) rotate(-4deg); }
+          9%        { transform: translate(-50%,-50%) scale(1.1) rotate(-9deg); }
+          12%, 22%  { transform: translate(-50%,-50%) scale(1) rotate(-6deg); opacity: 1; }
+          29%       { opacity: 0; transform: translate(-50%,-50%) scale(0.96) rotate(-6deg); }
+          100%      { opacity: 0; }
+        }
+        /* — Neu-Folie — */
+        @keyframes vbNewBgIn {
+          0%, 76%   { opacity: 0; transform: translateY(24px) scale(0.92); filter: blur(6px); }
+          88%       { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
           100%      { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
+        @keyframes vbNewStamp_${playKey} {
+          0%, 80%   { opacity: 0; top: 50%; transform: translate(-50%,-50%) scale(3) rotate(10deg); }
+          86%       { opacity: 1; top: 50%; transform: translate(-50%,-50%) scale(0.9) rotate(-3deg); }
+          89%       { opacity: 1; top: 50%; transform: translate(-50%,-50%) scale(1.12) rotate(2deg); }
+          93%       { opacity: 1; top: 50%; transform: translate(-50%,-50%) scale(1) rotate(0deg); }
+          96%       { opacity: 1; top: 50%; transform: translate(-50%,-50%) scale(1) rotate(0deg); }
+          100%      { opacity: 1; top: 16%; transform: translate(-50%,-50%) scale(0.32) rotate(0deg); }
+        }
+        @keyframes vbNewTagline_${playKey} {
+          0%, 93%   { opacity: 0; transform: translateY(18px); }
+          100%      { opacity: 1; transform: translateY(0); }
+        }
+        /* — Tree & Wolf — */
         @keyframes vbTreeZoom {
-          0%, 8%    { transform: translate(-50%, 0) scale(0.62); top: 80%; opacity: 0.85; }
-          22%       { transform: translate(-50%, -50%) scale(1.18); top: 50%; opacity: 1; }
-          72%       { transform: translate(-50%, -50%) scale(1.18); top: 50%; opacity: 1; }
-          88%       { transform: translate(-50%, 0) scale(0.62); top: 80%; opacity: 0.9; }
-          100%      { transform: translate(-50%, 0) scale(0.62); top: 80%; opacity: 0.85; }
+          0%, 18%   { transform: translate(-50%, 0) scale(0.62); top: 82%; opacity: 0.55; }
+          28%       { transform: translate(-50%, -50%) scale(1.2); top: 50%; opacity: 1; }
+          70%       { transform: translate(-50%, -50%) scale(1.2); top: 50%; opacity: 1; }
+          80%       { transform: translate(-50%, 0) scale(0.62); top: 82%; opacity: 0.35; }
+          100%      { transform: translate(-50%, 0) scale(0.62); top: 82%; opacity: 0; }
         }
         @keyframes vbWolfJump_${playKey} {
           0%        { left: ${startL}%; top: 74%; transform: translate(-50%,-50%) scale(1) rotate(0deg); }
-          50%       { left: ${midL}%;  top: -10%; transform: translate(-50%,-50%) scale(1.38) rotate(-14deg); }
+          50%       { left: ${midL}%;  top: -12%; transform: translate(-50%,-50%) scale(1.38) rotate(-14deg); }
           100%      { left: ${endL}%;  top: 74%; transform: translate(-50%,-50%) scale(1) rotate(0deg); }
         }
       `}</style>
@@ -356,9 +386,10 @@ function VariantB({ playKey }: { playKey: number }) {
         background: 'radial-gradient(ellipse at 30% 50%, #1e3a8a 0%, #0b1220 70%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 0 60px rgba(59,130,246,0.3)',
-        animation: 'vbOldSlideOut 3400ms ease both',
+        animation: 'vbOldSlideOut 4400ms ease both',
+        overflow: 'hidden',
       }}>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '0 24px' }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: '#fde68a', letterSpacing: '0.1em',
             background: 'rgba(0,0,0,0.4)', padding: '3px 10px', borderRadius: 999, display: 'inline-block', marginBottom: 10 }}>
             RUNDE 1 · FRAGE 5
@@ -366,6 +397,26 @@ function VariantB({ playKey }: { playKey: number }) {
           <div style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#93c5fd' }}>
             Letzte Frage dieser Runde!
           </div>
+        </div>
+        {/* Alt-Stempel — "Runde 1 geschafft!" */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          padding: '14px 32px',
+          background: '#dc2626',
+          color: '#fff',
+          fontWeight: 900,
+          fontSize: 'clamp(18px, 2.4vw, 34px)',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          border: '4px double rgba(255,255,255,0.9)',
+          borderRadius: 6,
+          boxShadow: '0 10px 28px rgba(0,0,0,0.55), 0 0 0 2px #dc2626 inset',
+          whiteSpace: 'nowrap',
+          opacity: 0,
+          animation: 'vbOldStamp 4400ms ease-out both',
+          pointerEvents: 'none',
+        }}>
+          🏁 Runde 1 geschafft!
         </div>
       </div>
 
@@ -376,26 +427,48 @@ function VariantB({ playKey }: { playKey: number }) {
         background: 'radial-gradient(ellipse at 30% 50%, #92400e 0%, #1c1208 70%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 0 60px rgba(245,158,11,0.3)',
-        animation: 'vbNewSlideIn 3400ms ease both',
+        animation: 'vbNewBgIn 4400ms ease both',
+        overflow: 'hidden',
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: '#fde68a', letterSpacing: '0.1em',
-            background: 'rgba(0,0,0,0.4)', padding: '3px 10px', borderRadius: 999, display: 'inline-block', marginBottom: 10 }}>
-            RUNDE 2 · FRAGE 1
-          </div>
-          <div style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#fcd34d' }}>
+        <div style={{
+          textAlign: 'center',
+          marginTop: '7%', // Platz für den schrumpfenden Stempel oben
+          opacity: 0,
+          animation: `vbNewTagline_${playKey} 4400ms ease both`,
+        }}>
+          <div style={{ fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 900, color: '#fcd34d' }}>
             Angriff & Verteidigung!
           </div>
         </div>
+        {/* Neu-Stempel — "Runde 2" */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          padding: '16px 40px',
+          background: '#f59e0b',
+          color: '#1c1208',
+          fontWeight: 900,
+          fontSize: 'clamp(22px, 3vw, 44px)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          border: '4px double rgba(28,18,8,0.85)',
+          borderRadius: 8,
+          boxShadow: '0 12px 32px rgba(0,0,0,0.6), 0 0 0 2px #f59e0b inset',
+          whiteSpace: 'nowrap',
+          opacity: 0,
+          animation: `vbNewStamp_${playKey} 4400ms cubic-bezier(0.3,0,0.2,1) both`,
+          pointerEvents: 'none',
+        }}>
+          Runde 2
+        </div>
       </div>
 
-      {/* Tree — zoomt rein, hält, zoomt zurück */}
+      {/* Tree — zoomt rein, hält, zoomt zurück, fadet weg */}
       <div style={{
-        position: 'absolute', left: '50%', top: '80%',
+        position: 'absolute', left: '50%', top: '82%',
         width: '88%',
         transform: 'translate(-50%, 0) scale(0.62)',
         transformOrigin: 'center',
-        animation: 'vbTreeZoom 3400ms cubic-bezier(0.4,0,0.2,1) both',
+        animation: 'vbTreeZoom 4400ms cubic-bezier(0.4,0,0.2,1) both',
       }}>
         <TreeRail
           visibleRounds={VISIBLE}
@@ -409,7 +482,7 @@ function VariantB({ playKey }: { playKey: number }) {
               size={62}
               style={{
                 left: `${startL}%`, top: '74%',
-                animation: `vbWolfJump_${playKey} 1100ms cubic-bezier(0.3,0,0.2,1) 1100ms both`,
+                animation: `vbWolfJump_${playKey} 1100ms cubic-bezier(0.3,0,0.2,1) 1900ms both`,
               }}
             />
           }
@@ -432,7 +505,7 @@ export default function QQRoundLabPage() {
     const id = setInterval(() => {
       setKeyA(k => k + 1);
       setKeyB(k => k + 1);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(id);
   }, [autoLoop]);
 
@@ -485,7 +558,7 @@ export default function QQRoundLabPage() {
 
         <VariantCard
           title="B · Zwischen Runden 🚀"
-          desc="Nur die beiden beteiligten Runden sind sichtbar (10 Dots, klare Lücke). Alt-Folie fadet weg, Tree zoomt zentral in Vogelperspektive, Wolf macht einen weiten Bogen über den Phase-Connector — alle Runde-1-Dots kippen auf ✓, Runde-2-Label glüht. Tree zoomt zurück, neue Folie kommt. ~3,4s."
+          desc='Drei klare Momente: 1) „Runde 1 geschafft!"-Stempel knallt auf Alt-Folie (roter Stamp, leicht gekippt), beide faden weg. 2) Tree zoomt in Vogelperspektive, Wolf macht weiten Bogen über den Phase-Connector — Runde-1-Dots kippen, Runde-2-Label glüht, Tree zoomt zurück. 3) „Runde 2"-Mega-Stempel bangt auf neue Folie, schrumpft als Badge nach oben, Tagline fadet drunter rein. ~4,4s.'
           onPlay={() => setKeyB(k => k + 1)}
         >
           <VariantB playKey={keyB} />

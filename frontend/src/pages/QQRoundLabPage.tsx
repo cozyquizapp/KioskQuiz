@@ -52,15 +52,19 @@ function Dot({
   state, emoji, color, size = 44,
 }: { state: DotState; emoji: string; color: string; size?: number }) {
   if (state === 'done') {
+    // Ausgegraut: Kategorie-Emoji bleibt lesbar (man sieht *was* gespielt wurde),
+    // aber desaturiert + reduzierte Deckkraft → aktuelles Amber-Dot bekommt die Bühne.
     return (
       <div style={{
         width: size, height: size, borderRadius: '50%',
-        background: '#cbd5e1',
+        background: '#f1f5f9',
+        border: '2px solid #e2e8f0',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontSize: Math.round(size * 0.5), fontWeight: 900,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+        fontSize: Math.round(size * 0.55), fontWeight: 800,
+        filter: 'grayscale(1)',
+        opacity: 0.55,
         transition: 'all 320ms ease',
-      }}>✓</div>
+      }}>{emoji}</div>
     );
   }
   if (state === 'current') {

@@ -4807,9 +4807,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
+                const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
-                const emoji = tc > 6 ? 28 : tc > 4 ? 34 : 40;
+                const emoji = tc > 6 ? 48 : tc > 4 ? 56 : 64;
                 return (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap }}>
                     {s.teams.map(tm => {
@@ -6110,9 +6110,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {/* Avatar row */}
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
+                const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
-                const emoji = tc > 6 ? 28 : tc > 4 ? 34 : 40;
+                const emoji = tc > 6 ? 48 : tc > 4 ? 56 : 64;
                 return (
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap,

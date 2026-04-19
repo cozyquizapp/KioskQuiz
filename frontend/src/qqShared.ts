@@ -60,6 +60,12 @@ export const QQ_BEAMER_CSS = `
     82%  { transform: translateY(9%);    opacity: 1; }
     100% { transform: translateY(0);     opacity: 1; }
   }
+  /* RoundMiniTree Wolf-Hop: wolf springt in einem kurzen Bogen zum nächsten Dot */
+  @keyframes roundMiniHop {
+    0%   { transform: translate(-50%, -50%); }
+    45%  { transform: translate(-50%, -115%); }
+    100% { transform: translate(-50%, -50%); }
+  }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }

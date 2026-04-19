@@ -1842,16 +1842,39 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
   const phase = s.gamePhaseIndex;
   const firstIdx = schedule.findIndex(e => e.phase === phase);
   const phaseEntries = schedule.filter(e => e.phase === phase);
-  if (phaseEntries.length === 0 || firstIdx < 0) return null;
 
-  const currentInPhase = Math.max(0, Math.min(s.questionIndex - firstIdx, phaseEntries.length - 1));
+  const currentInPhase = phaseEntries.length === 0 || firstIdx < 0
+    ? 0
+    : Math.max(0, Math.min(s.questionIndex - firstIdx, phaseEntries.length - 1));
+
+  // Wolf startet auf Vorgänger-Dot, springt nach Seiten-Entrance (~1s) zum aktuellen Dot.
+  const [displayIdx, setDisplayIdx] = useState(Math.max(0, currentInPhase - 1));
+  const [hopping, setHopping] = useState(false);
+
+  useEffect(() => {
+    if (currentInPhase === 0) {
+      setDisplayIdx(0);
+      setHopping(false);
+      return;
+    }
+    setDisplayIdx(Math.max(0, currentInPhase - 1));
+    setHopping(false);
+    const t1 = setTimeout(() => {
+      setDisplayIdx(currentInPhase);
+      setHopping(true);
+    }, 1000);
+    const t2 = setTimeout(() => setHopping(false), 1000 + 560);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [currentInPhase]);
+
+  if (phaseEntries.length === 0 || firstIdx < 0) return null;
 
   const DOT = 42;
   const GAP = 18;
   const WOLF = DOT + 10;
   const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
-  const wolfLeft = currentInPhase * (DOT + GAP) + DOT / 2;
-  const progressWidth = currentInPhase === 0 ? 0 : currentInPhase * (DOT + GAP);
+  const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
+  const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);
 
   return (
     <div style={{
@@ -1872,7 +1895,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
           background: 'linear-gradient(90deg, #FBBF24, #F59E0B)',
           transform: 'translateY(-50%)', borderRadius: 2,
           boxShadow: '0 0 10px rgba(251,191,36,0.6)',
-          transition: 'width 700ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'width 540ms cubic-bezier(0.4,0,0.2,1)',
         }} />
       )}
 
@@ -1880,8 +1903,8 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
       {phaseEntries.map((e, i) => {
         const label = QQ_CATEGORY_LABELS[e.category];
         const emoji = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
-        const isPast = i < currentInPhase;
-        const isCurrent = i === currentInPhase;
+        const isPast = i < displayIdx;
+        const isCurrent = i === displayIdx;
         const dotLeft = i * (DOT + GAP);
         return (
           <div key={i} style={{
@@ -1904,7 +1927,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         );
       })}
 
-      {/* Wolf-Avatar — gleitet per CSS-transition zum aktuellen Dot */}
+      {/* Wolf-Avatar — wartet auf Seiten-Entrance, springt dann in einem Bogen zum neuen Dot */}
       <div style={{
         position: 'absolute', top: '50%', left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
@@ -1916,7 +1939,8 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         border: `3px solid ${catColor}`,
         boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
         transform: 'translate(-50%, -50%)',
-        transition: 'left 800ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+        transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+        animation: hopping ? 'roundMiniHop 560ms cubic-bezier(0.4,0,0.2,1) both' : undefined,
         zIndex: 2,
       }} />
     </div>
@@ -4809,7 +4833,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const tc = s.teams.length;
                 const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
-                const emoji = tc > 6 ? 48 : tc > 4 ? 56 : 64;
                 return (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap }}>
                     {s.teams.map(tm => {
@@ -4818,15 +4841,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <div key={tm.id} style={{
                           position: 'relative',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: av, height: av, borderRadius: '50%',
-                          background: answered ? `${tm.color}25` : 'rgba(0,0,0,0.35)',
-                          border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.18)'}`,
-                          transition: 'all 0.4s ease',
-                          opacity: answered ? 1 : 0.55,
-                          boxShadow: answered ? `0 0 14px ${tm.color}66` : '0 2px 8px rgba(0,0,0,0.5)',
                           flexShrink: 0,
+                          transition: 'opacity 0.4s ease, filter 0.4s ease',
+                          opacity: answered ? 1 : 0.55,
+                          filter: answered ? `drop-shadow(0 0 10px ${tm.color}66)` : 'grayscale(0.4)',
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={emoji} />
+                          <QQTeamAvatar avatarId={tm.avatarId} size={av} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,
@@ -6112,7 +6132,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const tc = s.teams.length;
                 const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
-                const emoji = tc > 6 ? 48 : tc > 4 ? 56 : 64;
                 return (
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap,
@@ -6124,15 +6143,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <div key={tm.id} style={{
                           position: 'relative',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: av, height: av, borderRadius: '50%',
-                          background: answered ? `${tm.color}25` : 'rgba(255,255,255,0.04)',
-                          border: `3px solid ${answered ? tm.color : 'rgba(255,255,255,0.08)'}`,
-                          transition: 'all 0.4s ease',
-                          opacity: answered ? 1 : 0.4,
-                          boxShadow: answered ? `0 0 16px ${tm.color}44` : 'none',
                           flexShrink: 0,
+                          transition: 'opacity 0.4s ease, filter 0.4s ease',
+                          opacity: answered ? 1 : 0.4,
+                          filter: answered ? `drop-shadow(0 0 12px ${tm.color}55)` : 'grayscale(0.5)',
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={emoji} />
+                          <QQTeamAvatar avatarId={tm.avatarId} size={av} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,

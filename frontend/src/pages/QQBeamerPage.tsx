@@ -1063,6 +1063,107 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AnimatedCozyWolf — 4-Posen-Sequenz (Augen auf/zu × Mund auf/zu).
+// Idle-Blink + Mund-Flap waehrend gesprochen wird. Alle 4 PNGs werden auf
+// Mount geladen und per opacity-Toggle umgeschaltet → kein Image-Reload-Flackern.
+// ─────────────────────────────────────────────────────────────────────────────
+function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: boolean }) {
+  const [eyesOpen, setEyesOpen] = useState(true);
+  const [mouthOpen, setMouthOpen] = useState(false);
+
+  // Idle-Blink: alle 3-5s einmal kurz die Augen zu (~130ms)
+  useEffect(() => {
+    let alive = true;
+    let timer: number | undefined;
+    const scheduleBlink = () => {
+      timer = window.setTimeout(() => {
+        if (!alive) return;
+        setEyesOpen(false);
+        timer = window.setTimeout(() => {
+          if (!alive) return;
+          setEyesOpen(true);
+          scheduleBlink();
+        }, 130);
+      }, 3000 + Math.random() * 2200);
+    };
+    scheduleBlink();
+    return () => { alive = false; if (timer) window.clearTimeout(timer); };
+  }, []);
+
+  // Mund-Flap: nur waehrend speaking. Sprechpausen alle ~2.5s fuer ~1.5s,
+  // damit es nicht wie ein Maschinengewehr aussieht.
+  useEffect(() => {
+    if (!speaking) { setMouthOpen(false); return; }
+    let alive = true;
+    let timer: number | undefined;
+    let phase: 'speak' | 'pause' = 'speak';
+    let phaseUntil = Date.now() + 2200 + Math.random() * 1200;
+    const tick = () => {
+      if (!alive) return;
+      const now = Date.now();
+      if (now >= phaseUntil) {
+        if (phase === 'speak') {
+          phase = 'pause';
+          setMouthOpen(false);
+          phaseUntil = now + 1100 + Math.random() * 900;
+          timer = window.setTimeout(tick, phaseUntil - now);
+          return;
+        } else {
+          phase = 'speak';
+          phaseUntil = now + 2000 + Math.random() * 1500;
+        }
+      }
+      if (phase === 'speak') {
+        setMouthOpen(m => !m);
+        timer = window.setTimeout(tick, 200 + Math.random() * 80);
+      } else {
+        timer = window.setTimeout(tick, 200);
+      }
+    };
+    tick();
+    return () => { alive = false; if (timer) window.clearTimeout(timer); };
+  }, [speaking]);
+
+  const poses: Array<{ eyes: 'auf' | 'zu'; mouth: 'auf' | 'zu' }> = [
+    { eyes: 'auf', mouth: 'zu' },
+    { eyes: 'auf', mouth: 'auf' },
+    { eyes: 'zu',  mouth: 'zu' },
+    { eyes: 'zu',  mouth: 'auf' },
+  ];
+
+  return (
+    <div style={{
+      position: 'relative',
+      width: widthCss,
+      aspectRatio: '1 / 1',
+      filter: 'drop-shadow(0 10px 30px rgba(251,191,36,0.45))',
+      transformOrigin: 'bottom center',
+      animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
+    }}>
+      {poses.map(p => {
+        const visible = (p.eyes === 'auf') === eyesOpen && (p.mouth === 'auf') === mouthOpen;
+        const file = `augen${p.eyes}.mund${p.mouth}.png`;
+        return (
+          <img
+            key={file}
+            src={`/avatars/cozywolf/${file}`}
+            alt=""
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+              opacity: visible ? 1 : 0,
+              pointerEvents: 'none',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // QuizIntroOverlay — epische Begrüßungs-Folie "Willkommen beim BLOCK QUIZ
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
@@ -1153,21 +1254,15 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
           textShadow: '0 0 60px rgba(251,191,36,0.4)',
           animation: 'qqIntroTitleIn 1.2s cubic-bezier(0.2,0.9,0.3,1.1) 0.5s both',
         }}>{title}</div>
-        {/* Wolf + Speech Bubble — Wolf winkt am Rand, Bubble daneben */}
+        {/* Wolf + Speech Bubble — Wolf "spricht" mit Mund-Flap + Idle-Blink */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(12px, 1.8vw, 28px)',
           marginTop: 'clamp(8px, 1.2vh, 20px)',
           animation: 'qqIntroStackIn 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 1.3s both',
         }}>
-          <div style={{
-            width: 'clamp(120px, 14vw, 200px)',
-            filter: 'drop-shadow(0 10px 30px rgba(251,191,36,0.45))',
-            transformOrigin: 'bottom center',
-            animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
-          }}>
-            <img src="/avatars/wolf/geste.svg" alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
-          </div>
+          <AnimatedCozyWolf widthCss="clamp(120px, 14vw, 200px)" speaking={visible} />
+
           <div style={{
             position: 'relative',
             padding: 'clamp(12px, 1.6vh, 22px) clamp(20px, 2.4vw, 36px)',

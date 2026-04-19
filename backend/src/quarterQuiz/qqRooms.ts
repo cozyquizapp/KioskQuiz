@@ -92,6 +92,10 @@ export interface QQRoomState {
   soundConfig?: import('../../../shared/quarterQuizTypes').QQSoundConfig;
   lastActivityAt: number;
   _placementQueue?: string[];
+  // Snapshot ALLER Teams mit korrekter Antwort (gesetzt bei applyAutoEval/qqMarkCorrect,
+  // BEVOR _placementQueue durch Platzierungen leergeshiftet wird). Quelle für die
+  // Summary-Stats — nicht aus _placementQueue rekonstruieren.
+  _currentQuestionWinners?: string[];
   // Sound
   globalMuted: boolean;
   musicMuted: boolean;
@@ -426,10 +430,16 @@ export function qqFlushQuestionToHistory(room: QQRoomState): void {
   const qIdx = room.questionIndex;
   const alreadyPushed = (room.questionHistory as any[]).some(h => h._qIndex === qIdx);
   if (alreadyPushed) return;
-  const correctIds = [
-    ...(room.correctTeamId ? [room.correctTeamId] : []),
-    ...((room['_placementQueue'] as string[] | undefined) ?? []),
-  ];
+  // Quelle der Wahrheit: _currentQuestionWinners (gesetzt bei applyAutoEval/qqMarkCorrect).
+  // Fallback auf correctTeamId + _placementQueue für ältere Räume; letzteres ist aber
+  // unzuverlässig, weil _placementQueue während PLACEMENT leergeshiftet wird.
+  const snapshot = (room._currentQuestionWinners ?? []).filter(Boolean);
+  const correctIds = snapshot.length > 0
+    ? snapshot
+    : [
+        ...(room.correctTeamId ? [room.correctTeamId] : []),
+        ...((room['_placementQueue'] as string[] | undefined) ?? []),
+      ];
   const uniqueIds = Array.from(new Set(correctIds));
   room.questionHistory.push({
     _qIndex: qIdx,
@@ -519,6 +529,7 @@ export function qqActivateQuestion(
   room.phase          = 'QUESTION_ACTIVE';
   room.revealedAnswer = null;
   room.correctTeamId  = null;
+  room._currentQuestionWinners = [];
   room.pendingFor     = null;
   room.pendingAction  = null;
   room.answers        = [];
@@ -1134,6 +1145,12 @@ export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]
     room.correctTeamId = teamIdOrList;
     room['_placementQueue'] = [];
   }
+  // Snapshot für Summary-Stats — additiv, falls Moderator nachträglich weitere
+  // Teams als richtig markiert (z.B. CHEESE/SCHAETZCHEN-Toleranz von Hand).
+  const ids = Array.isArray(teamIdOrList) ? teamIdOrList : [teamIdOrList];
+  const prev = new Set(room._currentQuestionWinners ?? []);
+  for (const id of ids) prev.add(id);
+  room._currentQuestionWinners = Array.from(prev);
   room.lastActivityAt = Date.now();
 }
 

@@ -146,6 +146,10 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   const result = qqEvaluateAnswers(room);
   qqClearBuzz(room);
 
+  // Snapshot ALLER Winner für Summary-Stats — _placementQueue wird später durch
+  // Platzierungen leergeshiftet, daher hier festhalten.
+  room._currentQuestionWinners = [...result.winnerTeamIds];
+
   if (result.winnerTeamIds.length === 1) {
     room.correctTeamId = result.winnerTeamIds[0];
   } else if (result.winnerTeamIds.length > 1) {

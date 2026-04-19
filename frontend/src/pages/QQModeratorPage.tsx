@@ -35,7 +35,7 @@ export default function QQModeratorPage() {
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
-  const { state, connected, emit } = useQQSocket(roomCode);
+  const { state, connected, emit, reconnect } = useQQSocket(roomCode);
 
   // Setup/Lobby-Zweiteilung: Wert kommt aus dem server-state (via useQQSocket).
   // Fallback bis der erste State-Update da ist: false (= Setup anzeigen).
@@ -419,6 +419,30 @@ export default function QQModeratorPage() {
 
       {!joined && connected && (
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
+      )}
+
+      {!connected && (
+        <div style={{
+          margin: '14px auto', maxWidth: 520,
+          padding: '18px 22px', borderRadius: 14,
+          background: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.35)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          color: '#fecaca', fontSize: 14, fontWeight: 700, textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 900 }}>○ Verbindung zum Server weg</div>
+          <div style={{ color: '#cbd5e1', fontWeight: 500 }}>
+            Versuche automatisch neu zu verbinden… Dein Spielstand läuft serverseitig weiter.
+          </div>
+          <button
+            onClick={() => reconnect()}
+            style={{
+              padding: '8px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
+              background: '#3B82F6', color: '#fff', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+            }}
+          >Jetzt neu verbinden</button>
+        </div>
       )}
 
       {joined && s && s.phase === 'LOBBY' && !setupDone && (

@@ -25,10 +25,13 @@ export function useQQSocket(roomCode: string) {
     if (!roomCode) return;
 
     const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      // Erst WebSocket, Fallback auf Long-Polling — robuster bei Proxy/WLAN-Glitches
+      transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 800,
+      reconnectionDelayMax: 4000,
       reconnectionAttempts: Infinity,
+      timeout: 15000,
     });
     socketRef.current = socket;
 

@@ -47,14 +47,14 @@ export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
 // Each avatar has its own signature color — teams pick an avatar+color pair.
 // Order matches QQ_AVATARS so fallback indexing stays in sync with avatar rings.
 export const QQ_TEAM_PALETTE: string[] = [
-  '#EC4899', // shiba
-  '#84CC16', // faultier
+  '#FA507F', // shiba (label: Hund)
+  '#9DCB2F', // faultier
   '#266FD3', // pinguin
   '#9A65D5', // koala
   '#FEC814', // giraffe
   '#68B4A5', // waschbaer
   '#FF751F', // kuh
-  '#DC2626', // capybara
+  '#F84326', // capybara
 ];
 
 // ── Game constants ────────────────────────────────────────────────────────────
@@ -575,14 +575,14 @@ export interface QQAck {
 // /avatars/cozy-cast/avatar-{slug}.png. Die Reihenfolge: erste 4 sind die
 // kontrastreichsten Picks für kleine Team-Counts.
 export const QQ_AVATARS = [
-  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Shiba',     labelEn: 'Shiba',    color: '#EC4899', hoodie: '#0EA5E9' },
-  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#84CC16', hoodie: '#7C2D12' },
+  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#FA507F', hoodie: '#0EA5E9' },
+  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#9DCB2F', hoodie: '#7C2D12' },
   { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#266FD3', hoodie: '#FDE047' },
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#9A65D5', hoodie: '#EAB308' },
   { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#FEC814', hoodie: '#5B21B6' },
   { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#68B4A5', hoodie: '#F59E0B' },
   { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#FF751F', hoodie: '#581C87' },
-  { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#DC2626', hoodie: '#166534' },
+  { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#F84326', hoodie: '#166534' },
 ] as const;
 
 export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed: string };

@@ -400,6 +400,20 @@ export function playFieldPlaced() {
   tone(1320, 'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
 }
 
+export function playTeamReveal() {
+  if (!isSlotEnabled('teamReveal')) return;
+  const url = resolveSlotUrl('teamReveal');
+  if (url) { playAudioFile(url); return; }
+  // Fallback: gleicher Synth wie playFieldPlaced (bis User eigenes Sample hochlädt)
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(110, 'sine', t, 0.12, 0.28, 0.004, 0.1, ac);
+  tone(220, 'sine', t, 0.1, 0.2, 0.004, 0.08, ac);
+  tone(660, 'sine', t + 0.04, 0.2, 0.14, 0.005, 0.16, ac);
+  tone(1320, 'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
+}
+
 export function playSteal() {
   if (!isSlotEnabled('steal')) return;
   const url = resolveSlotUrl('steal');

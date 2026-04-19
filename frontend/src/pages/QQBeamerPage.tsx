@@ -18,6 +18,7 @@ import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
+  playTeamReveal,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop,
 } from '../utils/sounds';
@@ -1742,7 +1743,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     for (let i = 0; i < revealedCount; i++) {
       if (!playedRef.current.has(i)) {
         playedRef.current.add(i);
-        try { playFieldPlaced(); } catch {}
+        try { playTeamReveal(); } catch {}
       }
     }
     if (showGoodLuck && !playedRef.current.has(-1)) {

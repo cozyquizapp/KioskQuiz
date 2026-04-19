@@ -373,7 +373,7 @@ export type QQSlideTemplates = Partial<Record<string, QQSlideTemplate>>;
 export type QQSoundSlot =
   | 'timerLoop' | 'timesUp' | 'fieldPlaced' | 'steal'
   | 'correct'   | 'wrong'   | 'reveal'      | 'fanfare'
-  | 'lobbyWelcome' | 'gameOver';
+  | 'lobbyWelcome' | 'gameOver' | 'teamReveal';
 
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
@@ -386,6 +386,7 @@ export interface QQSoundConfig {
   fanfare?: string;          // phase intro / big moment
   lobbyWelcome?: string;     // lobby ambient / welcome
   gameOver?: string;         // game over jingle
+  teamReveal?: string;       // per-team slam on TeamsRevealView
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
 }
@@ -401,6 +402,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   fanfare:      '🎉 Phasen-Intro / großer Moment',
   lobbyWelcome: '🎵 Lobby- & Pause-Musik',
   gameOver:     '🏆 Spielende',
+  teamReveal:   '🎬 Team-Reveal („Heute spielen…")',
 };
 
 /** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
@@ -415,6 +417,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   fanfare:      '/sounds/fanfare.wav',
   lobbyWelcome: '/sounds/lobby-welcome.mp3',
   gameOver:     '/sounds/game-over.wav',
+  teamReveal:   '/sounds/field-placed.wav',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

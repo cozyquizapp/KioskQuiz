@@ -53,7 +53,7 @@ export const QQ_TEAM_PALETTE: string[] = [
   '#8B5CF6', // koala
   '#EAB308', // giraffe
   '#68B4A5', // waschbaer
-  '#F97316', // kuh
+  '#FF751F', // kuh
   '#DC2626', // capybara
 ];
 
@@ -581,7 +581,7 @@ export const QQ_AVATARS = [
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#8B5CF6', hoodie: '#EAB308' },
   { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#EAB308', hoodie: '#5B21B6' },
   { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#68B4A5', hoodie: '#F59E0B' },
-  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#F97316', hoodie: '#581C87' },
+  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#FF751F', hoodie: '#581C87' },
   { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#DC2626', hoodie: '#166534' },
 ] as const;
 

@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  qqGetAvatar, QQStateUpdate, QQSoundConfig,
+  QQStateUpdate, QQSoundConfig,
 } from '../../../shared/quarterQuizTypes';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -2261,7 +2261,6 @@ function LobbyView({
                 gap: 8,
               }}>
                 {s.teams.map(t => {
-                  const av = qqGetAvatar(t.avatarId);
                   return (
                     <div key={t.id} style={{
                       display: 'flex', alignItems: 'center', gap: 8,
@@ -2270,12 +2269,7 @@ function LobbyView({
                       border: `1px solid ${t.connected ? `${t.color}66` : 'rgba(255,255,255,0.08)'}`,
                       opacity: t.connected ? 1 : 0.55,
                     }}>
-                      <span style={{
-                        fontSize: 20, width: 32, height: 32, borderRadius: '50%',
-                        background: t.color, display: 'inline-flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        border: '2px solid rgba(255,255,255,0.9)', flexShrink: 0,
-                      }}>{av.emoji}</span>
+                      <QQTeamAvatar avatarId={t.avatarId} size={32} style={{ flexShrink: 0 }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{
                           fontSize: 13, fontWeight: 900,

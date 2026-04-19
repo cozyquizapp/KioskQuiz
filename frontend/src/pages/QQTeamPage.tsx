@@ -478,7 +478,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       ...(justPicked ? { ['--g' as string]: avColor, filter: 'none' } : taken ? { filter: 'grayscale(1) opacity(0.5)' } : {}),
                     }} />
                     <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
-                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : a.label}</span>
+                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : (lang === 'en' ? a.labelEn : a.label)}</span>
                   </button>
                 );
               })}

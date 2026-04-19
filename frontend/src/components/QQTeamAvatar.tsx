@@ -9,6 +9,8 @@ type Props = {
   title?: string;
   /** wenn true → kein border-radius (PNG ist eh rund, aber manche Wrapper wollen quadratisch). */
   square?: boolean;
+  /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
+  lang?: 'de' | 'en';
 };
 
 /**
@@ -17,9 +19,10 @@ type Props = {
  *
  * Fallback bei Lade-Fehler: Emoji-Glyph in einem farbigen Kreis (alte Optik).
  */
-export function QQTeamAvatar({ avatarId, size, style, className, title, square }: Props) {
+export function QQTeamAvatar({ avatarId, size, style, className, title, square, lang }: Props) {
   const av = qqGetAvatar(avatarId);
   const [failed, setFailed] = useState(false);
+  const labelText = lang === 'en' ? av.labelEn : av.label;
 
   const base: CSSProperties = {
     width: size,
@@ -35,7 +38,7 @@ export function QQTeamAvatar({ avatarId, size, style, className, title, square }
     return (
       <span
         className={className}
-        title={title ?? av.label}
+        title={title ?? labelText}
         style={{
           ...base,
           background: av.color,
@@ -54,8 +57,8 @@ export function QQTeamAvatar({ avatarId, size, style, className, title, square }
   return (
     <img
       src={av.image}
-      alt={av.label}
-      title={title ?? av.label}
+      alt={labelText}
+      title={title ?? labelText}
       className={className}
       onError={() => setFailed(true)}
       style={base}

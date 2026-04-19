@@ -399,7 +399,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   wrong:        '❌ Falsche / keine Antwort',
   reveal:       '🔍 Antwort aufgedeckt',
   fanfare:      '🎉 Phasen-Intro / großer Moment',
-  lobbyWelcome: '🎵 Lobby-Musik',
+  lobbyWelcome: '🎵 Lobby- & Pause-Musik',
   gameOver:     '🏆 Spielende',
 };
 
@@ -413,7 +413,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   wrong:        '/sounds/wrong.wav',
   reveal:       '/sounds/reveal.wav',
   fanfare:      '/sounds/fanfare.wav',
-  lobbyWelcome: '/sounds/lobby-welcome.wav',
+  lobbyWelcome: '/sounds/lobby-welcome.mp3',
   gameOver:     '/sounds/game-over.wav',
 };
 

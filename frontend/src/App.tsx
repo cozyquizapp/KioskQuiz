@@ -29,6 +29,7 @@ const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage')
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQCityLabPage       = React.lazy(() => import('./pages/QQCityLabPage'));
+const QQRoundLabPage      = React.lazy(() => import('./pages/QQRoundLabPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -160,6 +161,7 @@ function App() {
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/city-lab"   element={<PinGate><QQCityLabPage /></PinGate>} />
+          <Route path="/round-lab"  element={<PinGate><QQRoundLabPage /></PinGate>} />
 
           {/* ── Altes CozyQuiz (Archiv) ───────────────────────────── */}
           <Route path="/alt/team"         element={<TeamPage />} />

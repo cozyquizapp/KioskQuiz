@@ -48,17 +48,22 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { opacity: 0; }
     50%      { opacity: 0.35; }
   }
-  /* Round-Transition Ziffer-Flip: alte Ziffer fällt aus dem Titel, neue rollt von oben rein */
+  /* Round-Transition Ziffer-Flip: alte Ziffer fällt aus dem Titel, neue rollt von oben rein.
+     Langsamer + smoother: keine Overshoot-Bounce, ease-out cubic. Mit blur-Hint für Speed-Look. */
   @keyframes roundDigitFall {
-    0%   { transform: translateY(0);    opacity: 1; }
-    60%  { transform: translateY(55%);  opacity: 0.35; }
-    100% { transform: translateY(130%); opacity: 0; }
+    0%   { transform: translateY(0)     scale(1);    opacity: 1;   filter: blur(0); }
+    50%  { transform: translateY(45%)   scale(0.96); opacity: 0.55; filter: blur(0.5px); }
+    100% { transform: translateY(120%)  scale(0.9);  opacity: 0;   filter: blur(2px); }
   }
   @keyframes roundDigitRoll {
-    0%   { transform: translateY(-130%); opacity: 0; }
-    55%  { transform: translateY(-40%);  opacity: 0.55; }
-    82%  { transform: translateY(9%);    opacity: 1; }
-    100% { transform: translateY(0);     opacity: 1; }
+    0%   { transform: translateY(-120%) scale(0.9);  opacity: 0;   filter: blur(2px); }
+    45%  { transform: translateY(-30%)  scale(0.96); opacity: 0.7; filter: blur(0.4px); }
+    100% { transform: translateY(0)     scale(1);    opacity: 1;   filter: blur(0); }
+  }
+  /* Farb-Sweep: Wort "Runde" tauscht von Grau auf Kategorie-Farbe via gradient-Shift. */
+  @keyframes roundWordSweep {
+    0%   { background-position: 200% 0; }
+    100% { background-position: 0 0; }
   }
   /* RoundMiniTree Wolf-Hop: wolf springt in einem kurzen Bogen zum nächsten Dot */
   @keyframes roundMiniHop {

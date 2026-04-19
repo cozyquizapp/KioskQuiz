@@ -2029,10 +2029,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useEffect(() => {
     if (!hasRoundTransition) { setTransitioning(false); return; }
     setTransitioning(true);
-    // 1200ms: Ziffer-Flip-Ende (~1200ms). Danach swappt Tree auf neue Runde,
-    // QQProgressTree animiert die Amber-Linie ~600ms weiter — gesamte
-    // Transition wirkt jetzt wie 1,8s statt früher 0,45s.
-    const t = setTimeout(() => setTransitioning(false), 1200);
+    // 1900ms: smoother Ziffer-Flip + Wort-Sweep enden ~1850ms. Danach swappt
+    // der Tree auf die neue Runde, QQProgressTree triggert den Wolf-Hop
+    // ~220ms später, Amber-Linie animiert ~620ms weiter — Gesamt-Wirkung
+    // ist eine ~2,7s Round-Transition mit klarer Choreografie.
+    const t = setTimeout(() => setTransitioning(false), 1900);
     return () => clearTimeout(t);
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
@@ -2114,31 +2115,43 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 1,
-                color: displayColor,
-                textShadow: `0 0 120px ${displayColor}44, 0 12px 0 ${displayColor}33`,
+                textShadow: `0 0 120px ${color}33, 0 12px 0 ${color}22`,
                 textAlign: 'center',
                 display: 'inline-flex', alignItems: 'baseline', justifyContent: 'center',
                 gap: '0.18em',
-                transition: 'color 500ms ease, text-shadow 500ms ease',
-                animation: 'roundBreathe 4s ease-in-out 1.2s infinite',
+                animation: 'roundBreathe 4s ease-in-out 2s infinite',
               }}>
-                <span>{titleWord}</span>
+                {/* Wort "Runde": Farb-Sweep von Grau auf Kategorie-Farbe (links → rechts) */}
+                <span style={{
+                  display: 'inline-block',
+                  backgroundImage: `linear-gradient(90deg, ${color} 0%, ${color} 35%, #94a3b8 65%, #94a3b8 100%)`,
+                  backgroundSize: '300% 100%',
+                  backgroundPosition: '100% 0',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  color: 'transparent',
+                  animation: 'roundWordSweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 700ms both',
+                }}>{titleWord}</span>
                 {/* Ziffern-Flip-Container — kein overflow/height, Sizer gibt die Baseline vor */}
                 <span style={{
                   position: 'relative', display: 'inline-block',
                   lineHeight: 1,
+                  color: color,
+                  transition: 'color 600ms ease',
                 }}>
                   {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
                   <span style={{ visibility: 'hidden' }}>{newDigit}</span>
-                  {/* Alte Ziffer fällt */}
+                  {/* Alte Ziffer fällt — langsamer, sanfter cubic ease-in */}
                   <span style={{
                     position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
-                    animation: 'roundDigitFall 560ms cubic-bezier(0.5,0,0.75,0) 320ms both',
+                    color: prevColor,
+                    animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 420ms both',
                   }}>{prevDigit}</span>
-                  {/* Neue Ziffer rollt von oben */}
+                  {/* Neue Ziffer rollt von oben — langsamer, ohne Overshoot, smooth ease-out */}
                   <span style={{
                     position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
-                    animation: 'roundDigitRoll 580ms cubic-bezier(0.2,1.3,0.5,1) 620ms both',
+                    animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 880ms both',
                   }}>{newDigit}</span>
                 </span>
               </div>

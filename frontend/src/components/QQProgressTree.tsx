@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 
@@ -40,6 +41,22 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
 
   const currentIdx = state.questionIndex;
 
+  // Wolf-Hop: bei Wechsel des currentIdx kurz auf altem Dot stehen bleiben,
+  // dann nach kurzem Delay zum neuen Dot springen (parallel zur Page-Entrance).
+  const [displayIdx, setDisplayIdx] = useState(currentIdx);
+  const [hopping, setHopping] = useState(false);
+  useEffect(() => {
+    if (displayIdx === currentIdx) return;
+    setHopping(false);
+    const t1 = setTimeout(() => {
+      setDisplayIdx(currentIdx);
+      setHopping(true);
+    }, 220);
+    const t2 = setTimeout(() => setHopping(false), 220 + 620);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIdx]);
+
   const isMini = variant === 'mini';
 
   // Skalen je nach Variant
@@ -74,10 +91,11 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   });
   const totalWidth = cursor;
 
-  // Progress: von Center des ersten Dots bis Center des aktuellen Dots
+  // Progress: von Center des ersten Dots bis Center des Wolf-Dots (displayIdx).
   const firstCenter = dotCenters[0] ?? 0;
   const lastCenter = dotCenters[dotCenters.length - 1] ?? 0;
-  const currentCenter = dotCenters[Math.max(0, Math.min(currentIdx, dotCenters.length - 1))] ?? firstCenter;
+  const wolfDotIdx = Math.max(0, Math.min(displayIdx, dotCenters.length - 1));
+  const currentCenter = dotCenters[wolfDotIdx] ?? firstCenter;
   const trackStart = firstCenter;
   const trackEnd = lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
@@ -190,7 +208,10 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
             zIndex: 1,
           }} />
 
-          {/* Dots — Flex-Layout, genau mit Berechnung oben synchron */}
+          {/* Dots — Flex-Layout, genau mit Berechnung oben synchron.
+              Current = unsichtbarer Platzhalter (Wolf sitzt drauf).
+              Past = ausgegrautes Kategorie-Emoji (kein altbackenes ✓ mehr).
+              Future = dunkler Slot mit Kategorie-Emoji. */}
           {phases.map((p, pi) => {
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
@@ -198,8 +219,8 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
               <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
                 {entries.map((e, i) => {
                   const globalIdx = phaseStartIdx + i;
-                  const isPast = globalIdx < currentIdx;
-                  const isCurrent = globalIdx === currentIdx;
+                  const isPast = globalIdx < displayIdx;
+                  const isCurrent = globalIdx === displayIdx;
                   const color = QQ_CATEGORY_COLORS[e.category];
                   const label = QQ_CATEGORY_LABELS[e.category];
                   const emoji = e.bunteTueteKind
@@ -219,33 +240,61 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
                         fontSize: Math.round(dotSize * 0.55),
                         fontWeight: 800,
                         background: isCurrent
-                          ? color
+                          ? 'transparent'
                           : isPast
-                            ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.45)' : '#cbd5e1')
+                            ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : '#e2e8f0')
                             : ((variant === 'inline' || isMini) ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
-                        color: isCurrent ? '#fff' : isPast ? '#fff' : ((variant === 'inline' || isMini) ? '#cbd5e1' : '#64748b'),
+                        color: isPast
+                          ? ((variant === 'inline' || isMini) ? '#94a3b8' : '#94a3b8')
+                          : ((variant === 'inline' || isMini) ? '#cbd5e1' : '#64748b'),
                         border: isCurrent
-                          ? (isMini ? `2px solid #fff` : `3px solid #fff`)
+                          ? 'none'
                           : isPast
                             ? 'none'
                             : ((variant === 'inline' || isMini) ? '1.5px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
-                        boxShadow: isCurrent
-                          ? (isMini ? `0 0 0 2px ${color}66` : `0 0 0 4px ${color}55, 0 6px 14px ${color}66`)
-                          : isPast
-                            ? '0 2px 6px rgba(0,0,0,0.15)'
-                            : 'none',
-                        transform: isCurrent ? (isMini ? 'scale(1.1)' : 'scale(1.15)') : 'scale(1)',
-                        transition: 'transform 200ms ease, box-shadow 200ms ease',
-                        animation: (isCurrent && !isMini) ? 'qqTreePulse 1.6s ease-in-out infinite' : 'none',
+                        boxShadow: 'none',
+                        opacity: isCurrent ? 0 : isPast ? 0.55 : 1,
+                        filter: isPast ? 'grayscale(1)' : 'none',
+                        transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
                       }}
                     >
-                      {isPast ? '✓' : emoji}
+                      {emoji}
                     </div>
                   );
                 })}
               </div>
             );
           })}
+
+          {/* Wolf-Avatar — sitzt auf dem aktuellen Dot, springt bei Wechsel
+              im Bogen zum neuen Dot (gleiche Geste wie RoundMiniTree). */}
+          {dotCenters.length > 0 && (() => {
+            const currentSchedule = schedule[wolfDotIdx];
+            const wolfColor = currentSchedule ? QQ_CATEGORY_COLORS[currentSchedule.category] : '#FBBF24';
+            const wolfSize = Math.round(dotSize * 1.35);
+            return (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: currentCenter,
+                width: wolfSize,
+                height: wolfSize,
+                borderRadius: '50%',
+                background: '#fff',
+                backgroundImage: 'url(/logo.png)',
+                backgroundSize: '88%',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
+                boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
+                transform: 'translate(-50%, -50%)',
+                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+                animation: hopping ? 'roundMiniHop 620ms cubic-bezier(0.4,0,0.2,1) both' : undefined,
+                zIndex: 3,
+                pointerEvents: 'none',
+              }} />
+            );
+          })()}
         </div>
       </div>
 

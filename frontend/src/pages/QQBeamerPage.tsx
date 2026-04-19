@@ -7542,7 +7542,28 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {isStuck ? '📌' : showStar ? '⭐' : (team && <QQTeamAvatar avatarId={team.avatarId} size={Math.max(8, cellSize * 0.92)} />)}
+                  {isStuck ? '📌' : showStar ? '⭐' : (team && (() => {
+                    const avSize = Math.max(8, cellSize * 0.86);
+                    const discSize = Math.max(10, cellSize * 0.92);
+                    return (
+                      <div style={{
+                        position: 'relative', width: discSize, height: discSize,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {/* Dunkle Scheibe hinter dem Avatar — sorgt für Kontrast,
+                            damit transparente Bereiche im PNG nicht in die Teamfarbe
+                            verschwimmen. Square-Ecken bleiben teamfarbig. */}
+                        <div style={{
+                          position: 'absolute', inset: 0, borderRadius: '50%',
+                          background: '#0b1220',
+                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.55)',
+                        }} />
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                          <QQTeamAvatar avatarId={team.avatarId} size={avSize} />
+                        </div>
+                      </div>
+                    );
+                  })())}
                 </div>
               </div>
             );

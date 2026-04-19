@@ -57,6 +57,7 @@ export interface QQRoomState {
   hotPotatoTurnEndsAt: number | null;
   hotPotatoUsedAnswers: string[];
   hotPotatoAnswerAuthors: string[];     // parallel array of teamIds
+  hotPotatoQualified: string[];         // teams that have given >=1 accepted answer; only they can win
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   // Imposter (oneOfEight) round-robin state
   imposterActiveTeamId: string | null;
@@ -179,6 +180,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       hotPotatoTurnEndsAt: null,
       hotPotatoUsedAnswers: [],
       hotPotatoAnswerAuthors: [],
+      hotPotatoQualified: [],
       _hotPotatoTimerHandle: null,
       imposterActiveTeamId: null,
       imposterQueue: [],
@@ -528,6 +530,7 @@ export function qqActivateQuestion(
   room.hotPotatoTurnEndsAt   = null;
   room.hotPotatoUsedAnswers  = [];
   room.hotPotatoAnswerAuthors = [];
+  room.hotPotatoQualified    = [];
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately
@@ -899,6 +902,7 @@ export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): v
   room.hotPotatoLastAnswer = null;
   room.hotPotatoUsedAnswers = [];
   room.hotPotatoAnswerAuthors = [];
+  room.hotPotatoQualified = [];
   const alive = getAliveTeams(room);
   if (alive.length === 0) return;
   // Random start index stored in room for round-robin tracking
@@ -954,13 +958,51 @@ function getAliveTeams(room: QQRoomState): string[] {
   );
 }
 
+/** Markiere ein Team als qualifiziert (hat ≥1 akzeptierte Antwort gegeben). */
+export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): void {
+  if (!room.hotPotatoQualified.includes(teamId)) {
+    room.hotPotatoQualified.push(teamId);
+  }
+}
+
+/**
+ * Prüft, ob es einen eindeutigen Gewinner gibt.
+ *
+ * Regel: Gewinner ist das einzige noch lebende qualifizierte Team — solange
+ * keine unqualifizierten Teams mehr im Rennen sind, die noch die Chance haben
+ * sich zu qualifizieren. Sonst läuft die Runde weiter (jedes lebende Team
+ * muss bei seinem nächsten Turn liefern).
+ *
+ * Liefert null, wenn weiter gespielt werden muss.
+ * Liefert '' (leeren String), wenn die Runde endet, aber niemand gewinnen kann
+ * (alle eliminiert, kein qualifizierter alive).
+ */
+export function qqHotPotatoCheckWinner(room: QQRoomState): string | null | '' {
+  const alive = getAliveTeams(room);
+  const qualifiedAlive = alive.filter(id => room.hotPotatoQualified.includes(id));
+  if (alive.length === 0) return '';                         // alle weg → kein Sieger
+  if (qualifiedAlive.length === 1 && alive.length === qualifiedAlive.length) {
+    return qualifiedAlive[0];                                 // einziger qualifizierter alive → Sieger
+  }
+  if (qualifiedAlive.length === 0 && alive.length === 0) return '';
+  return null;                                                // weiter spielen
+}
+
 function nextRoundRobinTeam(room: QQRoomState): string | null {
   const alive = getAliveTeams(room);
   if (alive.length === 0) return null;
-  const currentIdx = alive.indexOf(room.hotPotatoActiveTeamId ?? '');
-  const nextIdx = (currentIdx + 1) % alive.length;
-  room._hotPotatoRoundRobinIdx = nextIdx;
-  return alive[nextIdx];
+  // joinOrder ist die stabile Rotations-Reihenfolge — wir gehen vom aktuell
+  // aktiven Team in joinOrder vorwärts, bis wir ein noch aliveTeam finden.
+  // (Wichtig: wenn das aktuelle Team gerade eliminiert wurde, ist es nicht
+  // mehr in `alive`, aber sein Slot in joinOrder gibt die Position vor.)
+  const order = room.joinOrder;
+  const startPos = order.indexOf(room.hotPotatoActiveTeamId ?? '');
+  if (startPos < 0) return alive[0];
+  for (let i = 1; i <= order.length; i++) {
+    const candidate = order[(startPos + i) % order.length];
+    if (alive.includes(candidate)) return candidate;
+  }
+  return null;
 }
 
 // ── Imposter (oneOfEight) round-robin ─────────────────────────────────────────
@@ -1748,6 +1790,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoTurnEndsAt:   room.hotPotatoTurnEndsAt,
     hotPotatoUsedAnswers:  room.hotPotatoUsedAnswers,
     hotPotatoAnswerAuthors: room.hotPotatoAnswerAuthors,
+    hotPotatoQualified:    room.hotPotatoQualified,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,

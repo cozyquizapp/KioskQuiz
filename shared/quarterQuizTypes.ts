@@ -467,6 +467,7 @@ export interface QQStateUpdate {
   hotPotatoTurnEndsAt: number | null;   // ms timestamp when current turn expires
   hotPotatoUsedAnswers: string[];       // accepted answers shown on beamer
   hotPotatoAnswerAuthors?: string[];    // teamId per index in hotPotatoUsedAnswers (parallel array)
+  hotPotatoQualified?: string[];        // teams that have given >=1 accepted answer; only they can win the round
   // Imposter (oneOfEight round-robin)
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)

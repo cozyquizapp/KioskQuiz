@@ -2026,15 +2026,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Ziffer-Flip im Titel ist die zentrale Geste.
   const hasRoundTransition = isFirstOfRound && s.introStep === 0 && s.gamePhaseIndex > 1;
   const [transitioning, setTransitioning] = useState(hasRoundTransition);
+  // Choreografie: Wolf hüpft ZUERST, danach rollt die Ziffer.
+  // - treeShowsPrev: hält den Tree kurz auf Runde N-1, swappt nach 220ms auf
+  //   Runde N → QQProgressTree triggert internen Hop (220ms Delay + 620ms Anim).
+  // - Wolf landet ca. bei 1100ms (220 + 220 + 620 + Puffer).
+  // - Digit-Fall startet 1150ms, Roll 1650ms, Wort-Sweep 1100ms — alles NACH dem Hop.
+  // - transitioning endet bei 2500ms.
+  const [treeShowsPrev, setTreeShowsPrev] = useState(hasRoundTransition);
   useEffect(() => {
-    if (!hasRoundTransition) { setTransitioning(false); return; }
+    if (!hasRoundTransition) { setTransitioning(false); setTreeShowsPrev(false); return; }
     setTransitioning(true);
-    // 1900ms: smoother Ziffer-Flip + Wort-Sweep enden ~1850ms. Danach swappt
-    // der Tree auf die neue Runde, QQProgressTree triggert den Wolf-Hop
-    // ~220ms später, Amber-Linie animiert ~620ms weiter — Gesamt-Wirkung
-    // ist eine ~2,7s Round-Transition mit klarer Choreografie.
-    const t = setTimeout(() => setTransitioning(false), 1900);
-    return () => clearTimeout(t);
+    setTreeShowsPrev(true);
+    const tTree = setTimeout(() => setTreeShowsPrev(false), 220);
+    const tEnd  = setTimeout(() => setTransitioning(false), 2500);
+    return () => { clearTimeout(tTree); clearTimeout(tEnd); };
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
   const prevIdx = s.gamePhaseIndex - 1;
@@ -2062,14 +2067,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const prevDigit = prevTitleMatch ? prevTitleMatch[2] : '';
   const newDigit  = newTitleMatch  ? newTitleMatch[2]  : '';
 
-  // Tree-State während Transition: letzter Dot der vorherigen Phase glüht
+  // Tree-State zu Beginn der Transition: letzter Dot der vorherigen Phase
+  // (Wolf sitzt dort). Sobald treeShowsPrev kippt, swappt der Tree auf die
+  // neue Phase und der Wolf hüpft (gesteuert in QQProgressTree).
   const displayTreeState: QQStateUpdate = useMemo(() => {
-    if (!transitioning || prevIdx < 1) return s;
+    if (!treeShowsPrev || prevIdx < 1) return s;
     const sched = s.schedule ?? [];
     let lastIdx = -1;
     for (let i = 0; i < sched.length; i++) if (sched[i].phase === prevIdx) lastIdx = i;
     return { ...s, gamePhaseIndex: prevIdx as any, questionIndex: lastIdx >= 0 ? lastIdx : s.questionIndex };
-  }, [transitioning, s, prevIdx]);
+  }, [treeShowsPrev, s, prevIdx]);
 
   return (
     <div style={{
@@ -2121,7 +2128,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 gap: '0.18em',
                 animation: 'roundBreathe 4s ease-in-out 2s infinite',
               }}>
-                {/* Wort "Runde": Farb-Sweep von Grau auf Kategorie-Farbe (links → rechts) */}
+                {/* Wort "Runde": Farb-Sweep von Grau auf Kategorie-Farbe (parallel zur Ziffer) */}
                 <span style={{
                   display: 'inline-block',
                   backgroundImage: `linear-gradient(90deg, ${color} 0%, ${color} 35%, #94a3b8 65%, #94a3b8 100%)`,
@@ -2131,9 +2138,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   backgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   color: 'transparent',
-                  animation: 'roundWordSweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 700ms both',
+                  animation: 'roundWordSweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 1100ms both',
                 }}>{titleWord}</span>
-                {/* Ziffern-Flip-Container — kein overflow/height, Sizer gibt die Baseline vor */}
+                {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms) */}
                 <span style={{
                   position: 'relative', display: 'inline-block',
                   lineHeight: 1,
@@ -2142,16 +2149,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
                   <span style={{ visibility: 'hidden' }}>{newDigit}</span>
-                  {/* Alte Ziffer fällt — langsamer, sanfter cubic ease-in */}
+                  {/* Alte Ziffer fällt — startet, sobald der Wolf gelandet ist */}
                   <span style={{
                     position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                     color: prevColor,
-                    animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 420ms both',
+                    animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
                   }}>{prevDigit}</span>
-                  {/* Neue Ziffer rollt von oben — langsamer, ohne Overshoot, smooth ease-out */}
+                  {/* Neue Ziffer rollt von oben */}
                   <span style={{
                     position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
-                    animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 880ms both',
+                    animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
                   }}>{newDigit}</span>
                 </span>
               </div>
@@ -7375,8 +7382,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   const fusedRadius = specialBorder
                     ? cellRadius
                     : `${rTL}px ${rTR}px ${rBR}px ${rBL}px` as any;
-                  const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : '99';
-                  const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : '66';
+                  // Default-Alpha auf nahezu voll deckend hochgezogen — vorher war
+                  // ein Gradient mit max. 60% Alpha (color99 → color66), wodurch die
+                  // Team-Farben auf dem dunklen BG durchscheinend pastellig wirkten
+                  // und sich z.B. Pink / Rot / Orange kaum voneinander unterscheiden
+                  // ließen. Jetzt: voll deckende Farbe mit minimalem Tonwert-Shading.
+                  const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : 'ff';
+                  const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : 'd9';
                   const bridgeBg = `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`;
                   const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
                   const bridgeOffset = cellRadius;

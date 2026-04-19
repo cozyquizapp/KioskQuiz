@@ -28,6 +28,7 @@ export default defineConfig({
       workbox: {
         // Cache app shell (JS/CSS/HTML/fonts/images)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],

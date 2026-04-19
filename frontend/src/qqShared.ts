@@ -20,7 +20,7 @@ export const QQ_BEAMER_CSS = `
   @keyframes introFadeOut  { to{opacity:0;pointer-events:none} }
   @keyframes contentReveal { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes floatNum { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
-  @keyframes phasePop { from{opacity:0;transform:scale(0.6) translateY(40px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  @keyframes phasePop { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
   @keyframes phaseLineGrow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
   @keyframes introRoundReveal {
     0%   { opacity:0; transform:scale(0.6) translateY(40px); }

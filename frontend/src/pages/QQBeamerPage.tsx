@@ -318,11 +318,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
   // ── Slide transition: gameshow-style flash-sweep between phase groups ──
   // Group QUESTION_ACTIVE + QUESTION_REVEAL together (reveal is not a "new slide")
+  // RULES sub-steps (Welcome -2 / RulesIntro -1 / Regel-Folie 0..) zählen als
+  // eigene Slides, damit der Flash-Sweep auch bei diesen Übergängen feuert.
   const phaseGroup = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
     ? `Q-${s.currentQuestion?.id ?? s.questionIndex}`
     : s.phase === 'PLACEMENT'
       ? `PLACE-${s.questionIndex}`
-      : s.phase;
+      : s.phase === 'RULES'
+        ? `RULES-${s.rulesSlideIndex ?? 0}`
+        : s.phase;
   const [flashKey, setFlashKey] = useState(0);
   const prevGroupRef = useRef(phaseGroup);
   useEffect(() => {
@@ -1067,10 +1071,20 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
   const lang = useLangFlip(language);
   const title = 'CozyQuiz';
   const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
-  const tagline = lang === 'en' ? 'by cozywolf' : 'by cozywolf';
+  const greeting = lang === 'en'
+    ? 'Get comfy — here we go!'
+    : 'Macht\'s euch bequem – gleich geht\'s los!';
   // Keine Auto-Dismiss: Moderator steuert das Weiterschalten per "Weiter"-Button.
-  // Die Intro-Elemente animieren einmalig ein und bleiben dann ruhig stehen.
-  // visible=false → opacity 0 crossfade, pointer-events off, bleibt gemountet.
+  // Elemente animieren einmalig ein und behalten dann sanfte Loop-Animationen,
+  // damit die Folie nicht einfriert wenn der Moderator 30s wartet.
+  // Fireflies deterministisch via index (kein Math.random → kein Re-Render-Springen).
+  const fireflies = Array.from({ length: 10 }, (_, i) => ({
+    left: 8 + ((i * 79) % 84),
+    top: 12 + ((i * 47) % 72),
+    dur: 5.5 + (i % 4) * 0.7,
+    delay: (i * 0.43) % 3,
+    size: 4 + (i % 3),
+  }));
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9990,
@@ -1083,128 +1097,147 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
       transition: 'opacity 0.55s ease, transform 0.65s cubic-bezier(0.4,0,0.2,1)',
       pointerEvents: visible ? 'auto' : 'none',
     }}>
-      {/* Hintergrund-Glow Pulse (warm amber) */}
+      {/* Ambient Glow — dauerhaft, pulsierend */}
       <div style={{
         position: 'absolute', left: '50%', top: '50%',
-        width: '140vmin', height: '140vmin',
+        width: '150vmin', height: '150vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(251,191,36,0.22) 0%, rgba(249,115,22,0.12) 35%, transparent 65%)',
-        filter: 'blur(10px)',
-        animation: 'qqIntroGlow 4.8s ease-out both',
+        background: 'radial-gradient(circle, rgba(251,191,36,0.26) 0%, rgba(249,115,22,0.14) 32%, transparent 62%)',
+        filter: 'blur(14px)',
+        animation: 'qqIntroGlowPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
-      {/* Sweep-Strahl diagonal */}
+      {/* Entry-Sweep — einmal diagonal */}
       <div style={{
         position: 'absolute', left: '-20%', top: 0, width: '40%', height: '100%',
         background: 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)',
         animation: 'qqIntroSweep 2.6s ease-out 0.2s both',
         pointerEvents: 'none',
       }} />
-      {/* Partikel (kleine Stern-Punkte) */}
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
-        const r = 260 + (i % 5) * 30;
-        const dx = Math.cos(angle) * r;
-        const dy = Math.sin(angle) * r;
-        return (
-          <div key={i} style={{
-            position: 'absolute', left: '50%', top: '50%',
-            width: 6, height: 6, borderRadius: '50%',
-            background: i % 2 ? '#fbbf24' : '#fde68a',
-            boxShadow: '0 0 14px rgba(251,191,36,0.9)',
-            ['--dx' as any]: `${dx}px`,
-            ['--dy' as any]: `${dy}px`,
-            transform: 'translate(-50%, -50%)',
-            animation: `qqIntroSpark 2.8s cubic-bezier(0.2, 0.8, 0.4, 1) ${0.4 + (i % 6) * 0.05}s both`,
-            pointerEvents: 'none',
-          }} />
-        );
-      })}
+      {/* Fireflies — driften dauerhaft */}
+      {fireflies.map((f, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          left: `${f.left}%`, top: `${f.top}%`,
+          width: f.size, height: f.size, borderRadius: '50%',
+          background: i % 2 ? '#fbbf24' : '#fde68a',
+          boxShadow: '0 0 14px rgba(251,191,36,0.85), 0 0 3px rgba(255,255,255,0.6)',
+          animation: `qqIntroFireflyDrift ${f.dur}s ease-in-out ${f.delay}s infinite`,
+          pointerEvents: 'none',
+        }} />
+      ))}
       {/* Content-Stack */}
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(12px, 2vh, 24px)',
+        gap: 'clamp(10px, 1.6vh, 22px)',
         textAlign: 'center',
         padding: '0 6vw',
       }}>
         {/* Welcome label */}
         <div style={{
-          fontSize: 'clamp(22px, 2.4vw, 36px)', fontWeight: 700,
-          letterSpacing: '0.3em', textTransform: 'uppercase',
+          fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 700,
+          letterSpacing: '0.32em', textTransform: 'uppercase',
           color: '#fbbf24',
           textShadow: '0 0 18px rgba(251,191,36,0.6)',
           animation: 'qqIntroWelcome 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.2s both',
         }}>{welcome}</div>
-        {/* Logo */}
-        <img
-          src="/logo.png"
-          alt="cozywolf"
-          style={{
-            width: 'clamp(120px, 14vw, 200px)', height: 'auto',
-            filter: 'drop-shadow(0 6px 24px rgba(251,191,36,0.55))',
-            animation: 'qqIntroLogoIn 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.5s both',
-          }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-        />
         {/* Title */}
         <div style={{
-          fontSize: 'clamp(68px, 10vw, 160px)', fontWeight: 900,
-          letterSpacing: '0.04em',
-          lineHeight: 1.0,
+          fontSize: 'clamp(80px, 12vw, 200px)', fontWeight: 900,
+          letterSpacing: '0.03em',
+          lineHeight: 0.96,
           background: 'linear-gradient(180deg, #fff 0%, #fde68a 45%, #fbbf24 75%, #f97316 100%)',
           WebkitBackgroundClip: 'text', backgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           textShadow: '0 0 60px rgba(251,191,36,0.4)',
-          animation: 'qqIntroTitleIn 1.2s cubic-bezier(0.2,0.9,0.3,1.1) 0.8s both',
+          animation: 'qqIntroTitleIn 1.2s cubic-bezier(0.2,0.9,0.3,1.1) 0.5s both',
         }}>{title}</div>
-        {/* Tagline */}
+        {/* Wolf + Speech Bubble — Wolf winkt am Rand, Bubble daneben */}
         <div style={{
-          fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 600,
-          letterSpacing: '0.22em',
-          color: 'rgba(255,255,255,0.88)',
-          textShadow: '0 2px 12px rgba(0,0,0,0.5)',
-          animation: 'qqIntroTagline 0.9s cubic-bezier(0.2,0.8,0.4,1) 1.6s both',
-        }}>{tagline}</div>
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(12px, 1.8vw, 28px)',
+          marginTop: 'clamp(8px, 1.2vh, 20px)',
+          animation: 'qqIntroStackIn 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 1.3s both',
+        }}>
+          <div style={{
+            width: 'clamp(120px, 14vw, 200px)',
+            filter: 'drop-shadow(0 10px 30px rgba(251,191,36,0.45))',
+            transformOrigin: 'bottom center',
+            animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
+          }}>
+            <img src="/avatars/wolf/geste.svg" alt="" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          </div>
+          <div style={{
+            position: 'relative',
+            padding: 'clamp(12px, 1.6vh, 22px) clamp(20px, 2.4vw, 36px)',
+            borderRadius: 22,
+            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+            border: '3px solid #fbbf24',
+            boxShadow: '0 10px 32px rgba(0,0,0,0.45), 0 0 0 3px rgba(251,191,36,0.22)',
+            color: '#7c2d12',
+            fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 800,
+            maxWidth: '68vw',
+            lineHeight: 1.25,
+            animation: 'qqIntroBubbleBob 5s ease-in-out infinite',
+          }}>
+            {/* Tail — zeigt nach links auf den Wolf */}
+            <div style={{
+              position: 'absolute', left: -14, top: '50%',
+              width: 0, height: 0,
+              transform: 'translateY(-50%)',
+              borderTop: '12px solid transparent',
+              borderBottom: '12px solid transparent',
+              borderRight: '16px solid #fbbf24',
+            }} />
+            <div style={{
+              position: 'absolute', left: -10, top: '50%',
+              width: 0, height: 0,
+              transform: 'translateY(-50%)',
+              borderTop: '10px solid transparent',
+              borderBottom: '10px solid transparent',
+              borderRight: '13px solid #fde68a',
+            }} />
+            {greeting}
+          </div>
+        </div>
       </div>
       <style>{`
-        @keyframes qqIntroFade {
-          0% { opacity: 0; }
-          6%, 85% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-        @keyframes qqIntroGlow {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
-          30% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-          100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.15); }
+        @keyframes qqIntroGlowPulse {
+          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+          50%      { opacity: 1.0; transform: translate(-50%, -50%) scale(1.06); }
         }
         @keyframes qqIntroSweep {
-          0% { transform: translateX(0); opacity: 0; }
-          30% { opacity: 1; }
+          0%   { transform: translateX(0); opacity: 0; }
+          30%  { opacity: 1; }
           100% { transform: translateX(360%); opacity: 0; }
         }
-        @keyframes qqIntroSpark {
-          0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-          30% { opacity: 1; }
-          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; }
+        @keyframes qqIntroFireflyDrift {
+          0%, 100% { opacity: 0.35; transform: translate(0, 0) scale(0.9); }
+          25%      { opacity: 1;    transform: translate(8px, -10px) scale(1.1); }
+          50%      { opacity: 0.6;  transform: translate(-6px, -18px) scale(1); }
+          75%      { opacity: 0.9;  transform: translate(10px, -8px) scale(1.05); }
         }
         @keyframes qqIntroWelcome {
-          0% { opacity: 0; transform: translateY(10px); letter-spacing: 0.5em; }
-          100% { opacity: 1; transform: translateY(0); letter-spacing: 0.3em; }
-        }
-        @keyframes qqIntroLogoIn {
-          0% { opacity: 0; transform: scale(0.4) rotate(-12deg); }
-          70% { transform: scale(1.08) rotate(3deg); }
-          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          0%   { opacity: 0; transform: translateY(10px); letter-spacing: 0.5em; }
+          100% { opacity: 1; transform: translateY(0);    letter-spacing: 0.32em; }
         }
         @keyframes qqIntroTitleIn {
-          0% { opacity: 0; transform: translateY(30px) scale(0.85); filter: blur(12px); }
-          60% { filter: blur(0); }
+          0%   { opacity: 0; transform: translateY(30px) scale(0.85); filter: blur(12px); }
+          60%  { filter: blur(0); }
           100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
-        @keyframes qqIntroTagline {
-          0% { opacity: 0; transform: translateY(8px); }
+        @keyframes qqIntroStackIn {
+          0%   { opacity: 0; transform: translateY(20px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes qqIntroWolfBreathe {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          50%      { transform: scale(1.03) rotate(-1deg); }
+        }
+        @keyframes qqIntroBubbleBob {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-6px); }
         }
       `}</style>
     </div>

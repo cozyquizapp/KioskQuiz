@@ -1732,7 +1732,6 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const titleDur = 800;
   const perTeamDelay = 900;
   const revealedCount = Math.max(0, Math.min(teams.length, Math.floor((elapsed - titleDur) / perTeamDelay) + 1));
-  const allRevealed = revealedCount >= teams.length;
   const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
 
@@ -1824,12 +1823,12 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         const multiRow = rowSizes.length > 1;
         // Bei mehreren Reihen kleiner skalieren, damit beides in die Bühne passt
         const discSize = multiRow
-          ? 'clamp(74px, 8vw, 130px)'
-          : many ? 'clamp(90px, 10vw, 160px)' : 'clamp(120px, 14vw, 200px)';
+          ? 'clamp(110px, 11vw, 180px)'
+          : many ? 'clamp(130px, 13vw, 210px)' : 'clamp(160px, 17vw, 260px)';
         const discFont = multiRow
-          ? 'clamp(38px, 4.8vw, 74px)'
-          : many ? 'clamp(46px, 6vw, 90px)' : 'clamp(60px, 8vw, 110px)';
-        const nameFont = multiRow ? 'clamp(16px, 1.9vw, 26px)' : 'clamp(18px, 2.2vw, 32px)';
+          ? 'clamp(52px, 6.2vw, 100px)'
+          : many ? 'clamp(62px, 7.8vw, 118px)' : 'clamp(78px, 10vw, 140px)';
+        const nameFont = multiRow ? 'clamp(20px, 2.4vw, 32px)' : 'clamp(22px, 2.6vw, 36px)';
         let cursor = 0;
         return (
           <div style={{
@@ -1916,13 +1915,6 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         </div>
       </div>
 
-      {/* Skip-Hint */}
-      <div style={{
-        position: 'absolute', bottom: 20, left: 0, right: 0,
-        textAlign: 'center', fontSize: 13, color: '#64748b', fontWeight: 700,
-      }}>
-        {allRevealed ? 'Moderator drückt weiter, sobald alle warm sind…' : 'Intro läuft…'}
-      </div>
     </div>
   );
 }

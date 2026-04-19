@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -7690,7 +7690,7 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
   );
 }
 
-export function Fireflies({ color }: { color?: string } = {}) {
+export const Fireflies = memo(function Fireflies({ color }: { color?: string } = {}) {
   const c = color ?? '#FEF08A';
   return (
     <>
@@ -7706,11 +7706,12 @@ export function Fireflies({ color }: { color?: string } = {}) {
           ['--dur' as string]: `${f.dur}s`,
           ['--del' as string]: `${f.del}s`,
           animation: `ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite`,
+          willChange: 'transform, opacity',
         }} />
       ))}
     </>
   );
-}
+});
 
 function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string; label: string; desc: string; color: string; cardBg?: string }) {
   return (

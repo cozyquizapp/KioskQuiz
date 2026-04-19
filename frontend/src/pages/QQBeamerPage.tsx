@@ -4640,7 +4640,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const accent = CAT_ACCENT[cat] ?? '#e2e8f0';
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
-  const cutouts = CAT_CUTOUTS[cat] ?? [];
+  // Dekorative Corner-Emojis pro Kategorie — aktuell ausgeblendet (Tester fanden sie
+  // verwirrend: "was macht das?"). Zum Reaktivieren: SHOW_CAT_CUTOUTS auf true setzen.
+  const SHOW_CAT_CUTOUTS = false;
+  const cutouts = SHOW_CAT_CUTOUTS ? (CAT_CUTOUTS[cat] ?? []) : [];
   // Per-question emoji override: replace default cutout emojis
   const effectiveCutouts = q.emojis?.length
     ? cutouts.map((c, i) => q.emojis![i] ? { ...c, emoji: q.emojis![i] } : c)

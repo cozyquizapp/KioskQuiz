@@ -968,10 +968,10 @@ export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): voi
 /**
  * Prüft, ob es einen eindeutigen Gewinner gibt.
  *
- * Regel: Solange noch ≥2 qualifizierte Teams im Rennen sind UND noch Antworten
- * übrig (Pool-Erschöpfung wird im Handler separat geprüft), läuft die Runde
- * weiter. Sobald nur noch 1 qualifiziertes Team alive ist, gewinnt es —
- * unqualifizierte Bystander zählen für die End-Bedingung nicht.
+ * Regel: In der ersten Runde MUSS jedes Team einmal antworten. Solange noch
+ * unqualifizierte Teams alive sind (hatten ihren ersten Turn noch nicht /
+ * wurden noch nicht eliminiert), läuft die Runde weiter. Erst wenn alle alive
+ * Teams qualifiziert sind UND davon nur noch 1 übrig ist → Sieger.
  *
  * Liefert null, wenn weiter gespielt werden muss.
  * Liefert '' (leeren String), wenn die Runde endet, aber niemand gewinnen kann
@@ -980,9 +980,11 @@ export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): voi
 export function qqHotPotatoCheckWinner(room: QQRoomState): string | null | '' {
   const alive = getAliveTeams(room);
   const qualifiedAlive = alive.filter(id => room.hotPotatoQualified.includes(id));
-  if (alive.length === 0) return '';                         // alle weg → kein Sieger
-  if (qualifiedAlive.length === 1) return qualifiedAlive[0]; // einziger qualifizierter → Sieger
-  return null;                                                // weiter spielen
+  if (alive.length === 0) return '';
+  // Unqualifizierte alive Teams blockieren den Win (müssen erst ihren Turn haben)
+  if (alive.length !== qualifiedAlive.length) return null;
+  if (qualifiedAlive.length === 1) return qualifiedAlive[0];
+  return null;
 }
 
 function nextRoundRobinTeam(room: QQRoomState): string | null {

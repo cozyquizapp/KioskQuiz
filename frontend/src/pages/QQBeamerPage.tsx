@@ -447,12 +447,21 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevCorrectRef.current = s.correctTeamId;
   }, [s.correctTeamId, s.sfxMuted]);
 
-  // ── Sound: placement flash — stamp or steal sound (SFX) ──
+  // ── Sound: pro Einzel-Placement (nicht pro Phase-Wechsel)
+  // In Multi-Placement-Runden (PLACE_2 etc.) bleibt das Backend in der PLACEMENT-Phase
+  // bis alle Steine gesetzt sind — wir verlassen uns deshalb auf lastPlacedCell, das pro
+  // einzelnem Placement auf dem Backend aktualisiert wird.
+  const prevPlacementKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!placementFlash || s.sfxMuted) return;
-    if (placementFlash.cell.wasSteal) playSteal();
+    const c = s.lastPlacedCell;
+    if (!c) { prevPlacementKeyRef.current = null; return; }
+    const key = `${c.row}-${c.col}-${c.teamId}`;
+    if (key === prevPlacementKeyRef.current) return;
+    prevPlacementKeyRef.current = key;
+    if (s.sfxMuted) return;
+    if (c.wasSteal) playSteal();
     else playFieldPlaced();
-  }, [placementFlash]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.lastPlacedCell, s.sfxMuted]);
 
   // ── Music: play question musicUrl ──
   const audioRef = useRef<HTMLAudioElement | null>(null);

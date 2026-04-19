@@ -567,13 +567,13 @@ export interface QQAck {
   code?: string;
 }
 
-// ── Available avatars (CozyCast — Wolf-Style PNG-Badges) ─────────────────────
-// 8 Tier-Badges im CozyWolf-Logo-Stil (schwarzer Innenkreis, team-farbiger Ring,
-// illustrierter Charakter). Die `id`s bleiben aus Legacy-Gründen englisch
-// (DB-Sessions in flight haben noch alte IDs), Inhalte zeigen aber die neuen
-// CozyCast-Tiere. `image` zeigt auf die gebackenen 2000×2000 PNGs unter
-// /avatars/cozy-cast/avatar-{slug}-wolf.png. Die Reihenfolge bleibt: erste 4
-// sind die kontrastreichsten Picks für kleine Team-Counts.
+// ── Available avatars (CozyCast PNG-Badges) ──────────────────────────────────
+// 8 Tier-Badges im CozyWolf-Brand-Style (team-farbiger Ring + illustrierter
+// Charakter, fertig gerendert in Canva). Die `id`s bleiben aus Legacy-Gründen
+// englisch (DB-Sessions in flight haben noch alte IDs), Inhalte zeigen aber
+// die neuen CozyCast-Tiere. `image` zeigt auf die PNGs unter
+// /avatars/cozy-cast/avatar-{slug}.png. Die Reihenfolge: erste 4 sind die
+// kontrastreichsten Picks für kleine Team-Counts.
 export const QQ_AVATARS = [
   { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Shiba',     labelEn: 'Shiba',    color: '#EC4899', hoodie: '#0EA5E9' },
   { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#84CC16', hoodie: '#7C2D12' },
@@ -589,7 +589,7 @@ export type QQAvatar = typeof QQ_AVATARS[number] & { image: string };
 
 export function qqGetAvatar(avatarId: string): QQAvatar {
   const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
-  return { ...av, image: `/avatars/cozy-cast/avatar-${av.slug}-wolf.png` };
+  return { ...av, image: `/avatars/cozy-cast/avatar-${av.slug}.png` };
 }
 
 export function qqAvatarLabel(avatarId: string, lang: 'de' | 'en'): string {

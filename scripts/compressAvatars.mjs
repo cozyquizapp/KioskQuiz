@@ -13,10 +13,15 @@ const AVATAR_DIR = resolve(__dirname, '../frontend/public/avatars/cozy-cast');
 const MAX = 1024;
 
 const files = (await readdir(AVATAR_DIR)).filter(f => f.endsWith('.png'));
+const SKIP_UNDER_BYTES = 500 * 1024; // Bereits komprimierte Palette-PNGs überspringen
 
 for (const file of files) {
   const path = join(AVATAR_DIR, file);
   const before = (await stat(path)).size;
+  if (before < SKIP_UNDER_BYTES) {
+    console.log(`  ${file.padEnd(32)}  ${(before/1024).toFixed(1).padStart(7)} KB  (skip, bereits komprimiert)`);
+    continue;
+  }
   const input = await readFile(path);
   const output = await sharp(input)
     .resize(MAX, MAX, { fit: 'inside', withoutEnlargement: true })

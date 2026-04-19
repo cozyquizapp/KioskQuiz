@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { QQStateUpdate, QQAck } from '../../../shared/quarterQuizTypes';
+import { QQStateUpdate, QQAck, qqTeamColor } from '../../../shared/quarterQuizTypes';
+
+/** Überschreibt team.color mit der Live-Ring-Farbe aus QQ_AVATARS.
+ *  Grund: team.color wird beim Beitritt gespeichert; wenn die Palette
+ *  später angepasst wird, hängen alte Runs mit stale Hex fest. Hier
+ *  einmalig am Socket-Ingress normalisieren → alle Views profitieren. */
+function normalizeState(s: QQStateUpdate): QQStateUpdate {
+  return { ...s, teams: s.teams.map(t => ({ ...t, color: qqTeamColor(t) })) };
+}
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (() => {
   const { protocol, hostname } = window.location;
@@ -29,7 +37,7 @@ export function useQQSocket(roomCode: string) {
     socket.on('reconnect_failed', () => setConnected(false));
 
     socket.on('qq:stateUpdate', (payload: QQStateUpdate) => {
-      setState(payload);
+      setState(normalizeState(payload));
     });
 
     return () => {

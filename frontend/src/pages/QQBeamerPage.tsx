@@ -1581,7 +1581,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
                     minWidth: 0,
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} size={compact ? 'clamp(44px, 4.4vw, 60px)' : 'clamp(48px, 5vw, 68px)'} style={{ flexShrink: 0 }} />
+                    <QQTeamAvatar avatarId={t.avatarId} size={compact ? 'clamp(56px, 5.4vw, 76px)' : 'clamp(64px, 6vw, 88px)'} style={{ flexShrink: 0 }} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,

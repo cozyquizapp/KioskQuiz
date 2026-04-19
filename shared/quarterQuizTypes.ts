@@ -600,3 +600,14 @@ export function qqAvatarLabel(avatarId: string, lang: 'de' | 'en'): string {
   const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
   return lang === 'en' ? av.labelEn : av.label;
 }
+
+/** Live Team-Farbe aus dem Avatar ableiten — `team.color` kann stale sein,
+ *  weil es beim Beitritt gespeichert wird und Palette-Updates nicht mitbekommt.
+ *  Für UI immer diese Variante nutzen, nicht `team.color` direkt. */
+export function qqTeamColor(team: { avatarId?: string; color?: string }): string {
+  if (team.avatarId) {
+    const av = QQ_AVATARS.find(a => a.id === team.avatarId);
+    if (av) return av.color;
+  }
+  return team.color ?? QQ_AVATARS[0].color;
+}

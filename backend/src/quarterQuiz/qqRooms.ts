@@ -426,7 +426,39 @@ export function qqClearAnswers(room: QQRoomState): void {
 // Called whenever we transition away from a question so every question is
 // captured for summary stats — not just phase boundaries.
 export function qqFlushQuestionToHistory(room: QQRoomState): void {
-  if (!room.currentQuestion || room.answers.length === 0) return;
+  if (!room.currentQuestion) return;
+
+  const isHotPotato = room.currentQuestion.category === 'BUNTE_TUETE'
+    && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
+
+  // Hot Potato hat keine room.answers — Antworten laufen ueber hotPotatoAnswerAuthors.
+  // Fuer faire Summary-Stats synthetische Antwort-Eintraege fuer alle Teilnehmer bauen,
+  // damit Sieg/Teilnahme korrekt gezaehlt werden (sonst „1/13 Trefferquote"-Bug).
+  let answers: { teamId: string; teamName: string; text: string; submittedAt: number }[];
+  if (isHotPotato) {
+    const participantIds = Array.from(new Set<string>([
+      ...room.hotPotatoAnswerAuthors,
+      ...room.hotPotatoEliminated,
+      ...room.hotPotatoQualified,
+    ]));
+    if (participantIds.length === 0) return; // niemand teilgenommen → skip
+    const now = Date.now();
+    answers = participantIds.map(id => ({
+      teamId: id,
+      teamName: room.teams[id]?.name ?? id,
+      text: room.hotPotatoEliminated.includes(id) ? '✗ eliminiert' : '✓ überlebt',
+      submittedAt: now,
+    }));
+  } else {
+    if (room.answers.length === 0) return;
+    answers = room.answers.map(a => ({
+      teamId: a.teamId,
+      teamName: room.teams[a.teamId]?.name ?? a.teamId,
+      text: a.text,
+      submittedAt: a.submittedAt,
+    }));
+  }
+
   const qIdx = room.questionIndex;
   const alreadyPushed = (room.questionHistory as any[]).some(h => h._qIndex === qIdx);
   if (alreadyPushed) return;
@@ -445,12 +477,7 @@ export function qqFlushQuestionToHistory(room: QQRoomState): void {
     _qIndex: qIdx,
     questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
     category: room.currentQuestion.category,
-    answers: room.answers.map(a => ({
-      teamId: a.teamId,
-      teamName: room.teams[a.teamId]?.name ?? a.teamId,
-      text: a.text,
-      submittedAt: a.submittedAt,
-    })),
+    answers,
     correctTeamId: room.correctTeamId,
     correctTeamIds: uniqueIds,
   } as any);

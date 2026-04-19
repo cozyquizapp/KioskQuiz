@@ -722,7 +722,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
               letterSpacing: 0.2,
               animation: 'contentReveal 0.4s ease both',
             }}>
-              ✓ {a}
+              {a}
             </div>
           ))}
         </div>
@@ -2020,7 +2020,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useEffect(() => {
     if (!hasRoundTransition) { setTransitioning(false); return; }
     setTransitioning(true);
-    const t = setTimeout(() => setTransitioning(false), 450);
+    // 1200ms: Ziffer-Flip-Ende (~1200ms). Danach swappt Tree auf neue Runde,
+    // QQProgressTree animiert die Amber-Linie ~600ms weiter — gesamte
+    // Transition wirkt jetzt wie 1,8s statt früher 0,45s.
+    const t = setTimeout(() => setTransitioning(false), 1200);
     return () => clearTimeout(t);
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
@@ -2085,48 +2088,47 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               : `Round ${displayGpi} of ${s.totalPhases}`}
           </div>
 
-          {/* Shockwave burst behind title */}
+          {/* Shockwave burst behind title — nur beim klassischen BAM, nicht während Transition (stört sonst) */}
           <div style={{ position: 'relative', zIndex: 5 }}>
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: 200, height: 200, marginLeft: -100, marginTop: -100,
-              borderRadius: '50%',
-              border: `3px solid ${displayColor}66`,
-              animation: hasRoundTransition ? undefined : 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
-              transition: 'border-color 500ms ease',
-              pointerEvents: 'none',
-            }} />
+            {!hasRoundTransition && (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: 200, height: 200, marginLeft: -100, marginTop: -100,
+                borderRadius: '50%',
+                border: `3px solid ${displayColor}66`,
+                animation: 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
+                pointerEvents: 'none',
+              }} />
+            )}
             {/* Round name — Ziffer-Flip wenn Transition, sonst klassischer BAM */}
             {canDigitFlip ? (
               <div style={{
                 fontFamily: fontFam,
-                fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
+                fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 1,
                 color: displayColor,
                 textShadow: `0 0 120px ${displayColor}44, 0 12px 0 ${displayColor}33`,
                 textAlign: 'center',
                 display: 'inline-flex', alignItems: 'baseline', justifyContent: 'center',
-                gap: '0.25em',
+                gap: '0.18em',
                 transition: 'color 500ms ease, text-shadow 500ms ease',
                 animation: 'roundBreathe 4s ease-in-out 1.2s infinite',
               }}>
                 <span>{titleWord}</span>
-                {/* Ziffern-Flip-Container */}
+                {/* Ziffern-Flip-Container — kein overflow/height, Sizer gibt die Baseline vor */}
                 <span style={{
                   position: 'relative', display: 'inline-block',
-                  width: `${0.6 * Math.max(prevDigit.length, newDigit.length)}em`,
-                  height: '1em', overflow: 'hidden', lineHeight: 1,
-                  verticalAlign: 'baseline',
+                  lineHeight: 1,
                 }}>
+                  {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
+                  <span style={{ visibility: 'hidden' }}>{newDigit}</span>
                   {/* Alte Ziffer fällt */}
                   <span style={{
-                    position: 'absolute', inset: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                     animation: 'roundDigitFall 560ms cubic-bezier(0.5,0,0.75,0) 320ms both',
                   }}>{prevDigit}</span>
                   {/* Neue Ziffer rollt von oben */}
                   <span style={{
-                    position: 'absolute', inset: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                     animation: 'roundDigitRoll 580ms cubic-bezier(0.2,1.3,0.5,1) 620ms both',
                   }}>{newDigit}</span>
                 </span>
@@ -2849,7 +2851,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       fontSize: 'clamp(16px, 1.9vw, 24px)', fontWeight: 900, color: '#fff',
                       flexShrink: 0,
                     }}>
-                      {isCorrect ? '✓' : optIdx + 1}
+                      {optIdx + 1}
                     </span>
                     <span style={{
                       flex: 1,
@@ -4128,7 +4130,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#86efac',
             letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75,
           }}>
-            ✓ {lang === 'en' ? 'Answer' : 'Lösung'}
+            {lang === 'en' ? 'Answer' : 'Lösung'}
           </div>
           <div style={{
             fontSize: 'clamp(64px, 8vw, 140px)',
@@ -4548,7 +4550,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
             zIndex: 1000,
           }}>
-            ✓ {lang === 'en' && q.answerEn ? q.answerEn : q.answer}
+            {lang === 'en' && q.answerEn ? q.answerEn : q.answer}
           </div>
         )}
       </div>
@@ -4932,7 +4934,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   animation: 'revealShimmer 0.8s ease 0.5s both',
                   pointerEvents: 'none',
                 }} />
-                ✓ {s.revealedAnswer}
+                {s.revealedAnswer}
               </div>
             )}
 
@@ -5233,7 +5235,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
                       boxShadow: isCorrect ? '0 0 16px rgba(34,197,94,0.6)' : `0 2px 8px ${optColor}44`,
                       transition: 'all 0.3s ease',
-                    }}>{isCorrect ? '✓' : label}</div>
+                    }}>{label}</div>
                     <div style={{
                       position: 'relative', zIndex: 1,
                       flex: 1, minWidth: 0,
@@ -5412,7 +5414,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     overflow: 'hidden', textOverflow: 'ellipsis',
                     position: 'relative', zIndex: 1,
                   }}>
-                    ✓ {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
+                    {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
                   </span>
                   {correctTeams.length > 0 && (
                     <div style={{

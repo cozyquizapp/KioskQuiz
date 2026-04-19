@@ -74,7 +74,8 @@
       "Bash(rm \"C:\\\\Users\\\\hornu\\\\.claude\\\\plans\\\\deep-sleeping-robin.md\")",
       "Bash(winget install *)",
       "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(node scripts/compressAvatars.mjs)"
     ]
   }
 }

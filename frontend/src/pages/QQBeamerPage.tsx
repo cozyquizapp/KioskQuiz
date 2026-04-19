@@ -330,6 +330,32 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }
   }, [phaseGroup]);
 
+  // ── Round-Transition: großes Curtain-Wipe mit Progress-Tree zwischen Runden ──
+  // Fires wenn gamePhaseIndex hochzählt (Runde 1→2, 2→3, 3→4). Die Transition wischt
+  // einmal diagonal durchs Bild und zeigt in der Mitte kurz den Progress-Tree.
+  const prevGpiRef = useRef(s.gamePhaseIndex);
+  const [roundTransition, setRoundTransition] = useState<{ oldSnap: QQStateUpdate; key: number } | null>(null);
+  const rtKeyRef = useRef(0);
+  useEffect(() => {
+    const prev = prevGpiRef.current;
+    prevGpiRef.current = s.gamePhaseIndex;
+    if (s.gamePhaseIndex > prev && s.phase === 'PHASE_INTRO') {
+      // Snapshot der vorherigen Runde: letztes Q der alten Phase als questionIndex
+      const sched = s.schedule ?? [];
+      let lastGlobalIdxOfPrev = -1;
+      for (let i = 0; i < sched.length; i++) if (sched[i].phase === prev) lastGlobalIdxOfPrev = i;
+      const oldSnap: QQStateUpdate = {
+        ...s,
+        questionIndex: lastGlobalIdxOfPrev >= 0 ? lastGlobalIdxOfPrev : s.questionIndex,
+        gamePhaseIndex: prev as any,
+      };
+      rtKeyRef.current += 1;
+      setRoundTransition({ oldSnap, key: rtKeyRef.current });
+      const t = setTimeout(() => setRoundTransition(null), 1450);
+      return () => clearTimeout(t);
+    }
+  }, [s.gamePhaseIndex, s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
   const prevPhaseRef = useRef(s.phase);
@@ -617,6 +643,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
 
+      {/* Round-Transition-Curtain — wischt einmal zwischen Runden durchs Bild */}
+      {roundTransition && (
+        <QQRoundTransitionCurtain
+          key={roundTransition.key}
+          oldSnap={roundTransition.oldSnap}
+          newState={s}
+        />
+      )}
+
       {/* Gameshow flash-sweep overlay — runs once per phase group change */}
       {flashKey > 0 && (
         <div
@@ -641,6 +676,60 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           }} />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Round-Transition-Curtain ─────────────────────────────────────────────────
+// Full-Screen-Wipe der zwischen Runden über das Bild zieht. In der Mitte
+// verweilt er kurz, damit der Progress-Tree sein "Dot weiterspringen"-Motif
+// (Amber-Linie wächst zum nächsten Dot) per CSS-Transition zeigen kann.
+function QQRoundTransitionCurtain({ oldSnap, newState }: { oldSnap: QQStateUpdate; newState: QQStateUpdate }) {
+  // Tree startet mit alter State (letzter Dot der alten Runde glüht) und swappt
+  // ~500ms später auf die neue State → Amber-Linie wächst smooth rüber.
+  const [treeState, setTreeState] = useState(oldSnap);
+  useEffect(() => {
+    const t = setTimeout(() => setTreeState(newState), 520);
+    return () => clearTimeout(t);
+  }, [newState]);
+
+  const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
+  const newColor = phaseColors[((newState.gamePhaseIndex as number) - 1) % phaseColors.length];
+  const lang = newState.language === 'en' ? 'en' : 'de';
+  const title = newState.gamePhaseIndex === (newState.totalPhases || 4)
+    ? (lang === 'de' ? 'Finale' : 'Finale')
+    : (lang === 'de' ? `Runde ${newState.gamePhaseIndex}` : `Round ${newState.gamePhaseIndex}`);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: 'qqRoundCurtainSlide 1400ms cubic-bezier(0.65,0,0.35,1) both',
+        background: `linear-gradient(135deg, rgba(15,23,42,0.96) 0%, ${newColor}22 48%, rgba(15,23,42,0.96) 100%)`,
+        backdropFilter: 'blur(6px)',
+        borderLeft: `6px solid ${newColor}`,
+        borderRight: `6px solid ${newColor}`,
+        boxShadow: `0 0 120px rgba(0,0,0,0.5) inset, 0 0 60px ${newColor}66`,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 28, padding: '30px 48px',
+          borderRadius: 28,
+          animation: 'qqRoundTreeFloat 1400ms ease-in-out both, qqRoundGlowPulse 1400ms ease-in-out both',
+        }}
+      >
+        <div style={{
+          fontFamily: "'Nunito', system-ui, sans-serif",
+          fontSize: 'clamp(42px, 5vw, 78px)', fontWeight: 900,
+          color: '#f8fafc',
+          letterSpacing: 1.5, textTransform: 'uppercase',
+          textShadow: `0 4px 24px ${newColor}, 0 0 40px rgba(0,0,0,0.5)`,
+        }}>{title}</div>
+        <QQProgressTree state={treeState} variant="hero" />
+      </div>
     </div>
   );
 }

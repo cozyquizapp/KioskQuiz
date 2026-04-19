@@ -789,7 +789,7 @@ export default function QQModeratorPage() {
                         border: `2px solid ${i === 0 ? team.color : 'rgba(255,255,255,0.1)'}`,
                       }}>
                         <span style={{ fontSize: 11, color: '#64748b', fontWeight: 800 }}>#{i + 1}</span>
-                        <QQTeamAvatar avatarId={team.avatarId} size={20} />
+                        <QQTeamAvatar avatarId={team.avatarId} size={30} />
                         <span style={{ fontWeight: 800, color: team.color, fontSize: 14 }}>{team.name}</span>
                       </div>
                     );
@@ -867,7 +867,7 @@ export default function QQModeratorPage() {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: '#475569', fontWeight: 800, width: 16 }}>{i + 1}</span>
-                        <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                        <QQTeamAvatar avatarId={t.avatarId} size={30} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontWeight: 800, color: t.color }}>{t.name}</span>
@@ -1140,7 +1140,7 @@ export default function QQModeratorPage() {
               {[...teamList].sort((a, b) => b.largestConnected - a.largestConnected).map((t, i) => (
                 <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
-                  <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                  <QQTeamAvatar avatarId={t.avatarId} size={30} />
                   <span style={{ flex: 1, fontWeight: 800, color: t.color, fontSize: 13 }}>{t.name}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: '#94a3b8' }}>{t.largestConnected}</span>
                 </div>
@@ -1360,7 +1360,7 @@ function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roo
                 <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#F59E0B' : '#475569', width: 18 }}>
                   {i === 0 ? '🥇' : `#${i + 1}`}
                 </span>
-                <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} size={18} />
+                <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} size={26} />
                 <div style={{ flex: 1 }}>
                   <span style={{ fontWeight: 800, color: r.team?.color ?? '#94a3b8' }}>{r.team?.name ?? r.teamId}</span>
                   <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: '#e2e8f0' }}>
@@ -1407,7 +1407,7 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       padding: '8px 12px', borderRadius: 10,
       background: `${team.color}18`, border: `1px solid ${team.color}44`,
     }}>
-      <QQTeamAvatar avatarId={team.avatarId} size={18} />
+      <QQTeamAvatar avatarId={team.avatarId} size={26} />
       <span style={{ fontWeight: 800, color: team.color }}>{team.name}</span>
       <span style={{ fontSize: 12, color: '#94a3b8' }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
       {s.pendingAction === 'FREE' && (
@@ -1471,7 +1471,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
   }
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-      <QQTeamAvatar avatarId={team.avatarId} size={18} />
+      <QQTeamAvatar avatarId={team.avatarId} size={26} />
       <span style={{ fontWeight: 800, color: team.color }}>{team.name} — Comeback:</span>
       <Btn small color="#22C55E" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'PLACE_2' })}>📍 2 Felder</Btn>
       <Btn small color="#EF4444" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'STEAL_1' })}>⚡ Klauen</Btn>
@@ -1560,7 +1560,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
             }}>
-              {cell.jokerFormed ? '⭐' : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(14, Math.floor(cellSize * 0.6))} /> : '')}
+              {cell.jokerFormed ? '⭐' : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
             </div>
           );
         })
@@ -2269,7 +2269,7 @@ function LobbyView({
                       border: `1px solid ${t.connected ? `${t.color}66` : 'rgba(255,255,255,0.08)'}`,
                       opacity: t.connected ? 1 : 0.55,
                     }}>
-                      <QQTeamAvatar avatarId={t.avatarId} size={32} style={{ flexShrink: 0 }} />
+                      <QQTeamAvatar avatarId={t.avatarId} size={44} style={{ flexShrink: 0 }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{
                           fontSize: 13, fontWeight: 900,

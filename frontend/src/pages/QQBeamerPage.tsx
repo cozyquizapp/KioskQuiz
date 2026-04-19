@@ -566,17 +566,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         >⛶</button>
       )}
 
-      {/* Mini-Runden-Tree — permanenter Kompass im Header bei laufendem Quiz */}
-      {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL'
-        || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (
-        <div style={{
-          position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 20, pointerEvents: 'none',
-        }}>
-          <QQProgressTree state={s} variant="mini" />
-        </div>
-      )}
-
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */
         <>
@@ -5710,14 +5699,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Correct team — winner banner (non-Schätzchen) */}
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (() => {
-            const cat = q.category;
             const isEn = lang === 'en';
-            // Drumroll-Beat: „Zack"-Kategorien (CHEESE/MUCHO/10vZ) bekommen eine
-            // Suspense-Sekunde zwischen Lösung und Winner-Banner, damit die
-            // Reveal-Kurve konsistenter zu Schätzchen & Co. wirkt.
-            const isZack = cat === 'CHEESE' || cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN';
-            const bannerDelay = isZack ? 1.5 : 0.7;
-            const avatarDelay = isZack ? 1.9 : 1.1;
+            const bannerDelay = 0.7;
+            const avatarDelay = 1.1;
 
             // ZEHN_VON_ZEHN: Tie-Info ermitteln, damit Text stimmt, wenn mehrere Teams
             // die gleiche Höchstpunktzahl auf die richtige Antwort gesetzt haben
@@ -5794,126 +5778,82 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
                     : (isEn ? 'correct!' : 'richtig!');
 
-            // Drumroll-Placeholder (nur „Zack"-Kategorien): baut die Sekunde
-            // Spannung auf, bevor der Winner-Banner ploppt. Fade-In ab 0.35s,
-            // Fade-Out ab 1.35s — überlappt kurz mit dem Banner-Fade-In.
-            const drumroll = isZack ? (
-              <div style={{
-                position: 'absolute', left: '50%', top: '50%',
-                transform: 'translate(-50%, -50%)',
-                pointerEvents: 'none', zIndex: 3, opacity: 0,
-                animation: 'qqDrumrollInOut 1.6s ease 0.3s forwards',
-              }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 16,
-                  padding: '18px 34px', borderRadius: 999,
-                  background: 'linear-gradient(135deg, rgba(251,191,36,0.16), rgba(251,191,36,0.04))',
-                  border: '2px solid rgba(251,191,36,0.45)',
-                  boxShadow: '0 0 40px rgba(251,191,36,0.22), 0 8px 24px rgba(0,0,0,0.35)',
-                  color: '#fbbf24', fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
-                  letterSpacing: 0.5, textTransform: 'uppercase',
-                }}>
-                  <span>{isEn ? 'And the winner is' : 'Und der Gewinner ist'}</span>
-                  <span style={{ display: 'inline-flex', gap: 6 }}>
-                    {[0, 1, 2].map(i => (
-                      <span key={i} style={{
-                        width: 10, height: 10, borderRadius: '50%',
-                        background: '#fbbf24',
-                        animation: `qqDrumrollDot 0.7s ease ${0.5 + i * 0.15}s infinite`,
-                      }} />
-                    ))}
-                  </span>
-                </div>
-              </div>
-            ) : null;
-
             // Echter Zeit-Gleichstand (gleiche max Punkte + gleiche ms) → mehrere Sieger
             if (coWinners && coWinners.length > 1) {
               const coMsg = isEn
                 ? `all tied on points & speed${allInTie ? ` (+${allInTie.winnerPts})` : ''}!`
                 : `gleich viele Punkte und gleich schnell${allInTie ? ` (+${allInTie.winnerPts})` : ''}!`;
               return (
-                <>
-                  {drumroll}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
-                    padding: '22px 38px', borderRadius: 28, marginBottom: 12,
-                    width: '100%', maxWidth: 1400, flexWrap: 'wrap',
-                    background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
-                    border: '2px solid rgba(251,191,36,0.55)',
-                    boxShadow: '0 0 60px rgba(251,191,36,0.25), 0 8px 24px rgba(0,0,0,0.4)',
-                    animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-                      {coWinners.map((tm, i) => (
-                        <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(64px, 7vw, 96px)'} style={{
-                            flexShrink: 0, boxShadow: `0 0 24px ${tm.color}66`,
-                            animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
-                          }} />
-                          <div style={{
-                            fontWeight: 900, fontSize: 'clamp(26px, 3.4vw, 48px)', color: tm.color, lineHeight: 1.1,
-                            textShadow: `0 0 24px ${tm.color}44`,
-                          }}>{tm.name}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{
-                      color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800,
-                    }}>
-                      {coMsg}
-                    </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
+                  padding: '22px 38px', borderRadius: 28, marginBottom: 12,
+                  width: '100%', maxWidth: 1400, flexWrap: 'wrap',
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
+                  border: '2px solid rgba(251,191,36,0.55)',
+                  boxShadow: '0 0 60px rgba(251,191,36,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {coWinners.map((tm, i) => (
+                      <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(64px, 7vw, 96px)'} style={{
+                          flexShrink: 0, boxShadow: `0 0 24px ${tm.color}66`,
+                          animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
+                        }} />
+                        <div style={{
+                          fontWeight: 900, fontSize: 'clamp(26px, 3.4vw, 48px)', color: tm.color, lineHeight: 1.1,
+                          textShadow: `0 0 24px ${tm.color}44`,
+                        }}>{tm.name}</div>
+                      </div>
+                    ))}
                   </div>
-                </>
+                  <div style={{
+                    color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800,
+                  }}>
+                    {coMsg}
+                  </div>
+                </div>
               );
             }
 
             // Single-winner Banner
             return (
-              <>
-                {drumroll}
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
-                  padding: '28px 44px', borderRadius: 28, marginBottom: 12,
-                  width: '100%', maxWidth: 1400,
-                  background: `linear-gradient(135deg, ${team!.color}22, ${team!.color}0a)`,
-                  border: `2px solid ${team!.color}66`,
-                  boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
-                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
-                }}>
-                  <QQTeamAvatar avatarId={team!.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
-                    flexShrink: 0,
-                    animation: `celebShake 0.6s ease ${avatarDelay}s both`,
-                  }} />
-                  <div>
-                    <div style={{
-                      fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
-                      textShadow: `0 0 30px ${team!.color}44`,
-                    }}>
-                      {team!.name}
-                    </div>
-                    <div style={{
-                      color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6,
-                    }}>
-                      {winMsg}
-                    </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
+                padding: '28px 44px', borderRadius: 28, marginBottom: 12,
+                width: '100%', maxWidth: 1400,
+                background: `linear-gradient(135deg, ${team!.color}22, ${team!.color}0a)`,
+                border: `2px solid ${team!.color}66`,
+                boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+                animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+              }}>
+                <QQTeamAvatar avatarId={team!.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
+                  flexShrink: 0,
+                  animation: `celebShake 0.6s ease ${avatarDelay}s both`,
+                }} />
+                <div>
+                  <div style={{
+                    fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
+                    textShadow: `0 0 30px ${team!.color}44`,
+                  }}>
+                    {team!.name}
+                  </div>
+                  <div style={{
+                    color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6,
+                  }}>
+                    {winMsg}
                   </div>
                 </div>
-              </>
+              </div>
             );
           })()}
 
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
-          {revealed && s.correctTeamId && (() => {
-            const cat = q.category;
-            const isZack = cat === 'CHEESE' || cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN';
-            const confettiDelay = isZack ? 1.6 : 0.8;
-            return (
-              <div style={{ animation: `contentReveal 0.01s ease ${confettiDelay}s both` }}>
-                <ConfettiOverlay />
-              </div>
-            );
-          })()}
+          {revealed && s.correctTeamId && (
+            <div style={{ animation: 'contentReveal 0.01s ease 0.8s both' }}>
+              <ConfettiOverlay />
+            </div>
+          )}
 
           {/* Nobody got it right banner */}
           {revealed && !s.correctTeamId && (

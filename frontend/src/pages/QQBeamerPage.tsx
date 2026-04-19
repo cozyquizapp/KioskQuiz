@@ -5,7 +5,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
-  QQStateUpdate, QQ_CATEGORY_LABELS, qqGetAvatar, QQCategory,
+  QQStateUpdate, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
+  qqGetAvatar, QQCategory,
   QQQuestionImage,
   QQSlideTemplates,
   QQLanguage,
@@ -331,32 +332,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }
   }, [phaseGroup]);
 
-  // ── Round-Transition: großes Curtain-Wipe mit Progress-Tree zwischen Runden ──
-  // Fires wenn gamePhaseIndex hochzählt (Runde 1→2, 2→3, 3→4). Die Transition wischt
-  // einmal diagonal durchs Bild und zeigt in der Mitte kurz den Progress-Tree.
-  const prevGpiRef = useRef(s.gamePhaseIndex);
-  const [roundTransition, setRoundTransition] = useState<{ oldSnap: QQStateUpdate; key: number } | null>(null);
-  const rtKeyRef = useRef(0);
-  useEffect(() => {
-    const prev = prevGpiRef.current;
-    prevGpiRef.current = s.gamePhaseIndex;
-    if (s.gamePhaseIndex > prev && s.phase === 'PHASE_INTRO') {
-      // Snapshot der vorherigen Runde: letztes Q der alten Phase als questionIndex
-      const sched = s.schedule ?? [];
-      let lastGlobalIdxOfPrev = -1;
-      for (let i = 0; i < sched.length; i++) if (sched[i].phase === prev) lastGlobalIdxOfPrev = i;
-      const oldSnap: QQStateUpdate = {
-        ...s,
-        questionIndex: lastGlobalIdxOfPrev >= 0 ? lastGlobalIdxOfPrev : s.questionIndex,
-        gamePhaseIndex: prev as any,
-      };
-      rtKeyRef.current += 1;
-      setRoundTransition({ oldSnap, key: rtKeyRef.current });
-      const t = setTimeout(() => setRoundTransition(null), 1450);
-      return () => clearTimeout(t);
-    }
-  }, [s.gamePhaseIndex, s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Placement cell flash: when PLACEMENT→QUESTION_REVEAL, keep showing
   // PlacementView briefly with the just-placed cell highlighted (#2)
   const prevPhaseRef = useRef(s.phase);
@@ -644,15 +619,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
 
-      {/* Round-Transition-Curtain — wischt einmal zwischen Runden durchs Bild */}
-      {roundTransition && (
-        <QQRoundTransitionCurtain
-          key={roundTransition.key}
-          oldSnap={roundTransition.oldSnap}
-          newState={s}
-        />
-      )}
-
       {/* Gameshow flash-sweep overlay — runs once per phase group change */}
       {flashKey > 0 && (
         <div
@@ -677,60 +643,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           }} />
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Round-Transition-Curtain ─────────────────────────────────────────────────
-// Full-Screen-Wipe der zwischen Runden über das Bild zieht. In der Mitte
-// verweilt er kurz, damit der Progress-Tree sein "Dot weiterspringen"-Motif
-// (Amber-Linie wächst zum nächsten Dot) per CSS-Transition zeigen kann.
-function QQRoundTransitionCurtain({ oldSnap, newState }: { oldSnap: QQStateUpdate; newState: QQStateUpdate }) {
-  // Tree startet mit alter State (letzter Dot der alten Runde glüht) und swappt
-  // ~500ms später auf die neue State → Amber-Linie wächst smooth rüber.
-  const [treeState, setTreeState] = useState(oldSnap);
-  useEffect(() => {
-    const t = setTimeout(() => setTreeState(newState), 520);
-    return () => clearTimeout(t);
-  }, [newState]);
-
-  const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
-  const newColor = phaseColors[((newState.gamePhaseIndex as number) - 1) % phaseColors.length];
-  const lang = newState.language === 'en' ? 'en' : 'de';
-  const title = newState.gamePhaseIndex === (newState.totalPhases || 4)
-    ? (lang === 'de' ? 'Finale' : 'Finale')
-    : (lang === 'de' ? `Runde ${newState.gamePhaseIndex}` : `Round ${newState.gamePhaseIndex}`);
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        animation: 'qqRoundCurtainSlide 1400ms cubic-bezier(0.65,0,0.35,1) both',
-        background: `linear-gradient(135deg, rgba(15,23,42,0.96) 0%, ${newColor}22 48%, rgba(15,23,42,0.96) 100%)`,
-        backdropFilter: 'blur(6px)',
-        borderLeft: `6px solid ${newColor}`,
-        borderRight: `6px solid ${newColor}`,
-        boxShadow: `0 0 120px rgba(0,0,0,0.5) inset, 0 0 60px ${newColor}66`,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 28, padding: '30px 48px',
-          borderRadius: 28,
-          animation: 'qqRoundTreeFloat 1400ms ease-in-out both, qqRoundGlowPulse 1400ms ease-in-out both',
-        }}
-      >
-        <div style={{
-          fontFamily: "'Nunito', system-ui, sans-serif",
-          fontSize: 'clamp(42px, 5vw, 78px)', fontWeight: 900,
-          color: '#f8fafc',
-          letterSpacing: 1.5, textTransform: 'uppercase',
-          textShadow: `0 4px 24px ${newColor}, 0 0 40px rgba(0,0,0,0.5)`,
-        }}>{title}</div>
-        <QQProgressTree state={treeState} variant="hero" />
-      </div>
     </div>
   );
 }
@@ -1921,6 +1833,97 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ROUND MINI TREE — 5 Kategorie-Dots der aktuellen Runde, Wolf auf aktuellem Dot.
+// Bei Fragewechsel gleitet der Wolf durch CSS-transition zum neuen Dot.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor: string }) {
+  const schedule = s.schedule ?? [];
+  const phase = s.gamePhaseIndex;
+  const firstIdx = schedule.findIndex(e => e.phase === phase);
+  const phaseEntries = schedule.filter(e => e.phase === phase);
+  if (phaseEntries.length === 0 || firstIdx < 0) return null;
+
+  const currentInPhase = Math.max(0, Math.min(s.questionIndex - firstIdx, phaseEntries.length - 1));
+
+  const DOT = 42;
+  const GAP = 18;
+  const WOLF = DOT + 10;
+  const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
+  const wolfLeft = currentInPhase * (DOT + GAP) + DOT / 2;
+  const progressWidth = currentInPhase === 0 ? 0 : currentInPhase * (DOT + GAP);
+
+  return (
+    <div style={{
+      position: 'relative', width: totalWidth, height: WOLF + 4,
+      display: 'flex', alignItems: 'center',
+    }}>
+      {/* Track (grau) + Progress (amber) — auf Dot-Mittelhöhe */}
+      <div style={{
+        position: 'absolute', top: '50%', left: DOT / 2,
+        width: totalWidth - DOT, height: 3,
+        background: 'rgba(148,163,184,0.28)',
+        transform: 'translateY(-50%)', borderRadius: 2,
+      }} />
+      {progressWidth > 0 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: DOT / 2,
+          width: progressWidth, height: 3,
+          background: 'linear-gradient(90deg, #FBBF24, #F59E0B)',
+          transform: 'translateY(-50%)', borderRadius: 2,
+          boxShadow: '0 0 10px rgba(251,191,36,0.6)',
+          transition: 'width 700ms cubic-bezier(0.4,0,0.2,1)',
+        }} />
+      )}
+
+      {/* Dots — bei current bleibt der Dot leer, der Wolf sitzt drauf */}
+      {phaseEntries.map((e, i) => {
+        const label = QQ_CATEGORY_LABELS[e.category];
+        const emoji = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
+        const isPast = i < currentInPhase;
+        const isCurrent = i === currentInPhase;
+        const dotLeft = i * (DOT + GAP);
+        return (
+          <div key={i} style={{
+            position: 'absolute', top: '50%', left: dotLeft,
+            width: DOT, height: DOT, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: Math.round(DOT * 0.55),
+            background: isPast ? 'rgba(148,163,184,0.18)'
+              : isCurrent ? 'transparent'
+              : 'rgba(30,41,59,0.55)',
+            border: isCurrent ? 'none' : '1.5px solid rgba(148,163,184,0.35)',
+            filter: isPast ? 'grayscale(1)' : 'none',
+            opacity: isPast ? 0.55 : isCurrent ? 0 : 1,
+            transform: 'translateY(-50%)',
+            transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
+            zIndex: 1,
+          }}>
+            {emoji}
+          </div>
+        );
+      })}
+
+      {/* Wolf-Avatar — gleitet per CSS-transition zum aktuellen Dot */}
+      <div style={{
+        position: 'absolute', top: '50%', left: wolfLeft,
+        width: WOLF, height: WOLF, borderRadius: '50%',
+        background: '#fff',
+        backgroundImage: 'url(/logo.png)',
+        backgroundSize: '88%',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        border: `3px solid ${catColor}`,
+        boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
+        transform: 'translate(-50%, -50%)',
+        transition: 'left 800ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+        zIndex: 2,
+      }} />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // PHASE INTRO
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1984,30 +1987,78 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
 
+  // ── Round Self-Transition ──
+  // Beim Mount der Slide (ab Runde 2) zeigen wir kurz den Look der vorherigen
+  // Runde, dann faden wir Farben, Label & Tree auf die neue Runde. Der
+  // Ziffer-Flip im Titel ist die zentrale Geste.
+  const hasRoundTransition = isFirstOfRound && s.introStep === 0 && s.gamePhaseIndex > 1;
+  const [transitioning, setTransitioning] = useState(hasRoundTransition);
+  useEffect(() => {
+    if (!hasRoundTransition) { setTransitioning(false); return; }
+    setTransitioning(true);
+    const t = setTimeout(() => setTransitioning(false), 450);
+    return () => clearTimeout(t);
+  }, [s.gamePhaseIndex, hasRoundTransition]);
+
+  const prevIdx = s.gamePhaseIndex - 1;
+  const prevIsFinal = prevIdx === s.totalPhases;
+  const prevColor = phaseColors[Math.max(0, prevIdx - 1) % 3];
+  const prevPhaseName = prevIdx < 1
+    ? phaseName
+    : prevIsFinal ? (lang === 'de' ? 'Finale' : 'Final')
+    : phaseNamesRaw[prevIdx];
+  const prevPhaseDesc = prevIdx < 1
+    ? phaseDesc
+    : prevIsFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in')
+    : phaseDescsRaw[prevIdx];
+
+  const displayColor = transitioning ? prevColor : color;
+  const displayPhaseDesc = transitioning ? prevPhaseDesc : phaseDesc;
+  const displayGpi = transitioning ? prevIdx : s.gamePhaseIndex;
+
+  // Ziffer-Flip: nur möglich wenn beide Titel "Runde N" / "Round N" sind
+  const digitRe = /^(Runde|Round)\s+(\d+)$/;
+  const prevTitleMatch = prevPhaseName.match(digitRe);
+  const newTitleMatch = phaseName.match(digitRe);
+  const canDigitFlip = hasRoundTransition && !!prevTitleMatch && !!newTitleMatch;
+  const titleWord = newTitleMatch ? newTitleMatch[1] : (lang === 'de' ? 'Runde' : 'Round');
+  const prevDigit = prevTitleMatch ? prevTitleMatch[2] : '';
+  const newDigit  = newTitleMatch  ? newTitleMatch[2]  : '';
+
+  // Tree-State während Transition: letzter Dot der vorherigen Phase glüht
+  const displayTreeState: QQStateUpdate = useMemo(() => {
+    if (!transitioning || prevIdx < 1) return s;
+    const sched = s.schedule ?? [];
+    let lastIdx = -1;
+    for (let i = 0; i < sched.length; i++) if (sched[i].phase === prevIdx) lastIdx = i;
+    return { ...s, gamePhaseIndex: prevIdx as any, questionIndex: lastIdx >= 0 ? lastIdx : s.questionIndex };
+  }, [transitioning, s, prevIdx]);
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
-      <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${color}88` : `${catColor ?? color}88`} />
+      <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${displayColor}88` : `${catColor ?? color}88`} />
 
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
         <>
-          {/* Round progress pill */}
+          {/* Round progress pill — Farbe + Text transitionen von prev auf new */}
           <div style={{
             padding: '8px 24px', borderRadius: 999,
-            background: `${color}18`, border: `2px solid ${color}44`,
+            background: `${displayColor}18`, border: `2px solid ${displayColor}44`,
             fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
-            color: `${color}cc`, letterSpacing: '0.08em',
+            color: `${displayColor}cc`, letterSpacing: '0.08em',
             marginBottom: 28,
-            animation: 'contentReveal 0.4s ease 0.1s both',
+            animation: hasRoundTransition ? undefined : 'contentReveal 0.4s ease 0.1s both',
+            transition: 'background 500ms ease, border-color 500ms ease, color 500ms ease',
             position: 'relative', zIndex: 5,
           }}>
             {lang === 'de'
-              ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}`
-              : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
+              ? `Runde ${displayGpi} von ${s.totalPhases}`
+              : `Round ${displayGpi} of ${s.totalPhases}`}
           </div>
 
           {/* Shockwave burst behind title */}
@@ -2016,55 +2067,98 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               position: 'absolute', top: '50%', left: '50%',
               width: 200, height: 200, marginLeft: -100, marginTop: -100,
               borderRadius: '50%',
-              border: `3px solid ${color}66`,
-              animation: 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
+              border: `3px solid ${displayColor}66`,
+              animation: hasRoundTransition ? undefined : 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
+              transition: 'border-color 500ms ease',
               pointerEvents: 'none',
             }} />
-            {/* Round name — BAM entrance */}
-            <div style={{
-              fontFamily: fontFam,
-              fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
-              color,
-              textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
-              textAlign: 'center',
-              animation: 'roundBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
-            }}>
-              {phaseName}
-            </div>
+            {/* Round name — Ziffer-Flip wenn Transition, sonst klassischer BAM */}
+            {canDigitFlip ? (
+              <div style={{
+                fontFamily: fontFam,
+                fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
+                color: displayColor,
+                textShadow: `0 0 120px ${displayColor}44, 0 12px 0 ${displayColor}33`,
+                textAlign: 'center',
+                display: 'inline-flex', alignItems: 'baseline', justifyContent: 'center',
+                gap: '0.25em',
+                transition: 'color 500ms ease, text-shadow 500ms ease',
+                animation: 'roundBreathe 4s ease-in-out 1.2s infinite',
+              }}>
+                <span>{titleWord}</span>
+                {/* Ziffern-Flip-Container */}
+                <span style={{
+                  position: 'relative', display: 'inline-block',
+                  width: `${0.6 * Math.max(prevDigit.length, newDigit.length)}em`,
+                  height: '1em', overflow: 'hidden', lineHeight: 1,
+                  verticalAlign: 'baseline',
+                }}>
+                  {/* Alte Ziffer fällt */}
+                  <span style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'roundDigitFall 560ms cubic-bezier(0.5,0,0.75,0) 320ms both',
+                  }}>{prevDigit}</span>
+                  {/* Neue Ziffer rollt von oben */}
+                  <span style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'roundDigitRoll 580ms cubic-bezier(0.2,1.3,0.5,1) 620ms both',
+                  }}>{newDigit}</span>
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                fontFamily: fontFam,
+                fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
+                color,
+                textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
+                textAlign: 'center',
+                animation: 'roundBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
+              }}>
+                {phaseName}
+              </div>
+            )}
           </div>
 
           {/* Divider line with glow + shimmer */}
           <div style={{
             width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
-            background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
             backgroundSize: '200% 100%',
             marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: 'roundLineGlow 0.7s cubic-bezier(0.34,1.2,0.64,1) 0.5s both, lineShimmer 3s linear 1.5s infinite',
-            boxShadow: `0 0 20px ${color}55, 0 0 40px ${color}22`,
+            animation: hasRoundTransition
+              ? 'lineShimmer 3s linear 1.5s infinite'
+              : 'roundLineGlow 0.7s cubic-bezier(0.34,1.2,0.64,1) 0.5s both, lineShimmer 3s linear 1.5s infinite',
+            boxShadow: `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
+            transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,
           }} />
 
-          {/* Mission subtitle — bigger, bolder */}
+          {/* Mission subtitle — Farbe + Text cross-faden */}
           <div style={{
             fontFamily: fontFam,
             fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
-            color: `${color}dd`,
-            textShadow: `0 0 30px ${color}33`,
-            animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+            color: `${displayColor}dd`,
+            textShadow: `0 0 30px ${displayColor}33`,
+            animation: hasRoundTransition ? undefined : 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+            transition: 'color 500ms ease, text-shadow 500ms ease',
             position: 'relative', zIndex: 5,
             textAlign: 'center',
           }}>
-            {phaseDesc}
+            {displayPhaseDesc}
           </div>
 
-          {/* Fortschrittsbaum — so sieht man was noch kommt */}
+          {/* Fortschrittsbaum — während Transition zeigt er den letzten Dot der
+              vorherigen Runde, nach ~450ms swappt er auf die neue Runde →
+              Amber-Linie wächst smooth zum ersten Dot rüber. */}
           <div style={{
             marginTop: 36,
-            animation: 'contentReveal 0.6s ease 1.0s both',
+            animation: hasRoundTransition ? undefined : 'contentReveal 0.6s ease 1.0s both',
             position: 'relative', zIndex: 5,
           }}>
-            <QQProgressTree state={s} variant="inline" />
+            <QQProgressTree state={displayTreeState} variant="inline" />
           </div>
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
@@ -2342,9 +2436,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       ) : (
         /* ── Category reveal (no explanation needed — already seen) ── */
         <>
-          {/* Question progress: "Frage 2 von 5" + dots */}
+          {/* Question progress: "Frage 2 von 5" + Runden-Mini-Tree mit Wolf */}
           <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
             marginBottom: 28,
             animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
             position: 'relative', zIndex: 5,
@@ -2355,18 +2449,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
             </div>
-            {/* Progress dots */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[1, 2, 3, 4, 5].map(n => (
-                <div key={n} style={{
-                  width: n === questionInPhase ? 28 : 12,
-                  height: 12, borderRadius: 6,
-                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(255,255,255,0.1)',
-                  boxShadow: n === questionInPhase ? `0 0 12px ${catColor}66` : 'none',
-                  transition: 'all 0.3s ease',
-                }} />
-              ))}
-            </div>
+            <RoundMiniTree state={s} catColor={catColor} />
           </div>
 
           {cat && (

@@ -48,24 +48,17 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { opacity: 0; }
     50%      { opacity: 0.35; }
   }
-  /* ── Round-transition: Curtain wipes across screen carrying the Progress-Tree ── */
-  @keyframes qqRoundCurtainSlide {
-    0%   { transform: translateX(100vw); }
-    28%  { transform: translateX(0); }
-    68%  { transform: translateX(0); }
-    100% { transform: translateX(-100vw); }
+  /* Round-Transition Ziffer-Flip: alte Ziffer fällt aus dem Titel, neue rollt von oben rein */
+  @keyframes roundDigitFall {
+    0%   { transform: translateY(0);    opacity: 1; }
+    60%  { transform: translateY(55%);  opacity: 0.35; }
+    100% { transform: translateY(130%); opacity: 0; }
   }
-  /* Tree leicht versetzt rein/raus — subtiler Parallax-Effekt */
-  @keyframes qqRoundTreeFloat {
-    0%   { transform: translateY(22px) scale(0.94); opacity: 0; }
-    20%  { transform: translateY(0)    scale(1);    opacity: 1; }
-    80%  { transform: translateY(0)    scale(1);    opacity: 1; }
-    100% { transform: translateY(-10px) scale(0.96); opacity: 0.85; }
-  }
-  /* Pulsierender Glow-Rahmen um den Tree während der Transition */
-  @keyframes qqRoundGlowPulse {
-    0%, 100% { box-shadow: 0 0 0 rgba(251,191,36,0); }
-    50%      { box-shadow: 0 0 120px 24px rgba(251,191,36,0.35); }
+  @keyframes roundDigitRoll {
+    0%   { transform: translateY(-130%); opacity: 0; }
+    55%  { transform: translateY(-40%);  opacity: 0.55; }
+    82%  { transform: translateY(9%);    opacity: 1; }
+    100% { transform: translateY(0);     opacity: 1; }
   }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }

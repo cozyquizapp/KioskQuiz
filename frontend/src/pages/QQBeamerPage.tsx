@@ -3388,38 +3388,37 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           ) : (() => {
             // Skaliere Größen je nach Anzahl Sieger — wenig Sieger = deutlich größer.
             const wn = winners.length;
+            // Ab 5 Siegern 2 Spalten (4-4 bei 8) damit unten nichts abgeschnitten wird
+            const twoCol = wn >= 5;
             const avatarSize =
               wn === 1 ? 'clamp(110px, 12vw, 180px)'
               : wn === 2 ? 'clamp(96px, 10vw, 150px)'
               : wn === 3 ? 'clamp(82px, 8.5vw, 124px)'
               : wn === 4 ? 'clamp(72px, 7.5vw, 108px)'
-              : wn === 5 ? 'clamp(64px, 6.5vw, 92px)'
-              : 'clamp(58px, 6vw, 84px)';
-            const emojiSize =
-              wn === 1 ? 'clamp(70px, 8vw, 120px)'
-              : wn === 2 ? 'clamp(60px, 7vw, 100px)'
-              : wn === 3 ? 'clamp(52px, 5.6vw, 84px)'
-              : wn === 4 ? 'clamp(46px, 5vw, 72px)'
-              : wn === 5 ? 'clamp(40px, 4.4vw, 62px)'
-              : 'clamp(36px, 4vw, 56px)';
+              : wn <= 6 ? 'clamp(56px, 5.2vw, 80px)'
+              : 'clamp(52px, 4.8vw, 74px)';
             const nameSize =
               wn === 1 ? 'clamp(40px, 4.6vw, 76px)'
               : wn === 2 ? 'clamp(34px, 3.8vw, 60px)'
               : wn === 3 ? 'clamp(30px, 3.4vw, 52px)'
               : wn === 4 ? 'clamp(26px, 3vw, 44px)'
-              : wn === 5 ? 'clamp(24px, 2.7vw, 40px)'
-              : 'clamp(22px, 2.5vw, 36px)';
+              : wn <= 6 ? 'clamp(20px, 2.1vw, 30px)'
+              : 'clamp(18px, 1.95vw, 28px)';
             const subSize =
               wn === 1 ? 'clamp(18px, 1.9vw, 30px)'
               : wn === 2 ? 'clamp(16px, 1.7vw, 26px)'
               : wn === 3 ? 'clamp(15px, 1.6vw, 24px)'
               : wn === 4 ? 'clamp(14px, 1.5vw, 22px)'
-              : wn === 5 ? 'clamp(13px, 1.4vw, 20px)'
-              : 'clamp(13px, 1.3vw, 19px)';
-            const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : wn === 5 ? 10 : 8;
-            const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : 14;
+              : 'clamp(12px, 1.3vw, 18px)';
+            const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : 10;
+            const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : twoCol ? 10 : 14;
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
+                gap: twoCol ? `${rowGap}px 18px` : `${rowGap}px`,
+                minHeight: 0, overflow: 'hidden',
+              }}>
                 {winners.map(w => {
                   const tm = s.teams.find(t => t.id === w.teamId);
                   if (!tm) return null;
@@ -3722,38 +3721,37 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
           ) : (() => {
             // Skaliere Größen je nach Anzahl Sieger — wenig Sieger = deutlich größer.
             const wn = winners.length;
+            // Ab 5 Siegern 2 Spalten (4-4 bei 8) damit unten nichts abgeschnitten wird
+            const twoCol = wn >= 5;
             const avatarSize =
               wn === 1 ? 'clamp(110px, 12vw, 180px)'
               : wn === 2 ? 'clamp(96px, 10vw, 150px)'
               : wn === 3 ? 'clamp(82px, 8.5vw, 124px)'
               : wn === 4 ? 'clamp(72px, 7.5vw, 108px)'
-              : wn === 5 ? 'clamp(64px, 6.5vw, 92px)'
-              : 'clamp(58px, 6vw, 84px)';
-            const emojiSize =
-              wn === 1 ? 'clamp(70px, 8vw, 120px)'
-              : wn === 2 ? 'clamp(60px, 7vw, 100px)'
-              : wn === 3 ? 'clamp(52px, 5.6vw, 84px)'
-              : wn === 4 ? 'clamp(46px, 5vw, 72px)'
-              : wn === 5 ? 'clamp(40px, 4.4vw, 62px)'
-              : 'clamp(36px, 4vw, 56px)';
+              : wn <= 6 ? 'clamp(56px, 5.2vw, 80px)'
+              : 'clamp(52px, 4.8vw, 74px)';
             const nameSize =
               wn === 1 ? 'clamp(40px, 4.6vw, 76px)'
               : wn === 2 ? 'clamp(34px, 3.8vw, 60px)'
               : wn === 3 ? 'clamp(30px, 3.4vw, 52px)'
               : wn === 4 ? 'clamp(26px, 3vw, 44px)'
-              : wn === 5 ? 'clamp(24px, 2.7vw, 40px)'
-              : 'clamp(22px, 2.5vw, 36px)';
+              : wn <= 6 ? 'clamp(20px, 2.1vw, 30px)'
+              : 'clamp(18px, 1.95vw, 28px)';
             const subSize =
               wn === 1 ? 'clamp(18px, 1.9vw, 30px)'
               : wn === 2 ? 'clamp(16px, 1.7vw, 26px)'
               : wn === 3 ? 'clamp(15px, 1.6vw, 24px)'
               : wn === 4 ? 'clamp(14px, 1.5vw, 22px)'
-              : wn === 5 ? 'clamp(13px, 1.4vw, 20px)'
-              : 'clamp(13px, 1.3vw, 19px)';
-            const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : wn === 5 ? 10 : 8;
-            const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : 14;
+              : 'clamp(12px, 1.3vw, 18px)';
+            const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : 10;
+            const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : twoCol ? 10 : 14;
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, minHeight: 0, overflow: 'hidden' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
+                gap: twoCol ? `${rowGap}px 18px` : `${rowGap}px`,
+                minHeight: 0, overflow: 'hidden',
+              }}>
                 {winners.map(w => {
                   const tm = s.teams.find(t => t.id === w.teamId);
                   if (!tm) return null;

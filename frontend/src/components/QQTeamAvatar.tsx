@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { qqGetAvatar } from '@shared/quarterQuizTypes';
 
 type Props = {
@@ -11,18 +11,26 @@ type Props = {
   square?: boolean;
   /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
   lang?: 'de' | 'en';
+  /** Blinzel-Animation (default: true). Bei winzigen Sizes lohnt sich's nicht. */
+  blink?: boolean;
 };
 
 /**
- * Team-Badge im CozyWolf-Stil. Lädt /avatars/cozy-cast/avatar-{slug}-wolf.png
- * (2000×2000 PNG mit schwarzem Innenkreis + farbigem Ring + Charakter, baked-in).
+ * Team-Badge (Canva-Avatar). Lädt avatar-{slug}.png (offene Augen) und
+ * blendet avatar-{slug}-closed.png (geschlossene Augen) in Intervallen kurz
+ * drüber → sanfte Blinzel-Animation. Jede Instanz bekommt einen zufälligen
+ * Delay, damit 8 Teams nicht im Chor zwinkern.
  *
- * Fallback bei Lade-Fehler: Emoji-Glyph in einem farbigen Kreis (alte Optik).
+ * Fallback bei Lade-Fehler: Emoji-Glyph in farbigem Kreis (alte Optik).
  */
-export function QQTeamAvatar({ avatarId, size, style, className, title, square, lang }: Props) {
+export function QQTeamAvatar({ avatarId, size, style, className, title, square, lang, blink = true }: Props) {
   const av = qqGetAvatar(avatarId);
   const [failed, setFailed] = useState(false);
   const labelText = lang === 'en' ? av.labelEn : av.label;
+
+  // Zufälliger Delay pro Mount-Instanz → 8 Avatare blinzeln asynchron.
+  // 5.2s Zyklus, Augen ~160ms zu — delay 0..5.2s verteilt gleichmäßig.
+  const blinkDelay = useMemo(() => -Math.random() * 5.2, []);
 
   const base: CSSProperties = {
     width: size,
@@ -34,7 +42,6 @@ export function QQTeamAvatar({ avatarId, size, style, className, title, square, 
   };
 
   if (failed) {
-    // Emoji-Fallback in farbigem Kreis (matcht Pre-Wolf-Optik)
     return (
       <span
         className={className}
@@ -54,15 +61,59 @@ export function QQTeamAvatar({ avatarId, size, style, className, title, square, 
     );
   }
 
+  if (!blink) {
+    return (
+      <img
+        src={av.image}
+        alt={labelText}
+        title={title ?? labelText}
+        className={className}
+        onError={() => setFailed(true)}
+        style={base}
+        draggable={false}
+      />
+    );
+  }
+
+  // Blink-Variante: zwei Bilder gestackt, closed-Layer mit Keyframe-Opacity.
+  // Der Wrapper übernimmt die (möglicherweise animierten) Outer-Styles; die
+  // Bilder füllen den Wrapper 1:1.
+  const inner: CSSProperties = {
+    position: 'absolute', inset: 0, width: '100%', height: '100%',
+    borderRadius: square ? 0 : '50%',
+    display: 'block', pointerEvents: 'none',
+  };
+
   return (
-    <img
-      src={av.image}
-      alt={labelText}
-      title={title ?? labelText}
+    <span
       className={className}
-      onError={() => setFailed(true)}
-      style={base}
-      draggable={false}
-    />
+      title={title ?? labelText}
+      style={{ ...base, position: 'relative', overflow: 'hidden' }}
+    >
+      <style>{`
+        @keyframes qqAvatarBlink {
+          0%, 94%, 100% { opacity: 0; }
+          96%, 98%      { opacity: 1; }
+        }
+      `}</style>
+      <img
+        src={av.image}
+        alt={labelText}
+        onError={() => setFailed(true)}
+        style={inner}
+        draggable={false}
+      />
+      <img
+        src={av.imageClosed}
+        alt=""
+        aria-hidden="true"
+        style={{
+          ...inner,
+          opacity: 0,
+          animation: `qqAvatarBlink 5.2s linear ${blinkDelay}s infinite`,
+        }}
+        draggable={false}
+      />
+    </span>
   );
 }

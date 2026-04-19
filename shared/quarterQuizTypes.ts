@@ -52,7 +52,7 @@ export const QQ_TEAM_PALETTE: string[] = [
   '#2563EB', // pinguin
   '#8B5CF6', // koala
   '#EAB308', // giraffe
-  '#14B8A6', // waschbaer
+  '#68B4A5', // waschbaer
   '#F97316', // kuh
   '#DC2626', // capybara
 ];
@@ -580,16 +580,20 @@ export const QQ_AVATARS = [
   { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#2563EB', hoodie: '#FDE047' },
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#8B5CF6', hoodie: '#EAB308' },
   { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#EAB308', hoodie: '#5B21B6' },
-  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#14B8A6', hoodie: '#F59E0B' },
+  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#68B4A5', hoodie: '#F59E0B' },
   { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#F97316', hoodie: '#581C87' },
   { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#DC2626', hoodie: '#166534' },
 ] as const;
 
-export type QQAvatar = typeof QQ_AVATARS[number] & { image: string };
+export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed: string };
 
 export function qqGetAvatar(avatarId: string): QQAvatar {
   const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
-  return { ...av, image: `/avatars/cozy-cast/avatar-${av.slug}.png` };
+  return {
+    ...av,
+    image: `/avatars/cozy-cast/avatar-${av.slug}.png`,
+    imageClosed: `/avatars/cozy-cast/avatar-${av.slug}-closed.png`,
+  };
 }
 
 export function qqAvatarLabel(avatarId: string, lang: 'de' | 'en'): string {

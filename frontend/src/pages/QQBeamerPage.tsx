@@ -4454,9 +4454,9 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SchaetzchenReveal — Split-Screen (Top5-Style):
-// oben Frage + Lösung, links Gewinner-Card, rechts Rangliste bottom-up.
-// Ranking wird von schlechtester→bester Schätzung enthüllt (Trommelwirbel bis #1).
+// SchaetzchenReveal — Top5-Style:
+// oben Frage (volle Breite), darunter links Lösung+Gewinner, rechts Top 5 Teams
+// (max 5, am nächsten dran). Bottom-up Enthüllung bis zum Gewinner.
 // ═══════════════════════════════════════════════════════════════════════════════
 function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -4470,29 +4470,26 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
     return n % 1 === 0 ? String(n) : n.toFixed(1);
   };
 
-  // Parse + Distanz. Sort: bester (geringste |Δ|) zuerst → letzter zuletzt.
+  // Parse + Distanz. Sort: bester (geringste |Δ|) zuerst, bei Delta-Tie → schnellste Einreichung gewinnt.
   const ranked = useMemo(() => {
     return s.answers
       .map(a => {
         const num = Number(String(a.text).replace(/[^0-9.,\-]/g, '').replace(',', '.'));
         const team = s.teams.find(t => t.id === a.teamId);
         if (!team || !Number.isFinite(num)) return null;
-        return { teamId: a.teamId, num, team, delta: Math.abs(num - target) };
+        return { teamId: a.teamId, num, team, delta: Math.abs(num - target), submittedAt: a.submittedAt };
       })
-      .filter((x): x is { teamId: string; num: number; team: NonNullable<ReturnType<typeof s.teams.find>>; delta: number } => !!x)
-      .sort((a, b) => a.delta - b.delta);
+      .filter((x): x is { teamId: string; num: number; team: NonNullable<ReturnType<typeof s.teams.find>>; delta: number; submittedAt: number } => !!x)
+      .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
   }, [s.answers, s.teams, target]);
 
-  const n = ranked.length;
-  const winnerDelta = ranked[0]?.delta ?? Infinity;
-  const winners = ranked.filter(r => r.delta === winnerDelta);
+  // Max 5 Teams rechts; Bottom-up Enthüllung (#5 → #4 → … → #1).
+  const top5 = ranked.slice(0, 5);
+  const n = top5.length;
+  const winner = ranked[0] ?? null;
 
-  // Bottom-up reveal: Start mit n (keiner sichtbar). Dann n-1, n-2, …, 0.
-  // revealedMinIdx = kleinster Rank-Index (0-basiert), der bereits sichtbar ist.
-  // Rank 0 = bester, Rank n-1 = schlechtester. Wir zeigen zuerst Rank n-1 (schlechtester)
-  // und enthüllen dann nach oben bis #1 (bester).
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
-  const STEP_MS = 2000;
+  const STEP_MS = 1600;
   const INITIAL_DELAY_MS = 500;
 
   useEffect(() => {
@@ -4515,195 +4512,150 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
 
   return (
     <div style={{
-      flex: 1, display: 'grid',
-      gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
-      gap: 'clamp(16px, 2.5vw, 36px)',
-      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 3vw, 48px)',
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(12px, 1.6vh, 20px)',
+      padding: 'clamp(14px, 1.8vh, 24px) clamp(20px, 3vw, 48px)',
       animation: 'contentReveal 0.45s ease both',
       minHeight: 0,
     }}>
-      {/* ── Linke Spalte: Frage oben, Winner-Card darunter ────── */}
+      {/* ── Zeile 1: Frage über ganze Breite (Top-5-Style) ── */}
       <div style={{
-        display: 'flex', flexDirection: 'column',
-        gap: 'clamp(14px, 1.8vh, 22px)',
-        minHeight: 0, minWidth: 0,
+        background: 'rgba(255,255,255,0.04)',
+        border: '2px solid rgba(255,255,255,0.08)',
+        borderRadius: 26,
+        padding: 'clamp(14px, 1.8vh, 22px) clamp(22px, 2.6vw, 42px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        flexShrink: 0, overflow: 'hidden',
       }}>
-        {/* Frage-Card — kompakt oben, OHNE Lösung */}
         <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '2px solid rgba(255,255,255,0.08)',
-          borderRadius: 26,
-          padding: 'clamp(14px, 1.8vh, 22px) clamp(20px, 2.4vw, 36px)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-          animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-          flex: '1 1 0',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          overflow: 'hidden',
+          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
+          letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
         }}>
-          <div style={{
-            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
-          }}>
-            🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
-          </div>
-          <div key={lang} style={{
-            fontSize: qText.length > 120 ? 'clamp(20px, 1.9vw, 28px)' : 'clamp(22px, 2.2vw, 34px)',
-            fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
-            minWidth: 0,
-            animation: 'langFadeIn 0.4s ease both',
-          }}>
-            {qText}
-          </div>
+          🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
         </div>
-
-        {/* Lösungs-Hero — der Fokus der Folie */}
-        <div style={{
-          flex: '1 1 0',
-          minHeight: 0,
-          padding: 'clamp(16px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
-          borderRadius: 28,
-          background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
-          border: '3px solid rgba(34,197,94,0.55)',
-          boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
-          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-          position: 'relative', overflow: 'hidden',
+        <div key={lang} style={{
+          fontSize: qText.length > 120 ? 'clamp(22px, 2.2vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+          fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+          textAlign: 'center', minWidth: 0,
+          animation: 'langFadeIn 0.4s ease both',
         }}>
-          <div style={{
-            position: 'absolute', top: 0, width: '60%', height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
-            animation: 'revealShimmer 0.9s ease 0.55s both',
-            pointerEvents: 'none',
-          }} />
-          <div style={{
-            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#86efac',
-            letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75,
-          }}>
-            {lang === 'en' ? 'Answer' : 'Lösung'}
-          </div>
-          <div style={{
-            fontSize: 'clamp(64px, 8vw, 140px)',
-            fontWeight: 900, color: '#86efac', lineHeight: 1,
-            fontVariantNumeric: 'tabular-nums',
-            textShadow: '0 0 28px rgba(34,197,94,0.35)',
-          }}>
-            {fmt(target)}
-          </div>
-        </div>
-
-        {/* Winner-Card — gleich hoch wie Frage + Lösung */}
-        <div style={{
-          flex: '1 1 0',
-          background: 'rgba(255,255,255,0.04)',
-          border: '2px solid rgba(255,255,255,0.08)',
-          borderRadius: 26,
-          padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 12, minHeight: 0, overflow: 'hidden',
-          opacity: revealedMinIdx === 0 ? 1 : 0.12,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
-          transition: 'opacity 0.7s ease, filter 0.7s ease',
-        }}>
-          <div style={{
-            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}>
-            🏆 {winners.length > 1
-              ? (lang === 'en' ? 'Closest (tie)' : 'Am nächsten (unentschieden)')
-              : (lang === 'en' ? 'Closest' : 'Am nächsten dran')}
-          </div>
-          {winners.length === 0 ? (
-            <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
-              {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
-            </div>
-          ) : (() => {
-            const wn = winners.length;
-            // 1-2 Winner: horizontal Row mit großem Avatar links + Name/Zahl rechts.
-            // 3+ Winner: Grid-Layout (Avatar oben, Name/Zahl darunter) — verhindert Overflow.
-            const isGrid = wn >= 3;
-            const avatarSize =
-              wn === 1 ? 'clamp(96px, 10vw, 150px)'
-              : wn === 2 ? 'clamp(80px, 8vw, 120px)'
-              : 'clamp(52px, 5.4vw, 88px)';
-            const emojiSize =
-              wn === 1 ? 'clamp(60px, 7vw, 100px)'
-              : wn === 2 ? 'clamp(50px, 5.6vw, 80px)'
-              : 'clamp(34px, 3.6vw, 56px)';
-            const nameSize =
-              wn === 1 ? 'clamp(36px, 4.2vw, 64px)'
-              : wn === 2 ? 'clamp(30px, 3.4vw, 50px)'
-              : 'clamp(16px, 1.8vw, 24px)';
-            const subSize =
-              wn === 1 ? 'clamp(18px, 2vw, 28px)'
-              : wn === 2 ? 'clamp(15px, 1.6vw, 22px)'
-              : 'clamp(13px, 1.3vw, 18px)';
-            return (
-              <div
-                style={
-                  isGrid
-                    ? {
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(auto-fit, minmax(${wn >= 4 ? 120 : 140}px, 1fr))`,
-                        gap: 10,
-                        alignItems: 'start',
-                      }
-                    : { display: 'flex', flexDirection: 'column', gap: 16 }
-                }
-              >
-                {winners.map((w, i) => (
-                  <div key={w.teamId} style={{
-                    display: 'flex',
-                    flexDirection: isGrid ? 'column' : 'row',
-                    alignItems: 'center',
-                    gap: isGrid ? 6 : 18,
-                    textAlign: isGrid ? 'center' : 'left',
-                    minWidth: 0,
-                    animation: revealedMinIdx === 0
-                      ? `revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) ${0.2 + i * 0.08}s both`
-                      : 'none',
-                  }}>
-                    <QQTeamAvatar avatarId={w.team.avatarId} size={avatarSize} style={{
-                      flexShrink: 0,
-                      boxShadow: `0 0 20px ${w.team.color}55`,
-                      animation: revealedMinIdx === 0 ? `celebShake 0.6s ease ${0.6 + i * 0.05}s both` : 'none',
-                    }} />
-                    <div style={{ minWidth: 0, flex: isGrid ? '0 0 auto' : 1, width: isGrid ? '100%' : 'auto' }}>
-                      <div style={{
-                        fontSize: nameSize, fontWeight: 900, color: w.team.color, lineHeight: 1.1,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>{w.team.name}</div>
-                      <div style={{
-                        fontSize: subSize, fontWeight: 800, color: '#cbd5e1', marginTop: 4,
-                        fontVariantNumeric: 'tabular-nums',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
-                        {fmt(w.num)}
-                        <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 6 }}>
-                          {w.delta === 0
-                            ? (lang === 'en' ? '· exact!' : '· genau!')
-                            : `· Δ ${fmt(w.delta)}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          {qText}
         </div>
       </div>
 
-      {/* ── Rechte Spalte: Ranking bottom-up (schlechtester zuerst, bester zuletzt) ── */}
+      {/* ── Zeile 2: Grid — links Lösung + Gewinner, rechts Top 5 ── */}
       <div style={{
-        display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
-        justifyContent: 'space-between',
-        minHeight: 0, height: '100%',
+        flex: 1, display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+        gap: 'clamp(16px, 2.4vw, 32px)',
+        minHeight: 0,
       }}>
-          {ranked.map((r, idx) => {
+        {/* Linke Spalte: Lösung oben, Gewinner darunter */}
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          gap: 'clamp(14px, 1.8vh, 22px)',
+          minHeight: 0, minWidth: 0,
+        }}>
+          {/* Lösungs-Hero */}
+          <div style={{
+            flex: '1 1 0', minHeight: 0,
+            padding: 'clamp(16px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+            borderRadius: 28,
+            background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
+            border: '3px solid rgba(34,197,94,0.55)',
+            boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
+            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', top: 0, width: '60%', height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+              animation: 'revealShimmer 0.9s ease 0.55s both',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#86efac',
+              letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75,
+            }}>
+              {lang === 'en' ? 'Answer' : 'Lösung'}
+            </div>
+            <div style={{
+              fontSize: 'clamp(64px, 8vw, 140px)',
+              fontWeight: 900, color: '#86efac', lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+              textShadow: '0 0 28px rgba(34,197,94,0.35)',
+            }}>
+              {fmt(target)}
+            </div>
+          </div>
+
+          {/* Winner-Card — ein Team (schnellstes bei Delta-Tie) */}
+          <div style={{
+            flex: '1 1 0',
+            background: winner ? `linear-gradient(135deg, ${winner.team.color}22, ${winner.team.color}08)` : 'rgba(255,255,255,0.04)',
+            border: winner ? `2.5px solid ${winner.team.color}66` : '2px solid rgba(255,255,255,0.08)',
+            borderRadius: 26,
+            padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
+            boxShadow: winner ? `0 0 36px ${winner.team.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : '0 8px 32px rgba(0,0,0,0.4)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            gap: 10, minHeight: 0, overflow: 'hidden',
+            opacity: revealedMinIdx === 0 ? 1 : 0.12,
+            filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
+            transition: 'opacity 0.7s ease, filter 0.7s ease',
+          }}>
+            <div style={{
+              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+            }}>
+              🏆 {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
+            </div>
+            {!winner ? (
+              <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
+                {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 18,
+                minWidth: 0,
+                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
+              }}>
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(80px, 9vw, 140px)'} style={{
+                  flexShrink: 0,
+                  boxShadow: `0 0 24px ${winner.team.color}66`,
+                  animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
+                }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{
+                    fontSize: 'clamp(28px, 3.4vw, 56px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.1,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{winner.team.name}</div>
+                  <div style={{
+                    fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                    fontVariantNumeric: 'tabular-nums',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {fmt(winner.num)}
+                    <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 6 }}>
+                      {winner.delta === 0
+                        ? (lang === 'en' ? '· exact!' : '· genau!')
+                        : `· Δ ${fmt(winner.delta)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Rechte Spalte: Top 5 Ranking (bottom-up enthüllt) */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
+          minHeight: 0, minWidth: 0,
+        }}>
+          {top5.map((r, idx) => {
             const rank = idx + 1;
             const isVisible = idx >= revealedMinIdx;
             const isTop = rank === 1;
@@ -4735,11 +4687,10 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                     ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
                     : 'none',
                   flex: 1,
-                  minHeight: 'clamp(64px, 8vh, 92px)',
+                  minHeight: 'clamp(72px, 9vh, 110px)',
                   boxShadow: isTop ? `0 0 28px ${r.team.color}33` : 'none',
                 }}
               >
-                {/* Rank-Badge */}
                 <div style={{
                   width: 'clamp(52px, 5vw, 72px)', height: 'clamp(52px, 5vw, 72px)',
                   borderRadius: 16,
@@ -4753,13 +4704,11 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 }}>
                   #{rank}
                 </div>
-                {/* Avatar */}
                 <QQTeamAvatar avatarId={r.team.avatarId} size={'clamp(44px, 4.4vw, 62px)'} style={{
                   boxShadow: `0 0 14px ${r.team.color}66`,
                   flexShrink: 0,
                   animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both` : 'none',
                 }} />
-                {/* Name + Schätzung */}
                 <div style={{ minWidth: 0 }}>
                   <div style={{
                     fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
@@ -4775,7 +4724,6 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                     {fmt(r.num)}
                   </div>
                 </div>
-                {/* Delta-Pille */}
                 <div style={{
                   padding: '6px 14px', borderRadius: 999,
                   background: isTop ? 'rgba(250,204,21,0.18)' : 'rgba(15,23,42,0.6)',
@@ -4791,7 +4739,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               </div>
             );
           })}
-          {ranked.length === 0 && (
+          {top5.length === 0 && (
             <div style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#64748b', fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 700,
@@ -4799,6 +4747,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>
           )}
+        </div>
       </div>
     </div>
   );
@@ -5129,10 +5078,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     return () => window.clearTimeout(t);
   }, [muchoLocked]);
 
-  // ── ZEHN_VON_ZEHN: Step-Reveal — Bet-Cascade + Jäger ─────────────────────
+  // ── ZEHN_VON_ZEHN: Step-Reveal — Bet-Cascade + Doppelblink ──────────────
   // Step 0: alle Chips sichtbar AUSSER höchste(r) Bet(s) pro Option; kein Grün, keine Winner-Card.
   // Step 1: höchste Bets kaskadieren pro Option (leere Optionen überspringen).
-  // Step 2: Jäger hüpft → lockt auf korrekte Option → Grün + Winner-Card.
+  // Step 2: Doppelblink auf korrekte Option → Grün + Winner-Card (analog MUCHO).
   const zvzStep = s.zvzRevealStep ?? 0;
   const zvzHighestPerOption = useMemo(() => {
     if (cat !== 'ZEHN_VON_ZEHN' || !q.options) return [] as Array<{ maxPts: number; teamIds: string[]; isEmpty: boolean }>;
@@ -5164,35 +5113,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     });
     return () => timers.forEach(t => window.clearTimeout(t));
   }, [cat, revealed, zvzStep, zvzNonEmptyOptions.join(','), s.sfxMuted]);
-  // Jäger-Phase (Step 2)
-  const [zvzAkt2Phase, setZvzAkt2Phase] = useState<'idle' | 'hop' | 'lock' | 'speedrun'>('idle');
-  const [zvzAkt2Idx, setZvzAkt2Idx] = useState(-1);
+  // Lock-Phase (Step 2): Doppelblink auf korrekte Option, Winner-Card nach 1.2s
+  const zvzLocked = cat === 'ZEHN_VON_ZEHN' && revealed && zvzStep >= 2 && q.correctOptionIndex != null;
+  const [zvzWinnerReady, setZvzWinnerReady] = useState(false);
   useEffect(() => {
-    if (cat !== 'ZEHN_VON_ZEHN' || !revealed || zvzStep < 2 || q.correctOptionIndex == null) {
-      setZvzAkt2Phase('idle'); setZvzAkt2Idx(-1);
-      return;
-    }
-    const timers: number[] = [];
-    setZvzAkt2Phase('hop'); setZvzAkt2Idx(-1);
-    const hopTargets = zvzNonEmptyOptions.length > 0 ? zvzNonEmptyOptions : (q.options ?? []).map((_, i) => i);
-    const hopPace = 400, startDelay = 250;
-    hopTargets.forEach((idx, i) => {
-      timers.push(window.setTimeout(() => {
-        setZvzAkt2Idx(idx);
-        if (!s.sfxMuted) { try { playTick(); } catch {} }
-      }, startDelay + i * hopPace));
-    });
-    const lockAt = startDelay + hopTargets.length * hopPace;
-    timers.push(window.setTimeout(() => {
-      setZvzAkt2Phase('lock');
-      setZvzAkt2Idx(q.correctOptionIndex!);
-    }, lockAt));
-    timers.push(window.setTimeout(() => {
-      setZvzAkt2Phase('speedrun');
-    }, lockAt + 700));
-    return () => timers.forEach(t => window.clearTimeout(t));
-  }, [cat, revealed, zvzStep, q.correctOptionIndex, zvzNonEmptyOptions.join(','), q.options?.length, s.sfxMuted]);
-  const zvzAkt3Ready = cat === 'ZEHN_VON_ZEHN' ? zvzAkt2Phase === 'speedrun' : true;
+    if (!zvzLocked) { setZvzWinnerReady(false); return; }
+    const t = window.setTimeout(() => setZvzWinnerReady(true), 1200);
+    return () => window.clearTimeout(t);
+  }, [zvzLocked]);
+  const zvzAkt3Ready = cat === 'ZEHN_VON_ZEHN' ? zvzWinnerReady : true;
 
   // ── CHEESE: Step-Reveal — Lösung grün → Avatare ──────────────────────────
   // Step 0: nur Eingaben sichtbar, keine Lösung grün, keine Avatare.
@@ -5765,12 +5694,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
-                // Step-gated reveal: Grün erst nach Jäger-Lock/Speedrun.
-                // Hunter hopst transient grün durch; Dim (isWrong) erst beim Lock.
-                const isCorrectLocked = revealed && (zvzAkt2Phase === 'lock' || zvzAkt2Phase === 'speedrun') && i === q.correctOptionIndex;
-                const isHunterHere = revealed && zvzAkt2Phase === 'hop' && zvzAkt2Idx === i;
-                const isCorrect = isCorrectLocked || isHunterHere;
-                const isWrong = revealed && (zvzAkt2Phase === 'lock' || zvzAkt2Phase === 'speedrun') && i !== q.correctOptionIndex;
+                // Step 2: Doppelblink auf korrekte Option → permanent grün (analog MUCHO).
+                const isCorrect = zvzLocked && i === q.correctOptionIndex;
+                const isWrong = zvzLocked && i !== q.correctOptionIndex;
                 const label = `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
@@ -5778,19 +5704,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
                     borderRadius: 20, padding: '24px 28px',
-                    background: isCorrectLocked ? 'rgba(34,197,94,0.2)'
-                      : isHunterHere ? 'rgba(34,197,94,0.12)'
-                      : cardBg,
+                    background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
-                    boxShadow: isCorrectLocked ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
-                      : isHunterHere ? '0 0 28px rgba(34,197,94,0.45)'
+                    boxShadow: isCorrect
+                      ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                       : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 16,
                     minHeight: optImg?.url ? 100 : 84,
-                    transform: isHunterHere ? 'scale(1.015)' : 'scale(1)',
-                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
-                    animation: isCorrectLocked
-                      ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) both'
+                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+                    animation: isCorrect
+                      ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
                       : isWrong
                         ? 'revealWrongDim 0.4s ease 0.15s both'
                         : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,

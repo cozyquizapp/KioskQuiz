@@ -731,10 +731,10 @@ export default function QQModeratorPage() {
                   const zvzStep = s.zvzRevealStep ?? 0;
                   const zvzInProgress = isZvZ && zvzStep < 2;
                   if (zvzInProgress) {
-                    const label = zvzStep === 0 ? '💰 Höchste Bets zeigen' : '🎯 Jäger starten';
+                    const label = zvzStep === 0 ? '💰 Höchste Bets zeigen' : '✅ Lösung aufdecken';
                     const helper = zvzStep === 0
                       ? 'Zeigt die Top-Bets pro Option kaskadiert'
-                      : 'Jäger springt & zeigt Gewinner';
+                      : 'Doppelblink auf richtige Option (~1.1 s)';
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:zvzRevealStep', { roomCode })} hotkey="Space">

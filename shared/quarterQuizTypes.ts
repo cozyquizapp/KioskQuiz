@@ -392,6 +392,12 @@ export interface QQSoundConfig {
   roundStart?: string;       // new round (phase/round change)
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
+  /**
+   * Pro Slot optional ein Synth-Preset wählen (z.B. 'classic', 'retro', 'chime').
+   * Greift nur, wenn keine Custom-URL gesetzt ist. Fehlt = Default-WAV wie bisher.
+   * Gültige Preset-IDs stehen in `SYNTH_PRESETS` (frontend/src/utils/sounds.ts).
+   */
+  preset?: Partial<Record<QQSoundSlot, string>>;
 }
 
 export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {

@@ -283,29 +283,472 @@ export function stopTimerLoop() {
   }
 }
 
+// ── Synth preset registry ────────────────────────────────────────────────────
+// Pro One-Shot-Slot mehrere Synth-Varianten. Moderator wählt eine per
+// soundConfig.preset[slot] im SoundPanel. Wenn kein Preset gesetzt und keine
+// Custom-URL da → Default-WAV. Wenn Preset gesetzt → dieser Synth (statt WAV).
+
+type SynthVariant = { label: string; play: (ac: AudioContext, t: number) => void };
+type SlotPresets = Record<string, SynthVariant>;
+
+export const SYNTH_PRESETS: Partial<Record<QQSoundSlot, SlotPresets>> = {
+  correct: {
+    classic: {
+      label: 'Klassisch — Arpeggio',
+      play: (ac, t) => {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+          tone(f, 'sine', t + i * 0.07, 0.35, 0.22, 0.01, 0.12, ac));
+      },
+    },
+    chime: {
+      label: 'Chime — Glocke',
+      play: (ac, t) => {
+        tone(1046.5, 'sine', t,        0.5, 0.22, 0.005, 0.4, ac);
+        tone(1567.98,'sine', t + 0.02, 0.5, 0.14, 0.005, 0.4, ac);
+        tone(2093.0, 'sine', t + 0.04, 0.4, 0.08, 0.005, 0.35, ac);
+      },
+    },
+    arcade: {
+      label: 'Arcade — 8-Bit Ding',
+      play: (ac, t) => {
+        tone(880,  'square', t,        0.08, 0.14, 0.004, 0.04, ac);
+        tone(1320, 'square', t + 0.08, 0.08, 0.14, 0.004, 0.04, ac);
+        tone(1760, 'square', t + 0.16, 0.14, 0.14, 0.004, 0.08, ac);
+      },
+    },
+  },
+  wrong: {
+    classic: {
+      label: 'Klassisch — Sawtooth',
+      play: (ac, t) => {
+        tone(180, 'sawtooth', t,        0.18, 0.18, 0.005, 0.14, ac);
+        tone(140, 'sawtooth', t + 0.09, 0.18, 0.14, 0.005, 0.12, ac);
+      },
+    },
+    buzzer: {
+      label: 'Buzzer — Hart',
+      play: (ac, t) => {
+        tone(110, 'square', t,        0.28, 0.24, 0.004, 0.08, ac);
+        tone(82,  'square', t + 0.04, 0.28, 0.20, 0.004, 0.08, ac);
+      },
+    },
+    sadTrombone: {
+      label: 'Sad Trombone',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(392, t);
+        osc.frequency.linearRampToValueAtTime(349.23, t + 0.18);
+        osc.frequency.linearRampToValueAtTime(329.63, t + 0.36);
+        osc.frequency.linearRampToValueAtTime(261.63, t + 0.6);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.22 * masterVolume, t + 0.02);
+        gain.gain.linearRampToValueAtTime(0, t + 0.7);
+        osc.start(t);
+        osc.stop(t + 0.75);
+      },
+    },
+  },
+  timesUp: {
+    classic: {
+      label: 'Klassisch — Swoop',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(380, t);
+        osc.frequency.exponentialRampToValueAtTime(110, t + 0.45);
+        gain.gain.setValueAtTime(0.32 * masterVolume, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.5);
+        osc.start(t); osc.stop(t + 0.55);
+        tone(75, 'sine', t + 0.05, 0.28, 0.22, 0.004, 0.22, ac);
+      },
+    },
+    alarm: {
+      label: 'Alarm — Beep',
+      play: (ac, t) => {
+        for (let i = 0; i < 3; i++) {
+          tone(880, 'square', t + i * 0.15, 0.1, 0.2, 0.004, 0.04, ac);
+        }
+      },
+    },
+    gong: {
+      label: 'Gong — Tief',
+      play: (ac, t) => {
+        tone(65,  'sine',     t, 0.9, 0.3,  0.005, 0.7, ac);
+        tone(130, 'sine',     t, 0.8, 0.2,  0.005, 0.6, ac);
+        tone(195, 'triangle', t, 0.6, 0.1,  0.005, 0.4, ac);
+      },
+    },
+  },
+  fanfare: {
+    classic: {
+      label: 'Klassisch — 4-Ton',
+      play: (ac, t) => {
+        const pattern: [number, number, number][] = [
+          [523.25, 0.0,  0.12],
+          [659.25, 0.12, 0.12],
+          [783.99, 0.24, 0.12],
+          [1046.5, 0.36, 0.28],
+        ];
+        pattern.forEach(([f, o, d]) => tone(f, 'sine', t + o, d, 0.2, 0.01, 0.08, ac));
+      },
+    },
+    trumpet: {
+      label: 'Trompete',
+      play: (ac, t) => {
+        tone(523.25, 'sawtooth', t,        0.14, 0.18, 0.006, 0.06, ac);
+        tone(523.25, 'sawtooth', t + 0.16, 0.14, 0.18, 0.006, 0.06, ac);
+        tone(783.99, 'sawtooth', t + 0.32, 0.18, 0.2,  0.006, 0.08, ac);
+        tone(1046.5, 'sawtooth', t + 0.52, 0.4,  0.22, 0.006, 0.16, ac);
+      },
+    },
+    celebration: {
+      label: 'Feier — Lang',
+      play: (ac, t) => {
+        [523.25, 659.25, 783.99, 987.77, 1046.5, 1318.5].forEach((f, i) =>
+          tone(f, 'sine', t + i * 0.08, 0.35, 0.18, 0.01, 0.2, ac));
+        tone(1975.5, 'triangle', t + 0.4, 0.5, 0.1, 0.01, 0.4, ac);
+      },
+    },
+  },
+  reveal: {
+    classic: {
+      label: 'Klassisch — Sweep',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, t);
+        osc.frequency.exponentialRampToValueAtTime(800, t + 0.35);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2 * masterVolume, t + 0.05);
+        gain.gain.linearRampToValueAtTime(0, t + 0.4);
+        osc.start(t); osc.stop(t + 0.45);
+      },
+    },
+    curtain: {
+      label: 'Vorhang — Slow',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(600, t + 0.8);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18 * masterVolume, t + 0.1);
+        gain.gain.linearRampToValueAtTime(0, t + 0.9);
+        osc.start(t); osc.stop(t + 0.95);
+      },
+    },
+    drumroll: {
+      label: 'Drumroll + Ding',
+      play: (ac, t) => {
+        for (let i = 0; i < 12; i++) {
+          tone(120 + Math.random() * 40, 'square', t + i * 0.04, 0.03, 0.08, 0.002, 0.02, ac);
+        }
+        tone(1046.5, 'sine',     t + 0.55, 0.3, 0.22, 0.01, 0.2, ac);
+        tone(1567.98,'triangle', t + 0.55, 0.3, 0.12, 0.01, 0.2, ac);
+      },
+    },
+  },
+  fieldPlaced: {
+    classic: {
+      label: 'Klassisch — Thump',
+      play: (ac, t) => {
+        tone(110, 'sine', t,        0.12, 0.28, 0.004, 0.1,  ac);
+        tone(220, 'sine', t,        0.1,  0.2,  0.004, 0.08, ac);
+        tone(660, 'sine', t + 0.04, 0.2,  0.14, 0.005, 0.16, ac);
+        tone(1320,'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
+      },
+    },
+    satisfying: {
+      label: 'Snap — Knackig',
+      play: (ac, t) => {
+        tone(180, 'sine',   t,        0.08, 0.26, 0.003, 0.06, ac);
+        tone(880, 'triangle', t + 0.02, 0.12, 0.2,  0.003, 0.09, ac);
+        tone(1760,'sine',   t + 0.04, 0.18, 0.1,  0.003, 0.14, ac);
+      },
+    },
+    stamp: {
+      label: 'Stempel — Bass',
+      play: (ac, t) => {
+        tone(55,  'sine', t, 0.3, 0.35, 0.004, 0.22, ac);
+        tone(110, 'sine', t, 0.2, 0.25, 0.004, 0.14, ac);
+        tone(440, 'triangle', t + 0.04, 0.12, 0.12, 0.004, 0.08, ac);
+      },
+    },
+  },
+  teamReveal: {
+    classic: {
+      label: 'Klassisch — Thump',
+      play: (ac, t) => {
+        tone(110, 'sine', t,        0.12, 0.28, 0.004, 0.1,  ac);
+        tone(220, 'sine', t,        0.1,  0.2,  0.004, 0.08, ac);
+        tone(660, 'sine', t + 0.04, 0.2,  0.14, 0.005, 0.16, ac);
+        tone(1320,'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
+      },
+    },
+    slam: {
+      label: 'Slam — Hart',
+      play: (ac, t) => {
+        tone(50,  'sine',     t, 0.4, 0.4, 0.003, 0.32, ac);
+        tone(100, 'sine',     t, 0.3, 0.3, 0.003, 0.24, ac);
+        tone(800, 'triangle', t + 0.05, 0.2, 0.14, 0.003, 0.14, ac);
+      },
+    },
+    drumHit: {
+      label: 'Drum + Ring',
+      play: (ac, t) => {
+        tone(65,  'sine',     t, 0.25, 0.32, 0.003, 0.2, ac);
+        tone(1760,'sine',     t + 0.02, 0.45, 0.12, 0.005, 0.38, ac);
+        tone(2637,'triangle', t + 0.02, 0.4,  0.06, 0.005, 0.34, ac);
+      },
+    },
+  },
+  steal: {
+    classic: {
+      label: 'Klassisch — Whoosh',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1400, t);
+        osc.frequency.exponentialRampToValueAtTime(280, t + 0.28);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.22 * masterVolume, t + 0.02);
+        gain.gain.linearRampToValueAtTime(0, t + 0.32);
+        osc.start(t); osc.stop(t + 0.35);
+        tone(440, 'triangle', t + 0.28, 0.1,  0.2,  0.005, 0.08, ac);
+        tone(880, 'triangle', t + 0.36, 0.18, 0.18, 0.005, 0.14, ac);
+      },
+    },
+    zap: {
+      label: 'Zap — Elektrisch',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(2400, t);
+        osc.frequency.exponentialRampToValueAtTime(200, t + 0.18);
+        gain.gain.setValueAtTime(0.24 * masterVolume, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.22);
+        osc.start(t); osc.stop(t + 0.25);
+      },
+    },
+    laser: {
+      label: 'Laser — Sci-Fi',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1800, t);
+        osc.frequency.exponentialRampToValueAtTime(150, t + 0.22);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2 * masterVolume, t + 0.01);
+        gain.gain.linearRampToValueAtTime(0, t + 0.26);
+        osc.start(t); osc.stop(t + 0.28);
+        tone(110, 'sine', t + 0.22, 0.1, 0.18, 0.004, 0.08, ac);
+      },
+    },
+  },
+  lobbyWelcome: {
+    classic: {
+      label: 'Klassisch — Aufsteigend',
+      play: (ac, t) => {
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) =>
+          tone(f, 'sine', t + i * 0.13, 0.45, 0.16 - i * 0.02, 0.01, 0.32, ac));
+      },
+    },
+    warm: {
+      label: 'Warm — Chord',
+      play: (ac, t) => {
+        [261.63, 329.63, 392.0, 523.25].forEach(f =>
+          tone(f, 'sine', t, 1.2, 0.12, 0.2, 0.8, ac));
+      },
+    },
+    cheerful: {
+      label: 'Cheerful — Bell',
+      play: (ac, t) => {
+        [523.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) =>
+          tone(f, 'triangle', t + i * 0.09, 0.55, 0.15, 0.005, 0.4, ac));
+      },
+    },
+  },
+  questionStart: {
+    classic: {
+      label: 'Klassisch — Sparkle',
+      play: (ac, t) => {
+        tone(783.99, 'triangle', t,        0.14, 0.16, 0.006, 0.10, ac);
+        tone(1046.5, 'triangle', t + 0.09, 0.22, 0.18, 0.006, 0.14, ac);
+        tone(1567.98,'sine',     t + 0.09, 0.18, 0.08, 0.006, 0.14, ac);
+      },
+    },
+    ping: {
+      label: 'Ping — Einfach',
+      play: (ac, t) => {
+        tone(1318.5, 'sine',     t, 0.3, 0.22, 0.004, 0.24, ac);
+        tone(1975.5, 'triangle', t, 0.3, 0.08, 0.004, 0.24, ac);
+      },
+    },
+    pop: {
+      label: 'Pop — Kurz',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(1200, t + 0.08);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2 * masterVolume, t + 0.01);
+        gain.gain.linearRampToValueAtTime(0, t + 0.12);
+        osc.start(t); osc.stop(t + 0.15);
+      },
+    },
+  },
+  roundStart: {
+    classic: {
+      label: 'Klassisch — Bass+3-Ton',
+      play: (ac, t) => {
+        tone(110,     'sine',     t,        0.20, 0.28, 0.004, 0.14, ac);
+        tone(587.33,  'triangle', t + 0.05, 0.18, 0.18, 0.006, 0.12, ac);
+        tone(880.00,  'triangle', t + 0.18, 0.18, 0.18, 0.006, 0.12, ac);
+        tone(1174.66, 'triangle', t + 0.31, 0.30, 0.20, 0.006, 0.18, ac);
+        tone(1760.00, 'sine',     t + 0.31, 0.28, 0.08, 0.006, 0.18, ac);
+      },
+    },
+    bells: {
+      label: 'Triple Bell',
+      play: (ac, t) => {
+        for (let i = 0; i < 3; i++) {
+          tone(1046.5, 'sine',     t + i * 0.18, 0.5, 0.18, 0.006, 0.4, ac);
+          tone(1567.98,'triangle', t + i * 0.18, 0.5, 0.1,  0.006, 0.4, ac);
+        }
+      },
+    },
+    intro: {
+      label: 'Intro — Whoosh+Fanfare',
+      play: (ac, t) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, t);
+        osc.frequency.exponentialRampToValueAtTime(1200, t + 0.35);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18 * masterVolume, t + 0.05);
+        gain.gain.linearRampToValueAtTime(0, t + 0.4);
+        osc.start(t); osc.stop(t + 0.45);
+        tone(523.25, 'triangle', t + 0.38, 0.2, 0.2, 0.006, 0.14, ac);
+        tone(1046.5, 'triangle', t + 0.55, 0.4, 0.22, 0.006, 0.2, ac);
+      },
+    },
+  },
+  gameOver: {
+    classic: {
+      label: 'Klassisch — Extended Fanfare',
+      play: (ac, t) => {
+        const pattern: [number, number, number][] = [
+          [523.25, 0.0,  0.15],
+          [659.25, 0.15, 0.15],
+          [783.99, 0.30, 0.15],
+          [1046.5, 0.45, 0.35],
+          [783.99, 0.80, 0.12],
+          [1046.5, 0.92, 0.5],
+        ];
+        pattern.forEach(([f, o, d]) => tone(f, 'sine', t + o, d, 0.22, 0.01, 0.08, ac));
+      },
+    },
+    victory: {
+      label: 'Victory — Major',
+      play: (ac, t) => {
+        tone(523.25, 'sine', t,       0.2, 0.22, 0.008, 0.08, ac);
+        tone(659.25, 'sine', t + 0.2, 0.2, 0.22, 0.008, 0.08, ac);
+        tone(783.99, 'sine', t + 0.4, 0.2, 0.22, 0.008, 0.08, ac);
+        // Final chord
+        [523.25, 659.25, 783.99, 1046.5].forEach(f =>
+          tone(f, 'sine', t + 0.6, 1.0, 0.18, 0.01, 0.7, ac));
+      },
+    },
+    epic: {
+      label: 'Epic — Bass-Hit',
+      play: (ac, t) => {
+        tone(55,  'sine', t, 1.2, 0.4, 0.01, 0.9, ac);
+        tone(110, 'sine', t, 1.0, 0.3, 0.01, 0.8, ac);
+        [523.25, 659.25, 783.99].forEach((f, i) =>
+          tone(f, 'sawtooth', t + 0.2 + i * 0.15, 0.3, 0.2, 0.01, 0.14, ac));
+        [1046.5, 1318.5, 1567.98].forEach((f, i) =>
+          tone(f, 'sine', t + 0.65 + i * 0.05, 1.1, 0.18, 0.01, 0.8, ac));
+      },
+    },
+  },
+};
+
+// ── Slot dispatch ────────────────────────────────────────────────────────────
+// Kanal-Auflösung pro Slot:
+//   1. enabled[slot] === false      → stumm
+//   2. soundConfig[slot] = Custom-URL → File abspielen (Upload gewinnt immer)
+//   3. preset[slot] gesetzt         → Synth-Variante (überspringt Default-WAV)
+//   4. Default-WAV existiert        → File abspielen
+//   5. sonst                        → classic-Synth als letzter Fallback
+
+function playSlotOneShot(slot: QQSoundSlot) {
+  if (!isSlotEnabled(slot)) return;
+  const custom = soundConfig[slot];
+  if (typeof custom === 'string' && custom.length > 0) {
+    playAudioFile(custom);
+    return;
+  }
+  const presetKey = soundConfig.preset?.[slot];
+  const presets = SYNTH_PRESETS[slot];
+  if (presetKey && presets?.[presetKey]) {
+    const ac = getCtx();
+    if (!ac) return;
+    presets[presetKey].play(ac, ac.currentTime);
+    return;
+  }
+  const defUrl = QQ_SOUND_DEFAULT_URLS[slot];
+  if (defUrl && defUrl.length > 0) {
+    playAudioFile(defUrl);
+    return;
+  }
+  if (presets?.classic) {
+    const ac = getCtx();
+    if (!ac) return;
+    presets.classic.play(ac, ac.currentTime);
+  }
+}
+
+/** Einmalig einen bestimmten Preset direkt abspielen (für Live-Preview im Panel). */
+export function playSynthPreset(slot: QQSoundSlot, presetKey: string) {
+  const presets = SYNTH_PRESETS[slot];
+  const variant = presets?.[presetKey];
+  if (!variant) return;
+  const ac = getCtx();
+  if (!ac) return;
+  variant.play(ac, ac.currentTime);
+}
+
 // ── One-shot sounds ───────────────────────────────────────────────────────────
 
-export function playCorrect() {
-  if (!isSlotEnabled('correct')) return;
-  const url = resolveSlotUrl('correct');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const freqs = [523.25, 659.25, 783.99, 1046.5];
-  freqs.forEach((f, i) => tone(f, 'sine', t + i * 0.07, 0.35, 0.22, 0.01, 0.12, ac));
-}
-
-export function playWrong() {
-  if (!isSlotEnabled('wrong')) return;
-  const url = resolveSlotUrl('wrong');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  tone(180, 'sawtooth', t, 0.18, 0.18, 0.005, 0.14, ac);
-  tone(140, 'sawtooth', t + 0.09, 0.18, 0.14, 0.005, 0.12, ac);
-}
+export function playCorrect()      { playSlotOneShot('correct'); }
+export function playWrong()        { playSlotOneShot('wrong'); }
+export function playTimesUp()      { playSlotOneShot('timesUp'); }
+export function playFanfare()      { playSlotOneShot('fanfare'); }
+export function playReveal()       { playSlotOneShot('reveal'); }
+export function playFieldPlaced()  { playSlotOneShot('fieldPlaced'); }
+export function playTeamReveal()   { playSlotOneShot('teamReveal'); }
+export function playSteal()        { playSlotOneShot('steal'); }
+export function playLobbyWelcome() { playSlotOneShot('lobbyWelcome'); }
 
 export function playTick() {
   // Ticks never have custom overrides — they're too frequent
@@ -323,133 +766,12 @@ export function playUrgentTick() {
   tone(1100, 'square', t + 0.1, 0.06, 0.13, 0.003, 0.04, ac);
 }
 
-export function playTimesUp() {
-  if (!isSlotEnabled('timesUp')) return;
-  const url = resolveSlotUrl('timesUp');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.connect(gain);
-  gain.connect(ac.destination);
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(380, t);
-  osc.frequency.exponentialRampToValueAtTime(110, t + 0.45);
-  gain.gain.setValueAtTime(0.32 * masterVolume, t);
-  gain.gain.linearRampToValueAtTime(0, t + 0.5);
-  osc.start(t);
-  osc.stop(t + 0.55);
-  tone(75, 'sine', t + 0.05, 0.28, 0.22, 0.004, 0.22, ac);
-}
-
-export function playFanfare() {
-  if (!isSlotEnabled('fanfare')) return;
-  const url = resolveSlotUrl('fanfare');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const pattern: [number, number, number][] = [
-    [523.25, 0.0, 0.12],
-    [659.25, 0.12, 0.12],
-    [783.99, 0.24, 0.12],
-    [1046.5, 0.36, 0.28],
-  ];
-  pattern.forEach(([f, offset, dur]) => tone(f, 'sine', t + offset, dur, 0.2, 0.01, 0.08, ac));
-}
-
-export function playReveal() {
-  if (!isSlotEnabled('reveal')) return;
-  const url = resolveSlotUrl('reveal');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.connect(gain);
-  gain.connect(ac.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(200, t);
-  osc.frequency.exponentialRampToValueAtTime(800, t + 0.35);
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.2 * masterVolume, t + 0.05);
-  gain.gain.linearRampToValueAtTime(0, t + 0.4);
-  osc.start(t);
-  osc.stop(t + 0.45);
-}
-
 export function playScoreUp() {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
   tone(880, 'sine', t, 0.12, 0.18, 0.005, 0.08, ac);
   tone(1108.73, 'sine', t + 0.1, 0.14, 0.15, 0.005, 0.1, ac);
-}
-
-export function playFieldPlaced() {
-  if (!isSlotEnabled('fieldPlaced')) return;
-  const url = resolveSlotUrl('fieldPlaced');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  tone(110, 'sine', t, 0.12, 0.28, 0.004, 0.1, ac);
-  tone(220, 'sine', t, 0.1, 0.2, 0.004, 0.08, ac);
-  tone(660, 'sine', t + 0.04, 0.2, 0.14, 0.005, 0.16, ac);
-  tone(1320, 'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
-}
-
-export function playTeamReveal() {
-  if (!isSlotEnabled('teamReveal')) return;
-  const url = resolveSlotUrl('teamReveal');
-  if (url) { playAudioFile(url); return; }
-  // Fallback: gleicher Synth wie playFieldPlaced (bis User eigenes Sample hochlädt)
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  tone(110, 'sine', t, 0.12, 0.28, 0.004, 0.1, ac);
-  tone(220, 'sine', t, 0.1, 0.2, 0.004, 0.08, ac);
-  tone(660, 'sine', t + 0.04, 0.2, 0.14, 0.005, 0.16, ac);
-  tone(1320, 'triangle', t + 0.06, 0.18, 0.07, 0.004, 0.14, ac);
-}
-
-export function playSteal() {
-  if (!isSlotEnabled('steal')) return;
-  const url = resolveSlotUrl('steal');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.connect(gain);
-  gain.connect(ac.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1400, t);
-  osc.frequency.exponentialRampToValueAtTime(280, t + 0.28);
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.22 * masterVolume, t + 0.02);
-  gain.gain.linearRampToValueAtTime(0, t + 0.32);
-  osc.start(t);
-  osc.stop(t + 0.35);
-  tone(440, 'triangle', t + 0.28, 0.1, 0.2, 0.005, 0.08, ac);
-  tone(880, 'triangle', t + 0.36, 0.18, 0.18, 0.005, 0.14, ac);
-}
-
-export function playLobbyWelcome() {
-  if (!isSlotEnabled('lobbyWelcome')) return;
-  const url = resolveSlotUrl('lobbyWelcome');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
-  notes.forEach((f, i) =>
-    tone(f, 'sine', t + i * 0.13, 0.45, 0.16 - i * 0.02, 0.01, 0.32, ac)
-  );
 }
 
 /** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent. */
@@ -476,57 +798,6 @@ export function stopLobbyLoop() {
   }
 }
 
-/**
- * Neuer Fragen-/Kategorie-Cue — ein kurzer aufsteigender 2-Ton-Sparkle mit
- * Triangle-Stimmung. Bewusst dezent, damit er pro Frage gut verträglich ist.
- */
-export function playQuestionStart() {
-  if (!isSlotEnabled('questionStart')) return;
-  const url = resolveSlotUrl('questionStart');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Zwei-Ton-Sparkle G5 → C6 mit leichtem Shimmer in der Octave.
-  tone(783.99, 'triangle', t,        0.14, 0.16, 0.006, 0.10, ac);
-  tone(1046.5, 'triangle', t + 0.09, 0.22, 0.18, 0.006, 0.14, ac);
-  tone(1567.98,'sine',     t + 0.09, 0.18, 0.08, 0.006, 0.14, ac);
-}
-
-/**
- * Runden-/Phasenwechsel-Cue — volleres 3-Ton-Motiv mit Bass-Impuls,
- * deutlich unterscheidbar vom Question-Start.
- */
-export function playRoundStart() {
-  if (!isSlotEnabled('roundStart')) return;
-  const url = resolveSlotUrl('roundStart');
-  if (url) { playAudioFile(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Bass-Kick + 3-Ton-Signal D5-A5-D6.
-  tone(110,     'sine',     t,        0.20, 0.28, 0.004, 0.14, ac);
-  tone(587.33,  'triangle', t + 0.05, 0.18, 0.18, 0.006, 0.12, ac);
-  tone(880.00,  'triangle', t + 0.18, 0.18, 0.18, 0.006, 0.12, ac);
-  tone(1174.66, 'triangle', t + 0.31, 0.30, 0.20, 0.006, 0.18, ac);
-  tone(1760.00, 'sine',     t + 0.31, 0.28, 0.08, 0.006, 0.18, ac);
-}
-
-export function playGameOver() {
-  if (!isSlotEnabled('gameOver')) return;
-  const url = resolveSlotUrl('gameOver');
-  if (url) { playAudioFile(url); return; }
-  // Default: extended fanfare (synth fallback)
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  const pattern: [number, number, number][] = [
-    [523.25, 0.0,  0.15],
-    [659.25, 0.15, 0.15],
-    [783.99, 0.30, 0.15],
-    [1046.5, 0.45, 0.35],
-    [783.99, 0.80, 0.12],
-    [1046.5, 0.92, 0.5],
-  ];
-  pattern.forEach(([f, offset, dur]) => tone(f, 'sine', t + offset, dur, 0.22, 0.01, 0.08, ac));
-}
+export function playQuestionStart() { playSlotOneShot('questionStart'); }
+export function playRoundStart()    { playSlotOneShot('roundStart'); }
+export function playGameOver()      { playSlotOneShot('gameOver'); }

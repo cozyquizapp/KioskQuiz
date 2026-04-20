@@ -27,9 +27,9 @@ import {
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
-  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
+  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoForceEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer, qqHotPotatoMarkQualified, qqHotPotatoCheckWinner,
-  qqImposterStart, qqImposterChoose,
+  qqImposterStart, qqImposterChoose, qqImposterForceEliminate,
   qqFlushQuestionToHistory,
   qqSkipCurrentPlacement,
 } from './qqRooms';
@@ -1218,6 +1218,30 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // Manueller Rauswurf: Moderator kickt ein bestimmtes Team aus Hot Potato
+    // (z.B. weil es offline ist oder gegen Regeln verstößt).
+    socket.on('qq:hotPotatoEliminateTeam', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqHotPotatoForceEliminate(room, payload.teamId, hotPotatoTurnExpired(payload.roomCode));
+        const winner = qqHotPotatoCheckWinner(room);
+        if (winner === '' || !room.hotPotatoActiveTeamId) {
+          qqClearHotPotatoTimer(room);
+          qqRevealAnswer(room);
+          qqMarkWrong(room);
+        } else if (winner) {
+          qqClearHotPotatoTimer(room);
+          qqRevealAnswer(room);
+          qqClearBuzz(room);
+          qqMarkCorrect(room, winner);
+        }
+        broadcast(io, payload.roomCode);
+        maybeAutoHotPotato(io, payload.roomCode);
+        if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Imposter / oneOfEight (moderator + team) ───────────────────────────
     socket.on('qq:imposterStart', (payload: { roomCode: string }, ack?: unknown) => {
       try {
@@ -1261,6 +1285,23 @@ export function registerQQHandlers(io: SocketIOServer): void {
         maybeAutoImposter(io, payload.roomCode);
         if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:imposterEliminateTeam', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqImposterForceEliminate(room, payload.teamId);
+        const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
+        if (survivors.length <= 1) {
+          qqRevealAnswer(room);
+          if (survivors.length === 1) qqMarkCorrect(room, survivors);
+          else qqMarkWrong(room);
+        }
+        broadcast(io, payload.roomCode);
+        maybeAutoImposter(io, payload.roomCode);
+        if (room.phase === 'PLACEMENT' && room.pendingFor) maybeAutoPlace(io, payload.roomCode);
+        ok(ack);
       } catch (e) { fail(ack, e); }
     });
 

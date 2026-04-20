@@ -634,6 +634,27 @@ export default function QQModeratorPage() {
                             <> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</>
                           )}
                         </div>
+                        {/* Moderator force-eliminate: liste noch aktiver Teams mit ✕ */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                          {s.teams.filter(t => !s.imposterEliminated.includes(t.id)).map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                if (confirm(`${t.name} aus Imposter-Runde ausschließen?`)) {
+                                  emit('qq:imposterEliminateTeam', { roomCode, teamId: t.id });
+                                }
+                              }}
+                              title={`${t.name} raus`}
+                              style={{
+                                padding: '2px 8px', borderRadius: 999, cursor: 'pointer',
+                                border: `1px solid ${t.color}55`, background: 'transparent',
+                                color: t.color, fontSize: 10, fontWeight: 800, fontFamily: 'inherit',
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                              }}>
+                              {t.name} ✕
+                            </button>
+                          ))}
+                        </div>
                       </>
                     )}
                   </div>
@@ -682,6 +703,27 @@ export default function QQModeratorPage() {
                             Genannt: {s.hotPotatoUsedAnswers.join(', ')}
                           </div>
                         )}
+                        {/* Moderator force-eliminate */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                          {s.teams.filter(t => !s.hotPotatoEliminated.includes(t.id)).map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                if (confirm(`${t.name} aus Hot-Potato-Runde ausschließen?`)) {
+                                  emit('qq:hotPotatoEliminateTeam', { roomCode, teamId: t.id });
+                                }
+                              }}
+                              title={`${t.name} raus`}
+                              style={{
+                                padding: '2px 8px', borderRadius: 999, cursor: 'pointer',
+                                border: `1px solid ${t.color}55`, background: 'transparent',
+                                color: t.color, fontSize: 10, fontWeight: 800, fontFamily: 'inherit',
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                              }}>
+                              {t.name} ✕
+                            </button>
+                          ))}
+                        </div>
                       </>
                     )}
                   </div>
@@ -986,21 +1028,37 @@ export default function QQModeratorPage() {
                   const answer = s.answers.find(a => a.teamId === t.id);
                   const isActive = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
                   const isSchaetz = s.currentQuestion?.category === 'SCHAETZCHEN';
+                  const isOffline = !t.connected;
                   return (
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 10,
-                      border: `2px solid ${s.pendingFor === t.id ? t.color : s.correctTeamId === t.id ? `${t.color}88` : 'rgba(255,255,255,0.07)'}`,
-                      background: s.correctTeamId === t.id ? `${t.color}18` : 'rgba(255,255,255,0.03)',
+                      border: `2px solid ${
+                        s.pendingFor === t.id && isOffline ? '#EF4444'
+                          : s.pendingFor === t.id ? t.color
+                          : isOffline ? 'rgba(239,68,68,0.5)'
+                          : s.correctTeamId === t.id ? `${t.color}88`
+                          : 'rgba(255,255,255,0.07)'
+                      }`,
+                      background: isOffline ? 'rgba(239,68,68,0.08)'
+                        : s.correctTeamId === t.id ? `${t.color}18`
+                        : 'rgba(255,255,255,0.03)',
+                      opacity: isOffline ? 0.85 : 1,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: '#475569', fontWeight: 800, width: 16 }}>{i + 1}</span>
                         <QQTeamAvatar avatarId={t.avatarId} size={30} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontWeight: 800, color: t.color }}>{t.name}</span>
-                            <span style={{ fontSize: 11, color: t.connected ? '#22C55E' : '#EF4444' }}>
-                              {t.connected ? '●' : '○'}
-                            </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 800, color: t.color, textDecoration: isOffline ? 'line-through' : 'none' }}>{t.name}</span>
+                            {isOffline ? (
+                              <span style={{
+                                fontSize: 10, fontWeight: 900, color: '#fff',
+                                background: '#EF4444', padding: '1px 7px', borderRadius: 999,
+                                letterSpacing: 0.3,
+                              }}>⚠ OFFLINE</span>
+                            ) : (
+                              <span style={{ fontSize: 11, color: '#22C55E' }}>●</span>
+                            )}
                             {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
                             {answer && <span style={{ fontSize: 11, color: '#FBBF24' }}>✎ abgegeben</span>}
                           </div>
@@ -1576,6 +1634,19 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
           </Btn>
         );
       })()}
+      {s.pendingAction === 'COMEBACK' && (
+        <Btn
+          small
+          color="#8B5CF6"
+          onClick={() => {
+            if (confirm('Comeback-Klau zurücknehmen? Alle bereits geklauten Felder gehen zurück.')) {
+              emit('qq:comebackUndo', { roomCode, teamId: team.id });
+            }
+          }}
+        >
+          ↩ Comeback zurück
+        </Btn>
+      )}
       <span title="Wenn Team nichts setzen/klauen kann oder will">
         <Btn
           small

@@ -115,6 +115,11 @@ export interface QQRoomState {
   // BEVOR _placementQueue durch Platzierungen leergeshiftet wird). Quelle für die
   // Summary-Stats — nicht aus _placementQueue rekonstruieren.
   _currentQuestionWinners?: string[];
+  // Grid-Snapshot vor Comeback-Steal — erlaubt Undo, auch wenn das Comeback-Team
+  // schon 1 oder mehrere Felder geklaut hat. Beim Abschluss des Comebacks
+  // (alle Felder geklaut ODER Skip) wird das Feld gelöscht.
+  _comebackGridSnapshot?: QQGrid;
+  _comebackStatsSnapshot?: { placementsLeft: number };
   // Sound
   globalMuted: boolean;
   musicMuted: boolean;
@@ -1025,6 +1030,36 @@ export function qqHotPotatoEliminate(room: QQRoomState, onTurnExpire?: () => voi
   return next;
 }
 
+/** Force-eliminate a specific team (nicht unbedingt active). Wird genutzt,
+ *  wenn ein Team offline geht oder der Moderator manuell ausschließt. Falls
+ *  das betroffene Team aktiv war, rückt die Round-Robin zum nächsten Team. */
+export function qqHotPotatoForceEliminate(
+  room: QQRoomState,
+  teamId: string,
+  onTurnExpire?: () => void,
+): string | null {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  if (!room.joinOrder.includes(teamId)) {
+    throw new QQError('NO_SUCH_TEAM', 'Unbekanntes Team.');
+  }
+  if (room.hotPotatoEliminated.includes(teamId)) {
+    throw new QQError('ALREADY_ELIMINATED', 'Team ist bereits raus.');
+  }
+  qqClearHotPotatoTimer(room);
+  room.hotPotatoEliminated.push(teamId);
+  if (room.hotPotatoActiveTeamId === teamId) {
+    const next = nextRoundRobinTeam(room);
+    room.hotPotatoActiveTeamId = next;
+    room.hotPotatoLastAnswer = null;
+    if (next && onTurnExpire) qqStartHotPotatoTurn(room, onTurnExpire);
+  } else if (room.hotPotatoActiveTeamId && onTurnExpire) {
+    // Aktives Team bleibt dran — Timer neu starten.
+    qqStartHotPotatoTurn(room, onTurnExpire);
+  }
+  room.lastActivityAt = Date.now();
+  return room.hotPotatoActiveTeamId;
+}
+
 /** Advance round-robin to next alive team WITHOUT eliminating current. */
 export function qqHotPotatoNext(room: QQRoomState, onTurnExpire?: () => void): string | null {
   assertPhase(room, ['QUESTION_ACTIVE']);
@@ -1194,6 +1229,33 @@ export function qqImposterChoose(
   room.imposterActiveTeamId = nextTeamId;
   room.lastActivityAt = Date.now();
   return { eliminated: false, allWin: false };
+}
+
+/** Force-eliminate a team in Imposter (offline/rule violation). Rückt Round-Robin
+ *  weiter, falls das betroffene Team aktiv war. */
+export function qqImposterForceEliminate(room: QQRoomState, teamId: string): string | null {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  if (!room.joinOrder.includes(teamId)) {
+    throw new QQError('NO_SUCH_TEAM', 'Unbekanntes Team.');
+  }
+  if (room.imposterEliminated.includes(teamId)) {
+    throw new QQError('ALREADY_ELIMINATED', 'Team ist bereits raus.');
+  }
+  room.imposterEliminated.push(teamId);
+  if (room.imposterActiveTeamId === teamId) {
+    const currentPos = room.imposterQueue.indexOf(teamId);
+    let nextTeamId: string | null = null;
+    for (let i = 1; i <= room.imposterQueue.length; i++) {
+      const candidate = room.imposterQueue[(currentPos + i) % room.imposterQueue.length];
+      if (!room.imposterEliminated.includes(candidate) && room.teams[candidate]?.connected) {
+        nextTeamId = candidate;
+        break;
+      }
+    }
+    room.imposterActiveTeamId = nextTeamId;
+  }
+  room.lastActivityAt = Date.now();
+  return room.imposterActiveTeamId;
 }
 
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
@@ -1698,6 +1760,10 @@ export function qqComebackAutoApplySteal(room: QQRoomState): void {
   room.pendingFor     = teamId;
   room.teamPhaseStats[teamId].placementsLeft = count;
   room.comebackStealsDone = [];
+  // Snapshot grid + stats, damit der Moderator auch nach 1-N Steals noch
+  // "Rückgängig" drücken kann (Undo restauriert den Zustand vor dem ersten Klau).
+  room._comebackGridSnapshot  = room.grid.map(r => r.map(c => ({ ...c })));
+  room._comebackStatsSnapshot = { placementsLeft: count };
   room.lastActivityAt = Date.now();
 }
 
@@ -1724,7 +1790,10 @@ export function qqApplyComebackChoice(
   room.lastActivityAt = Date.now();
 }
 
-/** Undo a comeback action choice — only allowed if nothing was executed yet. */
+/** Undo a comeback action choice — restaures grid + stats via snapshot
+ *  if der Moderator während des Klau-Zuges zurücknimmt. Bei der neuen
+ *  Auto-Steal-Mechanik heißt Undo: alle in diesem Zug geklauten Felder
+ *  zurückgeben und dem Team erneut die Auswahl geben. */
 export function qqUndoComebackChoice(room: QQRoomState, teamId: string): void {
   if (room.phase !== 'PLACEMENT' || room.pendingAction !== 'COMEBACK') {
     throw new QQError('INVALID_STATE', 'Comeback kann jetzt nicht zurückgenommen werden.');
@@ -1732,16 +1801,37 @@ export function qqUndoComebackChoice(room: QQRoomState, teamId: string): void {
   if (room.pendingFor !== teamId) {
     throw new QQError('NOT_YOUR_TURN', 'Nur das Comeback-Team kann zurücknehmen.');
   }
-  // PLACE_2 already used one placement? (placementsLeft dropped below 2)
-  const stats = room.teamPhaseStats[teamId];
-  if (room.comebackAction === 'PLACE_2' && stats && stats.placementsLeft < 2) {
-    throw new QQError('ALREADY_STARTED', 'Eine Platzierung wurde schon gemacht.');
-  }
   // SWAP_2 already picked first cell?
   if (room.comebackAction === 'SWAP_2' && room.swapFirstCell) {
     room.swapFirstCell = null; // just clear partial swap, let them re-pick within same action
     room.lastActivityAt = Date.now();
     return;
+  }
+
+  const stats = room.teamPhaseStats[teamId];
+
+  // Neue Mechanik: Snapshot existiert → auch nach 1-N Klau-Schritten zurückgehen.
+  if (room._comebackGridSnapshot) {
+    room.grid = room._comebackGridSnapshot.map(r => r.map(c => ({ ...c })));
+    updateTerritories(room);
+    if (stats && room._comebackStatsSnapshot) {
+      stats.placementsLeft = room._comebackStatsSnapshot.placementsLeft;
+    }
+    room.comebackStealsDone = [];
+    delete room._comebackGridSnapshot;
+    delete room._comebackStatsSnapshot;
+    // Zurück zur COMEBACK_CHOICE-Phase, damit der Moderator die Intro-Schritte
+    // erneut durchlaufen kann (Schritt-Index auf 0 zurück).
+    room.phase = 'COMEBACK_CHOICE';
+    room.comebackAction = null;
+    room.comebackIntroStep = 0;
+    room.lastActivityAt = Date.now();
+    return;
+  }
+
+  // Legacy/PLACE_2: blockieren wenn schon gesetzt wurde
+  if (room.comebackAction === 'PLACE_2' && stats && stats.placementsLeft < 2) {
+    throw new QQError('ALREADY_STARTED', 'Eine Platzierung wurde schon gemacht.');
   }
   // Reset to choice phase so team can pick again
   room.phase = 'COMEBACK_CHOICE';
@@ -1916,6 +2006,10 @@ function finishPlacement(room: QQRoomState): void {
     room.pendingFor    = null;
     room.pendingAction = null;
     room.phase         = 'PLACEMENT';
+    // Comeback ist abgeschlossen (oder geskippt) — Snapshot verwerfen,
+    // damit ein späterer Undo den Finale-Grid nicht retten kann.
+    delete room._comebackGridSnapshot;
+    delete room._comebackStatsSnapshot;
     room.lastActivityAt = Date.now();
     return;
   }

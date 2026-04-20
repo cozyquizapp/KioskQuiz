@@ -2758,7 +2758,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   }
 
   if (!isMyTurn) {
-    const miniCellSize = Math.min(44, Math.floor(280 / s.gridSize));
+    // miniCellSize nur noch für Avatar- und Font-Approximation; das Grid selbst
+    // füllt die Card-Breite per 1fr + aspect-ratio.
+    const miniCellSize = Math.min(48, Math.floor(320 / s.gridSize));
     const myTeam = s.teams.find(tm => tm.id === myTeamId);
 
     return (
@@ -2782,8 +2784,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 {lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board'}
               </div>
               <div style={{
-                display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${miniCellSize}px)`,
-                gap: 3, justifyContent: 'center', marginBottom: 14,
+                display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,
+                gap: 3, width: '100%', marginBottom: 6,
                 padding: 6, borderRadius: 10,
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -2796,7 +2798,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     const isNew = newCells.has(`${r}-${c}`);
                     return (
                       <div key={`${r}-${c}`} style={{
-                        width: miniCellSize, height: miniCellSize, borderRadius: 6,
+                        aspectRatio: '1 / 1', borderRadius: 6,
                         background: cellTeam
                           ? `linear-gradient(135deg, ${cellTeam.color}cc, ${cellTeam.color}88)`
                           : 'rgba(255,255,255,0.04)',
@@ -2817,34 +2819,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={24} /> : null}
+                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(14, Math.floor(miniCellSize * 0.6))} /> : null}
                       </div>
                     );
                   })
                 )}
-              </div>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                {[...s.teams].sort((a, b) => b.largestConnected - a.largestConnected).map((tm, i) => {
-                  const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
-                  return (
-                    <div key={tm.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '5px 12px', borderRadius: 999,
-                      background: tm.id === myTeamId ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${tm.id === myTeamId ? tm.color + '66' : 'rgba(255,255,255,0.08)'}`,
-                      boxShadow: i === 0 ? `0 0 8px ${tm.color}33` : 'none',
-                    }}>
-                      {i === 0 && <span style={{ fontSize: 12 }}>👑</span>}
-                      <QQTeamAvatar avatarId={tm.avatarId} size={16} />
-                      <span style={{ fontSize: 15, fontWeight: 900, color: tm.color }}>
-                        {cellCount} {lang === 'de' ? 'Felder' : 'cells'}
-                      </span>
-                      <span style={{ fontSize: 12, color: `${tm.color}88`, fontWeight: 700 }}>
-                        ({tm.largestConnected} {lang === 'de' ? 'verbunden' : 'connected'})
-                      </span>
-                    </div>
-                  );
-                })}
               </div>
             </>
           )}
@@ -3237,7 +3216,7 @@ function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate;
               #{myRank}
             </div>
             <div style={{ fontSize: 16, color: '#94a3b8', fontWeight: 700 }}>
-              {myTeam.totalCells} {de ? 'Felder' : 'cells'}
+              {myTeam.totalCells} {de ? (myTeam.totalCells === 1 ? 'Feld' : 'Felder') : (myTeam.totalCells === 1 ? 'cell' : 'cells')}
             </div>
           </div>
         )}

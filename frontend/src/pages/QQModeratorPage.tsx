@@ -181,6 +181,12 @@ export default function QQModeratorPage() {
       }
     }
     const muchoRevealInProgress = isMuchoReveal && (s.muchoRevealStep ?? 0) < muchoNonEmptyKey + 1;
+    // ZEHN_VON_ZEHN Step-Reveal (0→1 Bet-Cascade, 1→2 Jäger+Winner)
+    const isZvZReveal = q?.category === 'ZEHN_VON_ZEHN' && s.phase === 'QUESTION_REVEAL';
+    const zvzRevealInProgress = isZvZReveal && (s.zvzRevealStep ?? 0) < 2;
+    // CHEESE Step-Reveal (0→1 Lösung grün, 1→2 Avatare+Winner)
+    const isCheeseReveal = q?.category === 'CHEESE' && s.phase === 'QUESTION_REVEAL';
+    const cheeseRevealInProgress = isCheeseReveal && (s.cheeseRevealStep ?? 0) < 2;
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
@@ -208,6 +214,8 @@ export default function QQModeratorPage() {
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
         else if (muchoRevealInProgress) emitRef.current('qq:muchoRevealStep', { roomCode });
+        else if (zvzRevealInProgress) emitRef.current('qq:zvzRevealStep', { roomCode });
+        else if (cheeseRevealInProgress) emitRef.current('qq:cheeseRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       // COMEBACK_CHOICE: Erklärung Step 0→1→2 progressiv aufdecken
@@ -282,6 +290,8 @@ export default function QQModeratorPage() {
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
         else if (muchoRevealInProgress) emitRef.current('qq:muchoRevealStep', { roomCode });
+        else if (zvzRevealInProgress) emitRef.current('qq:zvzRevealStep', { roomCode });
+        else if (cheeseRevealInProgress) emitRef.current('qq:cheeseRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       else if (s.phase === 'COMEBACK_CHOICE') {
@@ -710,6 +720,42 @@ export default function QQModeratorPage() {
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:muchoRevealStep', { roomCode })} hotkey="Space">
+                          {label}
+                        </PrimaryBtn>
+                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
+                      </div>
+                    );
+                  }
+                  // ── ZEHN_VON_ZEHN: Bet-Cascade + Jäger ──
+                  const isZvZ = qRev?.category === 'ZEHN_VON_ZEHN';
+                  const zvzStep = s.zvzRevealStep ?? 0;
+                  const zvzInProgress = isZvZ && zvzStep < 2;
+                  if (zvzInProgress) {
+                    const label = zvzStep === 0 ? '💰 Höchste Bets zeigen' : '🎯 Jäger starten';
+                    const helper = zvzStep === 0
+                      ? 'Zeigt die Top-Bets pro Option kaskadiert'
+                      : 'Jäger springt & zeigt Gewinner';
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:zvzRevealStep', { roomCode })} hotkey="Space">
+                          {label}
+                        </PrimaryBtn>
+                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
+                      </div>
+                    );
+                  }
+                  // ── CHEESE: Lösung grün → Avatare cascaded ──
+                  const isCheese = qRev?.category === 'CHEESE';
+                  const cheeseStep = s.cheeseRevealStep ?? 0;
+                  const cheeseInProgress = isCheese && cheeseStep < 2;
+                  if (cheeseInProgress) {
+                    const label = cheeseStep === 0 ? '✅ Lösung grün aufdecken' : '👥 Antworten einblenden';
+                    const helper = cheeseStep === 0
+                      ? 'Markiert die richtige Antwort grün'
+                      : 'Team-Avatare erscheinen nacheinander';
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:cheeseRevealStep', { roomCode })} hotkey="Space">
                           {label}
                         </PrimaryBtn>
                         <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>

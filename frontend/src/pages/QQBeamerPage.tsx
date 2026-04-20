@@ -1336,15 +1336,17 @@ function MuchoOptionsReveal({
                 return (
                   <div style={{
                     display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 8,
-                    animation: 'revealAnswerBam 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
                   }}>
                     {voters.map((v, vi) => {
                       const tm = v.team;
                       const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
                       const isFastest = akt3On && isCorrect && vi === 0;
+                      // Kaskade: jeder Voter poppt zeitgesteuert nacheinander rein (180ms Versatz)
+                      const voterDelay = vi * 0.18;
                       return (
                         <div key={tm.id} style={{
                           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                          animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${voterDelay}s both`,
                         }}>
                           <div title={tm.name} style={{
                             position: 'relative',
@@ -3185,7 +3187,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 background: `linear-gradient(135deg, ${winner.team.color}22, rgba(34,197,94,0.18))`,
                 border: `2px solid ${winner.team.color}66`,
                 boxShadow: `0 0 0 3px ${winner.team.color}22`,
-                animation: 'contentReveal 0.5s ease 0.05s both',
+                animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) both',
               }}>
                 <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(44px, 4.5vw, 60px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${winner.team.color}66` }} />
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -3212,22 +3214,40 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               </div>
             )}
             {q.options!.map((optText, optIdx) => {
-              const isCorrect = optIdx === q.correctOptionIndex;
-              const color = isCorrect ? '#22C55E' : (ALLIN_COLORS[optIdx] ?? '#64748b');
+              const isCorrectLocked = optIdx === q.correctOptionIndex;
+              const isHunterHere = false;
+              const showGreen = isCorrectLocked || isHunterHere;
+              const color = showGreen ? '#22C55E' : (ALLIN_COLORS[optIdx] ?? '#64748b');
+              const highestTeamIds = new Set<string>();
+              const highestHidden = false;
               // Team contributions on this option (only teams with >0 pts), sorted desc
               const contribs = parsed
                 .map(p => ({ team: s.teams.find(t => t.id === p.teamId), pts: p.pts[optIdx] ?? 0 }))
                 .filter((c): c is { team: NonNullable<typeof c.team>; pts: number } => !!c.team && c.pts > 0)
                 .sort((a, b) => b.pts - a.pts);
               const totalPts = totalsPerOption[optIdx];
-              const barPct = (totalPts / globalMax) * 100;
+              // Visible contribs (vor Cascade: höchste Bets sind noch versteckt)
+              const visibleContribs = highestHidden
+                ? contribs.filter(c => !highestTeamIds.has(c.team.id))
+                : contribs;
+              const visibleTotal = visibleContribs.reduce((s, c) => s + c.pts, 0);
+              const displayTotal = highestHidden ? visibleTotal : totalPts;
+              const barPct = (displayTotal / globalMax) * 100;
               return (
                 <div key={optIdx} style={{
                   borderRadius: 14, overflow: 'hidden',
-                  background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.035)',
-                  border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
-                  boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
-                  animation: `contentReveal 0.4s ease ${0.1 + optIdx * 0.08}s both`,
+                  background: isCorrectLocked ? 'rgba(34,197,94,0.22)'
+                    : isHunterHere ? 'rgba(34,197,94,0.14)'
+                    : 'rgba(255,255,255,0.035)',
+                  border: showGreen ? '2px solid #22C55E' : '1.5px solid rgba(255,255,255,0.08)',
+                  boxShadow: isCorrectLocked ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
+                    : isHunterHere ? '0 0 28px rgba(34,197,94,0.45)'
+                    : 'none',
+                  transform: isHunterHere ? 'scale(1.015)' : 'scale(1)',
+                  transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+                  animation: isCorrectLocked
+                    ? 'revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+                    : `contentReveal 0.4s ease ${0.1 + optIdx * 0.08}s both`,
                 }}>
                   {/* Row 1: label + total */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
@@ -3237,22 +3257,25 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(16px, 1.9vw, 24px)', fontWeight: 900, color: '#fff',
                       flexShrink: 0,
+                      boxShadow: showGreen ? '0 0 16px rgba(34,197,94,0.6)' : 'none',
+                      transition: 'background 0.3s ease, box-shadow 0.3s ease',
                     }}>
                       {optIdx + 1}
                     </span>
                     <span style={{
                       flex: 1,
                       fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 800,
-                      color: isCorrect ? '#86efac' : '#e2e8f0',
+                      color: isCorrectLocked ? '#86efac' : '#e2e8f0',
                     }}>
                       {optText}
                     </span>
                     <span style={{
                       fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
-                      color: isCorrect ? '#4ade80' : color,
+                      color: isCorrectLocked ? '#4ade80' : color,
                       minWidth: 56, textAlign: 'right',
+                      transition: 'color 0.3s ease',
                     }}>
-                      💰 {totalPts}
+                      💰 {displayTotal}
                     </span>
                   </div>
                   {/* Row 2: stacked bar — each segment = one team's contribution */}
@@ -3265,7 +3288,11 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     display: 'flex',
                   }}>
                     {contribs.map((c, ci) => {
-                      const segPct = totalPts > 0 ? (c.pts / totalPts) * 100 : 0;
+                      const isHighest = highestTeamIds.has(c.team.id);
+                      const hidden = highestHidden && isHighest;
+                      const segPct = displayTotal > 0 ? (c.pts / displayTotal) * 100 : 0;
+                      if (hidden) return null;
+                      const justRevealed = isHighest;
                       return (
                         <div key={c.team.id} style={{
                           width: `${segPct}%`,
@@ -3275,7 +3302,9 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           gap: 4, minWidth: 0, overflow: 'hidden',
                           fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900, color: '#fff',
                           textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-                          animation: `contentReveal 0.5s ease ${0.2 + optIdx * 0.08 + ci * 0.05}s both`,
+                          animation: justRevealed
+                            ? 'muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) both'
+                            : `contentReveal 0.5s ease ${0.2 + optIdx * 0.08 + ci * 0.05}s both`,
                         }}>
                           <QQTeamAvatar avatarId={c.team.avatarId} size={'clamp(14px, 1.5vw, 18px)'} />
                           <span>{c.pts}</span>
@@ -3325,13 +3354,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         );
       })()}
 
-      {/* CHEESE: typed answers with speed for ties */}
+      {/* CHEESE: typed answers with speed for ties — step-based reveal */}
       {q.category === 'CHEESE' && (() => {
         const sorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (sorted[0]?.submittedAt ?? 0);
         const winners = sorted.filter(a => a.teamId === s.correctTeamId);
         const hasTie = winners.length > 1 || sorted.filter(a => {
-          // Count teams with same answer as winner
           if (!s.correctTeamId) return false;
           const winAns = sorted.find(x => x.teamId === s.correctTeamId)?.text?.trim().toLowerCase();
           return winAns && a.text?.trim().toLowerCase() === winAns;
@@ -3343,41 +3371,71 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               const isWinner = a.teamId === s.correctTeamId;
               const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
               if (!team) return null;
+              const greenOn = isWinner;
+              const avatarsOn = true;
+              const avatarDelay = avatarsOn ? i * 0.16 : 0;
               return (
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
                   borderRadius: 14, overflow: 'hidden',
-                  background: isWinner ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.035)',
-                  border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
-                  boxShadow: isWinner ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
+                  background: greenOn ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.035)',
+                  border: greenOn ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  boxShadow: greenOn ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.45s ease ${0.1 + i * 0.08}s both`,
                   minHeight: 60,
+                  transition: 'background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease',
+                  position: 'relative',
                 }}>
+                  {/* Shimmer overlay bei Grün-Enthüllung */}
+                  {greenOn && (
+                    <div aria-hidden style={{
+                      position: 'absolute', inset: 0, pointerEvents: 'none',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.28) 50%, transparent 100%)',
+                      animation: 'revealShimmer 1s ease 0.05s 1 both',
+                    }} />
+                  )}
                   <div style={{
                     width: 'clamp(60px, 6.5vw, 90px)',
-                    background: isWinner ? 'linear-gradient(135deg,#22C55E,#16A34A)' : `${team.color}30`,
-                    borderRight: `2px solid ${isWinner ? 'rgba(34,197,94,0.5)' : team.color + '50'}`,
+                    background: greenOn ? 'linear-gradient(135deg,#22C55E,#16A34A)' : `${team.color}30`,
+                    borderRight: `2px solid ${greenOn ? 'rgba(34,197,94,0.5)' : team.color + '50'}`,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, gap: 2,
+                    transition: 'background 0.35s ease, border-color 0.35s ease',
                   }}>
-                    <QQTeamAvatar avatarId={team.avatarId} size={'clamp(22px, 2.6vw, 34px)'} />
-                    <span style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900, color: isWinner ? '#fff' : team.color, letterSpacing: 0.3 }}>
+                    {avatarsOn
+                      ? (
+                        <div style={{ animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${avatarDelay}s both` }}>
+                          <QQTeamAvatar avatarId={team.avatarId} size={'clamp(22px, 2.6vw, 34px)'} />
+                        </div>
+                      )
+                      : (
+                        <span style={{
+                          width: 'clamp(22px, 2.6vw, 34px)', height: 'clamp(22px, 2.6vw, 34px)',
+                          borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.08)',
+                          border: '1.5px dashed rgba(255,255,255,0.22)',
+                        }} />
+                      )
+                    }
+                    <span style={{ fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900, color: greenOn ? '#fff' : team.color, letterSpacing: 0.3 }}>
                       {team.name}
                     </span>
                   </div>
                   <div style={{
                     flex: 1, padding: '10px 16px',
                     display: 'flex', alignItems: 'center', gap: 12,
+                    position: 'relative',
                   }}>
                     <span style={{
                       flex: 1,
                       fontSize: 'clamp(18px, 2.4vw, 32px)', fontWeight: 900,
-                      color: isWinner ? '#86efac' : '#e2e8f0',
+                      color: greenOn ? '#86efac' : '#e2e8f0',
                       lineHeight: 1.2,
+                      transition: 'color 0.35s ease',
                     }}>
                       {a.text || '—'}
                     </span>
-                    {hasTie && timeSec && (
+                    {hasTie && timeSec && avatarsOn && (
                       <span style={{
                         padding: '4px 10px', borderRadius: 999,
                         background: i === 0 && isWinner ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.28)',
@@ -3385,12 +3443,16 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800,
                         color: i === 0 && isWinner ? '#FBBF24' : '#94a3b8',
                         whiteSpace: 'nowrap',
+                        animation: `contentReveal 0.3s ease ${avatarDelay + 0.2}s both`,
                       }}>
                         {i === 0 && isWinner ? '⚡ ' : ''}{timeSec}s
                       </span>
                     )}
-                    {isWinner && (
-                      <span style={{ fontSize: 'clamp(20px, 2.4vw, 30px)', color: '#4ade80', fontWeight: 900 }}>✓</span>
+                    {greenOn && (
+                      <span style={{
+                        fontSize: 'clamp(20px, 2.4vw, 30px)', color: '#4ade80', fontWeight: 900,
+                        animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                      }}>✓</span>
                     )}
                   </div>
                 </div>
@@ -5043,6 +5105,107 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
 
+  // ── MUCHO: Winner-Card erst nach Jäger-Lock zeigen ──────────────────────
+  // Spiegelt die Akt-2-Timing aus MuchoOptionsReveal (hop + lock + speedrun).
+  // Solange Winner-Card verborgen ist bleibt die Spannungskurve intakt.
+  const muchoNonEmpty = useMemo(() => {
+    if (cat !== 'MUCHO' || !q.options) return 0;
+    let n = 0;
+    for (let i = 0; i < q.options.length; i++) {
+      if (s.answers.some(a => a.text === String(i))) n++;
+    }
+    return n;
+  }, [cat, q.options, s.answers]);
+  const muchoJaegerStep = muchoNonEmpty + 1;
+  const muchoJaegerTriggered = cat === 'MUCHO' && revealed && (s.muchoRevealStep ?? 0) >= muchoJaegerStep;
+  const [muchoAkt3Ready, setMuchoAkt3Ready] = useState(false);
+  useEffect(() => {
+    if (!muchoJaegerTriggered) { setMuchoAkt3Ready(false); return; }
+    const N = q.options?.length ?? 0;
+    const hopPace = 400, startDelay = 250, afterLock = 700;
+    const delayMs = startDelay + N * hopPace + afterLock;
+    const t = window.setTimeout(() => setMuchoAkt3Ready(true), delayMs);
+    return () => window.clearTimeout(t);
+  }, [muchoJaegerTriggered, q.options?.length]);
+
+  // ── ZEHN_VON_ZEHN: Step-Reveal — Bet-Cascade + Jäger ─────────────────────
+  // Step 0: alle Chips sichtbar AUSSER höchste(r) Bet(s) pro Option; kein Grün, keine Winner-Card.
+  // Step 1: höchste Bets kaskadieren pro Option (leere Optionen überspringen).
+  // Step 2: Jäger hüpft → lockt auf korrekte Option → Grün + Winner-Card.
+  const zvzStep = s.zvzRevealStep ?? 0;
+  const zvzHighestPerOption = useMemo(() => {
+    if (cat !== 'ZEHN_VON_ZEHN' || !q.options) return [] as Array<{ maxPts: number; teamIds: string[]; isEmpty: boolean }>;
+    const parsed = s.answers
+      .map(a => ({ teamId: a.teamId, pts: String(a.text ?? '').split(',').map(x => parseInt(x.trim(), 10)) }))
+      .filter(p => p.pts.length === q.options!.length && !p.pts.some(Number.isNaN));
+    return q.options!.map((_, i) => {
+      const entries = parsed.map(p => ({ teamId: p.teamId, pts: p.pts[i] ?? 0 })).filter(e => e.pts > 0);
+      if (entries.length === 0) return { maxPts: 0, teamIds: [], isEmpty: true };
+      const maxPts = Math.max(...entries.map(e => e.pts));
+      return { maxPts, teamIds: entries.filter(e => e.pts === maxPts).map(e => e.teamId), isEmpty: false };
+    });
+  }, [cat, q.options, s.answers]);
+  const zvzNonEmptyOptions = useMemo(() => zvzHighestPerOption.map((h, i) => (h.isEmpty ? -1 : i)).filter(i => i >= 0), [zvzHighestPerOption]);
+  const [zvzRevealed, setZvzRevealed] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    if (cat !== 'ZEHN_VON_ZEHN' || !revealed) { setZvzRevealed(new Set()); return; }
+    if (zvzStep === 0) { setZvzRevealed(new Set()); return; }
+    // Step 1+: kaskadieren; sobald Step 1 aktiv sind alle höchsten Bets (nacheinander) sichtbar.
+    const timers: number[] = [];
+    setZvzRevealed(new Set());
+    zvzNonEmptyOptions.forEach((optIdx, i) => {
+      timers.push(window.setTimeout(() => {
+        setZvzRevealed(prev => {
+          const next = new Set(prev); next.add(optIdx); return next;
+        });
+        if (!s.sfxMuted) { try { playTick(); } catch {} }
+      }, 200 + i * 550));
+    });
+    return () => timers.forEach(t => window.clearTimeout(t));
+  }, [cat, revealed, zvzStep, zvzNonEmptyOptions.join(','), s.sfxMuted]);
+  // Jäger-Phase (Step 2)
+  const [zvzAkt2Phase, setZvzAkt2Phase] = useState<'idle' | 'hop' | 'lock' | 'speedrun'>('idle');
+  const [zvzAkt2Idx, setZvzAkt2Idx] = useState(-1);
+  useEffect(() => {
+    if (cat !== 'ZEHN_VON_ZEHN' || !revealed || zvzStep < 2 || q.correctOptionIndex == null) {
+      setZvzAkt2Phase('idle'); setZvzAkt2Idx(-1);
+      return;
+    }
+    const timers: number[] = [];
+    setZvzAkt2Phase('hop'); setZvzAkt2Idx(-1);
+    const hopTargets = zvzNonEmptyOptions.length > 0 ? zvzNonEmptyOptions : (q.options ?? []).map((_, i) => i);
+    const hopPace = 400, startDelay = 250;
+    hopTargets.forEach((idx, i) => {
+      timers.push(window.setTimeout(() => {
+        setZvzAkt2Idx(idx);
+        if (!s.sfxMuted) { try { playTick(); } catch {} }
+      }, startDelay + i * hopPace));
+    });
+    const lockAt = startDelay + hopTargets.length * hopPace;
+    timers.push(window.setTimeout(() => {
+      setZvzAkt2Phase('lock');
+      setZvzAkt2Idx(q.correctOptionIndex!);
+    }, lockAt));
+    timers.push(window.setTimeout(() => {
+      setZvzAkt2Phase('speedrun');
+    }, lockAt + 700));
+    return () => timers.forEach(t => window.clearTimeout(t));
+  }, [cat, revealed, zvzStep, q.correctOptionIndex, zvzNonEmptyOptions.join(','), q.options?.length, s.sfxMuted]);
+  const zvzAkt3Ready = cat === 'ZEHN_VON_ZEHN' ? zvzAkt2Phase === 'speedrun' : true;
+
+  // ── CHEESE: Step-Reveal — Lösung grün → Avatare ──────────────────────────
+  // Step 0: nur Eingaben sichtbar, keine Lösung grün, keine Avatare.
+  // Step 1: Lösung grün + Shimmer.
+  // Step 2: Team-Avatare kaskadieren.
+  const cheeseStep = s.cheeseRevealStep ?? 0;
+  const cheeseShowGreen = cat !== 'CHEESE' || cheeseStep >= 1;
+  const cheeseShowAvatars = cat !== 'CHEESE' || cheeseStep >= 2;
+
+  const showMuchoWinner = cat !== 'MUCHO' || muchoAkt3Ready;
+  const showZvzWinner = cat !== 'ZEHN_VON_ZEHN' || zvzAkt3Ready;
+  const showCheeseWinner = cat !== 'CHEESE' || cheeseShowAvatars;
+  const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner;
+
   // ── CozyGuessr (map) full-screen reveal ─────────────────────────────────
   const isMapReveal = revealed
     && q.category === 'BUNTE_TUETE'
@@ -5602,8 +5765,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
-                const isCorrect = revealed && i === q.correctOptionIndex;
-                const isWrong = revealed && i !== q.correctOptionIndex;
+                // Step-gated reveal: Grün erst nach Jäger-Lock/Speedrun.
+                // Hunter hopst transient grün durch; Dim (isWrong) erst beim Lock.
+                const isCorrectLocked = revealed && (zvzAkt2Phase === 'lock' || zvzAkt2Phase === 'speedrun') && i === q.correctOptionIndex;
+                const isHunterHere = revealed && zvzAkt2Phase === 'hop' && zvzAkt2Idx === i;
+                const isCorrect = isCorrectLocked || isHunterHere;
+                const isWrong = revealed && (zvzAkt2Phase === 'lock' || zvzAkt2Phase === 'speedrun') && i !== q.correctOptionIndex;
                 const label = `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
@@ -5611,14 +5778,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
                     borderRadius: 20, padding: '24px 28px',
-                    background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
+                    background: isCorrectLocked ? 'rgba(34,197,94,0.2)'
+                      : isHunterHere ? 'rgba(34,197,94,0.12)'
+                      : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
-                    boxShadow: isCorrect ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)' : `0 4px 16px rgba(0,0,0,0.3)`,
+                    boxShadow: isCorrectLocked ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
+                      : isHunterHere ? '0 0 28px rgba(34,197,94,0.45)'
+                      : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', alignItems: 'center', gap: 16,
                     minHeight: optImg?.url ? 100 : 84,
-                    transition: 'all 0.3s ease',
-                    animation: isCorrect
-                      ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.25s both'
+                    transform: isHunterHere ? 'scale(1.015)' : 'scale(1)',
+                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+                    animation: isCorrectLocked
+                      ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) both'
                       : isWrong
                         ? 'revealWrongDim 0.4s ease 0.15s both'
                         : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
@@ -5660,8 +5832,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* ZEHN_VON_ZEHN: Bet-Chips UNTER den Options-Cards (volle Breite, nicht
-              über dem Antwort-Text). Eine Zeile pro Option, nur bei Treffern. */}
+          {/* ZEHN_VON_ZEHN: Bet-Chips UNTER den Options-Cards — step-based:
+              Step 0 zeigt alle Bets AUSSER die höchsten pro Option; Step 1 kaskadiert die höchsten rein. */}
           {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
             <div style={{
               width: '100%', maxWidth: 1400,
@@ -5674,30 +5846,47 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   const pts = a.text.split(',').map(n => Number(n) || 0);
                   return { team: s.teams.find(t => t.id === a.teamId), pts: pts[i] ?? 0 };
                 }).filter((b): b is { team: NonNullable<typeof b.team>; pts: number } => !!b.team && b.pts > 0);
+                const highest = zvzHighestPerOption[i];
+                const highestIds = new Set(highest?.teamIds ?? []);
+                const highestVisible = zvzStep >= 1 && zvzRevealed.has(i);
+                const visibleBets = bets.filter(b => !highestIds.has(b.team.id) || highestVisible);
                 return (
                   <div key={`bets-${i}`} style={{
                     display: 'flex', flexWrap: 'wrap', gap: 6,
                     justifyContent: 'center', alignItems: 'center',
                     minHeight: 'clamp(36px, 4.5vw, 54px)',
-                    animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
+                    animation: 'contentReveal 0.5s ease 0.3s both',
                   }}>
-                    {bets.length === 0 ? (
+                    {visibleBets.length === 0 ? (
                       <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#475569', fontStyle: 'italic' }}>—</span>
-                    ) : bets.map(({ team: tm, pts }) => (
-                      <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '3px 12px 3px 3px', borderRadius: 999,
-                        background: 'rgba(0,0,0,0.55)',
-                        border: `2px solid ${tm.color}`,
-                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
-                      }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 3vw, 40px)'} />
-                        <span style={{
-                          fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
-                          color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
-                        }}>{pts}</span>
-                      </div>
-                    ))}
+                    ) : visibleBets.map(({ team: tm, pts }) => {
+                      const isHighest = highestIds.has(tm.id);
+                      const justRevealed = isHighest && highestVisible;
+                      return (
+                        <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: isHighest ? '4px 14px 4px 4px' : '3px 12px 3px 3px',
+                          borderRadius: 999,
+                          background: 'rgba(0,0,0,0.55)',
+                          border: `${isHighest ? 3 : 2}px solid ${tm.color}`,
+                          boxShadow: isHighest
+                            ? `0 3px 14px rgba(0,0,0,0.55), 0 0 18px ${tm.color}aa`
+                            : `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
+                          transform: isHighest ? 'scale(1.08)' : 'scale(1)',
+                          transition: 'transform 0.3s ease',
+                          animation: justRevealed
+                            ? 'muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) both'
+                            : undefined,
+                        }}>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={isHighest ? 'clamp(34px, 3.6vw, 48px)' : 'clamp(28px, 3vw, 40px)'} />
+                          <span style={{
+                            fontSize: isHighest ? 'clamp(16px, 1.9vw, 26px)' : 'clamp(14px, 1.6vw, 22px)',
+                            fontWeight: 900,
+                            color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                          }}>{pts}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -5706,8 +5895,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN + Hot Potato — handled separately).
               Rechts im Feld: Avatare der Teams, die das Richtige getippt haben,
-              sortiert nach Reaktionszeit (schnellster mit ⚡-Krone). */}
+              sortiert nach Reaktionszeit (schnellster mit ⚡-Krone).
+              CHEESE: step-based — erst bei cheeseShowGreen (Step 1) sichtbar; Avatare kaskadieren bei Step 2. */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN'
+            && (q.category !== 'CHEESE' || cheeseShowGreen)
             && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (() => {
               // Korrekte Teams: wir nehmen alle, deren Antwort mit revealedAnswer (oder answerEn)
               // fuzzy matcht (lowercase, whitespace-trim). Bei SCHAETZCHEN gibt's nichts zu matchen →
@@ -5759,20 +5950,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }}>
                     {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
                   </span>
-                  {correctTeams.length > 0 && (
+                  {correctTeams.length > 0 && (q.category !== 'CHEESE' || cheeseShowAvatars) && (
                     <div style={{
                       display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                       gap: 12, flexWrap: 'wrap',
                       flexShrink: 0, width: '100%',
                       position: 'relative', zIndex: 1,
-                      animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
                     }}>
                       {correctTeams.map((ct, vi) => {
                         const timeSec = t0 ? Math.max(0, (ct.submittedAt - t0) / 1000) : null;
                         const isFastest = vi === 0;
+                        // CHEESE: jedes Team poppt zeitgesteuert (160ms Versatz); andere Kategorien bleiben bei bisheriger Animation.
+                        const isCheeseCascade = q.category === 'CHEESE' && cheeseShowAvatars;
+                        const cascadeDelay = isCheeseCascade ? vi * 0.16 : 0.6;
+                        const avatarAnim = isCheeseCascade
+                          ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${cascadeDelay}s both`
+                          : `revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) ${cascadeDelay}s both`;
                         return (
                           <div key={ct.team.id} style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                            animation: avatarAnim,
                           }}>
                             <div style={{ position: 'relative', display: 'inline-block' }}>
                               <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
@@ -6274,7 +6471,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           })()}
 
           {/* Correct team — winner banner (non-Schätzchen) */}
-          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (() => {
+          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && showUnifiedWinner && (() => {
             const isEn = lang === 'en';
             const bannerDelay = 0.7;
             const avatarDelay = 1.1;
@@ -6425,7 +6622,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           })()}
 
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
-          {revealed && s.correctTeamId && (
+          {revealed && s.correctTeamId && showUnifiedWinner && (
             <div style={{ animation: 'contentReveal 0.01s ease 0.8s both' }}>
               <ConfettiOverlay />
             </div>

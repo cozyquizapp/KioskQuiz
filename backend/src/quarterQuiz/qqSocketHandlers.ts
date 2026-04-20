@@ -1650,6 +1650,42 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── ZEHN_VON_ZEHN Step-Reveal (Moderator steuert Bet-Cascade + Jäger) ──
+    // Step 0 → 1: höchste Bets pro Option kaskadieren (frontend-seitig).
+    // Step 1 → 2: Jäger-Animation + Winner-Card zeigen.
+    socket.on('qq:zvzRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const q = room.currentQuestion;
+        const isZvZ = q?.category === 'ZEHN_VON_ZEHN';
+        if (room.phase !== 'QUESTION_REVEAL' || !isZvZ) { ok(ack); return; }
+        const maxStep = 2;
+        if (room.zvzRevealStep < maxStep) {
+          room.zvzRevealStep += 1;
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── CHEESE Step-Reveal (Moderator steuert Lösung-Grün + Avatar-Cascade) ──
+    // Step 0 → 1: Lösung grün markieren + Shimmer.
+    // Step 1 → 2: Team-Avatare einzeln kaskadiert einblenden + Winner-Card.
+    socket.on('qq:cheeseRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const q = room.currentQuestion;
+        const isCheese = q?.category === 'CHEESE';
+        if (room.phase !== 'QUESTION_REVEAL' || !isCheese) { ok(ack); return; }
+        const maxStep = 2;
+        if (room.cheeseRevealStep < maxStep) {
+          room.cheeseRevealStep += 1;
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── 2D/3D Toggle (moderator -> beamer) ─────────────────────────────────
     socket.on('qq:toggleView', (payload: { roomCode: string }, ack?: unknown) => {
       try {

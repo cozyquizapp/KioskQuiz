@@ -489,6 +489,10 @@ export interface QQStateUpdate {
   // 0 = Antwort aufgedeckt ohne Voter, 1..k = Voter der k-ten nicht-leeren Option,
   // k+1 = „Jäger starten" (Akt 2+3 laufen auf Beamer zeitgesteuert)
   muchoRevealStep: number;
+  // ZEHN_VON_ZEHN Step-Reveal: 0=Default-Chips sichtbar, 1=höchste Bets cascaded, 2=Jäger+Winner
+  zvzRevealStep: number;
+  // CHEESE Step-Reveal: 0=nur Eingaben sichtbar, 1=Lösung grün, 2=Avatare+Winner
+  cheeseRevealStep: number;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;

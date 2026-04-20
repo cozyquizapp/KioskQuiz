@@ -223,6 +223,13 @@ export const QQ_BEAMER_CSS = `
     70%  { transform: scale(0.98); filter: brightness(1.05); }
     100% { transform: scale(1); filter: brightness(1); }
   }
+  /* Kaskade: Team-Avatare poppen einzeln auf die Option — leichter Magnet-Drop von oben mit Bounce + Glow */
+  @keyframes muchoVoterDrop {
+    0%   { opacity: 0; transform: translateY(-28px) scale(0.55) rotate(-8deg); filter: brightness(1.8) drop-shadow(0 0 12px rgba(255,255,255,0.4)); }
+    55%  { opacity: 1; transform: translateY(4px) scale(1.08) rotate(1.5deg); filter: brightness(1.15) drop-shadow(0 0 6px rgba(255,255,255,0.2)); }
+    75%  { transform: translateY(-2px) scale(0.96) rotate(-0.5deg); filter: brightness(1.05); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  }
   @keyframes revealFlash {
     0%   { opacity: 0.6; }
     100% { opacity: 0; }

@@ -79,6 +79,16 @@ export interface QQRoomState {
   // 1..k = Voter der k-ten nicht-leeren Option eingeblendet (leere Options werden übersprungen)
   // k+1 = „Jäger starten" → Akt 2+3 laufen frontend-seitig zeitgesteuert ab
   muchoRevealStep: number;
+  // ZEHN_VON_ZEHN — moderator-gesteuerter Step-Reveal analog MUCHO
+  // 0 = alle Chips sichtbar außer höchstem Bet pro Option, keine Grün-Markierung
+  // 1 = höchste Bets pro Option 1/2/3 zeitgesteuert kaskadiert
+  // 2 = „Jäger starten" → Jäger-Animation + Winner-Card frontend-seitig
+  zvzRevealStep: number;
+  // CHEESE — moderator-gesteuerter Step-Reveal
+  // 0 = nur die Eingaben sichtbar, keine Lösung grün, keine Avatare
+  // 1 = Lösung grün + Shimmer
+  // 2 = Avatare cascaded + Winner-Card
+  cheeseRevealStep: number;
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
@@ -202,6 +212,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       _mapRevealTimerHandle: null,
       comebackIntroStep: 0,
       muchoRevealStep: 0,
+      zvzRevealStep: 0,
+      cheeseRevealStep: 0,
       _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
@@ -584,6 +596,8 @@ export function qqActivateQuestion(
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
   // MUCHO Akt-1-Step — pro Frage bei 0 starten
   room.muchoRevealStep = 0;
+  room.zvzRevealStep = 0;
+  room.cheeseRevealStep = 0;
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
@@ -1854,6 +1868,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     mapRevealStep:    room.mapRevealStep,
     comebackIntroStep: room.comebackIntroStep,
     muchoRevealStep:  room.muchoRevealStep,
+    zvzRevealStep:    room.zvzRevealStep,
+    cheeseRevealStep: room.cheeseRevealStep,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     schedule:         room.questions.map(q => ({
@@ -2014,6 +2030,8 @@ export function qqResetRoom(room: QQRoomState): void {
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
   room.comebackIntroStep     = 0;
   room.muchoRevealStep       = 0;
+  room.zvzRevealStep         = 0;
+  room.cheeseRevealStep      = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

@@ -164,6 +164,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   mapRevealStep: 0,
   comebackIntroStep: 0,
   muchoRevealStep: 0,
+  zvzRevealStep: 0,
+  cheeseRevealStep: 0,
 };
 
 const MOCK_QUESTION_BASE = {

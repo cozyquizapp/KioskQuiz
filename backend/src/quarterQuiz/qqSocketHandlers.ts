@@ -18,7 +18,7 @@ import {
   ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
-  qqChooseFreeAction, qqApplyComebackChoice, qqSwapCells,
+  qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
   qqSwapOneCell, qqFreezeCell, qqStuckCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
@@ -654,9 +654,9 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
 }
 
 /**
- * Wenn COMEBACK_CHOICE + pendingFor ist ein Dummy, wähle automatisch
- * PLACE_2 (einfachste Comeback-Action, kein SWAP-Doppelklick nötig).
- * Danach greift maybeAutoPlace automatisch.
+ * Wenn COMEBACK_CHOICE + pendingFor ist ein Dummy, starte automatisch die
+ * Klau-Aktion (fix vom Führenden) nach kurzer Verzögerung. Keine Wahl mehr
+ * zwischen PLACE_2/STEAL_1/SWAP_2 – einheitlich Steal.
  */
 export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
@@ -672,7 +672,7 @@ export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): v
     if (!live || live.phase !== 'COMEBACK_CHOICE') return;
     if (live.pendingFor !== teamId) return;
     try {
-      qqApplyComebackChoice(live, teamId, 'PLACE_2');
+      qqComebackAutoApplySteal(live);
       broadcastQQ(io, roomCode);
       maybeAutoPlace(io, roomCode);
     } catch { /* skip */ }
@@ -815,9 +815,23 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     } else if (action === 'STEAL_1') {
       if (!oppFree.length) { skipStuckDummy(); return; }
       mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
-    } else if (action === 'FREE' || action === 'COMEBACK') {
-      // FREE/COMEBACK: bevorzugt setzen (Cluster wachsen), sonst klauen.
-      // Bei PLACE_2 nutzen Dummies dasselbe, COMEBACK über PLACE_2 ausgelöst.
+    } else if (action === 'COMEBACK') {
+      // Comeback: fix Klauen vom Führenden. Nur Leader-Territorium erlaubt,
+      // bei ≥2 Leadern nicht zweimal vom selben Team.
+      const targets = live.comebackStealTargets ?? [];
+      const done = live.comebackStealsDone ?? [];
+      const allowedOwners = new Set(
+        targets.length >= 2 ? targets.filter(id => !done.includes(id)) : targets
+      );
+      const leaderCells = oppFree.filter(c => {
+        const ownerId = live.grid[c.row]?.[c.col]?.ownerId;
+        return ownerId != null && allowedOwners.has(ownerId);
+      });
+      if (!leaderCells.length) { skipStuckDummy(); return; }
+      mode = 'steal';
+      target = pickSmartSteal(live, teamId, leaderCells) ?? leaderCells[0];
+    } else if (action === 'FREE') {
+      // FREE: bevorzugt setzen (Cluster wachsen), sonst klauen.
       if (free.length) { mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0]; }
       else if (oppFree.length) { mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0]; }
       else { skipStuckDummy(); return; }
@@ -1615,13 +1629,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     // ── Comeback Intro Step (moderator steuert Erklärung Schritt für Schritt) ─
+    // Steps: 0 = was ist Comeback, 1 = warum DIESES Team, 2 = Aktion erklären
+    // (wie viele Felder klauen, von wem). Der Space-Druck bei Step 2 startet
+    // automatisch die Klau-Aktion (qqComebackAutoApplySteal) – keine
+    // PLACE_2/STEAL_1/SWAP_2-Auswahl mehr.
     socket.on('qq:comebackIntroStep', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
         if (room.phase !== 'COMEBACK_CHOICE') { ok(ack); return; }
-        const maxStep = 2; // 0=was ist das, 1=warum diese Team, 2=Optionen
+        const maxStep = 2;
         if (room.comebackIntroStep < maxStep) {
           room.comebackIntroStep += 1;
+          broadcast(io, payload.roomCode);
+        } else {
+          qqComebackAutoApplySteal(room);
           broadcast(io, payload.roomCode);
         }
         ok(ack);

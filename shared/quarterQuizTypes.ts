@@ -451,6 +451,11 @@ export interface QQStateUpdate {
   pendingAction: QQPendingAction | null;
   comebackTeamId: string | null;
   comebackAction: QQComebackAction | null;
+  // Comeback-Klau: Team-IDs der aktuellen Führenden, aus deren Territorium
+  // das Comeback-Team klauen darf. Bei 1 Führendem → 2 Felder von dem einen,
+  // bei ≥2 Führenden → genau 1 Feld von jedem.
+  comebackStealTargets: string[];
+  comebackStealsDone: string[];        // bereits beklaute Leader-Teams
   swapFirstCell: { row: number; col: number } | null;  // for SWAP_2 mid-action
   language: QQLanguage;
   // Timer

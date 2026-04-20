@@ -38,6 +38,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   pendingAction: null,
   comebackTeamId: null,
   comebackAction: null,
+  comebackStealTargets: [],
+  comebackStealsDone: [],
   swapFirstCell: null,
   language: 'de',
   timerDurationSec: 20,
@@ -154,6 +156,7 @@ export function makeBuiltinMockState(templateType: QQSlideTemplateType): QQState
       return {
         ...base, phase: 'COMEBACK_CHOICE',
         comebackTeamId: 't2', correctTeamId: 't2', teams: MOCK_TEAMS,
+        comebackStealTargets: ['t1'],
       };
 
     case 'GAME_OVER':

@@ -220,7 +220,9 @@ export default function QQModeratorPage() {
       }
       // COMEBACK_CHOICE: Erklärung Step 0→1→2 progressiv aufdecken
       else if (s.phase === 'COMEBACK_CHOICE') {
-        if ((s.comebackIntroStep ?? 0) < 2) emitRef.current('qq:comebackIntroStep', { roomCode });
+        // Steps 0/1 erklären, Step 2 zeigt die Aktion, nächster Space startet
+        // automatisch den Klau-Flow (Backend entscheidet per comebackIntroStep).
+        emitRef.current('qq:comebackIntroStep', { roomCode });
       }
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
@@ -295,7 +297,9 @@ export default function QQModeratorPage() {
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       else if (s.phase === 'COMEBACK_CHOICE') {
-        if ((s.comebackIntroStep ?? 0) < 2) emitRef.current('qq:comebackIntroStep', { roomCode });
+        // Steps 0/1 erklären, Step 2 zeigt die Aktion, nächster Space startet
+        // automatisch den Klau-Flow (Backend entscheidet per comebackIntroStep).
+        emitRef.current('qq:comebackIntroStep', { roomCode });
       }
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
@@ -1569,26 +1573,19 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.comebackTeamId);
   if (!team || s.comebackAction) return null;
   const step = s.comebackIntroStep ?? 0;
-  if (step < 2) {
-    const label = step === 0 ? '▶ Team zeigen' : '▶ Optionen zeigen';
-    return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
-          📖 Erklärung {step + 1}/3
-        </span>
-        <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
-          {label}
-        </PrimaryBtn>
-      </div>
-    );
-  }
+  const targets: string[] = s.comebackStealTargets ?? [];
+  const stealCount = targets.length === 1 ? 2 : targets.length;
+  const labels = ['▶ Team zeigen', '▶ Aktion zeigen', `⚡ Klau starten (${stealCount} Feld${stealCount === 1 ? '' : 'er'})`];
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <QQTeamAvatar avatarId={team.avatarId} size={26} />
-      <span style={{ fontWeight: 800, color: team.color }}>{team.name} — Comeback:</span>
-      <Btn small color="#22C55E" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'PLACE_2' })}>📍 2 Felder</Btn>
-      <Btn small color="#EF4444" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'STEAL_1' })}>⚡ Klauen</Btn>
-      <Btn small color="#8B5CF6" onClick={() => emit('qq:comebackChoice', { roomCode, teamId: team.id, action: 'SWAP_2' })}>🔄 Tauschen</Btn>
+      <span style={{ fontWeight: 800, color: team.color }}>{team.name}</span>
+      <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
+        📖 Schritt {step + 1}/3
+      </span>
+      <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
+        {labels[Math.min(step, 2)]}
+      </PrimaryBtn>
     </div>
   );
 }

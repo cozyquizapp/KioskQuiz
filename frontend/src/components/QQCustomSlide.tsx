@@ -131,6 +131,8 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   pendingAction: null,
   comebackTeamId: null,
   comebackAction: null,
+  comebackStealTargets: [],
+  comebackStealsDone: [],
   swapFirstCell: null,
   language: 'de',
   timerDurationSec: 20,

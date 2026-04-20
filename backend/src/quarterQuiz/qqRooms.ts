@@ -39,6 +39,10 @@ export interface QQRoomState {
   pendingAction: QQPendingAction | null;
   comebackTeamId: string | null;
   comebackAction: QQComebackAction | null;
+  // Comeback-Klau vom Führenden (fix, keine Wahl mehr): 1 Leader → 2 Felder,
+  // ≥2 gleichauf → 1 Feld von jedem.
+  comebackStealTargets: string[];
+  comebackStealsDone: string[];
   swapFirstCell: { row: number; col: number; ownerId: string } | null;
   language: QQLanguage;
   // Timer
@@ -185,6 +189,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       pendingAction: null,
       comebackTeamId: null,
       comebackAction: null,
+      comebackStealTargets: [],
+      comebackStealsDone: [],
       swapFirstCell: null,
       language: 'both',
       timerDurationSec: 30,
@@ -356,6 +362,8 @@ export function qqStartGame(
   room.pendingAction   = null;
   room.comebackTeamId  = null;
   room.comebackAction  = null;
+  room.comebackStealTargets = [];
+  room.comebackStealsDone   = [];
   room.swapFirstCell   = null;
   room.theme           = theme;
   room.draftId         = draftId;
@@ -1386,6 +1394,20 @@ export function qqStealCell(
     stats.stealsUsed++;
   }
 
+  // Comeback-Klau: nur Leader-Territorium erlaubt, bei ≥2 Leadern zusätzlich
+  // genau 1 pro Leader (kein doppeltes Beklauen eines Teams).
+  const isComeback = action === 'COMEBACK' && room.comebackTeamId === teamId;
+  if (isComeback) {
+    const targets = room.comebackStealTargets ?? [];
+    if (targets.length > 0 && !targets.includes(cell.ownerId)) {
+      throw new QQError('WRONG_TARGET', 'Beim Comeback darf nur aus Führenden-Gebiet geklaut werden.');
+    }
+    if (targets.length >= 2 && (room.comebackStealsDone ?? []).includes(cell.ownerId)) {
+      throw new QQError('ALREADY_STOLEN', 'Von diesem Team wurde bereits geklaut – wähle einen anderen Leader.');
+    }
+  }
+
+  const prevOwner = cell.ownerId;
   cell.ownerId = teamId;
   room.lastPlacedCell = { row, col, teamId, wasSteal: true };
   const jokersAwarded = handleJokerDetection(room, teamId);
@@ -1395,6 +1417,17 @@ export function qqStealCell(
     room.teamPhaseStats[teamId].placementsLeft = jokersAwarded;
     room.pendingAction = 'PLACE_1';
     return { jokersAwarded };
+  }
+
+  // Comeback-Multi-Steal: placementsLeft pro Klau dekrementieren, erst bei 0
+  // die Phase abschließen.
+  if (isComeback) {
+    const stats = room.teamPhaseStats[teamId];
+    if (prevOwner) room.comebackStealsDone = [...(room.comebackStealsDone ?? []), prevOwner];
+    if (stats && stats.placementsLeft > 0) stats.placementsLeft--;
+    if (stats && stats.placementsLeft > 0) {
+      return { jokersAwarded };
+    }
   }
 
   finishPlacement(room);
@@ -1572,13 +1605,52 @@ export function qqTriggerComeback(room: QQRoomState): void {
     ? tiedTeams[Math.floor(Math.random() * tiedTeams.length)]
     : lastTeamId;
 
+  // Führende ermitteln: alle Teams mit maximalem largestConnected (Tiebreak
+  // total ignoriert — Gleichstand auf largest reicht, dann wird von jedem 1
+  // Feld geklaut). Comeback-Team selbst ist per Definition NICHT führend.
+  const leaders = room.joinOrder.filter(id => {
+    const r = territories[id];
+    return r != null && r.largest === maxLargest && id !== comebackTeam;
+  });
+
   room.comebackTeamId    = comebackTeam;
   room.comebackAction    = null;
+  room.comebackStealTargets = leaders;
+  room.comebackStealsDone   = [];
   room.comebackIntroStep = 0;
   room.pendingFor        = comebackTeam;
   room.pendingAction     = 'COMEBACK';
   room.phase             = 'COMEBACK_CHOICE';
   room.lastActivityAt    = Date.now();
+}
+
+/** Startet direkt die Klau-Aktion nach dem letzten Intro-Step. Ersetzt die
+ *  frühere Dreifach-Wahl (PLACE_2/STEAL_1/SWAP_2). Bei 1 Leader → 2 Felder,
+ *  bei ≥2 Leadern → genau 1 Feld von jedem. Das Comeback-Team wählt die
+ *  Zellen aus den Territorien der Leader. */
+export function qqComebackAutoApplySteal(room: QQRoomState): void {
+  assertPhase(room, ['COMEBACK_CHOICE']);
+  const teamId = room.comebackTeamId;
+  if (!teamId) {
+    throw new QQError('INVALID_STATE', 'Kein Comeback-Team gesetzt.');
+  }
+  const targets = room.comebackStealTargets ?? [];
+  if (targets.length === 0) {
+    // Kein Leader (z.B. alle gleichauf mit Comeback-Team) → direkt Finalphase
+    room.pendingFor    = null;
+    room.pendingAction = null;
+    qqBeginPhase(room, room.totalPhases as QQGamePhaseIndex);
+    return;
+  }
+  const count = targets.length === 1 ? 2 : targets.length;
+
+  room.comebackAction = 'STEAL_1';
+  room.phase          = 'PLACEMENT';
+  room.pendingAction  = 'COMEBACK';
+  room.pendingFor     = teamId;
+  room.teamPhaseStats[teamId].placementsLeft = count;
+  room.comebackStealsDone = [];
+  room.lastActivityAt = Date.now();
 }
 
 export function qqApplyComebackChoice(
@@ -1643,6 +1715,8 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.pendingAction   = null;
   room.comebackTeamId  = null;
   room.comebackAction  = null;
+  room.comebackStealTargets = [];
+  room.comebackStealsDone   = [];
   room.swapFirstCell   = null;
   for (const fc of room.frozenCells) {
     const cell = room.grid[fc.row]?.[fc.col];
@@ -1857,6 +1931,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     pendingAction:    room.pendingAction,
     comebackTeamId:   room.comebackTeamId,
     comebackAction:   room.comebackAction,
+    comebackStealTargets: room.comebackStealTargets ?? [],
+    comebackStealsDone:   room.comebackStealsDone ?? [],
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
       : null,
@@ -2031,6 +2107,8 @@ export function qqResetRoom(room: QQRoomState): void {
   room.pendingAction   = null;
   room.comebackTeamId  = null;
   room.comebackAction  = null;
+  room.comebackStealTargets = [];
+  room.comebackStealsDone   = [];
   room.swapFirstCell   = null;
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];

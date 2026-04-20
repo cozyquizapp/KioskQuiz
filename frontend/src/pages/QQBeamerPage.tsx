@@ -6952,10 +6952,18 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
   const teamColor = team?.color ?? '#F59E0B';
   const step = s.comebackIntroStep ?? 0;
-  // Wenn eine Aktion gewaehlt ist, immer die Bestaetigung zeigen (Step wird ignoriert)
-  const showChosen = !!s.comebackAction;
-  const showOptions = step >= 2 && !showChosen;
-  const showTeam    = step >= 1 || showChosen;
+  const targets = s.comebackStealTargets ?? [];
+  const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
+  const stealCount = leaderTeams.length === 1 ? 2 : leaderTeams.length;
+  const showTeam = step >= 1;
+  const showAction = step >= 2;
+
+  const actionTextDe = leaderTeams.length === 1
+    ? `Klaut 2 Felder von ${leaderTeams[0]?.name ?? 'dem Führenden'}.`
+    : `Klaut je 1 Feld von jedem der ${leaderTeams.length} Führenden.`;
+  const actionTextEn = leaderTeams.length === 1
+    ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
+    : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`;
 
   return (
     <div style={{
@@ -6966,7 +6974,6 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies color={`${teamColor}55`} />
 
-      {/* Title — BAM entrance */}
       <div style={{
         fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900,
         color: '#F59E0B', textAlign: 'center',
@@ -6977,8 +6984,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         ⚡ {lang === 'en' ? 'Comeback Chance!' : 'Comeback-Chance!'}
       </div>
 
-      {/* Step 0: Erklärung "Was ist Comeback" */}
-      {step === 0 && !showChosen && (
+      {/* Step 0: Was ist Comeback */}
+      {step === 0 && (
         <div key="intro0" style={{
           maxWidth: 1100, textAlign: 'center',
           padding: '36px 48px', borderRadius: 28,
@@ -6995,8 +7002,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
           <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
             {lang === 'en'
-              ? 'Three options to catch up — place, steal or swap.'
-              : 'Drei Optionen zum Aufholen — setzen, klauen oder tauschen.'}
+              ? 'Catch-up by stealing cells from the current leader(s).'
+              : 'Aufholen durch gezielten Klau beim Führenden.'}
           </div>
         </div>
       )}
@@ -7022,7 +7029,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
             textShadow: `0 0 24px ${teamColor}44`,
           }}>{team.name}</div>
-          {step === 1 && !showChosen && (
+          {step === 1 && (
             <div style={{
               marginTop: 8, padding: '14px 28px', borderRadius: 18,
               background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
@@ -7031,46 +7038,48 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               animation: 'contentReveal 0.45s ease 0.15s both',
             }}>
               {lang === 'en'
-                ? `${team.name} is in last place right now and chooses one of three comeback moves.`
-                : `${team.name} liegt aktuell auf dem letzten Platz und wählt jetzt einen von drei Comeback-Moves.`}
+                ? `${team.name} is in last place right now and gets to strike back.`
+                : `${team.name} liegt aktuell auf dem letzten Platz und darf zurückschlagen.`}
             </div>
           )}
         </div>
       )}
 
-      {/* Step 2: Options */}
-      {showOptions && team && (
+      {/* Step 2: Aktion (Klau-Info + Leader-Anzeige) */}
+      {showAction && team && (
         <div style={{
           width: '100%', maxWidth: 1100,
           animation: 'contentReveal 0.5s ease both',
           position: 'relative', zIndex: 5,
-        }}>
-          <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <ComebackOption icon="📍" label={bt.comeback.place2[lang]} desc={bt.comeback.place2desc[lang]} color="#22C55E" cardBg={cardBg} />
-            <ComebackOption icon="⚡" label={bt.comeback.steal1[lang]}   desc={bt.comeback.steal1desc[lang]}   color="#EF4444" cardBg={cardBg} />
-            <ComebackOption icon="🔄" label={bt.comeback.swap2[lang]} desc={bt.comeback.swap2desc[lang]} color="#8B5CF6" cardBg={cardBg} />
-          </div>
-        </div>
-      )}
-
-      {/* Chosen action confirmation */}
-      {showChosen && team && (
-        <div style={{
-          width: '100%', maxWidth: 1100,
-          animation: 'contentReveal 0.5s ease both',
-          position: 'relative', zIndex: 5,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
         }}>
           <div style={{
-            padding: '32px 48px', borderRadius: 24, textAlign: 'center',
-            background: cardBg, border: `2px solid ${teamColor}44`,
-            boxShadow: `0 0 50px ${teamColor}18, 0 8px 32px rgba(0,0,0,0.5)`,
-            fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 900, color: '#e2e8f0',
-            animation: 'bQuestionIn 0.4s cubic-bezier(0.34,1.4,0.64,1) both',
+            padding: '24px 40px', borderRadius: 22, textAlign: 'center',
+            background: cardBg, border: `2px solid #EF444455`,
+            boxShadow: `0 0 40px rgba(239,68,68,0.2), 0 8px 28px rgba(0,0,0,0.4)`,
+            fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fecaca',
           }}>
-            {s.comebackAction === 'PLACE_2' && bt.comeback.chosenPlace2[lang]}
-            {s.comebackAction === 'STEAL_1' && bt.comeback.chosenSteal1[lang]}
-            {s.comebackAction === 'SWAP_2'  && bt.comeback.chosenSwap2[lang]}
+            ⚡ {lang === 'en' ? actionTextEn : actionTextDe}
           </div>
+          {leaderTeams.length > 0 && (
+            <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {leaderTeams.map(lt => (
+                <div key={lt.id} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  padding: '14px 18px', borderRadius: 16,
+                  background: `${lt.color}18`, border: `2px solid ${lt.color}66`,
+                  boxShadow: `0 0 20px ${lt.color}22`,
+                  minWidth: 120,
+                }}>
+                  <QQTeamAvatar avatarId={lt.avatarId} size={48} />
+                  <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 900, color: lt.color }}>{lt.name}</span>
+                  <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>
+                    {lang === 'en' ? '— 1 cell' : leaderTeams.length === 1 ? '— 2 Felder' : '— 1 Feld'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -7375,7 +7384,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
-  const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  // Tiebreak: bei Gleichstand auf largestConnected entscheidet totalCells;
+  // ist auch das gleich, bleibt der Array-Order stabil (extrem unwahrscheinlich).
+  const sorted = [...s.teams].sort((a, b) =>
+    b.largestConnected - a.largestConnected
+    || b.totalCells - a.totalCells
+  );
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#F59E0B';
 

@@ -551,6 +551,7 @@ export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }
 export interface QQMarkWrongPayload      { roomCode: string; }
+export interface QQUndoMarkCorrectPayload { roomCode: string; }
 export interface QQPlaceCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQStealCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SWAP' | 'STAPEL'; }

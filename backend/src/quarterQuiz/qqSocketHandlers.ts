@@ -5,7 +5,7 @@ import { saveQQGameResult } from '../db/schemas';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
   QQStartGamePayload, QQRevealAnswerPayload, QQShowImagePayload, QQMarkCorrectPayload,
-  QQMarkWrongPayload, QQPlaceCellPayload, QQStealCellPayload,
+  QQMarkWrongPayload, QQUndoMarkCorrectPayload, QQPlaceCellPayload, QQStealCellPayload,
   QQChooseFreeActionPayload, QQComebackChoicePayload, QQSwapCellsPayload,
   QQNextQuestionPayload, QQSetLanguagePayload, QQResetRoomPayload,
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
@@ -17,7 +17,7 @@ import {
 import {
   ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
-  qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqPlaceCell, qqStealCell,
+  qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
   qqSwapOneCell, qqFreezeCell, qqStuckCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
@@ -146,24 +146,25 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   const result = qqEvaluateAnswers(room);
   qqClearBuzz(room);
 
-  // Snapshot ALLER Winner für Summary-Stats — _placementQueue wird später durch
-  // Platzierungen leergeshiftet, daher hier festhalten.
-  room._currentQuestionWinners = [...result.winnerTeamIds];
+  // Bei mehreren Gewinnern nach Antwortzeit sortieren (schnellstes Team zuerst).
+  // Gilt für MUCHO (mehrere richtige Antworten) UND ZEHN_VON_ZEHN (Tiebreak bei
+  // gleichem Bet-Max auf die richtige Option).
+  const sortedWinners = [...result.winnerTeamIds].sort((a, b) => {
+    const aAt = room.answers.find(x => x.teamId === a)?.submittedAt ?? Infinity;
+    const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
+    return aAt - bAt;
+  });
 
-  if (result.winnerTeamIds.length === 1) {
-    room.correctTeamId = result.winnerTeamIds[0];
-  } else if (result.winnerTeamIds.length > 1) {
-    // Multiple correct teams: sort by answer time, fastest first
-    const sorted = result.winnerTeamIds
-      .map(tid => {
-        const ans = room.answers.find(a => a.teamId === tid);
-        return { tid, submittedAt: ans?.submittedAt ?? Infinity };
-      })
-      .sort((a, b) => a.submittedAt - b.submittedAt)
-      .map(e => e.tid);
-    // Store first as correctTeamId, rest in placement queue for startPlacement
-    room.correctTeamId = sorted[0];
-    room['_placementQueue'] = sorted.slice(1);
+  // Snapshot ALLER Winner für Summary-Stats — _placementQueue wird später durch
+  // Platzierungen leergeshiftet, daher hier festhalten. Reihenfolge bleibt
+  // zeitlich sortiert (wichtig für Top-5 / Recap-Anzeigen).
+  room._currentQuestionWinners = sortedWinners;
+
+  if (sortedWinners.length === 1) {
+    room.correctTeamId = sortedWinners[0];
+  } else if (sortedWinners.length > 1) {
+    room.correctTeamId = sortedWinners[0];
+    room['_placementQueue'] = sortedWinners.slice(1);
   }
   // No winner: correctTeamId stays null — moderator can manually mark or mark wrong
 }
@@ -969,6 +970,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
         qqClearBuzz(room);
         // Answers cleared naturally in qqNextQuestion (called inside qqMarkWrong)
         qqMarkWrong(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:undoMarkCorrect', (payload: QQUndoMarkCorrectPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqUndoMarkCorrect(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

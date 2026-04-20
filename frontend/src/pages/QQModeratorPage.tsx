@@ -793,10 +793,20 @@ export default function QQModeratorPage() {
                     );
                   }
                   if (s.correctTeamId) {
+                    const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
                     return (
-                      <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
-                        📍 Felder setzen
-                      </PrimaryBtn>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
+                          📍 Felder setzen
+                        </PrimaryBtn>
+                        <Btn small color="#475569" onClick={() => {
+                          if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
+                            emit('qq:undoMarkCorrect', { roomCode });
+                          }
+                        }}>
+                          ↩ Rückgängig
+                        </Btn>
+                      </div>
                     );
                   }
                   return (
@@ -1518,14 +1528,28 @@ function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roo
 function PlacementControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.pendingFor);
   if (!team) return null;
+  const offline = team.connected === false;
   return (
     <div style={{
-      display: 'flex', gap: 8, alignItems: 'center',
+      display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
       padding: '8px 12px', borderRadius: 10,
-      background: `${team.color}18`, border: `1px solid ${team.color}44`,
+      background: offline ? 'rgba(239,68,68,0.18)' : `${team.color}18`,
+      border: offline ? '2px solid #EF4444' : `1px solid ${team.color}44`,
+      boxShadow: offline ? '0 0 0 3px rgba(239,68,68,0.35)' : undefined,
     }}>
       <QQTeamAvatar avatarId={team.avatarId} size={26} />
-      <span style={{ fontWeight: 800, color: team.color }}>{team.name}</span>
+      <span style={{ fontWeight: 800, color: offline ? '#FCA5A5' : team.color }}>
+        {team.name}
+      </span>
+      {offline && (
+        <span style={{
+          fontSize: 11, fontWeight: 900, color: '#fff',
+          background: '#EF4444', padding: '2px 8px', borderRadius: 999,
+          letterSpacing: 0.4,
+        }}>
+          ⚠ OFFLINE — bitte Skip
+        </span>
+      )}
       <span style={{ fontSize: 12, color: '#94a3b8' }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
       {s.pendingAction === 'FREE' && (
         <>

@@ -339,6 +339,34 @@ export function qqStartGame(
     throw new QQError('WRONG_QUESTION_COUNT', `${phases * 5} Fragen erwartet, ${questions.length} erhalten.`);
   }
 
+  // Validate questions: catch missing correctOptionIndex / options for choice-based
+  // categories BEFORE the game starts — silent failures during reveal are
+  // live-event-killers (no winner emerges, moderator panics).
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const tag = `Frage ${i + 1} (${q.category})`;
+    if (q.category === 'MUCHO') {
+      if (!Array.isArray(q.options) || q.options.length !== 4) {
+        throw new QQError('INVALID_QUESTION', `${tag}: MUCHO benötigt genau 4 Optionen.`);
+      }
+      if (q.correctOptionIndex == null || q.correctOptionIndex < 0 || q.correctOptionIndex > 3) {
+        throw new QQError('INVALID_QUESTION', `${tag}: MUCHO correctOptionIndex fehlt oder außerhalb 0-3.`);
+      }
+    } else if (q.category === 'ZEHN_VON_ZEHN') {
+      if (!Array.isArray(q.options) || q.options.length < 2) {
+        throw new QQError('INVALID_QUESTION', `${tag}: ZEHN_VON_ZEHN benötigt mindestens 2 Optionen.`);
+      }
+      if (q.correctOptionIndex == null || q.correctOptionIndex < 0 || q.correctOptionIndex >= q.options.length) {
+        throw new QQError('INVALID_QUESTION', `${tag}: ZEHN_VON_ZEHN correctOptionIndex fehlt oder außerhalb 0-${q.options.length - 1}.`);
+      }
+    } else if (q.category === 'SCHAETZCHEN') {
+      if (q.targetValue == null || Number.isNaN(q.targetValue)) {
+        throw new QQError('INVALID_QUESTION', `${tag}: SCHAETZCHEN benötigt einen numerischen targetValue.`);
+      }
+    }
+    // BUNTE_TUETE / CHEESE haben eigene Payload-Formen → kein generischer Check.
+  }
+
   const gs = qqGridSize(teamCount);
   room.gridSize = gs;
   room.grid     = buildEmptyGrid(gs);
@@ -1194,7 +1222,14 @@ export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]
   assertPhase(room, ['QUESTION_REVEAL']);
 
   if (Array.isArray(teamIdOrList)) {
-    const sorted = [...teamIdOrList];
+    // Nach Antwortzeit sortieren (schnellstes Team zuerst), damit Placement-Queue
+    // fair bleibt — historisch wurde Array-Reihenfolge vom Caller benutzt, die
+    // bei Hot-Potato/Imposter-Tie-Scenarios zufällig war.
+    const sorted = [...teamIdOrList].sort((a, b) => {
+      const aAt = room.answers.find(x => x.teamId === a)?.submittedAt ?? Infinity;
+      const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
+      return aAt - bAt;
+    });
     room.correctTeamId = sorted[0];
     room['_placementQueue'] = sorted.slice(1);
   } else {
@@ -1208,6 +1243,19 @@ export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]
   const prev = new Set(room._currentQuestionWinners ?? []);
   for (const id of ids) prev.add(id);
   room._currentQuestionWinners = Array.from(prev);
+  room.lastActivityAt = Date.now();
+}
+
+// Undo a winner-mark while still in QUESTION_REVEAL. Moderator safety net for
+// "oops, wrong team" clicks — clears correctTeamId + placement queue + snapshot
+// so the reveal UI returns to "Gewinner wählen" state.
+export function qqUndoMarkCorrect(room: QQRoomState): void {
+  assertPhase(room, ['QUESTION_REVEAL']);
+  room.correctTeamId = null;
+  room.pendingFor    = null;
+  room.pendingAction = null;
+  delete room['_placementQueue'];
+  room._currentQuestionWinners = [];
   room.lastActivityAt = Date.now();
 }
 

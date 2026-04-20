@@ -201,6 +201,40 @@ export default function QQBeamerPage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
 
+  // Beamer-Fullscreen: erst auf User-Geste (Fullscreen-API darf nicht ohne Klick),
+  // danach Nudge-Hint einblenden, falls noch nicht fullscreen.
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(
+    typeof document !== 'undefined' && !!document.fullscreenElement
+  );
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+  const requestFS = useCallback(async () => {
+    try {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) {
+        await el.requestFullscreen();
+      }
+    } catch { /* user cancelled or not supported */ }
+  }, []);
+  // Erste User-Geste auf der Seite → Fullscreen anfordern (einmalig)
+  useEffect(() => {
+    if (isFullscreen) return;
+    const once = () => {
+      requestFS();
+      window.removeEventListener('pointerdown', once);
+      window.removeEventListener('keydown', once);
+    };
+    window.addEventListener('pointerdown', once, { once: true });
+    window.addEventListener('keydown', once, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', once);
+      window.removeEventListener('keydown', once);
+    };
+  }, [isFullscreen, requestFS]);
+
   // Remote-Flyover vom Moderator: simuliere F-Taste, damit interner Listener feuert
   useEffect(() => {
     const sock = socketRef.current;
@@ -260,7 +294,31 @@ export default function QQBeamerPage() {
   }, [state?.draftId]);
 
   if (!state) return <LoadingScreen roomCode={roomCode} connected={connected} />;
-  return <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />;
+  return (
+    <>
+      <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
+      {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
+    </>
+  );
+}
+
+function FullscreenNudge({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Beamer auf Vollbild schalten (F11)"
+      style={{
+        position: 'fixed', top: 14, right: 14, zIndex: 9999,
+        padding: '8px 14px', borderRadius: 10,
+        border: '1px solid rgba(251,191,36,0.5)',
+        background: 'rgba(15,23,42,0.85)', color: '#FBBF24',
+        fontFamily: "'Nunito', system-ui, sans-serif",
+        fontWeight: 900, fontSize: 13, cursor: 'pointer',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
+        animation: 'fsNudgePulse 2.4s ease-in-out infinite',
+      }}
+    >⛶ Vollbild (F11)</button>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -110,6 +110,10 @@ export const QQ_BEAMER_CSS = `
     75%  { opacity: 1; }
     100% { transform: translateY(calc(100vh + 40px)) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
   }
+  @keyframes fsNudgePulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 0 0 0 rgba(251,191,36,0.45); }
+    50%      { box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 0 0 10px rgba(251,191,36,0); }
+  }
   @keyframes celebShake {
     0%, 100% { transform: translateX(0); }
     15% { transform: translateX(-6px) rotate(-1deg); }

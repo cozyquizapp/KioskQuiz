@@ -152,10 +152,23 @@ export default function QQModeratorPage() {
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);
   setSetupDoneRef.current = setSetupDone;
+  const cheatsheetOpenRef = useRef(false);
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
     if (target?.tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+
+    // ? / Shift+/ — Hotkey-Cheatsheet toggle (auch waehrend Pause/Start erlaubt)
+    if (e.key === '?' || (e.shiftKey && e.code === 'Slash')) {
+      e.preventDefault();
+      setCheatsheetOpen(v => !v);
+      return;
+    }
+    if (e.code === 'Escape') {
+      // Escape schliesst zuerst das Cheatsheet, falls offen — normale Esc-Logik bleibt darunter
+      if (cheatsheetOpenRef.current) { setCheatsheetOpen(false); return; }
+    }
+
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const s = stateRef.current;
     if (!s) return;
@@ -381,6 +394,8 @@ export default function QQModeratorPage() {
   const s = state;
   const teamList = s?.teams ?? [];
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
   // Auto-collapse settings when game starts
   const prevPhaseRef = useRef(s?.phase);
   useEffect(() => {
@@ -436,11 +451,25 @@ export default function QQModeratorPage() {
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button
+            onClick={() => setCheatsheetOpen(v => !v)}
+            title="Hotkey-Cheatsheet (?)"
+            style={{
+              padding: '6px 12px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 900, fontSize: 14, lineHeight: 1,
+            }}
+          >? Hotkeys</button>
           <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
             {connected ? '● Verbunden' : '○ Getrennt'}
           </span>
         </div>
       </div>
+
+      {cheatsheetOpen && (
+        <HotkeyCheatsheet onClose={() => setCheatsheetOpen(false)} />
+      )}
 
       {!joined && connected && (
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
@@ -836,18 +865,48 @@ export default function QQModeratorPage() {
                   }
                   if (s.correctTeamId) {
                     const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
+                    const otherTeams = s.teams.filter(t => t.id !== s.correctTeamId);
                     return (
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
-                          📍 Felder setzen
-                        </PrimaryBtn>
-                        <Btn small color="#475569" onClick={() => {
-                          if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
-                            emit('qq:undoMarkCorrect', { roomCode });
-                          }
-                        }}>
-                          ↩ Rückgängig
-                        </Btn>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
+                            📍 Felder setzen
+                          </PrimaryBtn>
+                          <Btn small color="#475569" onClick={() => {
+                            if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
+                              emit('qq:undoMarkCorrect', { roomCode });
+                            }
+                          }}>
+                            ↩ Rückgängig
+                          </Btn>
+                        </div>
+                        {otherTeams.length > 0 && (
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginRight: 4 }}>
+                              ⇄ Gewinner ändern:
+                            </span>
+                            {otherTeams.map(t => (
+                              <button
+                                key={t.id}
+                                onClick={async () => {
+                                  if (!confirm(`Gewinner zu ${t.name} ändern?`)) return;
+                                  await emit('qq:undoMarkCorrect', { roomCode });
+                                  emit('qq:markCorrect', { roomCode, teamId: t.id });
+                                }}
+                                style={{
+                                  padding: '3px 10px', borderRadius: 8,
+                                  border: `1.5px solid ${t.color}88`,
+                                  background: `${t.color}15`, color: t.color,
+                                  fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                                  cursor: 'pointer',
+                                }}
+                                title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
+                              >
+                                {t.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -1069,9 +1128,27 @@ export default function QQModeratorPage() {
                           </div>
                         </div>
                         <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
+                        {/* Rename */}
+                        <button
+                          onClick={() => {
+                            const next = prompt(`Team „${t.name}" umbenennen:`, t.name);
+                            if (next == null) return;
+                            const trimmed = next.trim();
+                            if (!trimmed || trimmed === t.name) return;
+                            emit('qq:renameTeam', { roomCode, teamId: t.id, name: trimmed });
+                          }}
+                          title="Umbenennen"
+                          style={{
+                            padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
+                            border: '1px solid rgba(148,163,184,0.3)', background: 'transparent',
+                            color: '#94a3b8', fontSize: 11, fontFamily: 'inherit',
+                          }}>✎</button>
                         {/* Kick button */}
                         <button
-                          onClick={() => emit('qq:kickTeam', { roomCode, teamId: t.id })}
+                          onClick={() => {
+                            if (!confirm(`Team „${t.name}" wirklich entfernen?`)) return;
+                            emit('qq:kickTeam', { roomCode, teamId: t.id });
+                          }}
                           title="Kick"
                           style={{
                             padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
@@ -2490,6 +2567,24 @@ function LobbyView({
                       </div>
                       <button
                         onClick={() => {
+                          const next = prompt(`Team „${t.name}" umbenennen:`, t.name);
+                          if (next == null) return;
+                          const trimmed = next.trim();
+                          if (!trimmed || trimmed === t.name) return;
+                          emit('qq:renameTeam', { roomCode, teamId: t.id, name: trimmed });
+                        }}
+                        title="Team umbenennen"
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          border: '1px solid rgba(148,163,184,0.35)',
+                          background: 'rgba(148,163,184,0.08)', color: '#cbd5e1',
+                          fontSize: 11, fontWeight: 900, cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >✎</button>
+                      <button
+                        onClick={() => {
                           if (!window.confirm(`Team "${t.name}" entfernen?`)) return;
                           emit('qq:kickTeam', { roomCode, teamId: t.id });
                         }}
@@ -2626,3 +2721,106 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.06)', color: '#e2e8f0',
   fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
 };
+
+// ── Hotkey-Cheatsheet ────────────────────────────────────────────────────────
+
+const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
+  {
+    title: 'Ablauf',
+    rows: [
+      ['Space / F13', 'Nächster Schritt (Kontext-sensitiv)'],
+      ['R / F15', 'Antwort aufdecken'],
+      ['N / F17 / →', 'Nächste Frage (nur in PLACEMENT)'],
+      ['P', 'Pause / Resume'],
+    ],
+  },
+  {
+    title: 'Team als korrekt markieren',
+    rows: [
+      ['1–5', 'Team 1–5 korrekt (im QUESTION_REVEAL)'],
+      ['F14', 'Team 1 korrekt (Buzz-Winner)'],
+      ['Esc / Backspace / F16', 'Niemand korrekt'],
+    ],
+  },
+  {
+    title: 'Beamer & Ton',
+    rows: [
+      ['M', 'Ton an/aus (Musik + SFX)'],
+      ['V', '2D / 3D Grid-Toggle'],
+      ['F', 'Flyover (3D-Grid Kamerafahrt)'],
+    ],
+  },
+  {
+    title: 'Hilfe',
+    rows: [
+      ['?', 'Dieses Cheatsheet öffnen/schließen'],
+      ['Esc', 'Cheatsheet schließen'],
+    ],
+  },
+];
+
+function HotkeyCheatsheet({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: 'min(760px, 100%)', maxHeight: '90vh', overflowY: 'auto',
+          background: '#0f172a', borderRadius: 18,
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          padding: '24px 28px',
+          color: '#e2e8f0', fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>Hotkey-Cheatsheet</h2>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '6px 14px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.06)', color: '#cbd5e1',
+              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
+            }}
+          >Schließen (Esc)</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+          {HOTKEY_GROUPS.map(g => (
+            <div key={g.title}>
+              <div style={{
+                fontSize: 11, fontWeight: 900, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: '#94a3b8', marginBottom: 8,
+              }}>{g.title}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {g.rows.map(([key, desc]) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      minWidth: 110, padding: '3px 10px', borderRadius: 6,
+                      background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+                      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                      fontSize: 12, fontWeight: 800, color: '#fbbf24',
+                      textAlign: 'center',
+                    }}>{key}</span>
+                    <span style={{ fontSize: 13, color: '#cbd5e1' }}>{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 18, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+          StreamDeck: F13–F17 spiegeln Space / #1 / R / Esc / N
+        </div>
+      </div>
+    </div>
+  );
+}

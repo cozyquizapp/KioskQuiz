@@ -9,3 +9,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+
+# QQ state autosave (Recovery nach Crash/Sleep)
+.qq-rooms/
+backend/.qq-rooms/

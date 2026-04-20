@@ -14,8 +14,9 @@ import {
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
 } from '../../../shared/quarterQuizTypes';
+import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
 import {
-  ensureQQRoom, getQQRoom, buildQQStateUpdate, QQError,
+  ensureQQRoom, getQQRoom, insertQQRoom, buildQQStateUpdate, QQError,
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
@@ -25,7 +26,7 @@ import {
   qqUndoComebackChoice,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
-  qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqStartPlacement,
+  qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
   qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoForceEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer, qqHotPotatoMarkQualified, qqHotPotatoCheckWinner,
@@ -58,6 +59,13 @@ export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
   if (room.phase === 'GAME_OVER') persistGameResult(room);
+  // Autosave (debounced). Nach GAME_OVER zusaetzlich Snapshot loeschen, damit der
+  // naechste Serverstart nicht wieder im Danke-Screen landet.
+  if (room.phase === 'GAME_OVER' || room.phase === 'THANKS') {
+    deleteSavedRoom(roomCode).catch(() => {});
+  } else {
+    scheduleSave(room);
+  }
 }
 
 function broadcast(io: SocketIOServer, roomCode: string): void {
@@ -860,6 +868,21 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
 }
 
 export function registerQQHandlers(io: SocketIOServer): void {
+  // Persistente Rooms beim Start wieder einspielen. Fire-and-forget: falls
+  // das Laden scheitert (Permission / parse error), startet der Server normal
+  // mit leerer Map.
+  loadAllRooms().then(restored => {
+    for (const r of restored) {
+      insertQQRoom(r.room);
+      console.log(`[QQ-persist] restored room ${r.room.roomCode} (phase=${r.room.phase})`);
+    }
+    if (restored.length > 0) {
+      console.log(`[QQ-persist] ${restored.length} room(s) restored`);
+    }
+  }).catch(err => {
+    console.warn('[QQ-persist] restore failed:', err?.message ?? err);
+  });
+
   io.on('connection', (socket) => {
 
     // ── Join ────────────────────────────────────────────────────────────────
@@ -1321,6 +1344,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── Rename team (moderator) ────────────────────────────────────────────
+    socket.on('qq:renameTeam', (payload: { roomCode: string; teamId: string; name: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqRenameTeam(room, payload.teamId, payload.name);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Mark funny answer (moderator) ──────────────────────────────────────
     socket.on('qq:markFunny', (payload: { roomCode: string; teamId: string; text: string }, ack?: unknown) => {
       try {
@@ -1600,6 +1633,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqResetRoom(room);
+        deleteSavedRoom(payload.roomCode).catch(() => {});
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

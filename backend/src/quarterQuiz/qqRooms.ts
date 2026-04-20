@@ -176,6 +176,16 @@ export function getQQRoom(roomCode: string): QQRoomState | undefined {
   return qqRooms.get(roomCode);
 }
 
+/** Insert a pre-built room (used by persistence layer to restore state on startup). */
+export function insertQQRoom(room: QQRoomState): void {
+  qqRooms.set(room.roomCode, room);
+}
+
+/** Debug / admin: iterate all rooms. */
+export function getAllQQRooms(): QQRoomState[] {
+  return Array.from(qqRooms.values());
+}
+
 export function ensureQQRoom(roomCode: string): QQRoomState {
   let room = qqRooms.get(roomCode);
   if (!room) {
@@ -306,6 +316,18 @@ export function qqSetTeamConnected(
   if (room.teams[teamId]) {
     room.teams[teamId].connected = connected;
   }
+}
+
+// Moderator-Rename waehrend Lobby/Spiel. Laesst id/color/avatar unveraendert,
+// aendert nur den Display-Namen. Leere oder >40 Zeichen Eingaben werden abgewiesen.
+export function qqRenameTeam(room: QQRoomState, teamId: string, newName: string): void {
+  const t = room.teams[teamId];
+  if (!t) return;
+  const trimmed = (newName ?? '').trim();
+  if (trimmed.length === 0) throw new QQError('INVALID_NAME', 'Team-Name darf nicht leer sein.');
+  if (trimmed.length > 40) throw new QQError('INVALID_NAME', 'Team-Name zu lang (max 40 Zeichen).');
+  t.name = trimmed;
+  room.lastActivityAt = Date.now();
 }
 
 export function qqKickTeam(room: QQRoomState, teamId: string): void {

@@ -8202,8 +8202,53 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
     // Funny answers (random pick from all marked funny answers)
     const allFunny: Array<{ teamName: string; text: string; questionText: string }> = [];
 
+    // ── Neue Stats: Aggregate per Team ─────────────────────────────────────
+    const jokerTotals: Record<string, number> = {};
+    const stealTotals: Record<string, number> = {};
+    // Kategorie-Meister: teamName → category → correct count
+    const catCorrect: Record<string, Record<string, number>> = {};
+    // Bunte-Tüte Hot-Potato: teamName → correct count
+    const potatoCorrect: Record<string, number> = {};
+    // Comeback-King: Team wurde letzter zur Halbzeit aber gewann
+    const comebackWins: Record<string, number> = {};
+    // Perfekte Runden: Team hatte eine komplette Runde korrekt
+    const perfectRounds: Array<{ teamName: string; draftTitle: string; playedAt: number }> = [];
+    // Speed-Demon: kumulative Ränge bei korrekten Antworten (1 = schnellstes korrekt)
+    const speedRankSum: Record<string, number> = {};
+    const speedRankCount: Record<string, number> = {};
+
+    // Heute-Filter
+    const now = Date.now();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const todayStart = startOfDay.getTime();
+    let todayGames = 0;
+    let todayHighlight: { teamName: string; score: number; draftTitle: string } | null = null;
+    const todayWinners: string[] = [];
+
     for (const r of results) {
       const teams = Array.isArray(r.teams) ? r.teams : [];
+      // Today-Filter
+      const isToday = typeof r.playedAt === 'number' && r.playedAt >= todayStart && r.playedAt <= now;
+      if (isToday) {
+        todayGames += 1;
+        if (r.winner) todayWinners.push(r.winner);
+        for (const t of teams) {
+          if (t?.score != null && t.name && (!todayHighlight || t.score > todayHighlight.score)) {
+            todayHighlight = { teamName: t.name, score: t.score, draftTitle: r.draftTitle ?? '' };
+          }
+        }
+      }
+      // Joker / Steal per-team Aggregate
+      for (const t of teams) {
+        if (!t?.name) continue;
+        if (typeof t.jokersEarned === 'number') {
+          jokerTotals[t.name] = (jokerTotals[t.name] || 0) + t.jokersEarned;
+        }
+        if (typeof t.stealsUsed === 'number') {
+          stealTotals[t.name] = (stealTotals[t.name] || 0) + t.stealsUsed;
+        }
+      }
       // Highest score
       for (const t of teams) {
         if (t?.score != null && t.name && (!highestScore || t.score > highestScore.score)) {
@@ -8232,9 +8277,15 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
           }
         }
       }
-      // Fastest answer from questionHistory
+      // Fastest answer from questionHistory + Kategorie-Meister + Hot-Potato-Boss + Speed-Demon
       if (Array.isArray((r as any).questionHistory)) {
-        for (const qh of (r as any).questionHistory) {
+        const qh_arr = (r as any).questionHistory as any[];
+        // teamId → teamName Lookup für diese Partie
+        const idToName: Record<string, string> = {};
+        for (const t of teams) {
+          if (t?.id && t.name) idToName[t.id] = t.name;
+        }
+        for (const qh of qh_arr) {
           if (!Array.isArray(qh?.answers) || qh.answers.length === 0) continue;
           const firstAnswer = qh.answers.reduce((min: any, a: any) =>
             a.submittedAt < min.submittedAt ? a : min, qh.answers[0]);
@@ -8252,6 +8303,95 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
                 questionText: qh.questionText ?? '',
                 ms: speedMs,
               };
+            }
+          }
+
+          // Kategorie-Meister + Hot-Potato-Boss: Korrekte Antworten pro Team + Kategorie zählen
+          const winners: string[] = Array.isArray(qh.correctTeamIds) && qh.correctTeamIds.length > 0
+            ? qh.correctTeamIds
+            : (qh.correctTeamId ? [qh.correctTeamId] : []);
+          const cat: string | undefined = qh.category ?? qh.categoryId;
+          const isHotPotato = cat === 'BUNTE_TUETE' && (qh.bunteTuete?.kind === 'hotPotato');
+          for (const wid of winners) {
+            const wname = idToName[wid] ?? wid;
+            if (cat) {
+              catCorrect[wname] ??= {};
+              catCorrect[wname][cat] = (catCorrect[wname][cat] || 0) + 1;
+            }
+            if (isHotPotato) {
+              potatoCorrect[wname] = (potatoCorrect[wname] || 0) + 1;
+            }
+          }
+
+          // Speed-Demon: welches korrekte Team war das SCHNELLSTE korrekte
+          if (winners.length > 0) {
+            const correctAnswers = qh.answers
+              .filter((a: any) => winners.includes(a.teamId))
+              .sort((a: any, b: any) => a.submittedAt - b.submittedAt);
+            correctAnswers.forEach((a: any, rankIdx: number) => {
+              const tname = a.teamName ?? idToName[a.teamId] ?? a.teamId;
+              speedRankSum[tname] = (speedRankSum[tname] || 0) + (rankIdx + 1);
+              speedRankCount[tname] = (speedRankCount[tname] || 0) + 1;
+            });
+          }
+        }
+
+        // Perfekte Runde: für jede Phase / Runde checken, ob ein Team JEDE Frage korrekt hatte
+        const byPhase: Record<string, any[]> = {};
+        for (const qh of qh_arr) {
+          const phase = String(qh.phase ?? qh.round ?? 0);
+          byPhase[phase] ??= [];
+          byPhase[phase].push(qh);
+        }
+        for (const [phase, qhs] of Object.entries(byPhase)) {
+          if (qhs.length < 3) continue; // zu wenig Fragen = nicht signifikant
+          const teamCorrectCount: Record<string, number> = {};
+          for (const qh of qhs) {
+            const winners: string[] = Array.isArray(qh.correctTeamIds) && qh.correctTeamIds.length > 0
+              ? qh.correctTeamIds
+              : (qh.correctTeamId ? [qh.correctTeamId] : []);
+            for (const wid of winners) {
+              teamCorrectCount[wid] = (teamCorrectCount[wid] || 0) + 1;
+            }
+          }
+          for (const [tid, cnt] of Object.entries(teamCorrectCount)) {
+            if (cnt === qhs.length) {
+              const tname = idToName[tid] ?? tid;
+              perfectRounds.push({
+                teamName: tname,
+                draftTitle: r.draftTitle ?? '',
+                playedAt: r.playedAt ?? 0,
+              });
+            }
+          }
+        }
+
+        // Comeback-King: Team war vor der letzten Runde letzter, gewann dann trotzdem
+        const phases = Object.keys(byPhase).map(p => Number(p)).filter(p => !isNaN(p)).sort((a, b) => a - b);
+        if (phases.length >= 2 && r.winner) {
+          const lastPhase = phases[phases.length - 1];
+          const preLast = phases.slice(0, -1);
+          // Score pro Team bis vor der letzten Runde (über jokersEarned + correct als Proxy)
+          const preScore: Record<string, number> = {};
+          for (const p of preLast) {
+            for (const qh of byPhase[String(p)]) {
+              const winners: string[] = Array.isArray(qh.correctTeamIds) && qh.correctTeamIds.length > 0
+                ? qh.correctTeamIds
+                : (qh.correctTeamId ? [qh.correctTeamId] : []);
+              for (const wid of winners) {
+                const tname = idToName[wid] ?? wid;
+                preScore[tname] = (preScore[tname] || 0) + 1;
+              }
+            }
+          }
+          const preEntries = teams
+            .map((t: any) => ({ name: t?.name, score: preScore[t?.name] ?? 0 }))
+            .filter((x: any) => !!x.name);
+          if (preEntries.length >= 2) {
+            const minScore = Math.min(...preEntries.map((x: any) => x.score));
+            const isLoserBeforeLast = preEntries.some((x: any) => x.name === r.winner && x.score === minScore);
+            if (isLoserBeforeLast && preEntries.length > 2 && minScore < Math.max(...preEntries.map((x: any) => x.score))) {
+              comebackWins[r.winner] = (comebackWins[r.winner] || 0) + 1;
             }
           }
         }
@@ -8294,9 +8434,80 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
     const funnyPicks = allFunny.length <= 3 ? allFunny
       : allFunny.sort(() => Math.random() - 0.5).slice(0, 3);
 
+    // Joker-King / Steal-Master
+    const pickTop = (m: Record<string, number>, min = 1): { teamName: string; total: number } | null => {
+      const sorted = Object.entries(m).sort((a, b) => b[1] - a[1]);
+      if (sorted.length === 0 || sorted[0][1] < min) return null;
+      return { teamName: sorted[0][0], total: sorted[0][1] };
+    };
+    const jokerKing = pickTop(jokerTotals, 1);
+    const stealMaster = pickTop(stealTotals, 1);
+    const potatoBoss = pickTop(potatoCorrect, 2);
+
+    // Kategorie-Meister: Top-3 Teams, für jedes seine stärkste Kategorie
+    const categoryMasters: Array<{ teamName: string; category: string; count: number }> = [];
+    const teamTotals: Array<[string, number]> = Object.entries(catCorrect)
+      .map(([name, cats]) => [name, Object.values(cats).reduce((a, b) => a + b, 0)] as [string, number])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    for (const [name] of teamTotals) {
+      const cats = catCorrect[name];
+      const topCat = Object.entries(cats).sort((a, b) => b[1] - a[1])[0];
+      if (topCat && topCat[1] >= 2) {
+        categoryMasters.push({ teamName: name, category: topCat[0], count: topCat[1] });
+      }
+    }
+
+    // Perfekte Runden: neueste 5
+    const perfectRoundsOut = perfectRounds
+      .sort((a, b) => b.playedAt - a.playedAt)
+      .slice(0, 5)
+      .map(x => ({ teamName: x.teamName, draftTitle: x.draftTitle }));
+
+    // Speed-Demon: Team mit bestem (niedrigstem) durchschnittlichen Rang bei korrekten Antworten,
+    // gewichtet mit mindestens 5 Korrekten um Einzelausreißer zu vermeiden
+    let speedDemon: { teamName: string; avgRank: number; samples: number } | null = null;
+    for (const [name, sum] of Object.entries(speedRankSum)) {
+      const cnt = speedRankCount[name] || 0;
+      if (cnt < 5) continue;
+      const avg = sum / cnt;
+      if (!speedDemon || avg < speedDemon.avgRank) {
+        speedDemon = { teamName: name, avgRank: avg, samples: cnt };
+      }
+    }
+
+    // Comeback-King
+    const comebackKing = pickTop(comebackWins, 1);
+
+    // Underdog: Team mit weniger als 3 Spielen aber mindestens 1 Sieg
+    let underdog: { teamName: string; games: number; wins: number } | null = null;
+    for (const [name, w] of Object.entries(wins)) {
+      const g = gamesPlayed[name] || w;
+      if (g < 3 && w >= 1 && (!underdog || w / g > underdog.wins / underdog.games)) {
+        underdog = { teamName: name, games: g, wins: w };
+      }
+    }
+
+    // Today-Stats
+    let todayStats: { games: number; topScore: { teamName: string; score: number; draftTitle: string } | null; topWinner: { teamName: string; wins: number } | null } | null = null;
+    if (todayGames >= 1) {
+      const twMap: Record<string, number> = {};
+      for (const w of todayWinners) twMap[w] = (twMap[w] || 0) + 1;
+      const tw = Object.entries(twMap).sort((a, b) => b[1] - a[1])[0];
+      todayStats = {
+        games: todayGames,
+        topScore: todayHighlight,
+        topWinner: tw ? { teamName: tw[0], wins: tw[1] } : null,
+      };
+    }
+
     res.json({
       leaderboard, recent, totalGames: results.length,
-      funStats: { highestScore, closestGame, winStreak, mostGames, fastestAnswer, funnyAnswers: funnyPicks },
+      funStats: {
+        highestScore, closestGame, winStreak, mostGames, fastestAnswer, funnyAnswers: funnyPicks,
+        jokerKing, stealMaster, potatoBoss, comebackKing, underdog, speedDemon,
+        categoryMasters, perfectRounds: perfectRoundsOut, todayStats,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: 'Fehler beim Laden des Leaderboards' });

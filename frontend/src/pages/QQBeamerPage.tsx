@@ -7284,6 +7284,29 @@ type FunStats = {
   mostGames: { teamName: string; games: number } | null;
   fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null;
   funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
+  // Erweiterte Stats
+  jokerKing?: { teamName: string; total: number } | null;
+  stealMaster?: { teamName: string; total: number } | null;
+  potatoBoss?: { teamName: string; total: number } | null;
+  comebackKing?: { teamName: string; total: number } | null;
+  underdog?: { teamName: string; games: number; wins: number } | null;
+  speedDemon?: { teamName: string; avgRank: number; samples: number } | null;
+  categoryMasters?: Array<{ teamName: string; category: string; count: number }>;
+  perfectRounds?: Array<{ teamName: string; draftTitle: string }>;
+  todayStats?: {
+    games: number;
+    topScore: { teamName: string; score: number; draftTitle: string } | null;
+    topWinner: { teamName: string; wins: number } | null;
+  } | null;
+};
+
+// Kategorie-Akzente fürs Panel-Design (konsistent mit Beamer-Quiz)
+const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: string }> = {
+  SCHAETZCHEN:   { color: '#EAB308', emoji: '🎯', label: 'Schätzchen' },
+  MUCHO:         { color: '#3B82F6', emoji: '🔤', label: 'Mucho Choice' },
+  BUNTE_TUETE:   { color: '#EF4444', emoji: '🎁', label: 'Bunte Tüte' },
+  ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10' },
+  CHEESE:        { color: '#8B5CF6', emoji: '📸', label: 'Cheese!' },
 };
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
@@ -7374,28 +7397,64 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // All-time leaderboard (nur echte Siege)
+  // All-time leaderboard (nur echte Siege) — Design-Upgrade: Avatare aus Session-Teams
+  // gemappt (wo möglich), Siege als Subway-Stationen (max 8 sichtbar), Dark-Pills.
   const realLeaderboard = leaderboard.filter(e => e.wins > 0);
   if (realLeaderboard.length > 0) {
+    const maxVisibleWins = 8;
+    const maxWins = Math.max(...realLeaderboard.slice(0, 5).map(e => e.wins));
     panels.push({ key: 'leaderboard', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🏆</span> {de ? 'Bestenliste' : 'Leaderboard'}
           {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
-        {realLeaderboard.slice(0, 5).map((entry, i) => (
+        {realLeaderboard.slice(0, 5).map((entry, i) => {
+          const sessionTeam = s.teams.find(t => t.name === entry.name);
+          const teamColor = sessionTeam?.color ?? (i === 0 ? '#FBBF24' : i === 1 ? '#CBD5E1' : i === 2 ? '#F97316' : '#94A3B8');
+          const shown = Math.min(entry.wins, maxVisibleWins);
+          const overflow = entry.wins - shown;
+          return (
           <div key={entry.name} style={{
-            display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0',
+            display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
             borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
           }}>
-            <span style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', width: 48, textAlign: 'center' }}>
+            <span style={{ fontSize: 'clamp(26px, 3vw, 38px)', width: 46, textAlign: 'center', flexShrink: 0 }}>
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
             </span>
-            <span style={{ flex: 1, fontWeight: 800, fontSize: 'clamp(22px, 2.6vw, 32px)', color: '#e2e8f0' }}>{entry.name}</span>
-            <span style={{ fontSize: 'clamp(20px, 2.4vw, 28px)', fontWeight: 700, color: '#F59E0B' }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
-            <span style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#64748b' }}>{entry.games} {de ? 'Spiele' : 'games'}</span>
+            {sessionTeam
+              ? <QQTeamAvatar avatarId={sessionTeam.avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
+              : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#1e293b', flexShrink: 0 }} />
+            }
+            <span style={{
+              flex: 1, fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            }}>{entry.name}</span>
+            {/* Subway-Stationen: ein Dot pro Sieg, skaliert relativ zum Maximum */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, minWidth: 0 }}>
+              {Array.from({ length: shown }).map((_, k) => (
+                <span key={k} style={{
+                  width: 'clamp(8px, 1vw, 12px)', height: 'clamp(8px, 1vw, 12px)',
+                  borderRadius: '50%',
+                  background: teamColor,
+                  boxShadow: `0 0 8px ${teamColor}88`,
+                  opacity: 0.4 + 0.6 * ((k + 1) / maxWins),
+                }} />
+              ))}
+              {overflow > 0 && (
+                <span style={{ color: teamColor, fontWeight: 900, fontSize: 'clamp(13px, 1.4vw, 18px)', marginLeft: 4 }}>+{overflow}</span>
+              )}
+            </div>
+            {/* Dark-Pill mit Siegen */}
+            <span style={{
+              padding: '4px 12px', borderRadius: 999,
+              background: '#111827', border: `1.5px solid ${teamColor}66`,
+              color: teamColor, fontWeight: 900, fontSize: 'clamp(15px, 1.7vw, 21px)',
+              flexShrink: 0,
+            }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
           </div>
-        ))}
+          );
+        })}
       </div>
     )});
   }
@@ -7466,6 +7525,280 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       )});
     }
+  }
+
+  // ── Style-Helpers für die neuen Stat-Panels ──────────────────────────────
+  // Stat-Title in gleichem Look wie die bestehenden Panels
+  const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => (
+    <div style={{
+      fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900,
+      color: accentColor ?? '#e2e8f0',
+      marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14,
+    }}>
+      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>{icon}</span>
+      {de ? titleDe : titleEn}
+    </div>
+  );
+
+  // Dark-Pill im Beamer-Header-Style (bg #111827 + Akzent-Border)
+  const statPill = (value: string | number, label: string, accent = '#FBBF24') => (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 10,
+      padding: '8px 18px', borderRadius: 999,
+      background: '#111827',
+      border: `1.5px solid ${accent}66`,
+      color: '#fff',
+      fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900,
+      boxShadow: `0 0 18px ${accent}22`,
+    }}>
+      <span style={{ color: accent, fontSize: 'clamp(22px, 2.4vw, 30px)', lineHeight: 1 }}>{value}</span>
+      <span style={{ color: '#cbd5e1', fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+    </span>
+  );
+
+  // Big-Team-Line: Avatar + Name (farblich akzentuiert)
+  const teamLine = (name: string, color?: string, avatarId?: string | null) => {
+    const team = s.teams.find(t => t.name === name);
+    const c = color ?? team?.color ?? '#FBBF24';
+    const av = avatarId ?? team?.avatarId;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        {av && <QQTeamAvatar avatarId={av} size={'clamp(46px, 5vw, 68px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${c}55` }} />}
+        <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 42px)', color: c, textShadow: `0 0 18px ${c}44` }}>{name}</span>
+      </div>
+    );
+  };
+
+  // #01 Hot-Streak live — aktueller Session-Leader + Abstand
+  if (sortedTeams.length >= 2 && mode === 'pause') {
+    const leader = sortedTeams[0];
+    const runnerUp = sortedTeams[1];
+    const gap = leader.totalCells - runnerUp.totalCells;
+    if (gap > 0) {
+      panels.push({ key: 'hotStreak', node: (
+        <div>
+          {statTitle('🔥', 'Heiße Phase', 'Hot Streak', '#F97316')}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {teamLine(leader.name, leader.color, leader.avatarId)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
+              <span style={{ color: '#94a3b8', fontSize: 'clamp(17px, 1.9vw, 24px)', fontWeight: 700 }}>
+                {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
+              </span>
+            </div>
+          </div>
+        </div>
+      )});
+    }
+  }
+
+  // #02 Joker-König (all-time)
+  if (funStats?.jokerKing && funStats.jokerKing.total >= 2) {
+    panels.push({ key: 'jokerKing', node: (
+      <div>
+        {statTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
+        {teamLine(funStats.jokerKing.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
+        </div>
+      </div>
+    )});
+  }
+
+  // #03 Comeback-King
+  if (funStats?.comebackKing && funStats.comebackKing.total >= 1) {
+    panels.push({ key: 'comebackKing', node: (
+      <div>
+        {statTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
+        {teamLine(funStats.comebackKing.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
+          <span style={{ color: '#94a3b8', fontSize: 'clamp(15px, 1.7vw, 20px)' }}>
+            {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // #04 Steal-Master
+  if (funStats?.stealMaster && funStats.stealMaster.total >= 2) {
+    panels.push({ key: 'stealMaster', node: (
+      <div>
+        {statTitle('🗡️', 'Steal-Master', 'Steal Master', '#EF4444')}
+        {teamLine(funStats.stealMaster.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', '#EF4444')}
+        </div>
+      </div>
+    )});
+  }
+
+  // #05 Underdog (wenige Spiele, aber Siege)
+  if (funStats?.underdog) {
+    panels.push({ key: 'underdog', node: (
+      <div>
+        {statTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
+        {teamLine(funStats.underdog.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
+          {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', '#64748B')}
+          <span style={{ color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 18px)', alignSelf: 'center' }}>
+            {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // #06 Kategorie-Meister (Top-3 Teams mit bester Kategorie)
+  if (funStats?.categoryMasters && funStats.categoryMasters.length > 0) {
+    panels.push({ key: 'catMasters', node: (
+      <div>
+        {statTitle('👑', 'Kategorie-Meister', 'Category Masters', '#FBBF24')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {funStats.categoryMasters.map((cm, i) => {
+            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: '#FBBF24', emoji: '🎯', label: cm.category };
+            const team = s.teams.find(t => t.name === cm.teamName);
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
+                borderRadius: 16, background: `${catMeta.color}12`,
+                border: `1.5px solid ${catMeta.color}44`,
+              }}>
+                <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>
+                {team && <QQTeamAvatar avatarId={team.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{ flexShrink: 0 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 26px)', color: team?.color ?? '#e2e8f0' }}>{cm.teamName}</div>
+                  <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: catMeta.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{catMeta.label}</div>
+                </div>
+                {statPill(cm.count, de ? 'richtig' : 'correct', catMeta.color)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )});
+  }
+
+  // #07 Perfekte Runden
+  if (funStats?.perfectRounds && funStats.perfectRounds.length > 0) {
+    panels.push({ key: 'perfectRounds', node: (
+      <div>
+        {statTitle('💯', 'Perfekte Runden', 'Perfect Rounds', '#22C55E')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {funStats.perfectRounds.slice(0, 5).map((pr, i) => {
+            const team = s.teams.find(t => t.name === pr.teamName);
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
+                borderRadius: 14, background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.3)',
+              }}>
+                <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>✨</span>
+                {team && <QQTeamAvatar avatarId={team.avatarId} size={'clamp(34px, 3.6vw, 46px)'} />}
+                <span style={{ fontWeight: 800, fontSize: 'clamp(18px, 2vw, 26px)', color: team?.color ?? '#e2e8f0' }}>{pr.teamName}</span>
+                {pr.draftTitle && (
+                  <span style={{ marginLeft: 'auto', color: '#64748b', fontSize: 'clamp(13px, 1.5vw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )});
+  }
+
+  // #08 Speed-Demon
+  if (funStats?.speedDemon && funStats.speedDemon.samples >= 5) {
+    panels.push({ key: 'speedDemon', node: (
+      <div>
+        {statTitle('⚡', 'Schnellste Minute', 'Speed Demon', '#FACC15')}
+        {teamLine(funStats.speedDemon.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
+          <span style={{ color: '#94a3b8', fontSize: 'clamp(15px, 1.7vw, 20px)' }}>
+            {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // #09 Bunte-Tüte-Boss (Hot-Potato)
+  if (funStats?.potatoBoss && funStats.potatoBoss.total >= 2) {
+    const btColor = PAUSE_CAT_ACCENT.BUNTE_TUETE.color;
+    panels.push({ key: 'potatoBoss', node: (
+      <div>
+        {statTitle('🥔', 'Bunte-Tüte-Boss', 'Lucky Bag Boss', btColor)}
+        {teamLine(funStats.potatoBoss.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
+        </div>
+      </div>
+    )});
+  }
+
+  // #10 Heute-Stats — nur wenn mindestens 1 Spiel heute
+  if (funStats?.todayStats && funStats.todayStats.games >= 1) {
+    panels.push({ key: 'today', node: (
+      <div>
+        {statTitle('📅', 'Heute', 'Today', '#60A5FA')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {statPill(funStats.todayStats.games, de ? 'Spiele heute' : 'games today', '#60A5FA')}
+          {funStats.todayStats.topScore && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>🏅</span>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 26px)', color: '#e2e8f0' }}>
+                  {funStats.todayStats.topScore.teamName}
+                </div>
+                <div style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#94a3b8' }}>
+                  {funStats.todayStats.topScore.score} {de ? 'Punkte' : 'points'}
+                </div>
+              </div>
+            </div>
+          )}
+          {funStats.todayStats.topWinner && funStats.todayStats.topWinner.wins >= 2 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>🔥</span>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 26px)', color: '#e2e8f0' }}>
+                  {funStats.todayStats.topWinner.teamName}
+                </div>
+                <div style={{ fontSize: 'clamp(14px, 1.6vw, 20px)', color: '#94a3b8' }}>
+                  {funStats.todayStats.topWinner.wins}× {de ? 'heute gewonnen' : 'wins today'}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )});
+  }
+
+  // "Gegen dich" — wenn ein All-Time-Top-Team als Team in der aktuellen Session ist,
+  // aber nicht vorne liegt, ein kleines Revenge-Panel anzeigen
+  const rivalName = realLeaderboard.length > 0
+    ? realLeaderboard.find(e => s.teams.some(t => t.name === e.name) && sortedTeams[0]?.name !== e.name)?.name
+    : null;
+  if (rivalName && mode === 'pause') {
+    const rival = realLeaderboard.find(e => e.name === rivalName)!;
+    const rivalTeam = s.teams.find(t => t.name === rivalName);
+    panels.push({ key: 'rival', node: (
+      <div>
+        {statTitle('⚔️', 'Offene Rechnung', 'Unfinished Business', '#F472B6')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} size={'clamp(50px, 5.5vw, 72px)'} />}
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6vw, 32px)', color: rivalTeam?.color ?? '#F472B6' }}>{rivalName}</div>
+            <div style={{ fontSize: 'clamp(15px, 1.7vw, 22px)', color: '#94a3b8' }}>
+              {de ? `hat schon ${rival.wins}× gewonnen — wer dreht heute das Spiel?` : `already won ${rival.wins}× — who flips the script today?`}
+            </div>
+          </div>
+        </div>
+      </div>
+    )});
   }
 
   // Funny answers

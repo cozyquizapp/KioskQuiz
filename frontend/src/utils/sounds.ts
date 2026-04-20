@@ -37,7 +37,9 @@ function isSlotEnabled(slot: QQSoundSlot): boolean {
 function resolveSlotUrl(slot: QQSoundSlot): string | null {
   const custom = soundConfig[slot];
   if (typeof custom === 'string' && custom.length > 0) return custom;
-  return QQ_SOUND_DEFAULT_URLS[slot] ?? null;
+  const def = QQ_SOUND_DEFAULT_URLS[slot];
+  // Leerer String = absichtlich kein Default (synth-only bis Moderator Datei lädt).
+  return def && def.length > 0 ? def : null;
 }
 
 // Cache of preloaded HTMLAudioElement instances per URL
@@ -472,6 +474,42 @@ export function stopLobbyLoop() {
     lobbyAudioEl = null;
     fadeOutAudio(el, 450, true);
   }
+}
+
+/**
+ * Neuer Fragen-/Kategorie-Cue — ein kurzer aufsteigender 2-Ton-Sparkle mit
+ * Triangle-Stimmung. Bewusst dezent, damit er pro Frage gut verträglich ist.
+ */
+export function playQuestionStart() {
+  if (!isSlotEnabled('questionStart')) return;
+  const url = resolveSlotUrl('questionStart');
+  if (url) { playAudioFile(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Zwei-Ton-Sparkle G5 → C6 mit leichtem Shimmer in der Octave.
+  tone(783.99, 'triangle', t,        0.14, 0.16, 0.006, 0.10, ac);
+  tone(1046.5, 'triangle', t + 0.09, 0.22, 0.18, 0.006, 0.14, ac);
+  tone(1567.98,'sine',     t + 0.09, 0.18, 0.08, 0.006, 0.14, ac);
+}
+
+/**
+ * Runden-/Phasenwechsel-Cue — volleres 3-Ton-Motiv mit Bass-Impuls,
+ * deutlich unterscheidbar vom Question-Start.
+ */
+export function playRoundStart() {
+  if (!isSlotEnabled('roundStart')) return;
+  const url = resolveSlotUrl('roundStart');
+  if (url) { playAudioFile(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Bass-Kick + 3-Ton-Signal D5-A5-D6.
+  tone(110,     'sine',     t,        0.20, 0.28, 0.004, 0.14, ac);
+  tone(587.33,  'triangle', t + 0.05, 0.18, 0.18, 0.006, 0.12, ac);
+  tone(880.00,  'triangle', t + 0.18, 0.18, 0.18, 0.006, 0.12, ac);
+  tone(1174.66, 'triangle', t + 0.31, 0.30, 0.20, 0.006, 0.18, ac);
+  tone(1760.00, 'sine',     t + 0.31, 0.28, 0.08, 0.006, 0.18, ac);
 }
 
 export function playGameOver() {

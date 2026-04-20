@@ -373,7 +373,8 @@ export type QQSlideTemplates = Partial<Record<string, QQSlideTemplate>>;
 export type QQSoundSlot =
   | 'timerLoop' | 'timesUp' | 'fieldPlaced' | 'steal'
   | 'correct'   | 'wrong'   | 'reveal'      | 'fanfare'
-  | 'lobbyWelcome' | 'gameOver' | 'teamReveal';
+  | 'lobbyWelcome' | 'gameOver' | 'teamReveal'
+  | 'questionStart' | 'roundStart';
 
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
@@ -387,37 +388,44 @@ export interface QQSoundConfig {
   lobbyWelcome?: string;     // lobby ambient / welcome
   gameOver?: string;         // game over jingle
   teamReveal?: string;       // per-team slam on TeamsRevealView
+  questionStart?: string;    // new question / category change cue
+  roundStart?: string;       // new round (phase/round change)
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
 }
 
 export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
-  timerLoop:    '⏱ Timer-Loop (läuft während Frage)',
-  timesUp:      '⏰ Zeit abgelaufen',
-  fieldPlaced:  '📍 Feld gesetzt',
-  steal:        '⚡ Feld geklaut',
-  correct:      '✅ Richtige Antwort',
-  wrong:        '❌ Falsche / keine Antwort',
-  reveal:       '🔍 Antwort aufgedeckt',
-  fanfare:      '🎉 Phasen-Intro / großer Moment',
-  lobbyWelcome: '🎵 Lobby- & Pause-Musik',
-  gameOver:     '🏆 Spielende',
-  teamReveal:   '🎬 Team-Reveal („Heute spielen…")',
+  timerLoop:     '⏱ Timer-Loop (läuft während Frage)',
+  timesUp:       '⏰ Zeit abgelaufen',
+  fieldPlaced:   '📍 Feld gesetzt',
+  steal:         '⚡ Feld geklaut',
+  correct:       '✅ Richtige Antwort',
+  wrong:         '❌ Falsche / keine Antwort',
+  reveal:        '🔍 Antwort aufgedeckt',
+  fanfare:       '🎉 Phasen-Intro / großer Moment',
+  lobbyWelcome:  '🎵 Lobby- & Pause-Musik',
+  gameOver:      '🏆 Spielende',
+  teamReveal:    '🎬 Team-Reveal („Heute spielen…")',
+  questionStart: '❓ Neue Frage / Kategoriewechsel',
+  roundStart:    '🔔 Neue Runde',
 };
 
 /** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
 export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
-  timerLoop:    '/sounds/timer-loop.wav',
-  timesUp:      '/sounds/times-up.wav',
-  fieldPlaced:  '/sounds/field-placed.wav',
-  steal:        '/sounds/steal.wav',
-  correct:      '/sounds/correct.wav',
-  wrong:        '/sounds/wrong.wav',
-  reveal:       '/sounds/reveal.wav',
-  fanfare:      '/sounds/fanfare.wav',
-  lobbyWelcome: '/sounds/lobby-welcome.mp3',
-  gameOver:     '/sounds/game-over.wav',
-  teamReveal:   '/sounds/field-placed.wav',
+  timerLoop:     '/sounds/timer-loop.wav',
+  timesUp:       '/sounds/times-up.wav',
+  fieldPlaced:   '/sounds/field-placed.wav',
+  steal:         '/sounds/steal.wav',
+  correct:       '/sounds/correct.wav',
+  wrong:         '/sounds/wrong.wav',
+  reveal:        '/sounds/reveal.wav',
+  fanfare:       '/sounds/fanfare.wav',
+  lobbyWelcome:  '/sounds/lobby-welcome.mp3',
+  gameOver:      '/sounds/game-over.wav',
+  teamReveal:    '/sounds/field-placed.wav',
+  // Leer = synth-Fallback bis Moderator eigene Datei lädt.
+  questionStart: '',
+  roundStart:    '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

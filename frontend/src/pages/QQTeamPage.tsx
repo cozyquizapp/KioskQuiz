@@ -14,6 +14,7 @@ import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
+  playQuestionStart, playRoundStart,
   setVolume, setSoundConfig,
 } from '../utils/sounds';
 
@@ -590,15 +591,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.sfxMuted) return;
     resumeAudio();
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
+      playRoundStart();
       playFanfare();
       if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
     }
-    // Category-Soundcue beim Start einer neuen Frage (jede neue Question-ID).
-    // Kurzer kategoriespezifischer Ping via Web-Audio — eine Note pro Kategorie,
-    // damit man nicht auf den Beamer gucken muss um zu wissen, was dran ist.
+    // Einheitlicher Soundcue beim Start einer neuen Frage (jede neue Question-ID).
     if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion && s.currentQuestion.id !== prevQuestionIdRef.current) {
       prevQuestionIdRef.current = s.currentQuestion.id;
-      playCategoryCue(s.currentQuestion.category);
+      playQuestionStart();
       if (navigator.vibrate) navigator.vibrate(25);
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
@@ -915,39 +915,6 @@ function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; t
       </div>
     </div>
   );
-}
-
-// ── Category-Soundcue: kurzer kategoriespezifischer Ping zum Fragestart ──────
-function playCategoryCue(category: string) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Ctor = (window.AudioContext || (window as any).webkitAudioContext) as any;
-    if (!Ctor) return;
-    const ac = new Ctor() as AudioContext;
-    // Kategorie-spezifische Frequenzen (eine musikalische Note pro Kategorie).
-    const FREQ: Record<string, number> = {
-      SCHAETZCHEN:   523.25, // C5 — gold/warm
-      MUCHO:         659.25, // E5 — blau/klar
-      BUNTE_TUETE:   783.99, // G5 — rot/bunt
-      ZEHN_VON_ZEHN: 440.00, // A4 — grün/rund
-      CHEESE:        880.00, // A5 — violett/hell
-    };
-    const f = FREQ[category] ?? 587.33;
-    const t = ac.currentTime;
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(f, t);
-    osc.frequency.exponentialRampToValueAtTime(f * 1.5, t + 0.09);
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.18, t + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    osc.connect(gain);
-    gain.connect(ac.destination);
-    osc.start(t);
-    osc.stop(t + 0.3);
-    setTimeout(() => { try { ac.close(); } catch { /* ignore */ } }, 400);
-  } catch { /* ignore */ }
 }
 
 // ── Mobile Fireflies (lighter version for phones) ────────────────────────────

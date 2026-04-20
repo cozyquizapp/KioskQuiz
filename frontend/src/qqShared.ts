@@ -37,16 +37,17 @@ export const QQ_BEAMER_CSS = `
     60%  { opacity: 1; filter: blur(0); }
     100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
   }
-  /* Diagonal white sweep across the screen — TV-style cut */
-  @keyframes qqFlashSweep {
-    0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
-    35%  { opacity: 0.85; }
-    100% { transform: translateX(120%) skewX(-18deg); opacity: 0; }
+  /* Soft-Zoom crossfade — sanfter Blur+Scale-Puls über den Screen, kein Diagonal-Sheen */
+  @keyframes qqSoftZoom {
+    0%   { opacity: 0;    transform: scale(1);    filter: blur(0px); }
+    35%  { opacity: 0.55; transform: scale(1.04); filter: blur(10px); }
+    65%  { opacity: 0.55; transform: scale(1.04); filter: blur(10px); }
+    100% { opacity: 0;    transform: scale(1);    filter: blur(0px); }
   }
-  /* Subtle darkening pulse behind the sweep for weight */
+  /* Sehr dezente Dim-Welle für Gewicht unter dem Soft-Zoom */
   @keyframes qqFlashDim {
     0%, 100% { opacity: 0; }
-    50%      { opacity: 0.35; }
+    50%      { opacity: 0.22; }
   }
   /* Round-Transition Ziffer-Flip: alte Ziffer fällt aus dem Titel, neue rollt von oben rein.
      Langsamer + smoother: keine Overshoot-Bounce, ease-out cubic. Mit blur-Hint für Speed-Look. */

@@ -20,7 +20,7 @@ import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
-  playTeamReveal,
+  playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop,
 } from '../utils/sounds';
@@ -428,12 +428,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
   // ── Sound: phase-based SFX ──
   const prevSfxPhaseRef = useRef(s.phase);
+  const prevSfxQuestionIdRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevSfxPhaseRef.current;
     prevSfxPhaseRef.current = s.phase;
     if (s.sfxMuted) return;
     resumeAudio();
-    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') playFanfare();
+    if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
+      playRoundStart();
+      playFanfare();
+    }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') playReveal();
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
       if (s.correctTeamId) playCorrect();
@@ -442,15 +446,30 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playGameOver();
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Music: timer loop (game-show music while question is active) ──
+  // Neuer Frage-Cue bei jeder neuen Question-ID.
   useEffect(() => {
-    if (s.musicMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
+    if (s.sfxMuted) return;
+    const qid = s.currentQuestion?.id ?? null;
+    if (!qid) return;
+    if (qid === prevSfxQuestionIdRef.current) return;
+    prevSfxQuestionIdRef.current = qid;
+    if (s.phase === 'QUESTION_ACTIVE') {
+      resumeAudio();
+      playQuestionStart();
+    }
+  }, [s.currentQuestion?.id, s.phase, s.sfxMuted]);
+
+  // ── Music: timer loop (game-show music while question is active) ──
+  // Läuft, solange ein Frage-Timer oder ein Hot-Potato-Turn-Timer aktiv ist.
+  useEffect(() => {
+    const hasTimer = Boolean(s.timerEndsAt || s.hotPotatoTurnEndsAt);
+    if (s.musicMuted || !hasTimer || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
       stopTimerLoop();
       return;
     }
     startTimerLoop();
     return () => stopTimerLoop();
-  }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.timerEndsAt, s.hotPotatoTurnEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: Lobby-Loop in Lobby / Welcome-Folie / Pause ──
   useEffect(() => {
@@ -608,26 +627,29 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
-      {/* CozyWolf watermark — dezent unten links */}
-      <div style={{
-        position: 'fixed', bottom: 14, left: 16, zIndex: 9991,
-        display: 'flex', alignItems: 'center', gap: 8,
-        pointerEvents: 'none', userSelect: 'none',
-        opacity: 0.35,
-      }}>
-        <img
-          src="/logo.png"
-          alt=""
-          style={{ width: 22, height: 22, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
-        />
-        <span style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
-          color: '#cbd5e1', textTransform: 'uppercase',
-          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+      {/* CozyWolf watermark — nur in LOBBY / THANKS sichtbar (sonst überlagert
+          es Inhalte; prominente Markenpräsenz übernimmt die QR-Zone). */}
+      {(s.phase === 'LOBBY' || s.phase === 'THANKS') && (
+        <div style={{
+          position: 'fixed', bottom: 14, left: 16, zIndex: 9991,
+          display: 'flex', alignItems: 'center', gap: 8,
+          pointerEvents: 'none', userSelect: 'none',
+          opacity: 0.35,
         }}>
-          CozyWolf
-        </span>
-      </div>
+          <img
+            src="/logo.png"
+            alt=""
+            style={{ width: 22, height: 22, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+          />
+          <span style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+            color: '#cbd5e1', textTransform: 'uppercase',
+            textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+          }}>
+            CozyWolf
+          </span>
+        </div>
+      )}
 
       {/* Fullscreen toggle — hidden when already fullscreen */}
       {!isFullscreen && (
@@ -697,7 +719,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
 
-      {/* Gameshow flash-sweep overlay — runs once per phase group change */}
+      {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
       {flashKey > 0 && (
         <div
           key={flashKey}
@@ -706,18 +728,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             overflow: 'hidden',
           }}
         >
-          {/* Darkening pulse behind the sweep */}
+          {/* Dezenter Dim als Tiefen-Anker */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
-            animation: 'qqFlashDim 440ms ease-out both',
+            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.06) 65%, transparent 100%)',
+            animation: 'qqFlashDim 520ms ease-out both',
           }} />
-          {/* Diagonal white sweep */}
+          {/* Soft-Zoom: heller Blur-Schleier pulst kurz auf */}
           <div style={{
-            position: 'absolute', top: '-20%', left: 0, width: '40%', height: '140%',
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0.06) 70%, transparent 100%)',
-            filter: 'blur(6px)',
-            animation: 'qqFlashSweep 420ms cubic-bezier(0.55,0.05,0.3,0.95) both',
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 45%, transparent 75%)',
+            animation: 'qqSoftZoom 520ms cubic-bezier(0.4,0,0.2,1) both',
+            transformOrigin: 'center center',
           }} />
         </div>
       )}
@@ -1300,8 +1322,10 @@ function MuchoOptionsReveal({
               : `2px solid ${optColor}55`,
             boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
               : '0 4px 16px rgba(0,0,0,0.3)',
-            display: 'flex', alignItems: 'center', gap: 16,
-            minHeight: optImg?.url ? 100 : 84,
+            display: 'flex', alignItems: 'flex-start', gap: 16,
+            // Fixe Kartenhöhe vom ersten Render an, damit Voter-Avatare keinen
+            // Reflow auslösen. Höhe deckt Title (1-2 Zeilen) + Voter-Zeile ab.
+            minHeight: optImg?.url ? 220 : 200,
             transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
             animation: isCorrect
               ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
@@ -1332,7 +1356,7 @@ function MuchoOptionsReveal({
             }}>{muchoLabels[i]}</div>
             <div style={{
               position: 'relative', zIndex: 1,
-              flex: 1, minWidth: 0,
+              flex: 1, minWidth: 0, alignSelf: 'stretch',
               display: 'flex', flexDirection: 'column', gap: 10,
             }}>
               <div style={{
@@ -1341,6 +1365,8 @@ function MuchoOptionsReveal({
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
+              {/* Voter-Slot: immer reserviert (min-height), Inhalt erscheint animiert */}
+              <div style={{ minHeight: 60, marginTop: 'auto' }}>
               {voterShow && (() => {
                 const voters = answers
                   .filter(a => a.text === String(i))
@@ -1408,6 +1434,7 @@ function MuchoOptionsReveal({
                   </div>
                 );
               })()}
+              </div>
             </div>
           </div>
         );
@@ -1912,6 +1939,33 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {joinUrl.replace('https://', '').replace('http://', '')}
             </div>
+          </div>
+          {/* CozyWolf Branding — prominent unterhalb des QR-Codes */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 18px', borderRadius: 999,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.16), rgba(245,158,11,0.10))',
+            border: '1.5px solid rgba(251,191,36,0.35)',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(251,191,36,0.12)',
+          }}>
+            <img
+              src="/logo.png"
+              alt=""
+              style={{ width: 28, height: 28, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+            />
+            <span style={{
+              fontSize: 'clamp(12px, 1.1vw, 15px)', fontWeight: 800,
+              color: '#cbd5e1', letterSpacing: '0.06em',
+            }}>
+              {de ? 'präsentiert von' : 'presented by'}
+            </span>
+            <span style={{
+              fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
+              color: '#FBBF24', letterSpacing: '0.04em',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+            }}>
+              CozyWolf 🐺
+            </span>
           </div>
         </div>
 
@@ -5804,17 +5858,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const label = `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
+                // Highest-Bet-Chips (mögliche Gewinner) direkt auf der Option platzieren.
+                const highestForOpt = zvzHighestPerOption[i];
+                const highestIdsForOpt = new Set(highestForOpt?.teamIds ?? []);
+                const highestBets = s.answers
+                  .map(a => {
+                    const team = s.teams.find(t => t.id === a.teamId);
+                    if (!team || !highestIdsForOpt.has(team.id)) return null;
+                    const pts = (a.text.split(',').map(n => Number(n) || 0))[i] ?? 0;
+                    return pts > 0 ? { team, pts } : null;
+                  })
+                  .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number } => !!x);
+                const highestVisibleOpt = zvzStep >= 1 && zvzRevealed.has(i);
                 return (
                   <div key={i} style={{
                     position: 'relative', overflow: 'hidden',
-                    borderRadius: 20, padding: '24px 28px',
+                    borderRadius: 20, padding: '20px 24px',
                     background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                     border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
                     boxShadow: isCorrect
                       ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                       : `0 4px 16px rgba(0,0,0,0.3)`,
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    minHeight: optImg?.url ? 100 : 84,
+                    display: 'flex', flexDirection: 'column', gap: 12,
+                    // Fixe Höhe vom ersten Render an: deckt Title-Zeile + Highbet-Slot (60px) ab.
+                    minHeight: optImg?.url ? 200 : 180,
                     transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                     animation: isCorrect
                       ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
@@ -5832,26 +5899,63 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {optImg?.url && (
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
                     )}
+                    {/* Title-Zeile */}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      width: 56, height: 56, borderRadius: 16,
-                      background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-                      boxShadow: isCorrect ? '0 0 16px rgba(34,197,94,0.6)' : `0 2px 8px ${optColor}44`,
-                      transition: 'all 0.3s ease',
-                    }}>{label}</div>
-                    <div style={{
-                      position: 'relative', zIndex: 1,
-                      flex: 1, minWidth: 0,
-                      display: 'flex', flexDirection: 'column', gap: 10,
+                      display: 'flex', alignItems: 'center', gap: 16,
                     }}>
                       <div style={{
-                        fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
-                        color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                        width: 56, height: 56, borderRadius: 16,
+                        background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
+                        boxShadow: isCorrect ? '0 0 16px rgba(34,197,94,0.6)' : `0 2px 8px ${optColor}44`,
+                        transition: 'all 0.3s ease',
+                      }}>{label}</div>
+                      <div style={{
+                        flex: 1, minWidth: 0,
+                        fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 800,
+                        color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.25,
                         textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>
+                    </div>
+                    {/* Highbet-Slot: Top-Bets (mögliche Gewinner) direkt auf der Option.
+                        Höhe reserviert vom ersten Render an, Inhalt blendet beim Step 1 auf. */}
+                    <div style={{
+                      position: 'relative', zIndex: 1,
+                      minHeight: 64,
+                      display: 'flex', flexWrap: 'wrap', gap: 8,
+                      alignItems: 'center', justifyContent: 'flex-start',
+                      borderTop: '1px dashed rgba(255,255,255,0.10)',
+                      paddingTop: 10,
+                      opacity: highestVisibleOpt ? 1 : 0,
+                      transition: 'opacity 0.35s ease',
+                    }}>
+                      {highestBets.length === 0 ? (
+                        <span style={{
+                          fontSize: 'clamp(12px, 1.2vw, 15px)', color: '#64748b',
+                          fontStyle: 'italic', fontWeight: 700,
+                        }}>
+                          {lang === 'en' ? 'no top bet' : 'kein Top-Tipp'}
+                        </span>
+                      ) : highestBets.map(({ team: tm, pts }) => (
+                        <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '3px 14px 3px 3px',
+                          borderRadius: 999,
+                          background: 'rgba(0,0,0,0.6)',
+                          border: `2px solid ${tm.color}`,
+                          boxShadow: `0 3px 12px rgba(0,0,0,0.5), 0 0 10px ${tm.color}66`,
+                        }}>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(30px, 3.2vw, 42px)'} />
+                          <span style={{
+                            fontSize: 'clamp(15px, 1.7vw, 22px)',
+                            fontWeight: 900,
+                            color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                          }}>{pts}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
@@ -5859,8 +5963,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* ZEHN_VON_ZEHN: Bet-Chips UNTER den Options-Cards — step-based:
-              Step 0 zeigt alle Bets AUSSER die höchsten pro Option; Step 1 kaskadiert die höchsten rein. */}
+          {/* ZEHN_VON_ZEHN: Unter-Bets (alle außer Top-Bets) — Top-Bets werden
+              direkt auf der Option oben eingeblendet. Hier also nur die restlichen
+              Tipps pro Option, von Anfang an in einheitlicher Größe. */}
           {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
             <div style={{
               width: '100%', maxWidth: 1400,
@@ -5875,45 +5980,32 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 }).filter((b): b is { team: NonNullable<typeof b.team>; pts: number } => !!b.team && b.pts > 0);
                 const highest = zvzHighestPerOption[i];
                 const highestIds = new Set(highest?.teamIds ?? []);
-                const highestVisible = zvzStep >= 1 && zvzRevealed.has(i);
-                const visibleBets = bets.filter(b => !highestIds.has(b.team.id) || highestVisible);
+                const otherBets = bets.filter(b => !highestIds.has(b.team.id));
                 return (
                   <div key={`bets-${i}`} style={{
                     display: 'flex', flexWrap: 'wrap', gap: 6,
                     justifyContent: 'center', alignItems: 'center',
-                    minHeight: 'clamp(36px, 4.5vw, 54px)',
-                    animation: 'contentReveal 0.5s ease 0.3s both',
+                    minHeight: 'clamp(40px, 5vw, 56px)',
                   }}>
-                    {visibleBets.length === 0 ? (
+                    {otherBets.length === 0 ? (
                       <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#475569', fontStyle: 'italic' }}>—</span>
-                    ) : visibleBets.map(({ team: tm, pts }) => {
-                      const isHighest = highestIds.has(tm.id);
-                      const justRevealed = isHighest && highestVisible;
-                      return (
-                        <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
-                          display: 'flex', alignItems: 'center', gap: 6,
-                          padding: isHighest ? '4px 14px 4px 4px' : '3px 12px 3px 3px',
-                          borderRadius: 999,
-                          background: 'rgba(0,0,0,0.55)',
-                          border: `${isHighest ? 3 : 2}px solid ${tm.color}`,
-                          boxShadow: isHighest
-                            ? `0 3px 14px rgba(0,0,0,0.55), 0 0 18px ${tm.color}aa`
-                            : `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
-                          transform: isHighest ? 'scale(1.08)' : 'scale(1)',
-                          transition: 'transform 0.3s ease',
-                          animation: justRevealed
-                            ? 'muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) both'
-                            : undefined,
-                        }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={isHighest ? 'clamp(34px, 3.6vw, 48px)' : 'clamp(28px, 3vw, 40px)'} />
-                          <span style={{
-                            fontSize: isHighest ? 'clamp(16px, 1.9vw, 26px)' : 'clamp(14px, 1.6vw, 22px)',
-                            fontWeight: 900,
-                            color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
-                          }}>{pts}</span>
-                        </div>
-                      );
-                    })}
+                    ) : otherBets.map(({ team: tm, pts }) => (
+                      <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '3px 12px 3px 3px',
+                        borderRadius: 999,
+                        background: 'rgba(0,0,0,0.55)',
+                        border: `2px solid ${tm.color}`,
+                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
+                      }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 3vw, 40px)'} />
+                        <span style={{
+                          fontSize: 'clamp(14px, 1.6vw, 22px)',
+                          fontWeight: 900,
+                          color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                        }}>{pts}</span>
+                      </div>
+                    ))}
                   </div>
                 );
               })}
@@ -5925,8 +6017,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               sortiert nach Reaktionszeit (schnellster mit ⚡-Krone).
               CHEESE: step-based — erst bei cheeseShowGreen (Step 1) sichtbar; Avatare kaskadieren bei Step 2. */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN'
-            && (q.category !== 'CHEESE' || cheeseShowGreen)
             && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (() => {
+              // CHEESE: Box immer sichtbar (Layout fix), Inhalt erst bei Step 1.
+              const cheeseHideContent = q.category === 'CHEESE' && !cheeseShowGreen;
               // Korrekte Teams: wir nehmen alle, deren Antwort mit revealedAnswer (oder answerEn)
               // fuzzy matcht (lowercase, whitespace-trim). Bei SCHAETZCHEN gibt's nichts zu matchen →
               // leeres Array, dort macht die Zeitstrahl-Darstellung den Job.
@@ -5953,14 +6046,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{
                   position: 'relative', overflow: 'hidden',
                   padding: 'clamp(16px, 2vh, 32px) clamp(24px, 3vw, 52px)', borderRadius: 28,
-                  background: 'rgba(34,197,94,0.12)',
-                  border: '3px solid rgba(34,197,94,0.50)',
-                  boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
+                  background: cheeseHideContent ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.12)',
+                  border: cheeseHideContent ? '3px dashed rgba(34,197,94,0.22)' : '3px solid rgba(34,197,94,0.50)',
+                  boxShadow: cheeseHideContent ? 'none' : '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
                   marginBottom: 'clamp(8px, 1.2vh, 24px)',
                   width: '100%', maxWidth: 1400,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 'clamp(10px, 1.4vh, 18px)',
-                  animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                  animation: cheeseHideContent ? undefined : 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                  transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
                 }}>
                   {/* Shimmer sweep */}
                   <div style={{
@@ -5974,6 +6068,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     flexShrink: 1, minWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis',
                     position: 'relative', zIndex: 1,
+                    visibility: cheeseHideContent ? 'hidden' : 'visible',
                   }}>
                     {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
                   </span>
@@ -7687,6 +7782,38 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             </div>
           </div>
         )}
+        {/* Prominent CozyWolf Signatur */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 22px', borderRadius: 999,
+          background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12))',
+          border: '1.5px solid rgba(251,191,36,0.4)',
+          boxShadow: '0 4px 18px rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.15)',
+          marginTop: 4,
+        }}>
+          <img
+            src="/logo.png"
+            alt=""
+            style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+          />
+          <span style={{
+            fontSize: 16, fontWeight: 800, color: '#cbd5e1', letterSpacing: '0.06em',
+          }}>
+            {lang === 'de' ? 'ein' : 'a'}
+          </span>
+          <span style={{
+            fontSize: 20, fontWeight: 900, color: '#FBBF24',
+            letterSpacing: '0.04em',
+            textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+          }}>
+            CozyWolf 🐺
+          </span>
+          <span style={{
+            fontSize: 16, fontWeight: 800, color: '#cbd5e1', letterSpacing: '0.06em',
+          }}>
+            {lang === 'de' ? 'Erlebnis' : 'experience'}
+          </span>
+        </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
           fontSize: 15, color: 'rgba(251,191,36,0.75)', fontWeight: 800,
@@ -7944,8 +8071,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // Team-Farben auf dem dunklen BG durchscheinend pastellig wirkten
                   // und sich z.B. Pink / Rot / Orange kaum voneinander unterscheiden
                   // ließen. Jetzt: voll deckende Farbe mit minimalem Tonwert-Shading.
-                  const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? '66' : 'ff';
-                  const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? '44' : 'd9';
+                  // Dimmed: Alpha leicht abgesenkt (statt 66/44 jetzt cc/a6),
+                  // damit Team-Farben klar erkennbar bleiben. Zusätzlicher
+                  // brightness/saturate-Filter wurde komplett entfernt.
+                  const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? 'cc' : 'ff';
+                  const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? 'a6' : 'd9';
                   const bridgeBg = `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`;
                   const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
                   const bridgeOffset = cellRadius;
@@ -7974,7 +8104,6 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                               ? `0 0 14px ${team.color}88`
                               : 'none',
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
-                    filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
                       Nachbarn, damit „verbundene Felder" als eine Fläche wirken. */}
@@ -7985,7 +8114,6 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       width: gap + 2, height: bridgeSpan,
                       background: bridgeBg,
                       zIndex: 2, pointerEvents: 'none',
-                      filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
                     }} />
                   )}
                   {nBottom && (
@@ -7995,7 +8123,6 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       height: gap + 2, width: bridgeSpan,
                       background: bridgeBg,
                       zIndex: 2, pointerEvents: 'none',
-                      filter: isDimmed ? 'brightness(0.7) saturate(0.6)' : undefined,
                     }} />
                   )}
                   </>

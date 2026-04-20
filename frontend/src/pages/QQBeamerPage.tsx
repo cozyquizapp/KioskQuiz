@@ -8,6 +8,7 @@ import {
   QQStateUpdate, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
   QQQuestionImage,
+  QQOptionImage,
   QQSlideTemplates,
   QQLanguage,
 } from '../../../shared/quarterQuizTypes';
@@ -1157,6 +1158,224 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
               pointerEvents: 'none',
             }}
           />
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MuchoOptionsReveal — 3-Akt-Choreografie für MUCHO:
+//   Akt 1: Team-Avatare poppen pro Option staggered A→B→C→D auf ("Auf A hatten X,Y,Z")
+//   Akt 2: Grüner Jäger hüpft A→B→C→D sequentiell und lockt dann auf die richtige Lösung
+//   Akt 3: Schnellster Voter der richtigen Antwort bekommt ⚡ + Goldrand + Zeit-Pill
+// ─────────────────────────────────────────────────────────────────────────────
+type MuchoPhaseKind = 'idle' | 'akt1' | 'akt2_hop' | 'akt2_lock' | 'akt3';
+function MuchoOptionsReveal({
+  options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
+  cardBg, timerEndsAt, timerDurationSec, revealed, sfxMuted,
+}: {
+  options: string[];
+  optionsEn?: string[];
+  correctOptionIndex?: number;
+  optionImages?: Array<QQOptionImage | null | undefined>;
+  answers: Array<{ teamId: string; text: string; submittedAt: number }>;
+  teams: Array<{ id: string; name: string; avatarId: string }>;
+  lang: 'de' | 'en';
+  cardBg: string;
+  timerEndsAt: number | null;
+  timerDurationSec: number;
+  revealed: boolean;
+  sfxMuted?: boolean;
+}) {
+  const N = options.length;
+  const [phase, setPhase] = useState<MuchoPhaseKind>('idle');
+  const [akt1Step, setAkt1Step] = useState(-1);
+  const [akt2Idx, setAkt2Idx] = useState(-1);
+  const [akt3On, setAkt3On] = useState(false);
+
+  useEffect(() => {
+    if (!revealed || correctOptionIndex == null || N === 0) {
+      setPhase('idle');
+      setAkt1Step(-1);
+      setAkt2Idx(-1);
+      setAkt3On(false);
+      return;
+    }
+    const timers: number[] = [];
+    setPhase('akt1');
+    // Akt 1: Voter-Gruppen pro Option staggered einblenden
+    const akt1Stagger = 550;
+    const akt1StartDelay = 300;
+    for (let i = 0; i < N; i++) {
+      timers.push(window.setTimeout(() => setAkt1Step(i), akt1StartDelay + i * akt1Stagger));
+    }
+    // Akt 2: Jäger hüpft A→B→C→D, dann Lock auf richtige Option
+    const akt2Start = akt1StartDelay + N * akt1Stagger + 200;
+    const hopPace = 400;
+    for (let i = 0; i < N; i++) {
+      timers.push(window.setTimeout(() => {
+        setPhase('akt2_hop');
+        setAkt2Idx(i);
+        if (!sfxMuted) { try { playTick(); } catch {} }
+      }, akt2Start + i * hopPace));
+    }
+    const lockAt = akt2Start + N * hopPace;
+    timers.push(window.setTimeout(() => {
+      setPhase('akt2_lock');
+      setAkt2Idx(correctOptionIndex);
+    }, lockAt));
+    // Akt 3: Schnellster ⚡
+    timers.push(window.setTimeout(() => {
+      setPhase('akt3');
+      setAkt3On(true);
+    }, lockAt + 700));
+    return () => { timers.forEach(t => window.clearTimeout(t)); };
+  }, [revealed, correctOptionIndex, N, sfxMuted]);
+
+  const showLock = phase === 'akt2_lock' || phase === 'akt3';
+  const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+  const muchoLabels = ['A', 'B', 'C', 'D'];
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 18, marginBottom: 16,
+      width: '100%', maxWidth: 1400,
+      animation: 'contentReveal 0.35s ease 0.1s both',
+    }}>
+      {options.map((opt, i) => {
+        const optImg = optionImages?.[i];
+        const isCorrect = showLock && i === correctOptionIndex;
+        const isWrong = showLock && i !== correctOptionIndex;
+        const isHunter = phase === 'akt2_hop' && akt2Idx === i;
+        const optColor = MUCHO_COLORS[i] ?? '#64748B';
+        const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
+        const voterShow = akt1Step >= i;
+        return (
+          <div key={i} style={{
+            position: 'relative', overflow: 'hidden',
+            borderRadius: 20, padding: '24px 28px',
+            background: isCorrect ? 'rgba(34,197,94,0.22)'
+              : isHunter ? 'rgba(34,197,94,0.14)'
+              : cardBg,
+            border: isCorrect ? '3px solid #22C55E'
+              : isHunter ? '3px solid #22C55E'
+              : isWrong ? '2px solid rgba(255,255,255,0.06)'
+              : `2px solid ${optColor}55`,
+            boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
+              : isHunter ? '0 0 28px rgba(34,197,94,0.45)'
+              : '0 4px 16px rgba(0,0,0,0.3)',
+            display: 'flex', alignItems: 'center', gap: 16,
+            minHeight: optImg?.url ? 100 : 84,
+            transform: isHunter ? 'scale(1.02)' : 'scale(1)',
+            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+            animation: isCorrect
+              ? 'revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+              : isWrong
+                ? 'revealWrongDim 0.5s ease 0.1s both'
+                : undefined,
+          }}>
+            {optImg?.url && (
+              <img src={optImg.url} alt="" style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
+                pointerEvents: 'none',
+              }} />
+            )}
+            {optImg?.url && (
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
+            )}
+            <div style={{
+              position: 'relative', zIndex: 1,
+              width: 56, height: 56, borderRadius: 16,
+              background: isCorrect ? '#22C55E' : isHunter ? '#22C55E' : isWrong ? '#374151' : optColor,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
+              boxShadow: isCorrect || isHunter
+                ? '0 0 16px rgba(34,197,94,0.6)'
+                : `0 2px 8px ${optColor}44`,
+              transition: 'background 0.3s ease, box-shadow 0.3s ease',
+            }}>{muchoLabels[i]}</div>
+            <div style={{
+              position: 'relative', zIndex: 1,
+              flex: 1, minWidth: 0,
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{
+                fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
+                color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
+                transition: 'color 0.3s ease',
+              }}>{optText}</div>
+              {voterShow && (() => {
+                const voters = answers
+                  .filter(a => a.text === String(i))
+                  .sort((a, b) => a.submittedAt - b.submittedAt)
+                  .map(a => {
+                    const team = teams.find(t => t.id === a.teamId);
+                    return team ? { team, submittedAt: a.submittedAt } : null;
+                  })
+                  .filter((x): x is { team: NonNullable<ReturnType<typeof teams.find>>; submittedAt: number } => !!x);
+                if (voters.length === 0) return null;
+                const t0 = timerEndsAt && timerDurationSec
+                  ? timerEndsAt - timerDurationSec * 1000
+                  : voters[0]?.submittedAt;
+                return (
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 8,
+                    animation: 'revealAnswerBam 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                  }}>
+                    {voters.map((v, vi) => {
+                      const tm = v.team;
+                      const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
+                      const isFastest = akt3On && isCorrect && vi === 0;
+                      return (
+                        <div key={tm.id} style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        }}>
+                          <div title={tm.name} style={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            transform: isFastest ? 'scale(1.08)' : 'scale(1)',
+                            transition: 'transform 0.3s ease',
+                          }}>
+                            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{
+                              border: isFastest ? '3px solid #FBBF24' : 'none',
+                              boxShadow: isFastest
+                                ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
+                                : '0 4px 12px rgba(0,0,0,0.5)',
+                            }} />
+                            {isFastest && (
+                              <span style={{
+                                position: 'absolute', top: -8, right: -8,
+                                fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
+                                animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                              }}>⚡</span>
+                            )}
+                          </div>
+                          {timeSec != null && isCorrect && akt3On && (
+                            <span style={{
+                              padding: '1px 7px', borderRadius: 999,
+                              background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
+                              border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                              color: isFastest ? '#FBBF24' : '#e2e8f0',
+                              fontWeight: 900,
+                              fontSize: 'clamp(11px, 1.1vw, 14px)',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {timeSec.toFixed(1)}s
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         );
       })}
     </div>
@@ -5343,11 +5562,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* MUCHO / ZEHN_VON_ZEHN option cards */}
-          {q.options && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') && (
+          {/* MUCHO: 3-Akt-Reveal (Voter-Poppen → Grüner Jäger → Schnellster ⚡) */}
+          {q.options && q.category === 'MUCHO' && (
+            <MuchoOptionsReveal
+              options={q.options}
+              optionsEn={q.optionsEn}
+              correctOptionIndex={q.correctOptionIndex}
+              optionImages={q.optionImages}
+              answers={s.answers}
+              teams={s.teams}
+              lang={lang}
+              cardBg={cardBg}
+              timerEndsAt={s.timerEndsAt}
+              timerDurationSec={s.timerDurationSec}
+              revealed={revealed}
+              sfxMuted={s.sfxMuted}
+            />
+          )}
+
+          {/* ZEHN_VON_ZEHN: Options-Grid (Bet-Chips folgen weiter unten) */}
+          {q.options && q.category === 'ZEHN_VON_ZEHN' && (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: q.category === 'MUCHO' ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: 18, marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
@@ -5356,10 +5593,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const optImg = q.optionImages?.[i];
                 const isCorrect = revealed && i === q.correctOptionIndex;
                 const isWrong = revealed && i !== q.correctOptionIndex;
-                const muchoLabels = ['A', 'B', 'C', 'D'];
-                const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
-                const label = q.category === 'MUCHO' ? muchoLabels[i] : `${i + 1}`;
-                const optColor = q.category === 'MUCHO' ? MUCHO_COLORS[i] : accent;
+                const label = `${i + 1}`;
+                const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
                 return (
                   <div key={i} style={{
@@ -5407,69 +5642,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>
-                      {revealed && q.category === 'MUCHO' && (() => {
-                        const voters = s.answers
-                          .filter(a => a.text === String(i))
-                          .sort((a, b) => a.submittedAt - b.submittedAt)
-                          .map(a => {
-                            const team = s.teams.find(t => t.id === a.teamId);
-                            return team ? { team, submittedAt: a.submittedAt } : null;
-                          })
-                          .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
-                        if (voters.length === 0) return null;
-                        // Zeit-Anker: Timer-Start, sonst schnellster Voter als Fallback.
-                        const t0 = s.timerEndsAt && s.timerDurationSec
-                          ? s.timerEndsAt - s.timerDurationSec * 1000
-                          : voters[0]?.submittedAt;
-                        return (
-                          <div style={{
-                            display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 8,
-                            animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.6s both',
-                          }}>
-                            {voters.map((v, vi) => {
-                              const tm = v.team;
-                              const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
-                              const isFastest = isCorrect && vi === 0;
-                              return (
-                                <div key={tm.id} style={{
-                                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                                }}>
-                                  <div title={tm.name} style={{
-                                    position: 'relative',
-                                    display: 'inline-block',
-                                  }}>
-                                    <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{
-                                      border: isFastest ? '3px solid #FBBF24' : 'none',
-                                      boxShadow: isFastest
-                                        ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
-                                        : '0 4px 12px rgba(0,0,0,0.5)',
-                                    }} />
-                                    {isFastest && (
-                                      <span style={{
-                                        position: 'absolute', top: -8, right: -8,
-                                        fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
-                                      }}>⚡</span>
-                                    )}
-                                  </div>
-                                  {timeSec != null && isCorrect && (
-                                    <span style={{
-                                      padding: '1px 7px', borderRadius: 999,
-                                      background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
-                                      border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                                      color: isFastest ? '#FBBF24' : '#e2e8f0',
-                                      fontWeight: 900,
-                                      fontSize: 'clamp(11px, 1.1vw, 14px)',
-                                      whiteSpace: 'nowrap',
-                                    }}>
-                                      {timeSec.toFixed(1)}s
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
                 );

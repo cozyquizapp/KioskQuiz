@@ -211,6 +211,39 @@ const TEAM_CSS = `
     0%, 100% { box-shadow: 0 0 6px var(--cell-color, rgba(255,255,255,0.3)); }
     50%      { box-shadow: 0 0 16px var(--cell-color, rgba(255,255,255,0.6)); }
   }
+  /* Identity-Banner: slides down from top after successful join */
+  @keyframes tcIdentityIn {
+    0%   { opacity: 0; transform: translateY(-40px) scale(0.85); }
+    50%  { opacity: 1; transform: translateY(8px) scale(1.04); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes tcIdentityOut {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-30px) scale(0.9); }
+  }
+  /* Your-Turn fullscreen pulse (Hot Potato + Imposter) */
+  @keyframes tcYourTurnPulse {
+    0%   { opacity: 0; transform: scale(1.2); }
+    18%  { opacity: 1; transform: scale(0.96); }
+    30%  { opacity: 1; transform: scale(1.02); }
+    75%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.04); }
+  }
+  @keyframes tcYourTurnGlow {
+    0%, 100% { box-shadow: inset 0 0 120px 40px var(--turn-color, #EF4444); }
+    50%      { box-shadow: inset 0 0 180px 60px var(--turn-color, #EF4444); }
+  }
+  /* Red-glow on QuestionCard during critical countdown (last 3s) */
+  @keyframes tcCriticalGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
+    50%      { box-shadow: 0 0 36px 4px rgba(239,68,68,0.75); }
+  }
+  /* Trost-Message nach falscher Antwort */
+  @keyframes tcTrostIn {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+    60%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
 
   button:focus-visible, input:focus-visible {
     outline: 2px solid #F59E0B;
@@ -287,13 +320,16 @@ export default function QQTeamPage() {
     }
   }, [connected]);
 
+  // Identity-Banner nur bei frischem Join anzeigen, nicht bei Auto-Rejoin.
+  const [showIdentityBanner, setShowIdentityBanner] = useState(false);
+
   async function joinRoom() {
     if (!teamName.trim()) return;
     setError(null);
     sessionStorage.setItem('qq_teamName', teamName.trim());
     sessionStorage.setItem('qq_avatarId', avatarId);
     const ack = await emit('qq:joinTeam', { roomCode, teamId, teamName: teamName.trim(), avatarId });
-    if (ack.ok) setJoined(true);
+    if (ack.ok) { setJoined(true); setShowIdentityBanner(true); }
     else setError(ack.error ?? 'error');
   }
 
@@ -337,7 +373,8 @@ export default function QQTeamPage() {
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect} />;
+    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect}
+    showIdentityBanner={showIdentityBanner} dismissIdentityBanner={() => setShowIdentityBanner(false)} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -526,11 +563,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 // GAME VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected, reconnect }: {
+function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected, reconnect, showIdentityBanner, dismissIdentityBanner }: {
   state: QQStateUpdate; myTeam: QQTeam | null;
   myTeamId: string; emit: any; roomCode: string;
   lang: 'de' | 'en'; flagFlip: boolean; onFlagClick: () => void;
   connected: boolean; reconnect: () => void;
+  showIdentityBanner: boolean; dismissIdentityBanner: () => void;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
   const isComebackTeam = s.comebackTeamId === myTeamId;
@@ -545,6 +583,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   }, [s.soundConfig]);
 
   const prevPhaseRef = useRef(s.phase);
+  const prevQuestionIdRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = s.phase;
@@ -553,6 +592,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
       playFanfare();
       if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+    }
+    // Category-Soundcue beim Start einer neuen Frage (jede neue Question-ID).
+    // Kurzer kategoriespezifischer Ping via Web-Audio — eine Note pro Kategorie,
+    // damit man nicht auf den Beamer gucken muss um zu wissen, was dran ist.
+    if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion && s.currentQuestion.id !== prevQuestionIdRef.current) {
+      prevQuestionIdRef.current = s.currentQuestion.id;
+      playCategoryCue(s.currentQuestion.category);
+      if (navigator.vibrate) navigator.vibrate(25);
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       if (s.correctTeamId === myTeamId) {
@@ -571,7 +618,37 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       playFanfare();
       if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50, 30, 100]);
     }
-  }, [s.phase, s.correctTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.phase, s.correctTeamId, s.currentQuestion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Your-Turn-Alert: beim Aktivwerden in Hot Potato / Imposter.
+  const prevHotPotatoActiveRef = useRef<string | null>(null);
+  const prevImposterActiveRef  = useRef<string | null>(null);
+  const [yourTurnAlert, setYourTurnAlert] = useState<null | { kind: 'hotPotato' | 'imposter' }>(null);
+  useEffect(() => {
+    const prevHP = prevHotPotatoActiveRef.current;
+    prevHotPotatoActiveRef.current = s.hotPotatoActiveTeamId;
+    if (s.hotPotatoActiveTeamId === myTeamId && prevHP !== myTeamId) {
+      setYourTurnAlert({ kind: 'hotPotato' });
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      setTimeout(() => setYourTurnAlert(null), 1500);
+    }
+  }, [s.hotPotatoActiveTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const prevIM = prevImposterActiveRef.current;
+    prevImposterActiveRef.current = s.imposterActiveTeamId;
+    if (s.imposterActiveTeamId === myTeamId && prevIM !== myTeamId) {
+      setYourTurnAlert({ kind: 'imposter' });
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      setTimeout(() => setYourTurnAlert(null), 1500);
+    }
+  }, [s.imposterActiveTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Identity-Banner nach ~2.5s automatisch ausblenden.
+  useEffect(() => {
+    if (!showIdentityBanner) return;
+    const h = setTimeout(() => dismissIdentityBanner(), 2600);
+    return () => clearTimeout(h);
+  }, [showIdentityBanner]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dynamic phase/category accent for glows — match beamer accent colors
   const cat = s.currentQuestion?.category;
@@ -610,6 +687,9 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color={ffColor} />
+
+      {showIdentityBanner && myTeam && <IdentityBanner team={myTeam} lang={lang} />}
+      {yourTurnAlert && myTeam && <YourTurnAlert kind={yourTurnAlert.kind} team={myTeam} lang={lang} />}
 
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
@@ -750,6 +830,124 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       </div>
     </div>
   );
+}
+
+// ── Identity Banner: fullscreen welcome after successful join ────────────────
+function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      pointerEvents: 'none',
+      background: `radial-gradient(ellipse at 50% 50%, ${team.color}22 0%, rgba(13,10,6,0.92) 60%, rgba(13,10,6,0.98) 100%)`,
+      animation: 'tcIdentityOut 0.45s ease 2.15s both',
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        padding: '32px 44px', borderRadius: 28,
+        background: `linear-gradient(180deg, ${team.color}18, ${team.color}08)`,
+        border: `2.5px solid ${team.color}`,
+        boxShadow: `0 18px 56px rgba(0,0,0,0.55), 0 0 80px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`,
+        animation: 'tcIdentityIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both',
+      }}>
+        <div style={{
+          fontSize: 13, fontWeight: 900, letterSpacing: '0.2em',
+          color: `${team.color}dd`, textTransform: 'uppercase',
+        }}>
+          {lang === 'de' ? 'Willkommen!' : 'Welcome!'}
+        </div>
+        <QQTeamAvatar avatarId={team.avatarId} size={96} style={{
+          filter: `drop-shadow(0 0 24px ${team.color}aa)`,
+          animation: 'tcfloat 2.6s ease-in-out infinite',
+        }} />
+        <div style={{
+          fontSize: 14, fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.05em',
+        }}>
+          {lang === 'de' ? 'Ihr seid' : 'You are'}
+        </div>
+        <div style={{
+          fontSize: 40, fontWeight: 900, color: team.color, letterSpacing: '-0.01em',
+          textShadow: `0 0 30px ${team.color}aa`, textAlign: 'center',
+          lineHeight: 1.05, wordBreak: 'break-word', maxWidth: 360,
+        }}>
+          {team.name}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Your-Turn Alert: fullscreen pulse for Hot Potato / Imposter ──────────────
+function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; team: QQTeam; lang: 'de' | 'en' }) {
+  const emoji = kind === 'hotPotato' ? '🥔' : '🕵️';
+  const title = lang === 'de' ? 'JETZT BIST DU DRAN!' : 'YOUR TURN NOW!';
+  return (
+    <div
+      aria-live="assertive"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 2000, pointerEvents: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.55)',
+        animation: 'tcYourTurnPulse 1.5s ease both',
+        ['--turn-color' as string]: team.color,
+      }}
+    >
+      <div style={{
+        position: 'absolute', inset: 0,
+        animation: 'tcYourTurnGlow 0.7s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'relative',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+        padding: '28px 42px', borderRadius: 24,
+        background: `${team.color}22`,
+        border: `3px solid ${team.color}`,
+        boxShadow: `0 0 60px ${team.color}aa, inset 0 0 30px ${team.color}33`,
+      }}>
+        <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}>{emoji}</div>
+        <div style={{
+          fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.06em',
+          textShadow: `0 0 16px ${team.color}, 0 2px 0 rgba(0,0,0,0.5)`,
+          textAlign: 'center',
+        }}>
+          {title}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Category-Soundcue: kurzer kategoriespezifischer Ping zum Fragestart ──────
+function playCategoryCue(category: string) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Ctor = (window.AudioContext || (window as any).webkitAudioContext) as any;
+    if (!Ctor) return;
+    const ac = new Ctor() as AudioContext;
+    // Kategorie-spezifische Frequenzen (eine musikalische Note pro Kategorie).
+    const FREQ: Record<string, number> = {
+      SCHAETZCHEN:   523.25, // C5 — gold/warm
+      MUCHO:         659.25, // E5 — blau/klar
+      BUNTE_TUETE:   783.99, // G5 — rot/bunt
+      ZEHN_VON_ZEHN: 440.00, // A4 — grün/rund
+      CHEESE:        880.00, // A5 — violett/hell
+    };
+    const f = FREQ[category] ?? 587.33;
+    const t = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(f, t);
+    osc.frequency.exponentialRampToValueAtTime(f * 1.5, t + 0.09);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.18, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+    setTimeout(() => { try { ac.close(); } catch { /* ignore */ } }, 400);
+  } catch { /* ignore */ }
 }
 
 // ── Mobile Fireflies (lighter version for phones) ────────────────────────────
@@ -1186,12 +1384,25 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; lang: 'de' | 'en';
 }) {
   const q = s.currentQuestion;
+  // Critical-Glow: letzte 3s auf dem Question-Card — rot pulsierend.
+  const [isCritical, setIsCritical] = useState(false);
+  useEffect(() => {
+    if (!s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') { setIsCritical(false); return; }
+    const iv = setInterval(() => {
+      const secs = Math.ceil(Math.max(0, (s.timerEndsAt! - Date.now()) / 1000));
+      setIsCritical(secs >= 1 && secs <= 3);
+      if (secs === 0) clearInterval(iv);
+    }, 120);
+    return () => clearInterval(iv);
+  }, [s.timerEndsAt, s.phase]);
+
   if (!q) return null;
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catAccent = QQ_CAT_ACCENT[q.category] ?? catColor;
   const catLabel = QQ_CATEGORY_LABELS[q.category];
   const isRevealed = s.phase === 'QUESTION_REVEAL';
   const iWon = s.correctTeamId === myTeamId;
+  const iSubmitted = !!s.answers.find(a => a.teamId === myTeamId);
   const isCheese = q.category === 'CHEESE';
   const hasCheeseImg = isCheese && q.image?.url;
 
@@ -1201,6 +1412,10 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
     : catAccent;
 
   return (
+    <div style={{
+      borderRadius: 22,
+      animation: isCritical && !isRevealed ? 'tcCriticalGlow 0.7s ease-in-out infinite' : undefined,
+    }}>
     <CozyCard key={q.id} borderColor={cardBorder} pulse={!isRevealed}>
       {/* Category pill */}
       <div style={{
@@ -1592,6 +1807,48 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         );
       })()}
 
+      {/* Hot Potato: Eure-Runde-Zusammenfassung beim Reveal */}
+      {isRevealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
+        const eliminated = s.hotPotatoEliminated.includes(myTeamId);
+        return (
+          <div style={{
+            marginTop: 10, padding: '10px 14px', borderRadius: 12,
+            background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
+            border: `1.5px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
+            display: 'flex', alignItems: 'center', gap: 10,
+            animation: 'tcreveal 0.35s ease 0.15s both',
+          }}>
+            <span style={{ fontSize: 20 }}>{eliminated ? '🥔' : '🏆'}</span>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
+              {eliminated
+                ? (lang === 'de' ? 'Ausgeschieden' : 'Eliminated')
+                : (lang === 'de' ? 'Überlebt!' : 'Survived!')}
+            </span>
+          </div>
+        );
+      })()}
+
+      {/* Imposter: Eure-Runde-Zusammenfassung beim Reveal */}
+      {isRevealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'oneOfEight' && (() => {
+        const eliminated = s.imposterEliminated.includes(myTeamId);
+        return (
+          <div style={{
+            marginTop: 10, padding: '10px 14px', borderRadius: 12,
+            background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
+            border: `1.5px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
+            display: 'flex', alignItems: 'center', gap: 10,
+            animation: 'tcreveal 0.35s ease 0.15s both',
+          }}>
+            <span style={{ fontSize: 20 }}>{eliminated ? '🕵️' : '✓'}</span>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
+              {eliminated
+                ? (lang === 'de' ? 'Imposter erwischt — ausgeschieden' : 'Caught the imposter — eliminated')
+                : (lang === 'de' ? 'Wahre Aussage gewählt' : 'Picked a true statement')}
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Nobody got it right */}
       {isRevealed && !s.correctTeamId && (
         <div style={{
@@ -1605,8 +1862,37 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             : (lang === 'de' ? '❌ Keiner hatte Recht' : '❌ Nobody got it right')}
         </div>
       )}
+
+      {/* Trost-Message: eigene Antwort abgegeben, aber nicht gewonnen. Kein Shaming,
+          nur Ermutigung. Nicht zeigen wenn man die Runde gewonnen hat. */}
+      {isRevealed && !iWon && iSubmitted && (() => {
+        const msgs = lang === 'de'
+          ? ['Knapp daneben!', 'Nächste Chance gleich!', 'Dran bleiben!', 'Fast erwischt!', 'Weiter so!']
+          : ['So close!', 'Next chance is coming!', 'Stay in it!', 'Almost there!', 'Keep going!'];
+        // Deterministisch per Question-ID — kein Flackern bei Re-Render.
+        const pick = msgs[Math.abs(hashString(q.id)) % msgs.length];
+        return (
+          <div style={{
+            marginTop: 8, padding: '9px 14px', borderRadius: 12, textAlign: 'center',
+            background: 'rgba(148,163,184,0.08)',
+            border: '1px dashed rgba(148,163,184,0.25)',
+            fontSize: 13, fontWeight: 700, color: '#cbd5e1',
+            animation: 'tcTrostIn 0.5s ease 0.45s both',
+          }}>
+            ✨ {pick}
+          </div>
+        );
+      })()}
     </CozyCard>
+    </div>
   );
+}
+
+// Kleine Hash-Helper-Funktion (nur für deterministische Auswahl, kein Crypto).
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return h;
 }
 
 // ── Submit button (shared) ────────────────────────────────────────────────────
@@ -2293,11 +2579,18 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
 
 function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; durationSec: number; accentColor: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // Track last whole-second to fire exactly one vibration per new second in 1..3.
+  const lastBuzzSecRef = useRef<number | null>(null);
 
   useEffect(() => {
     const iv = setInterval(() => {
       const r = Math.max(0, (endsAt - Date.now()) / 1000);
       setRemaining(r);
+      const secs = Math.ceil(r);
+      if (secs >= 1 && secs <= 3 && lastBuzzSecRef.current !== secs) {
+        lastBuzzSecRef.current = secs;
+        if (navigator.vibrate) navigator.vibrate(70);
+      }
       if (r === 0) clearInterval(iv);
     }, 100);
     return () => clearInterval(iv);

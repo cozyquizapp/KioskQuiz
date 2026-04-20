@@ -5515,9 +5515,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Frosted question/answer card — bottom */}
+          {/* Frosted question/answer card — bottom.
+              minHeight reserviert Platz für Reveal-Zustand (Frage + Antwort + Gewinner-Row),
+              damit die Karte beim Reveal nicht nach oben wächst. */}
           <div style={{
             width: '100%', maxWidth: 900,
+            minHeight: 'clamp(320px, 38vh, 420px)',
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -5530,6 +5533,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             transition: 'padding 0.4s ease, border-color 0.4s ease',
             pointerEvents: 'auto',
             textAlign: 'center',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
             {/* Category pill — fade out on reveal */}
             <div style={{
@@ -6600,8 +6604,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Correct team — winner banner (non-Schätzchen) */}
-          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && showUnifiedWinner && (() => {
+          {/* Correct team — winner banner (non-Schätzchen). Platz wird ab Reveal-Start
+              reserviert (minHeight), damit das verspätete Akt3-Einblenden das Layout
+              nicht hochzieht. Gilt für MUCHO / ZvZ. */}
+          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
+            <div style={{
+              width: '100%', maxWidth: 1400,
+              minHeight: 'clamp(150px, 17vh, 200px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 12,
+            }}>
+              {showUnifiedWinner && (() => {
             const isEn = lang === 'en';
             const bannerDelay = 0.7;
             const avatarDelay = 1.1;
@@ -6689,7 +6702,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
-                  padding: '22px 38px', borderRadius: 28, marginBottom: 12,
+                  padding: '22px 38px', borderRadius: 28,
                   width: '100%', maxWidth: 1400, flexWrap: 'wrap',
                   background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
                   border: '2px solid rgba(251,191,36,0.55)',
@@ -6723,7 +6736,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
-                padding: '28px 44px', borderRadius: 28, marginBottom: 12,
+                padding: '28px 44px', borderRadius: 28,
                 width: '100%', maxWidth: 1400,
                 background: `linear-gradient(135deg, ${team!.color}22, ${team!.color}0a)`,
                 border: `2px solid ${team!.color}66`,
@@ -6752,6 +6765,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             );
           })()}
+            </div>
+          )}
 
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
           {revealed && s.correctTeamId && showUnifiedWinner && (

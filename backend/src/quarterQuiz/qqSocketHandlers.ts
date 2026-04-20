@@ -1628,6 +1628,28 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── MUCHO Akt-1 Step (Moderator deckt Team-Voter pro Option nacheinander auf) ─
+    // Leere Optionen werden übersprungen — wir zählen nur Optionen mit ≥1 Voter.
+    // maxStep = nonEmptyOptions.length + 1 (+1 für „Jäger starten" → Akt 2+3 auf Beamer).
+    socket.on('qq:muchoRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const q = room.currentQuestion;
+        const isMucho = q?.category === 'MUCHO';
+        if (room.phase !== 'QUESTION_REVEAL' || !isMucho || !q?.options) { ok(ack); return; }
+        let nonEmpty = 0;
+        for (let i = 0; i < q.options.length; i++) {
+          if (room.answers.some(a => a.text === String(i))) nonEmpty++;
+        }
+        const maxStep = nonEmpty + 1;
+        if (room.muchoRevealStep < maxStep) {
+          room.muchoRevealStep += 1;
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── 2D/3D Toggle (moderator -> beamer) ─────────────────────────────────
     socket.on('qq:toggleView', (payload: { roomCode: string }, ack?: unknown) => {
       try {

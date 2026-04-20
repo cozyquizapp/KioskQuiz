@@ -172,6 +172,15 @@ export default function QQModeratorPage() {
     const mapMaxStep = 1 + mapValidPinCount + 1;
     const mapRevealDone = isMapReveal && (s.mapRevealStep ?? 0) >= mapMaxStep;
     const mapRevealInProgress = isMapReveal && !mapRevealDone;
+    // MUCHO Akt-1-Reveal (moderator deckt Voter pro Option auf)
+    const isMuchoReveal = q?.category === 'MUCHO';
+    let muchoNonEmptyKey = 0;
+    if (isMuchoReveal && q?.options) {
+      for (let i = 0; i < q.options.length; i++) {
+        if (s.answers?.some((a: any) => a.text === String(i))) muchoNonEmptyKey++;
+      }
+    }
+    const muchoRevealInProgress = isMuchoReveal && (s.muchoRevealStep ?? 0) < muchoNonEmptyKey + 1;
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
@@ -195,9 +204,10 @@ export default function QQModeratorPage() {
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
       else if (s.phase === 'QUESTION_ACTIVE')
         emitRef.current('qq:revealAnswer', { roomCode });
-      // QUESTION_REVEAL: bei CozyGuessr progressiv aufdecken, sonst direkt zum Grid
+      // QUESTION_REVEAL: bei CozyGuessr/MUCHO progressiv aufdecken, sonst direkt zum Grid
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
+        else if (muchoRevealInProgress) emitRef.current('qq:muchoRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       // COMEBACK_CHOICE: Erklärung Step 0→1→2 progressiv aufdecken
@@ -271,6 +281,7 @@ export default function QQModeratorPage() {
         emitRef.current('qq:revealAnswer', { roomCode });
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
+        else if (muchoRevealInProgress) emitRef.current('qq:muchoRevealStep', { roomCode });
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       else if (s.phase === 'COMEBACK_CHOICE') {
@@ -673,6 +684,38 @@ export default function QQModeratorPage() {
                   const maxStep = 1 + validPins + 1;
                   const step = s.mapRevealStep ?? 0;
                   const inProgress = isMap && step < maxStep;
+                  // ── MUCHO: moderator-gesteuerter Akt-1-Voter-Reveal ──
+                  const isMucho = qRev?.category === 'MUCHO';
+                  let muchoNonEmpty = 0;
+                  if (isMucho && qRev?.options) {
+                    for (let i = 0; i < qRev.options.length; i++) {
+                      if (s.answers?.some(a => a.text === String(i))) muchoNonEmpty++;
+                    }
+                  }
+                  const muchoJaegerStep = muchoNonEmpty + 1;
+                  const muchoStep = s.muchoRevealStep ?? 0;
+                  const muchoInProgress = isMucho && muchoStep < muchoJaegerStep;
+                  if (muchoInProgress) {
+                    const isJaegerNext = muchoStep === muchoNonEmpty;
+                    const label = isJaegerNext
+                      ? '🎯 Jäger starten'
+                      : muchoStep === 0
+                        ? '👥 Teams pro Antwort zeigen'
+                        : `👉 Nächste Antwort (${muchoStep + 1}/${muchoNonEmpty})`;
+                    const helper = isJaegerNext
+                      ? 'Animation ~3 s, danach „Felder setzen"'
+                      : muchoNonEmpty === 0
+                        ? 'Keine Teams haben geantwortet'
+                        : `Voter-Gruppe ${muchoStep}/${muchoNonEmpty} gezeigt`;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:muchoRevealStep', { roomCode })} hotkey="Space">
+                          {label}
+                        </PrimaryBtn>
+                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
+                      </div>
+                    );
+                  }
                   if (inProgress) {
                     // Auto-Phase = Pins werden automatisch alle ~2.4s eingeblendet.
                     // Läuft zwischen step 1 (Target) und 1+validPins (alle Pins drauf).

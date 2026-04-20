@@ -485,6 +485,10 @@ export interface QQStateUpdate {
   mapRevealStep: number;
   // Comeback — moderator-gesteuerte Intro-Slides (0 = "was ist Comeback", 1 = "warum diese Team", 2 = Optionen)
   comebackIntroStep: number;
+  // MUCHO — moderator-gesteuerter Akt-1-Voter-Reveal
+  // 0 = Antwort aufgedeckt ohne Voter, 1..k = Voter der k-ten nicht-leeren Option,
+  // k+1 = „Jäger starten" (Akt 2+3 laufen auf Beamer zeitgesteuert)
+  muchoRevealStep: number;
   // Settings
   avatarsEnabled: boolean;
   totalPhases: 3 | 4;

@@ -74,6 +74,11 @@ export interface QQRoomState {
   // Comeback-Erklärung — moderator-gesteuerte Intro-Slides vor den 3 Optionen
   // 0 = Was ist Comeback, 1 = warum DIESES Team, 2 = Optionen zeigen
   comebackIntroStep: number;
+  // MUCHO — moderator-gesteuerter Akt-1-Voter-Reveal (pro Klick eine Option mit ≥1 Voter)
+  // 0 = Antwort aufgedeckt, keine Voter sichtbar
+  // 1..k = Voter der k-ten nicht-leeren Option eingeblendet (leere Options werden übersprungen)
+  // k+1 = „Jäger starten" → Akt 2+3 laufen frontend-seitig zeitgesteuert ab
+  muchoRevealStep: number;
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
@@ -196,6 +201,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       mapRevealStep: 0,
       _mapRevealTimerHandle: null,
       comebackIntroStep: 0,
+      muchoRevealStep: 0,
       _timerOnExpire: null,
       avatarsEnabled: true,
       totalPhases: 3,
@@ -576,6 +582,8 @@ export function qqActivateQuestion(
   // CozyGuessr (map) reveal — pro Frage bei 0 starten, evtl. laufenden Auto-Timer stoppen
   room.mapRevealStep  = 0;
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
+  // MUCHO Akt-1-Step — pro Frage bei 0 starten
+  room.muchoRevealStep = 0;
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
@@ -1845,6 +1853,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     imageRevealed:    room.imageRevealed,
     mapRevealStep:    room.mapRevealStep,
     comebackIntroStep: room.comebackIntroStep,
+    muchoRevealStep:  room.muchoRevealStep,
     avatarsEnabled:   room.avatarsEnabled,
     totalPhases:      room.totalPhases,
     schedule:         room.questions.map(q => ({
@@ -2004,6 +2013,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.mapRevealStep         = 0;
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }
   room.comebackIntroStep     = 0;
+  room.muchoRevealStep       = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teams[id].totalCells     = 0;

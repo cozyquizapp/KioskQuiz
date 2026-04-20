@@ -163,6 +163,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   teamsRevealStartedAt: null,
   mapRevealStep: 0,
   comebackIntroStep: 0,
+  muchoRevealStep: 0,
 };
 
 const MOCK_QUESTION_BASE = {

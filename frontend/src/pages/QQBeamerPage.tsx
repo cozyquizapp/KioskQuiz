@@ -1166,14 +1166,19 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MuchoOptionsReveal — 3-Akt-Choreografie für MUCHO:
-//   Akt 1: Team-Avatare poppen pro Option staggered A→B→C→D auf ("Auf A hatten X,Y,Z")
-//   Akt 2: Grüner Jäger hüpft A→B→C→D sequentiell und lockt dann auf die richtige Lösung
-//   Akt 3: Schnellster Voter der richtigen Antwort bekommt ⚡ + Goldrand + Zeit-Pill
+//   Akt 1 (moderator-gesteuert via revealStep): pro Klick poppen die Voter einer
+//         nicht-leeren Option rein. Leere Options werden übersprungen — der
+//         Backend-Handler „qq:muchoRevealStep" zählt nur Optionen mit ≥1 Voter.
+//   Akt 2 (zeitgesteuert, startet bei revealStep = nonEmpty+1 = "Jäger starten"):
+//         Grüner Jäger hüpft A→B→C→D sequentiell und lockt auf die richtige
+//         Lösung.
+//   Akt 3 (zeitgesteuert, direkt nach Lock): Schnellster Voter der richtigen
+//         Antwort bekommt ⚡ + Goldrand + Zeit-Pill.
 // ─────────────────────────────────────────────────────────────────────────────
-type MuchoPhaseKind = 'idle' | 'akt1' | 'akt2_hop' | 'akt2_lock' | 'akt3';
+type MuchoAkt2Phase = 'idle' | 'hop' | 'lock' | 'speedrun';
 function MuchoOptionsReveal({
   options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
-  cardBg, timerEndsAt, timerDurationSec, revealed, sfxMuted,
+  cardBg, timerEndsAt, timerDurationSec, revealStep, sfxMuted,
 }: {
   options: string[];
   optionsEn?: string[];
@@ -1185,55 +1190,61 @@ function MuchoOptionsReveal({
   cardBg: string;
   timerEndsAt: number | null;
   timerDurationSec: number;
-  revealed: boolean;
+  revealStep: number;
   sfxMuted?: boolean;
 }) {
   const N = options.length;
-  const [phase, setPhase] = useState<MuchoPhaseKind>('idle');
-  const [akt1Step, setAkt1Step] = useState(-1);
+  // Nicht-leere Optionen in Reihenfolge (identisch zur Backend-Zählung).
+  const nonEmptyOrdered = useMemo(() => {
+    const res: number[] = [];
+    for (let i = 0; i < N; i++) {
+      if (answers.some(a => a.text === String(i))) res.push(i);
+    }
+    return res;
+  }, [answers, N]);
+  const akt1Max = nonEmptyOrdered.length;
+  const jaegerStep = akt1Max + 1;
+  const isJaegerTriggered = revealStep >= jaegerStep && correctOptionIndex != null && N > 0;
+  // Welche Option-Indices zeigen ihre Voter? Bis revealStep (gekappt auf akt1Max).
+  const shownVoterSet = useMemo(() => {
+    const cap = Math.min(Math.max(0, revealStep), akt1Max);
+    return new Set(nonEmptyOrdered.slice(0, cap));
+  }, [revealStep, akt1Max, nonEmptyOrdered]);
+
+  // Akt 2/3 — zeitgesteuert, startet sobald revealStep den Jäger-Step erreicht.
+  const [akt2Phase, setAkt2Phase] = useState<MuchoAkt2Phase>('idle');
   const [akt2Idx, setAkt2Idx] = useState(-1);
-  const [akt3On, setAkt3On] = useState(false);
 
   useEffect(() => {
-    if (!revealed || correctOptionIndex == null || N === 0) {
-      setPhase('idle');
-      setAkt1Step(-1);
+    if (!isJaegerTriggered) {
+      setAkt2Phase('idle');
       setAkt2Idx(-1);
-      setAkt3On(false);
       return;
     }
     const timers: number[] = [];
-    setPhase('akt1');
-    // Akt 1: Voter-Gruppen pro Option staggered einblenden
-    const akt1Stagger = 550;
-    const akt1StartDelay = 300;
-    for (let i = 0; i < N; i++) {
-      timers.push(window.setTimeout(() => setAkt1Step(i), akt1StartDelay + i * akt1Stagger));
-    }
-    // Akt 2: Jäger hüpft A→B→C→D, dann Lock auf richtige Option
-    const akt2Start = akt1StartDelay + N * akt1Stagger + 200;
+    setAkt2Phase('hop');
+    setAkt2Idx(-1);
     const hopPace = 400;
+    const startDelay = 250;
     for (let i = 0; i < N; i++) {
       timers.push(window.setTimeout(() => {
-        setPhase('akt2_hop');
         setAkt2Idx(i);
         if (!sfxMuted) { try { playTick(); } catch {} }
-      }, akt2Start + i * hopPace));
+      }, startDelay + i * hopPace));
     }
-    const lockAt = akt2Start + N * hopPace;
+    const lockAt = startDelay + N * hopPace;
     timers.push(window.setTimeout(() => {
-      setPhase('akt2_lock');
-      setAkt2Idx(correctOptionIndex);
+      setAkt2Phase('lock');
+      setAkt2Idx(correctOptionIndex!);
     }, lockAt));
-    // Akt 3: Schnellster ⚡
     timers.push(window.setTimeout(() => {
-      setPhase('akt3');
-      setAkt3On(true);
+      setAkt2Phase('speedrun');
     }, lockAt + 700));
     return () => { timers.forEach(t => window.clearTimeout(t)); };
-  }, [revealed, correctOptionIndex, N, sfxMuted]);
+  }, [isJaegerTriggered, correctOptionIndex, N, sfxMuted]);
 
-  const showLock = phase === 'akt2_lock' || phase === 'akt3';
+  const showLock = akt2Phase === 'lock' || akt2Phase === 'speedrun';
+  const akt3On = akt2Phase === 'speedrun';
   const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
   const muchoLabels = ['A', 'B', 'C', 'D'];
 
@@ -1249,10 +1260,10 @@ function MuchoOptionsReveal({
         const optImg = optionImages?.[i];
         const isCorrect = showLock && i === correctOptionIndex;
         const isWrong = showLock && i !== correctOptionIndex;
-        const isHunter = phase === 'akt2_hop' && akt2Idx === i;
+        const isHunter = akt2Phase === 'hop' && akt2Idx === i;
         const optColor = MUCHO_COLORS[i] ?? '#64748B';
         const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
-        const voterShow = akt1Step >= i;
+        const voterShow = shownVoterSet.has(i);
         return (
           <div key={i} style={{
             position: 'relative', overflow: 'hidden',
@@ -5562,7 +5573,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* MUCHO: 3-Akt-Reveal (Voter-Poppen → Grüner Jäger → Schnellster ⚡) */}
+          {/* MUCHO: 3-Akt-Reveal (moderator steuert Akt 1 via revealStep, Akt 2+3 zeitgesteuert) */}
           {q.options && q.category === 'MUCHO' && (
             <MuchoOptionsReveal
               options={q.options}
@@ -5575,7 +5586,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               cardBg={cardBg}
               timerEndsAt={s.timerEndsAt}
               timerDurationSec={s.timerDurationSec}
-              revealed={revealed}
+              revealStep={revealed ? s.muchoRevealStep : 0}
               sfxMuted={s.sfxMuted}
             />
           )}

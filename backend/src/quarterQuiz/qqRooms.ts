@@ -120,8 +120,8 @@ export interface QQRoomState {
   // (alle Felder geklaut ODER Skip) wird das Feld gelöscht.
   _comebackGridSnapshot?: QQGrid;
   _comebackStatsSnapshot?: { placementsLeft: number };
-  // Sound
-  globalMuted: boolean;
+  // Sound. `globalMuted` wird im Snapshot als (musicMuted && sfxMuted) abgeleitet
+  // und ist daher kein eigener State-Slot mehr.
   musicMuted: boolean;
   sfxMuted: boolean;
   volume: number; // 0–1
@@ -140,6 +140,9 @@ export interface QQRoomState {
   // Pause: stores the phase to return to when resuming
   _phaseBeforePause: QQPhase | null;
   _timerRemainingMs?: number;
+  // Hot-Potato-Per-Turn-Timer beim Pause einfrieren
+  _hotPotatoOnExpire?: (() => void) | null;
+  _hotPotatoTurnRemainingMs?: number;
   // Fun stats — accumulated across questions
   questionHistory: Array<{
     questionText: string;
@@ -229,7 +232,6 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       avatarsEnabled: true,
       totalPhases: 3,
       lastActivityAt: Date.now(),
-      globalMuted: false,
       musicMuted: false,
       sfxMuted: false,
       volume: 0.8,
@@ -443,6 +445,11 @@ export function qqSetTimerDuration(room: QQRoomState, durationSec: number): void
   // If a timer is currently running, restart it with the new duration
   if (room.timerHandle && room._timerOnExpire) {
     qqStartTimer(room, room._timerOnExpire);
+  }
+  // Falls pausiert: Rest auf neue Dauer setzen, damit Resume die neue
+  // Einstellung verwendet (sonst würde der alte Rest aus Pre-Pause weitergeführt).
+  else if (room.phase === 'PAUSED' && room._timerRemainingMs != null) {
+    room._timerRemainingMs = room.timerDurationSec * 1000;
   }
 }
 
@@ -986,6 +993,7 @@ export function qqClearHotPotatoTimer(room: QQRoomState): void {
     room._hotPotatoTimerHandle = null;
   }
   room.hotPotatoTurnEndsAt = null;
+  room._hotPotatoOnExpire = null;
 }
 
 /** Begin a new turn: set deadline + auto-eliminate timer. */
@@ -993,6 +1001,7 @@ function qqStartHotPotatoTurn(room: QQRoomState, onExpire: () => void): void {
   qqClearHotPotatoTimer(room);
   room.hotPotatoLastAnswer = null;
   room.hotPotatoTurnEndsAt = Date.now() + HOT_POTATO_TURN_SEC * 1000;
+  room._hotPotatoOnExpire = onExpire;
   room._hotPotatoTimerHandle = setTimeout(onExpire, HOT_POTATO_TURN_SEC * 1000);
 }
 
@@ -2115,7 +2124,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     theme:            room.theme,
     draftId:          room.draftId,
     slideTemplates:   room.slideTemplates,
-    globalMuted:      room.globalMuted,
+    globalMuted:      room.musicMuted && room.sfxMuted,
     musicMuted:       room.musicMuted,
     sfxMuted:         room.sfxMuted,
     volume:           room.volume,
@@ -2188,32 +2197,48 @@ export function qqFinishTeamsReveal(room: QQRoomState): void {
 
 // ── Pause / Resume ───────────────────────────────────────────────────────────
 
-/** Pause the game — stores current phase and pauses the timer if running. */
+/** Pause the game — stores current phase and pauses ALLE Timer (main question
+ *  timer + Hot-Potato-Turn-Timer). Map-Reveal-Auto-Timer wird ebenfalls gestoppt,
+ *  aber nicht restauriert — Pins werden einfach ab Resume weiter manuell
+ *  getriggert. */
 export function qqPause(room: QQRoomState): void {
   if (room.phase === 'PAUSED') return; // already paused
   if (room.phase === 'LOBBY') throw new QQError('WRONG_PHASE', 'Kann in der Lobby nicht pausieren.');
   room._phaseBeforePause = room.phase;
-  // Pause timer if running (keep timerEndsAt for display but stop the timeout)
+  // Pause Haupt-Timer (Frage-Timer)
   if (room.timerHandle) {
     clearTimeout(room.timerHandle);
     room.timerHandle = null;
-    // Store remaining time so we can resume it
     if (room.timerEndsAt) {
       room._timerRemainingMs = Math.max(0, room.timerEndsAt - Date.now());
-      room.timerEndsAt = null; // clear so clients don't count down
+      room.timerEndsAt = null;
     }
+  }
+  // Pause Hot-Potato-Turn-Timer (sonst wird Team während Pause auto-eliminiert)
+  if (room._hotPotatoTimerHandle) {
+    clearTimeout(room._hotPotatoTimerHandle);
+    room._hotPotatoTimerHandle = null;
+    if (room.hotPotatoTurnEndsAt) {
+      room._hotPotatoTurnRemainingMs = Math.max(0, room.hotPotatoTurnEndsAt - Date.now());
+      room.hotPotatoTurnEndsAt = null;
+    }
+  }
+  // Pause Map-Reveal-Auto-Timer (Pins stoppen — Moderator triggert weiter nach Resume)
+  if (room._mapRevealTimerHandle) {
+    clearTimeout(room._mapRevealTimerHandle);
+    room._mapRevealTimerHandle = null;
   }
   room.phase = 'PAUSED';
   room.lastActivityAt = Date.now();
 }
 
-/** Resume from pause — restores previous phase and restarts timer if it was running. */
+/** Resume from pause — restores previous phase and restarts ALLE Timer. */
 export function qqResume(room: QQRoomState): void {
   assertPhase(room, ['PAUSED']);
   if (!room._phaseBeforePause) throw new QQError('WRONG_PHASE', 'Keine Phase zum Fortsetzen.');
   room.phase = room._phaseBeforePause;
   room._phaseBeforePause = null;
-  // Resume timer if there was remaining time
+  // Resume Haupt-Timer
   if (room._timerRemainingMs != null && room._timerRemainingMs > 0 && room._timerOnExpire) {
     const remainMs = room._timerRemainingMs;
     room.timerEndsAt = Date.now() + remainMs;
@@ -2226,6 +2251,14 @@ export function qqResume(room: QQRoomState): void {
     }, remainMs);
   }
   delete room._timerRemainingMs;
+  // Resume Hot-Potato-Turn-Timer
+  if (room._hotPotatoTurnRemainingMs != null && room._hotPotatoTurnRemainingMs > 0 && room._hotPotatoOnExpire) {
+    const remainMs = room._hotPotatoTurnRemainingMs;
+    room.hotPotatoTurnEndsAt = Date.now() + remainMs;
+    const onExpire = room._hotPotatoOnExpire;
+    room._hotPotatoTimerHandle = setTimeout(onExpire, remainMs);
+  }
+  delete room._hotPotatoTurnRemainingMs;
   room.lastActivityAt = Date.now();
 }
 

@@ -186,23 +186,29 @@ function isDummy(room: import('./qqRooms').QQRoomState, teamId: string | null | 
 function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], correctRate = 0.6): string {
   if (!q) return 'Dummy';
   const beCorrect = Math.random() < correctRate;
-  if (q.category === 'MUCHO' && q.options) {
-    const idx = beCorrect && q.correctOptionIndex != null
-      ? q.correctOptionIndex
+  if (q.category === 'MUCHO' && Array.isArray(q.options) && q.options.length > 0) {
+    const validCorrect = q.correctOptionIndex != null
+      && q.correctOptionIndex >= 0
+      && q.correctOptionIndex < q.options.length;
+    const idx = beCorrect && validCorrect
+      ? q.correctOptionIndex!
       : Math.floor(Math.random() * q.options.length);
     return String(idx);
   }
   if (q.category === 'SCHAETZCHEN') {
-    const target = q.targetValue ?? 100;
-    const noise = beCorrect ? target * 0.1 : target * (0.5 + Math.random());
+    const target = Number.isFinite(q.targetValue) ? (q.targetValue as number) : 100;
+    const noise = beCorrect ? Math.abs(target) * 0.1 : Math.abs(target) * (0.5 + Math.random());
     return String(Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2)));
   }
-  if (q.category === 'ZEHN_VON_ZEHN' && q.options) {
+  if (q.category === 'ZEHN_VON_ZEHN' && Array.isArray(q.options) && q.options.length > 0) {
+    const validCorrect = q.correctOptionIndex != null
+      && q.correctOptionIndex >= 0
+      && q.correctOptionIndex < q.options.length;
     // Bei korrekt: meistens auf die richtige Option legen.
-    if (beCorrect && q.correctOptionIndex != null) {
+    if (beCorrect && validCorrect) {
       const pts = Array(q.options.length).fill(0);
       const main = 6 + Math.floor(Math.random() * 4); // 6-9 Punkte auf richtig
-      pts[q.correctOptionIndex] = main;
+      pts[q.correctOptionIndex!] = main;
       let remaining = 10 - main;
       while (remaining > 0) {
         const idx = Math.floor(Math.random() * q.options.length);
@@ -1354,7 +1360,6 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:setMuted', (payload: QQSetMutedPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        room.globalMuted = payload.muted;
         room.musicMuted  = payload.muted;
         room.sfxMuted    = payload.muted;
         broadcast(io, payload.roomCode);
@@ -1366,7 +1371,6 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.musicMuted  = payload.muted;
-        room.globalMuted = room.musicMuted && room.sfxMuted;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -1376,7 +1380,6 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.sfxMuted    = payload.muted;
-        room.globalMuted = room.musicMuted && room.sfxMuted;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

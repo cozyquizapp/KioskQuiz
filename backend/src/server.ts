@@ -132,6 +132,9 @@ import {
   getQQGameResults,
   deleteQQGameResult,
   deleteAllQQGameResults,
+  saveQQFeedbackToDB,
+  getQQFeedbackFromDB,
+  deleteQQFeedbackFromDB,
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -8555,8 +8558,8 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
 });
 
 // ── QQ Feedback ───────────────────────────────────────────────────────────────
-// Append-only JSON-File, kein DB-Overhead. Rate-Limit via globalem apiLimiter.
-const qqFeedbackPath = path.join(__dirname, 'data', 'qqFeedback.json');
+// Spieler-Feedback von der Summary-Seite — persistent in MongoDB
+// (Render Free Tier hat kein stabiles Filesystem).
 type QQFeedbackEntry = {
   id: string;
   submittedAt: number;
@@ -8566,21 +8569,6 @@ type QQFeedbackEntry = {
   text: string;
   contact: string | null;
 };
-function loadQQFeedback(): QQFeedbackEntry[] {
-  try {
-    if (fs.existsSync(qqFeedbackPath)) return JSON.parse(fs.readFileSync(qqFeedbackPath, 'utf-8'));
-  } catch {}
-  return [];
-}
-function saveQQFeedback(list: QQFeedbackEntry[]): void {
-  try {
-    const dir = path.dirname(qqFeedbackPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(qqFeedbackPath, JSON.stringify(list, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('QQ feedback write failed:', err);
-  }
-}
 // ── QQ Crash-Reporting ───────────────────────────────────────────────────────
 // Append-only JSON-File für Client-side Crashes (Moderator/Beamer/Team).
 // Damit wir sporadische Crashes reproduzieren können.
@@ -8818,7 +8806,7 @@ app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
   res.json({ mode, target, team: teamId });
 });
 
-app.post('/api/qq/feedback', (req, res) => {
+app.post('/api/qq/feedback', async (req, res) => {
   const body = req.body as Partial<QQFeedbackEntry> & { text?: string };
   const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';
   if (!text) return res.status(400).json({ error: 'Text fehlt.' });
@@ -8831,15 +8819,23 @@ app.post('/api/qq/feedback', (req, res) => {
     text,
     contact: typeof body.contact === 'string' ? body.contact.trim().slice(0, 200) : null,
   };
-  const list = loadQQFeedback();
-  list.push(entry);
-  saveQQFeedback(list);
-  res.json({ ok: true, id: entry.id });
+  try {
+    await saveQQFeedbackToDB(entry);
+    res.json({ ok: true, id: entry.id });
+  } catch {
+    res.status(500).json({ error: 'Feedback konnte nicht gespeichert werden.' });
+  }
 });
-app.get('/api/qq/feedback', (_req, res) => {
-  // Nur für den Moderator — PinGate brauchen wir hier eigentlich, aber reicht
-  // fürs erste als simple Abfrage. Reihenfolge: neueste zuerst.
-  res.json(loadQQFeedback().slice().reverse());
+app.get('/api/qq/feedback', async (_req, res) => {
+  // Neueste zuerst (sort via getQQFeedbackFromDB).
+  const list = await getQQFeedbackFromDB(500);
+  res.json(list);
+});
+app.delete('/api/qq/feedback/:id', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  const ok = await deleteQQFeedbackFromDB(req.params.id);
+  res.json({ ok });
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

@@ -313,3 +313,48 @@ export async function deleteAllQQGameResults(): Promise<number> {
     return 0;
   }
 }
+
+// ============= QUARTER QUIZ FEEDBACK =============
+// Spieler-Feedback von der Summary-Seite (/qq/summary/:roomCode).
+// Persistent in Mongo statt File (Render Free Tier hat kein stabiles FS).
+
+const QQFeedbackSchema = new mongoose.Schema({
+  id:          { type: String, required: true, unique: true, index: true },
+  submittedAt: { type: Number, default: Date.now, index: true },
+  roomCode:    { type: String, default: null },
+  teamName:    { type: String, default: null },
+  rating:      { type: Number, default: null },  // 1-5
+  text:        { type: String, required: true },
+  contact:     { type: String, default: null },
+}, { strict: false });
+
+export const QQFeedbackModel = mongoose.model('QQFeedback', QQFeedbackSchema);
+
+export async function saveQQFeedbackToDB(entry: any): Promise<void> {
+  try {
+    const doc = new QQFeedbackModel(entry);
+    await doc.save();
+  } catch (err) {
+    console.error('Fehler beim Speichern des QQ Feedbacks:', err);
+    throw err;
+  }
+}
+
+export async function getQQFeedbackFromDB(limit = 500): Promise<any[]> {
+  try {
+    return await QQFeedbackModel.find({}).lean().sort({ submittedAt: -1 }).limit(limit);
+  } catch (err) {
+    console.error('Fehler beim Laden des QQ Feedbacks:', err);
+    return [];
+  }
+}
+
+export async function deleteQQFeedbackFromDB(id: string): Promise<boolean> {
+  try {
+    const res = await QQFeedbackModel.deleteOne({ id });
+    return res.deletedCount > 0;
+  } catch (err) {
+    console.error('Fehler beim Löschen eines QQ Feedbacks:', err);
+    return false;
+  }
+}

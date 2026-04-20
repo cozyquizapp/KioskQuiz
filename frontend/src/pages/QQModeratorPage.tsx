@@ -702,18 +702,18 @@ export default function QQModeratorPage() {
                       if (s.answers?.some(a => a.text === String(i))) muchoNonEmpty++;
                     }
                   }
-                  const muchoJaegerStep = muchoNonEmpty + 1;
+                  const muchoLockStep = muchoNonEmpty + 1;
                   const muchoStep = s.muchoRevealStep ?? 0;
-                  const muchoInProgress = isMucho && muchoStep < muchoJaegerStep;
+                  const muchoInProgress = isMucho && muchoStep < muchoLockStep;
                   if (muchoInProgress) {
-                    const isJaegerNext = muchoStep === muchoNonEmpty;
-                    const label = isJaegerNext
-                      ? '🎯 Jäger starten'
+                    const isLockNext = muchoStep === muchoNonEmpty;
+                    const label = isLockNext
+                      ? '✅ Lösung aufdecken'
                       : muchoStep === 0
                         ? '👥 Teams pro Antwort zeigen'
                         : `👉 Nächste Antwort (${muchoStep + 1}/${muchoNonEmpty})`;
-                    const helper = isJaegerNext
-                      ? 'Animation ~3 s, danach „Felder setzen"'
+                    const helper = isLockNext
+                      ? 'Doppelblink auf richtige Option (~1.1 s)'
                       : muchoNonEmpty === 0
                         ? 'Keine Teams haben geantwortet'
                         : `Voter-Gruppe ${muchoStep}/${muchoNonEmpty} gezeigt`;

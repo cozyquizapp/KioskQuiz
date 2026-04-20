@@ -1165,20 +1165,16 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MuchoOptionsReveal — 3-Akt-Choreografie für MUCHO:
+// MuchoOptionsReveal — 2-Akt-Choreografie für MUCHO:
 //   Akt 1 (moderator-gesteuert via revealStep): pro Klick poppen die Voter einer
 //         nicht-leeren Option rein. Leere Options werden übersprungen — der
 //         Backend-Handler „qq:muchoRevealStep" zählt nur Optionen mit ≥1 Voter.
-//   Akt 2 (zeitgesteuert, startet bei revealStep = nonEmpty+1 = "Jäger starten"):
-//         Grüner Jäger hüpft A→B→C→D sequentiell und lockt auf die richtige
-//         Lösung.
-//   Akt 3 (zeitgesteuert, direkt nach Lock): Schnellster Voter der richtigen
-//         Antwort bekommt ⚡ + Goldrand + Zeit-Pill.
+//   Akt 2 (moderator-gesteuert, revealStep = nonEmpty+1): Doppelblink auf die
+//         richtige Option → permanent grün + Speedrun-Highlight (⚡ Goldrand).
 // ─────────────────────────────────────────────────────────────────────────────
-type MuchoAkt2Phase = 'idle' | 'hop' | 'lock' | 'speedrun';
 function MuchoOptionsReveal({
   options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
-  cardBg, timerEndsAt, timerDurationSec, revealStep, sfxMuted,
+  cardBg, timerEndsAt, timerDurationSec, revealStep,
 }: {
   options: string[];
   optionsEn?: string[];
@@ -1191,7 +1187,6 @@ function MuchoOptionsReveal({
   timerEndsAt: number | null;
   timerDurationSec: number;
   revealStep: number;
-  sfxMuted?: boolean;
 }) {
   const N = options.length;
   // Nicht-leere Optionen in Reihenfolge (identisch zur Backend-Zählung).
@@ -1203,48 +1198,16 @@ function MuchoOptionsReveal({
     return res;
   }, [answers, N]);
   const akt1Max = nonEmptyOrdered.length;
-  const jaegerStep = akt1Max + 1;
-  const isJaegerTriggered = revealStep >= jaegerStep && correctOptionIndex != null && N > 0;
+  const lockStep = akt1Max + 1;
+  const locked = revealStep >= lockStep && correctOptionIndex != null && N > 0;
   // Welche Option-Indices zeigen ihre Voter? Bis revealStep (gekappt auf akt1Max).
   const shownVoterSet = useMemo(() => {
     const cap = Math.min(Math.max(0, revealStep), akt1Max);
     return new Set(nonEmptyOrdered.slice(0, cap));
   }, [revealStep, akt1Max, nonEmptyOrdered]);
 
-  // Akt 2/3 — zeitgesteuert, startet sobald revealStep den Jäger-Step erreicht.
-  const [akt2Phase, setAkt2Phase] = useState<MuchoAkt2Phase>('idle');
-  const [akt2Idx, setAkt2Idx] = useState(-1);
-
-  useEffect(() => {
-    if (!isJaegerTriggered) {
-      setAkt2Phase('idle');
-      setAkt2Idx(-1);
-      return;
-    }
-    const timers: number[] = [];
-    setAkt2Phase('hop');
-    setAkt2Idx(-1);
-    const hopPace = 400;
-    const startDelay = 250;
-    for (let i = 0; i < N; i++) {
-      timers.push(window.setTimeout(() => {
-        setAkt2Idx(i);
-        if (!sfxMuted) { try { playTick(); } catch {} }
-      }, startDelay + i * hopPace));
-    }
-    const lockAt = startDelay + N * hopPace;
-    timers.push(window.setTimeout(() => {
-      setAkt2Phase('lock');
-      setAkt2Idx(correctOptionIndex!);
-    }, lockAt));
-    timers.push(window.setTimeout(() => {
-      setAkt2Phase('speedrun');
-    }, lockAt + 700));
-    return () => { timers.forEach(t => window.clearTimeout(t)); };
-  }, [isJaegerTriggered, correctOptionIndex, N, sfxMuted]);
-
-  const showLock = akt2Phase === 'lock' || akt2Phase === 'speedrun';
-  const akt3On = akt2Phase === 'speedrun';
+  const showLock = locked;
+  const akt3On = locked;
   const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
   const muchoLabels = ['A', 'B', 'C', 'D'];
 
@@ -1260,7 +1223,6 @@ function MuchoOptionsReveal({
         const optImg = optionImages?.[i];
         const isCorrect = showLock && i === correctOptionIndex;
         const isWrong = showLock && i !== correctOptionIndex;
-        const isHunter = akt2Phase === 'hop' && akt2Idx === i;
         const optColor = MUCHO_COLORS[i] ?? '#64748B';
         const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
         const voterShow = shownVoterSet.has(i);
@@ -1268,22 +1230,17 @@ function MuchoOptionsReveal({
           <div key={i} style={{
             position: 'relative', overflow: 'hidden',
             borderRadius: 20, padding: '24px 28px',
-            background: isCorrect ? 'rgba(34,197,94,0.22)'
-              : isHunter ? 'rgba(34,197,94,0.14)'
-              : cardBg,
+            background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
             border: isCorrect ? '3px solid #22C55E'
-              : isHunter ? '3px solid #22C55E'
               : isWrong ? '2px solid rgba(255,255,255,0.06)'
               : `2px solid ${optColor}55`,
             boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
-              : isHunter ? '0 0 28px rgba(34,197,94,0.45)'
               : '0 4px 16px rgba(0,0,0,0.3)',
             display: 'flex', alignItems: 'center', gap: 16,
             minHeight: optImg?.url ? 100 : 84,
-            transform: isHunter ? 'scale(1.02)' : 'scale(1)',
-            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
             animation: isCorrect
-              ? 'revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+              ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
               : isWrong
                 ? 'revealWrongDim 0.5s ease 0.1s both'
                 : undefined,
@@ -1301,10 +1258,10 @@ function MuchoOptionsReveal({
             <div style={{
               position: 'relative', zIndex: 1,
               width: 56, height: 56, borderRadius: 16,
-              background: isCorrect ? '#22C55E' : isHunter ? '#22C55E' : isWrong ? '#374151' : optColor,
+              background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-              boxShadow: isCorrect || isHunter
+              boxShadow: isCorrect
                 ? '0 0 16px rgba(34,197,94,0.6)'
                 : `0 2px 8px ${optColor}44`,
               transition: 'background 0.3s ease, box-shadow 0.3s ease',
@@ -2551,19 +2508,45 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative', zIndex: 5,
           }} />
 
-          {/* Mission subtitle — Farbe + Text cross-faden */}
-          <div style={{
-            fontFamily: fontFam,
-            fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
-            color: `${displayColor}dd`,
-            textShadow: `0 0 30px ${displayColor}33`,
-            animation: hasRoundTransition ? undefined : 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-            transition: 'color 500ms ease, text-shadow 500ms ease',
-            position: 'relative', zIndex: 5,
-            textAlign: 'center',
-          }}>
-            {displayPhaseDesc}
-          </div>
+          {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer) */}
+          {hasRoundTransition ? (
+            <div style={{
+              fontFamily: fontFam,
+              fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
+              textShadow: `0 0 30px ${color}33`,
+              position: 'relative', zIndex: 5,
+              textAlign: 'center',
+              display: 'inline-block',
+            }}>
+              {/* Sizer (unsichtbar) — trägt die Baseline + Breite des neuen Subtitle */}
+              <span style={{ visibility: 'hidden' }}>{phaseDesc}</span>
+              {/* Alter Subtitle fällt — synchron zur alten Ziffer */}
+              <span style={{
+                position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
+                color: `${prevColor}dd`,
+                animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
+              }}>{prevPhaseDesc}</span>
+              {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer */}
+              <span style={{
+                position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
+                color: `${color}dd`,
+                animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
+              }}>{phaseDesc}</span>
+            </div>
+          ) : (
+            <div style={{
+              fontFamily: fontFam,
+              fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
+              color: `${displayColor}dd`,
+              textShadow: `0 0 30px ${displayColor}33`,
+              animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+              transition: 'color 500ms ease, text-shadow 500ms ease',
+              position: 'relative', zIndex: 5,
+              textAlign: 'center',
+            }}>
+              {displayPhaseDesc}
+            </div>
+          )}
 
           {/* Fortschrittsbaum — während Transition zeigt er den letzten Dot der
               vorherigen Runde, nach ~450ms swappt er auf die neue Runde →
@@ -2784,17 +2767,27 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
           return (
             <>
-              {/* Category pill — context */}
+              {/* Category pill — zwei Zeilen: Runde + Fragen-Fortschritt */}
               <div style={{
-                padding: '6px 20px', borderRadius: 999,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                padding: '8px 22px', borderRadius: 18,
                 background: `${catColor}15`, border: `1.5px solid ${catColor}33`,
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
                 color: `${catColor}aa`, letterSpacing: '0.06em',
                 marginBottom: 24,
                 animation: 'contentReveal 0.4s ease 0.1s both',
                 position: 'relative', zIndex: 5,
               }}>
-                {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                <div style={{
+                  fontSize: 'clamp(11px, 1.2vw, 16px)', fontWeight: 800,
+                  opacity: 0.8, textTransform: 'uppercase',
+                }}>
+                  {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
+                </div>
+                <div style={{
+                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+                }}>
+                  {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                </div>
               </div>
 
               {/* Big emoji */}
@@ -2859,10 +2852,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative', zIndex: 5,
           }}>
             <div style={{
-              fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 800,
-              color: catColor, letterSpacing: '0.08em',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
             }}>
-              {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+              <div style={{
+                fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 800,
+                color: `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
+              }}>
+                {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
+              </div>
+              <div style={{
+                fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 800,
+                color: catColor, letterSpacing: '0.08em',
+              }}>
+                {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+              </div>
             </div>
             <RoundMiniTree state={s} catColor={catColor} />
           </div>
@@ -5116,17 +5119,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     }
     return n;
   }, [cat, q.options, s.answers]);
-  const muchoJaegerStep = muchoNonEmpty + 1;
-  const muchoJaegerTriggered = cat === 'MUCHO' && revealed && (s.muchoRevealStep ?? 0) >= muchoJaegerStep;
+  const muchoLockStep = muchoNonEmpty + 1;
+  const muchoLocked = cat === 'MUCHO' && revealed && (s.muchoRevealStep ?? 0) >= muchoLockStep;
+  // Winner-Card erscheint nach dem Doppelblink (1.1s Animation + 100ms Puffer).
   const [muchoAkt3Ready, setMuchoAkt3Ready] = useState(false);
   useEffect(() => {
-    if (!muchoJaegerTriggered) { setMuchoAkt3Ready(false); return; }
-    const N = q.options?.length ?? 0;
-    const hopPace = 400, startDelay = 250, afterLock = 700;
-    const delayMs = startDelay + N * hopPace + afterLock;
-    const t = window.setTimeout(() => setMuchoAkt3Ready(true), delayMs);
+    if (!muchoLocked) { setMuchoAkt3Ready(false); return; }
+    const t = window.setTimeout(() => setMuchoAkt3Ready(true), 1200);
     return () => window.clearTimeout(t);
-  }, [muchoJaegerTriggered, q.options?.length]);
+  }, [muchoLocked]);
 
   // ── ZEHN_VON_ZEHN: Step-Reveal — Bet-Cascade + Jäger ─────────────────────
   // Step 0: alle Chips sichtbar AUSSER höchste(r) Bet(s) pro Option; kein Grün, keine Winner-Card.
@@ -5736,7 +5737,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* MUCHO: 3-Akt-Reveal (moderator steuert Akt 1 via revealStep, Akt 2+3 zeitgesteuert) */}
+          {/* MUCHO: 2-Akt-Reveal (Akt 1 Voter-Steps, Akt 2 Lock via Doppelblink) */}
           {q.options && q.category === 'MUCHO' && (
             <MuchoOptionsReveal
               options={q.options}
@@ -5750,7 +5751,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               timerEndsAt={s.timerEndsAt}
               timerDurationSec={s.timerDurationSec}
               revealStep={revealed ? s.muchoRevealStep : 0}
-              sfxMuted={s.sfxMuted}
             />
           )}
 
@@ -5950,12 +5950,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }}>
                     {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
                   </span>
-                  {correctTeams.length > 0 && (q.category !== 'CHEESE' || cheeseShowAvatars) && (
+                  {correctTeams.length > 0 && (
                     <div style={{
                       display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                       gap: 12, flexWrap: 'wrap',
                       flexShrink: 0, width: '100%',
                       position: 'relative', zIndex: 1,
+                      // Bei CHEESE vor Step 2: Platz reserviert, Inhalt unsichtbar — verhindert Card-Dehnung
+                      visibility: (q.category === 'CHEESE' && !cheeseShowAvatars) ? 'hidden' : 'visible',
                     }}>
                       {correctTeams.map((ct, vi) => {
                         const timeSec = t0 ? Math.max(0, (ct.submittedAt - t0) / 1000) : null;

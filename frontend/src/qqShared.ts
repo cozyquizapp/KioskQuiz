@@ -234,6 +234,15 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 0.6; }
     100% { opacity: 0; }
   }
+  /* Doppelblink auf die korrekte Option (MUCHO/ZvZ Reveal) — zwei kurze Helligkeits-Pulse, Endzustand hell */
+  @keyframes revealDoubleBlink {
+    0%   { filter: brightness(1); }
+    15%  { filter: brightness(1.9); }
+    30%  { filter: brightness(0.75); }
+    50%  { filter: brightness(1.9); }
+    70%  { filter: brightness(0.85); }
+    100% { filter: brightness(1); }
+  }
   @keyframes revealShimmer {
     0%   { left: -100%; }
     100% { left: 200%; }

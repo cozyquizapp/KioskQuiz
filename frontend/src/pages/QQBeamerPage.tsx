@@ -2384,6 +2384,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const prevDigit = prevTitleMatch ? prevTitleMatch[2] : '';
   const newDigit  = newTitleMatch  ? newTitleMatch[2]  : '';
 
+  // Finale-Roll: vorige Runde war "Runde N", neue ist "Finale/Final".
+  // Die alte "Runde N" fällt, und "FINALE" rollt von oben rein – gleiche Choreo
+  // wie der Ziffer-Flip, aber mit Wort-Roll statt Ziffer-Roll + Gold-Gradient.
+  const isFinaleTransition = hasRoundTransition && isFinal && !!prevTitleMatch && !canDigitFlip;
+  const finaleWord = lang === 'de' ? 'FINALE' : 'FINAL';
+  const prevRoundFull = prevTitleMatch ? `${prevTitleMatch[1]} ${prevTitleMatch[2]}` : '';
+
   // Tree-State zu Beginn der Transition: letzter Dot der vorherigen Phase
   // (Wolf sitzt dort). Sobald treeShowsPrev kippt, swappt der Tree auf die
   // neue Phase und der Wolf hüpft (gesteuert in QQProgressTree).
@@ -2434,8 +2441,39 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 pointerEvents: 'none',
               }} />
             )}
-            {/* Round name — Ziffer-Flip wenn Transition, sonst klassischer BAM */}
-            {canDigitFlip ? (
+            {/* Round name — Ziffer-Flip / Finale-Wort-Roll / BAM */}
+            {isFinaleTransition ? (
+              <div style={{
+                fontFamily: fontFam,
+                fontSize: 'clamp(80px, 14vw, 200px)', fontWeight: 900, lineHeight: 1,
+                textAlign: 'center',
+                position: 'relative', display: 'inline-block',
+                animation: 'roundBreathe 4s ease-in-out 2s infinite',
+              }}>
+                {/* Sizer (unsichtbar) – trägt Breite/Baseline des FINALE-Worts */}
+                <span style={{ visibility: 'hidden' }}>{finaleWord}</span>
+                {/* Alte "Runde N" fällt – synchron zur Subtitle-Fall-Animation */}
+                <span style={{
+                  position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
+                  color: prevColor,
+                  textShadow: `0 0 120px ${prevColor}33, 0 12px 0 ${prevColor}22`,
+                  animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
+                }}>{prevRoundFull}</span>
+                {/* FINALE rollt von oben – mit Gold-Gradient */}
+                <span style={{
+                  position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
+                  backgroundImage: 'linear-gradient(180deg, #FDE68A 0%, #F59E0B 45%, #D97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  color: 'transparent',
+                  letterSpacing: '0.04em',
+                  textShadow: `0 0 80px #F59E0B55`,
+                  filter: 'drop-shadow(0 12px 0 rgba(180,83,9,0.35))',
+                  animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
+                }}>{finaleWord}</span>
+              </div>
+            ) : canDigitFlip ? (
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 1,

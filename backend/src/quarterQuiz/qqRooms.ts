@@ -1662,6 +1662,20 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
 }
 
 export function qqNextQuestion(room: QQRoomState): void {
+  // Space-Gate nach Comeback: Nach Abschluss der Comeback-Aktion bleibt das Spiel
+  // in PLACEMENT (pendingFor=null, comebackTeamId gesetzt). Der Moderator-Space
+  // führt hier direkt in die Finalphase – damit die Placement-Animation in Ruhe
+  // auslaufen kann, bevor die Runden-Intro startet.
+  if (
+    !room.pendingFor &&
+    room.phase === 'PLACEMENT' &&
+    room.comebackTeamId != null &&
+    room.comebackAction != null
+  ) {
+    qqBeginPhase(room, room.totalPhases as QQGamePhaseIndex);
+    return;
+  }
+
   // Block if placement is still pending
   const stats = room.pendingFor
     ? room.teamPhaseStats[room.pendingFor]
@@ -1773,11 +1787,14 @@ export function qqSkipCurrentPlacement(room: QQRoomState): void {
 
 // ── Finish placement & advance ────────────────────────────────────────────────
 function finishPlacement(room: QQRoomState): void {
-  // If this was a comeback action, begin final phase now
+  // Wenn das Comeback fertig ist: NICHT automatisch in die Finalphase wechseln,
+  // sondern in PLACEMENT bleiben (mit pendingFor=null), damit der Moderator per
+  // Space-Druck die Finalphase auslöst (qqNextQuestion erkennt den Zustand).
   if (room.pendingAction === 'COMEBACK' || room.phase === 'COMEBACK_CHOICE') {
     room.pendingFor    = null;
     room.pendingAction = null;
-    qqBeginPhase(room, room.totalPhases as QQGamePhaseIndex);
+    room.phase         = 'PLACEMENT';
+    room.lastActivityAt = Date.now();
     return;
   }
 

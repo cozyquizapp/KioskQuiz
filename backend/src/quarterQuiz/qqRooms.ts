@@ -1128,24 +1128,36 @@ export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): voi
 }
 
 /**
- * Prüft, ob es einen eindeutigen Gewinner gibt.
+ * Prüft, ob die Hot-Potato-Runde endet.
  *
- * Regel: In der ersten Runde MUSS jedes Team einmal antworten. Solange noch
- * unqualifizierte Teams alive sind (hatten ihren ersten Turn noch nicht /
- * wurden noch nicht eliminiert), läuft die Runde weiter. Erst wenn alle alive
- * Teams qualifiziert sind UND davon nur noch 1 übrig ist → Sieger.
- *
- * Liefert null, wenn weiter gespielt werden muss.
- * Liefert '' (leeren String), wenn die Runde endet, aber niemand gewinnen kann
- * (alle eliminiert, kein qualifizierter mehr alive).
+ * Regeln:
+ *  - Alle Teams spielen reihum weiter, solange ≥2 Teams alive sind UND noch
+ *    gültige Antworten im Pool verfügbar sind.
+ *  - Sieger: genau 1 Team alive → es gewinnt (hat jede Runde richtig geantwortet).
+ *  - Pool erschöpft mit ≥2 Teams alive → alle alive-Teams gewinnen geteilt
+ *    (werden als string[] zurückgegeben, Reveal-Logik nutzt qqMarkCorrect(array)).
+ *  - '' → alle eliminiert, kein Sieger.
+ *  - null → weiterspielen.
  */
-export function qqHotPotatoCheckWinner(room: QQRoomState): string | null | '' {
+export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | null | '' {
   const alive = getAliveTeams(room);
-  const qualifiedAlive = alive.filter(id => room.hotPotatoQualified.includes(id));
   if (alive.length === 0) return '';
-  // Unqualifizierte alive Teams blockieren den Win (müssen erst ihren Turn haben)
-  if (alive.length !== qualifiedAlive.length) return null;
-  if (qualifiedAlive.length === 1) return qualifiedAlive[0];
+  if (alive.length === 1) return alive[0];
+
+  // Pool-Erschöpfung: wenn alle gültigen Antworten der Frage verbraucht sind,
+  // kann kein neuer Antwort-Turn mehr gespielt werden → Runde endet.
+  // Alle Überlebenden haben "in der Zeit richtig geantwortet" → Shared Win.
+  const q = room.currentQuestion;
+  if (q && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') {
+    const validAnswers = (q.answer || '')
+      .split(/[,;]/)
+      .map(a => a.replace(/[…\.]+$/, '').trim())
+      .filter(a => a.length > 0);
+    if (validAnswers.length > 0 && room.hotPotatoUsedAnswers.length >= validAnswers.length) {
+      return alive;
+    }
+  }
+
   return null;
 }
 
@@ -2100,6 +2112,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     currentQuestion:  room.currentQuestion,
     revealedAnswer:   room.revealedAnswer,
     correctTeamId:    room.correctTeamId,
+    currentQuestionWinners: room._currentQuestionWinners ?? [],
     pendingFor:       room.pendingFor,
     pendingAction:    room.pendingAction,
     comebackTeamId:   room.comebackTeamId,

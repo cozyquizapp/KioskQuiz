@@ -1113,31 +1113,35 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const teamId = room.hotPotatoActiveTeamId;
         if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
-        // Record used answer + qualifiziere das Team (>=1 akzeptierte Antwort)
         if (room.hotPotatoLastAnswer) {
           room.hotPotatoUsedAnswers.push(room.hotPotatoLastAnswer);
           room.hotPotatoAnswerAuthors.push(teamId);
           qqHotPotatoMarkQualified(room, teamId);
         }
-        // Advance to next team (correct = survive, not win)
-        const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
-        const winner = qqHotPotatoCheckWinner(room);
-        if (winner === '' || !next) {
-          qqClearHotPotatoTimer(room);
-          qqRevealAnswer(room);
-          qqClearBuzz(room);
-          // Wenn der Aktive selbst der einzige Qualifizierte ist, gewinnt er.
-          if (room.hotPotatoQualified.includes(teamId)
-              && room.hotPotatoQualified.length === 1) {
-            qqMarkCorrect(room, teamId);
-          } else {
+        // Check winner BEFORE advancing — pool-depletion end fires even if there
+        // would be a next team in round-robin.
+        const winnerPre = qqHotPotatoCheckWinner(room);
+        if (winnerPre === '' || !winnerPre) {
+          // Noch nicht vorbei → advance zum nächsten Team und nochmal prüfen
+          const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
+          const winner = qqHotPotatoCheckWinner(room);
+          if (winner === '' || !next) {
+            qqClearHotPotatoTimer(room);
+            qqRevealAnswer(room);
+            qqClearBuzz(room);
             qqMarkWrong(room);
+          } else if (winner) {
+            qqClearHotPotatoTimer(room);
+            qqRevealAnswer(room);
+            qqClearBuzz(room);
+            qqMarkCorrect(room, winner);
           }
-        } else if (winner) {
+        } else {
+          // Pool erschöpft oder nur noch 1 Team → Runde endet sofort
           qqClearHotPotatoTimer(room);
           qqRevealAnswer(room);
           qqClearBuzz(room);
-          qqMarkCorrect(room, winner);
+          qqMarkCorrect(room, winnerPre);
         }
         broadcast(io, payload.roomCode);
         maybeAutoHotPotato(io, payload.roomCode);
@@ -1196,39 +1200,30 @@ export function registerQQHandlers(io: SocketIOServer): void {
             return score >= 0.8;
           });
           if (isMatch) {
-            // Correct — record answer + qualifiziere das Team
             room.hotPotatoUsedAnswers.push(trimmed);
             room.hotPotatoAnswerAuthors.push(payload.teamId);
             qqHotPotatoMarkQualified(room, payload.teamId);
 
-            // Pool exhausted? Alle qualifizierten Survivors gewinnen
-            const usedNorm = room.hotPotatoUsedAnswers.map(u => normalizeText(u));
-            const remaining = validAnswers.filter(valid =>
-              !usedNorm.some(u => similarityScore(u, valid) >= 0.8)
-            );
-            const aliveNow = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id) && room.teams[id]?.connected);
-            const qualifiedAlive = aliveNow.filter(id => room.hotPotatoQualified.includes(id));
-            if (remaining.length === 0 && qualifiedAlive.length >= 1) {
+            // Pool erschöpft oder nur noch 1 alive? → Runde endet sofort
+            const winnerPre = qqHotPotatoCheckWinner(room);
+            if (winnerPre && winnerPre !== '') {
               qqClearHotPotatoTimer(room);
               qqRevealAnswer(room);
               qqClearBuzz(room);
-              const shuffled = [...qualifiedAlive].sort(() => Math.random() - 0.5);
-              qqMarkCorrect(room, shuffled.length === 1 ? shuffled[0] : shuffled);
+              qqMarkCorrect(room, winnerPre);
               broadcast(io, payload.roomCode);
               ok(ack);
               return;
             }
 
-            // Otherwise advance + Win-Check
+            // Weiter: nächstes Team, nochmal prüfen
             const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
             const winner = qqHotPotatoCheckWinner(room);
             if (winner === '' || !next) {
               qqClearHotPotatoTimer(room);
               qqRevealAnswer(room);
               qqClearBuzz(room);
-              if (qualifiedAlive.length === 1) qqMarkCorrect(room, qualifiedAlive[0]);
-              else if (qualifiedAlive.length > 1) qqMarkCorrect(room, qualifiedAlive);
-              else qqMarkWrong(room);
+              qqMarkWrong(room);
             } else if (winner) {
               qqClearHotPotatoTimer(room);
               qqRevealAnswer(room);
@@ -1732,6 +1727,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         } else {
           qqComebackAutoApplySteal(room);
           broadcast(io, payload.roomCode);
+          // Dummy als Comeback-Team? → automatisch Klau ausführen.
+          if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
+            maybeAutoPlace(io, payload.roomCode);
+          }
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

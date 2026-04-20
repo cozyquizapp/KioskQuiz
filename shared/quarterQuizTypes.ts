@@ -455,6 +455,9 @@ export interface QQStateUpdate {
   currentQuestion: QQQuestion | null;
   revealedAnswer: string | null;
   correctTeamId: string | null;
+  // Alle Gewinner der aktuellen Frage in Placement-Reihenfolge (fastest zuerst).
+  // Wird für "du warst richtig, aber nicht schnellstes"-Hinweise im /team genutzt.
+  currentQuestionWinners?: string[];
   pendingFor: string | null;         // teamId that must act (place/steal/comeback)
   pendingAction: QQPendingAction | null;
   comebackTeamId: string | null;

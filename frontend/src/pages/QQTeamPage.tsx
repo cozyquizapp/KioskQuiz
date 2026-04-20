@@ -2016,11 +2016,12 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
     return () => clearInterval(iv);
   }, [s.hotPotatoTurnEndsAt]);
 
-  // Auto-focus when it becomes your turn
+  // Auto-focus when it becomes your turn.
+  // preventScroll: true verhindert, dass Mobile-Browser den Header weg-scrollen.
   useEffect(() => {
     if (isMyTurn && !submitted) {
       setVal('');
-      setTimeout(() => ref.current?.focus(), 120);
+      setTimeout(() => ref.current?.focus({ preventScroll: true }), 120);
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }
   }, [isMyTurn, submitted]);
@@ -2034,7 +2035,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
     if (navigator.vibrate) navigator.vibrate(40);
     await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
     setVal('');
-    setTimeout(() => ref.current?.focus(), 60);
+    setTimeout(() => ref.current?.focus({ preventScroll: true }), 60);
   }
 
   const urgency = secondsLeft !== null && secondsLeft <= 5;
@@ -2088,7 +2089,7 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
 }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { setTimeout(() => ref.current?.focus(), 120); }, []);
+  useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 120); }, []);
   return (
     <div style={{ marginTop: 4 }}>
       <input
@@ -2466,29 +2467,29 @@ function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; 
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
       {criteria && (
-        <div style={{ fontSize: 12, color: catColor, fontWeight: 800, textAlign: 'center', padding: '5px 12px', borderRadius: 8, background: `${catColor}12`, border: `1px solid ${catColor}33` }}>
+        <div style={{ fontSize: 12, color: catColor, fontWeight: 800, textAlign: 'center', padding: '4px 10px', borderRadius: 8, background: `${catColor}12`, border: `1px solid ${catColor}33` }}>
           🔀 {criteria}
         </div>
       )}
-      <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center' }}>
         {lang === 'en' ? 'Tap ▲▼ to reorder' : '▲▼ zum Sortieren tippen'}
       </div>
       {items.map((item, i) => (
         <div key={item + i} style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 14px', borderRadius: 14,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '6px 10px', borderRadius: 12,
           background: 'rgba(26,32,53,0.9)', border: `1.5px solid ${catColor}22`,
           animation: `tcoptIn 0.3s ease ${i * 0.05}s both`,
         }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: catColor }}>
+          <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor }}>
             {i + 1}
           </div>
-          <div style={{ flex: 1, fontSize: 'clamp(14px,3.8vw,16px)', fontWeight: 700, color: '#F1F5F9' }}>{item}</div>
+          <div style={{ flex: 1, fontSize: 'clamp(13px,3.4vw,15px)', fontWeight: 700, color: '#F1F5F9', lineHeight: 1.25 }}>{item}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 40, height: 38, borderRadius: 8, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 15, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
-            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 40, height: 38, borderRadius: 8, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 15, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 34, height: 30, borderRadius: 7, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 34, height: 30, borderRadius: 7, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
           </div>
         </div>
       ))}
@@ -2660,6 +2661,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   useEffect(() => {
     if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); }
   }, [isMyTurn]);
+
+  // Auto-skip: wenn nur eine einzige Aktion übrig ist (kein Phase-2 Multi-Choice,
+  // kein FREE-Menü), direkt ins Grid springen statt den Zwischenbutton zu zeigen.
+  useEffect(() => {
+    if (!isMyTurn) return;
+    if (isPhase2Choice) return;       // Phase-2 place/steal Wahl nötig
+    if (isFree && !freeMode) return;  // FREE-Menü noch offen
+    if (selecting) return;
+    setSelecting(true);
+  }, [isMyTurn, isPhase2Choice, isFree, freeMode, selecting]);
 
   async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
@@ -2891,11 +2902,45 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     && !freeMode
     && !(s.comebackAction === 'PLACE_2' && myComebackStats && myComebackStats.placementsLeft < 2);
 
+  // "Richtig, aber nicht schnellstes Team" — Hinweis, wenn dieses Team in der
+  // Gewinner-Reihenfolge nicht der erste war (nur sinnvoll bei normalen
+  // Platzierungen, nicht bei Comeback/FREE-Menü/Phase-2-Wahl).
+  const winners = s.currentQuestionWinners ?? [];
+  const myWinPosition = winners.indexOf(myTeamId);
+  const showNotFastestHint = isMyTurn
+    && pa !== 'COMEBACK'
+    && myWinPosition > 0;
+  const positionLabel = (() => {
+    if (myWinPosition < 0) return '';
+    const n = myWinPosition + 1;
+    if (lang === 'de') return n === 2 ? '2.' : n === 3 ? '3.' : `${n}.`;
+    const en = n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+    return en;
+  })();
+
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
         {phaseLabel}
       </div>
+
+      {showNotFastestHint && (
+        <div style={{
+          background: 'rgba(250, 204, 21, 0.12)',
+          border: '1px solid rgba(250, 204, 21, 0.35)',
+          borderRadius: 10,
+          padding: '10px 12px',
+          marginBottom: 12,
+          fontSize: 13,
+          lineHeight: 1.4,
+          color: '#fde68a',
+          textAlign: 'center',
+        }}>
+          {lang === 'de'
+            ? <>✅ Richtig — aber nicht das schnellste Team.<br/>Du darfst an <b>{positionLabel} Position</b> setzen.</>
+            : <>✅ Correct — but not the fastest team.<br/>You place in <b>{positionLabel} position</b>.</>}
+        </div>
+      )}
 
       {/* Phase 2: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (

@@ -2568,6 +2568,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 fontSize: 'clamp(80px, 14vw, 200px)', fontWeight: 900, lineHeight: 1,
                 textAlign: 'center',
                 position: 'relative', display: 'inline-block',
+                overflow: 'hidden',
+                paddingBottom: '0.15em',
                 animation: 'roundBreathe 4s ease-in-out 2s infinite',
               }}>
                 {/* Sizer (unsichtbar) – trägt Breite/Baseline des FINALE-Worts */}
@@ -2618,6 +2620,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms) */}
                 <span style={{
                   position: 'relative', display: 'inline-block',
+                  overflow: 'hidden',
+                  paddingBottom: '0.15em',
                   lineHeight: 1,
                   color: color,
                   transition: 'color 600ms ease',
@@ -2675,6 +2679,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               position: 'relative', zIndex: 5,
               textAlign: 'center',
               display: 'inline-block',
+              overflow: 'hidden',
+              paddingBottom: '0.2em',
             }}>
               {/* Sizer (unsichtbar) — trägt die Baseline + Breite des neuen Subtitle */}
               <span style={{ visibility: 'hidden' }}>{phaseDesc}</span>

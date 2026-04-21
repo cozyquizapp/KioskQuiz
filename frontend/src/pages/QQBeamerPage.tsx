@@ -6564,7 +6564,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           })()}
 
           {/* Schätzchen: schlanker Gewinner-Chip unter dem Zeitstrahl (kein redundantes Riesen-Panel,
-              Avatare/Werte sind am Strahl bereits sichtbar). */}
+              Avatare/Werte sind am Strahl bereits sichtbar).
+              Bei Distanz-Gleichstand entscheidet die Reaktionszeit — dann zeigt der Chip
+              zusätzlich „und am schnellsten!". */}
           {revealed && q.category === 'SCHAETZCHEN' && s.answers.length > 0 && (() => {
             const ranked = s.answers
               .map(a => {
@@ -6573,10 +6575,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const distance = Number.isNaN(num) || q.targetValue == null ? Infinity : Math.abs(num - q.targetValue);
                 return { ...a, num, distance, team };
               })
-              .sort((a, b) => a.distance - b.distance);
+              // Primär Distanz, sekundär Speed — so gewinnt bei gleichem Abstand der schnellste.
+              .sort((a, b) => (a.distance - b.distance) || (a.submittedAt - b.submittedAt));
             const w = ranked[0];
             if (!w || w.distance === Infinity || !w.team) return null;
             const tColor = w.team.color;
+            // Gleichstand auf der Distanz → Speed war der Tiebreaker.
+            const distanceTied = ranked.filter(r => r.distance === w.distance).length > 1;
             return (
               <div style={{
                 display: 'flex', justifyContent: 'center', width: '100%',
@@ -6597,7 +6602,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <span style={{
                     color: '#cbd5e1', fontSize: 'clamp(19px, 2.1vw, 28px)', fontWeight: 700, lineHeight: 1.1,
                   }}>
-                    {lang === 'en' ? 'was closest!' : 'war am nächsten dran!'}
+                    {distanceTied
+                      ? (lang === 'en' ? 'was closest — and fastest! ⚡' : 'war am nächsten dran — und am schnellsten! ⚡')
+                      : (lang === 'en' ? 'was closest!' : 'war am nächsten dran!')}
                   </span>
                 </div>
               </div>

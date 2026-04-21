@@ -291,7 +291,7 @@ export default function QQFeedbackDashboard() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={onExportCSV} disabled={!filtered.length} style={btnGhost}>📄 CSV exportieren</button>
-          <button type="button" onClick={() => window.location.href = '/admin'} style={btnGhost}>← Admin</button>
+          <button type="button" onClick={() => window.location.href = '/moderator'} style={btnGhost}>← Moderator</button>
         </div>
       </header>
 

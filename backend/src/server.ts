@@ -8560,6 +8560,10 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
 // ── QQ Feedback ───────────────────────────────────────────────────────────────
 // Spieler-Feedback von der Summary-Seite — persistent in MongoDB
 // (Render Free Tier hat kein stabiles Filesystem).
+type QQFeedbackType = 'bug' | 'feedback' | 'idea' | 'praise';
+type QQFeedbackPlayAgain = 'yes' | 'maybe' | 'no';
+type QQFeedbackLength = 'short' | 'ok' | 'long';
+type QQFeedbackContactIntent = 'date' | 'booking' | 'response';
 type QQFeedbackEntry = {
   id: string;
   submittedAt: number;
@@ -8568,6 +8572,13 @@ type QQFeedbackEntry = {
   rating: number | null;
   text: string;
   contact: string | null;
+  // Erweiterte Felder — legacy-Eintraege haben sie schlicht nicht (Mongo strict:false).
+  type?: QQFeedbackType;
+  playAgain?: QQFeedbackPlayAgain | null;
+  favoriteCategory?: string | null;   // QQ category id, z.B. 'MUCHO'
+  lengthFeel?: QQFeedbackLength | null;
+  surprise?: string | null;
+  contactIntent?: QQFeedbackContactIntent[] | null;
 };
 // ── QQ Crash-Reporting ───────────────────────────────────────────────────────
 // Append-only JSON-File für Client-side Crashes (Moderator/Beamer/Team).
@@ -8810,6 +8821,17 @@ app.post('/api/qq/feedback', async (req, res) => {
   const body = req.body as Partial<QQFeedbackEntry> & { text?: string };
   const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';
   if (!text) return res.status(400).json({ error: 'Text fehlt.' });
+
+  const typeOk = (v: unknown): v is QQFeedbackType =>
+    v === 'bug' || v === 'feedback' || v === 'idea' || v === 'praise';
+  const playAgainOk = (v: unknown): v is QQFeedbackPlayAgain =>
+    v === 'yes' || v === 'maybe' || v === 'no';
+  const lengthOk = (v: unknown): v is QQFeedbackLength =>
+    v === 'short' || v === 'ok' || v === 'long';
+  const intentOk = (v: unknown): v is QQFeedbackContactIntent =>
+    v === 'date' || v === 'booking' || v === 'response';
+  const VALID_CATEGORIES = new Set(['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE']);
+
   const entry: QQFeedbackEntry = {
     id: `qqf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     submittedAt: Date.now(),
@@ -8818,6 +8840,15 @@ app.post('/api/qq/feedback', async (req, res) => {
     rating: typeof body.rating === 'number' && body.rating >= 1 && body.rating <= 5 ? Math.round(body.rating) : null,
     text,
     contact: typeof body.contact === 'string' ? body.contact.trim().slice(0, 200) : null,
+    type: typeOk(body.type) ? body.type : 'feedback',
+    playAgain: playAgainOk(body.playAgain) ? body.playAgain : null,
+    favoriteCategory: typeof body.favoriteCategory === 'string' && VALID_CATEGORIES.has(body.favoriteCategory)
+      ? body.favoriteCategory : null,
+    lengthFeel: lengthOk(body.lengthFeel) ? body.lengthFeel : null,
+    surprise: typeof body.surprise === 'string' ? body.surprise.trim().slice(0, 500) || null : null,
+    contactIntent: Array.isArray(body.contactIntent)
+      ? (body.contactIntent.filter(intentOk) as QQFeedbackContactIntent[]).slice(0, 3)
+      : null,
   };
   try {
     await saveQQFeedbackToDB(entry);

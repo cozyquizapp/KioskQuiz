@@ -5520,7 +5520,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               damit die Karte beim Reveal nicht nach oben wächst. */}
           <div style={{
             width: '100%', maxWidth: 900,
-            minHeight: 'clamp(320px, 38vh, 420px)',
+            minHeight: 'clamp(400px, 50vh, 540px)',
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -6610,7 +6610,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
             <div style={{
               width: '100%', maxWidth: 1400,
-              minHeight: 'clamp(150px, 17vh, 200px)',
+              minHeight: 'clamp(210px, 22vh, 260px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: 12,
             }}>
@@ -6724,7 +6724,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ))}
                   </div>
                   <div style={{
-                    color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800,
+                    color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800, lineHeight: 1.2,
                   }}>
                     {coMsg}
                   </div>
@@ -6757,7 +6757,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {truncName(team!.name, 20)}
                   </div>
                   <div style={{
-                    color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6,
+                    color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6, lineHeight: 1.2,
                   }}>
                     {winMsg}
                   </div>

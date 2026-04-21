@@ -1499,19 +1499,53 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             </div>
           );
         } else if (winnerTeam) {
-          // Check if this team also answered correctly but was slower
+          // Eigene Antwort auf Korrektheit prüfen (unabhängig vom Schnellsten):
+          // Bei MUCHO/CHEESE koennen mehrere Teams richtig liegen. Der Platzierungs-
+          // Rang ergibt sich aus submittedAt; das Backend queued die langsameren
+          // richtigen Teams ueber _placementQueue.
           const myAnswer = s.answers.find(a => a.teamId === myTeamId);
-          const alsoCorrect = muchoSpeedWin && myAnswer && q.correctOptionIndex != null && myAnswer.text === String(q.correctOptionIndex);
-          const loseMsg = alsoCorrect
-            ? (isEn ? `⏱ Correct, but ${winnerTeam.name} was faster!` : `⏱ Richtig, aber ${winnerTeam.name} war schneller!`)
+          const cheeseCorrectList = (cat === 'CHEESE')
+            ? [q.answer, q.answerEn].map(x => (x ?? '').trim().toLowerCase()).filter(Boolean)
+            : [];
+          const cheeseMatch = (txt: string) => {
+            const sub = txt.trim().toLowerCase();
+            if (sub.length < 2) return false;
+            return cheeseCorrectList.some(c => sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3));
+          };
+          const isAnswerCorrect = (ans: { text: string } | undefined): boolean => {
+            if (!ans) return false;
+            if (cat === 'MUCHO') return q.correctOptionIndex != null && ans.text === String(q.correctOptionIndex);
+            if (cat === 'CHEESE') return cheeseCorrectList.length > 0 && cheeseMatch(ans.text);
+            return false;
+          };
+          const iWasAlsoCorrect = isAnswerCorrect(myAnswer);
+
+          // Rang unter allen richtigen Antworten (1 = schnellstes richtiges Team = Gewinner)
+          let myRank = 0;
+          if (iWasAlsoCorrect && myAnswer) {
+            const correctSorted = s.answers
+              .filter(a => isAnswerCorrect(a))
+              .sort((a, b) => a.submittedAt - b.submittedAt);
+            myRank = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
+          }
+
+          const loseMsg = iWasAlsoCorrect
+            ? (myRank >= 2
+                ? (isEn
+                    ? `✓ Correct! You place #${myRank} (after ${winnerTeam.name})`
+                    : `✓ Richtig! Ihr platziert als Nr. ${myRank} (nach ${winnerTeam.name})`)
+                : (isEn
+                    ? `⏱ Correct, but ${winnerTeam.name} was faster!`
+                    : `⏱ Richtig, aber ${winnerTeam.name} war schneller!`))
             : cat === 'SCHAETZCHEN'
               ? (isEn ? `😔 ${winnerTeam.name} was closer.` : `😔 Leider war ${winnerTeam.name} näher dran.`)
               : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-              fontSize: 14, fontWeight: 700, color: '#64748b', textAlign: 'center',
+              background: iWasAlsoCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${iWasAlsoCorrect ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              fontSize: 14, fontWeight: 800, color: iWasAlsoCorrect ? '#4ade80' : '#64748b', textAlign: 'center',
               animation: 'tcreveal 0.4s ease 0.2s both',
             }}>
               {loseMsg}
@@ -1537,7 +1571,19 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         } else if (q.category === 'SCHAETZCHEN') {
           isCorrect = myAns.teamId === s.correctTeamId;
         } else if (q.category === 'CHEESE') {
-          isCorrect = myAns.teamId === s.correctTeamId;
+          // CHEESE: Text-Match statt nur Schnellster. Mehrere Teams koennen richtig sein;
+          // dann zeigt jedes sein ✓ und wird spaeter ueber _placementQueue zum Platzieren aufgerufen.
+          const correctList = [q.answer, q.answerEn]
+            .map(x => (x ?? '').trim().toLowerCase())
+            .filter(Boolean);
+          const sub = myAns.text.trim().toLowerCase();
+          if (correctList.length === 0 || sub.length < 2) {
+            isCorrect = null;
+          } else {
+            isCorrect = correctList.some(c =>
+              sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3)
+            );
+          }
         }
         return (
           <div style={{

@@ -2042,6 +2042,15 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
 }
 
 export function qqNextQuestion(room: QQRoomState): void {
+  // Double-Press-Guard: Wenn der Moderator Space/„Nächste Frage" doppelt drückt,
+  // darf der 2. Call nicht ein zweites Mal Comeback triggern. Phase ist nach dem
+  // 1. Call bereits COMEBACK_CHOICE / PHASE_INTRO / GAME_OVER — in diesen Zuständen
+  // ist „weiter" nicht die Aufgabe von qqNextQuestion. Stille Rückgabe statt Throw,
+  // damit der Client keinen Fehler anzeigt.
+  if (room.phase !== 'PLACEMENT' && room.phase !== 'QUESTION_REVEAL') {
+    return;
+  }
+
   // Space-Gate nach Comeback: Nach Abschluss der Comeback-Aktion bleibt das Spiel
   // in PLACEMENT (pendingFor=null, comebackTeamId gesetzt). Der Moderator-Space
   // führt hier direkt in die Finalphase – damit die Placement-Animation in Ruhe

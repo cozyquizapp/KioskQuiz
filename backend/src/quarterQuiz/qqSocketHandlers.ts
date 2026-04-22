@@ -611,7 +611,9 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     // Erstaufruf: placementsLeft == 2 → vergleichen. Bei STEAL via chooseFreeAction umschalten.
     if (action === 'PLACE_2') {
       const firstSlot = (stats?.placementsLeft ?? 0) >= 2;
-      if (firstSlot) {
+      const stealsUsed = stats?.stealsUsed ?? 0;
+      const canSteal = stealsUsed < 2; // QQ_MAX_STEALS_PER_PHASE
+      if (firstSlot && canSteal) {
         const placeChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
           availableKinds: ['PLACE'], phase,
         }, 0);
@@ -621,12 +623,16 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
         const placeScore2x = placeChoice ? placeChoice.score * 1.6 : -Infinity; // 2 Züge, zweiter bringt weniger
         const stealScore   = stealChoice ? stealChoice.score : -Infinity;
         if (stealScore > placeScore2x && stealChoice) {
+          let switched = false;
           try {
             qqChooseFreeAction(live, teamId, 'STEAL');
+            switched = true;
+          } catch { /* fällt unten auf Setzen zurück */ }
+          if (switched) {
             broadcastQQ(io, roomCode);
             if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-          } catch { /* fallback: weitersetzen */ }
-          return;
+            return;
+          }
         }
       }
       // Setzen (PLACE_2 erlaubt KEIN direktes Klauen — bei vollem Grid via chooseFreeAction('STEAL')).
@@ -641,16 +647,21 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
         } catch { /* skip */ }
         return;
       }
-      // Grid voll → auf STEAL umschalten
-      const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['STEAL'], phase,
-      });
-      if (!stealChoice) { skipStuckDummy(); return; }
-      try {
-        qqChooseFreeAction(live, teamId, 'STEAL');
-        broadcastQQ(io, roomCode);
-        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      } catch { skipStuckDummy(); }
+      // Grid voll → auf STEAL umschalten (falls noch Klaus übrig)
+      if (canSteal) {
+        const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['STEAL'], phase,
+        });
+        if (stealChoice) {
+          try {
+            qqChooseFreeAction(live, teamId, 'STEAL');
+            broadcastQQ(io, roomCode);
+            if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+            return;
+          } catch { /* skip below */ }
+        }
+      }
+      skipStuckDummy();
       return;
     }
 

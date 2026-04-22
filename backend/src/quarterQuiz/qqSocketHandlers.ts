@@ -593,16 +593,14 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
     };
 
-    // ── PLACE_1 (Phase 1): nur setzen ───────────────────────────────────────
+    // ── PLACE_1 (Phase 1): strikt nur setzen. Klauen ist in R1 nicht erlaubt.
     if (action === 'PLACE_1') {
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['PLACE', 'STEAL'], // STEAL als Fallback bei vollem Grid
-        phase,
+        availableKinds: ['PLACE'], phase,
       });
       if (!choice) { skipStuckDummy(); return; }
       try {
-        if (choice.kind === 'STEAL') qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
-        else qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
         broadcastQQ(io, roomCode);
         if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
       } catch { /* skip */ }
@@ -610,19 +608,17 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     }
 
     // ── PLACE_2 (Phase 2, Entscheidung zwischen 2×Setzen und 1×Klauen) ──────
-    // Erstaufruf: placementsLeft == 2 → vergleichen. Bei STEAL umschalten.
+    // Erstaufruf: placementsLeft == 2 → vergleichen. Bei STEAL via chooseFreeAction umschalten.
     if (action === 'PLACE_2') {
       const firstSlot = (stats?.placementsLeft ?? 0) >= 2;
       if (firstSlot) {
-        // Place-Score: 2 Züge simulieren (greedy: bester Setz-Zug + bester zweiter).
-        // Vereinfachung: wir nehmen das Delta des besten 1× Setzens × 2 als Näherung.
         const placeChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
           availableKinds: ['PLACE'], phase,
-        }, 0); // deterministisch für Vergleich
+        }, 0);
         const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
           availableKinds: ['STEAL'], phase,
         }, 0);
-        const placeScore2x = placeChoice ? placeChoice.score * 1.6 : -Infinity; // 2 Züge, aber 2. bringt weniger
+        const placeScore2x = placeChoice ? placeChoice.score * 1.6 : -Infinity; // 2 Züge, zweiter bringt weniger
         const stealScore   = stealChoice ? stealChoice.score : -Infinity;
         if (stealScore > placeScore2x && stealChoice) {
           try {
@@ -633,17 +629,28 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
           return;
         }
       }
-      // Weiter mit Setzen (oder Klauen als Fallback bei vollem Grid)
-      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['PLACE', 'STEAL'], phase,
+      // Setzen (PLACE_2 erlaubt KEIN direktes Klauen — bei vollem Grid via chooseFreeAction('STEAL')).
+      const placeChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['PLACE'], phase,
       });
-      if (!choice) { skipStuckDummy(); return; }
+      if (placeChoice) {
+        try {
+          qqPlaceCell(live, teamId, placeChoice.target!.row, placeChoice.target!.col);
+          broadcastQQ(io, roomCode);
+          if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+        return;
+      }
+      // Grid voll → auf STEAL umschalten
+      const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['STEAL'], phase,
+      });
+      if (!stealChoice) { skipStuckDummy(); return; }
       try {
-        if (choice.kind === 'STEAL') qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
-        else qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        qqChooseFreeAction(live, teamId, 'STEAL');
         broadcastQQ(io, roomCode);
         if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      } catch { /* skip */ }
+      } catch { skipStuckDummy(); }
       return;
     }
 

@@ -12,6 +12,7 @@ import {
   QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload, QQSetEnable3DPayload,
   QQSubmitAnswerPayload, QQAck,
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
+  QQBombCellPayload, QQShieldClusterPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
@@ -20,7 +21,7 @@ import {
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
-  qqSwapOneCell, qqFreezeCell, qqStuckCell,
+  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqBombCell, qqShieldCluster,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
@@ -34,7 +35,6 @@ import {
   qqFlushQuestionToHistory,
   qqSkipCurrentPlacement,
 } from './qqRooms';
-import { detectPlusForStuck } from './qqBfs';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 
 type AckFn = (payload: QQAck) => void;
@@ -725,54 +725,66 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     }
 
     // ── Power-Up-Würfel (nur bei FREE, also Phase 3+) ─────────────────────
-    // FREEZE ab Phase 3, STAPEL + SWAP ab Phase 4. 30% Gesamt-Chance, sonst normal setzen/klauen.
+    // BOMB + SHIELD ab Phase 3, STAPEL + SWAP ab Phase 4. 30% Gesamt-Chance, sonst normal setzen/klauen.
     if (action === 'FREE') {
       const phase = live.gamePhaseIndex;
+      const dummyStats = live.teamPhaseStats[teamId];
       const ownCells: Array<{ row: number; col: number }> = [];
-      const ownFreezable: Array<{ row: number; col: number }> = [];
+      const ownStapable: Array<{ row: number; col: number }> = [];
       for (let r = 0; r < live.grid.length; r++) {
         for (let c = 0; c < live.grid[r].length; c++) {
           const cell = live.grid[r][c];
           if (cell.ownerId === teamId) {
             ownCells.push({ row: r, col: c });
-            if (!cell.frozen && !cell.stuck) ownFreezable.push({ row: r, col: c });
+            if (!cell.stuck) ownStapable.push({ row: r, col: c });
           }
         }
       }
-      const freezeAvail = phase >= 3 && ownFreezable.length > 0;
-      const plusCandidates = phase >= 4 ? detectPlusForStuck(live.grid, live.gridSize, teamId) : [];
-      const stapelAvail = phase >= 4 && plusCandidates.length > 0;
-      const swapAvail = phase >= 4 && ownCells.length > 0 && oppFree.length > 0;
-      const options: Array<'FREEZE' | 'STAPEL' | 'SWAP'> = [];
-      if (freezeAvail) options.push('FREEZE');
+      const bombAvail   = phase >= 3 && !dummyStats?.bombUsed && oppFree.length > 0;
+      const shieldAvail = phase >= 3 && !dummyStats?.shieldUsed && ownCells.length > 0;
+      const stapelAvail = phase >= 4 && ownStapable.length > 0;
+      const swapAvail   = phase >= 4 && ownCells.length > 0 && oppFree.length > 0;
+      const options: Array<'BOMB' | 'SHIELD' | 'STAPEL' | 'SWAP'> = [];
+      if (bombAvail)   options.push('BOMB');
+      if (shieldAvail) options.push('SHIELD');
       if (stapelAvail) options.push('STAPEL');
-      if (swapAvail) options.push('SWAP');
+      if (swapAvail)   options.push('SWAP');
       if (options.length > 0 && Math.random() < 0.3) {
         const pick = options[Math.floor(Math.random() * options.length)];
         try {
           qqChooseFreeAction(live, teamId, pick);
           broadcastQQ(io, roomCode);
-          if (pick === 'FREEZE') {
-            // Eigenes Feld einfrieren: bevorzuge Feld aus größtem eigenem Cluster (schützt Kern).
-            const best = pickSmartPlacement(live, teamId, ownFreezable) ?? ownFreezable[0];
+          if (pick === 'BOMB') {
+            const target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
             setTimeout(() => {
               const live2 = getQQRoom(roomCode);
               if (!live2 || live2.phase !== 'PLACEMENT') return;
-              if (live2.pendingFor !== teamId || live2.pendingAction !== 'FREEZE_1') return;
+              if (live2.pendingFor !== teamId || live2.pendingAction !== 'BOMB_1') return;
               try {
-                qqFreezeCell(live2, teamId, best.row, best.col);
+                qqBombCell(live2, teamId, target.row, target.col);
+                broadcastQQ(io, roomCode);
+                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+              } catch { /* skip */ }
+            }, 900);
+          } else if (pick === 'SHIELD') {
+            setTimeout(() => {
+              const live2 = getQQRoom(roomCode);
+              if (!live2 || live2.phase !== 'PLACEMENT') return;
+              if (live2.pendingFor !== teamId || live2.pendingAction !== 'SHIELD_1') return;
+              try {
+                qqShieldCluster(live2, teamId);
                 broadcastQQ(io, roomCode);
                 if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
               } catch { /* skip */ }
             }, 900);
           } else if (pick === 'STAPEL') {
-            const pc = plusCandidates[Math.floor(Math.random() * plusCandidates.length)];
+            const pc = pickSmartPlacement(live, teamId, ownStapable) ?? ownStapable[0];
             setTimeout(() => {
               const live2 = getQQRoom(roomCode);
               if (!live2 || live2.phase !== 'PLACEMENT') return;
               if (live2.pendingFor !== teamId || live2.pendingAction !== 'STAPEL_1') return;
               try {
-                qqStuckCell(live2, teamId, pc.r, pc.c);
+                qqStuckCell(live2, teamId, pc.row, pc.col);
                 broadcastQQ(io, roomCode);
                 if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
               } catch { /* skip */ }
@@ -1550,11 +1562,31 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Phase 4: Stapeln (plus-center, permanent)
+    // Phase 4: Stapeln (eigenes Feld, permanent)
     socket.on('qq:stapelCell', (payload: QQStapelCellPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqStuckCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 3+: Bombe (Gegnerfeld → neutral, 1× pro Phase)
+    socket.on('qq:bombCell', (payload: QQBombCellPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqBombCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 3+: Schild (größtes eigenes Cluster bis Phasenende, 1× pro Phase)
+    socket.on('qq:shieldCluster', (payload: QQShieldClusterPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqShieldCluster(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

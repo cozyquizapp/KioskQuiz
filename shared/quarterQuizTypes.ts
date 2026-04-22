@@ -98,6 +98,7 @@ export interface QQCell {
   jokerFormed: boolean;    // this cell is part of a 2×2 already triggered
   frozen?: boolean;        // frozen for 1 question (cannot be stolen)
   stuck?: boolean;         // permanently frozen via Stapeln (counts 2 pts, cannot be stolen)
+  shielded?: boolean;      // protected until end of current phase (cannot be stolen/swapped/bombed)
 }
 
 export type QQGrid = QQCell[][];  // [row][col]
@@ -186,6 +187,8 @@ export interface QQTeamPhaseStats {
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
   pendingJokerBonus?: number; // legacy: joker bonus postponed until PLACE_2 finishes (no longer used, kept for state compatibility)
   pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first
+  bombUsed?: boolean;         // Phase 3+: team has used its 1× Bomb this phase
+  shieldUsed?: boolean;       // Phase 3+: team has used its 1× Schild this phase
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────
@@ -498,6 +501,8 @@ export interface QQStateUpdate {
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Cells temporarily frozen (expire after next placement), already reflected in grid.frozen
   frozenCells: { row: number; col: number }[];
+  // Cells shielded until end of current phase, already reflected in grid.shielded
+  shieldedCells: { row: number; col: number }[];
   // Cells available to Stucken for pendingFor team (plus-centers)
   stuckCandidates: { row: number; col: number }[];
   // CHEESE (Picture This) — moderator-controlled image reveal
@@ -552,10 +557,12 @@ export type QQPendingAction =
   | 'PLACE_1'    // Phase 1: place 1 cell
   | 'PLACE_2'    // Phase 2+: place 2 cells (placementsLeft = 1 or 2)
   | 'STEAL_1'    // Phase 2 steal or Phase 3/4 steal
-  | 'FREE'       // Phase 3/4: team picks action (place/steal/freeze/swap/stapel)
-  | 'FREEZE_1'   // Phase 3/4: freeze 1 own cell for next question
+  | 'FREE'       // Phase 3/4: team picks action (place/steal/bomb/shield/swap/stapel)
+  | 'FREEZE_1'   // (legacy, unused) freeze 1 own cell for next question
+  | 'BOMB_1'     // Phase 3+: bomb 1 enemy cell → neutral (one-shot per phase)
+  | 'SHIELD_1'   // Phase 3+: auto-shield own largest cluster until phase end (no target pick)
   | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
-  | 'STAPEL_1'   // Phase 4: stapeln - center of plus-shape (permanently frozen, 2 pts)
+  | 'STAPEL_1'   // Phase 4: stapeln - pick own cell (permanently frozen, 2 pts)
   | 'COMEBACK';  // before final phase: comeback team acts
 
 // ── Socket event payloads (client → server) ───────────────────────────────────
@@ -571,11 +578,13 @@ export interface QQMarkWrongPayload      { roomCode: string; }
 export interface QQUndoMarkCorrectPayload { roomCode: string; }
 export interface QQPlaceCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQStealCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
-export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SWAP' | 'STAPEL'; }
+export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'FREEZE' | 'BOMB' | 'SHIELD' | 'SWAP' | 'STAPEL'; }
 export interface QQComebackChoicePayload { roomCode: string; teamId: string; action: QQComebackAction; }
 export interface QQSwapCellsPayload      { roomCode: string; teamId: string; rowA: number; colA: number; rowB: number; colB: number; }
 export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)
 export interface QQFreezeCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
+export interface QQBombCellPayload       { roomCode: string; teamId: string; row: number; col: number; }
+export interface QQShieldClusterPayload  { roomCode: string; teamId: string; }
 export interface QQStapelCellPayload     { roomCode: string; teamId: string; row: number; col: number; }  // center of plus (Stapeln)
 export interface QQStartRulesPayload     { roomCode: string; }
 export interface QQRulesNextPayload      { roomCode: string; }

@@ -9,7 +9,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
-  markJokerCells, findLastPlace, detectPlusForStuck,
+  markJokerCells, findLastPlace,
 } from './qqBfs';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
@@ -97,6 +97,8 @@ export interface QQRoomState {
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
   frozenCells: { row: number; col: number }[];
+  // Shielded cells — protected against steal/swap/bomb until end of current phase
+  shieldedCells: { row: number; col: number }[];
   // Internal round-robin index for Hot Potato (not sent to clients)
   _hotPotatoRoundRobinIdx?: number;
   // Internal: stored timer expiry callback for mid-round restarts
@@ -231,6 +233,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       imposterEliminated: [],
       lastPlacedCell: null,
       frozenCells: [],
+      shieldedCells: [],
       imageRevealed: false,
       mapRevealStep: 0,
       _mapRevealTimerHandle: null,
@@ -1398,7 +1401,7 @@ function pendingActionForPhase(
 export function qqChooseFreeAction(
   room: QQRoomState,
   teamId: string,
-  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SWAP' | 'STAPEL'
+  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'BOMB' | 'SHIELD' | 'SWAP' | 'STAPEL'
 ): void {
   assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
@@ -1423,8 +1426,26 @@ export function qqChooseFreeAction(
     room.teamPhaseStats[teamId].placementsLeft = 2;
 
   } else if (action === 'FREEZE') {
+    // Legacy — nicht mehr im FE-Menü, aber Handler bleibt für Abwärtskompatibilität.
     if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Einfrieren erst ab Phase 3.');
     room.pendingAction = 'FREEZE_1';
+
+  } else if (action === 'BOMB') {
+    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Bombe erst ab Phase 3.');
+    const stats = room.teamPhaseStats[teamId];
+    if (stats.bombUsed) throw new QQError('BOMB_USED', 'Bombe bereits genutzt in dieser Phase.');
+    const hasBombable = room.grid.some(row => row.some(cell =>
+      cell.ownerId !== null && cell.ownerId !== teamId && !cell.stuck && !cell.shielded));
+    if (!hasBombable) throw new QQError('NO_TARGET', 'Kein gegnerisches Feld bombenfähig.');
+    room.pendingAction = 'BOMB_1';
+
+  } else if (action === 'SHIELD') {
+    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Schild erst ab Phase 3.');
+    const stats = room.teamPhaseStats[teamId];
+    if (stats.shieldUsed) throw new QQError('SHIELD_USED', 'Schild bereits genutzt in dieser Phase.');
+    const hasOwn = room.grid.some(row => row.some(cell => cell.ownerId === teamId));
+    if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Keine eigenen Felder zum Schützen.');
+    room.pendingAction = 'SHIELD_1';
 
   } else if (action === 'SWAP') {
     if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Tauschen erst ab Phase 4.');
@@ -1433,8 +1454,9 @@ export function qqChooseFreeAction(
 
   } else if (action === 'STAPEL') {
     if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Phase 4.');
-    const candidates = detectPlusForStuck(room.grid, room.gridSize, teamId);
-    if (candidates.length === 0) throw new QQError('NO_PLUS', 'Kein vollständiges Plus vorhanden.');
+    const hasOwn = room.grid.some(row => row.some(cell =>
+      cell.ownerId === teamId && !cell.stuck));
+    if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Kein eigenes Feld zum Stapeln.');
     room.pendingAction = 'STAPEL_1';
   }
 
@@ -1532,6 +1554,9 @@ export function qqStealCell(
   if (cell.frozen || cell.stuck) {
     throw new QQError('FROZEN_CELL', 'Dieses Feld ist eingefroren und kann nicht geklaut werden.');
   }
+  if (cell.shielded) {
+    throw new QQError('SHIELDED_CELL', 'Dieses Feld ist geschützt und kann nicht geklaut werden.');
+  }
 
   const action = room.pendingAction;
   if (action !== 'STEAL_1' && action !== 'FREE' && action !== 'COMEBACK') {
@@ -1614,6 +1639,9 @@ export function qqSwapCells(
   if (cellA.ownerId === cellB.ownerId) {
     throw new QQError('SAME_TEAM', 'Felder müssen von verschiedenen Teams sein.');
   }
+  if (cellA.shielded || cellB.shielded) {
+    throw new QQError('SHIELDED_CELL', 'Ein geschütztes Feld kann nicht getauscht werden.');
+  }
 
   const tmpOwner = cellA.ownerId;
   cellA.ownerId  = cellB.ownerId;
@@ -1662,6 +1690,9 @@ export function qqSwapOneCell(
     if (cell.stuck || cell.frozen) {
       throw new QQError('FROZEN_CELL', 'Dieses Feld ist eingefroren.');
     }
+    if (cell.shielded) {
+      throw new QQError('SHIELDED_CELL', 'Dieses Feld ist geschützt und kann nicht getauscht werden.');
+    }
     const ownCell = room.grid[room.swapFirstCell.row][room.swapFirstCell.col];
     const enemyOwner = cell.ownerId;
     cell.ownerId     = teamId;
@@ -1700,7 +1731,9 @@ export function qqFreezeCell(
   finishPlacement(room);
 }
 
-// ── Phase 4: Stucken (permanent freeze of plus-center) ───────────────────────
+// ── Phase 4: Stapeln (permanent-freeze eigenes Feld) ─────────────────────────
+// Historisch verlangte Stapeln ein Plus-Form-Zentrum. Ab CozyQuiz Option-C ist
+// die Form-Bedingung entfernt: jedes eigene Feld darf gestapelt werden.
 export function qqStuckCell(
   room: QQRoomState,
   teamId: string,
@@ -1713,16 +1746,102 @@ export function qqStuckCell(
   if (room.pendingAction !== 'STAPEL_1') {
     throw new QQError('WRONG_ACTION', 'Stapeln-Modus nicht aktiv.');
   }
-  // Validate plus-form
-  const candidates = detectPlusForStuck(room.grid, room.gridSize, teamId);
-  if (!candidates.some(c => c.r === row && c.c === col)) {
-    throw new QQError('INVALID_PLUS', 'Kein gültiges Plus mit diesem Zentrum.');
+  const cell = room.grid[row][col];
+  if (cell.ownerId !== teamId) {
+    throw new QQError('NOT_OWN_CELL', 'Nur eigene Felder können gestapelt werden.');
+  }
+  if (cell.stuck) {
+    throw new QQError('ALREADY_STUCK', 'Dieses Feld ist bereits gestapelt.');
+  }
+  cell.stuck    = true;
+  cell.frozen   = false;   // stuck supersedes frozen
+  cell.shielded = false;   // Stapeln löst Schild auf (permanenter Schutz reicht aus)
+  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
+  updateTerritories(room);
+  finishPlacement(room);
+}
+
+// ── Phase 3/4: Bombe (einmal pro Phase: Gegnerfeld → neutral) ───────────────
+export function qqBombCell(
+  room: QQRoomState,
+  teamId: string,
+  row: number,
+  col: number
+): void {
+  assertPhase(room, ['PLACEMENT']);
+  assertPendingFor(room, teamId);
+  assertValidCoord(room, row, col);
+  if (room.pendingAction !== 'BOMB_1') {
+    throw new QQError('WRONG_ACTION', 'Bomben-Modus nicht aktiv.');
   }
   const cell = room.grid[row][col];
-  cell.ownerId = teamId;
-  cell.stuck   = true;
-  cell.frozen  = false; // stuck supersedes frozen
+  if (cell.ownerId === null) {
+    throw new QQError('CELL_EMPTY', 'Leeres Feld kann nicht bombardiert werden.');
+  }
+  if (cell.ownerId === teamId) {
+    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht bombardiert werden.');
+  }
+  if (cell.stuck) {
+    throw new QQError('STUCK_CELL', 'Gestapeltes Feld übersteht die Bombe.');
+  }
+  if (cell.shielded) {
+    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Bombe prallt ab.');
+  }
+  cell.ownerId     = null;
+  cell.frozen      = false;
+  cell.jokerFormed = false;
+  room.teamPhaseStats[teamId].bombUsed = true;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
+  updateTerritories(room);
+  finishPlacement(room);
+}
+
+// ── Phase 3/4: Schild (einmal pro Phase: größtes eigenes Cluster schützen) ──
+// Kein Target-Pick nötig: findet das größte zusammenhängende Team-Cluster
+// und markiert alle Zellen als shielded. Shield läuft am Phasenende aus.
+export function qqShieldCluster(
+  room: QQRoomState,
+  teamId: string
+): void {
+  assertPhase(room, ['PLACEMENT']);
+  assertPendingFor(room, teamId);
+  if (room.pendingAction !== 'SHIELD_1') {
+    throw new QQError('WRONG_ACTION', 'Schild-Modus nicht aktiv.');
+  }
+  // BFS: größte zusammenhängende Komponente des Teams finden.
+  const size = room.gridSize;
+  const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+  let bestCells: Array<{ row: number; col: number }> = [];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (visited[r][c]) continue;
+      if (room.grid[r][c].ownerId !== teamId) { visited[r][c] = true; continue; }
+      const comp: Array<{ row: number; col: number }> = [];
+      const queue: Array<[number, number]> = [[r, c]];
+      visited[r][c] = true;
+      while (queue.length > 0) {
+        const [cr, cc] = queue.shift()!;
+        comp.push({ row: cr, col: cc });
+        const nbrs: Array<[number, number]> = [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]];
+        for (const [nr, nc] of nbrs) {
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+          if (visited[nr][nc]) continue;
+          if (room.grid[nr][nc].ownerId !== teamId) continue;
+          visited[nr][nc] = true;
+          queue.push([nr, nc]);
+        }
+      }
+      if (comp.length > bestCells.length) bestCells = comp;
+    }
+  }
+  if (bestCells.length === 0) {
+    throw new QQError('NO_OWN_CELL', 'Keine eigenen Felder zum Schützen.');
+  }
+  for (const { row, col } of bestCells) {
+    room.grid[row][col].shielded = true;
+  }
+  room.shieldedCells.push(...bestCells);
+  room.teamPhaseStats[teamId].shieldUsed = true;
   updateTerritories(room);
   finishPlacement(room);
 }
@@ -1904,6 +2023,12 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
     if (cell && !cell.stuck) cell.frozen = false;
   }
   room.frozenCells     = [];
+  // Shields laufen am Phasenende aus.
+  for (const sc of room.shieldedCells) {
+    const cell = room.grid[sc.row]?.[sc.col];
+    if (cell) cell.shielded = false;
+  }
+  room.shieldedCells   = [];
 
   // Reset per-phase stats — but preserve jokersEarned (it's per-game, not per-phase)
   for (const id of room.joinOrder) {
@@ -2155,9 +2280,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     imposterEliminated:    room.imposterEliminated,
     lastPlacedCell:        room.lastPlacedCell,
     frozenCells:      room.frozenCells,
-    stuckCandidates:  room.pendingAction === 'STAPEL_1' && room.pendingFor
-      ? detectPlusForStuck(room.grid, room.gridSize, room.pendingFor).map(c => ({ row: c.r, col: c.c }))
-      : [],
+    shieldedCells:    room.shieldedCells,
+    stuckCandidates:  [],
     imageRevealed:    room.imageRevealed,
     mapRevealStep:    room.mapRevealStep,
     comebackIntroStep: room.comebackIntroStep,
@@ -2345,6 +2469,8 @@ export function qqResetRoom(room: QQRoomState): void {
   room.imposterEliminated    = [];
   room.lastPlacedCell        = null;
   room.frozenCells           = [];
+  for (const row of room.grid) for (const cell of row) cell.shielded = false;
+  room.shieldedCells         = [];
   room.imageRevealed         = false;
   room.mapRevealStep         = 0;
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }

@@ -156,6 +156,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   sfxMuted: false,
   volume: 0.8,
   frozenCells: [],
+  shieldedCells: [],
   stuckCandidates: [],
   rulesSlideIndex: 0,
   introStep: 0,

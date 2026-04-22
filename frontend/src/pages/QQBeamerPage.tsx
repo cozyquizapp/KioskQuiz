@@ -113,8 +113,8 @@ const bt = {
   },
   phase: {
     names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
-    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Taktik & Freeze!', 'Alles auf eine Karte!'],
-             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Tactics & Freeze!', 'All or nothing!'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bombe & Schild!', 'Alles auf eine Karte!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Bomb & Shield!', 'All or nothing!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -976,7 +976,7 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     lines: [
       'Jede Runde bringt etwas Neues:',
       'Runde 2: Klauen',
-      'Runde 3: Freeze',
+      'Runde 3: Bombe & Schild',
       'Finale: Tauschen & Stapeln',
     ],
     showTree: true,
@@ -1019,7 +1019,7 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     lines: [
       'Each round adds something:',
       'Round 2: Steal',
-      'Round 3: Freeze',
+      'Round 3: Bomb & Shield',
       'Final: Swap & Stack',
     ],
     showTree: true,
@@ -2387,9 +2387,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: ['Place 2 tiles per round', 'Stealing is now possible!'],
     },
     3: {
-      emoji: '🧊',
-      de: ['Wählt eure Aktion frei', 'Einfrieren freigeschaltet!'],
-      en: ['Choose your action freely', 'Freezing unlocked!'],
+      emoji: '💣',
+      de: ['Wählt eure Aktion frei', 'Bombe & Schild freigeschaltet!'],
+      en: ['Choose your action freely', 'Bomb & Shield unlocked!'],
     },
     4: {
       emoji: '🔄',
@@ -8332,6 +8332,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const showStar = showJoker && cell.jokerFormed;
             const isFrozen = cell.frozen;
             const isStuck = cell.stuck;
+            const isShielded = !!cell.shielded && !cell.stuck;
             const cellRadius = Math.max(4, cellSize * 0.16);
             return (
               <div key={`${r}-${c}`} style={{
@@ -8365,7 +8366,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   const rBR = (nBottom || nRight) ? 0 : cellRadius;
                   const rBL = (nBottom || nLeft ) ? 0 : cellRadius;
                   // Spezial-Cells (stuck/frozen/joker) behalten runde Kanten für eigenes Styling
-                  const specialBorder = isStuck || isFrozen || showStar;
+                  const specialBorder = isStuck || isFrozen || isShielded || showStar;
                   const fusedRadius = specialBorder
                     ? cellRadius
                     : `${rTL}px ${rTR}px ${rBR}px ${rBL}px` as any;
@@ -8478,6 +8479,25 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
                     pointerEvents: 'none', zIndex: 1,
                   }} />
+                )}
+                {/* Shield overlay — cyan aura + 🛡️ corner */}
+                {isShielded && (
+                  <>
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      border: '2px solid rgba(6,182,212,0.85)',
+                      background: 'rgba(6,182,212,0.18)',
+                      boxShadow: 'inset 0 0 18px rgba(6,182,212,0.45), 0 0 12px rgba(6,182,212,0.55)',
+                      animation: 'frostPulse 2.5s ease-in-out infinite',
+                      pointerEvents: 'none', zIndex: 2,
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: -4, right: -4,
+                      fontSize: Math.max(10, cellSize * 0.3),
+                      zIndex: 5, lineHeight: 1,
+                      filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.9))',
+                    }}>🛡️</div>
+                  </>
                 )}
                 {/* Steal shatter — flying shards from stolen cell */}
                 {isStolen && [0, 1, 2, 3, 4, 5, 6, 7].map(i => {

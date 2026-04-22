@@ -1432,7 +1432,7 @@ export function qqChooseFreeAction(
     room.swapFirstCell = null;
 
   } else if (action === 'STAPEL') {
-    if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Stucken erst ab Phase 4.');
+    if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Phase 4.');
     const candidates = detectPlusForStuck(room.grid, room.gridSize, teamId);
     if (candidates.length === 0) throw new QQError('NO_PLUS', 'Kein vollständiges Plus vorhanden.');
     room.pendingAction = 'STAPEL_1';
@@ -1711,7 +1711,7 @@ export function qqStuckCell(
   assertPendingFor(room, teamId);
   assertValidCoord(room, row, col);
   if (room.pendingAction !== 'STAPEL_1') {
-    throw new QQError('WRONG_ACTION', 'Stucken-Modus nicht aktiv.');
+    throw new QQError('WRONG_ACTION', 'Stapeln-Modus nicht aktiv.');
   }
   // Validate plus-form
   const candidates = detectPlusForStuck(room.grid, room.gridSize, teamId);
@@ -1991,7 +1991,22 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.imposterEliminated    = [];
   delete room._placementQueue;
   room.phase           = 'PHASE_INTRO';
-  room.introStep       = 0;
+  // Q2+ mit NEUER Kategorie: plain-Reveal überspringen, direkt zur Explanation.
+  // So sieht der Mod nicht 2x die gleiche Kategorie-Folie (z.B. MUCHO → MUCHO).
+  {
+    const q = room.currentQuestion;
+    const catKey = q?.category === 'BUNTE_TUETE' && q.bunteTuete
+      ? `BUNTE_TUETE:${q.bunteTuete.kind}` : (q?.category ?? '');
+    const questionInPhase = room.questionIndex % QQ_QUESTIONS_PER_PHASE;
+    const isFirstOfRound = questionInPhase === 0;
+    const isNewCat = !!catKey && !room.seenCategories.includes(catKey);
+    if (!isFirstOfRound && isNewCat) {
+      room.seenCategories.push(catKey);
+      room.introStep = 1; // = catRevealStep + 1 (Explanation-Step für q2+)
+    } else {
+      room.introStep = 0;
+    }
+  }
   room.lastActivityAt  = Date.now();
 }
 

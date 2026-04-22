@@ -956,69 +956,40 @@ const RULES_SLIDES_DE: RulesSlide[] = [
     title: 'Das Ziel',
     color: '#3B82F6',
     lines: [
-      'Beantwortet Quizfragen und erobert Felder auf dem Spielfeld.',
-      'Das Team mit dem größten zusammenhängenden Gebiet gewinnt!',
+      'Sammelt Felder — das größte zusammenhängende Gebiet gewinnt.',
     ],
   },
   {
     icon: '⚡',
-    title: 'So läuft es',
+    title: 'So läuft\'s',
     color: '#8B5CF6',
     lines: [
-      'Frage → alle Teams antworten gleichzeitig auf dem Handy.',
-      'Jedes richtige Team darf ein Feld auf dem Spielfeld setzen.',
-      'Bei Gleichstand entscheidet die Geschwindigkeit, wer zuerst wählt!',
+      '3–4 Runden · 5 Kategorien',
+      'Richtige Antwort → Feld setzen',
+      'Bei Gleichstand entscheidet Tempo.',
     ],
   },
   {
-    icon: '🗺️',
-    title: 'Das Quiz im Überblick',
-    color: '#06B6D4',
+    icon: '🔓',
+    title: 'Neue Fähigkeiten',
+    color: '#F59E0B',
     lines: [
-      'Das Quiz läuft in mehreren Runden mit verschiedenen Kategorien.',
-      'Oben seht ihr den Fahrplan — so behaltet ihr den Überblick, wo wir gerade sind.',
+      'Jede Runde bringt etwas Neues:',
+      'Runde 2: Klauen',
+      'Runde 3: Freeze',
+      'Finale: Tauschen & Stapeln',
     ],
     showTree: true,
   },
   {
-    icon: '⭐',
-    title: 'Joker — 2×2-Bonus',
-    color: '#F59E0B',
-    lines: [
-      'Bildet ein 2×2-Quadrat in eurer Teamfarbe → ihr bekommt sofort ein Joker-Feld als Bonus-Platzierung.',
-      'Das Joker-Feld zählt wie ein normales Feld für euer Gebiet.',
-    ],
-    extra: '⭐ 2×2 bilden = 1 Bonus-Feld dazu!',
-    grid: {
-      cells: [
-        ['A','A',null,null],
-        ['A','⭐',null,null],
-        [null,null,null,null],
-        [null,null,null,null],
-      ],
-      colorA: '#3B82F6', colorB: '#EF4444',
-      label: '2×2 → ⭐ Bonus!',
-    },
-  },
-  {
-    icon: '🛡️',
-    title: 'Gut zu wissen',
+    icon: '🔄',
+    title: 'Comeback',
     color: '#10B981',
     lines: [
-      'Gegnerische Felder könnt ihr klauen — auch Joker-Felder.',
-      'Gestapelte Felder (doppelt gesetzt) sind geschützt und können nicht geklaut werden.',
-      'Nur eure größte zusammenhängende Fläche zählt — einzelne Felder bringen nichts.',
+      'Die Letzten werden die Ersten sein — oder wie war das?',
+      'Vor dem Finale gibt\'s eine Aufholchance. Überraschung!',
     ],
-  },
-  {
-    icon: '🔄',
-    title: 'Comeback-Chance',
-    color: '#8B5CF6',
-    lines: [
-      'Vor der letzten Runde bekommt das Team auf dem letzten Platz eine faire Aufholchance.',
-      'Keine Sorge — die Details erklären wir, wenn es soweit ist!',
-    ],
-    extra: 'Viel Spaß und möge das beste Team gewinnen! 🎉',
+    extra: 'Viel Spaß — möge das beste Team gewinnen! 🎉',
   },
 ];
 
@@ -1028,8 +999,7 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     title: 'The Goal',
     color: '#3B82F6',
     lines: [
-      'Answer quiz questions and conquer cells on the grid.',
-      'The team with the largest connected territory wins!',
+      'Claim cells — biggest connected area wins.',
     ],
   },
   {
@@ -1037,60 +1007,32 @@ const RULES_SLIDES_EN: RulesSlide[] = [
     title: 'How It Works',
     color: '#8B5CF6',
     lines: [
-      'Question → all teams answer on their phones at once.',
-      'Every correct team places a cell on the grid.',
-      'On a tie, speed decides who picks first!',
+      '3–4 rounds · 5 categories',
+      'Right answer → place a cell',
+      'Tie? Speed decides.',
     ],
   },
   {
-    icon: '🗺️',
-    title: 'Quiz Overview',
-    color: '#06B6D4',
+    icon: '🔓',
+    title: 'New Abilities',
+    color: '#F59E0B',
     lines: [
-      'The quiz runs in multiple rounds with different categories.',
-      'Above you see the roadmap — so you always know where we are.',
+      'Each round adds something:',
+      'Round 2: Steal',
+      'Round 3: Freeze',
+      'Final: Swap & Stack',
     ],
     showTree: true,
   },
   {
-    icon: '⭐',
-    title: 'Joker — 2×2 Bonus',
-    color: '#F59E0B',
-    lines: [
-      'Form a 2×2 square in your team color → you instantly get a Joker cell as a bonus placement.',
-      'The Joker cell counts like a regular cell toward your territory.',
-    ],
-    extra: '⭐ Form a 2×2 = 1 bonus cell!',
-    grid: {
-      cells: [
-        ['A','A',null,null],
-        ['A','⭐',null,null],
-        [null,null,null,null],
-        [null,null,null,null],
-      ],
-      colorA: '#3B82F6', colorB: '#EF4444',
-      label: '2×2 → ⭐ Bonus!',
-    },
-  },
-  {
-    icon: '🛡️',
-    title: 'Good to Know',
+    icon: '🔄',
+    title: 'Comeback',
     color: '#10B981',
     lines: [
-      'You can steal opponent cells — including Joker cells.',
-      'Stacked cells (placed twice) are protected and cannot be stolen.',
-      'Only your largest connected area counts — isolated cells don\'t help.',
+      'The last shall be first — or so they say.',
+      'Before the final: a catch-up for last place. Surprise!',
     ],
-  },
-  {
-    icon: '🔄',
-    title: 'Comeback Chance',
-    color: '#8B5CF6',
-    lines: [
-      'Before the final round, the team in last place gets a fair catch-up chance.',
-      "Don't worry — we'll explain the details when the time comes!",
-    ],
-    extra: 'Good luck and may the best team win! 🎉',
+    extra: 'Good luck — may the best team win! 🎉',
   },
 ];
 
@@ -2451,7 +2393,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     },
     4: {
       emoji: '🔄',
-      de: ['Tauschen & Stucken freigeschaltet', 'Alle Aktionen verfügbar!'],
+      de: ['Tauschen & Stapeln freigeschaltet', 'Alle Aktionen verfügbar!'],
       en: ['Swap & Stack unlocked', 'All actions available!'],
     },
   };
@@ -2578,7 +2520,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 <span style={{
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                   color: prevColor,
-                  textShadow: `0 0 120px ${prevColor}33, 0 12px 0 ${prevColor}22`,
+                  textShadow: `0 0 120px ${prevColor}33`,
                   animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
                 }}>{prevRoundFull}</span>
                 {/* FINALE rollt von oben – mit Gold-Gradient */}
@@ -2599,7 +2541,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 1,
-                textShadow: `0 0 120px ${color}33, 0 12px 0 ${color}22`,
+                textShadow: `0 0 120px ${color}33`,
                 textAlign: 'center',
                 display: 'inline-flex', alignItems: 'baseline', justifyContent: 'center',
                 gap: '0.18em',
@@ -2646,7 +2588,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
                 color,
-                textShadow: `0 0 120px ${color}44, 0 12px 0 ${color}33`,
+                textShadow: `0 0 120px ${color}44`,
                 textAlign: 'center',
                 animation: 'roundBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
               }}>
@@ -2860,67 +2802,67 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           const btKind = s.currentQuestion?.bunteTuete?.kind;
           const CAT_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
             SCHAETZCHEN: {
-              emoji: catEmoji, title: { de: 'Schätzchen', en: 'Guess It' },
+              emoji: catEmoji, title: { de: 'Schätzchen', en: 'Close Call' },
               lines: {
-                de: ['Gebt eine Zahl als Schätzung ein', 'Das Team mit der nächsten Antwort gewinnt!'],
-                en: ['Enter a number as your estimate', 'The team closest to the answer wins!'],
+                de: ['Schätzt am nächsten dran — und gewinnt das Feld.'],
+                en: ['Guess closest — and win the tile.'],
               },
             },
             MUCHO: {
               emoji: catEmoji, title: { de: 'Mu-Cho', en: 'Mu-Cho' },
               lines: {
-                de: ['4 Antwortmöglichkeiten, nur 1 ist richtig', '⚡ Schnelligkeit entscheidet bei Gleichstand!'],
-                en: ['4 options, only 1 is correct', '⚡ Speed decides when tied!'],
+                de: ['4 Antworten, 1 richtige. Speed entscheidet.'],
+                en: ['4 options, 1 right. Speed decides.'],
               },
             },
             ZEHN_VON_ZEHN: {
-              emoji: catEmoji, title: { de: '10 von 10', en: '10 of 10' },
+              emoji: catEmoji, title: { de: '10 von 10', en: 'All In' },
               lines: {
-                de: ['3 mögliche Antworten, 10 Punkte zu vergeben', 'Verteilt eure Punkte auf die Antworten!'],
-                en: ['3 possible answers, 10 points to distribute', 'Spread your points across the answers!'],
+                de: ['Verteilt 10 Punkte auf 3 Antworten.'],
+                en: ['Spread 10 points across 3 answers.'],
               },
             },
             CHEESE: {
               emoji: catEmoji, title: { de: 'Picture This', en: 'Picture This' },
               lines: {
-                de: ['Ein Bild erscheint auf dem Beamer', 'Tippt eure Antwort auf dem Handy ein!'],
-                en: ['An image appears on screen', 'Type your answer on your phone!'],
+                de: ['Erkennt das Bild — tippt die Antwort ins Handy.'],
+                en: ['Spot the image — type your answer.'],
               },
             },
             // BUNTE_TUETE sub-mechanics
             'BUNTE_TUETE:top5': {
               emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
               lines: {
-                de: ['Alle Teams gleichzeitig — bis zu 5 Antworten eintippen.', 'Wer die meisten Treffer hat, gewinnt die Runde.'],
-                en: ['All teams at once — type up to 5 answers.', 'Most hits wins the round.'],
+                de: ['Bis zu 5 Antworten — meiste Treffer gewinnt.'],
+                en: ['Up to 5 answers — most hits wins.'],
               },
             },
             'BUNTE_TUETE:oneOfEight': {
               emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' },
               lines: {
-                de: ['8 Aussagen — eine davon ist falsch!', 'Findet den Imposter, ohne selbst rauszufliegen!'],
-                en: ['8 statements — one is false!', 'Find the imposter without getting eliminated!'],
+                de: ['Unter 8 Aussagen ist eine falsch. Findet sie.'],
+                en: ['One of 8 statements is false. Find it.'],
               },
             },
             'BUNTE_TUETE:order': {
               emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
               lines: {
-                de: ['Jedes Team sortiert eigenständig auf dem Handy.', 'Pro korrekter Position = 1 Punkt. Meiste Punkte gewinnt!'],
-                en: ['Each team sorts independently on their phone.', '1 point per item in the correct position — most wins!'],
+                de: ['Sortiert richtig — pro Treffer 1 Punkt.'],
+                en: ['Sort correctly — 1 point per hit.'],
               },
             },
             'BUNTE_TUETE:map': {
               emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' },
               lines: {
-                de: ['Markiert den Ort auf der Karte — nächstes Team gewinnt!', 'Bei gleicher Entfernung: alle gewinnen (Reihenfolge nach Speed).'],
-                en: ['Pin the location — closest team wins!', 'On tie by distance: all win (order by speed).'],
+                de: ['Tippt den Ort auf der Karte — nächstes Team gewinnt.'],
+                en: ['Pin the spot on the map — closest team wins.'],
               },
             },
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum eine richtige Antwort tippen — Zeit läuft!', 'Keine richtige Antwort in der Zeit = raus.'],
-                en: ['Take turns typing a correct answer — timer runs!', 'No correct answer in time = you\'re out.'],
+                de: ['Reihum antworten — zu langsam = raus.'],
+                en: ['Answer in turn — too slow = out.'],
               },
             },
           };
@@ -2966,7 +2908,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 fontFamily: fontFam,
                 fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
-                textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
+                textShadow: `0 0 80px ${catColor}44`,
                 marginTop: 12,
                 animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
                 position: 'relative', zIndex: 5,
@@ -3048,7 +2990,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 fontFamily: fontFam,
                 fontSize: 'clamp(68px, 13vw, 200px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
-                textShadow: `0 0 80px ${catColor}44, 0 8px 0 ${catColor}33`,
+                textShadow: `0 0 80px ${catColor}44`,
                 marginTop: 12,
                 animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both, qqGlow 3s ease-in-out 1.2s infinite',
                 position: 'relative', zIndex: 5,

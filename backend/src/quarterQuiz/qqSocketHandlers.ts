@@ -885,6 +885,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
   io.on('connection', (socket) => {
 
+    // ── Heartbeat ──────────────────────────────────────────────────────────
+    // Client-Heartbeat (alle 20s). Hält die WS-Verbindung gegen Render-Proxy-
+    // Timeout (~100s Idle) und Browser-Tab-Throttling warm. Noop-Handler.
+    socket.on('qq:ping', () => { /* noop */ });
+
     // ── Join ────────────────────────────────────────────────────────────────
     socket.on('qq:joinModerator', (payload: QQJoinModeratorPayload, ack?: unknown) => {
       try {

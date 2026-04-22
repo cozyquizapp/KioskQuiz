@@ -1234,7 +1234,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               1: { emoji: '🏁', de: ['1 Feld setzen', 'Baut euer Quartier auf!'], en: ['Place 1 tile', 'Build your quarter!'] },
               2: { emoji: '⚔️', de: ['2 Felder + Klauen!'], en: ['2 tiles + Stealing!'] },
               3: { emoji: '🧊', de: ['Freie Aktionswahl', 'Einfrieren möglich!'], en: ['Free action choice', 'Freezing unlocked!'] },
-              4: { emoji: '🔄', de: ['Tauschen & Stucken!'], en: ['Swap & Stack!'] },
+              4: { emoji: '🔄', de: ['Tauschen & Stapeln!'], en: ['Swap & Stack!'] },
             };
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
             return (
@@ -1270,7 +1270,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Guess It' }, lines: { de: ['Gebt eine Zahl als Schätzung ein', 'Nächste Antwort gewinnt!'], en: ['Enter a number', 'Closest answer wins!'] } },
               MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
-              ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: '10 of 10' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
+              ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
               CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Bild erkennen, Antwort eintippen!'], en: ['Identify the image, type your answer!'] } },
               'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['So viele Antworten wie möglich nennen!'], en: ['Name as many answers as you can!'] } },
               'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['8 Aussagen — eine ist falsch!'], en: ['8 statements — one is false!'] } },
@@ -2899,7 +2899,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const phaseLabel = (() => {
     if (isSwapComeback || isSwapOne) return lang === 'de' ? '🔄 Tauschen' : '🔄 Swap';
     if (isFreeze) return lang === 'de' ? '❄️ Einfrieren' : '❄️ Freeze';
-    if (isStuck)  return lang === 'de' ? '📌 Stucken' : '📌 Stuck';
+    if (isStuck)  return lang === 'de' ? '📌 Stapeln' : '📌 Stack';
     if (isSteal)  return t.placement.titleSteal[lang];
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';

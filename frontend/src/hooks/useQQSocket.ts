@@ -43,7 +43,25 @@ export function useQQSocket(roomCode: string) {
       setState(normalizeState(payload));
     });
 
+    // Heartbeat: alle 20s ein Noop-Emit, damit Render-Proxy die WS-Verbindung
+    // nicht nach ~100s Idle kappt. Socket.IO hat zwar internen Ping, aber
+    // gegen externe Proxy-Timeouts ist App-Level-Traffic zuverlässiger.
+    const heartbeatId = window.setInterval(() => {
+      if (socket.connected) socket.emit('qq:ping');
+    }, 20000);
+
+    // Tab wieder sichtbar → falls disconnected, reconnect forcen.
+    // (Browser throttlen Background-Tabs, da kann der Socket sterben.)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && !socket.connected) {
+        socket.connect();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
+      window.clearInterval(heartbeatId);
+      document.removeEventListener('visibilitychange', onVisibility);
       socket.off('qq:stateUpdate');
       socket.disconnect();
       socketRef.current = null;

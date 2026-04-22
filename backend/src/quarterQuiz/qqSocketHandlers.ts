@@ -36,6 +36,7 @@ import {
   qqSkipCurrentPlacement,
 } from './qqRooms';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
+import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
 
 type AckFn = (payload: QQAck) => void;
 
@@ -284,144 +285,6 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
     return beCorrect ? String(fallback) : `Dummy-${Math.random().toString(36).slice(2, 6)}`;
   }
   return `Dummy-${Math.random().toString(36).slice(2, 6)}`;
-}
-
-// ── Smart Placement Heuristik ───────────────────────────────────────────────
-// Dummies platzieren nicht rein zufällig, sondern priorisieren Züge, die
-// ihre eigene Strategie "Regeln ausschöpfen" umsetzen:
-//   1. 2×2-Abschluss (Joker-Bonus) — höchste Priorität
-//   2. Ans eigene größte Cluster andocken (Gebiet wachsen lassen)
-//   3. Feld neben einem existierenden eigenen Feld (Cluster-Seed erweitern)
-//   4. Random free
-type CellCoord = { row: number; col: number };
-
-/** Find free cells that would complete a 2×2 of teamId. Returns cells sorted by completion count. */
-function findJokerCompletions(room: import('./qqRooms').QQRoomState, teamId: string): CellCoord[] {
-  const rows = room.grid.length;
-  const cols = room.grid[0]?.length ?? 0;
-  const completions: CellCoord[] = [];
-  // Ein free Feld schließt ein 2×2, wenn von den 4 möglichen 2×2-Rahmen, in
-  // denen das Feld vorkommt, mindestens einer nach Setzen des Feldes komplett
-  // vom teamId beherrscht ist.
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (room.grid[r][c].ownerId !== null) continue;
-      // Prüfe alle 4 möglichen 2×2-Rahmen, die dieses Feld enthalten
-      const frames = [
-        [{ r: r, c: c }, { r: r, c: c + 1 }, { r: r + 1, c: c }, { r: r + 1, c: c + 1 }],
-        [{ r: r, c: c - 1 }, { r: r, c: c }, { r: r + 1, c: c - 1 }, { r: r + 1, c: c }],
-        [{ r: r - 1, c: c }, { r: r - 1, c: c + 1 }, { r: r, c: c }, { r: r, c: c + 1 }],
-        [{ r: r - 1, c: c - 1 }, { r: r - 1, c: c }, { r: r, c: c - 1 }, { r: r, c: c }],
-      ];
-      for (const frame of frames) {
-        const valid = frame.every(p => p.r >= 0 && p.r < rows && p.c >= 0 && p.c < cols);
-        if (!valid) continue;
-        const owned = frame.every(p => {
-          if (p.r === r && p.c === c) return true; // hypothetisch gesetzt
-          return room.grid[p.r][p.c].ownerId === teamId;
-        });
-        if (owned) {
-          completions.push({ row: r, col: c });
-          break;
-        }
-      }
-    }
-  }
-  return completions;
-}
-
-/** BFS-Größe des Clusters, das Cell (r,c) mit teamId enthalten würde. */
-function clusterSizeWithCell(
-  room: import('./qqRooms').QQRoomState,
-  teamId: string,
-  r: number,
-  c: number,
-): number {
-  const rows = room.grid.length;
-  const cols = room.grid[0]?.length ?? 0;
-  const visited = new Set<string>();
-  const stack: CellCoord[] = [{ row: r, col: c }];
-  let size = 0;
-  while (stack.length) {
-    const { row, col } = stack.pop()!;
-    const key = `${row},${col}`;
-    if (visited.has(key)) continue;
-    if (row < 0 || row >= rows || col < 0 || col >= cols) continue;
-    const owner = (row === r && col === c) ? teamId : room.grid[row][col].ownerId;
-    if (owner !== teamId) continue;
-    visited.add(key);
-    size++;
-    stack.push({ row: row - 1, col }, { row: row + 1, col }, { row, col: col - 1 }, { row, col: col + 1 });
-  }
-  return size;
-}
-
-/** Smart pick for placing on a free cell. */
-function pickSmartPlacement(
-  room: import('./qqRooms').QQRoomState,
-  teamId: string,
-  freeCells: CellCoord[],
-): CellCoord | null {
-  if (!freeCells.length) return null;
-  // 70% strategisch, 30% zufällig — damit nicht 100% perfekt, aber spürbar besser.
-  const strategic = Math.random() < 0.7;
-  if (!strategic) return freeCells[Math.floor(Math.random() * freeCells.length)];
-
-  // 1) 2×2 abschließen
-  const jokers = findJokerCompletions(room, teamId).filter(jc =>
-    freeCells.some(f => f.row === jc.row && f.col === jc.col),
-  );
-  if (jokers.length) return jokers[Math.floor(Math.random() * jokers.length)];
-
-  // 2) Größtes Cluster weiter ausbauen: Cell picken, die die größte
-  // Cluster-Größe ergibt. Adjazente Felder werden bevorzugt.
-  let bestCells: CellCoord[] = [];
-  let bestSize = -1;
-  for (const f of freeCells) {
-    const size = clusterSizeWithCell(room, teamId, f.row, f.col);
-    if (size > bestSize) {
-      bestSize = size;
-      bestCells = [f];
-    } else if (size === bestSize) {
-      bestCells.push(f);
-    }
-  }
-  if (bestCells.length && bestSize > 1) {
-    return bestCells[Math.floor(Math.random() * bestCells.length)];
-  }
-
-  // 3) Sonst zufälliges freies Feld
-  return freeCells[Math.floor(Math.random() * freeCells.length)];
-}
-
-/** Smart pick for stealing: priorisiere gegnerische Jokerfelder, dann
- *  Felder aus größten Gegner-Clustern (max Damage). */
-function pickSmartSteal(
-  room: import('./qqRooms').QQRoomState,
-  teamId: string,
-  oppFreeCells: CellCoord[],
-): CellCoord | null {
-  if (!oppFreeCells.length) return null;
-  const strategic = Math.random() < 0.7;
-  if (!strategic) return oppFreeCells[Math.floor(Math.random() * oppFreeCells.length)];
-
-  // 1) Gegnerische Joker-Felder zuerst (jokerFormed flag)
-  const jokerCells = oppFreeCells.filter(cc => !!(room.grid[cc.row][cc.col] as any).jokerFormed);
-  if (jokerCells.length) return jokerCells[Math.floor(Math.random() * jokerCells.length)];
-
-  // 2) Feld aus dem größten Gegner-Cluster — ermittel Cluster-Größe des
-  // Opfers für jedes Kandidatenfeld.
-  let bestCells: CellCoord[] = [];
-  let bestSize = -1;
-  for (const cc of oppFreeCells) {
-    const victimId = room.grid[cc.row][cc.col].ownerId;
-    if (!victimId) continue;
-    const size = clusterSizeWithCell(room, victimId, cc.row, cc.col);
-    if (size > bestSize) { bestSize = size; bestCells = [cc]; }
-    else if (size === bestSize) bestCells.push(cc);
-  }
-  if (bestCells.length) return bestCells[Math.floor(Math.random() * bestCells.length)];
-  return oppFreeCells[Math.floor(Math.random() * oppFreeCells.length)];
 }
 
 /**
@@ -695,8 +558,13 @@ export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): v
 }
 
 /**
- * Wenn PLACEMENT + pendingFor ist ein Dummy, setze/klau automatisch ein Feld.
+ * Wenn PLACEMENT + pendingFor ist ein Dummy, setze/klau/spezial automatisch.
  * Kleine Verzögerung (1.2s), damit Moderator/Beamer den Übergang noch sehen.
+ *
+ * Entscheidung läuft über `pickDummyAction` (qqDummyAI.ts): simuliert jede
+ * mögliche Aktion auf einem Grid-Klon, bewertet per Territorium-Delta
+ * (eigenes largest - max gegner-largest) und wählt zu 80% die beste, zu 20%
+ * zufällig aus den Top-3.
  */
 export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
@@ -714,169 +582,284 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     if (!live || live.phase !== 'PLACEMENT') return;
     if (live.pendingFor !== teamId || live.pendingAction !== action) return;
 
-    const free: Array<{ row: number; col: number }> = [];
-    const oppFree: Array<{ row: number; col: number }> = [];
-    for (let r = 0; r < live.grid.length; r++) {
-      for (let c = 0; c < live.grid[r].length; c++) {
-        const cell = live.grid[r][c];
-        if (cell.ownerId === null) free.push({ row: r, col: c });
-        else if (cell.ownerId !== teamId && !cell.frozen && !cell.stuck) oppFree.push({ row: r, col: c });
-      }
-    }
+    const phase = live.gamePhaseIndex;
+    const stats = live.teamPhaseStats[teamId];
+    const bombUsed = !!stats?.bombUsed;
+    const shieldUsed = !!stats?.shieldUsed;
 
-    // ── Power-Up-Würfel (nur bei FREE, also Phase 3+) ─────────────────────
-    // BOMB + SHIELD ab Phase 3, STAPEL + SWAP ab Phase 4. 30% Gesamt-Chance, sonst normal setzen/klauen.
-    if (action === 'FREE') {
-      const phase = live.gamePhaseIndex;
-      const dummyStats = live.teamPhaseStats[teamId];
-      const ownCells: Array<{ row: number; col: number }> = [];
-      const ownStapable: Array<{ row: number; col: number }> = [];
-      for (let r = 0; r < live.grid.length; r++) {
-        for (let c = 0; c < live.grid[r].length; c++) {
-          const cell = live.grid[r][c];
-          if (cell.ownerId === teamId) {
-            ownCells.push({ row: r, col: c });
-            if (!cell.stuck) ownStapable.push({ row: r, col: c });
-          }
-        }
-      }
-      const bombAvail   = phase >= 3 && !dummyStats?.bombUsed && oppFree.length > 0;
-      const shieldAvail = phase >= 3 && !dummyStats?.shieldUsed && ownCells.length > 0;
-      const stapelAvail = phase >= 4 && ownStapable.length > 0;
-      const swapAvail   = phase >= 4 && ownCells.length > 0 && oppFree.length > 0;
-      const options: Array<'BOMB' | 'SHIELD' | 'STAPEL' | 'SWAP'> = [];
-      if (bombAvail)   options.push('BOMB');
-      if (shieldAvail) options.push('SHIELD');
-      if (stapelAvail) options.push('STAPEL');
-      if (swapAvail)   options.push('SWAP');
-      if (options.length > 0 && Math.random() < 0.3) {
-        const pick = options[Math.floor(Math.random() * options.length)];
-        try {
-          qqChooseFreeAction(live, teamId, pick);
-          broadcastQQ(io, roomCode);
-          if (pick === 'BOMB') {
-            const target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
-            setTimeout(() => {
-              const live2 = getQQRoom(roomCode);
-              if (!live2 || live2.phase !== 'PLACEMENT') return;
-              if (live2.pendingFor !== teamId || live2.pendingAction !== 'BOMB_1') return;
-              try {
-                qqBombCell(live2, teamId, target.row, target.col);
-                broadcastQQ(io, roomCode);
-                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
-              } catch { /* skip */ }
-            }, 900);
-          } else if (pick === 'SHIELD') {
-            setTimeout(() => {
-              const live2 = getQQRoom(roomCode);
-              if (!live2 || live2.phase !== 'PLACEMENT') return;
-              if (live2.pendingFor !== teamId || live2.pendingAction !== 'SHIELD_1') return;
-              try {
-                qqShieldCluster(live2, teamId);
-                broadcastQQ(io, roomCode);
-                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
-              } catch { /* skip */ }
-            }, 900);
-          } else if (pick === 'STAPEL') {
-            const pc = pickSmartPlacement(live, teamId, ownStapable) ?? ownStapable[0];
-            setTimeout(() => {
-              const live2 = getQQRoom(roomCode);
-              if (!live2 || live2.phase !== 'PLACEMENT') return;
-              if (live2.pendingFor !== teamId || live2.pendingAction !== 'STAPEL_1') return;
-              try {
-                qqStuckCell(live2, teamId, pc.row, pc.col);
-                broadcastQQ(io, roomCode);
-                if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
-              } catch { /* skip */ }
-            }, 900);
-          } else if (pick === 'SWAP') {
-            // Step 1: eigenes Feld (bevorzugt Randfeld) auswählen
-            const ownPick = ownCells[Math.floor(Math.random() * ownCells.length)];
-            setTimeout(() => {
-              const live2 = getQQRoom(roomCode);
-              if (!live2 || live2.phase !== 'PLACEMENT') return;
-              if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
-              try {
-                qqSwapOneCell(live2, teamId, ownPick.row, ownPick.col);
-                broadcastQQ(io, roomCode);
-                // Step 2: gegnerisches Feld auswählen (smart: größter Gegner-Cluster)
-                setTimeout(() => {
-                  const live3 = getQQRoom(roomCode);
-                  if (!live3 || live3.phase !== 'PLACEMENT') return;
-                  if (live3.pendingFor !== teamId || live3.pendingAction !== 'SWAP_1') return;
-                  const enemy = pickSmartSteal(live3, teamId, oppFree) ?? oppFree[0];
-                  try {
-                    qqSwapOneCell(live3, teamId, enemy.row, enemy.col);
-                    broadcastQQ(io, roomCode);
-                    if (live3.phase === 'PLACEMENT' && live3.pendingFor) maybeAutoPlace(io, roomCode);
-                  } catch { /* skip */ }
-                }, 900);
-              } catch { /* skip */ }
-            }, 900);
-          }
-          return;
-        } catch { /* Fallback: normaler Place/Steal */ }
-      }
-    }
-
-    let mode: 'place' | 'steal' | null = null;
-    let target: { row: number; col: number } | undefined;
-
-    // Helper: Dummy komplett festgefahren → Zug überspringen, damit der Flow
-    // weiterläuft (nächstes Team aus _placementQueue oder Rundenende).
-    const skipStuckDummy = (): boolean => {
+    const skipStuckDummy = (): void => {
       qqSkipCurrentPlacement(live);
       broadcastQQ(io, roomCode);
       if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      return true;
     };
 
-    if (action === 'PLACE_1' || action === 'PLACE_2') {
-      // Grid voll → auf Klauen ausweichen, sonst würde der Flow hängen bleiben.
-      if (!free.length) {
-        if (!oppFree.length) { skipStuckDummy(); return; }
-        mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
-      } else {
-        mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0];
+    // ── PLACE_1 (Phase 1): nur setzen ───────────────────────────────────────
+    if (action === 'PLACE_1') {
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['PLACE', 'STEAL'], // STEAL als Fallback bei vollem Grid
+        phase,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        if (choice.kind === 'STEAL') qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
+        else qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+
+    // ── PLACE_2 (Phase 2, Entscheidung zwischen 2×Setzen und 1×Klauen) ──────
+    // Erstaufruf: placementsLeft == 2 → vergleichen. Bei STEAL umschalten.
+    if (action === 'PLACE_2') {
+      const firstSlot = (stats?.placementsLeft ?? 0) >= 2;
+      if (firstSlot) {
+        // Place-Score: 2 Züge simulieren (greedy: bester Setz-Zug + bester zweiter).
+        // Vereinfachung: wir nehmen das Delta des besten 1× Setzens × 2 als Näherung.
+        const placeChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['PLACE'], phase,
+        }, 0); // deterministisch für Vergleich
+        const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['STEAL'], phase,
+        }, 0);
+        const placeScore2x = placeChoice ? placeChoice.score * 1.6 : -Infinity; // 2 Züge, aber 2. bringt weniger
+        const stealScore   = stealChoice ? stealChoice.score : -Infinity;
+        if (stealScore > placeScore2x && stealChoice) {
+          try {
+            qqChooseFreeAction(live, teamId, 'STEAL');
+            broadcastQQ(io, roomCode);
+            if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+          } catch { /* fallback: weitersetzen */ }
+          return;
+        }
       }
-    } else if (action === 'STEAL_1') {
-      if (!oppFree.length) { skipStuckDummy(); return; }
-      mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0];
-    } else if (action === 'COMEBACK') {
-      // Comeback: fix Klauen vom Führenden. Nur Leader-Territorium erlaubt,
-      // bei ≥2 Leadern nicht zweimal vom selben Team.
+      // Weiter mit Setzen (oder Klauen als Fallback bei vollem Grid)
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['PLACE', 'STEAL'], phase,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        if (choice.kind === 'STEAL') qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
+        else qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+
+    // ── STEAL_1 ─────────────────────────────────────────────────────────────
+    if (action === 'STEAL_1') {
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['STEAL'], phase,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+
+    // ── COMEBACK (fix Klauen, ggf. nur von bestimmten Leader-Teams) ─────────
+    if (action === 'COMEBACK') {
       const targets = live.comebackStealTargets ?? [];
       const done = live.comebackStealsDone ?? [];
       const allowedOwners = new Set(
         targets.length >= 2 ? targets.filter(id => !done.includes(id)) : targets
       );
-      const leaderCells = oppFree.filter(c => {
-        const ownerId = live.grid[c.row]?.[c.col]?.ownerId;
-        return ownerId != null && allowedOwners.has(ownerId);
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['STEAL'], phase,
+        stealFilter: (cell) => cell.ownerId != null && allowedOwners.has(cell.ownerId),
       });
-      if (!leaderCells.length) { skipStuckDummy(); return; }
-      mode = 'steal';
-      target = pickSmartSteal(live, teamId, leaderCells) ?? leaderCells[0];
-    } else if (action === 'FREE') {
-      // FREE: bevorzugt setzen (Cluster wachsen), sonst klauen.
-      if (free.length) { mode = 'place'; target = pickSmartPlacement(live, teamId, free) ?? free[0]; }
-      else if (oppFree.length) { mode = 'steal'; target = pickSmartSteal(live, teamId, oppFree) ?? oppFree[0]; }
-      else { skipStuckDummy(); return; }
-    } else {
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
       return;
     }
 
-    try {
-      if (mode === 'place') qqPlaceCell(live, teamId, target!.row, target!.col);
-      else qqStealCell(live, teamId, target!.row, target!.col);
-      broadcastQQ(io, roomCode);
-      // Immer erneut prüfen: PLACE_2 oder nächstes Team aus placementQueue (Multi-Winner).
-      // maybeAutoPlace selbst filtert (nur Dummies, nur wenn pendingFor gesetzt).
-      if (live.phase === 'PLACEMENT' && live.pendingFor) {
-        maybeAutoPlace(io, roomCode);
-      }
-    } catch { /* skip */ }
+    // ── FREE (Phase 3+ volle Auswahl) ───────────────────────────────────────
+    if (action === 'FREE') {
+      const kinds: DummyActionKind[] = ['PLACE', 'STEAL'];
+      if (phase >= 3) { kinds.push('BOMB'); kinds.push('SHIELD'); }
+      if (phase >= 4) { kinds.push('STAPEL'); kinds.push('SWAP'); }
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: kinds, phase, bombUsed, shieldUsed,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      dispatchFreeChoice(io, roomCode, teamId, choice);
+      return;
+    }
+
+    // ── Follow-up-Steps nach chooseFreeAction (falls Flow aus User-UI käme) ──
+    if (action === 'BOMB_1') {
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['BOMB'], phase, bombUsed: false,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        qqBombCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+    if (action === 'SHIELD_1') {
+      try {
+        qqShieldCluster(live, teamId);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+    if (action === 'STAPEL_1') {
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['STAPEL'], phase,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        qqStuckCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+    if (action === 'SWAP_1') {
+      // Step 1: eigenes Feld auswählen (wir nutzen SWAP-Enumeration und das ownTarget).
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['SWAP'], phase,
+      });
+      if (!choice || !choice.ownTarget || !choice.enemyTarget) { skipStuckDummy(); return; }
+      try {
+        qqSwapOneCell(live, teamId, choice.ownTarget.row, choice.ownTarget.col);
+        broadcastQQ(io, roomCode);
+        // Step 2 nach kurzer Verzögerung
+        setTimeout(() => {
+          const live2 = getQQRoom(roomCode);
+          if (!live2 || live2.phase !== 'PLACEMENT') return;
+          if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
+          try {
+            qqSwapOneCell(live2, teamId, choice.enemyTarget!.row, choice.enemyTarget!.col);
+            broadcastQQ(io, roomCode);
+            if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+          } catch { /* skip */ }
+        }, 900);
+      } catch { /* skip */ }
+      return;
+    }
   }, 1200);
+}
+
+/** Hilfs-Dispatcher: aus FREE-Wahl erst chooseFreeAction, dann Follow-up. */
+function dispatchFreeChoice(
+  io: SocketIOServer,
+  roomCode: string,
+  teamId: string,
+  choice: DummyActionChoice,
+): void {
+  const live = getQQRoom(roomCode);
+  if (!live) return;
+  try {
+    if (choice.kind === 'PLACE') {
+      qqChooseFreeAction(live, teamId, 'PLACE');
+      broadcastQQ(io, roomCode);
+      // PLACE_2 wird via erneuten maybeAutoPlace-Tick bedient.
+      if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      return;
+    }
+    if (choice.kind === 'STEAL') {
+      qqChooseFreeAction(live, teamId, 'STEAL');
+      broadcastQQ(io, roomCode);
+      // Direkt selbes Ziel klauen, um nicht neu zu enumerieren.
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId || live2.pendingAction !== 'STEAL_1') return;
+        try {
+          qqStealCell(live2, teamId, choice.target!.row, choice.target!.col);
+          broadcastQQ(io, roomCode);
+          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+      }, 700);
+      return;
+    }
+    if (choice.kind === 'BOMB') {
+      qqChooseFreeAction(live, teamId, 'BOMB');
+      broadcastQQ(io, roomCode);
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId || live2.pendingAction !== 'BOMB_1') return;
+        try {
+          qqBombCell(live2, teamId, choice.target!.row, choice.target!.col);
+          broadcastQQ(io, roomCode);
+          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+      }, 900);
+      return;
+    }
+    if (choice.kind === 'SHIELD') {
+      qqChooseFreeAction(live, teamId, 'SHIELD');
+      broadcastQQ(io, roomCode);
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId) return;
+        try {
+          // qqChooseFreeAction('SHIELD') wendet Shield direkt an (kein SHIELD_1-Step),
+          // aber falls doch auf SHIELD_1 gewartet wird, decken wir beides ab.
+          if (live2.pendingAction === 'SHIELD_1') qqShieldCluster(live2, teamId);
+          broadcastQQ(io, roomCode);
+          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+      }, 900);
+      return;
+    }
+    if (choice.kind === 'STAPEL') {
+      qqChooseFreeAction(live, teamId, 'STAPEL');
+      broadcastQQ(io, roomCode);
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId || live2.pendingAction !== 'STAPEL_1') return;
+        try {
+          qqStuckCell(live2, teamId, choice.target!.row, choice.target!.col);
+          broadcastQQ(io, roomCode);
+          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+      }, 900);
+      return;
+    }
+    if (choice.kind === 'SWAP') {
+      qqChooseFreeAction(live, teamId, 'SWAP');
+      broadcastQQ(io, roomCode);
+      // Step 1: eigenes Feld
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
+        try {
+          qqSwapOneCell(live2, teamId, choice.ownTarget!.row, choice.ownTarget!.col);
+          broadcastQQ(io, roomCode);
+          // Step 2: gegnerisches Feld
+          setTimeout(() => {
+            const live3 = getQQRoom(roomCode);
+            if (!live3 || live3.phase !== 'PLACEMENT') return;
+            if (live3.pendingFor !== teamId || live3.pendingAction !== 'SWAP_1') return;
+            try {
+              qqSwapOneCell(live3, teamId, choice.enemyTarget!.row, choice.enemyTarget!.col);
+              broadcastQQ(io, roomCode);
+              if (live3.phase === 'PLACEMENT' && live3.pendingFor) maybeAutoPlace(io, roomCode);
+            } catch { /* skip */ }
+          }, 900);
+        } catch { /* skip */ }
+      }, 700);
+      return;
+    }
+  } catch { /* Fallback: kein dispatch */ }
 }
 
 export function registerQQHandlers(io: SocketIOServer): void {

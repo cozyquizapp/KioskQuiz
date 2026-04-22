@@ -6317,8 +6317,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const wrapperY = isTop ? -gap : gap;
               const aSize = isWinner ? 86 : 72;
               const px = (pctOf(p.num) / 100) * STAGE_W;
-              const chipW = isWinner ? 100 : 70;
-              const chipH = isWinner ? 40 : 30;
+              const chipW = isWinner ? 140 : 100;
+              const chipH = isWinner ? 64 : 48;
               // Kandidaten relativ zum Avatar-Wrapper-Zentrum (px-Koordinaten).
               // Primär: Richtung "Rail" (zur Mitte hin) bleibt erhalten —
               // unten-Avatare → Chip nach oben, oben-Avatare → Chip nach unten.
@@ -6540,12 +6540,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 transform: off.side === 'right' || off.side === 'left'
                                   ? 'translate(0, 0)'
                                   : 'translate(-50%, 0)',
-                                padding: isWinner ? '7px 18px' : '5px 14px',
-                                borderRadius: 12,
+                                padding: isWinner ? '9px 22px' : '7px 18px',
+                                borderRadius: 14,
                                 background: 'rgba(0,0,0,0.88)',
                                 border: `2px solid ${tColor}`,
                                 color: '#fff', fontWeight: 900,
-                                fontSize: isWinner ? 'clamp(26px, 2.8vw, 36px)' : 'clamp(18px, 2vw, 26px)',
+                                fontSize: isWinner ? 'clamp(32px, 3.4vw, 46px)' : 'clamp(24px, 2.6vw, 34px)',
                                 whiteSpace: 'nowrap',
                                 boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
                                 zIndex: 1,

@@ -4817,25 +4817,27 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{
-                    fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
-                    color: isTop ? r.team.color : '#e2e8f0',
+                    fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 800,
+                    color: isTop ? r.team.color : '#cbd5e1',
                     lineHeight: 1.1,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{r.team.name}</div>
                   <div style={{
-                    fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
-                    color: '#94a3b8', marginTop: 2,
+                    fontSize: 'clamp(24px, 2.6vw, 40px)', fontWeight: 900,
+                    color: isTop ? '#FDE68A' : '#f1f5f9', marginTop: 4,
+                    lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
+                    textShadow: isTop ? '0 0 16px rgba(251,191,36,0.35)' : 'none',
                   }}>
                     {fmt(r.num)}
                   </div>
                 </div>
                 <div style={{
-                  padding: '6px 14px', borderRadius: 999,
-                  background: isTop ? 'rgba(250,204,21,0.18)' : 'rgba(15,23,42,0.6)',
-                  border: isTop ? '2px solid rgba(250,204,21,0.5)' : '1.5px solid rgba(148,163,184,0.25)',
-                  fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
-                  color: isTop ? '#FDE68A' : '#cbd5e1',
+                  padding: '8px 18px', borderRadius: 999,
+                  background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
+                  border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
+                  fontSize: 'clamp(18px, 1.9vw, 28px)', fontWeight: 900,
+                  color: isTop ? '#FDE68A' : '#e2e8f0',
                   fontVariantNumeric: 'tabular-nums',
                   flexShrink: 0,
                   animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',

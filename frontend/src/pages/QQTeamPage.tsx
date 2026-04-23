@@ -12,6 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQIcon, qqCatSlug } from '../components/QQIcon';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
   playQuestionStart, playRoundStart,
@@ -1324,8 +1325,13 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             </div>
             {catInfo && (
               <>
-                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>
-                  {catInfo.emoji}
+                <div style={{ fontSize: 44, marginBottom: 4, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite' }}>
+                  {(() => {
+                    const slug = cat ? qqCatSlug(cat as string) : null;
+                    return slug
+                      ? <QQIcon slug={slug} size={56} alt={catInfo[lang]} />
+                      : catInfo.emoji;
+                  })()}
                 </div>
                 <div style={{
                   fontSize: 32, fontWeight: 900, color: catColor,
@@ -1392,7 +1398,12 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         color: catAccent, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
         boxShadow: `0 0 16px ${catAccent}22`,
       }}>
-        <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>
+        {(() => {
+          const slug = qqCatSlug(q.category as string);
+          return slug
+            ? <QQIcon slug={slug} size={20} alt={catLabel.de} />
+            : <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>;
+        })()}
         {lang === 'en' ? catLabel.en : catLabel.de}
       </div>
 
@@ -3096,10 +3107,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           pointerEvents: 'none', zIndex: 1,
                         }} />
                         <div style={{
-                          position: 'absolute', top: -2, right: -2,
-                          fontSize: Math.max(6, cellSize * 0.24),
-                          zIndex: 3, lineHeight: 1,
-                        }}>❄️</div>
+                          position: 'absolute', top: -3, right: -3,
+                          zIndex: 3, lineHeight: 0,
+                        }}>
+                          <QQIcon slug="marker-frost" size={Math.max(10, cellSize * 0.4)} alt="Frost" />
+                        </div>
                       </>
                     )}
                     {isShieldedCell && (
@@ -3114,9 +3126,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                         }} />
                         <div style={{
                           position: 'absolute', top: -3, right: -3,
-                          fontSize: Math.max(7, cellSize * 0.26),
-                          zIndex: 3, lineHeight: 1,
-                        }}>🛡️</div>
+                          zIndex: 3, lineHeight: 0,
+                        }}>
+                          <QQIcon slug="marker-shield" size={Math.max(10, cellSize * 0.42)} alt="Schild" />
+                        </div>
                       </>
                     )}
                     <span style={{

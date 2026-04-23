@@ -16,6 +16,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
@@ -2290,10 +2291,14 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
       {/* Dots — bei current bleibt der Dot leer, der Wolf sitzt drauf */}
       {phaseEntries.map((e, i) => {
         const label = QQ_CATEGORY_LABELS[e.category];
-        const emoji = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
+        const subSlug = e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : null;
+        const catSlug = qqCatSlug(e.category);
+        const iconSlug = subSlug ?? catSlug;
+        const emojiFallback = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
         const isPast = i < displayIdx;
         const isCurrent = i === displayIdx;
         const dotLeft = i * (DOT + GAP);
+        const iconSize = Math.round(DOT * 0.78);
         return (
           <div key={i} style={{
             position: 'absolute', top: '50%', left: dotLeft,
@@ -2310,7 +2315,9 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
             transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
             zIndex: 1,
           }}>
-            {emoji}
+            {iconSlug
+              ? <QQIcon slug={iconSlug} size={iconSize} alt={label.de} />
+              : emojiFallback}
           </div>
         );
       })}
@@ -2896,12 +2903,21 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
 
-              {/* Big emoji */}
+              {/* Big emoji/icon — bevorzugt PNG, sonst Emoji-Fallback */}
               <div style={{
-                fontSize: 'clamp(72px, 12vw, 140px)',
+                fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 1,
                 animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
                 position: 'relative', zIndex: 5,
-              }}>{info.emoji}</div>
+              }}>
+                {(() => {
+                  const subSlug = btKind ? qqSubSlug(btKind) : null;
+                  const catSlug = cat ? qqCatSlug(cat as string) : null;
+                  const slug = subSlug ?? catSlug;
+                  return slug
+                    ? <QQIcon slug={slug} size={'clamp(110px, 16vw, 200px)'} alt={info.title.de} />
+                    : info.emoji;
+                })()}
+              </div>
 
               {/* Category/mechanic name */}
               <div style={{
@@ -2978,12 +2994,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
           {cat && (
             <>
-              {/* Emoji — float idle */}
+              {/* Emoji/Icon — float idle. Wenn Kategorie-PNG verfügbar → das, sonst Emoji-Fallback. */}
               <div style={{
-                fontSize: 'clamp(80px, 14vw, 180px)',
+                fontSize: 'clamp(80px, 14vw, 180px)', lineHeight: 1,
                 animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both, cfloat 4s ease-in-out 1s infinite',
                 position: 'relative', zIndex: 5,
-              }}>{catEmoji}</div>
+              }}>
+                {(() => {
+                  const slug = qqCatSlug(cat as string);
+                  return slug
+                    ? <QQIcon slug={slug} size={'clamp(120px, 18vw, 240px)'} alt={catLabel} />
+                    : catEmoji;
+                })()}
+              </div>
 
               {/* Category name — glow pulse idle */}
               <div style={{
@@ -5492,7 +5515,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 padding: '6px 18px', borderRadius: 999,
                 background: `${accent}22`, border: `1.5px solid ${accent}44`,
               }}>
-                <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)' }}>{catLabel.emoji}</span>
+                {(() => {
+                  const slug = qqCatSlug(cat as string);
+                  return slug
+                    ? <QQIcon slug={slug} size={'clamp(20px, 2.2vw, 28px)'} alt={catLabel.de} />
+                    : <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)' }}>{catLabel.emoji}</span>;
+                })()}
                 <span style={{
                   fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
                   color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -5639,7 +5667,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               background: `${accent}18`, border: `2px solid ${accent}44`,
               animation: 'contentReveal 0.35s ease both',
             }}>
-              <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>
+              {(() => {
+                const slug = qqCatSlug(cat as string);
+                return slug
+                  ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
+                  : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
+              })()}
               <span style={{
                 fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
                 color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -8464,14 +8497,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       `,
                       pointerEvents: 'none', zIndex: 3,
                     }} />
-                    {/* Small ❄️ badge top-right */}
+                    {/* Frost-PNG badge top-right */}
                     <div style={{
-                      position: 'absolute', top: -3, right: -3,
-                      fontSize: Math.max(8, cellSize * 0.28),
-                      zIndex: 5, lineHeight: 1,
+                      position: 'absolute', top: -4, right: -4,
+                      zIndex: 5, lineHeight: 0,
                       animation: 'frostCrystal 3s ease-in-out infinite',
                       filter: 'drop-shadow(0 0 3px rgba(147,210,255,0.8))',
-                    }}>❄️</div>
+                    }}>
+                      <QQIcon slug="marker-frost" size={Math.max(14, cellSize * 0.42)} alt="Frost" />
+                    </div>
                   </>
                 )}
                 {/* Stuck overlay — golden shimmer + ×2 chip top-right */}
@@ -8502,7 +8536,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }}>×2</div>
                   </>
                 )}
-                {/* Shield overlay — cyan aura + 🛡️ corner */}
+                {/* Shield overlay — cyan aura + Shield-PNG corner */}
                 {isShielded && (
                   <>
                     <div style={{
@@ -8515,10 +8549,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }} />
                     <div style={{
                       position: 'absolute', top: -4, right: -4,
-                      fontSize: Math.max(10, cellSize * 0.3),
-                      zIndex: 5, lineHeight: 1,
+                      zIndex: 5, lineHeight: 0,
                       filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.9))',
-                    }}>🛡️</div>
+                    }}>
+                      <QQIcon slug="marker-shield" size={Math.max(14, cellSize * 0.44)} alt="Schild" />
+                    </div>
                   </>
                 )}
                 {/* Steal shatter — flying shards from stolen cell */}

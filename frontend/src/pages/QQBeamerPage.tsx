@@ -2661,11 +2661,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 textAlign: 'center',
                 position: 'relative', display: 'inline-block',
                 overflow: 'hidden',
-                paddingBottom: '0.15em',
+                // Padding-x fängt Drop-Shadow + letterSpacing-Breite des FINALE-Worts ab,
+                // sonst wird das letzte 'E' rechts abgeschnitten.
+                padding: '0 0.18em 0.18em',
                 animation: 'roundBreathe 4s ease-in-out 2s infinite',
               }}>
-                {/* Sizer (unsichtbar) – trägt Breite/Baseline des FINALE-Worts */}
-                <span style={{ visibility: 'hidden' }}>{finaleWord}</span>
+                {/* Sizer (unsichtbar) – trägt Breite/Baseline des FINALE-Worts.
+                    MUSS dasselbe letterSpacing wie der animierte Span haben, sonst
+                    kollabiert der Container. */}
+                <span style={{ visibility: 'hidden', letterSpacing: '0.04em' }}>{finaleWord}</span>
                 {/* Alte "Runde N" fällt – synchron zur Subtitle-Fall-Animation */}
                 <span style={{
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',

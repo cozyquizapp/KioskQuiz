@@ -8184,14 +8184,17 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             animation: 'celebShake 0.6s ease 1.2s both',
           }} />
 
-          {/* Winner name */}
+          {/* Winner name. truncName(...,18) sichert Laenge — overflow:hidden
+              wuerde sonst den finaleGlow text-shadow clippen und als Rechteck
+              um den Namen erscheinen lassen. Padding-x faengt den Glow ab. */}
           <div title={winner.name} style={{
             fontSize: 'clamp(36px, 5.5vw, 72px)', fontWeight: 900,
             color: winnerColor,
             animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
             marginTop: 8,
             maxWidth: '90%',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            padding: '0 0.5em',
+            whiteSpace: 'nowrap',
           }}>
             {truncName(winner.name, 18)}
           </div>

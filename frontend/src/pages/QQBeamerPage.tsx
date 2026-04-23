@@ -461,16 +461,30 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   }, [s.currentQuestion?.id, s.phase, s.sfxMuted]);
 
   // ── Music: timer loop (game-show music while question is active) ──
-  // Läuft, solange ein Frage-Timer oder ein Hot-Potato-Turn-Timer aktiv ist.
+  // Normalfall: laeuft solange ein Frage-Timer aktiv ist (s.timerEndsAt).
+  // Hot Potato: hat keinen Frage-Timer, sondern pro-Team-Turn-Timer der mit
+  //   jedem Team-Wechsel neu gesetzt wird. Frueher hing die Musik an
+  //   `s.hotPotatoTurnEndsAt` → Loop startete bei jedem Team-Switch neu (Cut!).
+  //   Jetzt ist sie an die Frage selbst gekoppelt: einmal Start beim Aktivieren,
+  //   bis die Phase wechselt (Winner declared / Reveal).
   useEffect(() => {
-    const hasTimer = Boolean(s.timerEndsAt || s.hotPotatoTurnEndsAt);
-    if (s.musicMuted || !hasTimer || s.phase !== 'QUESTION_ACTIVE' || s.currentQuestion?.musicUrl) {
+    const bt: { kind?: string } | undefined = s.currentQuestion?.bunteTuete as any;
+    const isHotPotato = s.currentQuestion?.category === 'BUNTE_TUETE' && bt?.kind === 'hotPotato';
+    const hasNormalTimer = !!s.timerEndsAt;
+    const shouldLoop =
+      !s.musicMuted
+      && s.phase === 'QUESTION_ACTIVE'
+      && !s.currentQuestion?.musicUrl
+      && (hasNormalTimer || isHotPotato);
+    if (!shouldLoop) {
       stopTimerLoop();
       return;
     }
     startTimerLoop();
     return () => stopTimerLoop();
-  }, [s.timerEndsAt, s.hotPotatoTurnEndsAt, s.phase, s.musicMuted, s.currentQuestion?.musicUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+    // hotPotatoTurnEndsAt ABSICHTLICH NICHT in deps — sonst springt der Loop
+    // bei jedem Team-Wechsel an. Die Musik laeuft fuer die gesamte HP-Runde.
+  }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.id, s.currentQuestion?.musicUrl, s.currentQuestion?.category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: Lobby-Loop in Lobby / Welcome-Folie / Pause ──
   useEffect(() => {

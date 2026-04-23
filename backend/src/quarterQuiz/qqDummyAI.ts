@@ -94,8 +94,8 @@ function enumerateActions(
 
   if (kinds.includes('SANDUHR') && opts.phase === 3) {
     // Bann (intern SANDUHR): gegnerisches ODER leeres Feld neutralisieren + 3 Fragen blockieren.
-    // Frei wählbar pro Frage (kein Budget). Score-Modell wie früher Bombe (sofortiger
-    // Cluster-Schaden), zusätzlich kleiner Defensiv-Bonus bei leeren Feldern.
+    // Frei wählbar pro Frage (kein Budget). Score-Modell: sofortiger Cluster-Schaden,
+    // zusätzlich kleiner Defensiv-Bonus bei leeren Feldern.
     for (const t of oppBombable) {
       if (grid[t.row][t.col].sandLockTtl) continue;
       const g = cloneGrid(grid);

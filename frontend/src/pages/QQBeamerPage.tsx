@@ -962,8 +962,17 @@ type RulesSlide = {
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const abilityLines = totalPhases === 3
-    ? ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Finale (Runde 3): Bann & Schild']
-    : ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Runde 3: Bann & Schild', 'Finale: Tauschen & Stapeln'];
+    ? [
+        'Jede Runde bringt etwas Neues:',
+        'Runde 2: Klauen',
+        'Finale (Runde 3): Bann (3 Fragen) & Schild (max 2, bis Spielende)',
+      ]
+    : [
+        'Jede Runde bringt etwas Neues:',
+        'Runde 2: Klauen',
+        'Runde 3: Bann (3 Fragen) & Schild (max 2, bis Spielende)',
+        'Finale: Tauschen & Stapeln (eigenes Feld dauerhaft sichern)',
+      ];
   return [
     {
       icon: '🏆',
@@ -1018,8 +1027,17 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
   const abilityLines = totalPhases === 3
-    ? ['Each round adds something:', 'Round 2: Steal', 'Final (Round 3): Ban & Shield']
-    : ['Each round adds something:', 'Round 2: Steal', 'Round 3: Ban & Shield', 'Final: Swap & Stack'];
+    ? [
+        'Each round adds something:',
+        'Round 2: Steal',
+        'Final (Round 3): Ban (3 questions) & Shield (max 2, till end of game)',
+      ]
+    : [
+        'Each round adds something:',
+        'Round 2: Steal',
+        'Round 3: Ban (3 questions) & Shield (max 2, till end of game)',
+        'Final: Swap & Stack (lock your tile permanently)',
+      ];
   return [
     {
       icon: '🏆',

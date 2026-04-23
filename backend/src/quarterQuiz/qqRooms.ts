@@ -97,7 +97,7 @@ export interface QQRoomState {
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
   frozenCells: { row: number; col: number }[];
-  // Shielded cells — protected against steal/swap/bomb until end of current phase
+  // Shielded cells — protected against steal/swap/ban until end of current phase
   shieldedCells: { row: number; col: number }[];
   // Internal round-robin index for Hot Potato (not sent to clients)
   _hotPotatoRoundRobinIdx?: number;
@@ -1766,7 +1766,6 @@ export function qqStuckCell(
   finishPlacement(room);
 }
 
-// ── Phase 3/4: Bombe (einmal pro Phase: Gegnerfeld → neutral) ───────────────
 // ── Phase 3: Bann (intern SANDUHR — frei wählbar pro Frage, kein Budget) ──
 // Ziel: gegnerisches ODER leeres Feld. Stuck/Shielded blockt. Nach 3 Fragen wird
 // die Sperre aufgehoben → Feld ist leer und kann normal besetzt werden.

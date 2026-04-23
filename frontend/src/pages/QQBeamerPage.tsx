@@ -11,6 +11,7 @@ import {
   QQOptionImage,
   QQSlideTemplates,
   QQLanguage,
+  QQSoundSlot,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -474,6 +475,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   //   `s.hotPotatoTurnEndsAt` → Loop startete bei jedem Team-Switch neu (Cut!).
   //   Jetzt ist sie an die Frage selbst gekoppelt: einmal Start beim Aktivieren,
   //   bis die Phase wechselt (Winner declared / Reveal).
+  // Pro-Kategorie-Musik (seit 2026-04-23): currentQuestion.category waehlt
+  //   den passenden catMusic*-Slot — wenn dort eine URL gesetzt ist, wird
+  //   sie geladen, sonst Fallback auf timerLoop.
   useEffect(() => {
     const bt: { kind?: string } | undefined = s.currentQuestion?.bunteTuete as any;
     const isHotPotato = s.currentQuestion?.category === 'BUNTE_TUETE' && bt?.kind === 'hotPotato';
@@ -487,7 +491,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       stopTimerLoop();
       return;
     }
-    startTimerLoop();
+    const cat = s.currentQuestion?.category;
+    const catSlot: QQSoundSlot | undefined =
+      cat === 'SCHAETZCHEN'   ? 'catMusicSchaetzchen'
+      : cat === 'MUCHO'         ? 'catMusicMucho'
+      : cat === 'BUNTE_TUETE'   ? 'catMusicBunteTuete'
+      : cat === 'ZEHN_VON_ZEHN' ? 'catMusicZehnVonZehn'
+      : cat === 'CHEESE'        ? 'catMusicCheese'
+      : undefined;
+    startTimerLoop(catSlot);
     return () => stopTimerLoop();
     // hotPotatoTurnEndsAt ABSICHTLICH NICHT in deps — sonst springt der Loop
     // bei jedem Team-Wechsel an. Die Musik laeuft fuer die gesamte HP-Runde.

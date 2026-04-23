@@ -379,7 +379,12 @@ export type QQSoundSlot =
   | 'timerLoop' | 'timesUp' | 'fieldPlaced' | 'steal'
   | 'correct'   | 'wrong'   | 'reveal'      | 'fanfare'
   | 'lobbyWelcome' | 'gameOver' | 'teamReveal'
-  | 'questionStart' | 'roundStart';
+  | 'questionStart' | 'roundStart'
+  // Pro-Kategorie Hintergrundmusik (laeuft waehrend QUESTION_ACTIVE
+  // statt timerLoop wenn gesetzt). Frage-eigenes musicUrl hat weiter
+  // hoechste Prio, dann diese Kategorie-Slots, dann timerLoop.
+  | 'catMusicSchaetzchen' | 'catMusicMucho' | 'catMusicBunteTuete'
+  | 'catMusicZehnVonZehn' | 'catMusicCheese';
 
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
@@ -395,6 +400,12 @@ export interface QQSoundConfig {
   teamReveal?: string;       // per-team slam on TeamsRevealView
   questionStart?: string;    // new question / category change cue
   roundStart?: string;       // new round (phase/round change)
+  // Pro-Kategorie Background-Loop (siehe Kommentar oben).
+  catMusicSchaetzchen?: string;
+  catMusicMucho?: string;
+  catMusicBunteTuete?: string;
+  catMusicZehnVonZehn?: string;
+  catMusicCheese?: string;
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
   /**
@@ -419,6 +430,11 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   teamReveal:    '🎬 Team-Reveal („Heute spielen…")',
   questionStart: '❓ Neue Frage / Kategoriewechsel',
   roundStart:    '🔔 Neue Runde',
+  catMusicSchaetzchen: '🎯 Schätzchen-Musik (Frage-Loop)',
+  catMusicMucho:       '🅰️ Mu-Cho-Musik (Frage-Loop)',
+  catMusicBunteTuete:  '🎁 Bunte-Tüte-Musik (Frage-Loop)',
+  catMusicZehnVonZehn: '🎰 Quizzichoice-Musik (Frage-Loop)',
+  catMusicCheese:      '🧀 Cheese-Musik (Frage-Loop)',
 };
 
 /** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
@@ -437,6 +453,13 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   // Leer = synth-Fallback bis Moderator eigene Datei lädt.
   questionStart: '',
   roundStart:    '',
+  // Kategorie-Musik: leer = fallback auf timerLoop. Moderator kann pro
+  // Kategorie eigene MP3 hochladen (im Sound-Panel).
+  catMusicSchaetzchen: '',
+  catMusicMucho:       '',
+  catMusicBunteTuete:  '',
+  catMusicZehnVonZehn: '',
+  catMusicCheese:      '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

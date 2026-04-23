@@ -213,15 +213,27 @@ export function getMusicDuckFactor(): number {
 }
 
 /**
- * Starts a looping timer sound while the question is active.
- * Uses custom URL if set in soundConfig.timerLoop, else synth.
+ * Starts a looping music track while the question is active.
+ * Priority:
+ *   1. preferredSlot (z.B. catMusicMucho) wenn URL gesetzt UND enabled
+ *   2. timerLoop-Slot (Default-WAV oder Custom-Upload)
+ *   3. Synth-Fallback (120-BPM C-Dur Arpeggio)
+ * Der timerLoop-Master-Mute deaktiviert ALLES (auch Kategorie-Musik),
+ * damit der Moderator weiterhin einen Single-Toggle fuer Frage-Musik hat.
  */
-export function startTimerLoop() {
+export function startTimerLoop(preferredSlot?: QQSoundSlot) {
   if (loopActive) return;
   if (!isSlotEnabled('timerLoop')) return;
   loopActive = true;
 
-  const url = resolveSlotUrl('timerLoop');
+  // 1. Kategorie-spezifische URL?
+  let url: string | null = null;
+  if (preferredSlot && preferredSlot !== 'timerLoop' && isSlotEnabled(preferredSlot)) {
+    url = resolveSlotUrl(preferredSlot);
+  }
+  // 2. Fallback timerLoop URL
+  if (!url) url = resolveSlotUrl('timerLoop');
+
   if (url) {
     loopAudioEl = getOrCreateAudio(url);
     loopAudioEl.volume = masterVolume * musicDuckFactor;
@@ -231,6 +243,7 @@ export function startTimerLoop() {
     return;
   }
 
+  // 3. Synth-Fallback
   const ac = getCtx();
   if (!ac) return;
   scheduleLoopPattern(ac, ac.currentTime, 0);

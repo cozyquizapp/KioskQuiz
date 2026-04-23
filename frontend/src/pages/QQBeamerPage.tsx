@@ -2846,27 +2846,27 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
             )}
-            {/* Round 4: Plus-shape stacking example — showing the 5 plus-tiles + stacked tile */}
+            {/* Round 4: Stacking demo — any own tile can be stacked (no shape requirement) */}
             {s.gamePhaseIndex === 4 && (() => {
-              // Plus shape in a 3x3 grid: positions 1 (top), 3 (left), 4 (center), 5 (right), 7 (bottom)
-              const plusPositions = new Set([1, 3, 4, 5, 7]);
-              const stackTarget = 4; // center = the tile to stack on
+              // Verteilte eigene Felder, ohne Form-Suggestion
+              const ownPositions = new Set([0, 3, 4, 5, 7]);
+              const stackTarget = 4;
               return (
                 <div style={{
                   marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
                   animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                    {/* Before: plus shape in team color */}
+                    {/* Before: own tiles spread across grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
                       {[0,1,2,3,4,5,6,7,8].map(i => {
-                        const isPlus = plusPositions.has(i);
+                        const isOwn = ownPositions.has(i);
                         return (
                           <div key={i} style={{
                             width: 52, height: 52, borderRadius: 9,
-                            background: isPlus ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
-                            border: isPlus ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
-                            boxShadow: isPlus ? `0 0 8px ${color}55` : 'none',
+                            background: isOwn ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
+                            border: isOwn ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
+                            boxShadow: isOwn ? `0 0 8px ${color}55` : 'none',
                           }} />
                         );
                       })}
@@ -2874,18 +2874,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>+</div>
                     <div style={{ fontSize: 44 }}>📌</div>
                     <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>=</div>
-                    {/* After: plus shape with center stacked/pinned */}
+                    {/* After: same grid, one tile stacked */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
                       {[0,1,2,3,4,5,6,7,8].map(i => {
-                        const isPlus = plusPositions.has(i);
+                        const isOwn = ownPositions.has(i);
                         const isStacked = i === stackTarget;
                         return (
                           <div key={i} style={{
                             position: 'relative',
                             width: 52, height: 52, borderRadius: 9,
-                            background: isPlus ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
-                            border: isStacked ? '2.5px solid rgba(251,191,36,0.95)' : isPlus ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
-                            boxShadow: isStacked ? '0 0 16px rgba(251,191,36,0.75)' : isPlus ? `0 0 8px ${color}55` : 'none',
+                            background: isOwn ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
+                            border: isStacked ? '2.5px solid rgba(251,191,36,0.95)' : isOwn ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
+                            boxShadow: isStacked ? '0 0 16px rgba(251,191,36,0.75)' : isOwn ? `0 0 8px ${color}55` : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>
                             {isStacked && (
@@ -2911,8 +2911,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     color: `${color}aa`, textAlign: 'center', maxWidth: 720, lineHeight: 1.4,
                   }}>
                     {lang === 'en'
-                      ? 'Place a second tile ON an existing one (Plus-shape) — stacked tiles can\'t be stolen or swapped'
-                      : 'Zweiten Stein AUF einen bestehenden setzen (Plus-Form) — gestapelte Felder sind unklaubbar & untauschbar'}
+                      ? 'Stack any own tile — permanently safe from steal, ban & swap'
+                      : 'Beliebiges eigenes Feld stapeln — dauerhaft sicher vor Klauen, Bann & Swap'}
                   </div>
                 </div>
               );

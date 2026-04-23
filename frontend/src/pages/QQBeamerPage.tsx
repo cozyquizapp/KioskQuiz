@@ -1411,7 +1411,7 @@ function MuchoOptionsReveal({
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
               {/* Voter-Slot: immer reserviert (min-height), Inhalt erscheint animiert */}
-              <div style={{ minHeight: 60, marginTop: 'auto' }}>
+              <div style={{ minHeight: 92, marginTop: 'auto' }}>
               {voterShow && (() => {
                 const voters = answers
                   .filter(a => a.text === String(i))
@@ -1446,7 +1446,7 @@ function MuchoOptionsReveal({
                             transform: isFastest ? 'scale(1.08)' : 'scale(1)',
                             transition: 'transform 0.3s ease',
                           }}>
-                            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 4vw, 52px)'} style={{
+                            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(46px, 5vw, 66px)'} style={{
                               border: isFastest ? '3px solid #FBBF24' : 'none',
                               boxShadow: isFastest
                                 ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
@@ -1455,19 +1455,19 @@ function MuchoOptionsReveal({
                             {isFastest && (
                               <span style={{
                                 position: 'absolute', top: -8, right: -8,
-                                fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
+                                fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
                                 animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
                               }}>⚡</span>
                             )}
                           </div>
                           {timeSec != null && isCorrect && akt3On && (
                             <span style={{
-                              padding: '1px 7px', borderRadius: 999,
+                              padding: '2px 9px', borderRadius: 999,
                               background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
                               border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
                               color: isFastest ? '#FBBF24' : '#e2e8f0',
                               fontWeight: 900,
-                              fontSize: 'clamp(11px, 1.1vw, 14px)',
+                              fontSize: 'clamp(13px, 1.4vw, 18px)',
                               whiteSpace: 'nowrap',
                             }}>
                               {timeSec.toFixed(1)}s
@@ -5821,26 +5821,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           display: 'inline-block',
                           animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
                         }}>
-                          <QQTeamAvatar avatarId={team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
+                          <QQTeamAvatar avatarId={team.avatarId} size={'clamp(58px, 6.4vw, 88px)'} style={{
                             border: isFastest ? '3px solid #FBBF24' : 'none',
                             boxShadow: isFastest
-                              ? '0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
+                              ? '0 0 22px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
                               : '0 4px 12px rgba(0,0,0,0.4)',
                           }} />
                           {isFastest && (
                             <span style={{
                               position: 'absolute', top: -10, right: -10,
-                              fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
+                              fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
                             }}>⚡</span>
                           )}
                         </div>
                         <span style={{
-                          padding: '2px 8px', borderRadius: 999,
+                          padding: '3px 10px', borderRadius: 999,
                           background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
                           border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
                           color: isFastest ? '#FBBF24' : '#cbd5e1',
                           fontWeight: 900,
-                          fontSize: 'clamp(12px, 1.2vw, 15px)',
+                          fontSize: 'clamp(15px, 1.6vw, 20px)',
                           whiteSpace: 'nowrap',
                         }}>
                           {timeSec.toFixed(1)}s
@@ -6298,27 +6298,27 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             animation: avatarAnim,
                           }}>
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(44px, 5vw, 64px)'} style={{
+                              <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(58px, 6.4vw, 88px)'} style={{
                                 border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
                                 boxShadow: isFastest
-                                  ? `0 0 20px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
+                                  ? `0 0 22px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
                                   : '0 4px 12px rgba(0,0,0,0.4)',
                               }} />
                               {isFastest && (
                                 <span style={{
                                   position: 'absolute', top: -10, right: -10,
-                                  fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
+                                  fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
                                 }}>⚡</span>
                               )}
                             </div>
                             {timeSec != null && (
                               <span style={{
-                                padding: '2px 8px', borderRadius: 999,
+                                padding: '3px 10px', borderRadius: 999,
                                 background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
                                 border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
                                 color: isFastest ? '#FBBF24' : '#cbd5e1',
                                 fontWeight: 900,
-                                fontSize: 'clamp(12px, 1.2vw, 15px)',
+                                fontSize: 'clamp(15px, 1.6vw, 20px)',
                                 whiteSpace: 'nowrap',
                               }}>
                                 {timeSec.toFixed(1)}s

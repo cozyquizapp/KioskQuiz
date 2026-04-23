@@ -9,7 +9,6 @@ export type QQIconSlug =
   | 'marker-frost'
   | 'marker-shield'
   | 'marker-sanduhr'
-  | 'marker-bomb'
   // Kategorien
   | 'cat-schaetzchen'
   | 'cat-mucho'
@@ -26,7 +25,6 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'marker-frost':      '❄️',
   'marker-shield':     '🛡️',
   'marker-sanduhr':    '⏳',
-  'marker-bomb':       '🎯',
   'cat-schaetzchen':   '🎯',
   'cat-mucho':         '🅰️',
   'cat-bunte-tuete':   '🎁',

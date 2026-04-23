@@ -8474,13 +8474,33 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }}>❄️</div>
                   </>
                 )}
-                {/* Stuck overlay — golden shimmer */}
+                {/* Stuck overlay — golden shimmer + ×2 chip top-right */}
                 {isStuck && (
-                  <div style={{
-                    position: 'absolute', inset: 0, borderRadius: cellRadius,
-                    background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
-                    pointerEvents: 'none', zIndex: 1,
-                  }} />
+                  <>
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
+                      pointerEvents: 'none', zIndex: 1,
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: -4, right: -4,
+                      minWidth: Math.max(16, cellSize * 0.32),
+                      height: Math.max(16, cellSize * 0.32),
+                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
+                      borderRadius: '999px',
+                      background: 'linear-gradient(135deg, #FBBF24, #D97706)',
+                      border: '2px solid #422006',
+                      color: '#1c1304',
+                      fontSize: Math.max(9, cellSize * 0.20),
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      letterSpacing: '-0.02em',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(251,191,36,0.6)',
+                      zIndex: 6,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>×2</div>
+                  </>
                 )}
                 {/* Shield overlay — cyan aura + 🛡️ corner */}
                 {isShielded && (
@@ -8572,13 +8592,16 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 <div style={{
                   position: 'relative', zIndex: 4,
                   animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
-                  fontSize: isStuck ? Math.max(8, cellSize * 0.52) : undefined,
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {isStuck ? '📌' : showStar ? '⭐' : (team && (() => {
+                  {showStar ? '⭐' : (team && (() => {
                     const avSize = Math.max(8, cellSize * 0.86);
                     const discSize = Math.max(10, cellSize * 0.92);
+                    // Stuck → Doppel-Ring in Gold um die Avatar-Scheibe (×2 Indikator).
+                    const stuckRing = isStuck
+                      ? '0 0 0 2px rgba(251,191,36,0.95), 0 0 0 4px #0b1220, 0 0 0 6px rgba(251,191,36,0.85), inset 0 0 0 1px rgba(0,0,0,0.55)'
+                      : 'inset 0 0 0 1px rgba(0,0,0,0.55)';
                     return (
                       <div style={{
                         position: 'relative', width: discSize, height: discSize,
@@ -8590,7 +8613,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         <div style={{
                           position: 'absolute', inset: 0, borderRadius: '50%',
                           background: '#0b1220',
-                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.55)',
+                          boxShadow: stuckRing,
                         }} />
                         <div style={{ position: 'relative', zIndex: 1 }}>
                           <QQTeamAvatar avatarId={team.avatarId} size={avSize} />

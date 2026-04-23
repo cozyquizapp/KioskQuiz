@@ -6078,11 +6078,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                       : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', flexDirection: 'column', gap: 12,
-                    // Fixe Höhe vom ersten Render an: deckt Title-Zeile + Highbet-Slot (60px) ab.
-                    minHeight: optImg?.url ? 200 : 180,
+                    // Fixe Höhe vom ersten Render an: deckt Title-Zeile + Highbet-Slot
+                    // (jetzt 92px wegen größerer Avatare) ab.
+                    minHeight: optImg?.url ? 260 : 240,
                     transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+                    // Nur Brightness-Pulse beim Lock — KEIN scale-Pop, sonst werden
+                    // die schon sichtbaren Top-Bet-Avatare optisch "neu gesetzt".
                     animation: isCorrect
-                      ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+                      ? 'revealDoubleBlink 1.1s ease both'
                       : isWrong
                         ? 'revealWrongDim 0.4s ease 0.15s both'
                         : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
@@ -6119,11 +6122,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       }}>{optText}</div>
                     </div>
                     {/* Highbet-Slot: Top-Bets (mögliche Gewinner) direkt auf der Option.
-                        Höhe reserviert vom ersten Render an, Inhalt blendet beim Step 1 auf. */}
+                        Höhe reserviert vom ersten Render an, Inhalt blendet beim Step 1 auf.
+                        Avatare bewusst groß: das sind die wichtigsten Spieler dieser Option. */}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      minHeight: 64,
-                      display: 'flex', flexWrap: 'wrap', gap: 8,
+                      minHeight: 92,
+                      display: 'flex', flexWrap: 'wrap', gap: 10,
                       alignItems: 'center', justifyContent: 'flex-start',
                       borderTop: '1px dashed rgba(255,255,255,0.10)',
                       paddingTop: 10,
@@ -6139,16 +6143,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         </span>
                       ) : highestBets.map(({ team: tm, pts }) => (
                         <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
-                          display: 'flex', alignItems: 'center', gap: 6,
-                          padding: '3px 14px 3px 3px',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '4px 18px 4px 4px',
                           borderRadius: 999,
                           background: 'rgba(0,0,0,0.6)',
                           border: `2px solid ${tm.color}`,
-                          boxShadow: `0 3px 12px rgba(0,0,0,0.5), 0 0 10px ${tm.color}66`,
+                          boxShadow: `0 3px 14px rgba(0,0,0,0.5), 0 0 14px ${tm.color}66`,
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(30px, 3.2vw, 42px)'} />
+                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(48px, 5vw, 72px)'} />
                           <span style={{
-                            fontSize: 'clamp(15px, 1.7vw, 22px)',
+                            fontSize: 'clamp(20px, 2.2vw, 30px)',
                             fontWeight: 900,
                             color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
                           }}>{pts}</span>

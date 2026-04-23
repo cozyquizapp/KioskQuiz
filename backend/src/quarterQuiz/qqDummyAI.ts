@@ -157,7 +157,14 @@ export function pickDummyAction(
 ): DummyActionChoice | null {
   const choices = enumerateActions(grid, gridSize, teamId, opts);
   if (choices.length === 0) return null;
-  choices.sort((a, b) => b.score - a.score);
+  // Tie-Break randomisieren: ohne diesen Schritt würden Optionen mit identischem
+  // Score die Insertion-Reihenfolge (row-major) behalten und der Bot würde
+  // immer top-left bevorzugen → Felder hängen oben/links zusammen.
+  choices.sort((a, b) => {
+    const diff = b.score - a.score;
+    if (Math.abs(diff) < 1e-9) return Math.random() - 0.5;
+    return diff;
+  });
   if (Math.random() < randomnessPct) {
     const topN = choices.slice(0, Math.min(3, choices.length));
     return topN[Math.floor(Math.random() * topN.length)];

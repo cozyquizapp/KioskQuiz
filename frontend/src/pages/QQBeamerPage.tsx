@@ -2074,6 +2074,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const teams = s.teams.filter(t => t.connected).length > 0
     ? s.teams.filter(t => t.connected)
@@ -2161,7 +2162,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         textShadow: '0 4px 20px rgba(251,191,36,0.25)',
         marginBottom: 'clamp(24px, 3vw, 48px)',
       }}>
-        🎬 Heute spielen…
+        🎬 {lang === 'en' ? 'Tonight\u2019s teams\u2026' : 'Heute spielen\u2026'}
       </div>
 
       {/* Teams grid — feste Reihen, damit 8 als 2×4 statt 7+1 erscheint */}
@@ -2274,7 +2275,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
           animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
         }}>
-          ✨ Viel Glück! ✨
+          ✨ {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} ✨
         </div>
       </div>
 

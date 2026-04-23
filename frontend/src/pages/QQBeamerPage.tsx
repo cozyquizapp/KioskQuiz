@@ -2887,7 +2887,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 padding: '8px 22px', borderRadius: 18,
                 background: `${catColor}15`, border: `1.5px solid ${catColor}33`,
                 color: `${catColor}aa`, letterSpacing: '0.06em',
-                marginBottom: 24,
+                marginBottom: 16,
                 animation: 'contentReveal 0.4s ease 0.1s both',
                 position: 'relative', zIndex: 5,
               }}>
@@ -2902,6 +2902,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                 </div>
+              </div>
+
+              {/* Runden-Mini-Tree mit Wolf-Hop — zeigt Position innerhalb der aktuellen Runde */}
+              <div style={{
+                marginBottom: 20,
+                animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.12s both',
+                position: 'relative', zIndex: 5,
+              }}>
+                <RoundMiniTree state={s} catColor={catColor} />
               </div>
 
               {/* Big emoji/icon — bevorzugt PNG, sonst Emoji-Fallback */}

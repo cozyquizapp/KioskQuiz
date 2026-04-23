@@ -114,8 +114,8 @@ const bt = {
   },
   phase: {
     names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
-    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bombe & Schild!', 'Alles auf eine Karte!'],
-             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Bomb & Shield!', 'All or nothing!'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Alles auf eine Karte!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'All or nothing!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -953,8 +953,8 @@ type RulesSlide = {
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const abilityLines = totalPhases === 3
-    ? ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Finale (Runde 3): Bombe, Schild & Sanduhr-Sperre']
-    : ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Runde 3: Bombe, Schild & Sanduhr-Sperre', 'Finale: Tauschen & Stapeln'];
+    ? ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Finale (Runde 3): Bann & Schild']
+    : ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Runde 3: Bann & Schild', 'Finale: Tauschen & Stapeln'];
   return [
     {
       icon: '🏆',
@@ -996,8 +996,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
   const abilityLines = totalPhases === 3
-    ? ['Each round adds something:', 'Round 2: Steal', 'Final (Round 3): Bomb, Shield & Sand Lock']
-    : ['Each round adds something:', 'Round 2: Steal', 'Round 3: Bomb, Shield & Sand Lock', 'Final: Swap & Stack'];
+    ? ['Each round adds something:', 'Round 2: Steal', 'Final (Round 3): Ban & Shield']
+    : ['Each round adds something:', 'Round 2: Steal', 'Round 3: Ban & Shield', 'Final: Swap & Stack'];
   return [
     {
       icon: '🏆',
@@ -2395,9 +2395,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: ['Place 2 tiles per round', 'Stealing is now possible!'],
     },
     3: {
-      emoji: '💣',
-      de: ['Wählt eure Aktion frei', 'Bombe, Schild & Sanduhr-Sperre freigeschaltet!'],
-      en: ['Choose your action freely', 'Bomb, Shield & Sand Lock unlocked!'],
+      emoji: '⏳',
+      de: ['Wählt eure Aktion frei', 'Bann & Schild freigeschaltet!'],
+      en: ['Choose your action freely', 'Ban & Shield unlocked!'],
     },
     4: {
       emoji: '🔄',
@@ -8553,7 +8553,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }}>×2</div>
                   </>
                 )}
-                {/* Sanduhr-Sperre overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle */}
+                {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle */}
                 {isSandLocked && (
                   <>
                     <div style={{
@@ -8571,7 +8571,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       pointerEvents: 'none', zIndex: 4,
                       filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
                     }}>
-                      <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.7)} alt="Sanduhr-Sperre" />
+                      <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.7)} alt="Bann" />
                     </div>
                     {/* Countdown-Chip oben rechts */}
                     <div style={{

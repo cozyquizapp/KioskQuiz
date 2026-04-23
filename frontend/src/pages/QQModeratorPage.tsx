@@ -1908,11 +1908,10 @@ function actionLabel(action: string, stats: any): string {
   if (action === 'PLACE_2')   return `2 Felder (${stats?.placementsLeft ?? 2} übrig)`;
   if (action === 'STEAL_1')   return '1 Feld klauen';
   if (action === 'FREE')      return 'Setzen oder Klauen';
-  if (action === 'BOMB_1')    return '💣 Bombe (Gegner-Feld)';
   if (action === 'SHIELD_1')  return '🛡️ Schild';
   if (action === 'STAPEL_1')  return '📌 Stapeln';
   if (action === 'SWAP_1')    return '🔄 Tauschen';
-  if (action === 'SANDUHR_1') return '⏳ Sanduhr-Sperre';
+  if (action === 'SANDUHR_1') return '⏳ Bann';
   return action;
 }
 

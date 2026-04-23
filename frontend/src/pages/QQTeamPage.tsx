@@ -1186,8 +1186,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const colors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
   const color  = colors[(s.gamePhaseIndex - 1) % 4];
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] };
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bombe & Schild!', 'Alles auf eine Karte!'],
-                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Bomb & Shield!', 'All or nothing!'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Alles auf eine Karte!'],
+                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'All or nothing!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -1234,7 +1234,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
               1: { emoji: '🏁', de: ['1 Feld setzen', 'Baut euer Quartier auf!'], en: ['Place 1 tile', 'Build your quarter!'] },
               2: { emoji: '⚔️', de: ['2 Felder + Klauen!'], en: ['2 tiles + Stealing!'] },
-              3: { emoji: '💣', de: ['Freie Aktionswahl', 'Bombe & Schild!'], en: ['Free action choice', 'Bomb & Shield!'] },
+              3: { emoji: '⏳', de: ['Freie Aktionswahl', 'Bann & Schild!'], en: ['Free action choice', 'Ban & Shield!'] },
               4: { emoji: '🔄', de: ['Tauschen & Stapeln!'], en: ['Swap & Stack!'] },
             };
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
@@ -2659,7 +2659,7 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
   );
 }
 
-type FreeAction = 'PLACE' | 'STEAL' | 'BOMB' | 'SHIELD' | 'SWAP' | 'STAPEL' | 'SANDUHR';
+type FreeAction = 'PLACE' | 'STEAL' | 'SHIELD' | 'SWAP' | 'STAPEL' | 'SANDUHR';
 
 function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'de' }: {
   state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
@@ -2676,21 +2676,17 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const myStats = s.teamPhaseStats?.[myTeamId];
   const hasOwnCell = s.grid.some(row => row.some(cell => cell.ownerId === myTeamId));
   const hasStapable = s.grid.some(row => row.some(cell => cell.ownerId === myTeamId && !cell.stuck));
-  const hasBombable = s.grid.some(row => row.some(cell =>
-    cell.ownerId !== null && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded));
   const hasSandTarget = s.grid.some(row => row.some(cell =>
     !(cell.sandLockTtl && cell.sandLockTtl > 0) && (
       cell.ownerId === null
       || (cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded)
     )));
-  const bombUsed = !!myStats?.bombUsed;
-  const shieldUsed = !!myStats?.shieldUsed;
-  const sandUsed = !!myStats?.sandUsed;
+  const shieldsUsed = myStats?.shieldsUsed ?? 0;
+  const shieldsLeft = Math.max(0, 2 - shieldsUsed);
 
   // Derived mode flags
   const isFree      = pa === 'FREE';
   const isJoker     = pa === 'PLACE_1' && phase >= 2; // Joker bonus placement
-  const isBomb      = pa === 'BOMB_1'   || (isFree && freeMode === 'BOMB');
   const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   const isStuck     = pa === 'STAPEL_1' || (isFree && freeMode === 'STAPEL');
@@ -2792,15 +2788,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       }
     }
 
-    // BOMB: pick enemy cell (not shielded / stuck)
-    if (isBomb) {
-      if (!cell.ownerId || cell.ownerId === myTeamId || cell.stuck || cell.shielded) return;
-      await emit('qq:bombCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([80, 40, 120]);
-      setSelecting(false); return;
-    }
-
-    // SANDUHR: lock enemy or empty cell for 3 questions
+    // BANN: lock enemy or empty cell for 3 questions
     if (isSandLock) {
       if (cell.sandLockTtl && cell.sandLockTtl > 0) return;
       if (cell.ownerId === myTeamId) return;
@@ -2922,7 +2910,6 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   }
 
   const actionColor = isSwapComeback || isSwapOne ? '#8B5CF6'
-    : isBomb     ? '#DC2626'
     : isShield   ? '#06B6D4'
     : isStuck    ? '#F59E0B'
     : isSandLock ? '#A855F7'
@@ -2935,7 +2922,6 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     const cell = s.grid[r][c];
     if (isSwapComeback) return !!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || s.grid[swapFirst.r][swapFirst.c].ownerId !== cell.ownerId);
     if (isSwapOne) return swapFirst ? (!!cell.ownerId && cell.ownerId !== myTeamId && !cell.shielded) : cell.ownerId === myTeamId;
-    if (isBomb)     return !!cell.ownerId && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded;
     if (isStuck)    return cell.ownerId === myTeamId && !cell.stuck;
     if (isSandLock) return !(cell.sandLockTtl && cell.sandLockTtl > 0)
       && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded;
@@ -2945,10 +2931,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   const phaseLabel = (() => {
     if (isSwapComeback || isSwapOne) return lang === 'de' ? '🔄 Tauschen' : '🔄 Swap';
-    if (isBomb)     return lang === 'de' ? '💣 Bombe' : '💣 Bomb';
     if (isShield)   return lang === 'de' ? '🛡️ Schild' : '🛡️ Shield';
     if (isStuck)    return lang === 'de' ? '📌 Stapeln' : '📌 Stack';
-    if (isSandLock) return lang === 'de' ? '⏳ Sanduhr-Sperre' : '⏳ Sand lock';
+    if (isSandLock) return lang === 'de' ? '⏳ Bann' : '⏳ Ban';
     if (isSteal)  return t.placement.titleSteal[lang];
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
@@ -2960,11 +2945,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isSwapOne) return swapFirst
       ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
       : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
-    if (isBomb) return lang === 'de' ? 'Gegner-Feld tippen — wird neutralisiert' : 'Tap an enemy cell — clears to neutral';
     if (isStuck) return lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)';
     if (isSandLock) return lang === 'de'
-      ? 'Feld tippen (Gegner oder leer) — 3 Fragen blockiert'
-      : 'Tap a cell (enemy or empty) — locked for 3 questions';
+      ? 'Feld tippen (Gegner oder leer) — 3 Fragen gebannt'
+      : 'Tap a cell (enemy or empty) — banned for 3 questions';
     if (isSteal) return t.placement.tapOpponent[lang];
     if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty field';
     return t.placement.tapEmpty[lang];
@@ -3027,10 +3011,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         </div>
       )}
 
-      {/* Phase 3/4 FREE: action menu */}
+      {/* Phase 3/4 FREE: action menu (Plan v2)
+          R3: PLACE / STEAL / BANN (frei) / SCHILD (max 2 pro Spiel)
+          R4: STEAL / SWAP / STAPEL (kein Place mehr) */}
       {showFreeMenu && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-          {hasFreeCell && (
+          {phase < 4 && hasFreeCell && (
             <CozyBtn color="#22C55E" onClick={() => chooseFreeAction('PLACE')}>
               {lang === 'de' ? '📍 2 Felder setzen' : '📍 Place 2 cells'}
             </CozyBtn>
@@ -3038,19 +3024,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           <CozyBtn color="#EF4444" onClick={() => chooseFreeAction('STEAL')}>
             {lang === 'de' ? '⚡ Feld klauen' : '⚡ Steal a cell'}
           </CozyBtn>
-          {phase >= 3 && !bombUsed && hasBombable && (
-            <CozyBtn color="#DC2626" onClick={() => chooseFreeAction('BOMB')}>
-              {lang === 'de' ? '💣 Bombe' : '💣 Bomb'}
-            </CozyBtn>
-          )}
-          {phase >= 3 && !sandUsed && hasSandTarget && (
+          {phase === 3 && hasSandTarget && (
             <CozyBtn color="#A855F7" onClick={() => chooseFreeAction('SANDUHR')}>
-              {lang === 'de' ? '⏳ Sanduhr (3 Fragen Sperre)' : '⏳ Sand lock (3 questions)'}
+              {lang === 'de' ? '⏳ Bann (3 Fragen)' : '⏳ Ban (3 questions)'}
             </CozyBtn>
           )}
-          {phase >= 3 && !shieldUsed && hasOwnCell && (
+          {phase === 3 && shieldsLeft > 0 && hasOwnCell && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('SHIELD')}>
-              {lang === 'de' ? '🛡️ Schild (bis Phasenende)' : '🛡️ Shield (till phase end)'}
+              {lang === 'de'
+                ? `🛡️ Schild (bis Spielende, ${shieldsLeft}/2 übrig)`
+                : `🛡️ Shield (till end of game, ${shieldsLeft}/2 left)`}
             </CozyBtn>
           )}
           {phase >= 4 && (
@@ -3070,9 +3053,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       {!showFreeMenu && !isPhase2Choice && !selecting && (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
           {isSwapComeback || isSwapOne ? t.placement.swapBtn[lang]
-            : isBomb     ? (lang === 'de' ? '💣 Gegner-Feld wählen' : '💣 Select enemy cell')
             : isStuck    ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
-            : isSandLock ? (lang === 'de' ? '⏳ Feld zum Sperren wählen' : '⏳ Select cell to lock')
+            : isSandLock ? (lang === 'de' ? '⏳ Feld zum Bannen wählen' : '⏳ Select cell to ban')
             : isSteal    ? t.placement.confirmSteal[lang]
             : isJoker    ? (lang === 'de' ? '⭐ Jokerfeld setzen' : '⭐ Place joker cell')
             : t.placement.confirmPlace[lang]}
@@ -3180,7 +3162,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           pointerEvents: 'none', zIndex: 3,
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
                         }}>
-                          <QQIcon slug="marker-sanduhr" size={Math.max(14, cellSize * 0.6)} alt="Sanduhr-Sperre" />
+                          <QQIcon slug="marker-sanduhr" size={Math.max(14, cellSize * 0.6)} alt="Bann" />
                         </div>
                         <div style={{
                           position: 'absolute', top: -4, right: -4,

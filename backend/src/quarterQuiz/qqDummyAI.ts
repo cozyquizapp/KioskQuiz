@@ -7,11 +7,11 @@
 import { QQGrid, QQCell } from '../../../shared/quarterQuizTypes';
 import { computeTerritories } from './qqBfs';
 
-export type DummyActionKind = 'PLACE' | 'STEAL' | 'BOMB' | 'SHIELD' | 'STAPEL' | 'SWAP' | 'SANDUHR';
+export type DummyActionKind = 'PLACE' | 'STEAL' | 'SHIELD' | 'STAPEL' | 'SWAP' | 'SANDUHR';
 
 export interface DummyActionChoice {
   kind: DummyActionKind;
-  target?: { row: number; col: number };       // PLACE/STEAL/BOMB/STAPEL
+  target?: { row: number; col: number };       // PLACE/STEAL/SANDUHR/STAPEL
   ownTarget?: { row: number; col: number };    // SWAP step 1
   enemyTarget?: { row: number; col: number };  // SWAP step 2
   score: number;
@@ -20,9 +20,7 @@ export interface DummyActionChoice {
 export interface DummyEnumerateOpts {
   availableKinds: DummyActionKind[];
   phase: number;
-  bombUsed?: boolean;
-  shieldUsed?: boolean;
-  sandUsed?: boolean;
+  shieldsUsed?: number;
   // Beschränkt STEAL/COMEBACK auf bestimmte Zielzellen (z.B. nur Leader-Team)
   stealFilter?: (cell: QQCell, row: number, col: number) => boolean;
 }
@@ -94,19 +92,10 @@ function enumerateActions(
     }
   }
 
-  if (kinds.includes('BOMB') && opts.phase >= 3 && !opts.bombUsed) {
-    for (const t of oppBombable) {
-      const g = cloneGrid(grid);
-      g[t.row][t.col].ownerId = null;
-      g[t.row][t.col].jokerFormed = false;
-      choices.push({ kind: 'BOMB', target: t, score: scoreFor(g, gridSize, teamId) - baseline });
-    }
-  }
-
-  if (kinds.includes('SANDUHR') && opts.phase >= 3 && !opts.sandUsed) {
-    // Sanduhr-Sperre: gegnerisches ODER leeres Feld neutralisieren + 3 Fragen blockieren.
-    // Ziel-Score = wie Bombe (sofortiger Effekt), keine Bonus-Bewertung für die TTL,
-    // weil das schwer zu quantifizieren ist. Reicht aus damit Dummies's gelegentlich nutzen.
+  if (kinds.includes('SANDUHR') && opts.phase === 3) {
+    // Bann (intern SANDUHR): gegnerisches ODER leeres Feld neutralisieren + 3 Fragen blockieren.
+    // Frei wählbar pro Frage (kein Budget). Score-Modell wie früher Bombe (sofortiger
+    // Cluster-Schaden), zusätzlich kleiner Defensiv-Bonus bei leeren Feldern.
     for (const t of oppBombable) {
       if (grid[t.row][t.col].sandLockTtl) continue;
       const g = cloneGrid(grid);
@@ -122,11 +111,13 @@ function enumerateActions(
     }
   }
 
-  if (kinds.includes('SHIELD') && opts.phase >= 3 && !opts.shieldUsed) {
+  if (kinds.includes('SHIELD') && opts.phase === 3 && (opts.shieldsUsed ?? 0) < 2) {
     const territories = computeTerritories(grid, gridSize);
     const ownLargest = territories[teamId]?.largest ?? 0;
     // Nur sinnvoll ab 3er-Cluster; Wert = 0.5 * largest (defensiver Nutzen,
-    // konkurriert realistisch mit +1/+2-Aktionen).
+    // konkurriert realistisch mit +1/+2-Aktionen). Mit Lifetime "bis Spielende"
+    // ist der Wert eigentlich höher, aber wir bleiben konservativ damit Bots nicht
+    // beide Schilde sofort verbraten.
     if (ownLargest >= 3) {
       choices.push({ kind: 'SHIELD', score: ownLargest * 0.5 });
     }

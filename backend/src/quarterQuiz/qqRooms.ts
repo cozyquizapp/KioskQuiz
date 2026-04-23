@@ -1401,7 +1401,7 @@ function pendingActionForPhase(
 export function qqChooseFreeAction(
   room: QQRoomState,
   teamId: string,
-  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'BOMB' | 'SANDUHR' | 'SHIELD' | 'SWAP' | 'STAPEL'
+  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SANDUHR' | 'SHIELD' | 'SWAP' | 'STAPEL'
 ): void {
   assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
@@ -1421,6 +1421,7 @@ export function qqChooseFreeAction(
     room.pendingAction = 'STEAL_1';
 
   } else if (action === 'PLACE') {
+    if (room.gamePhaseIndex >= 4) throw new QQError('WRONG_PHASE', 'In der letzten Runde gibt es keine Platzierung mehr.');
     if (!hasFreeCell) throw new QQError('NO_FREE_CELL', 'Keine freien Felder mehr.');
     room.pendingAction = 'PLACE_2';
     room.teamPhaseStats[teamId].placementsLeft = 2;
@@ -1430,29 +1431,20 @@ export function qqChooseFreeAction(
     if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Einfrieren erst ab Phase 3.');
     room.pendingAction = 'FREEZE_1';
 
-  } else if (action === 'BOMB') {
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Bombe erst ab Phase 3.');
-    const stats = room.teamPhaseStats[teamId];
-    if (stats.bombUsed) throw new QQError('BOMB_USED', 'Bombe bereits genutzt in dieser Phase.');
-    const hasBombable = room.grid.some(row => row.some(cell =>
-      cell.ownerId !== null && cell.ownerId !== teamId && !cell.stuck && !cell.shielded));
-    if (!hasBombable) throw new QQError('NO_TARGET', 'Kein gegnerisches Feld bombenfähig.');
-    room.pendingAction = 'BOMB_1';
-
   } else if (action === 'SANDUHR') {
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Sanduhr-Sperre erst ab Phase 3.');
-    const stats = room.teamPhaseStats[teamId];
-    if (stats.sandUsed) throw new QQError('SAND_USED', 'Sanduhr-Sperre bereits genutzt in dieser Phase.');
+    // Bann (intern SANDUHR): nur Phase 3, pro Frage frei wählbar (kein Budget).
+    if (room.gamePhaseIndex !== 3) throw new QQError('WRONG_PHASE', 'Bann nur in Runde 3.');
     // Ziel: Gegnerfelder ODER leere Felder (jeweils nicht stuck/shielded/schon gesperrt).
     const hasTarget = room.grid.some(row => row.some(cell =>
       cell.ownerId !== teamId && !cell.stuck && !cell.shielded && !cell.sandLockTtl));
-    if (!hasTarget) throw new QQError('NO_TARGET', 'Kein sperrbares Feld vorhanden.');
+    if (!hasTarget) throw new QQError('NO_TARGET', 'Kein bannbares Feld vorhanden.');
     room.pendingAction = 'SANDUHR_1';
 
   } else if (action === 'SHIELD') {
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Schild erst ab Phase 3.');
+    // Schild: nur Phase 3, max 2 pro Spiel pro Team, hält bis Spielende.
+    if (room.gamePhaseIndex !== 3) throw new QQError('WRONG_PHASE', 'Schild nur in Runde 3.');
     const stats = room.teamPhaseStats[teamId];
-    if (stats.shieldUsed) throw new QQError('SHIELD_USED', 'Schild bereits genutzt in dieser Phase.');
+    if ((stats.shieldsUsed ?? 0) >= 2) throw new QQError('SHIELD_LIMIT', 'Bereits 2 Schilde verbraucht.');
     const hasOwn = room.grid.some(row => row.some(cell => cell.ownerId === teamId));
     if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Keine eigenen Felder zum Schützen.');
     room.pendingAction = 'SHIELD_1';
@@ -1489,7 +1481,7 @@ export function qqPlaceCell(
     throw new QQError('CELL_OCCUPIED', 'Dieses Feld ist bereits belegt.');
   }
   if (cell.sandLockTtl && cell.sandLockTtl > 0) {
-    throw new QQError('SAND_LOCKED', 'Feld ist durch Sanduhr-Sperre blockiert.');
+    throw new QQError('SAND_LOCKED', 'Feld ist gebannt.');
   }
 
   const action = room.pendingAction;
@@ -1775,41 +1767,7 @@ export function qqStuckCell(
 }
 
 // ── Phase 3/4: Bombe (einmal pro Phase: Gegnerfeld → neutral) ───────────────
-export function qqBombCell(
-  room: QQRoomState,
-  teamId: string,
-  row: number,
-  col: number
-): void {
-  assertPhase(room, ['PLACEMENT']);
-  assertPendingFor(room, teamId);
-  assertValidCoord(room, row, col);
-  if (room.pendingAction !== 'BOMB_1') {
-    throw new QQError('WRONG_ACTION', 'Bomben-Modus nicht aktiv.');
-  }
-  const cell = room.grid[row][col];
-  if (cell.ownerId === null) {
-    throw new QQError('CELL_EMPTY', 'Leeres Feld kann nicht bombardiert werden.');
-  }
-  if (cell.ownerId === teamId) {
-    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht bombardiert werden.');
-  }
-  if (cell.stuck) {
-    throw new QQError('STUCK_CELL', 'Gestapeltes Feld übersteht die Bombe.');
-  }
-  if (cell.shielded) {
-    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Bombe prallt ab.');
-  }
-  cell.ownerId     = null;
-  cell.frozen      = false;
-  cell.jokerFormed = false;
-  room.teamPhaseStats[teamId].bombUsed = true;
-  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
-  updateTerritories(room);
-  finishPlacement(room);
-}
-
-// ── Phase 3/4: Sanduhr-Sperre (einmal pro Phase: 1 Feld neutralisieren + 3 Fragen sperren) ──
+// ── Phase 3: Bann (intern SANDUHR — frei wählbar pro Frage, kein Budget) ──
 // Ziel: gegnerisches ODER leeres Feld. Stuck/Shielded blockt. Nach 3 Fragen wird
 // die Sperre aufgehoben → Feld ist leer und kann normal besetzt werden.
 export function qqSandLockCell(
@@ -1822,34 +1780,33 @@ export function qqSandLockCell(
   assertPendingFor(room, teamId);
   assertValidCoord(room, row, col);
   if (room.pendingAction !== 'SANDUHR_1') {
-    throw new QQError('WRONG_ACTION', 'Sanduhr-Modus nicht aktiv.');
+    throw new QQError('WRONG_ACTION', 'Bann-Modus nicht aktiv.');
   }
   const cell = room.grid[row][col];
   if (cell.ownerId === teamId) {
-    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht gesperrt werden.');
+    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht gebannt werden.');
   }
   if (cell.stuck) {
-    throw new QQError('STUCK_CELL', 'Gestapeltes Feld lässt sich nicht sperren.');
+    throw new QQError('STUCK_CELL', 'Gestapeltes Feld lässt sich nicht bannen.');
   }
   if (cell.shielded) {
-    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Sanduhr prallt ab.');
+    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Bann prallt ab.');
   }
   if (cell.sandLockTtl && cell.sandLockTtl > 0) {
-    throw new QQError('ALREADY_LOCKED', 'Feld ist bereits gesperrt.');
+    throw new QQError('ALREADY_LOCKED', 'Feld ist bereits gebannt.');
   }
   cell.ownerId     = null;
   cell.frozen      = false;
   cell.jokerFormed = false;
   cell.sandLockTtl = 3;
-  room.teamPhaseStats[teamId].sandUsed = true;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);
   finishPlacement(room);
 }
 
-// ── Phase 3/4: Schild (einmal pro Phase: größtes eigenes Cluster schützen) ──
+// ── Phase 3: Schild (max 2 pro Spiel: größtes eigenes Cluster schützen) ──
 // Kein Target-Pick nötig: findet das größte zusammenhängende Team-Cluster
-// und markiert alle Zellen als shielded. Shield läuft am Phasenende aus.
+// und markiert alle Zellen als shielded. Schild hält bis Spielende.
 export function qqShieldCluster(
   room: QQRoomState,
   teamId: string
@@ -1892,7 +1849,8 @@ export function qqShieldCluster(
     room.grid[row][col].shielded = true;
   }
   room.shieldedCells.push(...bestCells);
-  room.teamPhaseStats[teamId].shieldUsed = true;
+  const stats = room.teamPhaseStats[teamId];
+  stats.shieldsUsed = (stats.shieldsUsed ?? 0) + 1;
   updateTerritories(room);
   finishPlacement(room);
 }
@@ -1931,10 +1889,14 @@ export function qqTriggerComeback(room: QQRoomState): void {
   // Führende ermitteln: alle Teams mit maximalem largestConnected (Tiebreak
   // total ignoriert — Gleichstand auf largest reicht, dann wird von jedem 1
   // Feld geklaut). Comeback-Team selbst ist per Definition NICHT führend.
-  const leaders = room.joinOrder.filter(id => {
+  const allLeaders = room.joinOrder.filter(id => {
     const r = territories[id];
     return r != null && r.largest === maxLargest && id !== comebackTeam;
   });
+  // Cap auf max 3 Leader: bei 4+ Gleichstand würde Comeback sonst zu krass swingen
+  // (z.B. 4 Teams gleichauf → 4 Felder geklaut → vom Letzten auf Platz 1).
+  // Auswahl ist deterministisch nach joinOrder (kein Random, damit Replays stabil sind).
+  const leaders = allLeaders.length > 3 ? allLeaders.slice(0, 3) : allLeaders;
 
   room.comebackTeamId    = comebackTeam;
   room.comebackAction    = null;
@@ -2074,26 +2036,16 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
     if (cell && !cell.stuck) cell.frozen = false;
   }
   room.frozenCells     = [];
-  // Shields laufen am Phasenende aus.
-  for (const sc of room.shieldedCells) {
-    const cell = room.grid[sc.row]?.[sc.col];
-    if (cell) cell.shielded = false;
-  }
-  room.shieldedCells   = [];
-  // Sanduhr-Sperren laufen ebenfalls am Phasenende aus (analog Shields).
-  for (let r = 0; r < room.gridSize; r++) {
-    for (let c = 0; c < room.gridSize; c++) {
-      const cell = room.grid[r][c];
-      if (cell.sandLockTtl) delete cell.sandLockTtl;
-    }
-  }
+  // Schilde halten bis Spielende (max 2 pro Team) — kein Reset am Phasenende mehr.
+  // Bann-TTL läuft pro Frage runter, nicht pro Phase — kein Reset hier.
 
-  // Reset per-phase stats — but preserve jokersEarned (it's per-game, not per-phase)
+  // Reset per-phase stats — aber jokersEarned (game-wide) und shieldsUsed (game-wide) erhalten
   for (const id of room.joinOrder) {
     const prev = room.teamPhaseStats[id];
     room.teamPhaseStats[id] = {
       ...emptyPhaseStats(),
       jokersEarned: prev?.jokersEarned ?? 0,
+      shieldsUsed:  prev?.shieldsUsed ?? 0,
     };
   }
   room.lastActivityAt = Date.now();
@@ -2221,7 +2173,14 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
 
   const stats = room.teamPhaseStats[teamId];
   const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
-  const toAward = Math.min(newBlocks.length, remaining);
+  let toAward = Math.min(newBlocks.length, remaining);
+
+  // Comeback-Place-Cap: max 3 Felder Gesamtgewinn (2 Place + max 1 Joker-Bonus).
+  // Ohne diesen Cap könnte ein Team mit 2x2-Joker während Comeback 4 Felder
+  // bekommen und vom Letzten direkt auf Platz 1 springen — zu krasser Swing.
+  if (room.pendingAction === 'COMEBACK' && room.comebackAction === 'PLACE_2') {
+    toAward = Math.min(toAward, 1);
+  }
 
   for (let i = 0; i < newBlocks.length; i++) {
     markJokerCells(room.grid, newBlocks[i].r, newBlocks[i].c);

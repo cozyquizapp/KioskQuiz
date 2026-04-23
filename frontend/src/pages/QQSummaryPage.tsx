@@ -263,7 +263,11 @@ export default function QQSummaryPage() {
                     cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   }}>
-                  <div style={{ fontSize: 48, lineHeight: 1 }}>{av.emoji}</div>
+                  <img src={av.image} alt={av.label} style={{
+                    width: 56, height: 56, borderRadius: '50%',
+                    objectFit: 'cover',
+                    background: t.color, padding: 2,
+                  }} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
                     {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {tr('fields', lang)}
@@ -299,10 +303,14 @@ export default function QQSummaryPage() {
         <div style={{
           width: 112, height: 112, borderRadius: '50%',
           background: selectedTeam.color,
-          border: '4px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '4px solid #fff',
           boxShadow: `0 10px 30px ${selectedTeam.color}66`,
-          fontSize: 64, lineHeight: 1,
-        }}>{av.emoji}</div>
+          overflow: 'hidden',
+        }}>
+          <img src={av.image} alt={av.label} style={{
+            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+          }} />
+        </div>
         <div style={{ fontSize: 13, fontWeight: 900, color: '#fbbf24', letterSpacing: 0.3, textTransform: 'uppercase' }}>
           {placeLabel}
         </div>
@@ -358,7 +366,10 @@ export default function QQSummaryPage() {
                 border: `1px solid ${isMe ? t.color : 'rgba(255,255,255,0.06)'}`,
               }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', width: 22 }}>{i + 1}.</span>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{tAv.emoji}</span>
+                <img src={tAv.image} alt={tAv.label} style={{
+                  width: 28, height: 28, borderRadius: '50%', objectFit: 'cover',
+                  background: t.color, padding: 1,
+                }} />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{t.name}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>

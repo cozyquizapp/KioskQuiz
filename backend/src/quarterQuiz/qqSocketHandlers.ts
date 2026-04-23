@@ -84,19 +84,21 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // Flush last question's answers into history (covers GAME_OVER / last-of-final-phase)
   qqFlushQuestionToHistory(room);
 
-  // Per-Team Aggregat-Stats für die Summary-Seite
+  // Per-Team Aggregat-Stats für die Summary-Seite.
+  // FIX 2026-04-23: vorherige Variante machte Object.values(stats-OBJEKT)
+  // (ein Skalar-Stats, KEIN Phase-Map) und summierte v?.jokersEarned auf
+  // einzelne Number-Properties → immer 0. Direkter Zugriff stimmt fuer
+  // jokersEarned (game-wide, kein Phase-Reset). stealsUsed wird pro Phase
+  // resettet → wir nutzen den Lifetime-Counter `room.teamTotalSteals`.
   const teamStats: Record<string, { correct: number; answered: number; jokersEarned: number; stealsUsed: number }> = {};
   for (const t of teamList) {
     const t_: any = t;
+    const phaseStats = room.teamPhaseStats[t_.id];
     teamStats[t_.id] = {
       correct: 0,
       answered: 0,
-      jokersEarned: Object.values(room.teamPhaseStats[t_.id] ?? {}).reduce<number>(
-        (acc, v: any) => acc + (v?.jokersEarned ?? 0), 0
-      ),
-      stealsUsed: Object.values(room.teamPhaseStats[t_.id] ?? {}).reduce<number>(
-        (acc, v: any) => acc + (v?.stealsUsed ?? 0), 0
-      ),
+      jokersEarned: phaseStats?.jokersEarned ?? 0,
+      stealsUsed:   room.teamTotalSteals[t_.id] ?? 0,
     };
   }
   for (const qh of room.questionHistory) {

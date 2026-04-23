@@ -31,6 +31,10 @@ export interface QQRoomState {
   teams: Record<string, QQTeam>;
   joinOrder: string[];          // teamIds in join order
   teamPhaseStats: Record<string, QQTeamPhaseStats>;
+  /** Game-Total Steals pro Team (kumulativ ueber alle Phasen + Comeback).
+   *  `teamPhaseStats[id].stealsUsed` resettet pro Phase und ist nur fuer
+   *  den Phase-2-Cap zustaendig — fuer Summary brauchen wir den Lifetime-Wert. */
+  teamTotalSteals: Record<string, number>;
   questions: QQQuestion[];      // ordered 0-14
   currentQuestion: QQQuestion | null;
   revealedAnswer: string | null;
@@ -201,6 +205,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       teams: {},
       joinOrder: [],
       teamPhaseStats: {},
+      teamTotalSteals: {},
       questions: [],
       currentQuestion: null,
       revealedAnswer: null,
@@ -309,6 +314,7 @@ export function qqJoinTeam(
   };
   room.joinOrder.push(teamId);
   room.teamPhaseStats[teamId] = emptyPhaseStats();
+  room.teamTotalSteals[teamId] = 0;
 }
 
 export function qqSetTeamConnected(
@@ -434,6 +440,7 @@ export function qqStartGame(
   // Reset all phase stats
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id] = emptyPhaseStats();
+    room.teamTotalSteals[id] = 0;
   }
   room.lastActivityAt = Date.now();
 }
@@ -1578,6 +1585,9 @@ export function qqStealCell(
     }
     stats.stealsUsed++;
   }
+  // Game-Total-Steals (fuer Summary „Geklaut"-Counter). Phase-Reset von
+  // teamPhaseStats[id].stealsUsed wuerde sonst die Statistik vernichten.
+  room.teamTotalSteals[teamId] = (room.teamTotalSteals[teamId] ?? 0) + 1;
 
   // Comeback-Klau: nur Leader-Territorium erlaubt, bei ≥2 Leadern zusätzlich
   // genau 1 pro Leader (kein doppeltes Beklauen eines Teams).
@@ -2515,6 +2525,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.cheeseRevealStep      = 0;
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
+    room.teamTotalSteals[id]      = 0;
     room.teams[id].totalCells     = 0;
     room.teams[id].largestConnected = 0;
   }

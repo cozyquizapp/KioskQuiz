@@ -7,6 +7,8 @@ import { useParams } from 'react-router-dom';
 import { qqGetAvatar } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 
+type Lang = 'de' | 'en';
+
 type SummaryTeam = {
   id: string;
   name: string;
@@ -42,6 +44,137 @@ type UpcomingEvent = {
   note?: string;
 };
 
+// ── Translations ───────────────────────────────────────────────────────────────
+const T = {
+  notFoundTitle: { de: 'Kein Ergebnis gefunden', en: 'No result found' },
+  notFoundMsg:   { de: 'Dieses Spiel konnten wir nicht finden. Vielleicht war es zu lange her?',
+                   en: 'We couldn\u2019t find this game. Maybe it was too long ago?' },
+  loadError:     { de: 'Oha, da ist was beim Laden schiefgegangen. Versuch es nochmal in ein paar Minuten.',
+                   en: 'Oops, something went wrong loading. Try again in a few minutes.' },
+  unknownError:  { de: 'Unbekannter Fehler.', en: 'Unknown error.' },
+  loading:       { de: 'Lade eure Stats\u2026', en: 'Loading your stats\u2026' },
+
+  whichTeam:     { de: 'Welches Team seid ihr?', en: 'Which team are you?' },
+  rankShort:     { de: 'Platz', en: 'Rank' },
+  fields:        { de: 'Felder', en: 'fields' },
+  pickOther:     { de: '\u21A9 anderes Team w\u00E4hlen', en: '\u21A9 pick another team' },
+
+  yourNumbers:   { de: 'Eure Zahlen', en: 'Your numbers' },
+  largestArea:   { de: 'Gr\u00F6\u00DFtes Gebiet', en: 'Largest area' },
+  fieldsTotal:   { de: 'Felder gesamt', en: 'Fields total' },
+  correct:       { de: 'Richtig', en: 'Correct' },
+  accuracy:      { de: 'Trefferquote', en: 'Accuracy' },
+  jokersEarned:  { de: 'Joker verdient', en: 'Jokers earned' },
+  stolen:        { de: 'Geklaut', en: 'Stolen' },
+  pieces:        { de: 'St\u00FCck', en: 'pcs' },
+  fieldsUnit:    { de: 'Felder', en: 'fields' },
+  times:         { de: 'mal', en: 'times' },
+
+  yourMoment:    { de: 'Euer Moment', en: 'Your moment' },
+  funnyAnswer:   { de: '\uD83D\uDE02 Lustige Antwort', en: '\uD83D\uDE02 Funny answer' },
+  question:      { de: 'Frage', en: 'Question' },
+
+  finalStandings:{ de: 'Endstand', en: 'Final standings' },
+
+  // Hero
+  champion:      { de: 'Sieger', en: 'Winner' },
+
+  // Place labels
+  place:         { de: 'Platz', en: 'place' },
+
+  // Feedback section
+  feedbackTitle: { de: 'Feedback', en: 'Feedback' },
+  thanksTitle:   { de: 'Danke! Ist angekommen.', en: 'Thanks! It arrived.' },
+  thanksBugSub:  { de: 'Ich schau es mir an.', en: 'I\u2019ll look into it.' },
+  thanksGenSub:  { de: 'Jeder Eintrag hilft mir, CozyQuiz besser zu machen.',
+                   en: 'Every entry helps me make CozyQuiz better.' },
+
+  fbWhatType:    { de: 'Was habt ihr f\u00FCr mich?', en: 'What do you have for me?' },
+  fbType_feedback:{ de: 'Feedback', en: 'Feedback' },
+  fbType_bug:    { de: 'Bug', en: 'Bug' },
+  fbType_idea:   { de: 'Idee', en: 'Idea' },
+  fbType_praise: { de: 'Lob', en: 'Praise' },
+
+  fbPlayAgain:   { de: 'Nochmal spielen?', en: 'Play again?' },
+  fbPA_yes:      { de: 'Sofort', en: 'Right now' },
+  fbPA_maybe:    { de: 'Gerne mal', en: 'Sure, sometime' },
+  fbPA_no:       { de: 'Eher nicht', en: 'Probably not' },
+
+  fbFavCat:      { de: 'Lieblingskategorie heute?', en: 'Favorite category today?' },
+
+  fbLength:      { de: 'Wie war die Spielzeit?', en: 'How was the game length?' },
+  fbLen_short:   { de: 'Zu kurz', en: 'Too short' },
+  fbLen_ok:      { de: 'Genau richtig', en: 'Just right' },
+  fbLen_long:    { de: 'Zu lang', en: 'Too long' },
+
+  fbStars:       { de: 'Wie viele Sterne insgesamt?', en: 'How many stars overall?' },
+
+  fbSurprise:    { de: 'Was hat euch am meisten \u00FCberrascht?', en: 'What surprised you most?' },
+  fbOptional:    { de: '(optional)', en: '(optional)' },
+  fbSurprisePh:  { de: 'z.B. eine Antwort, eine Kategorie, ein Moment\u2026',
+                   en: 'e.g. an answer, a category, a moment\u2026' },
+
+  fbMainBug:     { de: 'Was ist schiefgelaufen?', en: 'What went wrong?' },
+  fbMainIdea:    { de: 'Eure Idee', en: 'Your idea' },
+  fbMainGen:     { de: 'Euer Feedback', en: 'Your feedback' },
+  fbPhBug:       { de: 'Was ist passiert? Was hattet ihr gerade gemacht?',
+                   en: 'What happened? What were you doing?' },
+  fbPhIdea:      { de: 'Was w\u00FCrdet ihr gerne sehen?', en: 'What would you like to see?' },
+  fbPhPraise:    { de: 'Was hat euch besonders Spa\u00DF gemacht?', en: 'What did you enjoy most?' },
+  fbPhGen:       { de: 'Was fiel euch auf? Alles willkommen.',
+                   en: 'What stood out? Anything goes.' },
+
+  fbContact:     { de: 'Kontakt', en: 'Contact' },
+  fbContactPh:   { de: 'Mail oder Instagram', en: 'Email or Instagram' },
+  fbIntent_response:{ de: '\uD83D\uDCAC Nur falls R\u00FCckfrage', en: '\uD83D\uDCAC Only if you have questions' },
+  fbIntent_date:    { de: '\uD83D\uDCC5 Termine bitte', en: '\uD83D\uDCC5 Send me dates' },
+  fbIntent_booking: { de: '\uD83C\uDF99\uFE0F Quiz buchen', en: '\uD83C\uDF99\uFE0F Book a quiz' },
+
+  fbErrEmpty:    { de: 'Ein paar Zeilen w\u00E4ren super.', en: 'A few lines would be great.' },
+  fbErrServer:   { de: 'Server mochte das Feedback nicht.', en: 'Server didn\u2019t like the feedback.' },
+  fbErrSend:     { de: 'Konnte nicht senden.', en: 'Could not send.' },
+
+  fbSubmitting:  { de: 'Sende\u2026', en: 'Sending\u2026' },
+  fbReportBug:   { de: '\uD83D\uDC1B Bug melden', en: '\uD83D\uDC1B Report bug' },
+  fbSend:        { de: 'Absenden', en: 'Send' },
+
+  // Categories
+  cat_SCHAETZCHEN:   { de: 'Sch\u00E4tzchen', en: 'Close Call' },
+  cat_MUCHO:         { de: 'Mu-Cho', en: 'Mu-Cho' },
+  cat_BUNTE_TUETE:   { de: 'Bunte T\u00FCte', en: 'Mixed Bag' },
+  cat_ZEHN_VON_ZEHN: { de: 'All In', en: 'All In' },
+  cat_CHEESE:        { de: 'Picture This', en: 'Picture This' },
+
+  // Upcoming events
+  nextQuizzes:   { de: 'N\u00E4chste Quizze', en: 'Upcoming quizzes' },
+
+  // Partner CTA
+  partnerTitle:  { de: 'Quiz bei euch?', en: 'Quiz at your place?' },
+  partnerHead:   { de: '\uD83D\uDC3A Ihr wollt CozyQuiz bei euch haben?',
+                   en: '\uD83D\uDC3A Want CozyQuiz at your venue?' },
+  partnerBody:   { de: 'Ob Kneipe, Event, Geburtstag oder Firmenfeier — ich komme mit Beamer, Stimme und guter Laune. Schreibt mir, ich mach euch ein Angebot.',
+                   en: 'Pub, event, birthday or company party — I come with projector, voice and good vibes. Drop me a line, I\u2019ll send an offer.' },
+  partnerMail:   { de: '\u2709\uFE0F Mail', en: '\u2709\uFE0F Mail' },
+  partnerWeb:    { de: '\uD83C\uDF10 cozywolf.de', en: '\uD83C\uDF10 cozywolf.de' },
+  partnerInsta:  { de: '\uD83D\uDCF8 @cozywolf.events', en: '\uD83D\uDCF8 @cozywolf.events' },
+
+  // Footer
+  footerBy:      { de: 'CozyQuiz von', en: 'CozyQuiz by' },
+};
+
+function tr<K extends keyof typeof T>(key: K, lang: Lang): string {
+  return T[key][lang];
+}
+
+// ── Lang persistence ──────────────────────────────────────────────────────────
+function detectInitialLang(): Lang {
+  if (typeof window === 'undefined') return 'de';
+  const stored = window.localStorage.getItem('qqSummaryLang');
+  if (stored === 'de' || stored === 'en') return stored;
+  return navigator.language?.toLowerCase().startsWith('de') ? 'de' : 'en';
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────────
 export default function QQSummaryPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -49,6 +182,12 @@ export default function QQSummaryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [lang, setLang] = useState<Lang>(detectInitialLang);
+
+  function changeLang(next: Lang) {
+    setLang(next);
+    try { window.localStorage.setItem('qqSummaryLang', next); } catch {}
+  }
 
   useEffect(() => {
     if (!roomCode) return;
@@ -60,7 +199,7 @@ export default function QQSummaryPage() {
           fetch(`${API_BASE}/qq/upcoming`).catch(() => null),
         ]);
         if (!sRes.ok) {
-          if (!cancelled) setError('Dieses Spiel konnten wir nicht finden. Vielleicht war es zu lange her?');
+          if (!cancelled) setError(tr('notFoundMsg', lang));
           return;
         }
         const s: Summary = await sRes.json();
@@ -70,12 +209,13 @@ export default function QQSummaryPage() {
           if (!cancelled) setUpcoming(u);
         }
       } catch {
-        if (!cancelled) setError('Oha, da ist was beim Laden schiefgegangen. Versuch es nochmal in ein paar Minuten.');
+        if (!cancelled) setError(tr('loadError', lang));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
   const selectedTeam = useMemo(
@@ -91,16 +231,16 @@ export default function QQSummaryPage() {
   }, [summary]);
 
   if (loading) {
-    return <Shell><Loading /></Shell>;
+    return <Shell lang={lang} onLang={changeLang}><Loading lang={lang} /></Shell>;
   }
 
   if (error || !summary) {
     return (
-      <Shell>
+      <Shell lang={lang} onLang={changeLang}>
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🤷</div>
-          <h2 style={{ margin: 0, marginBottom: 8 }}>Kein Ergebnis gefunden</h2>
-          <p style={{ color: '#94a3b8' }}>{error ?? 'Unbekannter Fehler.'}</p>
+          <h2 style={{ margin: 0, marginBottom: 8 }}>{tr('notFoundTitle', lang)}</h2>
+          <p style={{ color: '#94a3b8' }}>{error ?? tr('unknownError', lang)}</p>
         </div>
       </Shell>
     );
@@ -109,9 +249,9 @@ export default function QQSummaryPage() {
   // Auswahl-Screen
   if (!selectedTeam) {
     return (
-      <Shell>
-        <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} />
-        <Section title="Welches Team seid ihr?">
+      <Shell lang={lang} onLang={changeLang}>
+        <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} />
+        <Section title={tr('whichTeam', lang)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
             {ranking.map((t, i) => {
               const av = qqGetAvatar(t.avatarId);
@@ -126,16 +266,16 @@ export default function QQSummaryPage() {
                   <div style={{ fontSize: 48, lineHeight: 1 }}>{av.emoji}</div>
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
-                    Platz {i + 1} · {t.largestConnected} Felder
+                    {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {tr('fields', lang)}
                   </div>
                 </button>
               );
             })}
           </div>
         </Section>
-        <FeedbackForm roomCode={summary.roomCode} />
-        <PartnerCTA />
-        <UpcomingEvents events={upcoming} />
+        <FeedbackForm roomCode={summary.roomCode} lang={lang} />
+        <PartnerCTA lang={lang} />
+        <UpcomingEvents events={upcoming} lang={lang} />
         <Footer />
       </Shell>
     );
@@ -144,12 +284,12 @@ export default function QQSummaryPage() {
   // Team-Detail-Screen
   const place = ranking.findIndex(t => t.id === selectedTeam.id) + 1;
   const av = qqGetAvatar(selectedTeam.avatarId);
-  const placeLabel = place === 1 ? '🥇 1. Platz' : place === 2 ? '🥈 2. Platz' : place === 3 ? '🥉 3. Platz' : `🎖️ ${place}. Platz`;
+  const placeLabel = formatPlaceLabel(place, lang);
   const myFunny = summary.funnyAnswers.find(f => f.teamId === selectedTeam.id);
   const accuracy = selectedTeam.answered > 0 ? Math.round((selectedTeam.correct / selectedTeam.answered) * 100) : null;
 
   return (
-    <Shell>
+    <Shell lang={lang} onLang={changeLang}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
         padding: '28px 20px 22px', borderRadius: 20, marginBottom: 18,
@@ -172,40 +312,40 @@ export default function QQSummaryPage() {
             marginTop: 6, fontSize: 12, color: '#94a3b8', background: 'transparent',
             border: '1px solid rgba(255,255,255,0.15)', borderRadius: 999,
             padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit',
-          }}>↩ anderes Team wählen</button>
+          }}>{tr('pickOther', lang)}</button>
       </div>
 
-      <Section title="Eure Zahlen">
+      <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          <Stat label="Größtes Gebiet" value={selectedTeam.largestConnected} suffix="Felder" accent={selectedTeam.color} />
-          <Stat label="Felder gesamt" value={selectedTeam.totalCells} suffix="Stück" accent={selectedTeam.color} />
-          <Stat label="Richtig" value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
-          <Stat label="Trefferquote" value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
-          <Stat label="Joker verdient" value={selectedTeam.jokersEarned} accent="#EAB308" />
-          <Stat label="Geklaut" value={selectedTeam.stealsUsed} suffix="mal" accent="#EF4444" />
+          <Stat label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={tr('fieldsUnit', lang)} accent={selectedTeam.color} />
+          <Stat label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
+          <Stat label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
+          <Stat label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
+          <Stat label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent="#EAB308" />
+          <Stat label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent="#EF4444" />
         </div>
       </Section>
 
       {myFunny && (
-        <Section title="Euer Moment">
+        <Section title={tr('yourMoment', lang)}>
           <div style={{
             background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)',
             borderRadius: 12, padding: '12px 14px',
           }}>
             <div style={{ fontSize: 11, color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 }}>
-              😂 Lustige Antwort
+              {tr('funnyAnswer', lang)}
             </div>
             <div style={{ fontSize: 14, color: '#f8fafc', fontWeight: 700, marginBottom: 4 }}>
               „{myFunny.text}"
             </div>
             <div style={{ fontSize: 11, color: '#94a3b8' }}>
-              Frage: {myFunny.questionText}
+              {tr('question', lang)}: {myFunny.questionText}
             </div>
           </div>
         </Section>
       )}
 
-      <Section title="Endstand">
+      <Section title={tr('finalStandings', lang)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ranking.map((t, i) => {
             const tAv = qqGetAvatar(t.avatarId);
@@ -221,7 +361,7 @@ export default function QQSummaryPage() {
                 <span style={{ fontSize: 24, lineHeight: 1 }}>{tAv.emoji}</span>
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{t.name}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                  {t.largestConnected} <span style={{ fontSize: 10 }}>Felder</span>
+                  {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>
                 </span>
               </div>
             );
@@ -229,17 +369,27 @@ export default function QQSummaryPage() {
         </div>
       </Section>
 
-      <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} />
-      <PartnerCTA />
-      <UpcomingEvents events={upcoming} />
+      <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} />
+      <PartnerCTA lang={lang} />
+      <UpcomingEvents events={upcoming} lang={lang} />
       <Footer />
     </Shell>
   );
 }
 
+function formatPlaceLabel(place: number, lang: Lang): string {
+  if (lang === 'de') {
+    const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🎖️';
+    return `${medal} ${place}. Platz`;
+  }
+  const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🎖️';
+  const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
+  return `${medal} ${ord} place`;
+}
+
 // ── Helpers & Subcomponents ───────────────────────────────────────────────────
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: Lang; onLang: (l: Lang) => void }) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -248,13 +398,44 @@ function Shell({ children }: { children: React.ReactNode }) {
       fontFamily: "'Nunito', system-ui, sans-serif",
       padding: '20px 16px 40px',
     }}>
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>{children}</div>
+      <div style={{ maxWidth: 520, margin: '0 auto' }}>
+        <LangToggle lang={lang} onLang={onLang} />
+        {children}
+      </div>
     </div>
   );
 }
 
-function Hero({ draftTitle, winner, playedAt }: { draftTitle: string; winner: string | null; playedAt: number }) {
-  const date = new Date(playedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function LangToggle({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+      <div style={{
+        display: 'inline-flex', borderRadius: 999,
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+        padding: 2,
+      }}>
+        {(['de', 'en'] as const).map(l => {
+          const active = lang === l;
+          return (
+            <button key={l} type="button" onClick={() => onLang(l)}
+              style={{
+                padding: '4px 12px', borderRadius: 999,
+                fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                background: active ? '#fbbf24' : 'transparent',
+                color: active ? '#1e293b' : '#94a3b8',
+                border: 'none', cursor: 'pointer',
+                letterSpacing: 0.4,
+              }}>{l.toUpperCase()}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Hero({ draftTitle, winner, playedAt, lang }: { draftTitle: string; winner: string | null; playedAt: number; lang: Lang }) {
+  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
+  const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
     <div style={{
       padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
@@ -267,7 +448,7 @@ function Hero({ draftTitle, winner, playedAt }: { draftTitle: string; winner: st
       <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginTop: 4 }}>{draftTitle}</div>
       {winner && (
         <div style={{ marginTop: 10, fontSize: 14, color: '#fbbf24', fontWeight: 800 }}>
-          🏆 Sieger: {winner}
+          🏆 {tr('champion', lang)}: {winner}
         </div>
       )}
     </div>
@@ -299,11 +480,11 @@ function Stat({ label, value, suffix, accent }: { label: string; value: number |
   );
 }
 
-function Loading() {
+function Loading({ lang }: { lang: Lang }) {
   return (
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>🎲</div>
-      <div style={{ color: '#94a3b8' }}>Lade eure Stats…</div>
+      <div style={{ color: '#94a3b8' }}>{tr('loading', lang)}</div>
     </div>
   );
 }
@@ -313,22 +494,22 @@ type PlayAgain = 'yes' | 'maybe' | 'no';
 type LengthFeel = 'short' | 'ok' | 'long';
 type ContactIntent = 'date' | 'booking' | 'response';
 
-const TYPE_OPTIONS: Array<{ id: FeedbackType; emoji: string; label: string; color: string }> = [
-  { id: 'feedback', emoji: '💬', label: 'Feedback', color: '#60a5fa' },
-  { id: 'bug',      emoji: '🐛', label: 'Bug',      color: '#f87171' },
-  { id: 'idea',     emoji: '💡', label: 'Idee',     color: '#fbbf24' },
-  { id: 'praise',   emoji: '❤️', label: 'Lob',      color: '#f0abfc' },
+const TYPE_OPTIONS: Array<{ id: FeedbackType; emoji: string; labelKey: keyof typeof T; color: string }> = [
+  { id: 'feedback', emoji: '💬', labelKey: 'fbType_feedback', color: '#60a5fa' },
+  { id: 'bug',      emoji: '🐛', labelKey: 'fbType_bug',      color: '#f87171' },
+  { id: 'idea',     emoji: '💡', labelKey: 'fbType_idea',     color: '#fbbf24' },
+  { id: 'praise',   emoji: '❤️', labelKey: 'fbType_praise',   color: '#f0abfc' },
 ];
 
-const CATEGORY_OPTIONS: Array<{ id: string; emoji: string; label: string }> = [
-  { id: 'SCHAETZCHEN',   emoji: '🎯', label: 'Schätzchen' },
-  { id: 'MUCHO',         emoji: '🅰️', label: 'Mu-Cho' },
-  { id: 'BUNTE_TUETE',   emoji: '🎁', label: 'Bunte Tüte' },
-  { id: 'ZEHN_VON_ZEHN', emoji: '🎰', label: 'All In' },
-  { id: 'CHEESE',        emoji: '📸', label: 'Picture This' },
+const CATEGORY_OPTIONS: Array<{ id: string; emoji: string; labelKey: keyof typeof T }> = [
+  { id: 'SCHAETZCHEN',   emoji: '🎯', labelKey: 'cat_SCHAETZCHEN' },
+  { id: 'MUCHO',         emoji: '🅰️', labelKey: 'cat_MUCHO' },
+  { id: 'BUNTE_TUETE',   emoji: '🎁', labelKey: 'cat_BUNTE_TUETE' },
+  { id: 'ZEHN_VON_ZEHN', emoji: '🎰', labelKey: 'cat_ZEHN_VON_ZEHN' },
+  { id: 'CHEESE',        emoji: '📸', labelKey: 'cat_CHEESE' },
 ];
 
-function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: string }) {
+function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName?: string; lang: Lang }) {
   const [type, setType] = useState<FeedbackType>('feedback');
   const [playAgain, setPlayAgain] = useState<PlayAgain | null>(null);
   const [favoriteCategory, setFavoriteCategory] = useState<string | null>(null);
@@ -347,15 +528,15 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
   };
 
   const textPlaceholder = type === 'bug'
-    ? 'Was ist passiert? Was hattet ihr gerade gemacht?'
+    ? tr('fbPhBug', lang)
     : type === 'idea'
-      ? 'Was würdet ihr gerne sehen?'
+      ? tr('fbPhIdea', lang)
       : type === 'praise'
-        ? 'Was hat euch besonders Spaß gemacht?'
-        : 'Was fiel euch auf? Alles willkommen.';
+        ? tr('fbPhPraise', lang)
+        : tr('fbPhGen', lang);
 
   async function submit() {
-    if (!text.trim()) { setErr('Ein paar Zeilen wären super.'); return; }
+    if (!text.trim()) { setErr(tr('fbErrEmpty', lang)); return; }
     setSending(true); setErr(null);
     try {
       const res = await fetch(`${API_BASE}/qq/feedback`, {
@@ -367,26 +548,26 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
           contactIntent: contactIntent.length ? contactIntent : null,
         }),
       });
-      if (!res.ok) throw new Error('Server mochte das Feedback nicht.');
+      if (!res.ok) throw new Error(tr('fbErrServer', lang));
       setSent(true);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Konnte nicht senden.');
+      setErr(e instanceof Error ? e.message : tr('fbErrSend', lang));
     } finally { setSending(false); }
   }
 
   if (sent) {
     return (
-      <Section title="Feedback">
+      <Section title={tr('feedbackTitle', lang)}>
         <div style={{
           background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
           borderRadius: 12, padding: '16px', textAlign: 'center',
         }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>🎉</div>
           <div style={{ fontSize: 15, fontWeight: 900, color: '#86efac', marginBottom: 4 }}>
-            Danke! Ist angekommen.
+            {tr('thanksTitle', lang)}
           </div>
           <div style={{ fontSize: 12, color: '#94a3b8' }}>
-            {type === 'bug' ? 'Ich schau es mir an.' : 'Jeder Eintrag hilft mir, CozyQuiz besser zu machen.'}
+            {type === 'bug' ? tr('thanksBugSub', lang) : tr('thanksGenSub', lang)}
           </div>
         </div>
       </Section>
@@ -394,7 +575,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
   }
 
   return (
-    <Section title="Feedback">
+    <Section title={tr('feedbackTitle', lang)}>
       <div style={{
         background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
@@ -402,7 +583,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
 
         {/* 1. Typ-Chips */}
         <div>
-          <Caption>Was habt ihr für mich?</Caption>
+          <Caption>{tr('fbWhatType', lang)}</Caption>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
             {TYPE_OPTIONS.map(opt => {
               const active = type === opt.id;
@@ -418,7 +599,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   }}>
                   <span style={{ fontSize: 20, lineHeight: 1 }}>{opt.emoji}</span>
-                  <span>{opt.label}</span>
+                  <span>{tr(opt.labelKey, lang)}</span>
                 </button>
               );
             })}
@@ -428,13 +609,13 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
         {/* 2. Nochmal spielen? (nicht bei Bug) */}
         {type !== 'bug' && (
           <div>
-            <Caption>Nochmal spielen?</Caption>
+            <Caption>{tr('fbPlayAgain', lang)}</Caption>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
               {([
-                { id: 'yes',   emoji: '😍', label: 'Sofort' },
-                { id: 'maybe', emoji: '👍', label: 'Gerne mal' },
-                { id: 'no',    emoji: '😐', label: 'Eher nicht' },
-              ] as Array<{ id: PlayAgain; emoji: string; label: string }>).map(opt => {
+                { id: 'yes',   emoji: '😍', labelKey: 'fbPA_yes' as const },
+                { id: 'maybe', emoji: '👍', labelKey: 'fbPA_maybe' as const },
+                { id: 'no',    emoji: '😐', labelKey: 'fbPA_no' as const },
+              ] as Array<{ id: PlayAgain; emoji: string; labelKey: keyof typeof T }>).map(opt => {
                 const active = playAgain === opt.id;
                 return (
                   <button key={opt.id} type="button"
@@ -449,7 +630,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                     }}>
                     <span style={{ fontSize: 18, lineHeight: 1 }}>{opt.emoji}</span>
-                    <span>{opt.label}</span>
+                    <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );
               })}
@@ -460,7 +641,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
         {/* 3. Kategorie-Favorit (nicht bei Bug) */}
         {type !== 'bug' && (
           <div>
-            <Caption>Lieblingskategorie heute?</Caption>
+            <Caption>{tr('fbFavCat', lang)}</Caption>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {CATEGORY_OPTIONS.map(opt => {
                 const active = favoriteCategory === opt.id;
@@ -479,7 +660,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
                       whiteSpace: 'nowrap',
                     }}>
                     <span>{opt.emoji}</span>
-                    <span>{opt.label}</span>
+                    <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );
               })}
@@ -490,13 +671,13 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
         {/* 4. Spiel-Länge (nicht bei Bug) */}
         {type !== 'bug' && (
           <div>
-            <Caption>Wie war die Spielzeit?</Caption>
+            <Caption>{tr('fbLength', lang)}</Caption>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
               {([
-                { id: 'short', emoji: '⏱️', label: 'Zu kurz' },
-                { id: 'ok',    emoji: '✅', label: 'Genau richtig' },
-                { id: 'long',  emoji: '💤', label: 'Zu lang' },
-              ] as Array<{ id: LengthFeel; emoji: string; label: string }>).map(opt => {
+                { id: 'short', emoji: '⏱️', labelKey: 'fbLen_short' as const },
+                { id: 'ok',    emoji: '✅', labelKey: 'fbLen_ok' as const },
+                { id: 'long',  emoji: '💤', labelKey: 'fbLen_long' as const },
+              ] as Array<{ id: LengthFeel; emoji: string; labelKey: keyof typeof T }>).map(opt => {
                 const active = lengthFeel === opt.id;
                 return (
                   <button key={opt.id} type="button"
@@ -511,7 +692,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                     }}>
                     <span style={{ fontSize: 16, lineHeight: 1 }}>{opt.emoji}</span>
-                    <span>{opt.label}</span>
+                    <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );
               })}
@@ -522,7 +703,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
         {/* 5. Rating (nicht bei Bug/Idea — bei reinem Feature-Wunsch wenig sinnvoll) */}
         {(type === 'feedback' || type === 'praise') && (
           <div>
-            <Caption>Wie viele Sterne insgesamt?</Caption>
+            <Caption>{tr('fbStars', lang)}</Caption>
             <div style={{ display: 'flex', gap: 4 }}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)}
@@ -540,9 +721,9 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
         {/* 6. Überraschung (nicht bei Bug) */}
         {type !== 'bug' && (
           <div>
-            <Caption>Was hat euch am meisten überrascht? <span style={{ color: '#64748b', fontWeight: 700 }}>(optional)</span></Caption>
+            <Caption>{tr('fbSurprise', lang)} <span style={{ color: '#64748b', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
             <input value={surprise} onChange={e => setSurprise(e.target.value)} maxLength={500}
-              placeholder="z.B. eine Antwort, eine Kategorie, ein Moment…"
+              placeholder={tr('fbSurprisePh', lang)}
               style={{
                 width: '100%', boxSizing: 'border-box',
                 background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)',
@@ -554,7 +735,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
 
         {/* 7. Haupttext — Pflicht */}
         <div>
-          <Caption>{type === 'bug' ? 'Was ist schiefgelaufen?' : type === 'idea' ? 'Eure Idee' : 'Euer Feedback'}</Caption>
+          <Caption>{type === 'bug' ? tr('fbMainBug', lang) : type === 'idea' ? tr('fbMainIdea', lang) : tr('fbMainGen', lang)}</Caption>
           <textarea value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={2000}
             placeholder={textPlaceholder}
             style={{
@@ -567,9 +748,9 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
 
         {/* 8. Kontakt + Intent */}
         <div>
-          <Caption>Kontakt <span style={{ color: '#64748b', fontWeight: 700 }}>(optional)</span></Caption>
+          <Caption>{tr('fbContact', lang)} <span style={{ color: '#64748b', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
           <input value={contact} onChange={e => setContact(e.target.value)} maxLength={200}
-            placeholder="Mail oder Instagram"
+            placeholder={tr('fbContactPh', lang)}
             style={{
               width: '100%', boxSizing: 'border-box',
               background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)',
@@ -579,10 +760,10 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
           {contact.trim() && (
             <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {([
-                { id: 'response', label: '💬 Nur falls Rückfrage' },
-                { id: 'date',     label: '📅 Termine bitte' },
-                { id: 'booking',  label: '🎤 Quiz buchen' },
-              ] as Array<{ id: ContactIntent; label: string }>).map(opt => {
+                { id: 'response', labelKey: 'fbIntent_response' as const },
+                { id: 'date',     labelKey: 'fbIntent_date' as const },
+                { id: 'booking',  labelKey: 'fbIntent_booking' as const },
+              ] as Array<{ id: ContactIntent; labelKey: keyof typeof T }>).map(opt => {
                 const active = contactIntent.includes(opt.id);
                 return (
                   <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)}
@@ -594,7 +775,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
                       fontFamily: 'inherit', fontWeight: 700, fontSize: 11,
                       cursor: 'pointer',
                     }}>
-                    {opt.label}
+                    {tr(opt.labelKey, lang)}
                   </button>
                 );
               })}
@@ -612,7 +793,7 @@ function FeedbackForm({ roomCode, teamName }: { roomCode: string; teamName?: str
             border: 'none', borderRadius: 10, fontSize: 15, fontFamily: 'inherit',
             cursor: sending ? 'default' : 'pointer', opacity: sending ? 0.6 : 1,
           }}>
-          {sending ? 'Sende…' : type === 'bug' ? '🐛 Bug melden' : 'Absenden'}
+          {sending ? tr('fbSubmitting', lang) : type === 'bug' ? tr('fbReportBug', lang) : tr('fbSend', lang)}
         </button>
       </div>
     </Section>
@@ -628,13 +809,14 @@ function Caption({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UpcomingEvents({ events }: { events: UpcomingEvent[] }) {
+function UpcomingEvents({ events, lang }: { events: UpcomingEvent[]; lang: Lang }) {
   if (!events.length) return null;
+  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   return (
-    <Section title="Nächste Quizze">
+    <Section title={tr('nextQuizzes', lang)}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {events.map(e => {
-          const d = e.date ? new Date(e.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }) : '';
+          const d = e.date ? new Date(e.date).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit' }) : '';
           return (
             <a key={e.id} href={e.link || '#'}
               onClick={ev => { if (!e.link) ev.preventDefault(); }}
@@ -667,29 +849,29 @@ function UpcomingEvents({ events }: { events: UpcomingEvent[] }) {
   );
 }
 
-function PartnerCTA() {
+function PartnerCTA({ lang }: { lang: Lang }) {
   return (
-    <Section title="Quiz bei euch?">
+    <Section title={tr('partnerTitle', lang)}>
       <div style={{
         background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(236,72,153,0.08))',
         border: '1px solid rgba(251,191,36,0.3)',
         borderRadius: 14, padding: '16px 16px 14px',
       }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: '#fbbf24', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-          🐺 Ihr wollt CozyQuiz bei euch haben?
+          {tr('partnerHead', lang)}
         </div>
         <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 12 }}>
-          Ob Kneipe, Event, Geburtstag oder Firmenfeier — ich komme mit Beamer, Stimme und guter Laune. Schreibt mir, ich mach euch ein Angebot.
+          {tr('partnerBody', lang)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <a href="mailto:hallo@cozywolf.de" style={ctaButton('#fbbf24', '#1e293b')}>
-            ✉️ Mail
+            {tr('partnerMail', lang)}
           </a>
           <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={ctaButton('rgba(251,191,36,0.15)', '#fbbf24', 'rgba(251,191,36,0.4)')}>
-            🌐 cozywolf.de
+            {tr('partnerWeb', lang)}
           </a>
           <a href="https://instagram.com/cozywolf.events" target="_blank" rel="noreferrer" style={{ ...ctaButton('rgba(236,72,153,0.15)', '#f0abfc', 'rgba(236,72,153,0.4)'), gridColumn: '1 / -1' }}>
-            📸 @cozywolf.events
+            {tr('partnerInsta', lang)}
           </a>
         </div>
       </div>

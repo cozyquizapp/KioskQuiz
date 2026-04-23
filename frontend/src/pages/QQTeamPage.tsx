@@ -2929,11 +2929,17 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     return !cell.ownerId;
   }
 
-  const phaseLabel = (() => {
-    if (isSwapComeback || isSwapOne) return lang === 'de' ? '🔄 Tauschen' : '🔄 Swap';
-    if (isShield)   return lang === 'de' ? '🛡️ Schild' : '🛡️ Shield';
+  const phaseLabel: React.ReactNode = (() => {
+    const wrap = (slug: 'marker-swap' | 'marker-shield' | 'marker-sanduhr', text: string) => (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <QQIcon slug={slug} size={22} alt={text} />
+        {text}
+      </span>
+    );
+    if (isSwapComeback || isSwapOne) return wrap('marker-swap', lang === 'de' ? 'Tauschen' : 'Swap');
+    if (isShield)   return wrap('marker-shield', lang === 'de' ? 'Schild' : 'Shield');
     if (isStuck)    return lang === 'de' ? '📌 Stapeln' : '📌 Stack';
-    if (isSandLock) return lang === 'de' ? '⏳ Bann' : '⏳ Ban';
+    if (isSandLock) return wrap('marker-sanduhr', lang === 'de' ? 'Bann' : 'Ban');
     if (isSteal)  return t.placement.titleSteal[lang];
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
@@ -3026,19 +3032,28 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           </CozyBtn>
           {phase === 3 && hasSandTarget && (
             <CozyBtn color="#A855F7" onClick={() => chooseFreeAction('SANDUHR')}>
-              {lang === 'de' ? '⏳ Bann (3 Fragen)' : '⏳ Ban (3 questions)'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="marker-sanduhr" size={26} alt="Bann" />
+                {lang === 'de' ? 'Bann (3 Fragen)' : 'Ban (3 questions)'}
+              </span>
             </CozyBtn>
           )}
           {phase === 3 && shieldsLeft > 0 && hasOwnCell && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('SHIELD')}>
-              {lang === 'de'
-                ? `🛡️ Schild (bis Spielende, ${shieldsLeft}/2 übrig)`
-                : `🛡️ Shield (till end of game, ${shieldsLeft}/2 left)`}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="marker-shield" size={26} alt="Schild" />
+                {lang === 'de'
+                  ? `Schild (bis Spielende, ${shieldsLeft}/2 übrig)`
+                  : `Shield (till end of game, ${shieldsLeft}/2 left)`}
+              </span>
             </CozyBtn>
           )}
           {phase >= 4 && (
             <CozyBtn color="#8B5CF6" onClick={() => chooseFreeAction('SWAP')}>
-              {lang === 'de' ? '🔄 Tauschen' : '🔄 Swap cells'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="marker-swap" size={26} alt="Tauschen" />
+                {lang === 'de' ? 'Tauschen' : 'Swap cells'}
+              </span>
             </CozyBtn>
           )}
           {phase >= 4 && hasStapable && (
@@ -3052,9 +3067,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       {/* Confirm button before grid appears */}
       {!showFreeMenu && !isPhase2Choice && !selecting && (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
-          {isSwapComeback || isSwapOne ? t.placement.swapBtn[lang]
-            : isStuck    ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
-            : isSandLock ? (lang === 'de' ? '⏳ Feld zum Bannen wählen' : '⏳ Select cell to ban')
+          {isSwapComeback || isSwapOne ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <QQIcon slug="marker-swap" size={24} alt="Swap" />
+              {lang === 'de' ? 'Felder wählen' : 'Choose fields'}
+            </span>
+          ) : isStuck ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
+            : isSandLock ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="marker-sanduhr" size={24} alt="Bann" />
+                {lang === 'de' ? 'Feld zum Bannen wählen' : 'Select cell to ban'}
+              </span>
+            )
             : isSteal    ? t.placement.confirmSteal[lang]
             : isJoker    ? (lang === 'de' ? '⭐ Jokerfeld setzen' : '⭐ Place joker cell')
             : t.placement.confirmPlace[lang]}
@@ -3124,7 +3148,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           position: 'absolute', top: -3, right: -3,
                           zIndex: 3, lineHeight: 0,
                         }}>
-                          <QQIcon slug="marker-frost" size={Math.max(10, cellSize * 0.4)} alt="Frost" />
+                          <QQIcon slug="marker-frost" size={Math.max(18, cellSize * 0.42)} alt="Frost" />
                         </div>
                       </>
                     )}
@@ -3142,7 +3166,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           position: 'absolute', top: -3, right: -3,
                           zIndex: 3, lineHeight: 0,
                         }}>
-                          <QQIcon slug="marker-shield" size={Math.max(10, cellSize * 0.42)} alt="Schild" />
+                          <QQIcon slug="marker-shield" size={Math.max(18, cellSize * 0.44)} alt="Schild" />
                         </div>
                       </>
                     )}
@@ -3162,7 +3186,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           pointerEvents: 'none', zIndex: 3,
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
                         }}>
-                          <QQIcon slug="marker-sanduhr" size={Math.max(14, cellSize * 0.6)} alt="Bann" />
+                          <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.6)} alt="Bann" />
                         </div>
                         <div style={{
                           position: 'absolute', top: -4, right: -4,
@@ -3286,10 +3310,10 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
   const canSteal1 = opponentTotal >= 1;
   const canSwap2  = opponentTotal >= 2 && distinctOpponents >= 2;
 
-  const options = [
+  const options: Array<{ action: string; icon: string; iconSlug?: 'marker-swap'; label: string; desc: string; color: string; available: boolean; reason: string }> = [
     { action: 'PLACE_2', icon: '📍', label: t.comeback.place2[lang], desc: t.comeback.place2desc[lang], color: '#22C55E', available: canPlace2, reason: lang === 'de' ? 'zu wenig freie Felder' : 'not enough free cells' },
     { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang], desc: t.comeback.steal1desc[lang], color: '#EF4444', available: canSteal1, reason: lang === 'de' ? 'keine gegnerischen Felder' : 'no opponent cells' },
-    { action: 'SWAP_2',  icon: '🔄', label: t.comeback.swap2[lang],  desc: t.comeback.swap2desc[lang],  color: '#8B5CF6', available: canSwap2,  reason: lang === 'de' ? 'weniger als 2 gegnerische Teams' : 'fewer than 2 opposing teams' },
+    { action: 'SWAP_2',  icon: '🔄', iconSlug: 'marker-swap', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: '#8B5CF6', available: canSwap2,  reason: lang === 'de' ? 'weniger als 2 gegnerische Teams' : 'fewer than 2 opposing teams' },
   ];
   const anyAvailable = options.some(o => o.available);
 
@@ -3324,7 +3348,9 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
                 opacity: disabled ? 0.4 : 1,
                 filter: disabled ? 'grayscale(0.7)' : undefined,
               }}>
-              <span style={{ fontSize: 28, lineHeight: 1 }}>{opt.icon}</span>
+              {opt.iconSlug
+                ? <QQIcon slug={opt.iconSlug} size={32} alt={opt.label} />
+                : <span style={{ fontSize: 28, lineHeight: 1 }}>{opt.icon}</span>}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, color: disabled ? '#64748b' : opt.color, fontSize: 15 }}>{opt.label}</div>
                 <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: disabled ? '#475569' : '#475569', marginTop: 2 }}>

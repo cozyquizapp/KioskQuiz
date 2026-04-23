@@ -205,7 +205,9 @@ export default function QQModeratorPage() {
     if (e.code === 'Space') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = 5;
+        // 4 Folien: Ziel / So läuft's / Neue Fähigkeiten / Comeback
+        // (entspricht buildRulesSlidesDe/En in QQBeamerPage.tsx)
+        const totalSlides = 4;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -289,7 +291,7 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = 5;
+        const totalSlides = 4;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -1765,7 +1767,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = 5;
+  const totalSlides = 4;
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;

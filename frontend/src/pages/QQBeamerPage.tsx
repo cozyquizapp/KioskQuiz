@@ -4840,10 +4840,11 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           gap: 'clamp(14px, 1.8vh, 22px)',
           minHeight: 0, minWidth: 0,
         }}>
-          {/* Lösungs-Hero */}
+          {/* Lösungs-Hero — kompakter, damit der Winner-Block (Am nächsten dran)
+              prominenter werden kann; war vorher visuell uebermaechtig. */}
           <div style={{
-            flex: '1 1 0', minHeight: 0,
-            padding: 'clamp(16px, 2.4vh, 32px) clamp(20px, 2.4vw, 36px)',
+            flex: '0.75 1 0', minHeight: 0,
+            padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
             borderRadius: 28,
             background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
             border: '3px solid rgba(34,197,94,0.55)',
@@ -4859,13 +4860,13 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               pointerEvents: 'none',
             }} />
             <div style={{
-              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#86efac',
-              letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75,
+              fontSize: 'clamp(12px, 1.1vw, 16px)', fontWeight: 900, color: '#86efac',
+              letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.78,
             }}>
               {lang === 'en' ? 'Answer' : 'Lösung'}
             </div>
             <div style={{
-              fontSize: 'clamp(64px, 8vw, 140px)',
+              fontSize: 'clamp(48px, 6vw, 104px)',
               fontWeight: 900, color: '#86efac', lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
               textShadow: '0 0 28px rgba(34,197,94,0.35)',
@@ -4874,23 +4875,25 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             </div>
           </div>
 
-          {/* Winner-Card — ein Team (schnellstes bei Delta-Tie) */}
+          {/* Winner-Card — ein Team (schnellstes bei Delta-Tie).
+              Bekommt mehr Hoehe + groessere Avatar/Schrift, weil der Gewinner
+              wichtiger ist als die nackte Loesungszahl. */}
           <div style={{
-            flex: '1 1 0',
+            flex: '1.45 1 0',
             background: winner ? `linear-gradient(135deg, ${winner.team.color}22, ${winner.team.color}08)` : 'rgba(255,255,255,0.04)',
             border: winner ? `2.5px solid ${winner.team.color}66` : '2px solid rgba(255,255,255,0.08)',
             borderRadius: 26,
-            padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
-            boxShadow: winner ? `0 0 36px ${winner.team.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : '0 8px 32px rgba(0,0,0,0.4)',
+            padding: 'clamp(18px, 2.4vh, 32px) clamp(22px, 2.4vw, 36px)',
+            boxShadow: winner ? `0 0 48px ${winner.team.color}3d, inset 0 1px 0 rgba(255,255,255,0.05)` : '0 8px 32px rgba(0,0,0,0.4)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            gap: 10, minHeight: 0, overflow: 'hidden',
+            gap: 14, minHeight: 0, overflow: 'hidden',
             opacity: revealedMinIdx === 0 ? 1 : 0.12,
             filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
             transition: 'opacity 0.7s ease, filter 0.7s ease',
           }}>
             <div style={{
-              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
-              letterSpacing: '0.1em', textTransform: 'uppercase',
+              fontSize: 'clamp(14px, 1.3vw, 20px)', fontWeight: 900, color: '#cbd5e1',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
             }}>
               🏆 {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
             </div>
@@ -4900,27 +4903,28 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               </div>
             ) : (
               <div style={{
-                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 18,
+                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 22,
                 minWidth: 0,
                 animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
               }}>
-                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(80px, 9vw, 140px)'} style={{
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(110px, 12vw, 180px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 24px ${winner.team.color}66`,
+                  boxShadow: `0 0 32px ${winner.team.color}77`,
                   animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                 }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{
-                    fontSize: 'clamp(28px, 3.4vw, 56px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.1,
+                    fontSize: 'clamp(36px, 4.2vw, 68px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    textShadow: `0 0 22px ${winner.team.color}55`,
                   }}>{winner.team.name}</div>
                   <div style={{
-                    fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 800, color: '#cbd5e1', marginTop: 4,
+                    fontSize: 'clamp(22px, 2.5vw, 36px)', fontWeight: 800, color: '#e2e8f0', marginTop: 8,
                     fontVariantNumeric: 'tabular-nums',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {fmt(winner.num)}
-                    <span style={{ color: '#64748b', fontWeight: 700, marginLeft: 6 }}>
+                    <span style={{ color: '#94a3b8', fontWeight: 700, marginLeft: 8 }}>
                       {winner.delta === 0
                         ? (lang === 'en' ? '· exact!' : '· genau!')
                         : `· Δ ${fmt(winner.delta)}`}

@@ -951,91 +951,91 @@ type RulesSlide = {
   showTree?: boolean;
 };
 
-const RULES_SLIDES_DE: RulesSlide[] = [
-  {
-    icon: '🏆',
-    title: 'Das Ziel',
-    color: '#3B82F6',
-    lines: [
-      'Sammelt Felder — das größte zusammenhängende Gebiet gewinnt.',
-    ],
-  },
-  {
-    icon: '⚡',
-    title: 'So läuft\'s',
-    color: '#8B5CF6',
-    lines: [
-      '3–4 Runden · 5 Kategorien',
-      'Richtige Antwort → Feld setzen',
-      'Bei Gleichstand entscheidet Tempo.',
-    ],
-  },
-  {
-    icon: '🔓',
-    title: 'Neue Fähigkeiten',
-    color: '#F59E0B',
-    lines: [
-      'Jede Runde bringt etwas Neues:',
-      'Runde 2: Klauen',
-      'Runde 3: Bombe & Schild',
-      'Finale: Tauschen & Stapeln',
-    ],
-    showTree: true,
-  },
-  {
-    icon: '🔄',
-    title: 'Comeback',
-    color: '#10B981',
-    lines: [
-      'Die Letzten werden die Ersten sein — oder wie war das?',
-      'Vor dem Finale gibt\'s eine Aufholchance. Überraschung!',
-    ],
-    extra: 'Viel Spaß — möge das beste Team gewinnen! 🎉',
-  },
-];
+function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
+  const abilityLines = totalPhases === 3
+    ? ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Finale (Runde 3): Bombe, Schild & Sanduhr-Sperre']
+    : ['Jede Runde bringt etwas Neues:', 'Runde 2: Klauen', 'Runde 3: Bombe, Schild & Sanduhr-Sperre', 'Finale: Tauschen & Stapeln'];
+  return [
+    {
+      icon: '🏆',
+      title: 'Das Ziel',
+      color: '#3B82F6',
+      lines: [
+        'Sammelt Felder — das größte zusammenhängende Gebiet gewinnt.',
+      ],
+    },
+    {
+      icon: '⚡',
+      title: 'So läuft\'s',
+      color: '#8B5CF6',
+      lines: [
+        `${totalPhases} Runden · 5 Kategorien`,
+        'Richtige Antwort → Feld setzen',
+        'Bei Gleichstand entscheidet Tempo.',
+      ],
+    },
+    {
+      icon: '🔓',
+      title: 'Neue Fähigkeiten',
+      color: '#F59E0B',
+      lines: abilityLines,
+      showTree: true,
+    },
+    {
+      icon: '🔄',
+      title: 'Comeback',
+      color: '#10B981',
+      lines: [
+        'Die Letzten werden die Ersten sein — oder wie war das?',
+        'Vor dem Finale gibt\'s eine Aufholchance. Überraschung!',
+      ],
+      extra: 'Viel Spaß — möge das beste Team gewinnen! 🎉',
+    },
+  ];
+}
 
-const RULES_SLIDES_EN: RulesSlide[] = [
-  {
-    icon: '🏆',
-    title: 'The Goal',
-    color: '#3B82F6',
-    lines: [
-      'Claim cells — biggest connected area wins.',
-    ],
-  },
-  {
-    icon: '⚡',
-    title: 'How It Works',
-    color: '#8B5CF6',
-    lines: [
-      '3–4 rounds · 5 categories',
-      'Right answer → place a cell',
-      'Tie? Speed decides.',
-    ],
-  },
-  {
-    icon: '🔓',
-    title: 'New Abilities',
-    color: '#F59E0B',
-    lines: [
-      'Each round adds something:',
-      'Round 2: Steal',
-      'Round 3: Bomb & Shield',
-      'Final: Swap & Stack',
-    ],
-    showTree: true,
-  },
-  {
-    icon: '🔄',
-    title: 'Comeback',
-    color: '#10B981',
-    lines: [
-      'The last shall be first — or so they say.',
-      'Before the final: a catch-up for last place. Surprise!',
-    ],
-    extra: 'Good luck — may the best team win! 🎉',
-  },
-];
+function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
+  const abilityLines = totalPhases === 3
+    ? ['Each round adds something:', 'Round 2: Steal', 'Final (Round 3): Bomb, Shield & Sand Lock']
+    : ['Each round adds something:', 'Round 2: Steal', 'Round 3: Bomb, Shield & Sand Lock', 'Final: Swap & Stack'];
+  return [
+    {
+      icon: '🏆',
+      title: 'The Goal',
+      color: '#3B82F6',
+      lines: [
+        'Claim cells — biggest connected area wins.',
+      ],
+    },
+    {
+      icon: '⚡',
+      title: 'How It Works',
+      color: '#8B5CF6',
+      lines: [
+        `${totalPhases} rounds · 5 categories`,
+        'Right answer → place a cell',
+        'Tie? Speed decides.',
+      ],
+    },
+    {
+      icon: '🔓',
+      title: 'New Abilities',
+      color: '#F59E0B',
+      lines: abilityLines,
+      showTree: true,
+    },
+    {
+      icon: '🔄',
+      title: 'Comeback',
+      color: '#10B981',
+      lines: [
+        'The last shall be first — or so they say.',
+        'Before the final: a catch-up for last place. Surprise!',
+      ],
+      extra: 'Good luck — may the best team win! 🎉',
+    },
+  ];
+}
 
 /** Mini grid example for rules slides */
 function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string }) {
@@ -1648,7 +1648,8 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
 
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const slides = lang === 'en' ? RULES_SLIDES_EN : RULES_SLIDES_DE;
+  const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
+  const slides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
   // idx<0 = Overlay-Phase (Willkommen/Regel-Intro). Nichts rendern, damit der
@@ -2395,8 +2396,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     },
     3: {
       emoji: '💣',
-      de: ['Wählt eure Aktion frei', 'Bombe & Schild freigeschaltet!'],
-      en: ['Choose your action freely', 'Bomb & Shield unlocked!'],
+      de: ['Wählt eure Aktion frei', 'Bombe, Schild & Sanduhr-Sperre freigeschaltet!'],
+      en: ['Choose your action freely', 'Bomb, Shield & Sand Lock unlocked!'],
     },
     4: {
       emoji: '🔄',

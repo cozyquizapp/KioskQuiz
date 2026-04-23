@@ -3031,15 +3031,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       )}
 
       {/* Phase 3/4 FREE: action menu (Plan v2)
-          R3: PLACE / STEAL / BANN (frei) / SCHILD (max 2 pro Spiel)
-          R4: STEAL / SWAP / STAPEL (kein Place mehr) */}
+          R3: STEAL / BANN (frei) / SCHILD (1 Feld, max 2 pro Spiel)
+          R4: STEAL / SWAP / STAPEL
+          Setzen gibt es ab R3 nicht mehr — Felder nur ueber Klauen/Swap. */}
       {showFreeMenu && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-          {phase < 4 && hasFreeCell && (
-            <CozyBtn color="#22C55E" onClick={() => chooseFreeAction('PLACE')}>
-              {lang === 'de' ? '📍 2 Felder setzen' : '📍 Place 2 cells'}
-            </CozyBtn>
-          )}
           <CozyBtn color="#EF4444" onClick={() => chooseFreeAction('STEAL')}>
             {lang === 'de' ? '⚡ Feld klauen' : '⚡ Steal a cell'}
           </CozyBtn>

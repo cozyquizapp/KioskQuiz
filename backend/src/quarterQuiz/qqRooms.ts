@@ -1421,7 +1421,9 @@ export function qqChooseFreeAction(
     room.pendingAction = 'STEAL_1';
 
   } else if (action === 'PLACE') {
-    if (room.gamePhaseIndex >= 4) throw new QQError('WRONG_PHASE', 'In der letzten Runde gibt es keine Platzierung mehr.');
+    // Setzen ist nur in R1+R2 erlaubt. Ab R3 zaehlen nur noch Free-Actions
+    // (Klauen / Bann / Schild in R3, Klauen / Tauschen / Stapeln in R4).
+    if (room.gamePhaseIndex >= 3) throw new QQError('WRONG_PHASE', 'Ab Runde 3 gibt es keine Platzierung mehr.');
     if (!hasFreeCell) throw new QQError('NO_FREE_CELL', 'Keine freien Felder mehr.');
     room.pendingAction = 'PLACE_2';
     room.teamPhaseStats[teamId].placementsLeft = 2;

@@ -1232,7 +1232,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
           /* Rule reminder */
           (() => {
             const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
-              1: { emoji: '🏁', de: ['1 Feld setzen', 'Baut euer Quartier auf!'], en: ['Place 1 tile', 'Build your quarter!'] },
+              1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
               2: { emoji: '⚔️', de: ['2 Felder + Klauen!'], en: ['2 tiles + Stealing!'] },
               3: { emoji: '⏳', de: ['Freie Aktionswahl', 'Bann & Schild!'], en: ['Free action choice', 'Ban & Shield!'] },
               4: { emoji: '🔄', de: ['Tauschen & Stapeln!'], en: ['Swap & Stack!'] },

@@ -2465,8 +2465,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const ROUND_RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
     1: {
       emoji: '🏁',
-      de: ['1 Feld setzen nach richtiger Antwort', 'Baut euer Quartier auf!'],
-      en: ['Place 1 tile after a correct answer', 'Build your quarter!'],
+      de: ['1 Feld setzen nach richtiger Antwort', 'Sichert euch eure ersten Felder!'],
+      en: ['Place 1 tile after a correct answer', 'Claim your first cells!'],
     },
     2: {
       emoji: '⚔️',

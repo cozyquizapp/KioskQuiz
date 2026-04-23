@@ -85,7 +85,11 @@ const FF = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const QQ_ROOM = 'default';
 
-/** In 'both' mode, alternate between de and en every 8 s with a fade transition. */
+/** In 'both' mode, alternate between de and en with a fade transition.
+ *  Intervall war frueher 8s — fuehlte sich hektisch an, weil DE und EN oft
+ *  unterschiedlich lange Texte sind und der Container bei jedem Wechsel
+ *  resized. 12s gibt mehr Lese-Zeit pro Sprache und reduziert die Frequenz
+ *  der Layout-Shifts entsprechend. */
 function useLangFlip(serverLang: string): 'de' | 'en' {
   const [flip, setFlip] = useState(false);
   useEffect(() => {
@@ -94,7 +98,7 @@ function useLangFlip(serverLang: string): 'de' | 'en' {
       return;
     }
     setFlip(false); // always start with DE on new slide
-    const iv = setInterval(() => setFlip(f => !f), 8000);
+    const iv = setInterval(() => setFlip(f => !f), 12000);
     return () => clearInterval(iv);
   }, [serverLang]);
   if (serverLang === 'de') return 'de';

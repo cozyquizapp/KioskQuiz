@@ -48,7 +48,8 @@ function useLangFlip(serverLang: string): 'de' | 'en' {
       return;
     }
     setFlip(false);
-    const iv = setInterval(() => setFlip(f => !f), 8000);
+    // 8s → 12s: Layout-Shifts beim DE/EN-Wechsel waren zu hektisch.
+    const iv = setInterval(() => setFlip(f => !f), 12000);
     return () => clearInterval(iv);
   }, [serverLang]);
   if (serverLang === 'de') return 'de';

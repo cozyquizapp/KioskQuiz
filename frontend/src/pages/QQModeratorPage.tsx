@@ -621,6 +621,35 @@ export default function QQModeratorPage() {
         </div>
       )}
 
+      {/* Autoplay-Toggle — IMMER sichtbar in LOBBY (Setup + Lobby-Subphase),
+          damit der Test-Mode schon vor dem Setup-Abschluss aktivierbar ist. */}
+      {joined && s && s.phase === 'LOBBY' && (
+        <div style={{
+          maxWidth: 1100, margin: '0 auto 12px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 10, flexWrap: 'wrap',
+          padding: '10px 16px', borderRadius: 10,
+          background: autoplayEnabled ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${autoplayEnabled ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+          fontSize: 13, fontWeight: 700, color: autoplayEnabled ? '#86efac' : '#94a3b8',
+        }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <input
+              type="checkbox"
+              checked={autoplayEnabled}
+              onChange={e => setAutoplayEnabled(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <span>🤖 Autoplay-Modus (Test ohne Space)</span>
+          </label>
+          {autoplayEnabled && (
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
+              · advances Phasen automatisch · Pause-Button erscheint im Banner waehrend des Spiels
+            </span>
+          )}
+        </div>
+      )}
+
       {joined && s && s.phase === 'LOBBY' && !setupDone && (
         <SetupView
           s={s}
@@ -642,30 +671,6 @@ export default function QQModeratorPage() {
 
       {joined && s && s.phase === 'LOBBY' && setupDone && (
         <>
-          {/* Autoplay-Toggle (Test-Modus) — sichtbar in der Lobby */}
-          <div style={{
-            maxWidth: 1100, margin: '0 auto 12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '10px 16px', borderRadius: 10,
-            background: autoplayEnabled ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${autoplayEnabled ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
-            fontSize: 13, fontWeight: 700, color: autoplayEnabled ? '#86efac' : '#94a3b8',
-          }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-              <input
-                type="checkbox"
-                checked={autoplayEnabled}
-                onChange={e => setAutoplayEnabled(e.target.checked)}
-                style={{ width: 16, height: 16, cursor: 'pointer' }}
-              />
-              <span>🤖 Autoplay-Modus (Test ohne Space)</span>
-            </label>
-            {autoplayEnabled && (
-              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
-                · advances Phasen automatisch · Pause-Button erscheint im Spiel
-              </span>
-            )}
-          </div>
           <LobbyView
             s={s}
             drafts={drafts}

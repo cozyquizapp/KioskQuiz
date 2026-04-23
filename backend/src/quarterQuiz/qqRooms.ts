@@ -1803,55 +1803,51 @@ export function qqSandLockCell(
   finishPlacement(room);
 }
 
-// ── Phase 3: Schild (max 2 pro Spiel: größtes eigenes Cluster schützen) ──
-// Kein Target-Pick nötig: findet das größte zusammenhängende Team-Cluster
-// und markiert alle Zellen als shielded. Schild hält bis Spielende.
-export function qqShieldCluster(
+// ── Phase 3: Schild (max 2 pro Spiel: 1 spezifisches eigenes Feld schützen) ──
+// Spieler wählt das Ziel-Feld; nur diese eine Zelle wird `shielded = true`.
+// Schild hält bis Spielende. Frühere Variante "schütze ganzes Cluster" wurde
+// abgelöst — fühlte sich pay-to-win-mäßig an, weil 1 Schild 6+ Felder absicherte.
+export function qqShieldCell(
   room: QQRoomState,
-  teamId: string
+  teamId: string,
+  row: number,
+  col: number
 ): void {
   assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
   if (room.pendingAction !== 'SHIELD_1') {
     throw new QQError('WRONG_ACTION', 'Schild-Modus nicht aktiv.');
   }
-  // BFS: größte zusammenhängende Komponente des Teams finden.
-  const size = room.gridSize;
-  const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
-  let bestCells: Array<{ row: number; col: number }> = [];
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      if (visited[r][c]) continue;
-      if (room.grid[r][c].ownerId !== teamId) { visited[r][c] = true; continue; }
-      const comp: Array<{ row: number; col: number }> = [];
-      const queue: Array<[number, number]> = [[r, c]];
-      visited[r][c] = true;
-      while (queue.length > 0) {
-        const [cr, cc] = queue.shift()!;
-        comp.push({ row: cr, col: cc });
-        const nbrs: Array<[number, number]> = [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]];
-        for (const [nr, nc] of nbrs) {
-          if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
-          if (visited[nr][nc]) continue;
-          if (room.grid[nr][nc].ownerId !== teamId) continue;
-          visited[nr][nc] = true;
-          queue.push([nr, nc]);
-        }
-      }
-      if (comp.length > bestCells.length) bestCells = comp;
-    }
+  if (row < 0 || row >= room.gridSize || col < 0 || col >= room.gridSize) {
+    throw new QQError('OUT_OF_RANGE', 'Feld außerhalb des Spielbretts.');
   }
-  if (bestCells.length === 0) {
-    throw new QQError('NO_OWN_CELL', 'Keine eigenen Felder zum Schützen.');
+  const cell = room.grid[row][col];
+  if (cell.ownerId !== teamId) {
+    throw new QQError('NOT_OWN_CELL', 'Schild nur auf eigenen Feldern.');
   }
-  for (const { row, col } of bestCells) {
-    room.grid[row][col].shielded = true;
+  if (cell.shielded) {
+    throw new QQError('ALREADY_SHIELDED', 'Feld ist bereits geschützt.');
   }
-  room.shieldedCells.push(...bestCells);
+  cell.shielded = true;
+  room.shieldedCells.push({ row, col });
   const stats = room.teamPhaseStats[teamId];
   stats.shieldsUsed = (stats.shieldsUsed ?? 0) + 1;
   updateTerritories(room);
   finishPlacement(room);
+}
+
+/** @deprecated Backwards-compat: jetzt verlangt `qqShieldCell` row/col.
+ *  Alte Aufrufer sollten die spezifische Zelle übergeben. */
+export function qqShieldCluster(
+  room: QQRoomState,
+  teamId: string,
+  row?: number,
+  col?: number
+): void {
+  if (row == null || col == null) {
+    throw new QQError('TARGET_REQUIRED', 'Schild benötigt jetzt ein Ziel-Feld (row/col).');
+  }
+  qqShieldCell(room, teamId, row, col);
 }
 
 // ── Comeback (before Phase 3) ─────────────────────────────────────────────────

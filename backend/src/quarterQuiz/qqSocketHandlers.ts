@@ -12,7 +12,7 @@ import {
   QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload, QQSetEnable3DPayload,
   QQSubmitAnswerPayload, QQAck,
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
-  QQShieldClusterPayload, QQSandLockCellPayload,
+  QQShieldClusterPayload, QQShieldCellPayload, QQSandLockCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
@@ -21,7 +21,7 @@ import {
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
-  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqSandLockCell, qqShieldCluster,
+  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqSandLockCell, qqShieldCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
@@ -732,8 +732,14 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       return;
     }
     if (action === 'SHIELD_1') {
+      // Dummy braucht jetzt ein konkretes Ziel (1 Schild = 1 Feld).
+      const shieldsUsed = live.teamPhaseStats[teamId]?.shieldsUsed ?? 0;
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['SHIELD'], phase, shieldsUsed,
+      });
+      if (!choice || !choice.target) { skipStuckDummy(); return; }
       try {
-        qqShieldCluster(live, teamId);
+        qqShieldCell(live, teamId, choice.target.row, choice.target.col);
         broadcastQQ(io, roomCode);
         if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
       } catch { /* skip */ }
@@ -833,9 +839,11 @@ function dispatchFreeChoice(
         if (!live2 || live2.phase !== 'PLACEMENT') return;
         if (live2.pendingFor !== teamId) return;
         try {
-          // qqChooseFreeAction('SHIELD') wendet Shield direkt an (kein SHIELD_1-Step),
-          // aber falls doch auf SHIELD_1 gewartet wird, decken wir beides ab.
-          if (live2.pendingAction === 'SHIELD_1') qqShieldCluster(live2, teamId);
+          // 1 Schild = 1 Feld (frueher: ganzes Cluster). Dummy braucht jetzt
+          // ein konkretes Target, das per `choice.target` geliefert wurde.
+          if (live2.pendingAction === 'SHIELD_1' && choice.target) {
+            qqShieldCell(live2, teamId, choice.target.row, choice.target.col);
+          }
           broadcastQQ(io, roomCode);
           if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
         } catch { /* skip */ }
@@ -1589,15 +1597,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Phase 3: Schild (größtes eigenes Cluster bis Spielende, max 2 pro Team)
-    socket.on('qq:shieldCluster', (payload: QQShieldClusterPayload, ack?: unknown) => {
+    // Phase 3: Schild (1 spezifisches eigenes Feld, max 2 pro Team, hält bis Spielende).
+    // Neuer Event-Name `qq:shieldCell` mit row/col; alter `qq:shieldCluster` bleibt als
+    // Backward-Compat (Payload jetzt aliased auf {row,col}-Variante).
+    function shieldHandler(payload: QQShieldCellPayload, ack?: unknown) {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqShieldCluster(room, payload.teamId);
+        qqShieldCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
-    });
+    }
+    socket.on('qq:shieldCell',    shieldHandler);
+    socket.on('qq:shieldCluster', shieldHandler);
 
     // ── Rules presentation ──────────────────────────────────────────────────
     socket.on('qq:startRules', (payload: QQStartRulesPayload, ack?: unknown) => {

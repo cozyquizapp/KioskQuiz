@@ -2750,15 +2750,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
     await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
-    if (action === 'SHIELD') {
-      // Schild schützt automatisch das größte eigene Cluster — kein Feld-Pick nötig.
-      await emit('qq:shieldCluster', { roomCode, teamId: myTeamId });
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
-      setSelecting(false);
-      setFreeMode(null);
-      return;
-    }
-    // Always go directly to grid selection — skip the extra confirm step
+    // SHIELD: frueher Auto-Apply auf groesstes Cluster, jetzt 1-Feld-Pick
+    // (analog SANDUHR/STAPEL) — also einfach Grid oeffnen.
     setSelecting(true);
   }
 
@@ -2811,6 +2804,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       if (cell.ownerId !== myTeamId || cell.stuck) return;
       await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
+      setSelecting(false); return;
+    }
+
+    // SCHILD: 1 eigenes Feld auswaehlen (nicht bereits geschuetzt)
+    if (isShield) {
+      if (cell.ownerId !== myTeamId || cell.shielded) return;
+      await emit('qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
       setSelecting(false); return;
     }
 
@@ -2931,6 +2932,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isSwapComeback) return !!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || s.grid[swapFirst.r][swapFirst.c].ownerId !== cell.ownerId);
     if (isSwapOne) return swapFirst ? (!!cell.ownerId && cell.ownerId !== myTeamId && !cell.shielded) : cell.ownerId === myTeamId;
     if (isStuck)    return cell.ownerId === myTeamId && !cell.stuck;
+    if (isShield)   return cell.ownerId === myTeamId && !cell.shielded;
     if (isSandLock) return !(cell.sandLockTtl && cell.sandLockTtl > 0)
       && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded;
     if (isSteal)    return !!cell.ownerId && cell.ownerId !== myTeamId && !cell.frozen && !cell.stuck && !cell.shielded;
@@ -2960,6 +2962,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
       : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
     if (isStuck) return lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)';
+    if (isShield) return lang === 'de'
+      ? 'Eigenes Feld tippen — wird bis Spielende geschützt'
+      : 'Tap one of your cells — shielded till end of game';
     if (isSandLock) return lang === 'de'
       ? 'Feld tippen (Gegner oder leer) — 3 Fragen gebannt'
       : 'Tap a cell (enemy or empty) — banned for 3 questions';
@@ -3081,6 +3086,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               {lang === 'de' ? 'Felder wählen' : 'Choose fields'}
             </span>
           ) : isStuck ? (lang === 'de' ? '📌 Feld auswählen' : '📌 Select cell to stack')
+            : isShield ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="marker-shield" size={24} alt="Schild" />
+                {lang === 'de' ? 'Feld zum Schützen wählen' : 'Select cell to shield'}
+              </span>
+            )
             : isSandLock ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="marker-sanduhr" size={24} alt="Bann" />

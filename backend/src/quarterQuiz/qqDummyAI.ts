@@ -112,14 +112,19 @@ function enumerateActions(
   }
 
   if (kinds.includes('SHIELD') && opts.phase === 3 && (opts.shieldsUsed ?? 0) < 2) {
-    const territories = computeTerritories(grid, gridSize);
-    const ownLargest = territories[teamId]?.largest ?? 0;
-    // Nur sinnvoll ab 3er-Cluster; Wert = 0.5 * largest (defensiver Nutzen,
-    // konkurriert realistisch mit +1/+2-Aktionen). Mit Lifetime "bis Spielende"
-    // ist der Wert eigentlich höher, aber wir bleiben konservativ damit Bots nicht
-    // beide Schilde sofort verbraten.
-    if (ownLargest >= 3) {
-      choices.push({ kind: 'SHIELD', score: ownLargest * 0.5 });
+    // Seit "1 Schild = 1 Feld" braucht der Bot ein konkretes Ziel. Heuristik
+    // analog STAPEL: schütze das eigene Feld, dessen Verlust am meisten Cluster-
+    // Schaden verursacht (= Klau-Simulation, lossIfStolen). Wir bauen pro Zelle
+    // eine eigene Choice, der Wert-Mechanismus 0.5×lossIfStolen liegt im selben
+    // Range wie früher 0.5×ownLargest.
+    for (const t of ownCells) {
+      if (grid[t.row][t.col].shielded) continue;
+      const g = cloneGrid(grid);
+      g[t.row][t.col].ownerId = null;
+      g[t.row][t.col].jokerFormed = false;
+      const lossIfStolen = baseline - scoreFor(g, gridSize, teamId);
+      if (lossIfStolen <= 0) continue;
+      choices.push({ kind: 'SHIELD', target: t, score: lossIfStolen * 0.5 });
     }
   }
 

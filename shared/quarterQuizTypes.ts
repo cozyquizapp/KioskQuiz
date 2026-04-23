@@ -562,7 +562,7 @@ export type QQPendingAction =
   | 'FREE'       // Phase 3/4: team picks action (place/steal/bann/shield in R3, steal/swap/stapel in R4)
   | 'FREEZE_1'   // (legacy, unused) freeze 1 own cell for next question
   | 'SANDUHR_1'  // Phase 3: Bann — lock 1 enemy/empty cell for 3 questions (per-question free choice, no budget)
-  | 'SHIELD_1'   // Phase 3: auto-shield own largest cluster until end of game (max 2 per team)
+  | 'SHIELD_1'   // Phase 3: shield 1 own cell (player picks target) until end of game (max 2 per team)
   | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
   | 'STAPEL_1'   // Phase 4: stapeln - pick own cell (permanently frozen, 2 pts)
   | 'COMEBACK';  // before final phase: comeback team acts
@@ -586,7 +586,11 @@ export interface QQSwapCellsPayload      { roomCode: string; teamId: string; row
 export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)
 export interface QQFreezeCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQSandLockCellPayload   { roomCode: string; teamId: string; row: number; col: number; }
-export interface QQShieldClusterPayload  { roomCode: string; teamId: string; }
+/** Schild: schützt 1 eigenes Feld (Spieler wählt Target). Max 2 pro Team pro Spiel.
+ *  Frühere Variante "shield largest cluster" ist abgelöst — daher row/col Pflicht.
+ *  Alter Name `QQShieldClusterPayload` als Alias für Backward-Compat behalten. */
+export interface QQShieldCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
+export type QQShieldClusterPayload = QQShieldCellPayload;
 export interface QQStapelCellPayload     { roomCode: string; teamId: string; row: number; col: number; }  // center of plus (Stapeln)
 export interface QQStartRulesPayload     { roomCode: string; }
 export interface QQRulesNextPayload      { roomCode: string; }

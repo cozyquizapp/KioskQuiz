@@ -701,11 +701,13 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     }
 
     // ── FREE (Phase 3/4 volle Auswahl, Plan v2) ────────────────────────────
-    // R3: STEAL / SHIELD (max 2 pro Spiel) / SANDUHR (=Bann, frei wählbar)
-    // R4: STEAL / STAPEL / SWAP
-    // Setzen gibt es ab R3 nicht mehr — Felder kommen nur via Klauen/Swap rein.
+    // R3: PLACE (solange freie Felder) / STEAL / SHIELD (max 2 pro Spiel) /
+    //     SANDUHR (=Bann, frei wählbar)
+    // R4: STEAL / STAPEL / SWAP (kein PLACE mehr — letzte Runde)
     if (action === 'FREE') {
-      const kinds: DummyActionKind[] = ['STEAL'];
+      const kinds: DummyActionKind[] = [];
+      if (phase < 4) kinds.push('PLACE'); // PLACE bis inkl. R3, in R4 zu
+      kinds.push('STEAL');
       if (phase === 3) {
         kinds.push('SANDUHR'); // Bann
         if (shieldsUsed < 2) kinds.push('SHIELD');

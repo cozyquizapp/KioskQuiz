@@ -5015,7 +5015,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     iconAnchor: [36, 36] as any,
   }), []);
 
-  const makeTeamIcon = (color: string, emoji: string) => L.divIcon({
+  const makeTeamIcon = (color: string, imageUrl: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
       width: 48px; height: 48px; border-radius: 50%;
@@ -5023,9 +5023,14 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       border: 4px solid ${color};
       box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}66;
       display: flex; align-items: center; justify-content: center;
-      font-size: 26px; line-height: 1;
+      overflow: hidden;
       animation: qqTeamPinDrop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
-    ">${emoji}</div>`,
+    ">
+      <img src="${imageUrl}" alt="" draggable="false"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+        style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
+      <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
+    </div>`,
     iconSize: [48, 48] as any,
     iconAnchor: [24, 24] as any,
   });
@@ -5063,7 +5068,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
               <Marker
                 key={p.teamId}
                 position={[lat, lng] as any}
-                icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).emoji)}
+                icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).image, qqGetAvatar(team.avatarId).emoji)}
               />
             );
           })}
@@ -5147,7 +5152,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center', fontWeight: 900, fontFamily: "'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
                   <QQTeamAvatar avatarId={team.avatarId} size={'clamp(26px, 2.8vw, 38px)'} />
                   <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
@@ -5159,7 +5164,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
-                  <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
+                  <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}>📍 {dist}</span>
                 </div>
               );
             });

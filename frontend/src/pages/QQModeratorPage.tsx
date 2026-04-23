@@ -30,6 +30,20 @@ export default function QQModeratorPage() {
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   const startingRef = useRef(false); // prevent double-fire on startGame
 
+  // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
+  // User-Wunsch: zum Testen ohne Space-Pressen. Setting in localStorage,
+  // Pause-Button im Banner, Auto-Advance pro Phase nach festen Wartezeiten.
+  const [autoplayEnabled, setAutoplayEnabledState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('qqAutoplayMode') === '1';
+  });
+  const [autoplayPaused, setAutoplayPaused] = useState(false);
+  const setAutoplayEnabled = (v: boolean) => {
+    setAutoplayEnabledState(v);
+    try { window.localStorage.setItem('qqAutoplayMode', v ? '1' : '0'); } catch {}
+    if (!v) setAutoplayPaused(false);
+  };
+
   // Disable Cozy gradient mesh on QQ pages
   useEffect(() => {
     document.body.classList.add('qq-active');
@@ -153,6 +167,98 @@ export default function QQModeratorPage() {
   const setSetupDoneRef = useRef(setSetupDone);
   setSetupDoneRef.current = setSetupDone;
   const cheatsheetOpenRef = useRef(false);
+
+  // ── Autoplay-Tick: Auto-Advance pro Phase (wirkt nur lokal, simuliert Space) ─
+  useEffect(() => {
+    if (!autoplayEnabled || autoplayPaused) return;
+    const s = state;
+    if (!s) return;
+    // Game-Over → Autoplay aus, Loop nicht endlos.
+    if (s.phase === 'GAME_OVER' || s.phase === 'THANKS' || s.phase === 'LOBBY') return;
+
+    const q = s.currentQuestion;
+    const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
+    const mapValidPinCount = s.answers?.filter((a: any) => {
+      const parts = String(a.text ?? '').split(',');
+      return Number.isFinite(Number(parts[0])) && Number.isFinite(Number(parts[1]));
+    }).length ?? 0;
+    const mapMaxStep = 1 + mapValidPinCount + 1;
+    const mapRevealInProgress = isMapReveal && (s.mapRevealStep ?? 0) < mapMaxStep;
+
+    const isMuchoReveal = q?.category === 'MUCHO' && s.phase === 'QUESTION_REVEAL';
+    let muchoNonEmptyKey = 0;
+    if (isMuchoReveal && q?.options) {
+      for (let i = 0; i < q.options.length; i++) {
+        if (s.answers?.some((a: any) => a.text === String(i))) muchoNonEmptyKey++;
+      }
+    }
+    const muchoRevealInProgress = isMuchoReveal && (s.muchoRevealStep ?? 0) < muchoNonEmptyKey + 1;
+    const isZvZReveal = q?.category === 'ZEHN_VON_ZEHN' && s.phase === 'QUESTION_REVEAL';
+    const zvzRevealInProgress = isZvZReveal && (s.zvzRevealStep ?? 0) < 2;
+    const isCheeseReveal = q?.category === 'CHEESE' && s.phase === 'QUESTION_REVEAL';
+    const cheeseRevealInProgress = isCheeseReveal && (s.cheeseRevealStep ?? 0) < 2;
+
+    let delayMs = 0;
+    let action: (() => void) | null = null;
+    switch (s.phase) {
+      case 'RULES': {
+        delayMs = 6000;
+        const totalSlides = 4;
+        action = () => {
+          if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
+          else emit('qq:rulesNext', { roomCode });
+        };
+        break;
+      }
+      case 'TEAMS_REVEAL':
+        delayMs = 8000;
+        action = () => emit('qq:teamsRevealFinish', { roomCode });
+        break;
+      case 'PHASE_INTRO':
+        delayMs = 5000;
+        action = () => emit('qq:activateQuestion', { roomCode });
+        break;
+      case 'QUESTION_ACTIVE':
+        // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.
+        if (s.allAnswered) {
+          delayMs = 1500;
+          action = () => emit('qq:revealAnswer', { roomCode });
+        }
+        break;
+      case 'QUESTION_REVEAL':
+        delayMs = 4500;
+        action = () => {
+          if (mapRevealInProgress) emit('qq:mapRevealStep', { roomCode });
+          else if (muchoRevealInProgress) emit('qq:muchoRevealStep', { roomCode });
+          else if (zvzRevealInProgress) emit('qq:zvzRevealStep', { roomCode });
+          else if (cheeseRevealInProgress) emit('qq:cheeseRevealStep', { roomCode });
+          else emit('qq:startPlacement', { roomCode });
+        };
+        break;
+      case 'PLACEMENT':
+        // Auto-next nur wenn KEIN Team mehr was setzen muss.
+        if (!s.pendingFor) {
+          delayMs = 2000;
+          action = () => emit('qq:nextQuestion', { roomCode });
+        }
+        break;
+      case 'COMEBACK_CHOICE':
+        delayMs = 4000;
+        action = () => emit('qq:comebackIntroStep', { roomCode });
+        break;
+      case 'PAUSED':
+        // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
+        break;
+    }
+    if (!action) return;
+    const handle = window.setTimeout(action, delayMs);
+    return () => window.clearTimeout(handle);
+  }, [
+    autoplayEnabled, autoplayPaused, roomCode, emit,
+    state?.phase, state?.rulesSlideIndex, state?.allAnswered,
+    state?.muchoRevealStep, state?.zvzRevealStep, state?.cheeseRevealStep, state?.mapRevealStep,
+    state?.pendingFor, state?.currentQuestion?.id, state?.answers?.length,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
@@ -452,7 +558,21 @@ export default function QQModeratorPage() {
           <span style={badgeStyle('#3B82F6')}>CozyQuiz</span>
           <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Autoplay Pause/Resume — sichtbar nur wenn aktiv und im Spiel */}
+          {autoplayEnabled && joined && state && state.phase !== 'LOBBY' && state.phase !== 'GAME_OVER' && state.phase !== 'THANKS' && (
+            <button
+              onClick={() => setAutoplayPaused(v => !v)}
+              title={autoplayPaused ? 'Autoplay fortsetzen' : 'Autoplay pausieren'}
+              style={{
+                padding: '6px 14px', borderRadius: 8,
+                border: `1px solid ${autoplayPaused ? 'rgba(251,191,36,0.5)' : 'rgba(34,197,94,0.5)'}`,
+                background: autoplayPaused ? 'rgba(251,191,36,0.18)' : 'rgba(34,197,94,0.15)',
+                color: autoplayPaused ? '#FDE68A' : '#86efac', cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
+              }}
+            >{autoplayPaused ? '▶ Autoplay' : '⏸ Autoplay'}</button>
+          )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
@@ -521,17 +641,43 @@ export default function QQModeratorPage() {
       )}
 
       {joined && s && s.phase === 'LOBBY' && setupDone && (
-        <LobbyView
-          s={s}
-          drafts={drafts}
-          selectedDraftId={selectedDraftId}
-          phases={phases}
-          timerInput={timerInput}
-          roomCode={roomCode}
-          emit={emit}
-          startGame={startGame}
-          backToSetup={() => setSetupDone(false)}
-        />
+        <>
+          {/* Autoplay-Toggle (Test-Modus) — sichtbar in der Lobby */}
+          <div style={{
+            maxWidth: 1100, margin: '0 auto 12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '10px 16px', borderRadius: 10,
+            background: autoplayEnabled ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${autoplayEnabled ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+            fontSize: 13, fontWeight: 700, color: autoplayEnabled ? '#86efac' : '#94a3b8',
+          }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <input
+                type="checkbox"
+                checked={autoplayEnabled}
+                onChange={e => setAutoplayEnabled(e.target.checked)}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <span>🤖 Autoplay-Modus (Test ohne Space)</span>
+            </label>
+            {autoplayEnabled && (
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
+                · advances Phasen automatisch · Pause-Button erscheint im Spiel
+              </span>
+            )}
+          </div>
+          <LobbyView
+            s={s}
+            drafts={drafts}
+            selectedDraftId={selectedDraftId}
+            phases={phases}
+            timerInput={timerInput}
+            roomCode={roomCode}
+            emit={emit}
+            startGame={startGame}
+            backToSetup={() => setSetupDone(false)}
+          />
+        </>
       )}
 
       {joined && s && s.phase !== 'LOBBY' && (

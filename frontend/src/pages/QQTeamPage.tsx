@@ -1243,7 +1243,15 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
                 <div style={{ fontSize: 13, fontWeight: 800, color, letterSpacing: '0.06em', marginBottom: 6 }}>
                   {phaseName}
                 </div>
-                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>{r.emoji}</div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44 }}>
+                  {s.gamePhaseIndex === 3 ? (
+                    <QQIcon slug="marker-sanduhr" size={44} alt="Bann" />
+                  ) : s.gamePhaseIndex === 4 ? (
+                    <QQIcon slug="marker-swap" size={44} alt="Swap" />
+                  ) : (
+                    r.emoji
+                  )}
+                </div>
                 {s.gamePhaseIndex > 1 && (
                   <div style={{
                     display: 'inline-block', padding: '3px 14px', borderRadius: 999,

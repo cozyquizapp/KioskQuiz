@@ -124,10 +124,19 @@ function enumerateActions(
   }
 
   if (kinds.includes('STAPEL') && opts.phase >= 4) {
+    // Stapel ändert die Cluster-Größe nicht → naive scoreFor-Diff wäre 0.
+    // Stattdessen: "Was verliere ich, wenn jemand mir dieses Feld wegnimmt?"
+    // Wir simulieren Klau (ownerId=null) und messen den Cluster-Verlust.
+    // Stapeln verhindert das. Multiplikator 0.6 dämpft (nicht jeder Klau passiert).
+    // Bonus-Faktor 0.15 für Total-Felder, damit der Bot nicht ein Single-Tile
+    // stapelt (das schützt nichts Wertvolles).
     for (const t of ownStapable) {
       const g = cloneGrid(grid);
-      g[t.row][t.col].stuck = true;
-      choices.push({ kind: 'STAPEL', target: t, score: scoreFor(g, gridSize, teamId) - baseline });
+      g[t.row][t.col].ownerId = null;
+      g[t.row][t.col].jokerFormed = false;
+      const lossIfStolen = baseline - scoreFor(g, gridSize, teamId); // ≥0 normalerweise
+      const protectionValue = Math.max(0, lossIfStolen) * 0.6;
+      choices.push({ kind: 'STAPEL', target: t, score: protectionValue });
     }
   }
 

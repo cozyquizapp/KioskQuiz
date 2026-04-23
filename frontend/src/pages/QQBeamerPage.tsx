@@ -2768,12 +2768,21 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
-          {/* Big emoji */}
+          {/* Big emoji / Marker-PNG für R3 (Bann) + R4 (Swap) */}
           <div style={{
             fontSize: 'clamp(72px, 12vw, 140px)',
             animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
             position: 'relative', zIndex: 5,
-          }}>{roundRules.emoji}</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {s.gamePhaseIndex === 3 ? (
+              <QQIcon slug="marker-sanduhr" size={'clamp(72px, 12vw, 140px)'} alt="Bann" />
+            ) : s.gamePhaseIndex === 4 ? (
+              <QQIcon slug="marker-swap" size={'clamp(72px, 12vw, 140px)'} alt="Swap" />
+            ) : (
+              roundRules.emoji
+            )}
+          </div>
 
           {/* "NEU" badge (skip for round 1) */}
           {s.gamePhaseIndex > 1 && (

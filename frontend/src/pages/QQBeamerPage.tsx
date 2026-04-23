@@ -383,11 +383,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   }, [s.questionIndex]);
 
   // ── Slide transition: gameshow-style flash-sweep between phase groups ──
-  // Group QUESTION_ACTIVE + QUESTION_REVEAL together (reveal is not a "new slide")
-  // RULES sub-steps (Welcome -2 / RulesIntro -1 / Regel-Folie 0..) zählen als
-  // eigene Slides, damit der Flash-Sweep auch bei diesen Übergängen feuert.
+  // Bis 2026-04-23 wurden QUESTION_ACTIVE + QUESTION_REVEAL zusammengruppiert
+  // ("reveal ist keine neue Slide"). Das fuehlte sich beim Uebergang aber als
+  // harter Cut an. Jetzt triggert der Flash auch beim Active→Reveal-Wechsel,
+  // damit die Aufloesung visuell "reingefadet" wirkt.
+  // RULES sub-steps (Welcome -2 / RulesIntro -1 / Regel-Folie 0..) zaehlen als
+  // eigene Slides, damit der Flash-Sweep auch bei diesen Uebergaengen feuert.
   const phaseGroup = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
-    ? `Q-${s.currentQuestion?.id ?? s.questionIndex}`
+    ? `Q-${s.phase === 'QUESTION_REVEAL' ? 'reveal' : 'active'}-${s.currentQuestion?.id ?? s.questionIndex}`
     : s.phase === 'PLACEMENT'
       ? `PLACE-${s.questionIndex}`
       : s.phase === 'RULES'

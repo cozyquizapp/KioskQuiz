@@ -8368,6 +8368,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const isFrozen = cell.frozen;
             const isStuck = cell.stuck;
             const isShielded = !!cell.shielded && !cell.stuck;
+            const sandTtl = cell.sandLockTtl ?? 0;
+            const isSandLocked = sandTtl > 0;
             const cellRadius = Math.max(4, cellSize * 0.16);
             return (
               <div key={`${r}-${c}`} style={{
@@ -8534,6 +8536,47 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       zIndex: 6,
                       fontVariantNumeric: 'tabular-nums',
                     }}>×2</div>
+                  </>
+                )}
+                {/* Sanduhr-Sperre overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle */}
+                {isSandLocked && (
+                  <>
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: cellRadius,
+                      border: '2px solid rgba(168,85,247,0.85)',
+                      background: 'linear-gradient(135deg, rgba(168,85,247,0.22), rgba(126,34,206,0.12))',
+                      boxShadow: 'inset 0 0 16px rgba(168,85,247,0.4)',
+                      animation: 'frostPulse 2.5s ease-in-out infinite',
+                      pointerEvents: 'none', zIndex: 2,
+                    }} />
+                    {/* Sanduhr-PNG zentriert auf der Zelle */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      pointerEvents: 'none', zIndex: 4,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
+                    }}>
+                      <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.7)} alt="Sanduhr-Sperre" />
+                    </div>
+                    {/* Countdown-Chip oben rechts */}
+                    <div style={{
+                      position: 'absolute', top: -4, right: -4,
+                      minWidth: Math.max(16, cellSize * 0.32),
+                      height: Math.max(16, cellSize * 0.32),
+                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
+                      borderRadius: '999px',
+                      background: 'linear-gradient(135deg, #A855F7, #6B21A8)',
+                      border: '2px solid #2E1065',
+                      color: '#FFFFFF',
+                      fontSize: Math.max(10, cellSize * 0.22),
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      letterSpacing: '-0.02em',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(168,85,247,0.6)',
+                      zIndex: 6,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>{sandTtl}</div>
                   </>
                 )}
                 {/* Shield overlay — cyan aura + Shield-PNG corner */}

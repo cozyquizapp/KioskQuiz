@@ -1401,7 +1401,7 @@ function pendingActionForPhase(
 export function qqChooseFreeAction(
   room: QQRoomState,
   teamId: string,
-  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'BOMB' | 'SHIELD' | 'SWAP' | 'STAPEL'
+  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'BOMB' | 'SANDUHR' | 'SHIELD' | 'SWAP' | 'STAPEL'
 ): void {
   assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
@@ -1438,6 +1438,16 @@ export function qqChooseFreeAction(
       cell.ownerId !== null && cell.ownerId !== teamId && !cell.stuck && !cell.shielded));
     if (!hasBombable) throw new QQError('NO_TARGET', 'Kein gegnerisches Feld bombenfähig.');
     room.pendingAction = 'BOMB_1';
+
+  } else if (action === 'SANDUHR') {
+    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Sanduhr-Sperre erst ab Phase 3.');
+    const stats = room.teamPhaseStats[teamId];
+    if (stats.sandUsed) throw new QQError('SAND_USED', 'Sanduhr-Sperre bereits genutzt in dieser Phase.');
+    // Ziel: Gegnerfelder ODER leere Felder (jeweils nicht stuck/shielded/schon gesperrt).
+    const hasTarget = room.grid.some(row => row.some(cell =>
+      cell.ownerId !== teamId && !cell.stuck && !cell.shielded && !cell.sandLockTtl));
+    if (!hasTarget) throw new QQError('NO_TARGET', 'Kein sperrbares Feld vorhanden.');
+    room.pendingAction = 'SANDUHR_1';
 
   } else if (action === 'SHIELD') {
     if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Schild erst ab Phase 3.');
@@ -1477,6 +1487,9 @@ export function qqPlaceCell(
   const cell = room.grid[row][col];
   if (cell.ownerId !== null) {
     throw new QQError('CELL_OCCUPIED', 'Dieses Feld ist bereits belegt.');
+  }
+  if (cell.sandLockTtl && cell.sandLockTtl > 0) {
+    throw new QQError('SAND_LOCKED', 'Feld ist durch Sanduhr-Sperre blockiert.');
   }
 
   const action = room.pendingAction;
@@ -1796,6 +1809,44 @@ export function qqBombCell(
   finishPlacement(room);
 }
 
+// ── Phase 3/4: Sanduhr-Sperre (einmal pro Phase: 1 Feld neutralisieren + 3 Fragen sperren) ──
+// Ziel: gegnerisches ODER leeres Feld. Stuck/Shielded blockt. Nach 3 Fragen wird
+// die Sperre aufgehoben → Feld ist leer und kann normal besetzt werden.
+export function qqSandLockCell(
+  room: QQRoomState,
+  teamId: string,
+  row: number,
+  col: number
+): void {
+  assertPhase(room, ['PLACEMENT']);
+  assertPendingFor(room, teamId);
+  assertValidCoord(room, row, col);
+  if (room.pendingAction !== 'SANDUHR_1') {
+    throw new QQError('WRONG_ACTION', 'Sanduhr-Modus nicht aktiv.');
+  }
+  const cell = room.grid[row][col];
+  if (cell.ownerId === teamId) {
+    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht gesperrt werden.');
+  }
+  if (cell.stuck) {
+    throw new QQError('STUCK_CELL', 'Gestapeltes Feld lässt sich nicht sperren.');
+  }
+  if (cell.shielded) {
+    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Sanduhr prallt ab.');
+  }
+  if (cell.sandLockTtl && cell.sandLockTtl > 0) {
+    throw new QQError('ALREADY_LOCKED', 'Feld ist bereits gesperrt.');
+  }
+  cell.ownerId     = null;
+  cell.frozen      = false;
+  cell.jokerFormed = false;
+  cell.sandLockTtl = 3;
+  room.teamPhaseStats[teamId].sandUsed = true;
+  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
+  updateTerritories(room);
+  finishPlacement(room);
+}
+
 // ── Phase 3/4: Schild (einmal pro Phase: größtes eigenes Cluster schützen) ──
 // Kein Target-Pick nötig: findet das größte zusammenhängende Team-Cluster
 // und markiert alle Zellen als shielded. Shield läuft am Phasenende aus.
@@ -2029,6 +2080,13 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
     if (cell) cell.shielded = false;
   }
   room.shieldedCells   = [];
+  // Sanduhr-Sperren laufen ebenfalls am Phasenende aus (analog Shields).
+  for (let r = 0; r < room.gridSize; r++) {
+    for (let c = 0; c < room.gridSize; c++) {
+      const cell = room.grid[r][c];
+      if (cell.sandLockTtl) delete cell.sandLockTtl;
+    }
+  }
 
   // Reset per-phase stats — but preserve jokersEarned (it's per-game, not per-phase)
   for (const id of room.joinOrder) {
@@ -2105,6 +2163,18 @@ export function qqNextQuestion(room: QQRoomState): void {
     if (cell && !cell.stuck) cell.frozen = false;
   }
   room.frozenCells = [];
+
+  // Sanduhr-Sperre: Countdown auf allen gesperrten Feldern um 1 reduzieren.
+  // Bei TTL=0 wird die Sperre aufgehoben → Feld ist normal leer.
+  for (let r = 0; r < room.gridSize; r++) {
+    for (let c = 0; c < room.gridSize; c++) {
+      const cell = room.grid[r][c];
+      if (cell.sandLockTtl && cell.sandLockTtl > 0) {
+        cell.sandLockTtl -= 1;
+        if (cell.sandLockTtl <= 0) delete cell.sandLockTtl;
+      }
+    }
+  }
 
   room.questionIndex   = nextIndex;
   room.currentQuestion = room.questions[nextIndex] ?? null;

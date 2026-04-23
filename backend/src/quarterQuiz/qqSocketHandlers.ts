@@ -12,7 +12,7 @@ import {
   QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload, QQSetEnable3DPayload,
   QQSubmitAnswerPayload, QQAck,
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
-  QQBombCellPayload, QQShieldClusterPayload,
+  QQBombCellPayload, QQShieldClusterPayload, QQSandLockCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
@@ -21,7 +21,7 @@ import {
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
-  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqBombCell, qqShieldCluster,
+  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqBombCell, qqSandLockCell, qqShieldCluster,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
@@ -586,6 +586,7 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     const stats = live.teamPhaseStats[teamId];
     const bombUsed = !!stats?.bombUsed;
     const shieldUsed = !!stats?.shieldUsed;
+    const sandUsed = !!stats?.sandUsed;
 
     const skipStuckDummy = (): void => {
       qqSkipCurrentPlacement(live);
@@ -702,10 +703,10 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     // ── FREE (Phase 3+ volle Auswahl) ───────────────────────────────────────
     if (action === 'FREE') {
       const kinds: DummyActionKind[] = ['PLACE', 'STEAL'];
-      if (phase >= 3) { kinds.push('BOMB'); kinds.push('SHIELD'); }
+      if (phase >= 3) { kinds.push('BOMB'); kinds.push('SHIELD'); kinds.push('SANDUHR'); }
       if (phase >= 4) { kinds.push('STAPEL'); kinds.push('SWAP'); }
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: kinds, phase, bombUsed, shieldUsed,
+        availableKinds: kinds, phase, bombUsed, shieldUsed, sandUsed,
       });
       if (!choice) { skipStuckDummy(); return; }
       dispatchFreeChoice(io, roomCode, teamId, choice);
@@ -720,6 +721,18 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       if (!choice) { skipStuckDummy(); return; }
       try {
         qqBombCell(live, teamId, choice.target!.row, choice.target!.col);
+        broadcastQQ(io, roomCode);
+        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      } catch { /* skip */ }
+      return;
+    }
+    if (action === 'SANDUHR_1') {
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['SANDUHR'], phase, sandUsed: false,
+      });
+      if (!choice) { skipStuckDummy(); return; }
+      try {
+        qqSandLockCell(live, teamId, choice.target!.row, choice.target!.col);
         broadcastQQ(io, roomCode);
         if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
       } catch { /* skip */ }
@@ -813,6 +826,21 @@ function dispatchFreeChoice(
         if (live2.pendingFor !== teamId || live2.pendingAction !== 'BOMB_1') return;
         try {
           qqBombCell(live2, teamId, choice.target!.row, choice.target!.col);
+          broadcastQQ(io, roomCode);
+          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+        } catch { /* skip */ }
+      }, 900);
+      return;
+    }
+    if (choice.kind === 'SANDUHR') {
+      qqChooseFreeAction(live, teamId, 'SANDUHR');
+      broadcastQQ(io, roomCode);
+      setTimeout(() => {
+        const live2 = getQQRoom(roomCode);
+        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (live2.pendingFor !== teamId || live2.pendingAction !== 'SANDUHR_1') return;
+        try {
+          qqSandLockCell(live2, teamId, choice.target!.row, choice.target!.col);
           broadcastQQ(io, roomCode);
           if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
         } catch { /* skip */ }
@@ -1578,6 +1606,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqBombCell(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Phase 3+: Sanduhr-Sperre (Gegner-/Leerfeld → 3 Fragen blockiert, 1× pro Phase)
+    socket.on('qq:sandLockCell', (payload: QQSandLockCellPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqSandLockCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

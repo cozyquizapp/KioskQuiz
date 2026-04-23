@@ -99,6 +99,9 @@ export interface QQCell {
   frozen?: boolean;        // frozen for 1 question (cannot be stolen)
   stuck?: boolean;         // permanently frozen via Stapeln (counts 2 pts, cannot be stolen)
   shielded?: boolean;      // protected until end of current phase (cannot be stolen/swapped/bombed)
+  sandLockTtl?: number;    // Sanduhr-Sperre: cell is neutralized for N more questions
+                           //   (set to 3 on lock, decremented at each question advance,
+                           //   cleared when 0 — cell becomes a normal empty cell)
 }
 
 export type QQGrid = QQCell[][];  // [row][col]
@@ -189,6 +192,7 @@ export interface QQTeamPhaseStats {
   pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first
   bombUsed?: boolean;         // Phase 3+: team has used its 1× Bomb this phase
   shieldUsed?: boolean;       // Phase 3+: team has used its 1× Schild this phase
+  sandUsed?: boolean;         // Phase 3+: team has used its 1× Sanduhr-Sperre this phase
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────
@@ -560,6 +564,7 @@ export type QQPendingAction =
   | 'FREE'       // Phase 3/4: team picks action (place/steal/bomb/shield/swap/stapel)
   | 'FREEZE_1'   // (legacy, unused) freeze 1 own cell for next question
   | 'BOMB_1'     // Phase 3+: bomb 1 enemy cell → neutral (one-shot per phase)
+  | 'SANDUHR_1'  // Phase 3+: Sanduhr-Sperre — lock 1 enemy/empty cell for 3 questions (one-shot per phase)
   | 'SHIELD_1'   // Phase 3+: auto-shield own largest cluster until phase end (no target pick)
   | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
   | 'STAPEL_1'   // Phase 4: stapeln - pick own cell (permanently frozen, 2 pts)
@@ -584,6 +589,7 @@ export interface QQSwapCellsPayload      { roomCode: string; teamId: string; row
 export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)
 export interface QQFreezeCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQBombCellPayload       { roomCode: string; teamId: string; row: number; col: number; }
+export interface QQSandLockCellPayload   { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQShieldClusterPayload  { roomCode: string; teamId: string; }
 export interface QQStapelCellPayload     { roomCode: string; teamId: string; row: number; col: number; }  // center of plus (Stapeln)
 export interface QQStartRulesPayload     { roomCode: string; }

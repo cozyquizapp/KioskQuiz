@@ -7,7 +7,7 @@
 import { QQGrid, QQCell } from '../../../shared/quarterQuizTypes';
 import { computeTerritories } from './qqBfs';
 
-export type DummyActionKind = 'PLACE' | 'STEAL' | 'BOMB' | 'SHIELD' | 'STAPEL' | 'SWAP';
+export type DummyActionKind = 'PLACE' | 'STEAL' | 'BOMB' | 'SHIELD' | 'STAPEL' | 'SWAP' | 'SANDUHR';
 
 export interface DummyActionChoice {
   kind: DummyActionKind;
@@ -22,6 +22,7 @@ export interface DummyEnumerateOpts {
   phase: number;
   bombUsed?: boolean;
   shieldUsed?: boolean;
+  sandUsed?: boolean;
   // Beschränkt STEAL/COMEBACK auf bestimmte Zielzellen (z.B. nur Leader-Team)
   stealFilter?: (cell: QQCell, row: number, col: number) => boolean;
 }
@@ -99,6 +100,25 @@ function enumerateActions(
       g[t.row][t.col].ownerId = null;
       g[t.row][t.col].jokerFormed = false;
       choices.push({ kind: 'BOMB', target: t, score: scoreFor(g, gridSize, teamId) - baseline });
+    }
+  }
+
+  if (kinds.includes('SANDUHR') && opts.phase >= 3 && !opts.sandUsed) {
+    // Sanduhr-Sperre: gegnerisches ODER leeres Feld neutralisieren + 3 Fragen blockieren.
+    // Ziel-Score = wie Bombe (sofortiger Effekt), keine Bonus-Bewertung für die TTL,
+    // weil das schwer zu quantifizieren ist. Reicht aus damit Dummies's gelegentlich nutzen.
+    for (const t of oppBombable) {
+      if (grid[t.row][t.col].sandLockTtl) continue;
+      const g = cloneGrid(grid);
+      g[t.row][t.col].ownerId = null;
+      g[t.row][t.col].jokerFormed = false;
+      choices.push({ kind: 'SANDUHR', target: t, score: scoreFor(g, gridSize, teamId) - baseline });
+    }
+    for (const t of empty) {
+      if (grid[t.row][t.col].sandLockTtl) continue;
+      // Leeres Feld sperren: kein direkter Score-Gain (own.largest unverändert),
+      // aber Gegner kann's nicht setzen → kleiner Defensiv-Bonus.
+      choices.push({ kind: 'SANDUHR', target: t, score: 0.3 });
     }
   }
 

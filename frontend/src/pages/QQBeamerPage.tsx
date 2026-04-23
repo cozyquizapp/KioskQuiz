@@ -5273,7 +5273,12 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           touchZoom={false}
           style={{ width: '100%', height: '100%', background: '#0a1120' }}
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          {/* CartoDB Voyager — bunte, freundliche Karte mit Labels darueber.
+              War vorher 'dark_all' (grau-schwarz) — User wollte was Schoeneres. */}
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            subdomains={['a', 'b', 'c', 'd']}
+          />
           <QQMapResizer trigger={showRanking} />
           <QQFitBoundsOnTrigger bounds={bounds} trigger={step} />
           {showTarget && (

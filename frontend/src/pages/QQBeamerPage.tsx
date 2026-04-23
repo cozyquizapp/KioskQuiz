@@ -941,7 +941,7 @@ function ConfettiOverlay() {
 
 type AbilityBadge = {
   /** PNG-Slug aus QQIcon, falls vorhanden — sonst nur Emoji. */
-  slug?: 'marker-shield' | 'marker-sanduhr';
+  slug?: 'marker-shield' | 'marker-sanduhr' | 'marker-swap';
   emoji: string;
   label: string;
   accent: string;
@@ -999,7 +999,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
             { emoji: '⚡', label: 'Klauen',   accent: '#EF4444' },
             { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',    accent: '#A855F7' },
             { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild',  accent: '#06B6D4' },
-            { emoji: '🔄', label: 'Tauschen', accent: '#8B5CF6' },
+            { slug: 'marker-swap',    emoji: '🔄', label: 'Tauschen', accent: '#8B5CF6' },
             { emoji: '📌', label: 'Stapeln',  accent: '#F59E0B' },
           ],
     },
@@ -1055,7 +1055,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
             { emoji: '⚡', label: 'Steal',  accent: '#EF4444' },
             { slug: 'marker-sanduhr', emoji: '⏳', label: 'Ban',    accent: '#A855F7' },
             { slug: 'marker-shield',  emoji: '🛡️', label: 'Shield', accent: '#06B6D4' },
-            { emoji: '🔄', label: 'Swap',  accent: '#8B5CF6' },
+            { slug: 'marker-swap',    emoji: '🔄', label: 'Swap',  accent: '#8B5CF6' },
             { emoji: '📌', label: 'Stack', accent: '#F59E0B' },
           ],
     },
@@ -2821,6 +2821,28 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     }}>{b.sub}</div>
                   </div>
                 ))}
+              </div>
+            )}
+            {/* Round 4: Swap-Marker-Card (Stapel-Demo folgt darunter) */}
+            {s.gamePhaseIndex === 4 && (
+              <div style={{
+                marginTop: 20, display: 'flex', justifyContent: 'center',
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
+              }}>
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: '14px 24px', borderRadius: 18,
+                  background: '#8B5CF618', border: '2px solid #8B5CF655',
+                  boxShadow: '0 0 24px #8B5CF633', minWidth: 200,
+                }}>
+                  <QQIcon slug="marker-swap" size={'clamp(56px, 7vw, 96px)'} alt={lang === 'en' ? 'Swap' : 'Tauschen'} />
+                  <div style={{ fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900, color: '#8B5CF6', letterSpacing: '0.04em' }}>
+                    {lang === 'en' ? 'Swap' : 'Tauschen'}
+                  </div>
+                  <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700, color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3 }}>
+                    {lang === 'en' ? 'Trade your tile for an opponent\u2019s' : 'Eigenes Feld gegen Gegner-Feld tauschen'}
+                  </div>
+                </div>
               </div>
             )}
             {/* Round 4: Plus-shape stacking example — showing the 5 plus-tiles + stacked tile */}

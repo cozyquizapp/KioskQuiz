@@ -5,10 +5,11 @@ import { useState, type CSSProperties } from 'react';
 // Fallback bei Lade-Fehler: Emoji (passt nicht zum Avatar-Stil, aber besser als nichts).
 
 export type QQIconSlug =
-  // Marker (Cell-Status)
+  // Marker (Cell-Status / Action-Badges)
   | 'marker-frost'
   | 'marker-shield'
   | 'marker-sanduhr'
+  | 'marker-swap'
   // Kategorien
   | 'cat-schaetzchen'
   | 'cat-mucho'
@@ -25,6 +26,7 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'marker-frost':      '❄️',
   'marker-shield':     '🛡️',
   'marker-sanduhr':    '⏳',
+  'marker-swap':       '🔄',
   'cat-schaetzchen':   '🎯',
   'cat-mucho':         '🅰️',
   'cat-bunte-tuete':   '🎁',

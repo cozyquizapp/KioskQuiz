@@ -939,6 +939,13 @@ function ConfettiOverlay() {
 // RULES PRESENTATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
+type AbilityBadge = {
+  /** PNG-Slug aus QQIcon, falls vorhanden — sonst nur Emoji. */
+  slug?: 'marker-shield' | 'marker-sanduhr';
+  emoji: string;
+  label: string;
+  accent: string;
+};
 type RulesSlide = {
   icon: string;
   title: string;
@@ -949,6 +956,8 @@ type RulesSlide = {
   grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
   /** Rendert stattdessen den Fortschrittsbaum (Phasen + Fragen-Punkte). */
   showTree?: boolean;
+  /** Zeigt Ability-Badges (Bann, Schild, Tauschen, Stapeln) als Icon-Strip unter den Lines. */
+  abilities?: AbilityBadge[];
 };
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
@@ -980,6 +989,19 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: '#F59E0B',
       lines: abilityLines,
       showTree: true,
+      abilities: totalPhases === 3
+        ? [
+            { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
+            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',   accent: '#A855F7' },
+            { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild', accent: '#06B6D4' },
+          ]
+        : [
+            { emoji: '⚡', label: 'Klauen',   accent: '#EF4444' },
+            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',    accent: '#A855F7' },
+            { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild',  accent: '#06B6D4' },
+            { emoji: '🔄', label: 'Tauschen', accent: '#8B5CF6' },
+            { emoji: '📌', label: 'Stapeln',  accent: '#F59E0B' },
+          ],
     },
     {
       icon: '🔄',
@@ -1023,6 +1045,19 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: '#F59E0B',
       lines: abilityLines,
       showTree: true,
+      abilities: totalPhases === 3
+        ? [
+            { emoji: '⚡', label: 'Steal',  accent: '#EF4444' },
+            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Ban',    accent: '#A855F7' },
+            { slug: 'marker-shield',  emoji: '🛡️', label: 'Shield', accent: '#06B6D4' },
+          ]
+        : [
+            { emoji: '⚡', label: 'Steal',  accent: '#EF4444' },
+            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Ban',    accent: '#A855F7' },
+            { slug: 'marker-shield',  emoji: '🛡️', label: 'Shield', accent: '#06B6D4' },
+            { emoji: '🔄', label: 'Swap',  accent: '#8B5CF6' },
+            { emoji: '📌', label: 'Stack', accent: '#F59E0B' },
+          ],
     },
     {
       icon: '🔄',
@@ -1742,6 +1777,31 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 }}>{line}</span>
               </div>
             ))}
+            {/* Ability-Badges (Bann, Schild, Tauschen, …) als Icon-Strip */}
+            {slide.abilities && slide.abilities.length > 0 && (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                gap: 'clamp(10px, 1.4vw, 20px)', marginTop: 'clamp(10px, 1.6vh, 22px)',
+              }}>
+                {slide.abilities.map((b, i) => (
+                  <div key={`${b.label}-${i}`} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: 'clamp(10px, 1.2vh, 16px) clamp(14px, 1.6vw, 22px)', borderRadius: 16,
+                    background: `${b.accent}1a`, border: `2px solid ${b.accent}55`,
+                    boxShadow: `0 0 18px ${b.accent}33`, minWidth: 'clamp(96px, 11vw, 140px)',
+                    animation: `contentReveal 0.4s ease ${0.4 + i * 0.08}s both`,
+                  }}>
+                    {b.slug
+                      ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5vw, 72px)'} alt={b.label} />
+                      : <span style={{ fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1 }}>{b.emoji}</span>}
+                    <div style={{
+                      fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+                      color: b.accent, letterSpacing: '0.04em',
+                    }}>{b.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Mini grid example */}
@@ -2730,6 +2790,39 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {rule}
               </div>
             ))}
+            {/* Round 3: Bann & Schild — Marker-Icons groß zeigen */}
+            {s.gamePhaseIndex === 3 && (
+              <div style={{
+                marginTop: 24, display: 'flex', justifyContent: 'center', gap: 28,
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
+              }}>
+                {[
+                  { slug: 'marker-sanduhr' as const, label: lang === 'en' ? 'Ban' : 'Bann',
+                    sub: lang === 'en' ? '3 questions locked' : '3 Fragen gesperrt',
+                    accent: '#A855F7' },
+                  { slug: 'marker-shield' as const, label: lang === 'en' ? 'Shield' : 'Schild',
+                    sub: lang === 'en' ? 'till end of game · max 2' : 'bis Spielende · max 2',
+                    accent: '#06B6D4' },
+                ].map(b => (
+                  <div key={b.slug} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    padding: '16px 24px', borderRadius: 18,
+                    background: `${b.accent}18`, border: `2px solid ${b.accent}55`,
+                    boxShadow: `0 0 24px ${b.accent}33`, minWidth: 180,
+                  }}>
+                    <QQIcon slug={b.slug} size={'clamp(56px, 7vw, 96px)'} alt={b.label} />
+                    <div style={{
+                      fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                      color: b.accent, letterSpacing: '0.04em',
+                    }}>{b.label}</div>
+                    <div style={{
+                      fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                      color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3,
+                    }}>{b.sub}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Round 4: Plus-shape stacking example — showing the 5 plus-tiles + stacked tile */}
             {s.gamePhaseIndex === 4 && (() => {
               // Plus shape in a 3x3 grid: positions 1 (top), 3 (left), 4 (center), 5 (right), 7 (bottom)

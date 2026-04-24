@@ -7869,12 +7869,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const showAction = step >= 2;
 
   const actionTextDe = hl
-    ? `Spielt „Mehr oder Weniger" ${hl.rounds}×. Pro richtige Antwort klaut ihr 1 Feld vom aktuellen 1. Platz.`
+    ? `„Mehr oder Weniger" — pro richtige Antwort klaut ihr 1 Feld vom aktuellen 1. Platz.`
     : (leaderTeams.length === 1
         ? `Klaut 2 Felder von ${leaderTeams[0]?.name ?? 'dem Führenden'}.`
         : `Klaut je 1 Feld von jedem der ${leaderTeams.length} Führenden.`);
   const actionTextEn = hl
-    ? `Play "More or Less" ${hl.rounds}×. Each correct answer steals 1 cell from the current leader.`
+    ? `"More or Less" — each correct answer steals 1 cell from the current leader.`
     : (leaderTeams.length === 1
         ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
         : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`);
@@ -8419,6 +8419,46 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           position: 'relative', zIndex: 5,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
         }}>
+          {/* Prominenter Rundenzaehler — nur bei H/L, macht die tatsaechliche
+              Rundenzahl (1-3) visuell unmissverstaendlich. */}
+          {hl && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+            }}>
+              <div style={{
+                fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+                color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
+              }}>
+                {lang === 'en' ? 'In this run' : 'In diesem Durchgang'}
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'baseline', gap: 12,
+              }}>
+                <span style={{
+                  fontSize: 'clamp(68px, 8vw, 120px)', fontWeight: 900,
+                  color: '#FBBF24', lineHeight: 1,
+                  textShadow: '0 0 40px rgba(251,191,36,0.55)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>{hl.rounds}</span>
+                <span style={{
+                  fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: '#FDE68A',
+                }}>
+                  {hl.rounds === 1
+                    ? (lang === 'en' ? 'round' : 'Runde')
+                    : (lang === 'en' ? 'rounds' : 'Runden')}
+                </span>
+              </div>
+              {/* Kleine Dots als zusaetzlicher Count-Indikator */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                {Array.from({ length: hl.rounds }).map((_, i) => (
+                  <span key={i} style={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    background: '#FBBF24', boxShadow: '0 0 10px rgba(251,191,36,0.6)',
+                  }} />
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{
             padding: '24px 40px', borderRadius: 22, textAlign: 'center',
             background: cardBg,

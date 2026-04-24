@@ -3605,13 +3605,31 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
       <CozyCard borderColor="#FBBF24">
         <div style={{ textAlign: 'center', padding: '6px 0' }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>⚡</div>
-          <div style={{ fontWeight: 900, color: '#FDE68A', fontSize: 17, marginBottom: 6 }}>
+          <div style={{ fontWeight: 900, color: '#FDE68A', fontSize: 17, marginBottom: 10 }}>
             {lang === 'en' ? 'Comeback!' : 'Comeback!'}
+          </div>
+          {/* Prominenter Rundenzaehler fuer das Team */}
+          <div style={{
+            display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 6,
+            marginBottom: 8,
+          }}>
+            <span style={{
+              fontSize: 44, fontWeight: 900, color: '#FBBF24', lineHeight: 1,
+              textShadow: '0 0 20px rgba(251,191,36,0.55)',
+              fontVariantNumeric: 'tabular-nums',
+            }}>{hl.rounds}</span>
+            <span style={{
+              fontSize: 15, fontWeight: 900, color: '#FDE68A',
+            }}>
+              {hl.rounds === 1
+                ? (lang === 'en' ? 'Round' : 'Runde')
+                : (lang === 'en' ? 'Rounds' : 'Runden')}
+            </span>
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#cbd5e1', lineHeight: 1.4 }}>
             {lang === 'en'
-              ? `You play "More or Less" ${hl.rounds}× — each correct = 1 cell stolen from the leader.`
-              : `Du spielst „Mehr oder Weniger" ${hl.rounds}× — pro Richtig = 1 Feld vom 1. Platz.`}
+              ? `"More or Less" — each correct = 1 cell stolen from the leader.`
+              : `„Mehr oder Weniger" — pro Richtig = 1 Feld vom 1. Platz.`}
           </div>
         </div>
       </CozyCard>

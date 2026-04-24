@@ -5491,7 +5491,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   useEffect(() => {
     if (cat !== 'ZEHN_VON_ZEHN' || !revealed) { setZvzRevealed(new Set()); return; }
     if (zvzStep === 0) { setZvzRevealed(new Set()); return; }
-    // Step 1+: kaskadieren; sobald Step 1 aktiv sind alle höchsten Bets (nacheinander) sichtbar.
+    // Step 2+ (Lock): alle Top-Bets bleiben stationaer sichtbar — KEIN Reset
+    // und keine neue Cascade, sonst "erscheinen" die Chips nochmal obwohl
+    // sie schon da sind.
+    if (zvzStep >= 2) {
+      setZvzRevealed(new Set(zvzNonEmptyOptions));
+      return;
+    }
+    // Step 1: Kaskade pro Option (200ms Initial + 550ms pro Option).
     const timers: number[] = [];
     setZvzRevealed(new Set());
     zvzNonEmptyOptions.forEach((optIdx, i) => {
@@ -5503,7 +5510,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       }, 200 + i * 550));
     });
     return () => timers.forEach(t => window.clearTimeout(t));
-  }, [cat, revealed, zvzStep, zvzNonEmptyOptions.join(','), s.sfxMuted]);
+  }, [cat, revealed, zvzStep, zvzNonEmptyOptions.join(','), s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
   // Lock-Phase (Step 2): Doppelblink auf korrekte Option, Winner-Card nach 1.2s
   const zvzLocked = cat === 'ZEHN_VON_ZEHN' && revealed && zvzStep >= 2 && q.correctOptionIndex != null;
   const [zvzWinnerReady, setZvzWinnerReady] = useState(false);

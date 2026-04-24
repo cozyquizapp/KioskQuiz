@@ -362,12 +362,12 @@ export const QQ_BEAMER_CSS = `
     0%   { transform: translateY(var(--shuffle-from, 0px)); }
     100% { transform: translateY(0); }
   }
-  /* G1 Round-End-Overlay Fade-In/Out. */
-  @keyframes roundEndOverlay {
-    0%   { opacity: 0; transform: scale(0.95); }
-    15%  { opacity: 1; transform: scale(1); }
-    75%  { opacity: 1; }
-    100% { opacity: 0; transform: scale(1.02); }
+  /* G1 Round-End-Toast — dezent von unten statt Full-Screen-Overlay. */
+  @keyframes roundEndToast {
+    0%   { opacity: 0; transform: translate(-50%, 36px); }
+    12%  { opacity: 1; transform: translate(-50%, 0); }
+    85%  { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, 18px); }
   }
   /* G2 Placement-Entry-Sweep: heller Streifen laeuft uebers Grid beim Reveal→Placement. */
   @keyframes placementSweep {

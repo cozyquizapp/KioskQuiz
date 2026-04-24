@@ -334,6 +334,9 @@ export default function QQSummaryPage() {
         </div>
       </Section>
 
+      {/* H3 Superlatives: narrative End-Game-Titel */}
+      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} />
+
       {myFunny && (
         <Section title={tr('yourMoment', lang)}>
           <div style={{
@@ -535,6 +538,141 @@ function Stat({ label, value, suffix, accent }: { label: string; value: number |
         {animated} {suffix && <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>{suffix}</span>}
       </div>
     </div>
+  );
+}
+
+// H3 Superlatives: leitet narrative Titel aus den Team-Stats ab.
+// Max 4 werden angezeigt, nur wenn sie Sinn machen (>0-Werte / eindeutig).
+function Superlatives({ teams, selectedId, lang }: {
+  teams: SummaryTeam[]; selectedId: string; lang: Lang;
+}) {
+  if (teams.length < 2) return null;
+
+  type SuperTitle = {
+    emoji: string;
+    titleDe: string; titleEn: string;
+    descDe: string; descEn: string;
+    winner: SummaryTeam;
+    metric: string; // e.g. "6 Klaus"
+    accent: string;
+  };
+  const titles: SuperTitle[] = [];
+
+  // Meister-Klauer
+  const stealsSorted = [...teams].sort((a, b) => b.stealsUsed - a.stealsUsed);
+  if (stealsSorted[0].stealsUsed >= 2 && stealsSorted[0].stealsUsed > stealsSorted[1].stealsUsed) {
+    titles.push({
+      emoji: '⚡',
+      titleDe: 'Meister-Klauer', titleEn: 'Master Thief',
+      descDe: 'meiste Klaus im Spiel', descEn: 'most steals overall',
+      winner: stealsSorted[0],
+      metric: `${stealsSorted[0].stealsUsed}× ${lang === 'de' ? 'geklaut' : 'stolen'}`,
+      accent: '#EF4444',
+    });
+  }
+  // Trefferkönig
+  const withAccuracy = teams
+    .filter(t => t.answered >= 5)
+    .map(t => ({ t, acc: t.correct / t.answered }));
+  if (withAccuracy.length > 0) {
+    withAccuracy.sort((a, b) => b.acc - a.acc);
+    const top = withAccuracy[0];
+    if (top.acc >= 0.6) {
+      titles.push({
+        emoji: '🎯',
+        titleDe: 'Trefferkönig', titleEn: 'Accuracy King',
+        descDe: 'beste Trefferquote', descEn: 'highest accuracy',
+        winner: top.t,
+        metric: `${Math.round(top.acc * 100)}%`,
+        accent: '#22C55E',
+      });
+    }
+  }
+  // Joker-Jäger
+  const jokerSorted = [...teams].sort((a, b) => b.jokersEarned - a.jokersEarned);
+  if (jokerSorted[0].jokersEarned >= 1 && jokerSorted[0].jokersEarned > (jokerSorted[1]?.jokersEarned ?? 0)) {
+    titles.push({
+      emoji: '⭐',
+      titleDe: 'Joker-Jäger', titleEn: 'Joker Hunter',
+      descDe: 'meiste Joker verdient', descEn: 'most jokers earned',
+      winner: jokerSorted[0],
+      metric: `${jokerSorted[0].jokersEarned} ⭐`,
+      accent: '#F59E0B',
+    });
+  }
+  // Territorium-König (Sieger mit dem größten zusammenhängenden Gebiet)
+  const largestSorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  if (largestSorted[0].largestConnected >= 3) {
+    titles.push({
+      emoji: '🏆',
+      titleDe: 'Territorium-König', titleEn: 'Territory King',
+      descDe: 'größtes Cluster', descEn: 'biggest cluster',
+      winner: largestSorted[0],
+      metric: `${largestSorted[0].largestConnected} ${lang === 'de' ? 'Felder' : 'fields'}`,
+      accent: '#3B82F6',
+    });
+  }
+
+  if (titles.length === 0) return null;
+
+  const sectionTitle = lang === 'de' ? 'Ehrentitel' : 'Honors';
+  return (
+    <Section title={sectionTitle}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+        {titles.map((title, i) => {
+          const av = qqGetAvatar(title.winner.avatarId);
+          const isMe = title.winner.id === selectedId;
+          return (
+            <div key={`${title.titleDe}-${i}`} style={{
+              padding: '12px 14px', borderRadius: 14,
+              background: `linear-gradient(135deg, ${title.accent}22, ${title.accent}08)`,
+              border: `1.5px solid ${title.accent}66`,
+              boxShadow: `0 4px 14px ${title.accent}22`,
+              display: 'flex', flexDirection: 'column', gap: 8,
+              position: 'relative',
+            }}>
+              {isMe && (
+                <span style={{
+                  position: 'absolute', top: -8, right: -8,
+                  padding: '2px 8px', borderRadius: 999,
+                  background: '#FDE047', color: '#1c1304',
+                  fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                }}>{lang === 'de' ? 'DAS SEID IHR' : "THAT'S YOU"}</span>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>{title.emoji}</span>
+                <span style={{
+                  fontSize: 12, fontWeight: 900, color: title.accent,
+                  letterSpacing: 0.4, textTransform: 'uppercase',
+                }}>{lang === 'de' ? title.titleDe : title.titleEn}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img src={av.image} alt={av.label} style={{
+                  width: 38, height: 38, borderRadius: '50%',
+                  objectFit: 'cover', background: title.winner.color, padding: 2,
+                }} />
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 14, fontWeight: 900, color: title.winner.color,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{title.winner.name}</span>
+                  <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>
+                    {lang === 'de' ? title.descDe : title.descEn}
+                  </span>
+                </div>
+              </div>
+              <div style={{
+                fontSize: 13, fontWeight: 900, color: '#e2e8f0',
+                padding: '3px 8px', borderRadius: 6,
+                background: 'rgba(0,0,0,0.3)',
+                alignSelf: 'flex-start',
+              }}>{title.metric}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
   );
 }
 

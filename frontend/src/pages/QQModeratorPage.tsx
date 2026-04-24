@@ -58,6 +58,44 @@ export default function QQModeratorPage() {
     emit('qq:setSetupDone', { roomCode, value: v });
   };
 
+  // J1 Moderator-Toast-System: stack-basiert, zeigt Phase-Wechsel + Mark-Events.
+  type Toast = { id: number; msg: string; emoji: string; accent: string };
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(0);
+  const pushToast = (msg: string, emoji: string, accent = '#3B82F6') => {
+    const id = ++toastIdRef.current;
+    setToasts(ts => [...ts, { id, msg, emoji, accent }]);
+    setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3000);
+  };
+
+  // Phase-Wechsel als Toast quittieren (nur wenn Game laeuft).
+  const prevModPhaseRef = useRef<string | null>(null);
+  const prevModCorrectRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const prev = prevModPhaseRef.current;
+    prevModPhaseRef.current = state.phase;
+    if (!prev || prev === state.phase) return;
+    if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', '#22C55E');
+    else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', '#F59E0B');
+    else if (state.phase === 'PLACEMENT')      pushToast('Platzierungs-Phase', '📍', '#EF4444');
+    else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', '#8B5CF6');
+    else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', '#F59E0B');
+    else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', '#FBBF24');
+    else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung laeuft', '🎭', '#F97316');
+  }, [state?.phase, state?.gamePhaseIndex]);
+
+  // Winner-Mark als Toast quittieren.
+  useEffect(() => {
+    if (!state) return;
+    const prev = prevModCorrectRef.current;
+    prevModCorrectRef.current = state.correctTeamId;
+    if (state.correctTeamId && state.correctTeamId !== prev) {
+      const team = state.teams.find(t => t.id === state.correctTeamId);
+      if (team) pushToast(`${team.name} markiert`, '✓', team.color);
+    }
+  }, [state?.correctTeamId]);
+
   // Auto-join (and re-join after reconnect)
   useEffect(() => {
     if (!connected) { setJoined(false); return; }
@@ -629,6 +667,35 @@ export default function QQModeratorPage() {
       {cheatsheetOpen && (
         <HotkeyCheatsheet onClose={() => setCheatsheetOpen(false)} />
       )}
+
+      {/* J1 Toast-Stack: unten rechts, stacken wenn mehrere. */}
+      <div aria-live="polite" style={{
+        position: 'fixed', bottom: 18, right: 18, zIndex: 10000,
+        display: 'flex', flexDirection: 'column-reverse', gap: 8,
+        pointerEvents: 'none',
+      }}>
+        {toasts.map(toast => (
+          <div key={toast.id} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 16px', borderRadius: 12,
+            background: 'rgba(15,12,9,0.92)',
+            border: `1.5px solid ${toast.accent}`,
+            boxShadow: `0 6px 20px rgba(0,0,0,0.5), 0 0 18px ${toast.accent}44`,
+            fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
+            color: '#e2e8f0',
+            animation: 'modToastSlide 3s ease-in-out both',
+            maxWidth: 320,
+            pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: 18 }}>{toast.emoji}</span>
+            <span>{toast.msg}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* J2 Idle-Hint: wenn Moderator >15s auf einer Phase sitzt, sanfter
+          Space-drueck-Reminder am unteren Rand. Space/Return dismissed ihn. */}
+      {joined && state && <IdleHint state={state} />}
 
       {!joined && connected && (
         <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
@@ -1948,6 +2015,44 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
       <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
         {labels[Math.min(step, 2)]}
       </PrimaryBtn>
+    </div>
+  );
+}
+
+// J2 IdleHint: zeigt nach 15s Inaktivitaet einen Space-drueck-Reminder.
+// Reset bei Phase-Change. Nur in Phasen wo Space sinnvoll weitergehen wuerde.
+function IdleHint({ state }: { state: QQStateUpdate }) {
+  const [visible, setVisible] = useState(false);
+  const phase = state.phase;
+  const rulesIdx = state.rulesSlideIndex ?? 0;
+  const stepKey = `${phase}|${rulesIdx}|${state.currentQuestion?.id ?? ''}|${state.comebackIntroStep ?? ''}|${state.muchoRevealStep ?? ''}|${state.zvzRevealStep ?? ''}|${state.cheeseRevealStep ?? ''}|${state.mapRevealStep ?? ''}`;
+  useEffect(() => {
+    setVisible(false);
+    const relevantPhases = ['RULES', 'PHASE_INTRO', 'QUESTION_REVEAL', 'COMEBACK_CHOICE', 'TEAMS_REVEAL'];
+    if (!relevantPhases.includes(phase)) return;
+    const t = setTimeout(() => setVisible(true), 15000);
+    return () => clearTimeout(t);
+  }, [stepKey, phase]);
+  if (!visible) return null;
+  return (
+    <div aria-hidden style={{
+      position: 'fixed', bottom: 30, left: '50%',
+      transform: 'translateX(-50%)', zIndex: 9500,
+      pointerEvents: 'none',
+      padding: '8px 20px', borderRadius: 999,
+      background: 'rgba(15,12,9,0.88)',
+      border: '1.5px solid rgba(251,191,36,0.5)',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.45), 0 0 18px rgba(251,191,36,0.25)',
+      fontSize: 13, fontWeight: 800, color: '#FDE68A',
+      display: 'flex', alignItems: 'center', gap: 10,
+      animation: 'idleHintPulse 1.8s ease-in-out infinite',
+    }}>
+      <kbd style={{
+        padding: '2px 10px', borderRadius: 6,
+        background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.6)',
+        fontFamily: 'monospace', fontSize: 11, fontWeight: 900,
+      }}>Space</kbd>
+      <span>druecken um weiter</span>
     </div>
   );
 }

@@ -796,6 +796,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Only use custom template if it has actual elements to render
   const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;
 
+  // I2 Team-Farbwelt Accent: wenn ein Team gerade aktiv ist (pendingFor oder
+  // correctTeamId), subtil team-farbigen radial-Accent in den Hintergrund.
+  const accentTeamId = s.pendingFor ?? s.correctTeamId ?? null;
+  const accentTeam = accentTeamId ? s.teams.find(t => t.id === accentTeamId) : null;
+  const teamTintColor = accentTeam?.color ?? null;
+
   return (
     <div style={{
       height: '100vh', width: '100vw',
@@ -807,6 +813,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }}>
       {/* CSS keyframes */}
       <style>{BEAMER_CSS}</style>
+
+      {/* I2 Team-Farbwelt-Accent: radial-gradient in Team-Farbe,
+          nur sichtbar wenn Team aktiv. Sehr subtil (~8% alpha), damit
+          es nicht mit Kategorie-BG kollidiert. */}
+      {teamTintColor && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1,
+          background: `radial-gradient(ellipse at 50% 50%, ${teamTintColor}14 0%, transparent 55%)`,
+          transition: 'opacity 0.7s ease',
+        }} />
+      )}
 
       {/* Grain overlay */}
       <div style={{
@@ -5912,6 +5929,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+      {/* I1 Kategorie-Partikel — subtile Drift-Glyphen im Hintergrund.
+          Key bindet an category, damit beim Kategorie-Wechsel neu gerendert wird. */}
+      {!revealed && <CategoryParticles category={cat as string} color={accent} />}
       {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
       {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
         // CHEESE Crop: offsetX/Y steuern background-position, scale steuert Zoom.
@@ -9723,6 +9743,43 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }:
     </div>
   );
 }
+
+// I1 Kategorie-Partikel: subtile Emoji-Glyphen-Drift pro Kategorie.
+// Nur in QUESTION_ACTIVE sichtbar, laeuft mit ffmove-Animation.
+const CAT_PARTICLE_GLYPHS: Record<string, string[]> = {
+  SCHAETZCHEN:   ['1', '2', '3', '?', '∞'],
+  MUCHO:         ['A', 'B', 'C', 'D'],
+  BUNTE_TUETE:   ['🎲', '🎁', '⭐'],
+  ZEHN_VON_ZEHN: ['5', '10', '⚡'],
+  CHEESE:        ['📸', '🔍'],
+};
+export const CategoryParticles = memo(function CategoryParticles({ category, color }: { category?: string; color?: string }) {
+  const glyphs = category ? CAT_PARTICLE_GLYPHS[category] : undefined;
+  if (!glyphs) return null;
+  const c = color ?? '#FEF08A';
+  return (
+    <>
+      {FF.slice(0, 10).map((f, i) => {
+        const glyph = glyphs[i % glyphs.length];
+        return (
+          <div key={`${category}-${i}`} aria-hidden style={{
+            position: 'absolute', pointerEvents: 'none', zIndex: 2,
+            left: `${f.x}%`, top: `${f.y}%`,
+            fontSize: 22, fontWeight: 900,
+            color: c, opacity: 0.12,
+            textShadow: `0 0 12px ${c}66`,
+            ['--dx' as string]: `${f.dx}px`,
+            ['--dy' as string]: `${f.dy}px`,
+            ['--dur' as string]: `${f.dur * 1.5}s`,
+            ['--del' as string]: `${f.del}s`,
+            animation: `ffmove var(--dur,8s) ease-in-out var(--del,0s) infinite`,
+            willChange: 'transform, opacity',
+          }}>{glyph}</div>
+        );
+      })}
+    </>
+  );
+});
 
 export const Fireflies = memo(function Fireflies({ color }: { color?: string } = {}) {
   const c = color ?? '#FEF08A';

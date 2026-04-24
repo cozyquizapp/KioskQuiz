@@ -6606,11 +6606,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         {highestBets.map(({ team: tm, pts, submittedAt }, bi) => {
                           const timeSec = t0 ? Math.max(0, (submittedAt - t0) / 1000) : null;
                           const isFastest = showTimePills && bi === 0;
-                          // Falsch-Option: Chips dezent dimmen (wie Mucho-Voter auf falschen Optionen)
-                          const dim = isWrong;
                           // Avatar etwas kleiner wenn viele Chips, damit kein Ueberlappen
                           const many = highestBets.length > 3;
                           const avSz = many ? 'clamp(44px, 4.6vw, 64px)' : 'clamp(52px, 5.4vw, 76px)';
+                          // Dim-Logik bewusst entfernt (User-Feedback): ZvZ-Voter-Chips
+                          // bleiben voll opak auf allen Optionen, Falsch-Markierung
+                          // laeuft nur ueber die Card selbst (Rand + Text gedimmt).
                           return (
                             <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                               position: 'relative',
@@ -6623,9 +6624,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 ? '0 0 22px rgba(251,191,36,0.55), 0 6px 14px rgba(0,0,0,0.55)'
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}66`,
                               animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
-                              opacity: dim ? 0.55 : 1,
-                              filter: dim ? 'grayscale(0.6)' : 'none',
-                              transition: 'opacity 0.4s ease, filter 0.4s ease',
                             }}>
                               <QQTeamAvatar avatarId={tm.avatarId} size={avSz} />
                               <span style={{

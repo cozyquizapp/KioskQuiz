@@ -6451,8 +6451,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               columnGap: 18,
-              rowGap: 'clamp(70px, 9vh, 110px)',
-              paddingBottom: 'clamp(48px, 6vh, 78px)',
+              rowGap: 'clamp(80px, 10vh, 120px)',
+              // paddingBottom fuer die Chips, die nun mit translateY(72%) mehr hervorstehen
+              paddingBottom: 'clamp(62px, 7.5vh, 96px)',
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
@@ -6526,17 +6527,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>
                     </div>
-                    {/* Top-Bet-Chips: haengen halb auf der unteren Card-Linie */}
+                    {/* Top-Bet-Chips: haengen UNTER der Card (nur ein kleiner Lip
+                        ueberlappt den Card-Rand). ZvZ-Cards sind flach → wenn
+                        Chips mittig auf der Linie sitzen, ueberdecken sie das Label. */}
                     {highestVisibleOpt && highestBets.length > 0 && (
                       <div style={{
-                        position: 'absolute', left: 12, right: 12, bottom: 0,
-                        transform: 'translateY(50%)',
-                        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 10,
+                        position: 'absolute', left: 8, right: 8, bottom: 0,
+                        transform: 'translateY(72%)',
+                        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
+                        justifyContent: 'center',
+                        gap: highestBets.length > 3 ? 6 : 10,
                         pointerEvents: 'none', zIndex: 5,
                       }}>
                         {highestBets.map(({ team: tm, pts, submittedAt }, bi) => {
                           const timeSec = t0 ? Math.max(0, (submittedAt - t0) / 1000) : null;
                           const isFastest = showTimePills && bi === 0;
+                          // Falsch-Option: Chips dezent dimmen (wie Mucho-Voter auf falschen Optionen)
+                          const dim = isWrong;
+                          // Avatar etwas kleiner wenn viele Chips, damit kein Ueberlappen
+                          const many = highestBets.length > 3;
+                          const avSz = many ? 'clamp(44px, 4.6vw, 64px)' : 'clamp(52px, 5.4vw, 76px)';
                           return (
                             <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                               position: 'relative',
@@ -6549,8 +6559,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 ? '0 0 22px rgba(251,191,36,0.55), 0 6px 14px rgba(0,0,0,0.55)'
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}66`,
                               animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
+                              opacity: dim ? 0.55 : 1,
+                              filter: dim ? 'grayscale(0.6)' : 'none',
+                              transition: 'opacity 0.4s ease, filter 0.4s ease',
                             }}>
-                              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(52px, 5.4vw, 76px)'} />
+                              <QQTeamAvatar avatarId={tm.avatarId} size={avSz} />
                               <span style={{
                                 fontSize: 'clamp(20px, 2.2vw, 30px)',
                                 fontWeight: 900,

@@ -1600,8 +1600,10 @@ function MuchoOptionsReveal({
     <div style={{
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: 18,
-      // genug Bottom-Padding fuer die Avatar-Reihe, die unter jeder Card haengt
+      // Row-Gap extra gross, damit die Avatar-Reihe unter A/B nicht C/D verdeckt
+      columnGap: 18,
+      rowGap: 'clamp(70px, 9vh, 110px)',
+      // genug Bottom-Padding fuer die Avatar-Reihe unter C/D
       paddingBottom: 'clamp(48px, 6vh, 78px)',
       marginBottom: 16,
       width: '100%', maxWidth: 1400,

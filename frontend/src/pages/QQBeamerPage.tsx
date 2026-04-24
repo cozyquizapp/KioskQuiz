@@ -9817,7 +9817,16 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             }}>
               {t.largestConnected}
             </span>
-            <span style={{ opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8', flexShrink: 0 }}>
+            {/* Unit-Slot mit fester Breite → „Feld" (Singular) und „Felder" (Plural)
+                starten beide an derselben linken Kante. Ohne das wackelt die
+                Zahlen-Spalte rechts bei 1 Feld vs. 6 Felder. */}
+            <span style={{
+              opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8',
+              flexShrink: 0,
+              minWidth: dense ? 62 : 78,
+              textAlign: 'left',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
               {t.largestConnected === 1 ? 'Feld' : 'Felder'}
             </span>
             {/* Float +N — knapp über der Zahl */}

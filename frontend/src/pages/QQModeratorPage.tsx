@@ -2645,6 +2645,34 @@ function SetupView({
             </button>
           </div>
 
+          {/* Comeback H/L-Mini-Game: Timer pro Runde (Mehr oder Weniger) */}
+          <div>
+            <div style={fieldLabel}>Comeback „Mehr oder Weniger" — Timer pro Runde</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="number"
+                min={3}
+                max={60}
+                value={s.comebackHLTimerSec ?? 10}
+                onChange={e => {
+                  const v = Math.max(3, Math.min(60, Number(e.target.value) || 10));
+                  emit('qq:comebackHLTimer', { roomCode, seconds: v });
+                }}
+                style={{
+                  flex: 1, padding: '7px 12px', borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'rgba(0,0,0,0.35)', color: '#e2e8f0',
+                  fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              />
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#64748b' }}>Sek</span>
+            </div>
+            <div style={{ fontSize: 10, color: '#64748b', marginTop: 4, lineHeight: 1.4 }}>
+              Zeit pro H/L-Runde beim Comeback (3-60 Sek). Default: 10 s.
+            </div>
+          </div>
+
           {/* Bestenliste-Reset — nach Test-Spielen alle Dummy-Siege aus der
               Lobby-/Pause-Rotation loeschen. Einmaliger Reset-Knopf fuer den
               Moderator. */}

@@ -7882,21 +7882,364 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const hl = s.comebackHL;
+  // H/L: alle tied-letzten Teams. Ohne H/L: Fallback auf altes 1-Team-Verhalten.
+  const hlTeams = hl ? hl.teamIds.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams : [];
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
   const teamColor = team?.color ?? '#F59E0B';
   const step = s.comebackIntroStep ?? 0;
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
-  const stealCount = leaderTeams.length === 1 ? 2 : leaderTeams.length;
   const showTeam = step >= 1;
   const showAction = step >= 2;
 
-  const actionTextDe = leaderTeams.length === 1
-    ? `Klaut 2 Felder von ${leaderTeams[0]?.name ?? 'dem Führenden'}.`
-    : `Klaut je 1 Feld von jedem der ${leaderTeams.length} Führenden.`;
-  const actionTextEn = leaderTeams.length === 1
-    ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
-    : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`;
+  const actionTextDe = hl
+    ? `Spielt „Mehr oder Weniger" ${hl.rounds}×. Pro richtige Antwort klaut ihr 1 Feld vom aktuellen 1. Platz.`
+    : (leaderTeams.length === 1
+        ? `Klaut 2 Felder von ${leaderTeams[0]?.name ?? 'dem Führenden'}.`
+        : `Klaut je 1 Feld von jedem der ${leaderTeams.length} Führenden.`);
+  const actionTextEn = hl
+    ? `Play "More or Less" ${hl.rounds}×. Each correct answer steals 1 cell from the current leader.`
+    : (leaderTeams.length === 1
+        ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
+        : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`);
+
+  // Nummer kompakt formatieren: 3800000 → 3,8M | 15000 → 15k | 300 → 300
+  const fmtHL = (n: number) => {
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
+    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';
+    if (abs >= 10_000) return Math.round(n / 1000) + 'k';
+    if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+    return n % 1 === 0 ? String(n) : n.toFixed(1);
+  };
+
+  // ── H/L-Frage-Ansicht (waehrend der Runde) ──────────────────────────────
+  if (hl && hl.phase === 'question' && hl.currentPair) {
+    const pair = hl.currentPair;
+    const hasCustom = pair.kind === 'anchor' && !!pair.customQuestion;
+    return (
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(24px, 4vh, 48px) clamp(32px, 5vw, 72px)', gap: 'clamp(18px, 2.4vh, 32px)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <Fireflies color="#FBBF2455" />
+        {/* Header: Game-Name + Runden-Indikator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap',
+          justifyContent: 'center',
+          animation: 'contentReveal 0.35s ease both',
+        }}>
+          <div style={{
+            padding: '10px 22px', borderRadius: 999,
+            background: 'rgba(251,191,36,0.14)', border: '2px solid rgba(251,191,36,0.45)',
+            color: '#FDE68A', fontWeight: 900,
+            fontSize: 'clamp(16px, 1.8vw, 24px)', letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>
+            <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'}
+          </div>
+          <div style={{
+            padding: '10px 20px', borderRadius: 14,
+            background: 'rgba(15,23,42,0.6)', border: '1.5px solid rgba(255,255,255,0.1)',
+            color: '#e2e8f0', fontWeight: 800, fontSize: 'clamp(15px, 1.6vw, 22px)',
+          }}>
+            {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1} {lang === 'en' ? 'of' : 'von'} {hl.rounds}
+          </div>
+        </div>
+
+        {/* Frage-Text (nur bei customQuestion) */}
+        {hasCustom && (
+          <div style={{
+            fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 800, color: '#F1F5F9',
+            textAlign: 'center', maxWidth: 1200, lineHeight: 1.3,
+            animation: 'contentReveal 0.4s ease 0.1s both',
+          }}>
+            {pair.customQuestion}
+          </div>
+        )}
+
+        {/* Anchor + Subject - zwei Karten nebeneinander */}
+        <div style={{
+          display: 'flex', gap: 'clamp(16px, 2.2vw, 36px)', alignItems: 'stretch',
+          justifyContent: 'center', flexWrap: 'wrap', maxWidth: 1400, width: '100%',
+          animation: 'contentReveal 0.45s ease 0.15s both',
+        }}>
+          {/* Anchor-Card: bekannter Wert */}
+          <div style={{
+            flex: '1 1 0', maxWidth: 560, minWidth: 260,
+            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(34,197,94,0.04))',
+            border: '2px solid rgba(34,197,94,0.42)',
+            boxShadow: '0 0 40px rgba(34,197,94,0.18), 0 8px 28px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+          }}>
+            <div style={{
+              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+              color: '#86efac', letterSpacing: '0.14em', textTransform: 'uppercase',
+              opacity: 0.8,
+            }}>{pair.anchorLabel}</div>
+            <div style={{
+              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#86efac',
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+              textShadow: '0 0 28px rgba(34,197,94,0.35)',
+            }}>{fmtHL(pair.anchorValue)}</div>
+            <div style={{
+              fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,
+            }}>{pair.unit}</div>
+          </div>
+
+          {/* Vergleichs-Icon */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            fontSize: 'clamp(40px, 5vw, 80px)', fontWeight: 900, color: '#FBBF24',
+            textShadow: '0 0 20px rgba(251,191,36,0.5)',
+          }}>?</div>
+
+          {/* Subject-Card: zu erratender Wert */}
+          <div style={{
+            flex: '1 1 0', maxWidth: 560, minWidth: 260,
+            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))',
+            border: '2px dashed rgba(251,191,36,0.55)',
+            boxShadow: '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+          }}>
+            <div style={{
+              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+              color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase',
+              opacity: 0.9,
+            }}>{pair.subjectLabel}</div>
+            <div style={{
+              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+              textShadow: '0 0 28px rgba(251,191,36,0.45)',
+              animation: 'timerVignettePulse 1.2s ease-in-out infinite',
+            }}>???</div>
+            <div style={{
+              fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,
+            }}>{lang === 'en' ? 'Higher or Lower?' : 'Mehr oder Weniger?'}</div>
+          </div>
+        </div>
+
+        {/* Team-Progress: Avatare mit Answer-Status */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          animation: 'contentReveal 0.5s ease 0.25s both',
+        }}>
+          <div style={{
+            fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800, color: '#94a3b8',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            {lang === 'en' ? 'Last teams vote on their phone' : 'Letzte Teams tippen am Handy'}
+          </div>
+          <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {hlTeams.map(tm => {
+              const answered = hl.answeredThisRound.includes(tm.id);
+              return (
+                <div key={tm.id} style={{
+                  position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  opacity: answered ? 1 : 0.55,
+                  filter: answered ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)',
+                  transition: 'opacity 0.4s ease, filter 0.4s ease',
+                }}>
+                  <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
+                    border: `3px solid ${answered ? tm.color : 'rgba(148,163,184,0.4)'}`,
+                    boxShadow: answered ? `0 0 22px ${tm.color}66` : 'none',
+                  }} />
+                  {answered && (
+                    <div style={{
+                      position: 'absolute', bottom: -6, right: -6,
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: '#22C55E', border: '2.5px solid #0D0A06',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 900, color: '#fff',
+                      animation: 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+                    }}>✓</div>
+                  )}
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
+                    maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{truncName(tm.name, 10)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Timer-Pill unten rechts */}
+        {hl.timerEndsAt != null && (
+          <div style={{
+            position: 'absolute', bottom: 32, right: 48, zIndex: 8,
+          }}>
+            <BeamerTimer endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent="#FBBF24" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── H/L-Reveal-Ansicht ───────────────────────────────────────────────────
+  if (hl && hl.phase === 'reveal' && hl.currentPair) {
+    const pair = hl.currentPair;
+    const correctChoice = pair.subjectValue > pair.anchorValue ? 'higher' : 'lower';
+    const correctText = correctChoice === 'higher'
+      ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
+      : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓');
+    const correctIds = new Set(hl.correctThisRound);
+    return (
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(24px, 4vh, 48px) clamp(32px, 5vw, 72px)', gap: 'clamp(18px, 2.4vh, 32px)',
+        position: 'relative', overflow: 'hidden',
+        animation: 'contentReveal 0.4s ease both',
+      }}>
+        <Fireflies color="#FBBF2555" />
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            padding: '10px 22px', borderRadius: 999,
+            background: 'rgba(34,197,94,0.2)', border: '2px solid rgba(34,197,94,0.5)',
+            color: '#86efac', fontWeight: 900,
+            fontSize: 'clamp(16px, 1.8vw, 24px)', letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>
+            <QQEmojiIcon emoji="✅"/> {lang === 'en' ? 'Reveal' : 'Auflösung'}
+          </div>
+          <div style={{
+            padding: '10px 20px', borderRadius: 14,
+            background: 'rgba(15,23,42,0.6)', border: '1.5px solid rgba(255,255,255,0.1)',
+            color: '#e2e8f0', fontWeight: 800, fontSize: 'clamp(15px, 1.6vw, 22px)',
+          }}>
+            {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1} {lang === 'en' ? 'of' : 'von'} {hl.rounds}
+          </div>
+        </div>
+
+        {/* Anchor + Subject mit aufgedecktem Wert */}
+        <div style={{
+          display: 'flex', gap: 'clamp(16px, 2.2vw, 36px)', alignItems: 'stretch',
+          justifyContent: 'center', flexWrap: 'wrap', maxWidth: 1400, width: '100%',
+        }}>
+          <div style={{
+            flex: '1 1 0', maxWidth: 560, minWidth: 260,
+            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.03))',
+            border: '2px solid rgba(34,197,94,0.35)',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+            opacity: 0.82,
+          }}>
+            <div style={{
+              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+              color: '#86efac', letterSpacing: '0.14em', textTransform: 'uppercase',
+            }}>{pair.anchorLabel}</div>
+            <div style={{
+              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#86efac',
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+            }}>{fmtHL(pair.anchorValue)}</div>
+            <div style={{ fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7 }}>{pair.unit}</div>
+          </div>
+
+          {/* Richtung-Indikator */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 10,
+          }}>
+            <div style={{
+              fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
+              color: '#FBBF24', textShadow: '0 0 20px rgba(251,191,36,0.6)',
+              letterSpacing: '0.08em',
+              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+            }}>{correctText}</div>
+          </div>
+
+          {/* Subject-Card mit aufgedecktem Wert */}
+          <div style={{
+            flex: '1 1 0', maxWidth: 560, minWidth: 260,
+            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.06))',
+            border: '3px solid #FBBF24',
+            boxShadow: '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+          }}>
+            <div style={{
+              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
+              color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase',
+            }}>{pair.subjectLabel}</div>
+            <div style={{
+              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+              textShadow: '0 0 40px rgba(251,191,36,0.5)',
+            }}>{fmtHL(pair.subjectValue)}</div>
+            <div style={{ fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7 }}>{pair.unit}</div>
+          </div>
+        </div>
+
+        {/* Team-Ergebnisse: wer lag richtig, Winnings-Anzeige */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px, 2vw, 28px)', justifyContent: 'center',
+          animation: 'contentReveal 0.5s ease 0.45s both',
+        }}>
+          {hlTeams.map(tm => {
+            const correct = correctIds.has(tm.id);
+            const teamWin = hl.winnings[tm.id] ?? 0;
+            return (
+              <div key={tm.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                padding: '14px 20px', borderRadius: 20,
+                background: correct ? `rgba(34,197,94,0.16)` : 'rgba(239,68,68,0.12)',
+                border: correct ? '2px solid rgba(34,197,94,0.55)' : '2px solid rgba(239,68,68,0.45)',
+                boxShadow: correct ? '0 0 22px rgba(34,197,94,0.3)' : 'none',
+                minWidth: 140,
+              }}>
+                <div style={{ position: 'relative' }}>
+                  <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
+                    border: `3px solid ${tm.color}`,
+                    filter: correct ? 'none' : 'grayscale(0.35)',
+                    opacity: correct ? 1 : 0.75,
+                  }} />
+                  <div style={{
+                    position: 'absolute', bottom: -8, right: -8,
+                    width: 38, height: 38, borderRadius: '50%',
+                    background: correct ? '#22C55E' : '#EF4444',
+                    border: '3px solid #0D0A06',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22, fontWeight: 900, color: '#fff',
+                    animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.2s both',
+                  }}>{correct ? '✓' : '✕'}</div>
+                </div>
+                <div style={{
+                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
+                  maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{truncName(tm.name, 12)}</div>
+                {teamWin > 0 && (
+                  <div style={{
+                    marginTop: 2, padding: '3px 10px', borderRadius: 999,
+                    background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
+                    fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
+                      ? (lang === 'en' ? 'cell' : 'Feld')
+                      : (lang === 'en' ? 'cells' : 'Felder')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   // B1 BAM-Entry: nur beim initialen Mount + beim Step 0 spielen. Bei spaeteren
   // Steps (1, 2) soll die Folie ruhig bleiben, sonst reissen wir den User raus.
@@ -7993,47 +8336,88 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* Step 1+: Team hero */}
-      {showTeam && team && (
+      {/* Step 1+: Team hero — bei H/L mit Tied-Last mehrere Teams zeigen,
+          sonst Fallback auf Einzel-Team (Legacy-Comeback). */}
+      {showTeam && (hl ? hlTeams.length > 0 : !!team) && (
         <div key="team" style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
           animation: 'contentReveal 0.5s ease both',
           position: 'relative', zIndex: 5,
         }}>
-          <div style={{
-            width: 100, height: 100, borderRadius: '50%',
-            background: `${teamColor}20`, border: `3px solid ${teamColor}88`,
-            boxShadow: `0 0 30px ${teamColor}44`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: 'activeTeamGlow 2s ease-in-out infinite',
-            ['--team-color' as string]: `${teamColor}55`,
-          }}>
-            <QQTeamAvatar avatarId={team.avatarId} size={60} />
-          </div>
-          <div title={team.name} style={{
-            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
-            textShadow: `0 0 24px ${teamColor}44`,
-            maxWidth: '80vw',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>{truncName(team.name, 20)}</div>
-          {step === 1 && (
-            <div style={{
-              marginTop: 8, padding: '14px 28px', borderRadius: 18,
-              background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
-              fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
-              maxWidth: 900, textAlign: 'center',
-              animation: 'contentReveal 0.45s ease 0.15s both',
-            }}>
-              {lang === 'en'
-                ? `${team.name} is in last place right now and gets to strike back.`
-                : `${team.name} liegt aktuell auf dem letzten Platz und darf zurückschlagen.`}
-            </div>
+          {hl && hlTeams.length > 1 ? (
+            <>
+              <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                {hlTeams.map(tm => (
+                  <div key={tm.id} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  }}>
+                    <div style={{
+                      width: 100, height: 100, borderRadius: '50%',
+                      background: `${tm.color}20`, border: `3px solid ${tm.color}88`,
+                      boxShadow: `0 0 24px ${tm.color}55`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={60} />
+                    </div>
+                    <div title={tm.name} style={{
+                      fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900, color: tm.color,
+                      textShadow: `0 0 18px ${tm.color}44`,
+                      maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{truncName(tm.name, 14)}</div>
+                  </div>
+                ))}
+              </div>
+              {step === 1 && (
+                <div style={{
+                  marginTop: 4, padding: '14px 28px', borderRadius: 18,
+                  background: 'rgba(251,191,36,0.12)', border: '2px solid rgba(251,191,36,0.42)',
+                  fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
+                  maxWidth: 1000, textAlign: 'center',
+                }}>
+                  {lang === 'en'
+                    ? `${hlTeams.length} teams tied for last place — they all play together.`
+                    : `${hlTeams.length} Teams sind gleichauf auf dem letzten Platz — sie spielen gemeinsam.`}
+                </div>
+              )}
+            </>
+          ) : team && (
+            <>
+              <div style={{
+                width: 100, height: 100, borderRadius: '50%',
+                background: `${teamColor}20`, border: `3px solid ${teamColor}88`,
+                boxShadow: `0 0 30px ${teamColor}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: 'activeTeamGlow 2s ease-in-out infinite',
+                ['--team-color' as string]: `${teamColor}55`,
+              }}>
+                <QQTeamAvatar avatarId={team.avatarId} size={60} />
+              </div>
+              <div title={team.name} style={{
+                fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
+                textShadow: `0 0 24px ${teamColor}44`,
+                maxWidth: '80vw',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{truncName(team.name, 20)}</div>
+              {step === 1 && (
+                <div style={{
+                  marginTop: 8, padding: '14px 28px', borderRadius: 18,
+                  background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
+                  fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
+                  maxWidth: 900, textAlign: 'center',
+                  animation: 'contentReveal 0.45s ease 0.15s both',
+                }}>
+                  {lang === 'en'
+                    ? `${team.name} is in last place right now and gets to strike back.`
+                    : `${team.name} liegt aktuell auf dem letzten Platz und darf zurückschlagen.`}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
-      {/* Step 2: Aktion (Klau-Info + Leader-Anzeige) */}
-      {showAction && team && (
+      {/* Step 2: Aktion (H/L-Regeln + Leader-Anzeige) */}
+      {showAction && (hl ? hlTeams.length > 0 : !!team) && (
         <div style={{
           width: '100%', maxWidth: 1100,
           animation: 'contentReveal 0.5s ease both',
@@ -8042,30 +8426,43 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{
             padding: '24px 40px', borderRadius: 22, textAlign: 'center',
-            background: cardBg, border: `2px solid #EF444455`,
-            boxShadow: `0 0 40px rgba(239,68,68,0.2), 0 8px 28px rgba(0,0,0,0.4)`,
-            fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fecaca',
+            background: cardBg,
+            border: hl ? '2px solid rgba(251,191,36,0.55)' : `2px solid #EF444455`,
+            boxShadow: hl
+              ? '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)'
+              : `0 0 40px rgba(239,68,68,0.2), 0 8px 28px rgba(0,0,0,0.4)`,
+            fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900,
+            color: hl ? '#fde68a' : '#fecaca',
+            maxWidth: 1000,
+            lineHeight: 1.3,
           }}>
-            <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? actionTextEn : actionTextDe}
+            <QQEmojiIcon emoji={hl ? "🎯" : "⚡"}/> {lang === 'en' ? actionTextEn : actionTextDe}
           </div>
           {leaderTeams.length > 0 && (
-            <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {leaderTeams.map(lt => (
-                <div key={lt.id} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  padding: '14px 18px', borderRadius: 16,
-                  background: `${lt.color}18`, border: `2px solid ${lt.color}66`,
-                  boxShadow: `0 0 20px ${lt.color}22`,
-                  minWidth: 120,
-                }}>
-                  <QQTeamAvatar avatarId={lt.avatarId} size={48} />
-                  <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 900, color: lt.color }}>{lt.name}</span>
-                  <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>
-                    {lang === 'en' ? '— 1 cell' : leaderTeams.length === 1 ? '— 2 Felder' : '— 1 Feld'}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              <div style={{
+                fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: '#94a3b8',
+                letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: -4,
+              }}>
+                {leaderTeams.length === 1
+                  ? (lang === 'en' ? 'Current leader' : 'Aktueller 1. Platz')
+                  : (lang === 'en' ? 'Current leaders' : 'Aktuelle 1. Plätze')}
+              </div>
+              <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {leaderTeams.map(lt => (
+                  <div key={lt.id} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: '14px 18px', borderRadius: 16,
+                    background: `${lt.color}18`, border: `2px solid ${lt.color}66`,
+                    boxShadow: `0 0 20px ${lt.color}22`,
+                    minWidth: 120,
+                  }}>
+                    <QQTeamAvatar avatarId={lt.avatarId} size={48} />
+                    <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 900, color: lt.color }}>{truncName(lt.name, 12)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

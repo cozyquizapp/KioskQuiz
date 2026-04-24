@@ -583,7 +583,10 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   showIdentityBanner: boolean; dismissIdentityBanner: () => void;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
-  const isComebackTeam = s.comebackTeamId === myTeamId;
+  // Bei H/L-Comeback sind ggf. MEHRERE Teams beteiligt (alle tied-letzten).
+  // Primary comebackTeamId = Anzeige-Team, comebackHL.teamIds = alle Spieler.
+  const isComebackTeam = s.comebackTeamId === myTeamId
+    || (s.comebackHL?.teamIds ?? []).includes(myTeamId);
   const teamColor     = myTeam?.color ?? '#3B82F6';
 
   // ── Team sounds ──
@@ -3433,7 +3436,187 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
   state: QQStateUpdate; myTeamId: string; isMine: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
 }) {
   const comebackTeam = s.teams.find(t => t.id === s.comebackTeamId);
+  const hl = s.comebackHL;
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const fmtHL = (n: number) => {
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
+    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';
+    if (abs >= 10_000) return Math.round(n / 1000) + 'k';
+    if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+    return n % 1 === 0 ? String(n) : n.toFixed(1);
+  };
 
+  // ── H/L-Phase: Frage oder Warten ────────────────────────────────────────
+  if (hl && (hl.phase === 'question' || hl.phase === 'reveal') && hl.currentPair && isMine) {
+    const pair = hl.currentPair;
+    const myAnswer = hl.answers[myTeamId];
+    const answered = myAnswer != null;
+    const isReveal = hl.phase === 'reveal';
+    const correctChoice = pair.subjectValue > pair.anchorValue ? 'higher' : 'lower';
+    const myCorrect = isReveal && myAnswer === correctChoice;
+    const teamColor = myTeam?.color ?? '#F59E0B';
+    const submit = (choice: 'higher' | 'lower') => {
+      if (answered) return;
+      emit('qq:comebackHLAnswer', { roomCode, teamId: myTeamId, choice });
+    };
+    return (
+      <CozyCard borderColor={isReveal ? (myCorrect ? '#22C55E' : '#EF4444') : teamColor}>
+        {/* Header */}
+        <div style={{
+          fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: '#FDE68A', textAlign: 'center', marginBottom: 10,
+        }}>
+          ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} — {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
+        </div>
+
+        {/* customQuestion (nur Format B) */}
+        {pair.kind === 'anchor' && pair.customQuestion && (
+          <div style={{
+            fontSize: 14, fontWeight: 700, color: '#cbd5e1', textAlign: 'center',
+            marginBottom: 12, lineHeight: 1.4,
+          }}>
+            {pair.customQuestion}
+          </div>
+        )}
+
+        {/* Anchor-Info */}
+        <div style={{
+          padding: '12px 14px', borderRadius: 14,
+          background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.38)',
+          textAlign: 'center', marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#86efac', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+            {pair.anchorLabel}
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#86efac', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            {fmtHL(pair.anchorValue)}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', opacity: 0.7, marginTop: 2 }}>
+            {pair.unit}
+          </div>
+        </div>
+
+        {/* Subject */}
+        <div style={{
+          padding: '12px 14px', borderRadius: 14,
+          background: isReveal ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.1)',
+          border: isReveal ? '2px solid #FBBF24' : '1.5px dashed rgba(251,191,36,0.5)',
+          textAlign: 'center', marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#FDE68A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+            {pair.subjectLabel}
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#FBBF24', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            {isReveal ? fmtHL(pair.subjectValue) : '???'}
+          </div>
+          {!isReveal && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', opacity: 0.7, marginTop: 2 }}>
+              {lang === 'en' ? 'Higher or lower?' : 'Mehr oder weniger?'}
+            </div>
+          )}
+          {isReveal && (
+            <div style={{
+              marginTop: 6, padding: '4px 12px', borderRadius: 999,
+              background: correctChoice === 'higher' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)',
+              border: `1.5px solid ${correctChoice === 'higher' ? '#22C55E' : '#EF4444'}`,
+              fontSize: 12, fontWeight: 900, color: '#fff',
+              display: 'inline-block',
+            }}>
+              {correctChoice === 'higher'
+                ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
+                : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓')}
+            </div>
+          )}
+        </div>
+
+        {/* Action: Buttons (question) oder Ergebnis (reveal) */}
+        {!isReveal && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button
+              onClick={() => submit('higher')}
+              disabled={answered}
+              style={{
+                padding: '16px 10px', borderRadius: 14,
+                background: myAnswer === 'higher' ? '#22C55E' : 'rgba(34,197,94,0.15)',
+                border: `2px solid ${myAnswer === 'higher' ? '#22C55E' : 'rgba(34,197,94,0.5)'}`,
+                color: myAnswer === 'higher' ? '#fff' : '#86efac',
+                fontSize: 20, fontWeight: 900, fontFamily: 'inherit',
+                cursor: answered ? 'default' : 'pointer',
+                opacity: answered && myAnswer !== 'higher' ? 0.35 : 1,
+                transition: 'all 0.2s ease',
+              }}
+            >↑<br/>{lang === 'en' ? 'MORE' : 'MEHR'}</button>
+            <button
+              onClick={() => submit('lower')}
+              disabled={answered}
+              style={{
+                padding: '16px 10px', borderRadius: 14,
+                background: myAnswer === 'lower' ? '#EF4444' : 'rgba(239,68,68,0.15)',
+                border: `2px solid ${myAnswer === 'lower' ? '#EF4444' : 'rgba(239,68,68,0.5)'}`,
+                color: myAnswer === 'lower' ? '#fff' : '#fca5a5',
+                fontSize: 20, fontWeight: 900, fontFamily: 'inherit',
+                cursor: answered ? 'default' : 'pointer',
+                opacity: answered && myAnswer !== 'lower' ? 0.35 : 1,
+                transition: 'all 0.2s ease',
+              }}
+            >↓<br/>{lang === 'en' ? 'LESS' : 'WENIGER'}</button>
+          </div>
+        )}
+        {!isReveal && answered && (
+          <div style={{
+            marginTop: 12, padding: '8px 12px', borderRadius: 10,
+            background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.4)',
+            fontSize: 13, fontWeight: 800, color: '#FDE68A', textAlign: 'center',
+          }}>
+            ⏳ {lang === 'en' ? 'Waiting for other teams…' : 'Warte auf andere Teams…'}
+          </div>
+        )}
+        {isReveal && (
+          <div style={{
+            padding: '12px 14px', borderRadius: 12, textAlign: 'center',
+            background: myCorrect ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.18)',
+            border: `2px solid ${myCorrect ? '#22C55E' : '#EF4444'}`,
+            fontSize: 16, fontWeight: 900,
+            color: myCorrect ? '#86efac' : '#fca5a5',
+          }}>
+            {myCorrect
+              ? (lang === 'en' ? '✓ Correct! +1 cell to steal' : '✓ Richtig! +1 Feld zum Klauen')
+              : (lang === 'en' ? '✕ Wrong this round' : '✕ Diese Runde daneben')}
+            {(hl.winnings[myTeamId] ?? 0) > 0 && (
+              <div style={{ fontSize: 12, fontWeight: 800, marginTop: 4, opacity: 0.85 }}>
+                {lang === 'en' ? 'Total so far: ' : 'Insgesamt bisher: '}
+                {hl.winnings[myTeamId]} {hl.winnings[myTeamId] === 1
+                  ? (lang === 'en' ? 'cell' : 'Feld')
+                  : (lang === 'en' ? 'cells' : 'Felder')}
+              </div>
+            )}
+          </div>
+        )}
+      </CozyCard>
+    );
+  }
+
+  // ── H/L-Intro-Phase: Kurze Info für tied-last Team ───────────────────────
+  if (hl && hl.phase === 'intro' && isMine) {
+    return (
+      <CozyCard borderColor="#FBBF24">
+        <div style={{ textAlign: 'center', padding: '6px 0' }}>
+          <div style={{ fontSize: 32, marginBottom: 6 }}>⚡</div>
+          <div style={{ fontWeight: 900, color: '#FDE68A', fontSize: 17, marginBottom: 6 }}>
+            {lang === 'en' ? 'Comeback!' : 'Comeback!'}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#cbd5e1', lineHeight: 1.4 }}>
+            {lang === 'en'
+              ? `You play "More or Less" ${hl.rounds}× — each correct = 1 cell stolen from the leader.`
+              : `Du spielst „Mehr oder Weniger" ${hl.rounds}× — pro Richtig = 1 Feld vom 1. Platz.`}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
+  // ── Zuschauer (nicht tied-last Team) ─────────────────────────────────────
   if (!isMine) {
     return (
       <CozyCard>
@@ -3448,6 +3631,13 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
             </>
           )}
           <div style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
+          {hl && hl.teamIds.length > 1 && (
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+              {lang === 'en'
+                ? `${hl.teamIds.length} teams play "More or Less"`
+                : `${hl.teamIds.length} Teams spielen „Mehr oder Weniger"`}
+            </div>
+          )}
         </div>
       </CozyCard>
     );

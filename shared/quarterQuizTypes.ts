@@ -207,6 +207,67 @@ export interface QQTeam {
 // ── Comeback action ───────────────────────────────────────────────────────────
 export type QQComebackAction = 'PLACE_2' | 'STEAL_1' | 'SWAP_2';
 
+// ── Comeback Higher/Lower Mini-Game ──────────────────────────────────────────
+// Letztes Team (oder mehrere tied-letzten) spielt vor der Klau-Phase
+// Higher-or-Lower: pro richtig geratener Vergleich ein Feld klauen.
+// Format A (pair):   Zwei vergleichbare Objekte + gleiche Einheit
+//                    → Frage wird automatisch generiert.
+// Format B (anchor): Fester Anker-Text + Vergleichswert mit freier Frage-
+//                    Formulierung (mehr Erzähl-Flair, individuell gepflegt).
+export type QQHLPairKind = 'pair' | 'anchor';
+export type QQHLChoice = 'higher' | 'lower';
+
+export interface QQHLPair {
+  id: string;
+  kind: QQHLPairKind;
+  category: string;          // Online/Promis/Sport/Filme/Geografie/Wirtschaft/Nerdy
+  unit: string;              // z.B. "Einwohner", "m", "€", "Follower", "Oscars"
+  // Format A: Label + Wert für beide Seiten
+  // Format B: anchorLabel/anchorValue = fest, subjectLabel/subjectValue = Überraschung
+  anchorLabel: string;       // "Berlin" (pair) oder "Eiffelturm" (anchor)
+  anchorValue: number;
+  subjectLabel: string;      // "München" (pair) oder "Freiheitsstatue" (anchor)
+  subjectValue: number;
+  /** Freie Text-Überschreibung (nur für anchor-kind): komplette Frage-Formulierung.
+   *  Ohne wird automatisch generiert aus den Labels + Unit. */
+  customQuestion?: string;
+}
+
+/** Moderator-wählbare Zeit pro H/L-Runde. */
+export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 10;
+
+export interface QQComebackHLState {
+  /** Anzahl der H/L-Runden insgesamt (1..3, abh. von Balance + tied-Last-Cap). */
+  rounds: number;
+  /** Aktuelle Runde (0..rounds-1). */
+  round: number;
+  /** Alle Teams, die gleichzeitig mitspielen (1 bei Solo-Last, ≥2 bei Tied-Last). */
+  teamIds: string[];
+  /** Aktuelle Frage der Runde. */
+  currentPair: QQHLPair | null;
+  /** Pro Team die gewählte Antwort dieser Runde. */
+  answers: Record<string, QQHLChoice>;
+  /** Teams, die in der aktuellen Runde bereits geantwortet haben (für Progress). */
+  answeredThisRound: string[];
+  /** Korrekt in der aktuellen Runde (erst nach Reveal gefüllt). */
+  correctThisRound: string[];
+  /** Gesamtzahl geklauter Felder pro Team über alle Runden hinweg
+   *  (= Anzahl richtig geratener H/L Runden des Teams). */
+  winnings: Record<string, number>;
+  /** Phasen innerhalb des Mini-Games: intro → question → reveal → done → steal. */
+  phase: 'intro' | 'question' | 'reveal' | 'done' | 'steal';
+  /** Timer für die aktuelle Runde (ms timestamp). */
+  timerEndsAt: number | null;
+  /** Schon benutzte Pair-IDs (Dedupe innerhalb eines Spiels). */
+  usedPairIds: string[];
+  /** Queue an Teams, die noch Felder klauen müssen (gesetzt beim Übergang zu 'steal'). */
+  stealQueue: string[];
+  /** Team das aktuell klaut (oberstes der Queue). */
+  currentStealer: string | null;
+  /** Wie viele Felder das aktuelle Stealing-Team noch klauen darf (von winnings). */
+  currentStealerRemaining: number;
+}
+
 // ── Answer entry ─────────────────────────────────────────────────────────────
 export interface QQAnswerEntry {
   teamId: string;
@@ -557,6 +618,10 @@ export interface QQStateUpdate {
   // bei ≥2 Führenden → genau 1 Feld von jedem.
   comebackStealTargets: string[];
   comebackStealsDone: string[];        // bereits beklaute Leader-Teams
+  /** Higher/Lower-Mini-Game-State. Null = nicht aktiv bzw. Comeback ohne H/L. */
+  comebackHL: QQComebackHLState | null;
+  /** Moderator-einstellbarer Timer pro H/L-Runde in Sekunden (Default 10s). */
+  comebackHLTimerSec: number;
   swapFirstCell: { row: number; col: number } | null;  // for SWAP_2 mid-action
   language: QQLanguage;
   // Timer

@@ -21,6 +21,8 @@ import {
   qqJoinTeam, qqSetTeamConnected, qqStartGame, qqActivateQuestion,
   qqRevealAnswer, qqShowImage, qqMarkCorrect, qqMarkWrong, qqUndoMarkCorrect, qqPlaceCell, qqStealCell,
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
+  qqComebackHLStartRound, qqComebackHLSubmitAnswer, qqComebackHLReveal, qqComebackHLAdvance,
+  qqComebackFinishAllAndGoToFinale,
   qqSwapOneCell, qqFreezeCell, qqStuckCell, qqSandLockCell, qqShieldCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
@@ -784,6 +786,36 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       return;
     }
   }, 1200);
+}
+
+/** Comeback-Mini-Game: Dummy-Teams antworten automatisch auf die Higher/Lower-
+ *  Frage (50/50 zufällig, damit der Kampf nicht immer identisch ausgeht).
+ *  Wird nach jedem Rundenstart aufgerufen. */
+export function maybeDummyAnswerHL(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || !room.comebackHL) return;
+  const hl = room.comebackHL;
+  if (hl.phase !== 'question') return;
+  const dummies = hl.teamIds.filter(id => {
+    const t = (room.teams as any)[id];
+    return t && t._dummy && hl.answers[id] == null;
+  });
+  if (dummies.length === 0) return;
+  // Staggered Antwort-Zeitpunkte (800ms-2500ms), damit es nicht synchron aussieht.
+  dummies.forEach((teamId, i) => {
+    const delay = 800 + i * 400 + Math.floor(Math.random() * 900);
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || !live.comebackHL) return;
+      if (live.comebackHL.phase !== 'question') return;
+      if (live.comebackHL.answers[teamId] != null) return;
+      const choice: 'higher' | 'lower' = Math.random() < 0.5 ? 'higher' : 'lower';
+      try {
+        qqComebackHLSubmitAnswer(live, teamId, choice);
+        broadcastQQ(io, roomCode);
+      } catch { /* ignore */ }
+    }, delay);
+  });
 }
 
 /** Hilfs-Dispatcher: aus FREE-Wahl erst chooseFreeAction, dann Follow-up. */
@@ -1771,10 +1803,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     // ── Comeback Intro Step (moderator steuert Erklärung Schritt für Schritt) ─
-    // Steps: 0 = was ist Comeback, 1 = warum DIESES Team, 2 = Aktion erklären
-    // (wie viele Felder klauen, von wem). Der Space-Druck bei Step 2 startet
-    // automatisch die Klau-Aktion (qqComebackAutoApplySteal) – keine
-    // PLACE_2/STEAL_1/SWAP_2-Auswahl mehr.
+    // Steps: 0 = was ist Comeback, 1 = warum DIESES Team, 2 = H/L-Regeln erklären.
+    // Space-Druck bei Step 2 startet das H/L-Mini-Game (phase='question', erste
+    // Frage geladen). Weitere Spaces steuern den H/L-Flow über qq:comebackHLStep.
     socket.on('qq:comebackIntroStep', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
@@ -1784,13 +1815,85 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.comebackIntroStep += 1;
           broadcast(io, payload.roomCode);
         } else {
-          qqComebackAutoApplySteal(room);
+          // Step 2 → Space = H/L-Mini-Game starten (wenn H/L aktiv) oder
+          // Legacy-Auto-Steal (falls alte Mechanik noch gebraucht wird).
+          if (room.comebackHL && room.comebackHL.phase === 'intro') {
+            qqComebackHLStartRound(room);
+            broadcast(io, payload.roomCode);
+            // Dummy-Teams: automatisch H/L antworten.
+            maybeDummyAnswerHL(io, payload.roomCode);
+          } else {
+            qqComebackAutoApplySteal(room);
+            broadcast(io, payload.roomCode);
+            if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
+              maybeAutoPlace(io, payload.roomCode);
+            }
+          }
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Comeback H/L: Team-Antwort ('higher' | 'lower') ─────────────────────
+    socket.on('qq:comebackHLAnswer', (
+      payload: { roomCode: string; teamId: string; choice: 'higher' | 'lower' },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqComebackHLSubmitAnswer(room, payload.teamId, payload.choice);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Comeback H/L: Moderator-Step (Space) ────────────────────────────────
+    // Steuert den H/L-Flow:
+    //   phase='question'  → Reveal aufdecken (korrekte Antwort + Winnings)
+    //   phase='reveal'    → naechste Runde ODER Uebergang zu Klau-Phase
+    //   phase='steal'     → (keine Action, wird ueber qq:qqStealCell gesteuert)
+    socket.on('qq:comebackHLStep', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const hl = room.comebackHL;
+        if (!hl) { ok(ack); return; }
+        if (hl.phase === 'question') {
+          qqComebackHLReveal(room);
           broadcast(io, payload.roomCode);
-          // Dummy als Comeback-Team? → automatisch Klau ausführen.
-          if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
+        } else if (hl.phase === 'reveal') {
+          qqComebackHLAdvance(room);
+          broadcast(io, payload.roomCode);
+          // Direkt im Anschluss: neue H/L-Runde → Dummy-Antworten.
+          // Oder: Steal-Phase mit Dummy-Stealer → Auto-Steal.
+          if (room.comebackHL && room.comebackHL.phase === 'question') {
+            maybeDummyAnswerHL(io, payload.roomCode);
+          } else if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
             maybeAutoPlace(io, payload.roomCode);
           }
         }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Comeback H/L: Moderator skippt Mini-Game komplett (Debug/Balance-Korrektur) ─
+    socket.on('qq:comebackHLSkip', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.comebackHL) {
+          qqComebackFinishAllAndGoToFinale(room);
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Comeback H/L: Timer-Wert setzen (Moderator) ─────────────────────────
+    socket.on('qq:comebackHLTimer', (payload: { roomCode: string; seconds: number }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const s = Math.max(3, Math.min(60, Math.round(payload.seconds)));
+        room.comebackHLTimerSec = s;
+        broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

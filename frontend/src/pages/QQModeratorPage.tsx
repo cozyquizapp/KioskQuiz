@@ -343,10 +343,28 @@ export default function QQModeratorPage() {
           action = () => emit('qq:nextQuestion', { roomCode });
         }
         break;
-      case 'COMEBACK_CHOICE':
-        delayMs = 6000; // Step-Erklaerung lesen + Einblende-Animation
-        action = () => emit('qq:comebackIntroStep', { roomCode });
+      case 'COMEBACK_CHOICE': {
+        // Wenn H/L-Mini-Game aktiv: Autoplay steuert Frage/Reveal/Naechste-Runde.
+        const hl = s.comebackHL;
+        if (hl && hl.phase === 'question') {
+          // Reveal kommt wenn alle geantwortet haben — hier nur Fallback bei Timer-Out.
+          const allAnswered = hl.teamIds.every(id => hl.answers[id] != null);
+          if (allAnswered) {
+            delayMs = 1500; // Kurzer Puffer, dann Reveal
+            action = () => emit('qq:comebackHLStep', { roomCode });
+          } else {
+            // Timer laeuft noch → warten (Backend aufloesen nach Timeout auf Server-Seite
+            // faellt aus, daher hier: nichts tun; Moderator kann manuell Space druecken).
+          }
+        } else if (hl && hl.phase === 'reveal') {
+          delayMs = 5500; // Reveal-Animation + Lesen, dann naechste Runde/Steal
+          action = () => emit('qq:comebackHLStep', { roomCode });
+        } else {
+          delayMs = 6000; // Step-Erklaerung lesen + Einblende-Animation
+          action = () => emit('qq:comebackIntroStep', { roomCode });
+        }
         break;
+      }
       case 'PAUSED':
         // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
         break;
@@ -444,9 +462,18 @@ export default function QQModeratorPage() {
       }
       // COMEBACK_CHOICE: Erklärung Step 0→1→2 progressiv aufdecken
       else if (s.phase === 'COMEBACK_CHOICE') {
-        // Steps 0/1 erklären, Step 2 zeigt die Aktion, nächster Space startet
-        // automatisch den Klau-Flow (Backend entscheidet per comebackIntroStep).
-        emitRef.current('qq:comebackIntroStep', { roomCode });
+        // Phase-Flow:
+        //   introStep 0/1 → Erklärung „Was ist Comeback" / „warum DIESES Team"
+        //   introStep 2   → Mini-Game-Regeln („Higher/Lower 1-3 mal, pro Richtig klauen")
+        //   Space danach startet H/L-Runde 1 (phase 'question')
+        //   H/L phase 'question' → Space = Reveal
+        //   H/L phase 'reveal'   → Space = nächste Runde ODER Steal-Phase
+        const hl = s.comebackHL;
+        if (hl && (hl.phase === 'question' || hl.phase === 'reveal')) {
+          emitRef.current('qq:comebackHLStep', { roomCode });
+        } else {
+          emitRef.current('qq:comebackIntroStep', { roomCode });
+        }
       }
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
@@ -521,9 +548,18 @@ export default function QQModeratorPage() {
         else emitRef.current('qq:startPlacement', { roomCode });
       }
       else if (s.phase === 'COMEBACK_CHOICE') {
-        // Steps 0/1 erklären, Step 2 zeigt die Aktion, nächster Space startet
-        // automatisch den Klau-Flow (Backend entscheidet per comebackIntroStep).
-        emitRef.current('qq:comebackIntroStep', { roomCode });
+        // Phase-Flow:
+        //   introStep 0/1 → Erklärung „Was ist Comeback" / „warum DIESES Team"
+        //   introStep 2   → Mini-Game-Regeln („Higher/Lower 1-3 mal, pro Richtig klauen")
+        //   Space danach startet H/L-Runde 1 (phase 'question')
+        //   H/L phase 'question' → Space = Reveal
+        //   H/L phase 'reveal'   → Space = nächste Runde ODER Steal-Phase
+        const hl = s.comebackHL;
+        if (hl && (hl.phase === 'question' || hl.phase === 'reveal')) {
+          emitRef.current('qq:comebackHLStep', { roomCode });
+        } else {
+          emitRef.current('qq:comebackIntroStep', { roomCode });
+        }
       }
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });

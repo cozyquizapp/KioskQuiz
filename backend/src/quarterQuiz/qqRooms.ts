@@ -6,11 +6,13 @@ import {
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_TEAMS,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
+  QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
   markJokerCells, findLastPlace,
 } from './qqBfs';
+import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -47,6 +49,11 @@ export interface QQRoomState {
   // ≥2 gleichauf → 1 Feld von jedem.
   comebackStealTargets: string[];
   comebackStealsDone: string[];
+  /** Higher/Lower-Mini-Game-State fuer Comeback. Null wenn gerade kein Comeback
+   *  laeuft oder H/L uebersprungen wird (4+ tied last). */
+  comebackHL: QQComebackHLState | null;
+  /** Moderator-einstellbar: Timer pro H/L-Runde in Sekunden. */
+  comebackHLTimerSec: number;
   swapFirstCell: { row: number; col: number; ownerId: string } | null;
   language: QQLanguage;
   // Timer
@@ -216,6 +223,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       comebackAction: null,
       comebackStealTargets: [],
       comebackStealsDone: [],
+      comebackHL: null,
+      comebackHLTimerSec: QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
       swapFirstCell: null,
       language: 'both',
       timerDurationSec: 30,
@@ -430,6 +439,7 @@ export function qqStartGame(
   room.comebackAction  = null;
   room.comebackStealTargets = [];
   room.comebackStealsDone   = [];
+  room.comebackHL      = null;
   room.swapFirstCell   = null;
   room.theme           = theme;
   room.draftId         = draftId;
@@ -1622,6 +1632,18 @@ export function qqStealCell(
     const stats = room.teamPhaseStats[teamId];
     if (prevOwner) room.comebackStealsDone = [...(room.comebackStealsDone ?? []), prevOwner];
     if (stats && stats.placementsLeft > 0) stats.placementsLeft--;
+
+    // Neuer H/L-Comeback-Flow? Steal-Nachbearbeitung uebernimmt entweder
+    // - Leader-Recompute (bleibt in PLACEMENT mit aktualisierten Targets) oder
+    // - naechstes Team aus der Queue holen oder
+    // - Comeback abschliessen → Finale.
+    if (room.comebackHL && room.comebackHL.phase === 'steal') {
+      qqComebackStealAfterOne(room);
+      return { jokersAwarded };
+    }
+
+    // Legacy-Comeback (ohne H/L — aktuell nicht mehr genutzt, bleibt als
+    // Fallback fuer evtl. Szenarien ohne Mini-Game).
     if (stats && stats.placementsLeft > 0) {
       return { jokersAwarded };
     }
@@ -1885,37 +1907,226 @@ export function qqTriggerComeback(room: QQRoomState): void {
     return;
   }
 
-  // Tie for last place? Pick randomly among tied teams
-  const tiedTeams = room.joinOrder.filter(id => {
+  // Alle Teams auf dem letzten Platz (Gleichstand bei largest UND total) —
+  // spielen das H/L-Mini-Game GEMEINSAM (jeder Richtige = 1 Feld).
+  const tiedLastTeams = room.joinOrder.filter(id => {
     const r = territories[id];
     if (!r || !lastResult) return false;
     return r.largest === lastResult.largest && r.total === lastResult.total;
   });
-  const comebackTeam = tiedTeams.length > 1
-    ? tiedTeams[Math.floor(Math.random() * tiedTeams.length)]
-    : lastTeamId;
 
-  // Führende ermitteln: alle Teams mit maximalem largestConnected (Tiebreak
-  // total ignoriert — Gleichstand auf largest reicht, dann wird von jedem 1
-  // Feld geklaut). Comeback-Team selbst ist per Definition NICHT führend.
-  const allLeaders = room.joinOrder.filter(id => {
-    const r = territories[id];
-    return r != null && r.largest === maxLargest && id !== comebackTeam;
-  });
-  // Cap auf max 3 Leader: bei 4+ Gleichstand würde Comeback sonst zu krass swingen
-  // (z.B. 4 Teams gleichauf → 4 Felder geklaut → vom Letzten auf Platz 1).
-  // Auswahl ist deterministisch nach joinOrder (kein Random, damit Replays stabil sind).
-  const leaders = allLeaders.length > 3 ? allLeaders.slice(0, 3) : allLeaders;
+  // Balance-Rechnung: Runden = min(basis vom Gap, cap von tied-Last-Count).
+  // 4+ tied last → 0 Runden = komplett skippen (sonst zu viel geklaut).
+  const gap = maxLargest - lastResult.largest;
+  const rounds = qqComebackHLRounds(gap, tiedLastTeams.length);
+  if (rounds === 0) {
+    // Kein Comeback ausspielen — direkt ins Finale
+    qqBeginPhase(room, finalPhase);
+    return;
+  }
 
-  room.comebackTeamId    = comebackTeam;
-  room.comebackAction    = null;
+  // Führende ermitteln (fuer die spaetere Klau-Phase — wird dynamisch
+  // nach jedem Klau neu berechnet).
+  const leaders = qqComebackComputeLeaders(room, tiedLastTeams);
+
+  // Erstes „Haupt-Comeback-Team" fuer Anzeigezwecke (falls UI nur eins zeigt):
+  // nehmen das mit der hoechsten joinOrder-Position. Bei Solo-Last-Team = das
+  // eine, bei Tied-Last = alle spielen gleichzeitig.
+  const primaryComebackTeam = tiedLastTeams[0];
+
+  room.comebackTeamId       = primaryComebackTeam;
+  room.comebackAction       = null;
   room.comebackStealTargets = leaders;
   room.comebackStealsDone   = [];
-  room.comebackIntroStep = 0;
-  room.pendingFor        = comebackTeam;
+  room.comebackIntroStep    = 0;
+  room.pendingFor           = null;   // waehrend H/L-Intro niemand pending
+  room.pendingAction        = 'COMEBACK';
+  room.phase                = 'COMEBACK_CHOICE';
+  // H/L-Mini-Game-State vorbereiten
+  room.comebackHL = {
+    rounds,
+    round: 0,
+    teamIds: tiedLastTeams,
+    currentPair: null,
+    answers: {},
+    answeredThisRound: [],
+    correctThisRound: [],
+    winnings: Object.fromEntries(tiedLastTeams.map(id => [id, 0])),
+    phase: 'intro',
+    timerEndsAt: null,
+    usedPairIds: [],
+    stealQueue: [],
+    currentStealer: null,
+    currentStealerRemaining: 0,
+  };
+  room.lastActivityAt = Date.now();
+}
+
+/** Berechnet aktuelle Leader-Teams (alle mit maximalem largestConnected,
+ *  die NICHT selbst im H/L-Mini-Game sitzen).
+ *  Wird beim Setup aufgerufen und nach jedem Klau neu. */
+export function qqComebackComputeLeaders(room: QQRoomState, excludeIds: string[]): string[] {
+  const t = computeTerritories(room.grid, room.gridSize);
+  const exclude = new Set(excludeIds);
+  const largestPerTeam = room.joinOrder.map(id => ({ id, largest: t[id]?.largest ?? 0 }));
+  const maxL = Math.max(0, ...largestPerTeam.map(x => x.largest));
+  if (maxL === 0) return [];
+  return largestPerTeam.filter(x => x.largest === maxL && !exclude.has(x.id)).map(x => x.id);
+}
+
+/** Startet (oder wechselt zu) die nächste H/L-Frage-Runde.
+ *  Waehlt zufaellig ein unbenutztes Paar, setzt Timer, reset Answers. */
+export function qqComebackHLStartRound(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl) throw new QQError('INVALID_STATE', 'Kein H/L-State.');
+  const pair = qqHLPickPair(hl.usedPairIds);
+  hl.currentPair = pair;
+  hl.usedPairIds = [...hl.usedPairIds, pair.id];
+  hl.answers = {};
+  hl.answeredThisRound = [];
+  hl.correctThisRound = [];
+  hl.phase = 'question';
+  const durationMs = (room.comebackHLTimerSec ?? QQ_COMEBACK_HL_TIMER_DEFAULT_SEC) * 1000;
+  hl.timerEndsAt = Date.now() + durationMs;
+  room.lastActivityAt = Date.now();
+}
+
+/** Team gibt seine H/L-Antwort ab. Record-only — Reveal erfolgt separat. */
+export function qqComebackHLSubmitAnswer(
+  room: QQRoomState,
+  teamId: string,
+  choice: QQHLChoice
+): void {
+  const hl = room.comebackHL;
+  if (!hl) throw new QQError('INVALID_STATE', 'Kein H/L-State.');
+  if (hl.phase !== 'question') throw new QQError('INVALID_STATE', 'H/L gerade nicht aktiv.');
+  if (!hl.teamIds.includes(teamId)) {
+    throw new QQError('NOT_YOUR_TURN', 'Nur Comeback-Teams duerfen antworten.');
+  }
+  hl.answers[teamId] = choice;
+  if (!hl.answeredThisRound.includes(teamId)) hl.answeredThisRound.push(teamId);
+  room.lastActivityAt = Date.now();
+}
+
+/** Reveal der aktuellen H/L-Runde: berechnet welche Teams richtig lagen,
+ *  aktualisiert Winnings, setzt Phase 'reveal'. */
+export function qqComebackHLReveal(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl || !hl.currentPair) throw new QQError('INVALID_STATE', 'Kein H/L-State/Paar.');
+  if (hl.phase !== 'question') return; // idempotent
+  const correctChoice = qqHLCorrectAnswer(hl.currentPair);
+  hl.correctThisRound = hl.teamIds.filter(id => hl.answers[id] === correctChoice);
+  for (const id of hl.correctThisRound) {
+    hl.winnings[id] = (hl.winnings[id] ?? 0) + 1;
+  }
+  hl.phase = 'reveal';
+  hl.timerEndsAt = null;
+  room.lastActivityAt = Date.now();
+}
+
+/** Nach dem Reveal: naechste Runde oder - wenn alle Runden gespielt - ueber
+ *  in die Klau-Phase. */
+export function qqComebackHLAdvance(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl) throw new QQError('INVALID_STATE', 'Kein H/L-State.');
+  if (hl.phase !== 'reveal') return;
+  const next = hl.round + 1;
+  if (next < hl.rounds) {
+    hl.round = next;
+    qqComebackHLStartRound(room);
+    return;
+  }
+  // Alle Runden gespielt → Steal-Phase setup
+  qqComebackStealSetup(room);
+}
+
+/** Baut die Steal-Queue: Teams mit Winnings > 0, sortiert nach joinOrder.
+ *  Erstes Team wird zum aktuellen Stealer, faehrt in PLACEMENT. */
+export function qqComebackStealSetup(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl) throw new QQError('INVALID_STATE', 'Kein H/L-State.');
+  // Queue: alle Teams mit >=1 Richtig
+  const queue = hl.teamIds
+    .filter(id => (hl.winnings[id] ?? 0) > 0)
+    .sort((a, b) => room.joinOrder.indexOf(a) - room.joinOrder.indexOf(b));
+  hl.stealQueue = queue;
+  hl.phase = 'steal';
+  if (queue.length === 0) {
+    // Kein Team hat richtig geraten → direkt Finale
+    qqComebackFinishAllAndGoToFinale(room);
+    return;
+  }
+  qqComebackStealStartNext(room);
+}
+
+/** Pop das naechste Team aus der Queue und richtet den Steal-Zug ein. */
+export function qqComebackStealStartNext(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl) return;
+  const next = hl.stealQueue.shift();
+  if (!next) {
+    qqComebackFinishAllAndGoToFinale(room);
+    return;
+  }
+  hl.currentStealer = next;
+  hl.currentStealerRemaining = hl.winnings[next] ?? 0;
+  // Recompute Leaders (ohne alle HL-Teams, damit tied-lasts sich nicht gegenseitig klauen)
+  const leaders = qqComebackComputeLeaders(room, hl.teamIds);
+  room.comebackStealTargets = leaders;
+  room.comebackStealsDone = [];
+  if (leaders.length === 0 || hl.currentStealerRemaining === 0) {
+    // Kein Leader zum Klauen → direkt weiter
+    qqComebackStealStartNext(room);
+    return;
+  }
+  // In Klau-Phase: PLACEMENT + pendingFor = stealer
+  room.phase             = 'PLACEMENT';
+  room.pendingFor        = next;
   room.pendingAction     = 'COMEBACK';
-  room.phase             = 'COMEBACK_CHOICE';
-  room.lastActivityAt    = Date.now();
+  room.comebackTeamId    = next;
+  room.comebackAction    = 'STEAL_1';
+  room.teamPhaseStats[next].placementsLeft = hl.currentStealerRemaining;
+  // Snapshot pro Team fuer Undo
+  room._comebackGridSnapshot  = room.grid.map(r => r.map(c => ({ ...c })));
+  room._comebackStatsSnapshot = { placementsLeft: hl.currentStealerRemaining };
+  room.lastActivityAt = Date.now();
+}
+
+/** Nach einem Klau: prueft ob das aktuelle Team fertig ist, dann naechster
+ *  Stealer oder Finale. Auch Leader-Recompute. */
+export function qqComebackStealAfterOne(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl || !hl.currentStealer) return;
+  hl.currentStealerRemaining = Math.max(0, hl.currentStealerRemaining - 1);
+  // placementsLeft wurde vom Caller (qqSteal) bereits dekrementiert.
+  if (hl.currentStealerRemaining === 0) {
+    // Team fertig → naechstes
+    qqComebackStealStartNext(room);
+    return;
+  }
+  // Team klaut weiter: Recompute Leaders, da nach Klau der #1 anders sein kann.
+  const leaders = qqComebackComputeLeaders(room, hl.teamIds);
+  room.comebackStealTargets = leaders;
+  room.comebackStealsDone = [];
+  if (leaders.length === 0) {
+    // Keine Leader mehr (z.B. alle bei 0) → naechstes Team
+    qqComebackStealStartNext(room);
+    return;
+  }
+  room.lastActivityAt = Date.now();
+}
+
+/** Comeback komplett abschliessen und ins Finale wechseln. */
+export function qqComebackFinishAllAndGoToFinale(room: QQRoomState): void {
+  const finalPhase = room.totalPhases as QQGamePhaseIndex;
+  room.comebackHL        = null;
+  room.comebackTeamId    = null;
+  room.comebackAction    = null;
+  room.comebackStealTargets = [];
+  room.comebackStealsDone   = [];
+  room.pendingFor        = null;
+  room.pendingAction     = null;
+  qqBeginPhase(room, finalPhase);
 }
 
 /** Startet direkt die Klau-Aktion nach dem letzten Intro-Step. Ersetzt die
@@ -2039,6 +2250,7 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.comebackAction  = null;
   room.comebackStealTargets = [];
   room.comebackStealsDone   = [];
+  room.comebackHL      = null;
   room.swapFirstCell   = null;
   for (const fc of room.frozenCells) {
     const cell = room.grid[fc.row]?.[fc.col];
@@ -2306,6 +2518,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackAction:   room.comebackAction,
     comebackStealTargets: room.comebackStealTargets ?? [],
     comebackStealsDone:   room.comebackStealsDone ?? [],
+    comebackHL:           room.comebackHL ?? null,
+    comebackHLTimerSec:   room.comebackHLTimerSec ?? 10,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
       : null,
@@ -2505,6 +2719,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.comebackAction  = null;
   room.comebackStealTargets = [];
   room.comebackStealsDone   = [];
+  room.comebackHL      = null;
   room.swapFirstCell   = null;
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated   = [];

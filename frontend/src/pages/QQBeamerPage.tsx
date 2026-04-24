@@ -1596,18 +1596,22 @@ function MuchoOptionsReveal({
   const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
   const muchoLabels = ['A', 'B', 'C', 'D'];
 
+  // Waehrend QUESTION_ACTIVE (revealStep=0): kompaktes Layout, keine Luecken
+  // zwischen A/B und C/D. Erst wenn Voter-Avatare einfliegen (revealStep>=1)
+  // ziehen die Rows smooth auseinander, damit die Chips Platz unter der Card
+  // bekommen ohne die naechste Card zu verdecken.
+  const expandedLayout = revealStep >= 1;
   return (
     <div style={{
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      // Row-Gap extra gross, damit die Avatar-Reihe unter A/B nicht C/D verdeckt
       columnGap: 18,
-      rowGap: 'clamp(70px, 9vh, 110px)',
-      // genug Bottom-Padding fuer die Avatar-Reihe unter C/D
-      paddingBottom: 'clamp(48px, 6vh, 78px)',
+      rowGap: expandedLayout ? 'clamp(70px, 9vh, 110px)' : 18,
+      paddingBottom: expandedLayout ? 'clamp(48px, 6vh, 78px)' : 0,
       marginBottom: 16,
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s ease 0.1s both',
+      transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1)',
     }}>
       {options.map((opt, i) => {
         const optImg = optionImages?.[i];
@@ -6492,17 +6496,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const t0 = s.timerEndsAt && s.timerDurationSec
               ? s.timerEndsAt - s.timerDurationSec * 1000
               : null;
+            // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
+            // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
+            const expandedLayout = zvzStep >= 1;
             return (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               columnGap: 18,
-              rowGap: 'clamp(80px, 10vh, 120px)',
-              // paddingBottom fuer die Chips, die nun mit translateY(72%) mehr hervorstehen
-              paddingBottom: 'clamp(62px, 7.5vh, 96px)',
+              rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
+              paddingBottom: expandedLayout ? 'clamp(62px, 7.5vh, 96px)' : 0,
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
+              transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1)',
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];

@@ -1732,11 +1732,12 @@ function MuchoOptionsReveal({
                         />
                         {isFastest && (
                           <span style={{
-                            position: 'absolute', top: -10, right: -10,
-                            fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
+                            position: 'absolute', top: -12, right: -8,
+                            width: 'clamp(22px, 2.4vw, 30px)', height: 'clamp(22px, 2.4vw, 30px)',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            lineHeight: 1,
                             animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
-                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
-                          }}><QQEmojiIcon emoji="⚡"/></span>
+                          }}><QQEmojiIcon emoji="⚡" size="100%"/></span>
                         )}
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
                         {timeSec != null && isCorrect && akt3On && (
@@ -5683,14 +5684,18 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           <QQEmojiIcon emoji="🌍"/> {title}
         </div>
 
-        {/* Antwort-Label unten (wenn Target sichtbar) */}
+        {/* Antwort-Label unten (wenn Target sichtbar) — dunkler Pill mit
+            gold-gruenem Text, damit er auf der hellblauen Leaflet-Voyager-Map
+            kontrastreich lesbar ist. */}
         {showTarget && q.answer && (
           <div style={{
             position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
             padding: '14px 32px', borderRadius: 18,
-            background: 'rgba(34,197,94,0.14)', border: '2.5px solid rgba(34,197,94,0.45)',
+            background: 'rgba(13,10,6,0.92)',
+            border: '2.5px solid rgba(34,197,94,0.7)',
             color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8vw, 38px)',
-            boxShadow: '0 0 50px rgba(34,197,94,0.25)',
+            boxShadow: '0 0 50px rgba(34,197,94,0.35), 0 8px 24px rgba(0,0,0,0.45)',
+            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
             animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
             zIndex: 1000,
           }}>
@@ -6531,9 +6536,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x)
                   .sort((a, b) => a.submittedAt - b.submittedAt);
                 const highestVisibleOpt = zvzStep >= 1 && zvzRevealed.has(i);
-                // Tiebreak-Zeit nur bei MEHREREN Top-Bets auf DER richtigen Option
-                // (dort entscheidet Speed, wer gewinnt — deshalb Pill zeigen).
-                const showTimePills = isCorrect && highestBets.length > 1;
+                // Zeit-Pills IMMER auf der korrekten Option (konsistent mit Mucho/Cheese).
+                // Bei Tiebreak (mehrere Top-Bets mit gleichen Punkten) entscheidet Speed
+                // → schnellster bekommt Goldring + Blitz.
+                const showTimePills = isCorrect;
                 return (
                   <div key={i} style={{ position: 'relative' }}>
                     <div style={{
@@ -6624,13 +6630,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               }}>{pts}</span>
                               {isFastest && (
                                 <span style={{
-                                  position: 'absolute', top: -10, right: -10,
-                                  fontSize: 'clamp(18px, 2vw, 26px)', lineHeight: 1,
+                                  position: 'absolute', top: -12, right: -8,
+                                  width: 'clamp(22px, 2.4vw, 30px)', height: 'clamp(22px, 2.4vw, 30px)',
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  lineHeight: 1,
                                   animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
-                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
-                                }}><QQEmojiIcon emoji="⚡"/></span>
+                                  // Drop-Shadow entfernt — erzeugte bei kleinen Icons am Chip-Rand
+                                  // einen sichtbaren rechteckigen Schatten.
+                                }}><QQEmojiIcon emoji="⚡" size="100%"/></span>
                               )}
-                              {/* Zeit-Pill bei Tiebreak (mehrere gleiche Hoechstwerte auf korrekter Option) */}
+                              {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
                                 <span style={{
                                   position: 'absolute',

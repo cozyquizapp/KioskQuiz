@@ -4648,12 +4648,12 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             // Ab 5 Siegern 2 Spalten (4-4 bei 8) damit unten nichts abgeschnitten wird
             const twoCol = wn >= 5;
             const avatarSize =
-              wn === 1 ? 'clamp(110px, 12vw, 180px)'
-              : wn === 2 ? 'clamp(96px, 10vw, 150px)'
-              : wn === 3 ? 'clamp(82px, 8.5vw, 124px)'
-              : wn === 4 ? 'clamp(72px, 7.5vw, 108px)'
-              : wn <= 6 ? 'clamp(56px, 5.2vw, 80px)'
-              : 'clamp(52px, 4.8vw, 74px)';
+              wn === 1 ? 'clamp(130px, 14vw, 210px)'
+              : wn === 2 ? 'clamp(112px, 11.5vw, 172px)'
+              : wn === 3 ? 'clamp(96px, 9.8vw, 144px)'
+              : wn === 4 ? 'clamp(84px, 8.6vw, 124px)'
+              : wn <= 6 ? 'clamp(70px, 6.4vw, 100px)'
+              : 'clamp(64px, 5.8vw, 92px)';
             const nameSize =
               wn === 1 ? 'clamp(40px, 4.6vw, 76px)'
               : wn === 2 ? 'clamp(34px, 3.8vw, 60px)'
@@ -4783,10 +4783,10 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                     <QQTeamAvatar
                       key={tm.id}
                       avatarId={tm.avatarId}
-                      size={'clamp(36px, 3.8vw, 54px)'}
+                      size={'clamp(52px, 5.4vw, 78px)'}
                       title={tm.name}
                       style={{
-                        boxShadow: `0 0 14px ${tm.color}66`,
+                        boxShadow: `0 0 16px ${tm.color}66`,
                         animation: isVisible
                           ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
                           : 'none',
@@ -4795,7 +4795,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                   ))
                 ) : (
                   <div style={{
-                    width: 'clamp(36px, 3.8vw, 54px)', height: 'clamp(36px, 3.8vw, 54px)',
+                    width: 'clamp(52px, 5.4vw, 78px)', height: 'clamp(52px, 5.4vw, 78px)',
                     borderRadius: '50%',
                     background: 'rgba(148,163,184,0.15)',
                     border: '2px dashed rgba(148,163,184,0.4)',
@@ -4981,12 +4981,12 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             // Ab 5 Siegern 2 Spalten (4-4 bei 8) damit unten nichts abgeschnitten wird
             const twoCol = wn >= 5;
             const avatarSize =
-              wn === 1 ? 'clamp(110px, 12vw, 180px)'
-              : wn === 2 ? 'clamp(96px, 10vw, 150px)'
-              : wn === 3 ? 'clamp(82px, 8.5vw, 124px)'
-              : wn === 4 ? 'clamp(72px, 7.5vw, 108px)'
-              : wn <= 6 ? 'clamp(56px, 5.2vw, 80px)'
-              : 'clamp(52px, 4.8vw, 74px)';
+              wn === 1 ? 'clamp(130px, 14vw, 210px)'
+              : wn === 2 ? 'clamp(112px, 11.5vw, 172px)'
+              : wn === 3 ? 'clamp(96px, 9.8vw, 144px)'
+              : wn === 4 ? 'clamp(84px, 8.6vw, 124px)'
+              : wn <= 6 ? 'clamp(70px, 6.4vw, 100px)'
+              : 'clamp(64px, 5.8vw, 92px)';
             const nameSize =
               wn === 1 ? 'clamp(40px, 4.6vw, 76px)'
               : wn === 2 ? 'clamp(34px, 3.8vw, 60px)'

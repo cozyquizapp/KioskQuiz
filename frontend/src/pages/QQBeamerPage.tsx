@@ -6498,9 +6498,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* ZEHN_VON_ZEHN: Options-Grid. Top-Bet-Chips haengen an der unteren
               Card-Linie (analog MUCHO-Reveal) — nicht mehr im Card-Inhalt. */}
           {q.options && q.category === 'ZEHN_VON_ZEHN' && (() => {
+            // Fallback auf frueheste submittedAt, weil timerEndsAt zum Reveal
+            // bereits null ist → ohne Fallback keine Zeit-Anzeige.
+            const earliestSubmit = s.answers.length > 0
+              ? Math.min(...s.answers.map(a => a.submittedAt))
+              : null;
             const t0 = s.timerEndsAt && s.timerDurationSec
               ? s.timerEndsAt - s.timerDurationSec * 1000
-              : null;
+              : earliestSubmit;
             // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
             // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
             const expandedLayout = zvzStep >= 1;
@@ -6536,10 +6541,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x)
                   .sort((a, b) => a.submittedAt - b.submittedAt);
                 const highestVisibleOpt = zvzStep >= 1 && zvzRevealed.has(i);
-                // Zeit-Pills IMMER auf der korrekten Option (konsistent mit Mucho/Cheese).
-                // Bei Tiebreak (mehrere Top-Bets mit gleichen Punkten) entscheidet Speed
-                // → schnellster bekommt Goldring + Blitz.
-                const showTimePills = isCorrect;
+                // Blitz + Zeit NUR bei Tiebreak (mehrere Top-Bets mit gleichen Hoechstpunkten
+                // auf der korrekten Option). Solo-Top-Bet braucht keinen Speed-Indikator —
+                // der Chip mit Goldrand reicht.
+                const showTimePills = isCorrect && highestBets.length > 1;
                 return (
                   <div key={i} style={{ position: 'relative' }}>
                     <div style={{

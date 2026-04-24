@@ -10,6 +10,7 @@
 //   V2 „Ecke"   — Avatare als Floating-Chip an der Aussen-Ecke der Card
 //   V3 „Seite"  — dedizierte Voter-Sidebar rechts neben dem Grid
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 
@@ -980,6 +981,282 @@ export default function QQRevealLabPage() {
         💡 <b>Welche Variante gefällt?</b> Sag einfach z.B. „Mu-Cho ECKE, Quizzichoice SEITE, Cheese UNTER, Schätzchen SEITE, Bunte Tüte ECKE" —
         dann baue ich die echten Beamer-Layouts entsprechend um.
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ODER: Card waechst bei Reveal — keine minHeight-Reserve, smooth-Transition
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <div style={{
+        marginTop: 32, paddingTop: 24,
+        borderTop: '2px dashed rgba(148,163,184,0.2)',
+      }}>
+        <h2 style={{ fontSize: 20, fontWeight: 900, margin: '0 0 6px', color: '#f1f5f9' }}>
+          ✨ Alternative: Card wächst smooth beim Reveal
+        </h2>
+        <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 18, maxWidth: 1100, lineHeight: 1.5 }}>
+          Avatare bleiben <b style={{ color: '#e2e8f0' }}>in</b> der Card (direkte Zuordnung = klar, nicht ändern), aber die
+          <b style={{ color: '#e2e8f0' }}> minHeight-Reserve fliegt raus</b>. Stattdessen: Card startet kompakt (ohne Voter-Slot)
+          und expandiert beim Reveal mit einer smoothen Transition. Keine „zu groß von Anfang an"-Wirkung, kein hektisches Reinploppen.
+          <br/>
+          Pro Variante: Auto-Loop-Toggle zwischen Active (kompakt) und Reveal (expanded), Replay-Button.
+        </div>
+        <TransitionLab />
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Transition-Varianten — Mu-Cho als Demo (reprasentativ fuer alle 3
+// betroffenen Kategorien: Mu-Cho / Quizzichoice / Cheese).
+// ═════════════════════════════════════════════════════════════════════════════
+
+const TRANSITIONS = [
+  {
+    key: 'accordion',
+    label: 'T1 · ACCORDION',
+    desc: 'Voter-Slot klappt von oben rein (max-height 0 → 92px, 450ms ease-out). Saubere Collapse-Mechanik, keine Card-Transformation. Voter faden versetzt rein.',
+  },
+  {
+    key: 'grow',
+    label: 'T2 · GROW',
+    desc: 'Card + Voter-Slot wachsen gemeinsam organisch. Padding steigt mit, Voter faden mit kurzer Kaskade. Weichster Look, als wuerde die Card "atmen".',
+  },
+  {
+    key: 'pop',
+    label: 'T3 · POP',
+    desc: 'Card skaliert kurz (scale 0.97 → 1) + Voter-Slot expandiert mit Bounce, Avatare droppen staggered von oben (wie aktuell). Game-Show-Energie.',
+  },
+] as const;
+type TransitionKey = typeof TRANSITIONS[number]['key'];
+
+function TransitionLab() {
+  const [autoLoop, setAutoLoop] = useState(true);
+  const [replayKey, setReplayKey] = useState(0);
+
+  return (
+    <div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
+      }}>
+        <label style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <input type="checkbox" checked={autoLoop} onChange={e => setAutoLoop(e.target.checked)} />
+          Auto-Loop (5s Active / 5s Reveal)
+        </label>
+        <button
+          onClick={() => setReplayKey(k => k + 1)}
+          style={{
+            padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            fontWeight: 800, fontSize: 13, background: '#22C55E', color: '#052e16',
+          }}
+        >▶ Alle replay</button>
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 14,
+      }}>
+        {TRANSITIONS.map(t => (
+          <TransitionCard
+            key={t.key}
+            tKey={t.key}
+            label={t.label}
+            desc={t.desc}
+            autoLoop={autoLoop}
+            replayKey={replayKey}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TransitionCard({
+  tKey, label, desc, autoLoop, replayKey,
+}: {
+  tKey: TransitionKey; label: string; desc: string; autoLoop: boolean; replayKey: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Auto-Loop / Replay
+  useEffect(() => {
+    setExpanded(false);
+    const t1 = setTimeout(() => setExpanded(true), 800);
+    if (!autoLoop) return () => clearTimeout(t1);
+    const iv = setInterval(() => {
+      setExpanded(v => !v);
+    }, 5000);
+    return () => { clearTimeout(t1); clearInterval(iv); };
+  }, [autoLoop, replayKey]);
+
+  return (
+    <Frame label={label} note={desc}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '4px 8px', borderRadius: 6,
+          background: expanded ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.05)',
+          border: `1px solid ${expanded ? 'rgba(34,197,94,0.3)' : 'rgba(148,163,184,0.15)'}`,
+          fontSize: 10, fontWeight: 900,
+          color: expanded ? '#86efac' : '#94a3b8',
+          letterSpacing: 0.5,
+          transition: 'background 0.3s ease, border-color 0.3s ease, color 0.3s ease',
+        }}>
+          <span>{expanded ? '● REVEAL' : '○ ACTIVE'}</span>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            style={{
+              padding: '2px 8px', borderRadius: 4, border: 'none', cursor: 'pointer',
+              background: 'rgba(59,130,246,0.25)', color: '#93c5fd',
+              fontFamily: 'inherit', fontSize: 10, fontWeight: 800,
+            }}
+          >toggle</button>
+        </div>
+        <QBadge text="🅰️ Wo liegt der Eiffelturm?" accent="#3B82F6" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {MUCHO_OPTS.map((opt, i) => (
+            <TransitionOptionCard
+              key={opt.label}
+              opt={opt}
+              expanded={expanded}
+              tKey={tKey}
+              staggerIdx={i}
+              replayKey={replayKey}
+            />
+          ))}
+        </div>
+      </div>
+    </Frame>
+  );
+}
+
+function TransitionOptionCard({
+  opt, expanded, tKey, staggerIdx, replayKey,
+}: {
+  opt: typeof MUCHO_OPTS[number]; expanded: boolean; tKey: TransitionKey; staggerIdx: number; replayKey: number;
+}) {
+  const isCorrect = expanded && opt.correct;
+  const isWrong = expanded && !opt.correct;
+
+  // T2 GROW: Padding waechst mit
+  const padActive = tKey === 'grow' ? '4px 8px' : '6px 8px';
+  const padRevealed = tKey === 'grow' ? '10px 10px 8px' : '8px 10px';
+
+  // T3 POP: scale-Bounce beim Wechsel
+  const cardScale = tKey === 'pop' && expanded ? 'scale(1)' : (tKey === 'pop' ? 'scale(0.97)' : 'scale(1)');
+
+  return (
+    <div style={{
+      padding: expanded ? padRevealed : padActive,
+      borderRadius: 10,
+      background: isCorrect ? 'rgba(34,197,94,0.22)' : CARD_BG,
+      border: isCorrect ? '2px solid #22C55E' : `1.5px solid ${opt.color}55`,
+      transform: cardScale,
+      transformOrigin: 'center',
+      transition: [
+        'background 0.35s ease',
+        'border-color 0.35s ease',
+        'padding 0.45s cubic-bezier(0.34,1.35,0.64,1)',
+        tKey === 'pop' ? 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1)' : 'transform 0.3s ease',
+      ].join(', '),
+      display: 'flex', flexDirection: 'column', gap: 6,
+      position: 'relative',
+      opacity: isWrong ? 0.7 : 1,
+    }}>
+      {/* Title row — kompakt */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{
+          width: 22, height: 22, borderRadius: 5,
+          background: isCorrect ? '#22C55E' : opt.color,
+          color: '#fff', fontSize: 11, fontWeight: 900,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>{opt.label}</span>
+        <span style={{
+          fontSize: 11, fontWeight: 800,
+          color: isWrong ? '#475569' : '#f1f5f9', flex: 1,
+          transition: 'color 0.3s ease',
+        }}>{opt.text}</span>
+      </div>
+
+      {/* Voter-Slot — Kern der Animation */}
+      <VoterSlot
+        voters={opt.voters}
+        expanded={expanded}
+        tKey={tKey}
+        isCorrect={!!opt.correct && expanded}
+        replayKey={replayKey}
+      />
+    </div>
+  );
+}
+
+function VoterSlot({
+  voters, expanded, tKey, isCorrect, replayKey,
+}: {
+  voters: string[]; expanded: boolean; tKey: TransitionKey; isCorrect: boolean; replayKey: number;
+}) {
+  // T1 ACCORDION: max-height collapse/expand
+  // T2 GROW: flex mit variable min-height + opacity
+  // T3 POP: max-height + Bounce-Keyframes + Avatar-Drop-Anim
+
+  const maxH = expanded ? 60 : 0;
+  const transitionEase = tKey === 'pop'
+    ? 'max-height 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.1s, margin-top 0.4s ease'
+    : tKey === 'grow'
+      ? 'max-height 0.55s cubic-bezier(0.22,1,0.36,1), opacity 0.35s ease 0.15s, margin-top 0.5s cubic-bezier(0.22,1,0.36,1)'
+      : 'max-height 0.45s cubic-bezier(0.34,1.3,0.64,1), opacity 0.25s ease 0.1s';
+
+  return (
+    <div style={{
+      maxHeight: maxH,
+      marginTop: expanded ? 2 : 0,
+      opacity: expanded ? 1 : 0,
+      overflow: 'hidden',
+      transition: transitionEase,
+      display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center',
+    }}>
+      {voters.length === 0 && expanded && (
+        <span style={{ fontSize: 9, color: '#475569', fontStyle: 'italic' }}>— niemand</span>
+      )}
+      {voters.map((id, i) => {
+        const team = teamById(id);
+        // T3 POP: Avatar droppt staggered rein
+        const dropAnim = tKey === 'pop' && expanded
+          ? `voterSlotDrop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.15 + i * 0.08}s both`
+          : undefined;
+        const fadeAnim = tKey !== 'pop' && expanded
+          ? `voterSlotFade 0.35s ease ${0.15 + i * 0.06}s both`
+          : undefined;
+        return (
+          <div
+            key={`${id}-${replayKey}-${expanded ? 'r' : 'a'}`}
+            style={{ animation: dropAnim ?? fadeAnim }}
+          >
+            <div title={team.name} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              padding: '1px 6px 1px 1px', borderRadius: 999,
+              background: 'rgba(0,0,0,0.5)',
+              border: `1.5px solid ${isCorrect ? '#FBBF24' : team.color}`,
+              boxShadow: isCorrect ? '0 0 6px rgba(251,191,36,0.45)' : 'none',
+            }}>
+              <QQTeamAvatar avatarId={team.avatarId} size={18} />
+              <span style={{
+                fontSize: 9, fontWeight: 900,
+                color: isCorrect ? '#FBBF24' : '#e2e8f0',
+              }}>{team.name.slice(0,4)}</span>
+            </div>
+          </div>
+        );
+      })}
+      <style>{`
+        @keyframes voterSlotDrop {
+          0%   { opacity: 0; transform: translateY(-14px) scale(0.7); }
+          60%  { opacity: 1; transform: translateY(2px) scale(1.06); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes voterSlotFade {
+          0%   { opacity: 0; transform: translateY(-6px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

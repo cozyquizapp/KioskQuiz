@@ -2935,14 +2935,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 pointerEvents: 'none',
               }} />
             )}
-            {/* Round name — Ziffer-Flip / Finale-Wort-Roll / BAM */}
+            {/* Round name — Ziffer-Flip / Finale-Wort-Roll / BAM.
+                overflow:hidden nur waehrend der Transition, sonst bleibt
+                ein sichtbares Clip-Rechteck um das FINALE-Wort stehen. */}
             {isFinaleTransition ? (
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(80px, 14vw, 200px)', fontWeight: 900, lineHeight: 1,
                 textAlign: 'center',
                 position: 'relative', display: 'inline-block',
-                overflow: 'hidden',
+                overflow: transitioning ? 'hidden' : 'visible',
                 // Padding-x fängt Drop-Shadow + letterSpacing-Breite des FINALE-Worts ab,
                 // sonst wird das letzte 'E' rechts abgeschnitten.
                 padding: '0 0.18em 0.18em',
@@ -2995,10 +2997,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   color: 'transparent',
                   animation: 'roundWordSweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 1100ms both',
                 }}>{titleWord}</span>
-                {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms) */}
+                {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms).
+                    overflow:hidden nur waehrend der Transition — sonst bleibt ein
+                    sichtbares Clip-Rechteck um die Ziffer stehen. */}
                 <span style={{
                   position: 'relative', display: 'inline-block',
-                  overflow: 'hidden',
+                  overflow: transitioning ? 'hidden' : 'visible',
                   paddingBottom: '0.15em',
                   lineHeight: 1,
                   color: color,
@@ -3048,7 +3052,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative', zIndex: 5,
           }} />
 
-          {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer) */}
+          {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).
+              overflow:hidden nur waehrend der Transition, sonst bleibt ein
+              Clip-Rechteck um den Subtitle stehen. */}
           {hasRoundTransition ? (
             <div style={{
               fontFamily: fontFam,
@@ -3057,7 +3063,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               position: 'relative', zIndex: 5,
               textAlign: 'center',
               display: 'inline-block',
-              overflow: 'hidden',
+              overflow: transitioning ? 'hidden' : 'visible',
               paddingBottom: '0.2em',
             }}>
               {/* Sizer (unsichtbar) — trägt die Baseline + Breite des neuen Subtitle */}

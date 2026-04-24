@@ -589,18 +589,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Bei MUCHO/ZehnvonZehn/Cheese/CozyGuessr werden im REVEAL pro Moderator-Klick
   // sukzessive Avatare oder Pins eingespielt. Pro Step ein „Plopp", beim finalen
   // Lösungs-Step (z.B. MUCHO grünes Feld) ein satterer Bestätigungs-Sound.
-  const prevRevealStepsRef = useRef<{ mucho: number; zvz: number; cheese: number; map: number } | null>(null);
+  //
+  // Alter Code hatte einen separaten Reset-useEffect der BAUM die frisch gesetzte
+  // Baseline direkt wieder auf null ueberschrieb → jeder erste Step einer Frage
+  // hatte kein Audio. Jetzt konsolidiert in einem Hook + prevQidRef:
+  // - Frage-Wechsel (qid neu): prevSteps auf curr setzen, KEIN Sound.
+  // - Sonst: curr mit prev vergleichen, Sound pro Step-Inkrement.
+  const prevRevealStepsRef = useRef({ mucho: 0, zvz: 0, cheese: 0, map: 0 });
+  const prevRevealQidRef = useRef<string | null>(null);
   useEffect(() => {
+    const qid = s.currentQuestion?.id ?? null;
     const curr = {
       mucho:  s.muchoRevealStep  ?? 0,
       zvz:    s.zvzRevealStep    ?? 0,
       cheese: s.cheeseRevealStep ?? 0,
       map:    s.mapRevealStep    ?? 0,
     };
-    // Beim ersten Render & bei Frage-Wechsel nichts spielen, nur Baseline merken.
+    // Question wechselt → Baseline neu setzen, kein Sound.
+    if (qid !== prevRevealQidRef.current) {
+      prevRevealQidRef.current = qid;
+      prevRevealStepsRef.current = curr;
+      return;
+    }
     const prev = prevRevealStepsRef.current;
     prevRevealStepsRef.current = curr;
-    if (!prev || s.phase !== 'QUESTION_REVEAL' || s.sfxMuted) return;
+    if (s.phase !== 'QUESTION_REVEAL' || s.sfxMuted) return;
 
     // MUCHO: Akt-1-Steps → Plopp; Lock-Step (Lösung grün) → Bestätigungs-Sound.
     if (curr.mucho > prev.mucho) {
@@ -627,12 +640,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playFieldPlaced();
     }
   }, [s.muchoRevealStep, s.zvzRevealStep, s.cheeseRevealStep, s.mapRevealStep, s.phase, s.sfxMuted, s.currentQuestion?.id, s.answers]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reset der Reveal-Step-Baseline bei jeder neuen Frage, sonst feuert der Hook
-  // beim Phase-Wechsel mit alten prev-Werten.
-  useEffect(() => {
-    prevRevealStepsRef.current = null;
-  }, [s.currentQuestion?.id]);
 
   // ── Music: play question musicUrl ──
   const audioRef = useRef<HTMLAudioElement | null>(null);

@@ -1408,10 +1408,12 @@ function MuchoOptionsReveal({
             boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
               : '0 4px 16px rgba(0,0,0,0.3)',
             display: 'flex', alignItems: 'flex-start', gap: 16,
-            // Fixe Kartenhöhe vom ersten Render an, damit Voter-Avatare keinen
-            // Reflow auslösen. Höhe deckt Title (1-2 Zeilen) + Voter-Zeile ab.
-            minHeight: optImg?.url ? 220 : 200,
-            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+            // POP-Transition: Card startet kompakt, waechst mit subtilem scale-Bounce
+            // sobald Voter reinkommen (voterShow). Kein minHeight mehr — Slot unten
+            // faehrt eigenstaendig per max-height aus.
+            transform: voterShow ? 'scale(1)' : 'scale(0.98)',
+            transformOrigin: 'center',
+            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
             animation: isCorrect
               ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
               : isWrong
@@ -1450,8 +1452,15 @@ function MuchoOptionsReveal({
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
-              {/* Voter-Slot: immer reserviert (min-height), Inhalt erscheint animiert */}
-              <div style={{ minHeight: 92, marginTop: 'auto' }}>
+              {/* Voter-Slot: POP-Transition — max-height 0 → 92 mit Bounce.
+                  Card waechst smooth statt vom ersten Render reserviert zu sein. */}
+              <div style={{
+                maxHeight: voterShow ? 92 : 0,
+                marginTop: voterShow ? 'auto' : 0,
+                opacity: voterShow ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'max-height 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.1s, margin-top 0.4s ease',
+              }}>
               {voterShow && (() => {
                 const voters = answers
                   .filter(a => a.text === String(i))
@@ -5750,11 +5759,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
 
           {/* Frosted question/answer card — bottom.
-              minHeight reserviert Platz für Reveal-Zustand (Frage + Antwort + Gewinner-Row),
-              damit die Karte beim Reveal nicht nach oben wächst. */}
+              POP-Transition: minHeight waechst dynamisch beim Reveal
+              (von kompakt fuer Bild+Frage auf full-size fuer Bild+Frage+Loesung+Avatare).
+              Scale-Bounce beim Reveal als Akzent. */}
           <div style={{
             width: '100%', maxWidth: 900,
-            minHeight: 'clamp(400px, 50vh, 540px)',
+            minHeight: revealed
+              ? 'clamp(400px, 50vh, 540px)'
+              : 'clamp(260px, 32vh, 360px)',
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -5764,7 +5776,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.1s both'
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
-            transition: 'padding 0.4s ease, border-color 0.4s ease',
+            transform: revealed ? 'scale(1)' : 'scale(0.985)',
+            transformOrigin: 'center',
+            transition: 'padding 0.4s ease, border-color 0.4s ease, min-height 0.5s cubic-bezier(0.34,1.56,0.64,1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
             pointerEvents: 'auto',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -6134,12 +6148,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                       : `0 4px 16px rgba(0,0,0,0.3)`,
                     display: 'flex', flexDirection: 'column', gap: 12,
-                    // Fixe Höhe vom ersten Render an: deckt Title-Zeile + Highbet-Slot
-                    // (jetzt 92px wegen größerer Avatare) ab.
-                    minHeight: optImg?.url ? 260 : 240,
-                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
-                    // Nur Brightness-Pulse beim Lock — KEIN scale-Pop, sonst werden
-                    // die schon sichtbaren Top-Bet-Avatare optisch "neu gesetzt".
+                    // POP-Transition: Card startet kompakt (kein minHeight mehr),
+                    // wächst mit subtilem scale-Bounce wenn Top-Bets reinkommen.
+                    transform: highestVisibleOpt ? 'scale(1)' : 'scale(0.98)',
+                    transformOrigin: 'center',
+                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+                    // Nur Brightness-Pulse beim Lock — KEIN scale-Pop auf die Card
+                    // selbst, sonst werden die schon sichtbaren Top-Bet-Avatare
+                    // optisch "neu gesetzt".
                     animation: isCorrect
                       ? 'revealDoubleBlink 1.1s ease both'
                       : isWrong
@@ -6178,17 +6194,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       }}>{optText}</div>
                     </div>
                     {/* Highbet-Slot: Top-Bets (mögliche Gewinner) direkt auf der Option.
-                        Höhe reserviert vom ersten Render an, Inhalt blendet beim Step 1 auf.
+                        POP-Transition: max-height 0 → 120 beim Step 1 mit Bounce.
                         Avatare bewusst groß: das sind die wichtigsten Spieler dieser Option. */}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      minHeight: 92,
+                      maxHeight: highestVisibleOpt ? 120 : 0,
                       display: 'flex', flexWrap: 'wrap', gap: 10,
                       alignItems: 'center', justifyContent: 'flex-start',
-                      borderTop: '1px dashed rgba(255,255,255,0.10)',
-                      paddingTop: 10,
+                      borderTop: highestVisibleOpt ? '1px dashed rgba(255,255,255,0.10)' : '1px dashed transparent',
+                      paddingTop: highestVisibleOpt ? 10 : 0,
                       opacity: highestVisibleOpt ? 1 : 0,
-                      transition: 'opacity 0.35s ease',
+                      overflow: 'hidden',
+                      transition: 'max-height 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.1s, padding-top 0.4s ease, border-color 0.3s ease',
                     }}>
                       {highestBets.length === 0 ? (
                         <span style={{
@@ -6197,7 +6214,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           {lang === 'en' ? 'no top bet' : 'kein Top-Tipp'}
                         </span>
-                      ) : highestBets.map(({ team: tm, pts }) => (
+                      ) : highestBets.map(({ team: tm, pts }, bi) => (
                         <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                           display: 'flex', alignItems: 'center', gap: 8,
                           padding: '4px 18px 4px 4px',
@@ -6205,6 +6222,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           background: 'rgba(0,0,0,0.6)',
                           border: `2px solid ${tm.color}`,
                           boxShadow: `0 3px 14px rgba(0,0,0,0.5), 0 0 14px ${tm.color}66`,
+                          // POP: Chip droppt staggered von oben rein (analog MUCHO-Voter).
+                          animation: highestVisibleOpt
+                            ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`
+                            : undefined,
                         }}>
                           <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(48px, 5vw, 72px)'} />
                           <span style={{
@@ -6859,15 +6880,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Correct team — winner banner (non-Schätzchen). Platz wird ab Reveal-Start
-              reserviert (minHeight), damit das verspätete Akt3-Einblenden das Layout
-              nicht hochzieht. Gilt für MUCHO / ZvZ. */}
+          {/* Correct team — winner banner (non-Schätzchen).
+              POP-Transition: max-height 0 → voll beim showUnifiedWinner,
+              statt Platz dauerhaft zu reservieren. Gilt für MUCHO / ZvZ. */}
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
             <div style={{
               width: '100%', maxWidth: 1400,
-              minHeight: 'clamp(210px, 22vh, 260px)',
+              maxHeight: showUnifiedWinner ? 360 : 0,
+              overflow: 'hidden',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 12,
+              marginBottom: showUnifiedWinner ? 12 : 0,
+              transition: 'max-height 0.55s cubic-bezier(0.34,1.56,0.64,1), margin-bottom 0.4s ease',
             }}>
               {showUnifiedWinner && (() => {
             const isEn = lang === 'en';

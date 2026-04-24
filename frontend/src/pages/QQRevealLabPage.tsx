@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQEmojiIcon } from '../components/QQIcon';
 
 // ── Mock-Teams ──────────────────────────────────────────────────────────────
 type MockTeam = { id: string; name: string; color: string; avatarId: string };
@@ -455,7 +456,7 @@ export default function QQRevealLabPage() {
           textDecoration: 'none', fontWeight: 700, fontSize: 13,
         }}>← Menü</Link>
         <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>
-          ✨ Reveal-Lab — Card-Grow-Transition
+          <QQEmojiIcon emoji="✨"/> Reveal-Lab — Card-Grow-Transition
         </h1>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <label style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>

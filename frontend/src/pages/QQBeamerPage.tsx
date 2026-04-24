@@ -17,7 +17,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
-import { QQIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
+import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
@@ -1124,7 +1124,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           <QQTeamAvatar avatarId={activeTeam.avatarId} size={36} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#94a3b8' }}>
-              🥔 {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
+              <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
             </span>
             <span title={activeTeam.name} style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', fontWeight: 900, color: activeTeam.color }}>
               {truncName(activeTeam.name, 18)} {lang === 'en' ? 'is up!' : 'ist dran!'}
@@ -1150,7 +1150,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
           color: '#94a3b8', fontSize: 15, fontWeight: 700,
         }}>
-          🥔 {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
+          <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
         </div>
       )}
 
@@ -1163,7 +1163,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           fontSize: 'clamp(18px, 2vw, 28px)', color: '#94a3b8', fontWeight: 800,
         }}>
           <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)' }}>
-            ❌ {lang === 'en' ? 'Out:' : 'Raus:'}
+            <QQEmojiIcon emoji="❌"/> {lang === 'en' ? 'Out:' : 'Raus:'}
           </span>
           {s.hotPotatoEliminated.map((id: string) => {
             const t = s.teams.find((tm: any) => tm.id === id);
@@ -1186,7 +1186,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
                     filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.7))',
                     animation: 'hpPotatoDrop 1.3s cubic-bezier(0.4,1.4,0.6,1) both',
                     zIndex: 5,
-                  }}>🥔</span>
+                  }}><QQEmojiIcon emoji="🥔"/></span>
                 )}
               </span>
             );
@@ -1715,7 +1715,7 @@ function MuchoOptionsReveal({
                             fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
                             animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
                             filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
-                          }}>⚡</span>
+                          }}><QQEmojiIcon emoji="⚡"/></span>
                         )}
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
                         {timeSec != null && isCorrect && akt3On && (
@@ -2638,7 +2638,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
           animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
         }}>
-          ✨ {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} ✨
+          <QQEmojiIcon emoji="✨"/> {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} <QQEmojiIcon emoji="✨"/>
         </div>
       </div>
 
@@ -3185,7 +3185,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   background: `${color}18`, border: `2px solid ${color}55`,
                   boxShadow: `0 0 24px ${color}33`, minWidth: 200,
                 }}>
-                  <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}>📍</div>
+                  <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}><QQEmojiIcon emoji="📍"/></div>
                   <div style={{
                     fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
                     color, letterSpacing: '0.04em',
@@ -3311,7 +3311,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                       })}
                     </div>
                     <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>+</div>
-                    <div style={{ fontSize: 44 }}>📌</div>
+                    <div style={{ fontSize: 44 }}><QQEmojiIcon emoji="📌"/></div>
                     <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>=</div>
                     {/* After: same grid, one tile stacked */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
@@ -3337,7 +3337,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                                   transform: 'translate(3px, -3px)',
                                   zIndex: -1,
                                 }} />
-                                <span style={{ fontSize: 24 }}>📌</span>
+                                <span style={{ fontSize: 24 }}><QQEmojiIcon emoji="📌"/></span>
                               </>
                             )}
                           </div>
@@ -3639,7 +3639,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
               animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both',
             }}>
-              <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}>🎯</span>
+              <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}><QQEmojiIcon emoji="🎯"/></span>
               <span style={{
                 fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
                 color: '#FDE68A', letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -3810,7 +3810,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 <span style={{
                   fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
                   color: '#FBBF24', letterSpacing: '0.05em', textTransform: 'uppercase',
-                }}>⚡ Schnellster zuerst</span>
+                }}><QQEmojiIcon emoji="⚡"/> Schnellster zuerst</span>
                 {correctVoters.map((a, i) => {
                   const tm = s.teams.find(t => t.id === a.teamId);
                   if (!tm) return null;
@@ -3892,7 +3892,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                   }}>
-                    🏆 {lang === 'en' ? 'Round winner' : 'Rundensieger'}
+                    <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Round winner' : 'Rundensieger'}
                   </div>
                   <div style={{
                     fontSize: 'clamp(16px, 1.9vw, 26px)', fontWeight: 900,
@@ -4261,7 +4261,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{
                 fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900, color: '#64748b',
                 letterSpacing: '0.05em', textTransform: 'uppercase',
-              }}>🏆 Treffer</span>
+              }}><QQEmojiIcon emoji="🏆"/> Treffer</span>
               {teamScore.map(ts => {
                 const tm = s.teams.find(t => t.id === ts.teamId);
                 if (!tm) return null;
@@ -4385,7 +4385,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{
                 fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900, color: '#64748b',
                 letterSpacing: '0.05em', textTransform: 'uppercase',
-              }}>🎯 Richtige Positionen</span>
+              }}><QQEmojiIcon emoji="🎯"/> Richtige Positionen</span>
               {teamScores.map(ts => {
                 const tm = s.teams.find(t => t.id === ts.teamId);
                 if (!tm) return null;
@@ -4440,7 +4440,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? '#60A5FA' : '#475569', width: 20 }}>#{i + 1}</span>
               {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
               <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 13 }}>{team?.name}</span>
-              <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? '#4ade80' : '#64748b' }}>📍 {distStr}</span>
+              <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? '#4ade80' : '#64748b' }}><QQEmojiIcon emoji="📍"/> {distStr}</span>
             </div>
           );
         });
@@ -4632,7 +4632,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
             letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
-            🏆 {winners.length > 1
+            <QQEmojiIcon emoji="🏆"/> {winners.length > 1
               ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
               : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
           </div>
@@ -4965,7 +4965,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
             letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
-            🏆 {winners.length > 1
+            <QQEmojiIcon emoji="🏆"/> {winners.length > 1
               ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
               : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
           </div>
@@ -5227,7 +5227,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EAB308',
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
         }}>
-          🎯 {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
+          <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(22px, 2.2vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
@@ -5307,7 +5307,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               fontSize: 'clamp(14px, 1.3vw, 20px)', fontWeight: 900, color: '#cbd5e1',
               letterSpacing: '0.12em', textTransform: 'uppercase',
             }}>
-              🏆 {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
+              <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
             </div>
             {!winner ? (
               <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
@@ -5648,7 +5648,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(251,191,36,0.25)',
           zIndex: 1000, letterSpacing: 0.3,
         }}>
-          🌍 {title}
+          <QQEmojiIcon emoji="🌍"/> {title}
         </div>
 
         {/* Antwort-Label unten (wenn Target sichtbar) */}
@@ -5681,7 +5681,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)',
             color: '#FDE68A', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
           }}>
-            🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
+            <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
           {(() => {
             // Tie-Erkennung: Teams mit (gerundet) gleicher Distanz — dann entscheidet Speed.
@@ -5729,7 +5729,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
-                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9vw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}>📍 {dist}</span>
+                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9vw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             });
@@ -6215,7 +6215,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             <span style={{
                               position: 'absolute', top: -10, right: -10,
                               fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
-                            }}>⚡</span>
+                            }}><QQEmojiIcon emoji="⚡"/></span>
                           )}
                         </div>
                         <span style={{
@@ -6609,7 +6609,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Answer reveal (skip for MUCHO/ZEHN_VON_ZEHN + Hot Potato — handled separately).
               Rechts im Feld: Avatare der Teams, die das Richtige getippt haben,
-              sortiert nach Reaktionszeit (schnellster mit ⚡-Krone).
+              sortiert nach Reaktionszeit (schnellster mit <QQEmojiIcon emoji="⚡"/>-Krone).
               CHEESE: step-based — erst bei cheeseShowGreen (Step 1) sichtbar; Avatare kaskadieren bei Step 2. */}
           {revealed && s.revealedAnswer && q.category !== 'MUCHO' && q.category !== 'ZEHN_VON_ZEHN'
             && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (() => {
@@ -6705,7 +6705,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 <span style={{
                                   position: 'absolute', top: -12, right: -12,
                                   fontSize: 'clamp(24px, 2.6vw, 34px)', lineHeight: 1,
-                                }}>⚡</span>
+                                }}><QQEmojiIcon emoji="⚡"/></span>
                               )}
                             </div>
                             {timeSec != null && (
@@ -6756,7 +6756,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
                   color: '#86efac', letterSpacing: 0.5,
                 }}>
-                  🥔 {lang === 'en' ? 'All possible answers' : 'Alle möglichen Antworten'}
+                  <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'All possible answers' : 'Alle möglichen Antworten'}
                 </div>
                 <div style={{
                   display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
@@ -7018,7 +7018,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }}>
                     <span style={{
                       fontSize: 'clamp(16px, 1.7vw, 22px)', lineHeight: 1,
-                    }}>🎯</span>
+                    }}><QQEmojiIcon emoji="🎯"/></span>
                     <span style={{
                       color: '#fff', fontWeight: 900,
                       fontSize: 'clamp(14px, 1.6vw, 20px)', lineHeight: 1,
@@ -7183,7 +7183,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   border: `2px solid ${tColor}66`,
                   boxShadow: `0 0 32px ${tColor}44`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>🏆</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}><QQEmojiIcon emoji="🏆"/></span>
                   <QQTeamAvatar avatarId={w.team.avatarId} size={'clamp(28px, 3vw, 40px)'} style={{ flexShrink: 0 }} />
                   <span style={{
                     fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)', color: tColor, lineHeight: 1.1,
@@ -7315,7 +7315,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
                   animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>🥔</span>
+                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}><QQEmojiIcon emoji="🥔"/></span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {hpCoWinners.map((tm, i) => (
                       <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -7817,7 +7817,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           ['--bolt-rot' as string]: `${b.rot}deg`,
           animation: `comebackBoltFall 1.1s cubic-bezier(0.4,0,0.6,1) ${b.delay}s both`,
           pointerEvents: 'none', zIndex: 6,
-        }}>⚡</div>
+        }}><QQEmojiIcon emoji="⚡"/></div>
       ))}
 
       <div style={{
@@ -7832,7 +7832,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
         position: 'relative', zIndex: 7,
       }}>
-        ⚡ {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
+        <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
       </div>
       {/* Sub-Header nur bei Step 0, kleiner (darunter), wenn schon bei Step 1+ */}
       {bamActive && (
@@ -7924,7 +7924,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             boxShadow: `0 0 40px rgba(239,68,68,0.2), 0 8px 28px rgba(0,0,0,0.4)`,
             fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fecaca',
           }}>
-            ⚡ {lang === 'en' ? actionTextEn : actionTextDe}
+            <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? actionTextEn : actionTextDe}
           </div>
           {leaderTeams.length > 0 && (
             <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -8020,7 +8020,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'progress', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🗺️</span>
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
           {de ? 'Wo sind wir?' : 'Where are we?'}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -8042,7 +8042,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'standings', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>📊</span> {de ? 'Aktueller Stand' : 'Current Standings'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji="📊"/></span> {de ? 'Aktueller Stand' : 'Current Standings'}
         </div>
         <div style={{
           display: 'grid',
@@ -8085,7 +8085,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'leaderboard', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>🏆</span> {de ? 'Bestenliste' : 'Leaderboard'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
           {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 600, color: '#475569' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
@@ -8144,7 +8144,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (funStats.highestScore && funStats.highestScore.score > 0) {
       records.push(
         <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
             <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
@@ -8170,7 +8170,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (funStats.winStreak && funStats.winStreak.streak >= 2) {
       records.push(
         <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
             <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
@@ -8184,7 +8184,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
       records.push(
         <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚡</span>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
             <div style={{ fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
             <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
@@ -8374,7 +8374,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 borderRadius: 14, background: 'rgba(34,197,94,0.08)',
                 border: '1px solid rgba(34,197,94,0.3)',
               }}>
-                <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>✨</span>
+                <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}><QQEmojiIcon emoji="✨"/></span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} size={'clamp(34px, 3.6vw, 46px)'} />}
                 <span style={{ fontWeight: 800, fontSize: 'clamp(18px, 2vw, 26px)', color: team?.color ?? '#e2e8f0' }}>{pr.teamName}</span>
                 {pr.draftTitle && (
@@ -8440,7 +8440,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           )}
           {funStats.todayStats.topWinner && funStats.todayStats.topWinner.wins >= 2 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>🔥</span>
+              <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}><QQEmojiIcon emoji="🔥"/></span>
               <div>
                 <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 26px)', color: '#e2e8f0' }}>
                   {funStats.todayStats.topWinner.teamName}
@@ -8526,7 +8526,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         letterSpacing: '0.02em',
       }}>
         {mode === 'preGame'
-          ? <>✨ {de ? 'Gleich geht\'s los' : 'Starting soon'}</>
+          ? <><QQEmojiIcon emoji="✨"/> {de ? 'Gleich geht\'s los' : 'Starting soon'}</>
           : <>⏸ {de ? 'Kurze Pause' : 'Short Break'}</>}
       </div>
 
@@ -8638,7 +8638,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           <div style={{
             fontSize: 'clamp(40px, 5vw, 64px)',
             animation: 'finaleStarBurst 0.5s ease 0.9s both',
-          }}>🏆</div>
+          }}><QQEmojiIcon emoji="🏆"/></div>
 
           {/* Avatar with celebration ring */}
           <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
@@ -8786,7 +8786,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           color: '#FBBF24', textAlign: 'center', lineHeight: 1.1,
           textShadow: '0 0 40px rgba(251,191,36,0.4)',
         }}>
-          🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+          <QQEmojiIcon emoji="🎉"/> {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
         <div style={{
           fontSize: 'clamp(18px, 1.9vw, 24px)', fontWeight: 600,
@@ -8808,7 +8808,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340 }}>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC' }}>
-                📱 {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
+                <QQEmojiIcon emoji="📱"/> {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
               </div>
               <div style={{ fontSize: 17, color: '#94a3b8', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
                 {lang === 'de'
@@ -9609,7 +9609,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   boxShadow: '0 2px 6px rgba(0,0,0,0.4), 0 0 10px rgba(251,191,36,0.5)',
                   display: 'inline-flex', alignItems: 'center', gap: 2,
                   pointerEvents: 'none',
-                }}>⭐{teamPhaseStats[t.id].jokersEarned}</span>
+                }}><QQEmojiIcon emoji="⭐"/>{teamPhaseStats[t.id].jokersEarned}</span>
               )}
               {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}
               {jokerEarners.has(t.id) && (
@@ -9628,7 +9628,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
                     zIndex: 10,
                   }}
-                >⭐</span>
+                ><QQEmojiIcon emoji="⭐"/></span>
               )}
               {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
               {(streaks[t.id] ?? 0) >= 3 && (
@@ -9641,7 +9641,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 0 8px rgba(251,146,60,0.9)) drop-shadow(0 0 14px rgba(239,68,68,0.5))',
                   animation: 'streakFlameWobble 0.7s ease-in-out infinite',
                   zIndex: 9,
-                }} title={`${streaks[t.id]}x in Folge`}>🔥</span>
+                }} title={`${streaks[t.id]}x in Folge`}><QQEmojiIcon emoji="🔥"/></span>
               )}
               {/* F2 Rank-Change-Indikator: Pfeil hoch/runter bei Platztausch. */}
               {rankChanges[t.id] && (

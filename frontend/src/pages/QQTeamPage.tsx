@@ -12,7 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
-import { QQIcon, qqCatSlug } from '../components/QQIcon';
+import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
   playQuestionStart, playRoundStart,
@@ -754,7 +754,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             pointerEvents: 'none',
           }}
         >
-          <span style={{ fontSize: 22 }}>⚡</span>
+          <span style={{ fontSize: 22 }}><QQEmojiIcon emoji="⚡"/></span>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
             <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 800, letterSpacing: 0.4 }}>
               {lang === 'de' ? 'FELD GEKLAUT' : 'FIELD STOLEN'}
@@ -798,7 +798,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                         textDecorationColor: used ? '#64748b' : undefined,
                         lineHeight: 1,
                         transition: 'color 0.3s ease, filter 0.3s ease, opacity 0.3s ease',
-                      }}>⭐</span>
+                      }}><QQEmojiIcon emoji="⭐"/></span>
                     );
                   })}
                 </div>
@@ -1222,7 +1222,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
           textShadow: '0 2px 14px rgba(251,191,36,0.4)',
           animation: 'tcreveal 0.5s ease 0.4s both',
         }}>
-          ✨ {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} ✨
+          <QQEmojiIcon emoji="✨"/> {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} <QQEmojiIcon emoji="✨"/>
         </div>
 
         {/* Tagline */}
@@ -1240,15 +1240,15 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
         <div style={{
           position: 'absolute', top: 12, left: 16, fontSize: 20,
           animation: 'tcSparkle 1.8s ease-in-out infinite',
-        }}>✨</div>
+        }}><QQEmojiIcon emoji="✨"/></div>
         <div style={{
           position: 'absolute', top: 40, right: 18, fontSize: 16,
           animation: 'tcSparkle 2.2s ease-in-out 0.4s infinite',
-        }}>⭐</div>
+        }}><QQEmojiIcon emoji="⭐"/></div>
         <div style={{
           position: 'absolute', bottom: 30, left: 22, fontSize: 16,
           animation: 'tcSparkle 2s ease-in-out 0.8s infinite',
-        }}>⭐</div>
+        }}><QQEmojiIcon emoji="⭐"/></div>
       </div>
     </CozyCard>
   );
@@ -1518,7 +1518,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           fontSize: 14, color: '#64748b', marginBottom: 8,
         }}>
-          🥔 {s.teams.find(tm => tm.id === s.hotPotatoActiveTeamId)?.name ?? '?'} {lang === 'en' ? 'is up' : 'ist dran'}
+          <QQEmojiIcon emoji="🥔"/> {s.teams.find(tm => tm.id === s.hotPotatoActiveTeamId)?.name ?? '?'} {lang === 'en' ? 'is up' : 'ist dran'}
         </div>
       )}
       {!isRevealed && s.hotPotatoEliminated.includes(myTeamId) && (
@@ -1774,7 +1774,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
-              <span>📊 {lang === 'en' ? 'Your order' : 'Eure Reihenfolge'}</span>
+              <span><QQEmojiIcon emoji="📊"/> {lang === 'en' ? 'Your order' : 'Eure Reihenfolge'}</span>
               <span style={{ color: hits === correctSeq.length ? '#4ade80' : '#94a3b8' }}>
                 {hits}/{correctSeq.length} {lang === 'en' ? 'correct' : 'richtig'}
               </span>
@@ -1885,7 +1885,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
-              🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
+              <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
             </div>
             {scored.map((a, i) => {
               const team = s.teams.find(t => t.id === a.teamId);
@@ -1903,7 +1903,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
                   <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}>📍 {dist}</span>
+                  <span style={{ fontWeight: 800, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             })}
@@ -1983,7 +1983,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             fontSize: 13, fontWeight: 700, color: '#cbd5e1',
             animation: 'tcTrostIn 0.5s ease 0.45s both',
           }}>
-            ✨ {pick}
+            <QQEmojiIcon emoji="✨"/> {pick}
           </div>
         );
       })()}
@@ -2109,7 +2109,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
       {/* All answered indicator */}
       {answeredCount != null && totalTeams != null && totalTeams > 1 && answeredCount >= totalTeams && (
         <div style={{ fontSize: 13, fontWeight: 900, color: '#4ade80' }}>
-          ✅ {lang === 'de' ? 'Alle Teams fertig!' : 'All teams done!'}
+          <QQEmojiIcon emoji="✅"/> {lang === 'de' ? 'Alle Teams fertig!' : 'All teams done!'}
         </div>
       )}
     </div>
@@ -2558,7 +2558,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   if (!isMyTurn) {
     return (
       <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
-        🕵️ {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing' : 'wählt gerade'}<AnimatedDots />
+        <QQEmojiIcon emoji="🕵️"/> {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing' : 'wählt gerade'}<AnimatedDots />
         <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
     );
@@ -2577,7 +2577,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
-        🕵️ {lang === 'en' ? 'Your turn — which is false?' : 'Du bist dran — welche ist falsch?'}
+        <QQEmojiIcon emoji="🕵️"/> {lang === 'en' ? 'Your turn — which is false?' : 'Du bist dran — welche ist falsch?'}
       </div>
 
       {/* Drum wheel */}
@@ -2731,7 +2731,7 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
         </MapContainer>
       </div>
       {pin
-        ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}>📍 {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
+        ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
         : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>{t.pinIt.noPin[lang]}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!!pin} submitted={submitted} catColor={catColor} />
@@ -3154,8 +3154,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           textAlign: 'center',
         }}>
           {lang === 'de'
-            ? <>✅ Richtig — aber nicht das schnellste Team.<br/>Du darfst an <b>{positionLabel} Position</b> setzen.</>
-            : <>✅ Correct — but not the fastest team.<br/>You place in <b>{positionLabel} position</b>.</>}
+            ? <><QQEmojiIcon emoji="✅"/> Richtig — aber nicht das schnellste Team.<br/>Du darfst an <b>{positionLabel} Position</b> setzen.</>
+            : <><QQEmojiIcon emoji="✅"/> Correct — but not the fastest team.<br/>You place in <b>{positionLabel} position</b>.</>}
         </div>
       )}
 
@@ -3619,7 +3619,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
         {/* Hero section */}
         <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>
           {iWon ? (
-            <div style={{ fontSize: 52, marginBottom: 4 }}>🏆</div>
+            <div style={{ fontSize: 52, marginBottom: 4 }}><QQEmojiIcon emoji="🏆"/></div>
           ) : (
             <QQTeamAvatar avatarId={winner.avatarId} size={52} style={{ margin: '0 auto 4px' }} />
           )}

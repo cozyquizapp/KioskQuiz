@@ -151,6 +151,64 @@ export function qqSubSlug(kind: string): QQIconSlug | null {
   }
 }
 
+// Emoji → Fluent-Icon-Slug Mapping. Ermoeglicht Inline-Replacement via
+// <QQEmojiIcon emoji="🏆" size={...}/> ohne jedesmal den Slug rauszusuchen.
+const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
+  '🏆': 'fx-trophy',
+  '🥇': 'fx-medal-gold',
+  '🥈': 'fx-medal-silver',
+  '🥉': 'fx-medal-bronze',
+  '⚡': 'fx-lightning',
+  '✅': 'fx-check',
+  '❌': 'fx-cross',
+  '📍': 'fx-place',
+  '📌': 'fx-stack',
+  '🥔': 'fx-potato',
+  '🎯': 'fx-target',
+  '🔥': 'fx-fire',
+  '📱': 'fx-phone',
+  '✨': 'fx-sparkles',
+  '⭐': 'fx-star',
+  '💫': 'fx-dizzy',
+  '🎉': 'fx-confetti',
+  '📊': 'fx-chart',
+  '🕵️': 'fx-detective',
+  '🕵': 'fx-detective',
+  '🌍': 'fx-globe',
+  '🗺️': 'fx-map',
+  '🗺': 'fx-map',
+};
+
+export function qqEmojiSlug(emoji: string): QQIconSlug | null {
+  return EMOJI_TO_SLUG[emoji] ?? EMOJI_TO_SLUG[emoji.trim()] ?? null;
+}
+
+// Inline-Helper: rendert Emoji als Fluent-PNG, faellt bei unbekanntem Emoji
+// sauber auf Text-Rendering zurueck. Size default '1em' = passt sich Parent-Schrift an.
+export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt }: {
+  emoji: string; size?: number | string;
+  style?: CSSProperties; className?: string; title?: string; alt?: string;
+}) {
+  const slug = qqEmojiSlug(emoji);
+  if (!slug) {
+    return (
+      <span className={className} title={title} aria-label={alt} style={{
+        display: 'inline-block', ...style,
+      }}>{emoji}</span>
+    );
+  }
+  return (
+    <QQIcon
+      slug={slug}
+      size={size}
+      style={{ verticalAlign: '-0.15em', ...style }}
+      className={className}
+      title={title}
+      alt={alt ?? emoji}
+    />
+  );
+}
+
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {
   const [failed, setFailed] = useState(false);
   const base: CSSProperties = {

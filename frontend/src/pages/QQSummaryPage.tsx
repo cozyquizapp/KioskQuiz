@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { qqGetAvatar } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
+import { QQEmojiIcon } from '../components/QQIcon';
 
 type Lang = 'de' | 'en';
 
@@ -462,7 +463,7 @@ function Hero({ draftTitle, winner, playedAt, lang }: { draftTitle: string; winn
       <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginTop: 4 }}>{draftTitle}</div>
       {winner && (
         <div style={{ marginTop: 10, fontSize: 14, color: '#fbbf24', fontWeight: 800 }}>
-          🏆 {tr('champion', lang)}: {winner}
+          <QQEmojiIcon emoji="🏆"/> {tr('champion', lang)}: {winner}
         </div>
       )}
     </div>
@@ -758,7 +759,7 @@ function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName
           background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
           borderRadius: 12, padding: '16px', textAlign: 'center',
         }}>
-          <div style={{ fontSize: 32, marginBottom: 6 }}>🎉</div>
+          <div style={{ fontSize: 32, marginBottom: 6 }}><QQEmojiIcon emoji="🎉"/></div>
           <div style={{ fontSize: 15, fontWeight: 900, color: '#86efac', marginBottom: 4 }}>
             {tr('thanksTitle', lang)}
           </div>

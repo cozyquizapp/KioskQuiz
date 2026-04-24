@@ -7,6 +7,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQEmojiIcon } from '../components/QQIcon';
 
 const QQ_ROOM = 'default';
 
@@ -934,12 +935,12 @@ export default function QQModeratorPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {!s.imposterActiveTeamId ? (
                       <Btn color="#8B5CF6" onClick={() => emit('qq:imposterStart', { roomCode })}>
-                        🕵️ Imposter starten
+                        <QQEmojiIcon emoji="🕵️"/> Imposter starten
                       </Btn>
                     ) : (
                       <>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.imposterActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
-                          🕵️ {s.teams.find(t => t.id === s.imposterActiveTeamId)?.name ?? '?'} wählt
+                          <QQEmojiIcon emoji="🕵️"/> {s.teams.find(t => t.id === s.imposterActiveTeamId)?.name ?? '?'} wählt
                         </div>
                         <div style={{ fontSize: 11, color: '#94a3b8' }}>
                           {((s.currentQuestion?.bunteTuete as any)?.statements?.length ?? 8) - s.imposterChosenIndices.length} Aussagen übrig
@@ -983,7 +984,7 @@ export default function QQModeratorPage() {
                     ) : (
                       <>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
-                          🥔 {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
+                          <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
                         {s.hotPotatoLastAnswer ? (
                           <>
@@ -1154,7 +1155,7 @@ export default function QQModeratorPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                           <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
-                            📍 Felder setzen
+                            <QQEmojiIcon emoji="📍"/> Felder setzen
                           </PrimaryBtn>
                           <Btn small color="#475569" onClick={() => {
                             if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
@@ -1237,7 +1238,7 @@ export default function QQModeratorPage() {
                 {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (
                   <>
-                    <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}>🏆 Spiel beendet</div>
+                    <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}><QQEmojiIcon emoji="🏆"/> Spiel beendet</div>
                     <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
                       ▶ Danke-Folie & QR
                     </PrimaryBtn>
@@ -1288,7 +1289,7 @@ export default function QQModeratorPage() {
             {/* Buzz queue */}
             {s.buzzQueue.length > 0 && (
               <div style={{ ...card, borderColor: 'rgba(251,191,36,0.3)' }}>
-                <div style={sectionLabel}>⚡ Buzz-Reihenfolge</div>
+                <div style={sectionLabel}><QQEmojiIcon emoji="⚡"/> Buzz-Reihenfolge</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {s.buzzQueue.map((b, i) => {
                     const team = teamList.find(t => t.id === b.teamId);
@@ -1973,10 +1974,10 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       {s.pendingAction === 'FREE' && (
         <>
           <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
-            📍 Setzen
+            <QQEmojiIcon emoji="📍"/> Setzen
           </Btn>
           <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
-            ⚡ Klauen
+            <QQEmojiIcon emoji="⚡"/> Klauen
           </Btn>
         </>
       )}

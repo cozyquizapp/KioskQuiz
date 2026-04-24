@@ -715,7 +715,7 @@ export default function QQModeratorPage() {
             maxWidth: 320,
             pointerEvents: 'none',
           }}>
-            <span style={{ fontSize: 18 }}>{toast.emoji}</span>
+            <span style={{ fontSize: 18 }}><QQEmojiIcon emoji={toast.emoji}/></span>
             <span>{toast.msg}</span>
           </div>
         ))}
@@ -1905,7 +1905,7 @@ function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roo
               }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#F59E0B' : '#475569', width: 18 }}>
-                  {i === 0 ? '🥇' : `#${i + 1}`}
+                  {i === 0 ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
                 </span>
                 <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} size={26} />
                 <div style={{ flex: 1 }}>
@@ -2165,7 +2165,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
             }}>
-              {cell.jokerFormed ? '⭐' : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
+              {cell.jokerFormed ? <QQEmojiIcon emoji="⭐"/> : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
             </div>
           );
         })

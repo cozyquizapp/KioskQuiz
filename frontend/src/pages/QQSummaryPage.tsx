@@ -394,10 +394,10 @@ export default function QQSummaryPage() {
 
 function formatPlaceLabel(place: number, lang: Lang): string {
   if (lang === 'de') {
-    const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🎖️';
+    const medal = place === 1 ? <QQEmojiIcon emoji="🥇"/> : place === 2 ? <QQEmojiIcon emoji="🥈"/> : place === 3 ? <QQEmojiIcon emoji="🥉"/> : '🎖️';
     return `${medal} ${place}. Platz`;
   }
-  const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🎖️';
+  const medal = place === 1 ? <QQEmojiIcon emoji="🥇"/> : place === 2 ? <QQEmojiIcon emoji="🥈"/> : place === 3 ? <QQEmojiIcon emoji="🥉"/> : '🎖️';
   const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
   return `${medal} ${ord} place`;
 }
@@ -642,7 +642,7 @@ function Superlatives({ teams, selectedId, lang }: {
                 }}>{lang === 'de' ? 'DAS SEID IHR' : "THAT'S YOU"}</span>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 22, lineHeight: 1 }}>{title.emoji}</span>
+                <span style={{ fontSize: 22, lineHeight: 1 }}><QQEmojiIcon emoji={title.emoji}/></span>
                 <span style={{
                   fontSize: 12, fontWeight: 900, color: title.accent,
                   letterSpacing: 0.4, textTransform: 'uppercase',
@@ -795,7 +795,7 @@ function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName
                     cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>{opt.emoji}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
                   <span>{tr(opt.labelKey, lang)}</span>
                 </button>
               );
@@ -826,7 +826,7 @@ function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                     }}>
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>{opt.emoji}</span>
+                    <span style={{ fontSize: 18, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
                     <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );
@@ -856,7 +856,7 @@ function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                       whiteSpace: 'nowrap',
                     }}>
-                    <span>{opt.emoji}</span>
+                    <span><QQEmojiIcon emoji={opt.emoji}/></span>
                     <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );
@@ -888,7 +888,7 @@ function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                     }}>
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>{opt.emoji}</span>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
                     <span>{tr(opt.labelKey, lang)}</span>
                   </button>
                 );

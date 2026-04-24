@@ -977,7 +977,7 @@ function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; t
         border: `3px solid ${team.color}`,
         boxShadow: `0 0 60px ${team.color}aa, inset 0 0 30px ${team.color}33`,
       }}>
-        <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}>{emoji}</div>
+        <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}><QQEmojiIcon emoji={emoji}/></div>
         <div style={{
           fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.06em',
           textShadow: `0 0 16px ${team.color}, 0 2px 0 rgba(0,0,0,0.5)`,
@@ -1367,7 +1367,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
                 <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 8 }}>
                   {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                 </div>
-                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>{info.emoji}</div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}><QQEmojiIcon emoji={info.emoji}/></div>
                 <div style={{ fontSize: 28, fontWeight: 900, color: catColor, textShadow: `0 0 20px ${catColor}44` }}>
                   {info.title[lang]}
                 </div>
@@ -1482,7 +1482,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           const slug = qqCatSlug(q.category as string);
           return slug
             ? <QQIcon slug={slug} size={20} alt={catLabel.de} />
-            : <span style={{ fontSize: 16 }}>{catLabel.emoji}</span>;
+            : <span style={{ fontSize: 16 }}><QQEmojiIcon emoji={catLabel.emoji}/></span>;
         })()}
         {lang === 'en' ? catLabel.en : catLabel.de}
       </div>
@@ -1890,7 +1890,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             {scored.map((a, i) => {
               const team = s.teams.find(t => t.id === a.teamId);
               const isMe = a.teamId === myTeamId;
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+              const medal = i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i+1}`;
               const dist = a.distKm == null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
               return (
                 <div key={a.teamId} style={{
@@ -1922,7 +1922,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
-            <span style={{ fontSize: 20 }}>{eliminated ? '🥔' : '🏆'}</span>
+            <span style={{ fontSize: 20 }}>{eliminated ? <QQEmojiIcon emoji="🥔"/> : <QQEmojiIcon emoji="🏆"/>}</span>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
               {eliminated
                 ? (lang === 'de' ? 'Ausgeschieden' : 'Eliminated')
@@ -1943,7 +1943,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
-            <span style={{ fontSize: 20 }}>{eliminated ? '🕵️' : '✓'}</span>
+            <span style={{ fontSize: 20 }}>{eliminated ? <QQEmojiIcon emoji="🕵️"/> : '✓'}</span>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
               {eliminated
                 ? (lang === 'de' ? 'Imposter erwischt — ausgeschieden' : 'Caught the imposter — eliminated')
@@ -3379,7 +3379,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           ? 'stealCrashIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both'
                           : undefined,
                     }}>
-                      {isStuckCell ? '📌' : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
+                      {isStuckCell ? <QQEmojiIcon emoji="📌"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (
@@ -3537,7 +3537,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               }}>
               {opt.iconSlug
                 ? <QQIcon slug={opt.iconSlug} size={32} alt={opt.label} />
-                : <span style={{ fontSize: 28, lineHeight: 1 }}>{opt.icon}</span>}
+                : <span style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={opt.icon}/></span>}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, color: disabled ? '#64748b' : opt.color, fontSize: 15 }}>{opt.label}</div>
                 <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: disabled ? '#475569' : '#475569', marginTop: 2 }}>
@@ -3590,7 +3590,7 @@ function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate;
               background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
             }}>
               <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: '#64748b', fontWeight: 800 }}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
               <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: t.color }}>{t.name}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{t.totalCells}</span>
@@ -3657,7 +3657,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
               }}>
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
                   color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
-                }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
                 <QQTeamAvatar avatarId={tm.avatarId} size={24} />
                 <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>

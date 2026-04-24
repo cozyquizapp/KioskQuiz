@@ -209,8 +209,29 @@ export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt 
   );
 }
 
+// Slug-Alias: bestehende cat-*/sub-*/marker-*-Referenzen laden transparent die
+// Fluent-Version — ein Flag-Toggle genuegt, um zwischen Custom-Stil und Fluent
+// hin und her zu schalten.
+const USE_FLUENT_FOR_CUSTOM = true;
+const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = USE_FLUENT_FOR_CUSTOM ? {
+  'cat-schaetzchen':   'fx-cat-schaetzchen',
+  'cat-mucho':         'fx-cat-mucho',
+  'cat-bunte-tuete':   'fx-cat-bunte-tuete',
+  'cat-zehn-von-zehn': 'fx-cat-zehn-von-zehn',
+  'cat-cheese':        'fx-cat-cheese',
+  'sub-hotpotato':     'fx-sub-hotpotato',
+  'sub-top5':          'fx-sub-top5',
+  'sub-order':         'fx-sub-order',
+  'sub-map':           'fx-sub-map',
+  'marker-frost':      'fx-marker-frost',
+  'marker-shield':     'fx-marker-shield',
+  'marker-sanduhr':    'fx-marker-sanduhr',
+  'marker-swap':       'fx-marker-swap',
+} : {};
+
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {
   const [failed, setFailed] = useState(false);
+  const effectiveSlug = SLUG_ALIAS[slug] ?? slug;
   const base: CSSProperties = {
     width: size,
     height: size,
@@ -242,7 +263,7 @@ export function QQIcon({ slug, size, style, className, title, alt }: Props) {
 
   return (
     <img
-      src={`/icons/${slug}.png`}
+      src={`/icons/${effectiveSlug}.png`}
       alt={alt ?? title ?? slug}
       title={title}
       className={className}

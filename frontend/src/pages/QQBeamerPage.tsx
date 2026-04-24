@@ -1433,7 +1433,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               boxShadow: filled ? `0 0 12px ${isStar ? '#F59E0B44' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
               animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
             }}>
-              {isStar ? '⭐' : isPin ? '📌' : ''}
+              {isStar ? <QQEmojiIcon emoji="⭐"/> : isPin ? <QQEmojiIcon emoji="📌"/> : ''}
             </div>
           );
         }))}
@@ -2049,7 +2049,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           <span style={{
             fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
             filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-          }}>{slide.icon}</span>
+          }}><QQEmojiIcon emoji={slide.icon}/></span>
           <div style={{ flex: 1 }}>
             <div style={{
               fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 800, letterSpacing: '0.16em',
@@ -2121,7 +2121,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   }}>
                     {b.slug
                       ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5vw, 72px)'} alt={b.label} />
-                      : <span style={{ fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1 }}>{b.emoji}</span>}
+                      : <span style={{ fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1 }}><QQEmojiIcon emoji={b.emoji}/></span>}
                     <div style={{
                       fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
                       color: b.accent, letterSpacing: '0.04em',
@@ -3217,7 +3217,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     background: `${b.accent}18`, border: `2px solid ${b.accent}55`,
                     boxShadow: `0 0 24px ${b.accent}33`, minWidth: 180,
                   }}>
-                    <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}>{b.emoji}</div>
+                    <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}><QQEmojiIcon emoji={b.emoji}/></div>
                     <div style={{
                       fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
                       color: b.accent, letterSpacing: '0.04em',
@@ -3692,7 +3692,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#fff',
                         flexShrink: 0,
                       }}>
-                        {isWinner ? '🥇' : `#${i + 1}`}
+                        {isWinner ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
                       </span>
                       {a.team && (
                         <QQTeamAvatar avatarId={a.team.avatarId} size={'clamp(28px, 3vw, 38px)'} style={{ flexShrink: 0 }} />
@@ -5701,7 +5701,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             return bestFirst.map((p, i) => {
               const team = s.teams.find(t => t.id === p.teamId);
               if (!team) return null;
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+              const medal = i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i+1}`;
               const dist = p.distKm == null ? '—' : p.distKm < 1 ? `${Math.round(p.distKm * 1000)} m` : `${p.distKm.toFixed(1)} km`;
               const isTop = i === 0;
               const key = bucket(p.distKm);
@@ -7432,7 +7432,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               animation: 'revealWinnerIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
             }}>
               <span style={{ fontSize: 'clamp(48px, 6vw, 80px)', lineHeight: 1 }}>
-                {s.answers.length === 0 ? '⏱' : '❌'}
+                {s.answers.length === 0 ? '⏱' : <QQEmojiIcon emoji="❌"/>}
               </span>
               <div style={{
                 fontSize: 'clamp(24px, 3.5vw, 48px)', fontWeight: 900,
@@ -8059,7 +8059,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 minWidth: 0,
               }}>
                 <span style={{ fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0 }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                  {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
                 </span>
                 <QQTeamAvatar avatarId={t.avatarId} size={avSize} style={{ flexShrink: 0 }} />
                 <span style={{
@@ -8099,7 +8099,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
           }}>
             <span style={{ fontSize: 'clamp(26px, 3vw, 38px)', width: 46, textAlign: 'center', flexShrink: 0 }}>
-              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+              {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
             </span>
             {sessionTeam
               ? <QQTeamAvatar avatarId={sessionTeam.avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
@@ -8214,7 +8214,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       color: accentColor ?? '#e2e8f0',
       marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14,
     }}>
-      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>{icon}</span>
+      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
       {de ? titleDe : titleEn}
     </div>
   );
@@ -8703,7 +8703,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                   fontWeight: 900, width: many ? 30 : 40, flexShrink: 0,
                   color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569',
                 }}>
-                  {rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                  {rank === 2 ? <QQEmojiIcon emoji="🥈"/> : rank === 3 ? <QQEmojiIcon emoji="🥉"/> : `#${rank}`}
                 </span>
                 <QQTeamAvatar avatarId={tm.avatarId} size={many ? 'clamp(22px, 2.2vw, 30px)' : 'clamp(28px, 3vw, 40px)'} style={{ flexShrink: 0 }} />
                 <span style={{
@@ -9383,7 +9383,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {showStar ? '⭐' : (team && (() => {
+                  {showStar ? <QQEmojiIcon emoji="⭐"/> : (team && (() => {
                     const avSize = Math.max(8, cellSize * 0.86);
                     const discSize = Math.max(10, cellSize * 0.92);
                     // Stuck → Doppel-Ring in Gold um die Avatar-Scheibe (×2 Indikator).
@@ -9799,7 +9799,7 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
       boxShadow: `0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 30px ${color}12`,
       flex: '1 1 0', minWidth: 200,
     }}>
-      <span style={{ fontSize: 48, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 48, lineHeight: 1 }}><QQEmojiIcon emoji={icon}/></span>
       <div>
         <div style={{ fontWeight: 900, color, fontSize: 'clamp(22px, 2.5vw, 30px)' }}>{label}</div>
         <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(17px, 1.8vw, 22px)', color: '#94a3b8', marginTop: 4 }}>{desc}</div>

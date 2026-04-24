@@ -5264,107 +5264,117 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         gap: 'clamp(16px, 2.4vw, 32px)',
         minHeight: 0,
       }}>
-        {/* Linke Spalte: Lösung oben, Gewinner darunter */}
+        {/* Linke Spalte: EINE unified Card — Lösung oben, Winner-Footer unten.
+            War vorher 2 separate Karten, wirkte doppelt (Winner steht eh als #1
+            in der rechten Liste) + Lösung allein wirkte verloren. */}
         <div style={{
           display: 'flex', flexDirection: 'column',
-          gap: 'clamp(14px, 1.8vh, 22px)',
           minHeight: 0, minWidth: 0,
+          borderRadius: 28,
+          background: 'radial-gradient(circle at 50% 30%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
+          border: '3px solid rgba(34,197,94,0.55)',
+          boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
+          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+          position: 'relative', overflow: 'hidden',
         }}>
-          {/* Lösungs-Hero — kompakter, damit der Winner-Block (Am nächsten dran)
-              prominenter werden kann; war vorher visuell uebermaechtig. */}
+          {/* Shimmer-Sweep */}
           <div style={{
-            flex: '0.75 1 0', minHeight: 0,
-            padding: 'clamp(14px, 2vh, 26px) clamp(18px, 2vw, 30px)',
-            borderRadius: 28,
-            background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
-            border: '3px solid rgba(34,197,94,0.55)',
-            boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
-            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-            position: 'relative', overflow: 'hidden',
+            position: 'absolute', top: 0, width: '60%', height: '100%',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+            animation: 'revealShimmer 0.9s ease 0.55s both',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Loesung — nimmt 60% Hoehe */}
+          <div style={{
+            flex: '1.6 1 0', minHeight: 0,
+            padding: 'clamp(18px, 2.4vh, 30px) clamp(18px, 2vw, 30px) clamp(10px, 1.2vh, 18px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+            position: 'relative', zIndex: 1,
           }}>
             <div style={{
-              position: 'absolute', top: 0, width: '60%', height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
-              animation: 'revealShimmer 0.9s ease 0.55s both',
-              pointerEvents: 'none',
-            }} />
-            <div style={{
-              fontSize: 'clamp(12px, 1.1vw, 16px)', fontWeight: 900, color: '#86efac',
-              letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.78,
+              fontSize: 'clamp(12px, 1.2vw, 18px)', fontWeight: 900, color: '#86efac',
+              letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.82,
             }}>
               {lang === 'en' ? 'Answer' : 'Lösung'}
             </div>
             <div style={{
-              fontSize: 'clamp(48px, 6vw, 104px)',
+              fontSize: 'clamp(64px, 8vw, 140px)',
               fontWeight: 900, color: '#86efac', lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: '0 0 28px rgba(34,197,94,0.35)',
+              textShadow: '0 0 40px rgba(34,197,94,0.5)',
             }}>
               {fmt(target)}
             </div>
           </div>
 
-          {/* Winner-Card — ein Team (schnellstes bei Delta-Tie).
-              Bekommt mehr Hoehe + groessere Avatar/Schrift, weil der Gewinner
-              wichtiger ist als die nackte Loesungszahl. */}
-          <div style={{
-            flex: '1.45 1 0',
-            background: winner ? `linear-gradient(135deg, ${winner.team.color}22, ${winner.team.color}08)` : 'rgba(255,255,255,0.04)',
-            border: winner ? `2.5px solid ${winner.team.color}66` : '2px solid rgba(255,255,255,0.08)',
-            borderRadius: 26,
-            padding: 'clamp(18px, 2.4vh, 32px) clamp(22px, 2.4vw, 36px)',
-            boxShadow: winner ? `0 0 48px ${winner.team.color}3d, inset 0 1px 0 rgba(255,255,255,0.05)` : '0 8px 32px rgba(0,0,0,0.4)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            gap: 14, minHeight: 0, overflow: 'hidden',
-            opacity: revealedMinIdx === 0 ? 1 : 0.12,
-            filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
-            transition: 'opacity 0.7s ease, filter 0.7s ease',
-          }}>
+          {/* Winner-Footer — integriert in dieselbe Card, subtiler Separator.
+              Zeigt Trophy + Avatar + Name + Guess + Delta als horizontale Zeile. */}
+          {winner && (
             <div style={{
-              fontSize: 'clamp(14px, 1.3vw, 20px)', fontWeight: 900, color: '#cbd5e1',
-              letterSpacing: '0.12em', textTransform: 'uppercase',
+              flex: '1 1 0', minHeight: 0,
+              borderTop: `2px solid ${winner.team.color}44`,
+              background: `linear-gradient(180deg, ${winner.team.color}1a, ${winner.team.color}05)`,
+              padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
+              display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 24px)',
+              minWidth: 0,
+              opacity: revealedMinIdx === 0 ? 1 : 0.12,
+              filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
+              transition: 'opacity 0.7s ease, filter 0.7s ease',
+              position: 'relative', zIndex: 1,
             }}>
-              <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
-            </div>
-            {!winner ? (
-              <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
-                {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
-              </div>
-            ) : (
               <div style={{
-                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 22,
-                minWidth: 0,
-                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
+                flexShrink: 0,
               }}>
-                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(110px, 12vw, 180px)'} style={{
+                <span style={{
+                  fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900,
+                  color: '#cbd5e1', letterSpacing: '0.12em', textTransform: 'uppercase',
+                  opacity: 0.7,
+                }}>
+                  <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
+                </span>
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(88px, 9.5vw, 140px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 32px ${winner.team.color}77`,
+                  boxShadow: `0 0 28px ${winner.team.color}77`,
                   animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                 }} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{
-                    fontSize: 'clamp(36px, 4.2vw, 68px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
-                    whiteSpace: 'nowrap',
-                    padding: '0 0.3em',
-                    textShadow: `0 0 22px ${winner.team.color}55`,
-                  }}>{winner.team.name}</div>
-                  <div style={{
-                    fontSize: 'clamp(22px, 2.5vw, 36px)', fontWeight: 800, color: '#e2e8f0', marginTop: 8,
-                    fontVariantNumeric: 'tabular-nums',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {fmt(winner.num)}
-                    <span style={{ color: '#94a3b8', fontWeight: 700, marginLeft: 8 }}>
-                      {winner.delta === 0
-                        ? (lang === 'en' ? '· exact!' : '· genau!')
-                        : `· Δ ${fmt(winner.delta)}`}
-                    </span>
-                  </div>
+              </div>
+              <div style={{ minWidth: 0, flex: 1,
+                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.3s both' : 'none',
+              }}>
+                <div style={{
+                  fontSize: 'clamp(30px, 3.6vw, 58px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  padding: '0 0.2em',
+                  textShadow: `0 0 22px ${winner.team.color}55`,
+                }}>{winner.team.name}</div>
+                <div style={{
+                  fontSize: 'clamp(18px, 2.1vw, 30px)', fontWeight: 800, color: '#e2e8f0', marginTop: 6,
+                  fontVariantNumeric: 'tabular-nums',
+                  display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
+                }}>
+                  <span>{fmt(winner.num)}</span>
+                  <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.88em' }}>
+                    {winner.delta === 0
+                      ? (lang === 'en' ? '· exact!' : '· genau!')
+                      : `· Δ ${fmt(winner.delta)}`}
+                  </span>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          {!winner && (
+            <div style={{
+              flex: '1 1 0', minHeight: 0,
+              borderTop: '2px solid rgba(239,68,68,0.3)',
+              padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171',
+            }}>
+              {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
+            </div>
+          )}
         </div>
 
         {/* Rechte Spalte: Top 5 Ranking (bottom-up enthüllt) */}
@@ -6202,7 +6212,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const t0 = s.timerEndsAt
                 ? s.timerEndsAt - (s.timerDurationSec * 1000)
                 : (correctAnswers[0].submittedAt);
+              const winnerTeam = s.teams.find(t => t.id === correctAnswers[0].teamId);
+              const multiCorrect = correctAnswers.length > 1;
+              const winMsg = multiCorrect
+                ? (lang === 'en' ? 'recognized it fastest!' : 'hat es am schnellsten erkannt!')
+                : (lang === 'en' ? 'got it right!' : 'hat es erkannt!');
               return (
+                <>
                 <div style={{
                   marginTop: 14,
                   display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
@@ -6223,16 +6239,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           display: 'inline-block',
                           animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
                         }}>
-                          <QQTeamAvatar avatarId={team.avatarId} size={'clamp(58px, 6.4vw, 88px)'} style={{
-                            border: isFastest ? '3px solid #FBBF24' : 'none',
-                            boxShadow: isFastest
-                              ? '0 0 22px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)'
-                              : '0 4px 12px rgba(0,0,0,0.4)',
-                          }} />
+                          <QQTeamAvatar
+                            avatarId={team.avatarId}
+                            size={isFastest ? 'clamp(76px, 8.4vw, 116px)' : 'clamp(58px, 6.4vw, 88px)'}
+                            style={{
+                              border: isFastest ? '4px solid #FBBF24' : 'none',
+                              boxShadow: isFastest
+                                ? '0 0 28px rgba(251,191,36,0.65), 0 4px 14px rgba(0,0,0,0.45)'
+                                : '0 4px 12px rgba(0,0,0,0.4)',
+                            }}
+                          />
                           {isFastest && (
                             <span style={{
-                              position: 'absolute', top: -10, right: -10,
-                              fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
+                              position: 'absolute', top: -12, right: -12,
+                              fontSize: 'clamp(24px, 2.6vw, 34px)', lineHeight: 1,
                             }}><QQEmojiIcon emoji="⚡"/></span>
                           )}
                         </div>
@@ -6251,6 +6271,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     );
                   })}
                 </div>
+                {/* Winner-Banner fuer Cheese — das Main-Content-Winner-Banner
+                    ist bei cheeseOverlay display:none. Darum hier explizit:
+                    „X hat es erkannt!" / „X hat es am schnellsten erkannt!" */}
+                {winnerTeam && (
+                  <div style={{
+                    marginTop: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+                    animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.85s both',
+                  }}>
+                    <div style={{
+                      fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
+                      color: winnerTeam.color, lineHeight: 1.1,
+                      textShadow: `0 0 24px ${winnerTeam.color}55`,
+                    }}>
+                      {winnerTeam.name}
+                    </div>
+                    <div style={{
+                      fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
+                      color: '#94a3b8', lineHeight: 1.2,
+                    }}>
+                      {winMsg}
+                    </div>
+                  </div>
+                )}
+                </>
               );
             })()}
 

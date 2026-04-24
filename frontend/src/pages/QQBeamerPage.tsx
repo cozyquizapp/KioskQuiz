@@ -1677,12 +1677,13 @@ function MuchoOptionsReveal({
               }}>{optText}</div>
             </div>
             {/* Voter-Reihe: sitzt auf der unteren Card-Linie (Avatare halb innerhalb,
-                halb ausserhalb der Card → wirkt wie "an die Card geheftet"). */}
+                halb ausserhalb der Card → wirkt wie "an die Card geheftet").
+                Zeit-Pill haengt direkt unter dem Avatar-Kreis (ueberlappt den unteren Rand). */}
             {voterShow && voters.length > 0 && (
               <div style={{
                 position: 'absolute', left: 16, right: 16, bottom: 0,
                 transform: 'translateY(50%)',
-                display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10,
+                display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 10,
                 pointerEvents: 'none', zIndex: 5,
               }}>
                 {voters.map((v, vi) => {
@@ -1692,7 +1693,8 @@ function MuchoOptionsReveal({
                   const voterDelay = vi * 0.18;
                   return (
                     <div key={tm.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
+                      position: 'relative',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
                       animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${voterDelay}s both`,
                     }}>
                       <div title={tm.name} style={{ position: 'relative', display: 'inline-block' }}>
@@ -1715,21 +1717,26 @@ function MuchoOptionsReveal({
                             filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
                           }}>⚡</span>
                         )}
+                        {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
+                        {timeSec != null && isCorrect && akt3On && (
+                          <span style={{
+                            position: 'absolute',
+                            left: '50%', bottom: -8,
+                            transform: 'translate(-50%, 50%)',
+                            padding: '2px 9px', borderRadius: 999,
+                            background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
+                            color: isFastest ? '#0d0a06' : '#e2e8f0',
+                            fontWeight: 900,
+                            fontSize: 'clamp(11px, 1.2vw, 15px)',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                            lineHeight: 1.1,
+                          }}>
+                            {timeSec.toFixed(1)}s
+                          </span>
+                        )}
                       </div>
-                      {timeSec != null && isCorrect && akt3On && (
-                        <span style={{
-                          padding: '3px 10px', borderRadius: 999,
-                          background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.92)',
-                          border: isFastest ? '1.5px solid rgba(251,191,36,1)' : '1px solid rgba(255,255,255,0.18)',
-                          color: isFastest ? '#0d0a06' : '#e2e8f0',
-                          fontWeight: 900,
-                          fontSize: 'clamp(13px, 1.4vw, 18px)',
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.45)',
-                        }}>
-                          {timeSec.toFixed(1)}s
-                        </span>
-                      )}
                     </div>
                   );
                 })}

@@ -1680,12 +1680,16 @@ function MuchoOptionsReveal({
             </div>
             {/* Voter-Reihe: sitzt auf der unteren Card-Linie (Avatare halb innerhalb,
                 halb ausserhalb der Card → wirkt wie "an die Card geheftet").
-                Zeit-Pill haengt direkt unter dem Avatar-Kreis (ueberlappt den unteren Rand). */}
+                Zeit-Pill haengt direkt unter dem Avatar-Kreis (ueberlappt den unteren Rand).
+                justifyContent:center damit einzelne Avatare unter der Card zentriert
+                stehen (nicht links verloren). */}
             {voterShow && voters.length > 0 && (
               <div style={{
-                position: 'absolute', left: 16, right: 16, bottom: 0,
+                position: 'absolute', left: 8, right: 8, bottom: 0,
                 transform: 'translateY(50%)',
-                display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 10,
+                display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
+                justifyContent: 'center',
+                gap: voters.length > 4 ? 6 : 10,
                 pointerEvents: 'none', zIndex: 5,
               }}>
                 {voters.map((v, vi) => {
@@ -1693,16 +1697,27 @@ function MuchoOptionsReveal({
                   const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
                   const isFastest = akt3On && isCorrect && vi === 0;
                   const voterDelay = vi * 0.18;
+                  // Viele Voter (>4) = etwas kleinere Avatare, damit sie in eine Reihe passen
+                  const many = voters.length > 4;
+                  const avatarSz = isFastest
+                    ? (many ? 'clamp(56px, 6vw, 80px)' : 'clamp(64px, 7vw, 92px)')
+                    : (many ? 'clamp(44px, 4.8vw, 64px)' : 'clamp(52px, 5.6vw, 76px)');
+                  // Wrong-Option-Voter: dezent dimmen (Grayscale + Opacity) →
+                  // signalisiert visuell „haben falsch geraten".
+                  const dim = isWrong;
                   return (
                     <div key={tm.id} style={{
                       position: 'relative',
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
                       animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${voterDelay}s both`,
+                      opacity: dim ? 0.55 : 1,
+                      filter: dim ? 'grayscale(0.6)' : 'none',
+                      transition: 'opacity 0.4s ease, filter 0.4s ease',
                     }}>
                       <div title={tm.name} style={{ position: 'relative', display: 'inline-block' }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId}
-                          size={isFastest ? 'clamp(64px, 7vw, 92px)' : 'clamp(52px, 5.6vw, 76px)'}
+                          size={avatarSz}
                           style={{
                             border: isFastest ? '4px solid #FBBF24' : `2px solid ${tm.color}`,
                             boxShadow: isFastest

@@ -6425,75 +6425,76 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             />
           )}
 
-          {/* ZEHN_VON_ZEHN: Options-Grid (Bet-Chips folgen weiter unten) */}
-          {q.options && q.category === 'ZEHN_VON_ZEHN' && (
+          {/* ZEHN_VON_ZEHN: Options-Grid. Top-Bet-Chips haengen an der unteren
+              Card-Linie (analog MUCHO-Reveal) — nicht mehr im Card-Inhalt. */}
+          {q.options && q.category === 'ZEHN_VON_ZEHN' && (() => {
+            const t0 = s.timerEndsAt && s.timerDurationSec
+              ? s.timerEndsAt - s.timerDurationSec * 1000
+              : null;
+            return (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 18, marginBottom: 16,
+              columnGap: 18,
+              rowGap: 'clamp(70px, 9vh, 110px)',
+              paddingBottom: 'clamp(48px, 6vh, 78px)',
+              marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
-                // Step 2: Doppelblink auf korrekte Option → permanent grün (analog MUCHO).
                 const isCorrect = zvzLocked && i === q.correctOptionIndex;
                 const isWrong = zvzLocked && i !== q.correctOptionIndex;
                 const label = `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
-                // Highest-Bet-Chips (mögliche Gewinner) direkt auf der Option platzieren.
                 const highestForOpt = zvzHighestPerOption[i];
                 const highestIdsForOpt = new Set(highestForOpt?.teamIds ?? []);
+                // Top-Bets inkl. submittedAt fuer Tiebreaker-Anzeige
                 const highestBets = s.answers
                   .map(a => {
                     const team = s.teams.find(t => t.id === a.teamId);
                     if (!team || !highestIdsForOpt.has(team.id)) return null;
                     const pts = (a.text.split(',').map(n => Number(n) || 0))[i] ?? 0;
-                    return pts > 0 ? { team, pts } : null;
+                    return pts > 0 ? { team, pts, submittedAt: a.submittedAt } : null;
                   })
-                  .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number } => !!x);
+                  .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x)
+                  .sort((a, b) => a.submittedAt - b.submittedAt);
                 const highestVisibleOpt = zvzStep >= 1 && zvzRevealed.has(i);
+                // Tiebreak-Zeit nur bei MEHREREN Top-Bets auf DER richtigen Option
+                // (dort entscheidet Speed, wer gewinnt — deshalb Pill zeigen).
+                const showTimePills = isCorrect && highestBets.length > 1;
                 return (
-                  <div key={i} style={{
-                    position: 'relative', overflow: 'hidden',
-                    borderRadius: 20, padding: '20px 24px',
-                    background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                    border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
-                    boxShadow: isCorrect
-                      ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
-                      : `0 4px 16px rgba(0,0,0,0.3)`,
-                    display: 'flex', flexDirection: 'column', gap: 12,
-                    // POP-Transition: Card startet kompakt (kein minHeight mehr),
-                    // wächst mit subtilem scale-Bounce wenn Top-Bets reinkommen.
-                    transform: highestVisibleOpt ? 'scale(1)' : 'scale(0.98)',
-                    transformOrigin: 'center',
-                    transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
-                    // Nur Brightness-Pulse beim Lock — KEIN scale-Pop auf die Card
-                    // selbst, sonst werden die schon sichtbaren Top-Bet-Avatare
-                    // optisch "neu gesetzt".
-                    animation: isCorrect
-                      ? 'revealDoubleBlink 1.1s ease both'
-                      : isWrong
-                        ? 'revealWrongDim 0.4s ease 0.15s both'
-                        : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
-                  }}>
-                    {optImg?.url && (
-                      <img src={optImg.url} alt="" style={{
-                        position: 'absolute', inset: 0, width: '100%', height: '100%',
-                        objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
-                        pointerEvents: 'none',
-                      }} />
-                    )}
-                    {optImg?.url && (
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
-                    )}
-                    {/* Title-Zeile */}
+                  <div key={i} style={{ position: 'relative' }}>
                     <div style={{
-                      position: 'relative', zIndex: 1,
+                      position: 'relative', overflow: 'hidden',
+                      borderRadius: 20, padding: '20px 24px',
+                      background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
+                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
+                      boxShadow: isCorrect
+                        ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
+                        : `0 4px 16px rgba(0,0,0,0.3)`,
                       display: 'flex', alignItems: 'center', gap: 16,
+                      transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+                      animation: isCorrect
+                        ? 'revealDoubleBlink 1.1s ease both'
+                        : isWrong
+                          ? 'revealWrongDim 0.4s ease 0.15s both'
+                          : `contentReveal 0.4s ease ${0.1 + i * 0.08}s both`,
                     }}>
+                      {optImg?.url && (
+                        <img src={optImg.url} alt="" style={{
+                          position: 'absolute', inset: 0, width: '100%', height: '100%',
+                          objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
+                          pointerEvents: 'none',
+                        }} />
+                      )}
+                      {optImg?.url && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
+                      )}
                       <div style={{
+                        position: 'relative', zIndex: 1,
                         width: 56, height: 56, borderRadius: 16,
                         background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -6502,6 +6503,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         transition: 'all 0.3s ease',
                       }}>{label}</div>
                       <div style={{
+                        position: 'relative', zIndex: 1,
                         flex: 1, minWidth: 0,
                         fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 800,
                         color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.25,
@@ -6509,56 +6511,74 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>
                     </div>
-                    {/* Highbet-Slot: Top-Bets (mögliche Gewinner) direkt auf der Option.
-                        POP-Transition: max-height wächst dynamisch mit Anzahl Top-Bets.
-                        Avatare bewusst groß: das sind die wichtigsten Spieler dieser Option.
-                        Bei vielen Teams (3+ Gleichstand) Umbruch in 2 Zeilen statt clipping. */}
-                    <div style={{
-                      position: 'relative', zIndex: 1,
-                      // Multiple-Row-Support: 120 (1 Zeile) → 220 (2 Zeilen) wenn >3 Top-Bets
-                      maxHeight: highestVisibleOpt ? (highestBets.length > 3 ? 220 : 120) : 0,
-                      display: 'flex', flexWrap: 'wrap', gap: 8,
-                      alignItems: 'center', justifyContent: 'flex-start',
-                      borderTop: highestVisibleOpt ? '1px dashed rgba(255,255,255,0.10)' : '1px dashed transparent',
-                      paddingTop: highestVisibleOpt ? 10 : 0,
-                      opacity: highestVisibleOpt ? 1 : 0,
-                      overflow: 'hidden',
-                      transition: 'max-height 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.1s, padding-top 0.4s ease, border-color 0.3s ease',
-                    }}>
-                      {highestBets.length === 0 ? (
-                        <span style={{
-                          fontSize: 'clamp(12px, 1.2vw, 15px)', color: '#64748b',
-                          fontStyle: 'italic', fontWeight: 700,
-                        }}>
-                          {lang === 'en' ? 'no top bet' : 'kein Top-Tipp'}
-                        </span>
-                      ) : highestBets.map(({ team: tm, pts }, bi) => (
-                        <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '4px 18px 4px 4px',
-                          borderRadius: 999,
-                          background: 'rgba(0,0,0,0.6)',
-                          border: `2px solid ${tm.color}`,
-                          boxShadow: `0 3px 14px rgba(0,0,0,0.5), 0 0 14px ${tm.color}66`,
-                          // POP: Chip droppt staggered von oben rein (analog MUCHO-Voter).
-                          animation: highestVisibleOpt
-                            ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`
-                            : undefined,
-                        }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(48px, 5vw, 72px)'} />
-                          <span style={{
-                            fontSize: 'clamp(20px, 2.2vw, 30px)',
-                            fontWeight: 900,
-                            color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
-                          }}>{pts}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Top-Bet-Chips: haengen halb auf der unteren Card-Linie */}
+                    {highestVisibleOpt && highestBets.length > 0 && (
+                      <div style={{
+                        position: 'absolute', left: 12, right: 12, bottom: 0,
+                        transform: 'translateY(50%)',
+                        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 10,
+                        pointerEvents: 'none', zIndex: 5,
+                      }}>
+                        {highestBets.map(({ team: tm, pts, submittedAt }, bi) => {
+                          const timeSec = t0 ? Math.max(0, (submittedAt - t0) / 1000) : null;
+                          const isFastest = showTimePills && bi === 0;
+                          return (
+                            <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
+                              position: 'relative',
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '4px 18px 4px 4px',
+                              borderRadius: 999,
+                              background: 'rgba(0,0,0,0.7)',
+                              border: isFastest ? '3px solid #FBBF24' : `2px solid ${tm.color}`,
+                              boxShadow: isFastest
+                                ? '0 0 22px rgba(251,191,36,0.55), 0 6px 14px rgba(0,0,0,0.55)'
+                                : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}66`,
+                              animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
+                            }}>
+                              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(52px, 5.4vw, 76px)'} />
+                              <span style={{
+                                fontSize: 'clamp(20px, 2.2vw, 30px)',
+                                fontWeight: 900,
+                                color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                              }}>{pts}</span>
+                              {isFastest && (
+                                <span style={{
+                                  position: 'absolute', top: -10, right: -10,
+                                  fontSize: 'clamp(18px, 2vw, 26px)', lineHeight: 1,
+                                  animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+                                }}><QQEmojiIcon emoji="⚡"/></span>
+                              )}
+                              {/* Zeit-Pill bei Tiebreak (mehrere gleiche Hoechstwerte auf korrekter Option) */}
+                              {showTimePills && timeSec != null && (
+                                <span style={{
+                                  position: 'absolute',
+                                  left: '50%', bottom: -8,
+                                  transform: 'translate(-50%, 50%)',
+                                  padding: '2px 9px', borderRadius: 999,
+                                  background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
+                                  border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
+                                  color: isFastest ? '#0d0a06' : '#e2e8f0',
+                                  fontWeight: 900,
+                                  fontSize: 'clamp(11px, 1.2vw, 15px)',
+                                  whiteSpace: 'nowrap',
+                                  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                                  lineHeight: 1.1,
+                                }}>
+                                  {timeSec.toFixed(1)}s
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-          )}
+            );
+          })()}
 
           {/* ZEHN_VON_ZEHN: Unter-Bets (alle außer Top-Bets) — Top-Bets werden
               direkt auf der Option oben eingeblendet. Hier also nur die restlichen

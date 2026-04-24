@@ -753,6 +753,7 @@ export function playSynthPreset(slot: QQSoundSlot, presetKey: string) {
 
 // ── One-shot sounds ───────────────────────────────────────────────────────────
 
+// Basis-Play-Funktionen — direkte Slot-Aufrufe.
 export function playCorrect()      { playSlotOneShot('correct'); }
 export function playWrong()        { playSlotOneShot('wrong'); }
 export function playTimesUp()      { playSlotOneShot('timesUp'); }
@@ -762,6 +763,32 @@ export function playFieldPlaced()  { playSlotOneShot('fieldPlaced'); }
 export function playTeamReveal()   { playSlotOneShot('teamReveal'); }
 export function playSteal()        { playSlotOneShot('steal'); }
 export function playLobbyWelcome() { playSlotOneShot('lobbyWelcome'); }
+
+// Kategorie-aware Wrapper: wenn ein kategorie-spezifischer Slot eine URL hat,
+// wird er gespielt — sonst Fallback auf generic. Das erlaubt pro Kategorie
+// individuelle MP3s ohne dass alle generischen Calls gebrochen werden.
+const CAT_SLOT_SUFFIX: Record<string, string> = {
+  SCHAETZCHEN:   'Schaetzchen',
+  MUCHO:         'Mucho',
+  BUNTE_TUETE:   'BunteTuete',
+  ZEHN_VON_ZEHN: 'ZehnVonZehn',
+  CHEESE:        'Cheese',
+};
+function playSlotForCategoryOrFallback(baseSlot: QQSoundSlot, category?: string | null): void {
+  if (category && CAT_SLOT_SUFFIX[category]) {
+    const specific = `${baseSlot}${CAT_SLOT_SUFFIX[category]}` as QQSoundSlot;
+    const url = resolveSlotUrl(specific);
+    if (url && isSlotEnabled(specific)) {
+      playSlotOneShot(specific);
+      return;
+    }
+  }
+  playSlotOneShot(baseSlot);
+}
+export function playCorrectFor(category?: string | null)       { playSlotForCategoryOrFallback('correct', category); }
+export function playWrongFor(category?: string | null)         { playSlotForCategoryOrFallback('wrong', category); }
+export function playRevealFor(category?: string | null)        { playSlotForCategoryOrFallback('reveal', category); }
+export function playQuestionStartFor(category?: string | null) { playSlotForCategoryOrFallback('questionStart', category); }
 
 export function playTick() {
   // Ticks never have custom overrides — they're too frequent
@@ -864,6 +891,19 @@ export function playTeamJoin() {
   tone(523.25, 'sine', t,         0.16, 0.10, 0.01, 0.06, ac);
   tone(659.25, 'sine', t + 0.08,  0.18, 0.10, 0.01, 0.06, ac);
   tone(783.99, 'sine', t + 0.18,  0.20, 0.08, 0.01, 0.05, ac);
+}
+export function playSwapActivate() {
+  if (!isSlotEnabled('swapActivate')) return;
+  const url = resolveSlotUrl('swapActivate');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Tausch: zwei Ton-Paare, kreuzend (einer fällt, einer steigt).
+  tone(880,    'triangle', t,         0.20, 0.12, 0.008, 0.06, ac);
+  tone(440,    'triangle', t,         0.20, 0.12, 0.008, 0.06, ac);
+  tone(587.33, 'triangle', t + 0.12,  0.18, 0.10, 0.008, 0.05, ac);
+  tone(659.25, 'triangle', t + 0.12,  0.18, 0.10, 0.008, 0.05, ac);
 }
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */

@@ -386,7 +386,13 @@ export type QQSoundSlot =
   | 'catMusicSchaetzchen' | 'catMusicMucho' | 'catMusicBunteTuete'
   | 'catMusicZehnVonZehn' | 'catMusicCheese'
   // Aktion-spezifische Sounds (passend zu den Mikro-Animationen)
-  | 'shieldActivate' | 'stapelStamp' | 'sanduhrFlip' | 'teamJoin';
+  | 'shieldActivate' | 'stapelStamp' | 'sanduhrFlip' | 'teamJoin' | 'swapActivate'
+  // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
+  // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
+  | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
+  | 'wrongSchaetzchen'   | 'wrongMucho'   | 'wrongBunteTuete'   | 'wrongZehnVonZehn'   | 'wrongCheese'
+  | 'revealSchaetzchen'  | 'revealMucho'  | 'revealBunteTuete'  | 'revealZehnVonZehn'  | 'revealCheese'
+  | 'questionStartSchaetzchen' | 'questionStartMucho' | 'questionStartBunteTuete' | 'questionStartZehnVonZehn' | 'questionStartCheese';
 
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
@@ -413,6 +419,12 @@ export interface QQSoundConfig {
   stapelStamp?: string;
   sanduhrFlip?: string;
   teamJoin?: string;
+  swapActivate?: string;
+  // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
+  correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
+  wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
+  revealSchaetzchen?: string;   revealMucho?: string;   revealBunteTuete?: string;   revealZehnVonZehn?: string;   revealCheese?: string;
+  questionStartSchaetzchen?: string; questionStartMucho?: string; questionStartBunteTuete?: string; questionStartZehnVonZehn?: string; questionStartCheese?: string;
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
   /**
@@ -446,6 +458,28 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   stapelStamp:         '📌 Stempel-Thud',
   sanduhrFlip:         '⏳ Sanduhr umdrehen',
   teamJoin:            '👋 Team tritt bei',
+  swapActivate:        '🔄 Tauschen',
+  // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
+  correctSchaetzchen:   '✅ Richtig · Schätzchen',
+  correctMucho:         '✅ Richtig · Mu-Cho',
+  correctBunteTuete:    '✅ Richtig · Bunte Tüte',
+  correctZehnVonZehn:   '✅ Richtig · Quizzichoice',
+  correctCheese:        '✅ Richtig · Cheese',
+  wrongSchaetzchen:     '❌ Falsch · Schätzchen',
+  wrongMucho:           '❌ Falsch · Mu-Cho',
+  wrongBunteTuete:      '❌ Falsch · Bunte Tüte',
+  wrongZehnVonZehn:     '❌ Falsch · Quizzichoice',
+  wrongCheese:          '❌ Falsch · Cheese',
+  revealSchaetzchen:    '🔍 Reveal · Schätzchen',
+  revealMucho:          '🔍 Reveal · Mu-Cho',
+  revealBunteTuete:     '🔍 Reveal · Bunte Tüte',
+  revealZehnVonZehn:    '🔍 Reveal · Quizzichoice',
+  revealCheese:         '🔍 Reveal · Cheese',
+  questionStartSchaetzchen: '❓ Frage-Start · Schätzchen',
+  questionStartMucho:       '❓ Frage-Start · Mu-Cho',
+  questionStartBunteTuete:  '❓ Frage-Start · Bunte Tüte',
+  questionStartZehnVonZehn: '❓ Frage-Start · Quizzichoice',
+  questionStartCheese:      '❓ Frage-Start · Cheese',
 };
 
 /** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
@@ -476,6 +510,12 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   stapelStamp:         '',
   sanduhrFlip:         '',
   teamJoin:            '',
+  swapActivate:        '',
+  // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
+  correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
+  wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',
+  revealSchaetzchen:  '', revealMucho:  '', revealBunteTuete:  '', revealZehnVonZehn:  '', revealCheese:  '',
+  questionStartSchaetzchen: '', questionStartMucho: '', questionStartBunteTuete: '', questionStartZehnVonZehn: '', questionStartCheese: '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

@@ -25,7 +25,8 @@ import {
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop,
-  playShieldActivate, playStapelStamp, playSanduhrFlip, playTeamJoin,
+  playShieldActivate, playStapelStamp, playSanduhrFlip, playTeamJoin, playSwapActivate,
+  playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -448,10 +449,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playRoundStart();
       playFanfare();
     }
-    if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') playReveal();
+    if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
+      playRevealFor(s.currentQuestion?.category);
+    }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
-      if (s.correctTeamId) playCorrect();
-      else playWrong();
+      const cat = s.currentQuestion?.category;
+      if (s.correctTeamId) playCorrectFor(cat);
+      else playWrongFor(cat);
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playGameOver();
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -465,7 +469,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevSfxQuestionIdRef.current = qid;
     if (s.phase === 'QUESTION_ACTIVE') {
       resumeAudio();
-      playQuestionStart();
+      playQuestionStartFor(s.currentQuestion?.category);
     }
   }, [s.currentQuestion?.id, s.phase, s.sfxMuted]);
 
@@ -519,6 +523,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     return () => stopLobbyLoop();
   }, [s.phase, s.rulesSlideIndex, s.musicMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Audio-Unlock: Browser blockiert Autoplay bis zur ersten User-Interaktion
+  // im Tab. Der Beamer-Tab bekommt aber selten echte Klicks (Moderator ist
+  // meist im Moderator-Tab). Wir haengen einmalige Unlock-Listener auf
+  // click/keydown/touchend — sobald irgendwas im Beamer-Tab passiert, wird
+  // Audio-Context entsperrt und der Lobby-Loop (falls aktiv) neu gestartet.
+  useEffect(() => {
+    const stateSnapshot = { phase: s.phase, rulesSlideIndex: s.rulesSlideIndex, musicMuted: s.musicMuted };
+    // Ref zu aktuellen state-Werten via snapshot, der bei jedem Render refresht wird.
+    const unlock = () => {
+      resumeAudio();
+      const welcome = stateSnapshot.phase === 'RULES' && (stateSnapshot.rulesSlideIndex ?? 0) === -2;
+      const shouldLoop = !stateSnapshot.musicMuted && (stateSnapshot.phase === 'LOBBY' || stateSnapshot.phase === 'PAUSED' || welcome);
+      if (shouldLoop) startLobbyLoop();
+    };
+    const opts: AddEventListenerOptions = { once: true };
+    window.addEventListener('click', unlock, opts);
+    window.addEventListener('keydown', unlock, opts);
+    window.addEventListener('touchend', unlock, opts);
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('touchend', unlock);
+    };
+  }, [s.phase, s.rulesSlideIndex, s.musicMuted]);
+
   // ── Music Duck: während PAUSE wird alle Musik auf ~20% gedämpft (500ms fade) ──
   useEffect(() => {
     setMusicDucked(s.phase === 'PAUSED');
@@ -554,8 +583,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // D1-D3 Marker-Sounds: Shield / Stapel / Sanduhr beim ersten Setzen.
   // Wir diffen die Grid-Cell-Flags: neues shielded/stuck/sandLockTtl>0 → Sound.
   // F1 Team-Join-Sound wird hier auch angehaengt (neue Team-IDs).
-  const prevFlagsRef = useRef<{ shield: string; stuck: string; sand: string; teamIds: string }>({
-    shield: '', stuck: '', sand: '', teamIds: '',
+  // Swap-Sound: wenn zwischen zwei States zwei Cells gleichzeitig den Owner
+  // wechseln UND ihre neuen Owner zu ihren vorherigen Gegner passen (= Swap).
+  const prevFlagsRef = useRef<{ shield: string; stuck: string; sand: string; teamIds: string; owners: string }>({
+    shield: '', stuck: '', sand: '', teamIds: '', owners: '',
   });
   useEffect(() => {
     if (s.sfxMuted) return;
@@ -563,14 +594,29 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const stuckKey = s.grid.flatMap((row, r) => row.map((c, ci) => c.stuck ? `${r}-${ci}` : '')).filter(Boolean).join(',');
     const sandKey = s.grid.flatMap((row, r) => row.map((c, ci) => (c.sandLockTtl ?? 0) > 0 ? `${r}-${ci}` : '')).filter(Boolean).join(',');
     const teamIdsKey = s.teams.map(t => t.id).sort().join(',');
+    const ownersKey = s.grid.flatMap(row => row.map(c => c.ownerId ?? '')).join('|');
     const prev = prevFlagsRef.current;
-    // Nur triggern wenn Key wuchs (neue Elemente dazu).
     const grew = (a: string, b: string) => b.split(',').filter(Boolean).length > a.split(',').filter(Boolean).length;
     if (prev.shield && grew(prev.shield, shieldKey)) playShieldActivate();
     if (prev.stuck  && grew(prev.stuck,  stuckKey))  playStapelStamp();
     if (prev.sand   && grew(prev.sand,   sandKey))   playSanduhrFlip();
     if (prev.teamIds && grew(prev.teamIds, teamIdsKey) && s.phase === 'LOBBY') playTeamJoin();
-    prevFlagsRef.current = { shield: shieldKey, stuck: stuckKey, sand: sandKey, teamIds: teamIdsKey };
+    // Swap-Detect: zwei Cells gleichzeitig Owner-Wechsel + Gegenseitig.
+    if (prev.owners && prev.owners !== ownersKey) {
+      const prevArr = prev.owners.split('|');
+      const size = s.gridSize;
+      const changes: Array<{ idx: number; from: string; to: string }> = [];
+      for (let i = 0; i < size * size; i++) {
+        const from = prevArr[i] ?? '';
+        const to = s.grid[Math.floor(i / size)][i % size].ownerId ?? '';
+        if (from !== to && from !== '' && to !== '') changes.push({ idx: i, from, to });
+      }
+      // Klassischer Swap: genau 2 Cells, Owner kreuzen sich (A↔B).
+      if (changes.length === 2 && changes[0].from === changes[1].to && changes[1].from === changes[0].to) {
+        playSwapActivate();
+      }
+    }
+    prevFlagsRef.current = { shield: shieldKey, stuck: stuckKey, sand: sandKey, teamIds: teamIdsKey, owners: ownersKey };
   }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // H2 First-Steal-Badge: beim ersten Klau der Partie ein „Steal unlocked!"-

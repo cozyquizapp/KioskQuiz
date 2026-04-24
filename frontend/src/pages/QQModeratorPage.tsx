@@ -198,11 +198,16 @@ export default function QQModeratorPage() {
     const isCheeseReveal = q?.category === 'CHEESE' && s.phase === 'QUESTION_REVEAL';
     const cheeseRevealInProgress = isCheeseReveal && (s.cheeseRevealStep ?? 0) < 2;
 
+    // Delays bewusst konservativ — Animationen und Lesezeit muessen rein.
+    // PhaseIntro: FINALE-Roll ~2.5s, Subtitle-Drop, Tree-Animation.
+    // Schaetzchen-Reveal: Top5-Cascade bottom-up mit 1.6s pro Team (max 5 Teams).
+    // Mucho/ZvZ/Cheese: 2-Akt-Reveal mit Doppelblink ~1.1s + Winner-Card nach 1.2s.
+    // Teams-Reveal: Slam-Down pro Team ~1.5s.
     let delayMs = 0;
     let action: (() => void) | null = null;
     switch (s.phase) {
       case 'RULES': {
-        delayMs = 6000;
+        delayMs = 8000; // Regel-Folie lesen + Icon-Animationen
         const totalSlides = 4;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
@@ -211,39 +216,71 @@ export default function QQModeratorPage() {
         break;
       }
       case 'TEAMS_REVEAL':
-        delayMs = 8000;
+        delayMs = 11000; // 8 Teams × Slam-Down (~1.4s each) + Finale-Puls
         action = () => emit('qq:teamsRevealFinish', { roomCode });
         break;
-      case 'PHASE_INTRO':
-        delayMs = 5000;
+      case 'PHASE_INTRO': {
+        // FINALE-Intro hat extra Transition (~2.5s) + Breathe + Subtitle-Drop.
+        const isFinal = s.gamePhaseIndex === s.totalPhases;
+        delayMs = isFinal ? 9500 : 7500;
         action = () => emit('qq:activateQuestion', { roomCode });
         break;
+      }
       case 'QUESTION_ACTIVE':
         // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.
         if (s.allAnswered) {
-          delayMs = 1500;
+          delayMs = 2500; // kurzer „Timesup"-Puls abwarten
           action = () => emit('qq:revealAnswer', { roomCode });
         }
         break;
-      case 'QUESTION_REVEAL':
-        delayMs = 4500;
-        action = () => {
-          if (mapRevealInProgress) emit('qq:mapRevealStep', { roomCode });
-          else if (muchoRevealInProgress) emit('qq:muchoRevealStep', { roomCode });
-          else if (zvzRevealInProgress) emit('qq:zvzRevealStep', { roomCode });
-          else if (cheeseRevealInProgress) emit('qq:cheeseRevealStep', { roomCode });
-          else emit('qq:startPlacement', { roomCode });
-        };
+      case 'QUESTION_REVEAL': {
+        const cat = q?.category;
+        const bt: { kind?: string } | undefined = q?.bunteTuete as any;
+        // Schaetzchen hat keine Steps — ganze Bottom-Up-Cascade muss durchlaufen
+        // (500ms Initial + bis zu 5 × 1600ms Team-Reveal + Winner-Schuettel + Lesen).
+        if (cat === 'SCHAETZCHEN') {
+          delayMs = 11500;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
+        // Map (CozyGuessr): pro Pin eigene Fit-Bounds-Zoom-Anim (~1.2s), dann Lesen.
+        else if (mapRevealInProgress) {
+          delayMs = 4500;
+          action = () => emit('qq:mapRevealStep', { roomCode });
+        }
+        // Mucho/ZvZ/Cheese: Step-basierte Reveals mit Doppelblink + Winner-Card-Delay.
+        else if (muchoRevealInProgress) {
+          delayMs = 4000;
+          action = () => emit('qq:muchoRevealStep', { roomCode });
+        }
+        else if (zvzRevealInProgress) {
+          delayMs = 4500; // Bet-Cascade laeuft ~2.5s + Lese
+          action = () => emit('qq:zvzRevealStep', { roomCode });
+        }
+        else if (cheeseRevealInProgress) {
+          delayMs = 4500;
+          action = () => emit('qq:cheeseRevealStep', { roomCode });
+        }
+        // Hot Potato Reveal zeigt Antwort-Chips + Winner-Banner.
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'hotPotato') {
+          delayMs = 8500;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
+        // Finaler Uebergang zu Placement (Winner-Banner ~1s spaet + Confetti + Lesen).
+        else {
+          delayMs = 7000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
         break;
+      }
       case 'PLACEMENT':
-        // Auto-next nur wenn KEIN Team mehr was setzen muss.
+        // Auto-next nur wenn KEIN Team mehr was setzen muss (Animationen fertig).
         if (!s.pendingFor) {
-          delayMs = 2000;
+          delayMs = 3500; // Slam-Down + Placement-Flash abwarten
           action = () => emit('qq:nextQuestion', { roomCode });
         }
         break;
       case 'COMEBACK_CHOICE':
-        delayMs = 4000;
+        delayMs = 6000; // Step-Erklaerung lesen + Einblende-Animation
         action = () => emit('qq:comebackIntroStep', { roomCode });
         break;
       case 'PAUSED':

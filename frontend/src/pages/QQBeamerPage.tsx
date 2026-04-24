@@ -6942,6 +6942,54 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
                     : (isEn ? 'correct!' : 'richtig!');
 
+            // Hot Potato: bei pool-exhausted (>=2 Ueberlebende) haben alle
+            // Ueberlebenden gewonnen und ein Feld bekommen. Zeige sie alle an,
+            // sonst wirkt die Folie wie "Harald gewinnt allein".
+            let hpCoWinners: typeof s.teams | null = null;
+            if (cat === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'hotPotato') {
+              const eliminated = new Set((s.hotPotatoEliminated ?? []) as string[]);
+              const alive = s.teams.filter(t => !eliminated.has(t.id));
+              if (alive.length >= 2) hpCoWinners = alive;
+            }
+            if (hpCoWinners) {
+              const hpMsg = isEn
+                ? 'all survived — each gets a tile!'
+                : 'alle überlebt — jedes Team bekommt ein Feld!';
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
+                  padding: '22px 38px', borderRadius: 28,
+                  width: '100%', maxWidth: 1400, flexWrap: 'wrap',
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
+                  border: '2px solid rgba(34,197,94,0.55)',
+                  boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+                }}>
+                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>🥔</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {hpCoWinners.map((tm, i) => (
+                      <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(56px, 6.5vw, 88px)'} style={{
+                          flexShrink: 0, boxShadow: `0 0 22px ${tm.color}66`,
+                          animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
+                        }} />
+                        <div title={tm.name} style={{
+                          fontWeight: 900, fontSize: 'clamp(22px, 3vw, 40px)', color: tm.color, lineHeight: 1.1,
+                          textShadow: `0 0 24px ${tm.color}44`,
+                          maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{truncName(tm.name, 16)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    color: '#86efac', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800, lineHeight: 1.2,
+                  }}>
+                    {hpMsg}
+                  </div>
+                </div>
+              );
+            }
+
             // Echter Zeit-Gleichstand (gleiche max Punkte + gleiche ms) → mehrere Sieger
             if (coWinners && coWinners.length > 1) {
               const coMsg = isEn

@@ -5234,10 +5234,10 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             pointerEvents: 'none',
           }} />
 
-          {/* Loesung — nimmt 60% Hoehe */}
+          {/* Loesung — oberhaelfte */}
           <div style={{
-            flex: '1.6 1 0', minHeight: 0,
-            padding: 'clamp(18px, 2.4vh, 30px) clamp(18px, 2vw, 30px) clamp(10px, 1.2vh, 18px)',
+            flex: '1 1 0', minHeight: 0,
+            padding: 'clamp(16px, 2vh, 26px) clamp(18px, 2vw, 30px) clamp(10px, 1.2vh, 18px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
             position: 'relative', zIndex: 1,
           }}>
@@ -5257,58 +5257,79 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             </div>
           </div>
 
-          {/* Winner-Footer — integriert in dieselbe Card, subtiler Separator.
-              Zeigt Trophy + Avatar + Name + Guess + Delta als horizontale Zeile. */}
+          {/* Winner-Footer — Gewinner-Zahl gleich gross wie Loesung.
+              Links: Label + Avatar + Teamname (gestapelt). Rechts: Mega-Zahl + Delta-Chip. */}
           {winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
               borderTop: `2px solid ${winner.team.color}44`,
-              background: `linear-gradient(180deg, ${winner.team.color}1a, ${winner.team.color}05)`,
+              background: `linear-gradient(180deg, ${winner.team.color}1f, ${winner.team.color}06)`,
               padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
-              display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 24px)',
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr',
+              gap: 'clamp(16px, 2vw, 28px)',
+              alignItems: 'center',
               minWidth: 0,
               opacity: revealedMinIdx === 0 ? 1 : 0.12,
               filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
               transition: 'opacity 0.7s ease, filter 0.7s ease',
               position: 'relative', zIndex: 1,
             }}>
+              {/* Linke Saeule: Label + Avatar + Teamname */}
               <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
-                flexShrink: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 'clamp(6px, 0.9vh, 12px)', minWidth: 0,
               }}>
                 <span style={{
-                  fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900,
-                  color: '#cbd5e1', letterSpacing: '0.12em', textTransform: 'uppercase',
-                  opacity: 0.7,
+                  fontSize: 'clamp(10px, 0.9vw, 13px)', fontWeight: 900,
+                  color: '#cbd5e1', letterSpacing: '0.16em', textTransform: 'uppercase',
+                  opacity: 0.72, whiteSpace: 'nowrap',
                 }}>
                   <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
                 </span>
-                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(88px, 9.5vw, 140px)'} style={{
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(72px, 7.5vw, 110px)'} style={{
                   flexShrink: 0,
                   boxShadow: `0 0 28px ${winner.team.color}77`,
                   animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                 }} />
+                <div style={{
+                  fontSize: 'clamp(18px, 2vw, 32px)', fontWeight: 900, color: winner.team.color,
+                  lineHeight: 1.05, textAlign: 'center',
+                  maxWidth: '100%',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  textShadow: `0 0 22px ${winner.team.color}55`,
+                }}>{winner.team.name}</div>
               </div>
-              <div style={{ minWidth: 0, flex: 1,
+
+              {/* Rechte Saeule: Mega-Zahl + Delta-Pill — gleiche Groesse wie Loesung */}
+              <div style={{
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 'clamp(8px, 1.1vh, 14px)', minWidth: 0,
                 animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.3s both' : 'none',
               }}>
                 <div style={{
-                  fontSize: 'clamp(30px, 3.6vw, 58px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
-                  whiteSpace: 'nowrap',
-                  padding: '0 0.2em',
-                  textShadow: `0 0 22px ${winner.team.color}55`,
-                }}>{winner.team.name}</div>
-                <div style={{
-                  fontSize: 'clamp(18px, 2.1vw, 30px)', fontWeight: 800, color: '#e2e8f0', marginTop: 6,
+                  fontSize: 'clamp(64px, 8vw, 140px)',
+                  fontWeight: 900, color: winner.team.color, lineHeight: 1,
                   fontVariantNumeric: 'tabular-nums',
-                  display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
+                  textShadow: `0 0 40px ${winner.team.color}66`,
                 }}>
-                  <span>{fmt(winner.num)}</span>
-                  <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.88em' }}>
-                    {winner.delta === 0
-                      ? (lang === 'en' ? '· exact!' : '· genau!')
-                      : `· Δ ${fmt(winner.delta)}`}
-                  </span>
+                  {fmt(winner.num)}
+                </div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'baseline', gap: 6,
+                  padding: '6px 16px',
+                  borderRadius: 999,
+                  background: winner.delta === 0 ? 'rgba(34,197,94,0.22)' : `${winner.team.color}22`,
+                  border: winner.delta === 0 ? '2px solid rgba(34,197,94,0.6)' : `2px solid ${winner.team.color}66`,
+                  fontSize: 'clamp(16px, 1.7vw, 26px)', fontWeight: 900,
+                  color: winner.delta === 0 ? '#86efac' : '#e2e8f0',
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '0.02em',
+                }}>
+                  {winner.delta === 0
+                    ? (lang === 'en' ? '✨ exact!' : '✨ genau!')
+                    : `Δ ${fmt(winner.delta)}`}
                 </div>
               </div>
             </div>

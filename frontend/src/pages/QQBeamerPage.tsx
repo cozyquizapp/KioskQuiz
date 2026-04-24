@@ -5345,7 +5345,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               }}>
                 <div style={{
                   fontSize: 'clamp(30px, 3.6vw, 58px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                   padding: '0 0.2em',
                   textShadow: `0 0 22px ${winner.team.color}55`,
                 }}>{winner.team.name}</div>

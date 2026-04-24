@@ -550,6 +550,24 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     return () => clearInterval(iv);
   }, [s.timerEndsAt, s.phase, s.sfxMuted]);
 
+  // C3 Timer-Urgency-Vignette: roter Inset-Pulse am Screen-Rand bei <=5s.
+  // Separater State, damit wir im Render-Baum die Vignette zeigen koennen
+  // (der Sound-Tick-Hook oben setzt keinen State).
+  const [timerUrgent, setTimerUrgent] = useState(false);
+  useEffect(() => {
+    if (!s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') {
+      setTimerUrgent(false);
+      return;
+    }
+    const tick = () => {
+      const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
+      setTimerUrgent(rem > 0 && rem <= 5);
+    };
+    tick();
+    const iv = setInterval(tick, 250);
+    return () => clearInterval(iv);
+  }, [s.timerEndsAt, s.phase]);
+
   // ── Sound: Timer-End auch wenn alle Teams vor Ablauf geantwortet haben ──
   const prevAllAnsweredRef = useRef(false);
   useEffect(() => {
@@ -809,6 +827,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
 
+      {/* C3 Timer-Urgency-Vignette: pulsierender roter Screen-Rand bei <=5s,
+          zusaetzlich zum bestehenden Timer-Pill-Shake. */}
+      {timerUrgent && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9990,
+          animation: 'timerVignettePulse 0.8s ease-in-out infinite',
+        }} />
+      )}
+
       {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
       {flashKey > 0 && (
         <div
@@ -882,6 +909,22 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
     const iv = setInterval(tick, 200);
     return () => clearInterval(iv);
   }, [s.hotPotatoTurnEndsAt]);
+
+  // C1 Track new eliminations — dramatisches Ausscheide-Moment (Shake-Red +
+  // Kartoffel-Drop + fade-to-grey). Ein Team gleichzeitig ist normal, bei
+  // Last-Team-Wins koennen am Ende auch 2+ fast simultan eliminiert werden.
+  const prevElimRef = useRef<string[]>([]);
+  const [justEliminated, setJustEliminated] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const cur: string[] = s.hotPotatoEliminated ?? [];
+    const prev = prevElimRef.current;
+    const newOnes = cur.filter(id => !prev.includes(id));
+    prevElimRef.current = cur;
+    if (newOnes.length > 0) {
+      setJustEliminated(new Set(newOnes));
+      setTimeout(() => setJustEliminated(new Set()), 1400);
+    }
+  }, [s.hotPotatoEliminated]);
 
   const activeTeam = s.teams.find((t: any) => t.id === s.hotPotatoActiveTeamId);
   const urgent = remaining !== null && remaining <= 5;
@@ -961,7 +1004,8 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         </div>
       )}
 
-      {/* Eliminated teams (small, subtle) */}
+      {/* Eliminated teams (small, subtle). Frisch eliminierte Teams:
+          C1 Shake-Red + Kartoffel-Drop 🥔 + fade-to-grey. */}
       {s.hotPotatoEliminated && s.hotPotatoEliminated.length > 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
@@ -971,9 +1015,25 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           {s.hotPotatoEliminated.map((id: string) => {
             const t = s.teams.find((tm: any) => tm.id === id);
             if (!t) return null;
+            const fresh = justEliminated.has(id);
             return (
-              <span key={id} style={{ color: t.color, opacity: 0.7, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span key={id} style={{
+                color: t.color, opacity: fresh ? 1 : 0.7,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                position: 'relative',
+                animation: fresh ? 'hpEliminate 1.2s ease-out both' : undefined,
+              }}>
                 <QQTeamAvatar avatarId={t.avatarId} size={14} /> {t.name}
+                {fresh && (
+                  <span aria-hidden style={{
+                    position: 'absolute', top: -22, left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: 26, lineHeight: 1, pointerEvents: 'none',
+                    filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.7))',
+                    animation: 'hpPotatoDrop 1.3s cubic-bezier(0.4,1.4,0.6,1) both',
+                    zIndex: 5,
+                  }}>🥔</span>
+                )}
               </span>
             );
           })}
@@ -2038,7 +2098,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{
             background: '#ffffff', borderRadius: 28, padding: 'clamp(14px, 2vh, 24px)',
-            animation: 'qrGlow 3s ease-in-out infinite',
+            // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
+            animation: 'qrScanBreath 2.4s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
             boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
@@ -5252,7 +5313,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       border: 4px solid #FEF3C7;
       box-shadow: 0 0 0 8px rgba(251,191,36,0.25), 0 0 40px rgba(251,191,36,0.85), 0 8px 24px rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
-      animation: qqTargetPulse 2.1s ease-in-out infinite;
+      animation: mapTargetDrop 0.75s cubic-bezier(0.34,1.56,0.64,1) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
       position: relative;
     ">
       <div style="position:absolute; inset:14px; border-radius:50%; border:3px solid #78350F;"></div>
@@ -7444,7 +7505,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           width: 540, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
-          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} teamPhaseStats={s.teamPhaseStats} />
+          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} teamPhaseStats={s.teamPhaseStats} correctTeamId={s.correctTeamId} />
         </div>
       </div>
 
@@ -8944,7 +9005,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }}>×2</div>
                   </>
                 )}
-                {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle */}
+                {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.
+                    C7: Sanduhr droppt rein + tickt kontinuierlich. */}
                 {isSandLocked && (
                   <>
                     <div style={{
@@ -8955,12 +9017,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       animation: 'frostPulse 2.5s ease-in-out infinite',
                       pointerEvents: 'none', zIndex: 2,
                     }} />
-                    {/* Sanduhr-PNG zentriert auf der Zelle */}
+                    {/* Sanduhr-PNG zentriert — Drop-Anim beim Mount + dauer-Tick. */}
                     <div style={{
                       position: 'absolute', inset: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       pointerEvents: 'none', zIndex: 4,
                       filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
+                      animation: 'sanduhrDrop 0.65s cubic-bezier(0.34,1.56,0.64,1) both, sanduhrTick 2.5s ease-in-out 0.7s infinite',
+                      transformOrigin: 'center',
                     }}>
                       <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.7)} alt="Bann" />
                     </div>
@@ -9134,10 +9198,11 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-export function ScoreBar({ teams, activeTeamId, teamPhaseStats }: {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }: {
   teams: QQStateUpdate['teams'];
   activeTeamId?: string | null;
   teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
+  correctTeamId?: string | null;
 }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
@@ -9146,6 +9211,22 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats }: {
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
   // B2: Teams mit gerade verdientem Joker — triggert Stern-Flug-Animation
   const [jokerEarners, setJokerEarners] = useState<Set<string>>(new Set());
+  // C2: Streak-Counter pro Team (wie oft hintereinander correctTeamId).
+  // Wechselt der correctTeamId auf ein neues nicht-null Team: dessen Counter++
+  // und alle anderen → 0. Null (niemand richtig) tastet keine Counter.
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const prevCorrectRef = useRef<string | null>(null);
+  useEffect(() => {
+    const cur = correctTeamId ?? null;
+    if (!cur) return;
+    if (cur === prevCorrectRef.current) return;
+    prevCorrectRef.current = cur;
+    setStreaks(s => {
+      const next: Record<string, number> = {};
+      for (const t of teams) next[t.id] = t.id === cur ? (s[t.id] ?? 0) + 1 : 0;
+      return next;
+    });
+  }, [correctTeamId, teams]);
 
   useEffect(() => {
     const newPopped = new Set<string>();
@@ -9282,6 +9363,19 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats }: {
                     zIndex: 10,
                   }}
                 >⭐</span>
+              )}
+              {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
+              {(streaks[t.id] ?? 0) >= 3 && (
+                <span aria-hidden style={{
+                  position: 'absolute',
+                  top: dense ? -10 : -14,
+                  left: dense ? -6 : -8,
+                  fontSize: dense ? 22 : 28,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 0 8px rgba(251,146,60,0.9)) drop-shadow(0 0 14px rgba(239,68,68,0.5))',
+                  animation: 'streakFlameWobble 0.7s ease-in-out infinite',
+                  zIndex: 9,
+                }} title={`${streaks[t.id]}x in Folge`}>🔥</span>
               )}
             </span>
           </div>

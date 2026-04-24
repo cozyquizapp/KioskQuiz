@@ -3216,6 +3216,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           pointerEvents: 'none', zIndex: 3,
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
+                          // C7: Sanduhr droppt + tickt kontinuierlich.
+                          animation: 'sanduhrDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both, sanduhrTick 2.5s ease-in-out 0.65s infinite',
+                          transformOrigin: 'center',
                         }}>
                           <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.6)} alt="Bann" />
                         </div>

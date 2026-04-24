@@ -280,6 +280,67 @@ export const QQ_BEAMER_CSS = `
     60%  { transform: scale(0.96); }
     100% { transform: scale(1); box-shadow: 0 0 10px rgba(251,191,36,0.3); }
   }
+  /* C1 Hot-Potato-Elimination: Shake-red + fade-to-grey + Kartoffel-Drop. */
+  @keyframes hpEliminate {
+    0%   { transform: translate(0, 0) rotate(0); filter: brightness(1) saturate(1); }
+    10%  { transform: translate(-8px, 2px) rotate(-4deg); filter: brightness(1.4) saturate(1.3) drop-shadow(0 0 12px rgba(239,68,68,0.8)); }
+    20%  { transform: translate(8px, -2px) rotate(4deg); filter: brightness(1.4) saturate(1.3) drop-shadow(0 0 12px rgba(239,68,68,0.8)); }
+    30%  { transform: translate(-6px, 2px) rotate(-3deg); filter: brightness(1.3) saturate(1.2); }
+    40%  { transform: translate(6px, -1px) rotate(3deg); filter: brightness(1.2) saturate(1.1); }
+    50%  { transform: translate(-4px, 1px) rotate(-1deg); filter: brightness(1.1); }
+    60%  { transform: translate(2px, 0) rotate(1deg); filter: brightness(1); }
+    100% { transform: translate(0, 0) rotate(0); filter: grayscale(0.8) brightness(0.65) saturate(0.4); }
+  }
+  @keyframes hpPotatoDrop {
+    0%   { opacity: 0; transform: translate(0, -24px) rotate(0) scale(0.6); }
+    30%  { opacity: 1; transform: translate(0, 0) rotate(-15deg) scale(1.1); }
+    60%  { transform: translate(0, -4px) rotate(10deg) scale(1); }
+    100% { opacity: 0; transform: translate(0, 80px) rotate(-30deg) scale(0.8); }
+  }
+  /* C2 Streak: Feuer-Wackel. */
+  @keyframes streakFlameWobble {
+    0%, 100% { transform: scale(1) rotate(-3deg); }
+    50%      { transform: scale(1.1) rotate(3deg); }
+  }
+  /* C3 Timer-Urgency-Vignette: Screen-Rand pulsiert rot. */
+  @keyframes timerVignettePulse {
+    0%, 100% { box-shadow: inset 0 0 40px rgba(239,68,68,0.2), inset 0 0 120px rgba(239,68,68,0.08); }
+    50%      { box-shadow: inset 0 0 80px rgba(239,68,68,0.4), inset 0 0 220px rgba(239,68,68,0.18); }
+  }
+  /* C4 Map-Target-Drop. */
+  @keyframes mapTargetDrop {
+    0%   { opacity: 0; transform: translateY(-300px) scale(1.6) rotate(-8deg); filter: brightness(1.6); }
+    55%  { opacity: 1; transform: translateY(8px) scale(0.92); filter: brightness(1.25); }
+    75%  { transform: translateY(-3px) scale(1.04); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: brightness(1); }
+  }
+  /* C5 QR-Scan-me-Breath. */
+  @keyframes qrScanBreath {
+    0%, 100% { box-shadow: 0 0 0 rgba(34,197,94,0), 0 8px 28px rgba(0,0,0,0.4); transform: scale(1); }
+    50%      { box-shadow: 0 0 26px rgba(34,197,94,0.4), 0 0 60px rgba(34,197,94,0.2), 0 8px 28px rgba(0,0,0,0.4); transform: scale(1.01); }
+  }
+  /* C6 Swap-Cross-Over: Avatar-Paar kreuzt sich mit Bogen. */
+  @keyframes swapFlyA {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(var(--swap-mid-x, 100px), -40px) scale(1.1); }
+    100% { transform: translate(var(--swap-dx, 200px), 0) scale(1); }
+  }
+  @keyframes swapFlyB {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(calc(-1 * var(--swap-mid-x, 100px)), 40px) scale(1.1); }
+    100% { transform: translate(calc(-1 * var(--swap-dx, 200px)), 0) scale(1); }
+  }
+  /* C7 Sanduhr-Drop + Rotate. */
+  @keyframes sanduhrDrop {
+    0%   { opacity: 0; transform: translateY(-40px) rotate(-180deg) scale(0.5); }
+    55%  { opacity: 1; transform: translateY(4px) rotate(20deg) scale(1.1); }
+    100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+  }
+  @keyframes sanduhrTick {
+    0%, 100% { transform: rotate(0); }
+    25%      { transform: rotate(8deg); }
+    75%      { transform: rotate(-8deg); }
+  }
   @keyframes roundBam {
     0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
     40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }

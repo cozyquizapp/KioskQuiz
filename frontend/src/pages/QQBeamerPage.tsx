@@ -6053,19 +6053,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Team-Answer-Progress (vor dem Reveal) — spiegelt non-CHEESE-Layout wider */}
+          {/* Team-Answer-Progress (vor dem Reveal) — frosted Pill-Card oben
+              mittig ueber dem Bild, damit Avatare auch gegen helle/bunte
+              Cheese-Bilder sofort lesbar sind. Mirror vom non-CHEESE-Layout. */}
           {!revealed && s.teams.length > 0 && (
             <div style={{
-              position: 'absolute', top: 72, left: 0, right: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              position: 'absolute', top: 24, left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              padding: 'clamp(10px, 1.4vh, 16px) clamp(16px, 2vw, 28px)',
+              borderRadius: 22,
+              background: 'rgba(13,10,6,0.72)',
+              backdropFilter: 'blur(14px) saturate(1.2)',
+              WebkitBackdropFilter: 'blur(14px) saturate(1.2)',
+              border: '1.5px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
               pointerEvents: 'none', zIndex: 9,
               animation: 'contentReveal 0.45s ease 0.35s both',
+              maxWidth: 'calc(100vw - 80px)',
             }}>
               <div style={{
                 fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
-                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.75)',
-                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.9)',
                 transition: 'color 0.3s ease',
+                letterSpacing: '0.04em',
               }}>
                 {s.allAnswered
                   ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
@@ -6073,10 +6084,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
+                const av = tc > 6 ? 60 : tc > 4 ? 68 : 76;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
                 return (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, flexWrap: 'wrap' }}>
                     {s.teams.map(tm => {
                       const answered = s.answers.some(a => a.teamId === tm.id);
                       return (

@@ -6355,7 +6355,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           }}>
                             <div style={{ position: 'relative', display: 'inline-block' }}>
                               <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(58px, 6.4vw, 88px)'} style={{
-                                border: isFastest ? '3px solid #FBBF24' : '2px solid rgba(255,255,255,0.5)',
+                                border: isFastest ? '3px solid #FBBF24' : 'none',
                                 boxShadow: isFastest
                                   ? `0 0 22px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
                                   : '0 4px 12px rgba(0,0,0,0.4)',

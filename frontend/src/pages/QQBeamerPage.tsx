@@ -6091,14 +6091,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
 
           {/* Frosted question/answer card — bottom.
-              POP-Transition: minHeight waechst dynamisch beim Reveal
-              (von kompakt fuer Bild+Frage auf full-size fuer Bild+Frage+Loesung+Avatare).
-              Scale-Bounce beim Reveal als Akzent. */}
+              POP-Transition: minHeight waechst dynamisch beim Reveal.
+              Ohne Bild (hasImg=false) kompakter, weil kein Bild den Raum fuellt. */}
           <div style={{
             width: '100%', maxWidth: 900,
             minHeight: revealed
-              ? 'clamp(400px, 50vh, 540px)'
-              : 'clamp(260px, 32vh, 360px)',
+              ? (hasImg ? 'clamp(400px, 50vh, 540px)' : 'clamp(220px, 28vh, 320px)')
+              : (hasImg ? 'clamp(260px, 32vh, 360px)' : 'clamp(120px, 16vh, 180px)'),
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -7698,7 +7697,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 
       {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry. */}
       <div key={`sweep-${s.questionIndex}`} aria-hidden style={{
-        position: 'absolute', top: 112, left: 0, right: 0, bottom: 0,
+        position: 'absolute', top: 12, left: 0, right: 0, bottom: 0,
         pointerEvents: 'none', zIndex: 4, overflow: 'hidden',
       }}>
         <div style={{
@@ -7709,57 +7708,13 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
         }} />
       </div>
 
-      {/* Top banner — feste Höhe (auch wenn kein Team aktiv ist), sonst springt das
-          Grid darunter, sobald die Leiste verschwindet/erscheint. */}
+      {/* Top banner — schrumpft auf 0 wenn Team aktiv. Das aktive Team wird
+          stattdessen rechts in der ScoreBar prominent markiert (inkl. Aktions-Pill).
+          Feste 12px Abstand bleibt damit das Grid nicht an den Viewport-Rand rutscht. */}
       <div style={{
-        height: 112, flexShrink: 0,
-        padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
+        height: 12, flexShrink: 0,
         position: 'relative', zIndex: 5,
-        background: team ? `linear-gradient(180deg, rgba(13,10,6,0.8) 0%, rgba(13,10,6,0.4) 100%)` : 'transparent',
-        borderBottom: team ? `2px solid ${teamColor}22` : '2px solid transparent',
-        visibility: team ? 'visible' : 'hidden',
-      }}>
-        {team && (
-          <>
-            <div style={{
-              position: 'relative',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 72, height: 72, borderRadius: '50%',
-              background: `${teamColor}20`,
-              border: `3px solid ${teamColor}88`,
-              boxShadow: `0 0 20px ${teamColor}44`,
-              animation: 'activeTeamGlow 2s ease-in-out infinite',
-              ['--team-color' as string]: `${teamColor}55`,
-              flexShrink: 0,
-            }}>
-              <QQTeamAvatar avatarId={team.avatarId} size={44} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{
-                fontWeight: 900, fontSize: 'clamp(28px, 3.5vw, 52px)', color: teamColor,
-                textShadow: `0 0 24px ${teamColor}44`,
-              }}>{team.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{
-                  fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
-                  color: '#e2e8f0',
-                }}>
-                  {actionVerb(s.pendingAction, lang)}
-                </span>
-                {s.teamPhaseStats[team.id] && (
-                  <span style={{
-                    padding: '3px 12px', borderRadius: 999,
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#94a3b8', fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
-                  }}>
-                    {actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      }} />
 
       {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll).
           Beide Spalten bekommen height = gridMaxSize (fix quadratisches Grid) damit
@@ -7793,7 +7748,16 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           width: 540, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
-          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} teamPhaseStats={s.teamPhaseStats} correctTeamId={s.correctTeamId} />
+          <ScoreBar
+            teams={s.teams}
+            activeTeamId={activeTeamId}
+            teamPhaseStats={s.teamPhaseStats}
+            correctTeamId={s.correctTeamId}
+            activeActionLabel={team ? actionVerb(s.pendingAction, lang) : undefined}
+            activeActionDesc={team && s.teamPhaseStats[team.id]
+              ? actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)
+              : undefined}
+          />
         </div>
       </div>
 
@@ -9486,11 +9450,13 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }: {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc }: {
   teams: QQStateUpdate['teams'];
   activeTeamId?: string | null;
   teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
   correctTeamId?: string | null;
+  activeActionLabel?: string;
+  activeActionDesc?: string;
 }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
@@ -9607,8 +9573,15 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }:
         <div key={t.id} style={{
           display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
-          opacity: activeTeamId && !isActive ? 0.55 : 1,
-          transition: 'opacity 0.3s ease',
+          opacity: activeTeamId && !isActive ? 0.42 : 1,
+          // Aktives Team: prominenter Box-Ring + Puls, wegen Banner-Wegfall.
+          padding: isActive ? (dense ? '6px 10px' : '8px 14px') : '0',
+          borderRadius: isActive ? 16 : 0,
+          background: isActive ? `linear-gradient(135deg, ${t.color}22, ${t.color}08)` : 'transparent',
+          border: isActive ? `2px solid ${t.color}` : '2px solid transparent',
+          boxShadow: isActive ? `0 0 28px ${t.color}55, 0 0 60px ${t.color}22, inset 0 0 12px ${t.color}18` : 'none',
+          transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
+          position: 'relative',
         }}>
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
@@ -9699,13 +9672,38 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }:
               )}
             </span>
           </div>
-          {/* Name — flex-1, darf wachsen */}
-          <span style={{
+          {/* Name + (nur beim aktiven Team) Aktions-Pill darunter — ersetzt den
+              weggefallenen Placement-Banner. */}
+          <div style={{
             flex: 1, minWidth: 0,
-            fontSize: nameFs, fontWeight: 900, color: t.color,
-            textShadow: isActive ? `0 0 12px ${t.color}44` : 'none',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>{t.name}</span>
+            display: 'flex', flexDirection: 'column', gap: isActive && activeActionLabel ? 4 : 0,
+          }}>
+            <span style={{
+              fontSize: nameFs, fontWeight: 900, color: t.color,
+              textShadow: isActive ? `0 0 16px ${t.color}66` : 'none',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{t.name}</span>
+            {isActive && activeActionLabel && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                alignSelf: 'flex-start',
+                padding: '3px 10px', borderRadius: 999,
+                background: 'rgba(0,0,0,0.45)',
+                border: `1.5px solid ${t.color}88`,
+                fontSize: dense ? 14 : 16, fontWeight: 900,
+                color: '#fde68a',
+                animation: 'tcpulse 1.6s ease-in-out infinite',
+                ['--c' as string]: `${t.color}66`,
+              }}>
+                <span>{activeActionLabel}</span>
+                {activeActionDesc && (
+                  <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: dense ? 12 : 13 }}>
+                    {activeActionDesc}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
           {/* Wert — prominent rechts mit Medaille für Top 3 */}
           <div style={{
             position: 'relative',

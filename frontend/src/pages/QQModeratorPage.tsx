@@ -258,9 +258,19 @@ export default function QQModeratorPage() {
         action = () => emit('qq:teamsRevealFinish', { roomCode });
         break;
       case 'PHASE_INTRO': {
-        // FINALE-Intro hat extra Transition (~2.5s) + Breathe + Subtitle-Drop.
+        // PHASE_INTRO hat mehrere Substeps (introStep 0-3), qq:activateQuestion
+        // advanced sie im Backend sukzessive bevor am Ende QUESTION_ACTIVE kommt:
+        //   0 = Round-Announcement (FINALE-Roll / BAM)
+        //   1 = Rule-Reminder (neue Mechaniken)
+        //   2 = Category-Reveal (Kategorie-Card)
+        //   3 = Category-Explanation (nur bei neuer Kategorie)
+        // Delays pro Substep, weil verschiedene Inhalte verschieden lang sind.
         const isFinal = s.gamePhaseIndex === s.totalPhases;
-        delayMs = isFinal ? 9500 : 7500;
+        const step = s.introStep ?? 0;
+        if (step === 0) delayMs = isFinal ? 9500 : 7500;
+        else if (step === 1) delayMs = 5500; // Rule-Reminder
+        else if (step === 2) delayMs = s.categoryIsNew ? 4500 : 5000;
+        else delayMs = 6500; // Category-Explanation
         action = () => emit('qq:activateQuestion', { roomCode });
         break;
       }
@@ -286,16 +296,23 @@ export default function QQModeratorPage() {
           action = () => emit('qq:mapRevealStep', { roomCode });
         }
         // Mucho/ZvZ/Cheese: Step-basierte Reveals mit Doppelblink + Winner-Card-Delay.
+        // Der letzte In-Progress-Step ist der Lock-Step (Lösung grün). Er braucht
+        // mehr Zeit, weil Doppelblink 1.1s + Winner-Card nach 1.2s läuft.
         else if (muchoRevealInProgress) {
-          delayMs = 4000;
+          const willBeLockStep = (s.muchoRevealStep ?? 0) === muchoNonEmptyKey;
+          delayMs = willBeLockStep ? 5500 : 4000;
           action = () => emit('qq:muchoRevealStep', { roomCode });
         }
         else if (zvzRevealInProgress) {
-          delayMs = 4500; // Bet-Cascade laeuft ~2.5s + Lese
+          // Step 1 = Bet-Cascade (~2.5s), Step 2 = Lock mit Doppelblink + Winner-Card.
+          const willBeLockStep = (s.zvzRevealStep ?? 0) === 1;
+          delayMs = willBeLockStep ? 5500 : 4500;
           action = () => emit('qq:zvzRevealStep', { roomCode });
         }
         else if (cheeseRevealInProgress) {
-          delayMs = 4500;
+          // Step 1 = Lösung grün, Step 2 = Avatar-Row + Winner.
+          const willBeAvatarStep = (s.cheeseRevealStep ?? 0) === 1;
+          delayMs = willBeAvatarStep ? 5500 : 4500;
           action = () => emit('qq:cheeseRevealStep', { roomCode });
         }
         // Hot Potato Reveal zeigt Antwort-Chips + Winner-Banner.
@@ -331,6 +348,8 @@ export default function QQModeratorPage() {
   }, [
     autoplayEnabled, autoplayPaused, roomCode, emit,
     state?.phase, state?.rulesSlideIndex, state?.allAnswered,
+    state?.introStep, state?.categoryIsNew,
+    state?.comebackIntroStep,
     state?.muchoRevealStep, state?.zvzRevealStep, state?.cheeseRevealStep, state?.mapRevealStep,
     state?.pendingFor, state?.currentQuestion?.id, state?.answers?.length,
   ]); // eslint-disable-line react-hooks/exhaustive-deps

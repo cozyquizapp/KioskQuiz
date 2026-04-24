@@ -3725,6 +3725,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
         }
       `}</style>
       <div style={grainOverlay} />
+      <MobileFireflies color="#FEF08A44" />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>

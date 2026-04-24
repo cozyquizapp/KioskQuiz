@@ -2500,6 +2500,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: fontFam, overflow: 'hidden',
     }}>
+      <Fireflies />
       <style>{`
         @keyframes qqTrTitle {
           0%   { opacity: 0; transform: translateY(-30px) scale(0.8); letter-spacing: 0.5em; }
@@ -5927,9 +5928,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-      {/* I1 Kategorie-Partikel — subtile Drift-Glyphen im Hintergrund.
-          Key bindet an category, damit beim Kategorie-Wechsel neu gerendert wird. */}
-      {!revealed && <CategoryParticles category={cat as string} color={accent} />}
+      {/* I1 Kategorie-Partikel (fliegende Zahlen/Buchstaben) entfernt —
+          lenkten vom Fragentext ab. Stattdessen faerben wir die Fireflies
+          weiter unten in der Kategorie-Farbe. */}
       {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
       {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
         // CHEESE Crop: offsetX/Y steuern background-position, scale steuert Zoom.
@@ -6008,8 +6009,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         </div>
       ))}
 
-      {/* Fireflies */}
-      <Fireflies />
+      {/* Fireflies in Kategorie-Farbe — subtile Stimmung passend zum Thema */}
+      <Fireflies color={`${accent}99`} />
 
       {/* ── CHEESE overlay cards (Phase 2 + Reveal) ── */}
       {(cheeseWithQuestion || isCheeseReveal) && (

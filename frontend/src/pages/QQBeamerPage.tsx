@@ -7863,10 +7863,27 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             activeTeamId={activeTeamId}
             teamPhaseStats={s.teamPhaseStats}
             correctTeamId={s.correctTeamId}
-            activeActionLabel={team ? actionVerb(s.pendingAction, lang) : undefined}
-            activeActionDesc={team && s.teamPhaseStats[team.id]
-              ? actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang)
-              : undefined}
+            activeActionLabel={(() => {
+              if (!team) return undefined;
+              // Comeback-Klau-Phase: expliziter Label mit „Mehr oder Weniger"-Kontext.
+              if (s.comebackHL && s.comebackHL.phase === 'steal' && s.comebackHL.currentStealer === team.id) {
+                return lang === 'en' ? '⚡ Comeback Steal' : '⚡ Comeback-Klau';
+              }
+              return actionVerb(s.pendingAction, lang);
+            })()}
+            activeActionDesc={(() => {
+              if (!team || !s.teamPhaseStats[team.id]) return undefined;
+              // Comeback: Felder-Zähler (N von Total, siehe comebackHL.winnings)
+              if (s.comebackHL && s.comebackHL.phase === 'steal' && s.comebackHL.currentStealer === team.id) {
+                const remaining = s.comebackHL.currentStealerRemaining ?? 0;
+                const total = s.comebackHL.winnings[team.id] ?? remaining;
+                const done = total - remaining;
+                return lang === 'en'
+                  ? `Field ${done + 1} of ${total} — pick from current leader`
+                  : `Feld ${done + 1} von ${total} — klaut vom aktuellen 1. Platz`;
+              }
+              return actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang);
+            })()}
           />
         </div>
       </div>
@@ -7917,7 +7934,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   // ── H/L-Frage-Ansicht (waehrend der Runde) ──────────────────────────────
   if (hl && hl.phase === 'question' && hl.currentPair) {
     const pair = hl.currentPair;
-    const hasCustom = pair.kind === 'anchor' && !!pair.customQuestion;
+    // Frage-Text: bei Format-B customQuestion direkt, bei Format-A auto-generieren
+    // („Hat München mehr oder weniger Einwohner als Berlin?"). Macht den Quiz-Show-
+    // Moment deutlich starker als nur zwei Cards mit Zahlen.
+    const questionText = pair.customQuestion
+      ? pair.customQuestion
+      : (lang === 'en'
+          ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
+          : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`);
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -7949,16 +7973,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Frage-Text (nur bei customQuestion) */}
-        {hasCustom && (
-          <div style={{
-            fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 800, color: '#F1F5F9',
-            textAlign: 'center', maxWidth: 1200, lineHeight: 1.3,
-            animation: 'contentReveal 0.4s ease 0.1s both',
-          }}>
-            {pair.customQuestion}
-          </div>
-        )}
+        {/* Frage-Text — Format-B custom, Format-A auto-generiert */}
+        <div style={{
+          fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 800, color: '#F1F5F9',
+          textAlign: 'center', maxWidth: 1200, lineHeight: 1.3,
+          animation: 'contentReveal 0.4s ease 0.1s both',
+        }}>
+          {questionText}
+        </div>
 
         {/* Anchor + Subject - zwei Karten nebeneinander */}
         <div style={{
@@ -8091,6 +8113,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
       : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓');
     const correctIds = new Set(hl.correctThisRound);
+    const revealQuestion = pair.customQuestion
+      ? pair.customQuestion
+      : (lang === 'en'
+          ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
+          : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`);
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -8120,6 +8147,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1} {lang === 'en' ? 'of' : 'von'} {hl.rounds}
           </div>
+        </div>
+
+        {/* Frage-Text (wiederholt als Kontext im Reveal, dezent) */}
+        <div style={{
+          fontSize: 'clamp(18px, 2.1vw, 30px)', fontWeight: 700, color: '#cbd5e1',
+          textAlign: 'center', maxWidth: 1200, lineHeight: 1.3, opacity: 0.85,
+        }}>
+          {revealQuestion}
         </div>
 
         {/* Anchor + Subject mit aufgedecktem Wert */}

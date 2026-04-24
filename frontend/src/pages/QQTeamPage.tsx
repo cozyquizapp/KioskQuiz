@@ -3470,15 +3470,17 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
           ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} — {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
         </div>
 
-        {/* customQuestion (nur Format B) */}
-        {pair.kind === 'anchor' && pair.customQuestion && (
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: '#cbd5e1', textAlign: 'center',
-            marginBottom: 12, lineHeight: 1.4,
-          }}>
-            {pair.customQuestion}
-          </div>
-        )}
+        {/* Frage-Text — Format-B custom, Format-A auto-generiert */}
+        <div style={{
+          fontSize: 14, fontWeight: 700, color: '#cbd5e1', textAlign: 'center',
+          marginBottom: 12, lineHeight: 1.4,
+        }}>
+          {pair.customQuestion
+            ? pair.customQuestion
+            : (lang === 'en'
+                ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
+                : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`)}
+        </div>
 
         {/* Anchor-Info */}
         <div style={{

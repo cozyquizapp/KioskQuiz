@@ -74,6 +74,8 @@ export interface QQRoomState {
   hotPotatoAnswerAuthors: string[];     // parallel array of teamIds
   hotPotatoQualified: string[];         // teams that have given >=1 accepted answer; only they can win
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
+  /** Timer-Handle fuer den H/L-Mini-Game-Auto-Reveal bei Timeout. Not persisted. */
+  _comebackHLTimerHandle: ReturnType<typeof setTimeout> | null;
   // Imposter (oneOfEight) round-robin state
   imposterActiveTeamId: string | null;
   imposterQueue: string[];          // round-robin order
@@ -241,6 +243,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       hotPotatoAnswerAuthors: [],
       hotPotatoQualified: [],
       _hotPotatoTimerHandle: null,
+      _comebackHLTimerHandle: null,
       imposterActiveTeamId: null,
       imposterQueue: [],
       imposterChosenIndices: [],

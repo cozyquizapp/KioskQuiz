@@ -788,6 +788,42 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   }, 1200);
 }
 
+/** Scheduled Auto-Reveal fuer das Comeback-H/L-Mini-Game. Wird nach jedem
+ *  Rundenstart aufgerufen — wenn der Timer ablaeuft und nicht alle geantwortet
+ *  haben, triggert automatisch den Reveal. Fehlende Antworten zaehlen als falsch. */
+export function scheduleHLAutoReveal(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || !room.comebackHL) return;
+  if (room.comebackHL.phase !== 'question') return;
+  // Alte Handle clearen
+  if (room._comebackHLTimerHandle) {
+    clearTimeout(room._comebackHLTimerHandle);
+    room._comebackHLTimerHandle = null;
+  }
+  const endsAt = room.comebackHL.timerEndsAt;
+  if (endsAt == null) return;
+  // Kleiner Puffer (400ms), damit Client-Timer visuell erst auf 0 zeigt.
+  const ms = Math.max(0, endsAt - Date.now()) + 400;
+  room._comebackHLTimerHandle = setTimeout(() => {
+    const live = getQQRoom(roomCode);
+    if (!live || !live.comebackHL) return;
+    live._comebackHLTimerHandle = null;
+    if (live.comebackHL.phase !== 'question') return;
+    try {
+      qqComebackHLReveal(live);
+      broadcastQQ(io, roomCode);
+    } catch { /* ignore */ }
+  }, ms);
+}
+
+/** Clear Auto-Reveal Timer (bei manueller Reveal, Pause, Spielende). */
+function clearHLAutoReveal(room: { _comebackHLTimerHandle: ReturnType<typeof setTimeout> | null }): void {
+  if (room._comebackHLTimerHandle) {
+    clearTimeout(room._comebackHLTimerHandle);
+    room._comebackHLTimerHandle = null;
+  }
+}
+
 /** Comeback-Mini-Game: Dummy-Teams antworten automatisch auf die Higher/Lower-
  *  Frage (50/50 zufällig, damit der Kampf nicht immer identisch ausgeht).
  *  Wird nach jedem Rundenstart aufgerufen. */
@@ -1820,7 +1856,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
           if (room.comebackHL && room.comebackHL.phase === 'intro') {
             qqComebackHLStartRound(room);
             broadcast(io, payload.roomCode);
-            // Dummy-Teams: automatisch H/L antworten.
+            // Auto-Reveal bei Timer-Out + Dummy-Teams antworten automatisch.
+            scheduleHLAutoReveal(io, payload.roomCode);
             maybeDummyAnswerHL(io, payload.roomCode);
           } else {
             qqComebackAutoApplySteal(room);
@@ -1843,6 +1880,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqComebackHLSubmitAnswer(room, payload.teamId, payload.choice);
         broadcast(io, payload.roomCode);
+        // Wenn alle tied-last Teams geantwortet haben, Auto-Reveal nach kurzem
+        // „allAnswered"-Puffer (gibt Beamer Zeit, das Team-Ensemble-Pop zu zeigen).
+        const hl = room.comebackHL;
+        if (hl && hl.phase === 'question' && hl.teamIds.every(id => hl.answers[id] != null)) {
+          clearHLAutoReveal(room);
+          room._comebackHLTimerHandle = setTimeout(() => {
+            const live = getQQRoom(payload.roomCode);
+            if (!live || !live.comebackHL) return;
+            live._comebackHLTimerHandle = null;
+            if (live.comebackHL.phase !== 'question') return;
+            try {
+              qqComebackHLReveal(live);
+              broadcastQQ(io, payload.roomCode);
+            } catch { /* ignore */ }
+          }, 1200);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -1858,14 +1911,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const hl = room.comebackHL;
         if (!hl) { ok(ack); return; }
         if (hl.phase === 'question') {
+          // Manueller Reveal durch Moderator → Auto-Reveal-Timer clearen.
+          clearHLAutoReveal(room);
           qqComebackHLReveal(room);
           broadcast(io, payload.roomCode);
         } else if (hl.phase === 'reveal') {
           qqComebackHLAdvance(room);
           broadcast(io, payload.roomCode);
-          // Direkt im Anschluss: neue H/L-Runde → Dummy-Antworten.
+          // Direkt im Anschluss: neue H/L-Runde → Dummy-Antworten + Auto-Reveal.
           // Oder: Steal-Phase mit Dummy-Stealer → Auto-Steal.
           if (room.comebackHL && room.comebackHL.phase === 'question') {
+            scheduleHLAutoReveal(io, payload.roomCode);
             maybeDummyAnswerHL(io, payload.roomCode);
           } else if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
             maybeAutoPlace(io, payload.roomCode);
@@ -1880,6 +1936,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         if (room.comebackHL) {
+          clearHLAutoReveal(room);
           qqComebackFinishAllAndGoToFinale(room);
           broadcast(io, payload.roomCode);
         }

@@ -3308,77 +3308,21 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
             )}
-            {/* Round 4: Stacking demo — any own tile can be stacked (no shape requirement) */}
-            {s.gamePhaseIndex === 4 && (() => {
-              // Verteilte eigene Felder, ohne Form-Suggestion
-              const ownPositions = new Set([0, 3, 4, 5, 7]);
-              const stackTarget = 4;
-              return (
-                <div style={{
-                  marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-                  animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                    {/* Before: own tiles spread across grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
-                      {[0,1,2,3,4,5,6,7,8].map(i => {
-                        const isOwn = ownPositions.has(i);
-                        return (
-                          <div key={i} style={{
-                            width: 52, height: 52, borderRadius: 9,
-                            background: isOwn ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
-                            border: isOwn ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
-                            boxShadow: isOwn ? `0 0 8px ${color}55` : 'none',
-                          }} />
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>+</div>
-                    <div style={{ fontSize: 44 }}><QQEmojiIcon emoji="📌"/></div>
-                    <div style={{ fontSize: 44, fontWeight: 900, color: `${color}cc` }}>=</div>
-                    {/* After: same grid, one tile stacked */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 4 }}>
-                      {[0,1,2,3,4,5,6,7,8].map(i => {
-                        const isOwn = ownPositions.has(i);
-                        const isStacked = i === stackTarget;
-                        return (
-                          <div key={i} style={{
-                            position: 'relative',
-                            width: 52, height: 52, borderRadius: 9,
-                            background: isOwn ? `linear-gradient(135deg, ${color}ff, ${color}bb)` : 'rgba(255,255,255,0.04)',
-                            border: isStacked ? '2.5px solid rgba(251,191,36,0.95)' : isOwn ? `1px solid ${color}` : '1px dashed rgba(255,255,255,0.08)',
-                            boxShadow: isStacked ? '0 0 16px rgba(251,191,36,0.75)' : isOwn ? `0 0 8px ${color}55` : 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            {isStacked && (
-                              <>
-                                {/* Stacked second tile (behind, slightly offset) */}
-                                <div style={{
-                                  position: 'absolute', inset: -4, borderRadius: 9,
-                                  background: `linear-gradient(135deg, ${color}dd, ${color}88)`,
-                                  border: `1px solid ${color}`,
-                                  transform: 'translate(3px, -3px)',
-                                  zIndex: -1,
-                                }} />
-                                <span style={{ fontSize: 24 }}><QQEmojiIcon emoji="📌"/></span>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(15px, 1.7vw, 20px)', fontWeight: 800,
-                    color: `${color}aa`, textAlign: 'center', maxWidth: 720, lineHeight: 1.4,
-                  }}>
-                    {lang === 'en'
-                      ? 'Stack any own tile — permanently safe from steal, ban & swap'
-                      : 'Beliebiges eigenes Feld stapeln — dauerhaft sicher vor Klauen, Bann & Swap'}
-                  </div>
-                </div>
-              );
-            })()}
+            {/* Round 4: Stapeln-Info (Grid-Demo entfernt — User-Feedback, Grid war
+                visuell ueberladen, Text reicht aus da Mechanik aus R3-Vorwissen
+                bekannt) */}
+            {s.gamePhaseIndex === 4 && (
+              <div style={{
+                marginTop: 16,
+                fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 800,
+                color: `${color}cc`, textAlign: 'center', maxWidth: 820, lineHeight: 1.4,
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
+              }}>
+                <QQEmojiIcon emoji="📌"/> {lang === 'en'
+                  ? 'Stack any own tile — permanently safe from steal, ban & swap'
+                  : 'Beliebiges eigenes Feld stapeln — dauerhaft sicher vor Klauen, Bann & Swap'}
+              </div>
+            )}
           </div>
         </>
       ) : s.categoryIsNew ? (
@@ -8395,30 +8339,31 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}>
           {hl && hlTeams.length > 1 ? (
             <>
-              <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: 'clamp(18px, 2.4vw, 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {hlTeams.map(tm => (
                   <div key={tm.id} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                   }}>
                     <div style={{
-                      width: 100, height: 100, borderRadius: '50%',
-                      background: `${tm.color}20`, border: `3px solid ${tm.color}88`,
-                      boxShadow: `0 0 24px ${tm.color}55`,
+                      width: 'clamp(140px, 14vw, 200px)', height: 'clamp(140px, 14vw, 200px)',
+                      borderRadius: '50%',
+                      background: `${tm.color}20`, border: `4px solid ${tm.color}aa`,
+                      boxShadow: `0 0 34px ${tm.color}66`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} size={60} />
+                      <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(100px, 10vw, 150px)'} />
                     </div>
                     <div title={tm.name} style={{
-                      fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900, color: tm.color,
-                      textShadow: `0 0 18px ${tm.color}44`,
-                      maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: tm.color,
+                      textShadow: `0 0 22px ${tm.color}55`,
+                      maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{truncName(tm.name, 14)}</div>
                   </div>
                 ))}
               </div>
               {step === 1 && (
                 <div style={{
-                  marginTop: 4, padding: '14px 28px', borderRadius: 18,
+                  marginTop: 8, padding: '14px 28px', borderRadius: 18,
                   background: 'rgba(251,191,36,0.12)', border: '2px solid rgba(251,191,36,0.42)',
                   fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
                   maxWidth: 1000, textAlign: 'center',
@@ -8432,18 +8377,19 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           ) : team && (
             <>
               <div style={{
-                width: 100, height: 100, borderRadius: '50%',
-                background: `${teamColor}20`, border: `3px solid ${teamColor}88`,
-                boxShadow: `0 0 30px ${teamColor}44`,
+                width: 'clamp(160px, 16vw, 240px)', height: 'clamp(160px, 16vw, 240px)',
+                borderRadius: '50%',
+                background: `${teamColor}20`, border: `4px solid ${teamColor}aa`,
+                boxShadow: `0 0 42px ${teamColor}66`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 animation: 'activeTeamGlow 2s ease-in-out infinite',
                 ['--team-color' as string]: `${teamColor}55`,
               }}>
-                <QQTeamAvatar avatarId={team.avatarId} size={60} />
+                <QQTeamAvatar avatarId={team.avatarId} size={'clamp(116px, 11.6vw, 172px)'} />
               </div>
               <div title={team.name} style={{
-                fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, color: teamColor,
-                textShadow: `0 0 24px ${teamColor}44`,
+                fontSize: 'clamp(32px, 4.4vw, 62px)', fontWeight: 900, color: teamColor,
+                textShadow: `0 0 28px ${teamColor}55`,
                 maxWidth: '80vw',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>{truncName(team.name, 20)}</div>

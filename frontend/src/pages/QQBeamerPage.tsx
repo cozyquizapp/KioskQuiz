@@ -8855,13 +8855,21 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     </div>
                   </>
                 )}
-                {/* Stuck overlay — golden shimmer + ×2 chip top-right */}
+                {/* Stuck overlay — golden shimmer + ×2 chip top-right.
+                    Chip droppt mit Bounce + Dust-Ring beim ersten Mount. */}
                 {isStuck && (
                   <>
                     <div style={{
                       position: 'absolute', inset: 0, borderRadius: cellRadius,
                       background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
                       pointerEvents: 'none', zIndex: 1,
+                    }} />
+                    {/* Dust-Ring expandiert einmalig beim Setzen. */}
+                    <div style={{
+                      position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+                      border: '2.5px solid rgba(245,158,11,0.8)',
+                      animation: 'stapelDustRing 0.6s ease-out 0.1s both',
+                      pointerEvents: 'none', zIndex: 3,
                     }} />
                     <div style={{
                       position: 'absolute', top: -4, right: -4,
@@ -8880,6 +8888,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(251,191,36,0.6)',
                       zIndex: 6,
                       fontVariantNumeric: 'tabular-nums',
+                      animation: 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
                     }}>×2</div>
                   </>
                 )}
@@ -8924,23 +8933,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }}>{sandTtl}</div>
                   </>
                 )}
-                {/* Shield overlay — cyan aura + Shield-PNG corner */}
+                {/* Shield overlay — goldener Ring mit shieldGlow-Puls.
+                    Deutlich sichtbar aus Beamer-Distanz, Strategie klar. */}
                 {isShielded && (
                   <>
                     <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      border: '2px solid rgba(6,182,212,0.85)',
-                      background: 'rgba(6,182,212,0.18)',
-                      boxShadow: 'inset 0 0 18px rgba(6,182,212,0.45), 0 0 12px rgba(6,182,212,0.55)',
-                      animation: 'frostPulse 2.5s ease-in-out infinite',
+                      position: 'absolute', inset: -2, borderRadius: cellRadius + 2,
+                      border: '2.5px solid rgba(251,191,36,0.9)',
+                      background: 'rgba(251,191,36,0.14)',
+                      animation: 'shieldGlow 2s ease-in-out infinite',
                       pointerEvents: 'none', zIndex: 2,
                     }} />
                     <div style={{
-                      position: 'absolute', top: -4, right: -4,
+                      position: 'absolute', top: -5, right: -5,
                       zIndex: 5, lineHeight: 0,
-                      filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.9))',
+                      filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.9))',
                     }}>
-                      <QQIcon slug="marker-shield" size={Math.max(14, cellSize * 0.44)} alt="Schild" />
+                      <QQIcon slug="marker-shield" size={Math.max(16, cellSize * 0.48)} alt="Schild" />
                     </div>
                   </>
                 )}

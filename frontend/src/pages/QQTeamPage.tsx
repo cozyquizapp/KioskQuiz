@@ -2716,18 +2716,26 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   // Track newly claimed cells for animation
   const prevGridRef = useRef<string>('');
   const [newCells, setNewCells] = useState<Set<string>>(new Set());
+  const [stolenCells, setStolenCells] = useState<Set<string>>(new Set());
   const gridKey = s.grid.flatMap(row => row.map(c => c.ownerId ?? '')).join(',');
   useEffect(() => {
     if (prevGridRef.current && gridKey !== prevGridRef.current) {
       const prevArr = prevGridRef.current.split(',');
       const claimed = new Set<string>();
+      const stolen = new Set<string>();
       s.grid.forEach((row, r) => row.forEach((cell, c) => {
         const prevOwner = prevArr[(r * s.gridSize) + c];
         if (cell.ownerId && prevOwner === '') claimed.add(`${r}-${c}`);
+        // Owner gewechselt (nicht leer → nicht leer) = Klau
+        else if (cell.ownerId && prevOwner && cell.ownerId !== prevOwner) stolen.add(`${r}-${c}`);
       }));
       if (claimed.size > 0) {
         setNewCells(claimed);
         setTimeout(() => setNewCells(new Set()), 1000);
+      }
+      if (stolen.size > 0) {
+        setStolenCells(stolen);
+        setTimeout(() => setStolenCells(new Set()), 900);
       }
     }
     prevGridRef.current = gridKey;
@@ -3126,6 +3134,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isFrozenCell = cell.frozen && !cell.stuck;
                 const isStuckCell = cell.stuck;
                 const isShieldedCell = !!cell.shielded && !cell.stuck;
+                const justStolen = stolenCells.has(`${r}-${c}`);
                 const isStuckCandidate = isStuck && cell.ownerId === myTeamId && !cell.stuck;
                 const isMine = cell.ownerId === myTeamId;
                 const sandTtl = cell.sandLockTtl ?? 0;
@@ -3152,7 +3161,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       : isMine && team ? `0 0 6px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`
                       : team ? `inset 0 1px 0 rgba(255,255,255,0.08)`
                       : clickable ? `0 0 8px ${actionColor}44` : 'none',
-                    animation: tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
+                    animation: justStolen
+                      ? 'stealFlash 0.8s ease-out both'
+                      : tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
                     position: 'relative' as const, overflow: 'visible' as const,
                   }}>
                     {isFrozenCell && (
@@ -3175,16 +3186,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     {isShieldedCell && (
                       <>
                         <div style={{
-                          position: 'absolute', inset: 0, borderRadius: 6,
-                          border: '2px solid rgba(6,182,212,0.85)',
-                          background: 'rgba(6,182,212,0.18)',
-                          boxShadow: 'inset 0 0 10px rgba(6,182,212,0.4)',
-                          animation: 'frostPulse 2.5s ease-in-out infinite',
+                          position: 'absolute', inset: -2, borderRadius: 8,
+                          border: '2px solid rgba(251,191,36,0.85)',
+                          background: 'rgba(251,191,36,0.12)',
+                          animation: 'shieldGlow 2s ease-in-out infinite',
                           pointerEvents: 'none', zIndex: 1,
                         }} />
                         <div style={{
-                          position: 'absolute', top: -3, right: -3,
+                          position: 'absolute', top: -4, right: -4,
                           zIndex: 3, lineHeight: 0,
+                          filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.7))',
                         }}>
                           <QQIcon slug="marker-shield" size={Math.max(18, cellSize * 0.44)} alt="Schild" />
                         </div>
@@ -3229,9 +3240,33 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       position: 'relative', zIndex: 2,
                       opacity: isFrozenCell ? 0.5 : undefined,
                       filter: isFrozenCell ? 'saturate(0.4) brightness(1.2)' : undefined,
+                      display: 'inline-block',
+                      animation: isStuckCell
+                        ? 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
+                        : justStolen
+                          ? 'stealCrashIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both'
+                          : undefined,
                     }}>
                       {isStuckCell ? '📌' : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
                     </span>
+                    {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
+                    {isStuckCell && (
+                      <div style={{
+                        position: 'absolute', inset: -4, borderRadius: 10,
+                        border: '2px solid rgba(245,158,11,0.7)',
+                        animation: 'stapelDustRing 0.55s ease-out 0.1s both',
+                        pointerEvents: 'none', zIndex: 4,
+                      }} />
+                    )}
+                    {/* Steal-Burst: roter Ring platzt beim Klau nach aussen. */}
+                    {justStolen && (
+                      <div style={{
+                        position: 'absolute', inset: 0, borderRadius: 6,
+                        border: '3px solid rgba(239,68,68,0.9)',
+                        animation: 'stealBurst 0.6s ease-out both',
+                        pointerEvents: 'none', zIndex: 4,
+                      }} />
+                    )}
                   </div>
                 );
               })

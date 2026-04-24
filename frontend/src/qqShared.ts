@@ -184,6 +184,61 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { opacity: 0.7; transform: scale(1); }
     50%      { opacity: 1; transform: scale(1.15); }
   }
+  /* Schild-Glow: dauerhaft sichtbarer goldener Ring um geschuetzte Felder
+     (2s-Loop). Deutlicher als frostPulse, damit geschuetzte Felder aus
+     Beamer-Distanz lesbar sind. */
+  @keyframes shieldGlow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(251,191,36,0.4), 0 0 22px rgba(251,191,36,0.18), inset 0 0 8px rgba(251,191,36,0.15);
+      border-color: rgba(251,191,36,0.75);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(251,191,36,0.75), 0 0 42px rgba(251,191,36,0.35), inset 0 0 14px rgba(251,191,36,0.3);
+      border-color: rgba(251,191,36,1);
+    }
+  }
+  /* Schild-Puls einmalig beim Setzen (~700ms): groesserer Blitz-Effekt. */
+  @keyframes shieldBurst {
+    0%   { transform: scale(1.4); opacity: 0; box-shadow: 0 0 0 rgba(251,191,36,0); }
+    40%  { transform: scale(1); opacity: 1; box-shadow: 0 0 40px rgba(251,191,36,0.9), 0 0 70px rgba(251,191,36,0.4); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 16px rgba(251,191,36,0.5); }
+  }
+  /* Stapel-Drop: Stempel kracht von oben rein mit Bounce, Dust-Ring expandiert. */
+  @keyframes stapelDrop {
+    0%   { transform: translateY(-60px) scale(1.3) rotate(-8deg); opacity: 0; filter: brightness(1.4); }
+    55%  { transform: translateY(4px) scale(1.05) rotate(2deg); opacity: 1; filter: brightness(1.1); }
+    75%  { transform: translateY(-2px) scale(0.98) rotate(-1deg); }
+    100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; filter: brightness(1); }
+  }
+  @keyframes stapelShake {
+    0%, 100% { transform: translateX(0); }
+    15%  { transform: translateX(-3px); }
+    30%  { transform: translateX(3px); }
+    45%  { transform: translateX(-2px); }
+    60%  { transform: translateX(2px); }
+    80%  { transform: translateX(-1px); }
+  }
+  @keyframes stapelDustRing {
+    0%   { transform: scale(0.4); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+  /* Klauen: roter Flash + Avatar fly-out + crash-in. Wird von der Zelle getragen. */
+  @keyframes stealFlash {
+    0%   { background: transparent; }
+    15%  { background: rgba(239,68,68,0.55); }
+    60%  { background: rgba(239,68,68,0.22); }
+    100% { background: transparent; }
+  }
+  @keyframes stealCrashIn {
+    0%   { transform: scale(1.5); opacity: 0; filter: brightness(1.8); }
+    50%  { transform: scale(0.9); opacity: 1; filter: brightness(1.2); }
+    75%  { transform: scale(1.05); filter: brightness(1.05); }
+    100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  }
+  @keyframes stealBurst {
+    0%   { transform: scale(0.3); opacity: 1; border-width: 3px; }
+    100% { transform: scale(2.4); opacity: 0; border-width: 1px; }
+  }
   @keyframes roundBam {
     0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
     40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }

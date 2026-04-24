@@ -384,7 +384,9 @@ export type QQSoundSlot =
   // statt timerLoop wenn gesetzt). Frage-eigenes musicUrl hat weiter
   // hoechste Prio, dann diese Kategorie-Slots, dann timerLoop.
   | 'catMusicSchaetzchen' | 'catMusicMucho' | 'catMusicBunteTuete'
-  | 'catMusicZehnVonZehn' | 'catMusicCheese';
+  | 'catMusicZehnVonZehn' | 'catMusicCheese'
+  // Aktion-spezifische Sounds (passend zu den Mikro-Animationen)
+  | 'shieldActivate' | 'stapelStamp' | 'sanduhrFlip' | 'teamJoin';
 
 export interface QQSoundConfig {
   timerLoop?: string;        // looping music while timer runs
@@ -406,6 +408,11 @@ export interface QQSoundConfig {
   catMusicBunteTuete?: string;
   catMusicZehnVonZehn?: string;
   catMusicCheese?: string;
+  // Aktions-Sounds
+  shieldActivate?: string;
+  stapelStamp?: string;
+  sanduhrFlip?: string;
+  teamJoin?: string;
   /** Per-Slot-Mute (unabhängig von Upload). Fehlt = enabled (default). */
   enabled?: Partial<Record<QQSoundSlot, boolean>>;
   /**
@@ -435,6 +442,10 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   catMusicBunteTuete:  '🎁 Bunte-Tüte-Musik (Frage-Loop)',
   catMusicZehnVonZehn: '🎰 Quizzichoice-Musik (Frage-Loop)',
   catMusicCheese:      '🧀 Cheese-Musik (Frage-Loop)',
+  shieldActivate:      '🛡️ Schild aktivieren',
+  stapelStamp:         '📌 Stempel-Thud',
+  sanduhrFlip:         '⏳ Sanduhr umdrehen',
+  teamJoin:            '👋 Team tritt bei',
 };
 
 /** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
@@ -460,6 +471,11 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   catMusicBunteTuete:  '',
   catMusicZehnVonZehn: '',
   catMusicCheese:      '',
+  // Aktions-Sounds: leer = Synth-Fallback bis Moderator eigene Datei laedt.
+  shieldActivate:      '',
+  stapelStamp:         '',
+  sanduhrFlip:         '',
+  teamJoin:            '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

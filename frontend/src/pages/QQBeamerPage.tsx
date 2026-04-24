@@ -25,6 +25,7 @@ import {
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop,
+  playShieldActivate, playStapelStamp, playSanduhrFlip, playTeamJoin,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -549,6 +550,28 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }, 1000);
     return () => clearInterval(iv);
   }, [s.timerEndsAt, s.phase, s.sfxMuted]);
+
+  // D1-D3 Marker-Sounds: Shield / Stapel / Sanduhr beim ersten Setzen.
+  // Wir diffen die Grid-Cell-Flags: neues shielded/stuck/sandLockTtl>0 → Sound.
+  // F1 Team-Join-Sound wird hier auch angehaengt (neue Team-IDs).
+  const prevFlagsRef = useRef<{ shield: string; stuck: string; sand: string; teamIds: string }>({
+    shield: '', stuck: '', sand: '', teamIds: '',
+  });
+  useEffect(() => {
+    if (s.sfxMuted) return;
+    const shieldKey = s.grid.flatMap((row, r) => row.map((c, ci) => c.shielded ? `${r}-${ci}` : '')).filter(Boolean).join(',');
+    const stuckKey = s.grid.flatMap((row, r) => row.map((c, ci) => c.stuck ? `${r}-${ci}` : '')).filter(Boolean).join(',');
+    const sandKey = s.grid.flatMap((row, r) => row.map((c, ci) => (c.sandLockTtl ?? 0) > 0 ? `${r}-${ci}` : '')).filter(Boolean).join(',');
+    const teamIdsKey = s.teams.map(t => t.id).sort().join(',');
+    const prev = prevFlagsRef.current;
+    // Nur triggern wenn Key wuchs (neue Elemente dazu).
+    const grew = (a: string, b: string) => b.split(',').filter(Boolean).length > a.split(',').filter(Boolean).length;
+    if (prev.shield && grew(prev.shield, shieldKey)) playShieldActivate();
+    if (prev.stuck  && grew(prev.stuck,  stuckKey))  playStapelStamp();
+    if (prev.sand   && grew(prev.sand,   sandKey))   playSanduhrFlip();
+    if (prev.teamIds && grew(prev.teamIds, teamIdsKey) && s.phase === 'LOBBY') playTeamJoin();
+    prevFlagsRef.current = { shield: shieldKey, stuck: stuckKey, sand: sandKey, teamIds: teamIdsKey };
+  }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // C3 Timer-Urgency-Vignette: roter Inset-Pulse am Screen-Rand bei <=5s.
   // Separater State, damit wir im Render-Baum die Vignette zeigen koennen

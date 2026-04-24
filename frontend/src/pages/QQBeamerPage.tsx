@@ -2052,6 +2052,24 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     return () => clearInterval(id);
   }, []);
 
+  // F1 Team-Join-Wave: tracke frisch dazugekommene Teams, Card bekommt
+  // zusaetzlich zur Entry-Animation einen Wink-Shake + Glow-Burst.
+  const prevTeamIdsRef = useRef<Set<string>>(new Set());
+  const [waveIds, setWaveIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const curIds = new Set(s.teams.map(t => t.id));
+    const prev = prevTeamIdsRef.current;
+    const newJoins: string[] = [];
+    for (const id of curIds) if (!prev.has(id)) newJoins.push(id);
+    prevTeamIdsRef.current = curIds;
+    if (newJoins.length > 0 && prev.size > 0) {
+      // Nur als „wave" markieren wenn Lobby schon bestand (sonst sind alle
+      // initialen Teams „neu" und der Glow-Burst waere ueberfluessig).
+      setWaveIds(new Set(newJoins));
+      setTimeout(() => setWaveIds(new Set()), 1400);
+    }
+  }, [s.teams]);
+
   // Dynamic status text
   const teamCount = s.teams.length;
   const connectedCount = s.teams.filter(t => t.connected).length;
@@ -2206,6 +2224,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {s.teams.map((t, i) => {
                 const compact = teamCount > 6;
+                const isFreshJoin = waveIds.has(t.id);
                 return (
                   <div key={t.id} style={{
                     padding: compact
@@ -2213,14 +2232,29 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       : 'clamp(18px, 2.2vh, 26px) clamp(22px, 2.4vw, 30px)',
                     borderRadius: compact ? 18 : 22,
                     background: cardBg,
-                    border: `2px solid ${t.color}55`,
-                    boxShadow: `0 8px 28px rgba(0,0,0,0.4), 0 0 24px ${t.color}22`,
+                    border: `2px solid ${isFreshJoin ? t.color : t.color + '55'}`,
+                    boxShadow: isFreshJoin
+                      ? `0 8px 28px rgba(0,0,0,0.4), 0 0 60px ${t.color}99, 0 0 30px ${t.color}66`
+                      : `0 8px 28px rgba(0,0,0,0.4), 0 0 24px ${t.color}22`,
                     display: 'flex', alignItems: 'center',
                     gap: compact ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(14px, 1.6vw, 20px)',
-                    animation: `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
+                    // F1: frisch joinende Teams kriegen wink-Shake + Glow-Burst.
+                    animation: isFreshJoin
+                      ? 'teamJoinWave 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
+                      : `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
+                    transition: 'box-shadow 0.6s ease, border-color 0.6s ease',
                     minWidth: 0,
+                    position: 'relative',
                   }}>
                     <QQTeamAvatar avatarId={t.avatarId} size={compact ? 'clamp(56px, 5.4vw, 76px)' : 'clamp(64px, 6vw, 88px)'} style={{ flexShrink: 0 }} />
+                    {isFreshJoin && (
+                      <span aria-hidden style={{
+                        position: 'absolute', top: -16, right: -10,
+                        fontSize: 30, lineHeight: 1,
+                        animation: 'teamJoinHi 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
+                        filter: `drop-shadow(0 0 8px ${t.color}cc)`,
+                      }}>👋</span>
+                    )}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
@@ -9230,8 +9264,25 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }:
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
   const prevJokers = useRef<Record<string, number>>({});
+  const prevRanks = useRef<Record<string, number>>({});
   const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
+  // F2: Rank-Change-Indikator (up/down Pfeil pro Team).
+  const [rankChanges, setRankChanges] = useState<Record<string, 'up' | 'down'>>({});
+  useEffect(() => {
+    const next: Record<string, 'up' | 'down'> = {};
+    sorted.forEach((t, i) => {
+      const prevIdx = prevRanks.current[t.id];
+      if (prevIdx != null && prevIdx !== i) {
+        next[t.id] = prevIdx > i ? 'up' : 'down';
+      }
+      prevRanks.current[t.id] = i;
+    });
+    if (Object.keys(next).length > 0) {
+      setRankChanges(next);
+      setTimeout(() => setRankChanges({}), 1200);
+    }
+  }, [sorted.map(t => t.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   // B2: Teams mit gerade verdientem Joker — triggert Stern-Flug-Animation
   const [jokerEarners, setJokerEarners] = useState<Set<string>>(new Set());
   // C2: Streak-Counter pro Team (wie oft hintereinander correctTeamId).
@@ -9399,6 +9450,21 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId }:
                   animation: 'streakFlameWobble 0.7s ease-in-out infinite',
                   zIndex: 9,
                 }} title={`${streaks[t.id]}x in Folge`}>🔥</span>
+              )}
+              {/* F2 Rank-Change-Indikator: Pfeil hoch/runter bei Platztausch. */}
+              {rankChanges[t.id] && (
+                <span aria-hidden style={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: dense ? -18 : -22,
+                  transform: 'translateY(-50%)',
+                  fontSize: dense ? 18 : 22, fontWeight: 900,
+                  color: rankChanges[t.id] === 'up' ? '#22C55E' : '#EF4444',
+                  pointerEvents: 'none',
+                  filter: `drop-shadow(0 0 6px ${rankChanges[t.id] === 'up' ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.7)'})`,
+                  animation: 'voterSlotDrop 1.2s cubic-bezier(0.34,1.56,0.64,1) both',
+                  zIndex: 9,
+                }}>{rankChanges[t.id] === 'up' ? '▲' : '▼'}</span>
               )}
             </span>
           </div>

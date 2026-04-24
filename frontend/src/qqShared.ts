@@ -341,6 +341,27 @@ export const QQ_BEAMER_CSS = `
     25%      { transform: rotate(8deg); }
     75%      { transform: rotate(-8deg); }
   }
+  /* F1 Team-Join-Wave: Card shaked kurz + scaled hoch. */
+  @keyframes teamJoinWave {
+    0%   { opacity: 0; transform: scale(0.7) translateY(12px); }
+    30%  { opacity: 1; transform: scale(1.06) translateY(-2px) rotate(-1deg); }
+    45%  { transform: scale(1.02) translateY(0) rotate(1deg); }
+    60%  { transform: scale(1) rotate(-0.5deg); }
+    100% { opacity: 1; transform: scale(1) translateY(0) rotate(0); }
+  }
+  /* F1 Begruessungs-Wink 👋 */
+  @keyframes teamJoinHi {
+    0%   { opacity: 0; transform: translateY(-14px) scale(0.5) rotate(-20deg); }
+    30%  { opacity: 1; transform: translateY(2px) scale(1.2) rotate(14deg); }
+    55%  { transform: translateY(-2px) scale(1) rotate(-8deg); }
+    80%  { transform: scale(1.05) rotate(12deg); }
+    100% { opacity: 0; transform: scale(0.9) rotate(0); }
+  }
+  /* F2 Ranking-Shuffle: Zeile schiebt vertikal sanft weiter. */
+  @keyframes rankShuffle {
+    0%   { transform: translateY(var(--shuffle-from, 0px)); }
+    100% { transform: translateY(0); }
+  }
   @keyframes roundBam {
     0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
     40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }

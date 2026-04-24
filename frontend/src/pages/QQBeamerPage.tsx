@@ -979,88 +979,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         }} />
       )}
 
-      {/* H2 First-Steal-Toast: Banner unten mittig (konsistent mit G1). */}
-      {firstStealBadge && (
-        <div aria-hidden style={{
-          position: 'fixed', bottom: 36, left: '50%',
-          zIndex: 9988, pointerEvents: 'none',
-          padding: '10px 20px 10px 14px', borderRadius: 14,
-          background: 'rgba(15,12,9,0.92)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          border: '1.5px solid rgba(254,202,202,0.6)',
-          boxShadow: '0 10px 32px rgba(0,0,0,0.5), 0 0 24px rgba(239,68,68,0.3)',
-          display: 'flex', alignItems: 'center', gap: 12,
-          animation: 'roundEndToast 2.8s cubic-bezier(0.4,0,0.2,1) both',
-        }}>
-          <span style={{ fontSize: 26, lineHeight: 1 }}>⚡</span>
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 900, letterSpacing: '0.18em',
-              color: '#FECACA', textTransform: 'uppercase',
-            }}>Steal unlocked</span>
-            <span style={{
-              fontSize: 16, fontWeight: 900, color: '#FEF2F2',
-            }}>{firstStealBadge} klaut zuerst!</span>
-          </div>
-        </div>
-      )}
-
-      {/* G1 + H1 Round-End-Toast: dezenter Banner unten mittig, kein Full-Screen-
-          Dimming. Phase darunter laeuft ungestoert weiter. */}
-      {roundEndOverlay && (
-        <div aria-hidden style={{
-          position: 'fixed', bottom: 36, left: '50%',
-          zIndex: 9985, pointerEvents: 'none',
-          padding: '10px 20px 10px 14px', borderRadius: 14,
-          background: 'rgba(15,12,9,0.92)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          border: `1.5px solid ${roundEndOverlay.perfectTeams.length > 0 ? 'rgba(253,224,71,0.7)' : 'rgba(251,191,36,0.5)'}`,
-          boxShadow: '0 10px 32px rgba(0,0,0,0.5), 0 0 28px rgba(251,191,36,0.28)',
-          display: 'flex', alignItems: 'center', gap: 14,
-          animation: 'roundEndToast 3.2s cubic-bezier(0.4,0,0.2,1) both',
-          maxWidth: 'calc(100vw - 40px)',
-          flexWrap: 'wrap', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize: 26, lineHeight: 1 }}>🏁</span>
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 900, letterSpacing: '0.18em',
-              color: '#94a3b8', textTransform: 'uppercase',
-            }}>
-              Runde {roundEndOverlay.phase} abgeschlossen
-            </span>
-            {roundEndOverlay.winner && (
-              <span style={{
-                fontSize: 16, fontWeight: 900,
-                color: roundEndOverlay.winner.color,
-              }}>
-                🏆 {roundEndOverlay.winner.name} · {roundEndOverlay.winner.largestConnected} Felder
-              </span>
-            )}
-          </div>
-          {/* H1 Perfect-Round-Pill (inline) */}
-          {roundEndOverlay.perfectTeams.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '4px 10px', borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(253,224,71,0.22), rgba(168,85,247,0.18))',
-              border: '1.5px solid rgba(253,224,71,0.7)',
-              boxShadow: '0 0 12px rgba(253,224,71,0.35)',
-              fontSize: 12, fontWeight: 900, color: '#FDE047',
-              letterSpacing: 0.3,
-            }}>
-              <span>🌈 PERFECT</span>
-              {roundEndOverlay.perfectTeams.slice(0, 3).map(t => (
-                <span key={t.id} style={{ color: t.color, fontWeight: 900 }}>
-                  {t.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* G1/H1/H2 Toast-Overlays entfernt (User-Feedback): wirkten nebenbei,
+          Phase-Wechsel ist ohnehin visuell klar. Perfect-Round-Info bleibt
+          via roundCorrectsRef gespeichert — kann spaeter in PhaseIntro
+          oder Summary als Badge eingebaut werden wenn gewuenscht. */}
 
       {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
       {flashKey > 0 && (
@@ -5338,7 +5260,8 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{
                     fontSize: 'clamp(36px, 4.2vw, 68px)', fontWeight: 900, color: winner.team.color, lineHeight: 1.05,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    whiteSpace: 'nowrap',
+                    padding: '0 0.3em',
                     textShadow: `0 0 22px ${winner.team.color}55`,
                   }}>{winner.team.name}</div>
                   <div style={{
@@ -5851,13 +5774,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   }, [zvzLocked]);
   const zvzAkt3Ready = cat === 'ZEHN_VON_ZEHN' ? zvzWinnerReady : true;
 
-  // ── CHEESE: Step-Reveal — Lösung grün → Avatare ──────────────────────────
-  // Step 0: nur Eingaben sichtbar, keine Lösung grün, keine Avatare.
-  // Step 1: Lösung grün + Shimmer.
-  // Step 2: Team-Avatare kaskadieren.
-  const cheeseStep = s.cheeseRevealStep ?? 0;
-  const cheeseShowGreen = cat !== 'CHEESE' || cheeseStep >= 1;
-  const cheeseShowAvatars = cat !== 'CHEESE' || cheeseStep >= 2;
+  // ── CHEESE: Reveal sofort vollständig (keine Step-Gating mehr).
+  // Frueher: step 0/1/2 haben Loesung+Avatare progressiv gezeigt. Das fuehrte
+  // dazu dass der Reveal "nicht funktionierte" wenn die Steps nicht weitergeklickt
+  // wurden. Jetzt: sobald revealed → sofort gruene Loesung + Avatare + Winner.
+  const cheeseShowGreen = true;
+  const cheeseShowAvatars = true;
 
   const showMuchoWinner = cat !== 'MUCHO' || muchoAkt3Ready;
   const showZvzWinner = cat !== 'ZEHN_VON_ZEHN' || zvzAkt3Ready;
@@ -6084,12 +6006,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Frosted question/answer card — bottom.
               POP-Transition: minHeight waechst dynamisch beim Reveal.
-              Ohne Bild (hasImg=false) kompakter, weil kein Bild den Raum fuellt. */}
+              Mit Bild: waehrend QUESTION_ACTIVE so kompakt wie moeglich, damit das
+              Bild prominent bleibt; beim Reveal waechst sie fuer Loesung+Avatare.
+              Ohne Bild: nochmal kompakter. */}
           <div style={{
             width: '100%', maxWidth: 900,
             minHeight: revealed
-              ? (hasImg ? 'clamp(400px, 50vh, 540px)' : 'clamp(220px, 28vh, 320px)')
-              : (hasImg ? 'clamp(260px, 32vh, 360px)' : 'clamp(120px, 16vh, 180px)'),
+              ? (hasImg ? 'clamp(380px, 44vh, 500px)' : 'clamp(220px, 28vh, 320px)')
+              : (hasImg ? 'clamp(140px, 18vh, 220px)' : 'clamp(120px, 16vh, 180px)'),
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -6517,12 +6441,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       }}>{optText}</div>
                     </div>
                     {/* Highbet-Slot: Top-Bets (mögliche Gewinner) direkt auf der Option.
-                        POP-Transition: max-height 0 → 120 beim Step 1 mit Bounce.
-                        Avatare bewusst groß: das sind die wichtigsten Spieler dieser Option. */}
+                        POP-Transition: max-height wächst dynamisch mit Anzahl Top-Bets.
+                        Avatare bewusst groß: das sind die wichtigsten Spieler dieser Option.
+                        Bei vielen Teams (3+ Gleichstand) Umbruch in 2 Zeilen statt clipping. */}
                     <div style={{
                       position: 'relative', zIndex: 1,
-                      maxHeight: highestVisibleOpt ? 120 : 0,
-                      display: 'flex', flexWrap: 'wrap', gap: 10,
+                      // Multiple-Row-Support: 120 (1 Zeile) → 220 (2 Zeilen) wenn >3 Top-Bets
+                      maxHeight: highestVisibleOpt ? (highestBets.length > 3 ? 220 : 120) : 0,
+                      display: 'flex', flexWrap: 'wrap', gap: 8,
                       alignItems: 'center', justifyContent: 'flex-start',
                       borderTop: highestVisibleOpt ? '1px dashed rgba(255,255,255,0.10)' : '1px dashed transparent',
                       paddingTop: highestVisibleOpt ? 10 : 0,

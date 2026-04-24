@@ -234,7 +234,7 @@ export default function QQModeratorPage() {
     const isZvZReveal = q?.category === 'ZEHN_VON_ZEHN' && s.phase === 'QUESTION_REVEAL';
     const zvzRevealInProgress = isZvZReveal && (s.zvzRevealStep ?? 0) < 2;
     const isCheeseReveal = q?.category === 'CHEESE' && s.phase === 'QUESTION_REVEAL';
-    const cheeseRevealInProgress = isCheeseReveal && (s.cheeseRevealStep ?? 0) < 2;
+    const cheeseRevealInProgress = false; // Cheese zeigt Reveal sofort komplett
 
     // Delays bewusst konservativ — Animationen und Lesezeit muessen rein.
     // PhaseIntro: FINALE-Roll ~2.5s, Subtitle-Drop, Tree-Animation.
@@ -309,12 +309,8 @@ export default function QQModeratorPage() {
           delayMs = willBeLockStep ? 5500 : 4500;
           action = () => emit('qq:zvzRevealStep', { roomCode });
         }
-        else if (cheeseRevealInProgress) {
-          // Step 1 = Lösung grün, Step 2 = Avatar-Row + Winner.
-          const willBeAvatarStep = (s.cheeseRevealStep ?? 0) === 1;
-          delayMs = willBeAvatarStep ? 5500 : 4500;
-          action = () => emit('qq:cheeseRevealStep', { roomCode });
-        }
+        // Cheese hat keine Moderator-Steps mehr (zeigt alles sofort beim Reveal)
+        // → der cheeseRevealInProgress-Branch ist deaktiviert.
         // Hot Potato Reveal zeigt Antwort-Chips + Winner-Banner.
         else if (cat === 'BUNTE_TUETE' && bt?.kind === 'hotPotato') {
           delayMs = 8500;
@@ -399,7 +395,7 @@ export default function QQModeratorPage() {
     const zvzRevealInProgress = isZvZReveal && (s.zvzRevealStep ?? 0) < 2;
     // CHEESE Step-Reveal (0→1 Lösung grün, 1→2 Avatare+Winner)
     const isCheeseReveal = q?.category === 'CHEESE' && s.phase === 'QUESTION_REVEAL';
-    const cheeseRevealInProgress = isCheeseReveal && (s.cheeseRevealStep ?? 0) < 2;
+    const cheeseRevealInProgress = false; // Cheese zeigt Reveal sofort komplett
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {

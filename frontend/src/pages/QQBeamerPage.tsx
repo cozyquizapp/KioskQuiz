@@ -7298,11 +7298,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Correct team — winner banner (non-Schätzchen).
               POP-Transition: max-height 0 → voll beim showUnifiedWinner,
-              statt Platz dauerhaft zu reservieren. Gilt für MUCHO / ZvZ. */}
+              statt Platz dauerhaft zu reservieren. Gilt für MUCHO / ZvZ.
+              HotPotato-Co-Winner: bei vielen Teams (6+) kann die Card 2-3 Zeilen
+              hoch werden — 360 war zu knapp. 560 clipt praktisch nie. */}
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
             <div style={{
               width: '100%', maxWidth: 1400,
-              maxHeight: showUnifiedWinner ? 360 : 0,
+              maxHeight: showUnifiedWinner ? 560 : 0,
               overflow: 'hidden',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: showUnifiedWinner ? 12 : 0,
@@ -7403,32 +7405,40 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 : 'alle überlebt — jedes Team bekommt ein Feld!';
               return (
                 <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
-                  padding: '22px 38px', borderRadius: 28,
-                  width: '100%', maxWidth: 1400, flexWrap: 'wrap',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 'clamp(10px, 1.4vh, 18px)',
+                  padding: 'clamp(16px, 2vh, 26px) clamp(22px, 3vw, 42px)',
+                  borderRadius: 28,
+                  width: '100%', maxWidth: 1400,
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
                   boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
                   animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}><QQEmojiIcon emoji="🥔"/></span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 'clamp(12px, 1.5vw, 20px)', flexWrap: 'wrap',
+                  }}>
+                    <span style={{ fontSize: 'clamp(34px, 4.2vw, 56px)', lineHeight: 1 }}><QQEmojiIcon emoji="🥔"/></span>
                     {hpCoWinners.map((tm, i) => (
                       <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(56px, 6.5vw, 88px)'} style={{
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(52px, 5.6vw, 78px)'} style={{
                           flexShrink: 0, boxShadow: `0 0 22px ${tm.color}66`,
                           animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
                         }} />
                         <div title={tm.name} style={{
-                          fontWeight: 900, fontSize: 'clamp(22px, 3vw, 40px)', color: tm.color, lineHeight: 1.1,
+                          fontWeight: 900, fontSize: 'clamp(20px, 2.6vw, 34px)', color: tm.color, lineHeight: 1.1,
                           textShadow: `0 0 24px ${tm.color}44`,
-                          maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>{truncName(tm.name, 16)}</div>
+                          maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{truncName(tm.name, 14)}</div>
                       </div>
                     ))}
                   </div>
+                  {/* Zeile 2: Message — eigene Zeile, immer zentriert, nie geclippt */}
                   <div style={{
-                    color: '#86efac', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 800, lineHeight: 1.2,
+                    color: '#86efac', fontSize: 'clamp(18px, 2.3vw, 30px)', fontWeight: 800, lineHeight: 1.2,
+                    textAlign: 'center',
                   }}>
                     {hpMsg}
                   </div>

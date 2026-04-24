@@ -1566,7 +1566,7 @@ function MuchoOptionsReveal({
   correctOptionIndex?: number;
   optionImages?: Array<QQOptionImage | null | undefined>;
   answers: Array<{ teamId: string; text: string; submittedAt: number }>;
-  teams: Array<{ id: string; name: string; avatarId: string }>;
+  teams: Array<{ id: string; name: string; avatarId: string; color?: string }>;
   lang: 'de' | 'en';
   cardBg: string;
   timerEndsAt: number | null;
@@ -1600,7 +1600,10 @@ function MuchoOptionsReveal({
     <div style={{
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: 18, marginBottom: 16,
+      gap: 18,
+      // genug Bottom-Padding fuer die Avatar-Reihe, die unter jeder Card haengt
+      paddingBottom: 'clamp(48px, 6vh, 78px)',
+      marginBottom: 16,
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s ease 0.1s both',
     }}>
@@ -1611,139 +1614,127 @@ function MuchoOptionsReveal({
         const optColor = MUCHO_COLORS[i] ?? '#64748B';
         const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
         const voterShow = shownVoterSet.has(i);
+        // Voter pro Option vorberechnen — wir brauchen sie ausserhalb der Card
+        const voters = answers
+          .filter(a => a.text === String(i))
+          .sort((a, b) => a.submittedAt - b.submittedAt)
+          .map(a => {
+            const team = teams.find(t => t.id === a.teamId);
+            return team ? { team, submittedAt: a.submittedAt } : null;
+          })
+          .filter((x): x is { team: NonNullable<ReturnType<typeof teams.find>>; submittedAt: number } => !!x);
+        const t0 = timerEndsAt && timerDurationSec
+          ? timerEndsAt - timerDurationSec * 1000
+          : voters[0]?.submittedAt;
         return (
-          <div key={i} style={{
-            position: 'relative', overflow: 'hidden',
-            borderRadius: 20, padding: '24px 28px',
-            background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
-            border: isCorrect ? '3px solid #22C55E'
-              : isWrong ? '2px solid rgba(255,255,255,0.06)'
-              : `2px solid ${optColor}55`,
-            boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
-              : '0 4px 16px rgba(0,0,0,0.3)',
-            display: 'flex', alignItems: 'flex-start', gap: 16,
-            // POP-Transition: Card startet kompakt, waechst mit subtilem scale-Bounce
-            // sobald Voter reinkommen (voterShow). Kein minHeight mehr — Slot unten
-            // faehrt eigenstaendig per max-height aus.
-            transform: voterShow ? 'scale(1)' : 'scale(0.98)',
-            transformOrigin: 'center',
-            transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
-            animation: isCorrect
-              ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
-              : isWrong
-                ? 'revealWrongDim 0.5s ease 0.1s both'
-                : undefined,
-          }}>
-            {optImg?.url && (
-              <img src={optImg.url} alt="" style={{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
-                pointerEvents: 'none',
-              }} />
-            )}
-            {optImg?.url && (
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
-            )}
+          // Wrapper: Card oben, Avatar-Reihe absolut darunter (sitzt auf der unteren Card-Linie)
+          <div key={i} style={{ position: 'relative' }}>
             <div style={{
-              position: 'relative', zIndex: 1,
-              width: 56, height: 56, borderRadius: 16,
-              background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-              boxShadow: isCorrect
-                ? '0 0 16px rgba(34,197,94,0.6)'
-                : `0 2px 8px ${optColor}44`,
-              transition: 'background 0.3s ease, box-shadow 0.3s ease',
-            }}>{muchoLabels[i]}</div>
-            <div style={{
-              position: 'relative', zIndex: 1,
-              flex: 1, minWidth: 0, alignSelf: 'stretch',
-              display: 'flex', flexDirection: 'column', gap: 10,
+              position: 'relative', overflow: 'hidden',
+              borderRadius: 20, padding: '24px 28px',
+              background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
+              border: isCorrect ? '3px solid #22C55E'
+                : isWrong ? '2px solid rgba(255,255,255,0.06)'
+                : `2px solid ${optColor}55`,
+              boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
+                : '0 4px 16px rgba(0,0,0,0.3)',
+              display: 'flex', alignItems: 'center', gap: 16,
+              transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+              animation: isCorrect
+                ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+                : isWrong
+                  ? 'revealWrongDim 0.5s ease 0.1s both'
+                  : undefined,
             }}>
+              {optImg?.url && (
+                <img src={optImg.url} alt="" style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: optImg.fit ?? 'cover', opacity: optImg.opacity ?? 0.4,
+                  pointerEvents: 'none',
+                }} />
+              )}
+              {optImg?.url && (
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
+              )}
               <div style={{
+                position: 'relative', zIndex: 1,
+                width: 56, height: 56, borderRadius: 16,
+                background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
+                boxShadow: isCorrect
+                  ? '0 0 16px rgba(34,197,94,0.6)'
+                  : `0 2px 8px ${optColor}44`,
+                transition: 'background 0.3s ease, box-shadow 0.3s ease',
+              }}>{muchoLabels[i]}</div>
+              <div style={{
+                position: 'relative', zIndex: 1,
+                flex: 1, minWidth: 0,
                 fontSize: 'clamp(26px, 3.2vw, 44px)', fontWeight: 800,
                 color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
-              {/* Voter-Slot: POP-Transition — max-height 0 → 92 mit Bounce.
-                  Card waechst smooth statt vom ersten Render reserviert zu sein. */}
-              <div style={{
-                maxHeight: voterShow ? 92 : 0,
-                marginTop: voterShow ? 'auto' : 0,
-                opacity: voterShow ? 1 : 0,
-                overflow: 'hidden',
-                transition: 'max-height 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.1s, margin-top 0.4s ease',
-              }}>
-              {voterShow && (() => {
-                const voters = answers
-                  .filter(a => a.text === String(i))
-                  .sort((a, b) => a.submittedAt - b.submittedAt)
-                  .map(a => {
-                    const team = teams.find(t => t.id === a.teamId);
-                    return team ? { team, submittedAt: a.submittedAt } : null;
-                  })
-                  .filter((x): x is { team: NonNullable<ReturnType<typeof teams.find>>; submittedAt: number } => !!x);
-                if (voters.length === 0) return null;
-                const t0 = timerEndsAt && timerDurationSec
-                  ? timerEndsAt - timerDurationSec * 1000
-                  : voters[0]?.submittedAt;
-                return (
-                  <div style={{
-                    display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 8,
-                  }}>
-                    {voters.map((v, vi) => {
-                      const tm = v.team;
-                      const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
-                      const isFastest = akt3On && isCorrect && vi === 0;
-                      // Kaskade: jeder Voter poppt zeitgesteuert nacheinander rein (180ms Versatz)
-                      const voterDelay = vi * 0.18;
-                      return (
-                        <div key={tm.id} style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                          animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${voterDelay}s both`,
-                        }}>
-                          <div title={tm.name} style={{
-                            position: 'relative',
-                            display: 'inline-block',
-                            transform: isFastest ? 'scale(1.08)' : 'scale(1)',
-                            transition: 'transform 0.3s ease',
-                          }}>
-                            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(46px, 5vw, 66px)'} style={{
-                              border: isFastest ? '3px solid #FBBF24' : 'none',
-                              boxShadow: isFastest
-                                ? '0 0 18px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.5)'
-                                : '0 4px 12px rgba(0,0,0,0.5)',
-                            }} />
-                            {isFastest && (
-                              <span style={{
-                                position: 'absolute', top: -8, right: -8,
-                                fontSize: 'clamp(16px, 1.8vw, 22px)', lineHeight: 1,
-                                animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
-                              }}>⚡</span>
-                            )}
-                          </div>
-                          {timeSec != null && isCorrect && akt3On && (
-                            <span style={{
-                              padding: '2px 9px', borderRadius: 999,
-                              background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.6)',
-                              border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                              color: isFastest ? '#FBBF24' : '#e2e8f0',
-                              fontWeight: 900,
-                              fontSize: 'clamp(13px, 1.4vw, 18px)',
-                              whiteSpace: 'nowrap',
-                            }}>
-                              {timeSec.toFixed(1)}s
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-              </div>
             </div>
+            {/* Voter-Reihe: sitzt auf der unteren Card-Linie (Avatare halb innerhalb,
+                halb ausserhalb der Card → wirkt wie "an die Card geheftet"). */}
+            {voterShow && voters.length > 0 && (
+              <div style={{
+                position: 'absolute', left: 16, right: 16, bottom: 0,
+                transform: 'translateY(50%)',
+                display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10,
+                pointerEvents: 'none', zIndex: 5,
+              }}>
+                {voters.map((v, vi) => {
+                  const tm = v.team;
+                  const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
+                  const isFastest = akt3On && isCorrect && vi === 0;
+                  const voterDelay = vi * 0.18;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${voterDelay}s both`,
+                    }}>
+                      <div title={tm.name} style={{ position: 'relative', display: 'inline-block' }}>
+                        <QQTeamAvatar
+                          avatarId={tm.avatarId}
+                          size={isFastest ? 'clamp(64px, 7vw, 92px)' : 'clamp(52px, 5.6vw, 76px)'}
+                          style={{
+                            border: isFastest ? '4px solid #FBBF24' : `2px solid ${tm.color}`,
+                            boxShadow: isFastest
+                              ? '0 0 22px rgba(251,191,36,0.6), 0 6px 14px rgba(0,0,0,0.55)'
+                              : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${tm.color}55`,
+                            background: '#0d0a06',
+                          }}
+                        />
+                        {isFastest && (
+                          <span style={{
+                            position: 'absolute', top: -10, right: -10,
+                            fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
+                            animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+                          }}>⚡</span>
+                        )}
+                      </div>
+                      {timeSec != null && isCorrect && akt3On && (
+                        <span style={{
+                          padding: '3px 10px', borderRadius: 999,
+                          background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.92)',
+                          border: isFastest ? '1.5px solid rgba(251,191,36,1)' : '1px solid rgba(255,255,255,0.18)',
+                          color: isFastest ? '#0d0a06' : '#e2e8f0',
+                          fontWeight: 900,
+                          fontSize: 'clamp(13px, 1.4vw, 18px)',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.45)',
+                        }}>
+                          {timeSec.toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
@@ -5663,19 +5654,19 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         )}
       </div>
 
-      {/* Ranking-Panel rechts (slide-in) */}
+      {/* Ranking-Panel rechts (slide-in) — Sizing so dass min. 8 Teams reinpassen */}
       {showRanking && (
         <div style={{
-          flex: '0 0 36%', padding: '48px 28px 28px',
+          flex: '0 0 38%', padding: '34px 22px 22px',
           background: 'linear-gradient(180deg, rgba(15,23,42,0.96), rgba(13,10,6,0.96))',
           borderLeft: '2px solid rgba(251,191,36,0.2)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s cubic-bezier(0.22,1,0.36,1) both',
-          display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto',
         }}>
           <div style={{
-            fontWeight: 900, fontSize: 'clamp(22px, 2.2vw, 30px)',
-            color: '#FDE68A', marginBottom: 8, textAlign: 'center', letterSpacing: 0.4,
+            fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)',
+            color: '#FDE68A', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
           }}>
             🏆 {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
@@ -5706,26 +5697,26 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
               const timeLabel = isTied ? (deltaMs === 0 ? '⚡ zuerst' : `+${(deltaMs / 1000).toFixed(1)}s`) : null;
               return (
                 <div key={p.teamId} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 16px', borderRadius: 14,
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 14,
                   background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(255,255,255,0.04)',
                   border: `2px solid ${isTop ? team.color + '88' : 'rgba(255,255,255,0.08)'}`,
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s ease ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', width: 44, textAlign: 'center', fontWeight: 900, fontFamily: "'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
-                  <QQTeamAvatar avatarId={team.avatarId} size={'clamp(26px, 2.8vw, 38px)'} />
-                  <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(16px, 1.6vw, 22px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
+                  <QQTeamAvatar avatarId={team.avatarId} size={'clamp(36px, 3.8vw, 54px)'} />
+                  <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 30px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
                     <span style={{
-                      fontWeight: 800, fontSize: 'clamp(12px, 1.1vw, 15px)',
-                      padding: '3px 9px', borderRadius: 999,
+                      fontWeight: 800, fontSize: 'clamp(14px, 1.3vw, 18px)',
+                      padding: '3px 10px', borderRadius: 999,
                       background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
                       color: deltaMs === 0 ? '#FDE68A' : '#94a3b8',
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
-                  <span style={{ fontWeight: 800, fontSize: 'clamp(15px, 1.4vw, 20px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}>📍 {dist}</span>
+                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9vw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}>📍 {dist}</span>
                 </div>
               );
             });
@@ -7374,19 +7365,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               );
             }
 
-            // Single-winner Banner
+            // Single-winner Banner — borderless (User-Feedback: Rechteck weg)
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
-                padding: '28px 44px', borderRadius: 28,
+                padding: '12px 24px',
                 width: '100%', maxWidth: 1400,
-                background: `linear-gradient(135deg, ${team!.color}22, ${team!.color}0a)`,
-                border: `2px solid ${team!.color}66`,
-                boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
                 animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
                   flexShrink: 0,
+                  boxShadow: `0 0 28px ${team!.color}66`,
                   animation: `celebShake 0.6s ease ${avatarDelay}s both`,
                 }} />
                 <div style={{ minWidth: 0 }}>
@@ -7394,7 +7383,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
                     textShadow: `0 0 30px ${team!.color}44`,
                     maxWidth: '100%',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    padding: '0 0.3em',
+                    whiteSpace: 'nowrap',
                   }}>
                     {truncName(team!.name, 20)}
                   </div>

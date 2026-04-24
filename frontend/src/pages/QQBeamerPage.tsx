@@ -9614,22 +9614,24 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
               )}
-              {/* B2 Joker-Badge (persistent): ⭐{n} unten rechts am Avatar */}
+              {/* B2 Joker-Badge (persistent): ⭐{n} unten rechts am Avatar.
+                  Dunkles Pill + Gold-Outline → kontrastsicher auch auf gelben
+                  Avataren (Giraffe/Pinguin mit gelbem Hoodie). */}
               {teamPhaseStats && (teamPhaseStats[t.id]?.jokersEarned ?? 0) > 0 && (
                 <span style={{
                   position: 'absolute',
                   bottom: dense ? -4 : -6,
                   right: dense ? -6 : -8,
-                  padding: '2px 6px',
+                  padding: '2px 7px',
                   borderRadius: 999,
-                  background: 'linear-gradient(135deg, #FDE047, #F59E0B)',
-                  border: '2px solid #1c1304',
+                  background: '#0d0a06',
+                  border: '2px solid #FBBF24',
                   fontSize: dense ? 13 : 16,
                   fontWeight: 900,
-                  color: '#1c1304',
+                  color: '#FBBF24',
                   lineHeight: 1,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.4), 0 0 10px rgba(251,191,36,0.5)',
-                  display: 'inline-flex', alignItems: 'center', gap: 2,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 12px rgba(251,191,36,0.5)',
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
                   pointerEvents: 'none',
                 }}><QQEmojiIcon emoji="⭐"/>{teamPhaseStats[t.id].jokersEarned}</span>
               )}
@@ -9720,18 +9722,28 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             display: 'flex', alignItems: 'baseline', gap: 6,
             flexShrink: 0,
           }}>
-            {medal && (
-              <span style={{ fontSize: dense ? 22 : 28, lineHeight: 1, marginRight: 2 }}>{medal}</span>
-            )}
+            {/* Medal-Slot mit fixer Breite — ohne Medaille trotzdem Platzhalter,
+                damit die Zahlen-Spalte rechts fuer ALLE Teams gleich ausgerichtet ist. */}
+            <span style={{
+              width: dense ? 32 : 38,
+              flexShrink: 0,
+              textAlign: 'center',
+              fontSize: dense ? 22 : 28, lineHeight: 1,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}>{medal ? <QQEmojiIcon emoji={medal}/> : null}</span>
             <span style={{
               fontSize: valFs, color: isLeader ? '#FBBF24' : '#F1F5F9', fontWeight: 900,
               textShadow: isLeader ? '0 0 18px rgba(251,191,36,0.55)' : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
+              // Zahlen-Spalte rechtsbuendig mit fester Breite → alle Werte untereinander
+              width: dense ? 38 : 48,
+              textAlign: 'right',
+              flexShrink: 0,
             }}>
               {t.largestConnected}
             </span>
-            <span style={{ opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8' }}>
+            <span style={{ opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8', flexShrink: 0 }}>
               {t.largestConnected === 1 ? 'Feld' : 'Felder'}
             </span>
             {/* Float +N — knapp über der Zahl */}

@@ -239,6 +239,47 @@ export const QQ_BEAMER_CSS = `
     0%   { transform: scale(0.3); opacity: 1; border-width: 3px; }
     100% { transform: scale(2.4); opacity: 0; border-width: 1px; }
   }
+  /* Comeback-BAM: Screen-Flash + Schrift-Slam + Shake. */
+  @keyframes comebackFlash {
+    0%   { opacity: 0; }
+    20%  { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+  @keyframes comebackSlam {
+    0%   { opacity: 0; transform: translateY(-180px) scale(1.5) rotate(-4deg); filter: blur(6px) brightness(2); }
+    50%  { opacity: 1; transform: translateY(18px) scale(0.92) rotate(1deg); filter: blur(0) brightness(1.4); }
+    70%  { transform: translateY(-8px) scale(1.04) rotate(-0.5deg); filter: brightness(1.15); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: brightness(1); }
+  }
+  @keyframes comebackShake {
+    0%, 100% { transform: translate(0, 0); }
+    15%  { transform: translate(-6px, 2px); }
+    30%  { transform: translate(6px, -2px); }
+    45%  { transform: translate(-4px, 3px); }
+    60%  { transform: translate(4px, -1px); }
+    75%  { transform: translate(-2px, 1px); }
+    90%  { transform: translate(2px, 0); }
+  }
+  @keyframes comebackBoltFall {
+    0%   { opacity: 0; transform: translateY(-80vh) rotate(var(--bolt-rot, 0deg)) scale(0.6); }
+    10%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(120vh) rotate(var(--bolt-rot, 0deg)) scale(1); }
+  }
+  /* Joker-Stern-Flug (B2): Stern startet in Frage-Zone (CSS-Variablen von/to),
+     fliegt in Team-Header-Pill, dort Impact-Pulse. */
+  @keyframes jokerStarFly {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+    10%  { opacity: 1; transform: translate(0, 0) scale(1.2) rotate(30deg); }
+    85%  { opacity: 1; transform: translate(var(--jk-dx, 0), var(--jk-dy, -300px)) scale(0.85) rotate(540deg); }
+    100% { opacity: 0; transform: translate(var(--jk-dx, 0), var(--jk-dy, -300px)) scale(0.4) rotate(600deg); }
+  }
+  @keyframes jokerImpactPulse {
+    0%   { transform: scale(1); box-shadow: 0 0 0 rgba(251,191,36,0); }
+    30%  { transform: scale(1.22); box-shadow: 0 0 28px rgba(251,191,36,0.8), 0 0 60px rgba(251,191,36,0.35); }
+    60%  { transform: scale(0.96); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+  }
   @keyframes roundBam {
     0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
     40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }

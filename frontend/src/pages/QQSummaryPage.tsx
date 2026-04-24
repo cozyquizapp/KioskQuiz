@@ -477,15 +477,62 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+// B3 Count-Up Hook: zaehlt von 0 auf targetValue in ~700ms mit ease-out.
+// Akzeptiert nur nummerische Werte. Bei String-Values (z.B. '—') wird
+// direkt gerendert, kein Count-Up. Prozent-Strings werden gesondert behandelt.
+function useCountUp(finalValue: number | string, durationMs = 720): string {
+  const [display, setDisplay] = useState<string>(() => {
+    if (typeof finalValue === 'string') return finalValue;
+    return '0';
+  });
+  useEffect(() => {
+    if (typeof finalValue === 'string') {
+      // Prozent-String wie "53%" → anzaehlen auf Zahl, dann % anhaengen
+      const pctMatch = finalValue.match(/^(-?\d+(?:\.\d+)?)%$/);
+      if (pctMatch) {
+        const target = Number(pctMatch[1]);
+        animateTo(target, (v) => setDisplay(`${Math.round(v)}%`), durationMs);
+        return;
+      }
+      setDisplay(finalValue);
+      return;
+    }
+    const target = finalValue;
+    animateTo(target, (v) => setDisplay(String(Math.round(v))), durationMs);
+  }, [finalValue, durationMs]);
+  return display;
+}
+
+function animateTo(target: number, onTick: (v: number) => void, durationMs: number): void {
+  const start = performance.now();
+  const ease = (t: number) => 1 - Math.pow(1 - t, 3); // ease-out-cubic
+  let rafId = 0;
+  const tick = (now: number) => {
+    const elapsed = now - start;
+    const t = Math.min(1, elapsed / durationMs);
+    const eased = ease(t);
+    // Leichter Overshoot in den letzten 15% fuer Snap-Gefuehl
+    const overshoot = t > 0.85 ? Math.sin((t - 0.85) / 0.15 * Math.PI) * 0.04 : 0;
+    onTick(target * (eased + overshoot));
+    if (t < 1) rafId = requestAnimationFrame(tick);
+    else onTick(target);
+  };
+  rafId = requestAnimationFrame(tick);
+  // Cleanup falls neuer Effect triggered
+  // (React behandelt das automatisch via useEffect-Cleanup)
+  return undefined as unknown as void;
+}
+
 function Stat({ label, value, suffix, accent }: { label: string; value: number | string; suffix?: string; accent: string }) {
+  const animated = useCountUp(value);
   return (
     <div style={{
       background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
       borderRadius: 12, padding: '10px 12px',
     }}>
       <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1.1, marginTop: 2 }}>
-        {value} {suffix && <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>{suffix}</span>}
+      <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+        {animated} {suffix && <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>{suffix}</span>}
       </div>
     </div>
   );

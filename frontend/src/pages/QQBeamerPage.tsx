@@ -7444,7 +7444,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           width: 540, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
-          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} />
+          <ScoreBar teams={s.teams} activeTeamId={activeTeamId} teamPhaseStats={s.teamPhaseStats} />
         </div>
       </div>
 
@@ -7475,24 +7475,76 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
     : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`;
 
+  // B1 BAM-Entry: nur beim initialen Mount + beim Step 0 spielen. Bei spaeteren
+  // Steps (1, 2) soll die Folie ruhig bleiben, sonst reissen wir den User raus.
+  const bamActive = step === 0;
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
       padding: '48px 64px', gap: 24,
+      animation: bamActive ? 'comebackShake 0.65s ease 0.1s both' : undefined,
     }}>
       <Fireflies color={`${teamColor}55`} />
 
+      {/* B1 Screen-Flash: weisser Puls ueber dem ganzen Screen (0.6s). */}
+      {bamActive && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at center, rgba(255,247,220,0.95) 0%, rgba(251,191,36,0.55) 45%, transparent 80%)',
+          animation: 'comebackFlash 0.6s ease-out both',
+          pointerEvents: 'none', zIndex: 20,
+        }} />
+      )}
+
+      {/* B1 Lightning-Bolts: 6 gelbe Streifen fallen schraeg durchs Bild. */}
+      {bamActive && [
+        { left: '8%',  rot: -12, size: 64, delay: 0.05 },
+        { left: '22%', rot: 8,   size: 44, delay: 0.22 },
+        { left: '38%', rot: -6,  size: 52, delay: 0.14 },
+        { left: '58%', rot: 10,  size: 48, delay: 0.30 },
+        { left: '74%', rot: -14, size: 60, delay: 0.18 },
+        { left: '88%', rot: 4,   size: 40, delay: 0.38 },
+      ].map((b, i) => (
+        <div key={i} aria-hidden style={{
+          position: 'absolute', left: b.left, top: 0,
+          fontSize: b.size, lineHeight: 1,
+          color: '#FDE047',
+          filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(251,191,36,0.6))`,
+          ['--bolt-rot' as string]: `${b.rot}deg`,
+          animation: `comebackBoltFall 1.1s cubic-bezier(0.4,0,0.6,1) ${b.delay}s both`,
+          pointerEvents: 'none', zIndex: 6,
+        }}>⚡</div>
+      ))}
+
       <div style={{
-        fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900,
+        fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(36px, 5vw, 64px)',
+        fontWeight: 900,
         color: '#F59E0B', textAlign: 'center',
-        textShadow: '0 0 40px rgba(234,179,8,0.35)',
-        animation: 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
-        position: 'relative', zIndex: 5,
+        textShadow: '0 0 50px rgba(234,179,8,0.55), 0 6px 0 rgba(180,83,9,0.35)',
+        letterSpacing: bamActive ? '0.04em' : 'normal',
+        animation: bamActive
+          ? 'comebackSlam 1s cubic-bezier(0.34,1.56,0.64,1) both'
+          : 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+        transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
+        position: 'relative', zIndex: 7,
       }}>
-        ⚡ {lang === 'en' ? 'Comeback Chance!' : 'Comeback-Chance!'}
+        ⚡ {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
       </div>
+      {/* Sub-Header nur bei Step 0, kleiner (darunter), wenn schon bei Step 1+ */}
+      {bamActive && (
+        <div style={{
+          fontSize: 'clamp(18px, 2.2vw, 32px)', fontWeight: 800,
+          color: '#fde68a', textAlign: 'center', letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+          position: 'relative', zIndex: 7,
+        }}>
+          {lang === 'en' ? 'Last becomes first' : 'Die Letzten werden die Ersten'}
+        </div>
+      )}
 
       {/* Step 0: Was ist Comeback */}
       {step === 0 && (
@@ -9082,11 +9134,18 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams']; activeTeamId?: string | null }) {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats }: {
+  teams: QQStateUpdate['teams'];
+  activeTeamId?: string | null;
+  teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
+}) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
+  const prevJokers = useRef<Record<string, number>>({});
   const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
+  // B2: Teams mit gerade verdientem Joker — triggert Stern-Flug-Animation
+  const [jokerEarners, setJokerEarners] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const newPopped = new Set<string>();
@@ -9106,6 +9165,22 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
       setTimeout(() => setFloaters(f => f.filter(fl => !newFloaters.includes(fl))), 1200);
     }
   }, [teams]);
+
+  // B2: jokersEarned tracking pro Team. Beim Anstieg: Stern fliegt auf Avatar.
+  useEffect(() => {
+    if (!teamPhaseStats) return;
+    const newEarners = new Set<string>();
+    for (const t of teams) {
+      const now = teamPhaseStats[t.id]?.jokersEarned ?? 0;
+      const before = prevJokers.current[t.id] ?? 0;
+      if (now > before) newEarners.add(t.id);
+      prevJokers.current[t.id] = now;
+    }
+    if (newEarners.size > 0) {
+      setJokerEarners(newEarners);
+      setTimeout(() => setJokerEarners(new Set()), 1600);
+    }
+  }, [teams, teamPhaseStats]);
 
   // Bei vielen Teams (≥6) kompakter, sonst passen 8 Zeilen nicht nebeneinander.
   // Balken ist raus — Info steckt in der Zahl. Dafür Name + Wert deutlich größer.
@@ -9152,6 +9227,11 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',
+              // B2 Impact-Pulse: wenn Team gerade Joker verdient hat, Avatar pulsiert 1x
+              animation: jokerEarners.has(t.id)
+                ? 'jokerImpactPulse 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.85s both'
+                : undefined,
+              borderRadius: '50%',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} size={avatarSize} />
               {isLeader && (
@@ -9164,6 +9244,44 @@ export function ScoreBar({ teams, activeTeamId }: { teams: QQStateUpdate['teams'
                   pointerEvents: 'none',
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
+              )}
+              {/* B2 Joker-Badge (persistent): ⭐{n} unten rechts am Avatar */}
+              {teamPhaseStats && (teamPhaseStats[t.id]?.jokersEarned ?? 0) > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  bottom: dense ? -4 : -6,
+                  right: dense ? -6 : -8,
+                  padding: '2px 6px',
+                  borderRadius: 999,
+                  background: 'linear-gradient(135deg, #FDE047, #F59E0B)',
+                  border: '2px solid #1c1304',
+                  fontSize: dense ? 13 : 16,
+                  fontWeight: 900,
+                  color: '#1c1304',
+                  lineHeight: 1,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.4), 0 0 10px rgba(251,191,36,0.5)',
+                  display: 'inline-flex', alignItems: 'center', gap: 2,
+                  pointerEvents: 'none',
+                }}>⭐{teamPhaseStats[t.id].jokersEarned}</span>
+              )}
+              {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}
+              {jokerEarners.has(t.id) && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: 0, left: '50%',
+                    transform: 'translate(-50%, -30px)',
+                    fontSize: dense ? 36 : 44,
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                    filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.9)) drop-shadow(0 0 24px rgba(251,191,36,0.5))',
+                    ['--jk-dx' as string]: '0px',
+                    ['--jk-dy' as string]: '40px',
+                    animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
+                    zIndex: 10,
+                  }}
+                >⭐</span>
               )}
             </span>
           </div>

@@ -2608,6 +2608,43 @@ function SetupView({
               {s.enable3DTransition ? '✓ 2D → 3D Fahrt beim Placement' : '○ Nur 2D Grid'}
             </button>
           </div>
+
+          {/* Bestenliste-Reset — nach Test-Spielen alle Dummy-Siege aus der
+              Lobby-/Pause-Rotation loeschen. Einmaliger Reset-Knopf fuer den
+              Moderator. */}
+          <div>
+            <div style={fieldLabel}>Bestenliste (Lobby/Pause)</div>
+            <button
+              onClick={async () => {
+                if (!window.confirm('Wirklich ALLE gespeicherten Spiel-Ergebnisse loeschen? Die Bestenliste startet bei 0. Diese Aktion ist nicht ruekgaengig zu machen.')) return;
+                try {
+                  const r = await fetch('/api/qq/gameresults', { method: 'DELETE' });
+                  const d = await r.json();
+                  if (d.ok) {
+                    alert(`Bestenliste geloescht: ${d.deleted ?? 0} Eintraege entfernt.`);
+                  } else {
+                    alert('Fehler beim Loeschen.');
+                  }
+                } catch {
+                  alert('Netzwerkfehler beim Loeschen.');
+                }
+              }}
+              style={{
+                padding: '7px 14px', borderRadius: 8, fontFamily: 'inherit',
+                fontWeight: 800, fontSize: 12, cursor: 'pointer',
+                border: '1px solid rgba(239,68,68,0.45)',
+                background: 'rgba(239,68,68,0.1)',
+                color: '#f87171',
+                width: '100%',
+              }}
+              title="Alle Spiel-Ergebnisse aus der Datenbank loeschen (Bestenliste-Reset)"
+            >
+              🗑 Bestenliste leeren (Dummy-Daten weg)
+            </button>
+            <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>
+              Loescht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Eintraege bis zum naechsten echten Spielende.
+            </div>
+          </div>
         </div>
 
       </div>

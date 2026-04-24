@@ -362,6 +362,45 @@ export const QQ_BEAMER_CSS = `
     0%   { transform: translateY(var(--shuffle-from, 0px)); }
     100% { transform: translateY(0); }
   }
+  /* G1 Round-End-Overlay Fade-In/Out. */
+  @keyframes roundEndOverlay {
+    0%   { opacity: 0; transform: scale(0.95); }
+    15%  { opacity: 1; transform: scale(1); }
+    75%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.02); }
+  }
+  /* G2 Placement-Entry-Sweep: heller Streifen laeuft uebers Grid beim Reveal→Placement. */
+  @keyframes placementSweep {
+    0%   { transform: translateX(-120%) skewX(-14deg); opacity: 0.6; }
+    40%  { opacity: 0.85; }
+    100% { transform: translateX(220%) skewX(-14deg); opacity: 0; }
+  }
+  /* H1 Perfect-Round Rainbow-Burst. */
+  @keyframes rainbowBurst {
+    0%   { opacity: 0; transform: scale(0.3) rotate(0); }
+    40%  { opacity: 1; transform: scale(1.1) rotate(60deg); }
+    100% { opacity: 0; transform: scale(2.2) rotate(180deg); }
+  }
+  /* H2 First-Steal-Badge. */
+  @keyframes firstStealBadge {
+    0%   { opacity: 0; transform: translateY(-60px) scale(0.5) rotate(-10deg); }
+    30%  { opacity: 1; transform: translateY(8px) scale(1.08) rotate(3deg); }
+    50%  { transform: translateY(-4px) scale(1) rotate(-1deg); }
+    80%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-16px) scale(0.9); }
+  }
+  /* J1 Moderator-Toast-Slide. */
+  @keyframes modToastSlide {
+    0%   { opacity: 0; transform: translateX(60px); }
+    12%  { opacity: 1; transform: translateX(0); }
+    80%  { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(30px); }
+  }
+  /* J2 Idle-Hint sanftes Pulsieren. */
+  @keyframes idleHintPulse {
+    0%, 100% { opacity: 0.55; transform: translateY(0); }
+    50%      { opacity: 1; transform: translateY(-3px); }
+  }
   @keyframes roundBam {
     0%   { opacity: 0; transform: scale(1.35); filter: brightness(2); }
     40%  { opacity: 1; transform: scale(0.95); filter: brightness(1.3); }

@@ -573,6 +573,63 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevFlagsRef.current = { shield: shieldKey, stuck: stuckKey, sand: sandKey, teamIds: teamIdsKey };
   }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // H2 First-Steal-Badge: beim ersten Klau der Partie ein „Steal unlocked!"-
+  // Moment. Trigger via lastPlacedCell.wasSteal zum ersten Mal true.
+  const firstStealSeenRef = useRef(false);
+  const [firstStealBadge, setFirstStealBadge] = useState<string | null>(null);
+  useEffect(() => {
+    if (firstStealSeenRef.current) return;
+    if (s.lastPlacedCell?.wasSteal) {
+      firstStealSeenRef.current = true;
+      const t = s.teams.find(tm => tm.id === s.lastPlacedCell?.teamId);
+      setFirstStealBadge(t?.name ?? 'Team');
+      setTimeout(() => setFirstStealBadge(null), 2800);
+    }
+  }, [s.lastPlacedCell]);
+
+  // G1 Round-End-Overlay + H1 Perfect-Round-Detection.
+  // Tracken: pro Team, wie oft es in der aktuellen Runde correctTeamId war.
+  // Bei Runden-Wechsel (gamePhaseIndex++): Zeige Overlay, prüfe auf 5/5 Perfect.
+  const roundCorrectsRef = useRef<Record<string, number>>({});
+  const prevGamePhaseRef = useRef(s.gamePhaseIndex);
+  const prevCorrectTeamIdRef = useRef<string | null>(null);
+  const prevQidRef = useRef<string | null>(null);
+  const [roundEndOverlay, setRoundEndOverlay] = useState<{
+    phase: number;
+    winner: typeof s.teams[number] | null;
+    perfectTeams: typeof s.teams;
+  } | null>(null);
+
+  useEffect(() => {
+    const qid = s.currentQuestion?.id ?? null;
+    const cur = s.correctTeamId ?? null;
+    // Nur einmal pro Question counten — wechsel der Question-ID reset prevCorrect.
+    if (qid !== prevQidRef.current) {
+      prevQidRef.current = qid;
+      prevCorrectTeamIdRef.current = null;
+    }
+    if (cur && cur !== prevCorrectTeamIdRef.current) {
+      prevCorrectTeamIdRef.current = cur;
+      roundCorrectsRef.current[cur] = (roundCorrectsRef.current[cur] ?? 0) + 1;
+    }
+  }, [s.correctTeamId, s.currentQuestion?.id]);
+
+  useEffect(() => {
+    const prev = prevGamePhaseRef.current;
+    prevGamePhaseRef.current = s.gamePhaseIndex;
+    if (s.gamePhaseIndex > prev && prev >= 1) {
+      const leader = [...s.teams].sort((a, b) =>
+        b.largestConnected - a.largestConnected || b.totalCells - a.totalCells
+      )[0] ?? null;
+      // H1: wer hatte 5/5 in der gerade beendeten Runde?
+      const perfect = s.teams.filter(t => (roundCorrectsRef.current[t.id] ?? 0) >= 5);
+      setRoundEndOverlay({ phase: prev, winner: leader, perfectTeams: perfect });
+      setTimeout(() => setRoundEndOverlay(null), 3600);
+      // Reset fuer neue Runde.
+      roundCorrectsRef.current = {};
+    }
+  }, [s.gamePhaseIndex, s.teams]);
+
   // C3 Timer-Urgency-Vignette: roter Inset-Pulse am Screen-Rand bei <=5s.
   // Separater State, damit wir im Render-Baum die Vignette zeigen koennen
   // (der Sound-Tick-Hook oben setzt keinen State).
@@ -857,6 +914,143 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9990,
           animation: 'timerVignettePulse 0.8s ease-in-out infinite',
         }} />
+      )}
+
+      {/* H2 First-Steal-Badge: Banner oben mittig. */}
+      {firstStealBadge && (
+        <div aria-hidden style={{
+          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9988, pointerEvents: 'none',
+          padding: '14px 32px', borderRadius: 999,
+          background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(251,146,60,0.25))',
+          border: '2.5px solid rgba(254,202,202,0.75)',
+          boxShadow: '0 0 36px rgba(239,68,68,0.55), 0 8px 28px rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', gap: 14,
+          animation: 'firstStealBadge 2.8s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}>
+          <span style={{ fontSize: 'clamp(32px, 4vw, 52px)' }}>⚡</span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span style={{
+              fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900,
+              color: '#FECACA', letterSpacing: '0.18em', textTransform: 'uppercase',
+            }}>Steal unlocked</span>
+            <span style={{
+              fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+              color: '#FEF2F2',
+            }}>{firstStealBadge} klaut zuerst!</span>
+          </div>
+        </div>
+      )}
+
+      {/* G1 Round-End-Overlay: 3.6s-Moment mit Best-Team-Hero.
+          H1 Perfect-Round: falls Teams 5/5 hatten, Regenbogen-Burst dahinter. */}
+      {roundEndOverlay && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9985,
+          background: 'radial-gradient(ellipse at center, rgba(15,12,9,0.92) 0%, rgba(15,12,9,0.75) 65%, rgba(15,12,9,0.45) 100%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 22,
+          animation: 'roundEndOverlay 3.6s cubic-bezier(0.4,0,0.2,1) both',
+        }}>
+          {/* H1 Rainbow-Burst (nur wenn Perfect-Teams existieren). */}
+          {roundEndOverlay.perfectTeams.length > 0 && (
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              {[0, 60, 120, 180, 240, 300].map(deg => (
+                <div key={deg} style={{
+                  position: 'absolute',
+                  width: 'clamp(500px, 70vw, 900px)',
+                  height: 'clamp(500px, 70vw, 900px)',
+                  borderRadius: '50%',
+                  border: '3px solid transparent',
+                  background: `conic-gradient(from ${deg}deg, #ef4444, #f59e0b, #eab308, #22c55e, #3b82f6, #a855f7, #ef4444)`,
+                  WebkitMask: 'radial-gradient(circle, transparent 52%, #000 55%, #000 60%, transparent 62%)',
+                  mask: 'radial-gradient(circle, transparent 52%, #000 55%, #000 60%, transparent 62%)',
+                  opacity: 0.35,
+                  animation: `rainbowBurst 2.2s ease-out ${deg / 800}s both`,
+                }} />
+              ))}
+            </div>
+          )}
+          <div style={{
+            fontSize: 'clamp(16px, 1.8vw, 26px)', fontWeight: 900,
+            color: '#94a3b8', letterSpacing: '0.22em', textTransform: 'uppercase',
+            position: 'relative', zIndex: 1,
+          }}>
+            Runde {roundEndOverlay.phase} abgeschlossen
+          </div>
+          <div style={{
+            fontSize: 'clamp(56px, 8vw, 120px)', fontWeight: 900, lineHeight: 1,
+            color: '#FBBF24',
+            textShadow: '0 0 60px rgba(251,191,36,0.5)',
+            letterSpacing: '-0.02em',
+            position: 'relative', zIndex: 1,
+          }}>
+            🎉
+          </div>
+          {/* H1 Perfect-Round-Badge */}
+          {roundEndOverlay.perfectTeams.length > 0 && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              padding: '10px 22px', borderRadius: 18,
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(168,85,247,0.18))',
+              border: '2px solid rgba(251,191,36,0.6)',
+              boxShadow: '0 0 40px rgba(251,191,36,0.4)',
+              position: 'relative', zIndex: 1,
+            }}>
+              <div style={{
+                fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
+                color: '#FDE047', letterSpacing: '0.1em',
+              }}>
+                🌈 PERFECT ROUND!
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {roundEndOverlay.perfectTeams.map(t => (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <QQTeamAvatar avatarId={t.avatarId} size={34} style={{
+                      border: '2px solid #FDE047',
+                      boxShadow: '0 0 10px rgba(253,224,71,0.7)',
+                    }} />
+                    <span style={{ fontSize: 16, fontWeight: 900, color: t.color }}>{t.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {roundEndOverlay.winner && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              position: 'relative', zIndex: 1,
+            }}>
+              <div style={{
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
+                color: '#64748b', letterSpacing: '0.12em', textTransform: 'uppercase',
+              }}>
+                Aktuell vorne
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <QQTeamAvatar avatarId={roundEndOverlay.winner.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
+                  boxShadow: `0 0 36px ${roundEndOverlay.winner.color}88`,
+                }} />
+                <div style={{
+                  fontSize: 'clamp(32px, 4.5vw, 68px)', fontWeight: 900,
+                  color: roundEndOverlay.winner.color,
+                  textShadow: `0 0 24px ${roundEndOverlay.winner.color}55`,
+                }}>
+                  {roundEndOverlay.winner.name}
+                </div>
+              </div>
+              <div style={{
+                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800, color: '#FDE68A',
+              }}>
+                {roundEndOverlay.winner.largestConnected} Felder
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
@@ -7474,9 +7668,26 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     return () => window.removeEventListener('keydown', onKey);
   }, [viewMode]);
 
+  // G2 Entry-Sweep beim Mount einer neuen Question-Placement-Phase.
+  // Ein heller Streifen laeuft einmalig von links nach rechts uebers Grid.
+  // Key bindet an questionIndex, damit React beim Phase-Re-Mount die
+  // Animation neu triggert.
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Fireflies color={`${teamColor}77`} />
+
+      {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry. */}
+      <div key={`sweep-${s.questionIndex}`} aria-hidden style={{
+        position: 'absolute', top: 112, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none', zIndex: 4, overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0,
+          width: '40%',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.18) 55%, transparent 100%)',
+          animation: 'placementSweep 1.1s cubic-bezier(0.4,0,0.2,1) 0.15s both',
+        }} />
+      </div>
 
       {/* Top banner — feste Höhe (auch wenn kein Team aktiv ist), sonst springt das
           Grid darunter, sobald die Leiste verschwindet/erscheint. */}

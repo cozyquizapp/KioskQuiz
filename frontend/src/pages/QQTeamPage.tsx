@@ -136,6 +136,16 @@ const TEAM_CSS = `
   @keyframes tcoptIn   { from{opacity:0;transform:translateY(18px) scale(0.94)} to{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes tcwheelslide { from{transform:translateY(var(--from,0px));opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes tccheckpop { from{transform:scale(0)} to{transform:scale(1)} }
+  @keyframes tcsuccessGlow {
+    0%, 100% { box-shadow: 0 0 36px rgba(34,197,94,0.18), 0 6px 20px rgba(0,0,0,0.4); }
+    50%      { box-shadow: 0 0 52px rgba(34,197,94,0.4), 0 0 100px rgba(34,197,94,0.15), 0 6px 20px rgba(0,0,0,0.4); }
+  }
+  @keyframes tcStolenToast {
+    0%   { transform: translate(-50%, -120%); opacity: 0; }
+    10%  { transform: translate(-50%, 0); opacity: 1; }
+    80%  { transform: translate(-50%, 0); opacity: 1; }
+    100% { transform: translate(-50%, -40%); opacity: 0; }
+  }
   @keyframes tcwinBounce {
     0%   { transform: scale(0.5); opacity: 0; }
     40%  { transform: scale(1.15); opacity: 1; }
@@ -621,6 +631,38 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     }
   }, [s.phase, s.correctTeamId, s.currentQuestion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // E3 Klau-Toast: wenn ein eigenes Feld gerade geklaut wird.
+  const [stolenToast, setStolenToast] = useState<{ id: number; by: string } | null>(null);
+  const prevMyOwnedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const myOwned = new Set<string>();
+    const grid = s.grid;
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[r].length; c++) {
+        if (grid[r][c].ownerId === myTeamId) myOwned.add(`${r}-${c}`);
+      }
+    }
+    const prev = prevMyOwnedRef.current;
+    let stealer: string | null = null;
+    for (const key of prev) {
+      if (!myOwned.has(key)) {
+        const [r, c] = key.split('-').map(Number);
+        const nowOwner = grid[r]?.[c]?.ownerId;
+        if (nowOwner && nowOwner !== myTeamId) {
+          const t = s.teams.find(tm => tm.id === nowOwner);
+          stealer = t?.name ?? '?';
+          break;
+        }
+      }
+    }
+    prevMyOwnedRef.current = myOwned;
+    if (stealer) {
+      setStolenToast({ id: Date.now(), by: stealer });
+      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+      setTimeout(() => setStolenToast(null), 3200);
+    }
+  }, [s.grid, myTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Your-Turn-Alert: beim Aktivwerden in Hot Potato / Imposter.
   const prevHotPotatoActiveRef = useRef<string | null>(null);
   const prevImposterActiveRef  = useRef<string | null>(null);
@@ -691,6 +733,36 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
       {showIdentityBanner && myTeam && <IdentityBanner team={myTeam} lang={lang} />}
       {yourTurnAlert && myTeam && <YourTurnAlert kind={yourTurnAlert.kind} team={myTeam} lang={lang} />}
+
+      {/* E3 Mobile-Toast: eigenes Feld wurde gerade geklaut. */}
+      {stolenToast && (
+        <div
+          key={stolenToast.id}
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed', top: 14, left: '50%',
+            zIndex: 1000,
+            padding: '10px 16px', borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(239,68,68,0.95), rgba(185,28,28,0.95))',
+            border: '2px solid rgba(254,202,202,0.6)',
+            boxShadow: '0 8px 24px rgba(239,68,68,0.55), 0 0 32px rgba(239,68,68,0.3)',
+            color: '#FEF2F2', fontWeight: 900, fontSize: 14,
+            display: 'flex', alignItems: 'center', gap: 10,
+            maxWidth: 'calc(100vw - 28px)',
+            animation: 'tcStolenToast 3.2s ease-out both',
+            pointerEvents: 'none',
+          }}
+        >
+          <span style={{ fontSize: 22 }}>⚡</span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 800, letterSpacing: 0.4 }}>
+              {lang === 'de' ? 'FELD GEKLAUT' : 'FIELD STOLEN'}
+            </span>
+            <span>{stolenToast.by} {lang === 'de' ? 'hat dir ein Feld geklaut!' : 'stole a cell from you!'}</span>
+          </div>
+        </div>
+      )}
 
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
@@ -1958,42 +2030,86 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────────
-function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams }: {
-  text: string; lang?: 'de' | 'en'; answeredCount?: number; totalTeams?: number;
+function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingTeams, myRank }: {
+  text: string; lang?: 'de' | 'en';
+  answeredCount?: number; totalTeams?: number;
+  pendingTeams?: Array<{ id: string; name: string; color: string; avatarId: string }>;
+  myRank?: number; // 1-based Reihenfolge des Abschickens
 }) {
   return (
     <div style={{
-      padding: '16px 20px', borderRadius: 16, textAlign: 'center',
-      background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.35)',
-      animation: 'tcreveal 0.3s ease both',
-      display: 'flex', flexDirection: 'column', gap: 8,
+      padding: '20px 22px', borderRadius: 18, textAlign: 'center',
+      background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(34,197,94,0.08))',
+      border: '2px solid rgba(34,197,94,0.55)',
+      boxShadow: '0 0 40px rgba(34,197,94,0.2), 0 6px 20px rgba(0,0,0,0.4)',
+      animation: 'tcreveal 0.3s ease both, tcsuccessGlow 1.6s ease-in-out 0.3s infinite',
+      display: 'flex', flexDirection: 'column', gap: 12,
     }}>
-      {/* Checkmark + label */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      {/* E1 Big Check + prominent label */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 28, height: 28, borderRadius: '50%', background: '#22C55E',
-          color: '#fff', fontSize: 16, fontWeight: 900, flexShrink: 0,
-          animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+          width: 42, height: 42, borderRadius: '50%', background: '#22C55E',
+          color: '#fff', fontSize: 24, fontWeight: 900, flexShrink: 0,
+          boxShadow: '0 0 16px rgba(34,197,94,0.6)',
+          animation: 'tccheckpop 0.5s cubic-bezier(0.34,1.6,0.64,1) both',
         }}>✓</span>
-        <span style={{ fontSize: 15, fontWeight: 800, color: '#4ade80' }}>
-          {lang === 'de' ? 'Antwort abgegeben' : 'Answer submitted'}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
+          <span style={{ fontSize: 18, fontWeight: 900, color: '#86efac' }}>
+            {lang === 'de' ? 'Angekommen!' : 'Received!'}
+          </span>
+          {myRank != null && totalTeams != null && totalTeams > 1 && (
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.4 }}>
+              #{myRank} {lang === 'de' ? 'von' : 'of'} {totalTeams}
+            </span>
+          )}
+        </div>
       </div>
-      {/* Show the answer prominently */}
+      {/* Answer-Preview */}
       <div style={{
         padding: '10px 14px', borderRadius: 10,
-        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
         fontSize: 17, fontWeight: 900, color: '#F1F5F9', lineHeight: 1.3,
         wordBreak: 'break-word',
       }}>
         „{text}"
       </div>
-      {/* Team answer progress */}
-      {answeredCount != null && totalTeams != null && totalTeams > 1 && (
-        <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>
-          {answeredCount}/{totalTeams} Teams {lang === 'de' ? 'haben geantwortet' : 'have answered'}
-          {answeredCount >= totalTeams && <span style={{ marginLeft: 6 }}>✅</span>}
+      {/* E2 Waiting-Avatar-Row: wer fehlt noch */}
+      {pendingTeams && pendingTeams.length > 0 && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 6,
+          padding: '8px 10px', borderRadius: 10,
+          background: 'rgba(0,0,0,0.2)', border: '1px dashed rgba(255,255,255,0.12)',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.5 }}>
+            {lang === 'de' ? 'Noch offen:' : 'Still open:'}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+            {pendingTeams.slice(0, 10).map(t => (
+              <div key={t.id} title={t.name} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '2px 8px 2px 2px', borderRadius: 999,
+                background: 'rgba(0,0,0,0.4)',
+                border: `1.5px solid ${t.color}66`,
+                opacity: 0.85,
+                animation: 'tcpulse 1.8s ease-in-out infinite',
+              }}>
+                <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                <span style={{ fontSize: 10, fontWeight: 800, color: t.color, maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {t.name}
+                </span>
+              </div>
+            ))}
+            {pendingTeams.length > 10 && (
+              <span style={{ fontSize: 10, color: '#64748b', alignSelf: 'center' }}>+{pendingTeams.length - 10}</span>
+            )}
+          </div>
+        </div>
+      )}
+      {/* All answered indicator */}
+      {answeredCount != null && totalTeams != null && totalTeams > 1 && answeredCount >= totalTeams && (
+        <div style={{ fontSize: 13, fontWeight: 900, color: '#4ade80' }}>
+          ✅ {lang === 'de' ? 'Alle Teams fertig!' : 'All teams done!'}
         </div>
       )}
     </div>
@@ -2027,7 +2143,20 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (q && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map') {
       displayText = lang === 'de' ? '📍 Pin auf Karte gesetzt' : '📍 Pin placed on map';
     }
-    return <SubmittedBadge text={displayText} lang={lang} answeredCount={s.answers.length} totalTeams={s.teams.length} />;
+    // E2: Liste der Teams, die noch keine Antwort abgegeben haben.
+    const answeredIds = new Set(s.answers.map(a => a.teamId));
+    const pendingTeams = s.teams.filter(t => !answeredIds.has(t.id));
+    // E1: Rang = Position der eigenen Antwort in submit-order (1-based).
+    const sortedAnswers = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
+    const myRank = sortedAnswers.findIndex(a => a.teamId === myTeamId) + 1;
+    return <SubmittedBadge
+      text={displayText}
+      lang={lang}
+      answeredCount={s.answers.length}
+      totalTeams={s.teams.length}
+      pendingTeams={pendingTeams}
+      myRank={myRank > 0 ? myRank : undefined}
+    />;
   }
   if (!q) return null;
 

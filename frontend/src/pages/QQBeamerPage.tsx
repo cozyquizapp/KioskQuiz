@@ -392,12 +392,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // ── Slide transition: gameshow-style flash-sweep between phase groups ──
   // Bis 2026-04-23 wurden QUESTION_ACTIVE + QUESTION_REVEAL zusammengruppiert
   // ("reveal ist keine neue Slide"). Das fuehlte sich beim Uebergang aber als
-  // harter Cut an. Jetzt triggert der Flash auch beim Active→Reveal-Wechsel,
-  // damit die Aufloesung visuell "reingefadet" wirkt.
+  // harter Cut an. Active→Reveal feuert KEIN Flash mehr (User-Feedback): die
+  // QuestionView bleibt gemountet, der Inhalt aendert sich nur leicht (Antwort
+  // wird gruen, Avatare/Top-Bets erscheinen) — eine zusaetzliche Bildschirm-
+  // Pulsanimation wirkt unnoetig "ueber" einem fast identischen Screen.
   // RULES sub-steps (Welcome -2 / RulesIntro -1 / Regel-Folie 0..) zaehlen als
   // eigene Slides, damit der Flash-Sweep auch bei diesen Uebergaengen feuert.
   const phaseGroup = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')
-    ? `Q-${s.phase === 'QUESTION_REVEAL' ? 'reveal' : 'active'}-${s.currentQuestion?.id ?? s.questionIndex}`
+    ? `Q-${s.currentQuestion?.id ?? s.questionIndex}`
     : s.phase === 'PLACEMENT'
       ? `PLACE-${s.questionIndex}`
       : s.phase === 'RULES'
@@ -1152,32 +1154,36 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         </div>
       )}
 
-      {/* Eliminated teams (small, subtle). Frisch eliminierte Teams:
+      {/* Eliminated teams. Frisch eliminierte Teams:
           C1 Shake-Red + Kartoffel-Drop 🥔 + fade-to-grey. */}
       {s.hotPotatoEliminated && s.hotPotatoEliminated.length > 0 && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: 12, color: '#64748b', fontWeight: 700,
+          display: 'flex', alignItems: 'center', flexWrap: 'wrap',
+          gap: 'clamp(10px, 1.4vw, 18px)',
+          fontSize: 'clamp(18px, 2vw, 28px)', color: '#94a3b8', fontWeight: 800,
         }}>
-          <span>❌ {lang === 'en' ? 'Out:' : 'Raus:'}</span>
+          <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)' }}>
+            ❌ {lang === 'en' ? 'Out:' : 'Raus:'}
+          </span>
           {s.hotPotatoEliminated.map((id: string) => {
             const t = s.teams.find((tm: any) => tm.id === id);
             if (!t) return null;
             const fresh = justEliminated.has(id);
             return (
               <span key={id} style={{
-                color: t.color, opacity: fresh ? 1 : 0.7,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
+                color: t.color, opacity: fresh ? 1 : 0.75,
+                display: 'inline-flex', alignItems: 'center', gap: 8,
                 position: 'relative',
                 animation: fresh ? 'hpEliminate 1.2s ease-out both' : undefined,
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} size={14} /> {t.name}
+                <QQTeamAvatar avatarId={t.avatarId} size={'clamp(28px, 3vw, 42px)'} />
+                <span style={{ fontSize: 'clamp(16px, 1.8vw, 24px)' }}>{t.name}</span>
                 {fresh && (
                   <span aria-hidden style={{
-                    position: 'absolute', top: -22, left: '50%',
+                    position: 'absolute', top: -32, left: '50%',
                     transform: 'translateX(-50%)',
-                    fontSize: 26, lineHeight: 1, pointerEvents: 'none',
-                    filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.7))',
+                    fontSize: 36, lineHeight: 1, pointerEvents: 'none',
+                    filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.7))',
                     animation: 'hpPotatoDrop 1.3s cubic-bezier(0.4,1.4,0.6,1) both',
                     zIndex: 5,
                   }}>🥔</span>
@@ -2679,9 +2685,9 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 
   if (phaseEntries.length === 0 || firstIdx < 0) return null;
 
-  const DOT = 42;
-  const GAP = 18;
-  const WOLF = DOT + 10;
+  const DOT = 60;
+  const GAP = 26;
+  const WOLF = DOT + 12;
   const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
   const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
   const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);
@@ -3163,6 +3169,63 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {rule}
               </div>
             ))}
+            {/* Round 1: Place — einzige Aktion, groß zeigen */}
+            {s.gamePhaseIndex === 1 && (
+              <div style={{
+                marginTop: 24, display: 'flex', justifyContent: 'center',
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
+              }}>
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: '16px 28px', borderRadius: 18,
+                  background: `${color}18`, border: `2px solid ${color}55`,
+                  boxShadow: `0 0 24px ${color}33`, minWidth: 200,
+                }}>
+                  <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}>📍</div>
+                  <div style={{
+                    fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                    color, letterSpacing: '0.04em',
+                  }}>{lang === 'en' ? 'Place' : 'Platzieren'}</div>
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                    color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3,
+                  }}>{lang === 'en' ? '1 own tile per correct answer' : '1 eigenes Feld pro richtiger Antwort'}</div>
+                </div>
+              </div>
+            )}
+            {/* Round 2: Place + Steal — beide Aktionen zeigen */}
+            {s.gamePhaseIndex === 2 && (
+              <div style={{
+                marginTop: 24, display: 'flex', justifyContent: 'center', gap: 28,
+                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
+              }}>
+                {[
+                  { emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
+                    sub: lang === 'en' ? 'on free cells' : 'auf freie Felder',
+                    accent: color },
+                  { emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
+                    sub: lang === 'en' ? 'take an opponent’s cell' : 'Gegner-Feld erobern',
+                    accent: '#F59E0B' },
+                ].map((b, i) => (
+                  <div key={i} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    padding: '16px 24px', borderRadius: 18,
+                    background: `${b.accent}18`, border: `2px solid ${b.accent}55`,
+                    boxShadow: `0 0 24px ${b.accent}33`, minWidth: 180,
+                  }}>
+                    <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}>{b.emoji}</div>
+                    <div style={{
+                      fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                      color: b.accent, letterSpacing: '0.04em',
+                    }}>{b.label}</div>
+                    <div style={{
+                      fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                      color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3,
+                    }}>{b.sub}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Round 3: Bann & Schild — Marker-Icons groß zeigen */}
             {s.gamePhaseIndex === 3 && (
               <div style={{
@@ -6624,16 +6687,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             animation: avatarAnim,
                           }}>
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <QQTeamAvatar avatarId={ct.team.avatarId} size={'clamp(58px, 6.4vw, 88px)'} style={{
-                                border: isFastest ? '3px solid #FBBF24' : 'none',
-                                boxShadow: isFastest
-                                  ? `0 0 22px rgba(251,191,36,0.55), 0 4px 12px rgba(0,0,0,0.4)`
-                                  : '0 4px 12px rgba(0,0,0,0.4)',
-                              }} />
+                              <QQTeamAvatar
+                                avatarId={ct.team.avatarId}
+                                size={isFastest ? 'clamp(78px, 8.6vw, 116px)' : 'clamp(58px, 6.4vw, 88px)'}
+                                style={{
+                                  border: isFastest ? '4px solid #FBBF24' : 'none',
+                                  boxShadow: isFastest
+                                    ? `0 0 28px rgba(251,191,36,0.65), 0 4px 14px rgba(0,0,0,0.45)`
+                                    : '0 4px 12px rgba(0,0,0,0.4)',
+                                }}
+                              />
                               {isFastest && (
                                 <span style={{
-                                  position: 'absolute', top: -10, right: -10,
-                                  fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1,
+                                  position: 'absolute', top: -12, right: -12,
+                                  fontSize: 'clamp(24px, 2.6vw, 34px)', lineHeight: 1,
                                 }}>⚡</span>
                               )}
                             </div>

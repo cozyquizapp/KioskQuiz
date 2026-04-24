@@ -316,6 +316,18 @@ export default function QQModeratorPage() {
           delayMs = 8500;
           action = () => emit('qq:startPlacement', { roomCode });
         }
+        // Top5 (Bunte Tüte): Bottom-Up-Cascade 600ms Initial + 5 × 2400ms +
+        // Winner-Card-Reveal (~1.5s) + Lesen → ~16s.
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'top5') {
+          delayMs = 16000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
+        // Order (Bunte Tüte): Bottom-Up-Cascade 500ms Initial + bis 5 × 2000ms +
+        // Winner-Reveal + Lesen → ~13s.
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'order') {
+          delayMs = 13000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
         // Finaler Uebergang zu Placement (Winner-Banner ~1s spaet + Confetti + Lesen).
         else {
           delayMs = 7000;

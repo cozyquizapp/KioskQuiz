@@ -10457,7 +10457,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           {/* Wert — prominent rechts mit Medaille für Top 3 */}
           <div style={{
             position: 'relative',
-            display: 'flex', alignItems: 'baseline', gap: 6,
+            display: 'flex', alignItems: 'baseline', gap: 10,
             flexShrink: 0,
           }}>
             {/* Medal-Slot mit fixer Breite — ohne Medaille trotzdem Platzhalter,
@@ -10474,8 +10474,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               textShadow: isLeader ? '0 0 18px rgba(251,191,36,0.55)' : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
-              // Zahlen-Spalte rechtsbuendig mit fester Breite → alle Werte untereinander
-              width: dense ? 38 : 48,
+              // Zahlen-Spalte breit genug fuer 2-stellige Werte (10+) — vorher
+              // floss die '0' optisch ins Wort 'Felder' rein, weil die Spalte
+              // (38/48px) bei zweistelliger Zahl ueberlief und der Text in den
+              // Folge-Slot reinragte. Jetzt 56/72 → beide Stellen passen rein,
+              // gap auf 10 sichert weiter Abstand zum Wort.
+              width: dense ? 56 : 72,
               textAlign: 'right',
               flexShrink: 0,
             }}>

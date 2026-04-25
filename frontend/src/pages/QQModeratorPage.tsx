@@ -2519,20 +2519,7 @@ function SetupView({
   });
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18, paddingBottom: 100 }}>
-
-      {/* ── Hero ── */}
-      <div style={{
-        textAlign: 'center', padding: '16px 0 8px',
-      }}>
-        <div style={{ fontSize: 32, marginBottom: 4 }}>🐺</div>
-        <div style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.01em' }}>
-          Quiz-Abend vorbereiten
-        </div>
-        <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>
-          Stell alles ein, bevor die Teams den QR scannen.
-        </div>
-      </div>
+    <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18, paddingBottom: 100, paddingTop: 12 }}>
 
       {/* ── Fragensatz-Auswahl (Hero-Card) ── */}
       <div style={{

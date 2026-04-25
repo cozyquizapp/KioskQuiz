@@ -3689,8 +3689,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
           return { ...a, num, distance, team };
         }).sort((a, b) => a.distance - b.distance);
         const maxDistance = Math.max(1, ...scored.filter(s => Number.isFinite(s.distance)).map(s => s.distance));
-        const targetStr = q.targetValue != null ? q.targetValue.toLocaleString('de-DE') : '—';
         const unitStr = (q as any).unit ?? '';
+        // Jahreszahlen ohne Tausenderpunkt — sonst sieht 1500 wie 1,5 aus.
+        const isYearUnit = /jahr|year/i.test(unitStr);
+        const targetStr = q.targetValue != null
+          ? (isYearUnit ? String(Math.round(q.targetValue)) : q.targetValue.toLocaleString('de-DE'))
+          : '—';
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
             {/* Target banner */}
@@ -3722,7 +3726,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 const isWinner = i === 0;
                 const pct = Number.isFinite(a.distance) ? (a.distance / maxDistance) * 100 : 100;
                 const distStr = Number.isFinite(a.distance)
-                  ? `Δ ${a.distance.toLocaleString('de-DE')}${unitStr ? ` ${unitStr}` : ''}`
+                  ? `Δ ${isYearUnit ? String(Math.round(a.distance)) : a.distance.toLocaleString('de-DE')}${unitStr ? ` ${unitStr}` : ''}`
                   : '—';
                 return (
                   <div key={a.teamId} style={{
@@ -5250,8 +5254,14 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   const q = s.currentQuestion!;
   const target = q.targetValue as number;
 
+  // Jahreszahlen (Unit enthaelt "Jahr"/"year") OHNE Tausenderpunkt formatieren —
+  // sonst stehen Werte wie 1500 als '1.500' da, was wie 1.5 aussieht und falsch ist.
+  const unitStr = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
+  const isYearUnit = /jahr|year/i.test(unitStr);
+
   const fmt = (n: number) => {
     const abs = Math.abs(n);
+    if (isYearUnit) return String(Math.round(n));
     if (abs >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
     if (abs >= 10000) return (n / 1000).toFixed(0) + 'k';
     if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
@@ -7188,8 +7198,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               pinChipOffset.set(p.teamId, picked);
             });
             const targetPct = pctOf(target);
+            const unitStrInline = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
+            const isYearUnitInline = /jahr|year/i.test(unitStrInline);
             const fmt = (n: number) => {
               const abs = Math.abs(n);
+              if (isYearUnitInline) return String(Math.round(n));
               if (abs >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
               if (abs >= 10000) return (n / 1000).toFixed(0) + 'k';
               if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');

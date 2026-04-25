@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo, Fragment } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -2799,26 +2799,28 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const catExplain = cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '';
 
   // ── Rule reminders per round ──
+  // Subtitle ueber den Action-Cards. Beschreibt knapp wie die Wahl funktioniert,
+  // die exakte Anzahl pro Aktion steht direkt auf den Cards (× N).
   const ROUND_RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
     1: {
       emoji: '🏁',
-      de: ['1 Feld setzen nach richtiger Antwort', 'Sichert euch eure ersten Felder!'],
-      en: ['Place 1 tile after a correct answer', 'Claim your first cells!'],
+      de: ['Eure Aktion diese Runde:', 'Sichert euch eure ersten Felder!'],
+      en: ['Your action this round:', 'Claim your first cells!'],
     },
     2: {
       emoji: '⚔️',
-      de: ['2 Felder setzen pro Runde', 'Klauen jetzt möglich!'],
-      en: ['Place 2 tiles per round', 'Stealing is now possible!'],
+      de: ['Pro richtige Antwort wählt eine Aktion:', 'Klauen jetzt möglich!'],
+      en: ['Per correct answer choose one action:', 'Stealing now possible!'],
     },
     3: {
       emoji: '⏳',
-      de: ['Wählt eure Aktion frei', 'Bann & Schild freigeschaltet!'],
-      en: ['Choose your action freely', 'Ban & Shield unlocked!'],
+      de: ['Pro richtige Antwort wählt eine Aktion:', 'Bann & Schild freigeschaltet!'],
+      en: ['Per correct answer choose one action:', 'Ban & Shield unlocked!'],
     },
     4: {
       emoji: '🔄',
-      de: ['Tauschen & Stapeln freigeschaltet', 'Alle Aktionen verfügbar!'],
-      en: ['Swap & Stack unlocked', 'All actions available!'],
+      de: ['Im Finale — Setzen ist gesperrt:', 'Tauschen & Stapeln freigeschaltet!'],
+      en: ['In the final — placing is locked:', 'Swap & Stack unlocked!'],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
@@ -3168,32 +3170,135 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 return lead;
               })()}
             </div>
-            {/* Round 1: Place — einzige Aktion, groß zeigen */}
-            {s.gamePhaseIndex === 1 && (
-              <div style={{
-                marginTop: 32, display: 'flex', justifyContent: 'center',
-                animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
-              }}>
+            {/* Action-Cards mit explizitem Counter (×N) pro Aktion. Cards werden je
+                nach Runde dynamisch zusammengestellt — eine Wahl pro richtige
+                Antwort. Limits (max X pro Runde / Spiel) als Footer-Pill je Card. */}
+            {(() => {
+              type ActionCardData = {
+                count: number;
+                emoji?: string;
+                slug?: 'marker-sanduhr' | 'marker-shield' | 'marker-swap';
+                label: string;
+                limit?: string;
+                accent: string;
+              };
+              const ph = s.gamePhaseIndex;
+              const cards: ActionCardData[] =
+                ph === 1
+                  ? [
+                      { count: 1, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
+                    ]
+                  : ph === 2
+                  ? [
+                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
+                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
+                        limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
+                        accent: '#F59E0B' },
+                    ]
+                  : ph === 3
+                  ? [
+                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
+                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
+                      { count: 1, slug: 'marker-sanduhr', label: lang === 'en' ? 'Ban' : 'Bann',
+                        limit: lang === 'en' ? '3 questions locked' : '3 Fragen gesperrt',
+                        accent: '#A855F7' },
+                      { count: 1, slug: 'marker-shield', label: lang === 'en' ? 'Shield' : 'Schild',
+                        limit: lang === 'en' ? 'max 2 per game' : 'max 2 pro Spiel',
+                        accent: '#06B6D4' },
+                    ]
+                  : ph === 4
+                  ? [
+                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
+                      { count: 1, slug: 'marker-swap', label: lang === 'en' ? 'Swap' : 'Tauschen', accent: '#8B5CF6' },
+                      { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',
+                        limit: lang === 'en' ? 'permanent safe' : 'dauerhaft sicher',
+                        accent: '#F59E0B' },
+                    ]
+                  : [];
+              const many = cards.length >= 3;
+              const oder = lang === 'en' ? 'or' : 'oder';
+              return (
                 <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-                  padding: '28px 48px', borderRadius: 22,
-                  background: `${color}18`, border: `2px solid ${color}55`,
-                  boxShadow: `0 0 28px ${color}33`, minWidth: 280,
+                  marginTop: many ? 18 : 28,
+                  display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: many ? 'clamp(8px, 1.2vw, 18px)' : 'clamp(16px, 2vw, 32px)',
+                  width: '100%',
+                  animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                 }}>
-                  <div style={{ fontSize: 'clamp(72px, 9vw, 128px)', lineHeight: 1 }}><QQEmojiIcon emoji="📍"/></div>
-                  <div style={{
-                    fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 900,
-                    color, letterSpacing: '0.04em',
-                  }}>{lang === 'en' ? 'Place' : 'Platzieren'}</div>
-                  <div style={{
-                    fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
-                    color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3,
-                  }}>{lang === 'en' ? '1 own tile per correct answer' : '1 eigenes Feld pro richtiger Antwort'}</div>
+                  {cards.map((c, i) => {
+                    const iconNode = c.slug
+                      ? <QQIcon slug={c.slug} size={many ? 'clamp(48px, 5.6vw, 80px)' : 'clamp(60px, 7.5vw, 108px)'} alt={c.label} />
+                      : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
+                    return (
+                      <Fragment key={i}>
+                        {i > 0 && (
+                          <div style={{
+                            fontSize: many ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(16px, 1.7vw, 22px)',
+                            fontWeight: 800, color: '#64748b',
+                            letterSpacing: '0.1em', textTransform: 'uppercase',
+                            alignSelf: 'center', padding: '0 4px',
+                          }}>{oder}</div>
+                        )}
+                        <div style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center',
+                          gap: many ? 8 : 12,
+                          padding: many ? '14px 18px' : '20px 32px', borderRadius: 20,
+                          background: `${c.accent}1f`,
+                          border: `2px solid ${c.accent}66`,
+                          boxShadow: `0 0 24px ${c.accent}33`,
+                          minWidth: many ? 150 : 200,
+                        }}>
+                          <div style={{
+                            fontSize: many ? 'clamp(48px, 5.6vw, 80px)' : 'clamp(60px, 7.5vw, 108px)',
+                            lineHeight: 1,
+                          }}>{iconNode}</div>
+                          <div style={{
+                            display: 'flex', alignItems: 'baseline', gap: 8,
+                            fontWeight: 900, lineHeight: 1.05,
+                          }}>
+                            <span style={{
+                              fontSize: many ? 'clamp(22px, 2.6vw, 36px)' : 'clamp(30px, 3.4vw, 48px)',
+                              color: c.accent,
+                              fontVariantNumeric: 'tabular-nums',
+                              textShadow: `0 0 18px ${c.accent}55`,
+                            }}>{c.count}x</span>
+                            <span style={{
+                              fontSize: many ? 'clamp(20px, 2.2vw, 30px)' : 'clamp(26px, 3vw, 42px)',
+                              color: '#F1F5F9',
+                              letterSpacing: '0.02em',
+                            }}>{c.label}</span>
+                          </div>
+                          <div style={{
+                            fontSize: many ? 'clamp(11px, 1.2vw, 16px)' : 'clamp(13px, 1.4vw, 18px)',
+                            fontWeight: 700, color: '#94a3b8',
+                            textAlign: 'center', lineHeight: 1.25,
+                          }}>
+                            {lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}
+                          </div>
+                          {c.limit && (
+                            <div style={{
+                              marginTop: 2,
+                              padding: '3px 12px', borderRadius: 999,
+                              background: 'rgba(15,23,42,0.55)',
+                              border: `1px solid ${c.accent}55`,
+                              fontSize: many ? 'clamp(10px, 1.05vw, 13px)' : 'clamp(11px, 1.15vw, 15px)',
+                              fontWeight: 800, color: '#cbd5e1',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {c.limit}
+                            </div>
+                          )}
+                        </div>
+                      </Fragment>
+                    );
+                  })}
                 </div>
-              </div>
-            )}
-            {/* Round 2: Place + Steal — beide Aktionen zeigen */}
-            {s.gamePhaseIndex === 2 && (
+              );
+            })()}
+            {/* (alte Round-2/3/4-Blocks entfernt — werden jetzt durch die unified
+                Action-Cards-IIFE oben abgedeckt) */}
+            {false && s.gamePhaseIndex === 2 && (
               <div style={{
                 marginTop: 24, display: 'flex', justifyContent: 'center', gap: 28,
                 animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
@@ -3226,7 +3331,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               </div>
             )}
             {/* Round 3: Bann & Schild — Marker-Icons groß zeigen */}
-            {s.gamePhaseIndex === 3 && (
+            {false && s.gamePhaseIndex === 3 && (
               <div style={{
                 marginTop: 24, display: 'flex', justifyContent: 'center', gap: 28,
                 animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
@@ -3259,7 +3364,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               </div>
             )}
             {/* Round 4: Swap-Marker-Card (Stapel-Demo folgt darunter) */}
-            {s.gamePhaseIndex === 4 && (
+            {false && s.gamePhaseIndex === 4 && (
               <div style={{
                 marginTop: 20, display: 'flex', justifyContent: 'center',
                 animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
@@ -3283,7 +3388,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {/* Round 4: Stapeln-Info (Grid-Demo entfernt — User-Feedback, Grid war
                 visuell ueberladen, Text reicht aus da Mechanik aus R3-Vorwissen
                 bekannt) */}
-            {s.gamePhaseIndex === 4 && (
+            {false && s.gamePhaseIndex === 4 && (
               <div style={{
                 marginTop: 16,
                 fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 800,

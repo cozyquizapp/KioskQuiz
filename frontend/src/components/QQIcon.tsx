@@ -158,7 +158,9 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🥇': 'fx-medal-gold',
   '🥈': 'fx-medal-silver',
   '🥉': 'fx-medal-bronze',
-  '⚡': 'fx-lightning',
+  // '⚡': 'fx-lightning',  // entfernt — fx-lightning.png rendert mit
+  // sichtbarem Rechteck-Artefakt; `⚡` faellt jetzt durch auf native
+  // Unicode-Emoji-Rendering, das ist ueberall sauber transparent.
   '✅': 'fx-check',
   '❌': 'fx-cross',
   '📍': 'fx-place',

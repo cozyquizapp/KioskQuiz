@@ -121,8 +121,8 @@ const bt = {
   },
   phase: {
     names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
-    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Alles auf eine Karte!'],
-             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'All or nothing!'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Stapeln freigeschaltet!', 'Alles auf eine Karte!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Stack unlocked!', 'All or nothing!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -3098,17 +3098,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
-          {/* Big emoji / Marker-PNG für R3 (Bann) + R4 (Swap) */}
+          {/* Big emoji — R3+R4 zeigen Stapel-Pin als Highlight (Trinity-Mechanik) */}
           <div style={{
             fontSize: 'clamp(72px, 12vw, 140px)',
             animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
             position: 'relative', zIndex: 5,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {s.gamePhaseIndex === 3 ? (
-              <QQIcon slug="marker-sanduhr" size={'clamp(72px, 12vw, 140px)'} alt="Bann" />
-            ) : s.gamePhaseIndex === 4 ? (
-              <QQIcon slug="marker-swap" size={'clamp(72px, 12vw, 140px)'} alt="Swap" />
+            {(s.gamePhaseIndex === 3 || s.gamePhaseIndex === 4) ? (
+              <QQEmojiIcon emoji="📌" />
             ) : (
               roundRules.emoji
             )}

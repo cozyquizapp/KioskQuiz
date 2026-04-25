@@ -162,6 +162,10 @@ const TEAM_CSS = `
     50%  { transform: scale(0.88); }
     100% { transform: scale(1); }
   }
+  @keyframes tccellPendingPulse {
+    0%, 100% { transform: scale(1.04); filter: brightness(1.05); }
+    50%      { transform: scale(1.10); filter: brightness(1.18); }
+  }
   @keyframes tcTimerPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50%      { transform: scale(1.12); opacity: 0.85; }
@@ -2815,6 +2819,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const [freeMode, setFreeMode] = useState<FreeAction | null>(null);
   const [swapFirst, setSwapFirst] = useState<{ r: number; c: number } | null>(null);
   const [tappedCell, setTappedCell] = useState<string | null>(null);
+  // Pending-Pick: erst Tap → Highlight + Bestaetigen-Button. Verhindert Misstaps
+  // auf grossem Grid (8x8). Greift fuer alle Single-Cell-Aktionen.
+  type PendingKind = 'place' | 'steal' | 'ban' | 'shield' | 'stapel';
+  const [pendingPick, setPendingPick] = useState<{ r: number; c: number; kind: PendingKind } | null>(null);
   const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
 
   const pa = s.pendingAction;
@@ -2881,8 +2889,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   }, [gridKey]);
 
   useEffect(() => {
-    if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); }
+    if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); setPendingPick(null); }
   }, [isMyTurn]);
+
+  // Pending-Pick zuruecksetzen wenn der Aktions-Kontext (pendingAction / freeMode)
+  // sich aendert oder das Grid neu geladen wird (anderes Team dran etc.).
+  useEffect(() => {
+    setPendingPick(null);
+  }, [s.pendingAction, freeMode, s.questionIndex]);
 
   // Auto-skip: wenn nur eine einzige Aktion übrig ist (kein Phase-2 Multi-Choice,
   // kein FREE-Menü), direkt ins Grid springen statt den Zwischenbutton zu zeigen.
@@ -2941,40 +2955,63 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       if (cell.sandLockTtl && cell.sandLockTtl > 0) return;
       if (cell.ownerId === myTeamId) return;
       if (cell.stuck || cell.shielded) return;
-      await emit('qq:sandLockCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60]);
-      setSelecting(false); return;
+      setPendingPick({ r, c, kind: 'ban' });
+      return;
     }
 
     // STAPEL: any own non-stuck cell (plus-form removed)
     if (isStuck) {
       if (cell.ownerId !== myTeamId || cell.stuck) return;
-      await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
-      setSelecting(false); return;
+      setPendingPick({ r, c, kind: 'stapel' });
+      return;
     }
 
     // SCHILD: 1 eigenes Feld auswaehlen (nicht bereits geschuetzt)
     if (isShield) {
       if (cell.ownerId !== myTeamId || cell.shielded) return;
-      await emit('qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
-      setSelecting(false); return;
+      setPendingPick({ r, c, kind: 'shield' });
+      return;
     }
 
     // STEAL
     if (isSteal) {
       if (!cell.ownerId || cell.ownerId === myTeamId || cell.frozen || cell.stuck || cell.shielded) return;
-      await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
-      setSelecting(false); return;
+      setPendingPick({ r, c, kind: 'steal' });
+      return;
     }
 
     // PLACE
     if (cell.ownerId) return;
-    await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
-    if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
+    setPendingPick({ r, c, kind: 'place' });
+  }
+
+  // Bestaetigung des Pending-Picks → emit an Backend, dann Cleanup.
+  async function confirmPendingPick() {
+    if (!pendingPick) return;
+    const { r, c, kind } = pendingPick;
+    if (kind === 'ban') {
+      await emit('qq:sandLockCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60]);
+    } else if (kind === 'stapel') {
+      await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
+    } else if (kind === 'shield') {
+      await emit('qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
+    } else if (kind === 'steal') {
+      await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
+    } else if (kind === 'place') {
+      await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
+    }
+    setPendingPick(null);
     setSelecting(false);
+  }
+
+  function cancelPendingPick() {
+    setPendingPick(null);
+    if (navigator.vibrate) navigator.vibrate(15);
   }
 
   // Detect adjacency: cells with 2+ same-team neighbors in a row/col
@@ -3269,7 +3306,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               row.map((cell, c) => {
                 const team = s.teams.find(t => t.id === cell.ownerId);
                 const isSwapSelected = swapFirst && swapFirst.r === r && swapFirst.c === c;
-                const clickable = isCellClickable(r, c);
+                const isPending = pendingPick && pendingPick.r === r && pendingPick.c === c;
+                // Wenn pendingPick existiert: andere Cells sind quasi 'gelocked'
+                // (nur die pending Cell + ggf. Cancel-Button reagieren).
+                const clickable = isCellClickable(r, c) && (!pendingPick || isPending === true);
                 const isFrozenCell = cell.frozen && !cell.stuck;
                 const isStuckCell = cell.stuck;
                 const isShieldedCell = !!cell.shielded && !cell.stuck;
@@ -3280,13 +3320,15 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isSandLocked = sandTtl > 0;
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
-                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}`}
+                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
-                    background: isSwapSelected ? `${actionColor}66`
+                    background: isPending ? `${actionColor}88`
+                      : isSwapSelected ? `${actionColor}66`
                       : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}dd, ${team?.color ?? '#F59E0B'}aa)`
                       : team ? `linear-gradient(135deg, ${team.color}bb, ${team.color}77)` : 'rgba(255,255,255,0.04)',
-                    border: isSwapSelected ? `3px solid ${actionColor}`
+                    border: isPending ? `3px dashed ${actionColor}`
+                      : isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCandidate ? `2px solid #F59E0B`
                       : clickable ? `2px solid ${actionColor}` : team ? `1px solid ${team.color}44` : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -3294,15 +3336,19 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
                     opacity: clickable || isSwapSelected ? 1 : team ? 0.85 : 0.3,
                     transition: 'all 0.15s',
-                    boxShadow: isSwapSelected ? `0 0 14px ${actionColor}88`
+                    boxShadow: isPending ? `0 0 0 4px ${actionColor}66, 0 0 22px ${actionColor}aa`
+                      : isSwapSelected ? `0 0 14px ${actionColor}88`
                       : isStuckCandidate ? '0 0 10px #F59E0B88'
                       : isFrozenCell ? '0 0 8px rgba(147,210,255,0.5)'
                       : isMine && team ? `0 0 6px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`
                       : team ? `inset 0 1px 0 rgba(255,255,255,0.08)`
                       : clickable ? `0 0 8px ${actionColor}44` : 'none',
-                    animation: justStolen
-                      ? 'stealFlash 0.8s ease-out both'
+                    animation: isPending ? 'tccellPendingPulse 1.2s ease-in-out infinite'
+                      : justStolen ? 'stealFlash 0.8s ease-out both'
                       : tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,
+                    // Andere Cells gedimmt waehrend Pending-Pick aktiv ist, damit
+                    // der Fokus auf der Auswahl bleibt.
+                    ...(pendingPick && !isPending ? { opacity: team ? 0.55 : 0.22 } : {}),
                     position: 'relative' as const, overflow: 'visible' as const,
                   }}>
                     {isFrozenCell && (
@@ -3414,7 +3460,49 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               })
             )}
           </div>
-          <button onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); }} style={{
+
+          {/* Pending-Pick Confirm-/Cancel-Bar — verhindert Misstaps auf grossem Grid.
+              Erst Tap → Highlight, dann Bestaetigen (oder Anderes Feld). */}
+          {pendingPick && (
+            <div style={{
+              marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{
+                fontSize: 13, fontWeight: 800, color: '#e2e8f0', textAlign: 'center',
+                lineHeight: 1.3,
+              }}>
+                {pendingPick.kind === 'place'  ? (lang === 'de' ? 'Hier setzen?' : 'Place here?')
+                : pendingPick.kind === 'steal' ? (lang === 'de' ? 'Dieses Feld klauen?' : 'Steal this cell?')
+                : pendingPick.kind === 'ban'   ? (lang === 'de' ? 'Dieses Feld bannen?' : 'Ban this cell?')
+                : pendingPick.kind === 'shield'? (lang === 'de' ? 'Dieses Feld schützen?' : 'Shield this cell?')
+                :                                (lang === 'de' ? 'Dieses Feld stapeln?' : 'Stack this cell?')}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={cancelPendingPick} style={{
+                  flex: 1, padding: '12px 10px', borderRadius: 12,
+                  border: '1.5px solid rgba(148,163,184,0.4)',
+                  background: 'rgba(148,163,184,0.1)',
+                  color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 14, fontWeight: 800,
+                }}>
+                  ✕ {lang === 'de' ? 'Anderes Feld' : 'Other cell'}
+                </button>
+                <button onClick={confirmPendingPick} style={{
+                  flex: 1.4, padding: '12px 10px', borderRadius: 12,
+                  border: `2px solid ${actionColor}`,
+                  background: `linear-gradient(135deg, ${actionColor}, ${actionColor}cc)`,
+                  color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 16, fontWeight: 900,
+                  boxShadow: `0 4px 14px ${actionColor}55, 0 0 18px ${actionColor}44`,
+                  letterSpacing: '0.02em',
+                }}>
+                  ✓ {lang === 'de' ? 'Bestätigen' : 'Confirm'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); setPendingPick(null); }} style={{
             marginTop: 12, width: '100%', padding: '8px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
             color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,

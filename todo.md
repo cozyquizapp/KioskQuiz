@@ -70,27 +70,39 @@ Bei voller Grid: Range-Sieger bekommen Klau-Recht statt Setzen.
 
 ---
 
-### Erledigte Game-Design-Diskussionen (zur Referenz)
+## Erledigte Game-Design-Entscheidungen
 
-#### Klimakurve R1 → R4 (umgesetzt 2026-04-25)
+### Trinity-Mechanik (Stand 2026-04-25)
 
-**Vorher**: R4 entzieht Place/Bann/Schild und zeigt nur Tauschen+Stapeln. Bruch im Lernrhythmus.
+**Reduktion auf 3 Mechaniken**: Place / Steal / Stapel.
+Bann + Schild + Tauschen wurden gedroppt.
 
-**Jetzt**: additive Progression — jede Runde + 1 Werkzeug:
+**Klimakurve**:
 - R1: Place 1×
 - R2: + Klauen (max 2 pro Runde)
-- R3: + Bann + Schild (max 2 Schild pro Spiel)
-- R4: + Stapeln (Tauschen entfällt, Schild → Stapel als upgraded Defense mit +1 Punkt)
+- R3: + Stapeln (+1 Punkt, max 3 pro Spiel)
+- R4: identisch zu R3 (Long-Mode = mehr Fragen)
 
-**Tauschen** wurde gedroppt — Mechanik war nischig (eigenes ↔ Gegner-Feld), inhaltlich ähnlich
-zu Klauen, und R4 mit 5 Aktionen passt besser ohne sie.
+**Joker-Pattern erweitert**: 2x2 ODER 4-in-a-row → 1 Bonus-Feld (Cap 2 pro Spiel).
+
+**Backend-Cleanup-Status**: Frontend triggert SHIELD/SANDUHR/SWAP nicht mehr.
+Backend-Handler bleiben als Dead-Code für bestehende Cell-States (Legacy-Sessions
+mit shielded/banned Cells werden weiter visualisiert).
 
 ## Erledigt (zur Referenz)
 
-- 2026-04-25: ⚡ Blitz-Rechteck zentral entfernt
+- 2026-04-25: ⚡ Blitz-Rechteck zentral entfernt (Unicode statt Fluent-PNG)
 - 2026-04-25: Comeback-Bug — Legacy-Auto-Steal-Trigger entfernt
 - 2026-04-25: Jahreszahlen ohne Tausenderpunkt (Heuristik via `unit`)
 - 2026-04-25: CozyGuessr Team-Karte größer (260px → 380-620px clamp)
 - 2026-04-25: R4 Place erlaubt solange freie Felder
-- 2026-04-25: Beamer-Wrapper-Sicherheitsrand entfernt (zeichnete sich ab)
-- 2026-04-25: Klimakurve R1 → R4 — additive Progression, Tauschen gedroppt, Bann ab R4
+- 2026-04-25: Beamer-Wrapper-Sicherheitsrand entfernt
+- 2026-04-25: Klimakurve R1 → R4 — Trinity-Reduktion (Place/Steal/Stapel)
+- 2026-04-25: 4×1-Joker-Pattern zusätzlich zu 2×2
+- 2026-04-25: Stapel-Cap (max 3 pro Spiel)
+- 2026-04-25: Dummy-AI auf Trinity portiert
+- 2026-04-25: Comeback-Folie clipping gefixt (Größen reduziert)
+- 2026-04-25: CozyGuessr Pin-Cluster-Spread Floor reduziert (2.5° → 0.3°)
+- 2026-04-25: Spielende-Rankings als vertikale Tabelle
+- 2026-04-25: Phase-Descs + Big-Emoji auf Trinity konsistent
+- 2026-04-25: Dead-Code (alte R3/R4 Card-Blöcke + Buttons) gelöscht

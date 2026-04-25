@@ -282,7 +282,7 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
                 borderRadius: '50%',
                 background: '#fff',
                 backgroundImage: 'url(/logo.png)',
-                backgroundSize: '100%',
+                backgroundSize: '112%',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
                 border: `${isMini ? 2 : 3}px solid ${wolfColor}`,

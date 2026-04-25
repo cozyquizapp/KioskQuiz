@@ -1591,9 +1591,6 @@ function MuchoOptionsReveal({
         const t0 = timerEndsAt && timerDurationSec
           ? timerEndsAt - timerDurationSec * 1000
           : voters[0]?.submittedAt;
-        // Gewinnerteam-Frame: korrekte Option zusaetzlich mit Team-Farbe einrahmen.
-        // Gewinner = schnellster Voter auf der korrekten Option (voters[0]).
-        const winnerTeamColor = isCorrect && voters[0]?.team.color ? voters[0].team.color : null;
         return (
           // Wrapper: Card oben, Avatar-Reihe absolut darunter (sitzt auf der unteren Card-Linie)
           <div key={i} style={{ position: 'relative' }}>
@@ -1601,17 +1598,11 @@ function MuchoOptionsReveal({
               position: 'relative', overflow: 'hidden',
               borderRadius: 20, padding: '24px 28px',
               background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
-              // Gruener Innenrand bleibt fuer Korrektheits-Signal,
-              // aeusserer Ring in Team-Farbe via box-shadow spread.
               border: isCorrect ? '3px solid #22C55E'
                 : isWrong ? '2px solid rgba(255,255,255,0.06)'
                 : `2px solid ${optColor}55`,
-              boxShadow: isCorrect
-                ? (winnerTeamColor
-                    ? `0 0 0 5px ${winnerTeamColor}, 0 0 28px ${winnerTeamColor}66, 0 0 60px ${winnerTeamColor}33, 0 0 44px rgba(34,197,94,0.32)`
-                    : '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)')
+              boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
                 : '0 4px 16px rgba(0,0,0,0.3)',
-              margin: isCorrect && winnerTeamColor ? '4px' : 0,
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect
@@ -6472,13 +6463,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
             // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
             const expandedLayout = zvzStep >= 1;
-            // Gewinnerteam-Frame: korrekte Option zusaetzlich mit Team-Farbe einrahmen,
-            // damit visuell klar wird "auf dieser Option hat Team X gewonnen".
-            // Gruener Innenrand bleibt fuer Korrektheits-Signal.
-            const zvzWinnerTeam = zvzLocked && s.correctTeamId
-              ? s.teams.find(t => t.id === s.correctTeamId)
-              : null;
-            const winnerTeamColor = zvzWinnerTeam?.color ?? null;
             return (
             <div style={{
               display: 'grid',
@@ -6521,16 +6505,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       position: 'relative', overflow: 'hidden',
                       borderRadius: 20, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                      // Gewinner-Card: gruener Innenrand bleibt (Korrektheits-Signal),
-                      // PLUS aeusserer Team-Farben-Ring via box-shadow inset+spread.
                       border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
                       boxShadow: isCorrect
-                        ? (winnerTeamColor
-                            ? `0 0 0 5px ${winnerTeamColor}, 0 0 28px ${winnerTeamColor}66, 0 0 60px ${winnerTeamColor}33, 0 0 40px rgba(34,197,94,0.25)`
-                            : '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)')
+                        ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                         : `0 4px 16px rgba(0,0,0,0.3)`,
-                      // Etwas Abstand zur Nachbar-Card, damit der 5px Ring nicht abgeschnitten wirkt.
-                      margin: isCorrect && winnerTeamColor ? '4px' : 0,
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                       animation: isCorrect
@@ -7488,23 +7466,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               );
             }
 
-            // Single-winner Banner — borderless (User-Feedback: Rechteck weg)
+            // Single-winner Banner — Team-Farben-Card (User-Feedback:
+            // Gewinner-Card unten in Team-Farbe statt nur am Loesungsfeld oben).
             return (
               <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28,
-                padding: '12px 24px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 'clamp(20px, 2.4vw, 36px)',
+                padding: 'clamp(16px, 2vh, 26px) clamp(24px, 3vw, 42px)',
                 width: '100%', maxWidth: 1400,
+                borderRadius: 28,
+                background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
+                border: `3px solid ${team!.color}88`,
+                boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
                 animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 28px ${team!.color}66`,
+                  boxShadow: `0 0 28px ${team!.color}77`,
                   animation: `celebShake 0.6s ease ${avatarDelay}s both`,
                 }} />
                 <div style={{ minWidth: 0 }}>
                   <div title={team!.name} style={{
                     fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
-                    textShadow: `0 0 30px ${team!.color}44`,
+                    textShadow: `0 0 30px ${team!.color}55`,
                     maxWidth: '100%',
                     padding: '0 0.3em',
                     whiteSpace: 'nowrap',
@@ -7512,7 +7496,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {truncName(team!.name, 20)}
                   </div>
                   <div style={{
-                    color: '#94a3b8', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6, lineHeight: 1.2,
+                    color: '#cbd5e1', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6, lineHeight: 1.2,
                   }}>
                     {winMsg}
                   </div>
@@ -7934,8 +7918,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(24px, 4vh, 48px) clamp(32px, 5vw, 72px)', gap: 'clamp(18px, 2.4vh, 32px)',
+        padding: 'clamp(16px, 2.4vh, 36px) clamp(28px, 3.5vw, 56px)',
+        gap: 'clamp(12px, 1.6vh, 22px)',
         position: 'relative', overflow: 'hidden',
+        minHeight: 0,
       }}>
         <Fireflies color="#FBBF2455" />
         {/* Header: Game-Name + Runden-Indikator */}
@@ -8058,8 +8044,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   transition: 'opacity 0.4s ease, filter 0.4s ease',
                 }}>
                   <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
-                    border: `3px solid ${answered ? tm.color : 'rgba(148,163,184,0.4)'}`,
-                    boxShadow: answered ? `0 0 22px ${tm.color}66` : 'none',
+                    // Kein Doppel-Rand: das Avatar-Artwork hat bereits einen
+                    // farbigen Kapuzen-Rim. Status-Signal nur ueber Glow.
+                    boxShadow: answered ? `0 0 22px ${tm.color}88` : '0 0 14px rgba(148,163,184,0.18)',
                   }} />
                   {answered && (
                     <div style={{
@@ -8226,7 +8213,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <div style={{ position: 'relative' }}>
                   <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
-                    border: `3px solid ${tm.color}`,
+                    // Kein CSS-Border — Avatar hat eigenen Rim. Status via filter+glow.
+                    boxShadow: correct ? `0 0 18px ${tm.color}66` : 'none',
                     filter: correct ? 'none' : 'grayscale(0.35)',
                     opacity: correct ? 1 : 0.75,
                   }} />
@@ -8273,7 +8261,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
-      padding: '48px 64px', gap: 24,
+      padding: 'clamp(20px, 2.6vh, 40px) clamp(32px, 4vw, 64px)',
+      gap: 'clamp(12px, 1.8vh, 22px)',
+      minHeight: 0,
       animation: bamActive ? 'comebackShake 0.65s ease 0.1s both' : undefined,
     }}>
       <Fireflies color={`${teamColor}55`} />
@@ -8374,15 +8364,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   <div key={tm.id} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                   }}>
-                    <div style={{
-                      width: 'clamp(140px, 14vw, 200px)', height: 'clamp(140px, 14vw, 200px)',
-                      borderRadius: '50%',
-                      background: `${tm.color}20`, border: `4px solid ${tm.color}aa`,
-                      boxShadow: `0 0 34px ${tm.color}66`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(100px, 10vw, 150px)'} />
-                    </div>
+                    {/* Avatar direkt mit Glow — kein Halo-Wrapper, der einen
+                        zweiten Ring um den ohnehin gerimten Avatar erzeugt. */}
+                    <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(120px, 12vw, 180px)'} style={{
+                      boxShadow: `0 0 34px ${tm.color}77, 0 0 80px ${tm.color}33`,
+                    }} />
                     <div title={tm.name} style={{
                       fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: tm.color,
                       textShadow: `0 0 22px ${tm.color}55`,
@@ -8406,17 +8392,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </>
           ) : team && (
             <>
-              <div style={{
-                width: 'clamp(160px, 16vw, 240px)', height: 'clamp(160px, 16vw, 240px)',
-                borderRadius: '50%',
-                background: `${teamColor}20`, border: `4px solid ${teamColor}aa`,
-                boxShadow: `0 0 42px ${teamColor}66`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              {/* Avatar direkt mit Pulse-Glow — kein Halo-Wrapper. */}
+              <QQTeamAvatar avatarId={team.avatarId} size={'clamp(150px, 15vw, 220px)'} style={{
+                boxShadow: `0 0 42px ${teamColor}77, 0 0 100px ${teamColor}33`,
                 animation: 'activeTeamGlow 2s ease-in-out infinite',
-                ['--team-color' as string]: `${teamColor}55`,
-              }}>
-                <QQTeamAvatar avatarId={team.avatarId} size={'clamp(116px, 11.6vw, 172px)'} />
-              </div>
+                ['--team-color' as any]: `${teamColor}55`,
+              }} />
               <div title={team.name} style={{
                 fontSize: 'clamp(32px, 4.4vw, 62px)', fontWeight: 900, color: teamColor,
                 textShadow: `0 0 28px ${teamColor}55`,

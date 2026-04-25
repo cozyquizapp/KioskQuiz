@@ -162,11 +162,16 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   // Bei mehreren Gewinnern nach Antwortzeit sortieren (schnellstes Team zuerst).
   // Gilt für MUCHO (mehrere richtige Antworten) UND ZEHN_VON_ZEHN (Tiebreak bei
   // gleichem Bet-Max auf die richtige Option).
-  const sortedWinners = [...result.winnerTeamIds].sort((a, b) => {
-    const aAt = room.answers.find(x => x.teamId === a)?.submittedAt ?? Infinity;
-    const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
-    return aAt - bAt;
-  });
+  // EXKLUSION SCHAETZCHEN: dort ist die Distanz primaer entscheidend, nicht
+  // Speed — `evalSchaetzchen` liefert die Liste schon korrekt sortiert
+  // (Closest-Tied-Teams nach Speed, danach Secondary-in-Range).
+  const sortedWinners = q.category === 'SCHAETZCHEN'
+    ? [...result.winnerTeamIds]
+    : [...result.winnerTeamIds].sort((a, b) => {
+        const aAt = room.answers.find(x => x.teamId === a)?.submittedAt ?? Infinity;
+        const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
+        return aAt - bAt;
+      });
 
   // Snapshot ALLER Winner für Summary-Stats — _placementQueue wird später durch
   // Platzierungen leergeshiftet, daher hier festhalten. Reihenfolge bleibt

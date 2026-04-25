@@ -3297,8 +3297,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             SCHAETZCHEN: {
               emoji: catEmoji, title: { de: 'Schätzchen', en: 'Close Call' },
               lines: {
-                de: ['Schätzt am nächsten dran — und gewinnt das Feld.'],
-                en: ['Guess closest — and win the tile.'],
+                de: ['Schätzt am nächsten dran — und gewinnt 1 Feld.', '🎯 Knapp dran (in Range)? Bekommt auch 1 Feld!'],
+                en: ['Guess closest — and win 1 tile.', '🎯 Close to target? Also wins 1 tile!'],
               },
             },
             MUCHO: {
@@ -5357,6 +5357,10 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             const rank = idx + 1;
             const isVisible = idx >= revealedMinIdx;
             const isTop = rank === 1;
+            // Cozy-Range: 2nd-Place ist Co-Winner wenn er in `currentQuestionWinners`
+            // ist (Backend hat das beim eval bestimmt). Visuell als '+1 Feld'-Pille
+            // markiert, damit klar ist 'der hat auch was bekommen'.
+            const isInRangeWinner = !isTop && (s.currentQuestionWinners ?? []).includes(r.teamId);
             const rankGradient = rank === 1
               ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
               : rank === 2
@@ -5376,17 +5380,23 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   borderRadius: 18,
                   background: isTop
                     ? `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}08)`
-                    : 'rgba(148,163,184,0.06)',
+                    : isInRangeWinner
+                      ? `linear-gradient(135deg, ${r.team.color}1a, ${r.team.color}05)`
+                      : 'rgba(148,163,184,0.06)',
                   border: isTop
                     ? `2px solid ${r.team.color}66`
-                    : '2px solid rgba(148,163,184,0.15)',
+                    : isInRangeWinner
+                      ? `2px solid ${r.team.color}55`
+                      : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
                     ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(72px, 9vh, 110px)',
-                  boxShadow: isTop ? `0 0 28px ${r.team.color}33` : 'none',
+                  boxShadow: isTop
+                    ? `0 0 28px ${r.team.color}33`
+                    : isInRangeWinner ? `0 0 18px ${r.team.color}22` : 'none',
                 }}
               >
                 <div style={{
@@ -5409,11 +5419,28 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{
-                    fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 800,
-                    color: isTop ? r.team.color : '#cbd5e1',
-                    lineHeight: 1.1,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{r.team.name}</div>
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <span style={{
+                      fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 800,
+                      color: isTop || isInRangeWinner ? r.team.color : '#cbd5e1',
+                      lineHeight: 1.1,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{r.team.name}</span>
+                    {isInRangeWinner && (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '2px 8px', borderRadius: 999,
+                        background: `${r.team.color}26`,
+                        border: `1.5px solid ${r.team.color}66`,
+                        fontSize: 'clamp(11px, 1.1vw, 15px)', fontWeight: 900,
+                        color: r.team.color,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        🎯 {lang === 'en' ? 'in range · +1' : 'in Range · +1'}
+                      </span>
+                    )}
+                  </div>
                   <div style={{
                     fontSize: 'clamp(24px, 2.6vw, 40px)', fontWeight: 900,
                     color: isTop ? '#FDE68A' : '#f1f5f9', marginTop: 4,

@@ -841,28 +841,56 @@ function evalAllIn(room: QQRoomState, q: QQQuestion): QQEvalResult {
   return { winnerTeamIds: winners, earnedPoints };
 }
 
-// ── SCHAETZCHEN (closest numeric estimate) ────────────────────────────────────
+// ── SCHAETZCHEN (closest numeric estimate + Cozy-Range-Bonus) ────────────────
+// Adaptive %-Range nach Wertgröße — vermeidet, dass 5% bei 24 Stück (=±1.2)
+// zu eng oder bei 1 Mio Einwohnern (=±50k) zu großzügig wird.
+function schaetzchenRangeAbs(targetValue: number): number {
+  const abs = Math.abs(targetValue);
+  if (abs < 100)        return abs * 0.20;
+  if (abs < 1000)       return abs * 0.10;
+  if (abs < 10000)      return abs * 0.07;
+  if (abs < 1_000_000)  return abs * 0.05;
+  return abs * 0.03;
+}
+
 function evalSchaetzchen(room: QQRoomState, q: QQQuestion): QQEvalResult {
   if (q.targetValue == null) return { winnerTeamIds: [], earnedPoints: {} };
 
-  let minDist = Infinity;
-  const distMap: Array<{ teamId: string; distance: number }> = [];
-
+  // Distanz pro Team berechnen, ungueltige Antworten ueberspringen.
+  const distMap: Array<{ teamId: string; distance: number; submittedAt: number }> = [];
   for (const ans of room.answers) {
     const parsed = Number(ans.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
     if (Number.isNaN(parsed)) continue;
     const distance = Math.abs(parsed - q.targetValue);
-    distMap.push({ teamId: ans.teamId, distance });
-    if (distance < minDist) minDist = distance;
+    distMap.push({ teamId: ans.teamId, distance, submittedAt: ans.submittedAt });
   }
 
   if (distMap.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
 
-  // All teams at minimum distance win (tie handling)
-  const winners = distMap
+  // Sortiere primaer nach Distanz, sekundaer nach Antwortzeit (schnellstes
+  // Team zuerst bei Tie).
+  distMap.sort((a, b) => a.distance - b.distance || a.submittedAt - b.submittedAt);
+  const minDist = distMap[0].distance;
+
+  // Closest-Winner: alle Teams mit minimaler Distanz (echte Distanz-Ties).
+  const closestWinners = distMap
     .filter(d => d.distance === minDist)
     .map(d => d.teamId);
 
+  // Secondary-Winner ('Cozy-Range'): das naechst-naechste Team (also nach den
+  // Closest-Tied-Teams), wenn es innerhalb der adaptiven Range liegt. Nur 1
+  // Team — vermeidet Grid-Inflation. Closest-Trophy bleibt beim Closest.
+  const rangeAbs = schaetzchenRangeAbs(q.targetValue);
+  let secondaryWinner: string | null = null;
+  for (const d of distMap) {
+    if (closestWinners.includes(d.teamId)) continue;
+    if (d.distance > rangeAbs) break; // nicht in Range, Sortierung garantiert dass alle danach noch weiter weg sind
+    secondaryWinner = d.teamId;
+    break;
+  }
+
+  const winners = [...closestWinners];
+  if (secondaryWinner) winners.push(secondaryWinner);
   return { winnerTeamIds: winners, earnedPoints: {} };
 }
 

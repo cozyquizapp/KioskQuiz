@@ -3223,10 +3223,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         </div>
       )}
 
-      {/* Phase 3/4 FREE: action menu (Plan v2 — additive Klimakurve)
-          R3: PLACE (wenn frei) / STEAL / BANN / SCHILD (max 2 pro Spiel)
-          R4: PLACE (wenn frei) / STEAL / BANN / STAPEL (Schild → Stapel als
-              upgraded Defense, Tauschen entfernt) */}
+      {/* Phase 3/4 FREE: action menu — saubere Trinity Place/Steal/Stapel.
+          Bann, Schild, Tauschen wurden gedroppt zugunsten klarerer Klimakurve. */}
       {showFreeMenu && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
           {hasFreeCell && (
@@ -3237,7 +3235,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           <CozyBtn color="#EF4444" onClick={() => chooseFreeAction('STEAL')}>
             {lang === 'de' ? '⚡ Feld klauen' : '⚡ Steal a cell'}
           </CozyBtn>
-          {phase >= 3 && hasSandTarget && (
+          {/* Bann + Schild + Tauschen entfernt — Trinity Place/Steal/Stapel
+              ist die finale Mechanik-Auswahl. */}
+          {false && phase >= 3 && hasSandTarget && (
             <CozyBtn color="#A855F7" onClick={() => chooseFreeAction('SANDUHR')}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="marker-sanduhr" size={26} alt="Bann" />
@@ -3245,7 +3245,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </span>
             </CozyBtn>
           )}
-          {phase === 3 && shieldsLeft > 0 && hasOwnCell && (
+          {false && phase === 3 && shieldsLeft > 0 && hasOwnCell && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('SHIELD')}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="marker-shield" size={26} alt="Schild" />
@@ -3255,8 +3255,6 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </span>
             </CozyBtn>
           )}
-          {/* Tauschen entfernt — Mechanik wurde gedroppt zugunsten der
-              additiven Klimakurve. Stapel ist die R4-Defense (=Schild +1 Pkt). */}
           {false && phase >= 4 && (
             <CozyBtn color="#8B5CF6" onClick={() => chooseFreeAction('SWAP')}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -3265,9 +3263,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </span>
             </CozyBtn>
           )}
-          {phase >= 4 && hasStapable && (
-            <CozyBtn color="#F59E0B" onClick={() => chooseFreeAction('STAPEL')}>
-              {lang === 'de' ? '📌 Stapeln!' : '📌 Stack!'}
+          {phase >= 3 && hasStapable && (
+            <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
+              {lang === 'de' ? '📌 Stapeln (+1 Punkt, dauerhaft)' : '📌 Stack (+1 point, permanent)'}
             </CozyBtn>
           )}
         </div>

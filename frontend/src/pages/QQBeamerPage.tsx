@@ -1226,13 +1226,13 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     ? [
         'Jede Runde bringt etwas Neues:',
         'Runde 2: Klauen',
-        'Finale (Runde 3): Bann (3 Fragen) & Schild (max 2, bis Spielende)',
+        'Finale (Runde 3): Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
       ]
     : [
         'Jede Runde bringt etwas Neues:',
         'Runde 2: Klauen',
-        'Runde 3: Bann (3 Fragen) & Schild (max 2, bis Spielende)',
-        'Finale: Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
+        'Runde 3: Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
+        'Finale: Stapeln bleibt — mehr Zeit, mehr Fragen',
       ];
   return [
     {
@@ -1259,18 +1259,10 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: '#F59E0B',
       lines: abilityLines,
       showTree: true,
-      abilities: totalPhases === 3
-        ? [
-            { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
-            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',   accent: '#A855F7' },
-            { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild', accent: '#06B6D4' },
-          ]
-        : [
-            { emoji: '⚡', label: 'Klauen',   accent: '#EF4444' },
-            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',    accent: '#A855F7' },
-            { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild',  accent: '#06B6D4' },
-            { emoji: '📌', label: 'Stapeln',  accent: '#F59E0B' },
-          ],
+      abilities: [
+        { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
+        { emoji: '📌', label: 'Stapeln', accent: '#06B6D4' },
+      ],
     },
     {
       icon: '🔄',
@@ -1290,13 +1282,13 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     ? [
         'Each round adds something:',
         'Round 2: Steal',
-        'Final (Round 3): Ban (3 questions) & Shield (max 2, till end of game)',
+        'Final (Round 3): Stack (own tile +1 point, permanently safe)',
       ]
     : [
         'Each round adds something:',
         'Round 2: Steal',
-        'Round 3: Ban (3 questions) & Shield (max 2, till end of game)',
-        'Final: Stack (own tile +1 point, permanently safe)',
+        'Round 3: Stack (own tile +1 point, permanently safe)',
+        'Final: Stack stays — more time, more questions',
       ];
   return [
     {
@@ -1323,19 +1315,10 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: '#F59E0B',
       lines: abilityLines,
       showTree: true,
-      abilities: totalPhases === 3
-        ? [
-            { emoji: '⚡', label: 'Steal',  accent: '#EF4444' },
-            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Ban',    accent: '#A855F7' },
-            { slug: 'marker-shield',  emoji: '🛡️', label: 'Shield', accent: '#06B6D4' },
-          ]
-        : [
-            { emoji: '⚡', label: 'Steal',  accent: '#EF4444' },
-            { slug: 'marker-sanduhr', emoji: '⏳', label: 'Ban',    accent: '#A855F7' },
-            { slug: 'marker-shield',  emoji: '🛡️', label: 'Shield', accent: '#06B6D4' },
-            { slug: 'marker-swap',    emoji: '🔄', label: 'Swap',  accent: '#8B5CF6' },
-            { emoji: '📌', label: 'Stack', accent: '#F59E0B' },
-          ],
+      abilities: [
+        { emoji: '⚡', label: 'Steal', accent: '#EF4444' },
+        { emoji: '📌', label: 'Stack', accent: '#06B6D4' },
+      ],
     },
     {
       icon: '🔄',
@@ -2809,14 +2792,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: ['Per correct answer choose one action:', 'Stealing now possible!'],
     },
     3: {
-      emoji: '⏳',
-      de: ['Pro richtige Antwort wählt eine Aktion:', 'Bann & Schild freigeschaltet!'],
-      en: ['Per correct answer choose one action:', 'Ban & Shield unlocked!'],
-    },
-    4: {
       emoji: '📌',
       de: ['Pro richtige Antwort wählt eine Aktion:', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!'],
       en: ['Per correct answer choose one action:', 'Stack unlocked — lock your tile + 1 extra point!'],
+    },
+    4: {
+      emoji: '📌',
+      de: ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
+      en: ['Per correct answer choose one action:', 'Final round — everything stays available!'],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
@@ -3191,26 +3174,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
                         accent: '#F59E0B' },
                     ]
-                  : ph === 3
-                  ? [
-                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
-                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
-                      { count: 1, slug: 'marker-sanduhr', label: lang === 'en' ? 'Ban' : 'Bann',
-                        limit: lang === 'en' ? '3 questions locked' : '3 Fragen gesperrt',
-                        accent: '#A855F7' },
-                      { count: 1, slug: 'marker-shield', label: lang === 'en' ? 'Shield' : 'Schild',
-                        limit: lang === 'en' ? 'max 2 per game' : 'max 2 pro Spiel',
-                        accent: '#06B6D4' },
-                    ]
-                  : ph === 4
+                  : (ph === 3 || ph === 4)
                   ? [
                       { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
                         limit: lang === 'en' ? 'while free cells' : 'wenn Feld frei',
                         accent: color },
                       { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
-                      { count: 1, slug: 'marker-sanduhr', label: lang === 'en' ? 'Ban' : 'Bann',
-                        limit: lang === 'en' ? '3 questions locked' : '3 Fragen gesperrt',
-                        accent: '#A855F7' },
                       { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',
                         limit: lang === 'en' ? '+1 point · permanent' : '+1 Punkt · dauerhaft',
                         accent: '#06B6D4' },

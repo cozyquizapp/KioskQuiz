@@ -1478,7 +1478,7 @@ export function qqChooseFreeAction(
     room.swapFirstCell = null;
 
   } else if (action === 'STAPEL') {
-    if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Phase 4.');
+    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Runde 3.');
     const hasOwn = room.grid.some(row => row.some(cell =>
       cell.ownerId === teamId && !cell.stuck));
     if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Kein eigenes Feld zum Stapeln.');

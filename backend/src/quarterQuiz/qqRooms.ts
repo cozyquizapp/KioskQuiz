@@ -1442,10 +1442,8 @@ export function qqChooseFreeAction(
 
   } else if (action === 'PLACE') {
     // R1/R2: Default-PLACE laeuft via PLACE_1/PLACE_2-Action.
-    // R3: PLACE bleibt erlaubt SOLANGE freie Felder existieren — sobald Grid
-    //     voll ist, koennen Teams nur noch klauen/bannen/schuetzen.
-    // R4: Setzen komplett zu (Felder kommen nur noch via Tausch/Stapel).
-    if (room.gamePhaseIndex >= 4) throw new QQError('WRONG_PHASE', 'In der letzten Runde gibt es keine Platzierung mehr.');
+    // R3+R4: PLACE bleibt erlaubt SOLANGE freie Felder existieren — sobald Grid
+    //        voll ist, koennen Teams nur noch klauen/spezial-Aktionen nutzen.
     if (!hasFreeCell) throw new QQError('NO_FREE_CELL', 'Keine freien Felder mehr.');
     room.pendingAction = 'PLACE_2';
     room.teamPhaseStats[teamId].placementsLeft = 2;

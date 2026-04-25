@@ -854,11 +854,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       fontFamily: fontFam,
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
-      // Fixer Sicherheits-Rand außen — Inhalt kommt nicht an die Kante,
-      // alle inneren Views (flex: 1) nutzen aber den Bereich darin voll.
-      // Position-fixed Overlays (Welcome, Rules, CHEESE-Bg) bleiben
-      // weiterhin edge-to-edge.
-      padding: 'clamp(14px, 1.6vh, 28px) clamp(18px, 1.8vw, 32px)',
+      // Kein Wrapper-Padding — der eingebaute Sicherheitsrand zeichnete
+      // sich optisch sichtbar ab. Inneres Padding handhaben die Views selber.
       transition: 'background 0.8s ease',
     }}>
       {/* CSS keyframes */}
@@ -3208,6 +3205,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ]
                   : ph === 4
                   ? [
+                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
+                        limit: lang === 'en' ? 'while free cells' : 'wenn Feld frei',
+                        accent: color },
                       { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
                       { count: 1, slug: 'marker-swap', label: lang === 'en' ? 'Swap' : 'Tauschen', accent: '#8B5CF6' },
                       { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',

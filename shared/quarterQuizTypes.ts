@@ -620,6 +620,8 @@ export interface QQStateUpdate {
   // bei ≥2 Führenden → genau 1 Feld von jedem.
   comebackStealTargets: string[];
   comebackStealsDone: string[];        // bereits beklaute Leader-Teams
+  /** True nach jedem einzelnen Comeback-Klau bis Moderator Space drueckt. */
+  comebackStealPaused?: boolean;
   /** Higher/Lower-Mini-Game-State. Null = nicht aktiv bzw. Comeback ohne H/L. */
   comebackHL: QQComebackHLState | null;
   /** Moderator-einstellbarer Timer pro H/L-Runde in Sekunden (Default 10s). */

@@ -2832,7 +2832,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   // auf grossem Grid (8x8). Greift fuer alle Single-Cell-Aktionen.
   type PendingKind = 'place' | 'steal' | 'ban' | 'shield' | 'stapel';
   const [pendingPick, setPendingPick] = useState<{ r: number; c: number; kind: PendingKind } | null>(null);
-  const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
+  // Comeback-Steal-Pause: pendingFor=null, comebackTeamId zeigt aber das aktive Team.
+  // Damit andere Teams nicht „Spielfeld" sehen (so als waere die Klau-Phase fertig),
+  // sondern weiterhin das klauende Team mit „wartet auf Moderator".
+  const isComebackStealActive =
+    !!s.comebackHL && s.comebackHL.phase === 'steal' && !!s.comebackTeamId;
+  const pendingTeam = s.teams.find(t => t.id === s.pendingFor)
+    ?? (isComebackStealActive ? s.teams.find(t => t.id === s.comebackTeamId) : undefined);
+  const isComebackStealPause = isComebackStealActive && !!s.comebackStealPaused && !s.pendingFor;
 
   const pa = s.pendingAction;
   const phase = s.gamePhaseIndex;
@@ -3055,7 +3062,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               }} />
               <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
               <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, fontWeight: 600 }}>
-                {lang === 'de' ? 'wählt ein Feld' : 'is choosing a field'}<AnimatedDots />
+                {isComebackStealPause
+                  ? (pendingTeam.id === myTeamId
+                      ? (lang === 'de' ? '✓ Geklaut — warte auf Moderator' : '✓ Stolen — waiting for moderator')
+                      : (lang === 'de' ? 'wartet auf Moderator' : 'waiting for moderator'))
+                  : (lang === 'de' ? 'wählt ein Feld' : 'is choosing a field')}
+                <AnimatedDots />
               </div>
             </>
           ) : (

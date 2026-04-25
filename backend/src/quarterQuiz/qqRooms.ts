@@ -135,6 +135,10 @@ export interface QQRoomState {
   // (alle Felder geklaut ODER Skip) wird das Feld gelöscht.
   _comebackGridSnapshot?: QQGrid;
   _comebackStatsSnapshot?: { placementsLeft: number };
+  // Comeback-Steal-Pause: nach jedem einzelnen Klau wird auf Moderator-Space gewartet,
+  // bevor das Comeback-Team das naechste Feld klauen darf bzw. das naechste Team
+  // an die Reihe kommt. Solange dieses Flag true ist: pendingFor=null, kein Klick.
+  _comebackStealPaused?: boolean;
   // Sound. `globalMuted` wird im Snapshot als (musicMuted && sfxMuted) abgeleitet
   // und ist daher kein eigener State-Slot mehr.
   musicMuted: boolean;
@@ -2129,27 +2133,48 @@ export function qqComebackStealStartNext(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-/** Nach einem Klau: prueft ob das aktuelle Team fertig ist, dann naechster
- *  Stealer oder Finale. Auch Leader-Recompute. */
+/** Nach einem Klau: dekrementiert Remaining + setzt Pause. Der Moderator muss
+ *  Space druecken (qqNextQuestion → qqComebackStealResume), damit das naechste
+ *  Feld geklaut werden kann bzw. das naechste Team dran kommt. */
 export function qqComebackStealAfterOne(room: QQRoomState): void {
   const hl = room.comebackHL;
   if (!hl || !hl.currentStealer) return;
   hl.currentStealerRemaining = Math.max(0, hl.currentStealerRemaining - 1);
   // placementsLeft wurde vom Caller (qqSteal) bereits dekrementiert.
-  if (hl.currentStealerRemaining === 0) {
-    // Team fertig → naechstes
+  // Pause: Team kann nicht weiterklicken, Moderator muss bestaetigen.
+  room._comebackStealPaused = true;
+  room.pendingFor = null;
+  room.lastActivityAt = Date.now();
+}
+
+/** Wird vom Moderator-Space (qqNextQuestion) ausgeloest, wenn der Steal-Flow
+ *  gerade pausiert. Holt entweder das naechste Feld fuer den selben Stealer,
+ *  springt zum naechsten Team in der Queue oder beendet das Comeback. */
+export function qqComebackStealResume(room: QQRoomState): void {
+  const hl = room.comebackHL;
+  if (!hl || !hl.currentStealer) {
+    delete room._comebackStealPaused;
+    return;
+  }
+  delete room._comebackStealPaused;
+
+  if (hl.currentStealerRemaining <= 0) {
     qqComebackStealStartNext(room);
     return;
   }
-  // Team klaut weiter: Recompute Leaders, da nach Klau der #1 anders sein kann.
+  // Team klaut weiter: Leader-Recompute, weil sich Punktstand veraendert hat.
   const leaders = qqComebackComputeLeaders(room, hl.teamIds);
   room.comebackStealTargets = leaders;
   room.comebackStealsDone = [];
   if (leaders.length === 0) {
-    // Keine Leader mehr (z.B. alle bei 0) → naechstes Team
     qqComebackStealStartNext(room);
     return;
   }
+  // pendingFor zurueck auf den aktuellen Stealer, damit die Klau-Klicks wieder
+  // angenommen werden.
+  room.pendingFor    = hl.currentStealer;
+  room.pendingAction = 'COMEBACK';
+  room.phase         = 'PLACEMENT';
   room.lastActivityAt = Date.now();
 }
 
@@ -2163,6 +2188,7 @@ export function qqComebackFinishAllAndGoToFinale(room: QQRoomState): void {
   room.comebackStealsDone   = [];
   room.pendingFor        = null;
   room.pendingAction     = null;
+  delete room._comebackStealPaused;
   qqBeginPhase(room, finalPhase);
 }
 
@@ -2227,12 +2253,17 @@ export function qqApplyComebackChoice(
  *  Auto-Steal-Mechanik heißt Undo: alle in diesem Zug geklauten Felder
  *  zurückgeben und dem Team erneut die Auswahl geben. */
 export function qqUndoComebackChoice(room: QQRoomState, teamId: string): void {
+  // Waehrend der Steal-Pause ist pendingFor=null → trotzdem Undo zulassen,
+  // wenn das Team mit dem Comeback-Team uebereinstimmt.
+  const isPausedForTeam = !!room._comebackStealPaused && room.comebackTeamId === teamId;
   if (room.phase !== 'PLACEMENT' || room.pendingAction !== 'COMEBACK') {
     throw new QQError('INVALID_STATE', 'Comeback kann jetzt nicht zurückgenommen werden.');
   }
-  if (room.pendingFor !== teamId) {
+  if (room.pendingFor !== teamId && !isPausedForTeam) {
     throw new QQError('NOT_YOUR_TURN', 'Nur das Comeback-Team kann zurücknehmen.');
   }
+  // Pause beim Undo aufheben: Snapshot-Restore setzt eh die ganze Comeback-Phase neu auf.
+  delete room._comebackStealPaused;
   // SWAP_2 already picked first cell?
   if (room.comebackAction === 'SWAP_2' && room.swapFirstCell) {
     room.swapFirstCell = null; // just clear partial swap, let them re-pick within same action
@@ -2288,6 +2319,7 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.comebackStealTargets = [];
   room.comebackStealsDone   = [];
   room.comebackHL      = null;
+  delete room._comebackStealPaused;
   room.swapFirstCell   = null;
   for (const fc of room.frozenCells) {
     const cell = room.grid[fc.row]?.[fc.col];
@@ -2311,6 +2343,13 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
 }
 
 export function qqNextQuestion(room: QQRoomState): void {
+  // Comeback-Steal-Pause: zwischen einzelnen Klau-Aktionen wartet das Spiel auf
+  // Moderator-Space. Hier weiter zum naechsten Steal/Team — ohne andere Logik.
+  if (room._comebackStealPaused) {
+    qqComebackStealResume(room);
+    return;
+  }
+
   // Double-Press-Guard: Wenn der Moderator Space/„Nächste Frage" doppelt drückt,
   // darf der 2. Call nicht ein zweites Mal Comeback triggern. Phase ist nach dem
   // 1. Call bereits COMEBACK_CHOICE / PHASE_INTRO / GAME_OVER — in diesen Zuständen
@@ -2561,6 +2600,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackAction:   room.comebackAction,
     comebackStealTargets: room.comebackStealTargets ?? [],
     comebackStealsDone:   room.comebackStealsDone ?? [],
+    comebackStealPaused:  !!room._comebackStealPaused,
     comebackHL:           room.comebackHL ?? null,
     comebackHLTimerSec:   room.comebackHLTimerSec ?? 10,
     swapFirstCell:    room.swapFirstCell

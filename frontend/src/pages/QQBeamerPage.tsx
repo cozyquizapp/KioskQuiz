@@ -7751,8 +7751,16 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     return () => clearTimeout(t);
   }, [s.lastPlacedCell?.row, s.lastPlacedCell?.col, s.lastPlacedCell?.teamId]);
 
-  // Aufloesungsreihenfolge: Flash > Sticky Placer > pendingFor
-  const activeTeamId = flashCell?.teamId ?? stickyPlacer ?? s.pendingFor;
+  // Aufloesungsreihenfolge: Flash > Sticky Placer > pendingFor.
+  // Comeback-Steal-Pause: pendingFor ist null, also Fallback auf comebackTeamId,
+  // damit das aktive Team in der ScoreBar markiert bleibt waehrend wir auf
+  // Moderator-Space warten.
+  const isComebackStealActive =
+    !!s.comebackHL && s.comebackHL.phase === 'steal' && !!s.comebackTeamId;
+  const activeTeamId = flashCell?.teamId
+    ?? stickyPlacer
+    ?? s.pendingFor
+    ?? (isComebackStealActive ? s.comebackTeamId : null);
   const team = s.teams.find(tm => tm.id === activeTeamId);
   const teamColor = team?.color ?? '#94a3b8';
 
@@ -7903,6 +7911,9 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               if (!team) return undefined;
               // Comeback-Klau-Phase: expliziter Label mit „Mehr oder Weniger"-Kontext.
               if (s.comebackHL && s.comebackHL.phase === 'steal' && s.comebackHL.currentStealer === team.id) {
+                if (s.comebackStealPaused) {
+                  return lang === 'en' ? '✓ Stolen — press Space' : '✓ Geklaut — Weiter mit Space';
+                }
                 return lang === 'en' ? '⚡ Comeback Steal' : '⚡ Comeback-Klau';
               }
               return actionVerb(s.pendingAction, lang);
@@ -7914,6 +7925,16 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
                 const remaining = s.comebackHL.currentStealerRemaining ?? 0;
                 const total = s.comebackHL.winnings[team.id] ?? remaining;
                 const done = total - remaining;
+                if (s.comebackStealPaused) {
+                  if (remaining <= 0) {
+                    return lang === 'en'
+                      ? 'Press Space — next team continues'
+                      : 'Space drücken — nächstes Team kommt dran';
+                  }
+                  return lang === 'en'
+                    ? `Press Space — ${remaining} field${remaining === 1 ? '' : 's'} left`
+                    : `Space drücken — noch ${remaining} Feld${remaining === 1 ? '' : 'er'}`;
+                }
                 return lang === 'en'
                   ? `Field ${done + 1} of ${total} — pick from current leader`
                   : `Feld ${done + 1} von ${total} — klaut vom aktuellen 1. Platz`;

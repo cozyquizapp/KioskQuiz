@@ -4879,108 +4879,17 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         )}
       </div>
 
-      {/* ── Bottom: Winner + Rangliste ─────────────────────────── */}
+      {/* ── Mitte: Antwort-Liste full-width, von oben nach unten ── */}
       <div style={{
-        flex: 1, display: 'grid',
-        gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 7fr)',
-        gap: 'clamp(16px, 2.5vw, 36px)',
+        flex: 1, display: 'flex', flexDirection: 'column',
         minHeight: 0,
       }}>
-        {/* Winner */}
+        {/* Antwort-Liste — bottom-up enthuellt */}
         <div style={{
-          height: '100%',
-          background: 'transparent',
-          border: 'none',
-          borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 14, minHeight: 0,
-          opacity: revealedMinIdx === 0 ? 1 : 0.12,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
-          transition: 'opacity 0.7s ease, filter 0.7s ease',
-        }}>
-          <div style={{
-            fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#94a3b8',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}>
-            <QQEmojiIcon emoji="🏆"/> {winners.length > 1
-              ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
-              : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
-          </div>
-          {winners.length === 0 ? (
-            <div style={{ fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171' }}>
-              {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
-            </div>
-          ) : (() => {
-            // Skaliere Größen je nach Anzahl Sieger — wenig Sieger = deutlich größer.
-            const wn = winners.length;
-            // Ab 5 Siegern 2 Spalten (4-4 bei 8) damit unten nichts abgeschnitten wird
-            const twoCol = wn >= 5;
-            const avatarSize =
-              wn === 1 ? 'clamp(130px, 14vw, 210px)'
-              : wn === 2 ? 'clamp(112px, 11.5vw, 172px)'
-              : wn === 3 ? 'clamp(96px, 9.8vw, 144px)'
-              : wn === 4 ? 'clamp(84px, 8.6vw, 124px)'
-              : wn <= 6 ? 'clamp(70px, 6.4vw, 100px)'
-              : 'clamp(64px, 5.8vw, 92px)';
-            const nameSize =
-              wn === 1 ? 'clamp(40px, 4.6vw, 76px)'
-              : wn === 2 ? 'clamp(34px, 3.8vw, 60px)'
-              : wn === 3 ? 'clamp(30px, 3.4vw, 52px)'
-              : wn === 4 ? 'clamp(26px, 3vw, 44px)'
-              : wn <= 6 ? 'clamp(20px, 2.1vw, 30px)'
-              : 'clamp(18px, 1.95vw, 28px)';
-            const subSize =
-              wn === 1 ? 'clamp(18px, 1.9vw, 30px)'
-              : wn === 2 ? 'clamp(16px, 1.7vw, 26px)'
-              : wn === 3 ? 'clamp(15px, 1.6vw, 24px)'
-              : wn === 4 ? 'clamp(14px, 1.5vw, 22px)'
-              : 'clamp(12px, 1.3vw, 18px)';
-            const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : 10;
-            const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : twoCol ? 10 : 14;
-            return (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
-                gap: twoCol ? `${rowGap}px 18px` : `${rowGap}px`,
-                minHeight: 0, overflow: 'hidden',
-              }}>
-                {winners.map(w => {
-                  const tm = s.teams.find(t => t.id === w.teamId);
-                  if (!tm) return null;
-                  return (
-                    <div key={tm.id} style={{
-                      display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
-                      animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
-                    }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} style={{
-                        flexShrink: 0,
-                        animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
-                      }} />
-                      <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                        <div style={{
-                          fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>{tm.name}</div>
-                        <div style={{
-                          fontSize: subSize, fontWeight: 800, color: '#cbd5e1', marginTop: 2,
-                        }}>
-                          {w.hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Right column: Ranking bottom-up */}
-        <div style={{
+          flex: 1,
           display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 14px)',
           justifyContent: 'space-between',
-          minHeight: 0, height: '100%',
+          minHeight: 0,
         }}>
           {perPosition.map(({ correctIdx, hitters }, idx) => {
             const rank = idx + 1;
@@ -5079,6 +4988,105 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
               </div>
             );
           })}
+        </div>
+
+        {/* Sieger-Footer — horizontale Pill-Reihe, skaliert bis 8 Teams */}
+        <div style={{
+          marginTop: 'clamp(10px, 1.4vh, 18px)',
+          padding: 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.8vw, 24px)',
+          borderRadius: 18,
+          background: winners.length > 0
+            ? 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(245,158,11,0.04))'
+            : 'rgba(148,163,184,0.06)',
+          border: winners.length > 0
+            ? '2px solid rgba(251,191,36,0.35)'
+            : '2px solid rgba(148,163,184,0.15)',
+          display: 'flex', alignItems: 'center',
+          gap: 'clamp(12px, 1.6vw, 22px)',
+          flexShrink: 0, minHeight: 0,
+          opacity: revealedMinIdx === 0 ? 1 : 0.18,
+          filter: revealedMinIdx === 0 ? 'none' : 'blur(8px) saturate(0.4)',
+          transition: 'opacity 0.6s ease, filter 0.6s ease',
+        }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 2,
+            flexShrink: 0, minWidth: 0,
+            paddingRight: 'clamp(8px, 1vw, 16px)',
+            borderRight: '2px solid rgba(255,255,255,0.08)',
+          }}>
+            <div style={{
+              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#FBBF24',
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}>
+              <QQEmojiIcon emoji="🏆"/> {winners.length > 1
+                ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
+                : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
+            </div>
+            {winners.length > 0 && (
+              <div style={{
+                fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 800, color: '#cbd5e1',
+                whiteSpace: 'nowrap',
+              }}>
+                {winners[0].hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
+              </div>
+            )}
+          </div>
+
+          {winners.length === 0 ? (
+            <div style={{
+              fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900, color: '#f87171',
+            }}>
+              {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
+            </div>
+          ) : (() => {
+            const wn = winners.length;
+            // Avatar + Name als Pill, skaliert je nach Anzahl Sieger
+            const avatarSize = wn <= 2 ? 'clamp(54px, 5.6vw, 78px)'
+              : wn <= 4 ? 'clamp(46px, 4.8vw, 66px)'
+              : wn <= 6 ? 'clamp(40px, 4.2vw, 56px)'
+              : 'clamp(36px, 3.8vw, 50px)';
+            const nameSize = wn <= 2 ? 'clamp(20px, 2.2vw, 32px)'
+              : wn <= 4 ? 'clamp(17px, 1.9vw, 26px)'
+              : wn <= 6 ? 'clamp(15px, 1.7vw, 22px)'
+              : 'clamp(14px, 1.5vw, 19px)';
+            const pillGap = wn <= 4 ? 'clamp(10px, 1.2vw, 18px)' : 'clamp(8px, 0.9vw, 12px)';
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'center', flexWrap: 'wrap',
+                gap: pillGap,
+                flex: 1, minWidth: 0,
+              }}>
+                {winners.map((w, wi) => {
+                  const tm = s.teams.find(t => t.id === w.teamId);
+                  if (!tm) return null;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.8vw, 12px)',
+                      padding: 'clamp(4px, 0.6vh, 8px) clamp(10px, 1.1vw, 16px) clamp(4px, 0.6vh, 8px) clamp(4px, 0.5vh, 6px)',
+                      borderRadius: 999,
+                      background: `linear-gradient(135deg, ${tm.color}26, ${tm.color}0a)`,
+                      border: `2px solid ${tm.color}66`,
+                      animation: revealedMinIdx === 0
+                        ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${0.2 + wi * 0.08}s both`
+                        : 'none',
+                      minWidth: 0,
+                    }}>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} style={{
+                        flexShrink: 0,
+                        boxShadow: `0 0 14px ${tm.color}66`,
+                      }} />
+                      <div style={{
+                        fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        minWidth: 0,
+                      }}>{tm.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -2053,16 +2053,26 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
 function ComebackControls({ state: s, roomCode, emit }: any) {
   const team = s.teams.find((t: any) => t.id === s.comebackTeamId);
   if (!team || s.comebackAction) return null;
+  // Sobald H/L-Mini-Game aktiv (question/reveal/steal) wird der Flow ueber
+  // qq:comebackHLStep gesteuert — die Intro-Step-Buttons hier wuerden sonst
+  // versehentlich Legacy-Pfade triggern. Nur waehrend hl.phase === 'intro'
+  // (oder wenn hl gar nicht existiert) sind die Buttons sinnvoll.
+  const hlPhase = s.comebackHL?.phase;
+  const inHLGame = hlPhase === 'question' || hlPhase === 'reveal' || hlPhase === 'steal';
+  if (inHLGame) return null;
   const step = s.comebackIntroStep ?? 0;
-  const targets: string[] = s.comebackStealTargets ?? [];
-  const stealCount = targets.length === 1 ? 2 : targets.length;
-  const labels = ['▶ Team zeigen', '▶ Aktion zeigen', `⚡ Klau starten (${stealCount} Feld${stealCount === 1 ? '' : 'er'})`];
+  // 2 Intro-Steps insgesamt (0 + 1), danach startet das H/L-Mini-Game.
+  const labels = [
+    '▶ Team zeigen',
+    '▶ Aktion zeigen',
+    '⚡ H/L-Mini-Game starten',
+  ];
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <QQTeamAvatar avatarId={team.avatarId} size={26} />
       <span style={{ fontWeight: 800, color: team.color }}>{team.name}</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>
-        📖 Schritt {step + 1}/3
+        📖 Schritt {Math.min(step + 1, 2)}/2
       </span>
       <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
         {labels[Math.min(step, 2)]}

@@ -1850,22 +1850,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (room.comebackIntroStep < maxStep) {
           room.comebackIntroStep += 1;
           broadcast(io, payload.roomCode);
+        } else if (room.comebackHL && room.comebackHL.phase === 'intro') {
+          // Letzter Intro-Step → H/L-Mini-Game starten.
+          qqComebackHLStartRound(room);
+          broadcast(io, payload.roomCode);
+          scheduleHLAutoReveal(io, payload.roomCode);
+          maybeDummyAnswerHL(io, payload.roomCode);
         } else {
-          // Step 2 → Space = H/L-Mini-Game starten (wenn H/L aktiv) oder
-          // Legacy-Auto-Steal (falls alte Mechanik noch gebraucht wird).
-          if (room.comebackHL && room.comebackHL.phase === 'intro') {
-            qqComebackHLStartRound(room);
-            broadcast(io, payload.roomCode);
-            // Auto-Reveal bei Timer-Out + Dummy-Teams antworten automatisch.
-            scheduleHLAutoReveal(io, payload.roomCode);
-            maybeDummyAnswerHL(io, payload.roomCode);
-          } else {
-            qqComebackAutoApplySteal(room);
-            broadcast(io, payload.roomCode);
-            if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
-              maybeAutoPlace(io, payload.roomCode);
-            }
-          }
+          // BUG-FIX 2026-04-25: H/L laeuft schon (phase !== 'intro') oder ist
+          // unerwartet null. KEINE Legacy-Auto-Steal mehr ausloesen — dadurch
+          // wurde frueher das Grid geoeffnet, obwohl das Team falsch geraten
+          // hatte und keine Klau-Punkte verdient hat. Stattdessen: no-op.
+          // Der Moderator-Space-Handler ruft fuer aktive H/L-Phasen
+          // (question/reveal) eh `qq:comebackHLStep`, nicht intro.
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

@@ -9207,15 +9207,16 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
-      {/* Two-column: left = winner + rankings, right = final grid.
-          alignItems:flex-start + feste Breiten verhindern Overlap bei 8 Teams. */}
+      {/* Two-column: left = winner hero, right = final grid.
+          Rankings sitzen jetzt als horizontale Pill-Reihe UNTER der Row,
+          damit das Grid vertikal mehr Platz hat. */}
       <div style={{
-        display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 'clamp(24px, 3vw, 56px)',
-        width: '100%', maxWidth: 1600, justifyContent: 'center',
+        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'clamp(24px, 3vw, 56px)',
+        width: '100%', maxWidth: 1700, justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
-        {/* Left column — maxWidth verhindert dass er ins Grid läuft */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0, maxWidth: 1050 }}>
+        {/* Left column: nur Winner-Hero */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0, maxWidth: 880 }}>
       {/* Stage 2: Winner hero — big entrance + dauerhafte Loops, damit die
           Spielende-Page nicht statisch wirkt nach dem Entrance. */}
       {winner && (
@@ -9293,63 +9294,6 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         </div>
       )}
 
-      {/* Stage 3: Rankings — slide in staggered. Bei vielen Teams kompakter. */}
-      {sorted.length > 1 && (() => {
-        const many = sorted.length > 5;
-        return (
-        <div style={{
-          width: '100%', maxWidth: many ? 1000 : 640,
-          display: 'grid',
-          gridTemplateColumns: many ? '1fr 1fr' : '1fr',
-          gap: 8,
-        }}>
-          {sorted.slice(1).map((tm, i) => {
-            const rank = i + 2;
-            const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
-            return (
-              <div key={tm.id} style={{
-                display: 'flex', alignItems: 'center', gap: many ? 10 : 16,
-                padding: many ? '8px 14px' : '12px 24px', borderRadius: 14,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.10}s both`,
-                minWidth: 0,
-              }}>
-                <span style={{
-                  fontSize: many ? 'clamp(16px, 1.6vw, 22px)' : 'clamp(20px, 2.2vw, 28px)',
-                  fontWeight: 900, width: many ? 30 : 40, flexShrink: 0,
-                  color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569',
-                }}>
-                  {rank === 2 ? <QQEmojiIcon emoji="🥈"/> : rank === 3 ? <QQEmojiIcon emoji="🥉"/> : `#${rank}`}
-                </span>
-                <QQTeamAvatar avatarId={tm.avatarId} size={many ? 'clamp(22px, 2.2vw, 30px)' : 'clamp(28px, 3vw, 40px)'} style={{ flexShrink: 0 }} />
-                <span style={{
-                  flex: 1, minWidth: 0,
-                  fontSize: many ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(20px, 2.5vw, 32px)',
-                  fontWeight: 900, color: tm.color,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{tm.name}</span>
-                <span style={{
-                  fontSize: many ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(16px, 1.8vw, 22px)',
-                  fontWeight: 800,
-                  color: 'rgba(255,255,255,0.7)',
-                  flexShrink: 0,
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {tm.largestConnected}
-                </span>
-                <span style={{
-                  fontSize: many ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(13px, 1.4vw, 18px)',
-                  color: '#475569', fontWeight: 600, flexShrink: 0,
-                }}>
-                  ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        );
-      })()}
         </div>
         {/* Right column — final grid trophy */}
         <div style={{
@@ -9370,13 +9314,80 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             border: `2px solid ${winnerColor}44`,
             boxShadow: `0 0 40px ${winnerColor}33, 0 10px 40px rgba(0,0,0,0.4)`,
           }}>
-            {/* Spielende-Grid groesser, damit Teams ihr finales Territorium
-                klar erkennen koennen (vorher capped 440px → fuehlte sich auf
-                grossen Beamern winzig an). */}
-            <GridDisplay state={s} maxSize={Math.min(720, typeof window !== 'undefined' ? window.innerHeight * 0.7 : 600)} highlightTeam={winner?.id ?? null} showJoker />
+            {/* Spielende-Grid: Rankings sind jetzt unten als horizontale Pill-Reihe,
+                also bekommt das Grid mehr Platz. */}
+            <GridDisplay state={s} maxSize={Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 640)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
       </div>
+
+      {/* Rankings — horizontale Pill-Reihe unter der Row. Skaliert bis 7
+          Verlierer-Teams (8 insgesamt minus Sieger). Pills in Team-Farbe. */}
+      {sorted.length > 1 && (() => {
+        const others = sorted.slice(1);
+        const wn = others.length;
+        const compact = wn > 5;
+        return (
+          <div style={{
+            display: 'flex', flexDirection: 'row', alignItems: 'center',
+            justifyContent: 'center', flexWrap: 'wrap',
+            gap: compact ? 'clamp(8px, 1vw, 14px)' : 'clamp(10px, 1.2vw, 18px)',
+            width: '100%', maxWidth: 1700,
+            marginTop: 'clamp(16px, 2vh, 28px)',
+            position: 'relative', zIndex: 5,
+          }}>
+            {others.map((tm, i) => {
+              const rank = i + 2;
+              const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+              const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+              return (
+                <div key={tm.id} style={{
+                  display: 'flex', alignItems: 'center',
+                  gap: compact ? 8 : 12,
+                  padding: compact ? '8px 14px' : '10px 18px',
+                  borderRadius: 999,
+                  background: `linear-gradient(135deg, ${tm.color}1f, ${tm.color}06)`,
+                  border: `1.5px solid ${tm.color}66`,
+                  boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
+                  animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
+                  minWidth: 0,
+                }}>
+                  <span style={{
+                    fontSize: compact ? 'clamp(15px, 1.5vw, 20px)' : 'clamp(17px, 1.7vw, 24px)',
+                    fontWeight: 900, flexShrink: 0,
+                    color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
+                    minWidth: medal ? 0 : compact ? 26 : 30,
+                  }}>
+                    {medal ? <QQEmojiIcon emoji={medal}/> : `#${rank}`}
+                  </span>
+                  <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(28px, 2.8vw, 38px)' : 'clamp(32px, 3.2vw, 44px)'} style={{ flexShrink: 0 }} />
+                  <span style={{
+                    fontSize: compact ? 'clamp(15px, 1.6vw, 20px)' : 'clamp(17px, 1.8vw, 24px)',
+                    fontWeight: 900, color: tm.color, lineHeight: 1.1,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    maxWidth: compact ? 110 : 150,
+                  }}>{tm.name}</span>
+                  <span style={{
+                    fontSize: compact ? 'clamp(14px, 1.5vw, 19px)' : 'clamp(16px, 1.7vw, 22px)',
+                    fontWeight: 900, color: '#FDE68A',
+                    fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+                  }}>
+                    {tm.largestConnected}
+                  </span>
+                  {!compact && (
+                    <span style={{
+                      fontSize: 'clamp(11px, 1.1vw, 14px)',
+                      color: '#64748b', fontWeight: 600, flexShrink: 0,
+                    }}>
+                      ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }

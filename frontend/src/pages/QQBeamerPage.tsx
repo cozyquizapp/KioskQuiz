@@ -209,15 +209,29 @@ export default function QQBeamerPage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
 
-  // Beamer-Fullscreen: erst auf User-Geste (Fullscreen-API darf nicht ohne Klick),
-  // danach Nudge-Hint einblenden, falls noch nicht fullscreen.
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(
-    typeof document !== 'undefined' && !!document.fullscreenElement
-  );
+  // Beamer-Fullscreen: erkennt sowohl JS-API (document.fullscreenElement) als
+  // auch natives F11 (window.innerHeight === screen.height), damit die Nudge
+  // verschwindet wenn der User schon per F11 im Vollbild ist und kein erneutes
+  // requestFullscreen noetig (das wuerde an verbrauchter User-Geste scheitern).
+  const detectFS = (): boolean => {
+    if (typeof document === 'undefined') return false;
+    if (!!document.fullscreenElement) return true;
+    if (typeof window !== 'undefined' && typeof screen !== 'undefined') {
+      // ±2px Toleranz fuer Rundungsdifferenzen bei skaliertem Display
+      return Math.abs(window.innerHeight - screen.height) < 3;
+    }
+    return false;
+  };
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(detectFS);
   useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const onChange = () => setIsFullscreen(detectFS());
     document.addEventListener('fullscreenchange', onChange);
-    return () => document.removeEventListener('fullscreenchange', onChange);
+    window.addEventListener('resize', onChange);
+    onChange();
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange);
+      window.removeEventListener('resize', onChange);
+    };
   }, []);
   const requestFS = useCallback(async () => {
     try {
@@ -227,7 +241,9 @@ export default function QQBeamerPage() {
       }
     } catch { /* user cancelled or not supported */ }
   }, []);
-  // Erste User-Geste auf der Seite → Fullscreen anfordern (einmalig)
+  // Erste User-Geste auf der Seite → Fullscreen anfordern (einmalig).
+  // Skip wenn bereits per F11 im Vollbild — sonst koennte der once-Listener
+  // die User-Geste verbrauchen, bevor der Klick auf die Nudge ankommt.
   useEffect(() => {
     if (isFullscreen) return;
     const once = () => {
@@ -313,10 +329,11 @@ export default function QQBeamerPage() {
 function FullscreenNudge({ onClick }: { onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       title="Beamer auf Vollbild schalten (F11)"
       style={{
-        position: 'fixed', top: 14, right: 14, zIndex: 9999,
+        position: 'fixed', top: 14, right: 14, zIndex: 99999,
         padding: '8px 14px', borderRadius: 10,
         border: '1px solid rgba(251,191,36,0.5)',
         background: 'rgba(15,23,42,0.85)', color: '#FBBF24',
@@ -324,6 +341,7 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
         fontWeight: 900, fontSize: 13, cursor: 'pointer',
         boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
         animation: 'fsNudgePulse 2.4s ease-in-out infinite',
+        pointerEvents: 'auto',
       }}
     >⛶ Vollbild (F11)</button>
   );
@@ -814,23 +832,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     return () => { fadeOutAudio(a, 500); };
   }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume, duckFactor]);
 
-  // Fullscreen toggle — detect both JS Fullscreen API and F11/native fullscreen
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  useEffect(() => {
-    const check = () => setIsFullscreen(!!document.fullscreenElement || window.innerHeight === screen.height);
-    document.addEventListener('fullscreenchange', check);
-    window.addEventListener('resize', check);
-    check();
-    return () => { document.removeEventListener('fullscreenchange', check); window.removeEventListener('resize', check); };
-  }, []);
-  const toggleFullscreen = () => {
-    resumeAudio();
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
+  // (Vollbild-Button wird zentral vom QQBeamerPage-Parent gerendert (FullscreenNudge),
+  //  hier kein zweiter Button mehr — vermeidet Stacking-/Klick-Konflikte oben rechts.)
 
   // Resolve slide template type for current phase
   const templateType = resolveTemplateType(s);
@@ -879,23 +882,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
-
-      {/* Fullscreen toggle — hidden when already fullscreen */}
-      {!isFullscreen && (
-        <button
-          onClick={toggleFullscreen}
-          title="Vollbild"
-          style={{
-            position: 'fixed', top: 12, right: 12, zIndex: 9999,
-            width: 36, height: 36, borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.18)',
-            background: 'rgba(13,17,23,0.72)',
-            color: '#e2e8f0', fontSize: 16, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backdropFilter: 'blur(6px)',
-          }}
-        >⛶</button>
-      )}
 
       {activeTemplate ? (
         /* Custom template: render only Fireflies + CustomSlide (no overlayOnly — ph_* positions apply) */

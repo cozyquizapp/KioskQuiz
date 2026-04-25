@@ -1586,6 +1586,9 @@ function MuchoOptionsReveal({
         const t0 = timerEndsAt && timerDurationSec
           ? timerEndsAt - timerDurationSec * 1000
           : voters[0]?.submittedAt;
+        // Gewinnerteam-Frame: korrekte Option zusaetzlich mit Team-Farbe einrahmen.
+        // Gewinner = schnellster Voter auf der korrekten Option (voters[0]).
+        const winnerTeamColor = isCorrect && voters[0]?.team.color ? voters[0].team.color : null;
         return (
           // Wrapper: Card oben, Avatar-Reihe absolut darunter (sitzt auf der unteren Card-Linie)
           <div key={i} style={{ position: 'relative' }}>
@@ -1593,11 +1596,17 @@ function MuchoOptionsReveal({
               position: 'relative', overflow: 'hidden',
               borderRadius: 20, padding: '24px 28px',
               background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
+              // Gruener Innenrand bleibt fuer Korrektheits-Signal,
+              // aeusserer Ring in Team-Farbe via box-shadow spread.
               border: isCorrect ? '3px solid #22C55E'
                 : isWrong ? '2px solid rgba(255,255,255,0.06)'
                 : `2px solid ${optColor}55`,
-              boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
+              boxShadow: isCorrect
+                ? (winnerTeamColor
+                    ? `0 0 0 5px ${winnerTeamColor}, 0 0 28px ${winnerTeamColor}66, 0 0 60px ${winnerTeamColor}33, 0 0 44px rgba(34,197,94,0.32)`
+                    : '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)')
                 : '0 4px 16px rgba(0,0,0,0.3)',
+              margin: isCorrect && winnerTeamColor ? '4px' : 0,
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect
@@ -6444,6 +6453,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
             // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
             const expandedLayout = zvzStep >= 1;
+            // Gewinnerteam-Frame: korrekte Option zusaetzlich mit Team-Farbe einrahmen,
+            // damit visuell klar wird "auf dieser Option hat Team X gewonnen".
+            // Gruener Innenrand bleibt fuer Korrektheits-Signal.
+            const zvzWinnerTeam = zvzLocked && s.correctTeamId
+              ? s.teams.find(t => t.id === s.correctTeamId)
+              : null;
+            const winnerTeamColor = zvzWinnerTeam?.color ?? null;
             return (
             <div style={{
               display: 'grid',
@@ -6486,10 +6502,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       position: 'relative', overflow: 'hidden',
                       borderRadius: 20, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
+                      // Gewinner-Card: gruener Innenrand bleibt (Korrektheits-Signal),
+                      // PLUS aeusserer Team-Farben-Ring via box-shadow inset+spread.
                       border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
                       boxShadow: isCorrect
-                        ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
+                        ? (winnerTeamColor
+                            ? `0 0 0 5px ${winnerTeamColor}, 0 0 28px ${winnerTeamColor}66, 0 0 60px ${winnerTeamColor}33, 0 0 40px rgba(34,197,94,0.25)`
+                            : '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)')
                         : `0 4px 16px rgba(0,0,0,0.3)`,
+                      // Etwas Abstand zur Nachbar-Card, damit der 5px Ring nicht abgeschnitten wirkt.
+                      margin: isCorrect && winnerTeamColor ? '4px' : 0,
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                       animation: isCorrect

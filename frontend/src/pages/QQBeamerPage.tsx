@@ -6640,13 +6640,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* ZEHN_VON_ZEHN: Unter-Bets (alle außer Top-Bets) — Top-Bets werden
               direkt auf der Option oben eingeblendet. Hier also nur die restlichen
-              Tipps pro Option, von Anfang an in einheitlicher Größe. */}
+              Tipps pro Option, von Anfang an in einheitlicher Größe.
+              Sobald die Korrektheit gelockt ist (zvzLocked), gleiten die Sub-Bets
+              nach unten weg + fade — clean Spotlight auf die richtige Option. */}
           {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
             <div style={{
               width: '100%', maxWidth: 1400,
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 18, marginBottom: 16,
+              gap: 18,
+              marginBottom: zvzLocked ? 0 : 16,
+              maxHeight: zvzLocked ? 0 : 600,
+              overflow: 'hidden',
+              opacity: zvzLocked ? 0 : 1,
+              transform: zvzLocked ? 'translateY(20px)' : 'translateY(0)',
+              transition: 'opacity 0.55s ease 0.2s, transform 0.55s ease 0.2s, max-height 0.55s ease 0.2s, margin-bottom 0.55s ease 0.2s',
+              pointerEvents: zvzLocked ? 'none' : 'auto',
             }}>
               {q.options.map((_, i) => {
                 const bets = s.answers.map(a => {
@@ -9191,24 +9200,51 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       }}>
         {/* Left column — maxWidth verhindert dass er ins Grid läuft */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0, maxWidth: 1050 }}>
-      {/* Stage 2: Winner hero — big entrance */}
+      {/* Stage 2: Winner hero — big entrance + dauerhafte Loops, damit die
+          Spielende-Page nicht statisch wirkt nach dem Entrance. */}
       {winner && (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
           animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
           position: 'relative', zIndex: 5, marginBottom: 20,
         }}>
-          {/* Crown */}
+          {/* Trophy — Entrance + Float-Loop, damit's lebendig bleibt */}
           <div style={{
             fontSize: 'clamp(40px, 5vw, 64px)',
-            animation: 'finaleStarBurst 0.5s ease 0.9s both',
+            animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
           }}><QQEmojiIcon emoji="🏆"/></div>
 
-          {/* Avatar with celebration ring */}
-          <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
-            boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
-            animation: 'celebShake 0.6s ease 1.2s both',
-          }} />
+          {/* Avatar mit Breath-Loop + Sparkles drumherum */}
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
+              boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
+              animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
+            }} />
+            {/* Sparkle-Partikel um den Winner-Avatar — feiern weiter, statt einmalig */}
+            {([
+              { top: '-8%',  left: '12%', delay: 1.8, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
+              { top: '18%',  left: '-10%', delay: 2.4, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
+              { top: '60%',  left: '-6%', delay: 3.1, dur: 2.6, size: 'clamp(10px, 1.1vw, 16px)' },
+              { top: '92%',  left: '32%', delay: 2.0, dur: 3.0, size: 'clamp(12px, 1.4vw, 20px)' },
+              { top: '88%',  left: '78%', delay: 2.7, dur: 2.8, size: 'clamp(14px, 1.6vw, 22px)' },
+              { top: '56%',  left: '102%', delay: 3.3, dur: 2.4, size: 'clamp(10px, 1.2vw, 16px)' },
+              { top: '14%',  left: '96%', delay: 2.2, dur: 3.4, size: 'clamp(12px, 1.4vw, 18px)' },
+              { top: '-6%',  left: '74%', delay: 2.9, dur: 2.6, size: 'clamp(14px, 1.5vw, 22px)' },
+            ]).map((sp, i) => (
+              <span key={i} style={{
+                position: 'absolute',
+                top: sp.top, left: sp.left,
+                width: sp.size, height: sp.size,
+                fontSize: sp.size,
+                lineHeight: 1,
+                color: '#FBBF24',
+                textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(255,255,255,0.6)`,
+                animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sp.delay}s infinite`,
+                pointerEvents: 'none',
+                zIndex: 6,
+              }}>✦</span>
+            ))}
+          </div>
 
           {/* Winner name. truncName(...,18) sichert Laenge — overflow:hidden
               wuerde sonst den finaleGlow text-shadow clippen und als Rechteck
@@ -9225,14 +9261,15 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             {truncName(winner.name, 18)}
           </div>
 
-          {/* Score highlight */}
+          {/* Score highlight — eigene Pop-Animation als kleiner Akzent */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16, marginTop: 4,
-            animation: 'contentReveal 0.5s ease 1.8s both',
+            animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
           }}>
             <span style={{
               fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900,
               color: '#EAB308',
+              textShadow: '0 0 18px rgba(234,179,8,0.45)',
             }}>
               {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected fields'}
             </span>

@@ -596,6 +596,25 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: scale(1.3) rotate(10deg); opacity: 1; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
   }
+  @keyframes finaleTrophyFloat {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-10px) rotate(3deg); }
+  }
+  @keyframes finaleAvatarBreathe {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50%      { transform: scale(1.04); filter: brightness(1.08); }
+  }
+  @keyframes finaleSparklePop {
+    0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+    20%      { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(20deg); }
+    60%      { opacity: 0.85; transform: translate(-50%, -50%) scale(0.95) rotate(180deg); }
+    80%      { opacity: 0; transform: translate(-50%, -50%) scale(0.8) rotate(280deg); }
+  }
+  @keyframes finaleScoreCount {
+    0%   { transform: translateY(8px) scale(0.85); opacity: 0; }
+    60%  { transform: translateY(-2px) scale(1.06); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
 
   @keyframes qqTargetPulse {
     0%, 100% { transform: scale(1); filter: brightness(1); }

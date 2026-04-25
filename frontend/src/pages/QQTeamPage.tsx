@@ -3239,32 +3239,6 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           </CozyBtn>
           {/* Bann + Schild + Tauschen entfernt — Trinity Place/Steal/Stapel
               ist die finale Mechanik-Auswahl. */}
-          {false && phase >= 3 && hasSandTarget && (
-            <CozyBtn color="#A855F7" onClick={() => chooseFreeAction('SANDUHR')}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <QQIcon slug="marker-sanduhr" size={26} alt="Bann" />
-                {lang === 'de' ? 'Bann (3 Fragen)' : 'Ban (3 questions)'}
-              </span>
-            </CozyBtn>
-          )}
-          {false && phase === 3 && shieldsLeft > 0 && hasOwnCell && (
-            <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('SHIELD')}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <QQIcon slug="marker-shield" size={26} alt="Schild" />
-                {lang === 'de'
-                  ? `Schild (bis Spielende, ${shieldsLeft}/2 übrig)`
-                  : `Shield (till end of game, ${shieldsLeft}/2 left)`}
-              </span>
-            </CozyBtn>
-          )}
-          {false && phase >= 4 && (
-            <CozyBtn color="#8B5CF6" onClick={() => chooseFreeAction('SWAP')}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <QQIcon slug="marker-swap" size={26} alt="Tauschen" />
-                {lang === 'de' ? 'Tauschen' : 'Swap cells'}
-              </span>
-            </CozyBtn>
-          )}
           {phase >= 3 && hasStapable && stapelsLeft > 0 && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
               {lang === 'de'

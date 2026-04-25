@@ -880,30 +880,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         opacity: 0.04, mixBlendMode: 'overlay',
       }} />
 
-      {/* CozyWolf watermark — nur in LOBBY / THANKS sichtbar (sonst überlagert
-          es Inhalte; prominente Markenpräsenz übernimmt die QR-Zone). */}
-      {(s.phase === 'LOBBY' || s.phase === 'THANKS') && (
-        <div style={{
-          position: 'fixed', bottom: 14, left: 16, zIndex: 9991,
-          display: 'flex', alignItems: 'center', gap: 8,
-          pointerEvents: 'none', userSelect: 'none',
-          opacity: 0.35,
-        }}>
-          <img
-            src="/logo.png"
-            alt=""
-            style={{ width: 22, height: 22, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
-          />
-          <span style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
-            color: '#cbd5e1', textTransform: 'uppercase',
-            textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-          }}>
-            CozyWolf
-          </span>
-        </div>
-      )}
-
       {/* Fullscreen toggle — hidden when already fullscreen */}
       {!isFullscreen && (
         <button
@@ -2257,27 +2233,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* ── Top: Logo + Title (compact, centered) ── */}
+      {/* ── Top: Title (compact, centered) — CozyWolf-Branding nur noch unter QR ── */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
+        paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          marginBottom: 4, opacity: 0.7,
-        }}>
-          <img
-            src="/logo.png"
-            alt=""
-            style={{ width: 'clamp(22px, 2.5vh, 30px)', height: 'clamp(22px, 2.5vh, 30px)', objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
-          />
-          <span style={{
-            fontSize: 'clamp(10px, 1.1vw, 14px)', fontWeight: 800, letterSpacing: '0.24em',
-            color: '#94a3b8', textTransform: 'uppercase',
-          }}>
-            A CozyWolf Production
-          </span>
-        </div>
         <div style={{
           fontFamily: fontFam,
           fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,

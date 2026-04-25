@@ -5596,9 +5596,14 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     const allLngs = [tLng, ...valid.map(p => p.lng)];
     const spanLat = Math.max(...allLats) - Math.min(...allLats);
     const spanLng = Math.max(...allLngs) - Math.min(...allLngs);
-    const span = Math.max(spanLat, spanLng, 10); // mind. 10° auch bei engem Zoom
-    // Merge-Schwelle ~6% der Spannweite, mind. 2.5° (2 nah beieinander = ein Cluster).
-    const MERGE_DEG = Math.max(2.5, span * 0.06);
+    const span = Math.max(spanLat, spanLng, 1); // mind. 1° (sonst Division-Probleme)
+    // Merge-Schwelle: 4% der Spannweite, Floor 0.3° (≈ 33km).
+    // Vorher Floor 2.5° (≈ 280km!) → bei Hamburg-Quiz mit teams in DE wurde
+    // ein 250m-naher Pin mit 200km-Pins in einem Cluster zusammengelegt und
+    // dann kreisfoermig verteilt — dadurch landete der eigentlich nahe Pin
+    // weit weg vom Target. Mit 0.3° bleiben enge Pins separat, weit verstreute
+    // Quizze (z.B. „weltweit") clustern weiterhin sinnvoll.
+    const MERGE_DEG = Math.max(0.3, span * 0.04);
 
     const clusters: Array<typeof scored> = [];
     for (const p of valid) {
@@ -5625,9 +5630,9 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       }
       const avgLat = list.reduce((s, p) => s + p.lat, 0) / list.length;
       const avgLng = list.reduce((s, p) => s + p.lng, 0) / list.length;
-      // Spread-Radius ~7% der Spannweite + Bonus pro Pin im Cluster.
-      // Bei 3 Pins über 60° Span → ~5° Radius (statt früher 1.6°).
-      const radiusDeg = Math.max(2.0, span * 0.07 + list.length * 0.4);
+      // Spread-Radius: 5% der Spannweite + Bonus pro Pin, Floor 0.4°
+      // (vorher Floor 2.0° = 220km, was bei DE-Quiz absurd weit war).
+      const radiusDeg = Math.max(0.4, span * 0.05 + list.length * 0.25);
       list.forEach((p, i) => {
         const angle = (i / list.length) * Math.PI * 2 - Math.PI / 2;
         const dLat = radiusDeg * Math.sin(angle);
@@ -8437,7 +8442,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       ))}
 
       <div style={{
-        fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(36px, 5vw, 64px)',
+        fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(28px, 3.6vw, 50px)',
         fontWeight: 900,
         color: '#F59E0B', textAlign: 'center',
         textShadow: '0 0 50px rgba(234,179,8,0.55), 0 6px 0 rgba(180,83,9,0.35)',
@@ -8531,28 +8536,28 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           ) : team && (
             <>
               {/* Avatar direkt mit Pulse-Glow — kein Halo-Wrapper. */}
-              <QQTeamAvatar avatarId={team.avatarId} size={'clamp(150px, 15vw, 220px)'} style={{
+              <QQTeamAvatar avatarId={team.avatarId} size={'clamp(110px, 11vw, 170px)'} style={{
                 boxShadow: `0 0 42px ${teamColor}77, 0 0 100px ${teamColor}33`,
                 animation: 'activeTeamGlow 2s ease-in-out infinite',
                 ['--team-color' as any]: `${teamColor}55`,
               }} />
               <div title={team.name} style={{
-                fontSize: 'clamp(32px, 4.4vw, 62px)', fontWeight: 900, color: teamColor,
+                fontSize: 'clamp(26px, 3.4vw, 50px)', fontWeight: 900, color: teamColor,
                 textShadow: `0 0 28px ${teamColor}55`,
                 maxWidth: '80vw',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>{truncName(team.name, 20)}</div>
               {step === 1 && (
                 <div style={{
-                  marginTop: 8, padding: '14px 28px', borderRadius: 18,
+                  marginTop: 4, padding: '10px 22px', borderRadius: 16,
                   background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
-                  fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 800, color: '#e2e8f0',
+                  fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 700, color: '#e2e8f0',
                   maxWidth: 900, textAlign: 'center',
                   animation: 'contentReveal 0.45s ease 0.15s both',
                 }}>
                   {lang === 'en'
-                    ? `${team.name} is in last place right now and gets to strike back.`
-                    : `${team.name} liegt aktuell auf dem letzten Platz und darf zurückschlagen.`}
+                    ? `${team.name} is in last place — strike back!`
+                    : `${team.name} liegt auf dem letzten Platz — schlag zurück!`}
                 </div>
               )}
             </>
@@ -8566,56 +8571,53 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           width: '100%', maxWidth: 1100,
           animation: 'contentReveal 0.5s ease both',
           position: 'relative', zIndex: 5,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(8px, 1.2vh, 14px)',
         }}>
-          {/* Prominenter Rundenzaehler — nur bei H/L, macht die tatsaechliche
-              Rundenzahl (1-3) visuell unmissverstaendlich. */}
+          {/* Round-Counter kompakt: Label + Zahl + Dots inline. */}
           {hl && (
             <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 14px)',
             }}>
-              <div style={{
-                fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+              <span style={{
+                fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900,
                 color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
               }}>
-                {lang === 'en' ? 'In this run' : 'In diesem Durchgang'}
-              </div>
-              <div style={{
-                display: 'flex', alignItems: 'baseline', gap: 12,
+                {lang === 'en' ? 'In this run' : 'Durchgang'}
+              </span>
+              <span style={{
+                fontSize: 'clamp(36px, 4.4vw, 64px)', fontWeight: 900,
+                color: '#FBBF24', lineHeight: 1,
+                textShadow: '0 0 30px rgba(251,191,36,0.5)',
+                fontVariantNumeric: 'tabular-nums',
+              }}>{hl.rounds}</span>
+              <span style={{
+                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900, color: '#FDE68A',
               }}>
-                <span style={{
-                  fontSize: 'clamp(68px, 8vw, 120px)', fontWeight: 900,
-                  color: '#FBBF24', lineHeight: 1,
-                  textShadow: '0 0 40px rgba(251,191,36,0.55)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>{hl.rounds}</span>
-                <span style={{
-                  fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: '#FDE68A',
-                }}>
-                  {hl.rounds === 1
-                    ? (lang === 'en' ? 'round' : 'Runde')
-                    : (lang === 'en' ? 'rounds' : 'Runden')}
-                </span>
-              </div>
-              {/* Kleine Dots als zusaetzlicher Count-Indikator */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                {hl.rounds === 1
+                  ? (lang === 'en' ? 'Runde' : 'Runde')
+                  : (lang === 'en' ? 'Runden' : 'Runden')}
+              </span>
+              {/* Dots inline */}
+              <span style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
                 {Array.from({ length: hl.rounds }).map((_, i) => (
                   <span key={i} style={{
-                    width: 14, height: 14, borderRadius: '50%',
-                    background: '#FBBF24', boxShadow: '0 0 10px rgba(251,191,36,0.6)',
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: '#FBBF24', boxShadow: '0 0 8px rgba(251,191,36,0.5)',
                   }} />
                 ))}
-              </div>
+              </span>
             </div>
           )}
           <div style={{
-            padding: '24px 40px', borderRadius: 22, textAlign: 'center',
+            padding: 'clamp(12px, 1.6vh, 18px) clamp(20px, 2.4vw, 32px)', borderRadius: 18,
+            textAlign: 'center',
             background: cardBg,
             border: hl ? '2px solid rgba(251,191,36,0.55)' : `2px solid #EF444455`,
             boxShadow: hl
-              ? '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)'
-              : `0 0 40px rgba(239,68,68,0.2), 0 8px 28px rgba(0,0,0,0.4)`,
-            fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900,
+              ? '0 0 32px rgba(251,191,36,0.22), 0 6px 18px rgba(0,0,0,0.4)'
+              : `0 0 32px rgba(239,68,68,0.2), 0 6px 18px rgba(0,0,0,0.4)`,
+            fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 900,
             color: hl ? '#fde68a' : '#fecaca',
             maxWidth: 1000,
             lineHeight: 1.3,
@@ -8632,17 +8634,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   ? (lang === 'en' ? 'Current leader' : 'Aktueller 1. Platz')
                   : (lang === 'en' ? 'Current leaders' : 'Aktuelle 1. Plätze')}
               </div>
-              <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {leaderTeams.map(lt => (
                   <div key={lt.id} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    padding: '14px 18px', borderRadius: 16,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 14px', borderRadius: 14,
                     background: `${lt.color}18`, border: `2px solid ${lt.color}66`,
-                    boxShadow: `0 0 20px ${lt.color}22`,
-                    minWidth: 120,
+                    boxShadow: `0 0 16px ${lt.color}22`,
                   }}>
-                    <QQTeamAvatar avatarId={lt.avatarId} size={48} />
-                    <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 900, color: lt.color }}>{truncName(lt.name, 12)}</span>
+                    <QQTeamAvatar avatarId={lt.avatarId} size={36} />
+                    <span style={{ fontSize: 'clamp(15px, 1.7vw, 20px)', fontWeight: 900, color: lt.color }}>{truncName(lt.name, 12)}</span>
                   </div>
                 ))}
               </div>
@@ -9428,25 +9429,25 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             border: `2px solid ${winnerColor}44`,
             boxShadow: `0 0 40px ${winnerColor}33, 0 10px 40px rgba(0,0,0,0.4)`,
           }}>
-            {/* Spielende-Grid: Rankings sind jetzt unten als horizontale Pill-Reihe,
-                also bekommt das Grid mehr Platz. */}
-            <GridDisplay state={s} maxSize={Math.min(800, typeof window !== 'undefined' ? window.innerHeight * 0.72 : 640)} highlightTeam={winner?.id ?? null} showJoker />
+            {/* Spielende-Grid: Rankings sitzen jetzt als vertikale Tabelle
+                darunter — Grid muss etwas kleiner werden, damit Tabelle noch
+                Platz hat (sonst clipt's am unteren Rand). */}
+            <GridDisplay state={s} maxSize={Math.min(620, typeof window !== 'undefined' ? window.innerHeight * 0.55 : 520)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
       </div>
 
-      {/* Rankings — horizontale Pill-Reihe unter der Row. Skaliert bis 7
-          Verlierer-Teams (8 insgesamt minus Sieger). Pills in Team-Farbe. */}
+      {/* Rankings — vertikale Tabelle unter der Row. Jedes Team auf eigener
+          Zeile, damit es nicht in einer schmalen Pill-Reihe untergeht. */}
       {sorted.length > 1 && (() => {
         const others = sorted.slice(1);
         const wn = others.length;
         const compact = wn > 5;
         return (
           <div style={{
-            display: 'flex', flexDirection: 'row', alignItems: 'center',
-            justifyContent: 'center', flexWrap: 'wrap',
-            gap: compact ? 'clamp(8px, 1vw, 14px)' : 'clamp(10px, 1.2vw, 18px)',
-            width: '100%', maxWidth: 1700,
+            display: 'flex', flexDirection: 'column',
+            gap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
+            width: '100%', maxWidth: 880,
             marginTop: 'clamp(16px, 2vh, 28px)',
             position: 'relative', zIndex: 5,
           }}>
@@ -9456,12 +9457,14 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
               return (
                 <div key={tm.id} style={{
-                  display: 'flex', alignItems: 'center',
-                  gap: compact ? 8 : 12,
-                  padding: compact ? '8px 14px' : '10px 18px',
-                  borderRadius: 999,
-                  background: `linear-gradient(135deg, ${tm.color}1f, ${tm.color}06)`,
-                  border: `1.5px solid ${tm.color}66`,
+                  display: 'grid',
+                  gridTemplateColumns: 'auto auto 1fr auto auto',
+                  alignItems: 'center',
+                  gap: compact ? 'clamp(8px, 1vw, 14px)' : 'clamp(10px, 1.2vw, 18px)',
+                  padding: compact ? '8px 16px' : '10px 20px',
+                  borderRadius: 14,
+                  background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
+                  border: `1.5px solid ${tm.color}55`,
                   boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
                   animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
                   minWidth: 0,
@@ -9474,12 +9477,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                   }}>
                     {medal ? <QQEmojiIcon emoji={medal}/> : `#${rank}`}
                   </span>
-                  <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(28px, 2.8vw, 38px)' : 'clamp(32px, 3.2vw, 44px)'} style={{ flexShrink: 0 }} />
+                  <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(36px, 3.4vw, 46px)' : 'clamp(40px, 3.8vw, 52px)'} style={{ flexShrink: 0 }} />
                   <span style={{
-                    fontSize: compact ? 'clamp(15px, 1.6vw, 20px)' : 'clamp(17px, 1.8vw, 24px)',
+                    fontSize: compact ? 'clamp(17px, 1.8vw, 24px)' : 'clamp(19px, 2vw, 28px)',
                     fontWeight: 900, color: tm.color, lineHeight: 1.1,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    maxWidth: compact ? 110 : 150,
                   }}>{tm.name}</span>
                   <span style={{
                     fontSize: compact ? 'clamp(14px, 1.5vw, 19px)' : 'clamp(16px, 1.7vw, 22px)',

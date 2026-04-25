@@ -1787,18 +1787,20 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
   // Elemente animieren einmalig ein und behalten dann sanfte Loop-Animationen,
   // damit die Folie nicht einfriert wenn der Moderator 30s wartet.
   // Fireflies deterministisch via index (kein Math.random → kein Re-Render-Springen).
-  const fireflies = Array.from({ length: 10 }, (_, i) => ({
-    left: 8 + ((i * 79) % 84),
-    top: 12 + ((i * 47) % 72),
-    dur: 5.5 + (i % 4) * 0.7,
-    delay: (i * 0.43) % 3,
-    size: 4 + (i % 3),
+  // Reduziert auf 6 + dezenter, damit's nicht nach Splash-Screen aussieht.
+  const fireflies = Array.from({ length: 6 }, (_, i) => ({
+    left: 12 + ((i * 79) % 76),
+    top: 18 + ((i * 47) % 64),
+    dur: 6 + (i % 3) * 0.8,
+    delay: (i * 0.5) % 3,
+    size: 3 + (i % 2),
   }));
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9990,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'radial-gradient(ellipse at center, #1a1030 0%, #0b0618 55%, #050208 100%)',
+      // Slate-Hintergrund wie Rest des Quiz (kein warmer Goldgradient mehr)
+      background: 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)',
       overflow: 'hidden',
       fontFamily: "'Nunito', system-ui, sans-serif",
       opacity: visible ? 1 : 0,
@@ -1806,31 +1808,32 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
       transition: 'opacity 0.55s ease, transform 0.65s cubic-bezier(0.4,0,0.2,1)',
       pointerEvents: visible ? 'auto' : 'none',
     }}>
-      {/* Ambient Glow — dauerhaft, pulsierend */}
+      {/* Ambient Glow — nur lokal um den Wolf-Bereich, dezent statt überdominant */}
       <div style={{
-        position: 'absolute', left: '50%', top: '50%',
-        width: '150vmin', height: '150vmin',
+        position: 'absolute', left: '50%', top: '62%',
+        width: '70vmin', height: '70vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(251,191,36,0.26) 0%, rgba(249,115,22,0.14) 32%, transparent 62%)',
-        filter: 'blur(14px)',
+        background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, rgba(249,115,22,0.08) 38%, transparent 65%)',
+        filter: 'blur(18px)',
         animation: 'qqIntroGlowPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
-      {/* Entry-Sweep — einmal diagonal */}
+      {/* Entry-Sweep — einmal diagonal, dezenter */}
       <div style={{
         position: 'absolute', left: '-20%', top: 0, width: '40%', height: '100%',
-        background: 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)',
+        background: 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
         animation: 'qqIntroSweep 2.6s ease-out 0.2s both',
         pointerEvents: 'none',
       }} />
-      {/* Fireflies — driften dauerhaft */}
+      {/* Fireflies — wenige, dezent, weiterhin warm-golden als Marken-Akzent */}
       {fireflies.map((f, i) => (
         <div key={i} style={{
           position: 'absolute',
           left: `${f.left}%`, top: `${f.top}%`,
           width: f.size, height: f.size, borderRadius: '50%',
           background: i % 2 ? '#fbbf24' : '#fde68a',
-          boxShadow: '0 0 14px rgba(251,191,36,0.85), 0 0 3px rgba(255,255,255,0.6)',
+          boxShadow: '0 0 10px rgba(251,191,36,0.55), 0 0 2px rgba(255,255,255,0.4)',
+          opacity: 0.65,
           animation: `qqIntroFireflyDrift ${f.dur}s ease-in-out ${f.delay}s infinite`,
           pointerEvents: 'none',
         }} />
@@ -1839,67 +1842,80 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(10px, 1.6vh, 22px)',
+        gap: 'clamp(8px, 1.2vh, 18px)',
         textAlign: 'center',
         padding: '0 6vw',
       }}>
-        {/* Welcome label */}
+        {/* Welcome label — kleiner, dezenter Akzent in Marken-Gold */}
         <div style={{
-          fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 700,
+          fontSize: 'clamp(13px, 1.3vw, 20px)', fontWeight: 800,
           letterSpacing: '0.32em', textTransform: 'uppercase',
           color: '#fbbf24',
-          textShadow: '0 0 18px rgba(251,191,36,0.6)',
+          opacity: 0.88,
           animation: 'qqIntroWelcome 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.2s both',
         }}>{welcome}</div>
-        {/* Title */}
+        {/* Title — Nunito weiss statt Goldgradient-Logo, mit feiner Akzentlinie drunter */}
         <div style={{
-          fontSize: 'clamp(80px, 12vw, 200px)', fontWeight: 900,
-          letterSpacing: '0.03em',
-          lineHeight: 0.96,
-          background: 'linear-gradient(180deg, #fff 0%, #fde68a 45%, #fbbf24 75%, #f97316 100%)',
-          WebkitBackgroundClip: 'text', backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 0 60px rgba(251,191,36,0.4)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(8px, 1vh, 14px)',
           animation: 'qqIntroTitleIn 1.2s cubic-bezier(0.2,0.9,0.3,1.1) 0.5s both',
-        }}>{title}</div>
-        {/* Wolf + Speech Bubble — Wolf "spricht" mit Mund-Flap + Idle-Blink */}
+        }}>
+          <div style={{
+            fontSize: 'clamp(56px, 8vw, 130px)', fontWeight: 900,
+            letterSpacing: '0.01em',
+            lineHeight: 0.96,
+            color: '#f8fafc',
+            textShadow: '0 0 40px rgba(251,191,36,0.22), 0 4px 24px rgba(0,0,0,0.5)',
+          }}>{title}</div>
+          {/* Akzentlinie — Marken-Gold-Highlight unter dem Titel */}
+          <div style={{
+            width: 'clamp(60px, 7vw, 110px)', height: 3, borderRadius: 999,
+            background: 'linear-gradient(90deg, transparent, #fbbf24 50%, transparent)',
+            boxShadow: '0 0 12px rgba(251,191,36,0.5)',
+            animation: 'qqIntroAccentIn 0.8s ease 1.0s both',
+          }} />
+        </div>
+        {/* Wolf + Sprechblase — Wolf bleibt das Logo-Zentrum, Sprechblase im Cozy-Card-Stil */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(12px, 1.8vw, 28px)',
-          marginTop: 'clamp(8px, 1.2vh, 20px)',
+          marginTop: 'clamp(12px, 1.6vh, 24px)',
           animation: 'qqIntroStackIn 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 1.3s both',
         }}>
-          <AnimatedCozyWolf widthCss="clamp(120px, 14vw, 200px)" speaking={visible} />
+          <AnimatedCozyWolf widthCss="clamp(130px, 15vw, 220px)" speaking={visible} />
 
           <div style={{
             position: 'relative',
-            padding: 'clamp(12px, 1.6vh, 22px) clamp(20px, 2.4vw, 36px)',
+            padding: 'clamp(14px, 1.8vh, 24px) clamp(22px, 2.6vw, 38px)',
             borderRadius: 22,
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            border: '3px solid #fbbf24',
-            boxShadow: '0 10px 32px rgba(0,0,0,0.45), 0 0 0 3px rgba(251,191,36,0.22)',
-            color: '#7c2d12',
+            // Glassmorph-Card statt cremiger Comic-Bubble
+            background: 'linear-gradient(180deg, rgba(15,23,42,0.78) 0%, rgba(11,16,28,0.78) 100%)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            border: '2px solid rgba(251,191,36,0.55)',
+            boxShadow: '0 10px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(251,191,36,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+            color: '#f1f5f9',
             fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 800,
-            maxWidth: '68vw',
-            lineHeight: 1.25,
+            maxWidth: '60vw',
+            lineHeight: 1.28,
             animation: 'qqIntroBubbleBob 5s ease-in-out infinite',
           }}>
-            {/* Tail — zeigt nach links auf den Wolf */}
+            {/* Tail — zeigt nach links auf den Wolf, in Card-Farben */}
             <div style={{
-              position: 'absolute', left: -14, top: '50%',
+              position: 'absolute', left: -13, top: '50%',
               width: 0, height: 0,
               transform: 'translateY(-50%)',
-              borderTop: '12px solid transparent',
-              borderBottom: '12px solid transparent',
-              borderRight: '16px solid #fbbf24',
+              borderTop: '11px solid transparent',
+              borderBottom: '11px solid transparent',
+              borderRight: '14px solid rgba(251,191,36,0.55)',
             }} />
             <div style={{
               position: 'absolute', left: -10, top: '50%',
               width: 0, height: 0,
               transform: 'translateY(-50%)',
-              borderTop: '10px solid transparent',
-              borderBottom: '10px solid transparent',
-              borderRight: '13px solid #fde68a',
+              borderTop: '9px solid transparent',
+              borderBottom: '9px solid transparent',
+              borderRight: '12px solid rgba(15,23,42,0.85)',
             }} />
             {greeting}
           </div>
@@ -1929,6 +1945,10 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
           0%   { opacity: 0; transform: translateY(30px) scale(0.85); filter: blur(12px); }
           60%  { filter: blur(0); }
           100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes qqIntroAccentIn {
+          0%   { opacity: 0; transform: scaleX(0.2); }
+          100% { opacity: 1; transform: scaleX(1); }
         }
         @keyframes qqIntroStackIn {
           0%   { opacity: 0; transform: translateY(20px); }

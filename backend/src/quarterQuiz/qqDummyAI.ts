@@ -128,7 +128,7 @@ function enumerateActions(
     }
   }
 
-  if (kinds.includes('STAPEL') && opts.phase >= 4) {
+  if (kinds.includes('STAPEL') && opts.phase >= 3) {
     // Stapel ändert die Cluster-Größe nicht → naive scoreFor-Diff wäre 0.
     // Stattdessen: "Was verliere ich, wenn jemand mir dieses Feld wegnimmt?"
     // Wir simulieren Klau (ownerId=null) und messen den Cluster-Verlust.

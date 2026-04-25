@@ -2847,6 +2847,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     )));
   const shieldsUsed = myStats?.shieldsUsed ?? 0;
   const shieldsLeft = Math.max(0, 2 - shieldsUsed);
+  const stapelsUsed = myStats?.stapelsUsed ?? 0;
+  const stapelsLeft = Math.max(0, 3 - stapelsUsed);
 
   // Derived mode flags
   const isFree      = pa === 'FREE';
@@ -3263,9 +3265,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </span>
             </CozyBtn>
           )}
-          {phase >= 3 && hasStapable && (
+          {phase >= 3 && hasStapable && stapelsLeft > 0 && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
-              {lang === 'de' ? '📌 Stapeln (+1 Punkt, dauerhaft)' : '📌 Stack (+1 point, permanent)'}
+              {lang === 'de'
+                ? `📌 Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`
+                : `📌 Stack (+1 point · ${stapelsLeft}/3 left)`}
             </CozyBtn>
           )}
         </div>

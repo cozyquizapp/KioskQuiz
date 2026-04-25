@@ -114,30 +114,64 @@ export function findLastPlace(
  *   1. Marking those cells jokerFormed = true
  *   2. Awarding one bonus field per block (up to QQ_MAX_JOKERS_PER_GAME)
  */
+export type JokerBlock = {
+  kind: '2x2' | '4line';
+  cells: Array<{ r: number; c: number }>;
+};
+
 export function detectNewJokers(
   grid: QQGrid,
   gridSize: number,
   teamId: string
-): Array<{ r: number; c: number }> {
-  const newBlocks: Array<{ r: number; c: number }> = [];
+): JokerBlock[] {
+  const newBlocks: JokerBlock[] = [];
+  const ownedAndFresh = (r: number, c: number): boolean => {
+    const cell = grid[r]?.[c];
+    return !!cell && cell.ownerId === teamId && !cell.jokerFormed;
+  };
 
+  // 2x2 squares
   for (let r = 0; r <= gridSize - 2; r++) {
     for (let c = 0; c <= gridSize - 2; c++) {
-      const tl = grid[r][c];
-      const tr = grid[r][c + 1];
-      const bl = grid[r + 1][c];
-      const br = grid[r + 1][c + 1];
-
-      // All 4 must be owned by this team
       if (
-        tl.ownerId !== teamId || tr.ownerId !== teamId ||
-        bl.ownerId !== teamId || br.ownerId !== teamId
-      ) continue;
+        ownedAndFresh(r, c) && ownedAndFresh(r, c + 1) &&
+        ownedAndFresh(r + 1, c) && ownedAndFresh(r + 1, c + 1)
+      ) {
+        newBlocks.push({
+          kind: '2x2',
+          cells: [{ r, c }, { r, c: c + 1 }, { r: r + 1, c }, { r: r + 1, c: c + 1 }],
+        });
+      }
+    }
+  }
 
-      // None of the 4 cells should already be part of a triggered joker
-      if (tl.jokerFormed || tr.jokerFormed || bl.jokerFormed || br.jokerFormed) continue;
+  // 4-in-a-row horizontal
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c <= gridSize - 4; c++) {
+      if (
+        ownedAndFresh(r, c) && ownedAndFresh(r, c + 1) &&
+        ownedAndFresh(r, c + 2) && ownedAndFresh(r, c + 3)
+      ) {
+        newBlocks.push({
+          kind: '4line',
+          cells: [{ r, c }, { r, c: c + 1 }, { r, c: c + 2 }, { r, c: c + 3 }],
+        });
+      }
+    }
+  }
 
-      newBlocks.push({ r, c });
+  // 4-in-a-row vertical
+  for (let c = 0; c < gridSize; c++) {
+    for (let r = 0; r <= gridSize - 4; r++) {
+      if (
+        ownedAndFresh(r, c) && ownedAndFresh(r + 1, c) &&
+        ownedAndFresh(r + 2, c) && ownedAndFresh(r + 3, c)
+      ) {
+        newBlocks.push({
+          kind: '4line',
+          cells: [{ r, c }, { r: r + 1, c }, { r: r + 2, c }, { r: r + 3, c }],
+        });
+      }
     }
   }
 
@@ -145,18 +179,18 @@ export function detectNewJokers(
 }
 
 /**
- * Mark all 4 cells of a 2×2 block as jokerFormed.
- * Mutates the grid in place — call after awarding the joker.
+ * Mark all cells of a joker block as jokerFormed.
+ * Generischer als die alte 2x2-Variante — nimmt jetzt die Cells-Liste vom
+ * detected Block (funktioniert fuer 2x2 und 4x1 Linien gleichermassen).
+ * Mutates the grid in place.
  */
 export function markJokerCells(
   grid: QQGrid,
-  topLeftR: number,
-  topLeftC: number
+  cells: Array<{ r: number; c: number }>
 ): void {
-  grid[topLeftR][topLeftC].jokerFormed         = true;
-  grid[topLeftR][topLeftC + 1].jokerFormed     = true;
-  grid[topLeftR + 1][topLeftC].jokerFormed     = true;
-  grid[topLeftR + 1][topLeftC + 1].jokerFormed = true;
+  for (const { r, c } of cells) {
+    if (grid[r]?.[c]) grid[r][c].jokerFormed = true;
+  }
 }
 
 /**

@@ -702,19 +702,16 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       return;
     }
 
-    // ── FREE (Phase 3/4 volle Auswahl, Plan v2) ────────────────────────────
-    // R3: PLACE (solange freie Felder) / STEAL / SHIELD (max 2 pro Spiel) /
-    //     SANDUHR (=Bann, frei wählbar)
-    // R4: STEAL / STAPEL / SWAP (kein PLACE mehr — letzte Runde)
+    // ── FREE (Phase 3/4 volle Auswahl, Trinity-Mechanik) ──────────────────
+    // R3+R4: PLACE (solange freie Felder) / STEAL / STAPEL (max 3 pro Spiel)
+    // Bann/Schild/Tauschen sind aus dem Spiel.
     if (action === 'FREE') {
       const kinds: DummyActionKind[] = [];
-      if (phase < 4) kinds.push('PLACE'); // PLACE bis inkl. R3, in R4 zu
+      const hasFreeCellNow = live.grid.some(row => row.some(c => c.ownerId === null));
+      if (hasFreeCellNow) kinds.push('PLACE');
       kinds.push('STEAL');
-      if (phase === 3) {
-        kinds.push('SANDUHR'); // Bann
-        if (shieldsUsed < 2) kinds.push('SHIELD');
-      }
-      if (phase >= 4) { kinds.push('STAPEL'); kinds.push('SWAP'); }
+      const stapelsUsedNow = stats?.stapelsUsed ?? 0;
+      if (phase >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
         availableKinds: kinds, phase, shieldsUsed,
       });

@@ -4,7 +4,7 @@ import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
-  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_TEAMS,
+  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
 } from '../../../shared/quarterQuizTypes';
@@ -366,7 +366,7 @@ export function qqKickTeam(room: QQRoomState, teamId: string): void {
 }
 
 function emptyPhaseStats(): QQTeamPhaseStats {
-  return { stealsUsed: 0, jokersEarned: 0, placementsLeft: 0, pendingJokerBonus: 0 };
+  return { stealsUsed: 0, jokersEarned: 0, placementsLeft: 0, pendingJokerBonus: 0, stapelsUsed: 0 };
 }
 
 // ── Game start ────────────────────────────────────────────────────────────────
@@ -1479,6 +1479,10 @@ export function qqChooseFreeAction(
 
   } else if (action === 'STAPEL') {
     if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Runde 3.');
+    const stats = room.teamPhaseStats[teamId];
+    if ((stats.stapelsUsed ?? 0) >= QQ_MAX_STAPELS_PER_GAME) {
+      throw new QQError('STAPEL_LIMIT', `Bereits ${QQ_MAX_STAPELS_PER_GAME} Stapel verbraucht.`);
+    }
     const hasOwn = room.grid.some(row => row.some(cell =>
       cell.ownerId === teamId && !cell.stuck));
     if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Kein eigenes Feld zum Stapeln.');
@@ -1799,6 +1803,9 @@ export function qqStuckCell(
   cell.stuck    = true;
   cell.frozen   = false;   // stuck supersedes frozen
   cell.shielded = false;   // Stapeln löst Schild auf (permanenter Schutz reicht aus)
+  // Stapel-Counter pro Spiel hochsetzen (Cap: QQ_MAX_STAPELS_PER_GAME).
+  const stats = room.teamPhaseStats[teamId];
+  stats.stapelsUsed = (stats.stapelsUsed ?? 0) + 1;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);
   finishPlacement(room);
@@ -2269,6 +2276,7 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
       ...emptyPhaseStats(),
       jokersEarned: prev?.jokersEarned ?? 0,
       shieldsUsed:  prev?.shieldsUsed ?? 0,
+      stapelsUsed:  prev?.stapelsUsed ?? 0,
     };
   }
   room.lastActivityAt = Date.now();
@@ -2390,6 +2398,8 @@ export function qqNextQuestion(room: QQRoomState): void {
 }
 
 // ── Joker handling ────────────────────────────────────────────────────────────
+// Joker-Pattern: 2x2 Block ODER 4-in-a-row Linie (horizontal/vertikal).
+// Beide Patterns geben 1 Bonus-Cell pro Pattern. Cap: QQ_MAX_JOKERS_PER_GAME (=2).
 function handleJokerDetection(room: QQRoomState, teamId: string): number {
   const newBlocks = detectNewJokers(room.grid, room.gridSize, teamId);
   if (newBlocks.length === 0) return 0;
@@ -2405,8 +2415,11 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
     toAward = Math.min(toAward, 1);
   }
 
-  for (let i = 0; i < newBlocks.length; i++) {
-    markJokerCells(room.grid, newBlocks[i].r, newBlocks[i].c);
+  // Markiere Cells aller detected Blocks (auch ueber Cap hinaus, damit sie
+  // nicht beim naechsten Place erneut zaehlen) — Bonus wird aber nur
+  // toAward-mal vergeben.
+  for (const block of newBlocks) {
+    markJokerCells(room.grid, block.cells);
   }
 
   stats.jokersEarned += toAward;

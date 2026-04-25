@@ -1250,6 +1250,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         `${totalPhases} Runden · 5 Kategorien`,
         'Richtige Antwort → Feld setzen',
+        '2×2 Block oder 4 in einer Reihe = Bonus-Feld!',
         'Bei Gleichstand entscheidet Tempo.',
       ],
     },
@@ -1306,6 +1307,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         `${totalPhases} rounds · 5 categories`,
         'Right answer → place a cell',
+        '2×2 block or 4 in a row = bonus tile!',
         'Tie? Speed decides.',
       ],
     },
@@ -3181,7 +3183,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         accent: color },
                       { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
                       { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',
-                        limit: lang === 'en' ? '+1 point · permanent' : '+1 Punkt · dauerhaft',
+                        limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
                         accent: '#06B6D4' },
                     ]
                   : [];

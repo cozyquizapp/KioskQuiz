@@ -63,6 +63,7 @@ export const QQ_QUESTIONS_PER_PHASE   = 5;
 export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
+export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (verhindert Snowball-Effekt)
 export const QQ_MAX_TEAMS             = 8;
 export const QQ_MIN_TEAMS             = 2;
 
@@ -190,7 +191,8 @@ export interface QQTeamPhaseStats {
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
   pendingJokerBonus?: number; // legacy: joker bonus postponed until PLACE_2 finishes (no longer used, kept for state compatibility)
   pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first
-  shieldsUsed?: number;       // Phase 3+: how many shields this team has used this game (max 2)
+  shieldsUsed?: number;       // Phase 3+: how many shields this team has used this game (max 2) — DEPRECATED, Schild gedroppt
+  stapelsUsed?: number;       // Phase 3+: wie viele Stapel das Team in diesem Spiel verbraucht hat (max QQ_MAX_STAPELS_PER_GAME)
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────

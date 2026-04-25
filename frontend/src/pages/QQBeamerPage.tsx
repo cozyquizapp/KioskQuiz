@@ -522,10 +522,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     // bei jedem Team-Wechsel an. Die Musik laeuft fuer die gesamte HP-Runde.
   }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.id, s.currentQuestion?.musicUrl, s.currentQuestion?.category]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Music: Lobby-Loop in Lobby / Welcome-Folie / Pause ──
+  // ── Music: Lobby-Loop in Lobby / Welcome / RULES / Pause ──
+  // Erweitert auf alle RULES-Slides (vorher nur Welcome bei -2), damit
+  // der Regel-Walkthrough nicht in komplett stillem Raum stattfindet.
   useEffect(() => {
-    const welcome = s.phase === 'RULES' && (s.rulesSlideIndex ?? 0) === -2;
-    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || welcome);
+    const inRules = s.phase === 'RULES';
+    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || inRules);
     if (shouldLoop) {
       resumeAudio();
       startLobbyLoop();
@@ -533,7 +535,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       stopLobbyLoop();
     }
     return () => stopLobbyLoop();
-  }, [s.phase, s.rulesSlideIndex, s.musicMuted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.phase, s.musicMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Audio-Unlock: Browser blockiert Autoplay bis zur ersten User-Interaktion
   // im Tab. Der Beamer-Tab bekommt aber selten echte Klicks (Moderator ist
@@ -541,12 +543,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // click/keydown/touchend — sobald irgendwas im Beamer-Tab passiert, wird
   // Audio-Context entsperrt und der Lobby-Loop (falls aktiv) neu gestartet.
   useEffect(() => {
-    const stateSnapshot = { phase: s.phase, rulesSlideIndex: s.rulesSlideIndex, musicMuted: s.musicMuted };
+    const stateSnapshot = { phase: s.phase, musicMuted: s.musicMuted };
     // Ref zu aktuellen state-Werten via snapshot, der bei jedem Render refresht wird.
     const unlock = () => {
       resumeAudio();
-      const welcome = stateSnapshot.phase === 'RULES' && (stateSnapshot.rulesSlideIndex ?? 0) === -2;
-      const shouldLoop = !stateSnapshot.musicMuted && (stateSnapshot.phase === 'LOBBY' || stateSnapshot.phase === 'PAUSED' || welcome);
+      const inRules = stateSnapshot.phase === 'RULES';
+      const shouldLoop = !stateSnapshot.musicMuted && (stateSnapshot.phase === 'LOBBY' || stateSnapshot.phase === 'PAUSED' || inRules);
       if (shouldLoop) startLobbyLoop();
     };
     const opts: AddEventListenerOptions = { once: true };
@@ -6049,23 +6051,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {s.teams.map(tm => {
                       const answered = s.answers.some(a => a.teamId === tm.id);
                       return (
+                        // Wrapper ist nur unsichtbarer Container fuer den Check-
+                        // mark-Badge. Dunkler Ring + Glow direkt via box-shadow
+                        // auf dem Avatar — keine extra Hintergrund-Flaeche, die
+                        // als graues Rechteck rendern koennte.
                         <div key={tm.id} style={{
                           position: 'relative',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          // Dunkler Backing-Ring um den Avatar — schuetzt Lesbarkeit
-                          // auf hellen Cheese-Bildern. Padding macht den Ring sichtbar.
-                          padding: 3,
-                          borderRadius: '50%',
-                          background: 'rgba(13,10,6,0.82)',
-                          boxShadow: answered
-                            ? `0 0 14px ${tm.color}66, 0 4px 12px rgba(0,0,0,0.65)`
-                            : '0 4px 12px rgba(0,0,0,0.55)',
-                          transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
                           opacity: answered ? 1 : 0.6,
                           filter: answered ? 'none' : 'grayscale(0.4)',
+                          transition: 'opacity 0.4s ease, filter 0.4s ease',
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={av} />
+                          <QQTeamAvatar avatarId={tm.avatarId} size={av} style={{
+                            // 4px dunkler Ring direkt um die Avatar-Kante
+                            // (spread-shadow) → Lesbarkeit auf hellen Cheese-
+                            // Bildern, ohne extra Wrapper-Box.
+                            boxShadow: answered
+                              ? `0 0 0 4px rgba(13,10,6,0.85), 0 0 16px ${tm.color}77, 0 4px 12px rgba(0,0,0,0.65)`
+                              : '0 0 0 4px rgba(13,10,6,0.85), 0 4px 12px rgba(0,0,0,0.55)',
+                          }} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -2, right: -2,

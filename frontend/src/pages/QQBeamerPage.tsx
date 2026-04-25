@@ -852,6 +852,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       fontFamily: fontFam,
       color: textCol, display: 'flex', flexDirection: 'column',
       overflow: 'hidden', position: 'relative',
+      // Fixer Sicherheits-Rand außen — Inhalt kommt nicht an die Kante,
+      // alle inneren Views (flex: 1) nutzen aber den Bereich darin voll.
+      // Position-fixed Overlays (Welcome, Rules, CHEESE-Bg) bleiben
+      // weiterhin edge-to-edge.
+      padding: 'clamp(14px, 1.6vh, 28px) clamp(18px, 1.8vw, 32px)',
       transition: 'background 0.8s ease',
     }}>
       {/* CSS keyframes */}
@@ -3149,43 +3154,46 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
-          {/* Rule lines */}
+          {/* Aktionen-Bereich — kleiner Header, dann Karten als Hauptinhalt.
+              Vorher: zwei dicke Textzeilen mit redundanter Wiederholung der
+              Action-Card-Subtexte. Jetzt: Cards sprechen fuer sich. */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
             marginTop: s.gamePhaseIndex === 1 ? 24 : 12,
             position: 'relative', zIndex: 5,
           }}>
-            {(lang === 'en' ? roundRules.en : roundRules.de).map((rule, i) => (
-              <div key={i} style={{
-                fontSize: i === 0 ? 'clamp(32px, 4.5vw, 60px)' : 'clamp(24px, 3vw, 44px)',
-                fontWeight: i === 0 ? 900 : 700,
-                color: i === 0 ? '#F1F5F9' : `${color}cc`,
-                textShadow: i === 0 ? `0 0 40px ${color}33` : 'none',
-                textAlign: 'center',
-                animation: `phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.15}s both`,
-              }}>
-                {rule}
-              </div>
-            ))}
+            {/* Schlankes Label statt riesiger Regel-Texte */}
+            <div style={{
+              fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 800,
+              color: `${color}cc`, letterSpacing: '0.18em', textTransform: 'uppercase',
+              textAlign: 'center',
+              animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.4s both',
+            }}>
+              {(() => {
+                // Erste Regel-Zeile als Untertitel — sie beschreibt das Was kompakt.
+                const lead = (lang === 'en' ? roundRules.en : roundRules.de)[0];
+                return lead;
+              })()}
+            </div>
             {/* Round 1: Place — einzige Aktion, groß zeigen */}
             {s.gamePhaseIndex === 1 && (
               <div style={{
-                marginTop: 24, display: 'flex', justifyContent: 'center',
+                marginTop: 32, display: 'flex', justifyContent: 'center',
                 animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
               }}>
                 <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  padding: '16px 28px', borderRadius: 18,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  padding: '28px 48px', borderRadius: 22,
                   background: `${color}18`, border: `2px solid ${color}55`,
-                  boxShadow: `0 0 24px ${color}33`, minWidth: 200,
+                  boxShadow: `0 0 28px ${color}33`, minWidth: 280,
                 }}>
-                  <div style={{ fontSize: 'clamp(56px, 7vw, 96px)', lineHeight: 1 }}><QQEmojiIcon emoji="📍"/></div>
+                  <div style={{ fontSize: 'clamp(72px, 9vw, 128px)', lineHeight: 1 }}><QQEmojiIcon emoji="📍"/></div>
                   <div style={{
-                    fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                    fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 900,
                     color, letterSpacing: '0.04em',
                   }}>{lang === 'en' ? 'Place' : 'Platzieren'}</div>
                   <div style={{
-                    fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+                    fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
                     color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3,
                   }}>{lang === 'en' ? '1 own tile per correct answer' : '1 eigenes Feld pro richtiger Antwort'}</div>
                 </div>
@@ -5994,30 +6002,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Team-Answer-Progress (vor dem Reveal) — frosted Pill-Card oben
-              mittig ueber dem Bild, damit Avatare auch gegen helle/bunte
-              Cheese-Bilder sofort lesbar sind. Mirror vom non-CHEESE-Layout. */}
+          {/* Team-Answer-Progress (vor dem Reveal) — KEINE Card mehr.
+              Stattdessen Avatare direkt auf dem Bild, jeder mit einem dunklen
+              Backing-Ring (padding + dark bg) damit sie auch auf hellen
+              Cheese-Bildern lesbar bleiben. Analog zum MUCHO-Layout. */}
           {!revealed && s.teams.length > 0 && (
             <div style={{
-              position: 'absolute', top: 24, left: '50%',
+              position: 'absolute', top: 20, left: '50%',
               transform: 'translateX(-50%)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              padding: 'clamp(10px, 1.4vh, 16px) clamp(16px, 2vw, 28px)',
-              borderRadius: 22,
-              background: 'rgba(13,10,6,0.72)',
-              backdropFilter: 'blur(14px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(14px) saturate(1.2)',
-              border: '1.5px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
               pointerEvents: 'none', zIndex: 9,
               animation: 'contentReveal 0.45s ease 0.35s both',
               maxWidth: 'calc(100vw - 80px)',
             }}>
               <div style={{
                 fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
-                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.9)',
+                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.95)',
                 transition: 'color 0.3s ease',
                 letterSpacing: '0.04em',
+                textShadow: '0 2px 8px rgba(0,0,0,0.85), 0 0 4px rgba(0,0,0,0.7)',
               }}>
                 {s.allAnswered
                   ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
@@ -6036,14 +6039,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           position: 'relative',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          transition: 'opacity 0.4s ease, filter 0.4s ease',
-                          opacity: answered ? 1 : 0.55,
-                          filter: answered ? `drop-shadow(0 0 10px ${tm.color}66)` : 'grayscale(0.4)',
+                          // Dunkler Backing-Ring um den Avatar — schuetzt Lesbarkeit
+                          // auf hellen Cheese-Bildern. Padding macht den Ring sichtbar.
+                          padding: 3,
+                          borderRadius: '50%',
+                          background: 'rgba(13,10,6,0.82)',
+                          boxShadow: answered
+                            ? `0 0 14px ${tm.color}66, 0 4px 12px rgba(0,0,0,0.65)`
+                            : '0 4px 12px rgba(0,0,0,0.55)',
+                          transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
+                          opacity: answered ? 1 : 0.6,
+                          filter: answered ? 'none' : 'grayscale(0.4)',
                         }}>
                           <QQTeamAvatar avatarId={tm.avatarId} size={av} />
                           {answered && (
                             <div style={{
-                              position: 'absolute', bottom: -4, right: -4,
+                              position: 'absolute', bottom: -2, right: -2,
                               width: 26, height: 26, borderRadius: '50%',
                               background: '#22C55E', border: '2px solid #0D0A06',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',

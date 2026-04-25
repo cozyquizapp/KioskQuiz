@@ -915,15 +915,22 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
       position: 'fixed', inset: 0, zIndex: 1000,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       pointerEvents: 'none',
-      background: `radial-gradient(ellipse at 50% 50%, ${team.color}22 0%, rgba(13,10,6,0.92) 60%, rgba(13,10,6,0.98) 100%)`,
+      // Voll opaker Backdrop + sanfter Team-Color-Glow obendrauf — verhindert
+      // dass die TeamView-UI durchscheint und mit dem Welcome-Banner verschwimmt.
+      background: `radial-gradient(ellipse at 50% 50%, ${team.color}33 0%, transparent 70%), rgba(13,10,6,0.96)`,
+      backdropFilter: 'blur(10px) saturate(1.1)',
+      WebkitBackdropFilter: 'blur(10px) saturate(1.1)',
       animation: 'tcIdentityOut 0.45s ease 2.15s both',
     }}>
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         padding: '32px 44px', borderRadius: 28,
-        background: `linear-gradient(180deg, ${team.color}18, ${team.color}08)`,
+        // Card jetzt opak: dunkler Card-Background mit dezentem Team-Color-Tint,
+        // damit der Inhalt klar gegen den Hintergrund steht.
+        background: `linear-gradient(180deg, rgba(28,22,16,0.96), rgba(15,12,8,0.96)), linear-gradient(180deg, ${team.color}1f, ${team.color}10)`,
+        backgroundBlendMode: 'normal, normal',
         border: `2.5px solid ${team.color}`,
-        boxShadow: `0 18px 56px rgba(0,0,0,0.55), 0 0 80px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`,
+        boxShadow: `0 18px 56px rgba(0,0,0,0.65), 0 0 80px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`,
         animation: 'tcIdentityIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both',
       }}>
         <div style={{

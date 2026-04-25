@@ -1232,7 +1232,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         'Jede Runde bringt etwas Neues:',
         'Runde 2: Klauen',
         'Runde 3: Bann (3 Fragen) & Schild (max 2, bis Spielende)',
-        'Finale: Tauschen & Stapeln (eigenes Feld dauerhaft sichern)',
+        'Finale: Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
       ];
   return [
     {
@@ -1269,7 +1269,6 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
             { emoji: '⚡', label: 'Klauen',   accent: '#EF4444' },
             { slug: 'marker-sanduhr', emoji: '⏳', label: 'Bann',    accent: '#A855F7' },
             { slug: 'marker-shield',  emoji: '🛡️', label: 'Schild',  accent: '#06B6D4' },
-            { slug: 'marker-swap',    emoji: '🔄', label: 'Tauschen', accent: '#8B5CF6' },
             { emoji: '📌', label: 'Stapeln',  accent: '#F59E0B' },
           ],
     },
@@ -1297,7 +1296,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
         'Each round adds something:',
         'Round 2: Steal',
         'Round 3: Ban (3 questions) & Shield (max 2, till end of game)',
-        'Final: Swap & Stack (lock your tile permanently)',
+        'Final: Stack (own tile +1 point, permanently safe)',
       ];
   return [
     {
@@ -2815,9 +2814,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: ['Per correct answer choose one action:', 'Ban & Shield unlocked!'],
     },
     4: {
-      emoji: '🔄',
-      de: ['Im Finale — Setzen ist gesperrt:', 'Tauschen & Stapeln freigeschaltet!'],
-      en: ['In the final — placing is locked:', 'Swap & Stack unlocked!'],
+      emoji: '📌',
+      de: ['Pro richtige Antwort wählt eine Aktion:', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!'],
+      en: ['Per correct answer choose one action:', 'Stack unlocked — lock your tile + 1 extra point!'],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
@@ -3209,10 +3208,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         limit: lang === 'en' ? 'while free cells' : 'wenn Feld frei',
                         accent: color },
                       { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
-                      { count: 1, slug: 'marker-swap', label: lang === 'en' ? 'Swap' : 'Tauschen', accent: '#8B5CF6' },
+                      { count: 1, slug: 'marker-sanduhr', label: lang === 'en' ? 'Ban' : 'Bann',
+                        limit: lang === 'en' ? '3 questions locked' : '3 Fragen gesperrt',
+                        accent: '#A855F7' },
                       { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',
-                        limit: lang === 'en' ? 'permanent safe' : 'dauerhaft sicher',
-                        accent: '#F59E0B' },
+                        limit: lang === 'en' ? '+1 point · permanent' : '+1 Punkt · dauerhaft',
+                        accent: '#06B6D4' },
                     ]
                   : [];
               // Cards alle gleich gross + mittig + prominent. Statt 'compact-Modus'

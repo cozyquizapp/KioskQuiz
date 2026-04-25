@@ -1454,8 +1454,9 @@ export function qqChooseFreeAction(
     room.pendingAction = 'FREEZE_1';
 
   } else if (action === 'SANDUHR') {
-    // Bann (intern SANDUHR): nur Phase 3, pro Frage frei wählbar (kein Budget).
-    if (room.gamePhaseIndex !== 3) throw new QQError('WRONG_PHASE', 'Bann nur in Runde 3.');
+    // Bann (intern SANDUHR): ab Phase 3, pro Frage frei wählbar (kein Budget).
+    // R4: Bann bleibt verfuegbar — additive Klimakurve (jede Runde +1 Tool).
+    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Bann erst ab Runde 3.');
     // Ziel: Gegnerfelder ODER leere Felder (jeweils nicht stuck/shielded/schon gesperrt).
     const hasTarget = room.grid.some(row => row.some(cell =>
       cell.ownerId !== teamId && !cell.stuck && !cell.shielded && !cell.sandLockTtl));

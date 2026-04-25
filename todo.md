@@ -4,68 +4,86 @@
 
 ### Schätzchen — Punkte für Range-Treffer (User denkt drüber nach, Stand 2026-04-25)
 
-**Idee**: alle Teams die innerhalb von ±5% am Zielwert dran sind, bekommen Punkte.
+**Idee**: alle Teams die innerhalb einer Range am Zielwert dran sind, bekommen Punkte.
 Aktuell: nur 1 Gewinner (kleinste Distanz, Speed-Tiebreak). „Knapp daneben"-Teams gehen leer aus.
 
-**Varianten zum Ansprechen**:
+#### Range-Modell — adaptive % je nach Wertgröße (User-Vorschlag)
 
-- **A) Stufen-Punkte**:
-  - ±0% (genau): 3 Felder
-  - ±5%: 2 Felder
-  - ±10%: 1 Feld
-  - Risiko: Grid füllt sich extrem schnell, wenn alle treffen (8 Teams × 5 Schätzchen-Runden)
+Festes 5% ist nicht überall sinnvoll:
+- 50.000 Einwohner ±5% = ±2.500 → fast trivial getroffen
+- 24 Stück ±5% = ±1,2 → nur bei exaktem Treffer in Range
 
-- **B) Reine 5%-Range (binär)**:
-  - In Range: 1 Feld
-  - Außerhalb: 0
-  - Vorteil: simpel
-  - Risiko: bei großen Werten (Mio Einwohner) sind 5% sehr großzügig (50k Toleranz);
-    bei kleinen Werten (50 Bauteile) sehr eng (2.5 Toleranz)
+**Konkrete Formel-Vorschläge** (zur Auswahl):
 
-- **C) Adaptive Range**: min(5%, fester absoluter Wert je nach Größenordnung)
-  - Vorteil: balanced über alle Skalen
-  - Nachteil: Mehr Logik, schwerer zu erklären
+- **F1 — Größenabhängige %**:
+  ```
+  Wert < 100      →  20%
+  Wert 100-1.000  →  10%
+  Wert 1.000-10k  →   7%
+  Wert 10k-1Mio   →   5%
+  Wert > 1Mio     →   3%
+  ```
 
-- **D) Podium (Top-3)**: 1./2./3. Platz bekommen Felder, range-frei
+- **F2 — Logarithmisch**: `tolerance = value * (0.20 - 0.025 * log10(value))`
+  - Wert 10: 17.5% (1.75)
+  - Wert 100: 15% (15)
+  - Wert 1000: 12.5% (125)
+  - Wert 10k: 10% (1k)
+  - Wert 1Mio: 5% (50k)
+  - Wert 100Mio: 0% — muss noch min-cap kriegen
 
-**Empfehlung (CozyClaude)**:
-Variante **B + Tweak**:
-- ±5% **oder** absolute Min-Toleranz bei kleinen Werten (z.B. ±2 bei <50)
-- Genau-Treffer (Δ = 0): +1 Bonus-Feld extra (also 2 statt 1)
-- So vermeiden: 8 Teams alle in Range → 8 Felder weg in einer Frage
+- **F3 — Hybrid (% UND absolut, beide gelten)**:
+  ```
+  range = max(value * 0.05, sqrt(value))
+  ```
+  - Wert 25: max(1.25, 5) = 5 (=20% effektiv)
+  - Wert 100: max(5, 10) = 10 (=10%)
+  - Wert 10.000: max(500, 100) = 500 (=5%)
+  - Wert 1Mio: max(50k, 1k) = 50k (=5%)
 
-**Offene Fragen**:
-- Bei vollem Grid: bekommen Range-Sieger Klau-Recht statt Setzen?
-- „Closest Call"-Trophy bleibt für genauesten Treffer (auch wenn mehrere Punkte kriegen)?
+**Empfehlung**: F1 ist am einfachsten zu erklären und debugbar. F3 ist mathematisch elegant.
 
-**Backend-Schema**:
-- evalSchaetzchen muss Mehrfach-Sieger zurückgeben (correctTeamId → correctTeamIds[])
-- Punkte-Counter pro Range-Stufe in `teamPhaseStats`?
+#### Punkte-Stufen-Vorschlag (mit adaptiver Range)
 
-**Frontend**:
-- SchaetzchenReveal-UI muss mehrere "Treffer"-Avatare statt nur 1 Trophy zeigen
-- Reveal-Animation: jeder Treffer pop't einzeln in seiner Range-Farbe
+- **Genau (Δ = 0)**: 2 Felder + „Closest Call"-Trophy
+- **In Range (gemäß Formel)**: 1 Feld
+- **Außerhalb**: 0
+
+Bei voller Grid: Range-Sieger bekommen Klau-Recht statt Setzen.
+
+#### Backend-Schema-Änderungen
+
+- `evalSchaetzchen` muss Mehrfach-Sieger zurückgeben (`correctTeamId` → `correctTeamIds[]`)
+- Optional: Punkte-Bonus-Counter pro Team in `teamPhaseStats`
+
+#### Frontend-Änderungen
+
+- `SchaetzchenReveal`-UI: mehrere Treffer-Avatare in einer Reihe statt nur 1 Trophy
+- Reveal-Animation: jeder Treffer pop't einzeln, Range-Indikator als visueller Bogen
+- Optional: Bonus-Animation für „Genau"-Treffer (Konfetti / Sparkles / Trophy)
+
+#### Offene Fragen
+
+- Welche Formel (F1/F2/F3) gefällt am besten?
+- Bei vollem Grid: Range-Sieger → Klau-Recht oder leer aus?
+- „Closest Call"-Trophy bleibt für genauesten Treffer auch wenn mehrere Punkte kriegen?
 
 ---
 
-### Schild vs. Stapel — Game-Design-Frage (Stand 2026-04-25)
+### Erledigte Game-Design-Diskussionen (zur Referenz)
 
-**Problem**: Schild (R3, max 2 pro Spiel) wirkt im 4-Phase-Modus überflüssig wenn in R4 Stapeln verfügbar ist (kein Limit, +1 Punkt pro Feld, dauerhaft sicher).
+#### Klimakurve R1 → R4 (umgesetzt 2026-04-25)
 
-**Mögliche Lösungen**:
-- Schild auch in R2 verfügbar machen (frühere Defense-Option)
-- Stapel-Limit einführen (z.B. max 3 pro Spiel)
-- Schild gibt zusätzlichen Bonus (z.B. „kann auch Stapel-Felder schützen"?)
-- Akzeptieren: Schild ist eben die R3-Defense, Stapel die R4-Offense
+**Vorher**: R4 entzieht Place/Bann/Schild und zeigt nur Tauschen+Stapeln. Bruch im Lernrhythmus.
 
-**Empfehlung (CozyClaude)**: Schild & Stapel sind unterschiedliche Werkzeuge:
-- Schild ist *Reaktion* in R3 (jemand will mein Feld klauen → blocken)
-- Stapel ist *Endgame-Verstärkung* in R4 (mein Feld wird +1 Punkt wert)
+**Jetzt**: additive Progression — jede Runde + 1 Werkzeug:
+- R1: Place 1×
+- R2: + Klauen (max 2 pro Runde)
+- R3: + Bann + Schild (max 2 Schild pro Spiel)
+- R4: + Stapeln (Tauschen entfällt, Schild → Stapel als upgraded Defense mit +1 Punkt)
 
-Im 3-Phase-Modus (häufiger?) gibt's eh kein Stapel — Schild ist DIE R3-Defense.
-Im 4-Phase-Modus: Schild bleibt nützlich für „Vorab-Schutz, bevor Gegner in R3 klauen". Aber in vielen Fällen wird man eher direkt auf Stapel in R4 warten.
-
-**Feedback erwünscht** ob Anpassung gewollt oder OK so.
+**Tauschen** wurde gedroppt — Mechanik war nischig (eigenes ↔ Gegner-Feld), inhaltlich ähnlich
+zu Klauen, und R4 mit 5 Aktionen passt besser ohne sie.
 
 ## Erledigt (zur Referenz)
 
@@ -75,3 +93,4 @@ Im 4-Phase-Modus: Schild bleibt nützlich für „Vorab-Schutz, bevor Gegner in 
 - 2026-04-25: CozyGuessr Team-Karte größer (260px → 380-620px clamp)
 - 2026-04-25: R4 Place erlaubt solange freie Felder
 - 2026-04-25: Beamer-Wrapper-Sicherheitsrand entfernt (zeichnete sich ab)
+- 2026-04-25: Klimakurve R1 → R4 — additive Progression, Tauschen gedroppt, Bann ab R4

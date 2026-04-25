@@ -1140,24 +1140,12 @@ export default function QQModeratorPage() {
                       </div>
                     );
                   }
-                  // ── CHEESE: Lösung grün → Avatare cascaded ──
-                  const isCheese = qRev?.category === 'CHEESE';
-                  const cheeseStep = s.cheeseRevealStep ?? 0;
-                  const cheeseInProgress = isCheese && cheeseStep < 2;
-                  if (cheeseInProgress) {
-                    const label = cheeseStep === 0 ? '✅ Lösung grün aufdecken' : '👥 Antworten einblenden';
-                    const helper = cheeseStep === 0
-                      ? 'Markiert die richtige Antwort grün'
-                      : 'Team-Avatare erscheinen nacheinander';
-                    return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:cheeseRevealStep', { roomCode })} hotkey="Space">
-                          {label}
-                        </PrimaryBtn>
-                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
-                      </div>
-                    );
-                  }
+                  // CHEESE: Reveal zeigt Loesung + Avatare sofort komplett
+                  // (cheeseShowGreen/cheeseShowAvatars sind in der BeamerView
+                  // hardcoded auf true). Frueher gab's hier Step-Buttons fuer
+                  // 'Loesung gruen' + 'Antworten einblenden' — beide haben aber
+                  // visuell auf dem Beamer nichts ausgeloest, also entfernt.
+                  // Moderator gibt direkt Space → naechste Frage / Platzierung.
                   if (inProgress) {
                     // Auto-Phase = Pins werden automatisch alle ~2.4s eingeblendet.
                     // Läuft zwischen step 1 (Target) und 1+validPins (alle Pins drauf).

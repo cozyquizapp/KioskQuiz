@@ -3215,76 +3215,95 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         accent: '#F59E0B' },
                     ]
                   : [];
-              const many = cards.length >= 3;
+              // Cards alle gleich gross + mittig + prominent. Statt 'compact-Modus'
+              // bei vielen Cards behalten wir EINE Groesse und lassen flex die Breite
+              // gleich verteilen. align-items: stretch sorgt fuer gleiche Hoehen.
               const oder = lang === 'en' ? 'or' : 'oder';
+              const cardCount = cards.length;
+              // Single-Card → zentriert mit max-Breite, multi → flex evenly
               return (
                 <div style={{
-                  marginTop: many ? 18 : 28,
+                  flex: 1, minHeight: 0,
+                  marginTop: 'clamp(20px, 3vh, 40px)',
                   display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
-                  alignItems: 'center', justifyContent: 'center',
-                  gap: many ? 'clamp(8px, 1.2vw, 18px)' : 'clamp(16px, 2vw, 32px)',
-                  width: '100%',
+                  alignItems: 'stretch', justifyContent: 'center',
+                  gap: 'clamp(10px, 1.6vw, 24px)',
+                  width: '100%', maxWidth: 1700,
                   animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                 }}>
                   {cards.map((c, i) => {
+                    const iconSize = 'clamp(72px, 8.5vw, 132px)';
                     const iconNode = c.slug
-                      ? <QQIcon slug={c.slug} size={many ? 'clamp(48px, 5.6vw, 80px)' : 'clamp(60px, 7.5vw, 108px)'} alt={c.label} />
+                      ? <QQIcon slug={c.slug} size={iconSize} alt={c.label} />
                       : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
                     return (
                       <Fragment key={i}>
                         {i > 0 && (
                           <div style={{
-                            fontSize: many ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(16px, 1.7vw, 22px)',
-                            fontWeight: 800, color: '#64748b',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 'clamp(15px, 1.6vw, 22px)',
+                            fontWeight: 900, color: '#94a3b8',
                             letterSpacing: '0.1em', textTransform: 'uppercase',
-                            alignSelf: 'center', padding: '0 4px',
+                            flex: '0 0 auto',
                           }}>{oder}</div>
                         )}
                         <div style={{
+                          flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
+                          minWidth: cardCount === 1 ? 280 : 200,
+                          maxWidth: cardCount === 1 ? 480 : 360,
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          gap: many ? 8 : 12,
-                          padding: many ? '14px 18px' : '20px 32px', borderRadius: 20,
-                          background: `${c.accent}1f`,
-                          border: `2px solid ${c.accent}66`,
-                          boxShadow: `0 0 24px ${c.accent}33`,
-                          minWidth: many ? 150 : 200,
+                          justifyContent: 'center',
+                          gap: 'clamp(8px, 1.2vh, 16px)',
+                          padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
+                          borderRadius: 24,
+                          background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
+                          border: `3px solid ${c.accent}aa`,
+                          boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
                         }}>
+                          {/* Icon — gross + drop-shadow als Fokus-Element */}
                           <div style={{
-                            fontSize: many ? 'clamp(48px, 5.6vw, 80px)' : 'clamp(60px, 7.5vw, 108px)',
+                            fontSize: iconSize,
                             lineHeight: 1,
+                            filter: `drop-shadow(0 6px 18px ${c.accent}66)`,
                           }}>{iconNode}</div>
+                          {/* Counter + Label kombiniert — das Hauptinfo-Token */}
                           <div style={{
-                            display: 'flex', alignItems: 'baseline', gap: 8,
-                            fontWeight: 900, lineHeight: 1.05,
+                            display: 'flex', alignItems: 'baseline',
+                            gap: 'clamp(6px, 0.8vw, 12px)',
+                            fontWeight: 900, lineHeight: 1,
+                            flexWrap: 'wrap', justifyContent: 'center',
                           }}>
                             <span style={{
-                              fontSize: many ? 'clamp(22px, 2.6vw, 36px)' : 'clamp(30px, 3.4vw, 48px)',
+                              fontSize: 'clamp(36px, 4.2vw, 64px)',
                               color: c.accent,
                               fontVariantNumeric: 'tabular-nums',
-                              textShadow: `0 0 18px ${c.accent}55`,
+                              textShadow: `0 0 22px ${c.accent}77, 0 2px 0 rgba(0,0,0,0.3)`,
                             }}>{c.count}x</span>
                             <span style={{
-                              fontSize: many ? 'clamp(20px, 2.2vw, 30px)' : 'clamp(26px, 3vw, 42px)',
+                              fontSize: 'clamp(28px, 3.2vw, 48px)',
                               color: '#F1F5F9',
-                              letterSpacing: '0.02em',
+                              letterSpacing: '0.01em',
                             }}>{c.label}</span>
                           </div>
+                          {/* Sub-Zeile */}
                           <div style={{
-                            fontSize: many ? 'clamp(11px, 1.2vw, 16px)' : 'clamp(13px, 1.4vw, 18px)',
-                            fontWeight: 700, color: '#94a3b8',
+                            fontSize: 'clamp(13px, 1.4vw, 19px)',
+                            fontWeight: 700, color: '#cbd5e1',
                             textAlign: 'center', lineHeight: 1.25,
+                            opacity: 0.85,
                           }}>
                             {lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}
                           </div>
                           {c.limit && (
                             <div style={{
-                              marginTop: 2,
-                              padding: '3px 12px', borderRadius: 999,
-                              background: 'rgba(15,23,42,0.55)',
-                              border: `1px solid ${c.accent}55`,
-                              fontSize: many ? 'clamp(10px, 1.05vw, 13px)' : 'clamp(11px, 1.15vw, 15px)',
-                              fontWeight: 800, color: '#cbd5e1',
+                              marginTop: 4,
+                              padding: '5px 14px', borderRadius: 999,
+                              background: 'rgba(15,23,42,0.6)',
+                              border: `1.5px solid ${c.accent}66`,
+                              fontSize: 'clamp(11px, 1.15vw, 15px)',
+                              fontWeight: 800, color: '#e2e8f0',
                               whiteSpace: 'nowrap',
+                              boxShadow: `0 2px 8px ${c.accent}22`,
                             }}>
                               {c.limit}
                             </div>

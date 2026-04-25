@@ -234,6 +234,10 @@ export default function QQBeamerPage() {
     };
   }, []);
   const requestFS = useCallback(async () => {
+    // AudioContext bei diesem User-Klick entstummen — vermeidet
+    // "AudioContext was not allowed to start" Console-Warnings, sobald
+    // beim ersten Reveal Sounds spielen sollen.
+    try { resumeAudio(); } catch { /* noop */ }
     try {
       const el = document.documentElement;
       if (!document.fullscreenElement && el.requestFullscreen) {
@@ -241,23 +245,11 @@ export default function QQBeamerPage() {
       }
     } catch { /* user cancelled or not supported */ }
   }, []);
-  // Erste User-Geste auf der Seite → Fullscreen anfordern (einmalig).
-  // Skip wenn bereits per F11 im Vollbild — sonst koennte der once-Listener
-  // die User-Geste verbrauchen, bevor der Klick auf die Nudge ankommt.
-  useEffect(() => {
-    if (isFullscreen) return;
-    const once = () => {
-      requestFS();
-      window.removeEventListener('pointerdown', once);
-      window.removeEventListener('keydown', once);
-    };
-    window.addEventListener('pointerdown', once, { once: true });
-    window.addEventListener('keydown', once, { once: true });
-    return () => {
-      window.removeEventListener('pointerdown', once);
-      window.removeEventListener('keydown', once);
-    };
-  }, [isFullscreen, requestFS]);
+  // (Kein globaler once-Listener mehr — der konnte requestFullscreen aus
+  //  Pointerdown-Events feuern, die der Browser nicht als "transient
+  //  activation" akzeptiert, was die Console-Errors „API can only be
+  //  initiated by a user gesture" produzierte. Der Vollbild-Button
+  //  rechts oben ist der saubere Trigger.)
 
   // Remote-Flyover vom Moderator: simuliere F-Taste, damit interner Listener feuert
   useEffect(() => {

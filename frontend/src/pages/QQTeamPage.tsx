@@ -2731,7 +2731,16 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
       <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
         {t.pinIt.tap[lang]}
       </div>
-      <div style={{ borderRadius: 14, overflow: 'hidden', border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`, height: 260, position: 'relative' }}>
+      {/* Karte deutlich groesser — auf grossem Beamer-Phone wird Pin-Setzen
+          sonst zu fummelig. clamp(380, 70vh, 620) fuellt fast die ganze
+          verfuegbare Hoehe (Question-Header oben + Submit-Button unten lassen
+          ~150-180px frei). border-radius/border bleibt schlank. */}
+      <div style={{
+        borderRadius: 14, overflow: 'hidden',
+        border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
+        height: 'clamp(380px, 70vh, 620px)',
+        position: 'relative',
+      }}>
         <MapContainer
           center={[centerLat, centerLng]}
           zoom={zoom}

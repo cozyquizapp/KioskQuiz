@@ -4552,13 +4552,34 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
         gap: 'clamp(16px, 2.5vw, 36px)',
         minHeight: 0,
       }}>
-        {/* Winner card — füllt volle Spaltenhöhe */}
+        {/* Winner card — Team-Farben-Frame bei Einzelsieger, Gold bei mehreren. */}
+        {(() => {
+          const singleColor = winners.length === 1
+            ? s.teams.find(t => t.id === winners[0].teamId)?.color ?? null
+            : null;
+          const cardBgGrad = winners.length === 0
+            ? 'transparent'
+            : singleColor
+              ? `linear-gradient(135deg, ${singleColor}1f, ${singleColor}07)`
+              : 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))';
+          const cardBorder = winners.length === 0
+            ? 'none'
+            : singleColor
+              ? `3px solid ${singleColor}88`
+              : '3px solid rgba(251,191,36,0.55)';
+          const cardShadow = winners.length === 0
+            ? 'none'
+            : singleColor
+              ? `0 0 48px ${singleColor}33, 0 8px 24px rgba(0,0,0,0.4)`
+              : '0 0 48px rgba(251,191,36,0.22), 0 8px 24px rgba(0,0,0,0.4)';
+          return (
         <div style={{
           height: '100%',
-          background: 'transparent',
-          border: 'none',
+          background: cardBgGrad,
+          border: cardBorder,
           borderRadius: 26,
-          padding: 'clamp(18px, 2.4vh, 32px) clamp(8px, 1.4vw, 24px)',
+          padding: 'clamp(18px, 2.4vh, 32px) clamp(14px, 1.8vw, 28px)',
+          boxShadow: cardShadow,
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 14, minHeight: 0,
           opacity: revealedMinIdx === 0 ? 1 : 0.12,
@@ -4641,6 +4662,8 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             );
           })()}
         </div>
+          );
+        })()}
 
       {/* ── Right column: Top-5 List (bottom-up reveal, fills column) ─────── */}
       <div style={{
@@ -7880,7 +7903,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
   const showTeam = step >= 1;
-  const showAction = step >= 2;
+  // Step 1+2 zusammengelegt: bei step >= 1 zeigen wir Team UND Action zusammen.
+  const showAction = step >= 1;
 
   const actionTextDe = hl
     ? `„Mehr oder Weniger" — pro richtige Antwort klaut ihr 1 Feld vom aktuellen 1. Platz.`
@@ -9346,7 +9370,10 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             border: `2px solid ${winnerColor}44`,
             boxShadow: `0 0 40px ${winnerColor}33, 0 10px 40px rgba(0,0,0,0.4)`,
           }}>
-            <GridDisplay state={s} maxSize={Math.min(440, typeof window !== 'undefined' ? window.innerHeight * 0.48 : 400)} highlightTeam={winner?.id ?? null} showJoker />
+            {/* Spielende-Grid groesser, damit Teams ihr finales Territorium
+                klar erkennen koennen (vorher capped 440px → fuehlte sich auf
+                grossen Beamern winzig an). */}
+            <GridDisplay state={s} maxSize={Math.min(720, typeof window !== 'undefined' ? window.innerHeight * 0.7 : 600)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
       </div>

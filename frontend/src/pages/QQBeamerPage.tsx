@@ -1686,7 +1686,10 @@ function MuchoOptionsReveal({
                           avatarId={tm.avatarId}
                           size={avatarSz}
                           style={{
-                            border: isFastest ? '4px solid #FBBF24' : `2px solid ${tm.color}`,
+                            // Kein Doppel-Rand mehr: das Avatar-Artwork hat eh
+                            // einen farbigen Kapuzen-/Kreis-Rim. Nur der schnellste
+                            // Voter bekommt den Gold-Ring als Winner-Indikator.
+                            border: isFastest ? '4px solid #FBBF24' : 'none',
                             boxShadow: isFastest
                               ? '0 0 22px rgba(251,191,36,0.6), 0 6px 14px rgba(0,0,0,0.55)'
                               : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${tm.color}55`,
@@ -5225,65 +5228,62 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             </div>
           </div>
 
-          {/* Winner-Footer — Gewinner-Zahl gleich gross wie Loesung.
-              Links: Label + Avatar + Teamname (gestapelt). Rechts: Mega-Zahl + Delta-Chip. */}
+          {/* Winner-Footer — Gewinner-Zahl gleich gross wie Loesung und auf
+              gleicher Mittelachse zentriert (visuell direkt untereinander).
+              Avatar + Name + Delta als kompakte horizontale Zeile darunter. */}
           {winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
               borderTop: `2px solid ${winner.team.color}44`,
               background: `linear-gradient(180deg, ${winner.team.color}1f, ${winner.team.color}06)`,
               padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr',
-              gap: 'clamp(16px, 2vw, 28px)',
-              alignItems: 'center',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(8px, 1.2vh, 16px)',
               minWidth: 0,
               opacity: revealedMinIdx === 0 ? 1 : 0.12,
               filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
               transition: 'opacity 0.7s ease, filter 0.7s ease',
               position: 'relative', zIndex: 1,
             }}>
-              {/* Linke Saeule: Label + Avatar + Teamname */}
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 'clamp(6px, 0.9vh, 12px)', minWidth: 0,
+              {/* Trophy-Label oben, klein und mittig */}
+              <span style={{
+                fontSize: 'clamp(10px, 0.9vw, 13px)', fontWeight: 900,
+                color: '#cbd5e1', letterSpacing: '0.16em', textTransform: 'uppercase',
+                opacity: 0.72, whiteSpace: 'nowrap',
               }}>
-                <span style={{
-                  fontSize: 'clamp(10px, 0.9vw, 13px)', fontWeight: 900,
-                  color: '#cbd5e1', letterSpacing: '0.16em', textTransform: 'uppercase',
-                  opacity: 0.72, whiteSpace: 'nowrap',
-                }}>
-                  <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
-                </span>
-                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(72px, 7.5vw, 110px)'} style={{
+                <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
+              </span>
+
+              {/* Mega-Zahl — gleiche Groesse + zentriert wie Loesung darueber */}
+              <div style={{
+                fontSize: 'clamp(64px, 8vw, 140px)',
+                fontWeight: 900, color: winner.team.color, lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
+                textShadow: `0 0 40px ${winner.team.color}66`,
+                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.3s both' : 'none',
+              }}>
+                {fmt(winner.num)}
+              </div>
+
+              {/* Team-Info-Reihe: Avatar | Name | Delta-Pill */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 'clamp(10px, 1.2vw, 18px)',
+                flexWrap: 'wrap', minWidth: 0,
+              }}>
+                <QQTeamAvatar avatarId={winner.team.avatarId} size={'clamp(48px, 5vw, 72px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 28px ${winner.team.color}77`,
+                  boxShadow: `0 0 22px ${winner.team.color}77`,
                   animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                 }} />
                 <div style={{
-                  fontSize: 'clamp(18px, 2vw, 32px)', fontWeight: 900, color: winner.team.color,
-                  lineHeight: 1.05, textAlign: 'center',
-                  maxWidth: '100%',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  fontSize: 'clamp(20px, 2.2vw, 36px)', fontWeight: 900, color: winner.team.color,
+                  lineHeight: 1.05,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  maxWidth: 'min(40vw, 360px)',
                   textShadow: `0 0 22px ${winner.team.color}55`,
                 }}>{winner.team.name}</div>
-              </div>
-
-              {/* Rechte Saeule: Mega-Zahl + Delta-Pill — gleiche Groesse wie Loesung */}
-              <div style={{
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: 'clamp(8px, 1.1vh, 14px)', minWidth: 0,
-                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.3s both' : 'none',
-              }}>
-                <div style={{
-                  fontSize: 'clamp(64px, 8vw, 140px)',
-                  fontWeight: 900, color: winner.team.color, lineHeight: 1,
-                  fontVariantNumeric: 'tabular-nums',
-                  textShadow: `0 0 40px ${winner.team.color}66`,
-                }}>
-                  {fmt(winner.num)}
-                </div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'baseline', gap: 6,
                   padding: '6px 16px',

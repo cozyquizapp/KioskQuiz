@@ -75,6 +75,12 @@ function broadcast(io: SocketIOServer, roomCode: string): void {
   broadcastQQ(io, roomCode);
 }
 
+// ── Live-Reactions State (in-memory) ──────────────────────────────────────
+// Pro Room und Team eine Liste der letzten Reaction-Timestamps fürs Rate-Limit.
+// Reines Anti-Spam-Memo, lebt nicht in qqRooms (zu ephemer).
+const reactionLog: Record<string, Record<string, number[]>> = {};
+const ALLOWED_REACTION_EMOJIS = new Set(['👏', '🔥', '😱', '😢', '🎉', '😂']);
+
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   if (!room) return;
   const teamList = Object.values(room.teams);
@@ -2056,6 +2062,44 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqResume(room);
         broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Live-Reactions (Phone → Beamer) ────────────────────────────────────
+    // Spieler tappen ein Reaction-Emoji am Phone; das wird ohne State-Update
+    // direkt als Burst-Event an alle Clients gepushed. Beamer rendert das als
+    // schwebendes Mini-Emoji am Bildschirmrand (siehe QQBeamerPage).
+    // Rate-Limit pro Team: max 4 Reactions pro 5-Sekunden-Fenster gegen Spam.
+    socket.on('qq:reaction', (payload: { roomCode: string; teamId: string; emoji: string }, ack?: unknown) => {
+      try {
+        if (typeof payload.emoji !== 'string' || payload.emoji.length > 4) {
+          throw new QQError('INVALID_REACTION', 'Ungültiges Emoji.');
+        }
+        if (!ALLOWED_REACTION_EMOJIS.has(payload.emoji)) {
+          throw new QQError('INVALID_REACTION', 'Reaction nicht erlaubt.');
+        }
+        const room = ensureQQRoom(payload.roomCode);
+        if (!room.teams[payload.teamId]) {
+          throw new QQError('UNKNOWN_TEAM', 'Team unbekannt.');
+        }
+        // Rate-Limit
+        const now = Date.now();
+        if (!reactionLog[payload.roomCode]) reactionLog[payload.roomCode] = {};
+        const teamLog = reactionLog[payload.roomCode][payload.teamId] ?? [];
+        const recent = teamLog.filter(ts => now - ts < 5000);
+        if (recent.length >= 4) {
+          ok(ack); // silent throttle, kein Error
+          return;
+        }
+        recent.push(now);
+        reactionLog[payload.roomCode][payload.teamId] = recent;
+        // Broadcast an alle Clients im Room
+        io.to(payload.roomCode).emit('qq:reactionBurst', {
+          teamId: payload.teamId,
+          emoji: payload.emoji,
+          ts: now,
+        });
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

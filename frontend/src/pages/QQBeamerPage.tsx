@@ -294,6 +294,28 @@ export default function QQBeamerPage() {
     };
   }, [connected]);
 
+  // Live-Reactions von Phones — kommt als qq:reactionBurst-Event mit
+  // {teamId, emoji, ts}. Sammelt aktive Reactions in einer State-Liste,
+  // jede mit eigener Float-Animation; Auto-Cleanup nach 3.2s.
+  const [reactionFloats, setReactionFloats] = useState<Array<{
+    id: string; emoji: string; teamId: string; xPct: number; delaySec: number;
+  }>>([]);
+  useEffect(() => {
+    const sock = socketRef.current;
+    if (!sock) return;
+    const onBurst = (payload: { teamId: string; emoji: string; ts: number }) => {
+      const id = `${payload.ts}-${Math.random().toString(36).slice(2, 7)}`;
+      // Random X-Position 5%-95% damit Reactions nicht alle in derselben Spalte fliegen
+      const xPct = 5 + Math.random() * 90;
+      setReactionFloats(prev => [...prev, { id, emoji: payload.emoji, teamId: payload.teamId, xPct, delaySec: 0 }]);
+      window.setTimeout(() => {
+        setReactionFloats(prev => prev.filter(r => r.id !== id));
+      }, 3500);
+    };
+    sock.on('qq:reactionBurst', onBurst);
+    return () => { sock.off('qq:reactionBurst', onBurst); };
+  }, [connected]);
+
   useEffect(() => {
     if (!connected) { setJoined(false); return; }
     if (joined) return;
@@ -339,6 +361,38 @@ export default function QQBeamerPage() {
     <>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
+      {/* Live-Reactions Overlay — Mini-Bursts schweben von unten nach oben.
+          Pointer-events: none → blockt nichts darunter. zIndex: 9000 → über
+          allem (auch Cell-Animationen) aber unter Fehlermeldungen. */}
+      {reactionFloats.length > 0 && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9000,
+          overflow: 'hidden',
+        }}>
+          {reactionFloats.map(r => (
+            <span key={r.id} style={{
+              position: 'absolute',
+              left: `${r.xPct}%`,
+              bottom: 0,
+              fontSize: 'clamp(36px, 4.4vw, 64px)',
+              animation: 'reactionFloat 3.2s cubic-bezier(0.22,0.7,0.35,1) both',
+              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))',
+              transform: 'translateX(-50%)',
+              willChange: 'transform, opacity',
+            }}>
+              {r.emoji}
+            </span>
+          ))}
+          <style>{`
+            @keyframes reactionFloat {
+              0%   { transform: translate(-50%, 0)        scale(0.6); opacity: 0; }
+              12%  { transform: translate(-50%, -8vh)     scale(1.15); opacity: 1; }
+              80%  { transform: translate(-50%, -78vh)    scale(1); opacity: 1; }
+              100% { transform: translate(-50%, -100vh)   scale(0.85); opacity: 0; }
+            }
+          `}</style>
+        </div>
+      )}
     </>
   );
 }

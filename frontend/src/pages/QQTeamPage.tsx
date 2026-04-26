@@ -901,6 +901,15 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
 
+        {/* Live-Reactions-Pad — sichtbar in passiven Beobachter-Phasen.
+            Spieler tappen ein Emoji; das fliegt als Mini-Burst über den Beamer.
+            Backend rate-limit (4 pro 5s pro Team) gegen Spam. */}
+        {(s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT'
+          || s.phase === 'PAUSED' || s.phase === 'GAME_OVER' || s.phase === 'THANKS'
+          || s.phase === 'PHASE_INTRO' || s.phase === 'TEAMS_REVEAL') && (
+          <ReactionPad emit={emit} roomCode={roomCode} myTeamId={myTeamId} accent={phaseAccent} lang={lang} />
+        )}
+
         {/* Phase stats */}
         {myTeam && s.teamPhaseStats[myTeamId] && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
@@ -4146,6 +4155,71 @@ function StatChip({ label, color }: { label: string; color: string }) {
   return (
     <div style={{ padding: '3px 10px', borderRadius: 999, background: `${color}18`, border: `1px solid ${color}33`, fontSize: 13, fontWeight: 800, color }}>
       {label}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ReactionPad — 4 Emojis tap-bar, fliegen am Beamer als Mini-Bursts.
+// Phone bekommt visuelles Feedback (Tap-Pop), Backend rate-limit
+// (4 pro 5s pro Team) verhindert Spam. Cooldown lokal in setBlockedUntil
+// gegen versehentliche Doppel-Taps.
+// ─────────────────────────────────────────────────────────────────────────
+const REACTION_EMOJIS = ['👏', '🔥', '😱', '😢', '🎉', '😂'] as const;
+
+function ReactionPad({
+  emit, roomCode, myTeamId, accent, lang,
+}: {
+  emit: any; roomCode: string; myTeamId: string;
+  accent: string; lang: 'de' | 'en';
+}) {
+  const [tappedIdx, setTappedIdx] = useState<number | null>(null);
+  const [blockedUntil, setBlockedUntil] = useState<number>(0);
+
+  function tap(emoji: string, i: number) {
+    const now = Date.now();
+    if (now < blockedUntil) return;
+    setTappedIdx(i);
+    setTimeout(() => setTappedIdx(null), 320);
+    if (navigator.vibrate) navigator.vibrate(15);
+    emit('qq:reaction', { roomCode, teamId: myTeamId, emoji });
+    // Lokaler 250ms-Cooldown (Backend hat eigenes 5s-Window)
+    setBlockedUntil(now + 250);
+  }
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      marginTop: 8, padding: '10px 12px',
+      borderRadius: 18,
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent}22`,
+    }}>
+      <div style={{
+        fontSize: 11, fontWeight: 800, color: '#94a3b8',
+        letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.75,
+      }}>
+        {lang === 'de' ? 'Reaktion senden' : 'Send a reaction'}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {REACTION_EMOJIS.map((e, i) => (
+          <button
+            key={e}
+            onClick={() => tap(e, i)}
+            style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: tappedIdx === i ? `${accent}33` : 'rgba(255,255,255,0.06)',
+              border: `1.5px solid ${tappedIdx === i ? accent : 'rgba(255,255,255,0.10)'}`,
+              fontSize: 26, lineHeight: 1, cursor: 'pointer',
+              transition: 'all 0.18s',
+              transform: tappedIdx === i ? 'scale(1.18)' : 'scale(1)',
+            }}
+            aria-label={`React ${e}`}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -760,17 +760,20 @@ function AvatarStudyMockup() {
 // Prinzip: 15-20% Saturation runter, 5-10% Lightness rauf — bleibt distinkt
 // aber atmet ruhiger. Hoodie-Pairings funktionieren weiter, der Kontrast
 // wird sogar stimmiger (weniger Schreierisches dazwischen).
+// Soft Team-Farben = exakter Hoodie-Hex aus den gemalten Aquarell-Avataren.
+// Quelle: avatar-{slug}.png in public/avatars/gouache, Hoodie-Sample
+// (Region 85-97% Höhe, Average-RGB ohne Highlight/Shadow-Pixel).
 const TEAM_COLOR_SOFT: Array<{
   slug: string; label: string; oldHex: string; softHex: string; softName: string;
 }> = [
-  { slug: 'shiba',     label: 'Hund (Shiba)', oldHex: '#FA507F', softHex: '#E68099', softName: 'Rose' },
-  { slug: 'faultier',  label: 'Faultier',     oldHex: '#9DCB2F', softHex: '#B4CC78', softName: 'Sage-Limette' },
-  { slug: 'pinguin',   label: 'Pinguin',      oldHex: '#266FD3', softHex: '#5B85C2', softName: 'Staubig-Blau' },
-  { slug: 'koala',     label: 'Koala',        oldHex: '#9A65D5', softHex: '#B393D1', softName: 'Lavendel' },
-  { slug: 'giraffe',   label: 'Giraffe',      oldHex: '#FEC814', softHex: '#F0CC5F', softName: 'Honig' },
-  { slug: 'waschbaer', label: 'Waschbär',     oldHex: '#68B4A5', softHex: '#88B5AB', softName: 'Stein-Teal' },
-  { slug: 'kuh',       label: 'Kuh',          oldHex: '#FF751F', softHex: '#E89561', softName: 'Terracotta-Orange' },
-  { slug: 'capybara',  label: 'Capybara',     oldHex: '#F84326', softHex: '#DB6A55', softName: 'Backstein' },
+  { slug: 'shiba',     label: 'Hund (Shiba)', oldHex: '#FA507F', softHex: '#9D9387', softName: 'Stone Grey' },
+  { slug: 'faultier',  label: 'Faultier',     oldHex: '#9DCB2F', softHex: '#B79EAC', softName: 'Lavender' },
+  { slug: 'pinguin',   label: 'Pinguin',      oldHex: '#266FD3', softHex: '#E99E9D', softName: 'Dusty Rose' },
+  { slug: 'koala',     label: 'Koala',        oldHex: '#9A65D5', softHex: '#F35357', softName: 'Coral Red' },
+  { slug: 'giraffe',   label: 'Giraffe',      oldHex: '#FEC814', softHex: '#9EA7C8', softName: 'Periwinkel Blue' },
+  { slug: 'waschbaer', label: 'Waschbär',     oldHex: '#68B4A5', softHex: '#E9BF53', softName: 'Mustard Yellow' },
+  { slug: 'kuh',       label: 'Kuh',          oldHex: '#FF751F', softHex: '#D26631', softName: 'Burnt Orange' },
+  { slug: 'capybara',  label: 'Capybara',     oldHex: '#F84326', softHex: '#B4B677', softName: 'Sage Olive' },
 ];
 
 function SoftTeamColorsSection() {
@@ -955,18 +958,21 @@ function SoftGridDemo() {
 // Final 8 Hoodie-Pairings (2026-04-26): keine Doppelungen, alle aus dem
 // gemittelten Aquarell-Sat-Bereich, Pink + Stone-Grey als neue Akzente.
 // Reihenfolge: zuerst die 6 vom User validierten Farben, dann die 2 NEUen.
+// Hoodie-Pairings — final 2026-04-26 nach Avatar-Lieferung:
+// Hoodie = Team-Farbe (eine Identität pro Team). Werte exakt aus den
+// avatar-{slug}.png Hoodies extrahiert.
 const HOODIE_PAIRINGS: Array<{
   slug: string; label: string; teamColor: string;
-  hoodieColor: string; hoodieName: string; reason: string; isNew?: boolean;
+  hoodieColor: string; hoodieName: string; reason: string;
 }> = [
-  { slug: 'capybara',  label: 'Capybara',     teamColor: '#DB6A55', hoodieColor: '#7A9E7E', hoodieName: 'Sage green',     reason: 'Grün-Komplement zu Backstein-Rot · auf Bild bestätigt' },
-  { slug: 'giraffe',   label: 'Giraffe',      teamColor: '#F0CC5F', hoodieColor: '#B393D1', hoodieName: 'Lavendel',       reason: 'Violett vs Honig · auf Bild bestätigt' },
-  { slug: 'koala',     label: 'Koala',        teamColor: '#B393D1', hoodieColor: '#E07A5F', hoodieName: 'Terracotta',     reason: 'Warmes Rot auf kühlem Lavendel · auf Bild bestätigt' },
-  { slug: 'waschbaer', label: 'Waschbär',     teamColor: '#88B5AB', hoodieColor: '#D9A05B', hoodieName: 'Mustard Ocker',  reason: 'Warm-Gelb auf kühlem Stein-Teal · auf Bild bestätigt' },
-  { slug: 'kuh',       label: 'Kuh',          teamColor: '#E89561', hoodieColor: '#5B85C2', hoodieName: 'Dusty blue',     reason: 'Kühles Blau auf warmem Orange · auf Bild bestätigt' },
-  { slug: 'shiba',     label: 'Hund (Shiba)', teamColor: '#E68099', hoodieColor: '#88B5AB', hoodieName: 'Mint teal',      reason: 'Kühles Grün-Blau auf Rose · auf Bild (Retriever) bestätigt' },
-  { slug: 'pinguin',   label: 'Pinguin',      teamColor: '#5B85C2', hoodieColor: '#CA8FA4', hoodieName: 'Dusty Rose',     reason: 'Warm-Pink auf kühlem Blau', isNew: true },
-  { slug: 'faultier',  label: 'Faultier',     teamColor: '#B4CC78', hoodieColor: '#A89B8E', hoodieName: 'Stone Grey',     reason: 'Neutraler Stein-Ton auf Sage-Limette', isNew: true },
+  { slug: 'capybara',  label: 'Capybara',     teamColor: '#B4B677', hoodieColor: '#B4B677', hoodieName: 'Sage Olive',       reason: 'Hoodie + Cell verschmelzen → braunes Capybara-Gesicht pop\'t' },
+  { slug: 'giraffe',   label: 'Giraffe',      teamColor: '#9EA7C8', hoodieColor: '#9EA7C8', hoodieName: 'Periwinkel Blue',  reason: 'Hoodie + Cell verschmelzen → orange-gelber Giraffenhals pop\'t' },
+  { slug: 'koala',     label: 'Koala',        teamColor: '#F35357', hoodieColor: '#F35357', hoodieName: 'Coral Red',        reason: 'Hoodie + Cell verschmelzen → graues Koala-Gesicht pop\'t' },
+  { slug: 'waschbaer', label: 'Waschbär',     teamColor: '#E9BF53', hoodieColor: '#E9BF53', hoodieName: 'Mustard Yellow',   reason: 'Hoodie + Cell verschmelzen → schwarz-weiße Maske pop\'t' },
+  { slug: 'faultier',  label: 'Faultier',     teamColor: '#B79EAC', hoodieColor: '#B79EAC', hoodieName: 'Lavender',         reason: 'Hoodie + Cell verschmelzen → braunes Faultier-Gesicht pop\'t' },
+  { slug: 'shiba',     label: 'Hund (Shiba)', teamColor: '#9D9387', hoodieColor: '#9D9387', hoodieName: 'Stone Grey',       reason: 'Hoodie + Cell verschmelzen → goldenes Retriever-Gesicht pop\'t' },
+  { slug: 'pinguin',   label: 'Pinguin',      teamColor: '#E99E9D', hoodieColor: '#E99E9D', hoodieName: 'Dusty Rose',       reason: 'Hoodie + Cell verschmelzen → schwarz-weißer Pinguin pop\'t' },
+  { slug: 'kuh',       label: 'Kuh',          teamColor: '#D26631', hoodieColor: '#D26631', hoodieName: 'Burnt Orange',     reason: 'Hoodie + Cell verschmelzen → gefleckte Kuh pop\'t' },
 ];
 
 // Erweiterte Hoodie-Palette — 12 Optionen für Variationen oder zukünftige

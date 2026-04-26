@@ -61,37 +61,30 @@ export const PAPER_BG =
   `<rect width='400' height='400' filter='url(%23n)'/></svg>")`;
 
 // ─────────────────────────────────────────────────────────────────────────
-// Team-Farben — sanfte Gouache-Variante.
-// Mapping per QQ_AVATARS.id (nicht per slug!) — der Code nutzt id für
-// alle Team-Operationen.
+// Team-Farben — exakte Hoodie-Hex aus den gemalten Aquarell-Avataren.
+// Jeder Hex wurde aus dem Hoodie-Bereich des jeweiligen Bildes extrahiert
+// (extract-hoodie-colors-Script, Sample-Region unten Mitte 85-97% Höhe).
+// Hoodie-Farbe = Team-Farbe → eine Identität pro Team statt zwei
+// konkurrierende Farben.
+// Mapping per QQ_AVATARS.id (nicht per slug!).
 // ─────────────────────────────────────────────────────────────────────────
 export const SOFT_TEAM_COLORS: Record<string, string> = {
-  fox:     '#E68099',  // Hund (Shiba)   — Rose
-  frog:    '#B4CC78',  // Faultier       — Sage-Limette
-  panda:   '#5B85C2',  // Pinguin        — Staubig-Blau
-  rabbit:  '#B393D1',  // Koala          — Lavendel
-  unicorn: '#F0CC5F',  // Giraffe        — Honig
-  raccoon: '#88B5AB',  // Waschbär       — Stein-Teal
-  cow:     '#E89561',  // Kuh            — Terracotta-Orange
-  cat:     '#DB6A55',  // Capybara       — Backstein
+  fox:     '#9D9387',  // Hund (Shiba)   — Stone Grey
+  frog:    '#B79EAC',  // Faultier        — Lavender
+  panda:   '#E99E9D',  // Pinguin         — Dusty Rose
+  rabbit:  '#F35357',  // Koala           — Coral Red
+  unicorn: '#9EA7C8',  // Giraffe         — Periwinkel-Blau
+  raccoon: '#E9BF53',  // Waschbär        — Mustard Yellow
+  cow:     '#D26631',  // Kuh             — Burnt Orange
+  cat:     '#B4B677',  // Capybara        — Sage Olive
 };
 
-// Hoodie-Farben — finale Variante (2026-04-26) ohne Doppelungen,
-// abgestimmt auf den realen Aquarell-Look der gemalten Avatare.
-// Vorherige Empfehlung hatte zu schwere Töne (Indigo/Holzkohle); jetzt
-// alle aus dem mittleren Aquarell-Sat-Bereich, plus Dusty-Rose + Stone-
-// Grey als neue Akzente.
-// Mapping per QQ_AVATARS.id.
-export const HOODIE_COLORS: Record<string, string> = {
-  fox:     '#88B5AB',  // Hund (Shiba)   — Mint teal
-  frog:    '#A89B8E',  // Faultier        — Stone Grey
-  panda:   '#CA8FA4',  // Pinguin         — Dusty Rose
-  rabbit:  '#E07A5F',  // Koala           — Terracotta
-  unicorn: '#B393D1',  // Giraffe         — Lavendel
-  raccoon: '#D9A05B',  // Waschbär        — Mustard Ocker
-  cow:     '#5B85C2',  // Kuh             — Dusty blue
-  cat:     '#7A9E7E',  // Capybara        — Sage green
-};
+// Hoodie-Farben = Team-Farben (siehe oben) — die Avatare sind so gemalt,
+// dass jeder genau seine Team-Farbe trägt. Auf eigenem Feld verschmilzt
+// der Hoodie mit der Cell, das Tier-Gesicht (warmer Pelz) wird zum
+// fokalen Pop. Auf fremdem Feld (Klau-Phase) kontrastiert der Hoodie
+// klar gegen die andere Team-Farbe.
+export const HOODIE_COLORS: Record<string, string> = SOFT_TEAM_COLORS;
 
 // Helpers — geben Defaults zurück falls die ID nicht in der Map ist.
 export function softTeamColor(avatarId: string, fallback = PALETTE.terracotta): string {

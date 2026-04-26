@@ -27,6 +27,8 @@ const qqLinks: LinkItem[] = [
   { path: '/sneak-peak.html',       label: 'Design Sneak Peak',emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
   { path: '/round-lab',             label: 'Wolf-Trail Lab',   emoji: '🐺', note: 'Prototyp: Wolf wandert den Tree entlang' },
   { path: '/reveal-lab',            label: 'Reveal-Lab',       emoji: '👥', note: 'Avatar-Layouts pro Kategorie vergleichen' },
+  { path: '/city-lab',              label: 'City Lab (3D)',    emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats · Lantern Field' },
+  { path: '/gouache',               label: 'Gouache Lab',      emoji: '🎨', note: 'Aquarell-/Bilderbuch-Stil — komplette Stilstudie + Live-Avatar-Status' },
 ];
 
 // ── Legacy ────────────────────────────────────────────────────────────────────

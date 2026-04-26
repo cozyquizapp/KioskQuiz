@@ -46,7 +46,39 @@ const SIZE = 7;
 const TILE = 1.6;
 const OFFSET = ((SIZE - 1) * TILE) / 2;
 
-type Variant = 1 | 2 | 3;
+type Variant = 1 | 2 | 3 | 4;
+
+// ── Cluster-Sizes BFS (4er-Nachbarschaft) ─────────────────────────────────
+// Wird einmal beim Modul-Load berechnet. Variant 4 nutzt diese Map, um die
+// Hoehe der Tier-Haeuser proportional zur verbundenen Territoriumsgroesse
+// wachsen zu lassen — kleines Cluster = kleine Huette, grosses = Tower.
+function computeClusterSizes(grid: Cell[][]): Map<string, number> {
+  const visited = new Set<string>();
+  const sizes = new Map<string, number>();
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const k = (r: number, c: number) => `${r}-${c}`;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const owner = grid[r][c].owner;
+      if (!owner || visited.has(k(r, c))) continue;
+      const cluster: Array<[number, number]> = [];
+      const queue: Array<[number, number]> = [[r, c]];
+      while (queue.length > 0) {
+        const [rr, cc] = queue.shift()!;
+        if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+        if (visited.has(k(rr, cc))) continue;
+        if (grid[rr][cc].owner !== owner) continue;
+        visited.add(k(rr, cc));
+        cluster.push([rr, cc]);
+        queue.push([rr - 1, cc], [rr + 1, cc], [rr, cc - 1], [rr, cc + 1]);
+      }
+      cluster.forEach(([rr, cc]) => sizes.set(k(rr, cc), cluster.length));
+    }
+  }
+  return sizes;
+}
+const CLUSTER_SIZES: Map<string, number> = computeClusterSizes(DEMO_GRID);
 
 // ── Avatar-Textur-Cache (Emoji → CanvasTexture) ────────────────────────────
 // Emojis werden via 2D-Canvas mit System-Emoji-Fonts gerendert und
@@ -152,6 +184,7 @@ const VARIANTS: { id: Variant; title: string; sub: string; accent: string }[] = 
   { id: 1, title: '① Häuser (Three.js)', sub: '8 Gebäudetypen wie QQ3DGrid, mit echtem Licht & emissive Fenstern', accent: '#F59E0B' },
   { id: 2, title: '② Sockel + Kopf',      sub: 'Team-farbiger 3D-Sockel mit Avatar-Portrait',                       accent: '#3B82F6' },
   { id: 3, title: '③ 2D-Plan (Morph-Base)', sub: 'Flacher Stadtplan mit Straßen + Innenhöfen — gleiche Topologie wie 3D, morphbar', accent: '#10B981' },
+  { id: 4, title: '④ Habitat (Tier-Häuser)', sub: 'Häuschen wachsen mit Cluster-Größe · Pagode bei Stapel · Joker-Sparkle-Ring', accent: '#EC4899' },
 ];
 
 // Gebäude-Typ pro Zelle deterministisch bestimmen (wie QQ3DGrid-Ansatz)
@@ -260,9 +293,26 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
             );
           }
 
-          if (!owner) return <EmptyPlot key={key} x={x} z={z} />;
+          if (!owner) {
+            if (variant === 4) return <MeadowMound key={key} x={x} z={z} seed={r * 11 + c * 7} />;
+            return <EmptyPlot key={key} x={x} z={z} />;
+          }
           const avatar = AVATARS[owner];
           if (variant === 2) return <PedestalFigure key={key} x={x} z={z} avatar={avatar} joker={joker} seed={r * 5 + c} />;
+          if (variant === 4) {
+            return (
+              <HabitatCell
+                key={key}
+                x={x} z={z}
+                avatar={avatar}
+                joker={joker}
+                stacked={cell.stacked ?? 0}
+                frozen={!!cell.frozen}
+                clusterSize={CLUSTER_SIZES.get(`${r}-${c}`) ?? 1}
+                seed={r * 7 + c * 3}
+              />
+            );
+          }
           return null;
         }))}
 
@@ -2942,6 +2992,273 @@ function PedestalFigure({ x, z, avatar, joker, seed }: {
           <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={0.9} metalness={0.7} roughness={0.3} />
         </mesh>
       )}
+    </group>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ④ HABITAT CELL — Tier-Häuser, die mit Cluster-Größe wachsen.
+// Kleine Hütte (1 Feld) → Cottage (2-3) → Tower (4-5) → Skyscraper (6+).
+// Stapel = klassische Pagode mit 3 abgestuften Stockwerken.
+// Joker = schwebendes Häuschen + rotierender Sparkle-Ring oben.
+// Frozen = Eiskristall-Kappe auf dem Dach.
+// Cluster ≥ 3 = farbiger Glow-Ring um die Basis.
+// Avatar schwebt als Billboard ueber dem Dach mit sanftem Bobbing.
+// ─────────────────────────────────────────────────────────────────────────────
+function HabitatCell({ x, z, avatar, joker, stacked, frozen, clusterSize, seed }: {
+  x: number; z: number; avatar: typeof AVATARS[AvatarKey];
+  joker: boolean; stacked: number; frozen: boolean; clusterSize: number; seed: number;
+}) {
+  const tex = useAvatarTexture(avatar.emoji);
+  const headRef = useRef<THREE.Group>(null);
+  const sparkleRef = useRef<THREE.Group>(null);
+  const houseRef = useRef<THREE.Group>(null);
+  const bob = seed * 0.6;
+
+  // Kleines Cluster = niedrige Hütte, grosses Cluster = hoher Tower.
+  // Cap bei 1.6, sonst werden die Modelle viel größer als die Tile-Spannweite.
+  const baseH = stacked > 0
+    ? 0.32 + 0.36 * (1 + stacked)        // Pagode-Stapel-Höhe
+    : Math.min(1.55, 0.36 + clusterSize * 0.18);
+  const topY = baseH + 0.05;
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (headRef.current) {
+      headRef.current.position.y = topY + 0.3 + Math.sin(t * 1.4 + bob) * 0.05;
+    }
+    if (sparkleRef.current) {
+      sparkleRef.current.rotation.y = t * 1.2;
+      const s = 0.95 + Math.sin(t * 2.4 + bob) * 0.06;
+      sparkleRef.current.scale.setScalar(s);
+    }
+    if (houseRef.current && joker) {
+      // Joker-Hütte schwebt sanft hoch und runter
+      houseRef.current.position.y = 0.05 + Math.sin(t * 0.9 + bob) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      {/* Boden-Tile in Teamfarbe (gleich wie Variant 1/2) */}
+      <TeamBase x={x} z={z} color={avatar.color} joker={joker} />
+
+      {/* Cluster-Glow-Ring fuer grosse Territorien */}
+      {clusterSize >= 3 && (
+        <mesh position={[x, 0.045, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.6, 0.7, 36]} />
+          <meshBasicMaterial color={avatar.color} toneMapped={false} transparent opacity={0.32} />
+        </mesh>
+      )}
+
+      <group ref={houseRef} position={[x, 0.05, z]}>
+        {stacked > 0 ? (
+          // PAGODE — 3 hexagonale Stockwerke mit Pyramiden-Dächern
+          <>
+            {[0, 1, 2].map(i => {
+              const tierH = 0.28;
+              const tierY = i * (tierH + 0.06);
+              const tierR = 0.38 - i * 0.06;
+              return (
+                <group key={i} position={[0, tierY, 0]}>
+                  {/* Stockwerk */}
+                  <mesh position={[0, tierH / 2, 0]} castShadow receiveShadow>
+                    <cylinderGeometry args={[tierR, tierR + 0.02, tierH, 6]} />
+                    <meshStandardMaterial
+                      color="#f3e3c2"
+                      roughness={0.7}
+                      emissive={avatar.color}
+                      emissiveIntensity={0.08}
+                    />
+                  </mesh>
+                  {/* Dach */}
+                  <mesh position={[0, tierH + 0.09, 0]} castShadow rotation={[0, Math.PI / 6, 0]}>
+                    <coneGeometry args={[tierR + 0.12, 0.18, 6]} />
+                    <meshStandardMaterial
+                      color={avatar.color}
+                      emissive={avatar.color}
+                      emissiveIntensity={0.55}
+                      roughness={0.4}
+                      metalness={0.25}
+                    />
+                  </mesh>
+                  {/* Dach-Kante (heller Rand wie traditionelle Pagode) */}
+                  <mesh position={[0, tierH + 0.005, 0]}>
+                    <torusGeometry args={[tierR + 0.06, 0.012, 6, 24]} />
+                    <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={0.4} toneMapped={false} />
+                  </mesh>
+                </group>
+              );
+            })}
+            {/* Spitze ganz oben */}
+            <mesh position={[0, 3 * (0.28 + 0.06) + 0.06, 0]} castShadow>
+              <coneGeometry args={[0.05, 0.16, 4]} />
+              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.0} metalness={0.7} roughness={0.3} />
+            </mesh>
+          </>
+        ) : (
+          // STANDARD-HAUS — Box mit Pyramiden-Dach in Teamfarbe + Fenster + Tür
+          <>
+            {/* Hauskorpus */}
+            <mesh position={[0, baseH / 2, 0]} castShadow receiveShadow>
+              <boxGeometry args={[0.62, baseH, 0.62]} />
+              <meshStandardMaterial
+                color="#efddb8"
+                roughness={0.78}
+                emissive={avatar.color}
+                emissiveIntensity={0.06}
+              />
+            </mesh>
+            {/* Pyramiden-Dach in Teamfarbe */}
+            <mesh position={[0, baseH + 0.13, 0]} castShadow rotation={[0, Math.PI / 4, 0]}>
+              <coneGeometry args={[0.5, 0.28, 4]} />
+              <meshStandardMaterial
+                color={avatar.color}
+                emissive={avatar.color}
+                emissiveIntensity={0.5}
+                roughness={0.45}
+                metalness={0.18}
+              />
+            </mesh>
+            {/* Tür */}
+            <mesh position={[0, 0.13, 0.312]}>
+              <planeGeometry args={[0.13, 0.24]} />
+              <meshStandardMaterial color="#3a2614" roughness={0.85} />
+            </mesh>
+            {/* Fenster — emissive, beleuchtet (links/rechts auf Frontfassade) */}
+            <mesh position={[-0.18, baseH * 0.62, 0.312]}>
+              <planeGeometry args={[0.11, 0.13]} />
+              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.3} roughness={0.3} toneMapped={false} />
+            </mesh>
+            <mesh position={[0.18, baseH * 0.62, 0.312]}>
+              <planeGeometry args={[0.11, 0.13]} />
+              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.3} roughness={0.3} toneMapped={false} />
+            </mesh>
+            {/* Bei Tower (clusterSize >= 4): zweite Fenster-Reihe oberhalb */}
+            {clusterSize >= 4 && (
+              <>
+                <mesh position={[-0.18, baseH * 0.32, 0.312]}>
+                  <planeGeometry args={[0.11, 0.13]} />
+                  <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.0} roughness={0.3} toneMapped={false} />
+                </mesh>
+                <mesh position={[0.18, baseH * 0.32, 0.312]}>
+                  <planeGeometry args={[0.11, 0.13]} />
+                  <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.0} roughness={0.3} toneMapped={false} />
+                </mesh>
+              </>
+            )}
+            {/* Bei Tower: schmale Türmchen an den Seiten */}
+            {clusterSize >= 5 && (
+              <>
+                <mesh position={[0.36, baseH * 0.55, 0]} castShadow>
+                  <cylinderGeometry args={[0.08, 0.08, baseH * 0.85, 12]} />
+                  <meshStandardMaterial color="#efddb8" roughness={0.8} />
+                </mesh>
+                <mesh position={[0.36, baseH + 0.06, 0]} castShadow>
+                  <coneGeometry args={[0.12, 0.18, 12]} />
+                  <meshStandardMaterial color={avatar.color} emissive={avatar.color} emissiveIntensity={0.6} roughness={0.4} />
+                </mesh>
+              </>
+            )}
+            {/* Bei großem Cluster (≥4): Fahnenmast mit Team-Fahne auf der Spitze */}
+            {clusterSize >= 4 && (
+              <>
+                <mesh position={[0, baseH + 0.42, 0]}>
+                  <cylinderGeometry args={[0.008, 0.008, 0.3, 6]} />
+                  <meshStandardMaterial color="#5a4a30" />
+                </mesh>
+                <mesh position={[0.08, baseH + 0.5, 0]}>
+                  <planeGeometry args={[0.16, 0.1]} />
+                  <meshStandardMaterial color={avatar.color} emissive={avatar.color} emissiveIntensity={0.4} side={THREE.DoubleSide} />
+                </mesh>
+              </>
+            )}
+          </>
+        )}
+      </group>
+
+      {/* Tier-Avatar schwebt als Billboard ueber dem Haus */}
+      <group ref={headRef} position={[x, topY + 0.3, z]}>
+        <Billboard>
+          {joker && (
+            <mesh position={[0, 0, -0.01]}>
+              <circleGeometry args={[0.32, 32]} />
+              <meshBasicMaterial color="#fbbf24" toneMapped={false} transparent opacity={0.55} />
+            </mesh>
+          )}
+          {/* Soft white glow disc behind avatar */}
+          <mesh position={[0, 0, -0.005]}>
+            <circleGeometry args={[0.26, 32]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.18} />
+          </mesh>
+          <mesh>
+            <planeGeometry args={[0.46, 0.46]} />
+            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+          </mesh>
+        </Billboard>
+      </group>
+
+      {/* Joker: rotierender Sparkle-Ring oberhalb des Avatars */}
+      {joker && (
+        <group ref={sparkleRef} position={[x, topY + 0.78, z]}>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+            const angle = (i / 8) * Math.PI * 2;
+            const r = 0.34;
+            return (
+              <mesh key={i} position={[Math.cos(angle) * r, 0, Math.sin(angle) * r]}>
+                <sphereGeometry args={[0.045, 10, 10]} />
+                <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.2} toneMapped={false} />
+              </mesh>
+            );
+          })}
+        </group>
+      )}
+
+      {/* Frozen: Eiskristall-Kappe auf dem Dach */}
+      {frozen && (
+        <mesh position={[x, topY + 0.08, z]} castShadow rotation={[0, Math.PI / 4, 0]}>
+          <octahedronGeometry args={[0.16, 0]} />
+          <meshStandardMaterial
+            color="#bfe7ff"
+            emissive="#5bb3ff"
+            emissiveIntensity={0.85}
+            roughness={0.12}
+            metalness={0.45}
+            transparent
+            opacity={0.88}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Wiesen-Hügel als „leeres Feld" in Variant 4 — ein dunkelgrüner Mound mit
+// 1-2 Bäumchen drauf, statt der dunklen leeren Tile-Plane.
+function MeadowMound({ x, z, seed }: { x: number; z: number; seed: number }) {
+  const rng = useMemo(() => rngFromSeed(seed), [seed]);
+  const treeCount = 1 + Math.floor(rng() * 2);
+  const trees: Array<{ tx: number; tz: number; sc: number }> = [];
+  for (let i = 0; i < treeCount; i++) {
+    trees.push({
+      tx: (rng() - 0.5) * 0.6,
+      tz: (rng() - 0.5) * 0.6,
+      sc: 0.42 + rng() * 0.18,
+    });
+  }
+  return (
+    <group position={[x, 0, z]}>
+      {/* Hügel-Boden */}
+      <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.6, 24]} />
+        <meshStandardMaterial color="#3d6b3f" roughness={0.92} />
+      </mesh>
+      {/* Sanfter Hügel-Dome */}
+      <mesh position={[0, 0.04, 0]} castShadow receiveShadow>
+        <sphereGeometry args={[0.55, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]} />
+        <meshStandardMaterial color="#3d6b3f" roughness={0.95} />
+      </mesh>
+      {trees.map((t, i) => <TreeAt key={i} x={t.tx} z={t.tz} scale={t.sc} />)}
     </group>
   );
 }

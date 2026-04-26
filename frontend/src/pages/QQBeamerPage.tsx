@@ -1237,7 +1237,7 @@ type RulesSlide = {
   color: string;
   lines: string[];
   extra?: string;
-  /** Mini grid example: 2D array — 'A' = team A, 'B' = team B, '⭐' = joker star, '📌' = stacked, null = empty */
+  /** Mini grid example: 2D array — 'A' = team A, 'B' = team B, '⭐' = joker star, '🗼' = stacked, null = empty */
   grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
   /** Rendert stattdessen den Fortschrittsbaum (Phasen + Fragen-Punkte). */
   showTree?: boolean;
@@ -1286,7 +1286,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       showTree: true,
       abilities: [
         { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
-        { emoji: '📌', label: 'Stapeln', accent: '#06B6D4' },
+        { emoji: '🗼', label: 'Stapeln', accent: '#06B6D4' },
       ],
     },
     {
@@ -1343,7 +1343,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       showTree: true,
       abilities: [
         { emoji: '⚡', label: 'Steal', accent: '#EF4444' },
-        { emoji: '📌', label: 'Stack', accent: '#06B6D4' },
+        { emoji: '🗼', label: 'Stack', accent: '#06B6D4' },
       ],
     },
     {
@@ -1379,7 +1379,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
         {grid.cells.flatMap((row, r) => row.map((cell, c) => {
           const isTeamA = cell === 'A';
           const isStar = cell === '⭐';
-          const isPin = cell === '📌';
+          const isPin = cell === '🗼';
           const filled = isTeamA || isStar || isPin;
           const bg = isStar
             ? `linear-gradient(135deg, ${grid.colorA}cc, #F59E0Bcc)`
@@ -1399,7 +1399,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               boxShadow: filled ? `0 0 12px ${isStar ? '#F59E0B44' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
               animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
             }}>
-              {isStar ? <QQEmojiIcon emoji="⭐"/> : isPin ? <QQEmojiIcon emoji="📌"/> : ''}
+              {isStar ? <QQEmojiIcon emoji="⭐"/> : isPin ? <QQEmojiIcon emoji="🗼"/> : ''}
             </div>
           );
         }))}
@@ -2825,12 +2825,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: ['Per correct answer choose one action:', 'Stealing now possible!'],
     },
     3: {
-      emoji: '📌',
+      emoji: '🗼',
       de: ['Pro richtige Antwort wählt eine Aktion:', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!'],
       en: ['Per correct answer choose one action:', 'Stack unlocked — lock your tile + 1 extra point!'],
     },
     4: {
-      emoji: '📌',
+      emoji: '🗼',
       de: ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
       en: ['Per correct answer choose one action:', 'Final round — everything stays available!'],
     },
@@ -3137,7 +3137,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {(s.gamePhaseIndex === 3 || s.gamePhaseIndex === 4) ? (
-              <QQEmojiIcon emoji="📌" />
+              <QQEmojiIcon emoji="🗼" />
             ) : (
               roundRules.emoji
             )}
@@ -3211,7 +3211,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         limit: lang === 'en' ? 'while free cells' : 'wenn Feld frei',
                         accent: color },
                       { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
-                      { count: 1, emoji: '📌', label: lang === 'en' ? 'Stack' : 'Stapeln',
+                      { count: 1, emoji: '🗼', label: lang === 'en' ? 'Stack' : 'Stapeln',
                         limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
                         accent: '#06B6D4' },
                     ]
@@ -6544,31 +6544,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* Mobile hint — fade out on reveal */}
-          {(() => {
-            const hints: Record<string, { de: string; en: string }> = {
-              SCHAETZCHEN:   { de: '📱 Gebt eure Schätzung auf dem Handy ein', en: '📱 Enter your estimate on your phone' },
-              MUCHO:         { de: '📱 Wählt die richtige Antwort auf dem Handy', en: '📱 Pick the right answer on your phone' },
-              BUNTE_TUETE:   { de: '📱 Antwort jetzt auf dem Handy eingeben', en: '📱 Enter your answer on your phone' },
-              ZEHN_VON_ZEHN: { de: '📱 Verteilt eure Punkte auf dem Handy', en: '📱 Distribute your points on your phone' },
-              CHEESE:        { de: '📱 Antwort auf dem Handy eingeben', en: '📱 Enter your answer on your phone' },
-            };
-            const hint = hints[cat] ?? hints.BUNTE_TUETE;
-            return (
-              <div style={{
-                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 700,
-                color: 'rgba(148,163,184,0.8)', letterSpacing: '0.02em',
-                overflow: 'hidden',
-                maxHeight: revealed ? 0 : 60,
-                opacity: revealed ? 0 : 1,
-                marginBottom: revealed ? 0 : 16,
-                transition: 'max-height 0.4s ease, opacity 0.25s ease, margin-bottom 0.4s ease',
-                animation: !revealed ? 'contentReveal 0.4s ease 0.3s both' : undefined,
-              }}>
-                {lang === 'en' ? hint.en : hint.de}
-              </div>
-            );
-          })()}
+          {/* Mobile-Hint („📱 Antwort auf dem Handy") entfernt 2026-04-26:
+              Teams haben bereits die Eingabe-UI auf ihren Geraeten — der
+              Beamer-Hint zielte auf niemanden, der ihn lesen muss. Die
+              Avatare-mit-Haekchen-Reihe (z.B. bei Cheese) zeigt die
+              Antwort-Progress visueller. */}
 
           {/* BUNTE_TÜTE order — Items während QUESTION_ACTIVE sichtbar
               (Teams sortieren am Handy, Publikum muss wissen worum es geht) */}

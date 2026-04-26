@@ -86,7 +86,7 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-check':          '✅',
   'fx-cross':          '❌',
   'fx-place':          '📍',
-  'fx-stack':          '📌',
+  'fx-stack':          '🗼',
   'fx-potato':         '🥔',
   'fx-target':         '🎯',
   'fx-fire':           '🔥',
@@ -164,7 +164,9 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '✅': 'fx-check',
   '❌': 'fx-cross',
   '📍': 'fx-place',
-  '📌': 'fx-stack',
+  // '🗼': 'fx-stack',  // entfernt — fx-stack.png ist die alte Pin-Variante,
+  // wir wollen aber das Turm-Emoji (Stapel = Turm). 🗼 faellt jetzt auf
+  // natives Unicode-Rendering durch, das den Turm zeigt.
   '🥔': 'fx-potato',
   '🎯': 'fx-target',
   '🔥': 'fx-fire',

@@ -1549,16 +1549,17 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
   if (bt.kind === 'order') {
     const items = bt.items ?? ['', '', ''];
     const itemsEn = bt.itemsEn ?? [];
+    const itemValues = bt.itemValues ?? [];
     const correctOrder = bt.correctOrder ?? items.map((_, i) => i);
     const btCriteria = bt.criteria;
     const btCriteriaEn = bt.criteriaEn;
 
-    function patchOrder(newItems: string[], newOrder: number[], newItemsEn?: string[], criteria?: string, criteriaEn?: string) {
-      onChange({ ...q, bunteTuete: { kind: 'order' as const, items: newItems, correctOrder: newOrder, itemsEn: newItemsEn ?? itemsEn, criteria: criteria ?? btCriteria, criteriaEn: criteriaEn ?? btCriteriaEn } });
+    function patchOrder(newItems: string[], newOrder: number[], newItemsEn?: string[], criteria?: string, criteriaEn?: string, newItemValues?: string[]) {
+      onChange({ ...q, bunteTuete: { kind: 'order' as const, items: newItems, correctOrder: newOrder, itemsEn: newItemsEn ?? itemsEn, criteria: criteria ?? btCriteria, criteriaEn: criteriaEn ?? btCriteriaEn, itemValues: newItemValues ?? itemValues } });
     }
-    function addItem() { patchOrder([...items, ''], [...correctOrder, items.length]); }
+    function addItem() { patchOrder([...items, ''], [...correctOrder, items.length], undefined, undefined, undefined, [...itemValues, '']); }
     function removeItem(i: number) {
-      patchOrder(items.filter((_, idx) => idx !== i), correctOrder.filter(x => x !== i).map(x => x > i ? x - 1 : x));
+      patchOrder(items.filter((_, idx) => idx !== i), correctOrder.filter(x => x !== i).map(x => x > i ? x - 1 : x), undefined, undefined, undefined, itemValues.filter((_, idx) => idx !== i));
     }
 
     return (
@@ -1581,6 +1582,8 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
                   style={inputStyle} placeholder={`Element ${i + 1} (DE)…`} />
                 <input value={itemsEn[i] ?? ''} onChange={e => { const it = [...itemsEn]; it[i] = e.target.value; patchOrder(items, correctOrder, it); }}
                   style={{ ...inputStyle, marginTop: 4, fontSize: 12, opacity: 0.7 }} placeholder={`Element ${i + 1} (EN, opt.)…`} />
+                <input value={itemValues[i] ?? ''} onChange={e => { const iv = [...itemValues]; iv[i] = e.target.value; patchOrder(items, correctOrder, undefined, undefined, undefined, iv); }}
+                  style={{ ...inputStyle, marginTop: 4, fontSize: 12, opacity: 0.85 }} placeholder={`Wert für Auflösung (z.B. „1 Tag", „8848 m")…`} />
               </div>
               {items.length > 2 && (
                 <button onClick={() => removeItem(i)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 12 }}>✕</button>

@@ -303,9 +303,9 @@ export default function QQSummaryPage() {
       }}>
         <div style={{
           width: 112, height: 112, borderRadius: '50%',
-          background: selectedTeam.color,
-          border: '4px solid #fff',
-          boxShadow: `0 10px 30px ${selectedTeam.color}66`,
+          background: '#0f172a',
+          border: `4px solid ${selectedTeam.color}`,
+          boxShadow: `0 10px 30px ${selectedTeam.color}55, 0 0 0 2px rgba(15,23,42,0.7) inset`,
           overflow: 'hidden',
         }}>
           <img src={av.image} alt={av.label} style={{
@@ -393,11 +393,10 @@ export default function QQSummaryPage() {
 }
 
 function formatPlaceLabel(place: number, lang: Lang): string {
-  if (lang === 'de') {
-    const medal = place === 1 ? <QQEmojiIcon emoji="🥇"/> : place === 2 ? <QQEmojiIcon emoji="🥈"/> : place === 3 ? <QQEmojiIcon emoji="🥉"/> : '🎖️';
-    return `${medal} ${place}. Platz`;
-  }
-  const medal = place === 1 ? <QQEmojiIcon emoji="🥇"/> : place === 2 ? <QQEmojiIcon emoji="🥈"/> : place === 3 ? <QQEmojiIcon emoji="🥉"/> : '🎖️';
+  // Unicode-Emoji statt JSX-Komponente — innerhalb eines Template-Strings wuerde
+  // <QQEmojiIcon> sonst zu „[object Object]" stringifiziert.
+  const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🎖️';
+  if (lang === 'de') return `${medal} ${place}. Platz`;
   const ord = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`;
   return `${medal} ${ord} place`;
 }

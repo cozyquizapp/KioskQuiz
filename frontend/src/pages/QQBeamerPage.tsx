@@ -62,6 +62,30 @@ const CAT_GLOW: Record<string, string> = {
   CHEESE:        'rgba(124,58,237,0.45)',
 };
 // (CAT_ACCENT removed — now imported from qqShared)
+
+// SpeedBoltMarker: goldener Blitz-Badge fuer „schnellster Voter". Inline-SVG statt
+// Unicode-⚡ — sonst rendert das Browser-Emoji-Fallback je nach OS als gelbes
+// Polygon mit eigenem Hintergrund (Apple Color Emoji etc).
+function SpeedBoltMarker({ top, right }: { top: number; right: number }) {
+  return (
+    <span style={{
+      position: 'absolute', top, right,
+      width: 'clamp(22px, 2.4vw, 32px)', height: 'clamp(22px, 2.4vw, 32px)',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle at 30% 28%, #FEF3C7 0%, #FBBF24 55%, #B45309 100%)',
+      boxShadow: '0 0 14px rgba(251,191,36,0.55), 0 4px 8px rgba(0,0,0,0.4)',
+      border: '2px solid #FDE68A',
+      animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+      pointerEvents: 'none',
+    }} aria-label="Schnellster">
+      <svg viewBox="0 0 24 24" width="62%" height="62%" aria-hidden style={{ display: 'block' }}>
+        <path d="M13.5 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#7C2D12" stroke="#FFFBEB" strokeWidth="0.8" strokeLinejoin="round"/>
+      </svg>
+    </span>
+  );
+}
+
 interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: string; right?: string; size: number; rot: number; alt?: boolean }
 // Positions avoid the top-right timer (at top:16px right:48px) and top-left category pill.
 // Decorations stay on the sides (mid-height) and near the bottom, where nothing else sits.
@@ -1676,13 +1700,7 @@ function MuchoOptionsReveal({
                           }}
                         />
                         {isFastest && (
-                          <span style={{
-                            position: 'absolute', top: -12, right: -8,
-                            width: 'clamp(22px, 2.4vw, 30px)', height: 'clamp(22px, 2.4vw, 30px)',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            lineHeight: 1,
-                            animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
-                          }}><QQEmojiIcon emoji="⚡" size="100%"/></span>
+                          <SpeedBoltMarker top={-12} right={-8} />
                         )}
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
                         {timeSec != null && isCorrect && akt3On && (
@@ -4390,8 +4408,27 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 const QQFitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }> = ({ bounds, trigger }) => {
   const map = useMap();
   useEffect(() => {
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [80, 80], maxZoom: 9, animate: true, duration: 0.9 });
+    if (bounds.isValid()) {
+      // flyToBounds = smoother Cinematic-Zoom (vs. fitBounds = harter Sprung).
+      // padding etwas grosszuegiger + duration 1.4s damit die Bewegung als
+      // bewusster Move zum Ziel erkennbar ist (Geoguessr-style).
+      map.flyToBounds(bounds, { padding: [100, 100], maxZoom: 8, duration: 1.4 });
+    }
   }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+};
+
+// Slow-Zoom-Intro: beim ersten Reveal-Step (showTarget) auf den Zielbereich
+// zoomen — startet typischerweise von einem weiten Default-Zoom und gleitet
+// rein, wie GeoGuessr-Round-End. Nur einmal beim Mount.
+const QQInitialTargetZoom: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
+  const map = useMap();
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      map.flyTo([lat, lng] as any, 6, { duration: 2.0 });
+    }, 200);
+    return () => window.clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 };
 
@@ -4781,6 +4818,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
   const btt = q.bunteTuete as any;
   const itemsDE: string[] = (btt.items ?? []) as string[];
   const itemsEN: string[] = (btt.itemsEn ?? []) as string[];
+  const itemValues: string[] = (btt.itemValues ?? []) as string[];
   const correctOrder: number[] = (btt.correctOrder ?? []) as number[];
   const items = lang === 'en' && itemsEN.length ? itemsEN : itemsDE;
   const n = correctOrder.length;
@@ -4961,12 +4999,32 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                 </div>
 
                 <div style={{
-                  fontSize: 'clamp(20px, 2.3vw, 34px)', fontWeight: 900,
-                  color: hasHits ? '#86efac' : '#cbd5e1',
-                  lineHeight: 1.2,
-                  minWidth: 0, wordBreak: 'break-word',
+                  display: 'flex', alignItems: 'baseline', gap: 'clamp(8px, 1vw, 14px)',
+                  flexWrap: 'wrap', minWidth: 0,
                 }}>
-                  {hasHits ? '✓ ' : ''}{itemText}
+                  <div style={{
+                    fontSize: 'clamp(20px, 2.3vw, 34px)', fontWeight: 900,
+                    color: hasHits ? '#86efac' : '#cbd5e1',
+                    lineHeight: 1.2,
+                    minWidth: 0, wordBreak: 'break-word',
+                  }}>
+                    {hasHits ? '✓ ' : ''}{itemText}
+                  </div>
+                  {itemValues[correctIdx] && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '3px 12px', borderRadius: 999,
+                      background: hasHits ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.16)',
+                      border: hasHits ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
+                      color: hasHits ? '#86efac' : '#cbd5e1',
+                      fontWeight: 800,
+                      fontSize: 'clamp(14px, 1.5vw, 22px)',
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {itemValues[correctIdx]}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{
@@ -5217,37 +5275,38 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         gap: 'clamp(16px, 2.4vw, 32px)',
         minHeight: 0,
       }}>
-        {/* Linke Spalte: EINE unified Card — Lösung oben, Winner-Footer unten.
-            War vorher 2 separate Karten, wirkte doppelt (Winner steht eh als #1
-            in der rechten Liste) + Lösung allein wirkte verloren. */}
+        {/* Linke Spalte: 2 separate Cards — Lösung (gruen umrandet) oben,
+            Gewinner (in Teamfarbe umrandet) unten. War vorher eine unified
+            Card mit nur grünem Rand und Winner als Footer — User wollte die
+            Winner-Hälfte deutlich in Team-Farbe abgesetzt sehen. */}
         <div style={{
           display: 'flex', flexDirection: 'column',
+          gap: 'clamp(10px, 1.4vh, 18px)',
           minHeight: 0, minWidth: 0,
-          borderRadius: 28,
-          background: 'radial-gradient(circle at 50% 30%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
-          border: '3px solid rgba(34,197,94,0.55)',
-          boxShadow: '0 0 60px rgba(34,197,94,0.28), inset 0 0 30px rgba(34,197,94,0.08)',
-          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
-          position: 'relative', overflow: 'hidden',
         }}>
-          {/* Shimmer-Sweep */}
-          <div style={{
-            position: 'absolute', top: 0, width: '60%', height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
-            animation: 'revealShimmer 0.9s ease 0.55s both',
-            pointerEvents: 'none',
-          }} />
-
-          {/* Loesung — oberhaelfte */}
+          {/* Loesung — obere Card, gruen umrandet */}
           <div style={{
             flex: '1 1 0', minHeight: 0,
-            padding: 'clamp(16px, 2vh, 26px) clamp(18px, 2vw, 30px) clamp(10px, 1.2vh, 18px)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-            position: 'relative', zIndex: 1,
+            borderRadius: 24,
+            background: 'radial-gradient(circle at 50% 35%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
+            border: '3px solid rgba(34,197,94,0.6)',
+            boxShadow: '0 0 50px rgba(34,197,94,0.25), inset 0 0 26px rgba(34,197,94,0.08)',
+            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+            padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2vw, 30px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+            position: 'relative', overflow: 'hidden',
           }}>
+            {/* Shimmer-Sweep */}
+            <div style={{
+              position: 'absolute', top: 0, width: '60%', height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+              animation: 'revealShimmer 0.9s ease 0.55s both',
+              pointerEvents: 'none',
+            }} />
             <div style={{
               fontSize: 'clamp(12px, 1.2vw, 18px)', fontWeight: 900, color: '#86efac',
               letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.82,
+              position: 'relative', zIndex: 1,
             }}>
               {lang === 'en' ? 'Answer' : 'Lösung'}
             </div>
@@ -5256,19 +5315,20 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               fontWeight: 900, color: '#86efac', lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
               textShadow: '0 0 40px rgba(34,197,94,0.5)',
+              position: 'relative', zIndex: 1,
             }}>
               {fmt(target)}
             </div>
           </div>
 
-          {/* Winner-Footer — Gewinner-Zahl gleich gross wie Loesung und auf
-              gleicher Mittelachse zentriert (visuell direkt untereinander).
-              Avatar + Name + Delta als kompakte horizontale Zeile darunter. */}
+          {/* Winner — untere Card, in Teamfarbe umrandet */}
           {winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
-              borderTop: `2px solid ${winner.team.color}44`,
-              background: `linear-gradient(180deg, ${winner.team.color}1f, ${winner.team.color}06)`,
+              borderRadius: 24,
+              border: `3px solid ${winner.team.color}`,
+              background: `linear-gradient(180deg, ${winner.team.color}26, ${winner.team.color}08)`,
+              boxShadow: `0 0 44px ${winner.team.color}44, inset 0 0 26px ${winner.team.color}11`,
               padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
               display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
@@ -5277,13 +5337,13 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               opacity: revealedMinIdx === 0 ? 1 : 0.12,
               filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
               transition: 'opacity 0.7s ease, filter 0.7s ease',
-              position: 'relative', zIndex: 1,
+              position: 'relative',
             }}>
               {/* Trophy-Label oben, klein und mittig */}
               <span style={{
                 fontSize: 'clamp(10px, 0.9vw, 13px)', fontWeight: 900,
-                color: '#cbd5e1', letterSpacing: '0.16em', textTransform: 'uppercase',
-                opacity: 0.72, whiteSpace: 'nowrap',
+                color: winner.team.color, letterSpacing: '0.16em', textTransform: 'uppercase',
+                opacity: 0.92, whiteSpace: 'nowrap',
               }}>
                 <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest' : 'Am nächsten dran'}
               </span>
@@ -5338,7 +5398,8 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           {!winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
-              borderTop: '2px solid rgba(239,68,68,0.3)',
+              borderRadius: 24,
+              border: '2px solid rgba(239,68,68,0.4)',
               padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 32px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900, color: '#f87171',
@@ -5571,12 +5632,24 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   const validCount = scored.length;
   const showRanking = step >= (1 + validCount + 1);
 
-  // FitBounds bounds aus aktuell sichtbaren Punkten — display-Positionen verwenden,
-  // damit fan-out-Pins nicht außerhalb der Map landen.
+  // FitBounds bounds — aber Cap auf max. 2500km Pin-Distanz vom Ziel. Sehr
+  // weit entfernte Pins (z.B. „Penguin-Team in Argentinien" bei einem
+  // Hamburg-Quiz) wuerden sonst die Map auf Welt-Level rauszoomen, sodass
+  // alle nahen Pins als Pixel verschmelzen. Diese „Off-Map"-Pins werden in
+  // einer Leiste unter der Karte separat mit Distanz angezeigt.
+  const FIT_MAX_KM = 2500;
+  const onMapPins = useMemo(
+    () => revealedPins.filter(p => (p.distKm ?? 0) <= FIT_MAX_KM),
+    [revealedPins]
+  );
+  const offMapPins = useMemo(
+    () => revealedPins.filter(p => (p.distKm ?? 0) > FIT_MAX_KM),
+    [revealedPins]
+  );
   const bounds = useMemo(() => {
     const b = L.latLngBounds([] as any);
     if (showTarget) b.extend([tLat, tLng]);
-    for (const p of revealedPins) {
+    for (const p of onMapPins) {
       const dp = displayPos.get(p.teamId);
       const lat = dp?.lat ?? p.lat;
       const lng = dp?.lng ?? p.lng;
@@ -5584,7 +5657,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     }
     if (!b.isValid()) b.extend([tLat, tLng]);
     return b;
-  }, [showTarget, revealedPins, tLat, tLng, displayPos]);
+  }, [showTarget, onMapPins, tLat, tLng, displayPos]);
 
   const targetIcon = useMemo(() => L.divIcon({
     className: 'qq-target-pin',
@@ -5634,7 +5707,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s cubic-bezier(0.4,0,0.2,1)' }}>
         <MapContainer
           center={[tLat, tLng] as any}
-          zoom={4}
+          zoom={3}
           zoomControl={false}
           attributionControl={false}
           scrollWheelZoom={false}
@@ -5649,12 +5722,15 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             subdomains={['a', 'b', 'c', 'd']}
           />
+          {/* Geoguessr-Style: erst Welt-Level (zoom 3), dann smoothes Reinzoomen
+              auf den Zielbereich beim ersten Reveal-Schritt. */}
+          <QQInitialTargetZoom lat={tLat} lng={tLng} />
           <QQMapResizer trigger={showRanking} />
           <QQFitBoundsOnTrigger bounds={bounds} trigger={step} />
           {showTarget && (
             <Marker position={[tLat, tLng] as any} icon={targetIcon} />
           )}
-          {revealedPins.map(p => {
+          {onMapPins.map(p => {
             const team = s.teams.find(t => t.id === p.teamId);
             if (!team) return null;
             const dp = displayPos.get(p.teamId);
@@ -5669,6 +5745,47 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             );
           })}
         </MapContainer>
+
+        {/* Off-Map Indikator: Pins die >2500km vom Ziel weg sind, werden auf
+            der Map nicht eingerahmt (sonst zoomt sie auf Welt-Level raus).
+            Stattdessen hier kompakt mit Distanz-Pfeil. */}
+        {offMapPins.length > 0 && (
+          <div style={{
+            position: 'absolute', top: 88, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            padding: '8px 16px', borderRadius: 999,
+            background: 'rgba(13,10,6,0.85)',
+            border: '1.5px solid rgba(251,191,36,0.35)',
+            zIndex: 1000, maxWidth: 'calc(100% - 80px)', justifyContent: 'center',
+          }}>
+            <span style={{
+              fontSize: 13, fontWeight: 800, color: '#FDE68A',
+              letterSpacing: 0.3, textTransform: 'uppercase',
+            }}>
+              {lang === 'en' ? '✈ Far away' : '✈ Weit weg'}
+            </span>
+            {offMapPins.map(p => {
+              const team = s.teams.find(t => t.id === p.teamId);
+              if (!team) return null;
+              return (
+                <span key={p.teamId} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '4px 10px 4px 4px', borderRadius: 999,
+                  background: 'rgba(15,23,42,0.6)',
+                  border: `1.5px solid ${team.color}66`,
+                }}>
+                  <QQTeamAvatar avatarId={team.avatarId} size={28} />
+                  <span style={{
+                    fontWeight: 800, color: team.color, fontSize: 13,
+                    fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2,
+                  }}>
+                    {(p.distKm ?? 0) >= 1000 ? `${((p.distKm ?? 0) / 1000).toFixed(1)} Mm` : `${Math.round(p.distKm ?? 0)} km`}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* Title-Overlay oben */}
         <div style={{
@@ -6051,25 +6168,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Team-Answer-Progress (vor dem Reveal) — KEINE Card mehr.
-              Stattdessen Avatare direkt auf dem Bild, jeder mit einem dunklen
-              Backing-Ring (padding + dark bg) damit sie auch auf hellen
-              Cheese-Bildern lesbar bleiben. Analog zum MUCHO-Layout. */}
+          {/* Team-Answer-Progress (vor dem Reveal) — am unteren Bildrand
+              direkt ueber der Frage-Card, mit dunklem Strip-Backing fuer
+              Kontrast (statt per-Avatar-Ringen). Folgt dem normalen Flex-
+              Flow (justifyContent:flex-end), erscheint also natuerlich
+              oberhalb der Frage. */}
           {!revealed && s.teams.length > 0 && (
             <div style={{
-              position: 'absolute', top: 20, left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              alignSelf: 'center',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              padding: '10px 22px 12px',
+              borderRadius: 18,
+              background: 'linear-gradient(180deg, rgba(13,10,6,0.78), rgba(13,10,6,0.92))',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
               pointerEvents: 'none', zIndex: 9,
               animation: 'contentReveal 0.45s ease 0.35s both',
               maxWidth: 'calc(100vw - 80px)',
+              marginBottom: 14,
             }}>
               <div style={{
                 fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
                 color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.95)',
                 transition: 'color 0.3s ease',
                 letterSpacing: '0.04em',
-                textShadow: '0 2px 8px rgba(0,0,0,0.85), 0 0 4px rgba(0,0,0,0.7)',
               }}>
                 {s.allAnswered
                   ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
@@ -6077,40 +6199,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 60 : tc > 4 ? 68 : 76;
+                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
                 const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
                 return (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, flexWrap: 'wrap' }}>
                     {s.teams.map(tm => {
                       const answered = s.answers.some(a => a.teamId === tm.id);
                       return (
-                        // Wrapper ist nur unsichtbarer Container fuer den Check-
-                        // mark-Badge. Dunkler Ring + Glow direkt via box-shadow
-                        // auf dem Avatar — keine extra Hintergrund-Flaeche, die
-                        // als graues Rechteck rendern koennte.
                         <div key={tm.id} style={{
                           position: 'relative',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          opacity: answered ? 1 : 0.6,
+                          opacity: answered ? 1 : 0.55,
                           filter: answered ? 'none' : 'grayscale(0.4)',
                           transition: 'opacity 0.4s ease, filter 0.4s ease',
                         }}>
                           <QQTeamAvatar avatarId={tm.avatarId} size={av} style={{
-                            // 4px dunkler Ring direkt um die Avatar-Kante
-                            // (spread-shadow) → Lesbarkeit auf hellen Cheese-
-                            // Bildern, ohne extra Wrapper-Box.
                             boxShadow: answered
-                              ? `0 0 0 4px rgba(13,10,6,0.85), 0 0 16px ${tm.color}77, 0 4px 12px rgba(0,0,0,0.65)`
-                              : '0 0 0 4px rgba(13,10,6,0.85), 0 4px 12px rgba(0,0,0,0.55)',
+                              ? `0 0 14px ${tm.color}77, 0 4px 10px rgba(0,0,0,0.45)`
+                              : '0 4px 10px rgba(0,0,0,0.4)',
                           }} />
                           {answered && (
                             <div style={{
                               position: 'absolute', bottom: -2, right: -2,
-                              width: 26, height: 26, borderRadius: '50%',
+                              width: 24, height: 24, borderRadius: '50%',
                               background: '#22C55E', border: '2px solid #0D0A06',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 14, fontWeight: 900, color: '#fff',
+                              fontSize: 13, fontWeight: 900, color: '#fff',
                               animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
                             }}>✓</div>
                           )}
@@ -6274,10 +6389,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             }}
                           />
                           {isFastest && (
-                            <span style={{
-                              position: 'absolute', top: -12, right: -12,
-                              fontSize: 'clamp(24px, 2.6vw, 34px)', lineHeight: 1,
-                            }}><QQEmojiIcon emoji="⚡"/></span>
+                            <SpeedBoltMarker top={-12} right={-12} />
                           )}
                         </div>
                         <span style={{
@@ -6647,15 +6759,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
                               }}>{pts}</span>
                               {isFastest && (
-                                <span style={{
-                                  position: 'absolute', top: -12, right: -8,
-                                  width: 'clamp(22px, 2.4vw, 30px)', height: 'clamp(22px, 2.4vw, 30px)',
-                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                  lineHeight: 1,
-                                  animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
-                                  // Drop-Shadow entfernt — erzeugte bei kleinen Icons am Chip-Rand
-                                  // einen sichtbaren rechteckigen Schatten.
-                                }}><QQEmojiIcon emoji="⚡" size="100%"/></span>
+                                <SpeedBoltMarker top={-12} right={-8} />
                               )}
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
@@ -6841,10 +6945,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 }}
                               />
                               {isFastest && (
-                                <span style={{
-                                  position: 'absolute', top: -12, right: -12,
-                                  fontSize: 'clamp(24px, 2.6vw, 34px)', lineHeight: 1,
-                                }}><QQEmojiIcon emoji="⚡"/></span>
+                                <SpeedBoltMarker top={-12} right={-12} />
                               )}
                             </div>
                             {timeSec != null && (

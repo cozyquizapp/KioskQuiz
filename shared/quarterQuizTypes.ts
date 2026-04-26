@@ -129,6 +129,9 @@ export interface QQBunteTueteOrder {
   correctOrder: number[];  // indices in correct order
   criteria?: string;       // e.g. "nach Größe", "chronologisch"
   criteriaEn?: string;
+  /** Optionaler Wert pro Item (z.B. Lebensdauer „1 Tag", Höhe „8848 m") — wird im
+   *  Reveal als Pill neben dem Item-Text angezeigt. Index korrespondiert zu `items[]`. */
+  itemValues?: string[];
 }
 
 export interface QQBunteTueteMap {

@@ -4351,127 +4351,433 @@ function PausedView({ state, de }: { state: QQStateUpdate; de: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// THANKS — Danke-Folie mit QR zur Team-Summary
+// THANKS — Danke-Folie mit QR zur Team-Summary, CozyWolf-Signatur 1:1
 // ─────────────────────────────────────────────────────────────────────────
 
-function ThanksView({ de }: { de: boolean }) {
-  const summaryUrl = `${window.location.origin}/team`;
+function ThanksView({ de, roomCode }: { de: boolean; roomCode?: string }) {
+  const summaryUrl = typeof window !== 'undefined' && roomCode
+    ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
+    : '';
   return (
     <CenterArea>
-      <PaperCard washColor={PALETTE.cream} padding="clamp(32px, 5vh, 64px)" style={{ maxWidth: 900, width: '92%', textAlign: 'center' }}>
-        <div style={{ marginBottom: 12 }}>
-          <BlockCapsHeading size="xl" color={PALETTE.terracotta} glow>
-            {de ? 'Danke' : 'Thank you'}
-          </BlockCapsHeading>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
+        padding: '56px 72px', borderRadius: 36,
+        background: `linear-gradient(135deg, ${PALETTE.cream}f5, ${PALETTE.peach}f0)`,
+        border: `2px solid ${PALETTE.amberGlow}66`,
+        boxShadow: `0 30px 80px rgba(31,58,95,0.45), 0 0 120px ${PALETTE.amberGlow}33`,
+        maxWidth: 900,
+        animation: 'gFadeIn 0.6s ease both',
+        filter: 'url(#paintFrame)',
+      }}>
+        <div style={{
+          fontFamily: F_HAND, fontWeight: 700,
+          fontSize: 'clamp(36px, 4.5vw, 64px)',
+          color: PALETTE.terracotta, textAlign: 'center', lineHeight: 1.1,
+          textShadow: `0 0 40px ${PALETTE.amberGlow}66`,
+        }}>
+          🎉 {de ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
         <div style={{
-          fontFamily: F_HAND, fontSize: 'min(5vh, 3.6vw)', color: PALETTE.inkDeep,
-          fontWeight: 700, lineHeight: 1.05, marginBottom: 24,
+          fontFamily: F_BODY, fontSize: 'clamp(18px, 1.9vw, 24px)',
+          color: PALETTE.inkDeep, textAlign: 'center', lineHeight: 1.45,
+          maxWidth: 680, fontStyle: 'italic',
         }}>
-          {de ? 'für’s Mitspielen!' : 'for playing!'}
+          {de
+            ? '📣 Erzählt euren Freunden vom CozyQuiz — und scannt den Code für eure Team-Stats 🎁'
+            : '📣 Tell your friends about CozyQuiz — and scan the code for your team stats 🎁'}
         </div>
+        {summaryUrl && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 36, marginTop: 4 }}>
+            <div style={{
+              padding: 14, borderRadius: 18,
+              background: '#ffffff',
+              boxShadow: `0 0 32px ${PALETTE.amberGlow}55, 0 4px 16px rgba(0,0,0,0.4)`,
+            }}>
+              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor={PALETTE.inkDeep} level="M" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340 }}>
+              <div style={{ fontFamily: F_HAND, fontSize: 26, fontWeight: 700, color: PALETTE.inkDeep }}>
+                📱 {de ? 'Scannt euer Ergebnis' : 'Scan your result'}
+              </div>
+              <div style={{
+                fontFamily: F_BODY, fontSize: 17, color: PALETTE.inkSoft,
+                lineHeight: 1.55, whiteSpace: 'pre-line',
+              }}>
+                {de
+                  ? '• Eure Team-Stats\n• Feedback & Bugs\n• Nächste Quiz-Termine'
+                  : '• Your team stats\n• Feedback & bugs\n• Upcoming events'}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* CozyWolf Signatur — Aquarell-Pill */}
         <div style={{
-          background: '#fff', borderRadius: 18, padding: 18,
-          display: 'inline-block',
-          boxShadow: '0 12px 32px rgba(31,58,95,0.25)',
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 22px', borderRadius: 999,
+          background: `linear-gradient(135deg, ${PALETTE.amberGlow}33, ${PALETTE.terracotta}1f)`,
+          border: `1.5px solid ${PALETTE.amberGlow}88`,
+          boxShadow: `0 4px 18px rgba(0,0,0,0.4), 0 0 24px ${PALETTE.amberGlow}33`,
+          marginTop: 4,
         }}>
-          <QRCodeSVG value={summaryUrl} size={220} bgColor="#fff" fgColor={PALETTE.inkDeep} level="M" />
+          <img
+            src="/logo.png"
+            alt=""
+            style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+          />
+          <span style={{
+            fontFamily: F_BODY, fontSize: 16, fontWeight: 700, color: PALETTE.inkDeep,
+            letterSpacing: '0.04em',
+          }}>
+            {de ? 'ein' : 'a'}
+          </span>
+          <span style={{
+            fontFamily: F_HAND, fontSize: 24, fontWeight: 700, color: PALETTE.terracotta,
+            letterSpacing: '0.02em',
+            textShadow: `0 1px 2px rgba(0,0,0,0.4)`,
+          }}>
+            CozyWolf 🐺
+          </span>
+          <span style={{
+            fontFamily: F_BODY, fontSize: 16, fontWeight: 700, color: PALETTE.inkDeep,
+            letterSpacing: '0.04em',
+          }}>
+            {de ? 'Erlebnis' : 'experience'}
+          </span>
         </div>
-        <div style={{ marginTop: 18 }}>
-          <BlockCapsHeading size="md" color={PALETTE.inkDeep}>
-            {de ? 'eure Statistiken' : 'your stats'}
-          </BlockCapsHeading>
+        {/* Footer-Links 1:1 vom Original */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
+          fontFamily: F_HAND_CAPS,
+          fontSize: 15, color: PALETTE.terracotta, fontWeight: 700,
+          letterSpacing: '0.14em', textTransform: 'uppercase',
+        }}>
+          <span>play.cozyquiz.app</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>📸</span>
+            @cozywolf.events
+          </span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🐺</span>
+            cozywolf.de
+          </span>
         </div>
-      </PaperCard>
+      </div>
     </CenterArea>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// GAME_OVER — Sieger-Page (atmosphärisch, wärmer Tag-Sky)
+// GAME_OVER — 1:1 vom Original. Hero (Trophy + Avatar mit Sparkles +
+// Name + Score) zentral oben, dann 2-spaltig: GouacheGrid links +
+// Rankings rechts. Confetti + Ambient-Glow als Atmosphäre.
 // ─────────────────────────────────────────────────────────────────────────
 
 function GameOverView({ state, de }: { state: QQStateUpdate; de: boolean }) {
-  const { w, h } = useViewportSize();
-  // Ranking nach largestConnected, sonst totalCells
-  const sorted = [...state.teams].sort((a, b) => {
-    if (b.largestConnected !== a.largestConnected) return b.largestConnected - a.largestConnected;
-    return b.totalCells - a.totalCells;
-  });
+  const { w: vw, h: vh } = useViewportSize();
+  const sorted = [...state.teams].sort((a, b) =>
+    b.largestConnected - a.largestConnected
+    || b.totalCells - a.totalCells
+  );
   const winner = sorted[0];
-  const others = sorted.slice(1, 4);
-
   if (!winner) return <PhasePlaceholderCard state={state} de={de} />;
 
   const winnerColor = softTeamColor(winner.avatarId);
   const winnerSlug = qqGetAvatar(winner.avatarId).slug;
-  const avatarSize = Math.round(Math.max(140, Math.min(h * 0.30, w * 0.20, 320)));
+  const winnerAvatarSize = Math.round(Math.max(96, Math.min(vh * 0.18, vw * 0.12, 144)));
+  const gridSize = Math.min(420, vh * 0.42);
+  const others = sorted.slice(1);
 
   return (
-    <CenterArea>
-      <div style={{ textAlign: 'center', animation: 'gFadeIn 1.2s ease-out both' }}>
-        <div style={{ marginBottom: 18 }}>
-          <BlockCapsHeading size="lg" color={PALETTE.terracotta}>
-            {de ? 'Sieger' : 'Winner'}
-          </BlockCapsHeading>
-        </div>
+    <>
+      {/* Ambient glow behind winner */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+        background: `radial-gradient(ellipse at 30% 35%, ${winnerColor}33 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, ${PALETTE.amberGlow}26 0%, transparent 50%)`,
+      }} />
+
+      {/* Confetti-Overlay */}
+      <ConfettiOverlay />
+
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', overflow: 'hidden', zIndex: 5,
+        padding: '32px 48px',
+      }}>
+        {/* Title — klein, oben */}
         <div style={{
-          display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 18,
-          padding: '32px 48px', borderRadius: 36,
-          background: `${PALETTE.cream}f5`,
-          border: `4px solid ${winnerColor}`,
-          boxShadow: `0 24px 60px rgba(31,58,95,0.25), 0 0 80px ${winnerColor}66`,
-          filter: 'url(#paintFrame)',
+          fontFamily: F_HAND_CAPS, fontWeight: 700,
+          fontSize: 'clamp(20px, 2.4vw, 30px)',
+          color: `${PALETTE.cream}cc`,
+          letterSpacing: '0.14em',
+          animation: 'gFadeIn 0.6s ease both',
+          marginBottom: 12,
         }}>
-          <div style={{ filter: 'url(#warmGlow)' }}>
-            <PaintedAvatar slug={winnerSlug} size={avatarSize} color={winnerColor} withGrain={false} />
-          </div>
+          {de ? 'Spielende' : 'Game Over'}
+        </div>
+
+        {/* Hero — Trophy + Avatar + Name + Score */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
+          marginBottom: 'clamp(16px, 2vh, 28px)',
+        }}>
           <div style={{
-            fontFamily: F_HAND, fontSize: 'min(8vh, 6vw)', color: winnerColor,
-            fontWeight: 700, lineHeight: 1, textShadow: `0 4px 16px ${winnerColor}44`,
-          }}>
-            {winner.name}
+            fontSize: 'clamp(36px, 4.4vw, 56px)',
+            animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
+          }}>🏆</div>
+
+          {/* Avatar mit Sparkles drumherum */}
+          <div style={{ position: 'relative', display: 'inline-block', marginTop: 4 }}>
+            <div style={{
+              filter: `drop-shadow(0 0 60px ${winnerColor}aa) drop-shadow(0 0 120px ${winnerColor}55)`,
+              animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
+            }}>
+              <PaintedAvatar slug={winnerSlug} size={winnerAvatarSize}
+                color={winnerColor} withGrain={false} />
+            </div>
+            {[
+              { top: '-8%',  left: '12%', delay: 1.8, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
+              { top: '18%',  left: '-10%', delay: 2.4, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
+              { top: '60%',  left: '-6%', delay: 3.1, dur: 2.6, size: 'clamp(10px, 1.1vw, 16px)' },
+              { top: '92%',  left: '32%', delay: 2.0, dur: 3.0, size: 'clamp(12px, 1.4vw, 20px)' },
+              { top: '88%',  left: '78%', delay: 2.7, dur: 2.8, size: 'clamp(14px, 1.6vw, 22px)' },
+              { top: '56%',  left: '102%', delay: 3.3, dur: 2.4, size: 'clamp(10px, 1.2vw, 16px)' },
+              { top: '14%',  left: '96%', delay: 2.2, dur: 3.4, size: 'clamp(12px, 1.4vw, 18px)' },
+              { top: '-6%',  left: '74%', delay: 2.9, dur: 2.6, size: 'clamp(14px, 1.5vw, 22px)' },
+            ].map((sp, i) => (
+              <span key={i} style={{
+                position: 'absolute',
+                top: sp.top, left: sp.left,
+                width: sp.size, height: sp.size,
+                fontSize: sp.size, lineHeight: 1,
+                color: PALETTE.amberGlow,
+                textShadow: `0 0 12px ${winnerColor}, 0 0 4px ${PALETTE.cream}`,
+                animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sp.delay}s infinite`,
+                pointerEvents: 'none', zIndex: 6,
+              }}>✦</span>
+            ))}
           </div>
-          <div style={{
-            fontFamily: F_BODY, fontSize: 'min(2.4vh, 1.8vw)', color: PALETTE.inkSoft,
-            fontStyle: 'italic',
+
+          {/* Winner name */}
+          <div title={winner.name} style={{
+            fontFamily: F_HAND, fontWeight: 700,
+            fontSize: 'clamp(36px, 5.2vw, 64px)',
+            color: winnerColor,
+            animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
+            textShadow: `0 4px 18px ${winnerColor}66`,
+            marginTop: 10, padding: '0 0.5em',
+            whiteSpace: 'nowrap', maxWidth: '90%',
           }}>
-            {winner.largestConnected} {de ? 'zusammenhängende Felder' : 'connected fields'} · {winner.totalCells} {de ? 'gesamt' : 'total'}
+            {winner.name.length > 18 ? winner.name.slice(0, 17) + '…' : winner.name}
+          </div>
+
+          {/* Connected fields */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16, marginTop: 2,
+            animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
+          }}>
+            <span style={{
+              fontFamily: F_HAND_CAPS, fontWeight: 700,
+              fontSize: 'clamp(18px, 2.2vw, 28px)',
+              color: PALETTE.amberGlow,
+              textShadow: `0 0 18px ${PALETTE.amberGlow}77`,
+              letterSpacing: '0.06em',
+            }}>
+              {winner.largestConnected} {de ? 'verbundene Felder' : 'connected fields'}
+            </span>
           </div>
         </div>
 
-        {others.length > 0 && (
+        {/* Untere Sektion: Grid links | Rankings rechts */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto minmax(0, 1fr)',
+          alignItems: 'start',
+          gap: 'clamp(20px, 2.5vw, 40px)',
+          width: '100%', maxWidth: 1500, justifyContent: 'center',
+        }}>
+          {/* Grid links */}
           <div style={{
-            marginTop: 36,
-            display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
           }}>
-            {others.map((t, i) => {
-              const color = softTeamColor(t.avatarId);
-              return (
-                <div key={t.id} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  opacity: 0.85,
-                }}>
-                  <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={avatarSize * 0.45} color={color} withGrain={false} />
-                  <div style={{
-                    fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.18em',
-                    color: PALETTE.inkSoft, textTransform: 'uppercase',
-                  }}>
-                    #{i + 2}
-                  </div>
-                  <div style={{
-                    fontFamily: F_HAND, fontSize: 'min(3vh, 2.2vw)',
-                    color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1,
-                  }}>
-                    {t.name}
-                  </div>
-                </div>
-              );
-            })}
+            <div style={{
+              padding: 12, borderRadius: 18,
+              background: `${PALETTE.cream}1a`,
+              border: `2px solid ${winnerColor}66`,
+              boxShadow: `0 0 36px ${winnerColor}33, 0 8px 28px rgba(0,0,0,0.4)`,
+            }}>
+              <GouacheGrid state={state} maxSize={gridSize} highlightTeam={winner.id} />
+            </div>
           </div>
-        )}
+
+          {/* Rankings rechts */}
+          {others.length > 0 && (() => {
+            const compact = others.length > 5;
+            return (
+              <div style={{
+                display: 'flex', flexDirection: 'column',
+                gap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
+                width: '100%', maxWidth: 760,
+                animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
+              }}>
+                {others.map((tm, i) => {
+                  const rank = i + 2;
+                  const teamColor = softTeamColor(tm.avatarId);
+                  const cellCount = state.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+                  const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+                  return (
+                    <div key={tm.id} style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto auto 1fr auto auto',
+                      alignItems: 'center',
+                      gap: compact ? 'clamp(8px, 1vw, 14px)' : 'clamp(10px, 1.2vw, 18px)',
+                      padding: compact ? '8px 16px' : '10px 20px',
+                      borderRadius: 14,
+                      background: `linear-gradient(90deg, ${teamColor}26, ${teamColor}11)`,
+                      border: `1.5px solid ${teamColor}66`,
+                      boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
+                      animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
+                      minWidth: 0,
+                    }}>
+                      <span style={{
+                        fontFamily: F_HAND_CAPS,
+                        fontSize: compact ? 'clamp(15px, 1.5vw, 20px)' : 'clamp(17px, 1.7vw, 24px)',
+                        fontWeight: 700, flexShrink: 0,
+                        color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : `${PALETTE.cream}cc`,
+                        minWidth: medal ? 0 : compact ? 26 : 30,
+                      }}>
+                        {medal ?? `#${rank}`}
+                      </span>
+                      <PaintedAvatar
+                        slug={qqGetAvatar(tm.avatarId).slug}
+                        size={compact ? 42 : 48}
+                        color={teamColor}
+                        withGrain={false}
+                      />
+                      <span style={{
+                        fontFamily: F_HAND, fontWeight: 700,
+                        fontSize: compact ? 'clamp(17px, 1.8vw, 24px)' : 'clamp(19px, 2vw, 28px)',
+                        color: teamColor, lineHeight: 1.1,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{tm.name}</span>
+                      <span style={{
+                        fontFamily: F_HAND, fontWeight: 700,
+                        fontSize: compact ? 'clamp(14px, 1.5vw, 19px)' : 'clamp(16px, 1.7vw, 22px)',
+                        color: PALETTE.amberGlow,
+                        fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+                      }}>{tm.largestConnected}</span>
+                      {!compact && (
+                        <span style={{
+                          fontFamily: F_BODY, fontSize: 'clamp(11px, 1.1vw, 14px)',
+                          color: `${PALETTE.cream}88`, fontWeight: 600, fontStyle: 'italic',
+                          flexShrink: 0,
+                        }}>
+                          ({cellCount} {de ? 'ges.' : 'tot.'})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
       </div>
-    </CenterArea>
+
+      {/* Lokale Animations-Keyframes für Finale */}
+      <style>{`
+        @keyframes finaleWinner {
+          0%   { opacity: 0; transform: translateY(28px) scale(0.94); }
+          60%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
+          100% { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+        @keyframes finaleStarBurst {
+          0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+          60%  { transform: scale(1.3) rotate(5deg);   opacity: 1; }
+          100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+        }
+        @keyframes finaleTrophyFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-8px); }
+        }
+        @keyframes celebShake {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-4deg); }
+          75% { transform: rotate(4deg); }
+        }
+        @keyframes finaleAvatarBreathe {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.04); }
+        }
+        @keyframes finaleSparklePop {
+          0%, 100% { transform: scale(0.6); opacity: 0.4; }
+          50%      { transform: scale(1.4); opacity: 1; }
+        }
+        @keyframes finaleGlow {
+          0%, 100% { text-shadow: 0 4px 18px ${winnerColor}66; }
+          50%      { text-shadow: 0 4px 28px ${winnerColor}cc, 0 0 60px ${winnerColor}66; }
+        }
+        @keyframes finaleScoreCount {
+          0%   { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes finaleRank {
+          0%   { opacity: 0; transform: translateX(40px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes confettiFall {
+          0%   { transform: translateY(var(--cy)) rotate(0); opacity: 1; }
+          100% { transform: translateY(110vh) rotate(var(--cr)); opacity: 0; }
+        }
+      `}</style>
+    </>
+  );
+}
+
+// ConfettiOverlay 1:1 vom Original
+const CONFETTI_COLORS = [
+  CAT_ACCENT.SCHAETZCHEN, CAT_ACCENT.BUNTE_TUETE, CAT_ACCENT.MUCHO,
+  CAT_ACCENT.ZEHN_VON_ZEHN, CAT_ACCENT.CHEESE,
+  '#F472B6', '#FCD34D', '#34D399',
+];
+const CONFETTI_COUNT = 50;
+
+function ConfettiOverlay() {
+  const [particles] = useState(() =>
+    Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      delay: Math.random() * 0.8,
+      duration: 1.8 + Math.random() * 1.4,
+      size: 6 + Math.random() * 6,
+      rotation: 360 + Math.random() * 720,
+      startY: -(20 + Math.random() * 60),
+      shape: Math.random() > 0.5 ? 'rect' : 'circle' as 'rect' | 'circle',
+    }))
+  );
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50, overflow: 'hidden' }}>
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: 'absolute',
+          left: `${p.x}%`,
+          width: p.shape === 'rect' ? p.size : p.size * 0.8,
+          height: p.shape === 'rect' ? p.size * 0.6 : p.size * 0.8,
+          borderRadius: p.shape === 'circle' ? '50%' : 2,
+          background: p.color,
+          ['--cy' as any]: `${p.startY}px`,
+          ['--cr' as any]: `${p.rotation}deg`,
+          animation: `confettiFall ${p.duration}s ease-in ${p.delay}s both`,
+        }} />
+      ))}
+    </div>
   );
 }
 

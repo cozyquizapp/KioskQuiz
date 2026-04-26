@@ -134,12 +134,11 @@ function ExtrudedAvatar({
     <group>
       {Array.from({ length: layers }).map((_, i) => {
         const z = (i / (layers - 1) - 0.5) * depth;
-        // Front (i = layers-1) ist hellster Layer, mittlere Layer dunkler
-        // (fake-AO), back (i = 0) wieder leicht heller. Erzeugt sichtbare
-        // Tiefe ohne explizites Lighting.
+        // Vorderste Plane (i = layers-1) bleibt voll hell, Layer dahinter
+        // werden nur leicht abgedunkelt → der Avatar wirkt frisch+freundlich,
+        // nicht „in einer dunklen Höhle". AO nur als sehr dezenter Hauch.
         const fromFront = (layers - 1 - i) / (layers - 1);
-        const aoCenter = 1 - 4 * fromFront * (1 - fromFront); // 0 an den Enden, 1 in der Mitte
-        const tint = 1.0 - aoCenter * 0.35;
+        const tint = 1.0 - fromFront * 0.18;
         return (
           <mesh key={i} position={[0, 0, z]}>
             <planeGeometry args={[size, size]} />
@@ -3439,7 +3438,9 @@ function BalloonBody({
   const emissiveColor = frozen ? '#7ec5ff' : joker ? '#fbbf24' : color;
   const seamColor = joker ? '#b8860b' : color;
 
-  const radius = 0.42 * size;
+  // Body etwas kleiner als zuvor (war 0.42) damit der Avatar+Korb darunter
+  // mehr visuelle Bedeutung bekommt.
+  const radius = 0.38 * size;
   return (
     <group>
       {/* Ballon-Hauptkörper — Sphere, ein bisschen höher als breit (yScale 1.1) */}
@@ -3478,7 +3479,7 @@ function BalloonBody({
         );
       })}
       {/* Neck-Cone unten — Übergang zu den Seilen, leicht offen ("Brenneröffnung") */}
-      <mesh position={[0, -radius * 1.1, 0]} castShadow>
+      <mesh position={[0, -radius * 1.18, 0]} castShadow>
         <coneGeometry args={[radius * 0.32, 0.22 * size, 16, 1, true]} />
         <meshStandardMaterial
           color={emissiveColor}
@@ -3489,7 +3490,7 @@ function BalloonBody({
         />
       </mesh>
       {/* Brenner-Glüh-Disk unten in der Öffnung */}
-      <mesh position={[0, -radius * 1.18, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -radius * 1.26, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <circleGeometry args={[radius * 0.28, 16]} />
         <meshBasicMaterial
           color={joker ? '#fde68a' : '#ffaa3a'}
@@ -3502,70 +3503,94 @@ function BalloonBody({
   );
 }
 
-// Wicker-Basket (Gondola) — kleine Korbgeflecht-Box am Boden des Ballons.
-// Trägt den Avatar als ExtrudedAvatar (Z-gestapelte Planes für Tiefe) +
-// Team-Color-Ring drumherum (Canva-3D-Maker-Style).
+// Wicker-Basket (Gondola) — sichtbarer Korb mit vertikalen Holz-Latten,
+// größerem Avatar der oben rausschaut, Canva-Style Team-Ring um den Avatar.
 function BalloonBasket({
   size = 1.0, avatarTex, color,
 }: {
   size?: number; avatarTex: THREE.Texture; color: string;
 }) {
-  const basketR = 0.18 * size;
-  const basketH = 0.16 * size;
-  const avatarSize = basketR * 2.4;
+  // Deutlich größerer Korb, damit der Avatar nicht im dunklen Loch verschwindet.
+  const basketR = 0.28 * size;
+  const basketH = 0.22 * size;
+  const avatarSize = basketR * 2.2; // groß genug um aus dem Korb zu ragen
   const ringR = avatarSize * 0.46;
+  // Vertikale Latten — pro Korbumfang ~12 Stück, sichtbar als Korb-Geflecht
+  const slatCount = 12;
+  const slats: JSX.Element[] = [];
+  for (let i = 0; i < slatCount; i++) {
+    const angle = (i / slatCount) * Math.PI * 2;
+    slats.push(
+      <mesh
+        key={`slat-${i}`}
+        position={[Math.cos(angle) * basketR * 1.04, 0, Math.sin(angle) * basketR * 1.04]}
+        rotation={[0, -angle, 0]}
+        castShadow
+      >
+        <boxGeometry args={[0.012 * size, basketH * 0.92, 0.025 * size]} />
+        <meshStandardMaterial color="#8a5a25" roughness={0.86} />
+      </mesh>
+    );
+  }
   return (
     <group>
-      {/* Korpus — leicht konisch (oben breiter), Korbgeflecht-Braun */}
+      {/* Innenkorpus (heller, damit nicht alles schwarz wirkt) — leicht konisch */}
       <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[basketR * 1.08, basketR * 0.95, basketH, 16]} />
-        <meshStandardMaterial color="#7a4a1f" roughness={0.92} />
+        <cylinderGeometry args={[basketR * 1.0, basketR * 0.92, basketH, 16]} />
+        <meshStandardMaterial color="#a06a30" roughness={0.92} />
       </mesh>
-      {/* Oberer Rand (dunkler) */}
-      <mesh position={[0, basketH / 2, 0]} castShadow>
-        <torusGeometry args={[basketR * 1.08, 0.012 * size, 8, 24]} />
+      {/* Vertikale Holz-Latten außen */}
+      {slats}
+      {/* Oberer Rand (dunkler Holzrand) */}
+      <mesh position={[0, basketH / 2 + 0.005 * size, 0]} castShadow>
+        <torusGeometry args={[basketR * 1.06, 0.018 * size, 8, 28]} />
         <meshStandardMaterial color="#3a2614" roughness={0.85} />
       </mesh>
-      {/* 3 horizontale Geflecht-Linien */}
-      {[-0.04, 0.0, 0.04].map((y, i) => (
-        <mesh key={i} position={[0, y * size, 0]}>
-          <torusGeometry args={[basketR * 1.04, 0.004 * size, 4, 18]} />
-          <meshStandardMaterial color="#4a2a14" roughness={0.9} />
+      {/* Unterer Rand */}
+      <mesh position={[0, -basketH / 2 - 0.005 * size, 0]} castShadow>
+        <torusGeometry args={[basketR * 0.95, 0.014 * size, 8, 24]} />
+        <meshStandardMaterial color="#3a2614" roughness={0.85} />
+      </mesh>
+      {/* 3 horizontale Geflecht-Bänder zwischen den Latten */}
+      {[-0.06, 0.0, 0.06].map((y, i) => (
+        <mesh key={`weave-${i}`} position={[0, y * size, 0]}>
+          <torusGeometry args={[basketR * 1.07, 0.006 * size, 4, 24]} />
+          <meshStandardMaterial color="#5a3618" roughness={0.9} />
         </mesh>
       ))}
 
-      {/* ── 3D-Avatar im Korb mit Canva-Style Ring drumherum ──
-          NICHT als Billboard — die Z-gestapelten Planes brauchen ein festes
-          Forward-Direction, damit das Auge die Tiefe wahrnimmt wenn die
-          OrbitControls die Kamera schwenken. */}
-      <group position={[0, basketH * 0.55, 0]}>
-        {/* Glow-Disc dahinter (klein, fängt das Auge zum Avatar) */}
-        <mesh position={[0, 0, -0.06]}>
-          <circleGeometry args={[ringR * 1.05, 28]} />
-          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.32} />
+      {/* ── HERO: 3D-Avatar mit Canva-Style Ring, ragt oben aus dem Korb raus ──
+          Verschoben auf basketH * 0.95 → Avatar steht oben auf dem Korbrand,
+          nur die Schultern sind im Korb. Macht den Animal-Cutout zur
+          Hauptattraktion (war vorher zu klein im dunklen Korb verloren). */}
+      <group position={[0, basketH * 1.05, 0]}>
+        {/* Glow-Disc dahinter — größer, damit der Avatar aus dem dunklen
+            Bühnenhintergrund popt */}
+        <mesh position={[0, 0, -0.08]}>
+          <circleGeometry args={[ringR * 1.15, 28]} />
+          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.42} />
         </mesh>
-        {/* ExtrudedAvatar: flaches PNG bekommt durch Z-Layer-Stacking Tiefe */}
+        {/* ExtrudedAvatar: 10 gestapelte Planes → echte Tiefe */}
         <ExtrudedAvatar
           texture={avatarTex}
           size={avatarSize}
-          depth={0.08 * size}
+          depth={0.09 * size}
           layers={10}
         />
-        {/* Canva-Style Team-Color-Ring um den Avatar — extrudiert via Torus,
-            sieht aus wie ein 3D-Reifen aus dem die Animal-Cutout schaut. */}
+        {/* Canva-Style Team-Color-Ring — dicker, satter, klar lesbar */}
         <mesh>
-          <torusGeometry args={[ringR, 0.022 * size, 12, 36]} />
+          <torusGeometry args={[ringR, 0.032 * size, 14, 40]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={0.65}
-            metalness={0.35}
-            roughness={0.32}
+            emissiveIntensity={0.75}
+            metalness={0.4}
+            roughness={0.3}
           />
         </mesh>
-        {/* Innerer Ring-Schatten (dunklere Innenkante macht den Reifen runder) */}
+        {/* Innerer feiner Schattenring (dunklere Innenkante) */}
         <mesh>
-          <torusGeometry args={[ringR * 0.93, 0.008 * size, 8, 32]} />
+          <torusGeometry args={[ringR * 0.92, 0.01 * size, 8, 32]} />
           <meshStandardMaterial color={color} roughness={0.85} opacity={0.55} transparent />
         </mesh>
       </group>
@@ -3609,22 +3634,28 @@ function BalloonRopes({ size = 1.0 }: { size?: number }) {
 
 // Komplettes Heißluftballon-Modell: Body + Ropes + Basket + Avatar.
 // Hängt am Mittelpunkt — Body zentriert bei (0,0,0), Korb fällt drunter.
+// Proportionen ab 2026-04-26 nachjustiert: Body etwas kleiner, Korb deutlich
+// größer, sodass der Avatar als Hero gelesen wird (vorher war er ein
+// dunkler Punkt unter einem dominanten Glow-Sphere).
 function HotAirBalloon({
   color, size = 1.0, intensity = 1.0, frozen = false, joker = false, avatarTex,
 }: {
   color: string; size?: number; intensity?: number;
   frozen?: boolean; joker?: boolean; avatarTex: THREE.Texture;
 }) {
-  const radius = 0.42 * size;
+  const radius = 0.38 * size;
+  // Korb-Maße aus BalloonBasket gespiegelt — fuer korrekte Y-Positionierung
+  const basketH = 0.22 * size;
+  const ropeLen = 0.16 * size;
   return (
     <group>
       <BalloonBody color={color} size={size} intensity={intensity} frozen={frozen} joker={joker} />
-      {/* Seile darunter */}
-      <group position={[0, -radius * 1.32, 0]}>
+      {/* Seile direkt unter dem Body */}
+      <group position={[0, -radius * 1.25, 0]}>
         <BalloonRopes size={size} />
       </group>
-      {/* Korb noch tiefer */}
-      <group position={[0, -radius * 1.32 - 0.18 * size - 0.08 * size, 0]}>
+      {/* Korb hängt am Ende der Seile */}
+      <group position={[0, -radius * 1.25 - ropeLen - basketH * 0.5, 0]}>
         <BalloonBasket size={size} avatarTex={avatarTex} color={color} />
       </group>
     </group>

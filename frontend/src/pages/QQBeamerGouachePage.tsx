@@ -3750,72 +3750,603 @@ function RoundMiniTreeGouache({ state, catColor }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// PAUSED — kompakter Standings-View
+// PAUSED — Rotating Panels (alle Original-Panels 1:1)
+// Lädt fetch /api/qq/leaderboard für all-time Stats. Rotiert alle 8s
+// durch alle verfügbaren Panels: Progress / Standings / Leaderboard /
+// Records + 9 erweiterte Stat-Panels (HotStreak / JokerKing /
+// ComebackKing / StealMaster / Underdog / CategoryMasters /
+// PerfectRounds / SpeedDemon / FunnyAnswers).
 // ─────────────────────────────────────────────────────────────────────────
 
-function PausedView({ state, de }: { state: QQStateUpdate; de: boolean }) {
-  const sorted = [...state.teams].sort((a, b) => b.totalCells - a.totalCells);
-  return (
-    <CenterArea>
-      <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 56px)" style={{ maxWidth: 980, width: '92%', textAlign: 'center' }}>
-        <div style={{ marginBottom: 10 }}>
-          <BlockCapsHeading size="xl" color={PALETTE.terracotta} glow>
-            {de ? 'Pause' : 'Break'}
-          </BlockCapsHeading>
-        </div>
-        <div style={{ fontFamily: F_BODY, fontSize: 'min(2.2vh, 1.6vw)', color: PALETTE.inkSoft, fontStyle: 'italic', marginBottom: 28 }}>
-          {de ? 'Aktueller Stand' : 'Current standings'}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640, margin: '0 auto' }}>
-          {sorted.map((t, i) => (
-            <StandingsRow key={t.id} team={t} rank={i + 1} />
-          ))}
-        </div>
-      </PaperCard>
-    </CenterArea>
-  );
-}
+type PauseLeaderEntry = { name: string; wins: number; games: number };
+type PauseFunStats = {
+  highestScore: { teamName: string; score: number; draftTitle: string } | null;
+  closestGame: { teams: string[]; gap: number; draftTitle: string } | null;
+  winStreak: { teamName: string; streak: number } | null;
+  mostGames: { teamName: string; games: number } | null;
+  fastestAnswer: { teamName: string; text: string; questionText: string; ms: number } | null;
+  funnyAnswers: Array<{ teamName: string; text: string; questionText: string }>;
+  jokerKing?: { teamName: string; total: number } | null;
+  stealMaster?: { teamName: string; total: number } | null;
+  potatoBoss?: { teamName: string; total: number } | null;
+  comebackKing?: { teamName: string; total: number } | null;
+  underdog?: { teamName: string; games: number; wins: number } | null;
+  speedDemon?: { teamName: string; avgRank: number; samples: number } | null;
+  categoryMasters?: Array<{ teamName: string; category: string; count: number }>;
+  perfectRounds?: Array<{ teamName: string; draftTitle: string }>;
+  todayStats?: any;
+};
 
-function StandingsRow({ team, rank }: { team: QQTeam; rank: number }) {
-  const color = softTeamColor(team.avatarId);
-  const slug = qqGetAvatar(team.avatarId).slug;
-  return (
+const PAUSE_CAT_META: Record<string, { color: string; emoji: string; label: string }> = {
+  SCHAETZCHEN:   { color: CAT_ACCENT.SCHAETZCHEN,   emoji: '🎯', label: 'Schätzchen' },
+  MUCHO:         { color: CAT_ACCENT.MUCHO,         emoji: '🔤', label: 'Mu-Cho' },
+  BUNTE_TUETE:   { color: CAT_ACCENT.BUNTE_TUETE,   emoji: '🎁', label: 'Bunte Tüte' },
+  ZEHN_VON_ZEHN: { color: CAT_ACCENT.ZEHN_VON_ZEHN, emoji: '🎲', label: '10 von 10' },
+  CHEESE:        { color: CAT_ACCENT.CHEESE,        emoji: '📸', label: 'Cheese' },
+};
+
+function PausedView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  const modeAccent = PALETTE.amberGlow;
+
+  const [leaderboard, setLeaderboard] = useState<PauseLeaderEntry[]>([]);
+  const [totalGames, setTotalGames] = useState(0);
+  const [funStats, setFunStats] = useState<PauseFunStats | null>(null);
+  useEffect(() => {
+    const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
+    fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
+      if (data.leaderboard) setLeaderboard(data.leaderboard);
+      if (data.totalGames) setTotalGames(data.totalGames);
+      if (data.funStats) setFunStats(data.funStats);
+    }).catch(() => {});
+  }, []);
+
+  const panels: Array<{ key: string; node: React.ReactNode }> = [];
+
+  // Hilfs-Renderer im Aquarell-Stil
+  const panelTitle = (icon: string, titleDe: string, titleEn: string, accent = PALETTE.cream) => (
     <div style={{
-      display: 'grid', gridTemplateColumns: 'auto auto 1fr auto auto',
-      alignItems: 'center', gap: 16,
-      padding: '10px 18px', borderRadius: 14,
-      background: rank === 1 ? `${color}1f` : `${PALETTE.cream}d0`,
-      border: `2px solid ${rank === 1 ? color : color + '55'}`,
-      boxShadow: rank === 1 ? `0 8px 24px ${color}33` : 'none',
+      fontFamily: F_HAND_CAPS,
+      fontSize: 'clamp(22px, 2.8vw, 38px)', fontWeight: 700,
+      color: accent, marginBottom: 22,
+      display: 'flex', alignItems: 'center', gap: 14,
+      letterSpacing: '0.06em',
+    }}>
+      <span style={{ fontSize: 'clamp(28px, 3.2vw, 44px)' }}>{icon}</span>
+      {de ? titleDe : titleEn}
+    </div>
+  );
+  const statPill = (value: string | number, label: string, accent = PALETTE.amberGlow) => (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 10,
+      padding: '6px 16px', borderRadius: 999,
+      background: `${PALETTE.charcoal}99`, border: `1.5px solid ${accent}88`,
     }}>
       <span style={{
-        fontFamily: F_HAND, fontSize: 'min(3.4vh, 2.4vw)',
-        color: rank === 1 ? color : PALETTE.inkDeep, fontWeight: 700,
-        minWidth: 48, textAlign: 'center',
-      }}>
-        #{rank}
-      </span>
-      <PaintedAvatar slug={slug} size={56} color={color} withGrain={false} />
+        fontFamily: F_HAND, fontSize: 'clamp(20px, 2.4vw, 30px)',
+        color: accent, fontWeight: 700, lineHeight: 1,
+      }}>{value}</span>
       <span style={{
-        fontFamily: F_HAND, fontSize: 'min(3.2vh, 2.2vw)',
-        color: PALETTE.inkDeep, fontWeight: 700, textAlign: 'left',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      }} title={team.name}>
-        {team.name}
-      </span>
-      <span style={{
-        fontFamily: F_HAND, fontSize: 'min(3vh, 2.2vw)',
-        color, fontWeight: 700,
+        fontFamily: F_HAND_CAPS, fontSize: 'clamp(11px, 1.2vw, 15px)',
+        color: PALETTE.cream, letterSpacing: '0.08em',
+      }}>{label}</span>
+    </span>
+  );
+  const teamLine = (name: string, color?: string, avatarId?: string | null) => {
+    const team = state.teams.find(t => t.name === name);
+    const c = color ?? (team ? softTeamColor(team.avatarId) : PALETTE.amberGlow);
+    const av = avatarId ?? team?.avatarId;
+    const slug = av ? qqGetAvatar(av).slug : null;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        {slug && (
+          <PaintedAvatar slug={slug} size={56} color={c} withGrain={false} />
+        )}
+        <span style={{
+          fontFamily: F_HAND,
+          fontWeight: 700, fontSize: 'clamp(26px, 3vw, 42px)', color: c,
+          textShadow: `0 0 18px ${c}66`,
+        }}>{name}</span>
+      </div>
+    );
+  };
+
+  // ── Panel 1: Standings (current game) ──
+  const sortedTeams = [...state.teams].sort((a, b) => b.totalCells - a.totalCells);
+  if (sortedTeams.length > 0) {
+    const twoCol = sortedTeams.length >= 5;
+    panels.push({ key: 'standings', node: (
+      <div>
+        {panelTitle('📊', 'Aktueller Stand', 'Current Standings', PALETTE.cream)}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
+          columnGap: 32, rowGap: 0,
+        }}>
+          {sortedTeams.map((t, i) => {
+            const teamColor = softTeamColor(t.avatarId);
+            const slug = qqGetAvatar(t.avatarId).slug;
+            const nextInCol = twoCol ? (i + 2 < sortedTeams.length) : (i < sortedTeams.length - 1);
+            return (
+              <div key={t.id} style={{
+                display: 'flex', alignItems: 'center', gap: twoCol ? 12 : 18,
+                padding: twoCol ? '8px 0' : '12px 0',
+                borderBottom: nextInCol ? `1px solid ${PALETTE.cream}22` : 'none',
+                minWidth: 0,
+              }}>
+                <span style={{
+                  fontFamily: F_HAND_CAPS,
+                  fontSize: twoCol ? 'clamp(22px, 2.4vw, 32px)' : 'clamp(28px, 3.2vw, 42px)',
+                  color: PALETTE.cream, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0,
+                }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                </span>
+                <PaintedAvatar
+                  slug={slug}
+                  size={twoCol ? 38 : 48}
+                  color={teamColor}
+                  withGrain={false}
+                />
+                <span style={{
+                  flex: 1, fontFamily: F_HAND, fontWeight: 700,
+                  fontSize: twoCol ? 'clamp(18px, 2vw, 26px)' : 'clamp(22px, 2.6vw, 32px)',
+                  color: teamColor,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+                }}>{t.name}</span>
+                <span style={{
+                  fontFamily: F_HAND,
+                  fontSize: twoCol ? 'clamp(18px, 2vw, 26px)' : 'clamp(22px, 2.6vw, 32px)',
+                  fontWeight: 700, color: PALETTE.amberGlow, flexShrink: 0,
+                }}>{t.totalCells}</span>
+                <span style={{
+                  fontFamily: F_BODY,
+                  fontSize: twoCol ? 'clamp(12px, 1.3vw, 16px)' : 'clamp(14px, 1.6vw, 20px)',
+                  color: `${PALETTE.cream}88`, flexShrink: 0, fontStyle: 'italic',
+                }}>{de ? 'Felder' : 'cells'}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 2: Hot Streak (gap leader vs runner-up) ──
+  if (sortedTeams.length >= 2) {
+    const leader = sortedTeams[0];
+    const runnerUp = sortedTeams[1];
+    const gap = leader.totalCells - runnerUp.totalCells;
+    if (gap > 0) {
+      panels.push({ key: 'hotStreak', node: (
+        <div>
+          {panelTitle('🔥', 'Heiße Phase', 'Hot Streak', '#F97316')}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {teamLine(leader.name, softTeamColor(leader.avatarId), leader.avatarId)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
+              <span style={{
+                color: `${PALETTE.cream}aa`, fontFamily: F_BODY,
+                fontSize: 'clamp(17px, 1.9vw, 24px)', fontWeight: 600, fontStyle: 'italic',
+              }}>
+                {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
+              </span>
+            </div>
+          </div>
+        </div>
+      )});
+    }
+  }
+
+  // ── Panel 3: All-time Leaderboard ──
+  const realLeaderboard = leaderboard.filter(e => e.wins > 0);
+  if (realLeaderboard.length > 0) {
+    panels.push({ key: 'leaderboard', node: (
+      <div>
+        {panelTitle('🏆', 'Bestenliste', 'Leaderboard', PALETTE.amberGlow)}
+        {totalGames > 0 && (
+          <div style={{
+            fontFamily: F_BODY, fontSize: 'clamp(14px, 1.6vw, 20px)',
+            color: `${PALETTE.cream}66`, marginBottom: 12, fontStyle: 'italic',
+            marginTop: -14,
+          }}>
+            {totalGames} {de ? 'Spiele insgesamt' : 'total games'}
+          </div>
+        )}
+        {realLeaderboard.slice(0, 5).map((entry, i) => {
+          const sessionTeam = state.teams.find(t => t.name === entry.name);
+          const teamColor = sessionTeam
+            ? softTeamColor(sessionTeam.avatarId)
+            : (i === 0 ? PALETTE.amberGlow : i === 1 ? '#CBD5E1' : i === 2 ? PALETTE.terracotta : '#94A3B8');
+          return (
+            <div key={entry.name} style={{
+              display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
+              borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? `1px solid ${PALETTE.cream}22` : 'none',
+            }}>
+              <span style={{
+                fontFamily: F_HAND_CAPS,
+                fontSize: 'clamp(26px, 3vw, 38px)', color: PALETTE.cream,
+                width: 46, textAlign: 'center', flexShrink: 0,
+              }}>
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+              </span>
+              {sessionTeam
+                ? <PaintedAvatar slug={qqGetAvatar(sessionTeam.avatarId).slug}
+                    size={48} color={teamColor} withGrain={false} />
+                : <span style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: `${PALETTE.charcoal}99`, flexShrink: 0,
+                  }} />}
+              <span style={{
+                flex: 1, fontFamily: F_HAND, fontWeight: 700,
+                fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+              }}>{entry.name}</span>
+              <span style={{
+                padding: '4px 12px', borderRadius: 999,
+                background: `${PALETTE.charcoal}99`, border: `1.5px solid ${teamColor}88`,
+                fontFamily: F_HAND_CAPS,
+                color: teamColor, fontWeight: 700,
+                fontSize: 'clamp(15px, 1.7vw, 21px)',
+                flexShrink: 0,
+              }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+            </div>
+          );
+        })}
+      </div>
+    )});
+  }
+
+  // ── Panel 4: Records (höchster Score, knappstes Spiel, Win-Streak, schnellste Antwort) ──
+  if (funStats) {
+    const records: React.ReactNode[] = [];
+    if (funStats.highestScore && funStats.highestScore.score > 0) {
+      records.push(
+        <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <div>
+            <div style={{
+              fontFamily: F_HAND_CAPS, fontWeight: 700,
+              fontSize: 'clamp(20px, 2.4vw, 28px)', color: PALETTE.cream,
+              letterSpacing: '0.06em',
+            }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'clamp(18px, 2vw, 24px)',
+              color: `${PALETTE.cream}aa`,
+            }}>
+              <strong style={{ color: PALETTE.amberGlow }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.closestGame && funStats.closestGame.gap > 0) {
+      records.push(
+        <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚔️</span>
+          <div>
+            <div style={{
+              fontFamily: F_HAND_CAPS, fontWeight: 700,
+              fontSize: 'clamp(20px, 2.4vw, 28px)', color: PALETTE.cream,
+              letterSpacing: '0.06em',
+            }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'clamp(18px, 2vw, 24px)',
+              color: `${PALETTE.cream}aa`,
+            }}>
+              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.winStreak && funStats.winStreak.streak >= 2) {
+      records.push(
+        <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>🔥</span>
+          <div>
+            <div style={{
+              fontFamily: F_HAND_CAPS, fontWeight: 700,
+              fontSize: 'clamp(20px, 2.4vw, 28px)', color: PALETTE.cream,
+              letterSpacing: '0.06em',
+            }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
+            <div style={{ fontFamily: F_HAND, fontSize: 'clamp(18px, 2vw, 24px)', color: `${PALETTE.cream}aa` }}>
+              <strong style={{ color: PALETTE.amberGlow }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}× {de ? 'in Folge' : 'in a row'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (funStats.fastestAnswer && funStats.fastestAnswer.ms >= 100) {
+      const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
+      records.push(
+        <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
+          <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚡</span>
+          <div>
+            <div style={{
+              fontFamily: F_HAND_CAPS, fontWeight: 700,
+              fontSize: 'clamp(20px, 2.4vw, 28px)', color: PALETTE.cream,
+              letterSpacing: '0.06em',
+            }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
+            <div style={{ fontFamily: F_HAND, fontSize: 'clamp(18px, 2vw, 24px)', color: `${PALETTE.cream}aa` }}>
+              <strong style={{ color: PALETTE.amberGlow }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (records.length > 0) {
+      panels.push({ key: 'records', node: (
+        <div>
+          {panelTitle('🏅', 'Rekorde', 'Records', PALETTE.amberGlow)}
+          {records}
+        </div>
+      )});
+    }
+  }
+
+  // ── Panel 5: Joker King ──
+  if (funStats?.jokerKing && funStats.jokerKing.total >= 2) {
+    panels.push({ key: 'jokerKing', node: (
+      <div>
+        {panelTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
+        {teamLine(funStats.jokerKing.teamName)}
+        <div style={{ marginTop: 14 }}>
+          {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 6: Comeback King ──
+  if (funStats?.comebackKing && funStats.comebackKing.total >= 1) {
+    panels.push({ key: 'comebackKing', node: (
+      <div>
+        {panelTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
+        {teamLine(funStats.comebackKing.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
+          <span style={{
+            color: `${PALETTE.cream}aa`, fontFamily: F_BODY,
+            fontSize: 'clamp(15px, 1.7vw, 20px)', fontStyle: 'italic',
+          }}>
+            {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 7: Steal Master ──
+  if (funStats?.stealMaster && funStats.stealMaster.total >= 2) {
+    panels.push({ key: 'stealMaster', node: (
+      <div>
+        {panelTitle('🗡️', 'Steal-Master', 'Steal Master', CAT_ACCENT.BUNTE_TUETE)}
+        {teamLine(funStats.stealMaster.teamName)}
+        <div style={{ marginTop: 14 }}>
+          {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', CAT_ACCENT.BUNTE_TUETE)}
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 8: Underdog ──
+  if (funStats?.underdog) {
+    panels.push({ key: 'underdog', node: (
+      <div>
+        {panelTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
+        {teamLine(funStats.underdog.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
+          {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', '#64748B')}
+          <span style={{
+            color: `${PALETTE.cream}aa`, fontFamily: F_BODY,
+            fontSize: 'clamp(14px, 1.6vw, 18px)', alignSelf: 'center', fontStyle: 'italic',
+          }}>
+            {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 9: Category Masters ──
+  if (funStats?.categoryMasters && funStats.categoryMasters.length > 0) {
+    panels.push({ key: 'catMasters', node: (
+      <div>
+        {panelTitle('👑', 'Kategorie-Meister', 'Category Masters', PALETTE.amberGlow)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {funStats.categoryMasters.map((cm, i) => {
+            const meta = PAUSE_CAT_META[cm.category] ?? { color: PALETTE.amberGlow, emoji: '🎯', label: cm.category };
+            const team = state.teams.find(t => t.name === cm.teamName);
+            const teamColor = team ? softTeamColor(team.avatarId) : meta.color;
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
+                borderRadius: 16, background: `${meta.color}1f`,
+                border: `1.5px solid ${meta.color}66`,
+              }}>
+                <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1 }}>{meta.emoji}</span>
+                {team && (
+                  <PaintedAvatar slug={qqGetAvatar(team.avatarId).slug} size={44} color={teamColor} withGrain={false} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontFamily: F_HAND, fontWeight: 700,
+                    fontSize: 'clamp(18px, 2vw, 26px)', color: teamColor,
+                  }}>{cm.teamName}</div>
+                  <div style={{
+                    fontFamily: F_HAND_CAPS, fontWeight: 700,
+                    fontSize: 'clamp(13px, 1.4vw, 18px)', color: meta.color,
+                    letterSpacing: '0.08em',
+                  }}>{meta.label}</div>
+                </div>
+                {statPill(cm.count, de ? 'richtig' : 'correct', meta.color)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 10: Perfect Rounds ──
+  if (funStats?.perfectRounds && funStats.perfectRounds.length > 0) {
+    panels.push({ key: 'perfectRounds', node: (
+      <div>
+        {panelTitle('💯', 'Perfekte Runden', 'Perfect Rounds', '#22C55E')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {funStats.perfectRounds.slice(0, 5).map((pr, i) => {
+            const team = state.teams.find(t => t.name === pr.teamName);
+            const teamColor = team ? softTeamColor(team.avatarId) : '#22C55E';
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
+                borderRadius: 14, background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.35)',
+              }}>
+                <span style={{ fontSize: 'clamp(24px, 2.6vw, 34px)' }}>✨</span>
+                {team && <PaintedAvatar slug={qqGetAvatar(team.avatarId).slug} size={42} color={teamColor} withGrain={false} />}
+                <span style={{
+                  fontFamily: F_HAND, fontWeight: 700,
+                  fontSize: 'clamp(18px, 2vw, 26px)', color: teamColor,
+                }}>{pr.teamName}</span>
+                {pr.draftTitle && (
+                  <span style={{
+                    marginLeft: 'auto', color: `${PALETTE.cream}88`,
+                    fontFamily: F_BODY, fontSize: 'clamp(13px, 1.5vw, 18px)', fontStyle: 'italic',
+                  }}>„{pr.draftTitle}"</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 11: Speed Demon ──
+  if (funStats?.speedDemon && funStats.speedDemon.samples >= 5) {
+    panels.push({ key: 'speedDemon', node: (
+      <div>
+        {panelTitle('⚡', 'Schnellste Hand', 'Speed Demon', '#FACC15')}
+        {teamLine(funStats.speedDemon.teamName)}
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
+          <span style={{
+            color: `${PALETTE.cream}aa`, fontFamily: F_BODY,
+            fontSize: 'clamp(15px, 1.7vw, 20px)', fontStyle: 'italic',
+          }}>
+            {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
+          </span>
+        </div>
+      </div>
+    )});
+  }
+
+  // ── Panel 12: Funny Answers ──
+  if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
+    panels.push({ key: 'funny', node: (
+      <div>
+        {panelTitle('😄', 'Lustige Antworten', 'Funny Answers', PALETTE.terracotta)}
+        {funStats.funnyAnswers.map((fa, i) => (
+          <div key={i} style={{
+            padding: '12px 0',
+            borderBottom: i < funStats.funnyAnswers.length - 1 ? `1px solid ${PALETTE.cream}22` : 'none',
+          }}>
+            <div style={{
+              fontFamily: F_HAND, fontWeight: 700,
+              fontSize: 'clamp(22px, 2.6vw, 30px)', color: PALETTE.amberGlow,
+            }}>„{fa.text}"</div>
+            <div style={{
+              fontFamily: F_BODY, fontSize: 'clamp(16px, 1.8vw, 22px)',
+              color: `${PALETTE.cream}88`, marginTop: 4, fontStyle: 'italic',
+            }}>— {fa.teamName}</div>
+          </div>
+        ))}
+      </div>
+    )});
+  }
+
+  // ── Rotation alle 8s ──
+  const [panelIdx, setPanelIdx] = useState(0);
+  useEffect(() => {
+    if (panels.length <= 1) return;
+    const id = setInterval(() => setPanelIdx(p => (p + 1) % panels.length), 8000);
+    return () => clearInterval(id);
+  }, [panels.length]);
+
+  const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
+
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <PhaseBackdrop phase="paused" />
+      </div>
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '48px 64px', position: 'relative', overflow: 'hidden', zIndex: 5,
+        gap: 32,
       }}>
-        {team.totalCells}
-      </span>
-      <span style={{
-        fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft,
-        letterSpacing: '0.06em',
-      }}>
-        Felder
-      </span>
-    </div>
+        {/* Title mit Glow-Pulse */}
+        <div style={{
+          fontFamily: F_HAND_CAPS,
+          fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 700,
+          color: modeAccent,
+          display: 'flex', alignItems: 'center', gap: 14,
+          animation: 'gTwinkle 3s ease-in-out infinite',
+          textShadow: `0 0 24px ${modeAccent}66, 0 0 48px ${modeAccent}33`,
+          letterSpacing: '0.04em',
+        }}>
+          ⏸ {de ? 'Kurze Pause' : 'Short Break'}
+        </div>
+
+        {/* Active Panel — PaperCard mit Slide-In */}
+        {activePanel && (
+          <div style={{ width: '100%', maxWidth: 900, position: 'relative' }}>
+            <PaperCard
+              washColor={`${PALETTE.dusk}cc` as any}
+              padding="clamp(28px, 3.5vw, 48px)"
+              style={{
+                animation: 'gFadeIn 0.55s cubic-bezier(0.22,1,0.36,1) both',
+              }}
+            >
+              {/* Akzent-Streifen oben */}
+              <div style={{
+                position: 'absolute', top: 0, left: 12, right: 12, height: 3,
+                background: `linear-gradient(90deg, transparent, ${modeAccent}, transparent)`,
+                borderRadius: 2,
+              }} />
+              <div key={activePanel.key} style={{
+                animation: 'gFadeIn 0.55s cubic-bezier(0.22,1,0.36,1) both',
+              }}>
+                {activePanel.node}
+              </div>
+            </PaperCard>
+            {panels.length > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 18 }}>
+                {panels.map((_, i) => (
+                  <div key={i} style={{
+                    width: i === panelIdx % panels.length ? 22 : 10, height: 10,
+                    borderRadius: 999,
+                    background: i === panelIdx % panels.length ? modeAccent : `${PALETTE.cream}33`,
+                    transition: 'all 0.3s',
+                  }} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hint */}
+        <div style={{
+          fontFamily: F_BODY, fontSize: 'clamp(16px, 1.8vw, 24px)',
+          color: `${PALETTE.cream}88`, fontStyle: 'italic',
+          letterSpacing: '0.03em',
+        }}>
+          {de ? 'Gleich geht’s weiter…' : 'Continuing soon…'}
+        </div>
+      </div>
+    </>
   );
 }
 

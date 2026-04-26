@@ -12,7 +12,7 @@
 // haben Fallback-Cards mit Phasen-Label und werden in Folge-Items
 // eigens migriert.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
@@ -2934,32 +2934,694 @@ function RulesTree({ state, de, accent }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// PHASE_INTRO — „PHASE 2" Block-Caps-Pop
+// PHASE_INTRO — alle 4 Sub-Steps wie im Original:
+//   1. Round-Announcement (isFirstOfRound + introStep === 0)
+//      → Phase-Name groß, Round-Pill "N von Total", Divider, Tree
+//   2. Rule-Reminder      (isFirstOfRound + introStep === 1)
+//      → "NEU"-Badge, Action-Cards (Place/Steal/Stack mit emoji + count + limit)
+//   3. Kategorie-Erklärung (categoryIsNew, beliebige Frage)
+//      → Frage-Pill, RoundMiniTree, Emoji, Kategorie-Title, Lines, "So geht's"
+//   4. Kategorie-Reveal kompakt (alles andere)
+//      → Frage-Progress, RoundMiniTree, Emoji
 // ─────────────────────────────────────────────────────────────────────────
 
 function PhaseIntroView({ state, de }: { state: QQStateUpdate; de: boolean }) {
   const phaseIdx = state.gamePhaseIndex ?? 1;
+  const isFinal = phaseIdx === (state.totalPhases ?? 4);
+  // Round-Texte aus Original
+  const phaseNamesDe = ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'];
+  const phaseNamesEn = ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'];
+  const phaseDescsDe = ['', 'Felder setzen', 'Klauen freigeschaltet', 'Stapeln freigeschaltet', 'Alles aufs Spiel'];
+  const phaseDescsEn = ['', 'Place cells', 'Steal unlocked', 'Stack unlocked', 'All in'];
+  const phaseName = isFinal ? (de ? 'Finale' : 'Final') : (de ? phaseNamesDe[phaseIdx] : phaseNamesEn[phaseIdx]);
+  const phaseDesc = isFinal ? (de ? 'Alles aufs Spiel' : 'All in') : (de ? phaseDescsDe[phaseIdx] : phaseDescsEn[phaseIdx]);
+
+  const questionInPhase = (state.questionIndex % 5) + 1;
+  const isFirstOfRound = questionInPhase === 1;
+  const cat = state.currentQuestion?.category as keyof typeof CAT_ACCENT | undefined;
+  const catColor = cat ? CAT_ACCENT[cat] : CAT_ACCENT.MUCHO;
+  const introStep = state.introStep ?? 0;
+
+  // Phase-Backdrop je nach Phase
+  const phaseStyle = (() => {
+    if (isFirstOfRound && introStep <= 1) {
+      // Round-Announcement: Phase-spezifischer Sky
+      if (phaseIdx === 1) return 'phaseIntro1' as const;
+      if (phaseIdx === 2) return 'phaseIntro2' as const;
+      if (phaseIdx === 3) return 'phaseIntro3' as const;
+      return 'phaseIntro4' as const;
+    }
+    return null;
+  })();
+
   return (
-    <CenterArea>
-      <div style={{ textAlign: 'center', animation: 'gFadeIn 0.6s ease-out both' }}>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 'min(2vh, 1.6vw)', letterSpacing: '0.32em',
-          color: PALETTE.amberGlow, fontWeight: 700, textTransform: 'uppercase',
-          marginBottom: 18,
-          textShadow: '0 2px 12px rgba(0,0,0,0.4)',
-        }}>
-          {de ? `Runde ${phaseIdx}` : `Round ${phaseIdx}`}
+    <>
+      {/* Phase-Backdrop überschreibt den Default-Sky während Phase-Intro */}
+      {phaseStyle && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <PhaseBackdrop phase={phaseStyle} />
         </div>
-        <div style={{ fontSize: 'min(18vh, 14vw)', lineHeight: 1, animation: 'gFloat 4s ease-in-out infinite' }}>
-          <BlockCapsHeading size="xl" color={PALETTE.cream} glow>
-            {phaseIdx === 1 ? (de ? 'Los geht’s' : 'Let’s go')
-              : phaseIdx === 2 ? (de ? 'Klauen' : 'Steal')
-              : phaseIdx === 3 ? (de ? 'Stapeln' : 'Stack')
-              : (de ? 'Finale' : 'Final')}
+      )}
+
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 5, overflow: 'hidden',
+      }}>
+        {isFirstOfRound && introStep === 0 ? (
+          <PhaseIntroRoundAnnouncement
+            phaseName={phaseName}
+            phaseDesc={phaseDesc}
+            phaseIdx={phaseIdx}
+            totalPhases={state.totalPhases ?? 4}
+            isFinal={isFinal}
+            de={de}
+          />
+        ) : isFirstOfRound && introStep === 1 ? (
+          <PhaseIntroRuleReminder phaseIdx={phaseIdx} de={de} />
+        ) : state.categoryIsNew ? (
+          <PhaseIntroCategoryExplanation
+            state={state}
+            de={de}
+            cat={cat}
+            catColor={catColor}
+            questionInPhase={questionInPhase}
+          />
+        ) : (
+          <PhaseIntroCategoryReveal
+            state={state}
+            de={de}
+            cat={cat}
+            catColor={catColor}
+            questionInPhase={questionInPhase}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Step 0: Round-Announcement — Phase-Name groß
+// ─────────────────────────────────────────────────────────────────────────
+
+function PhaseIntroRoundAnnouncement({
+  phaseName, phaseDesc, phaseIdx, totalPhases, isFinal, de,
+}: {
+  phaseName: string; phaseDesc: string; phaseIdx: number;
+  totalPhases: number; isFinal: boolean; de: boolean;
+}) {
+  const accent = isFinal ? PALETTE.amberGlow : CAT_ACCENT.MUCHO;
+  return (
+    <div style={{ textAlign: 'center', animation: 'gFadeIn 0.6s ease-out both' }}>
+      {/* Round-Progress-Pill */}
+      <div style={{
+        display: 'inline-block',
+        padding: '8px 24px', borderRadius: 999,
+        background: `${accent}22`, border: `2px solid ${accent}66`,
+        fontFamily: F_HAND_CAPS,
+        fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 700,
+        color: PALETTE.cream, letterSpacing: '0.08em',
+        marginBottom: 28,
+        textShadow: '0 2px 8px rgba(0,0,0,0.4)',
+      }}>
+        {de
+          ? `Runde ${phaseIdx} von ${totalPhases}`
+          : `Round ${phaseIdx} of ${totalPhases}`}
+      </div>
+
+      {/* Phase-Name groß */}
+      <div style={{
+        fontFamily: F_HAND,
+        fontSize: 'min(18vh, 14vw)',
+        fontWeight: 700,
+        lineHeight: 0.9,
+        color: isFinal ? 'transparent' : PALETTE.cream,
+        backgroundImage: isFinal
+          ? `linear-gradient(180deg, #FDE68A 0%, #F59E0B 45%, #D97706 100%)`
+          : undefined,
+        WebkitBackgroundClip: isFinal ? 'text' : undefined,
+        backgroundClip: isFinal ? 'text' : undefined,
+        WebkitTextFillColor: isFinal ? 'transparent' : undefined,
+        textShadow: isFinal
+          ? `0 0 80px ${PALETTE.amberGlow}88`
+          : '0 6px 24px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4)',
+        letterSpacing: '-0.01em',
+        animation: 'phaseBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+      }}>
+        {isFinal ? (de ? 'FINALE' : 'FINAL') : phaseName}
+      </div>
+
+      {/* Divider mit Glow */}
+      <div style={{
+        width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
+        background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+        margin: '28px auto',
+        boxShadow: `0 0 20px ${accent}88, 0 0 40px ${accent}44`,
+        animation: 'gFadeIn 0.7s ease 0.5s both',
+      }} />
+
+      {/* Phase-Description in Caveat */}
+      <div style={{
+        fontFamily: F_HAND,
+        fontSize: 'clamp(34px, 5vw, 72px)', fontWeight: 700, lineHeight: 1,
+        color: PALETTE.cream,
+        textShadow: '0 4px 14px rgba(0,0,0,0.45)',
+        animation: 'gFadeIn 0.6s ease 0.7s both',
+      }}>
+        {phaseDesc}
+      </div>
+
+      <style>{`
+        @keyframes phaseBam {
+          0%   { transform: scale(0.4); opacity: 0; }
+          60%  { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Step 1: Rule-Reminder — NEU-Badge + Action-Cards
+// ─────────────────────────────────────────────────────────────────────────
+
+function PhaseIntroRuleReminder({ phaseIdx, de }: { phaseIdx: number; de: boolean }) {
+  const accent = phaseIdx === 1 ? CAT_ACCENT.MUCHO
+    : phaseIdx === 2 ? CAT_ACCENT.SCHAETZCHEN
+    : phaseIdx === 3 ? CAT_ACCENT.BUNTE_TUETE
+    : PALETTE.amberGlow;
+
+  // Action-Cards je Phase
+  type ActionCard = { count: number; emoji: string; label: string; limit?: string; accent: string };
+  const cards: ActionCard[] =
+    phaseIdx === 1 ? [
+      { count: 1, emoji: '📍', label: de ? 'Platzieren' : 'Place', accent },
+    ]
+    : phaseIdx === 2 ? [
+      { count: 2, emoji: '📍', label: de ? 'Platzieren' : 'Place', accent: CAT_ACCENT.MUCHO },
+      { count: 1, emoji: '⚡', label: de ? 'Klauen' : 'Steal',
+        limit: de ? 'max 2× pro Runde' : 'max 2× per round',
+        accent: CAT_ACCENT.SCHAETZCHEN },
+    ]
+    : (phaseIdx === 3 || phaseIdx === 4) ? [
+      { count: 2, emoji: '📍', label: de ? 'Platzieren' : 'Place',
+        limit: de ? 'wenn Feld frei' : 'while free cells',
+        accent: CAT_ACCENT.MUCHO },
+      { count: 1, emoji: '⚡', label: de ? 'Klauen' : 'Steal', accent: CAT_ACCENT.SCHAETZCHEN },
+      { count: 1, emoji: '🏯', label: de ? 'Stapeln' : 'Stack',
+        limit: de ? '+1 Pkt · max 3 pro Spiel' : '+1 pt · max 3 per game',
+        accent: '#06B6D4' },
+    ]
+    : [];
+
+  const lead = phaseIdx === 1
+    ? (de ? 'Sichert euch eure ersten Felder' : 'Claim your first cells')
+    : (de ? 'Pro richtige Antwort wählt eine Aktion' : 'Per correct answer choose one action');
+
+  const emoji = phaseIdx === 1 ? '🏁' : (phaseIdx === 3 || phaseIdx === 4) ? '🏯' : '⚔️';
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 14, animation: 'gFadeIn 0.5s ease both',
+    }}>
+      {/* Round-Pill (kleiner Kontext) */}
+      <div style={{
+        padding: '6px 20px', borderRadius: 999,
+        background: `${accent}22`, border: `1.5px solid ${accent}55`,
+        fontFamily: F_HAND_CAPS,
+        fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
+        color: PALETTE.cream, letterSpacing: '0.06em',
+      }}>
+        {de ? `Runde ${phaseIdx}` : `Round ${phaseIdx}`}
+      </div>
+
+      {/* Big Emoji */}
+      <div style={{
+        fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 1,
+        animation: 'gFloat 4s ease-in-out infinite',
+        filter: `drop-shadow(0 6px 20px ${accent}66)`,
+      }}>{emoji}</div>
+
+      {/* NEU-Badge */}
+      {phaseIdx > 1 && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '6px 22px', borderRadius: 999,
+          background: `${accent}33`, border: `2px solid ${accent}88`,
+          marginTop: 14,
+          animation: 'gFadeIn 0.5s ease 0.3s both',
+        }}>
+          <BlockCapsHeading size="sm" color={accent} glow>
+            ✨ {de ? 'Neu' : 'New'}
+          </BlockCapsHeading>
+        </div>
+      )}
+
+      {/* Lead-Subtitle */}
+      <div style={{
+        fontFamily: F_HAND_CAPS,
+        fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 700,
+        color: `${PALETTE.cream}cc`, letterSpacing: '0.18em', textTransform: 'uppercase',
+        textAlign: 'center', marginTop: 12,
+      }}>
+        {lead}
+      </div>
+
+      {/* Action-Cards */}
+      <div style={{
+        marginTop: 'clamp(20px, 3vh, 40px)',
+        display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
+        alignItems: 'stretch', justifyContent: 'center',
+        gap: 'clamp(10px, 1.6vw, 24px)',
+        width: '100%', maxWidth: 1700,
+      }}>
+        {cards.map((c, i) => (
+          <Fragment key={i}>
+            {i > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: F_HAND_CAPS,
+                fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
+                color: `${PALETTE.cream}aa`, letterSpacing: '0.12em',
+                flex: '0 0 auto',
+              }}>{de ? 'oder' : 'or'}</div>
+            )}
+            <div style={{
+              flex: cards.length === 1 ? '0 1 auto' : '1 1 0',
+              minWidth: cards.length === 1 ? 280 : 200,
+              maxWidth: cards.length === 1 ? 480 : 360,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(8px, 1.2vh, 16px)',
+              padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
+              borderRadius: 24,
+              background: `linear-gradient(180deg, ${PALETTE.cream}f0, ${PALETTE.cream}d0)`,
+              border: `3px solid ${c.accent}aa`,
+              boxShadow: `0 0 40px ${c.accent}44, 0 12px 28px rgba(31,58,95,0.25)`,
+              filter: 'url(#paintFrame)',
+              animation: `gFadeIn 0.5s ease ${0.85 + i * 0.1}s both`,
+            }}>
+              <div style={{
+                fontSize: 'clamp(72px, 8.5vw, 132px)',
+                lineHeight: 1,
+                filter: `drop-shadow(0 6px 18px ${c.accent}66)`,
+              }}>{c.emoji}</div>
+              <div style={{
+                display: 'flex', alignItems: 'baseline', gap: 'clamp(6px, 0.8vw, 12px)',
+                lineHeight: 1, flexWrap: 'wrap', justifyContent: 'center',
+              }}>
+                <span style={{
+                  fontFamily: F_HAND_CAPS,
+                  fontSize: 'clamp(36px, 4.2vw, 64px)',
+                  color: c.accent, fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  textShadow: `0 0 22px ${c.accent}77`,
+                }}>{c.count}×</span>
+                <span style={{
+                  fontFamily: F_HAND,
+                  fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 700,
+                  color: PALETTE.inkDeep,
+                }}>{c.label}</span>
+              </div>
+              <div style={{
+                fontFamily: F_BODY,
+                fontSize: 'clamp(13px, 1.4vw, 19px)', fontWeight: 600,
+                color: PALETTE.inkSoft, fontStyle: 'italic',
+                textAlign: 'center', lineHeight: 1.25,
+              }}>
+                {de ? 'pro richtige Antwort' : 'per correct answer'}
+              </div>
+              {c.limit && (
+                <div style={{
+                  marginTop: 4,
+                  padding: '5px 14px', borderRadius: 999,
+                  background: `${PALETTE.charcoal}cc`,
+                  border: `1.5px solid ${c.accent}88`,
+                  fontFamily: F_BODY,
+                  fontSize: 'clamp(11px, 1.15vw, 15px)', fontWeight: 700,
+                  color: PALETTE.cream,
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.02em',
+                }}>
+                  {c.limit}
+                </div>
+              )}
+            </div>
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Step 2: Kategorie-Erklärung (categoryIsNew = true)
+// ─────────────────────────────────────────────────────────────────────────
+
+function PhaseIntroCategoryExplanation({
+  state, de, cat, catColor, questionInPhase,
+}: {
+  state: QQStateUpdate; de: boolean;
+  cat: keyof typeof CAT_ACCENT | undefined;
+  catColor: string; questionInPhase: number;
+}) {
+  if (!cat) return null;
+  const catLabel = QQ_CATEGORY_LABELS[cat];
+  const btKind = state.currentQuestion?.bunteTuete?.kind;
+
+  // Explanations 1:1 vom Original
+  const CAT_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
+    SCHAETZCHEN: {
+      emoji: '🎯', title: { de: 'Schätzchen', en: 'Close Call' },
+      lines: { de: ['Schätzt am nächsten dran — und gewinnt 1 Feld.', '🎯 Knapp dran (in Range)? Bekommt auch 1 Feld!'],
+        en: ['Guess closest — and win 1 tile.', '🎯 Close to target? Also wins 1 tile!'] },
+    },
+    MUCHO: {
+      emoji: '🅰️', title: { de: 'Mu-Cho', en: 'Mu-Cho' },
+      lines: { de: ['4 Antworten, 1 richtige. Speed entscheidet.'], en: ['4 options, 1 right. Speed decides.'] },
+    },
+    ZEHN_VON_ZEHN: {
+      emoji: '🎰', title: { de: '10 von 10', en: 'All In' },
+      lines: { de: ['Verteilt 10 Punkte auf 3 Antworten.'], en: ['Spread 10 points across 3 answers.'] },
+    },
+    CHEESE: {
+      emoji: '📸', title: { de: 'Picture This', en: 'Picture This' },
+      lines: { de: ['Erkennt das Bild — tippt die Antwort ins Handy.'], en: ['Spot the image — type your answer.'] },
+    },
+    'BUNTE_TUETE:top5': {
+      emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
+      lines: { de: ['Bis zu 5 Antworten — meiste Treffer gewinnt.'], en: ['Up to 5 answers — most hits wins.'] },
+    },
+    'BUNTE_TUETE:oneOfEight': {
+      emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' },
+      lines: { de: ['Unter 8 Aussagen ist eine falsch. Findet sie.'], en: ['One of 8 statements is false. Find it.'] },
+    },
+    'BUNTE_TUETE:order': {
+      emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
+      lines: { de: ['Sortiert richtig — pro Treffer 1 Punkt.'], en: ['Sort correctly — 1 point per hit.'] },
+    },
+    'BUNTE_TUETE:map': {
+      emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' },
+      lines: { de: ['Tippt den Ort auf der Karte — nächstes Team gewinnt.'], en: ['Pin the spot on the map — closest team wins.'] },
+    },
+    'BUNTE_TUETE:hotPotato': {
+      emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
+      lines: { de: ['Reihum antworten — zu langsam = raus.'], en: ['Answer in turn — too slow = out.'] },
+    },
+  };
+  const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : cat;
+  const info = CAT_INTRO[key] ?? CAT_INTRO[cat];
+  if (!info) return null;
+
+  return (
+    <>
+      {/* CategoryBackdrop überlagert für Stimmung */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <CategoryBackdrop category={cat} />
+      </div>
+
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        position: 'relative', zIndex: 5,
+      }}>
+        {/* Pill: Runde + Frage */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          padding: '8px 22px', borderRadius: 18,
+          background: `${catColor}22`, border: `1.5px solid ${catColor}66`,
+          letterSpacing: '0.06em',
+          animation: 'gFadeIn 0.4s ease 0.1s both',
+        }}>
+          <span style={{
+            fontFamily: F_BODY,
+            fontSize: 'clamp(11px, 1.2vw, 16px)', fontWeight: 700,
+            color: `${catColor}cc`, textTransform: 'uppercase',
+            letterSpacing: '0.18em',
+          }}>
+            {de ? `Runde ${state.gamePhaseIndex}` : `Round ${state.gamePhaseIndex}`}
+          </span>
+          <span style={{
+            fontFamily: F_HAND_CAPS,
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
+            color: PALETTE.cream, letterSpacing: '0.06em',
+          }}>
+            {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+          </span>
+        </div>
+
+        {/* Mini-Tree */}
+        <RoundMiniTreeGouache state={state} catColor={catColor} />
+
+        {/* Big emoji */}
+        <div style={{
+          fontSize: 'clamp(110px, 16vw, 200px)', lineHeight: 1,
+          animation: 'gFloat 4s ease-in-out infinite',
+          filter: `drop-shadow(0 8px 24px ${catColor}66)`,
+        }}>
+          {info.emoji}
+        </div>
+
+        {/* Title */}
+        <div style={{
+          fontFamily: F_HAND,
+          fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 700, lineHeight: 1,
+          color: catColor,
+          textShadow: `0 0 80px ${catColor}66, 0 4px 14px rgba(0,0,0,0.4)`,
+          animation: 'gFadeIn 0.7s ease 0.3s both',
+          textAlign: 'center',
+        }}>
+          {info.title[de ? 'de' : 'en']}
+        </div>
+
+        {/* Lines */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          marginTop: 24,
+        }}>
+          {info.lines[de ? 'de' : 'en'].map((line, i) => (
+            <div key={i} style={{
+              fontFamily: F_HAND,
+              fontSize: i === 0 ? 'clamp(26px, 3.5vw, 48px)' : 'clamp(20px, 2.5vw, 36px)',
+              fontWeight: 700,
+              color: i === 0 ? PALETTE.cream : `${catColor}cc`,
+              textAlign: 'center',
+              textShadow: i === 0 ? '0 4px 12px rgba(0,0,0,0.45)' : 'none',
+              animation: `gFadeIn 0.5s ease ${0.5 + i * 0.15}s both`,
+            }}>
+              {line}
+            </div>
+          ))}
+        </div>
+
+        {/* "So geht's"-Badge */}
+        <div style={{
+          marginTop: 24, padding: '6px 22px', borderRadius: 999,
+          background: `${catColor}22`, border: `1.5px solid ${catColor}66`,
+          animation: 'gFadeIn 0.5s ease 0.8s both',
+        }}>
+          <BlockCapsHeading size="sm" color={catColor}>
+            {de ? '📱 Antwort auf dem Handy' : '📱 Answer on your phone'}
           </BlockCapsHeading>
         </div>
       </div>
-    </CenterArea>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Step 3: Kategorie-Reveal kompakt — Frage-Progress + Mini-Tree + Emoji
+// ─────────────────────────────────────────────────────────────────────────
+
+function PhaseIntroCategoryReveal({
+  state, de, cat, catColor, questionInPhase,
+}: {
+  state: QQStateUpdate; de: boolean;
+  cat: keyof typeof CAT_ACCENT | undefined;
+  catColor: string; questionInPhase: number;
+}) {
+  if (!cat) return null;
+  const catInfo = QQ_CATEGORY_LABELS[cat];
+  const btKind = state.currentQuestion?.bunteTuete?.kind;
+  const subInfo = btKind ? QQ_BUNTE_TUETE_LABELS[btKind] : null;
+  const emoji = subInfo?.emoji ?? catInfo.emoji;
+
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <CategoryBackdrop category={cat} />
+      </div>
+
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+        position: 'relative', zIndex: 5,
+        animation: 'gFadeIn 0.5s ease both',
+      }}>
+        {/* Frage-Progress */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+        }}>
+          <div style={{
+            fontFamily: F_BODY,
+            fontSize: 'clamp(13px, 1.6vw, 20px)', fontWeight: 700,
+            color: `${catColor}cc`, letterSpacing: '0.18em', textTransform: 'uppercase',
+          }}>
+            {de ? `Runde ${state.gamePhaseIndex}` : `Round ${state.gamePhaseIndex}`}
+          </div>
+          <div style={{
+            fontFamily: F_HAND_CAPS,
+            fontSize: 'clamp(22px, 2.8vw, 36px)', fontWeight: 700,
+            color: catColor, letterSpacing: '0.06em',
+          }}>
+            {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+          </div>
+        </div>
+
+        {/* Mini-Tree */}
+        <RoundMiniTreeGouache state={state} catColor={catColor} />
+
+        {/* Big emoji */}
+        <div style={{
+          fontSize: 'clamp(110px, 16vw, 200px)', lineHeight: 1,
+          animation: 'gFloat 4s ease-in-out infinite',
+          filter: `drop-shadow(0 8px 24px ${catColor}66)`,
+        }}>{emoji}</div>
+
+        {/* Title */}
+        <div style={{
+          fontFamily: F_HAND,
+          fontSize: 'clamp(48px, 8vw, 120px)', fontWeight: 700, lineHeight: 1,
+          color: catColor,
+          textShadow: `0 0 60px ${catColor}55, 0 4px 14px rgba(0,0,0,0.4)`,
+          textAlign: 'center',
+        }}>
+          {subInfo ? (de ? subInfo.de : subInfo.en) : (de ? catInfo.de : catInfo.en)}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// RoundMiniTree — kompakte Phasen-Folge mit Wolf-Avatar auf aktueller Frage.
+// Ohne Original-Wolf-Animation (vereinfachte Variante: Wolf springt direkt).
+// ─────────────────────────────────────────────────────────────────────────
+
+function RoundMiniTreeGouache({ state, catColor }: {
+  state: QQStateUpdate; catColor: string;
+}) {
+  const schedule = state.schedule ?? [];
+  const phase = state.gamePhaseIndex;
+  const firstIdx = schedule.findIndex(e => e.phase === phase);
+  const phaseEntries = schedule.filter(e => e.phase === phase);
+
+  const currentInPhase = phaseEntries.length === 0 || firstIdx < 0
+    ? 0
+    : Math.max(0, Math.min(state.questionIndex - firstIdx, phaseEntries.length - 1));
+
+  const [displayIdx, setDisplayIdx] = useState(Math.max(0, currentInPhase - 1));
+  const [hopping, setHopping] = useState(false);
+
+  useEffect(() => {
+    if (currentInPhase === 0) {
+      setDisplayIdx(0);
+      setHopping(false);
+      return;
+    }
+    setDisplayIdx(Math.max(0, currentInPhase - 1));
+    setHopping(false);
+    const t1 = setTimeout(() => {
+      setDisplayIdx(currentInPhase);
+      setHopping(true);
+    }, 1000);
+    const t2 = setTimeout(() => setHopping(false), 1000 + 560);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [currentInPhase]);
+
+  if (phaseEntries.length === 0 || firstIdx < 0) return null;
+
+  const DOT = 60;
+  const GAP = 26;
+  const WOLF = DOT + 12;
+  const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
+  const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
+  const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);
+
+  return (
+    <div style={{
+      position: 'relative', width: totalWidth, height: WOLF + 4,
+      display: 'flex', alignItems: 'center',
+    }}>
+      {/* Track + Progress */}
+      <div style={{
+        position: 'absolute', top: '50%', left: DOT / 2,
+        width: totalWidth - DOT, height: 3,
+        background: `${PALETTE.cream}33`,
+        transform: 'translateY(-50%)', borderRadius: 2,
+      }} />
+      {progressWidth > 0 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: DOT / 2,
+          width: progressWidth, height: 3,
+          background: `linear-gradient(90deg, ${PALETTE.amberGlow}, ${PALETTE.terracotta})`,
+          transform: 'translateY(-50%)', borderRadius: 2,
+          boxShadow: `0 0 10px ${PALETTE.amberGlow}aa`,
+          transition: 'width 540ms cubic-bezier(0.4,0,0.2,1)',
+        }} />
+      )}
+
+      {/* Dots */}
+      {phaseEntries.map((e, i) => {
+        const subInfo = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind] : null;
+        const catInfo = QQ_CATEGORY_LABELS[e.category as keyof typeof QQ_CATEGORY_LABELS];
+        const dotEmoji = subInfo?.emoji ?? catInfo?.emoji ?? '';
+        const isPast = i < displayIdx;
+        const isCurrent = i === displayIdx;
+        const dotLeft = i * (DOT + GAP);
+        return (
+          <div key={i} style={{
+            position: 'absolute', top: '50%', left: dotLeft,
+            width: DOT, height: DOT, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: Math.round(DOT * 0.55),
+            background: isPast ? `${PALETTE.cream}26`
+              : isCurrent ? 'transparent'
+              : `${PALETTE.charcoal}88`,
+            border: isCurrent ? 'none' : `1.5px solid ${PALETTE.cream}55`,
+            filter: isPast ? 'grayscale(0.8)' : 'none',
+            opacity: isPast ? 0.55 : isCurrent ? 0 : 1,
+            transform: 'translateY(-50%)',
+            transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
+            zIndex: 1,
+          }}>
+            {dotEmoji}
+          </div>
+        );
+      })}
+
+      {/* Wolf-Avatar mit Logo */}
+      <div style={{
+        position: 'absolute', top: '50%', left: wolfLeft,
+        width: WOLF, height: WOLF, borderRadius: '50%',
+        background: PALETTE.cream,
+        backgroundImage: 'url(/logo.png)',
+        backgroundSize: '88%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
+        border: `3px solid ${catColor}`,
+        boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
+        transform: 'translate(-50%, -50%)',
+        transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+        animation: hopping ? 'roundMiniHop 560ms cubic-bezier(0.4,0,0.2,1) both' : undefined,
+        zIndex: 2,
+      }} />
+      <style>{`
+        @keyframes roundMiniHop {
+          0%   { transform: translate(-50%, -50%); }
+          50%  { transform: translate(-50%, -110%); }
+          100% { transform: translate(-50%, -50%); }
+        }
+      `}</style>
+    </div>
   );
 }
 

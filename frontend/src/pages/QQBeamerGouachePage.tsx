@@ -12,7 +12,7 @@
 // haben Fallback-Cards mit Phasen-Label und werden in Folge-Items
 // eigens migriert.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
@@ -1071,264 +1071,988 @@ function AllInView({ state, q, de, revealed }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// PLACEMENT — 2D-Aquarell-Grid mit Owner-Wäschen, Joker-Sterne, Frost,
-// Stapel-Patches, Last-Placed-Pulse + Pending-Action-Header
+// PLACEMENT — Layout strikt 1:1 nach Original PlacementView aus
+// QQBeamerPage.tsx: 2-spaltig (Grid links · ScoreBar rechts), gleiche
+// Höhe = gridMaxSize. Sweep-Animation bei Phase-Entry, Sticky-Placer-
+// Logic, Active-Team-Highlight in ScoreBar mit Aktions-Pill.
+// 3D ist bewusst weggelassen (User-Wunsch). Aquarell-Stil tauscht nur
+// Tokens/Components, alle Funktionen + Indikatoren bleiben.
 // ─────────────────────────────────────────────────────────────────────────
 
 function PlacementView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  // Sticky Placer — der Highlight bleibt 1.2s am Team das gerade gesetzt hat,
+  // sonst springt der Glow zum nächsten Team während die Cell-Anim noch läuft.
+  const [stickyPlacer, setStickyPlacer] = useState<string | null>(null);
+  const prevPlacedKey = useRef<string | null>(null);
+  useEffect(() => {
+    const lp = state.lastPlacedCell;
+    const key = lp ? `${lp.row}-${lp.col}-${lp.teamId}` : null;
+    if (!key) return;
+    if (key === prevPlacedKey.current) return;
+    prevPlacedKey.current = key;
+    setStickyPlacer(lp!.teamId);
+    const t = setTimeout(() => setStickyPlacer(cur => (cur === lp!.teamId ? null : cur)), 1200);
+    return () => clearTimeout(t);
+  }, [state.lastPlacedCell?.row, state.lastPlacedCell?.col, state.lastPlacedCell?.teamId]);
+
+  // Aktiv-Team-Resolver: Sticky > Pending > Comeback-Steal
+  const isComebackStealActive =
+    !!state.comebackHL && state.comebackHL.phase === 'steal' && !!state.comebackTeamId;
+  const activeTeamId = stickyPlacer
+    ?? state.pendingFor
+    ?? (isComebackStealActive ? state.comebackTeamId : null);
+
+  // Grid-Größe wie Original: Min(720, 72vh, 48vw) damit rechts Platz für ScoreBar
+  // bleibt.
   const { w: vw, h: vh } = useViewportSize();
-  const grid = state.grid;
-  const size = state.gridSize;
-
-  // Cell-Dimensionen — Grid soll quadratisch in der verfügbaren Fläche bleiben.
-  // Verfügbare Höhe ≈ 70vh (nach Header + Footer), Breite ≈ 70vw.
-  const maxCellPx = Math.min(vh * 0.7, vw * 0.6) / size;
-  const cellPx = Math.max(48, Math.floor(maxCellPx) - 6);
-
-  const last = state.lastPlacedCell;
-  const pendingTeam = state.pendingFor ? state.teams.find(t => t.id === state.pendingFor) : null;
-
-  return (
-    <>
-      <PlacementHeader state={state} de={de} pendingTeam={pendingTeam} />
-      <CenterArea>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${size}, ${cellPx}px)`,
-          gap: 6,
-          padding: 16,
-          borderRadius: 24,
-          background: `${PALETTE.cream}1f`,
-          border: `2px dashed ${PALETTE.cream}33`,
-          filter: 'url(#paintFrame)',
-        }}>
-          {grid.flat().map(cell => {
-            const isLast = last && last.row === cell.row && last.col === cell.col;
-            return (
-              <PlacementCell
-                key={`${cell.row}-${cell.col}`}
-                cell={cell}
-                cellPx={cellPx}
-                team={cell.ownerId ? state.teams.find(t => t.id === cell.ownerId) ?? null : null}
-                lastPlaced={!!isLast}
-                wasSteal={!!(isLast && last?.wasSteal)}
-              />
-            );
-          })}
-        </div>
-      </CenterArea>
-      <PlacementFooter state={state} de={de} />
-    </>
-  );
-}
-
-function PlacementHeader({
-  state, de, pendingTeam,
-}: { state: QQStateUpdate; de: boolean; pendingTeam: QQTeam | null }) {
-  const action = state.pendingAction;
-  const actionLabel = (() => {
-    switch (action) {
-      case 'PLACE_1':
-      case 'PLACE_2': return de ? 'setzt ein Feld' : 'places a field';
-      case 'STEAL_1': return de ? 'klaut ein Feld' : 'steals a field';
-      case 'FREE':    return de ? 'wählt eine Aktion' : 'picks an action';
-      case 'SANDUHR_1': return de ? 'bannt ein Feld' : 'locks a field';
-      case 'SHIELD_1':  return de ? 'schützt ein Feld' : 'shields a field';
-      case 'SWAP_1':    return de ? 'tauscht zwei Felder' : 'swaps two fields';
-      case 'STAPEL_1':  return de ? 'stapelt ein Feld' : 'stacks a field';
-      case 'COMEBACK':  return de ? 'startet das Comeback' : 'starts the comeback';
-      default: return de ? 'ist am Zug' : 'is up';
-    }
-  })();
-  if (!pendingTeam) {
-    return (
-      <header style={{ textAlign: 'center', flexShrink: 0, position: 'relative', zIndex: 5 }}>
-        <BlockCapsHeading size="lg" color={PALETTE.cream}>
-          {de ? 'Platzierung' : 'Placement'}
-        </BlockCapsHeading>
-      </header>
-    );
-  }
-  const color = softTeamColor(pendingTeam.avatarId);
-  return (
-    <header style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
-      flexShrink: 0, position: 'relative', zIndex: 5,
-      animation: 'gFadeIn 0.5s ease-out both',
-    }}>
-      <div style={{ filter: 'url(#warmGlow)' }}>
-        <PaintedAvatar slug={qqGetAvatar(pendingTeam.avatarId).slug} size={80} color={color} withGrain={false} />
-      </div>
-      <div>
-        <div style={{
-          fontFamily: F_HAND, fontSize: 'min(6vh, 4vw)', color, fontWeight: 700, lineHeight: 1,
-          textShadow: `0 4px 12px ${color}44`,
-        }}>
-          {pendingTeam.name}
-        </div>
-        <BlockCapsHeading size="md" color={PALETTE.cream}>
-          {actionLabel}
-        </BlockCapsHeading>
-      </div>
-    </header>
-  );
-}
-
-function PlacementFooter({ state, de }: { state: QQStateUpdate; de: boolean }) {
-  // Mini-Standings unten — wer hat wie viele Felder
-  const sorted = [...state.teams].sort((a, b) => b.totalCells - a.totalCells);
-  return (
-    <footer style={{
-      display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10,
-      flexShrink: 0, position: 'relative', zIndex: 5,
-      padding: '0 12px',
-    }}>
-      {sorted.map(t => {
-        const color = softTeamColor(t.avatarId);
-        return (
-          <div key={t.id} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '4px 10px', borderRadius: 999,
-            background: `${PALETTE.cream}1f`,
-            border: `1.5px solid ${color}88`,
-          }}>
-            <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={26} color={color} withGrain={false} />
-            <span style={{
-              fontFamily: F_HAND, fontSize: 'min(2.2vh, 1.6vw)',
-              color: PALETTE.cream, fontWeight: 700,
-            }} title={t.name}>
-              {t.name.length > 10 ? t.name.slice(0, 9) + '…' : t.name}
-            </span>
-            <span style={{
-              fontFamily: F_HAND_CAPS, fontSize: 'min(2vh, 1.5vw)',
-              color, fontWeight: 700, letterSpacing: '0.06em',
-            }}>
-              {t.totalCells}
-              {t.largestConnected > 1 && ` · ${t.largestConnected}`}
-            </span>
-          </div>
-        );
-      })}
-      <div style={{
-        padding: '4px 12px', borderRadius: 999,
-        background: `${PALETTE.cream}11`,
-        border: `1px dashed ${PALETTE.cream}33`,
-        fontFamily: F_BODY, fontSize: 11,
-        color: `${PALETTE.cream}aa`,
-        letterSpacing: '0.08em',
-      }}>
-        {de ? 'gesamt · zusammenhängend' : 'total · connected'}
-      </div>
-    </footer>
-  );
-}
-
-function PlacementCell({
-  cell, cellPx, team, lastPlaced, wasSteal,
-}: {
-  cell: { row: number; col: number; ownerId: string | null;
-         jokerFormed?: boolean; frozen?: boolean; stuck?: boolean;
-         shielded?: boolean; sandLockTtl?: number };
-  cellPx: number;
-  team: QQTeam | null;
-  lastPlaced: boolean;
-  wasSteal: boolean;
-}) {
-  const color = team ? softTeamColor(team.avatarId) : null;
-  const slug = team ? qqGetAvatar(team.avatarId).slug : null;
-  const isLocked = (cell.sandLockTtl ?? 0) > 0;
+  const gridMaxSize = Math.min(720, vh * 0.72, vw * 0.48);
 
   return (
     <div style={{
-      width: cellPx, height: cellPx,
-      borderRadius: 14,
-      background: color ? `${color}33` : `${PALETTE.cream}d0`,
-      border: color
-        ? `3px solid ${cell.stuck ? color : color + 'aa'}`
-        : `2px solid ${PALETTE.inkSoft}33`,
-      boxShadow: lastPlaced && color
-        ? `0 0 0 4px ${color}aa, 0 12px 32px ${color}99`
-        : color ? `0 4px 12px ${color}33` : 'none',
-      animation: lastPlaced ? 'cellSlamDown 0.7s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
-      position: 'relative', overflow: 'hidden',
-      filter: 'url(#watercolorEdge)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flex: 1, display: 'flex', flexDirection: 'column',
+      position: 'relative', overflow: 'hidden', minHeight: 0,
     }}>
-      {/* Owner Avatar */}
-      {slug && color && (
+      {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry. */}
+      <div key={`sweep-${state.questionIndex}`} aria-hidden style={{
+        position: 'absolute', top: 12, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none', zIndex: 4, overflow: 'hidden',
+      }}>
         <div style={{
-          width: cellPx * 0.62, height: cellPx * 0.62,
-          borderRadius: '50%',
-          backgroundImage: `url(/avatars/gouache/avatar-${slug}.png)`,
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          border: `2.5px solid ${color}`,
-          boxShadow: `0 2px 6px ${color}66`,
-          opacity: cell.frozen || isLocked ? 0.5 : 1,
+          position: 'absolute', top: 0, bottom: 0,
+          width: '40%',
+          background: `linear-gradient(90deg, transparent 0%, ${PALETTE.cream}33 45%, ${PALETTE.cream}55 50%, ${PALETTE.cream}33 55%, transparent 100%)`,
+          animation: 'placementSweep 1.1s cubic-bezier(0.4,0,0.2,1) 0.15s both',
         }} />
-      )}
-      {/* Joker indicator (Stern-Glow) */}
-      {cell.jokerFormed && (
+      </div>
+
+      {/* Top-Banner-Spacer (Original: 12px leer) */}
+      <div style={{ height: 12, flexShrink: 0, position: 'relative', zIndex: 5 }} />
+
+      {/* Center: 2-spaltig — Grid links, ScoreBar rechts. Beide Spalten
+          height = gridMaxSize damit ScoreBar exakt Grid-Höhe hat. */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'row',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '12px 36px', position: 'relative', zIndex: 5, gap: 32,
+        minHeight: 0,
+      }}>
         <div style={{
-          position: 'absolute', top: 4, right: 4,
-          width: cellPx * 0.18, height: cellPx * 0.18,
-          background: `radial-gradient(circle, ${PALETTE.amberGlow} 0%, ${PALETTE.amberGlow}00 70%)`,
-          fontSize: cellPx * 0.22, lineHeight: 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: PALETTE.amberGlow,
-          textShadow: `0 0 8px ${PALETTE.amberGlow}`,
-          fontFamily: F_HAND, fontWeight: 700,
-        }}>★</div>
-      )}
-      {/* Stapel (stuck) — kleine Pin-Marke unten rechts */}
-      {cell.stuck && (
+          width: gridMaxSize, height: gridMaxSize,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <GouacheGrid state={state} maxSize={gridMaxSize} highlightTeam={activeTeamId} />
+        </div>
         <div style={{
-          position: 'absolute', bottom: 4, right: 4,
-          padding: '2px 6px', borderRadius: 6,
-          background: PALETTE.inkDeep, color: PALETTE.cream,
-          fontFamily: F_HAND_CAPS, fontSize: cellPx * 0.16,
-          letterSpacing: '0.06em',
-        }}>×2</div>
-      )}
-      {/* Frozen (Schneeflocke) */}
-      {cell.frozen && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(220,240,255,0.35)',
-          backdropFilter: 'blur(1px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: cellPx * 0.4, color: '#9DCBFF',
-        }}>❄</div>
-      )}
-      {/* SandLock (Sanduhr) */}
-      {isLocked && (
-        <div style={{
-          position: 'absolute', top: 4, left: 4,
-          fontSize: cellPx * 0.18,
-          opacity: 0.85,
-        }}>⏳</div>
-      )}
-      {/* Steal-Indikator: Wave-Glow auf last-placed das ein Steal war */}
-      {lastPlaced && wasSteal && (
-        <div aria-hidden style={{
-          position: 'absolute', inset: -4, borderRadius: 18,
-          border: `3px solid ${PALETTE.terracotta}`,
-          animation: 'cellStealRing 1s ease-out forwards',
-          pointerEvents: 'none',
-        }} />
-      )}
-      {/* Lokale Animations-Keyframes */}
+          width: 540, height: gridMaxSize, flexShrink: 0,
+          display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
+        }}>
+          <GouacheScoreBar
+            teams={state.teams}
+            activeTeamId={activeTeamId}
+            teamPhaseStats={state.teamPhaseStats}
+            correctTeamId={state.correctTeamId}
+            activeActionLabel={(() => {
+              const team = state.teams.find(t => t.id === activeTeamId);
+              if (!team) return undefined;
+              if (state.comebackHL && state.comebackHL.phase === 'steal' && (state.comebackHL as any).currentStealer === team.id) {
+                if (state.comebackStealPaused) {
+                  return de ? '✓ Geklaut — Weiter mit Space' : '✓ Stolen — press Space';
+                }
+                return de ? '⚡ Comeback-Klau' : '⚡ Comeback Steal';
+              }
+              return placementActionVerb(state.pendingAction, de);
+            })()}
+            activeActionDesc={(() => {
+              const team = state.teams.find(t => t.id === activeTeamId);
+              if (!team) return undefined;
+              return placementActionDesc(state.pendingAction, state.teamPhaseStats[team.id], de);
+            })()}
+          />
+        </div>
+      </div>
+
+      {/* Lokale Keyframes für Placement-Anims */}
       <style>{`
-        @keyframes cellSlamDown {
-          0%   { transform: translateY(-50px) scale(0.6); opacity: 0; }
-          55%  { transform: translateY(4px)   scale(1.08); opacity: 1; }
-          80%  { transform: translateY(-2px)  scale(0.98); }
-          100% { transform: translateY(0)     scale(1); opacity: 1; }
+        @keyframes placementSweep {
+          0%   { transform: translateX(-60%); opacity: 0; }
+          15%  { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { transform: translateX(260%); opacity: 0; }
         }
-        @keyframes cellStealRing {
+        @keyframes boardShake {
+          0%   { transform: translate(0, 0); }
+          25%  { transform: translate(-3px, 1px); }
+          50%  { transform: translate(2px, -2px); }
+          75%  { transform: translate(-1px, 2px); }
+          100% { transform: translate(0, 0); }
+        }
+        @keyframes cellInkFill {
+          0%   { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+          55%  { transform: scale(1.06) rotate(2deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg);    opacity: 1; }
+        }
+        @keyframes cellShockwave {
           0%   { transform: scale(0.7); opacity: 1; }
           100% { transform: scale(1.6); opacity: 0; }
         }
+        @keyframes cellSparkle {
+          0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
+        }
+        @keyframes cellShard {
+          0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+          100% { transform: translate(var(--shx), var(--shy)) rotate(var(--shr)); opacity: 0; }
+        }
+        @keyframes cellEmojiDrop {
+          0%   { transform: translateY(-30px) scale(0.5); opacity: 0; }
+          60%  { transform: translateY(4px) scale(1.06); opacity: 1; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes cellNeighborDuck {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(0.94); }
+          100% { transform: scale(1); }
+        }
+        @keyframes cellIdlePulse {
+          0%, 100% { background: ${PALETTE.cream}10; }
+          50%      { background: ${PALETTE.cream}26; }
+        }
+        @keyframes gridIdle {
+          0%, 100% { box-shadow: 0 14px 36px rgba(31,58,95,0.18); }
+          50%      { box-shadow: 0 18px 44px rgba(31,58,95,0.24); }
+        }
+        @keyframes frostPulse {
+          0%, 100% { opacity: 0.7; }
+          50%      { opacity: 1; }
+        }
+        @keyframes frostShimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes frostCrystal {
+          0%, 100% { transform: rotate(-4deg) scale(1); }
+          50%      { transform: rotate(4deg) scale(1.08); }
+        }
+        @keyframes stapelDustRing {
+          0%   { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(1.4); opacity: 0; }
+        }
+        @keyframes stapelDrop {
+          0%   { transform: translateY(-20px) scale(0.4); opacity: 0; }
+          60%  { transform: translateY(3px) scale(1.15); opacity: 1; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes sanduhrDrop {
+          0%   { transform: translateY(-30px) scale(0.5); opacity: 0; }
+          60%  { transform: translateY(4px) scale(1.1); opacity: 1; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes sanduhrTick {
+          0%, 100% { transform: rotate(0deg); }
+          50%      { transform: rotate(180deg); }
+        }
+        @keyframes shieldGlow {
+          0%, 100% { box-shadow: 0 0 14px ${PALETTE.amberGlow}88; }
+          50%      { box-shadow: 0 0 28px ${PALETTE.amberGlow}cc, 0 0 48px ${PALETTE.amberGlow}66; }
+        }
+        @keyframes scorePop {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(1.06); }
+          100% { transform: scale(1); }
+        }
+        @keyframes tcpulse {
+          0%, 100% { box-shadow: 0 0 0 0 var(--c, transparent); }
+          50%      { box-shadow: 0 0 0 6px transparent; }
+        }
+        @keyframes jokerStarFly {
+          0%   { transform: translate(-50%, -90px) scale(0.4) rotate(-30deg); opacity: 0; }
+          40%  { transform: translate(-50%, -10px) scale(1.4) rotate(15deg);  opacity: 1; }
+          100% { transform: translate(-50%, var(--jk-dy)) scale(0.5) rotate(0deg); opacity: 0; }
+        }
+        @keyframes jokerImpactPulse {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.18); }
+        }
+        @keyframes streakFlameWobble {
+          0%, 100% { transform: rotate(-8deg); }
+          50%      { transform: rotate(8deg); }
+        }
+        @keyframes voterSlotDrop {
+          0%   { transform: translateY(-12px); opacity: 0; }
+          60%  { transform: translateY(2px);  opacity: 1; }
+          100% { transform: translateY(0);    opacity: 1; }
+        }
+        @keyframes scoreFloater {
+          0%   { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(-32px); opacity: 0; }
+        }
       `}</style>
+    </div>
+  );
+}
+
+// Action-Verb / -Description (DE/EN) — pendingAction → label & sub
+function placementActionVerb(a: string | null, de: boolean): string {
+  if (a === 'STEAL_1')   return de ? '⚡ Klauen' : '⚡ Steal';
+  if (a === 'COMEBACK')  return de ? '⭐ Comeback' : '⭐ Comeback';
+  if (a === 'SANDUHR_1') return de ? '⏳ Bann' : '⏳ Lock';
+  if (a === 'SHIELD_1')  return de ? '🛡 Schild' : '🛡 Shield';
+  if (a === 'SWAP_1')    return de ? '🔄 Tauschen' : '🔄 Swap';
+  if (a === 'STAPEL_1')  return de ? '🪨 Stapeln' : '🪨 Stack';
+  if (a === 'FREE')      return de ? '✱ Aktion wählen' : '✱ Pick action';
+  return de ? '📍 Setzen' : '📍 Place';
+}
+
+function placementActionDesc(a: string | null, stats: any, de: boolean): string | undefined {
+  if (a === 'PLACE_1') return de ? '1 Feld auswählen' : 'Pick 1 field';
+  if (a === 'PLACE_2') return de
+    ? `${stats?.placementsLeft ?? 2} Felder übrig`
+    : `${stats?.placementsLeft ?? 2} fields left`;
+  if (a === 'STEAL_1') return de ? 'Gegnerisches Feld' : 'Opponent field';
+  if (a === 'FREE')    return de ? 'Setzen / Klauen / Bann' : 'Place / Steal / Lock';
+  return undefined;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// GouacheGrid — 1:1 von GridDisplay (Original): Cells mit Owner-Wash,
+// Territorium-Bridges, alle Spezial-Indikatoren (Frozen/Stuck/Sanduhr/
+// Shield/Joker), Idle-Pulse, Diff-Tracking (new/stolen/neighbor),
+// Shockwave/Sparkle/Shard-Animationen, Avatar full-bleed im Quadrat
+// (User-Override: KEIN runder Disc-Frame mehr).
+// ─────────────────────────────────────────────────────────────────────────
+
+function GouacheGrid({
+  state, maxSize, highlightTeam,
+}: {
+  state: QQStateUpdate; maxSize: number; highlightTeam: string | null;
+}) {
+  const gap = 4;
+  const cellSize = Math.floor((maxSize - (state.gridSize - 1) * gap) / state.gridSize);
+  const activeTeam = state.teams.find(t => t.id === highlightTeam);
+  const activeColor = activeTeam ? softTeamColor(activeTeam.avatarId) : PALETTE.cream;
+
+  // Diff-Tracking für new/stolen/neighbor
+  const gridKey = state.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
+  const prevGridRef = useRef<string>(gridKey);
+  const newCellsRef = useRef<Set<string>>(new Set());
+  const stolenCellsRef = useRef<Set<string>>(new Set());
+  const neighborCellsRef = useRef<Set<string>>(new Set());
+  const [shakeTick, setShakeTick] = useState(0);
+  if (gridKey !== prevGridRef.current) {
+    const newSet = new Set<string>();
+    const stolenSet = new Set<string>();
+    const neighborSet = new Set<string>();
+    const prevOwners = prevGridRef.current.split(',');
+    state.grid.forEach((row, r) => row.forEach((cell, c) => {
+      const prevOwner = prevOwners[(r * state.gridSize) + c];
+      if (prevOwner === undefined) return;
+      if (cell.ownerId && prevOwner === '') newSet.add(`${r}-${c}`);
+      else if (cell.ownerId && prevOwner && prevOwner !== cell.ownerId) stolenSet.add(`${r}-${c}`);
+    }));
+    const changed = new Set<string>([...newSet, ...stolenSet]);
+    for (const key of changed) {
+      const [r, c] = key.split('-').map(Number);
+      [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr, nc]) => {
+        if (nr >= 0 && nr < state.gridSize && nc >= 0 && nc < state.gridSize && !changed.has(`${nr}-${nc}`)) {
+          neighborSet.add(`${nr}-${nc}`);
+        }
+      });
+    }
+    newCellsRef.current = newSet;
+    stolenCellsRef.current = stolenSet;
+    neighborCellsRef.current = neighborSet;
+    prevGridRef.current = gridKey;
+    if (newSet.size > 0 || stolenSet.size > 0) {
+      setShakeTick(t => t + 1);
+      setTimeout(() => {
+        newCellsRef.current = new Set();
+        stolenCellsRef.current = new Set();
+        neighborCellsRef.current = new Set();
+      }, 1200);
+    }
+  }
+
+  // Idle-Pulse für 2 zufällige leere Cells
+  const [idleCells, setIdleCells] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const empty: string[] = [];
+      state.grid.forEach((row, r) => row.forEach((cell, c) => {
+        if (!cell.ownerId) empty.push(`${r}-${c}`);
+      }));
+      if (empty.length === 0) { setIdleCells(new Set()); return; }
+      const picked = new Set<string>();
+      for (let i = 0; i < Math.min(2, empty.length); i++) {
+        const idx = Math.floor(Math.random() * empty.length);
+        picked.add(empty.splice(idx, 1)[0]);
+      }
+      setIdleCells(picked);
+    }, 2500);
+    return () => clearInterval(iv);
+  }, [state.grid]);
+
+  return (
+    <div
+      key={`shake-${shakeTick}`}
+      style={{ animation: shakeTick > 0 ? 'boardShake 0.45s ease-out' : undefined }}
+    >
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${state.gridSize}, ${cellSize}px)`,
+        gap,
+        background: `${PALETTE.cream}1a`,
+        padding: 10, borderRadius: 18,
+        border: `2px solid ${highlightTeam ? `${activeColor}88` : `${PALETTE.cream}33`}`,
+        boxShadow: highlightTeam
+          ? `0 0 40px ${activeColor}44, inset 0 1px 0 ${PALETTE.cream}11`
+          : `0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 ${PALETTE.cream}11`,
+        animation: 'gridIdle 4s ease-in-out infinite',
+        transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
+      }}>
+        {state.grid.flatMap((row, r) =>
+          row.map((cell, c) => (
+            <GouacheCell
+              key={`${r}-${c}`}
+              cell={cell}
+              cellSize={cellSize}
+              gap={gap}
+              row={r}
+              col={c}
+              gridSize={state.gridSize}
+              grid={state.grid}
+              team={cell.ownerId ? state.teams.find(t => t.id === cell.ownerId) ?? null : null}
+              isHighlighted={!!(highlightTeam && cell.ownerId === highlightTeam)}
+              isAccentActive={!!highlightTeam}
+              isNew={newCellsRef.current.has(`${r}-${c}`)}
+              isStolen={stolenCellsRef.current.has(`${r}-${c}`)}
+              isNeighbor={neighborCellsRef.current.has(`${r}-${c}`)}
+              idlePulse={idleCells.has(`${r}-${c}`)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GouacheCell({
+  cell, cellSize, gap, row, col, gridSize, grid, team,
+  isHighlighted, isAccentActive, isNew, isStolen, isNeighbor, idlePulse,
+}: {
+  cell: any; cellSize: number; gap: number;
+  row: number; col: number; gridSize: number; grid: any[][];
+  team: QQTeam | null;
+  isHighlighted: boolean; isAccentActive: boolean;
+  isNew: boolean; isStolen: boolean; isNeighbor: boolean; idlePulse: boolean;
+}) {
+  const showStar = !!cell.jokerFormed;
+  const isFrozen = !!cell.frozen;
+  const isStuck = !!cell.stuck;
+  const isShielded = !!cell.shielded && !cell.stuck;
+  const sandTtl = cell.sandLockTtl ?? 0;
+  const isSandLocked = sandTtl > 0;
+  const cellRadius = Math.max(4, cellSize * 0.16);
+  const isAccent = isNew || isStolen;
+  const teamColor = team ? softTeamColor(team.avatarId) : null;
+  const slug = team ? qqGetAvatar(team.avatarId).slug : null;
+  // Territorium-Fusion: gleiche Team-Nachbarn ermitteln
+  const tid = team?.id;
+  const nTop    = !!tid && grid[row - 1]?.[col]?.ownerId === tid;
+  const nRight  = !!tid && grid[row]?.[col + 1]?.ownerId === tid;
+  const nBottom = !!tid && grid[row + 1]?.[col]?.ownerId === tid;
+  const nLeft   = !!tid && grid[row]?.[col - 1]?.ownerId === tid;
+  const rTL = (nTop || nLeft) ? 0 : cellRadius;
+  const rTR = (nTop || nRight) ? 0 : cellRadius;
+  const rBR = (nBottom || nRight) ? 0 : cellRadius;
+  const rBL = (nBottom || nLeft) ? 0 : cellRadius;
+  const specialBorder = isStuck || isFrozen || isShielded || showStar;
+  const fusedRadius: any = specialBorder
+    ? cellRadius
+    : `${rTL}px ${rTR}px ${rBR}px ${rBL}px`;
+  const isDimmed = isAccentActive && !isHighlighted && !isAccent && !!team;
+
+  return (
+    <div style={{
+      position: 'relative', overflow: 'visible',
+      width: cellSize, height: cellSize, borderRadius: cellRadius,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: isAccent ? 5 : 1,
+      animation: isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
+    }}>
+      {/* Empty cell base — Aquarell-Cremepapier mit idle-Pulse */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: cellRadius,
+        background: `${PALETTE.cream}26`,
+        border: `1px solid ${PALETTE.cream}33`,
+        animation: !team && idlePulse ? 'cellIdlePulse 2.5s ease-in-out both' : undefined,
+        filter: 'url(#watercolorEdge)',
+      }} />
+      {/* Team color layer — voll deckend, Aquarell-Wash */}
+      {team && teamColor && (() => {
+        const baseAlpha = isHighlighted || isAccent ? 'ff' : isDimmed ? 'cc' : 'ff';
+        const gradAlpha = isHighlighted || isAccent ? 'cc' : isDimmed ? 'a6' : 'd9';
+        const bridgeBg = `linear-gradient(135deg, ${teamColor}${baseAlpha}, ${teamColor}${gradAlpha})`;
+        const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
+        const bridgeOffset = cellRadius;
+        return (
+          <>
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: fusedRadius,
+              background: isStuck
+                ? `linear-gradient(135deg, ${teamColor}ff, ${teamColor}bb)`
+                : bridgeBg,
+              border: isStuck
+                ? `2px solid ${PALETTE.amberGlow}ee`
+                : showStar
+                  ? `2px solid ${PALETTE.amberGlow}cc`
+                  : isFrozen
+                    ? 'none'
+                    : `1px solid ${teamColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
+              animation: isAccent ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+              boxShadow: isStuck
+                ? `0 0 14px ${PALETTE.amberGlow}aa, 0 0 6px ${PALETTE.amberGlow}66`
+                : isAccent
+                  ? `0 0 24px ${teamColor}bb`
+                  : showStar
+                    ? `0 0 10px ${PALETTE.amberGlow}88`
+                    : isHighlighted
+                      ? `0 0 14px ${teamColor}88`
+                      : 'none',
+              transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
+              filter: 'url(#watercolorEdge)',
+            }} />
+            {/* Territorium-Bridges */}
+            {nRight && (
+              <div style={{
+                position: 'absolute',
+                right: -gap - 1, top: bridgeOffset,
+                width: gap + 2, height: bridgeSpan,
+                background: bridgeBg,
+                zIndex: 2, pointerEvents: 'none',
+              }} />
+            )}
+            {nBottom && (
+              <div style={{
+                position: 'absolute',
+                bottom: -gap - 1, left: bridgeOffset,
+                height: gap + 2, width: bridgeSpan,
+                background: bridgeBg,
+                zIndex: 2, pointerEvents: 'none',
+              }} />
+            )}
+          </>
+        );
+      })()}
+      {/* Frozen overlay */}
+      {isFrozen && (
+        <>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: cellRadius,
+            background: 'rgba(147,210,255,0.22)',
+            border: '2px solid rgba(147,210,255,0.8)',
+            animation: 'frostPulse 2.5s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 2,
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: cellRadius,
+            background: 'linear-gradient(105deg, transparent 30%, rgba(200,230,255,0.35) 45%, rgba(255,255,255,0.45) 50%, rgba(200,230,255,0.35) 55%, transparent 70%)',
+            backgroundSize: '200% 100%',
+            animation: 'frostShimmer 3s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 3,
+          }} />
+          <div style={{
+            position: 'absolute', top: -4, right: -4,
+            zIndex: 5, lineHeight: 0,
+            animation: 'frostCrystal 3s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 3px rgba(147,210,255,0.8))',
+            fontSize: Math.max(14, cellSize * 0.42),
+          }}>❄</div>
+        </>
+      )}
+      {/* Stuck overlay — Gold-Schimmer + ×2-Chip + Dust-Ring */}
+      {isStuck && (
+        <>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: cellRadius,
+            background: `linear-gradient(135deg, ${PALETTE.amberGlow}33, ${PALETTE.amberGlow}11)`,
+            pointerEvents: 'none', zIndex: 1,
+          }} />
+          <div style={{
+            position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+            border: `2.5px solid ${PALETTE.amberGlow}cc`,
+            animation: 'stapelDustRing 0.6s ease-out 0.1s both',
+            pointerEvents: 'none', zIndex: 3,
+          }} />
+          <div style={{
+            position: 'absolute', top: -4, right: -4,
+            minWidth: Math.max(16, cellSize * 0.32),
+            height: Math.max(16, cellSize * 0.32),
+            padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
+            borderRadius: 999,
+            background: `linear-gradient(135deg, ${PALETTE.amberGlow}, ${PALETTE.terracotta})`,
+            border: `2px solid ${PALETTE.charcoal}`,
+            color: PALETTE.charcoal,
+            fontSize: Math.max(10, cellSize * 0.20),
+            fontWeight: 900,
+            lineHeight: 1, letterSpacing: '-0.02em',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 2px 6px rgba(0,0,0,0.35), 0 0 8px ${PALETTE.amberGlow}99`,
+            zIndex: 6, fontVariantNumeric: 'tabular-nums',
+            animation: 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
+            fontFamily: F_HAND_CAPS,
+          }}>×2</div>
+        </>
+      )}
+      {/* Sanduhr / SandLock */}
+      {isSandLocked && (
+        <>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: cellRadius,
+            border: `2px solid ${PALETTE.lavenderDusk}cc`,
+            background: `linear-gradient(135deg, ${PALETTE.lavenderDusk}33, ${PALETTE.lavenderDusk}1a)`,
+            boxShadow: `inset 0 0 16px ${PALETTE.lavenderDusk}66`,
+            animation: 'frostPulse 2.5s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 2,
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none', zIndex: 4,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
+            fontSize: Math.max(20, cellSize * 0.6),
+            animation: 'sanduhrDrop 0.65s cubic-bezier(0.34,1.56,0.64,1) both, sanduhrTick 2.5s ease-in-out 0.7s infinite',
+          }}>⏳</div>
+          <div style={{
+            position: 'absolute', top: -4, right: -4,
+            minWidth: Math.max(16, cellSize * 0.32),
+            height: Math.max(16, cellSize * 0.32),
+            padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
+            borderRadius: 999,
+            background: `linear-gradient(135deg, ${PALETTE.lavenderDusk}, #2E1065)`,
+            border: '2px solid #2E1065',
+            color: PALETTE.cream,
+            fontSize: Math.max(10, cellSize * 0.22),
+            fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 2px 6px rgba(0,0,0,0.35), 0 0 8px ${PALETTE.lavenderDusk}99`,
+            zIndex: 6, fontVariantNumeric: 'tabular-nums',
+            fontFamily: F_HAND_CAPS,
+          }}>{sandTtl}</div>
+        </>
+      )}
+      {/* Shield overlay */}
+      {isShielded && (
+        <>
+          <div style={{
+            position: 'absolute', inset: -2, borderRadius: cellRadius + 2,
+            border: `2.5px solid ${PALETTE.amberGlow}e6`,
+            background: `${PALETTE.amberGlow}24`,
+            animation: 'shieldGlow 2s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 2,
+          }} />
+          <div style={{
+            position: 'absolute', top: -5, right: -5,
+            zIndex: 5, lineHeight: 0,
+            filter: `drop-shadow(0 0 6px ${PALETTE.amberGlow}cc)`,
+            fontSize: Math.max(16, cellSize * 0.48),
+          }}>🛡</div>
+        </>
+      )}
+      {/* Steal-Shatter (8 Splitter) */}
+      {isStolen && [0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+        const angle = i * 45 + Math.random() * 20;
+        const dist = cellSize * (0.7 + Math.random() * 0.5);
+        const shx = `${Math.cos(angle * Math.PI / 180) * dist}px`;
+        const shy = `${Math.sin(angle * Math.PI / 180) * dist}px`;
+        const shr = `${(Math.random() * 360 - 180).toFixed(0)}deg`;
+        return (
+          <div key={`sh-${i}`} style={{
+            position: 'absolute',
+            width: Math.max(4, cellSize * 0.14), height: Math.max(4, cellSize * 0.14),
+            borderRadius: 2,
+            background: teamColor ?? PALETTE.cream,
+            top: '50%', left: '50%',
+            marginTop: -Math.max(2, cellSize * 0.07),
+            marginLeft: -Math.max(2, cellSize * 0.07),
+            ['--shx' as any]: shx, ['--shy' as any]: shy, ['--shr' as any]: shr,
+            animation: `cellShard 0.7s ease-out ${0.05 + i * 0.02}s both`,
+            pointerEvents: 'none', zIndex: 6,
+            boxShadow: `0 0 8px ${teamColor ?? PALETTE.cream}`,
+          }} />
+        );
+      })}
+      {/* Shockwave-Rings auf neue/stolen */}
+      {(isNew || isStolen) && (
+        <>
+          <div style={{
+            position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+            border: `2.5px solid ${teamColor ?? PALETTE.cream}88`,
+            animation: 'cellShockwave 0.7s ease-out both',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', inset: -4, borderRadius: cellRadius + 4,
+            border: `1.5px solid ${teamColor ?? PALETTE.cream}44`,
+            animation: 'cellShockwave 0.9s ease-out 0.15s both',
+            pointerEvents: 'none',
+          }} />
+        </>
+      )}
+      {/* Sparkle-Particles */}
+      {(isNew || isStolen) && [0, 1, 2, 3, 4, 5].map(i => {
+        const angle = i * 60;
+        const dist = cellSize * 0.6;
+        const sx = `${Math.cos(angle * Math.PI / 180) * dist}px`;
+        const sy = `${Math.sin(angle * Math.PI / 180) * dist}px`;
+        return (
+          <div key={`sp-${i}`} style={{
+            position: 'absolute',
+            width: 4, height: 4, borderRadius: '50%',
+            background: teamColor ?? PALETTE.cream,
+            top: '50%', left: '50%', marginTop: -2, marginLeft: -2,
+            ['--sx' as any]: sx, ['--sy' as any]: sy,
+            animation: `cellSparkle 0.6s ease-out ${0.1 + i * 0.04}s both`,
+            pointerEvents: 'none', zIndex: 3,
+          }} />
+        );
+      })}
+      {/* Avatar / Star — full-bleed im Quadrat ohne runden Frame
+          (User-Override: transparente Aquarell-PNGs sitzen direkt im Cell). */}
+      <div style={{
+        position: 'relative', zIndex: 4,
+        animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : undefined,
+        opacity: isFrozen ? 0.55 : undefined,
+        filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
+        width: '100%', height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {showStar ? (
+          <span style={{
+            fontSize: Math.max(14, cellSize * 0.5),
+            color: PALETTE.amberGlow,
+            textShadow: `0 0 12px ${PALETTE.amberGlow}aa`,
+          }}>⭐</span>
+        ) : team && slug ? (
+          <div style={{
+            width: Math.max(8, cellSize * 0.94),
+            height: Math.max(8, cellSize * 0.94),
+            backgroundImage: `url(/avatars/gouache/avatar-${slug}.png)`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }} />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// GouacheScoreBar — 1:1 von ScoreBar (Original): sortiert nach
+// largestConnected, Crown auf #1, Joker-Badge persistent + Stern-Flug-
+// Animation, Streak-🔥 ab 3, Rank-Change-Pfeile, Floater +N, Active-
+// Team-Highlight mit Aktions-Pill, Medal-Slot fix, Wert+Unit ausgerichtet.
+// Aquarell-Stil tauscht nur Tokens (Cremepapier statt dunkel, Caveat,
+// softTeamColor, Painted-Avatar).
+// ─────────────────────────────────────────────────────────────────────────
+
+function GouacheScoreBar({
+  teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc,
+}: {
+  teams: QQTeam[];
+  activeTeamId?: string | null;
+  teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
+  correctTeamId?: string | null;
+  activeActionLabel?: string;
+  activeActionDesc?: string;
+}) {
+  const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const prevScores = useRef<Record<string, number>>({});
+  const prevJokers = useRef<Record<string, number>>({});
+  const prevRanks = useRef<Record<string, number>>({});
+  const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
+  const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
+  const [rankChanges, setRankChanges] = useState<Record<string, 'up' | 'down'>>({});
+  useEffect(() => {
+    const next: Record<string, 'up' | 'down'> = {};
+    sorted.forEach((t, i) => {
+      const prevIdx = prevRanks.current[t.id];
+      if (prevIdx != null && prevIdx !== i) {
+        next[t.id] = prevIdx > i ? 'up' : 'down';
+      }
+      prevRanks.current[t.id] = i;
+    });
+    if (Object.keys(next).length > 0) {
+      setRankChanges(next);
+      setTimeout(() => setRankChanges({}), 1200);
+    }
+  }, [sorted.map(t => t.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [jokerEarners, setJokerEarners] = useState<Set<string>>(new Set());
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const prevCorrectRef = useRef<string | null>(null);
+  useEffect(() => {
+    const cur = correctTeamId ?? null;
+    if (!cur) return;
+    if (cur === prevCorrectRef.current) return;
+    prevCorrectRef.current = cur;
+    setStreaks(s => {
+      const next: Record<string, number> = {};
+      for (const t of teams) next[t.id] = t.id === cur ? (s[t.id] ?? 0) + 1 : 0;
+      return next;
+    });
+  }, [correctTeamId, teams]);
+
+  useEffect(() => {
+    const newPopped = new Set<string>();
+    const newFloaters: typeof floaters = [];
+    for (const t of teams) {
+      const prev = prevScores.current[t.id] ?? 0;
+      if (t.largestConnected > prev && prev > 0) {
+        newPopped.add(t.id);
+        newFloaters.push({ id: `${t.id}-${Date.now()}`, teamId: t.id, diff: t.largestConnected - prev });
+      }
+      prevScores.current[t.id] = t.largestConnected;
+    }
+    if (newPopped.size > 0) {
+      setPoppedIds(newPopped);
+      setFloaters(f => [...f, ...newFloaters]);
+      setTimeout(() => setPoppedIds(new Set()), 500);
+      setTimeout(() => setFloaters(f => f.filter(fl => !newFloaters.includes(fl))), 1200);
+    }
+  }, [teams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!teamPhaseStats) return;
+    const newEarners = new Set<string>();
+    for (const t of teams) {
+      const now = teamPhaseStats[t.id]?.jokersEarned ?? 0;
+      const before = prevJokers.current[t.id] ?? 0;
+      if (now > before) newEarners.add(t.id);
+      prevJokers.current[t.id] = now;
+    }
+    if (newEarners.size > 0) {
+      setJokerEarners(newEarners);
+      setTimeout(() => setJokerEarners(new Set()), 1600);
+    }
+  }, [teams, teamPhaseStats]);
+
+  const dense = sorted.length >= 6;
+  const avatarSize = dense ? 64 : 78;
+  const avatarBox = dense ? 76 : 92;
+  const nameFs = dense ? 32 : 40;
+  const valFs = dense ? 40 : 52;
+  const unitFs = dense ? 16 : 20;
+
+  const medalFor = (i: number, val: number): string | null => {
+    if (val === 0) return null;
+    if (i === 0) return '🥇';
+    if (i === 1 && sorted[1].largestConnected < sorted[0].largestConnected) return '🥈';
+    if (i === 2 && sorted[2].largestConnected < (sorted[1]?.largestConnected ?? 0)) return '🥉';
+    return null;
+  };
+
+  const many = sorted.length >= 7;
+  const rowGap = dense ? 18 : 26;
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      justifyContent: many ? 'space-between' : 'center',
+      gap: many ? 0 : rowGap,
+      width: '100%', maxWidth: 560, height: '100%',
+      paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
+    }}>
+      {sorted.map((t, i) => {
+        const teamColor = softTeamColor(t.avatarId);
+        const slug = qqGetAvatar(t.avatarId).slug;
+        const isLeader = i === 0 && t.largestConnected > 0;
+        const isActive = t.id === activeTeamId;
+        const medal = medalFor(i, t.largestConnected);
+        const jokers = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
+        return (
+          <div key={t.id} style={{
+            display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
+            animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
+            opacity: activeTeamId && !isActive ? 0.42 : 1,
+            padding: isActive ? (dense ? '6px 10px' : '8px 14px') : '0',
+            borderRadius: isActive ? 16 : 0,
+            background: isActive ? `linear-gradient(135deg, ${teamColor}33, ${teamColor}11)` : 'transparent',
+            border: isActive ? `2px solid ${teamColor}` : '2px solid transparent',
+            boxShadow: isActive ? `0 0 28px ${teamColor}55, 0 0 60px ${teamColor}22, inset 0 0 12px ${teamColor}18` : 'none',
+            transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
+            position: 'relative',
+          }}>
+            <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
+              <span style={{
+                position: 'relative', display: 'inline-block',
+                animation: jokerEarners.has(t.id)
+                  ? 'jokerImpactPulse 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.85s both'
+                  : undefined,
+                borderRadius: '50%',
+              }}>
+                <PaintedAvatar slug={slug} size={avatarSize} color={teamColor} withGrain={false} />
+                {isLeader && (
+                  <span style={{
+                    position: 'absolute',
+                    top: dense ? -12 : -16,
+                    left: '50%',
+                    transform: 'translateX(-50%) rotate(-14deg)',
+                    fontSize: dense ? 24 : 30,
+                    pointerEvents: 'none',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                  }}>👑</span>
+                )}
+                {jokers > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    bottom: dense ? -4 : -6,
+                    right: dense ? -6 : -8,
+                    padding: '2px 7px',
+                    borderRadius: 999,
+                    background: PALETTE.charcoal,
+                    border: `2px solid ${PALETTE.amberGlow}`,
+                    fontSize: dense ? 13 : 16,
+                    fontWeight: 900,
+                    color: PALETTE.amberGlow,
+                    lineHeight: 1,
+                    boxShadow: `0 2px 6px rgba(0,0,0,0.55), 0 0 12px ${PALETTE.amberGlow}88`,
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                    pointerEvents: 'none',
+                    fontFamily: F_HAND_CAPS,
+                  }}>⭐{jokers}</span>
+                )}
+                {jokerEarners.has(t.id) && (
+                  <span aria-hidden style={{
+                    position: 'absolute',
+                    top: 0, left: '50%',
+                    transform: 'translate(-50%, -30px)',
+                    fontSize: dense ? 36 : 44,
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                    filter: `drop-shadow(0 0 12px ${PALETTE.amberGlow}e6) drop-shadow(0 0 24px ${PALETTE.amberGlow}88)`,
+                    ['--jk-dx' as any]: '0px',
+                    ['--jk-dy' as any]: '40px',
+                    animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
+                    zIndex: 10,
+                  }}>⭐</span>
+                )}
+                {(streaks[t.id] ?? 0) >= 3 && (
+                  <span aria-hidden style={{
+                    position: 'absolute',
+                    top: dense ? -10 : -14,
+                    left: dense ? -6 : -8,
+                    fontSize: dense ? 22 : 28,
+                    pointerEvents: 'none',
+                    filter: 'drop-shadow(0 0 8px rgba(251,146,60,0.9)) drop-shadow(0 0 14px rgba(239,68,68,0.5))',
+                    animation: 'streakFlameWobble 0.7s ease-in-out infinite',
+                    zIndex: 9,
+                  }} title={`${streaks[t.id]}× in Folge`}>🔥</span>
+                )}
+                {rankChanges[t.id] && (
+                  <span aria-hidden style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: dense ? -18 : -22,
+                    transform: 'translateY(-50%)',
+                    fontSize: dense ? 18 : 22, fontWeight: 900,
+                    color: rankChanges[t.id] === 'up' ? PALETTE.sage : PALETTE.terracotta,
+                    pointerEvents: 'none',
+                    filter: `drop-shadow(0 0 6px ${rankChanges[t.id] === 'up' ? PALETTE.sage : PALETTE.terracotta}cc)`,
+                    animation: 'voterSlotDrop 1.2s cubic-bezier(0.34,1.56,0.64,1) both',
+                    zIndex: 9,
+                  }}>{rankChanges[t.id] === 'up' ? '▲' : '▼'}</span>
+                )}
+              </span>
+            </div>
+            {/* Name + (nur isActive) Aktions-Pill */}
+            <div style={{
+              flex: 1, minWidth: 0,
+              display: 'flex', flexDirection: 'column',
+              gap: isActive && activeActionLabel ? 4 : 0,
+            }}>
+              <span style={{
+                fontFamily: F_HAND, fontSize: nameFs, fontWeight: 700, color: teamColor,
+                textShadow: isActive ? `0 0 16px ${teamColor}88` : 'none',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                lineHeight: 1.1,
+              }}>{t.name}</span>
+              {isActive && activeActionLabel && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  alignSelf: 'flex-start',
+                  padding: '3px 10px', borderRadius: 999,
+                  background: `${PALETTE.charcoal}99`,
+                  border: `1.5px solid ${teamColor}aa`,
+                  fontFamily: F_HAND_CAPS,
+                  fontSize: dense ? 14 : 16, fontWeight: 700,
+                  color: PALETTE.amberGlow,
+                  letterSpacing: '0.04em',
+                  animation: 'tcpulse 1.6s ease-in-out infinite',
+                  ['--c' as any]: `${teamColor}66`,
+                }}>
+                  <span>{activeActionLabel}</span>
+                  {activeActionDesc && (
+                    <span style={{
+                      color: `${PALETTE.cream}aa`, fontWeight: 400,
+                      fontSize: dense ? 12 : 13, letterSpacing: '0.04em',
+                      fontFamily: F_BODY, fontStyle: 'italic',
+                    }}>
+                      {activeActionDesc}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Wert + Unit + Medal */}
+            <div style={{
+              position: 'relative',
+              display: 'flex', alignItems: 'baseline', gap: 10,
+              flexShrink: 0,
+            }}>
+              <span style={{
+                width: dense ? 32 : 38,
+                flexShrink: 0,
+                textAlign: 'center',
+                fontSize: dense ? 22 : 28, lineHeight: 1,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}>{medal ?? null}</span>
+              <span style={{
+                fontFamily: F_HAND,
+                fontSize: valFs, color: isLeader ? PALETTE.amberGlow : PALETTE.cream, fontWeight: 700,
+                textShadow: isLeader ? `0 0 18px ${PALETTE.amberGlow}88` : 'none',
+                fontVariantNumeric: 'tabular-nums',
+                lineHeight: 1,
+                width: dense ? 56 : 72,
+                textAlign: 'right',
+                flexShrink: 0,
+              }}>
+                {t.largestConnected}
+              </span>
+              <span style={{
+                opacity: 0.55, fontSize: unitFs, fontWeight: 400, color: PALETTE.cream,
+                flexShrink: 0,
+                minWidth: dense ? 62 : 78,
+                textAlign: 'left',
+                fontFamily: F_BODY, fontStyle: 'italic',
+              }}>
+                {t.largestConnected === 1 ? 'Feld' : 'Felder'}
+              </span>
+              {/* Floater +N */}
+              {floaters.filter(f => f.teamId === t.id).map(f => (
+                <span key={f.id} aria-hidden style={{
+                  position: 'absolute', right: dense ? 70 : 90, top: -10,
+                  fontFamily: F_HAND_CAPS, fontSize: dense ? 18 : 22,
+                  color: PALETTE.sage, fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textShadow: `0 0 8px ${PALETTE.sage}cc`,
+                  animation: 'scoreFloater 1s ease-out forwards',
+                  pointerEvents: 'none',
+                }}>+{f.diff}</span>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

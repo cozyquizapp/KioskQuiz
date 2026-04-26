@@ -1142,6 +1142,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqNextQuestion(room);
         broadcast(io, payload.roomCode);
+        // Nach Comeback-Steal-Resume kann der nächste Stealer wieder ein
+        // Dummy-Team sein. Ohne maybeAutoPlace würde Autoplay an dieser
+        // Stelle hängen — Backend wartet auf nächsten Klick, Frontend wartet
+        // auf nächste Phase-Änderung.
+        if (room.phase === 'PLACEMENT' && room.pendingFor) {
+          maybeAutoPlace(io, payload.roomCode);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

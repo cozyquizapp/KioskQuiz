@@ -113,6 +113,14 @@ const FF = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const QQ_ROOM = 'default';
 
+// ── Time-Travel-Recorder (Module-Level) ──
+// Backend trackt Frage-Gewinner nicht historisch, also recorden wir live
+// im Frontend. Module-Level damit Recorder-State und Replay-Component
+// dieselben Maps lesen.
+type RecordedQuestion = { winnerId: string | null; category: string; idx: number };
+const recordedQuestions = new Map<string, RecordedQuestion>();
+const recordedSteals = new Set<string>();
+
 /** In 'both' mode, alternate between de and en with a fade transition.
  *  Intervall war frueher 8s — fuehlte sich hektisch an, weil DE und EN oft
  *  unterschiedlich lange Texte sind und der Container bei jedem Wechsel
@@ -361,6 +369,11 @@ export default function QQBeamerPage() {
     <>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
+      {/* Time-Travel-Replay — erscheint 5.5s nach GAME_OVER über dem Sieger
+          und spielt alle 15 Fragen + Steal-Highlights als 15s-Recap ab. */}
+      {state.phase === 'GAME_OVER' && (
+        <ReplayOverlay state={state} />
+      )}
       {/* Live-Reactions Overlay — Mini-Bursts schweben von unten nach oben.
           Pointer-events: none → blockt nichts darunter. zIndex: 9000 → über
           allem (auch Cell-Animationen) aber unter Fehlermeldungen. */}
@@ -394,6 +407,149 @@ export default function QQBeamerPage() {
         </div>
       )}
     </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ReplayOverlay — Time-Travel-Recap am Spielende.
+// Erscheint 5.5s nach GAME_OVER-Entry, läuft 15 Sek durch alle geloggten
+// Fragen (1 Sek pro Frage). Pro Slot: Frage-Index + Avatar des Winners +
+// Kategorie-Akzent. Ein Slot pro Frage in einem 5×3-Grid (15 Fragen total).
+// Steal-Highlights blinken rot beim Auftauchen (wasSteal-Flag aus Recorder).
+// Auto-fade-out nach Replay; bleibt dann sichtbar als Mini-Strip am unteren
+// Bildschirmrand.
+// ─────────────────────────────────────────────────────────────────────────
+
+function ReplayOverlay({ state }: { state: QQStateUpdate }) {
+  const [visible, setVisible] = useState(false);
+  const [revealedIdx, setRevealedIdx] = useState(-1);
+  const [phase, setPhase] = useState<'hidden' | 'intro' | 'replay' | 'done'>('hidden');
+
+  useEffect(() => {
+    // 5.5s nach GAME_OVER-Mount sichtbar machen, dann in 15s durchspielen.
+    const tIntro = window.setTimeout(() => { setVisible(true); setPhase('intro'); }, 5500);
+    const tReplay = window.setTimeout(() => { setPhase('replay'); }, 5500 + 1200);
+    return () => { window.clearTimeout(tIntro); window.clearTimeout(tReplay); };
+  }, []);
+
+  // Replay-Tick: ein Slot pro Sekunde
+  useEffect(() => {
+    if (phase !== 'replay') return;
+    const total = Math.min(15, recordedQuestions.size);
+    if (total === 0) { setPhase('done'); return; }
+    let i = 0;
+    setRevealedIdx(0);
+    const id = window.setInterval(() => {
+      i++;
+      if (i >= total) {
+        window.clearInterval(id);
+        setRevealedIdx(total - 1);
+        window.setTimeout(() => setPhase('done'), 1200);
+      } else {
+        setRevealedIdx(i);
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [phase]);
+
+  if (!visible) return null;
+
+  // Sortiere Recorded-Questions nach idx
+  const entries = Array.from(recordedQuestions.values()).sort((a, b) => a.idx - b.idx).slice(0, 15);
+  if (entries.length === 0) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 8500,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+      paddingBottom: 'clamp(40px, 6vh, 80px)',
+      animation: phase === 'done' ? undefined : 'replayBackdrop 0.6s ease both',
+    }}>
+      <style>{`
+        @keyframes replayBackdrop {
+          0%   { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes replaySlotIn {
+          0%   { transform: scale(0.5) translateY(20px); opacity: 0; filter: blur(6px); }
+          50%  { transform: scale(1.18) translateY(-2px); opacity: 1; filter: blur(0); }
+          100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+        }
+        @keyframes replayStealRing {
+          0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.9); }
+          50%  { box-shadow: 0 0 0 6px rgba(239,68,68,0.4), 0 0 24px rgba(239,68,68,0.7); }
+          100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+        }
+      `}</style>
+      <div style={{
+        background: 'rgba(13,10,6,0.92)',
+        borderRadius: 24,
+        padding: 'clamp(20px, 2.4vh, 32px) clamp(28px, 3vw, 48px)',
+        border: '1.5px solid rgba(251,191,36,0.4)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(251,191,36,0.15)',
+        backdropFilter: 'blur(14px)',
+        maxWidth: 1100, width: '92%',
+      }}>
+        <div style={{
+          fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+          color: '#FBBF24', letterSpacing: '0.16em', textTransform: 'uppercase',
+          textAlign: 'center', marginBottom: 14,
+          textShadow: '0 0 18px rgba(251,191,36,0.55)',
+        }}>
+          ⏱ Spielverlauf · Recap
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: 'clamp(8px, 1vw, 14px)',
+        }}>
+          {entries.map((e, i) => {
+            const team = e.winnerId ? state.teams.find(t => t.id === e.winnerId) : null;
+            const teamColor = team?.color ?? '#475569';
+            const catColor = QQ_CAT_ACCENT[e.category] ?? '#94a3b8';
+            const wasSteal = team
+              ? Array.from(recordedSteals).some(key => key.endsWith(`-${team.id}`))
+              : false;
+            void wasSteal; // grobe Heuristik — nicht jeder Steal ist 1:1 dieser Frage zuordenbar
+            const shown = i <= revealedIdx;
+            return (
+              <div key={i} style={{
+                position: 'relative',
+                aspectRatio: '1 / 1',
+                borderRadius: 14,
+                background: shown && team
+                  ? `linear-gradient(135deg, ${teamColor}88, ${teamColor}33)`
+                  : 'rgba(255,255,255,0.04)',
+                border: shown
+                  ? `2px solid ${team ? teamColor : '#475569'}`
+                  : '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 4,
+                opacity: shown ? 1 : 0.25,
+                animation: shown ? 'replaySlotIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+                overflow: 'hidden',
+              }}>
+                {/* Frage-Index oben links */}
+                <span style={{
+                  position: 'absolute', top: 4, left: 6,
+                  fontSize: 'clamp(9px, 0.9vw, 12px)', fontWeight: 800,
+                  color: catColor, letterSpacing: '0.08em',
+                  opacity: shown ? 1 : 0,
+                }}>
+                  {e.idx + 1}
+                </span>
+                {/* Avatar des Winners (oder leer) */}
+                {shown && team ? (
+                  <QQTeamAvatar avatarId={team.avatarId} size={'min(8vh, 6vw)'} />
+                ) : shown ? (
+                  <span style={{ fontSize: 'min(5vh, 3vw)', opacity: 0.4 }}>?</span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -555,6 +711,44 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
     }
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Time-Travel-Recorder ──
+  // Wir loggen während des Spiels Frage für Frage wer gewonnen hat —
+  // das Backend trackt das nicht historisch (nur live in correctTeamId).
+  // Beim GAME_OVER spielen wir das als 15-Sek-Recap ab.
+  // Steal-Events kommen aus lastPlacedCell.wasSteal.
+  // Module-Level-Refs (siehe oben), damit die Replay-Component beim Mount
+  // im Render-Tree dieselben Refs sieht.
+  useEffect(() => {
+    if (s.phase === 'QUESTION_REVEAL' && s.currentQuestion) {
+      const qid = s.currentQuestion.id;
+      if (!recordedQuestions.has(qid)) {
+        recordedQuestions.set(qid, {
+          winnerId: s.correctTeamId ?? null,
+          category: s.currentQuestion.category,
+          idx: s.questionIndex,
+        });
+      } else if (s.correctTeamId) {
+        const ex = recordedQuestions.get(qid)!;
+        if (!ex.winnerId) ex.winnerId = s.correctTeamId;
+      }
+    }
+  }, [s.phase, s.currentQuestion?.id, s.correctTeamId, s.questionIndex]);
+
+  useEffect(() => {
+    const lp = s.lastPlacedCell;
+    if (lp && lp.wasSteal) {
+      recordedSteals.add(`${lp.row}-${lp.col}-${lp.teamId}`);
+    }
+  }, [s.lastPlacedCell?.row, s.lastPlacedCell?.col, s.lastPlacedCell?.teamId, s.lastPlacedCell?.wasSteal]);
+
+  // Reset Recordings beim Game-Restart (LOBBY → erneut aktivieren)
+  useEffect(() => {
+    if (s.phase === 'LOBBY') {
+      recordedQuestions.clear();
+      recordedSteals.clear();
+    }
+  }, [s.phase]);
 
   // Lagerfeuer-Loop als Atmosphäre-Layer: läuft in Lobby/Pause/Phase-Intro.
   // Sehr leise (~4% master volume), Brown-Noise + sporadische Knister-Pops.

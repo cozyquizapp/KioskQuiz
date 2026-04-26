@@ -7888,7 +7888,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3
     q(`${d1id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr wurde die Berliner Mauer gebaut?', answer: '1961', targetValue: 1961 }),
     q(`${d1id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer malte die Mona Lisa?', answer: 'Leonardo da Vinci', options: ['Michelangelo', 'Leonardo da Vinci', 'Raphael', 'Donatello'], correctOptionIndex: 1 }),
-    q(`${d1id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Erfindungen in die richtige Reihenfolge!', answer: 'Buchdruck, Dampfmaschine, Telefon, Internet', bunteTuete: { kind: 'order', items: ['Telefon', 'Internet', 'Buchdruck', 'Dampfmaschine'], correctOrder: [2, 3, 0, 1] } }),
+    q(`${d1id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Erfindungen in die richtige Reihenfolge!', answer: 'Buchdruck, Dampfmaschine, Telefon, Internet', bunteTuete: { kind: 'order', items: ['Telefon', 'Internet', 'Buchdruck', 'Dampfmaschine'], correctOrder: [2, 3, 0, 1], criteria: 'älteste zuerst', itemValues: ['1876', '1969', '~1450', '1769'] } }),
     q(`${d1id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptstadt von Australien?', answer: 'Canberra', options: ['Sydney', 'Melbourne', 'Canberra'], correctOptionIndex: 2 }),
     q(`${d1id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Axolotl' }),
   ];
@@ -7911,7 +7911,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3
     q(`${d2id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Harry-Potter-Bücher gibt es?', answer: '7', targetValue: 7 }),
     q(`${d2id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer spielt Jack Sparrow?', answer: 'Johnny Depp', options: ['Brad Pitt', 'Johnny Depp', 'Orlando Bloom', 'Leonardo DiCaprio'], correctOptionIndex: 1 }),
-    q(`${d2id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Disney-Filme in die richtige Reihenfolge!', answer: 'Schneewittchen, Der König der Löwen, Frozen, Encanto', bunteTuete: { kind: 'order', items: ['Frozen', 'Der König der Löwen', 'Encanto', 'Schneewittchen'], correctOrder: [3, 1, 0, 2] } }),
+    q(`${d2id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Disney-Filme in die richtige Reihenfolge!', answer: 'Schneewittchen, Der König der Löwen, Frozen, Encanto', bunteTuete: { kind: 'order', items: ['Frozen', 'Der König der Löwen', 'Encanto', 'Schneewittchen'], correctOrder: [3, 1, 0, 2], criteria: 'ältester Film zuerst', itemValues: ['2013', '1994', '2021', '1937'] } }),
     q(`${d2id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land hat die meisten Fußball-WM-Titel?', answer: 'Brasilien', options: ['Deutschland', 'Brasilien', 'Argentinien'], correctOptionIndex: 1 }),
     q(`${d2id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche berühmte Person ist das?', answer: 'Albert Einstein' }),
   ];
@@ -7928,7 +7928,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 2 — Hafen & Wasser (bunte Tüte: order)
     q(`${d3id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Brücken hat Hamburg ungefähr?', answer: '2500', targetValue: 2500, funFact: 'Hamburg hat mehr Brücken als Venedig, Amsterdam und London zusammen.' }),
     q(`${d3id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wie heißt der große See mitten in Hamburg?', answer: 'Alster', options: ['Elbe', 'Alster', 'Bille', 'Isebek'], correctOptionIndex: 1 }),
-    q(`${d3id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Hamburger Bauwerke in die richtige Reihenfolge ihrer Eröffnung!', answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Rathaus', 'Michel', 'Köhlbrandbrücke'], correctOrder: [2, 1, 3, 0], criteria: 'nach Eröffnungsjahr (älteste zuerst)' }, funFact: 'Michel 1786, Rathaus 1897, Köhlbrandbrücke 1974, Elbphilharmonie 2017.' }),
+    q(`${d3id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Hamburger Bauwerke in die richtige Reihenfolge ihrer Eröffnung!', answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Rathaus', 'Michel', 'Köhlbrandbrücke'], correctOrder: [2, 1, 3, 0], criteria: 'nach Eröffnungsjahr (älteste zuerst)', itemValues: ['2017', '1897', '1786', '1974'] }, funFact: 'Michel 1786, Rathaus 1897, Köhlbrandbrücke 1974, Elbphilharmonie 2017.' }),
     q(`${d3id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Hamburg ist der größte Seehafen Deutschlands — stimmt das?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
     q(`${d3id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche berühmte Brücke ist das?', answer: 'Köhlbrandbrücke' }),
     // Phase 3 — St. Pauli & Kiez (bunte Tüte: hotPotato)
@@ -7957,7 +7957,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 2 — Vögel & Insekten (order)
     q(`${d4id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Flügelschläge pro Sekunde hat ein Kolibri (ca.)?', answer: '80', targetValue: 80 }),
     q(`${d4id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welcher Vogel kann NICHT fliegen?', answer: 'Pinguin', options: ['Albatros', 'Pinguin', 'Kolibri', 'Adler'], correctOptionIndex: 1 }),
-    q(`${d4id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Tiere nach ihrer Lebensdauer in die richtige Reihenfolge!', answer: 'Eintagsfliege, Maus, Hund, Grönlandwal', bunteTuete: { kind: 'order', items: ['Grönlandwal', 'Hund', 'Eintagsfliege', 'Maus'], correctOrder: [2, 3, 1, 0], criteria: 'kürzeste zuerst' }, funFact: 'Eintagsfliege 1 Tag, Maus ~2 Jahre, Hund ~12 Jahre, Grönlandwal 200+ Jahre.' }),
+    q(`${d4id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Tiere nach ihrer Lebensdauer in die richtige Reihenfolge!', answer: 'Eintagsfliege, Maus, Hund, Grönlandwal', bunteTuete: { kind: 'order', items: ['Grönlandwal', 'Hund', 'Eintagsfliege', 'Maus'], correctOrder: [2, 3, 1, 0], criteria: 'kürzeste zuerst', itemValues: ['200+ Jahre', '~12 Jahre', '1 Tag', '~2 Jahre'] }, funFact: 'Eintagsfliege 1 Tag, Maus ~2 Jahre, Hund ~12 Jahre, Grönlandwal 200+ Jahre.' }),
     q(`${d4id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Beine hat eine Spinne?', answer: '8', options: ['6', '8', '10'], correctOptionIndex: 1 }),
     q(`${d4id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welcher Vogel ist das?', answer: 'Flamingo' }),
     // Phase 3 — Pflanzen & Wald (hotPotato)
@@ -8015,7 +8015,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 2 — Süßes & Desserts (order)
     q(`${d6id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viel Zucker (g) enthält eine 0,33l-Cola?', answer: '35', targetValue: 35, unit: 'g' }),
     q(`${d6id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land hat die Praline erfunden?', answer: 'Belgien', options: ['Frankreich', 'Belgien', 'Schweiz', 'Italien'], correctOptionIndex: 1 }),
-    q(`${d6id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Desserts nach ihrem Kaloriengehalt pro 100g!', answer: 'Obstsalat, Vanilleeis, Schwarzwälder Kirschtorte, Sahnetorte', bunteTuete: { kind: 'order', items: ['Sahnetorte', 'Obstsalat', 'Schwarzwälder Kirschtorte', 'Vanilleeis'], correctOrder: [1, 3, 2, 0], criteria: 'wenigste Kalorien zuerst' } }),
+    q(`${d6id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Desserts nach ihrem Kaloriengehalt pro 100g!', answer: 'Obstsalat, Vanilleeis, Schwarzwälder Kirschtorte, Sahnetorte', bunteTuete: { kind: 'order', items: ['Sahnetorte', 'Obstsalat', 'Schwarzwälder Kirschtorte', 'Vanilleeis'], correctOrder: [1, 3, 2, 0], criteria: 'wenigste Kalorien zuerst', itemValues: ['~370 kcal', '~50 kcal', '~280 kcal', '~210 kcal'] } }),
     q(`${d6id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptzutat in Marzipan?', answer: 'Mandeln', options: ['Nüsse', 'Mandeln', 'Kokos'], correctOptionIndex: 1 }),
     q(`${d6id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Dessert ist das?', answer: 'Crème brûlée' }),
     // Phase 3 — Getränke (hotPotato)

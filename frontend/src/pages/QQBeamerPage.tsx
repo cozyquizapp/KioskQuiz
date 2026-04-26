@@ -377,11 +377,10 @@ export default function QQBeamerPage() {
     <>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
-      {/* Time-Travel-Replay — erscheint 5.5s nach GAME_OVER über dem Sieger
-          und spielt alle 15 Fragen + Steal-Highlights als 15s-Recap ab. */}
-      {state.phase === 'GAME_OVER' && (
-        <ReplayOverlay state={state} />
-      )}
+      {/* Time-Travel-Replay deaktiviert (Wolfs Wunsch) — die separate Card
+          überlagerte die GameOver-Komposition und wirkte fragmentiert.
+          Code in ReplayOverlay bleibt drin falls später wieder gewünscht. */}
+      {/* {state.phase === 'GAME_OVER' && <ReplayOverlay state={state} />} */}
       {/* Live-Reactions Overlay — Mini-Bursts schweben von unten nach oben.
           Pointer-events: none → blockt nichts darunter. zIndex: 9000 → über
           allem (auch Cell-Animationen) aber unter Fehlermeldungen. */}
@@ -9909,19 +9908,19 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         width: '100%', maxWidth: 1500, justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
-        {/* Grid links — kompakter (max 360px), damit Rankings rechts
-            ihren Raum bekommen. */}
+        {/* Grid links — wieder groß (max 540px), kein Recap mehr der Platz
+            klauen würde. Rankings rechts werden bei vielen Teams 2-spaltig. */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
           animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
         }}>
           <div style={{
-            padding: 10, borderRadius: 18,
+            padding: 14, borderRadius: 22,
             background: 'rgba(255,255,255,0.03)',
             border: `2px solid ${winnerColor}44`,
             boxShadow: `0 0 36px ${winnerColor}2a, 0 8px 28px rgba(0,0,0,0.4)`,
           }}>
-            <GridDisplay state={s} maxSize={Math.min(360, typeof window !== 'undefined' ? window.innerHeight * 0.36 : 320)} highlightTeam={winner?.id ?? null} showJoker />
+            <GridDisplay state={s} maxSize={Math.min(540, typeof window !== 'undefined' ? window.innerHeight * 0.5 : 480)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
 

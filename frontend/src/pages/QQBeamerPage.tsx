@@ -8520,9 +8520,20 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     return n % 1 === 0 ? String(n) : n.toFixed(1);
   };
 
-  // ── H/L-Frage-Ansicht (waehrend der Runde) ──────────────────────────────
-  if (hl && hl.phase === 'question' && hl.currentPair) {
+  // ── H/L UNIFIED Frage- und Reveal-Ansicht ──────────────────────────────
+  // Question und Reveal teilen sich exakt dieselbe Composition. Beim Wechsel
+  // wird KEINE neue Folie eingeblendet — nur die Subject-Wert-Stelle (??? →
+  // Slot-Machine-Roll), der Direction-Indikator (? → MEHR ↑ / WENIGER ↓) und
+  // die Avatar-Status-Layer (Tipp-Status → richtig/falsch + Winnings) wechseln
+  // smooth in-place.
+  if (hl && (hl.phase === 'question' || hl.phase === 'reveal') && hl.currentPair) {
     const pair = hl.currentPair;
+    const isReveal = hl.phase === 'reveal';
+    const correctChoice = pair.subjectValue > pair.anchorValue ? 'higher' : 'lower';
+    const correctText = correctChoice === 'higher'
+      ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
+      : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓');
+    const correctIds = new Set(hl.correctThisRound);
     // Frage-Text: bei Format-B customQuestion direkt, bei Format-A auto-generieren
     // („Hat München mehr oder weniger Einwohner als Berlin?"). Macht den Quiz-Show-
     // Moment deutlich starker als nur zwei Cards mit Zahlen.
@@ -8549,11 +8560,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{
             padding: '10px 22px', borderRadius: 999,
-            background: 'rgba(251,191,36,0.14)', border: '2px solid rgba(251,191,36,0.45)',
-            color: '#FDE68A', fontWeight: 900,
+            background: isReveal ? 'rgba(34,197,94,0.18)' : 'rgba(251,191,36,0.14)',
+            border: isReveal ? '2px solid rgba(34,197,94,0.5)' : '2px solid rgba(251,191,36,0.45)',
+            color: isReveal ? '#86efac' : '#FDE68A',
+            fontWeight: 900,
             fontSize: 'clamp(16px, 1.8vw, 24px)', letterSpacing: '0.08em', textTransform: 'uppercase',
+            transition: 'background 0.4s ease, border-color 0.4s ease, color 0.4s ease',
           }}>
-            <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'}
+            <QQEmojiIcon emoji={isReveal ? '✅' : '⚡'}/> {isReveal
+              ? (lang === 'en' ? 'Reveal' : 'Auflösung')
+              : (lang === 'en' ? 'More or Less' : 'Mehr oder Weniger')}
           </div>
           <div style={{
             padding: '10px 20px', borderRadius: 14,
@@ -8604,22 +8620,45 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>{pair.unit}</div>
           </div>
 
-          {/* Vergleichs-Icon */}
+          {/* Vergleichs-Icon — bei Reveal smooth swap zu MEHR↑/WENIGER↓ */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(40px, 5vw, 80px)', fontWeight: 900, color: '#FBBF24',
+            fontWeight: 900, color: '#FBBF24',
             textShadow: '0 0 20px rgba(251,191,36,0.5)',
-          }}>?</div>
+            letterSpacing: '0.08em',
+            // Bei reveal: groessere font + scale-pop wenn sich Wert aendert
+            fontSize: isReveal ? 'clamp(28px, 3.4vw, 48px)' : 'clamp(40px, 5vw, 80px)',
+            transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
+          }}>
+            <span
+              key={isReveal ? 'reveal' : 'q'}
+              style={{
+                animation: isReveal ? 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.3s both' : undefined,
+                display: 'inline-block',
+              }}
+            >
+              {isReveal ? correctText : '?'}
+            </span>
+          </div>
 
-          {/* Subject-Card: zu erratender Wert */}
+          {/* Subject-Card: zu erratender Wert. Border + Glow werden bei
+              Reveal staerker (solid + dicker). Inhalt bleibt strukturell
+              gleich — nur ??? wird zur SlotMachineNumber. */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))',
-            border: '2px dashed rgba(251,191,36,0.55)',
-            boxShadow: '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)',
+            background: isReveal
+              ? 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.06))'
+              : 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))',
+            border: isReveal
+              ? '3px solid #FBBF24'
+              : '2px dashed rgba(251,191,36,0.55)',
+            boxShadow: isReveal
+              ? '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)'
+              : '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+            transition: 'background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
@@ -8627,66 +8666,110 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               opacity: 0.9,
             }}>{pair.subjectLabel}</div>
             <div style={{
-              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
-              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-              textShadow: '0 0 28px rgba(251,191,36,0.45)',
-              animation: 'timerVignettePulse 1.2s ease-in-out infinite',
-            }}>???</div>
+              lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {isReveal ? (
+                <SlotMachineNumber
+                  value={pair.subjectValue}
+                  fontSize="clamp(44px, 6vw, 92px)"
+                  color="#FBBF24"
+                  glow="rgba(251,191,36,0.5)"
+                />
+              ) : (
+                <span style={{
+                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                  textShadow: '0 0 28px rgba(251,191,36,0.45)',
+                  animation: 'timerVignettePulse 1.2s ease-in-out infinite',
+                }}>???</span>
+              )}
+            </div>
             <div style={{
               fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,
-            }}>{lang === 'en' ? 'Higher or Lower?' : 'Mehr oder Weniger?'}</div>
+            }}>{pair.unit}</div>
           </div>
         </div>
 
-        {/* Team-Progress: Avatare mit Answer-Status */}
+        {/* Team-Progress: gleiche Avatare-Reihe in beiden Phasen.
+            Nur das Status-Badge (✓ answered → ✓ correct / ✕ wrong) und
+            die optionale Winnings-Pill ergaenzen sich beim Reveal. */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           animation: 'contentReveal 0.5s ease 0.25s both',
         }}>
           <div style={{
-            fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800, color: '#94a3b8',
+            fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800,
+            color: isReveal ? '#cbd5e1' : '#94a3b8',
             letterSpacing: '0.1em', textTransform: 'uppercase',
+            transition: 'color 0.4s ease',
           }}>
-            {lang === 'en' ? 'Last teams vote on their phone' : 'Letzte Teams tippen am Handy'}
+            {isReveal
+              ? (lang === 'en' ? 'Who got it right?' : 'Wer lag richtig?')
+              : (lang === 'en' ? 'Last teams vote on their phone' : 'Letzte Teams tippen am Handy')}
           </div>
           <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
             {hlTeams.map(tm => {
               const answered = hl.answeredThisRound.includes(tm.id);
+              const correct = correctIds.has(tm.id);
+              const teamWin = hl.winnings[tm.id] ?? 0;
+              // Im Reveal: dim if wrong; Glow if correct.
+              const dim = isReveal && !correct;
               return (
                 <div key={tm.id} style={{
                   position: 'relative',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  opacity: answered ? 1 : 0.55,
-                  filter: answered ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)',
+                  opacity: dim ? 0.55 : (answered || isReveal ? 1 : 0.55),
+                  filter: dim
+                    ? 'grayscale(0.4)'
+                    : (answered || isReveal ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)'),
                   transition: 'opacity 0.4s ease, filter 0.4s ease',
                 }}>
                   <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
-                    // Kein Doppel-Rand: das Avatar-Artwork hat bereits einen
-                    // farbigen Kapuzen-Rim. Status-Signal nur ueber Glow.
-                    boxShadow: answered ? `0 0 22px ${tm.color}88` : '0 0 14px rgba(148,163,184,0.18)',
+                    boxShadow: (correct || (answered && !isReveal))
+                      ? `0 0 22px ${tm.color}88`
+                      : '0 0 14px rgba(148,163,184,0.18)',
+                    transition: 'box-shadow 0.4s ease',
                   }} />
-                  {answered && (
+                  {/* Status-Badge: in question = ✓ answered, in reveal = ✓/✕ */}
+                  {(isReveal ? true : answered) && (
                     <div style={{
                       position: 'absolute', bottom: -6, right: -6,
                       width: 32, height: 32, borderRadius: '50%',
-                      background: '#22C55E', border: '2.5px solid #0D0A06',
+                      background: isReveal ? (correct ? '#22C55E' : '#EF4444') : '#22C55E',
+                      border: '2.5px solid #0D0A06',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 18, fontWeight: 900, color: '#fff',
-                      animation: 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
-                    }}>✓</div>
+                      animation: isReveal
+                        ? 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.5s both'
+                        : 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+                    }}>{isReveal ? (correct ? '✓' : '✕') : '✓'}</div>
                   )}
                   <div style={{
                     fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
                     maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{truncName(tm.name, 10)}</div>
+                  {isReveal && teamWin > 0 && (
+                    <div style={{
+                      marginTop: 2, padding: '3px 10px', borderRadius: 999,
+                      background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
+                      fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
+                      fontVariantNumeric: 'tabular-nums',
+                      animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+                    }}>
+                      <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
+                        ? (lang === 'en' ? 'cell' : 'Feld')
+                        : (lang === 'en' ? 'cells' : 'Felder')}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Timer-Pill unten rechts */}
-        {hl.timerEndsAt != null && (
+        {/* Timer-Pill unten rechts — nur in question phase */}
+        {!isReveal && hl.timerEndsAt != null && (
           <div style={{
             position: 'absolute', bottom: 32, right: 48, zIndex: 8,
           }}>
@@ -8697,182 +8780,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     );
   }
 
-  // ── H/L-Reveal-Ansicht ───────────────────────────────────────────────────
-  if (hl && hl.phase === 'reveal' && hl.currentPair) {
-    const pair = hl.currentPair;
-    const correctChoice = pair.subjectValue > pair.anchorValue ? 'higher' : 'lower';
-    const correctText = correctChoice === 'higher'
-      ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
-      : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓');
-    const correctIds = new Set(hl.correctThisRound);
-    const revealQuestion = pair.customQuestion
-      ? pair.customQuestion
-      : (lang === 'en'
-          ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
-          : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`);
-    return (
-      <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(24px, 4vh, 48px) clamp(32px, 5vw, 72px)', gap: 'clamp(18px, 2.4vh, 32px)',
-        position: 'relative', overflow: 'hidden',
-        animation: 'contentReveal 0.4s ease both',
-      }}>
-        <Fireflies color="#FBBF2555" />
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}>
-          <div style={{
-            padding: '10px 22px', borderRadius: 999,
-            background: 'rgba(34,197,94,0.2)', border: '2px solid rgba(34,197,94,0.5)',
-            color: '#86efac', fontWeight: 900,
-            fontSize: 'clamp(16px, 1.8vw, 24px)', letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>
-            <QQEmojiIcon emoji="✅"/> {lang === 'en' ? 'Reveal' : 'Auflösung'}
-          </div>
-          <div style={{
-            padding: '10px 20px', borderRadius: 14,
-            background: 'rgba(15,23,42,0.6)', border: '1.5px solid rgba(255,255,255,0.1)',
-            color: '#e2e8f0', fontWeight: 800, fontSize: 'clamp(15px, 1.6vw, 22px)',
-          }}>
-            {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1} {lang === 'en' ? 'of' : 'von'} {hl.rounds}
-          </div>
-        </div>
-
-        {/* Frage-Text (wiederholt als Kontext im Reveal, dezent) */}
-        <div style={{
-          fontSize: 'clamp(18px, 2.1vw, 30px)', fontWeight: 700, color: '#cbd5e1',
-          textAlign: 'center', maxWidth: 1200, lineHeight: 1.3, opacity: 0.85,
-        }}>
-          {revealQuestion}
-        </div>
-
-        {/* Anchor + Subject mit aufgedecktem Wert */}
-        <div style={{
-          display: 'flex', gap: 'clamp(16px, 2.2vw, 36px)', alignItems: 'stretch',
-          justifyContent: 'center', flexWrap: 'wrap', maxWidth: 1400, width: '100%',
-        }}>
-          <div style={{
-            flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
-            background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.03))',
-            border: '2px solid rgba(34,197,94,0.35)',
-            textAlign: 'center',
-            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
-            opacity: 0.82,
-          }}>
-            <div style={{
-              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
-              color: '#86efac', letterSpacing: '0.14em', textTransform: 'uppercase',
-            }}>{pair.anchorLabel}</div>
-            <div style={{
-              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#86efac',
-              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-            }}>{fmtHL(pair.anchorValue)}</div>
-            <div style={{ fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7 }}>{pair.unit}</div>
-          </div>
-
-          {/* Richtung-Indikator */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 10,
-          }}>
-            <div style={{
-              fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
-              color: '#FBBF24', textShadow: '0 0 20px rgba(251,191,36,0.6)',
-              letterSpacing: '0.08em',
-              animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
-            }}>{correctText}</div>
-          </div>
-
-          {/* Subject-Card mit aufgedecktem Wert — Slot-Machine-Roll von ??? */}
-          <div style={{
-            flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.06))',
-            border: '3px solid #FBBF24',
-            boxShadow: '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)',
-            textAlign: 'center',
-            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
-          }}>
-            <div style={{
-              fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
-              color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase',
-            }}>{pair.subjectLabel}</div>
-            <div style={{
-              lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <SlotMachineNumber
-                value={pair.subjectValue}
-                fontSize="clamp(44px, 6vw, 92px)"
-                color="#FBBF24"
-                glow="rgba(251,191,36,0.5)"
-              />
-            </div>
-            <div style={{ fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7 }}>{pair.unit}</div>
-          </div>
-        </div>
-
-        {/* Team-Ergebnisse: wer lag richtig, Winnings-Anzeige */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px, 2vw, 28px)', justifyContent: 'center',
-          animation: 'contentReveal 0.5s ease 0.45s both',
-        }}>
-          {hlTeams.map(tm => {
-            const correct = correctIds.has(tm.id);
-            const teamWin = hl.winnings[tm.id] ?? 0;
-            return (
-              <div key={tm.id} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                padding: '14px 20px', borderRadius: 20,
-                background: correct ? `rgba(34,197,94,0.16)` : 'rgba(239,68,68,0.12)',
-                border: correct ? '2px solid rgba(34,197,94,0.55)' : '2px solid rgba(239,68,68,0.45)',
-                boxShadow: correct ? '0 0 22px rgba(34,197,94,0.3)' : 'none',
-                minWidth: 140,
-              }}>
-                <div style={{ position: 'relative' }}>
-                  <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(70px, 7.5vw, 110px)'} style={{
-                    // Kein CSS-Border — Avatar hat eigenen Rim. Status via filter+glow.
-                    boxShadow: correct ? `0 0 18px ${tm.color}66` : 'none',
-                    filter: correct ? 'none' : 'grayscale(0.35)',
-                    opacity: correct ? 1 : 0.75,
-                  }} />
-                  <div style={{
-                    position: 'absolute', bottom: -8, right: -8,
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: correct ? '#22C55E' : '#EF4444',
-                    border: '3px solid #0D0A06',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 22, fontWeight: 900, color: '#fff',
-                    animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.2s both',
-                  }}>{correct ? '✓' : '✕'}</div>
-                </div>
-                <div style={{
-                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
-                  maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>{truncName(tm.name, 12)}</div>
-                {teamWin > 0 && (
-                  <div style={{
-                    marginTop: 2, padding: '3px 10px', borderRadius: 999,
-                    background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
-                    fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
-                      ? (lang === 'en' ? 'cell' : 'Feld')
-                      : (lang === 'en' ? 'cells' : 'Felder')}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  // ── (alter separater Reveal-Block entfernt — jetzt unified mit question) ─
 
   // B1 BAM-Entry: nur beim initialen Mount + beim Step 0 spielen. Bei spaeteren
   // Steps (1, 2) soll die Folie ruhig bleiben, sonst reissen wir den User raus.

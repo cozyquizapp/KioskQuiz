@@ -139,8 +139,273 @@ function PhaseRouter({
     return <PhasePlaceholderCard state={state} de={de} />;
   }
 
-  // Komplexe Phasen (PLACEMENT, TEAMS_REVEAL, COMEBACK_CHOICE) folgen.
+  if (phase === 'PLACEMENT') return <PlacementView state={state} de={de} />;
+
+  // TEAMS_REVEAL, COMEBACK_CHOICE folgen in eigenen Items.
   return <PhasePlaceholderCard state={state} de={de} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PLACEMENT — 2D-Aquarell-Grid mit Owner-Wäschen, Joker-Sterne, Frost,
+// Stapel-Patches, Last-Placed-Pulse + Pending-Action-Header
+// ─────────────────────────────────────────────────────────────────────────
+
+function PlacementView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  const { w: vw, h: vh } = useViewportSize();
+  const grid = state.grid;
+  const size = state.gridSize;
+
+  // Cell-Dimensionen — Grid soll quadratisch in der verfügbaren Fläche bleiben.
+  // Verfügbare Höhe ≈ 70vh (nach Header + Footer), Breite ≈ 70vw.
+  const maxCellPx = Math.min(vh * 0.7, vw * 0.6) / size;
+  const cellPx = Math.max(48, Math.floor(maxCellPx) - 6);
+
+  const last = state.lastPlacedCell;
+  const pendingTeam = state.pendingFor ? state.teams.find(t => t.id === state.pendingFor) : null;
+
+  return (
+    <>
+      <PlacementHeader state={state} de={de} pendingTeam={pendingTeam} />
+      <CenterArea>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${size}, ${cellPx}px)`,
+          gap: 6,
+          padding: 16,
+          borderRadius: 24,
+          background: `${PALETTE.cream}1f`,
+          border: `2px dashed ${PALETTE.cream}33`,
+          filter: 'url(#paintFrame)',
+        }}>
+          {grid.flat().map(cell => {
+            const isLast = last && last.row === cell.row && last.col === cell.col;
+            return (
+              <PlacementCell
+                key={`${cell.row}-${cell.col}`}
+                cell={cell}
+                cellPx={cellPx}
+                team={cell.ownerId ? state.teams.find(t => t.id === cell.ownerId) ?? null : null}
+                lastPlaced={!!isLast}
+                wasSteal={!!(isLast && last?.wasSteal)}
+              />
+            );
+          })}
+        </div>
+      </CenterArea>
+      <PlacementFooter state={state} de={de} />
+    </>
+  );
+}
+
+function PlacementHeader({
+  state, de, pendingTeam,
+}: { state: QQStateUpdate; de: boolean; pendingTeam: QQTeam | null }) {
+  const action = state.pendingAction;
+  const actionLabel = (() => {
+    switch (action) {
+      case 'PLACE_1':
+      case 'PLACE_2': return de ? 'setzt ein Feld' : 'places a field';
+      case 'STEAL_1': return de ? 'klaut ein Feld' : 'steals a field';
+      case 'FREE':    return de ? 'wählt eine Aktion' : 'picks an action';
+      case 'SANDUHR_1': return de ? 'bannt ein Feld' : 'locks a field';
+      case 'SHIELD_1':  return de ? 'schützt ein Feld' : 'shields a field';
+      case 'SWAP_1':    return de ? 'tauscht zwei Felder' : 'swaps two fields';
+      case 'STAPEL_1':  return de ? 'stapelt ein Feld' : 'stacks a field';
+      case 'COMEBACK':  return de ? 'startet das Comeback' : 'starts the comeback';
+      default: return de ? 'ist am Zug' : 'is up';
+    }
+  })();
+  if (!pendingTeam) {
+    return (
+      <header style={{ textAlign: 'center', flexShrink: 0, position: 'relative', zIndex: 5 }}>
+        <BlockCapsHeading size="lg" color={PALETTE.cream}>
+          {de ? 'Platzierung' : 'Placement'}
+        </BlockCapsHeading>
+      </header>
+    );
+  }
+  const color = softTeamColor(pendingTeam.avatarId);
+  return (
+    <header style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
+      flexShrink: 0, position: 'relative', zIndex: 5,
+      animation: 'gFadeIn 0.5s ease-out both',
+    }}>
+      <div style={{ filter: 'url(#warmGlow)' }}>
+        <PaintedAvatar slug={qqGetAvatar(pendingTeam.avatarId).slug} size={80} color={color} withGrain={false} />
+      </div>
+      <div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 'min(6vh, 4vw)', color, fontWeight: 700, lineHeight: 1,
+          textShadow: `0 4px 12px ${color}44`,
+        }}>
+          {pendingTeam.name}
+        </div>
+        <BlockCapsHeading size="md" color={PALETTE.cream}>
+          {actionLabel}
+        </BlockCapsHeading>
+      </div>
+    </header>
+  );
+}
+
+function PlacementFooter({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  // Mini-Standings unten — wer hat wie viele Felder
+  const sorted = [...state.teams].sort((a, b) => b.totalCells - a.totalCells);
+  return (
+    <footer style={{
+      display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10,
+      flexShrink: 0, position: 'relative', zIndex: 5,
+      padding: '0 12px',
+    }}>
+      {sorted.map(t => {
+        const color = softTeamColor(t.avatarId);
+        return (
+          <div key={t.id} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '4px 10px', borderRadius: 999,
+            background: `${PALETTE.cream}1f`,
+            border: `1.5px solid ${color}88`,
+          }}>
+            <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={26} color={color} withGrain={false} />
+            <span style={{
+              fontFamily: F_HAND, fontSize: 'min(2.2vh, 1.6vw)',
+              color: PALETTE.cream, fontWeight: 700,
+            }} title={t.name}>
+              {t.name.length > 10 ? t.name.slice(0, 9) + '…' : t.name}
+            </span>
+            <span style={{
+              fontFamily: F_HAND_CAPS, fontSize: 'min(2vh, 1.5vw)',
+              color, fontWeight: 700, letterSpacing: '0.06em',
+            }}>
+              {t.totalCells}
+              {t.largestConnected > 1 && ` · ${t.largestConnected}`}
+            </span>
+          </div>
+        );
+      })}
+      <div style={{
+        padding: '4px 12px', borderRadius: 999,
+        background: `${PALETTE.cream}11`,
+        border: `1px dashed ${PALETTE.cream}33`,
+        fontFamily: F_BODY, fontSize: 11,
+        color: `${PALETTE.cream}aa`,
+        letterSpacing: '0.08em',
+      }}>
+        {de ? 'gesamt · zusammenhängend' : 'total · connected'}
+      </div>
+    </footer>
+  );
+}
+
+function PlacementCell({
+  cell, cellPx, team, lastPlaced, wasSteal,
+}: {
+  cell: { row: number; col: number; ownerId: string | null;
+         jokerFormed?: boolean; frozen?: boolean; stuck?: boolean;
+         shielded?: boolean; sandLockTtl?: number };
+  cellPx: number;
+  team: QQTeam | null;
+  lastPlaced: boolean;
+  wasSteal: boolean;
+}) {
+  const color = team ? softTeamColor(team.avatarId) : null;
+  const slug = team ? qqGetAvatar(team.avatarId).slug : null;
+  const isLocked = (cell.sandLockTtl ?? 0) > 0;
+
+  return (
+    <div style={{
+      width: cellPx, height: cellPx,
+      borderRadius: 14,
+      background: color ? `${color}33` : `${PALETTE.cream}d0`,
+      border: color
+        ? `3px solid ${cell.stuck ? color : color + 'aa'}`
+        : `2px solid ${PALETTE.inkSoft}33`,
+      boxShadow: lastPlaced && color
+        ? `0 0 0 4px ${color}aa, 0 12px 32px ${color}99`
+        : color ? `0 4px 12px ${color}33` : 'none',
+      animation: lastPlaced ? 'cellSlamDown 0.7s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+      position: 'relative', overflow: 'hidden',
+      filter: 'url(#watercolorEdge)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {/* Owner Avatar */}
+      {slug && color && (
+        <div style={{
+          width: cellPx * 0.62, height: cellPx * 0.62,
+          borderRadius: '50%',
+          backgroundImage: `url(/avatars/gouache/avatar-${slug}.png)`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          border: `2.5px solid ${color}`,
+          boxShadow: `0 2px 6px ${color}66`,
+          opacity: cell.frozen || isLocked ? 0.5 : 1,
+        }} />
+      )}
+      {/* Joker indicator (Stern-Glow) */}
+      {cell.jokerFormed && (
+        <div style={{
+          position: 'absolute', top: 4, right: 4,
+          width: cellPx * 0.18, height: cellPx * 0.18,
+          background: `radial-gradient(circle, ${PALETTE.amberGlow} 0%, ${PALETTE.amberGlow}00 70%)`,
+          fontSize: cellPx * 0.22, lineHeight: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: PALETTE.amberGlow,
+          textShadow: `0 0 8px ${PALETTE.amberGlow}`,
+          fontFamily: F_HAND, fontWeight: 700,
+        }}>★</div>
+      )}
+      {/* Stapel (stuck) — kleine Pin-Marke unten rechts */}
+      {cell.stuck && (
+        <div style={{
+          position: 'absolute', bottom: 4, right: 4,
+          padding: '2px 6px', borderRadius: 6,
+          background: PALETTE.inkDeep, color: PALETTE.cream,
+          fontFamily: F_HAND_CAPS, fontSize: cellPx * 0.16,
+          letterSpacing: '0.06em',
+        }}>×2</div>
+      )}
+      {/* Frozen (Schneeflocke) */}
+      {cell.frozen && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(220,240,255,0.35)',
+          backdropFilter: 'blur(1px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: cellPx * 0.4, color: '#9DCBFF',
+        }}>❄</div>
+      )}
+      {/* SandLock (Sanduhr) */}
+      {isLocked && (
+        <div style={{
+          position: 'absolute', top: 4, left: 4,
+          fontSize: cellPx * 0.18,
+          opacity: 0.85,
+        }}>⏳</div>
+      )}
+      {/* Steal-Indikator: Wave-Glow auf last-placed das ein Steal war */}
+      {lastPlaced && wasSteal && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: -4, borderRadius: 18,
+          border: `3px solid ${PALETTE.terracotta}`,
+          animation: 'cellStealRing 1s ease-out forwards',
+          pointerEvents: 'none',
+        }} />
+      )}
+      {/* Lokale Animations-Keyframes */}
+      <style>{`
+        @keyframes cellSlamDown {
+          0%   { transform: translateY(-50px) scale(0.6); opacity: 0; }
+          55%  { transform: translateY(4px)   scale(1.08); opacity: 1; }
+          80%  { transform: translateY(-2px)  scale(0.98); }
+          100% { transform: translateY(0)     scale(1); opacity: 1; }
+        }
+        @keyframes cellStealRing {
+          0%   { transform: scale(0.7); opacity: 1; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

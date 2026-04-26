@@ -1,16 +1,23 @@
-// QQ Lobby Gouache — erste echte parallele Live-Page im Aquarell-Stil.
+// QQ Lobby Gouache — parallele Aquarell-Variante der `/beamer`-Lobby.
 //
-// Bewusst KEIN Eingriff in QQBeamerPage / QQTeamPage / QQModeratorPage —
-// diese Seite ist eine zweite Beamer-Lobby-Variante, die parallel auf
-// dieselbe Room ('default') hört. Wer sich `/lobby-gouache` auf einen
-// zweiten Beamer / Tab legt, sieht denselben Lobby-State im Bilderbuch-
-// Look. Der echte Quiz-Pfad bleibt unberührt.
+// Layout/Komposition strikt nach `LobbyView` in QQBeamerPage.tsx (Original).
+// Gouache wechselt nur den STIL (PaperCard/Painted-Components/Aquarell-
+// Palette + Caveat/Lora), nicht die Anordnung — Wolf hat an der
+// Original-Komposition wochenlang gefeilt, die bleibt 1:1.
 //
-// Wenn die Page weiter wächst (z.B. mit Phase-Übergängen), werden die
-// Teil-Views ausgegliedert — aktuell reicht eine Datei.
+// User-Overrides ggü. Original (siehe Conversation):
+//   - Header: nur „CozyQuiz" mittig (kein „Heute Abend"-Sublabel,
+//     kein Untertitel, keine Connection-Pill)
+//   - Teams-Grid: dynamisch wachsend statt fest 2-spaltig
+//       1-4 Teams = 1 Reihe (max 4 Spalten)
+//       5-8 Teams = 4 Spalten × 2 Reihen
+//   - Cards größer & Ringe in voller Teamfarbe (nicht 55-alpha) für
+//     bessere Beamer-Sichtbarkeit
+//   - Footer komplett weg
+// Alles andere (CozyWolf-Branding, Statusmeldungen, Bilingual-Flip,
+// Empty-Hint, Wave-Animation) wird vom Original übernommen.
 
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
@@ -42,226 +49,80 @@ export default function QQLobbyGouachePage() {
     emit('qq:joinBeamer', { roomCode }).then(ack => { if (ack.ok) setJoined(true); });
   }, [connected, joined, emit, roomCode]);
 
+  // Bilingual-Flip wie im Original (8s pro Sprache).
+  const [de, setDe] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setDe(p => !p), 8000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div style={{
-      minHeight: '100vh', width: '100vw',
+      height: '100vh', width: '100vw',
       background: `linear-gradient(180deg, ${PALETTE.inkDeep} 0%, ${PALETTE.inkSoft} 55%, ${PALETTE.sage} 100%)`,
       position: 'relative', overflow: 'hidden',
       fontFamily: F_BODY, color: PALETTE.cream,
+      display: 'flex', flexDirection: 'column',
+      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
+      gap: 'clamp(10px, 1.5vh, 20px)',
     }}>
       <GouacheFilters />
       <PaintedKeyframes />
 
-      {/* Atmosphäre — Sterne, Mond, Vögel ganz unabhängig vom State */}
+      {/* Atmosphäre — gemalter Nachthimmel */}
       <PaintedStars count={32} />
-      <div style={{ position: 'absolute', top: 'clamp(28px, 5vh, 72px)', right: 'clamp(40px, 6vw, 110px)', zIndex: 2 }}>
-        <PaintedMoon size={84} />
+      <div style={{ position: 'absolute', top: 'clamp(40px, 6vh, 90px)', right: 'clamp(60px, 8vw, 140px)', zIndex: 2, pointerEvents: 'none' }}>
+        <PaintedMoon size={80} />
       </div>
-      <PaintedBird x="14%" y="12%" size={28} />
+      <PaintedBird x="14%" y="14%" size={28} />
       <PaintedBird x="62%" y="9%" size={22} />
       <PaintedBird x="86%" y="22%" size={26} />
-
-      {/* Hügel ganz unten */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none' }}>
         <PaintedHills width={2400} height={220} />
       </div>
-
-      {/* Schwebende Heißluftballons in Team-Farben (entstehen real aus den joinenden Teams) */}
       <FloatingTeamBalloons teams={state?.teams ?? []} />
 
-      {/* Header */}
-      <Header connected={connected} state={state} />
-
-      {/* Main content */}
-      <main style={{
-        position: 'relative', zIndex: 5,
-        padding: 'clamp(8px, 1vh, 24px) clamp(20px, 3vw, 56px) clamp(30px, 5vh, 70px)',
-        display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2vh, 28px)',
+      {/* ── Top: Title (zentriert) ── */}
+      <div style={{
+        textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
+        paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
-        {!state ? (
-          <ConnectingPanel connected={connected} />
-        ) : state.phase === 'LOBBY' && !state.setupDone ? (
-          <PreGamePanel />
-        ) : state.phase === 'LOBBY' ? (
-          <LobbyPanel state={state} roomCode={roomCode} />
-        ) : (
-          <RunningPanel state={state} />
-        )}
-      </main>
-
-      {/* Lab-Footer */}
-      <LabFooter />
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Header
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Header({ connected, state }: { connected: boolean; state: QQStateUpdate | null }) {
-  const teamCount = state?.teams.length ?? 0;
-  return (
-    <header style={{
-      position: 'relative', zIndex: 5,
-      padding: 'clamp(20px, 3vh, 40px) clamp(20px, 3vw, 56px) 0',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: 24, flexWrap: 'wrap',
-    }}>
-      <div>
         <div style={{
-          fontFamily: F_BODY, fontSize: 13, letterSpacing: '0.32em',
-          color: PALETTE.cream, opacity: 0.78, textTransform: 'uppercase',
-          marginBottom: 8,
-        }}>
-          Heute Abend
-        </div>
-        <h1 style={{
-          fontFamily: F_HAND, fontSize: 'clamp(56px, 9vw, 132px)',
-          color: PALETTE.cream, lineHeight: 0.95, margin: 0, fontWeight: 700,
-          textShadow: '0 6px 22px rgba(0,0,0,0.45)',
+          fontFamily: F_HAND,
+          fontSize: 'clamp(64px, 9vw, 132px)', fontWeight: 700, lineHeight: 0.95,
+          color: PALETTE.cream,
           letterSpacing: '-0.01em',
+          textShadow: '0 6px 22px rgba(0,0,0,0.45)',
         }}>
           CozyQuiz
-        </h1>
-        <div style={{
-          fontFamily: F_HAND, fontSize: 'clamp(22px, 2.6vw, 40px)',
-          color: PALETTE.sageLight, marginTop: 8,
-          fontStyle: 'italic', opacity: 0.92,
-        }}>
-          Beim Schein der Laternen
         </div>
       </div>
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10,
-      }}>
-        <ConnectionPill connected={connected} />
-        {state && (
-          <div style={{
-            padding: '6px 14px', borderRadius: 999,
-            background: `${PALETTE.cream}22`,
-            border: `1px solid ${PALETTE.cream}33`,
-            fontFamily: F_BODY, fontSize: 13, color: PALETTE.cream,
-            letterSpacing: '0.06em',
-          }}>
-            {teamCount} {teamCount === 1 ? 'Team' : 'Teams'} · {state.phase}
-          </div>
-        )}
-      </div>
-    </header>
-  );
-}
 
-function ConnectionPill({ connected }: { connected: boolean }) {
-  const color = connected ? PALETTE.sageLight : PALETTE.terracotta;
-  return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 8,
-      padding: '6px 14px', borderRadius: 999,
-      background: `${color}22`,
-      border: `1px solid ${color}66`,
-      fontFamily: F_BODY, fontSize: 13, color: PALETTE.cream,
-    }}>
-      <span style={{
-        width: 8, height: 8, borderRadius: '50%', background: color,
-        boxShadow: `0 0 10px ${color}`,
-        animation: connected ? 'gTwinkle 2.4s ease-in-out infinite' : 'none',
-      }} />
-      {connected ? 'Verbunden' : 'Verbinde …'}
+      {/* ── Center: 2-column layout — QR links, Teams rechts (Original-Struktur) ── */}
+      {!state ? (
+        <ConnectingPanel connected={connected} />
+      ) : state.phase === 'LOBBY' && !state.setupDone ? (
+        <PreGamePanel de={de} />
+      ) : state.phase === 'LOBBY' ? (
+        <LobbyMainGrid state={state} de={de} roomCode={roomCode} />
+      ) : (
+        <RunningPanel state={state} de={de} />
+      )}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Connecting / Pre-Game / Running Panels
+// Lobby Main Grid — exakt das Original-Layout, nur Gouache-Components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ConnectingPanel({ connected }: { connected: boolean }) {
-  return (
-    <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 520, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: F_HAND, fontSize: 'clamp(36px, 4.4vw, 56px)', color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05 }}>
-          {connected ? 'Lade Lobby …' : 'Suche Verbindung …'}
-        </div>
-        <div style={{ fontFamily: F_BODY, fontSize: 16, color: PALETTE.inkSoft, marginTop: 14, fontStyle: 'italic' }}>
-          Wenn das Backend frisch aufwacht, dauert das einen Moment. Render
-          legt die Server in der Pause schlafen.
-        </div>
-      </div>
-    </PaperCard>
-  );
-}
-
-function PreGamePanel() {
-  return (
-    <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 720, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.24em',
-          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
-        }}>
-          Vor dem Spiel
-        </div>
-        <div style={{
-          fontFamily: F_HAND, fontSize: 'clamp(40px, 5vw, 68px)', color: PALETTE.inkDeep,
-          fontWeight: 700, lineHeight: 1.05, marginTop: 8,
-        }}>
-          Bald geht's los …
-        </div>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 'clamp(15px, 1.4vw, 18px)',
-          color: PALETTE.inkSoft, marginTop: 18, lineHeight: 1.65,
-          maxWidth: 540, margin: '18px auto 0', fontStyle: 'italic',
-        }}>
-          Der Moderator richtet gerade das Quiz ein. Sobald die Lobby geöffnet
-          ist, erscheint hier der QR-Code zum Beitreten.
-        </div>
-      </div>
-    </PaperCard>
-  );
-}
-
-function RunningPanel({ state }: { state: QQStateUpdate }) {
-  return (
-    <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 760, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.24em',
-          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
-        }}>
-          Läuft gerade
-        </div>
-        <div style={{
-          fontFamily: F_HAND, fontSize: 'clamp(40px, 5vw, 64px)', color: PALETTE.inkDeep,
-          fontWeight: 700, lineHeight: 1.05, marginTop: 8,
-        }}>
-          Das Spiel ist im Gange
-        </div>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 'clamp(15px, 1.4vw, 18px)',
-          color: PALETTE.inkSoft, marginTop: 18, lineHeight: 1.65,
-          maxWidth: 540, margin: '18px auto 0', fontStyle: 'italic',
-        }}>
-          Diese Aquarell-Lobby zeigt nur den Welcome-Screen. Die Quiz-Phasen
-          laufen aktuell auf <code>/beamer</code> im klassischen Cozy-Dark-Stil
-          weiter — Phase: <strong style={{ color: PALETTE.terracotta }}>{state.phase}</strong>.
-        </div>
-      </div>
-    </PaperCard>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Lobby Panel — QR + Team-Liste
-// ─────────────────────────────────────────────────────────────────────────────
-
-function LobbyPanel({ state, roomCode }: { state: QQStateUpdate; roomCode: string }) {
+function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: boolean; roomCode: string }) {
   const joinUrl = `${window.location.origin}/team`;
   const teams = state.teams;
   const teamCount = teams.length;
   const connectedCount = teams.filter(t => t.connected).length;
 
-  // Wave-Animation: frisch dazugekommene Teams kriegen Glow + 👋
+  // Wave-Animation (aus Original): frisch joinende Teams kriegen Glow + 👋
   const prevIdsRef = useRef<Set<string>>(new Set());
   const [waveIds, setWaveIds] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -279,237 +140,400 @@ function LobbyPanel({ state, roomCode }: { state: QQStateUpdate; roomCode: strin
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'minmax(260px, 380px) 1fr',
-      gap: 'clamp(20px, 3vw, 44px)',
-      alignItems: 'start',
-      maxWidth: 1320, margin: '0 auto', width: '100%',
+      flex: 1, display: 'grid',
+      gridTemplateColumns: 'auto 1fr',
+      alignItems: 'center',
+      columnGap: 'clamp(24px, 3vw, 48px)',
+      position: 'relative', zIndex: 5,
+      width: '100%',
+      padding: '0 clamp(24px, 4vw, 80px)',
+      minHeight: 0,
     }}>
-      {/* QR-Card */}
-      <QrCard joinUrl={joinUrl} roomCode={roomCode} />
+      {/* Left: QR Code */}
+      <QrColumn joinUrl={joinUrl} de={de} roomCode={roomCode} />
 
-      {/* Teams-Card */}
-      <PaperCard washColor={PALETTE.cream} padding="clamp(20px, 2.4vh, 32px)" style={{ minHeight: 320 }}>
+      {/* Right: Teams + Status */}
+      <div style={{
+        minWidth: 0, width: '100%',
+        display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.8vh, 22px)',
+        alignItems: 'stretch', justifyContent: 'center',
+      }}>
+        {/* Header über dem Grid */}
         <div style={{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          marginBottom: 18, flexWrap: 'wrap', gap: 8,
+          fontFamily: F_BODY,
+          fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
+          color: `${PALETTE.cream}cc`,
+          letterSpacing: '0.18em', textTransform: 'uppercase',
+          textAlign: 'center',
         }}>
-          <div>
-            <div style={{
-              fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.22em',
-              color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
-            }}>
-              Heute am Tisch
-            </div>
-            <div style={{
-              fontFamily: F_HAND, fontSize: 'clamp(28px, 3.2vw, 44px)',
-              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1, marginTop: 4,
-            }}>
-              {teamCount} {teamCount === 1 ? 'Team' : 'Teams'}
-            </div>
-          </div>
-          <StatusChip teamCount={teamCount} connectedCount={connectedCount} />
+          {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
         </div>
 
         {teamCount === 0 ? (
-          <EmptyTeamsHint />
+          <EmptyTeamsPanel de={de} />
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))',
-            gap: 'clamp(10px, 1.4vw, 16px)',
-          }}>
-            {teams.map((t, i) => (
-              <TeamCard key={t.id} team={t} fresh={waveIds.has(t.id)} delayIndex={i} />
-            ))}
-          </div>
+          <TeamsGrid teams={teams} waveIds={waveIds} />
         )}
-      </PaperCard>
+
+        {/* Status drunter */}
+        <StatusLine de={de} teamCount={teamCount} connectedCount={connectedCount} />
+      </div>
     </div>
   );
 }
 
-function QrCard({ joinUrl, roomCode }: { joinUrl: string; roomCode: string }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// QR Column (Original-Struktur, Gouache-Stil)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roomCode: string }) {
+  void roomCode; // Reserve falls Multi-Room kommt
+  const qrSize = 'min(44vh, 420px)';
   return (
-    <PaperCard washColor={PALETTE.cream} padding="clamp(18px, 2.2vh, 28px)" style={{ textAlign: 'center' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5vh, 18px)',
+      flexShrink: 0, justifySelf: 'start',
+    }}>
+      {/* QR im weißen PaperCard-Frame */}
       <div style={{
-        fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.24em',
-        color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
-        marginBottom: 12,
-      }}>
-        Mitspielen
-      </div>
-      <div style={{
-        background: '#fff', borderRadius: 14,
-        padding: 'clamp(10px, 1.5vh, 18px)',
-        boxShadow: '0 8px 24px rgba(31,58,95,0.18), 0 0 0 1px rgba(31,58,95,0.06)',
-        margin: '0 auto', display: 'inline-block',
+        background: '#ffffff', borderRadius: 24, padding: 'clamp(14px, 2vh, 24px)',
+        boxShadow: `0 16px 64px rgba(31,58,95,0.45), 0 0 50px ${PALETTE.cream}33`,
         animation: 'gFloat 5.2s ease-in-out infinite',
+        width: qrSize, height: qrSize,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <QRCodeSVG
           value={joinUrl}
-          size={220}
+          size={256}
           bgColor="#ffffff"
           fgColor={PALETTE.inkDeep}
           level="M"
-          style={{ display: 'block' }}
+          style={{ width: '100%', height: '100%' }}
         />
       </div>
-      <div style={{
-        fontFamily: F_HAND, fontSize: 'clamp(28px, 3vw, 40px)',
-        color: PALETTE.inkDeep, marginTop: 14, lineHeight: 1, fontWeight: 700,
-      }}>
-        Code scannen
+
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: F_HAND,
+          fontSize: 'clamp(28px, 3.2vw, 42px)', color: PALETTE.cream, fontWeight: 700,
+          lineHeight: 1, marginBottom: 6,
+          textShadow: '0 4px 16px rgba(0,0,0,0.5)',
+        }}>
+          {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
+        </div>
+        <div style={{
+          fontSize: 'clamp(13px, 1.4vw, 18px)',
+          color: PALETTE.inkDeep,
+          fontFamily: 'ui-monospace, "SFMono-Regular", monospace',
+          background: PALETTE.cream,
+          padding: '6px 16px', borderRadius: 999,
+          border: `1.5px dashed ${PALETTE.sage}88`,
+          display: 'inline-block',
+          letterSpacing: '0.02em',
+        }}>
+          {joinUrl.replace('https://', '').replace('http://', '')}
+        </div>
       </div>
+
+      {/* CozyWolf Branding (aus Original) — als Aquarell-Pill */}
       <div style={{
-        fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkSoft,
-        marginTop: 6, fontStyle: 'italic',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 18px', borderRadius: 999,
+        background: `linear-gradient(135deg, ${PALETTE.ochre}33, ${PALETTE.terracotta}1f)`,
+        border: `1.5px solid ${PALETTE.ochre}88`,
+        boxShadow: `0 4px 18px rgba(0,0,0,0.35), 0 0 18px ${PALETTE.ochre}33`,
       }}>
-        oder direkt im Browser öffnen
+        <img
+          src="/logo.png"
+          alt=""
+          style={{ width: 28, height: 28, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+        />
+        <span style={{
+          fontFamily: F_BODY,
+          fontSize: 'clamp(12px, 1.1vw, 15px)', fontWeight: 700,
+          color: PALETTE.cream, letterSpacing: '0.06em',
+        }}>
+          {de ? 'präsentiert von' : 'presented by'}
+        </span>
+        <span style={{
+          fontFamily: F_HAND,
+          fontSize: 'clamp(18px, 1.7vw, 24px)', fontWeight: 700,
+          color: PALETTE.ochre, letterSpacing: '0.02em',
+          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+        }}>
+          CozyWolf 🐺
+        </span>
       </div>
-      <div style={{
-        marginTop: 12, padding: '6px 14px',
-        display: 'inline-block', borderRadius: 999,
-        background: `${PALETTE.sage}26`,
-        border: `1px dashed ${PALETTE.sage}88`,
-        fontFamily: 'ui-monospace, "SFMono-Regular", monospace',
-        fontSize: 13, color: PALETTE.inkDeep, letterSpacing: '0.04em',
-      }}>
-        {joinUrl.replace(/^https?:\/\//, '')}
-      </div>
-      <div style={{
-        marginTop: 10, fontFamily: F_BODY, fontSize: 11,
-        color: PALETTE.inkSoft, opacity: 0.65, letterSpacing: '0.08em',
-      }}>
-        Raum: {roomCode}
-      </div>
-    </PaperCard>
+    </div>
   );
 }
 
-function StatusChip({ teamCount, connectedCount }: { teamCount: number; connectedCount: number }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Teams-Grid — dynamisch wachsend (User-Override)
+//   1-4 Teams = 1 Reihe (max 4 Spalten)
+//   5-8 Teams = 4 Spalten × 2 Reihen
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TeamsGrid({ teams, waveIds }: { teams: QQTeam[]; waveIds: Set<string> }) {
+  const teamCount = teams.length;
+  const cols = teamCount <= 4 ? teamCount : 4;
+  // Bei 5-8 Teams = 2 Reihen → kompaktere Card-Größen, sonst groß.
+  const compact = teamCount > 4;
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+      gap: compact ? 'clamp(10px, 1.4vw, 16px)' : 'clamp(14px, 1.8vw, 22px)',
+    }}>
+      {teams.map((t, i) => (
+        <TeamCard key={t.id} team={t} fresh={waveIds.has(t.id)} compact={compact} delayIndex={i} />
+      ))}
+    </div>
+  );
+}
+
+function TeamCard({
+  team, fresh, compact, delayIndex,
+}: { team: QQTeam; fresh: boolean; compact: boolean; delayIndex: number }) {
+  const slug = qqGetAvatar(team.avatarId).slug;
+  // Volle Teamfarbe als Ring (kein 55-alpha) → Beamer-Lesbarkeit.
+  const ringColor = softTeamColor(team.avatarId, PALETTE.terracotta);
+  const avatarSize = compact ? 'clamp(64px, 6vw, 88px)' : 'clamp(80px, 7.4vw, 112px)';
+  return (
+    <div style={{
+      position: 'relative',
+      padding: compact
+        ? 'clamp(16px, 2vh, 22px) clamp(18px, 2vw, 26px)'
+        : 'clamp(22px, 2.6vh, 32px) clamp(22px, 2.6vw, 34px)',
+      borderRadius: compact ? 22 : 28,
+      background: `${PALETTE.cream}f5`,
+      // Dicker Ring in voller Teamfarbe + warmer Glow
+      border: `4px solid ${ringColor}`,
+      boxShadow: fresh
+        ? `0 12px 36px rgba(31,58,95,0.35), 0 0 70px ${ringColor}cc, 0 0 36px ${ringColor}88`
+        : `0 14px 32px rgba(31,58,95,0.28), 0 0 24px ${ringColor}44`,
+      display: 'flex', alignItems: 'center',
+      gap: compact ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(18px, 1.9vw, 26px)',
+      animation: fresh
+        ? 'lobbyGouacheJoin 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
+        : `lobbyGouacheCardIn 0.55s cubic-bezier(0.34,1.2,0.64,1) ${0.3 + delayIndex * 0.06}s both`,
+      transition: 'box-shadow 0.6s ease, border-color 0.6s ease',
+      minWidth: 0,
+      filter: 'url(#paintFrame)',
+    }}>
+      <PaintedAvatar slug={slug} size={parseSize(avatarSize)} color={ringColor} withGrain={false} />
+      {fresh && (
+        <span aria-hidden style={{
+          position: 'absolute', top: -18, right: -10,
+          fontSize: compact ? 32 : 40, lineHeight: 1,
+          animation: 'lobbyGouacheWave 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
+          filter: `drop-shadow(0 0 10px ${ringColor}cc)`,
+        }}>👋</span>
+      )}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          fontFamily: F_HAND,
+          fontWeight: 700,
+          fontSize: compact ? 'clamp(24px, 2.4vw, 34px)' : 'clamp(28px, 2.8vw, 42px)',
+          color: PALETTE.inkDeep,
+          lineHeight: 1.05,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }} title={team.name}>
+          {team.name.length > 12 ? team.name.slice(0, 11) + '…' : team.name}
+        </div>
+        <div style={{
+          fontFamily: F_BODY,
+          fontSize: compact ? 'clamp(12px, 1.1vw, 15px)' : 'clamp(13px, 1.25vw, 17px)',
+          fontWeight: 700,
+          color: team.connected ? ringColor : `${PALETTE.inkSoft}aa`,
+          marginTop: 4,
+          letterSpacing: '0.04em',
+          fontStyle: team.connected ? 'normal' : 'italic',
+        }}>
+          {team.connected
+            ? `● bereit · ${qqAvatarLabel(team.avatarId, 'de')}`
+            : `○ offline · ${qqAvatarLabel(team.avatarId, 'de')}`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Best-effort Parser für clamp()-Strings → Number für SVG-Größe.
+// PaintedAvatar erwartet eine Number; wir bauen aus dem Mittelwert
+// einen vernünftigen Default (Browser rechnet das clamp ohnehin via CSS,
+// aber PaintedAvatar nutzt size für inline-px). Fallback: 80.
+function parseSize(s: string): number {
+  const m = s.match(/clamp\(\s*([\d.]+)px\s*,\s*([\d.]+)vw\s*,\s*([\d.]+)px\s*\)/);
+  if (!m) return 80;
+  if (typeof window === 'undefined') return Number(m[1]);
+  const px = Number(m[2]) * window.innerWidth / 100;
+  return Math.round(Math.min(Number(m[3]), Math.max(Number(m[1]), px)));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty-Hint + Status-Line (aus Original)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EmptyTeamsPanel({ de }: { de: boolean }) {
+  return (
+    <div style={{
+      fontFamily: F_HAND,
+      color: PALETTE.cream, fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 700,
+      animation: 'gTwinkle 2.5s ease-in-out infinite', textAlign: 'center',
+      padding: 'clamp(28px, 4vh, 56px) 24px',
+      border: `2px dashed ${PALETTE.cream}44`, borderRadius: 22,
+      background: `${PALETTE.inkDeep}33`,
+    }}>
+      {de ? 'Warte auf Teams …' : 'Waiting for teams …'}
+    </div>
+  );
+}
+
+function StatusLine({ de, teamCount, connectedCount }: { de: boolean; teamCount: number; connectedCount: number }) {
   let label: string;
   let color: string;
+  let pulsing = false;
   if (teamCount === 0) {
-    label = 'Warte auf Teams …';
-    color = PALETTE.terracotta;
-  } else if (teamCount === 1) {
-    label = 'Noch ein Team fehlt';
-    color = PALETTE.terracotta;
-  } else if (connectedCount < teamCount) {
-    label = `${connectedCount} / ${teamCount} bereit`;
+    label = de ? '📱 Scannt den Code um beizutreten' : '📱 Scan to join';
+    color = PALETTE.ochre;
+  } else if (teamCount < 2) {
+    label = de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!';
     color = PALETTE.ochre;
   } else if (teamCount >= 5) {
-    label = `${teamCount} sind dabei!`;
-    color = PALETTE.sage;
+    label = de ? `🔥 ${teamCount} Teams sind dabei!` : `🔥 ${teamCount} teams are in!`;
+    color = PALETTE.sageLight;
+    pulsing = true;
+  } else if (connectedCount === teamCount) {
+    label = de ? '🚀 Gleich geht’s los!' : '🚀 Let’s go!';
+    color = PALETTE.sageLight;
+    pulsing = true;
   } else {
-    label = 'Gleich geht’s los';
-    color = PALETTE.sage;
+    label = de ? `${connectedCount}/${teamCount} verbunden` : `${connectedCount}/${teamCount} connected`;
+    color = PALETTE.ochre;
   }
   return (
     <div style={{
-      padding: '6px 14px', borderRadius: 999,
-      background: `${color}1f`,
-      border: `1.5px solid ${color}88`,
-      fontFamily: F_HAND, fontSize: 22, color,
-      fontWeight: 700, lineHeight: 1.1,
-      animation: teamCount >= 2 && connectedCount === teamCount ? 'gTwinkle 2.4s ease-in-out infinite' : 'none',
+      fontFamily: F_HAND,
+      fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 700, textAlign: 'center',
+      color,
+      letterSpacing: '0.02em',
+      textShadow: '0 2px 10px rgba(0,0,0,0.45)',
+      animation: pulsing ? 'gTwinkle 2.5s ease-in-out infinite' : undefined,
     }}>
       {label}
     </div>
   );
 }
 
-function EmptyTeamsHint() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Connecting / Pre-Game / Running — atmosphärische Fallbacks
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ConnectingPanel({ connected }: { connected: boolean }) {
   return (
     <div style={{
-      padding: 'clamp(28px, 4vh, 48px) 24px',
-      borderRadius: 14,
-      border: `1.5px dashed ${PALETTE.inkSoft}66`,
-      textAlign: 'center',
-      background: `${PALETTE.cream}40`,
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', zIndex: 5,
     }}>
-      <div style={{ fontFamily: F_HAND, fontSize: 'clamp(28px, 3vw, 42px)', color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.1 }}>
-        Noch niemand am Tisch.
-      </div>
-      <div style={{ fontFamily: F_BODY, fontSize: 15, color: PALETTE.inkSoft, marginTop: 10, fontStyle: 'italic' }}>
-        Sobald jemand den QR scannt, taucht hier die erste Karte auf.
-      </div>
+      <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 520 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: F_HAND, fontSize: 'clamp(36px, 4.4vw, 56px)', color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05 }}>
+            {connected ? 'Lade Lobby …' : 'Suche Verbindung …'}
+          </div>
+          <div style={{ fontFamily: F_BODY, fontSize: 16, color: PALETTE.inkSoft, marginTop: 14, fontStyle: 'italic' }}>
+            Wenn das Backend frisch aufwacht, dauert das einen Moment.
+          </div>
+        </div>
+      </PaperCard>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TeamCard
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TeamCard({ team, fresh, delayIndex }: { team: QQTeam; fresh: boolean; delayIndex: number }) {
-  const slug = qqGetAvatar(team.avatarId).slug;
-  const animal = qqAvatarLabel(team.avatarId, 'de');
-  const ringColor = softTeamColor(team.avatarId, PALETTE.terracotta);
+function PreGamePanel({ de }: { de: boolean }) {
   return (
     <div style={{
-      position: 'relative',
-      padding: '14px 16px',
-      borderRadius: 14,
-      background: `${PALETTE.cream}f0`,
-      border: `1.5px solid ${ringColor}55`,
-      boxShadow: fresh
-        ? `0 14px 28px rgba(31,58,95,0.18), 0 0 0 3px ${ringColor}55, 0 0 32px ${ringColor}66`
-        : `0 8px 18px rgba(31,58,95,0.12)`,
-      display: 'flex', alignItems: 'center', gap: 14,
-      animation: fresh
-        ? 'lobbyGouacheJoin 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
-        : `gFadeIn 0.55s ease-out ${0.2 + delayIndex * 0.05}s both`,
-      transition: 'box-shadow 0.5s ease, border-color 0.5s ease',
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', zIndex: 5,
     }}>
-      <PaintedAvatar slug={slug} size={64} color={ringColor} withGrain={false} />
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{
-          fontFamily: F_HAND, fontSize: 'clamp(22px, 2.2vw, 28px)',
-          color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.1,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }} title={team.name}>
-          {team.name}
+      <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 720 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.24em',
+            color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+          }}>
+            {de ? 'Vor dem Spiel' : 'Before the game'}
+          </div>
+          <div style={{
+            fontFamily: F_HAND, fontSize: 'clamp(40px, 5vw, 68px)', color: PALETTE.inkDeep,
+            fontWeight: 700, lineHeight: 1.05, marginTop: 8,
+          }}>
+            {de ? 'Bald geht’s los …' : 'Almost ready …'}
+          </div>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 'clamp(15px, 1.4vw, 18px)',
+            color: PALETTE.inkSoft, marginTop: 18, lineHeight: 1.65,
+            maxWidth: 540, margin: '18px auto 0', fontStyle: 'italic',
+          }}>
+            {de
+              ? 'Der Moderator richtet gerade das Quiz ein. Sobald die Lobby offen ist, erscheint hier der QR-Code zum Beitreten.'
+              : 'The moderator is setting up the quiz. The QR code will appear here once the lobby is open.'}
+          </div>
         </div>
-        <div style={{
-          fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft,
-          marginTop: 4, letterSpacing: '0.04em', fontStyle: 'italic',
-        }}>
-          {animal} · {team.connected ? 'bereit' : 'offline'}
+      </PaperCard>
+    </div>
+  );
+}
+
+function RunningPanel({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', zIndex: 5,
+    }}>
+      <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 48px)" style={{ maxWidth: 760 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.24em',
+            color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+          }}>
+            {de ? 'Läuft gerade' : 'In progress'}
+          </div>
+          <div style={{
+            fontFamily: F_HAND, fontSize: 'clamp(40px, 5vw, 64px)', color: PALETTE.inkDeep,
+            fontWeight: 700, lineHeight: 1.05, marginTop: 8,
+          }}>
+            {de ? 'Das Spiel ist im Gange' : 'The game is on'}
+          </div>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 'clamp(15px, 1.4vw, 18px)',
+            color: PALETTE.inkSoft, marginTop: 18, lineHeight: 1.65,
+            maxWidth: 540, margin: '18px auto 0', fontStyle: 'italic',
+          }}>
+            Phase: <strong style={{ color: PALETTE.terracotta }}>{state.phase}</strong>
+          </div>
         </div>
-      </div>
-      {fresh && (
-        <span aria-hidden style={{
-          position: 'absolute', top: -14, right: -8, fontSize: 28, lineHeight: 1,
-          animation: 'lobbyGouacheWave 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
-          filter: `drop-shadow(0 0 8px ${ringColor}cc)`,
-        }}>👋</span>
-      )}
-      {/* Status-Punkt */}
-      <span style={{
-        width: 10, height: 10, borderRadius: '50%',
-        background: team.connected ? PALETTE.sage : `${PALETTE.inkSoft}55`,
-        boxShadow: team.connected ? `0 0 10px ${PALETTE.sage}cc` : 'none',
-        flexShrink: 0,
-      }} />
+      </PaperCard>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Floating Balloons — pro joinendem Team ein Ballon in dessen Hoodie-Farbe
+// (übernommen aus erstem Wurf — passt atmosphärisch zur Lobby)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BALLOON_SLOTS: Array<{ left: string; top: string; size: number; delay: string }> = [
-  { left: '6%',  top: '22%', size: 64, delay: '0s'   },
-  { left: '88%', top: '34%', size: 58, delay: '1.4s' },
-  { left: '18%', top: '52%', size: 48, delay: '0.8s' },
-  { left: '74%', top: '18%', size: 52, delay: '2.1s' },
-  { left: '40%', top: '60%', size: 44, delay: '1.1s' },
-  { left: '56%', top: '14%', size: 50, delay: '0.4s' },
-  { left: '28%', top: '32%', size: 40, delay: '1.8s' },
-  { left: '70%', top: '54%', size: 46, delay: '2.6s' },
+  { left: '4%',  top: '24%', size: 64, delay: '0s'   },
+  { left: '90%', top: '36%', size: 58, delay: '1.4s' },
+  { left: '14%', top: '54%', size: 48, delay: '0.8s' },
+  { left: '78%', top: '18%', size: 52, delay: '2.1s' },
+  { left: '38%', top: '64%', size: 44, delay: '1.1s' },
+  { left: '58%', top: '14%', size: 50, delay: '0.4s' },
+  { left: '24%', top: '34%', size: 40, delay: '1.8s' },
+  { left: '72%', top: '58%', size: 46, delay: '2.6s' },
 ];
 
 function FloatingTeamBalloons({ teams }: { teams: QQTeam[] }) {
@@ -529,8 +553,6 @@ function FloatingTeamBalloons({ teams }: { teams: QQTeam[] }) {
           </div>
         );
       })}
-      {/* Wenn keine Teams da sind, zeigen wir 3 sanfte Default-Ballons als
-          Atmosphäre — verschwinden sobald das erste Team joint. */}
       {slots.length === 0 && (
         <>
           <div style={{ position: 'absolute', left: '12%', top: '28%', opacity: 0.7 }}>
@@ -544,37 +566,16 @@ function FloatingTeamBalloons({ teams }: { teams: QQTeam[] }) {
           </div>
         </>
       )}
-    </div>
-  );
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lab-Footer
-// ─────────────────────────────────────────────────────────────────────────────
-
-function LabFooter() {
-  return (
-    <footer style={{
-      position: 'relative', zIndex: 5,
-      padding: '20px clamp(20px, 3vw, 56px) 28px',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      gap: 16, flexWrap: 'wrap',
-    }}>
-      <div style={{
-        fontFamily: F_BODY, fontSize: 12, color: `${PALETTE.cream}aa`,
-        letterSpacing: '0.08em',
-      }}>
-        Aquarell-Lab · läuft parallel zum klassischen <code>/beamer</code>
-      </div>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <Link to="/gouache" style={lobbyLinkStyle}>← Stilstudie</Link>
-        <Link to="/beamer" style={lobbyLinkStyle}>Cozy-Beamer →</Link>
-      </div>
-      {/* Page-spezifische Animationen, falls die Globals woanders konkurrieren */}
+      {/* Animationen — lokal, damit globale gFloat/gTwinkle nicht überschrieben werden */}
       <style>{`
         @keyframes lobbyGouacheJoin {
           0%   { transform: translateY(8px) scale(0.94); opacity: 0; }
           55%  { transform: translateY(-2px) scale(1.04); opacity: 1; }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        }
+        @keyframes lobbyGouacheCardIn {
+          0%   { transform: translateY(14px) scale(0.96); opacity: 0; }
           100% { transform: translateY(0)    scale(1);    opacity: 1; }
         }
         @keyframes lobbyGouacheWave {
@@ -583,15 +584,6 @@ function LabFooter() {
           100% { transform: translateY(0)   rotate(0)      scale(1);   opacity: 1; }
         }
       `}</style>
-    </footer>
+    </div>
   );
 }
-
-const lobbyLinkStyle: React.CSSProperties = {
-  fontFamily: F_BODY, fontSize: 13,
-  padding: '6px 14px', borderRadius: 999,
-  background: `${PALETTE.cream}1a`,
-  border: `1px solid ${PALETTE.cream}33`,
-  color: PALETTE.cream, textDecoration: 'none',
-  letterSpacing: '0.04em',
-};

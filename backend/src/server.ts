@@ -8071,11 +8071,65 @@ if (qqDrafts.length === 0) {
   if (changed) persistQQDrafts();
 }
 
+// ── Backfill itemValues für Order-Fragen ───────────────────────────────────
+// Persistierte Drafts (file + DB) wurden vor dem itemValues-Update geseeded
+// und enthalten die Werte nicht. Diese Migration matched Order-Fragen über
+// ihre items-Reihenfolge und ergänzt die fehlenden Werte. Idempotent — ein
+// einmal migrierter Draft wird nicht nochmal angefasst.
+const ORDER_VALUES_BY_ITEMS_KEY: Record<string, string[]> = {
+  // Natur & Tiere — Lebensdauer
+  'Grönlandwal|Hund|Eintagsfliege|Maus': ['200+ Jahre', '~12 Jahre', '1 Tag', '~2 Jahre'],
+  // Allgemeinwissen — Erfindungen (Jahreszahlen)
+  'Telefon|Internet|Buchdruck|Dampfmaschine': ['1876', '1969', '~1450', '1769'],
+  // Disney-Filme (Erscheinungsjahr)
+  'Frozen|Der König der Löwen|Encanto|Schneewittchen': ['2013', '1994', '2021', '1937'],
+  // Hamburger Bauwerke (Eröffnungsjahr)
+  'Elbphilharmonie|Rathaus|Michel|Köhlbrandbrücke': ['2017', '1897', '1786', '1974'],
+  // Desserts (Kalorien)
+  'Sahnetorte|Obstsalat|Schwarzwälder Kirschtorte|Vanilleeis': ['~370 kcal', '~50 kcal', '~280 kcal', '~210 kcal'],
+};
+
+function backfillOrderItemValues(draft: any): boolean {
+  if (!draft || !Array.isArray(draft.questions)) return false;
+  let changed = false;
+  for (const q of draft.questions) {
+    const bt = q?.bunteTuete;
+    if (!bt || bt.kind !== 'order') continue;
+    if (Array.isArray(bt.itemValues) && bt.itemValues.length === (bt.items?.length ?? 0)) continue;
+    const key = (bt.items ?? []).join('|');
+    const values = ORDER_VALUES_BY_ITEMS_KEY[key];
+    if (values) {
+      bt.itemValues = values;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+// Initial-Backfill auf file-backed drafts beim Startup
+{
+  let changed = false;
+  for (const d of qqDrafts) {
+    if (backfillOrderItemValues(d)) changed = true;
+  }
+  if (changed) {
+    persistQQDrafts();
+    console.log('[migration] Order-Frage itemValues backfilled (file)');
+  }
+}
+
 app.get('/api/qq/drafts', async (_req, res) => {
   const cached = cache.get<any[]>('qqDrafts');
   if (cached) return res.json(cached);
   if (await ensureDraftDbConnection()) {
     const dbDrafts = await getAllQQDraftsFromDB();
+    // Migrate Order-Fragen ohne itemValues — auch in DB persistieren falls
+    // backfill greift (one-time migration für vor-itemValues-Drafts).
+    for (const d of dbDrafts) {
+      if (backfillOrderItemValues(d)) {
+        try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+      }
+    }
     // Merge any file-backed drafts that aren't yet in DB
     const dbIds = new Set(dbDrafts.map((d: any) => d.id));
     const fileDrafts = qqDrafts.filter(d => !dbIds.has(d.id));
@@ -8114,10 +8168,17 @@ app.post('/api/qq/drafts', async (req, res) => {
 app.get('/api/qq/drafts/:id', async (req, res) => {
   if (await ensureDraftDbConnection()) {
     const draft = await getQQDraftFromDB(req.params.id);
-    if (draft) return res.json(draft);
+    if (draft) {
+      // Backfill itemValues falls noch fehlt + persistieren (one-time migration)
+      if (backfillOrderItemValues(draft)) {
+        try { await saveQQDraftToDB(draft); cache.del('qqDrafts'); } catch { /* ignore */ }
+      }
+      return res.json(draft);
+    }
   }
   const draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
+  if (backfillOrderItemValues(draft)) persistQQDrafts();
   res.json(draft);
 });
 

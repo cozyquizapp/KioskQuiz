@@ -10551,20 +10551,30 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                       pointerEvents: 'none', zIndex: 3,
                     }} />
-                    {/* Pagoda-Krone oben mittig — Stapeln-Symbol passend zum 🏯
-                        Emoji aus den Rules. Goldener Glow + Drop-Animation. */}
+                    {/* ×2-Chip oben rechts — dezenter Marker. Pagoda mittig
+                        war zu aufdringlich (klebte am Avatar); der Chip am
+                        Cell-Rand laesst die Avatare frei und signalisiert
+                        Wert + Schutz im Zusammenspiel mit dem 3D-Lift +
+                        Gold-Border + Glow. */}
                     <div style={{
-                      position: 'absolute',
-                      top: `${-Math.max(8, cellSize * 0.32)}px`,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      fontSize: Math.max(14, cellSize * 0.46),
+                      position: 'absolute', top: -4, right: -4,
+                      minWidth: Math.max(16, cellSize * 0.32),
+                      height: Math.max(16, cellSize * 0.32),
+                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
+                      borderRadius: '999px',
+                      background: 'linear-gradient(135deg, #FBBF24, #D97706)',
+                      border: '2px solid #422006',
+                      color: '#1c1304',
+                      fontSize: Math.max(9, cellSize * 0.20),
+                      fontWeight: 900,
                       lineHeight: 1,
-                      filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.85)) drop-shadow(0 2px 3px rgba(0,0,0,0.5))',
+                      letterSpacing: '-0.02em',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(251,191,36,0.6)',
                       zIndex: 6,
-                      pointerEvents: 'none',
+                      fontVariantNumeric: 'tabular-nums',
                       animation: 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
-                    }}>🏯</div>
+                    }}>×2</div>
                   </>
                 )}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.

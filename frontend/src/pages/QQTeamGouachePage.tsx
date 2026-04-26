@@ -31,7 +31,7 @@ import {
 import {
   PALETTE, F_HAND, F_BODY, softTeamColor,
   GouacheFilters, PaintedKeyframes, usePaintFonts,
-  PaperCard,
+  PaperCard, BlockCapsHeading,
   PaintedAvatar,
   PaintedHills, PaintedStars, PaintedMoon, PaintedBird,
 } from '../gouache';
@@ -527,8 +527,6 @@ function ActiveQuestionCard({
     await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
-  // Nur drei Kategorien werden in der Aquarell-MVP gespielt — der Rest
-  // verweist auf /team. So bleibt der Scope klein.
   if (q.category === 'SCHAETZCHEN') {
     return <SchaetzchenCard q={q} onSubmit={submitText} myColor={myColor} />;
   }
@@ -538,7 +536,27 @@ function ActiveQuestionCard({
   if (q.category === 'CHEESE') {
     return <CheeseCard q={q} onSubmit={submitText} myColor={myColor} />;
   }
-  // BUNTE_TUETE, ZEHN_VON_ZEHN
+  if (q.category === 'ZEHN_VON_ZEHN') {
+    return <AllInCard q={q} onSubmit={submitText} myColor={myColor} />;
+  }
+  if (q.category === 'BUNTE_TUETE') {
+    const kind = q.bunteTuete?.kind;
+    if (kind === 'top5') {
+      return <Top5Card q={q} onSubmit={submitText} myColor={myColor} />;
+    }
+    if (kind === 'order') {
+      return <FixItCard q={q} onSubmit={submitText} myColor={myColor} />;
+    }
+    if (kind === 'oneOfEight') {
+      return <ImposterCard q={q} state={state} myTeamId={myTeamId} emit={emit} roomCode={roomCode} myColor={myColor} />;
+    }
+    if (kind === 'hotPotato') {
+      return <HotPotatoCard q={q} state={state} myTeamId={myTeamId} emit={emit} roomCode={roomCode} myColor={myColor} />;
+    }
+    if (kind === 'map') {
+      return <PinItCard q={q} onSubmit={submitText} myColor={myColor} />;
+    }
+  }
   return <UnsupportedCategoryCard q={q} />;
 }
 
@@ -710,6 +728,447 @@ function CheeseCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: str
         Antwort abschicken
       </SubmitButton>
     </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Top5 — free text input (gleicher Submit-Pfad wie Schätzchen)
+// ─────────────────────────────────────────────────────────────────────────
+function Top5Card({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 80); }, []);
+  const canSubmit = val.trim().length > 0;
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub="🏆 Top 5 — eine Antwort reicht" />
+      <input
+        ref={ref}
+        type="text"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' && canSubmit) onSubmit(val); }}
+        placeholder="Deine Antwort"
+        autoComplete="off"
+        style={{
+          width: '100%', boxSizing: 'border-box', marginTop: 18,
+          padding: '14px 16px', borderRadius: 12,
+          border: `2px solid ${val ? myColor : `${PALETTE.inkSoft}55`}`,
+          background: PALETTE.cream,
+          fontFamily: F_HAND, fontSize: 26, color: PALETTE.inkDeep,
+          outline: 'none',
+          boxShadow: val ? `0 4px 14px ${myColor}33` : 'none',
+        }}
+      />
+      <SubmitButton disabled={!canSubmit} myColor={myColor} onClick={() => onSubmit(val)}>
+        Antwort abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AllIn (10 von 10) — verteile 10 Punkte auf 3 Optionen
+// Submit-Format: "p1,p2,p3"
+// ─────────────────────────────────────────────────────────────────────────
+function AllInCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const opts = q.options ?? [];
+  const [pts, setPts] = useState<number[]>(() => opts.map(() => 0));
+  const total = pts.reduce((s, p) => s + p, 0);
+  const remaining = 10 - total;
+  const canSubmit = total === 10;
+  function adjust(i: number, delta: number) {
+    setPts(prev => {
+      const next = [...prev];
+      const newVal = Math.max(0, Math.min(10, next[i] + delta));
+      const otherSum = next.reduce((s, p, j) => j === i ? s : s + p, 0);
+      if (newVal + otherSum > 10) return prev;
+      next[i] = newVal;
+      return next;
+    });
+  }
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub="🎰 Verteile 10 Punkte" />
+      <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+        {opts.map((opt, i) => (
+          <div key={i} style={{
+            padding: '12px 14px', borderRadius: 14,
+            background: pts[i] > 0 ? `${myColor}1f` : `${PALETTE.cream}d0`,
+            border: `2px solid ${pts[i] > 0 ? myColor : `${PALETTE.inkSoft}33`}`,
+            display: 'grid', gridTemplateColumns: 'auto 1fr auto auto auto',
+            alignItems: 'center', gap: 10,
+          }}>
+            <span style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: PALETTE.inkDeep, color: PALETTE.cream,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: F_HAND, fontSize: 18, fontWeight: 700, flexShrink: 0,
+            }}>
+              {i + 1}
+            </span>
+            <span style={{
+              fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, lineHeight: 1.2, fontWeight: 700,
+            }}>
+              {opt}
+            </span>
+            <button onClick={() => adjust(i, -1)} disabled={pts[i] === 0} style={tinyBtn(myColor, pts[i] === 0)}>−</button>
+            <span style={{
+              fontFamily: F_HAND, fontSize: 26, color: myColor, fontWeight: 700, minWidth: 32, textAlign: 'center',
+            }}>
+              {pts[i]}
+            </span>
+            <button onClick={() => adjust(i, +1)} disabled={remaining === 0} style={tinyBtn(myColor, remaining === 0)}>+</button>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        marginTop: 12, padding: '6px 14px', borderRadius: 999,
+        background: canSubmit ? `${PALETTE.sage}26` : `${PALETTE.ochre}22`,
+        border: `1.5px solid ${canSubmit ? PALETTE.sage : PALETTE.ochre}88`,
+        fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkDeep, textAlign: 'center',
+      }}>
+        {canSubmit ? '10 / 10 verteilt' : `Noch ${remaining} Punkte verteilen`}
+      </div>
+      <SubmitButton disabled={!canSubmit} myColor={myColor} onClick={() => onSubmit(pts.join(','))}>
+        Wette abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+function tinyBtn(color: string, disabled: boolean): React.CSSProperties {
+  return {
+    width: 36, height: 36, borderRadius: 10,
+    background: disabled ? `${PALETTE.inkSoft}22` : color,
+    color: disabled ? PALETTE.inkSoft : PALETTE.cream,
+    border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+    fontFamily: F_HAND, fontSize: 22, fontWeight: 700,
+    flexShrink: 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Imposter (oneOfEight) — tap auf eine der 8 Aussagen
+// Eigener Socket-Event: qq:imposterChoose
+// ─────────────────────────────────────────────────────────────────────────
+function ImposterCard({ q, state, myTeamId, emit, roomCode, myColor }: {
+  q: QQQuestion; state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; myColor: string;
+}) {
+  const bt = q.bunteTuete as any;
+  const statements: string[] = bt?.statements ?? [];
+  const chosen = new Set(state.imposterChosenIndices ?? []);
+  const eliminated = (state.imposterEliminated ?? []).includes(myTeamId);
+  const isMyTurn = state.imposterActiveTeamId === myTeamId;
+  const activeName = state.imposterActiveTeamId
+    ? state.teams.find(t => t.id === state.imposterActiveTeamId)?.name : null;
+
+  if (eliminated) {
+    return (
+      <PaperCard washColor={PALETTE.cream} padding={24}>
+        <div style={{ textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>Du bist raus</BlockCapsHeading>
+          <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 12, fontStyle: 'italic' }}>
+            Falsche Aussage erwischt. Schau auf den Beamer wer als nächstes dran ist.
+          </div>
+        </div>
+      </PaperCard>
+    );
+  }
+
+  async function pick(i: number) {
+    if (!isMyTurn) return;
+    if (navigator.vibrate) navigator.vibrate(30);
+    await emit('qq:imposterChoose', { roomCode, teamId: myTeamId, statementIndex: i });
+  }
+
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub="🕵️ Welche Aussage ist falsch?" />
+      {!isMyTurn && (
+        <div style={{
+          marginTop: 14, padding: '10px 14px', borderRadius: 12,
+          background: `${PALETTE.ochre}22`, border: `1.5px dashed ${PALETTE.ochre}`,
+          fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkDeep, textAlign: 'center',
+        }}>
+          {activeName ? `${activeName} wählt gerade …` : 'Warte auf das nächste Team …'}
+        </div>
+      )}
+      <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+        {statements.map((s, i) => {
+          const wasChosen = chosen.has(i);
+          return (
+            <button
+              key={i}
+              onClick={() => pick(i)}
+              disabled={!isMyTurn || wasChosen}
+              style={{
+                display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderRadius: 12,
+                background: wasChosen ? `${PALETTE.inkSoft}22` : `${PALETTE.cream}d0`,
+                border: `2px solid ${wasChosen ? PALETTE.inkSoft : (isMyTurn ? myColor + '88' : PALETTE.inkSoft + '33')}`,
+                cursor: isMyTurn && !wasChosen ? 'pointer' : 'not-allowed',
+                opacity: wasChosen ? 0.5 : 1,
+                fontFamily: 'inherit', textAlign: 'left',
+              }}
+            >
+              <span style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: PALETTE.inkDeep, color: PALETTE.cream,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: F_HAND, fontSize: 16, fontWeight: 700,
+              }}>{i + 1}</span>
+              <span style={{ fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.15 }}>
+                {s}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HotPotato — Round-Robin: nur active-Team eingibt; eigener Event
+// ─────────────────────────────────────────────────────────────────────────
+function HotPotatoCard({ q, state, myTeamId, emit, roomCode, myColor }: {
+  q: QQQuestion; state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; myColor: string;
+}) {
+  const isMyTurn = state.hotPotatoActiveTeamId === myTeamId;
+  const eliminated = state.hotPotatoEliminated.includes(myTeamId);
+  const activeName = state.hotPotatoActiveTeamId
+    ? state.teams.find(t => t.id === state.hotPotatoActiveTeamId)?.name : null;
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!state.hotPotatoTurnEndsAt) { setSecs(null); return; }
+    const tick = () => setSecs(Math.max(0, Math.ceil((state.hotPotatoTurnEndsAt! - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [state.hotPotatoTurnEndsAt]);
+  useEffect(() => {
+    if (isMyTurn && !eliminated) setTimeout(() => ref.current?.focus({ preventScroll: true }), 80);
+  }, [isMyTurn, eliminated]);
+
+  if (eliminated) {
+    return (
+      <PaperCard washColor={PALETTE.cream} padding={24}>
+        <div style={{ textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>Du bist raus</BlockCapsHeading>
+          <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 12, fontStyle: 'italic' }}>
+            Schau auf den Beamer — vielleicht ist beim nächsten Mal wieder Glück dabei.
+          </div>
+        </div>
+      </PaperCard>
+    );
+  }
+
+  async function submit() {
+    if (!val.trim() || !isMyTurn) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
+    setVal('');
+    setTimeout(() => ref.current?.focus({ preventScroll: true }), 60);
+  }
+
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub="🥔 Heiße Kartoffel" />
+      {!isMyTurn ? (
+        <div style={{
+          marginTop: 18, padding: '14px 16px', borderRadius: 12,
+          background: `${PALETTE.ochre}22`, border: `1.5px dashed ${PALETTE.ochre}`,
+          fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkDeep, textAlign: 'center',
+        }}>
+          {activeName ? `${activeName} ist dran …` : 'Warte auf den Start …'}
+        </div>
+      ) : (
+        <>
+          {secs !== null && (
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
+              <span style={{
+                fontFamily: F_HAND, fontSize: 36, fontWeight: 700,
+                color: secs <= 5 ? PALETTE.terracotta : PALETTE.inkDeep,
+                animation: secs <= 5 ? 'gTwinkle 0.6s ease-in-out infinite' : undefined,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {secs}s
+              </span>
+            </div>
+          )}
+          <input
+            ref={ref}
+            type="text"
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && val.trim()) submit(); }}
+            placeholder="Deine Antwort"
+            autoComplete="off"
+            style={{
+              width: '100%', boxSizing: 'border-box', marginTop: 12,
+              padding: '14px 16px', borderRadius: 12,
+              border: `2px solid ${val ? myColor : `${PALETTE.inkSoft}55`}`,
+              background: PALETTE.cream,
+              fontFamily: F_HAND, fontSize: 24, color: PALETTE.inkDeep,
+              outline: 'none',
+              boxShadow: val ? `0 4px 14px ${myColor}33` : 'none',
+            }}
+          />
+          <SubmitButton disabled={!val.trim()} myColor={myColor} onClick={submit}>
+            Schnell — abschicken!
+          </SubmitButton>
+        </>
+      )}
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FixIt (Order) — Items in korrekte Reihenfolge bringen via Up/Down-Buttons
+// Submit: indices als Komma-String
+// ─────────────────────────────────────────────────────────────────────────
+function FixItCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const bt = q.bunteTuete as any;
+  const items: string[] = bt?.items ?? [];
+  const [order, setOrder] = useState<number[]>(() => items.map((_, i) => i));
+  function move(idx: number, delta: number) {
+    const target = idx + delta;
+    if (target < 0 || target >= order.length) return;
+    setOrder(prev => {
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  }
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub={bt?.criteria ? `🔀 ${bt.criteria}` : '🔀 Reihenfolge bringen'} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+        {order.map((origIdx, i) => (
+          <div key={origIdx} style={{
+            display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 12,
+            background: `${PALETTE.cream}d0`,
+            border: `2px solid ${myColor}55`,
+          }}>
+            <span style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: PALETTE.inkDeep, color: PALETTE.cream,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: F_HAND, fontSize: 18, fontWeight: 700, flexShrink: 0,
+            }}>
+              {i + 1}
+            </span>
+            <span style={{
+              fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.15,
+            }}>
+              {items[origIdx]}
+            </span>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={tinyBtn(myColor, i === 0)}>↑</button>
+            <button onClick={() => move(i, +1)} disabled={i === order.length - 1} style={tinyBtn(myColor, i === order.length - 1)}>↓</button>
+          </div>
+        ))}
+      </div>
+      <SubmitButton disabled={false} myColor={myColor} onClick={() => onSubmit(order.join(','))}>
+        Reihenfolge abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PinIt (Map) — Lat/Lng-Eingabe via simple Leaflet-Map (Tap auf Karte)
+// Submit-Format: "lat,lng"
+// ─────────────────────────────────────────────────────────────────────────
+function PinItCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub="📍 Tippe auf die Karte" />
+      <div style={{ marginTop: 14 }}>
+        <PinItMap onPick={setPin} pin={pin} />
+      </div>
+      {pin && (
+        <div style={{
+          marginTop: 10, padding: '6px 12px', borderRadius: 999,
+          background: `${myColor}22`, border: `1.5px solid ${myColor}88`,
+          fontFamily: 'ui-monospace, monospace', fontSize: 13,
+          color: PALETTE.inkDeep, textAlign: 'center',
+        }}>
+          {pin.lat.toFixed(3)}, {pin.lng.toFixed(3)}
+        </div>
+      )}
+      <SubmitButton disabled={!pin} myColor={myColor}
+        onClick={() => pin && onSubmit(`${pin.lat},${pin.lng}`)}>
+        Pin abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+function PinItMap({ onPick, pin }: { onPick: (p: { lat: number; lng: number }) => void; pin: { lat: number; lng: number } | null }) {
+  // Leaflet dynamisch importieren um Bundle-Size zu sparen
+  const [mods, setMods] = useState<{ MapContainer: any; TileLayer: any; Marker: any; useMapEvents: any; L: any } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      import('react-leaflet'),
+      import('leaflet'),
+      import('leaflet/dist/leaflet.css'),
+    ]).then(([rl, leaflet]) => {
+      if (cancelled) return;
+      const L = leaflet.default;
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+      setMods({ MapContainer: rl.MapContainer, TileLayer: rl.TileLayer, Marker: rl.Marker, useMapEvents: rl.useMapEvents, L });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!mods) {
+    return (
+      <div style={{
+        height: 280, borderRadius: 12,
+        background: `${PALETTE.inkSoft}22`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkSoft, fontStyle: 'italic',
+      }}>
+        Karte wird geladen …
+      </div>
+    );
+  }
+  const { MapContainer, TileLayer, Marker, useMapEvents } = mods;
+
+  function ClickHandler() {
+    useMapEvents({ click(e: any) { onPick({ lat: e.latlng.lat, lng: e.latlng.lng }); } });
+    return null;
+  }
+
+  return (
+    <div style={{
+      height: 320, borderRadius: 14, overflow: 'hidden',
+      border: `2px solid ${PALETTE.inkSoft}33`,
+    }}>
+      <MapContainer center={[20, 0]} zoom={2} style={{ height: '100%', width: '100%' }}>
+        <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap' />
+        <ClickHandler />
+        {pin && <Marker position={[pin.lat, pin.lng]} />}
+      </MapContainer>
+    </div>
   );
 }
 

@@ -78,9 +78,16 @@ function broadcast(io: SocketIOServer, roomCode: string): void {
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   if (!room) return;
   const teamList = Object.values(room.teams);
+  // QQ-Score = largestConnected (verbundene Felder). teamPhaseStats hat KEIN
+  // totalScore-Feld — die alte Variante hat deshalb immer 0 gespeichert und
+  // damit Highscore/ClosestGame/Leaderboard kaputt gemacht (Winner war oft
+  // einfach der erste Team-Eintrag, weil alle Scores 0 waren).
   const scores: Record<string, number> = {};
-  teamList.forEach((t: any) => { scores[t.id] = (room.teamPhaseStats[t.id] as any)?.totalScore ?? 0; });
-  const sorted = [...teamList].sort((a: any, b: any) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
+  teamList.forEach((t: any) => { scores[t.id] = t.largestConnected ?? 0; });
+  const sorted = [...teamList].sort((a: any, b: any) =>
+    (scores[b.id] ?? 0) - (scores[a.id] ?? 0)
+    || ((b.totalCells ?? 0) - (a.totalCells ?? 0))
+  );
   const winner = (sorted[0] as any)?.name ?? null;
 
   // Flush last question's answers into history (covers GAME_OVER / last-of-final-phase)
@@ -1954,9 +1961,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // ── MUCHO Akt-1 Step (Moderator deckt Team-Voter pro Option nacheinander auf) ─
-    // Leere Optionen werden übersprungen — wir zählen nur Optionen mit ≥1 Voter.
-    // maxStep = nonEmptyOptions.length + 1 (+1 für „Jäger starten" → Akt 2+3 auf Beamer).
+    // ── MUCHO Step-Reveal (vereinfachter 2-Klick-Flow ab 2026-04-26) ──────────
+    // Klick 1: alle Voter werden auf dem Beamer auto-staggered eingeblendet.
+    // Klick 2: korrekte Option grün markieren + Siegerteam-Card.
+    // Frontend uebernimmt die Per-Option-Stagger-Animation, Backend springt
+    // direkt auf akt1Max bzw. lockStep.
     socket.on('qq:muchoRevealStep', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
@@ -1967,9 +1976,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
         for (let i = 0; i < q.options.length; i++) {
           if (room.answers.some(a => a.text === String(i))) nonEmpty++;
         }
-        const maxStep = nonEmpty + 1;
-        if (room.muchoRevealStep < maxStep) {
-          room.muchoRevealStep += 1;
+        const lockStep = nonEmpty + 1;
+        if (room.muchoRevealStep === 0) {
+          // Klick 1 → alle Voter freigeben (Frontend staggered intern)
+          room.muchoRevealStep = nonEmpty;
+          broadcast(io, payload.roomCode);
+        } else if (room.muchoRevealStep < lockStep) {
+          // Klick 2 → korrekte Option + Sieger
+          room.muchoRevealStep = lockStep;
           broadcast(io, payload.roomCode);
         }
         ok(ack);

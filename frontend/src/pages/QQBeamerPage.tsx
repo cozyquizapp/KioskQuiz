@@ -1551,11 +1551,24 @@ function MuchoOptionsReveal({
   const akt1Max = nonEmptyOrdered.length;
   const lockStep = akt1Max + 1;
   const locked = revealStep >= lockStep && correctOptionIndex != null && N > 0;
-  // Welche Option-Indices zeigen ihre Voter? Bis revealStep (gekappt auf akt1Max).
+  // Auto-Stagger ab 2026-04-26: Backend springt bei Klick 1 direkt auf akt1Max,
+  // Frontend zaehlt intern hoch (auto-Reveal jeder Option im 750ms-Takt) damit
+  // die Voter nacheinander einfliegen statt alle gleichzeitig.
+  const [autoCap, setAutoCap] = useState(0);
+  useEffect(() => {
+    if (revealStep <= 0) {
+      setAutoCap(0);
+      return;
+    }
+    const target = Math.min(revealStep, akt1Max);
+    if (autoCap >= target) return;
+    const t = setTimeout(() => setAutoCap(prev => Math.min(prev + 1, target)), 750);
+    return () => clearTimeout(t);
+  }, [revealStep, autoCap, akt1Max]);
   const shownVoterSet = useMemo(() => {
-    const cap = Math.min(Math.max(0, revealStep), akt1Max);
+    const cap = Math.min(autoCap, akt1Max);
     return new Set(nonEmptyOrdered.slice(0, cap));
-  }, [revealStep, akt1Max, nonEmptyOrdered]);
+  }, [autoCap, akt1Max, nonEmptyOrdered]);
 
   const showLock = locked;
   const akt3On = locked;
@@ -9356,47 +9369,33 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       <ConfettiOverlay />
       <Fireflies color={`${winnerColor}55`} />
 
-      {/* Stage 1: "Spielende!" title */}
+      {/* Title — klein, oben */}
       <div style={{
-        fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800,
-        color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
+        fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 800,
+        color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
         animation: 'contentReveal 0.6s ease both',
-        position: 'relative', zIndex: 5, marginBottom: 20,
+        position: 'relative', zIndex: 5, marginBottom: 12,
       }}>
         {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
-      {/* Two-column: left = winner hero, right = final grid.
-          Rankings sitzen jetzt als horizontale Pill-Reihe UNTER der Row,
-          damit das Grid vertikal mehr Platz hat. */}
-      <div style={{
-        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'clamp(24px, 3vw, 56px)',
-        width: '100%', maxWidth: 1700, justifyContent: 'center',
-        position: 'relative', zIndex: 5,
-      }}>
-        {/* Left column: nur Winner-Hero */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, flex: '1 1 0', minWidth: 0, maxWidth: 880 }}>
-      {/* Stage 2: Winner hero — big entrance + dauerhafte Loops, damit die
-          Spielende-Page nicht statisch wirkt nach dem Entrance. */}
+      {/* Hero — Trophy + Avatar + Name + Score, zentral und dominant */}
       {winner && (
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
           animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
-          position: 'relative', zIndex: 5, marginBottom: 20,
+          position: 'relative', zIndex: 5, marginBottom: 'clamp(16px, 2vh, 28px)',
         }}>
-          {/* Trophy — Entrance + Float-Loop, damit's lebendig bleibt */}
           <div style={{
-            fontSize: 'clamp(40px, 5vw, 64px)',
+            fontSize: 'clamp(36px, 4.4vw, 56px)',
             animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
           }}><QQEmojiIcon emoji="🏆"/></div>
 
-          {/* Avatar mit Breath-Loop + Sparkles drumherum */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(100px, 14vw, 160px)'} style={{
+          <div style={{ position: 'relative', display: 'inline-block', marginTop: 4 }}>
+            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(96px, 12vw, 144px)'} style={{
               boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
               animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
             }} />
-            {/* Sparkle-Partikel um den Winner-Avatar — feiern weiter, statt einmalig */}
             {([
               { top: '-8%',  left: '12%', delay: 1.8, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
               { top: '18%',  left: '-10%', delay: 2.4, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
@@ -9422,14 +9421,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             ))}
           </div>
 
-          {/* Winner name. truncName(...,18) sichert Laenge — overflow:hidden
-              wuerde sonst den finaleGlow text-shadow clippen und als Rechteck
-              um den Namen erscheinen lassen. Padding-x faengt den Glow ab. */}
           <div title={winner.name} style={{
-            fontSize: 'clamp(36px, 5.5vw, 72px)', fontWeight: 900,
+            fontSize: 'clamp(36px, 5.2vw, 64px)', fontWeight: 900,
             color: winnerColor,
             animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
-            marginTop: 8,
+            marginTop: 10,
             maxWidth: '90%',
             padding: '0 0.5em',
             whiteSpace: 'nowrap',
@@ -9437,13 +9433,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             {truncName(winner.name, 18)}
           </div>
 
-          {/* Score highlight — eigene Pop-Animation als kleiner Akzent */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 16, marginTop: 4,
+            display: 'flex', alignItems: 'center', gap: 16, marginTop: 2,
             animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
           }}>
             <span style={{
-              fontSize: 'clamp(20px, 2.5vw, 32px)', fontWeight: 900,
+              fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900,
               color: '#EAB308',
               textShadow: '0 0 18px rgba(234,179,8,0.45)',
             }}>
@@ -9453,36 +9448,34 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         </div>
       )}
 
-        </div>
-        {/* Right column — final grid trophy */}
+      {/* Untere Sektion: 2-spaltig — Grid links | Rankings rechts.
+          Hero sitzt drueber zentriert, Grid wird kompakter, Rankings haben
+          nun direkt neben dem Grid Platz (statt darunter wegzuscrollen). */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto minmax(0, 1fr)',
+        alignItems: 'start',
+        gap: 'clamp(20px, 2.5vw, 40px)',
+        width: '100%', maxWidth: 1500, justifyContent: 'center',
+        position: 'relative', zIndex: 5,
+      }}>
+        {/* Grid links — kompakter als zuvor (max 420px), damit Rankings rechts
+            ihren Raum bekommen. */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
           animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
-          flex: '0 0 auto',
         }}>
           <div style={{
-            fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
-            letterSpacing: '0.14em', textTransform: 'uppercase',
-            color: '#94a3b8',
-          }}>
-            {lang === 'en' ? 'Final Territory' : 'Finales Territorium'}
-          </div>
-          <div style={{
-            padding: 14, borderRadius: 20,
+            padding: 12, borderRadius: 18,
             background: 'rgba(255,255,255,0.03)',
             border: `2px solid ${winnerColor}44`,
-            boxShadow: `0 0 40px ${winnerColor}33, 0 10px 40px rgba(0,0,0,0.4)`,
+            boxShadow: `0 0 36px ${winnerColor}2a, 0 8px 28px rgba(0,0,0,0.4)`,
           }}>
-            {/* Spielende-Grid: Rankings sitzen jetzt als vertikale Tabelle
-                darunter — Grid muss etwas kleiner werden, damit Tabelle noch
-                Platz hat (sonst clipt's am unteren Rand). */}
-            <GridDisplay state={s} maxSize={Math.min(620, typeof window !== 'undefined' ? window.innerHeight * 0.55 : 520)} highlightTeam={winner?.id ?? null} showJoker />
+            <GridDisplay state={s} maxSize={Math.min(420, typeof window !== 'undefined' ? window.innerHeight * 0.42 : 360)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
-      </div>
 
-      {/* Rankings — vertikale Tabelle unter der Row. Jedes Team auf eigener
-          Zeile, damit es nicht in einer schmalen Pill-Reihe untergeht. */}
+      {/* Rankings — rechts neben dem Grid, vertikal. */}
       {sorted.length > 1 && (() => {
         const others = sorted.slice(1);
         const wn = others.length;
@@ -9491,9 +9484,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           <div style={{
             display: 'flex', flexDirection: 'column',
             gap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
-            width: '100%', maxWidth: 880,
-            marginTop: 'clamp(16px, 2vh, 28px)',
+            width: '100%', maxWidth: 760,
             position: 'relative', zIndex: 5,
+            animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
           }}>
             {others.map((tm, i) => {
               const rank = i + 2;
@@ -9548,6 +9541,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
         );
       })()}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@
 
 import { CSSProperties } from 'react';
 import { PALETTE, F_HAND, F_BODY, SHADOWS, RADIUS, PAPER_GRAIN_BG } from './tokens';
+import { useGouacheAvatar } from './useGouacheAvatar';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PaperCard — Cremepapier-Card mit Grain-Overlay + optionaler Wobble-Edge
@@ -122,18 +123,27 @@ export function SectionLabel({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// PaintedAvatar — bestehendes cozy-cast PNG mit Aquarell-Filter + Frame
+// PaintedAvatar — Avatar-PNG (Gouache wenn vorhanden, sonst cozy-cast)
+// mit Aquarell-Filter + farbigem Frame.
+// Wenn `applyGouacheFilter` false: zeigt das Bild ohne Sepia/Color-Matrix
+// (sinnvoll wenn die echten Gouache-PNGs schon im Aquarell-Stil gemalt
+// sind — die kommen unbearbeitet raus).
 // ─────────────────────────────────────────────────────────────────────────
 export function PaintedAvatar({
   slug, size = 80, color = PALETTE.terracotta, dimmed = false, withGrain = true,
+  applyGouacheFilter,
 }: {
   slug: string;
   size?: number;
   color?: string;
   dimmed?: boolean;
   withGrain?: boolean;
+  /** Default: Filter NUR auf cozy-cast (nicht auf echte Gouache-PNGs). */
+  applyGouacheFilter?: boolean;
 }) {
-  const filterChain = `url(#avatarGouache)${dimmed ? ' grayscale(0.45) opacity(0.55)' : ''}`;
+  const { src, isGouache } = useGouacheAvatar(slug);
+  const useFilter = applyGouacheFilter ?? !isGouache;
+  const filterChain = `${useFilter ? 'url(#avatarGouache)' : ''}${dimmed ? ' grayscale(0.45) opacity(0.55)' : ''}`.trim();
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -146,11 +156,14 @@ export function PaintedAvatar({
     }}>
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: `url(/avatars/cozy-cast/avatar-${slug}.png)`,
+        backgroundImage: `url(${src})`,
         backgroundSize: 'cover', backgroundPosition: 'center',
-        filter: filterChain,
+        filter: filterChain || undefined,
       }} />
-      {withGrain && (
+      {withGrain && !isGouache && (
+        // Grain-Overlay nur fuer cozy-cast — die echten Gouache-PNGs haben
+        // schon eigene Papier-Textur eingemalt und brauchen keinen Multiply-
+        // Layer obendrauf (würde sie sonst muddy machen).
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: PAPER_GRAIN_BG,
@@ -166,13 +179,17 @@ export function PaintedAvatar({
 export function PaintedAvatarMini({
   slug, answered, size = 36,
 }: { slug: string; answered: boolean; size?: number }) {
+  const { src, isGouache } = useGouacheAvatar(slug);
+  const dim = !answered;
+  const baseFilter = isGouache ? '' : 'url(#avatarGouache)';
+  const filterChain = `${baseFilter}${dim ? ' grayscale(0.4) opacity(0.55)' : ''}`.trim();
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
       background: PALETTE.cream,
       border: `2px solid ${answered ? PALETTE.terracotta : PALETTE.inkSoft + '55'}`,
-      filter: answered ? 'url(#avatarGouache)' : 'url(#avatarGouache) grayscale(0.4) opacity(0.55)',
-      backgroundImage: `url(/avatars/cozy-cast/avatar-${slug}.png)`,
+      filter: filterChain || undefined,
+      backgroundImage: `url(${src})`,
       backgroundSize: 'cover', backgroundPosition: 'center',
       boxShadow: answered ? `0 4px 8px ${PALETTE.terracotta}55` : 'none',
       flexShrink: 0,

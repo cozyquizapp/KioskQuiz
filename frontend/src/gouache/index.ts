@@ -13,3 +13,4 @@ export * from './tokens';
 export * from './filters';
 export * from './components';
 export * from './usePaintFonts';
+export * from './useGouacheAvatar';

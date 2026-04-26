@@ -7,6 +7,7 @@
 // kannst du sie 1:1 in echten Game-Pages (Beamer/Team/Moderator-
 // Gouache-Variante) wiederverwenden.
 
+import * as React from 'react';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 import {
   PALETTE, F_HAND, F_BODY, PAPER_BG,
@@ -951,24 +952,248 @@ function SoftGridDemo() {
 // Hoodie-Farbe ist KOMPLEMENTÄR zur Team-Farbe, alle 8 stammen aus der
 // gleichen Gouache-Palette → kohärentes Set, jeder Avatar pop't auf seinem
 // eigenen Feld klar raus statt zu verschmelzen.
+// Final 8 Hoodie-Pairings (2026-04-26): keine Doppelungen, alle aus dem
+// gemittelten Aquarell-Sat-Bereich, Pink + Stone-Grey als neue Akzente.
+// Reihenfolge: zuerst die 6 vom User validierten Farben, dann die 2 NEUen.
 const HOODIE_PAIRINGS: Array<{
   slug: string; label: string; teamColor: string;
-  hoodieColor: string; hoodieName: string; reason: string;
+  hoodieColor: string; hoodieName: string; reason: string; isNew?: boolean;
 }> = [
-  { slug: 'shiba',     label: 'Hund (Shiba)', teamColor: '#FA507F', hoodieColor: '#7A9E7E', hoodieName: 'Salbei',         reason: 'Grün-Komplement zu Pink' },
-  { slug: 'faultier',  label: 'Faultier',     teamColor: '#9DCB2F', hoodieColor: '#E07A5F', hoodieName: 'Terracotta',     reason: 'Klassischer Rot-Grün-Kontrast' },
-  { slug: 'pinguin',   label: 'Pinguin',      teamColor: '#266FD3', hoodieColor: '#F2EAD3', hoodieName: 'Cremeweiß',      reason: 'Hell auf tiefem Blau' },
-  { slug: 'koala',     label: 'Koala',        teamColor: '#9A65D5', hoodieColor: '#D9A05B', hoodieName: 'Ocker',          reason: 'Warmes Gelb auf kühlem Violett' },
-  { slug: 'giraffe',   label: 'Giraffe',      teamColor: '#FEC814', hoodieColor: '#1F3A5F', hoodieName: 'Indigo',         reason: 'Max. Kontrast Dunkel/Hell' },
-  { slug: 'waschbaer', label: 'Waschbär',     teamColor: '#68B4A5', hoodieColor: '#2D2A26', hoodieName: 'Holzkohle',      reason: 'Dunkel auf mittlerem Teal' },
-  { slug: 'kuh',       label: 'Kuh',          teamColor: '#FF751F', hoodieColor: '#3D5A80', hoodieName: 'Tinte sanft',    reason: 'Blau-Orange-Komplement' },
-  { slug: 'capybara',  label: 'Capybara',     teamColor: '#F84326', hoodieColor: '#B8CDB1', hoodieName: 'Salbei hell',    reason: 'Kühles Hell auf warmem Rot' },
+  { slug: 'capybara',  label: 'Capybara',     teamColor: '#DB6A55', hoodieColor: '#7A9E7E', hoodieName: 'Sage green',     reason: 'Grün-Komplement zu Backstein-Rot · auf Bild bestätigt' },
+  { slug: 'giraffe',   label: 'Giraffe',      teamColor: '#F0CC5F', hoodieColor: '#B393D1', hoodieName: 'Lavendel',       reason: 'Violett vs Honig · auf Bild bestätigt' },
+  { slug: 'koala',     label: 'Koala',        teamColor: '#B393D1', hoodieColor: '#E07A5F', hoodieName: 'Terracotta',     reason: 'Warmes Rot auf kühlem Lavendel · auf Bild bestätigt' },
+  { slug: 'waschbaer', label: 'Waschbär',     teamColor: '#88B5AB', hoodieColor: '#D9A05B', hoodieName: 'Mustard Ocker',  reason: 'Warm-Gelb auf kühlem Stein-Teal · auf Bild bestätigt' },
+  { slug: 'kuh',       label: 'Kuh',          teamColor: '#E89561', hoodieColor: '#5B85C2', hoodieName: 'Dusty blue',     reason: 'Kühles Blau auf warmem Orange · auf Bild bestätigt' },
+  { slug: 'shiba',     label: 'Hund (Shiba)', teamColor: '#E68099', hoodieColor: '#88B5AB', hoodieName: 'Mint teal',      reason: 'Kühles Grün-Blau auf Rose · auf Bild (Retriever) bestätigt' },
+  { slug: 'pinguin',   label: 'Pinguin',      teamColor: '#5B85C2', hoodieColor: '#CA8FA4', hoodieName: 'Dusty Rose',     reason: 'Warm-Pink auf kühlem Blau', isNew: true },
+  { slug: 'faultier',  label: 'Faultier',     teamColor: '#B4CC78', hoodieColor: '#A89B8E', hoodieName: 'Stone Grey',     reason: 'Neutraler Stein-Ton auf Sage-Limette', isNew: true },
 ];
+
+// Erweiterte Hoodie-Palette — 12 Optionen für Variationen oder zukünftige
+// Avatare. Aus dieser Box ziehen wir die finalen 8 oben.
+const HOODIE_PALETTE_OPTIONS: Array<{ name: string; hex: string; family: 'cool' | 'warm' | 'neutral' }> = [
+  { name: 'Sage green',        hex: '#7A9E7E', family: 'cool' },
+  { name: 'Mint teal',         hex: '#88B5AB', family: 'cool' },
+  { name: 'Pale sage',         hex: '#B8CDB1', family: 'cool' },
+  { name: 'Lavendel',          hex: '#B393D1', family: 'cool' },
+  { name: 'Dusty blue',        hex: '#5B85C2', family: 'cool' },
+  { name: 'Terracotta',        hex: '#E07A5F', family: 'warm' },
+  { name: 'Mustard Ocker',     hex: '#D9A05B', family: 'warm' },
+  { name: 'Dusty Rose',        hex: '#CA8FA4', family: 'warm' },
+  { name: 'Burnt Sienna',      hex: '#C2785A', family: 'warm' },
+  { name: 'Cream / Off-white', hex: '#F2EAD3', family: 'neutral' },
+  { name: 'Stone Grey',        hex: '#A89B8E', family: 'neutral' },
+  { name: 'Charcoal',          hex: '#2D2A26', family: 'neutral' },
+];
+
+// ── Erweiterte Hoodie-Palette ──────────────────────────────────────────────
+// 12 Aquarell-Hoodie-Farben gruppiert nach Familie. Aus dieser Box werden
+// die finalen 8 Pairings gezogen — falls du ein Pairing tauschen willst,
+// hier sind alle Alternativen.
+function HoodiePaletteOptionsSection() {
+  const groups: Array<{ family: 'cool' | 'warm' | 'neutral'; label: string }> = [
+    { family: 'cool',    label: 'Kühle Töne' },
+    { family: 'warm',    label: 'Warme Töne' },
+    { family: 'neutral', label: 'Neutrale' },
+  ];
+  return (
+    <PaperCard washColor={PALETTE.paper} padding={36} style={{ marginBottom: 40 }}>
+      <SectionLabel n="11" title="Erweiterte Hoodie-Palette" sub="12 Aquarell-Töne — daraus werden die finalen 8 gezogen" />
+      <div style={{
+        marginTop: 28, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20,
+      }}>
+        {groups.map(g => {
+          const colors = HOODIE_PALETTE_OPTIONS.filter(c => c.family === g.family);
+          return (
+            <div key={g.family}>
+              <div style={{
+                fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.18em', color: PALETTE.terracotta,
+                fontWeight: 700, textTransform: 'uppercase', marginBottom: 10,
+              }}>
+                {g.label}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {colors.map(c => (
+                  <div key={c.hex} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '6px 10px', borderRadius: 10,
+                    background: `${PALETTE.cream}88`,
+                    border: `1px solid ${PALETTE.charcoal}22`,
+                  }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: '50%',
+                      background: c.hex,
+                      border: `2px solid ${PALETTE.cream}`,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                      flexShrink: 0,
+                      filter: 'url(#paintFrame)',
+                    }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1 }}>
+                        {c.name}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', fontSize: 11, color: PALETTE.inkSoft, marginTop: 2 }}>
+                        {c.hex}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{
+        marginTop: 24, padding: '12px 16px', borderRadius: 10,
+        background: `${PALETTE.sage}1f`, border: `1.5px solid ${PALETTE.sage}55`,
+        fontFamily: F_BODY, fontSize: 13, color: PALETTE.charcoal, lineHeight: 1.55,
+      }}>
+        <strong style={{ fontFamily: F_HAND, fontSize: 18, color: PALETTE.sage, fontWeight: 700 }}>
+          Faustregel
+        </strong>
+        : Avatare in 8 distinkten Hoodies — nimm aus jeder Familie 2-3 Töne, dann
+        sind alle 8 mutuell unterscheidbar. Vermeide ähnlich-helle Töne nebeneinander
+        (z.B. Sage + Mint + Pale sage zusammen wird zu „grün" verschmolzen).
+      </div>
+    </PaperCard>
+  );
+}
+
+// ── Avatar-Loading-Status ─────────────────────────────────────────────────
+// Live-Check: für jedes der 8 erwarteten Gouache-Avatare versuchen wir's
+// zu laden. Erscheint im UI als ✓ (vorhanden) oder ⧖ (fehlt). Wenn der
+// User jetzt eine PNG in public/avatars/gouache/ legt → bei Page-Refresh
+// switcht der Status auf ✓ und das Avatar wird überall in der App benutzt.
+function AvatarLoadingStatusSection() {
+  const [statuses, setStatuses] = React.useState<Record<string, 'loading' | 'present' | 'missing'>>(() =>
+    Object.fromEntries(QQ_AVATARS.map(a => [a.id, 'loading' as const]))
+  );
+
+  React.useEffect(() => {
+    const checkAll = () => {
+      QQ_AVATARS.forEach(a => {
+        const img = new Image();
+        img.onload  = () => setStatuses(prev => ({ ...prev, [a.id]: 'present' }));
+        img.onerror = () => setStatuses(prev => ({ ...prev, [a.id]: 'missing' }));
+        img.src = `/avatars/gouache/avatar-${a.slug}.png?t=${Date.now()}`;
+      });
+    };
+    checkAll();
+    const interval = setInterval(checkAll, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const presentCount = Object.values(statuses).filter(s => s === 'present').length;
+
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
+      <SectionLabel n="12" title="Avatar-Loading-Status" sub="Live-Check der Gouache-Bilder im public/-Ordner" />
+
+      <div style={{
+        marginTop: 24, padding: '14px 18px', borderRadius: 10,
+        background: presentCount === 8 ? `${PALETTE.sage}26` : `${PALETTE.terracotta}1a`,
+        border: `1.5px solid ${presentCount === 8 ? PALETTE.sage : PALETTE.terracotta}66`,
+        fontFamily: F_BODY, fontSize: 14, color: PALETTE.charcoal, lineHeight: 1.55,
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 36, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1, flexShrink: 0 }}>
+          {presentCount} <span style={{ color: PALETTE.inkSoft, fontSize: 22 }}>/ 8</span>
+        </div>
+        <div style={{ flex: 1 }}>
+          {presentCount === 0 && (
+            <>
+              <strong style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.terracotta, display: 'block' }}>
+                Noch keine Gouache-Bilder vorhanden
+              </strong>
+              Die App zeigt aktuell überall die <em>cozy-cast</em>-Variante.
+              Sobald du eine Datei in <code style={{ background: PALETTE.paper, padding: '0 6px', borderRadius: 4 }}>frontend/public/avatars/gouache/</code> ablegst,
+              wird sie automatisch hier und in allen Gouache-Pages verwendet.
+            </>
+          )}
+          {presentCount > 0 && presentCount < 8 && (
+            <>
+              <strong style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.terracotta, display: 'block' }}>
+                {presentCount} von 8 da — fehlen noch {8 - presentCount}
+              </strong>
+              Vorhandene Avatare werden direkt benutzt, fehlende fallen auf cozy-cast zurück.
+              Refresh dieser Page nach jedem Drop, dann switcht der Status.
+            </>
+          )}
+          {presentCount === 8 && (
+            <>
+              <strong style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.sage, display: 'block' }}>
+                Alle 8 Gouache-Avatare sind da! 🎉
+              </strong>
+              Das Quiz wird in jeder Gouache-Page nun ausschließlich die neuen Bilder zeigen.
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Status-Grid: 8 Slots mit Avatar-Vorschau */}
+      <div style={{
+        marginTop: 24, display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16,
+      }}>
+        {QQ_AVATARS.map(a => {
+          const status = statuses[a.id];
+          const present = status === 'present';
+          return (
+            <div key={a.id} style={{
+              padding: 14, borderRadius: 14,
+              background: present ? `${PALETTE.sage}1a` : `${PALETTE.paper}aa`,
+              border: `2px solid ${present ? PALETTE.sage : PALETTE.charcoal + '22'}`,
+              filter: 'url(#watercolorEdge)',
+              textAlign: 'center',
+            }}>
+              <div style={{ position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: '50%',
+                  border: `3px solid ${a.color}`,
+                  background: PALETTE.cream,
+                  backgroundImage: present
+                    ? `url(/avatars/gouache/avatar-${a.slug}.png)`
+                    : `url(/avatars/cozy-cast/avatar-${a.slug}.png)`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: present ? undefined : 'url(#avatarGouache) opacity(0.55)',
+                }} />
+                <div style={{
+                  position: 'absolute', top: -4, right: -4,
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: present ? PALETTE.sage : PALETTE.terracotta,
+                  color: PALETTE.cream,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, fontWeight: 700, fontFamily: F_BODY,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                }}>
+                  {present ? '✓' : '⧖'}
+                </div>
+              </div>
+              <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep, fontWeight: 700, marginTop: 8 }}>
+                {a.label}
+              </div>
+              <div style={{ fontFamily: 'monospace', fontSize: 10, color: PALETTE.inkSoft, marginTop: 2 }}>
+                avatar-{a.slug}.png
+              </div>
+              <div style={{
+                fontFamily: F_BODY, fontSize: 10, color: present ? PALETTE.sage : PALETTE.terracotta,
+                fontWeight: 700, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>
+                {present ? 'gouache live' : 'fallback cozy-cast'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </PaperCard>
+  );
+}
 
 function HoodieRecommendationSection() {
   return (
     <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
-      <SectionLabel n="11" title="Hoodie-Farben" sub="Team-Farbe ist das Feld · Hoodie ist der Avatar-Pop dagegen" />
+      <SectionLabel n="13" title="Hoodie-Farben" sub="Final 8 · Team-Farbe ist das Feld · Hoodie ist der Avatar-Pop dagegen" />
 
       <div style={{
         marginTop: 24, padding: '14px 18px', borderRadius: 10,
@@ -1161,7 +1386,7 @@ function HoodieRecommendationSection() {
 function VerdictSection() {
   return (
     <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
-      <SectionLabel n="12" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
+      <SectionLabel n="14" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
       <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
         <VerdictCard
           icon="✓"
@@ -1258,6 +1483,8 @@ export default function QQGouachePage() {
         <GameOverMockup />
         <AvatarStudyMockup />
         <SoftTeamColorsSection />
+        <HoodiePaletteOptionsSection />
+        <AvatarLoadingStatusSection />
         <HoodieRecommendationSection />
         <VerdictSection />
 

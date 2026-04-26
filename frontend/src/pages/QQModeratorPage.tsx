@@ -8,6 +8,7 @@ import {
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
+import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
 
@@ -677,7 +678,7 @@ export default function QQModeratorPage() {
   }
 
   return (
-    <div style={page}>
+    <div className="qq-mod-shell" style={page}>
       {/* ── Header ── */}
       <div style={header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -687,15 +688,11 @@ export default function QQModeratorPage() {
               if (hasGame && !window.confirm('Zurück zum Hauptmenü? Laufendes Spiel wird nicht gespeichert.')) return;
               window.location.href = '/menu';
             }}
-            style={{
-              padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer',
-              fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
-            }}
+            className="qm-ghost"
             title="Zurück zum Hauptmenü"
           >⌂ Menü</button>
           <span style={badgeStyle('#3B82F6')}>CozyQuiz</span>
-          <span style={{ fontWeight: 900, fontSize: 18 }}>Moderator</span>
+          <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Autoplay Pause/Resume — sichtbar nur wenn aktiv und im Spiel */}
@@ -704,26 +701,27 @@ export default function QQModeratorPage() {
               onClick={() => setAutoplayPaused(v => !v)}
               title={autoplayPaused ? 'Autoplay fortsetzen' : 'Autoplay pausieren'}
               style={{
-                padding: '6px 14px', borderRadius: 8,
+                padding: '6px 14px', borderRadius: 10,
                 border: `1px solid ${autoplayPaused ? 'rgba(251,191,36,0.5)' : 'rgba(34,197,94,0.5)'}`,
-                background: autoplayPaused ? 'rgba(251,191,36,0.18)' : 'rgba(34,197,94,0.15)',
+                background: autoplayPaused ? 'rgba(251,191,36,0.18)' : 'rgba(34,197,94,0.14)',
                 color: autoplayPaused ? '#FDE68A' : '#86efac', cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
+                boxShadow: 'var(--qm-depth-sm)',
               }}
             >{autoplayPaused ? '▶ Autoplay' : '⏸ Autoplay'}</button>
           )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
-            style={{
-              padding: '6px 12px', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer',
-              fontFamily: 'inherit', fontWeight: 900, fontSize: 14, lineHeight: 1,
-            }}
-          >? Hotkeys</button>
-          <span style={{ fontSize: 13, fontWeight: 800, color: connected ? '#22C55E' : '#EF4444' }}>
-            {connected ? '● Verbunden' : '○ Getrennt'}
+            className="qm-ghost"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+          >
+            <span className="qm-kbd qm-kbd-sm">?</span>
+            Hotkeys
+          </button>
+          <span className={connected ? 'qm-conn-online' : 'qm-conn-offline'} style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span className="qm-dot" />
+            {connected ? 'Verbunden' : 'Getrennt'}
           </span>
         </div>
       </div>
@@ -742,11 +740,11 @@ export default function QQModeratorPage() {
           <div key={toast.id} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 16px', borderRadius: 12,
-            background: 'rgba(15,12,9,0.92)',
+            background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.96))',
             border: `1.5px solid ${toast.accent}`,
-            boxShadow: `0 6px 20px rgba(0,0,0,0.5), 0 0 18px ${toast.accent}44`,
+            boxShadow: `0 8px 22px rgba(0,0,0,0.55), 0 0 22px ${toast.accent}55`,
             fontFamily: 'inherit', fontSize: 13, fontWeight: 800,
-            color: '#e2e8f0',
+            color: '#f1e8d8',
             animation: 'modToastSlide 3s ease-in-out both',
             maxWidth: 320,
             pointerEvents: 'none',
@@ -766,24 +764,21 @@ export default function QQModeratorPage() {
       )}
 
       {!connected && (
-        <div style={{
-          margin: '14px auto', maxWidth: 520,
-          padding: '18px 22px', borderRadius: 14,
-          background: 'rgba(239,68,68,0.08)',
-          border: '1px solid rgba(239,68,68,0.35)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          color: '#fecaca', fontSize: 14, fontWeight: 700, textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 900 }}>○ Verbindung zum Server weg</div>
-          <div style={{ color: '#cbd5e1', fontWeight: 500 }}>
+        <div className="qm-disconnect-banner">
+          <div style={{ fontSize: 16, fontWeight: 900, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span className="qm-dot" style={{ color: 'var(--qm-tone-place)' }} />
+            Verbindung zum Server weg
+          </div>
+          <div style={{ color: 'var(--qm-text-muted)', fontWeight: 500 }}>
             Versuche automatisch neu zu verbinden… Dein Spielstand läuft serverseitig weiter.
           </div>
           <button
             onClick={() => reconnect()}
             style={{
-              padding: '8px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
-              background: '#3B82F6', color: '#fff', cursor: 'pointer',
-              fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+              padding: '10px 20px', borderRadius: 10, border: 'none',
+              background: 'linear-gradient(180deg, #3b82f6, #2563eb)', color: '#fff', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 900, fontSize: 14,
+              boxShadow: '0 4px 0 #1e40af, 0 0 18px rgba(59,130,246,0.35)',
             }}
           >Jetzt neu verbinden</button>
         </div>
@@ -792,15 +787,10 @@ export default function QQModeratorPage() {
       {/* Autoplay-Toggle — IMMER sichtbar in LOBBY (Setup + Lobby-Subphase),
           damit der Test-Mode schon vor dem Setup-Abschluss aktivierbar ist. */}
       {joined && s && s.phase === 'LOBBY' && (
-        <div style={{
-          maxWidth: 1100, margin: '0 auto 12px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 10, flexWrap: 'wrap',
-          padding: '10px 16px', borderRadius: 10,
-          background: autoplayEnabled ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${autoplayEnabled ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
-          fontSize: 13, fontWeight: 700, color: autoplayEnabled ? '#86efac' : '#94a3b8',
-        }}>
+        <div
+          className="qm-autoplay-banner"
+          data-on={autoplayEnabled ? 'true' : 'false'}
+        >
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
             <input
               type="checkbox"
@@ -811,7 +801,7 @@ export default function QQModeratorPage() {
             <span>🤖 Autoplay-Modus (Test ohne Space)</span>
           </label>
           {autoplayEnabled && (
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: 'var(--qm-text-muted)', fontWeight: 600 }}>
               · advances Phasen automatisch · Pause-Button erscheint im Banner waehrend des Spiels
             </span>
           )}
@@ -862,36 +852,36 @@ export default function QQModeratorPage() {
             const connectedTeams = s.teams.filter(t => t.connected).length;
             const showProgress = s.phase === 'QUESTION_ACTIVE' && connectedTeams > 0;
             return (
-              <div style={{
-                background: `${status.color}15`, border: `2px solid ${status.color}44`,
-                borderRadius: 16, padding: '14px 24px', marginBottom: 14,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-              }}>
+              <div className="qm-hero" style={{ ['--qm-hero-color' as any]: status.color }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{
-                    fontSize: 22, fontWeight: 900, color: status.color,
-                    letterSpacing: '0.04em', textTransform: 'uppercase',
-                  }}>{status.text}</div>
-                  {status.sub && <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700 }}>{status.sub}</span>}
+                  <div className="qm-hero-title">{status.text}</div>
+                  {status.sub && <span className="qm-hero-sub">{status.sub}</span>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {/* Answer progress bar */}
                   {showProgress && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{
-                        width: 120, height: 8, borderRadius: 4,
-                        background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
+                        width: 120, height: 10, borderRadius: 5,
+                        background: 'rgba(0,0,0,0.35)',
+                        border: '1px solid var(--qm-border)',
+                        overflow: 'hidden',
                       }}>
                         <div style={{
                           width: `${(answeredCount / connectedTeams) * 100}%`,
                           height: '100%', borderRadius: 4,
-                          background: answeredCount >= connectedTeams ? '#22C55E' : '#F59E0B',
+                          background: answeredCount >= connectedTeams
+                            ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+                            : 'linear-gradient(90deg, #d97706, #f59e0b)',
+                          boxShadow: answeredCount >= connectedTeams
+                            ? '0 0 10px rgba(34,197,94,0.55)'
+                            : '0 0 10px rgba(245,158,11,0.45)',
                           transition: 'width 0.3s, background 0.3s',
                         }} />
                       </div>
                       <span style={{
-                        fontSize: 13, fontWeight: 800,
-                        color: answeredCount >= connectedTeams ? '#22C55E' : '#F59E0B',
+                        fontSize: 13, fontWeight: 900,
+                        color: answeredCount >= connectedTeams ? 'var(--qm-tone-active)' : 'var(--qm-tone-reveal)',
                       }}>
                         {answeredCount}/{connectedTeams}
                       </span>
@@ -2210,11 +2200,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
 
 function Pill({ label, color }: { label: string; color: string }) {
   return (
-    <div style={{
-      padding: '4px 12px', borderRadius: 999,
-      background: `${color}18`, border: `1px solid ${color}44`,
-      color, fontSize: 12, fontWeight: 800,
-    }}>
+    <div className="qm-pill" style={{ ['--qm-pill-color' as any]: color }}>
       {label}
     </div>
   );
@@ -2225,35 +2211,31 @@ function Btn({ children, color, onClick, outline = false, small = false }: {
   outline?: boolean; small?: boolean;
 }) {
   return (
-    <button onClick={onClick} style={{
-      padding: small ? '5px 12px' : '8px 18px',
-      borderRadius: 8, border: `1px solid ${color}`,
-      background: outline ? 'transparent' : `${color}22`,
-      color, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800,
-      fontSize: small ? 12 : 13,
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-    }}>
+    <button
+      onClick={onClick}
+      className="qm-btn"
+      data-outline={outline ? 'true' : undefined}
+      data-small={small ? 'true' : undefined}
+      style={{ ['--qm-btn-color' as any]: color }}
+    >
       {children}
     </button>
   );
 }
 
 /** Big primary action button — the "do the next thing" button */
-function PrimaryBtn({ children, color, onClick, hotkey }: {
-  children: React.ReactNode; color: string; onClick: () => void; hotkey?: string;
+function PrimaryBtn({ children, color, onClick, hotkey, pulse = false }: {
+  children: React.ReactNode; color: string; onClick: () => void; hotkey?: string; pulse?: boolean;
 }) {
   return (
-    <button onClick={onClick} style={{
-      padding: '10px 24px', borderRadius: 10,
-      border: `2px solid ${color}`,
-      background: `${color}30`,
-      color, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900,
-      fontSize: 15,
-      display: 'inline-flex', alignItems: 'center', gap: 8,
-      boxShadow: `0 0 16px ${color}22`,
-    }}>
-      {children}
-      {hotkey && <span style={{ fontSize: 10, opacity: 0.5, fontWeight: 700 }}>{hotkey}</span>}
+    <button
+      onClick={onClick}
+      className="qm-primary"
+      data-pulse={pulse ? 'true' : undefined}
+      style={{ ['--qm-btn-color' as any]: color }}
+    >
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{children}</span>
+      {hotkey && <span className="qm-kbd qm-kbd-sm">{hotkey}</span>}
     </button>
   );
 }
@@ -2289,10 +2271,13 @@ function phasePillStyle(phase: string): React.CSSProperties {
 
 function badgeStyle(color: string): React.CSSProperties {
   return {
+    display: 'inline-flex', alignItems: 'center',
     padding: '4px 12px', borderRadius: 999,
-    background: `${color}18`, border: `1px solid ${color}44`,
-    color, fontSize: 11, fontWeight: 800,
-    textTransform: 'uppercase', letterSpacing: '0.08em',
+    background: `linear-gradient(180deg, ${color}24, ${color}10)`,
+    border: `1px solid ${color}55`,
+    color, fontSize: 11, fontWeight: 900,
+    textTransform: 'uppercase', letterSpacing: '0.1em',
+    boxShadow: `0 0 12px ${color}22, inset 0 1px 0 rgba(255,255,255,0.08)`,
   };
 }
 
@@ -3102,36 +3087,51 @@ function ConfigChip({ label, value }: { label: string; value: string }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const page: React.CSSProperties = {
-  minHeight: '100vh', background: '#0D0A06', color: '#e2e8f0',
-  fontFamily: "'Nunito', system-ui, sans-serif", padding: 20,
+  minHeight: '100vh',
+  background:
+    'radial-gradient(circle at 50% -20%, rgba(245,158,11,0.06), transparent 55%), ' +
+    'radial-gradient(circle at 90% 110%, rgba(99,102,241,0.05), transparent 50%), ' +
+    '#0D0A06',
+  color: 'var(--qm-text)',
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  padding: 20,
 };
 
 const header: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  marginBottom: 18,
+  padding: '10px 14px',
+  borderRadius: 14,
+  background: 'linear-gradient(180deg, rgba(255,235,200,0.04), rgba(255,235,200,0.015))',
+  border: '1px solid var(--qm-border)',
+  boxShadow: 'var(--qm-depth-sm)',
 };
 
 const card: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.09)',
-  borderRadius: 14, padding: 16,
+  background:
+    'linear-gradient(180deg, rgba(255,235,200,0.045), rgba(255,235,200,0.02))',
+  border: '1px solid var(--qm-border)',
+  borderRadius: 14,
+  padding: 16,
+  boxShadow: 'var(--qm-depth-sm)',
 };
 
 const sectionLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 800, color: '#475569',
-  textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10,
+  fontSize: 11, fontWeight: 800, color: 'var(--qm-text-subtle)',
+  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
 };
 
 const selectStyle: React.CSSProperties = {
   padding: '7px 12px', borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: '#1a1a2e', color: '#e2e8f0',
+  border: '1px solid var(--qm-border-hi)',
+  background: 'var(--qm-elev)', color: 'var(--qm-text)',
   fontFamily: 'inherit', fontSize: 13,
 };
 
 const inputStyle: React.CSSProperties = {
   padding: '6px 10px', borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.06)', color: '#e2e8f0',
+  border: '1px solid var(--qm-border-hi)',
+  background: 'rgba(255,235,200,0.05)', color: 'var(--qm-text)',
   fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
 };
 
@@ -3176,61 +3176,34 @@ function HotkeyCheatsheet({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
-      }}
+      className="qq-mod-shell qm-cheatsheet-overlay"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{
-          width: 'min(760px, 100%)', maxHeight: '90vh', overflowY: 'auto',
-          background: '#0f172a', borderRadius: 18,
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-          padding: '24px 28px',
-          color: '#e2e8f0', fontFamily: 'inherit',
-        }}
+        className="qm-cheatsheet-panel"
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>Hotkey-Cheatsheet</h2>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '6px 14px', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.15)',
-              background: 'rgba(255,255,255,0.06)', color: '#cbd5e1',
-              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
-            }}
-          >Schließen (Esc)</button>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: 'var(--qm-text-warm)' }}>⌨ Hotkey-Cheatsheet</h2>
+          <button onClick={onClose} className="qm-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Schließen <span className="qm-kbd qm-kbd-sm">Esc</span>
+          </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
           {HOTKEY_GROUPS.map(g => (
             <div key={g.title}>
-              <div style={{
-                fontSize: 11, fontWeight: 900, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: '#94a3b8', marginBottom: 8,
-              }}>{g.title}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="qm-eyebrow qm-eyebrow-bright" style={{ marginBottom: 8 }}>{g.title}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {g.rows.map(([key, desc]) => (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{
-                      minWidth: 110, padding: '3px 10px', borderRadius: 6,
-                      background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
-                      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                      fontSize: 12, fontWeight: 800, color: '#fbbf24',
-                      textAlign: 'center',
-                    }}>{key}</span>
-                    <span style={{ fontSize: 13, color: '#cbd5e1' }}>{desc}</span>
+                  <div key={key} className="qm-cheatsheet-row" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="qm-kbd">{key}</span>
+                    <span style={{ fontSize: 13, color: 'var(--qm-text-muted)' }}>{desc}</span>
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 18, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+        <div style={{ marginTop: 18, fontSize: 12, color: 'var(--qm-text-faint)', textAlign: 'center' }}>
           StreamDeck: F13–F17 spiegeln Space / #1 / R / Esc / N
         </div>
       </div>

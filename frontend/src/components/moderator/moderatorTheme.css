@@ -1,0 +1,317 @@
+/* =============================================================
+   Moderator Phone Theme — cozy-dark, brand-pink-accented
+   Used by ModeratorPage.tsx (renderMobileLayout)
+   Goal: consolidate the ad-hoc rgba()/#hex soup into tokens,
+   sharper hierarchy, mode-tinted accent strip, hotkey badges,
+   subtle live/glow animations.
+   ============================================================= */
+
+:root {
+  /* Surfaces */
+  --mod-bg:           #0a0814;
+  --mod-chrome:       #120a1c;
+  --mod-card:         #170f24;
+  --mod-card-elev:    #1f1530;
+  --mod-card-soft:    rgba(11, 35, 67, 0.55);
+
+  /* Borders */
+  --mod-border:       rgba(240, 95, 178, 0.16);
+  --mod-border-strong:rgba(240, 95, 178, 0.34);
+  --mod-border-soft:  rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --mod-text:         #ffe4f2;
+  --mod-text-warm:    #ffd1e8;
+  --mod-text-muted:   #a8a3b8;
+  --mod-text-subtle:  #6b6479;
+
+  /* Brand accent */
+  --mod-accent:       #f05fb2;
+  --mod-accent-soft:  rgba(240, 95, 178, 0.14);
+  --mod-accent-strong:rgba(240, 95, 178, 0.32);
+
+  /* State tones */
+  --mod-tone-prep:    #22c55e;
+  --mod-tone-live:    #ef4444;
+  --mod-tone-eval:    #fbbf24;
+  --mod-tone-final:   #a78bfa;
+  --mod-tone-info:    #60a5fa;
+  --mod-tone-warn:    #f97316;
+}
+
+/* ----- Container chrome ----------------------------------------- */
+
+.mod-shell {
+  background: var(--mod-bg);
+  color: var(--mod-text);
+}
+
+.mod-chrome {
+  background: var(--mod-chrome);
+  border-color: var(--mod-border);
+}
+
+/* Top accent stripe — colour reflects current state tone */
+.mod-state-stripe {
+  height: 3px;
+  width: 100%;
+  background: var(--mod-stripe-color, var(--mod-accent));
+  transition: background 0.4s ease;
+  box-shadow: 0 0 12px var(--mod-stripe-color, var(--mod-accent));
+  opacity: 0.85;
+}
+
+/* ----- Cards ---------------------------------------------------- */
+
+.mod-card {
+  background: var(--mod-card);
+  border: 1px solid var(--mod-border);
+  border-radius: 16px;
+}
+.mod-card-elev {
+  background: var(--mod-card-elev);
+  border: 1px solid var(--mod-border);
+  border-radius: 14px;
+}
+.mod-card-soft {
+  background: var(--mod-card-soft);
+  border: 1px solid var(--mod-border);
+  border-radius: 12px;
+}
+
+/* ----- Pills / Chips -------------------------------------------- */
+
+.mod-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: var(--mod-accent-soft);
+  border: 1px solid var(--mod-accent-strong);
+  color: var(--mod-accent);
+}
+.mod-pill[data-tone="live"] {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  animation: modLivePulse 1.4s ease-in-out infinite;
+}
+.mod-pill[data-tone="eval"] {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fde68a;
+}
+.mod-pill[data-tone="final"] {
+  background: rgba(167, 139, 250, 0.18);
+  border-color: rgba(167, 139, 250, 0.45);
+  color: #ddd6fe;
+}
+.mod-pill[data-tone="prep"] {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #86efac;
+}
+.mod-pill-counter {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--mod-border-soft);
+  color: var(--mod-text-muted);
+}
+
+/* Telemetry dot — connected/active indicator */
+.mod-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mod-text-subtle);
+  box-shadow: 0 0 0 2px transparent;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.mod-dot[data-on="true"] {
+  background: var(--mod-tone-prep);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
+}
+.mod-dot[data-tone="live"][data-on="true"] {
+  background: var(--mod-tone-live);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
+  animation: modLivePulse 1.4s ease-in-out infinite;
+}
+
+/* ----- Section headings ----------------------------------------- */
+
+.mod-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mod-accent);
+  margin: 0 0 6px;
+}
+.mod-eyebrow[data-tone="success"] { color: var(--mod-tone-prep); }
+.mod-eyebrow[data-tone="info"]    { color: var(--mod-tone-info); }
+.mod-eyebrow[data-tone="warn"]    { color: var(--mod-tone-warn); }
+
+/* ----- Hotkey badge --------------------------------------------- */
+
+.mod-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom-width: 2px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.mod-primary-action .mod-kbd {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ----- Bottom action bar ---------------------------------------- */
+
+.mod-bottom-bar {
+  background: var(--mod-chrome);
+  border-top: 1px solid var(--mod-border);
+  padding: 10px 12px 12px;
+}
+
+.mod-primary-action {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 18px;
+  border: none;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--mod-action-color, var(--mod-accent));
+  box-shadow:
+    0 6px 0 rgba(0, 0, 0, 0.45),
+    0 0 24px var(--mod-action-glow, transparent);
+  transition: transform 0.08s ease, box-shadow 0.18s ease;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.mod-primary-action:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.45),
+    0 0 16px var(--mod-action-glow, transparent);
+}
+.mod-primary-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mod-primary-action[data-pulse="true"]:not(:disabled) {
+  animation: modActionPulse 2.4s ease-in-out infinite;
+}
+
+.mod-secondary-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.mod-secondary-row::-webkit-scrollbar { display: none; }
+
+.mod-secondary-action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--mod-border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--mod-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.mod-secondary-action:hover,
+.mod-secondary-action:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--mod-border);
+  color: var(--mod-text);
+}
+
+/* ----- Settings overlay ----------------------------------------- */
+
+.mod-setting-row {
+  display: grid;
+  gap: 6px;
+}
+.mod-setting-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mod-text-subtle);
+}
+.mod-setting-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mod-chip-btn {
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--mod-text-muted);
+  touch-action: manipulation;
+}
+.mod-chip-btn[aria-pressed="true"] {
+  background: var(--mod-accent-soft);
+  border-color: var(--mod-accent-strong);
+  color: var(--mod-text);
+}
+
+/* ----- Animations ----------------------------------------------- */
+
+@keyframes modLivePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+@keyframes modActionPulse {
+  0%, 100% { box-shadow: 0 6px 0 rgba(0,0,0,0.45), 0 0 22px var(--mod-action-glow, transparent); }
+  50%      { box-shadow: 0 6px 0 rgba(0,0,0,0.45), 0 0 38px var(--mod-action-glow, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mod-pill[data-tone="live"],
+  .mod-dot[data-tone="live"][data-on="true"],
+  .mod-primary-action[data-pulse="true"]:not(:disabled) {
+    animation: none;
+  }
+}

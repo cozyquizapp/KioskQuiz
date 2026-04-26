@@ -1,0 +1,380 @@
+/* ===============================================================
+   QQ Moderator Theme — cozy-warm dark, phase-tinted
+   Used by QQModeratorPage.tsx
+   Goal: tighter visual hierarchy, depth/elevation, hero status
+   banner with phase-glow, polished primary button, keycap badges,
+   warmer card surfaces. Bedienung & Flow bleiben unverändert.
+   Scoped via .qq-mod-shell to avoid bleeding into other pages.
+   =============================================================== */
+
+.qq-mod-shell {
+  /* Surfaces (warm-tinted dark) */
+  --qm-bg:           #0d0a06;
+  --qm-bg-soft:      #120e08;
+  --qm-surface:      rgba(255, 235, 200, 0.045);
+  --qm-surface-hi:   rgba(255, 235, 200, 0.08);
+  --qm-surface-lo:   rgba(255, 235, 200, 0.025);
+  --qm-elev:         #1a130c;
+
+  /* Borders */
+  --qm-border:       rgba(255, 220, 180, 0.10);
+  --qm-border-hi:    rgba(255, 220, 180, 0.22);
+  --qm-border-lo:    rgba(255, 220, 180, 0.06);
+
+  /* Text */
+  --qm-text:         #f1e8d8;
+  --qm-text-warm:    #fef3c7;
+  --qm-text-muted:   #a8a395;
+  --qm-text-subtle:  #6b6555;
+  --qm-text-faint:   #4a463c;
+
+  /* Accents (campfire) */
+  --qm-accent:       #f59e0b;
+  --qm-accent-soft:  rgba(245, 158, 11, 0.16);
+  --qm-accent-strong:rgba(245, 158, 11, 0.45);
+
+  /* Phase tones (echo getStatusText colors) */
+  --qm-tone-lobby:   #475569;
+  --qm-tone-rules:   #6366f1;
+  --qm-tone-intro:   #3b82f6;
+  --qm-tone-active:  #22c55e;
+  --qm-tone-reveal:  #f59e0b;
+  --qm-tone-place:   #ef4444;
+  --qm-tone-comeback:#8b5cf6;
+  --qm-tone-paused:  #f59e0b;
+  --qm-tone-over:    #fbbf24;
+
+  /* Shadows */
+  --qm-depth-sm:     0 2px 8px rgba(0, 0, 0, 0.32);
+  --qm-depth-md:     0 6px 18px rgba(0, 0, 0, 0.4);
+  --qm-depth-lg:     0 14px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ----- Cards ---------------------------------------------------- */
+
+.qm-card {
+  background: linear-gradient(180deg, var(--qm-surface), var(--qm-surface-lo));
+  border: 1px solid var(--qm-border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--qm-depth-sm);
+}
+.qm-card-elev {
+  background: var(--qm-elev);
+  border: 1px solid var(--qm-border-hi);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--qm-depth-md);
+}
+.qm-card-tinted {
+  background:
+    linear-gradient(180deg, var(--qm-surface), var(--qm-surface-lo)),
+    radial-gradient(circle at top right, var(--qm-tint-color, transparent) 0%, transparent 60%);
+  border: 1px solid var(--qm-tint-border, var(--qm-border));
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--qm-depth-sm);
+}
+
+/* ----- Section labels / eyebrow --------------------------------- */
+
+.qm-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--qm-text-subtle);
+  margin: 0 0 10px;
+}
+.qm-eyebrow-bright {
+  color: var(--qm-text-muted);
+}
+
+/* ----- Hero status banner --------------------------------------- */
+
+.qm-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 12%, transparent), transparent 65%),
+    var(--qm-elev);
+  border: 1px solid color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 32%, transparent);
+  box-shadow:
+    var(--qm-depth-md),
+    0 0 0 1px color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 8%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.qm-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at left center, color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 18%, transparent), transparent 55%);
+  opacity: 0.7;
+}
+.qm-hero > * { position: relative; }
+
+.qm-hero-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--qm-hero-color, var(--qm-accent));
+  text-shadow: 0 0 18px color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 40%, transparent);
+}
+.qm-hero-sub {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--qm-text-muted);
+}
+
+/* ----- Pills ---------------------------------------------------- */
+
+.qm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: color-mix(in oklab, var(--qm-pill-color, var(--qm-accent)) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--qm-pill-color, var(--qm-accent)) 32%, transparent);
+  color: var(--qm-pill-color, var(--qm-accent));
+  white-space: nowrap;
+}
+.qm-pill-uppercase {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ----- Buttons (Btn / PrimaryBtn) ------------------------------- */
+
+.qm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--qm-btn-color, var(--qm-accent));
+  background: color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 15%, transparent);
+  color: var(--qm-btn-color, var(--qm-accent));
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+}
+.qm-btn:hover { background: color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 22%, transparent); }
+.qm-btn:active { transform: translateY(1px); }
+.qm-btn[data-outline="true"] { background: transparent; }
+.qm-btn[data-small="true"] {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.qm-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px;
+  border-radius: 12px;
+  border: 2px solid var(--qm-btn-color, var(--qm-accent));
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 28%, transparent),
+      color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 18%, transparent));
+  color: var(--qm-btn-color, var(--qm-accent));
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%),
+    0 0 22px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 20%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.08s ease, box-shadow 0.18s ease, background 0.15s ease;
+  position: relative;
+}
+.qm-primary:hover {
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 36%, transparent),
+      color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 22%, transparent));
+  box-shadow:
+    0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%),
+    0 0 32px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.qm-primary:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%),
+    0 0 20px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Pulse on attention-grabbing primary buttons */
+.qm-primary[data-pulse="true"] {
+  animation: qmPrimaryPulse 2.6s ease-in-out infinite;
+}
+@keyframes qmPrimaryPulse {
+  0%, 100% { box-shadow: 0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%), 0 0 22px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 20%, transparent), inset 0 1px 0 rgba(255,255,255,0.12); }
+  50%      { box-shadow: 0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%), 0 0 38px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 36%, transparent), inset 0 1px 0 rgba(255,255,255,0.18); }
+}
+
+/* ----- Keycap (hotkey badge) ------------------------------------ */
+
+.qm-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 235, 200, 0.18), rgba(255, 235, 200, 0.06));
+  border: 1px solid rgba(255, 220, 180, 0.32);
+  border-bottom-width: 2px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--qm-text-warm);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.qm-kbd-sm {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+}
+
+/* ----- Connection / status text --------------------------------- */
+
+.qm-conn-online {
+  color: var(--qm-tone-active);
+  font-weight: 800;
+}
+.qm-conn-offline {
+  color: var(--qm-tone-place);
+  font-weight: 800;
+}
+.qm-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ----- Ghost button (small toolbar buttons) --------------------- */
+
+.qm-ghost {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--qm-border);
+  background: var(--qm-surface);
+  color: var(--qm-text-muted);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.qm-ghost:hover {
+  background: var(--qm-surface-hi);
+  border-color: var(--qm-border-hi);
+  color: var(--qm-text);
+}
+
+/* ----- Connection / autoplay banners ---------------------------- */
+
+.qm-autoplay-banner {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--qm-surface);
+  border: 1px solid var(--qm-border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--qm-text-muted);
+}
+.qm-autoplay-banner[data-on="true"] {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.32);
+  color: #86efac;
+}
+
+.qm-disconnect-banner {
+  margin: 14px auto;
+  max-width: 520px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fecaca;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ----- Cheatsheet modal ----------------------------------------- */
+
+.qm-cheatsheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(8, 6, 3, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.qm-cheatsheet-panel {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1a130c, #120e08);
+  border-radius: 18px;
+  border: 1px solid var(--qm-border-hi);
+  box-shadow: var(--qm-depth-lg), 0 0 60px rgba(245, 158, 11, 0.08);
+  padding: 24px 28px;
+  color: var(--qm-text);
+  font-family: inherit;
+}
+.qm-cheatsheet-row .qm-kbd {
+  min-width: 110px;
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.22), rgba(251, 191, 36, 0.08));
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
+/* ----- Reduced motion ------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .qm-primary[data-pulse="true"] { animation: none; }
+}

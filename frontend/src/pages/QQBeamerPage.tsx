@@ -588,30 +588,33 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const rulesIdx = s.rulesSlideIndex ?? 0;
   const welcomeActive = s.phase === 'RULES' && rulesIdx === -2;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
-  // Pause-/Wartescreen: statt Braun ein kühler Event-Look mit farbigen Blobs.
-  // Pre-Game (warm, orange/gold) und Paused (cool, cyan/violett) kriegen
-  // eigene Identitäten.
+  // Pause-/Wartescreen: cozy-warm Look passend zum Quiz, mit weichen Blob-Akzenten.
+  // Pre-Game (gold/amber, „Lagerfeuer entfacht sich") und Paused (lavender/rose,
+  // „kurze Atempause") teilen sich den warmen Cozy-Untergrund.
   const isPreGame = s.phase === 'LOBBY' && !s.setupDone;
   const isPaused = s.phase === 'PAUSED';
   const pauseBg = isPreGame
     ? [
-        'radial-gradient(ellipse at 22% 30%, rgba(251,191,36,0.28) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 78% 70%, rgba(249,115,22,0.22) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 50% 100%, rgba(124,58,237,0.18) 0%, transparent 60%)',
-        '#0b1020',
+        'radial-gradient(ellipse at 22% 28%, rgba(251,191,36,0.30) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 78% 72%, rgba(249,115,22,0.24) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 50% 105%, rgba(244,114,182,0.16) 0%, transparent 60%)',
+        '#0D0A06',
       ].join(',')
     : isPaused
     ? [
-        'radial-gradient(ellipse at 25% 30%, rgba(6,182,212,0.24) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.26) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 55% 10%, rgba(236,72,153,0.14) 0%, transparent 55%)',
-        '#0b1020',
+        'radial-gradient(ellipse at 28% 32%, rgba(167,139,250,0.26) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 78% 70%, rgba(244,114,182,0.20) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 55% 8%, rgba(251,191,36,0.14) 0%, transparent 55%)',
+        '#0D0A06',
       ].join(',')
     : null;
   const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
   const accent = s.theme?.accentColor ?? '#F59E0B';
-  const cardBg = (isPreGame || isPaused) ? '#141b2e' : (s.theme?.cardBg ?? '#1B1510');
+  // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy
+  const cardBg = (isPreGame || isPaused)
+    ? 'linear-gradient(180deg, #1f1610, #150e08)'
+    : (s.theme?.cardBg ?? '#1B1510');
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
   // ── 3D grid toggle (beamer-local) ──
@@ -9001,11 +9004,12 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
 };
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
-  const cardBg = '#141b2e';
-  // Mode-spezifische Akzentfarbe für Titel/Panel-Border/Chips
-  const modeAccent = mode === 'preGame' ? '#FBBF24' : '#38BDF8';
-  const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.35)' : 'rgba(56,189,248,0.4)';
-  const modeGlow = mode === 'preGame' ? 'rgba(251,191,36,0.25)' : 'rgba(56,189,248,0.25)';
+  // Cozy-warmer Card-Hintergrund (passend zu In-Game-Cards)
+  const cardBg = 'linear-gradient(180deg, #1f1610, #150e08)';
+  // Mode-spezifische Akzentfarbe — preGame: Lagerfeuer-Gold, Pause: Cozy-Lavender
+  const modeAccent = mode === 'preGame' ? '#FBBF24' : '#A78BFA';
+  const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)';
+  const modeGlow = mode === 'preGame' ? 'rgba(251,191,36,0.28)' : 'rgba(167,139,250,0.28)';
   const [de, setDe] = useState(true);
   useEffect(() => {
     const id = setInterval(() => setDe(p => !p), 8000);
@@ -9115,7 +9119,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             </span>
             {sessionTeam
               ? <QQTeamAvatar avatarId={sessionTeam.avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
-              : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#1e293b', flexShrink: 0 }} />
+              : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#241a10', flexShrink: 0 }} />
             }
             <span style={{
               flex: 1, fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
@@ -9139,9 +9143,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             {/* Dark-Pill mit Siegen */}
             <span style={{
               padding: '4px 12px', borderRadius: 999,
-              background: '#111827', border: `1.5px solid ${teamColor}66`,
+              background: 'linear-gradient(180deg, #241a10, #1a120a)',
+              border: `1.5px solid ${teamColor}66`,
               color: teamColor, fontWeight: 900, fontSize: 'clamp(15px, 1.7vw, 21px)',
               flexShrink: 0,
+              boxShadow: `0 0 14px ${teamColor}22, inset 0 1px 0 rgba(255,255,255,0.05)`,
             }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
           </div>
           );
@@ -9231,16 +9237,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     </div>
   );
 
-  // Dark-Pill im Beamer-Header-Style (bg #111827 + Akzent-Border)
+  // Dark-Pill im Cozy-Header-Style (warmer card-bg + Akzent-Border)
   const statPill = (value: string | number, label: string, accent = '#FBBF24') => (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 10,
       padding: '8px 18px', borderRadius: 999,
-      background: '#111827',
+      background: 'linear-gradient(180deg, #241a10, #1a120a)',
       border: `1.5px solid ${accent}66`,
       color: '#fff',
       fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900,
-      boxShadow: `0 0 18px ${accent}22`,
+      boxShadow: `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
       <span style={{ color: accent, fontSize: 'clamp(22px, 2.4vw, 30px)', lineHeight: 1 }}>{value}</span>
       <span style={{ color: '#cbd5e1', fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>

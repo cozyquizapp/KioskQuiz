@@ -8397,6 +8397,85 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SlotMachineNumber — Slot-Machine-Roll-Animation für H/L-Reveal.
+// Pro Digit rollt ein Roller mit Random-Ziffern (~70ms/frame). Stoppt
+// staggered von links nach rechts auf der Zielziffer mit kurzem Bounce-Pulse.
+// Trennzeichen (.,/) bleiben statisch. Total ~1.4-1.8s je nach Stellenzahl.
+// ═══════════════════════════════════════════════════════════════════════════════
+function SlotMachineNumber({ value, fontSize, color, glow }: {
+  value: number;
+  fontSize: string;
+  color: string;
+  glow?: string;
+}) {
+  // Final-String mit Tausenderpunkten (z.B. "1.500.000")
+  const targetStr = value.toLocaleString('de-DE');
+  const chars = useMemo(() => targetStr.split(''), [targetStr]);
+  const digitPositions = useMemo(() => chars.map((c, i) => /\d/.test(c) ? i : -1).filter(i => i >= 0), [chars]);
+
+  // Globale Tick-Counter für die Roller — alle Digits rollen synchron, aber
+  // jeder Digit "stoppt" nacheinander bei einem bestimmten Tick-Threshold.
+  const [tick, setTick] = useState(0);
+  // Wieviele Digits sind schon "gelandet" (von links).
+  const [landed, setLanded] = useState(0);
+  const totalDigits = digitPositions.length;
+
+  useEffect(() => {
+    // Roller-Frequenz: 70ms pro Tick → flackernde Random-Ziffer
+    const rollId = setInterval(() => setTick(t => t + 1), 70);
+    return () => clearInterval(rollId);
+  }, []);
+
+  useEffect(() => {
+    // Staggered Stop: erster Digit landet nach 800ms, dann jeder weitere nach +280ms.
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < totalDigits; i++) {
+      timeouts.push(setTimeout(() => setLanded(i + 1), 800 + i * 280));
+    }
+    return () => { timeouts.forEach(clearTimeout); };
+  }, [totalDigits]);
+
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'baseline', gap: 0,
+      fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+    }}>
+      {chars.map((char, idx) => {
+        const isDigit = /\d/.test(char);
+        if (!isDigit) {
+          // Trennzeichen statisch
+          return (
+            <span key={idx} style={{
+              fontSize, fontWeight: 900, color, textShadow: glow ? `0 0 28px ${glow}` : undefined,
+            }}>{char}</span>
+          );
+        }
+        const digitOrderIdx = digitPositions.indexOf(idx);
+        const stopped = digitOrderIdx < landed;
+        const display = stopped ? char : String((tick + idx * 7) % 10);
+        return (
+          <span
+            key={`${idx}-${stopped ? 'l' : 'r'}`}
+            style={{
+              fontSize, fontWeight: 900, color, textShadow: glow ? `0 0 28px ${glow}` : undefined,
+              display: 'inline-block',
+              animation: stopped ? 'slotMachineStop 0.36s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+            }}
+          >{display}</span>
+        );
+      })}
+      <style>{`
+        @keyframes slotMachineStop {
+          0%   { transform: translateY(-30%) scale(0.85); opacity: 0.4; filter: blur(2px); }
+          55%  { transform: translateY(6%)  scale(1.18); opacity: 1;   filter: blur(0); }
+          100% { transform: translateY(0)   scale(1);    opacity: 1;   filter: blur(0); }
+        }
+      `}</style>
+    </span>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // COMEBACK VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -8703,7 +8782,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>{correctText}</div>
           </div>
 
-          {/* Subject-Card mit aufgedecktem Wert */}
+          {/* Subject-Card mit aufgedecktem Wert — Slot-Machine-Roll von ??? */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
@@ -8712,17 +8791,22 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             boxShadow: '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
-            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
               color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase',
             }}>{pair.subjectLabel}</div>
             <div style={{
-              fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
-              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-              textShadow: '0 0 40px rgba(251,191,36,0.5)',
-            }}>{fmtHL(pair.subjectValue)}</div>
+              lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <SlotMachineNumber
+                value={pair.subjectValue}
+                fontSize="clamp(44px, 6vw, 92px)"
+                color="#FBBF24"
+                glow="rgba(251,191,36,0.5)"
+              />
+            </div>
             <div style={{ fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7 }}>{pair.unit}</div>
           </div>
         </div>
@@ -10311,7 +10395,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 width: cellSize, height: cellSize, borderRadius: cellRadius,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
-                zIndex: isAccent ? 5 : 1,
+                zIndex: isAccent ? 5 : isStuck ? 4 : 1,
+                // 3D-Lift fuer Stapel: Cell wird um 3px gehoben + bekommt einen
+                // tiefen Drop-Shadow → wirkt physisch hoeher als die Nachbarn.
+                transform: isStuck ? 'translateY(-3px)' : undefined,
+                filter: isStuck
+                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(251,191,36,0.45))'
+                  : undefined,
+                transition: 'transform 0.4s cubic-bezier(0.34,1.4,0.64,1), filter 0.4s ease',
                 animation: isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
               }}>
                 {/* Empty cell base — with idle pulse for alive feel */}
@@ -10460,25 +10551,20 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                       pointerEvents: 'none', zIndex: 3,
                     }} />
+                    {/* Pagoda-Krone oben mittig — Stapeln-Symbol passend zum 🏯
+                        Emoji aus den Rules. Goldener Glow + Drop-Animation. */}
                     <div style={{
-                      position: 'absolute', top: -4, right: -4,
-                      minWidth: Math.max(16, cellSize * 0.32),
-                      height: Math.max(16, cellSize * 0.32),
-                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
-                      borderRadius: '999px',
-                      background: 'linear-gradient(135deg, #FBBF24, #D97706)',
-                      border: '2px solid #422006',
-                      color: '#1c1304',
-                      fontSize: Math.max(9, cellSize * 0.20),
-                      fontWeight: 900,
+                      position: 'absolute',
+                      top: `${-Math.max(8, cellSize * 0.32)}px`,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: Math.max(14, cellSize * 0.46),
                       lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(251,191,36,0.6)',
+                      filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.85)) drop-shadow(0 2px 3px rgba(0,0,0,0.5))',
                       zIndex: 6,
-                      fontVariantNumeric: 'tabular-nums',
+                      pointerEvents: 'none',
                       animation: 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
-                    }}>×2</div>
+                    }}>🏯</div>
                   </>
                 )}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.

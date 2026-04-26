@@ -1901,12 +1901,12 @@ function MuchoOptionsReveal({
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
       columnGap: 18,
-      rowGap: expandedLayout ? 'clamp(70px, 9vh, 110px)' : 18,
-      paddingBottom: expandedLayout ? 'clamp(48px, 6vh, 78px)' : 0,
-      marginBottom: 16,
+      rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
+      paddingBottom: expandedLayout ? 'clamp(70px, 8.5vh, 110px)' : 0,
+      marginBottom: 'clamp(20px, 2.8vh, 40px)',
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s ease 0.1s both',
-      transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1)',
+      transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1), margin-bottom 0.6s ease',
     }}>
       {options.map((opt, i) => {
         const optImg = optionImages?.[i];
@@ -6565,22 +6565,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 Foto-Hintergrund lesbar sind. */}
             {!revealed && s.teams.length > 0 && (
               <>
-                {/* Klein-Text als Eyebrow am unteren Card-Rand innen */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: 8, left: 0, right: 0,
-                  textAlign: 'center',
-                  fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800,
-                  color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.85)',
-                  transition: 'color 0.3s ease',
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  pointerEvents: 'none', zIndex: 8,
-                  animation: 'contentReveal 0.45s ease 0.35s both',
-                }}>
-                  {s.allAnswered
-                    ? (lang === 'en' ? '✅ All teams answered' : '✅ Alle Teams geantwortet')
-                    : `${s.answers.length}/${s.teams.length} Teams`}
-                </div>
+                {/* Klein-Text Progress am unteren Card-Rand innen — verschwindet
+                    wenn alle dran sind (Avatare mit ✓ zeigen das eh schon). */}
+                {!s.allAnswered && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 8, left: 0, right: 0,
+                    textAlign: 'center',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800,
+                    color: 'rgba(226,232,240,0.85)',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    pointerEvents: 'none', zIndex: 8,
+                    animation: 'contentReveal 0.45s ease 0.35s both',
+                  }}>
+                    {`${s.answers.length}/${s.teams.length} Teams`}
+                  </div>
+                )}
                 {/* Avatar-Reihe */}
                 {(() => {
                   const tc = s.teams.length;
@@ -6881,7 +6881,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 padding: shrinkOnReveal
                   ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'
                   : 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
-                marginBottom: 'clamp(8px, 1.2vh, 20px)',
+                marginBottom: 'clamp(20px, 2.8vh, 44px)',
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
                 animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
@@ -7897,9 +7897,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               if (alive.length >= 2) hpCoWinners = alive;
             }
             if (hpCoWinners) {
+              const survivorCount = hpCoWinners.length;
+              const totalCount = s.teams.length;
+              const everyoneSurvived = survivorCount === totalCount;
               const hpMsg = isEn
-                ? 'all survived — each gets a tile!'
-                : 'alle überlebt — jedes Team bekommt ein Feld!';
+                ? (everyoneSurvived
+                    ? 'all survived — each gets a tile!'
+                    : `${survivorCount} survived — each gets a tile!`)
+                : (everyoneSurvived
+                    ? 'alle überlebt — jedes Team bekommt ein Feld!'
+                    : `${survivorCount} haben überlebt — jedes Team bekommt ein Feld!`);
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -8060,16 +8067,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
               position: 'absolute', bottom: 16, left: 0, right: 0,
             }}>
-              {/* Progress text */}
-              <div style={{
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
-                color: s.allAnswered ? '#86EFAC' : '#64748b',
-                transition: 'color 0.3s ease',
-              }}>
-                {s.allAnswered
-                  ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
-                  : `${s.answers.length}/${s.teams.length} Teams`}
-              </div>
+              {/* Progress text — verschwindet wenn alle dran sind (Avatare mit ✓ zeigen's eh) */}
+              {!s.allAnswered && (
+                <div style={{
+                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
+                  color: '#64748b',
+                }}>
+                  {`${s.answers.length}/${s.teams.length} Teams`}
+                </div>
+              )}
               {/* Avatar row */}
               {(() => {
                 const tc = s.teams.length;

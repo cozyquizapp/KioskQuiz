@@ -6514,7 +6514,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'fixed', inset: 0, zIndex: 52,
           display: 'flex', flexDirection: 'column',
           justifyContent: 'flex-end', alignItems: 'center',
-          padding: '40px 48px 48px',
+          // Bottom-Padding größer als sonst: die Voter-Avatare hängen unter
+          // der Card und brauchen Platz, sonst klemmen sie am Bildschirmrand.
+          padding: '40px 48px clamp(110px, 14vh, 170px)',
           pointerEvents: 'none',
         }}>
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}

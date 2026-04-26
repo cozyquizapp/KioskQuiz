@@ -3155,7 +3155,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     );
     if (isSwapComeback || isSwapOne) return wrap('marker-swap', lang === 'de' ? 'Tauschen' : 'Swap');
     if (isShield)   return wrap('marker-shield', lang === 'de' ? 'Schild' : 'Shield');
-    if (isStuck)    return lang === 'de' ? '🗼 Stapeln' : '🗼 Stack';
+    if (isStuck)    return lang === 'de' ? '🏯 Stapeln' : '🏯 Stack';
     if (isSandLock) return wrap('marker-sanduhr', lang === 'de' ? 'Bann' : 'Ban');
     if (isSteal)  return t.placement.titleSteal[lang];
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
@@ -3254,8 +3254,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           {phase >= 3 && hasStapable && stapelsLeft > 0 && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
               {lang === 'de'
-                ? `🗼 Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`
-                : `🗼 Stack (+1 point · ${stapelsLeft}/3 left)`}
+                ? `🏯 Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`
+                : `🏯 Stack (+1 point · ${stapelsLeft}/3 left)`}
             </CozyBtn>
           )}
         </div>
@@ -3269,7 +3269,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               <QQIcon slug="marker-swap" size={24} alt="Swap" />
               {lang === 'de' ? 'Felder wählen' : 'Choose fields'}
             </span>
-          ) : isStuck ? (lang === 'de' ? '🗼 Feld auswählen' : '🗼 Select cell to stack')
+          ) : isStuck ? (lang === 'de' ? '🏯 Feld auswählen' : '🏯 Select cell to stack')
             : isShield ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="marker-shield" size={24} alt="Schild" />
@@ -3434,7 +3434,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           ? 'stealCrashIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both'
                           : undefined,
                     }}>
-                      {isStuckCell ? <QQEmojiIcon emoji="🗼"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
+                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (

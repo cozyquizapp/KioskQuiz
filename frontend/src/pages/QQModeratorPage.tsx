@@ -2266,7 +2266,7 @@ function actionLabel(action: string, stats: any): string {
   if (action === 'STEAL_1')   return '1 Feld klauen';
   if (action === 'FREE')      return 'Setzen oder Klauen';
   if (action === 'SHIELD_1')  return '🛡️ Schild';
-  if (action === 'STAPEL_1')  return '🗼 Stapeln';
+  if (action === 'STAPEL_1')  return '🏯 Stapeln';
   if (action === 'SWAP_1')    return '🔄 Tauschen';
   if (action === 'SANDUHR_1') return '⏳ Bann';
   return action;

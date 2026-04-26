@@ -12,11 +12,12 @@
 // haben Fallback-Cards mit Phasen-Label und werden in Folge-Items
 // eigens migriert.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
-  QQStateUpdate, QQTeam, qqGetAvatar,
+  QQStateUpdate, QQTeam, QQQuestion, qqGetAvatar,
+  QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import {
   PALETTE, F_HAND, F_HAND_CAPS, F_BODY, softTeamColor,
@@ -126,8 +127,477 @@ function PhaseRouter({
   if (phase === 'THANKS')              return <ThanksView de={de} />;
   if (phase === 'GAME_OVER')           return <GameOverView state={state} de={de} />;
 
-  // Komplexe Phasen kommen in eigenen Folge-Items.
+  // QUESTION_ACTIVE / QUESTION_REVEAL → routen pro Kategorie
+  if (phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL') {
+    const q = state.currentQuestion;
+    if (!q) return <PhasePlaceholderCard state={state} de={de} />;
+    const revealed = phase === 'QUESTION_REVEAL';
+    if (q.category === 'SCHAETZCHEN') return <SchaetzchenView state={state} q={q} de={de} revealed={revealed} />;
+    if (q.category === 'MUCHO')       return <MuchoView state={state} q={q} de={de} revealed={revealed} />;
+    if (q.category === 'CHEESE')      return <CheeseView state={state} q={q} de={de} revealed={revealed} />;
+    // BUNTE_TUETE + ZEHN_VON_ZEHN folgen in eigenen Items
+    return <PhasePlaceholderCard state={state} de={de} />;
+  }
+
+  // Komplexe Phasen (PLACEMENT, TEAMS_REVEAL, COMEBACK_CHOICE) folgen.
   return <PhasePlaceholderCard state={state} de={de} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// QuestionFrame — Header (Kategorie + Frage-Index + Timer) + Content-Area
+// Wird von SCHAETZCHEN/MUCHO/CHEESE gemeinsam genutzt.
+// ─────────────────────────────────────────────────────────────────────────
+
+function QuestionHeader({ state, q, de }: { state: QQStateUpdate; q: QQQuestion; de: boolean }) {
+  const cat = QQ_CATEGORY_LABELS[q.category];
+  const isBunteTuete = q.category === 'BUNTE_TUETE';
+  const subKind = isBunteTuete && q.bunteTuete ? QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind] : null;
+  const label = de ? cat.de : cat.en;
+  const subLabel = subKind ? (de ? subKind.de : subKind.en) : null;
+  const totalQuestions = state.schedule?.length ?? 15;
+  const qNum = (state.questionIndex ?? 0) + 1;
+  return (
+    <header style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      gap: 16, position: 'relative', zIndex: 5,
+      flexShrink: 0, padding: '0 6px',
+    }}>
+      <CategoryPill label={subLabel ? `${label} · ${subLabel}` : label} />
+      <div style={{
+        fontFamily: F_HAND_CAPS, fontSize: 'min(2.4vh, 1.8vw)',
+        color: `${PALETTE.cream}cc`,
+        textTransform: 'uppercase', letterSpacing: '0.16em',
+      }}>
+        {de ? `Frage ${qNum} / ${totalQuestions}` : `Question ${qNum} / ${totalQuestions}`}
+      </div>
+      <TimerPill timerEndsAt={state.timerEndsAt} />
+    </header>
+  );
+}
+
+function CategoryPill({ label }: { label: string }) {
+  return (
+    <div style={{
+      padding: '6px 16px', borderRadius: 999,
+      background: `${PALETTE.cream}1f`,
+      border: `1.5px solid ${PALETTE.cream}55`,
+      backdropFilter: 'blur(4px)',
+    }}>
+      <span style={{
+        fontFamily: F_HAND_CAPS,
+        fontSize: 'min(2.4vh, 1.8vw)',
+        color: PALETTE.cream,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function TimerPill({ timerEndsAt }: { timerEndsAt: number | null }) {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!timerEndsAt) { setSecs(null); return; }
+    const tick = () => setSecs(Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [timerEndsAt]);
+  if (secs == null) {
+    return <div style={{ width: 80 }} />;
+  }
+  const urgent = secs <= 5;
+  const color = urgent ? PALETTE.terracotta : PALETTE.cream;
+  return (
+    <div style={{
+      padding: '6px 18px', borderRadius: 999,
+      background: urgent ? `${PALETTE.terracotta}33` : `${PALETTE.cream}1f`,
+      border: `1.5px solid ${color}88`,
+      animation: urgent ? 'gTwinkle 0.6s ease-in-out infinite' : undefined,
+      fontFamily: F_HAND, fontSize: 'min(3.2vh, 2.4vw)',
+      fontWeight: 700, color,
+      fontVariantNumeric: 'tabular-nums',
+      minWidth: 64, textAlign: 'center',
+    }}>
+      {secs}s
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AnswerTracker — wer hat schon geantwortet (Avatar-Reihe)
+// ─────────────────────────────────────────────────────────────────────────
+
+function AnswerTracker({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  const answered = new Set(state.answers.map(a => a.teamId));
+  const total = state.teams.length;
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 12,
+      padding: '8px 18px', borderRadius: 999,
+      background: `${PALETTE.cream}1f`,
+      border: `1.5px dashed ${PALETTE.cream}55`,
+    }}>
+      <span style={{
+        fontFamily: F_HAND_CAPS, fontSize: 'min(2vh, 1.5vw)',
+        color: PALETTE.cream, letterSpacing: '0.06em',
+      }}>
+        {answered.size} / {total} {de ? 'geantwortet' : 'answered'}
+      </span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {state.teams.map(t => {
+          const has = answered.has(t.id);
+          const color = softTeamColor(t.avatarId);
+          return (
+            <div key={t.id} style={{
+              width: 26, height: 26, borderRadius: '50%',
+              background: has ? color : `${PALETTE.cream}22`,
+              border: `1.5px solid ${has ? color : `${PALETTE.cream}55`}`,
+              boxShadow: has ? `0 0 10px ${color}88` : 'none',
+              transition: 'all 0.3s',
+            }} />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SCHÄTZCHEN — Frage = Text + Unit, Reveal = Lösung + nähester Voter
+// ─────────────────────────────────────────────────────────────────────────
+
+function SchaetzchenView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const unit = (de ? q.unit : q.unitEn) ?? q.unit;
+  const answers = state.answers
+    .map(a => ({ ...a, num: parseFloat(a.text.replace(',', '.')) }))
+    .filter(a => Number.isFinite(a.num));
+  const target = q.targetValue ?? null;
+  const ranked = target == null ? answers : [...answers].sort((a, b) => Math.abs(a.num - target) - Math.abs(b.num - target));
+  const winner = revealed && ranked[0] ? state.teams.find(t => t.id === ranked[0].teamId) : null;
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 56px)" style={{ maxWidth: 1100, width: '92%' }}>
+          <div style={{ textAlign: 'center' }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? 'Schätzchen' : 'Close call'}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(8vh, 6vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05,
+              marginTop: 18,
+            }}>
+              {text}
+            </div>
+            {unit && (
+              <div style={{
+                fontFamily: F_BODY, fontSize: 'min(2.4vh, 1.8vw)',
+                color: PALETTE.inkSoft, fontStyle: 'italic', marginTop: 12,
+              }}>
+                {de ? `in ${unit}` : `in ${unit}`}
+              </div>
+            )}
+
+            {!revealed ? (
+              <div style={{ marginTop: 32 }}>
+                <AnswerTracker state={state} de={de} />
+              </div>
+            ) : (
+              <SchaetzchenReveal target={target} ranked={ranked} winner={winner} state={state} de={de} />
+            )}
+          </div>
+        </PaperCard>
+      </CenterArea>
+    </>
+  );
+}
+
+function SchaetzchenReveal({
+  target, ranked, winner, state, de,
+}: {
+  target: number | null;
+  ranked: Array<{ teamId: string; num: number }>;
+  winner: QQTeam | undefined | null;
+  state: QQStateUpdate;
+  de: boolean;
+}) {
+  if (target == null) return null;
+  return (
+    <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'stretch', textAlign: 'left' }}>
+      {/* Solution */}
+      <div style={{
+        padding: '22px 26px', borderRadius: 18,
+        background: `${PALETTE.sageLight}55`, border: `2.5px solid ${PALETTE.sage}`,
+        textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        animation: 'gFadeIn 0.5s ease-out both',
+      }}>
+        <BlockCapsHeading size="sm" color={PALETTE.sage}>
+          {de ? 'Lösung' : 'Solution'}
+        </BlockCapsHeading>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 'min(12vh, 9vw)',
+          color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1, marginTop: 8,
+        }}>
+          {target}
+        </div>
+      </div>
+      {/* Top 5 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {ranked.slice(0, 5).map((r, i) => {
+          const team = state.teams.find(t => t.id === r.teamId);
+          if (!team) return null;
+          const color = softTeamColor(team.avatarId);
+          const delta = Math.abs(r.num - target);
+          return (
+            <div key={r.teamId} style={{
+              display: 'grid', gridTemplateColumns: 'auto auto 1fr auto auto',
+              alignItems: 'center', gap: 12,
+              padding: '8px 14px', borderRadius: 12,
+              background: `${PALETTE.cream}d0`,
+              border: `2px solid ${i === 0 ? color : color + '33'}`,
+              boxShadow: i === 0 ? `0 4px 16px ${color}44` : 'none',
+              animation: `gFadeIn 0.45s ease-out ${0.1 + i * 0.08}s both`,
+            }}>
+              <span style={{
+                fontFamily: F_HAND, fontSize: 'min(3vh, 2.2vw)',
+                color: i === 0 ? color : PALETTE.inkDeep, fontWeight: 700, minWidth: 32,
+              }}>
+                #{i + 1}
+              </span>
+              <PaintedAvatar slug={qqGetAvatar(team.avatarId).slug} size={40} color={color} withGrain={false} />
+              <span style={{
+                fontFamily: F_HAND, fontSize: 'min(2.6vh, 2vw)',
+                color: PALETTE.inkDeep, fontWeight: 700,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {team.name}
+              </span>
+              <span style={{ fontFamily: F_HAND, fontSize: 'min(2.4vh, 1.8vw)', color: PALETTE.inkDeep, fontWeight: 700 }}>
+                {r.num}
+              </span>
+              <span style={{ fontFamily: F_BODY, fontSize: 11, color: PALETTE.inkSoft }}>
+                Δ {delta}
+              </span>
+            </div>
+          );
+        })}
+        {winner && (
+          <div style={{
+            marginTop: 8, padding: '10px 18px', borderRadius: 12,
+            background: `${softTeamColor(winner.avatarId)}26`,
+            border: `2.5px solid ${softTeamColor(winner.avatarId)}`,
+            textAlign: 'center', animation: 'gFadeIn 0.6s ease-out 0.6s both',
+          }}>
+            <BlockCapsHeading size="sm" color={softTeamColor(winner.avatarId)} glow>
+              {de ? `${winner.name} ist am nächsten dran` : `${winner.name} closest`}
+            </BlockCapsHeading>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MUCHO — Frage + 4 Optionen, Reveal hebt korrekte Option grün hervor
+// ─────────────────────────────────────────────────────────────────────────
+
+function MuchoView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const opts = (de ? q.options : q.optionsEn) ?? q.options ?? [];
+  const correctIdx = q.correctOptionIndex;
+  const letters = ['A', 'B', 'C', 'D'];
+  // Voter-Avatare pro Option
+  const votersByOpt = useMemo(() => {
+    const m = new Map<number, string[]>();
+    state.answers.forEach(a => {
+      const i = parseInt(a.text, 10);
+      if (Number.isInteger(i)) {
+        if (!m.has(i)) m.set(i, []);
+        m.get(i)!.push(a.teamId);
+      }
+    });
+    return m;
+  }, [state.answers]);
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <div style={{ width: '100%', maxWidth: 1240, display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 28px)' }}>
+          <PaperCard washColor={PALETTE.cream} padding="clamp(20px, 3vh, 40px)" style={{ textAlign: 'center' }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>Mu-Cho</BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(7vh, 5.4vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05,
+              marginTop: 14,
+            }}>
+              {text}
+            </div>
+          </PaperCard>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 'clamp(10px, 1.5vh, 18px)',
+          }}>
+            {opts.map((opt, i) => {
+              const voters = votersByOpt.get(i) ?? [];
+              const isCorrect = revealed && correctIdx === i;
+              const dimmed = revealed && correctIdx != null && !isCorrect;
+              return (
+                <div key={i} style={{
+                  position: 'relative',
+                  padding: 'clamp(14px, 2vh, 22px) clamp(16px, 2vw, 28px)',
+                  borderRadius: 18,
+                  background: isCorrect ? `${PALETTE.sage}33` : `${PALETTE.cream}f0`,
+                  border: `3px solid ${isCorrect ? PALETTE.sage : `${PALETTE.inkSoft}55`}`,
+                  boxShadow: isCorrect
+                    ? `0 12px 36px ${PALETTE.sage}55, 0 0 60px ${PALETTE.sage}66`
+                    : '0 8px 22px rgba(31,58,95,0.14)',
+                  filter: dimmed ? 'grayscale(0.6) opacity(0.55)' : undefined,
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  transition: 'all 0.5s ease',
+                }}>
+                  <span style={{
+                    width: 'min(7vh, 5vw)', height: 'min(7vh, 5vw)',
+                    minWidth: 48, minHeight: 48,
+                    borderRadius: '50%',
+                    background: isCorrect ? PALETTE.sage : PALETTE.inkDeep,
+                    color: PALETTE.cream,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: F_HAND, fontSize: 'min(4vh, 3vw)', fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {letters[i]}
+                  </span>
+                  <span style={{
+                    flex: 1, minWidth: 0,
+                    fontFamily: F_HAND, fontSize: 'min(3.4vh, 2.4vw)',
+                    color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.15,
+                  }}>
+                    {opt}
+                  </span>
+                  {voters.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      {voters.slice(0, 6).map(tid => {
+                        const team = state.teams.find(t => t.id === tid);
+                        if (!team) return null;
+                        return (
+                          <PaintedAvatar key={tid} slug={qqGetAvatar(team.avatarId).slug}
+                            size={36} color={softTeamColor(team.avatarId)} withGrain={false} />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {!revealed && (
+            <div style={{ textAlign: 'center' }}>
+              <AnswerTracker state={state} de={de} />
+            </div>
+          )}
+        </div>
+      </CenterArea>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHEESE — Frage + Bild, Reveal zeigt Lösung als Frosted-Card über Bild
+// ─────────────────────────────────────────────────────────────────────────
+
+function CheeseView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const answer = (de ? q.answer : q.answerEn) ?? q.answer;
+  const imgUrl = q.image?.url;
+  const winner = revealed && state.correctTeamId
+    ? state.teams.find(t => t.id === state.correctTeamId) : null;
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <div style={{
+          position: 'relative', width: '100%', maxWidth: 1200, height: 'min(70vh, 60vw)',
+          borderRadius: 28, overflow: 'hidden',
+          boxShadow: '0 24px 60px rgba(31,58,95,0.4)',
+          filter: 'url(#paintFrame)',
+        }}>
+          {imgUrl ? (
+            <img src={imgUrl} alt="" style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover',
+            }} />
+          ) : (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(135deg, ${PALETTE.dusk}, ${PALETTE.lavenderDusk})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: F_HAND_CAPS, fontSize: 'min(6vh, 4.5vw)',
+              color: `${PALETTE.cream}88`, textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+            }}>
+              {de ? 'Bild fehlt' : 'No image'}
+            </div>
+          )}
+          {/* Frosted Card mit Frage/Lösung */}
+          <div style={{
+            position: 'absolute', left: '50%', bottom: '6%', transform: 'translateX(-50%)',
+            width: '88%',
+            padding: 'clamp(20px, 3vh, 36px) clamp(24px, 3vw, 44px)',
+            borderRadius: 22,
+            background: `${PALETTE.cream}eb`,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 18px 44px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            animation: 'gFadeIn 0.6s ease-out both',
+          }}>
+            <BlockCapsHeading size="sm" color={revealed ? PALETTE.sage : PALETTE.terracotta}>
+              {revealed ? (de ? 'Lösung' : 'Solution') : (de ? 'Bilderrätsel' : 'Picture this')}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(6vh, 4.4vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05,
+              marginTop: 8,
+            }}>
+              {revealed ? answer : text}
+            </div>
+            {winner && (
+              <div style={{
+                marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 12,
+                padding: '8px 18px', borderRadius: 999,
+                background: `${softTeamColor(winner.avatarId)}26`,
+                border: `2.5px solid ${softTeamColor(winner.avatarId)}`,
+              }}>
+                <PaintedAvatar slug={qqGetAvatar(winner.avatarId).slug} size={36} color={softTeamColor(winner.avatarId)} withGrain={false} />
+                <span style={{
+                  fontFamily: F_HAND, fontSize: 'min(3vh, 2.2vw)',
+                  color: softTeamColor(winner.avatarId), fontWeight: 700,
+                }}>
+                  {winner.name}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        {!revealed && (
+          <div style={{ marginTop: 20 }}>
+            <AnswerTracker state={state} de={de} />
+          </div>
+        )}
+      </CenterArea>
+    </>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

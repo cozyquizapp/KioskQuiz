@@ -6514,15 +6514,43 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           display: 'flex', flexDirection: 'column',
           justifyContent: 'flex-end', alignItems: 'center',
           // Bottom-Padding dynamisch:
-          //   - während QUESTION_ACTIVE: groß damit die unter der Card
-          //     hängenden Voter-Avatare nicht am Bildrand klemmen
+          //   - während QUESTION_ACTIVE: Platz unter der Card für die hängenden
+          //     Voter-Avatare (~50-60px)
           //   - beim Reveal: zurück auf normales Padding, damit die Card
           //     dichter am Bildrand sitzt und weniger vom Foto verdeckt
           // Smooth transition zwischen beiden Zuständen.
-          padding: revealed ? '40px 48px 32px' : '40px 48px clamp(110px, 14vh, 170px)',
+          padding: revealed ? '40px 48px 32px' : '40px 48px clamp(58px, 7vh, 92px)',
           transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
           pointerEvents: 'none',
         }}>
+          {/* Konsistente Kategorie-Pill oben links — gleiche Position wie bei
+              den anderen Kategorien (Mucho/Schätzchen/etc.). Ersetzt die
+              mittige PICTURE-THIS-Pill IN der Card. */}
+          {!revealed && (
+            <div style={{
+              position: 'absolute', top: 20, left: 48, zIndex: 10,
+              animation: 'contentReveal 0.35s ease both',
+            }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                padding: '8px 22px', borderRadius: 999,
+                background: `${accent}22`, border: `2px solid ${accent}44`,
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}>
+                {(() => {
+                  const slug = qqCatSlug(cat as string);
+                  return slug
+                    ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
+                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
+                })()}
+                <span style={{
+                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+                  color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
+              </div>
+            </div>
+          )}
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}
           {s.timerEndsAt && (
             <div style={{
@@ -6640,31 +6668,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </>
             )}
 
-            {/* Category pill — fade out on reveal */}
-            <div style={{
-              overflow: 'hidden',
-              maxHeight: revealed ? 0 : 60,
-              opacity: revealed ? 0 : 1,
-              marginBottom: revealed ? 0 : 14,
-              transition: 'max-height 0.35s ease, opacity 0.25s ease, margin-bottom 0.35s ease',
-            }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 10,
-                padding: '6px 18px', borderRadius: 999,
-                background: `${accent}22`, border: `1.5px solid ${accent}44`,
-              }}>
-                {(() => {
-                  const slug = qqCatSlug(cat as string);
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(20px, 2.2vw, 28px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(16px, 1.8vw, 22px)' }}>{catLabel.emoji}</span>;
-                })()}
-                <span style={{
-                  fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
-                  color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
-              </div>
-            </div>
+            {/* Category pill IN der Card entfernt — die Pill sitzt jetzt
+                konsistent oben links wie bei den anderen Kategorien. */}
 
             {/* Question text — no font-size change on reveal to prevent reflow */}
             <div key={`cheese-${lang}`} style={{

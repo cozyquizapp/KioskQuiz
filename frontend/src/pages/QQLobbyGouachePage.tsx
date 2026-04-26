@@ -17,7 +17,7 @@
 // Alles andere (CozyWolf-Branding, Statusmeldungen, Bilingual-Flip,
 // Empty-Hint, Wave-Animation) wird vom Original übernommen.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
@@ -32,6 +32,24 @@ import {
 } from '../gouache';
 
 const QQ_ROOM = 'default';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useViewportSize — für vh-basierte Avatar-Größen (PaintedAvatar braucht
+// number). Hört auf resize, sodass der Layout sich live an Beamer/Fernseher/
+// Laptop anpasst und nicht statisch in einer Auflösung „kleben" bleibt.
+// ─────────────────────────────────────────────────────────────────────────────
+function useViewportSize() {
+  const [size, setSize] = useState(() => ({
+    w: typeof window !== 'undefined' ? window.innerWidth : 1920,
+    h: typeof window !== 'undefined' ? window.innerHeight : 1080,
+  }));
+  useEffect(() => {
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return size;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -63,33 +81,35 @@ export default function QQLobbyGouachePage() {
       position: 'relative', overflow: 'hidden',
       fontFamily: F_BODY, color: PALETTE.cream,
       display: 'flex', flexDirection: 'column',
-      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
-      gap: 'clamp(10px, 1.5vh, 20px)',
+      padding: 'clamp(6px, 1.2vh, 18px) clamp(20px, 2.5vw, 48px)',
+      gap: 'clamp(6px, 1.2vh, 16px)',
     }}>
       <GouacheFilters />
       <PaintedKeyframes />
 
       {/* Atmosphäre — gemalter Nachthimmel */}
       <PaintedStars count={32} />
-      <div style={{ position: 'absolute', top: 'clamp(40px, 6vh, 90px)', right: 'clamp(60px, 8vw, 140px)', zIndex: 2, pointerEvents: 'none' }}>
-        <PaintedMoon size={80} />
+      <div style={{ position: 'absolute', top: 'clamp(20px, 3vh, 60px)', right: 'clamp(40px, 6vw, 120px)', zIndex: 2, pointerEvents: 'none' }}>
+        <PaintedMoon size={64} />
       </div>
-      <PaintedBird x="14%" y="14%" size={28} />
-      <PaintedBird x="62%" y="9%" size={22} />
-      <PaintedBird x="86%" y="22%" size={26} />
+      <PaintedBird x="14%" y="14%" size={24} />
+      <PaintedBird x="62%" y="9%" size={20} />
+      <PaintedBird x="86%" y="22%" size={22} />
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none' }}>
-        <PaintedHills width={2400} height={220} />
+        <PaintedHills width={2400} height={180} />
       </div>
       <FloatingTeamBalloons teams={state?.teams ?? []} />
 
-      {/* ── Top: Title (zentriert, sehr groß) ── */}
+      {/* ── Top: Title (zentriert, dynamisch an Viewport-Höhe gekoppelt) ── */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        paddingTop: 'clamp(4px, 0.6vh, 10px)',
       }}>
         <div style={{
           fontFamily: F_HAND,
-          fontSize: 'clamp(96px, 13vw, 200px)', fontWeight: 700, lineHeight: 0.92,
+          // Doppel-Cap: max(vh, vw) damit weder Höhe noch Breite gesprengt werden.
+          // 11vh = 119px @1080, 79px @720, 237px @4K.
+          fontSize: 'min(11vh, 14vw)',
+          fontWeight: 700, lineHeight: 0.92,
           color: PALETTE.cream,
           letterSpacing: '-0.015em',
           textShadow: '0 8px 28px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4)',
@@ -143,10 +163,10 @@ function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: bool
       flex: 1, display: 'grid',
       gridTemplateColumns: 'auto 1fr',
       alignItems: 'center',
-      columnGap: 'clamp(24px, 3vw, 48px)',
+      columnGap: 'clamp(20px, 2.6vw, 44px)',
       position: 'relative', zIndex: 5,
       width: '100%',
-      padding: '0 clamp(24px, 4vw, 80px)',
+      padding: '0 clamp(16px, 3vw, 60px)',
       minHeight: 0,
     }}>
       {/* Left: QR Code */}
@@ -154,17 +174,18 @@ function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: bool
 
       {/* Right: Teams + Status */}
       <div style={{
-        minWidth: 0, width: '100%',
-        display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.8vh, 22px)',
+        minWidth: 0, minHeight: 0, width: '100%',
+        display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 16px)',
         alignItems: 'stretch', justifyContent: 'center',
       }}>
         {/* Header über dem Grid */}
         <div style={{
           fontFamily: F_BODY,
-          fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 700,
+          fontSize: 'min(2vh, 1.5vw)', fontWeight: 700,
           color: `${PALETTE.cream}cc`,
           letterSpacing: '0.18em', textTransform: 'uppercase',
           textAlign: 'center',
+          flexShrink: 0,
         }}>
           {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
         </div>
@@ -187,16 +208,19 @@ function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: bool
 // ─────────────────────────────────────────────────────────────────────────────
 
 function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roomCode: string }) {
-  void roomCode; // Reserve falls Multi-Room kommt
-  const qrSize = 'min(44vh, 420px)';
+  void roomCode;
+  // QR-Größe an verfügbare Höhe gekoppelt — Doppel-Cap (vh+vw) damit die
+  // Box weder die Höhe noch die Breite sprengt. Auf 1080p ~ 410px,
+  // auf 720p ~ 270px, auf 4K bis 600px.
+  const qrSize = 'min(40vh, 30vw, 460px)';
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5vh, 18px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'min(1.4vh, 16px)',
       flexShrink: 0, justifySelf: 'start',
     }}>
       {/* QR im weißen PaperCard-Frame */}
       <div style={{
-        background: '#ffffff', borderRadius: 24, padding: 'clamp(14px, 2vh, 24px)',
+        background: '#ffffff', borderRadius: 24, padding: 'min(2vh, 22px)',
         boxShadow: `0 16px 64px rgba(31,58,95,0.45), 0 0 50px ${PALETTE.cream}33`,
         animation: 'gFloat 5.2s ease-in-out infinite',
         width: qrSize, height: qrSize,
@@ -215,18 +239,18 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
       <div style={{ textAlign: 'center' }}>
         <div style={{
           fontFamily: F_HAND,
-          fontSize: 'clamp(28px, 3.2vw, 42px)', color: PALETTE.cream, fontWeight: 700,
+          fontSize: 'min(3.4vh, 2.8vw)', color: PALETTE.cream, fontWeight: 700,
           lineHeight: 1, marginBottom: 6,
           textShadow: '0 4px 16px rgba(0,0,0,0.5)',
         }}>
           {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
         </div>
         <div style={{
-          fontSize: 'clamp(13px, 1.4vw, 18px)',
+          fontSize: 'min(1.6vh, 1.3vw)',
           color: PALETTE.inkDeep,
           fontFamily: 'ui-monospace, "SFMono-Regular", monospace',
           background: PALETTE.cream,
-          padding: '6px 16px', borderRadius: 999,
+          padding: '5px 14px', borderRadius: 999,
           border: `1.5px dashed ${PALETTE.sage}88`,
           display: 'inline-block',
           letterSpacing: '0.02em',
@@ -238,7 +262,7 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
       {/* CozyWolf Branding (aus Original) — als Aquarell-Pill */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '8px 18px', borderRadius: 999,
+        padding: '6px 16px', borderRadius: 999,
         background: `linear-gradient(135deg, ${PALETTE.ochre}33, ${PALETTE.terracotta}1f)`,
         border: `1.5px solid ${PALETTE.ochre}88`,
         boxShadow: `0 4px 18px rgba(0,0,0,0.35), 0 0 18px ${PALETTE.ochre}33`,
@@ -246,18 +270,18 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
         <img
           src="/logo.png"
           alt=""
-          style={{ width: 28, height: 28, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+          style={{ width: 'min(3vh, 28px)', height: 'min(3vh, 28px)', objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
         />
         <span style={{
           fontFamily: F_BODY,
-          fontSize: 'clamp(12px, 1.1vw, 15px)', fontWeight: 700,
+          fontSize: 'min(1.4vh, 1.1vw)', fontWeight: 700,
           color: PALETTE.cream, letterSpacing: '0.06em',
         }}>
           {de ? 'präsentiert von' : 'presented by'}
         </span>
         <span style={{
           fontFamily: F_HAND,
-          fontSize: 'clamp(18px, 1.7vw, 24px)', fontWeight: 700,
+          fontSize: 'min(2.2vh, 1.7vw)', fontWeight: 700,
           color: PALETTE.ochre, letterSpacing: '0.02em',
           textShadow: '0 1px 2px rgba(0,0,0,0.6)',
         }}>
@@ -284,43 +308,58 @@ function TeamsGrid({ teams, waveIds }: { teams: QQTeam[]; waveIds: Set<string> }
   const compact = teamCount > 4;
   // 1 Team mittig — nicht volle Breite, sondern hübsch in der Mitte.
   const justifyItems = teamCount === 1 ? 'center' : 'stretch';
+
+  // Avatar-Größe an Viewport-Höhe gekoppelt: pro Reihe muss eine Card
+  // (Padding + Avatar + Gap + Name + Status) ins verfügbare vertikale
+  // Budget passen. PaintedAvatar erwartet number → wir rechnen hier in JS
+  // damit's auf Beamer/Fernseher/Laptop dynamisch skaliert.
+  const { w: vw, h: vh } = useViewportSize();
+  const avatarSize = useMemo(() => {
+    if (compact) {
+      // 5-8 Teams = 4 Reihen → Avatar darf max ~10% vh sein
+      return Math.round(Math.max(56, Math.min(vh * 0.10, vw * 0.07, 130)));
+    }
+    // 1-4 Teams = 1-2 Reihen → mehr Platz pro Card
+    return Math.round(Math.max(90, Math.min(vh * 0.18, vw * 0.12, 220)));
+  }, [vw, vh, compact]);
+
   return (
     <div style={{
       display: 'grid',
       gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      gap: compact ? 'clamp(10px, 1.4vw, 16px)' : 'clamp(14px, 1.8vw, 22px)',
+      gap: compact ? 'clamp(8px, 1.2vh, 14px)' : 'clamp(10px, 1.6vh, 20px)',
       justifyItems,
+      // Bei 1 Team Card-Breite begrenzen statt volle Spalte
+      ...(teamCount === 1 ? { width: 'min(420px, 100%)', justifySelf: 'center', margin: '0 auto' } : null),
+      minHeight: 0,
     }}>
       {teams.map((t, i) => (
-        <TeamCard key={t.id} team={t} fresh={waveIds.has(t.id)} compact={compact} delayIndex={i} />
+        <TeamCard key={t.id} team={t} fresh={waveIds.has(t.id)} compact={compact} delayIndex={i} avatarSize={avatarSize} />
       ))}
     </div>
   );
 }
 
 function TeamCard({
-  team, fresh, compact, delayIndex,
-}: { team: QQTeam; fresh: boolean; compact: boolean; delayIndex: number }) {
+  team, fresh, compact, delayIndex, avatarSize,
+}: { team: QQTeam; fresh: boolean; compact: boolean; delayIndex: number; avatarSize: number }) {
   const slug = qqGetAvatar(team.avatarId).slug;
   // Volle Teamfarbe als Ring (kein 55-alpha) → Beamer-Lesbarkeit.
   const ringColor = softTeamColor(team.avatarId, PALETTE.terracotta);
-  // Hochkant: Avatar oben groß, Name + Status drunter.
-  const avatarSize = compact ? 'clamp(96px, 9vw, 140px)' : 'clamp(120px, 12vw, 180px)';
   return (
     <div style={{
       position: 'relative',
       padding: compact
-        ? 'clamp(18px, 2.2vh, 26px) clamp(14px, 1.4vw, 22px)'
-        : 'clamp(24px, 2.8vh, 34px) clamp(18px, 1.8vw, 28px)',
-      borderRadius: compact ? 24 : 30,
+        ? 'clamp(8px, 1.4vh, 16px) clamp(12px, 1.4vw, 22px)'
+        : 'clamp(16px, 2.4vh, 28px) clamp(16px, 1.8vw, 28px)',
+      borderRadius: compact ? 22 : 28,
       background: `${PALETTE.cream}f5`,
-      // Dicker Ring in voller Teamfarbe + warmer Glow
       border: `4px solid ${ringColor}`,
       boxShadow: fresh
         ? `0 14px 40px rgba(31,58,95,0.4), 0 0 80px ${ringColor}cc, 0 0 40px ${ringColor}aa`
-        : `0 16px 38px rgba(31,58,95,0.3), 0 0 28px ${ringColor}55`,
+        : `0 14px 32px rgba(31,58,95,0.28), 0 0 24px ${ringColor}55`,
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: compact ? 'clamp(8px, 1vh, 14px)' : 'clamp(12px, 1.4vh, 20px)',
+      gap: compact ? 'clamp(4px, 0.8vh, 10px)' : 'clamp(10px, 1.4vh, 18px)',
       animation: fresh
         ? 'lobbyGouacheJoin 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
         : `lobbyGouacheCardIn 0.55s cubic-bezier(0.34,1.2,0.64,1) ${0.3 + delayIndex * 0.06}s both`,
@@ -329,11 +368,11 @@ function TeamCard({
       filter: 'url(#paintFrame)',
       textAlign: 'center',
     }}>
-      <PaintedAvatar slug={slug} size={parseSize(avatarSize)} color={ringColor} withGrain={false} />
+      <PaintedAvatar slug={slug} size={avatarSize} color={ringColor} withGrain={false} />
       {fresh && (
         <span aria-hidden style={{
           position: 'absolute', top: -18, right: -10,
-          fontSize: compact ? 36 : 46, lineHeight: 1,
+          fontSize: compact ? 32 : 42, lineHeight: 1,
           animation: 'lobbyGouacheWave 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
           filter: `drop-shadow(0 0 10px ${ringColor}cc)`,
         }}>👋</span>
@@ -342,7 +381,7 @@ function TeamCard({
         <div style={{
           fontFamily: F_HAND,
           fontWeight: 700,
-          fontSize: compact ? 'clamp(28px, 2.8vw, 42px)' : 'clamp(34px, 3.4vw, 52px)',
+          fontSize: compact ? 'min(3vh, 2.6vw)' : 'min(4vh, 3.4vw)',
           color: PALETTE.inkDeep,
           lineHeight: 1.05,
           whiteSpace: 'nowrap',
@@ -353,7 +392,7 @@ function TeamCard({
         </div>
         <div style={{
           fontFamily: F_BODY,
-          fontSize: compact ? 'clamp(13px, 1.2vw, 17px)' : 'clamp(14px, 1.4vw, 19px)',
+          fontSize: compact ? 'min(1.5vh, 1.2vw)' : 'min(1.8vh, 1.4vw)',
           fontWeight: 700,
           color: team.connected ? ringColor : `${PALETTE.inkSoft}aa`,
           marginTop: 4,
@@ -369,18 +408,6 @@ function TeamCard({
   );
 }
 
-// Best-effort Parser für clamp()-Strings → Number für SVG-Größe.
-// PaintedAvatar erwartet eine Number; wir bauen aus dem Mittelwert
-// einen vernünftigen Default (Browser rechnet das clamp ohnehin via CSS,
-// aber PaintedAvatar nutzt size für inline-px). Fallback: 80.
-function parseSize(s: string): number {
-  const m = s.match(/clamp\(\s*([\d.]+)px\s*,\s*([\d.]+)vw\s*,\s*([\d.]+)px\s*\)/);
-  if (!m) return 80;
-  if (typeof window === 'undefined') return Number(m[1]);
-  const px = Number(m[2]) * window.innerWidth / 100;
-  return Math.round(Math.min(Number(m[3]), Math.max(Number(m[1]), px)));
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Empty-Hint + Status-Line (aus Original)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -389,9 +416,9 @@ function EmptyTeamsPanel({ de }: { de: boolean }) {
   return (
     <div style={{
       fontFamily: F_HAND,
-      color: PALETTE.cream, fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 700,
+      color: PALETTE.cream, fontSize: 'min(3.4vh, 2.6vw)', fontWeight: 700,
       animation: 'gTwinkle 2.5s ease-in-out infinite', textAlign: 'center',
-      padding: 'clamp(28px, 4vh, 56px) 24px',
+      padding: 'clamp(20px, 4vh, 56px) 24px',
       border: `2px dashed ${PALETTE.cream}44`, borderRadius: 22,
       background: `${PALETTE.inkDeep}33`,
     }}>
@@ -425,11 +452,12 @@ function StatusLine({ de, teamCount, connectedCount }: { de: boolean; teamCount:
   return (
     <div style={{
       fontFamily: F_HAND,
-      fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 700, textAlign: 'center',
+      fontSize: 'min(3vh, 2.4vw)', fontWeight: 700, textAlign: 'center',
       color,
       letterSpacing: '0.02em',
       textShadow: '0 2px 10px rgba(0,0,0,0.45)',
       animation: pulsing ? 'gTwinkle 2.5s ease-in-out infinite' : undefined,
+      flexShrink: 0,
     }}>
       {label}
     </div>

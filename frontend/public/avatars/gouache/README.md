@@ -18,7 +18,28 @@ geladen. Wenn eine Datei hier fehlt, fällt der Code auf die
 | `kuh`       | Kuh       | `#3D5A80` | muted dusty blue hoodie   |
 | `capybara`  | Capybara  | `#B8CDB1` | pale sage hoodie          |
 
-Dateinamen-Schema: **`avatar-{slug}.png`**
+Dateinamen-Schema: **`avatar-{slug}.png`** (+ `avatar-{slug}.webp` Variante).
+
+## Komprimierung
+
+Die produktiven Dateien hier sind **komprimierte Varianten** (≈ 300–500 KB
+PNG, ≈ 60–120 KB WebP). Originale (9–13 MB pro PNG) liegen in
+`frontend/avatars-source-gouache/` (gitignored — nicht im Repo, lokal als
+Backup).
+
+**Komprimierung neu starten** (z.B. nach Avatar-Update):
+
+```bash
+node scripts/compressGouacheAvatars.mjs
+```
+
+Das Script liest aus `frontend/avatars-source-gouache/`, schreibt nach
+`frontend/public/avatars/gouache/` mit:
+- PNG: `1024×1024`, palette: true, quality 90, effort 10
+- WebP: `1024×1024`, quality 80, effort 6
+
+Wenn du **neue Originale** einfügen willst: leg sie in
+`frontend/avatars-source-gouache/` ab und lass das Script laufen.
 
 ## Empfohlene Bild-Specs
 

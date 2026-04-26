@@ -754,6 +754,198 @@ function AvatarStudyMockup() {
   );
 }
 
+// ── Team-Farben sanft ──────────────────────────────────────────────────────
+// Vergleich: aktuelle saturierte Team-Farben vs sanftere Gouache-Variante.
+// Prinzip: 15-20% Saturation runter, 5-10% Lightness rauf — bleibt distinkt
+// aber atmet ruhiger. Hoodie-Pairings funktionieren weiter, der Kontrast
+// wird sogar stimmiger (weniger Schreierisches dazwischen).
+const TEAM_COLOR_SOFT: Array<{
+  slug: string; label: string; oldHex: string; softHex: string; softName: string;
+}> = [
+  { slug: 'shiba',     label: 'Hund (Shiba)', oldHex: '#FA507F', softHex: '#E68099', softName: 'Rose' },
+  { slug: 'faultier',  label: 'Faultier',     oldHex: '#9DCB2F', softHex: '#B4CC78', softName: 'Sage-Limette' },
+  { slug: 'pinguin',   label: 'Pinguin',      oldHex: '#266FD3', softHex: '#5B85C2', softName: 'Staubig-Blau' },
+  { slug: 'koala',     label: 'Koala',        oldHex: '#9A65D5', softHex: '#B393D1', softName: 'Lavendel' },
+  { slug: 'giraffe',   label: 'Giraffe',      oldHex: '#FEC814', softHex: '#F0CC5F', softName: 'Honig' },
+  { slug: 'waschbaer', label: 'Waschbär',     oldHex: '#68B4A5', softHex: '#88B5AB', softName: 'Stein-Teal' },
+  { slug: 'kuh',       label: 'Kuh',          oldHex: '#FF751F', softHex: '#E89561', softName: 'Terracotta-Orange' },
+  { slug: 'capybara',  label: 'Capybara',     oldHex: '#F84326', softHex: '#DB6A55', softName: 'Backstein' },
+];
+
+function SoftTeamColorsSection() {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
+      <SectionLabel n="10" title="Sanfte Team-Farben" sub="Bestehende Hues — nur etwas weniger saturiert" />
+
+      <div style={{
+        marginTop: 24, padding: '14px 18px', borderRadius: 10,
+        background: `${PALETTE.terracotta}1a`, border: `1.5px solid ${PALETTE.terracotta}55`,
+        fontFamily: F_BODY, fontSize: 14, color: PALETTE.charcoal, lineHeight: 1.55,
+      }}>
+        <strong style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.terracotta, fontWeight: 700, display: 'block', marginBottom: 4 }}>
+          Sanftungs-Prinzip
+        </strong>
+        Die 8 Team-Hues bleiben — Pink ist Pink, Blau ist Blau, alle Teams bleiben sofort
+        unterscheidbar. Aber: ~15-20% Saturation runter, ~5-10% Lightness rauf, leicht
+        wärmerer Bias bei den kalten Tönen. Effekt: weniger Plakat-Knall, mehr Aquarell-
+        Atem. Die Avatare poppen trotzdem klar wegen der Hoodie-Komplementäre.
+      </div>
+
+      {/* Side-by-side Swatches: Alt vs Sanft */}
+      <div style={{
+        marginTop: 28, display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16,
+      }}>
+        {TEAM_COLOR_SOFT.map(t => (
+          <div key={t.slug} style={{
+            padding: 14, borderRadius: 14,
+            background: `${PALETTE.paper}aa`,
+            border: `1.5px solid ${PALETTE.charcoal}22`,
+            filter: 'url(#watercolorEdge)',
+          }}>
+            <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep, fontWeight: 700, marginBottom: 8 }}>
+              {t.label}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  height: 56, borderRadius: 10,
+                  background: `radial-gradient(circle at 30% 30%, ${t.oldHex}cc, ${t.oldHex}99 60%, ${t.oldHex}66 100%)`,
+                  border: `1.5px solid ${t.oldHex}`,
+                  marginBottom: 4,
+                }} />
+                <div style={{ fontFamily: 'monospace', fontSize: 10, color: PALETTE.inkSoft, textAlign: 'center' }}>
+                  Alt {t.oldHex}
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: F_HAND, fontSize: 26, color: PALETTE.terracotta, fontWeight: 700, padding: '0 4px',
+              }}>→</div>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  height: 56, borderRadius: 10,
+                  background: `radial-gradient(circle at 30% 30%, ${t.softHex}cc, ${t.softHex}99 60%, ${t.softHex}66 100%)`,
+                  border: `1.5px solid ${t.softHex}`,
+                  boxShadow: `0 4px 10px ${t.softHex}33`,
+                  marginBottom: 4,
+                }} />
+                <div style={{ fontFamily: 'monospace', fontSize: 10, color: PALETTE.inkDeep, fontWeight: 700, textAlign: 'center' }}>
+                  Sanft {t.softHex}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontFamily: F_BODY, fontSize: 11, color: PALETTE.terracotta, fontStyle: 'italic', marginTop: 6, textAlign: 'center' }}>
+              {t.softName}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Demo-Grid mit den sanften Farben — exakt wie der echte In-Game-Grid */}
+      <div style={{ marginTop: 32 }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 24, color: PALETTE.inkDeep, fontWeight: 700, marginBottom: 12 }}>
+          Demo-Grid mit sanften Farben
+        </div>
+        <SoftGridDemo />
+      </div>
+
+      {/* Direkter Hex-Block zum Kopieren */}
+      <div style={{
+        marginTop: 28, padding: '16px 20px', borderRadius: 10,
+        background: PALETTE.inkDeep, color: PALETTE.cream,
+        fontFamily: 'monospace', fontSize: 13, lineHeight: 1.7,
+      }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.cream, fontWeight: 700, marginBottom: 8 }}>
+          Zum Kopieren · QQ_AVATARS color-Field
+        </div>
+        {TEAM_COLOR_SOFT.map(t => (
+          <div key={t.slug}>
+            <span style={{ color: PALETTE.sageLight }}>{t.slug.padEnd(11)}</span>
+            <span style={{ color: PALETTE.cream }}>color: '</span>
+            <span style={{ color: PALETTE.terracotta, fontWeight: 700 }}>{t.softHex}</span>
+            <span style={{ color: PALETTE.cream }}>',</span>
+            <span style={{ color: PALETTE.inkSoft, marginLeft: 12 }}>// {t.softName}</span>
+          </div>
+        ))}
+      </div>
+    </PaperCard>
+  );
+}
+
+// 5x5 Demo-Grid — gleicher Look wie der echte In-Game-Grid, mit sanften Farben
+function SoftGridDemo() {
+  const grid: Array<Array<{ slug: string | null; joker?: boolean; stack?: boolean }>> = [
+    [{ slug: 'shiba' }, { slug: null }, { slug: 'faultier' }, { slug: 'faultier' }, { slug: null }],
+    [{ slug: 'shiba' }, { slug: 'capybara' }, { slug: null }, { slug: 'faultier', stack: true }, { slug: 'pinguin' }],
+    [{ slug: null }, { slug: 'capybara' }, { slug: 'giraffe', joker: true }, { slug: 'giraffe' }, { slug: 'pinguin' }],
+    [{ slug: 'kuh' }, { slug: null }, { slug: 'giraffe' }, { slug: null }, { slug: 'koala' }],
+    [{ slug: 'kuh' }, { slug: 'kuh' }, { slug: null }, { slug: 'koala' }, { slug: 'koala' }],
+  ];
+  const colorOf = (slug: string | null) => {
+    if (!slug) return null;
+    return TEAM_COLOR_SOFT.find(t => t.slug === slug)?.softHex ?? null;
+  };
+
+  return (
+    <div style={{
+      maxWidth: 600, margin: '0 auto',
+      padding: 16, borderRadius: 18,
+      background: `linear-gradient(180deg, ${PALETTE.inkSoft}88 0%, ${PALETTE.sage}88 100%)`,
+      filter: 'url(#paintFrame)',
+      boxShadow: '0 14px 38px rgba(31,58,95,0.3)',
+    }}>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8,
+      }}>
+        {grid.flatMap((row, r) => row.map((cell, c) => {
+          const color = colorOf(cell.slug);
+          const tilt = ((r * 7 + c * 13) % 7 - 3) * 0.5;
+          return (
+            <div key={`${r}-${c}`} style={{
+              aspectRatio: '1', borderRadius: 12,
+              background: color
+                ? `radial-gradient(circle at 30% 30%, ${color}cc, ${color}99 60%, ${color}66 100%)`
+                : `${PALETTE.cream}99`,
+              border: color ? `1.5px solid ${color}` : `1.5px dashed ${PALETTE.inkSoft}55`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+              transform: `rotate(${tilt}deg)`,
+              boxShadow: color ? `0 4px 12px ${color}55, inset 0 -3px 6px rgba(0,0,0,0.08)` : 'none',
+            }}>
+              {cell.slug && (
+                <div style={{
+                  width: '70%', height: '70%', borderRadius: '50%',
+                  backgroundImage: `url(/avatars/cozy-cast/avatar-${cell.slug}.png)`,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  filter: 'url(#avatarGouache)',
+                }} />
+              )}
+              {cell.joker && (
+                <div style={{
+                  position: 'absolute', top: -6, right: -6,
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: PALETTE.ochre,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, color: PALETTE.cream,
+                  boxShadow: `0 0 12px ${PALETTE.ochre}99`,
+                }}>★</div>
+              )}
+              {cell.stack && (
+                <div style={{
+                  position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)',
+                  fontFamily: F_HAND, fontSize: 14, color: PALETTE.cream,
+                  background: PALETTE.charcoal, padding: '0 6px', borderRadius: 4,
+                }}>×2</div>
+              )}
+            </div>
+          );
+        }))}
+      </div>
+    </div>
+  );
+}
+
 // ── Hoodie-Empfehlungen ────────────────────────────────────────────────────
 // Konkrete Hex-Pairings fuer die neuen Avatare im Gouache-Stil. Die
 // Hoodie-Farbe ist KOMPLEMENTÄR zur Team-Farbe, alle 8 stammen aus der
@@ -776,7 +968,7 @@ const HOODIE_PAIRINGS: Array<{
 function HoodieRecommendationSection() {
   return (
     <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
-      <SectionLabel n="10" title="Hoodie-Farben" sub="Team-Farbe ist das Feld · Hoodie ist der Avatar-Pop dagegen" />
+      <SectionLabel n="11" title="Hoodie-Farben" sub="Team-Farbe ist das Feld · Hoodie ist der Avatar-Pop dagegen" />
 
       <div style={{
         marginTop: 24, padding: '14px 18px', borderRadius: 10,
@@ -969,7 +1161,7 @@ function HoodieRecommendationSection() {
 function VerdictSection() {
   return (
     <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
-      <SectionLabel n="11" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
+      <SectionLabel n="12" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
       <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
         <VerdictCard
           icon="✓"
@@ -1065,6 +1257,7 @@ export default function QQGouachePage() {
         <TeamPageMockup />
         <GameOverMockup />
         <AvatarStudyMockup />
+        <SoftTeamColorsSection />
         <HoodieRecommendationSection />
         <VerdictSection />
 

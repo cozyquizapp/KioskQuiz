@@ -247,8 +247,11 @@ export default function QQModeratorPage() {
     let action: (() => void) | null = null;
     switch (s.phase) {
       case 'RULES': {
-        delayMs = 8000; // Regel-Folie lesen + Icon-Animationen
-        const totalSlides = 4;
+        const rIdx = s.rulesSlideIndex ?? 0;
+        // Slide 2 (Tree-Showcase) braucht länger wegen Phasen-Sweep
+        // (4 Phasen × 2.2s = ~9s + initialer Pause + Lesen).
+        delayMs = rIdx === 2 ? 12500 : 8000;
+        const totalSlides = 5;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -435,7 +438,7 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 4 Folien: Ziel / So läuft's / Neue Fähigkeiten / Comeback
         // (entspricht buildRulesSlidesDe/En in QQBeamerPage.tsx)
-        const totalSlides = 4;
+        const totalSlides = 5;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -528,7 +531,7 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = 4;
+        const totalSlides = 5;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -2112,7 +2115,7 @@ function IdleHint({ state }: { state: QQStateUpdate }) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = 4;
+  const totalSlides = 5;
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;

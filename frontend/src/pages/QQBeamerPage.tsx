@@ -1541,6 +1541,8 @@ type RulesSlide = {
   grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
   /** Rendert stattdessen den Fortschrittsbaum (Phasen + Fragen-Punkte). */
   showTree?: boolean;
+  /** Eigene Folie: Tree riesig + Phasen-Sweep-Animation (Roadmap-Vorstellung). */
+  treeShowcase?: boolean;
   /** Zeigt Ability-Badges (Bann, Schild, Tauschen, Stapeln) als Icon-Strip unter den Lines. */
   abilities?: AbilityBadge[];
 };
@@ -1579,11 +1581,19 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
     },
     {
+      icon: '🗺',
+      title: 'Dein Weg durchs Quiz',
+      color: '#FBBF24',
+      lines: [
+        // Lines bleiben leer — die Slide rendert nur den Tree groß.
+      ],
+      treeShowcase: true,
+    },
+    {
       icon: '🔓',
       title: 'Neue Fähigkeiten',
       color: '#F59E0B',
       lines: abilityLines,
-      showTree: true,
       abilities: [
         { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
         { emoji: '🏯', label: 'Stapeln', accent: '#06B6D4' },
@@ -1636,11 +1646,17 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       ],
     },
     {
+      icon: '🗺',
+      title: 'Your Quiz Roadmap',
+      color: '#FBBF24',
+      lines: [],
+      treeShowcase: true,
+    },
+    {
       icon: '🔓',
       title: 'New Abilities',
       color: '#F59E0B',
       lines: abilityLines,
-      showTree: true,
       abilities: [
         { emoji: '⚡', label: 'Steal', accent: '#EF4444' },
         { emoji: '🏯', label: 'Stack', accent: '#06B6D4' },
@@ -2395,13 +2411,46 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Content: text left, grid right (if grid exists) */}
         <div style={{
           display: 'flex', gap: 'clamp(24px, 3vw, 48px)',
-          alignItems: slide.showTree ? 'stretch' : 'center',
-          flexDirection: slide.showTree ? 'column' : (hasGrid ? 'row' : 'column'),
+          alignItems: (slide.showTree || slide.treeShowcase) ? 'stretch' : 'center',
+          flexDirection: (slide.showTree || slide.treeShowcase) ? 'column' : (hasGrid ? 'row' : 'column'),
         }}>
-          {/* Fortschrittsbaum (wenn Flag gesetzt) — oben, volle Breite */}
+          {/* Fortschrittsbaum (Inline-Variante in Abilities-Slide) */}
           {slide.showTree && (
             <div style={{ display: 'flex', justifyContent: 'center', animation: 'contentReveal 0.5s ease 0.05s both' }}>
               <QQProgressTree state={s} variant="inline" />
+            </div>
+          )}
+
+          {/* TREE SHOWCASE — eigene Slide, Tree groß + Phasen-Sweep */}
+          {slide.treeShowcase && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 'clamp(20px, 3vh, 40px)',
+              animation: 'contentReveal 0.6s ease 0.1s both',
+              padding: 'clamp(8px, 1.5vh, 24px) 0',
+            }}>
+              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2200} />
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 12,
+                fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 700,
+                color: '#a8a395', letterSpacing: '0.04em',
+                animation: 'contentReveal 0.6s ease 0.5s both',
+              }}>
+                <span style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                  background: '#FBBF24', boxShadow: '0 0 12px rgba(251,191,36,0.65)',
+                  animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
+                }} />
+                {lang === 'de'
+                  ? '5 Kategorien pro Runde — jede mit eigenem Twist'
+                  : '5 categories per round — each with its own twist'}
+              </div>
+              <style>{`
+                @keyframes qqShowcaseHintPulse {
+                  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+                  50% { opacity: 1; transform: scale(1.15); }
+                }
+              `}</style>
             </div>
           )}
 

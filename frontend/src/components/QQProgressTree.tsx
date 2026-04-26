@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 
-type Variant = 'hero' | 'inline' | 'panel' | 'mini';
+type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
 interface Props {
   state: QQStateUpdate;
-  variant?: Variant; // hero = groß zentriert (PHASE_INTRO/Rules), inline = Overlay (QUESTION_ACTIVE), panel = Pausen-Rotation
+  variant?: Variant; // hero = groß zentriert (PHASE_INTRO/Rules), inline = Overlay (QUESTION_ACTIVE), panel = Pausen-Rotation, showcase = Roadmap-Vorstellung mit Phasen-Sweep
   title?: string;
+  /** Wenn true: zeigt Spotlight-Sweep über alle Phasen statt der state.questionIndex-Position. */
+  showcaseMode?: boolean;
+  /** Sweep-Geschwindigkeit pro Phase in ms (default 2200). */
+  showcaseStepMs?: number;
 }
 
 const PHASE_LABELS_DE: Record<QQGamePhaseIndex, string> = {
@@ -23,13 +27,34 @@ const PHASE_LABELS_EN: Record<QQGamePhaseIndex, string> = {
   4: 'Finale',
 };
 
-export default function QQProgressTree({ state, variant = 'hero', title }: Props) {
+export default function QQProgressTree({
+  state,
+  variant = 'hero',
+  title,
+  showcaseMode = false,
+  showcaseStepMs = 2200,
+}: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
 
   const lang = state.language === 'en' ? 'en' : 'de';
   const phaseLabels = lang === 'en' ? PHASE_LABELS_EN : PHASE_LABELS_DE;
   const totalPhases = state.totalPhases || 4;
+
+  // Showcase-Sweep: cycelt durch alle Phasen, hebt jede 2.2s lang hervor.
+  // Reset auf -1 = Pause (alle gleich gedimmt), dann 0..n-1.
+  const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
+  useEffect(() => {
+    if (!showcaseMode) return;
+    let i = -1;
+    const tick = () => {
+      i = (i + 1) % (totalPhases + 1); // +1 für initialen Pause-Step
+      setShowcasePhaseIdx(i - 1); // -1 = Pause, 0..n-1 = Phase highlight
+    };
+    tick(); // Erster Reset auf -1
+    const id = setInterval(tick, showcaseStepMs);
+    return () => clearInterval(id);
+  }, [showcaseMode, totalPhases, showcaseStepMs]);
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -58,14 +83,16 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   }, [currentIdx]);
 
   const isMini = variant === 'mini';
+  const isShowcase = variant === 'showcase';
 
   // Skalen je nach Variant
-  const scale = variant === 'hero' ? 1
+  const scale = isShowcase ? 1.6
+    : variant === 'hero' ? 1
     : variant === 'panel' ? 0.8
     : isMini ? 0.42
     : 0.95;
-  const titleSize = variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
-  const phaseNameSize = variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
+  const titleSize = isShowcase ? 44 : variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
+  const phaseNameSize = isShowcase ? 26 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
   const dotSize = Math.round(34 * scale);
   const dotGap = isMini ? 4 : Math.round(12 * scale);
   const phaseGap = isMini ? 14 : Math.round(40 * scale);
@@ -94,7 +121,20 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   // Progress: von Center des ersten Dots bis Center des Wolf-Dots (displayIdx).
   const firstCenter = dotCenters[0] ?? 0;
   const lastCenter = dotCenters[dotCenters.length - 1] ?? 0;
-  const wolfDotIdx = Math.max(0, Math.min(displayIdx, dotCenters.length - 1));
+
+  // Im Showcase-Mode wandert der Wolf MIT der Phasen-Highlight-Sweep mit:
+  // pro highlighteter Phase steht er am LETZTEN Dot dieser Phase.
+  const showcaseWolfIdx = (() => {
+    if (!showcaseMode || showcasePhaseIdx < 0) return 0;
+    let cum = 0;
+    for (let pi = 0; pi <= showcasePhaseIdx; pi++) {
+      const phaseEntries = byPhase.get(phases[pi]) ?? [];
+      cum += phaseEntries.length;
+    }
+    return Math.max(0, cum - 1);
+  })();
+  const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
+  const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
   const currentCenter = dotCenters[wolfDotIdx] ?? firstCenter;
   const trackStart = firstCenter;
   const trackEnd = lastCenter;
@@ -103,17 +143,21 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
   const progressColor = '#FBBF24'; // Amber — markiert Fortschritt
 
-  const wrapperBg = isMini
-    ? 'rgba(15,23,42,0.55)'
-    : variant === 'inline'
-      ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
-      : 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92))';
-  const wrapperBorder = isMini
-    ? '1px solid rgba(148,163,184,0.18)'
-    : variant === 'inline'
-      ? '1px solid rgba(148,163,184,0.3)'
-      : '2px solid #e2e8f0';
-  const wrapperColor = (isMini || variant === 'inline') ? '#f8fafc' : '#0f172a';
+  const wrapperBg = isShowcase
+    ? 'transparent'
+    : isMini
+      ? 'rgba(15,23,42,0.55)'
+      : variant === 'inline'
+        ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92))';
+  const wrapperBorder = isShowcase
+    ? 'none'
+    : isMini
+      ? '1px solid rgba(148,163,184,0.18)'
+      : variant === 'inline'
+        ? '1px solid rgba(148,163,184,0.3)'
+        : '2px solid #e2e8f0';
+  const wrapperColor = (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : '#0f172a';
 
   return (
     <div
@@ -121,17 +165,18 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: variant === 'hero' ? 22 : isMini ? 0 : 14,
-        padding: variant === 'hero' ? '28px 40px'
+        gap: isShowcase ? 32 : variant === 'hero' ? 22 : isMini ? 0 : 14,
+        padding: isShowcase ? '20px 40px'
+          : variant === 'hero' ? '28px 40px'
           : variant === 'inline' ? '20px 36px'
           : isMini ? '6px 14px'
           : '16px 24px',
         borderRadius: isMini ? 999 : 20,
         background: wrapperBg,
         color: wrapperColor,
-        boxShadow: isMini ? '0 4px 12px rgba(0,0,0,0.35)' : '0 10px 32px rgba(15,23,42,0.18)',
+        boxShadow: isShowcase ? 'none' : isMini ? '0 4px 12px rgba(0,0,0,0.35)' : '0 10px 32px rgba(15,23,42,0.18)',
         border: wrapperBorder,
-        maxWidth: variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
+        maxWidth: isShowcase ? 1600 : variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
         fontFamily: "'Nunito', system-ui, sans-serif",
         backdropFilter: isMini ? 'blur(8px)' : undefined,
       }}
@@ -148,7 +193,9 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
         {showLabels && (
         <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>
           {phases.map((p, pi) => {
-            const isCurrentPhase = state.gamePhaseIndex === p;
+            const isCurrentPhase = showcaseMode
+              ? pi === showcasePhaseIdx
+              : state.gamePhaseIndex === p;
             return (
               <div
                 key={p}
@@ -156,13 +203,16 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
                   width: phaseWidths[pi],
                   textAlign: 'center',
                   fontSize: phaseNameSize,
-                  fontWeight: 800,
+                  fontWeight: 900,
                   color: isCurrentPhase
-                    ? (variant === 'inline' ? '#FBBF24' : '#b45309')
-                    : (variant === 'inline' ? '#94a3b8' : '#64748b'),
+                    ? (isShowcase ? '#FBBF24' : variant === 'inline' ? '#FBBF24' : '#b45309')
+                    : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b'),
                   letterSpacing: 0.4,
                   textTransform: 'uppercase',
                   flexShrink: 0,
+                  textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
+                  transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
+                  transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
                 }}
               >
                 {phaseLabels[p]}
@@ -215,12 +265,13 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
           {phases.map((p, pi) => {
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
+            const isShowcasedPhase = showcaseMode && pi === showcasePhaseIdx;
             return (
               <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
                 {entries.map((e, i) => {
                   const globalIdx = phaseStartIdx + i;
-                  const isPast = globalIdx < displayIdx;
-                  const isCurrent = globalIdx === displayIdx;
+                  const isPast = !showcaseMode && globalIdx < displayIdx;
+                  const isCurrent = globalIdx === effectiveDisplayIdx;
                   const color = QQ_CATEGORY_COLORS[e.category];
                   const label = QQ_CATEGORY_LABELS[e.category];
                   const emoji = e.bunteTueteKind
@@ -241,21 +292,30 @@ export default function QQProgressTree({ state, variant = 'hero', title }: Props
                         fontWeight: 800,
                         background: isCurrent
                           ? 'transparent'
+                          : isShowcasedPhase
+                            ? `${color}33`
+                            : isPast
+                              ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : '#e2e8f0')
+                              : ((variant === 'inline' || isMini || isShowcase) ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
+                        color: isShowcasedPhase
+                          ? '#fef3c7'
                           : isPast
-                            ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : '#e2e8f0')
-                            : ((variant === 'inline' || isMini) ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
-                        color: isPast
-                          ? ((variant === 'inline' || isMini) ? '#94a3b8' : '#94a3b8')
-                          : ((variant === 'inline' || isMini) ? '#cbd5e1' : '#64748b'),
+                            ? ((variant === 'inline' || isMini) ? '#94a3b8' : '#94a3b8')
+                            : ((variant === 'inline' || isMini || isShowcase) ? '#cbd5e1' : '#64748b'),
                         border: isCurrent
                           ? 'none'
-                          : isPast
-                            ? 'none'
-                            : ((variant === 'inline' || isMini) ? '1.5px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
-                        boxShadow: 'none',
+                          : isShowcasedPhase
+                            ? `2px solid ${color}`
+                            : isPast
+                              ? 'none'
+                              : ((variant === 'inline' || isMini || isShowcase) ? '1.5px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
+                        boxShadow: isShowcasedPhase
+                          ? `0 0 18px ${color}88, 0 0 36px ${color}44`
+                          : 'none',
                         opacity: isCurrent ? 0 : isPast ? 0.55 : 1,
                         filter: isPast ? 'grayscale(1)' : 'none',
-                        transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
+                        transform: isShowcasedPhase ? 'scale(1.18)' : 'scale(1)',
+                        transition: 'all 0.45s cubic-bezier(0.22,1,0.36,1)',
                       }}
                     >
                       {emoji}

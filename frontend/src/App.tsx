@@ -29,6 +29,7 @@ const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage')
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQCityLabPage       = React.lazy(() => import('./pages/QQCityLabPage'));
+const QQGouachePage       = React.lazy(() => import('./pages/QQGouachePage'));
 const QQRoundLabPage      = React.lazy(() => import('./pages/QQRoundLabPage'));
 const QQRevealLabPage     = React.lazy(() => import('./pages/QQRevealLabPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
@@ -163,6 +164,7 @@ function App() {
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/city-lab"   element={<PinGate><QQCityLabPage /></PinGate>} />
+          <Route path="/gouache"    element={<PinGate><QQGouachePage /></PinGate>} />
           <Route path="/round-lab"  element={<PinGate><QQRoundLabPage /></PinGate>} />
           <Route path="/reveal-lab" element={<PinGate><QQRevealLabPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />

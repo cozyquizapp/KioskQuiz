@@ -10318,8 +10318,54 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           border: isActive ? `2px solid ${t.color}` : '2px solid transparent',
           boxShadow: isActive ? `0 0 28px ${t.color}55, 0 0 60px ${t.color}22, inset 0 0 12px ${t.color}18` : 'none',
           transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
-          position: 'relative',
+          position: 'relative', overflow: 'visible',
         }}>
+          {/* Hot-Seat-Spotlight: animierter Lichtkegel der von oben auf das aktive
+              Team fällt. Zwei Cone-Layer (warm + cooler edge) + 3 flackernde
+              Glitter-Punkte → wirkt wie eine Bühne. Aufgehängt am isActive-State,
+              gleitet durch Position-Re-Render zum nächsten Team. */}
+          {isActive && (
+            <>
+              <div aria-hidden style={{
+                position: 'absolute',
+                top: -64, left: '20%', right: '20%',
+                height: 'calc(100% + 100px)',
+                background: `linear-gradient(180deg, ${t.color}88 0%, ${t.color}44 30%, ${t.color}11 70%, transparent 100%)`,
+                clipPath: 'polygon(38% 0%, 62% 0%, 82% 100%, 18% 100%)',
+                pointerEvents: 'none',
+                zIndex: 0,
+                animation: 'hotSeatFlicker 2.4s ease-in-out infinite',
+                mixBlendMode: 'screen',
+                filter: 'blur(6px)',
+              }} />
+              <div aria-hidden style={{
+                position: 'absolute',
+                top: -32, left: '32%', right: '32%',
+                height: 'calc(100% + 60px)',
+                background: `linear-gradient(180deg, rgba(254,243,199,0.5) 0%, rgba(254,243,199,0.18) 40%, transparent 100%)`,
+                clipPath: 'polygon(42% 0%, 58% 0%, 70% 100%, 30% 100%)',
+                pointerEvents: 'none',
+                zIndex: 0,
+                animation: 'hotSeatFlicker 2.4s ease-in-out 0.4s infinite',
+                mixBlendMode: 'screen',
+              }} />
+              {/* 3 sanft fallende Glitter-Punkte am Spotlight-Rand */}
+              {[0, 1, 2].map(i => (
+                <span key={i} aria-hidden style={{
+                  position: 'absolute',
+                  top: -20,
+                  left: `${42 + i * 8}%`,
+                  width: 4, height: 4, borderRadius: '50%',
+                  background: t.color,
+                  boxShadow: `0 0 10px ${t.color}, 0 0 4px #fff`,
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  animation: `hotSeatGlitter ${2.8 + i * 0.6}s ease-in ${i * 0.7}s infinite`,
+                  opacity: 0,
+                }} />
+              ))}
+            </>
+          )}
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',

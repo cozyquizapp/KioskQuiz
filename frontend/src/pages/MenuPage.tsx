@@ -31,6 +31,7 @@ const qqLinks: LinkItem[] = [
   { path: '/gouache',               label: 'Gouache Lab',      emoji: '🎨', note: 'Aquarell-/Bilderbuch-Stil — komplette Stilstudie + Live-Avatar-Status' },
   { path: '/lobby-gouache',         label: 'Lobby (Gouache)',  emoji: '🎈', note: 'Echte Welcome-Lobby im Aquarell-Look — selber Socket-Room wie /beamer' },
   { path: '/team-gouache',          label: 'Team (Gouache)',   emoji: '📱', note: 'Phone-Variante im Aquarell-Look — Schätzchen/Mucho/Cheese live spielbar' },
+  { path: '/beamer-gouache',        label: 'Beamer (Gouache)', emoji: '📽️', note: 'Beamer-Show im Aquarell-Look — Foundation + simple Phasen, Frage-Views folgen' },
 ];
 
 // ── Legacy ────────────────────────────────────────────────────────────────────

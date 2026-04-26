@@ -26,30 +26,12 @@ import {
 import {
   PALETTE, F_HAND, F_HAND_CAPS, F_BODY, softTeamColor,
   GouacheFilters, PaintedKeyframes, usePaintFonts,
-  PaperCard, PaintedMist, BlockCapsHeading,
-  PaintedAvatar,
-  PaintedBalloon, PaintedMoon, PaintedHills, PaintedStars, PaintedBird,
+  PaperCard, BlockCapsHeading,
+  PaintedAvatar, PaintedBalloon,
+  GouachePageShell, GouacheNightSky, useViewportSize,
 } from '../gouache';
 
 const QQ_ROOM = 'default';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// useViewportSize — für vh-basierte Avatar-Größen (PaintedAvatar braucht
-// number). Hört auf resize, sodass der Layout sich live an Beamer/Fernseher/
-// Laptop anpasst und nicht statisch in einer Auflösung „kleben" bleibt.
-// ─────────────────────────────────────────────────────────────────────────────
-function useViewportSize() {
-  const [size, setSize] = useState(() => ({
-    w: typeof window !== 'undefined' ? window.innerWidth : 1920,
-    h: typeof window !== 'undefined' ? window.innerHeight : 1080,
-  }));
-  useEffect(() => {
-    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  return size;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -75,39 +57,12 @@ export default function QQLobbyGouachePage() {
   }, []);
 
   return (
-    <div style={{
-      height: '100vh', width: '100vw',
-      position: 'relative', overflow: 'hidden',
-      fontFamily: F_BODY, color: PALETTE.cream,
-      display: 'flex', flexDirection: 'column',
-      padding: 'clamp(6px, 1.2vh, 18px) clamp(20px, 2.5vw, 48px)',
-      gap: 'clamp(6px, 1.2vh, 16px)',
-    }}>
+    <GouachePageShell
+      backdrop={<GouacheNightSky />}
+      style={{ fontFamily: F_BODY, color: PALETTE.cream }}
+    >
       <GouacheFilters />
       <PaintedKeyframes />
-
-      {/* Atmosphärischer Wash-Hintergrund (mehrlagige radiale Wäschen + Papier-Korn) */}
-      <PaintedMist
-        baseColor={PALETTE.inkDeep}
-        washes={[
-          { color: PALETTE.dusk,         cx: '50%', cy: '85%', r: '60%', opacity: 0.7 },
-          { color: PALETTE.lavenderDusk, cx: '20%', cy: '55%', r: '45%', opacity: 0.35 },
-          { color: PALETTE.mist,         cx: '78%', cy: '70%', r: '40%', opacity: 0.30 },
-          { color: PALETTE.peach,        cx: '60%', cy: '12%', r: '35%', opacity: 0.18 },
-        ]}
-      />
-
-      {/* Atmosphäre — gemalter Nachthimmel */}
-      <PaintedStars count={32} />
-      <div style={{ position: 'absolute', top: 'clamp(20px, 3vh, 60px)', right: 'clamp(40px, 6vw, 120px)', zIndex: 2, pointerEvents: 'none' }}>
-        <PaintedMoon size={64} />
-      </div>
-      <PaintedBird x="14%" y="14%" size={24} />
-      <PaintedBird x="62%" y="9%" size={20} />
-      <PaintedBird x="86%" y="22%" size={22} />
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none' }}>
-        <PaintedHills width={2400} height={180} />
-      </div>
       <FloatingTeamBalloons teams={state?.teams ?? []} />
 
       {/* ── Top: Title (zentriert, dynamisch an Viewport-Höhe gekoppelt) ── */}
@@ -138,7 +93,7 @@ export default function QQLobbyGouachePage() {
       ) : (
         <RunningPanel state={state} de={de} />
       )}
-    </div>
+    </GouachePageShell>
   );
 }
 
@@ -475,7 +430,7 @@ function StatusLine({ de, teamCount, connectedCount }: { de: boolean; teamCount:
 // Connecting / Pre-Game / Running — atmosphärische Fallbacks
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ConnectingPanel({ connected }: { connected: boolean }) {
+export function ConnectingPanel({ connected }: { connected: boolean }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -495,7 +450,7 @@ function ConnectingPanel({ connected }: { connected: boolean }) {
   );
 }
 
-function PreGamePanel({ de }: { de: boolean }) {
+export function PreGamePanel({ de }: { de: boolean }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -530,7 +485,7 @@ function PreGamePanel({ de }: { de: boolean }) {
   );
 }
 
-function RunningPanel({ state, de }: { state: QQStateUpdate; de: boolean }) {
+export function RunningPanel({ state, de }: { state: QQStateUpdate; de: boolean }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -579,7 +534,7 @@ const BALLOON_SLOTS: Array<{ left: string; top: string; size: number; delay: str
   { left: '72%', top: '58%', size: 46, delay: '2.6s' },
 ];
 
-function FloatingTeamBalloons({ teams }: { teams: QQTeam[] }) {
+export function FloatingTeamBalloons({ teams }: { teams: QQTeam[] }) {
   const slots = teams.slice(0, BALLOON_SLOTS.length);
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>

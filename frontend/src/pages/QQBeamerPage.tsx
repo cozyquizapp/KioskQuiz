@@ -6530,82 +6530,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Team-Answer-Progress (vor dem Reveal) — am unteren Bildrand
-              direkt ueber der Frage-Card, mit dunklem Strip-Backing fuer
-              Kontrast (statt per-Avatar-Ringen). Folgt dem normalen Flex-
-              Flow (justifyContent:flex-end), erscheint also natuerlich
-              oberhalb der Frage. */}
-          {!revealed && s.teams.length > 0 && (
-            <div style={{
-              alignSelf: 'center',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              padding: '10px 22px 12px',
-              borderRadius: 18,
-              background: 'linear-gradient(180deg, rgba(13,10,6,0.78), rgba(13,10,6,0.92))',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
-              pointerEvents: 'none', zIndex: 9,
-              animation: 'contentReveal 0.45s ease 0.35s both',
-              maxWidth: 'calc(100vw - 80px)',
-              marginBottom: 14,
-            }}>
-              <div style={{
-                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
-                color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.95)',
-                transition: 'color 0.3s ease',
-                letterSpacing: '0.04em',
-              }}>
-                {s.allAnswered
-                  ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
-                  : `${s.answers.length}/${s.teams.length} Teams`}
-              </div>
-              {(() => {
-                const tc = s.teams.length;
-                const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
-                const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
-                return (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, flexWrap: 'wrap' }}>
-                    {s.teams.map(tm => {
-                      const answered = s.answers.some(a => a.teamId === tm.id);
-                      return (
-                        <div key={tm.id} style={{
-                          position: 'relative',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
-                          opacity: answered ? 1 : 0.55,
-                          filter: answered ? 'none' : 'grayscale(0.4)',
-                          transition: 'opacity 0.4s ease, filter 0.4s ease',
-                        }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} size={av} style={{
-                            boxShadow: answered
-                              ? `0 0 14px ${tm.color}77, 0 4px 10px rgba(0,0,0,0.45)`
-                              : '0 4px 10px rgba(0,0,0,0.4)',
-                          }} />
-                          {answered && (
-                            <div style={{
-                              position: 'absolute', bottom: -2, right: -2,
-                              width: 24, height: 24, borderRadius: '50%',
-                              background: '#22C55E', border: '2px solid #0D0A06',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 13, fontWeight: 900, color: '#fff',
-                              animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
-                            }}>✓</div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
           {/* Frosted question/answer card — bottom.
               POP-Transition: minHeight waechst dynamisch beim Reveal.
               Mit Bild: waehrend QUESTION_ACTIVE so kompakt wie moeglich, damit das
               Bild prominent bleibt; beim Reveal waechst sie fuer Loesung+Avatare.
               Ohne Bild: nochmal kompakter. */}
           <div style={{
+            position: 'relative',
             width: '100%', maxWidth: 900,
             minHeight: revealed
               ? (hasImg ? 'clamp(380px, 44vh, 500px)' : 'clamp(220px, 28vh, 320px)')
@@ -6626,6 +6557,68 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
+            {/* Team-Answer-Progress — sitzt absolut auf dem oberen Card-Rand,
+                halb überlappend (untere Hälfte ragt in die Card rein, obere
+                ragt darüber). Kein eigener Strip-Bg → Avatare „kleben" direkt
+                an der Card-Edge. Avatar-Kreise nutzen den natural Avatar-Look
+                (wie in Mucho/Schätzchen) ohne extra Color-Glow. */}
+            {!revealed && s.teams.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                bottom: '100%', left: 0, right: 0,
+                transform: 'translateY(50%)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                pointerEvents: 'none', zIndex: 9,
+                animation: 'contentReveal 0.45s ease 0.35s both',
+              }}>
+                <div style={{
+                  fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                  color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.95)',
+                  transition: 'color 0.3s ease',
+                  letterSpacing: '0.04em',
+                  textShadow: '0 2px 8px rgba(0,0,0,0.85)',
+                }}>
+                  {s.allAnswered
+                    ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
+                    : `${s.answers.length}/${s.teams.length} Teams`}
+                </div>
+                {(() => {
+                  const tc = s.teams.length;
+                  const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
+                  const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, flexWrap: 'wrap' }}>
+                      {s.teams.map(tm => {
+                        const answered = s.answers.some(a => a.teamId === tm.id);
+                        return (
+                          <div key={tm.id} style={{
+                            position: 'relative',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            opacity: answered ? 1 : 0.55,
+                            filter: answered ? 'none' : 'grayscale(0.4)',
+                            transition: 'opacity 0.4s ease, filter 0.4s ease',
+                          }}>
+                            <QQTeamAvatar avatarId={tm.avatarId} size={av} />
+                            {answered && (
+                              <div style={{
+                                position: 'absolute', bottom: -2, right: -2,
+                                width: 24, height: 24, borderRadius: '50%',
+                                background: '#22C55E', border: '2px solid #0D0A06',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 13, fontWeight: 900, color: '#fff',
+                                animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                              }}>✓</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Category pill — fade out on reveal */}
             <div style={{
               overflow: 'hidden',
@@ -10777,52 +10770,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
           position: 'relative', overflow: 'visible',
         }}>
-          {/* Hot-Seat-Spotlight: animierter Lichtkegel der von oben auf das aktive
-              Team fällt. Zwei Cone-Layer (warm + cooler edge) + 3 flackernde
-              Glitter-Punkte → wirkt wie eine Bühne. Aufgehängt am isActive-State,
-              gleitet durch Position-Re-Render zum nächsten Team. */}
-          {isActive && (
-            <>
-              <div aria-hidden style={{
-                position: 'absolute',
-                top: -64, left: '20%', right: '20%',
-                height: 'calc(100% + 100px)',
-                background: `linear-gradient(180deg, ${t.color}88 0%, ${t.color}44 30%, ${t.color}11 70%, transparent 100%)`,
-                clipPath: 'polygon(38% 0%, 62% 0%, 82% 100%, 18% 100%)',
-                pointerEvents: 'none',
-                zIndex: 0,
-                animation: 'hotSeatFlicker 2.4s ease-in-out infinite',
-                mixBlendMode: 'screen',
-                filter: 'blur(6px)',
-              }} />
-              <div aria-hidden style={{
-                position: 'absolute',
-                top: -32, left: '32%', right: '32%',
-                height: 'calc(100% + 60px)',
-                background: `linear-gradient(180deg, rgba(254,243,199,0.5) 0%, rgba(254,243,199,0.18) 40%, transparent 100%)`,
-                clipPath: 'polygon(42% 0%, 58% 0%, 70% 100%, 30% 100%)',
-                pointerEvents: 'none',
-                zIndex: 0,
-                animation: 'hotSeatFlicker 2.4s ease-in-out 0.4s infinite',
-                mixBlendMode: 'screen',
-              }} />
-              {/* 3 sanft fallende Glitter-Punkte am Spotlight-Rand */}
-              {[0, 1, 2].map(i => (
-                <span key={i} aria-hidden style={{
-                  position: 'absolute',
-                  top: -20,
-                  left: `${42 + i * 8}%`,
-                  width: 4, height: 4, borderRadius: '50%',
-                  background: t.color,
-                  boxShadow: `0 0 10px ${t.color}, 0 0 4px #fff`,
-                  pointerEvents: 'none',
-                  zIndex: 1,
-                  animation: `hotSeatGlitter ${2.8 + i * 0.6}s ease-in ${i * 0.7}s infinite`,
-                  opacity: 0,
-                }} />
-              ))}
-            </>
-          )}
+          {/* Hot-Seat-Spotlight wurde entfernt (Wolfs Wunsch) — der Box-Ring
+              + Border am Container reichen als visueller Anker für das aktive
+              Team. Animationen `hotSeatFlicker` / `hotSeatGlitter` bleiben in
+              der CSS, falls später wieder gewünscht. */}
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',

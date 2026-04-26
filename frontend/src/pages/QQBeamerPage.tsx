@@ -3676,8 +3676,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             SCHAETZCHEN: {
               emoji: catEmoji, title: { de: 'Schätzchen', en: 'Close Call' },
               lines: {
-                de: ['Schätzt am nächsten dran — und gewinnt 1 Feld.', '🎯 Knapp dran (in Range)? Bekommt auch 1 Feld!'],
-                en: ['Guess closest — and win 1 tile.', '🎯 Close to target? Also wins 1 tile!'],
+                de: ['Wer am nächsten dran liegt, gewinnt — knapp dran zählt auch.'],
+                en: ['Closest guess wins — near misses also count.'],
               },
             },
             MUCHO: {

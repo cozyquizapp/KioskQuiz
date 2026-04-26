@@ -86,13 +86,13 @@ export default function QQProgressTree({
   const isShowcase = variant === 'showcase';
 
   // Skalen je nach Variant
-  const scale = isShowcase ? 1.6
+  const scale = isShowcase ? 2.4
     : variant === 'hero' ? 1
     : variant === 'panel' ? 0.8
     : isMini ? 0.42
     : 0.95;
   const titleSize = isShowcase ? 44 : variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
-  const phaseNameSize = isShowcase ? 26 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
+  const phaseNameSize = isShowcase ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
   const dotSize = Math.round(34 * scale);
   const dotGap = isMini ? 4 : Math.round(12 * scale);
   const phaseGap = isMini ? 14 : Math.round(40 * scale);
@@ -102,8 +102,10 @@ export default function QQProgressTree({
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
 
   // Berechne exakte x-Positionen aller Dots (für Progress-Track)
+  // + phaseCenters für die Showcase-Pan-Animation (Camera fliegt zu Phase).
   const dotCenters: number[] = [];
   const phaseWidths: number[] = [];
+  const phaseCenters: number[] = [];
   let cursor = 0;
   phases.forEach((p, pIdx) => {
     if (pIdx > 0) cursor += phaseGap;
@@ -115,8 +117,19 @@ export default function QQProgressTree({
       cursor += dotSize;
     });
     phaseWidths.push(cursor - phaseStart);
+    phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
   const totalWidth = cursor;
+  const treeCenter = totalWidth / 2;
+
+  // Showcase-Pan: bringt die hervorgehobene Phase ins Viewport-Zentrum.
+  // -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
+  const showcaseTargetPhase = showcaseMode
+    ? (showcasePhaseIdx >= 0 ? showcasePhaseIdx : 0)
+    : -1;
+  const panOffset = (isShowcase && showcaseTargetPhase >= 0 && phaseCenters[showcaseTargetPhase] != null)
+    ? treeCenter - phaseCenters[showcaseTargetPhase]
+    : 0;
 
   // Progress: von Center des ersten Dots bis Center des Wolf-Dots (displayIdx).
   const firstCenter = dotCenters[0] ?? 0;
@@ -166,7 +179,9 @@ export default function QQProgressTree({
         flexDirection: 'column',
         alignItems: 'center',
         gap: isShowcase ? 32 : variant === 'hero' ? 22 : isMini ? 0 : 14,
-        padding: isShowcase ? '20px 40px'
+        // Showcase: kein horizontales Padding — der Pan-Container nimmt
+        // die volle Breite ein und cliped durch overflow:hidden.
+        padding: isShowcase ? '20px 0'
           : variant === 'hero' ? '28px 40px'
           : variant === 'inline' ? '20px 36px'
           : isMini ? '6px 14px'
@@ -176,7 +191,11 @@ export default function QQProgressTree({
         color: wrapperColor,
         boxShadow: isShowcase ? 'none' : isMini ? '0 4px 12px rgba(0,0,0,0.35)' : '0 10px 32px rgba(15,23,42,0.18)',
         border: wrapperBorder,
-        maxWidth: isShowcase ? 1600 : variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
+        // Showcase: volle Container-Breite (Pan-Camera fliegt smooth durch).
+        width: isShowcase ? '100%' : undefined,
+        maxWidth: isShowcase ? '100%' : variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
+        // Showcase: outer cliped damit gepannte Tree-Teile außerhalb verschwinden.
+        overflow: isShowcase ? 'hidden' : undefined,
         fontFamily: "'Nunito', system-ui, sans-serif",
         backdropFilter: isMini ? 'blur(8px)' : undefined,
       }}
@@ -187,8 +206,18 @@ export default function QQProgressTree({
         </div>
       )}
 
-      {/* Container mit exakter Gesamtbreite — Labels + Timeline teilen sie sich */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMini ? 0 : 10, width: totalWidth, maxWidth: '100%' }}>
+      {/* Container mit exakter Gesamtbreite — Labels + Timeline teilen sie sich.
+          Im Showcase-Mode wird zusätzlich translateX gesetzt, damit der Tree
+          smooth zur hervorgehobenen Phase gepant wird (Camera-Fly-Through). */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: isMini ? 0 : 10,
+        width: totalWidth,
+        maxWidth: isShowcase ? 'none' : '100%',
+        transform: isShowcase ? `translateX(${panOffset}px)` : undefined,
+        transition: isShowcase ? 'transform 1.4s cubic-bezier(0.65, 0, 0.35, 1)' : undefined,
+        willChange: isShowcase ? 'transform' : undefined,
+      }}>
         {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert (nicht im mini-Mode) */}
         {showLabels && (
         <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>

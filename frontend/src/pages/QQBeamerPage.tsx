@@ -2429,7 +2429,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               animation: 'contentReveal 0.6s ease 0.1s both',
               padding: 'clamp(8px, 1.5vh, 24px) 0',
             }}>
-              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2200} />
+              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2800} />
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 12,
                 fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 700,

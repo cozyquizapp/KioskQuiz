@@ -248,9 +248,9 @@ export default function QQModeratorPage() {
     switch (s.phase) {
       case 'RULES': {
         const rIdx = s.rulesSlideIndex ?? 0;
-        // Slide 2 (Tree-Showcase) braucht länger wegen Phasen-Sweep
-        // (4 Phasen × 2.2s = ~9s + initialer Pause + Lesen).
-        delayMs = rIdx === 2 ? 12500 : 8000;
+        // Slide 2 (Tree-Showcase) braucht länger wegen Pan-Sweep durch alle
+        // Phasen (4 Phasen × 2.8s = 11.2s + initialer Pause + Lese-Puffer).
+        delayMs = rIdx === 2 ? 16500 : 8000;
         const totalSlides = 5;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });

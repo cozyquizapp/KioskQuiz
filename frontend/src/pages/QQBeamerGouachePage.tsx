@@ -139,10 +139,105 @@ function PhaseRouter({
     return <PhasePlaceholderCard state={state} de={de} />;
   }
 
-  if (phase === 'PLACEMENT') return <PlacementView state={state} de={de} />;
+  if (phase === 'PLACEMENT')    return <PlacementView state={state} de={de} />;
+  if (phase === 'TEAMS_REVEAL') return <TeamsRevealView state={state} de={de} />;
 
-  // TEAMS_REVEAL, COMEBACK_CHOICE folgen in eigenen Items.
+  // COMEBACK_CHOICE folgt in eigenem Item.
   return <PhasePlaceholderCard state={state} de={de} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// TEAMS_REVEAL — gestaffelte Vorstellung mit Outro „Viel Glück"
+// Anchor: state.teamsRevealStartedAt; pro Team 900ms Delay.
+// ─────────────────────────────────────────────────────────────────────────
+
+function TeamsRevealView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  const { w: vw, h: vh } = useViewportSize();
+  const teams = state.teams.filter(t => t.connected).length > 0
+    ? state.teams.filter(t => t.connected)
+    : state.teams;
+  const anchor = state.teamsRevealStartedAt ?? Date.now();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 250);
+    return () => clearInterval(id);
+  }, []);
+  void tick;
+  const elapsed = Date.now() - anchor;
+
+  const titleDur = 800;
+  const perTeamDelay = 900;
+  const revealedCount = Math.max(0, Math.min(teams.length, Math.floor((elapsed - titleDur) / perTeamDelay) + 1));
+  const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
+  const showGoodLuck = elapsed >= goodLuckDelay;
+
+  // Avatar-Größe je nach Teamzahl + Viewport
+  const avatarSize = Math.round(Math.max(80, Math.min(vh * 0.20, vw * 0.10, 200)));
+
+  return (
+    <CenterArea>
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        {/* Title */}
+        <div style={{
+          opacity: elapsed >= 0 ? 1 : 0,
+          transform: elapsed >= titleDur ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'all 0.8s ease-out',
+          marginBottom: 36,
+        }}>
+          <BlockCapsHeading size="xl" color={PALETTE.cream} glow>
+            {de ? 'Die Teams' : 'The Teams'}
+          </BlockCapsHeading>
+        </div>
+
+        {/* Teams Stagger */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+          gap: 'clamp(16px, 2.5vw, 36px)',
+        }}>
+          {teams.map((t, i) => {
+            const visible = i < revealedCount;
+            const color = softTeamColor(t.avatarId);
+            return (
+              <div key={t.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.7)',
+                transition: 'all 0.7s cubic-bezier(0.34,1.56,0.64,1)',
+              }}>
+                <div style={{ filter: visible ? 'url(#warmGlow)' : undefined }}>
+                  <PaintedAvatar
+                    slug={qqGetAvatar(t.avatarId).slug}
+                    size={avatarSize}
+                    color={color}
+                    withGrain={false}
+                  />
+                </div>
+                <div style={{
+                  fontFamily: F_HAND, fontSize: 'min(4.4vh, 3.4vw)',
+                  color, fontWeight: 700, lineHeight: 1,
+                  textShadow: `0 4px 14px ${color}66`,
+                }}>
+                  {t.name}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Outro: VIEL GLÜCK */}
+        {showGoodLuck && (
+          <div style={{
+            marginTop: 56,
+            animation: 'gFadeIn 0.8s ease-out both',
+          }}>
+            <BlockCapsHeading size="xl" color={PALETTE.amberGlow} glow>
+              {de ? 'Viel Glück' : 'Good luck'}
+            </BlockCapsHeading>
+          </div>
+        )}
+      </div>
+    </CenterArea>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

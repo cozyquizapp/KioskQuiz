@@ -1,6 +1,6 @@
 # KioskQuiz — Status
 
-> Kompakte Übersicht. Letztes Update: 2026-04-14
+> Kompakte Übersicht. Letztes Update: 2026-04-26
 
 ## Aktueller Stand
 
@@ -8,7 +8,15 @@ CozyQuiz (intern QQ, früher „Quarter Quiz / Block Quiz") ist in der Testphase
 Gespräche mit einer Kioskkette laufen, nichts fixes. Cozy60 (alte App) wird
 nicht mehr angefasst.
 
-**Nächstes Todo**: Keine offenen Roadmap-Punkte. Neue Features/Bugs ad-hoc.
+**Aktiver Block**: **Gouache-Stil als Parallel-Theme** — Aquarell-/Bilderbuch-Look
+parallel zum bestehenden Cozy-Dark aufgebaut. Library + 16 Aquarell-Avatare
+fertig, nächster Schritt: erste echte Live-Page (Lobby/Team/Spielende, User
+entscheidet).
+👉 **Komplette Doku in [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)**.
+
+**Sicherheit**: Der bestehende Cozy-Dark-Stil bleibt während der Migration
+unangetastet. Live-Quizze laufen weiter im klassischen Look.
+
 Details + Anleitungen zu allen offenen Blöcken:
 `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/project_qq_roadmap_handoff.md`
 
@@ -56,6 +64,21 @@ Details + Anleitungen zu allen offenen Blöcken:
 ### Block F — Memory & Longterm-Memo
 - [x] Handoff-Memo komprimiert (297 → ~55 Zeilen, nur Code-Map + Regeln)
 - [x] Longterm-TODO-File gepflegt (Sentry, Plausible, Spectator-Emotes eingepflegt)
+
+### Block G — Gouache-Stil (Aquarell-/Bilderbuch-Look) 🎨
+> Aktiver Block. Komplette Doku: [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)
+- [x] Library `frontend/src/gouache/` — Tokens + SVG-Filter + 11 Painted-Components + Hooks
+- [x] 16 Aquarell-Avatare (8 Tiere × open/closed eyes) in `public/avatars/gouache/`
+- [x] Auto-Fallback-Hook: Gouache-PNG wenn da, sonst cozy-cast
+- [x] Stilstudie `/gouache` (14 Sektionen, alle Pages durchgespielt)
+- [x] `/gouache` + `/city-lab` im Menü verlinkt
+- [x] Vite-PWA exclude für unkomprimierte Avatare (Build-Fix)
+- [ ] **Phase 1**: erste echte Live-Page parallel (`/lobby-gouache` empfohlen)
+- [ ] **Phase 2**: `/team-gouache`
+- [ ] **Phase 3**: `/spielende-gouache`
+- [ ] **Phase 4**: `/beamer-gouache` mit allen 5 Kategorien-Reveals
+- [ ] **Phase 5**: PNG-Komprimierung via sharp/squoosh (200-500 KB pro Bild)
+- [ ] **Phase 6**: Theme-Switch im Moderator-Setup (Dropdown „Klassisch / Bilderbuch")
 
 ## Offen / Bugs
 

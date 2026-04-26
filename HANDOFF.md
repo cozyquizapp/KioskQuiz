@@ -1,6 +1,23 @@
 # QQ App – Handoff Dokument
 
-Stand: 08.04.2026 | Branch: `main`
+Stand: 26.04.2026 | Branch: `main`
+
+---
+
+## 🎨 Aktiver Block (April 2026): Gouache-Stil parallel
+
+Seit 2026-04-26 läuft eine umfassende Stil-Migration auf Aquarell-/
+Bilderbuch-Look **parallel zum bestehenden Cozy-Dark-Theme**.
+
+**Wichtig für neue Sessions**:
+- Komplette Doku, Migration-Plan, Avatar-Hex-Werte, technische Details:
+  → **[`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)**
+- Library liegt in `frontend/src/gouache/`
+- 16 Aquarell-Avatare in `frontend/public/avatars/gouache/`
+- Stilstudie auf `/gouache`, im Menü als „Gouache Lab" 🎨
+- **NIE** den alten Cozy-Dark-Code (QQBeamerPage, QQTeamPage, QQModeratorPage,
+  beamerTheme.css) anfassen außer der User sagt explizit „migrieren". Der
+  bestehende Stil ist die Safety, läuft Live-Quizze, darf nicht kaputtgehen.
 
 ---
 

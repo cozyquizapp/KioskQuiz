@@ -26,8 +26,14 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Cache app shell (JS/CSS/HTML/fonts/images)
+        // Cache app shell (JS/CSS/HTML/fonts/images).
+        // Aquarell-Avatare in /avatars/gouache/* werden NICHT gecacht — die
+        // sind aktuell unkomprimiert (9-13 MB pro Bild) und sprengen das
+        // Workbox-Limit. Sie werden zur Laufzeit normal vom Server geladen.
+        // Vor Production-Deploy → durch sharp-Pipeline auf <500 KB schrumpfen,
+        // dann kann das Exclude wieder weg (siehe GOUACHE_PLAN.md Phase 5).
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: ['**/avatars/gouache/**'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes
         navigateFallback: '/index.html',

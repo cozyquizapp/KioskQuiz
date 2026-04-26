@@ -15,6 +15,21 @@
 
 ---
 
+## ⚠️ Aktiver Block: Gouache-Stil als Parallel-Theme
+
+**Seit 2026-04-26** wird parallel zum bestehenden Cozy-Dark-Look eine
+Aquarell-/Bilderbuch-Variante aufgebaut. Komplette Doku, Plan und alle
+8 Avatar-Hex-Werte: → **[`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)**
+
+Kurz:
+- Library liegt in `frontend/src/gouache/`
+- Alle 16 Aquarell-Avatare in `frontend/public/avatars/gouache/` (je open + closed eyes)
+- Stilstudie: `/gouache` (im Menü als „Gouache Lab" 🎨)
+- **Bestehender Cozy-Dark-Stil bleibt während der Migration unangetastet**
+- Echte Live-Pages folgen Stück für Stück (`-gouache`-Suffix)
+
+---
+
 ## CozyQuiz (QQ) — Buildplan
 
 ### Kerndaten

@@ -16,11 +16,14 @@ import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 // Map QQ-Avatar-Id → Anzeige-Info (Name, Farbe, Emoji) direkt aus shared.
 type AvatarKey = typeof QQ_AVATARS[number]['id'];
 
-const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string }> =
+const AVATARS: Record<AvatarKey, { name: string; color: string; emoji: string; image: string }> =
   QQ_AVATARS.reduce((acc, a) => {
-    acc[a.id as AvatarKey] = { name: a.label, color: a.color, emoji: a.emoji };
+    acc[a.id as AvatarKey] = {
+      name: a.label, color: a.color, emoji: a.emoji,
+      image: `/avatars/cozy-cast/avatar-${a.slug}.png`,
+    };
     return acc;
-  }, {} as Record<AvatarKey, { name: string; color: string; emoji: string }>);
+  }, {} as Record<AvatarKey, { name: string; color: string; emoji: string; image: string }>);
 
 type Cell = {
   owner: AvatarKey | null;
@@ -100,6 +103,18 @@ function useAvatarTexture(emoji: string): THREE.Texture {
     tex.needsUpdate = true;
     return tex;
   }, [emoji]);
+}
+
+// Lädt eine Avatar-PNG (cozy-cast) als Three.js-Texture. Async-Load —
+// Texture wird beim Mount blank initialisiert und beim Bild-Empfang neu
+// gerendert. SRGB-Colorspace, sonst werden die Avatare zu hell.
+function useAvatarImageTexture(imageUrl: string): THREE.Texture {
+  return useMemo(() => {
+    const tex = new THREE.TextureLoader().load(imageUrl);
+    tex.anisotropy = 8;
+    (tex as any).colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [imageUrl]);
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -261,6 +276,7 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
         {variant === 1 && <ChaflanPlazas />}
         {variant === 1 && <StreetTrees />}
         {!isLantern && variant !== 1 && <GridLines />}
+        {isLantern && <LanternGridLines />}
 
         {/* Embers — schwebende Glühpartikel, nur in Variant 5. */}
         {isLantern && <Embers count={75} />}
@@ -3370,103 +3386,259 @@ function Embers({ count }: { count: number }) {
   );
 }
 
-// Eine einzelne Papier-Laterne: vertikales Sphere/Capsule mit Rippen, oben + unten
-// dunklere Holz-Caps, hängt an einer Schnur die nach oben verschwindet.
-// Emissive-Material in Teamfarbe → wird vom Bloom als Glow rausgeholt.
-// Nutzung als Building-Block für LanternCell und LanternTower.
-function PaperLanternBody({
-  color, size = 1.0, intensity = 1.0, swing = 0, frozen = false, joker = false,
+// Hot Air Balloon Body — Pear-shaped (Sphere + Neck-Cone unten), 6 vertikale
+// Panel-Nähte als Halbkreis-Tori, emissive Teamfarbe → Bloom holt das Halo raus.
+function BalloonBody({
+  color, size = 1.0, intensity = 1.0, frozen = false, joker = false,
 }: {
-  color: string; size?: number; intensity?: number; swing?: number; frozen?: boolean; joker?: boolean;
+  color: string; size?: number; intensity?: number; frozen?: boolean; joker?: boolean;
 }) {
   const innerColor = frozen ? '#dceaff' : joker ? '#fff4cc' : '#fff5d4';
   const emissiveColor = frozen ? '#7ec5ff' : joker ? '#fbbf24' : color;
-  const wireColor = frozen ? '#9ec5e8' : '#c98a3a';
+  const seamColor = joker ? '#b8860b' : color;
 
+  const radius = 0.42 * size;
   return (
-    <group rotation={[0, 0, swing]}>
-      {/* Hauptkörper — leicht abgeflachte Sphere (Papier-Laternen sind oben/unten flacher) */}
-      <mesh castShadow>
-        <sphereGeometry args={[0.32 * size, 24, 18]} />
+    <group>
+      {/* Ballon-Hauptkörper — Sphere, ein bisschen höher als breit (yScale 1.1) */}
+      <group scale={[1, 1.1, 1]}>
+        <mesh castShadow>
+          <sphereGeometry args={[radius, 32, 24]} />
+          <meshStandardMaterial
+            color={innerColor}
+            emissive={emissiveColor}
+            emissiveIntensity={2.1 * intensity}
+            roughness={0.55}
+            transparent
+            opacity={0.93}
+            toneMapped={false}
+          />
+        </mesh>
+        {/* Hellerer Innenkern fuer weichen Bloom-Trigger */}
+        <mesh>
+          <sphereGeometry args={[radius * 0.55, 18, 14]} />
+          <meshBasicMaterial color={emissiveColor} toneMapped={false} transparent opacity={0.85} />
+        </mesh>
+      </group>
+      {/* 6 vertikale Panel-Nähte als Halbkreis-Tori (Y-Achse) */}
+      {[0, 1, 2, 3, 4, 5].map(i => {
+        const angle = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={i} rotation={[Math.PI / 2, 0, angle]}>
+            <torusGeometry args={[radius * 1.05, 0.005 * size, 4, 32, Math.PI]} />
+            <meshStandardMaterial
+              color={seamColor}
+              emissive={seamColor}
+              emissiveIntensity={0.4}
+              roughness={0.6}
+            />
+          </mesh>
+        );
+      })}
+      {/* Neck-Cone unten — Übergang zu den Seilen, leicht offen ("Brenneröffnung") */}
+      <mesh position={[0, -radius * 1.1, 0]} castShadow>
+        <coneGeometry args={[radius * 0.32, 0.22 * size, 16, 1, true]} />
         <meshStandardMaterial
-          color={innerColor}
+          color={emissiveColor}
           emissive={emissiveColor}
-          emissiveIntensity={2.2 * intensity}
+          emissiveIntensity={0.7 * intensity}
           roughness={0.6}
-          transparent
-          opacity={0.94}
-          toneMapped={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
-      {/* Hellere Innenkern-Sphere (kleinere Sphere mit höherer Emissive-Intensity)
-          gibt den weichen Glühkern, den Bloom dann zum Halo expandiert. */}
-      <mesh>
-        <sphereGeometry args={[0.18 * size, 16, 12]} />
-        <meshBasicMaterial color={emissiveColor} toneMapped={false} transparent opacity={0.9} />
-      </mesh>
-      {/* Horizontale Rippen — 5 dünne Tori auf verschiedenen Höhen */}
-      {[-0.18, -0.09, 0, 0.09, 0.18].map((y, i) => (
-        <mesh key={i} position={[0, y * size, 0]}>
-          <torusGeometry args={[0.32 * size * (1 - Math.abs(y) * 0.6), 0.008 * size, 6, 28]} />
-          <meshStandardMaterial color={wireColor} roughness={0.7} metalness={0.2} />
-        </mesh>
-      ))}
-      {/* Oberer Holz-Cap */}
-      <mesh position={[0, 0.27 * size, 0]} castShadow>
-        <cylinderGeometry args={[0.13 * size, 0.18 * size, 0.06 * size, 12]} />
-        <meshStandardMaterial color="#3a2614" roughness={0.85} />
-      </mesh>
-      {/* Unterer Holz-Cap mit kleiner Quaste */}
-      <mesh position={[0, -0.27 * size, 0]} castShadow>
-        <cylinderGeometry args={[0.18 * size, 0.13 * size, 0.06 * size, 12]} />
-        <meshStandardMaterial color="#3a2614" roughness={0.85} />
-      </mesh>
-      <mesh position={[0, -0.36 * size, 0]}>
-        <coneGeometry args={[0.04 * size, 0.12 * size, 6]} />
-        <meshStandardMaterial color={joker ? '#fde68a' : '#b8602a'} emissive={joker ? '#fbbf24' : '#000'} emissiveIntensity={joker ? 0.5 : 0} roughness={0.6} />
+      {/* Brenner-Glüh-Disk unten in der Öffnung */}
+      <mesh position={[0, -radius * 1.18, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[radius * 0.28, 16]} />
+        <meshBasicMaterial
+          color={joker ? '#fde68a' : '#ffaa3a'}
+          toneMapped={false}
+          transparent
+          opacity={0.85}
+        />
       </mesh>
     </group>
   );
 }
 
-// LanternCell — eine schwebende Laterne über einem dunklen Fels-Sockel.
-// Sanftes Pendeln + Bobbing. Bei Joker = goldene Riesen-Laterne mit Sparkle-Ring.
-// Bei Stapel = Pagoden-Tower (3 Laternen vertikal). Bei Frozen = Eis-Laterne.
+// Wicker-Basket (Gondola) — kleine Korbgeflecht-Box am Boden des Ballons.
+// Trägt das Avatar-PNG als Front-Billboard.
+function BalloonBasket({
+  size = 1.0, avatarTex, color,
+}: {
+  size?: number; avatarTex: THREE.Texture; color: string;
+}) {
+  const basketR = 0.18 * size;
+  const basketH = 0.16 * size;
+  return (
+    <group>
+      {/* Korpus — leicht konisch (oben breiter), Korbgeflecht-Braun */}
+      <mesh castShadow receiveShadow>
+        <cylinderGeometry args={[basketR * 1.08, basketR * 0.95, basketH, 16]} />
+        <meshStandardMaterial color="#7a4a1f" roughness={0.92} />
+      </mesh>
+      {/* Oberer Rand (dunkler) */}
+      <mesh position={[0, basketH / 2, 0]} castShadow>
+        <torusGeometry args={[basketR * 1.08, 0.012 * size, 8, 24]} />
+        <meshStandardMaterial color="#3a2614" roughness={0.85} />
+      </mesh>
+      {/* 3 horizontale Geflecht-Linien */}
+      {[-0.04, 0.0, 0.04].map((y, i) => (
+        <mesh key={i} position={[0, y * size, 0]}>
+          <torusGeometry args={[basketR * 1.04, 0.004 * size, 4, 18]} />
+          <meshStandardMaterial color="#4a2a14" roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Avatar-PNG als Front-Billboard (zeigt immer zur Kamera) */}
+      <Billboard position={[0, basketH * 0.05, 0]}>
+        {/* Soft Glow-Disc dahinter in Teamfarbe — Avatar pop't damit aus dem Korb */}
+        <mesh position={[0, 0, -0.005]}>
+          <circleGeometry args={[basketR * 1.3, 24]} />
+          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.4} />
+        </mesh>
+        <mesh>
+          <planeGeometry args={[basketR * 2.2, basketR * 2.2]} />
+          <meshBasicMaterial map={avatarTex} transparent alphaTest={0.04} toneMapped={false} />
+        </mesh>
+      </Billboard>
+    </group>
+  );
+}
+
+// 4 Seile vom Ballon-Hals zur Korb-Oberkante
+function BalloonRopes({ size = 1.0 }: { size?: number }) {
+  const ropeLen = 0.18 * size;
+  const offset = 0.13 * size;
+  return (
+    <group>
+      {[[1, 1], [-1, 1], [1, -1], [-1, -1]].map(([dx, dz], i) => {
+        // Ropes gehen leicht schräg nach innen/unten — vom Hals (oben breiter)
+        // zum Korb-Rand (unten enger). Berechnung: tiltX/tiltZ für Rotation.
+        const topX = dx * 0.06 * size;
+        const topZ = dz * 0.06 * size;
+        const botX = dx * offset;
+        const botZ = dz * offset;
+        const midX = (topX + botX) / 2;
+        const midZ = (topZ + botZ) / 2;
+        const dxRope = botX - topX;
+        const dzRope = botZ - topZ;
+        const rotZ = Math.atan2(dxRope, ropeLen);
+        const rotX = -Math.atan2(dzRope, ropeLen);
+        return (
+          <mesh
+            key={i}
+            position={[midX, -ropeLen / 2, midZ]}
+            rotation={[rotX, 0, rotZ]}
+          >
+            <cylinderGeometry args={[0.005 * size, 0.005 * size, ropeLen, 4]} />
+            <meshStandardMaterial color="#2a1a0c" roughness={0.95} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+// Komplettes Heißluftballon-Modell: Body + Ropes + Basket + Avatar.
+// Hängt am Mittelpunkt — Body zentriert bei (0,0,0), Korb fällt drunter.
+function HotAirBalloon({
+  color, size = 1.0, intensity = 1.0, frozen = false, joker = false, avatarTex,
+}: {
+  color: string; size?: number; intensity?: number;
+  frozen?: boolean; joker?: boolean; avatarTex: THREE.Texture;
+}) {
+  const radius = 0.42 * size;
+  return (
+    <group>
+      <BalloonBody color={color} size={size} intensity={intensity} frozen={frozen} joker={joker} />
+      {/* Seile darunter */}
+      <group position={[0, -radius * 1.32, 0]}>
+        <BalloonRopes size={size} />
+      </group>
+      {/* Korb noch tiefer */}
+      <group position={[0, -radius * 1.32 - 0.18 * size - 0.08 * size, 0]}>
+        <BalloonBasket size={size} avatarTex={avatarTex} color={color} />
+      </group>
+    </group>
+  );
+}
+
+// Sichtbares Grid fuer Variant 5 — warme Amber-Linien mit niedrigem Opacity,
+// damit man die Tile-Grenzen sieht ohne dass es vom Lantern-Glow ablenkt.
+function LanternGridLines() {
+  const lines = [];
+  const len = SIZE * TILE;
+  const half = len / 2;
+  for (let i = 0; i <= SIZE; i++) {
+    const p = (i * TILE) - OFFSET - TILE / 2;
+    lines.push(
+      <mesh key={`h-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, p]}>
+        <planeGeometry args={[len + 0.4, 0.018]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.18} toneMapped={false} />
+      </mesh>,
+      <mesh key={`v-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p, 0.015, 0]}>
+        <planeGeometry args={[0.018, len + 0.4]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.18} toneMapped={false} />
+      </mesh>
+    );
+  }
+  // Subtile Eck-Pfosten an jeder Kreuzung (kleine emissive Punkte)
+  for (let i = 0; i <= SIZE; i++) {
+    for (let j = 0; j <= SIZE; j++) {
+      const x = (j * TILE) - OFFSET - TILE / 2;
+      const z = (i * TILE) - OFFSET - TILE / 2;
+      // Nur jeden zweiten Eckpfosten, sonst zu busy
+      if ((i + j) % 2 !== 0) continue;
+      // Außerhalb des Boards überspringen (passt zu len/2 Begrenzung)
+      if (Math.abs(x) > half || Math.abs(z) > half) continue;
+      lines.push(
+        <mesh key={`p-${i}-${j}`} position={[x, 0.04, z]}>
+          <sphereGeometry args={[0.018, 8, 6]} />
+          <meshBasicMaterial color="#fde68a" toneMapped={false} transparent opacity={0.7} />
+        </mesh>
+      );
+    }
+  }
+  return <>{lines}</>;
+}
+
+// LanternCell (jetzt: Hot-Air-Balloon-Cell) — schwebender Heißluftballon
+// in Teamfarbe mit Avatar-PNG im Korb. Sanftes Bobbing + leichtes Pendeln.
+// Joker = größerer goldener Ballon mit rotierendem Sparkle-Ring.
+// Stapel = vertikale 3er-Ballon-Allee mit goldener Spitze.
+// Frozen = eis-blau gefärbter Ballon mit Eiskristall-Aura.
 function LanternCell({ x, z, avatar, joker, stacked, frozen, seed }: {
   x: number; z: number; avatar: typeof AVATARS[AvatarKey];
   joker: boolean; stacked: number; frozen: boolean; seed: number;
 }) {
-  const tex = useAvatarTexture(avatar.emoji);
-  const lanternRef = useRef<THREE.Group>(null);
+  const avatarTex = useAvatarImageTexture(avatar.image);
+  const balloonRef = useRef<THREE.Group>(null);
   const sparkleRef = useRef<THREE.Group>(null);
-  const avatarRef = useRef<THREE.Group>(null);
 
   const isTower = stacked > 0;
-  const lanternSize = joker ? 1.35 : isTower ? 0.85 : 1.0;
-  const hangY = isTower ? 1.45 : 0.85;
+  // Ein einzelner Ballon ist deutlich grösser als die alte Laterne — daher
+  // hangY höher und Größen kleiner skaliert.
+  const balloonSize = joker ? 1.25 : isTower ? 0.7 : 1.0;
+  const hangY = isTower ? 1.85 : 1.25;
   const swingPhase = seed * 0.83;
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    if (lanternRef.current) {
-      // sanftes Pendeln + leichter Bob
-      lanternRef.current.rotation.z = Math.sin(t * 0.7 + swingPhase) * 0.06;
-      lanternRef.current.position.y = hangY + Math.sin(t * 0.9 + swingPhase) * 0.025;
+    if (balloonRef.current) {
+      // Sanftes Schweben — Heißluftballons pendeln weniger als Laternen.
+      balloonRef.current.rotation.z = Math.sin(t * 0.5 + swingPhase) * 0.04;
+      balloonRef.current.rotation.x = Math.cos(t * 0.4 + swingPhase * 0.7) * 0.025;
+      balloonRef.current.position.y = hangY + Math.sin(t * 0.65 + swingPhase) * 0.05;
     }
     if (sparkleRef.current) {
-      sparkleRef.current.rotation.y = t * 1.0;
+      sparkleRef.current.rotation.y = t * 0.9;
       const s = 0.95 + Math.sin(t * 2.4 + swingPhase) * 0.06;
       sparkleRef.current.scale.setScalar(s);
-    }
-    if (avatarRef.current) {
-      avatarRef.current.position.y = 0.18 + Math.sin(t * 1.3 + swingPhase * 1.4) * 0.025;
     }
   });
 
   // Real point light fuer den Lake-Reflector — wird auf Boden gespiegelt.
-  // distance + decay so gewählt, dass nur 1-2 Tiles um die Laterne erleuchtet werden.
   const lightColor = frozen ? '#7ec5ff' : joker ? '#fbbf24' : avatar.color;
-  const lightIntensity = joker ? 1.6 : isTower ? 1.2 : 0.85;
+  const lightIntensity = joker ? 2.0 : isTower ? 1.5 : 1.1;
 
   return (
     <group position={[x, 0, z]}>
@@ -3475,107 +3647,83 @@ function LanternCell({ x, z, avatar, joker, stacked, frozen, seed }: {
         <cylinderGeometry args={[0.42, 0.46, 0.08, 16]} />
         <meshStandardMaterial color="#1a1d28" roughness={0.92} metalness={0.05} />
       </mesh>
-      {/* Farbiger Glow-Ring auf dem Sockel — Marker für Team-Owner */}
+      {/* Farbiger Glow-Ring auf dem Sockel — Team-Owner-Marker, klar sichtbar */}
       <mesh position={[0, 0.085, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.36, 0.44, 32]} />
-        <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.85} />
+        <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.9} />
       </mesh>
 
-      {/* Pol/Stab fuer Tower-Spine, sonst nur sub­tiler Steinhaufen */}
-      {isTower && (
-        <mesh position={[0, 0.7, 0]} castShadow>
-          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
-          <meshStandardMaterial color="#3a2614" roughness={0.8} />
-        </mesh>
-      )}
-
-      {/* Avatar als Billboard knapp über dem Sockel */}
-      <group ref={avatarRef} position={[0, 0.18, 0]}>
-        <Billboard>
-          {/* Soft glow disc behind */}
-          <mesh position={[0, 0, -0.005]}>
-            <circleGeometry args={[0.22, 24]} />
-            <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.32} />
-          </mesh>
-          <mesh>
-            <planeGeometry args={[0.36, 0.36]} />
-            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
-          </mesh>
-        </Billboard>
-      </group>
-
-      {/* Laternen-Schnur die hochläuft (subtil, fast nur Andeutung) */}
-      <mesh position={[0, hangY + 0.7, 0]}>
-        <cylinderGeometry args={[0.004, 0.004, 1.4, 4]} />
-        <meshBasicMaterial color="#1a1208" transparent opacity={0.8} toneMapped={false} />
+      {/* Anker-Seil vom Boden bis zum Korb (sehr dünn, fast nur Andeutung).
+          Macht das „der Ballon schwebt fest auf seinem Feld" lesbar. */}
+      <mesh position={[0, hangY * 0.4, 0]}>
+        <cylinderGeometry args={[0.0035, 0.0035, hangY * 0.7, 4]} />
+        <meshBasicMaterial color="#2a1a0c" transparent opacity={0.6} toneMapped={false} />
       </mesh>
 
-      {/* DIE LATERNE(N) */}
-      <group ref={lanternRef} position={[0, hangY, 0]}>
+      {/* DER BALLON / TOWER */}
+      <group ref={balloonRef} position={[0, hangY, 0]}>
         {isTower ? (
-          // PAGODEN-TOWER: 3 Laternen vertikal mit kleinen Holz-Stützen
+          // STAPEL-TOWER: 3 Ballons vertikal — größer unten, kleiner oben
           <>
             {[0, 1, 2].map(i => {
-              const tierSize = 0.95 - i * 0.16;
-              const tierY = -0.5 + i * 0.55;
+              const tierSize = 0.95 - i * 0.18;
+              const tierY = -0.85 + i * 0.85;
               return (
                 <group key={i} position={[0, tierY, 0]}>
-                  <PaperLanternBody color={avatar.color} size={tierSize} intensity={1.1} joker={joker} frozen={frozen} />
-                  {/* Mini-Pagoden-Dach über jeder Laterne */}
-                  <mesh position={[0, 0.32 * tierSize + 0.04, 0]} castShadow rotation={[0, Math.PI / 6, 0]}>
-                    <coneGeometry args={[0.36 * tierSize, 0.13, 6]} />
-                    <meshStandardMaterial
-                      color={avatar.color}
-                      emissive={avatar.color}
-                      emissiveIntensity={0.45}
-                      roughness={0.5}
-                      metalness={0.2}
-                    />
-                  </mesh>
+                  <HotAirBalloon
+                    color={avatar.color}
+                    size={tierSize}
+                    intensity={1.1}
+                    joker={joker}
+                    frozen={frozen}
+                    avatarTex={avatarTex}
+                  />
                 </group>
               );
             })}
-            {/* Goldene Spitze ganz oben */}
-            <mesh position={[0, 1.25, 0]} castShadow>
-              <coneGeometry args={[0.06, 0.18, 6]} />
-              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.5} metalness={0.7} roughness={0.3} toneMapped={false} />
-            </mesh>
           </>
         ) : (
-          <PaperLanternBody color={avatar.color} size={lanternSize} intensity={joker ? 1.6 : 1.0} joker={joker} frozen={frozen} />
+          <HotAirBalloon
+            color={avatar.color}
+            size={balloonSize}
+            intensity={joker ? 1.6 : 1.0}
+            joker={joker}
+            frozen={frozen}
+            avatarTex={avatarTex}
+          />
         )}
       </group>
 
-      {/* Joker: rotierender Sparkle-Ring um die Riesen-Laterne */}
+      {/* Joker: rotierender Sparkle-Ring um den großen Ballon */}
       {joker && (
-        <group ref={sparkleRef} position={[0, hangY, 0]}>
+        <group ref={sparkleRef} position={[0, hangY + 0.05, 0]}>
           {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
             const angle = (i / 8) * Math.PI * 2;
-            const r = 0.65;
+            const r = 0.78;
             return (
               <mesh key={i} position={[Math.cos(angle) * r, 0, Math.sin(angle) * r]}>
-                <sphereGeometry args={[0.05, 10, 10]} />
-                <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.6} toneMapped={false} />
+                <sphereGeometry args={[0.055, 10, 10]} />
+                <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.8} toneMapped={false} />
               </mesh>
             );
           })}
         </group>
       )}
 
-      {/* Echte Punktlicht in der Laterne — beleuchtet leicht den Boden + Reflector */}
+      {/* Echte Punktlicht im Ballon — beleuchtet leicht den Boden + Lake-Reflector */}
       <pointLight
         position={[0, hangY, 0]}
         color={lightColor}
         intensity={lightIntensity}
-        distance={isTower ? 4.5 : 3.2}
+        distance={isTower ? 5.2 : 3.6}
         decay={1.8}
         castShadow={false}
       />
 
-      {/* Frozen: Eiskristall-Aura schwach um die Laterne */}
+      {/* Frozen: kalte Eis-Aura um den Ballon */}
       {frozen && !isTower && (
         <mesh position={[0, hangY, 0]}>
-          <sphereGeometry args={[0.55, 16, 12]} />
+          <sphereGeometry args={[0.7, 16, 12]} />
           <meshBasicMaterial color="#7ec5ff" toneMapped={false} transparent opacity={0.08} />
         </mesh>
       )}

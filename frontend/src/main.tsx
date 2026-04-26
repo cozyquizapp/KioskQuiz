@@ -1,10 +1,46 @@
+/// <reference types="vite-plugin-pwa/client" />
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './main.css';
 
 import * as Sentry from '@sentry/react';
+
+// ── Service Worker mit Auto-Update + Polling ─────────────────────────────────
+// Problem zuvor: Workbox cachte JS/CSS-Bundles aggressiv. Selbst Hard-Reload
+// hat den Service-Worker-Cache nicht invalidiert; User mussten manuell
+// „Clear site data" klicken, was im Live-Quiz unzumutbar ist.
+//
+// Fix: registerSW mit:
+//   1. onNeedRefresh — sobald ein neuer SW bereit ist → sofort updateSW(true)
+//      → neuer SW übernimmt (skipWaiting + clientsClaim sind im SW gesetzt)
+//      → Page-Reload mit frischen Bundles.
+//   2. Periodisches registration.update() (alle 60 s) und beim Tab-Fokus,
+//      damit langlebige Beamer-/Moderator-Tabs neue Builds zeitnah bemerken.
+//
+// State-Loss beim Reload ist OK — Server hält Quiz-State, useQQSocket
+// reconnected automatisch.
+if (typeof window !== 'undefined') {
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      updateSW(true);
+    },
+    onRegisteredSW(_swUrl, registration) {
+      if (!registration) return;
+      window.setInterval(() => {
+        registration.update().catch(() => {/* offline ist ok */});
+      }, 60_000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          registration.update().catch(() => {});
+        }
+      });
+    },
+  });
+}
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN || '',
   tracesSampleRate: 1.0,

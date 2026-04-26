@@ -7,7 +7,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' lässt das Plugin KEIN auto-Registration-Snippet injizieren.
+      // Wir registrieren selbst in main.tsx mit Auto-Reload + Update-Polling
+      // (60s), damit neue Builds nicht im Service-Worker-Cache hängen bleiben
+      // und User keine Caches manuell leeren müssen.
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'logo.ico', 'logo.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Cozy Quiz Team',
@@ -38,6 +43,14 @@ export default defineConfig({
         // Fall back to index.html for SPA navigation, but not for API/socket routes
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],
+        // Sobald ein neuer SW installiert ist, sofort übernehmen und alle
+        // Tabs zwingen, mit dem neuen Cache zu arbeiten — sonst bleibt die
+        // alte Version im Browser hängen, bis alle Tabs/PWA-Instanzen zur
+        // Domain geschlossen sind. Zusammen mit dem registerSW-Polling in
+        // main.tsx kommt jeder neue Build zeitnah beim User an.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com/,

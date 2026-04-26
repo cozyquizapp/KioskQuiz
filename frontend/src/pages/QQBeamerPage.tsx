@@ -32,6 +32,14 @@ import {
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
+// ── Cozy-Card-Default ─────────────────────────────────────────────────────────
+// Standard-Card-Hintergrund für ALLE Beamer-Cards (Frage, Antwort-Reveal,
+// Stat-Panel, Game-Over, Comeback, Pause). Subtiler Top-zu-Bottom-Gradient
+// gibt der Card visuelle Tiefe (oben „beleuchtet", unten „grounded") statt
+// flachem `#1B1510`. Themes mit eigenem `cardBg` überschreiben das (s.theme
+// gewinnt überall via `s.theme?.cardBg ?? COZY_CARD_BG`).
+export const COZY_CARD_BG = 'linear-gradient(180deg, #1f1610, #150e08)';
+
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
 import { loadUsedFonts } from '../utils/fonts';
@@ -611,10 +619,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
   const accent = s.theme?.accentColor ?? '#F59E0B';
-  // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy
+  // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.
+  // PreGame/Paused nutzen denselben Default wie In-Game (COZY_CARD_BG),
+  // damit der ganze Beamer eine konsistente Card-Optik hat.
   const cardBg = (isPreGame || isPaused)
-    ? 'linear-gradient(180deg, #1f1610, #150e08)'
-    : (s.theme?.cardBg ?? '#1B1510');
+    ? COZY_CARD_BG
+    : (s.theme?.cardBg ?? COZY_CARD_BG);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
 
   // ── 3D grid toggle (beamer-local) ──
@@ -2480,7 +2490,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
-  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const joinUrl = `${window.location.origin}/team`;
   const [de, setDe] = useState(true);
@@ -6215,7 +6225,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const effectiveCutouts = q.emojis?.length
     ? cutouts.map((c, i) => q.emojis![i] ? { ...c, emoji: q.emojis![i] } : c)
     : cutouts;
-  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const img = q.image;
   // For CHEESE (Picture This): show image even with layout='none' — it's the main visual
   const isCheese = cat === 'CHEESE';
@@ -8323,7 +8333,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 
 export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const cardBg = s.theme?.cardBg ?? '#1B1510';
+  const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const hl = s.comebackHL;
   // H/L: alle tied-letzten Teams. Ohne H/L: Fallback auf altes 1-Team-Verhalten.
   const hlTeams = hl ? hl.teamIds.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams : [];
@@ -9005,7 +9015,7 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // Cozy-warmer Card-Hintergrund (passend zu In-Game-Cards)
-  const cardBg = 'linear-gradient(180deg, #1f1610, #150e08)';
+  const cardBg = COZY_CARD_BG;
   // Mode-spezifische Akzentfarbe — preGame: Lagerfeuer-Gold, Pause: Cozy-Lavender
   const modeAccent = mode === 'preGame' ? '#FBBF24' : '#A78BFA';
   const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)';

@@ -754,11 +754,222 @@ function AvatarStudyMockup() {
   );
 }
 
+// ── Hoodie-Empfehlungen ────────────────────────────────────────────────────
+// Konkrete Hex-Pairings fuer die neuen Avatare im Gouache-Stil. Die
+// Hoodie-Farbe ist KOMPLEMENTÄR zur Team-Farbe, alle 8 stammen aus der
+// gleichen Gouache-Palette → kohärentes Set, jeder Avatar pop't auf seinem
+// eigenen Feld klar raus statt zu verschmelzen.
+const HOODIE_PAIRINGS: Array<{
+  slug: string; label: string; teamColor: string;
+  hoodieColor: string; hoodieName: string; reason: string;
+}> = [
+  { slug: 'shiba',     label: 'Hund (Shiba)', teamColor: '#FA507F', hoodieColor: '#7A9E7E', hoodieName: 'Salbei',         reason: 'Grün-Komplement zu Pink' },
+  { slug: 'faultier',  label: 'Faultier',     teamColor: '#9DCB2F', hoodieColor: '#E07A5F', hoodieName: 'Terracotta',     reason: 'Klassischer Rot-Grün-Kontrast' },
+  { slug: 'pinguin',   label: 'Pinguin',      teamColor: '#266FD3', hoodieColor: '#F2EAD3', hoodieName: 'Cremeweiß',      reason: 'Hell auf tiefem Blau' },
+  { slug: 'koala',     label: 'Koala',        teamColor: '#9A65D5', hoodieColor: '#D9A05B', hoodieName: 'Ocker',          reason: 'Warmes Gelb auf kühlem Violett' },
+  { slug: 'giraffe',   label: 'Giraffe',      teamColor: '#FEC814', hoodieColor: '#1F3A5F', hoodieName: 'Indigo',         reason: 'Max. Kontrast Dunkel/Hell' },
+  { slug: 'waschbaer', label: 'Waschbär',     teamColor: '#68B4A5', hoodieColor: '#2D2A26', hoodieName: 'Holzkohle',      reason: 'Dunkel auf mittlerem Teal' },
+  { slug: 'kuh',       label: 'Kuh',          teamColor: '#FF751F', hoodieColor: '#3D5A80', hoodieName: 'Tinte sanft',    reason: 'Blau-Orange-Komplement' },
+  { slug: 'capybara',  label: 'Capybara',     teamColor: '#F84326', hoodieColor: '#B8CDB1', hoodieName: 'Salbei hell',    reason: 'Kühles Hell auf warmem Rot' },
+];
+
+function HoodieRecommendationSection() {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
+      <SectionLabel n="10" title="Hoodie-Farben" sub="Team-Farbe ist das Feld · Hoodie ist der Avatar-Pop dagegen" />
+
+      <div style={{
+        marginTop: 24, padding: '14px 18px', borderRadius: 10,
+        background: `${PALETTE.sage}1f`, border: `1.5px solid ${PALETTE.sage}55`,
+        fontFamily: F_BODY, fontSize: 14, color: PALETTE.charcoal, lineHeight: 1.55,
+      }}>
+        <strong style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.sage, fontWeight: 700, display: 'block', marginBottom: 4 }}>
+          Prinzip
+        </strong>
+        Der <em>Cell-Color</em> auf dem Grid ist die saturierte Team-Farbe — die bleibt, weil das Spiel
+        damit funktioniert (8 Teams müssen visuell trennbar sein). Der <em>Hoodie</em> sollte komplementär
+        zur Team-Farbe sein, sonst verschwindet der Avatar auf seinem eigenen Feld. Alle 8 Hoodie-Farben
+        stammen aus der Gouache-Palette → die Avatare sehen als Set kohärent aus.
+      </div>
+
+      {/* Pairing-Cards: Team-Color + Hoodie-Color + Demo-Avatar auf Feld */}
+      <div style={{
+        marginTop: 28, display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16,
+      }}>
+        {HOODIE_PAIRINGS.map(p => (
+          <div key={p.slug} style={{
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr',
+            gap: 14,
+            padding: 14, borderRadius: 14,
+            background: `${PALETTE.paper}aa`,
+            border: `1.5px solid ${PALETTE.charcoal}22`,
+            filter: 'url(#watercolorEdge)',
+          }}>
+            {/* Demo-Cell: Avatar auf Team-Color-Feld (so wie's auf dem Grid aussieht) */}
+            <div style={{
+              width: 96, height: 96, borderRadius: 14,
+              background: `radial-gradient(circle at 30% 30%, ${p.teamColor}cc, ${p.teamColor}99 60%, ${p.teamColor}66 100%)`,
+              border: `2px solid ${p.teamColor}`,
+              boxShadow: `0 4px 12px ${p.teamColor}55, inset 0 -3px 6px rgba(0,0,0,0.1)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              {/* Mini-Hoodie-Repräsentation: Kreis im Hoodie-Color, Tier-Emoji obendrauf */}
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: p.hoodieColor,
+                border: `2.5px solid ${PALETTE.cream}`,
+                boxShadow: `0 4px 10px rgba(0,0,0,0.25)`,
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: `url(/avatars/cozy-cast/avatar-${p.slug}.png)`,
+                  backgroundSize: '125% 125%',
+                  backgroundPosition: 'center 15%',
+                  filter: 'url(#avatarGouache)',
+                  mixBlendMode: 'multiply',
+                  opacity: 0.7,
+                }} />
+              </div>
+            </div>
+
+            {/* Info-Spalte */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+              <div style={{
+                fontFamily: F_HAND, fontSize: 26, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1,
+              }}>
+                {p.label}
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                <span style={{
+                  width: 14, height: 14, borderRadius: 4, background: p.teamColor,
+                  border: `1px solid ${PALETTE.charcoal}33`,
+                }} />
+                <span style={{ fontFamily: 'monospace', fontSize: 11, color: PALETTE.inkSoft }}>
+                  Feld {p.teamColor}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{
+                  width: 14, height: 14, borderRadius: 4, background: p.hoodieColor,
+                  border: `1px solid ${PALETTE.charcoal}33`,
+                }} />
+                <span style={{ fontFamily: 'monospace', fontSize: 11, color: PALETTE.inkDeep, fontWeight: 700 }}>
+                  Hoodie {p.hoodieColor}
+                </span>
+                <span style={{ fontFamily: F_BODY, fontSize: 11, color: PALETTE.terracotta, fontStyle: 'italic' }}>
+                  · {p.hoodieName}
+                </span>
+              </div>
+              <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.charcoal, opacity: 0.78, marginTop: 4, lineHeight: 1.4 }}>
+                {p.reason}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Test-Strip: alle 8 Hoodies nebeneinander auf einem Demo-Grid-Streifen */}
+      <div style={{ marginTop: 32 }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep, fontWeight: 700, marginBottom: 10 }}>
+          Test: Alle 8 Hoodies auf ihrem Team-Feld
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6,
+          padding: 12, borderRadius: 12,
+          background: `${PALETTE.inkSoft}33`,
+          border: `1.5px solid ${PALETTE.inkSoft}55`,
+        }}>
+          {HOODIE_PAIRINGS.map(p => (
+            <div key={p.slug} style={{
+              aspectRatio: '1', borderRadius: 8,
+              background: `radial-gradient(circle at 30% 30%, ${p.teamColor}cc, ${p.teamColor}99 60%, ${p.teamColor}66 100%)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: `1.5px solid ${p.teamColor}`,
+            }}>
+              <div style={{
+                width: '70%', height: '70%', borderRadius: '50%',
+                background: p.hoodieColor,
+                border: `2px solid ${PALETTE.cream}`,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft, marginTop: 8, fontStyle: 'italic', textAlign: 'center' }}>
+          Jeder Hoodie pop't klar gegen sein Feld — keine Verschmelzung, alle 8 distinkt
+        </div>
+      </div>
+
+      {/* Cross-Test: Hoodie auf FREMDEN Feldern (für Klau-Phase / Zwischenbild) */}
+      <div style={{ marginTop: 28 }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep, fontWeight: 700, marginBottom: 10 }}>
+          Cross-Check: Hoodie auf fremden Feldern (Klau-Phase)
+        </div>
+        <div style={{ overflow: 'auto' }}>
+          <table style={{ borderCollapse: 'separate', borderSpacing: 4, fontFamily: F_BODY, fontSize: 11, color: PALETTE.charcoal }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, fontFamily: F_HAND, fontSize: 14, color: PALETTE.inkDeep }}>
+                  Hoodie ↓ / Feld →
+                </th>
+                {HOODIE_PAIRINGS.map(p => (
+                  <th key={p.slug} style={{
+                    width: 36, height: 24, padding: 0,
+                    background: p.teamColor, borderRadius: 4,
+                    fontSize: 9, color: '#fff', fontWeight: 700, textAlign: 'center',
+                  }}>
+                    {p.label.split(' ')[0].slice(0, 4)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {HOODIE_PAIRINGS.map(h => (
+                <tr key={h.slug}>
+                  <td style={{ padding: '4px 8px', fontFamily: F_HAND, fontSize: 14, fontWeight: 700, color: PALETTE.inkDeep, whiteSpace: 'nowrap' }}>
+                    {h.label.split(' ')[0]} <span style={{ fontFamily: 'monospace', fontSize: 9, color: PALETTE.inkSoft }}>{h.hoodieColor}</span>
+                  </td>
+                  {HOODIE_PAIRINGS.map(c => (
+                    <td key={c.slug} style={{
+                      width: 36, height: 36, padding: 0, borderRadius: 4,
+                      background: c.teamColor,
+                    }}>
+                      <div style={{
+                        width: '100%', height: '100%', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: h.hoodieColor,
+                          border: `1.5px solid ${PALETTE.cream}`,
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                        }} />
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft, marginTop: 8, fontStyle: 'italic' }}>
+          Diagonale = eigenes Feld (sollte am stärksten poppen). Andere Zellen = Klau-Szenarien.
+          Falls du irgendwo eine Verschmelzung siehst, ist das Pairing zu nah — sag Bescheid.
+        </div>
+      </div>
+    </PaperCard>
+  );
+}
+
 // ── Verdict-Section ────────────────────────────────────────────────────────
 function VerdictSection() {
   return (
     <PaperCard washColor={PALETTE.cream} padding={36} style={{ marginBottom: 40 }}>
-      <SectionLabel n="10" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
+      <SectionLabel n="11" title="Ehrliches Verdict" sub="Was geht, was wird haarig, was sollte hybrid bleiben" />
       <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
         <VerdictCard
           icon="✓"
@@ -854,6 +1065,7 @@ export default function QQGouachePage() {
         <TeamPageMockup />
         <GameOverMockup />
         <AvatarStudyMockup />
+        <HoodieRecommendationSection />
         <VerdictSection />
 
         <div style={{

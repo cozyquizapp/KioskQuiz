@@ -82,17 +82,17 @@ export default function QQLobbyGouachePage() {
       </div>
       <FloatingTeamBalloons teams={state?.teams ?? []} />
 
-      {/* ── Top: Title (zentriert) ── */}
+      {/* ── Top: Title (zentriert, sehr groß) ── */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        paddingTop: 'clamp(6px, 1vh, 14px)',
+        paddingTop: 'clamp(4px, 0.6vh, 10px)',
       }}>
         <div style={{
           fontFamily: F_HAND,
-          fontSize: 'clamp(64px, 9vw, 132px)', fontWeight: 700, lineHeight: 0.95,
+          fontSize: 'clamp(96px, 13vw, 200px)', fontWeight: 700, lineHeight: 0.92,
           color: PALETTE.cream,
-          letterSpacing: '-0.01em',
-          textShadow: '0 6px 22px rgba(0,0,0,0.45)',
+          letterSpacing: '-0.015em',
+          textShadow: '0 8px 28px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4)',
         }}>
           CozyQuiz
         </div>
@@ -261,7 +261,7 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
           color: PALETTE.ochre, letterSpacing: '0.02em',
           textShadow: '0 1px 2px rgba(0,0,0,0.6)',
         }}>
-          CozyWolf 🐺
+          CozyWolf
         </span>
       </div>
     </div>
@@ -269,21 +269,27 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Teams-Grid — dynamisch wachsend (User-Override)
-//   1-4 Teams = 1 Reihe (max 4 Spalten)
-//   5-8 Teams = 4 Spalten × 2 Reihen
+// Teams-Grid — 2-spaltig wachsend (User-Override), Cards hochkant
+//   1 Team   = 1 Card mittig (1 Spalte)
+//   2 Teams  = 2 Spalten × 1 Reihe
+//   3-4      = 2 Spalten × 2 Reihen
+//   5-6      = 2 Spalten × 3 Reihen
+//   7-8      = 2 Spalten × 4 Reihen
 // ─────────────────────────────────────────────────────────────────────────────
 
 function TeamsGrid({ teams, waveIds }: { teams: QQTeam[]; waveIds: Set<string> }) {
   const teamCount = teams.length;
-  const cols = teamCount <= 4 ? teamCount : 4;
-  // Bei 5-8 Teams = 2 Reihen → kompaktere Card-Größen, sonst groß.
+  const cols = teamCount === 1 ? 1 : 2;
+  // Ab 5 Teams kompaktere Cards (sonst sprengt es vertikal).
   const compact = teamCount > 4;
+  // 1 Team mittig — nicht volle Breite, sondern hübsch in der Mitte.
+  const justifyItems = teamCount === 1 ? 'center' : 'stretch';
   return (
     <div style={{
       display: 'grid',
       gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
       gap: compact ? 'clamp(10px, 1.4vw, 16px)' : 'clamp(14px, 1.8vw, 22px)',
+      justifyItems,
     }}>
       {teams.map((t, i) => (
         <TeamCard key={t.id} team={t} fresh={waveIds.has(t.id)} compact={compact} delayIndex={i} />
@@ -298,54 +304,56 @@ function TeamCard({
   const slug = qqGetAvatar(team.avatarId).slug;
   // Volle Teamfarbe als Ring (kein 55-alpha) → Beamer-Lesbarkeit.
   const ringColor = softTeamColor(team.avatarId, PALETTE.terracotta);
-  const avatarSize = compact ? 'clamp(64px, 6vw, 88px)' : 'clamp(80px, 7.4vw, 112px)';
+  // Hochkant: Avatar oben groß, Name + Status drunter.
+  const avatarSize = compact ? 'clamp(96px, 9vw, 140px)' : 'clamp(120px, 12vw, 180px)';
   return (
     <div style={{
       position: 'relative',
       padding: compact
-        ? 'clamp(16px, 2vh, 22px) clamp(18px, 2vw, 26px)'
-        : 'clamp(22px, 2.6vh, 32px) clamp(22px, 2.6vw, 34px)',
-      borderRadius: compact ? 22 : 28,
+        ? 'clamp(18px, 2.2vh, 26px) clamp(14px, 1.4vw, 22px)'
+        : 'clamp(24px, 2.8vh, 34px) clamp(18px, 1.8vw, 28px)',
+      borderRadius: compact ? 24 : 30,
       background: `${PALETTE.cream}f5`,
       // Dicker Ring in voller Teamfarbe + warmer Glow
       border: `4px solid ${ringColor}`,
       boxShadow: fresh
-        ? `0 12px 36px rgba(31,58,95,0.35), 0 0 70px ${ringColor}cc, 0 0 36px ${ringColor}88`
-        : `0 14px 32px rgba(31,58,95,0.28), 0 0 24px ${ringColor}44`,
-      display: 'flex', alignItems: 'center',
-      gap: compact ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(18px, 1.9vw, 26px)',
+        ? `0 14px 40px rgba(31,58,95,0.4), 0 0 80px ${ringColor}cc, 0 0 40px ${ringColor}aa`
+        : `0 16px 38px rgba(31,58,95,0.3), 0 0 28px ${ringColor}55`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: compact ? 'clamp(8px, 1vh, 14px)' : 'clamp(12px, 1.4vh, 20px)',
       animation: fresh
         ? 'lobbyGouacheJoin 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
         : `lobbyGouacheCardIn 0.55s cubic-bezier(0.34,1.2,0.64,1) ${0.3 + delayIndex * 0.06}s both`,
       transition: 'box-shadow 0.6s ease, border-color 0.6s ease',
-      minWidth: 0,
+      minWidth: 0, width: '100%',
       filter: 'url(#paintFrame)',
+      textAlign: 'center',
     }}>
       <PaintedAvatar slug={slug} size={parseSize(avatarSize)} color={ringColor} withGrain={false} />
       {fresh && (
         <span aria-hidden style={{
           position: 'absolute', top: -18, right: -10,
-          fontSize: compact ? 32 : 40, lineHeight: 1,
+          fontSize: compact ? 36 : 46, lineHeight: 1,
           animation: 'lobbyGouacheWave 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
           filter: `drop-shadow(0 0 10px ${ringColor}cc)`,
         }}>👋</span>
       )}
-      <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ minWidth: 0, width: '100%' }}>
         <div style={{
           fontFamily: F_HAND,
           fontWeight: 700,
-          fontSize: compact ? 'clamp(24px, 2.4vw, 34px)' : 'clamp(28px, 2.8vw, 42px)',
+          fontSize: compact ? 'clamp(28px, 2.8vw, 42px)' : 'clamp(34px, 3.4vw, 52px)',
           color: PALETTE.inkDeep,
           lineHeight: 1.05,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }} title={team.name}>
-          {team.name.length > 12 ? team.name.slice(0, 11) + '…' : team.name}
+          {team.name.length > 14 ? team.name.slice(0, 13) + '…' : team.name}
         </div>
         <div style={{
           fontFamily: F_BODY,
-          fontSize: compact ? 'clamp(12px, 1.1vw, 15px)' : 'clamp(13px, 1.25vw, 17px)',
+          fontSize: compact ? 'clamp(13px, 1.2vw, 17px)' : 'clamp(14px, 1.4vw, 19px)',
           fontWeight: 700,
           color: team.connected ? ringColor : `${PALETTE.inkSoft}aa`,
           marginTop: 4,

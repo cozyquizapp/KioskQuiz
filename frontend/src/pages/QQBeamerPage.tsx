@@ -6514,9 +6514,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'fixed', inset: 0, zIndex: 52,
           display: 'flex', flexDirection: 'column',
           justifyContent: 'flex-end', alignItems: 'center',
-          // Bottom-Padding größer als sonst: die Voter-Avatare hängen unter
-          // der Card und brauchen Platz, sonst klemmen sie am Bildschirmrand.
-          padding: '40px 48px clamp(110px, 14vh, 170px)',
+          // Bottom-Padding dynamisch:
+          //   - während QUESTION_ACTIVE: groß damit die unter der Card
+          //     hängenden Voter-Avatare nicht am Bildrand klemmen
+          //   - beim Reveal: zurück auf normales Padding, damit die Card
+          //     dichter am Bildrand sitzt und weniger vom Foto verdeckt
+          // Smooth transition zwischen beiden Zuständen.
+          padding: revealed ? '40px 48px 32px' : '40px 48px clamp(110px, 14vh, 170px)',
+          transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
           pointerEvents: 'none',
         }}>
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}

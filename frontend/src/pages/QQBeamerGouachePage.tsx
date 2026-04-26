@@ -25,6 +25,8 @@ import {
   PaperCard, BlockCapsHeading,
   PaintedAvatar,
   GouachePageShell, GouacheNightSky, GouacheDaySky, useViewportSize,
+  PhaseBackdrop, CategoryBackdrop,
+  CAT_ACCENT, CAT_BADGE_BG, CAT_PASTEL, CAT_DEEP,
 } from '../gouache';
 import {
   ConnectingPanel, PreGamePanel, RunningPanel,
@@ -2515,35 +2517,419 @@ function CheeseView({ state, q, de, revealed }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// RULES — kompakte Rules-Slide-Karte (Foundation-Version, später ausbauen)
+// RULES — komplette Slide-Rotation (1:1 Original) im Aquarell-Stil.
+// Der Moderator klickt durch die 4 Folien (rulesSlideIndex 0-3).
+// Slide 3 zeigt zusätzlich Ability-Badges (Klauen/Stapeln) und ggf.
+// Tree (showTree). Slide-Daten direkt vom Cozy-Quiz übernommen.
 // ─────────────────────────────────────────────────────────────────────────
 
+type RulesSlideData = {
+  icon: string;
+  title: string;
+  color: string;
+  lines: string[];
+  extra?: string;
+  grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
+  showTree?: boolean;
+  abilities?: { slug?: string; emoji: string; label: string; accent: string }[];
+};
+
+function buildRulesSlidesDeGouache(totalPhases: 3 | 4): RulesSlideData[] {
+  const abilityLines = totalPhases === 3
+    ? [
+        'Jede Runde bringt etwas Neues:',
+        'Runde 2: Klauen',
+        'Finale (Runde 3): Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
+      ]
+    : [
+        'Jede Runde bringt etwas Neues:',
+        'Runde 2: Klauen',
+        'Runde 3: Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
+        'Finale: Stapeln bleibt — mehr Zeit, mehr Fragen',
+      ];
+  return [
+    {
+      icon: '🏆',
+      title: 'Das Ziel',
+      color: CAT_ACCENT.MUCHO,
+      lines: ['Sammelt Felder — das größte zusammenhängende Gebiet gewinnt.'],
+    },
+    {
+      icon: '⚡',
+      title: 'So läuft’s',
+      color: CAT_ACCENT.CHEESE,
+      lines: [
+        `${totalPhases} Runden · 5 Kategorien`,
+        'Richtige Antwort → Feld setzen',
+        '2×2 Block oder 4 in einer Reihe = Bonus-Feld!',
+        'Bei Gleichstand entscheidet Tempo.',
+      ],
+    },
+    {
+      icon: '🔓',
+      title: 'Neue Fähigkeiten',
+      color: CAT_ACCENT.SCHAETZCHEN,
+      lines: abilityLines,
+      showTree: true,
+      abilities: [
+        { emoji: '⚡', label: 'Klauen',  accent: CAT_ACCENT.BUNTE_TUETE },
+        { emoji: '🏯', label: 'Stapeln', accent: '#06B6D4' },
+      ],
+    },
+    {
+      icon: '🔄',
+      title: 'Comeback',
+      color: CAT_ACCENT.ZEHN_VON_ZEHN,
+      lines: [
+        'Die Letzten werden die Ersten sein — oder wie war das?',
+        'Vor dem Finale gibt’s eine Aufholchance. Überraschung!',
+      ],
+      extra: 'Viel Spaß — möge das beste Team gewinnen! 🎉',
+    },
+  ];
+}
+
+function buildRulesSlidesEnGouache(totalPhases: 3 | 4): RulesSlideData[] {
+  const abilityLines = totalPhases === 3
+    ? [
+        'Each round adds something:',
+        'Round 2: Steal',
+        'Final (Round 3): Stack (own tile +1 point, permanently safe)',
+      ]
+    : [
+        'Each round adds something:',
+        'Round 2: Steal',
+        'Round 3: Stack (own tile +1 point, permanently safe)',
+        'Final: Stack stays — more time, more questions',
+      ];
+  return [
+    {
+      icon: '🏆',
+      title: 'The Goal',
+      color: CAT_ACCENT.MUCHO,
+      lines: ['Claim cells — biggest connected area wins.'],
+    },
+    {
+      icon: '⚡',
+      title: 'How It Works',
+      color: CAT_ACCENT.CHEESE,
+      lines: [
+        `${totalPhases} rounds · 5 categories`,
+        'Right answer → place a cell',
+        '2×2 block or 4 in a row = bonus tile!',
+        'Tie? Speed decides.',
+      ],
+    },
+    {
+      icon: '🔓',
+      title: 'New Abilities',
+      color: CAT_ACCENT.SCHAETZCHEN,
+      lines: abilityLines,
+      showTree: true,
+      abilities: [
+        { emoji: '⚡', label: 'Steal', accent: CAT_ACCENT.BUNTE_TUETE },
+        { emoji: '🏯', label: 'Stack', accent: '#06B6D4' },
+      ],
+    },
+    {
+      icon: '🔄',
+      title: 'Comeback',
+      color: CAT_ACCENT.ZEHN_VON_ZEHN,
+      lines: [
+        'The last shall be first — or so they say.',
+        'Before the final: a catch-up for last place. Surprise!',
+      ],
+      extra: 'Good luck — may the best team win! 🎉',
+    },
+  ];
+}
+
 function RulesView({ state, de }: { state: QQStateUpdate; de: boolean }) {
-  const idx = Math.max(0, state.rulesSlideIndex ?? 0);
+  const totalPhases = (state.totalPhases ?? 4) as 3 | 4;
+  const slides = de ? buildRulesSlidesDeGouache(totalPhases) : buildRulesSlidesEnGouache(totalPhases);
+  const totalSlides = slides.length;
+  const rawIdx = state.rulesSlideIndex ?? 0;
+  if (rawIdx < 0) return null; // Overlay-Phase, später Übergang
+  const idx = Math.max(0, Math.min(rawIdx, totalSlides - 1));
+  const slide = slides[idx];
+  const isLast = idx === totalSlides - 1;
+  const hasGrid = !!slide.grid;
+  const accent = slide.color;
+
   return (
     <CenterArea>
-      <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 56px)" style={{ maxWidth: 880, width: '90%', textAlign: 'center' }}>
+      <div
+        key={idx}
+        style={{
+          position: 'relative', zIndex: 5,
+          maxWidth: 1200, width: '94%', maxHeight: '92vh', overflow: 'hidden',
+          background: `${PALETTE.cream}f5`,
+          border: `2px solid ${accent}66`,
+          borderRadius: 36,
+          padding: `clamp(24px, 4vh, ${hasGrid ? 52 : 60}px) clamp(32px, 5vw, ${hasGrid ? 64 : 72}px)`,
+          boxShadow: `0 0 120px ${accent}26, 0 16px 48px rgba(31,58,95,0.30)`,
+          animation: 'gFadeIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+          filter: 'url(#paintFrame)',
+        }}
+      >
+        {/* Papier-Korn-Overlay (über paintFrame, multiply) */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, borderRadius: 36,
+          backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'240\' height=\'240\'><filter id=\'n\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.45\' numOctaves=\'3\'/><feColorMatrix values=\'0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0 0.74  0 0 0 0.32 0\'/></filter><rect width=\'240\' height=\'240\' filter=\'url(%23n)\'/></svg>")',
+          opacity: 0.3, mixBlendMode: 'multiply', pointerEvents: 'none',
+        }} />
+
+        {/* Icon + title row */}
         <div style={{
-          fontFamily: F_BODY, fontSize: 14, letterSpacing: '0.24em',
-          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
-          marginBottom: 14,
+          display: 'flex', alignItems: 'center',
+          gap: 'clamp(16px, 2vw, 28px)', marginBottom: 'clamp(16px, 2.5vh, 32px)',
+          position: 'relative',
         }}>
-          {de ? `Folie ${idx + 1}` : `Slide ${idx + 1}`}
+          <span style={{
+            fontSize: 'clamp(64px, 9vw, 110px)', lineHeight: 1,
+            filter: `drop-shadow(0 4px 16px ${accent}44)`,
+          }}>{slide.icon}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: F_BODY,
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700,
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: `${accent}cc`, marginBottom: 6,
+            }}>
+              {de ? `Spielregeln · Folie ${idx + 1} von ${totalSlides}` : `Game Rules · Slide ${idx + 1} of ${totalSlides}`}
+            </div>
+            <div style={{
+              fontFamily: F_HAND,
+              fontSize: 'clamp(44px, 7vw, 88px)', fontWeight: 700, lineHeight: 1.05,
+              color: accent,
+              textShadow: `0 0 60px ${accent}44`,
+            }}>
+              {slide.title}
+            </div>
+          </div>
         </div>
-        <BlockCapsHeading size="xl" color={PALETTE.inkDeep}>
-          {de ? 'Spielregeln' : 'Game Rules'}
-        </BlockCapsHeading>
+
+        {/* Divider */}
         <div style={{
-          fontFamily: F_BODY, fontSize: 'min(2.4vh, 1.8vw)',
-          color: PALETTE.inkSoft, marginTop: 26, fontStyle: 'italic',
-          maxWidth: 620, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6,
+          width: '100%', height: 3, borderRadius: 2,
+          background: `linear-gradient(90deg, ${accent}aa, ${accent}33, transparent)`,
+          marginBottom: 'clamp(16px, 2.5vh, 32px)',
+        }} />
+
+        {/* Content: text left, grid right */}
+        <div style={{
+          display: 'flex',
+          gap: 'clamp(24px, 3vw, 48px)',
+          alignItems: slide.showTree ? 'stretch' : 'center',
+          flexDirection: slide.showTree ? 'column' : (hasGrid ? 'row' : 'column'),
+          position: 'relative',
         }}>
-          {de
-            ? 'Der Moderator führt durch die Regeln am Beamer. Schau gleich auf den großen Bildschirm.'
-            : 'The moderator walks you through the rules on the main screen.'}
+          {slide.showTree && (
+            <RulesTree state={state} de={de} accent={accent} />
+          )}
+
+          {/* Text lines */}
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            gap: 'clamp(10px, 1.5vh, 20px)', flex: 1,
+          }}>
+            {slide.lines.map((line, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start',
+                gap: 'clamp(10px, 1.2vw, 18px)',
+                animation: `gFadeIn 0.4s ease ${0.1 + i * 0.12}s both`,
+              }}>
+                <div style={{
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: accent, marginTop: 14, flexShrink: 0,
+                  boxShadow: `0 0 10px ${accent}66`,
+                }} />
+                <span style={{
+                  fontFamily: F_HAND,
+                  fontSize: 'clamp(22px, 3vw, 42px)', fontWeight: 700,
+                  color: PALETTE.inkDeep, lineHeight: 1.3,
+                }}>
+                  {line}
+                </span>
+              </div>
+            ))}
+
+            {/* Ability-Badges */}
+            {slide.abilities && slide.abilities.length > 0 && (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                gap: 'clamp(10px, 1.4vw, 20px)', marginTop: 'clamp(10px, 1.6vh, 22px)',
+              }}>
+                {slide.abilities.map((b, i) => (
+                  <div key={`${b.label}-${i}`} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: 'clamp(10px, 1.2vh, 16px) clamp(14px, 1.6vw, 22px)',
+                    borderRadius: 16,
+                    background: `${b.accent}1f`,
+                    border: `2px solid ${b.accent}88`,
+                    boxShadow: `0 0 18px ${b.accent}44`,
+                    minWidth: 'clamp(96px, 11vw, 140px)',
+                    animation: `gFadeIn 0.4s ease ${0.4 + i * 0.08}s both`,
+                  }}>
+                    <span style={{
+                      fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1,
+                    }}>{b.emoji}</span>
+                    <div style={{
+                      fontFamily: F_HAND_CAPS,
+                      fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 700,
+                      color: b.accent, letterSpacing: '0.04em',
+                    }}>{b.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mini grid example */}
+          {slide.grid && <RulesMiniGridGouache grid={slide.grid} accent={accent} />}
         </div>
-      </PaperCard>
+
+        {/* Extra callout */}
+        {slide.extra && (
+          <div style={{
+            marginTop: 'clamp(16px, 2.5vh, 32px)',
+            padding: 'clamp(12px, 1.8vh, 20px) clamp(18px, 2.2vw, 28px)',
+            borderRadius: 18,
+            background: `${accent}1f`,
+            border: `2px solid ${accent}55`,
+            fontFamily: F_HAND,
+            fontSize: 'clamp(18px, 2.4vw, 34px)', fontWeight: 700,
+            color: accent,
+            animation: 'gFadeIn 0.5s ease 0.4s both',
+            textShadow: `0 0 24px ${accent}33`,
+          }}>
+            {slide.extra}
+          </div>
+        )}
+
+        {/* Last slide hint */}
+        {isLast && (
+          <div style={{
+            marginTop: 'clamp(16px, 2.5vh, 32px)', textAlign: 'center',
+            animation: 'gFadeIn 0.5s ease 0.6s both',
+          }}>
+            <BlockCapsHeading size="md" color={accent} glow>
+              {de ? '🎬 Los geht’s!' : '🎬 Let’s go!'}
+            </BlockCapsHeading>
+          </div>
+        )}
+      </div>
     </CenterArea>
+  );
+}
+
+// Mini-Grid für RULES — zeigt z.B. ein 4×4-Beispiel mit Joker-Stern
+function RulesMiniGridGouache({ grid, accent }: {
+  grid: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
+  accent: string;
+}) {
+  const rows = grid.cells.length;
+  const cols = grid.cells[0].length;
+  const cellSz = Math.min(84, Math.floor(340 / Math.max(rows, cols)));
+  const gap = 5;
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+      animation: 'gFadeIn 0.5s ease 0.35s both',
+    }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, ${cellSz}px)`,
+        gridTemplateRows: `repeat(${rows}, ${cellSz}px)`,
+        gap,
+      }}>
+        {grid.cells.flatMap((row, r) => row.map((cell, c) => {
+          const isTeamA = cell === 'A';
+          const isStar = cell === '⭐';
+          const isPin = cell === '🏯';
+          const filled = isTeamA || isStar || isPin;
+          const bg = isStar
+            ? `linear-gradient(135deg, ${grid.colorA}cc, ${PALETTE.amberGlow}cc)`
+            : isPin
+              ? `linear-gradient(135deg, ${grid.colorA}cc, ${PALETTE.sage}cc)`
+              : isTeamA
+                ? `${grid.colorA}aa`
+                : `${PALETTE.cream}26`;
+          return (
+            <div key={`${r}-${c}`} style={{
+              width: cellSz, height: cellSz,
+              borderRadius: Math.max(4, cellSz * 0.18),
+              background: bg,
+              border: filled
+                ? `2px solid ${isStar ? PALETTE.amberGlow : isPin ? PALETTE.sage : grid.colorA}`
+                : `1px solid ${PALETTE.inkSoft}33`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: cellSz * 0.5,
+              boxShadow: filled
+                ? `0 0 12px ${isStar ? PALETTE.amberGlow + '66' : isPin ? PALETTE.sage + '66' : grid.colorA + '66'}`
+                : 'none',
+              filter: 'url(#watercolorEdge)',
+            }}>
+              {isStar ? '⭐' : isPin ? '🏯' : ''}
+            </div>
+          );
+        }))}
+      </div>
+      {grid.label && (
+        <div style={{
+          fontFamily: F_HAND_CAPS,
+          fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 700,
+          color: accent, letterSpacing: '0.04em',
+        }}>{grid.label}</div>
+      )}
+    </div>
+  );
+}
+
+// Rules-Tree — kompakte Darstellung der Phasen-Folge mit Fragen pro Runde
+function RulesTree({ state, de, accent }: {
+  state: QQStateUpdate; de: boolean; accent: string;
+}) {
+  const total = state.totalPhases ?? 4;
+  const phases = Array.from({ length: total }, (_, i) => i + 1);
+  const labels = de
+    ? ['Setzen', 'Klauen', 'Stapeln', 'Finale']
+    : ['Place', 'Steal', 'Stack', 'Final'];
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', gap: 'clamp(8px, 1vw, 16px)',
+      flexWrap: 'wrap',
+      animation: 'gFadeIn 0.5s ease 0.05s both',
+    }}>
+      {phases.map(p => (
+        <div key={p} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          padding: 'clamp(10px, 1.6vh, 18px) clamp(14px, 1.8vw, 24px)',
+          borderRadius: 18,
+          background: `${accent}14`,
+          border: `2px solid ${accent}55`,
+          minWidth: 110,
+        }}>
+          <BlockCapsHeading size="sm" color={accent}>
+            {de ? `Runde ${p}` : `Round ${p}`}
+          </BlockCapsHeading>
+          <div style={{
+            fontFamily: F_HAND,
+            fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 700,
+            color: PALETTE.inkDeep, lineHeight: 1,
+          }}>
+            {labels[p - 1] ?? `R${p}`}
+          </div>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 12,
+            color: PALETTE.inkSoft, fontStyle: 'italic',
+            letterSpacing: '0.04em',
+          }}>
+            5 {de ? 'Fragen' : 'questions'}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

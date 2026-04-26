@@ -13,7 +13,7 @@ CozyQuiz hat ab sofort **zwei parallele Visual-Welten**:
 | Welt | Stimmung | Status | Live-Pfade |
 |---|---|---|---|
 | **Cozy Dark** *(bestehend, „klassisch")* | Dunkler Beamer, warme Amber-Spots, Fireflies, satte Saturation | ✅ Production-ready, alle Spiele laufen darauf | `/beamer`, `/team`, `/moderator`, `/lobby` |
-| **Gouache** *(neu, „Bilderbuch")* | Cremepapier, gemalte Aquarell-Wäschen, handgeschriebene Headings (Caveat), gedämpfte Erdtöne | 🚧 Lab-Stilstudie + Library + 16 echte Aquarell-Avatare; echte Live-Pages folgen | `/gouache` (Studie), zukünftig `/lobby-gouache`, `/beamer-gouache`, `/team-gouache` |
+| **Gouache** *(neu, „Bilderbuch")* | Cremepapier, gemalte Aquarell-Wäschen, handgeschriebene Headings (Caveat), gedämpfte Erdtöne | 🚧 Lab-Stilstudie + Library + 16 echte Aquarell-Avatare + erste echte Live-Page (Lobby) | `/gouache` (Studie), `/lobby-gouache` (live), zukünftig `/beamer-gouache`, `/team-gouache` |
 
 **Wichtig**: Der alte Stil bleibt **als Safety unverändert**. Solange wir noch nicht alle Gouache-Live-Pages durchgetestet haben, läuft jedes echte Quiz weiter im Cozy-Dark-Stil. Erst wenn der parallele Pfad voll funktioniert → entscheiden wir per Theme-Switch im Setup.
 
@@ -112,18 +112,29 @@ crasht — fehlende fallen still auf cozy-cast zurück.
 > **Strategie**: Page für Page parallel aufbauen, nicht alles auf einmal.
 > Jede neue Page bekommt einen `-gouache`-Suffix, alte bleiben unverändert.
 
-### Phase 1 — Erste Live-Page
+### Phase 1 — Erste Live-Page ✅ (live seit 2026-04-26)
 
-**`/lobby-gouache`** *(empfohlen als Erstes)*
+**`/lobby-gouache`** — `frontend/src/pages/QQLobbyGouachePage.tsx`
 
 - Welcome-Screen vor Spielstart, Teams joinen
-- Wenig State, viel Atmosphäre
-- Sofort sichtbar wie sich der Stil mit Live-Daten anfühlt
-- Reuses: real socket connection, real team-state
-- Components: `PaperCard`, `PaintedBalloon`, `PaintedHills`, `PaintedStars`,
-  `PaintedAvatar`
-
-**Blocker**: keine — Library ist fertig, Avatare sind da.
+- Echte Live-Daten via `useQQSocket('default')` + `qq:joinBeamer`
+- Selber Socket-Room wie `/beamer` → spiegelt 1:1 dieselbe Lobby parallel
+- Komponenten:
+  - `PaperCard` für QR-Card + Teams-Card
+  - `PaintedBalloon` pro joinendem Team in dessen `softTeamColor()`
+    (Default-Atmo-Ballons verschwinden sobald das erste Team da ist)
+  - `PaintedHills` als Bottom-Silhouette
+  - `PaintedStars` (32) + `PaintedMoon` + `PaintedBird` für Atmo
+  - `PaintedAvatar` pro Team (Aquarell-PNG, Fallback cozy-cast)
+- Drei State-Branches:
+  1. Kein State / nicht verbunden → ConnectingPanel
+  2. `phase === 'LOBBY' && !setupDone` → PreGamePanel („Bald geht's los")
+  3. `phase === 'LOBBY' && setupDone` → Voller QR + Team-Grid
+  4. Andere Phasen → RunningPanel mit Hinweis auf `/beamer`
+- Wave-Animation (👋 + Glow) wenn ein neues Team frisch joint
+- Lab-Footer mit Cross-Links zu `/gouache` und `/beamer`
+- **Sicherheit**: keine Edits an QQBeamerPage / qqShared / Backend.
+  Nur eine neue Page + 1 Zeile in App.tsx + 1 Zeile in MenuPage.
 
 ### Phase 2 — Team-Page (Phone)
 

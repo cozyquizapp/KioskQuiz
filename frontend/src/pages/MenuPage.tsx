@@ -29,6 +29,7 @@ const qqLinks: LinkItem[] = [
   { path: '/reveal-lab',            label: 'Reveal-Lab',       emoji: '👥', note: 'Avatar-Layouts pro Kategorie vergleichen' },
   { path: '/city-lab',              label: 'City Lab (3D)',    emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats · Lantern Field' },
   { path: '/gouache',               label: 'Gouache Lab',      emoji: '🎨', note: 'Aquarell-/Bilderbuch-Stil — komplette Stilstudie + Live-Avatar-Status' },
+  { path: '/lobby-gouache',         label: 'Lobby (Gouache)',  emoji: '🎈', note: 'Echte Welcome-Lobby im Aquarell-Look — selber Socket-Room wie /beamer' },
 ];
 
 // ── Legacy ────────────────────────────────────────────────────────────────────

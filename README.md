@@ -34,7 +34,7 @@ Status:
 - [x] Auto-Fallback-Hook (Gouache-PNG wenn da, sonst cozy-cast)
 - [x] Stilstudie auf `/gouache` (im Menü als „Gouache Lab" 🎨)
 - [x] PWA-Build-Fix (unkomprimierte PNGs aus Precache excludet)
-- [ ] **Phase 1**: erste echte Live-Page parallel (Lobby-Gouache empfohlen)
+- [x] **Phase 1**: `/lobby-gouache` — echte Welcome-Lobby mit Live-Sockets (parallel zu `/beamer`)
 - [ ] **Phase 2-4**: Team / Spielende / Beamer mit allen 5 Kategorien
 - [ ] **Phase 5**: PNG-Komprimierung (sharp/squoosh, 200-500 KB pro Bild)
 - [ ] **Phase 6**: Theme-Switch im Moderator-Setup

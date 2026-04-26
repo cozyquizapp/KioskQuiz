@@ -216,7 +216,8 @@ backend/.env.example                        — Alle Env-Vars als Template
 
 ## Verwandte Docs
 
-- [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md) — Aquarell-Stil-Migration (aktiver Block)
+- [`WOW_FEATURES.md`](./WOW_FEATURES.md) — fünf Charakter-Features (Haptik, Spotlight, Soundscape, Live-Reactions, Time-Travel-Replay)
+- [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md) — Aquarell-Stil-Migration (pausiert)
 - `~/.claude/projects/.../memory/` — Agent-Memory (User-Profil, Feedback-Regeln, etc.)
 - `frontend/public/avatars/gouache/README.md` — Hoodie-Specs + Master-Prompt für Avatar-Generierung
 - `docs/QQ_ROUND_PLAN_TODO.md` — alte Round-Plan-Diskussion (historisch)

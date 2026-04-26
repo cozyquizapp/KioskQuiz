@@ -135,7 +135,8 @@ function PhaseRouter({
     if (q.category === 'SCHAETZCHEN') return <SchaetzchenView state={state} q={q} de={de} revealed={revealed} />;
     if (q.category === 'MUCHO')       return <MuchoView state={state} q={q} de={de} revealed={revealed} />;
     if (q.category === 'CHEESE')      return <CheeseView state={state} q={q} de={de} revealed={revealed} />;
-    // BUNTE_TUETE + ZEHN_VON_ZEHN folgen in eigenen Items
+    if (q.category === 'BUNTE_TUETE') return <BunteTueteView state={state} q={q} de={de} revealed={revealed} />;
+    // ZEHN_VON_ZEHN folgt in eigenem Item
     return <PhasePlaceholderCard state={state} de={de} />;
   }
 
@@ -237,6 +238,450 @@ function TeamsRevealView({ state, de }: { state: QQStateUpdate; de: boolean }) {
         )}
       </div>
     </CenterArea>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// BUNTE_TUETE — Router auf Sub-Spiel (Top5, FixIt/Order, PinIt/Map,
+// HotPotato, Imposter/oneOfEight)
+// ─────────────────────────────────────────────────────────────────────────
+
+function BunteTueteView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const kind = q.bunteTuete?.kind;
+  if (kind === 'top5')       return <Top5View state={state} q={q} de={de} revealed={revealed} />;
+  if (kind === 'order')      return <FixItView state={state} q={q} de={de} revealed={revealed} />;
+  if (kind === 'map')        return <PinItView state={state} q={q} de={de} revealed={revealed} />;
+  if (kind === 'hotPotato')  return <HotPotatoView state={state} q={q} de={de} revealed={revealed} />;
+  if (kind === 'oneOfEight') return <ImposterView state={state} q={q} de={de} revealed={revealed} />;
+  return <PhasePlaceholderCard state={state} de={de} />;
+}
+
+// Top 5 — bis 5 korrekte Antworten, Teams müssen welche treffen
+function Top5View({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const bt = q.bunteTuete as any;
+  const answers: string[] = (de ? bt?.answers : bt?.answersEn) ?? bt?.answers ?? [];
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <PaperCard washColor={PALETTE.cream} padding="clamp(24px, 3.5vh, 48px)" style={{ maxWidth: 1200, width: '92%' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? 'Top 5' : 'Top 5'}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(6vh, 4.4vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 12,
+            }}>
+              {text}
+            </div>
+          </div>
+          {revealed ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              {answers.slice(0, 5).map((ans, i) => (
+                <div key={i} style={{
+                  padding: '14px 18px', borderRadius: 14,
+                  background: `${PALETTE.sage}26`,
+                  border: `2.5px solid ${PALETTE.sage}88`,
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  animation: `gFadeIn 0.5s ease-out ${0.1 + i * 0.1}s both`,
+                }}>
+                  <span style={{
+                    fontFamily: F_HAND, fontSize: 'min(4vh, 2.8vw)',
+                    color: PALETTE.sage, fontWeight: 700, minWidth: 36,
+                  }}>#{i + 1}</span>
+                  <span style={{
+                    fontFamily: F_HAND, fontSize: 'min(3.4vh, 2.4vw)',
+                    color: PALETTE.inkDeep, fontWeight: 700,
+                  }}>{ans}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <AnswerTracker state={state} de={de} />
+            </div>
+          )}
+        </PaperCard>
+      </CenterArea>
+    </>
+  );
+}
+
+// FixIt — Items in korrekte Reihenfolge bringen
+function FixItView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const bt = q.bunteTuete as any;
+  const items: string[] = (de ? bt?.items : bt?.itemsEn) ?? bt?.items ?? [];
+  const order: number[] = bt?.correctOrder ?? items.map((_: string, i: number) => i);
+  const itemValues: string[] = bt?.itemValues ?? [];
+  const criteria: string = (de ? bt?.criteria : bt?.criteriaEn) ?? bt?.criteria ?? '';
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <PaperCard washColor={PALETTE.cream} padding="clamp(24px, 3.5vh, 48px)" style={{ maxWidth: 1100, width: '92%' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? 'Sortieren' : 'Fix It'}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(5vh, 4vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 10,
+            }}>
+              {text}
+            </div>
+            {criteria && (
+              <div style={{
+                fontFamily: F_BODY, fontSize: 'min(2vh, 1.5vw)', color: PALETTE.inkSoft,
+                marginTop: 6, fontStyle: 'italic',
+              }}>
+                {criteria}
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {(revealed ? order : items.map((_, i) => i)).map((origIdx, i) => (
+              <div key={i} style={{
+                display: 'grid', gridTemplateColumns: 'auto 1fr auto',
+                alignItems: 'center', gap: 16,
+                padding: '12px 18px', borderRadius: 14,
+                background: revealed ? `${PALETTE.sage}1f` : `${PALETTE.cream}d0`,
+                border: `2.5px solid ${revealed ? PALETTE.sage + '99' : PALETTE.inkSoft + '33'}`,
+                animation: revealed ? `gFadeIn 0.5s ease-out ${0.1 + i * 0.1}s both` : undefined,
+              }}>
+                <span style={{
+                  fontFamily: F_HAND, fontSize: 'min(3.4vh, 2.4vw)',
+                  color: revealed ? PALETTE.sage : PALETTE.inkDeep, fontWeight: 700,
+                  minWidth: 44, textAlign: 'center',
+                }}>#{i + 1}</span>
+                <span style={{
+                  fontFamily: F_HAND, fontSize: 'min(3vh, 2.2vw)',
+                  color: PALETTE.inkDeep, fontWeight: 700,
+                }}>
+                  {items[origIdx] ?? items[i]}
+                </span>
+                {revealed && itemValues[origIdx] && (
+                  <span style={{
+                    fontFamily: F_BODY, fontSize: 'min(2vh, 1.5vw)',
+                    color: PALETTE.terracotta, fontWeight: 700,
+                    padding: '4px 12px', borderRadius: 999,
+                    background: `${PALETTE.terracotta}22`,
+                  }}>
+                    {itemValues[origIdx]}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          {!revealed && (
+            <div style={{ marginTop: 22, textAlign: 'center' }}>
+              <AnswerTracker state={state} de={de} />
+            </div>
+          )}
+        </PaperCard>
+      </CenterArea>
+    </>
+  );
+}
+
+// PinIt — Geo-Map (Aquarell: Lösungs-Label statt Map, Team-Pins als Liste)
+function PinItView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const bt = q.bunteTuete as any;
+  const target = bt?.targetLabel as string | undefined;
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <PaperCard washColor={PALETTE.cream} padding="clamp(28px, 4vh, 56px)" style={{ maxWidth: 1000, width: '92%', textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+            {de ? 'Pin auf der Karte' : 'Pin on the map'}
+          </BlockCapsHeading>
+          <div style={{
+            fontFamily: F_HAND, fontSize: 'min(6vh, 4.4vw)',
+            color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 14,
+          }}>
+            {text}
+          </div>
+          {revealed && target && (
+            <div style={{
+              marginTop: 28, padding: '20px 28px', borderRadius: 18,
+              background: `${PALETTE.sage}26`, border: `2.5px solid ${PALETTE.sage}`,
+              display: 'inline-block',
+              animation: 'gFadeIn 0.6s ease-out both',
+            }}>
+              <BlockCapsHeading size="sm" color={PALETTE.sage}>
+                {de ? 'Lösung' : 'Solution'}
+              </BlockCapsHeading>
+              <div style={{
+                fontFamily: F_HAND, fontSize: 'min(7vh, 5vw)',
+                color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 8,
+              }}>
+                📍 {target}
+              </div>
+            </div>
+          )}
+          {!revealed && (
+            <div style={{ marginTop: 24 }}>
+              <AnswerTracker state={state} de={de} />
+            </div>
+          )}
+          {revealed && state.answers.length > 0 && (
+            <div style={{
+              marginTop: 24, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
+            }}>
+              {state.answers.slice(0, 8).map(a => {
+                const team = state.teams.find(t => t.id === a.teamId);
+                if (!team) return null;
+                const color = softTeamColor(team.avatarId);
+                return (
+                  <div key={a.teamId} style={{
+                    padding: '6px 12px', borderRadius: 999,
+                    background: `${color}22`, border: `1.5px solid ${color}`,
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    fontFamily: F_HAND, fontSize: 'min(2.4vh, 1.8vw)',
+                    color: PALETTE.inkDeep, fontWeight: 700,
+                  }}>
+                    <PaintedAvatar slug={qqGetAvatar(team.avatarId).slug} size={28} color={color} withGrain={false} />
+                    {team.name}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </PaperCard>
+      </CenterArea>
+    </>
+  );
+}
+
+// HotPotato — Round-Robin Live-Spiel
+function HotPotatoView({ state, q, de }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const activeId = state.hotPotatoActiveTeamId;
+  const active = activeId ? state.teams.find(t => t.id === activeId) : null;
+  const eliminated = new Set(state.hotPotatoEliminated);
+  const used = state.hotPotatoUsedAnswers ?? [];
+  const authors = state.hotPotatoAnswerAuthors ?? [];
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <div style={{ width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)' }}>
+          <PaperCard washColor={PALETTE.cream} padding="clamp(20px, 3vh, 40px)" style={{ textAlign: 'center' }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? '🥔 Heiße Kartoffel' : '🥔 Hot Potato'}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(5vh, 4vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 10,
+            }}>
+              {text}
+            </div>
+          </PaperCard>
+          {/* Active Team */}
+          {active && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18,
+              animation: 'gFadeIn 0.5s ease-out both',
+            }}>
+              <div style={{ filter: 'url(#warmGlow)' }}>
+                <PaintedAvatar slug={qqGetAvatar(active.avatarId).slug} size={120}
+                  color={softTeamColor(active.avatarId)} withGrain={false} />
+              </div>
+              <div>
+                <BlockCapsHeading size="sm" color={PALETTE.cream}>
+                  {de ? 'ist dran' : 'up next'}
+                </BlockCapsHeading>
+                <div style={{
+                  fontFamily: F_HAND, fontSize: 'min(7vh, 5vw)',
+                  color: softTeamColor(active.avatarId), fontWeight: 700,
+                  textShadow: `0 4px 16px ${softTeamColor(active.avatarId)}66`,
+                }}>
+                  {active.name}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Used answers */}
+          {used.length > 0 && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8,
+              padding: 16, borderRadius: 18,
+              background: `${PALETTE.cream}1f`,
+              border: `1.5px dashed ${PALETTE.cream}55`,
+            }}>
+              {used.map((ans, i) => {
+                const authId = authors[i];
+                const author = authId ? state.teams.find(t => t.id === authId) : null;
+                const color = author ? softTeamColor(author.avatarId) : PALETTE.cream;
+                return (
+                  <div key={i} style={{
+                    padding: '6px 14px', borderRadius: 999,
+                    background: `${color}26`, border: `1.5px solid ${color}88`,
+                    fontFamily: F_HAND, fontSize: 'min(2.4vh, 1.8vw)',
+                    color: PALETTE.cream, fontWeight: 700,
+                  }}>
+                    {ans}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Eliminated indicator */}
+          {eliminated.size > 0 && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
+            }}>
+              {Array.from(eliminated).map(eid => {
+                const t = state.teams.find(x => x.id === eid);
+                if (!t) return null;
+                return (
+                  <div key={eid} style={{
+                    opacity: 0.4, filter: 'grayscale(0.7)',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 12px', borderRadius: 999,
+                    background: `${PALETTE.cream}11`,
+                  }}>
+                    <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={28}
+                      color={softTeamColor(t.avatarId)} withGrain={false} />
+                    <span style={{
+                      fontFamily: F_BODY, fontSize: 11, color: PALETTE.cream,
+                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>
+                      {t.name} · {de ? 'raus' : 'out'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </CenterArea>
+    </>
+  );
+}
+
+// Imposter (oneOfEight) — 8 Aussagen, eine ist falsch
+function ImposterView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const bt = q.bunteTuete as any;
+  const statements: string[] = (de ? bt?.statements : bt?.statementsEn) ?? bt?.statements ?? [];
+  const falseIdx = bt?.falseIndex ?? -1;
+  const chosen = new Set(state.imposterChosenIndices ?? []);
+  const eliminated = new Set(state.imposterEliminated ?? []);
+  const activeId = state.imposterActiveTeamId;
+  const active = activeId ? state.teams.find(t => t.id === activeId) : null;
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <div style={{ width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 2vh, 20px)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? '🕵️ Imposter' : '🕵️ Imposter'}
+            </BlockCapsHeading>
+            {active && !revealed && (
+              <div style={{
+                marginTop: 8, fontFamily: F_HAND, fontSize: 'min(4vh, 3vw)',
+                color: softTeamColor(active.avatarId), fontWeight: 700,
+              }}>
+                {active.name} {de ? 'wählt' : 'chooses'} …
+              </div>
+            )}
+          </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 10,
+          }}>
+            {statements.map((s, i) => {
+              const isFalse = revealed && i === falseIdx;
+              const wasChosen = chosen.has(i);
+              const dimmed = wasChosen && !isFalse;
+              return (
+                <div key={i} style={{
+                  padding: 'clamp(12px, 1.8vh, 18px) clamp(14px, 1.8vw, 22px)',
+                  borderRadius: 14,
+                  background: isFalse ? `${PALETTE.terracotta}33` : `${PALETTE.cream}f0`,
+                  border: `2.5px solid ${isFalse ? PALETTE.terracotta : PALETTE.inkSoft + '33'}`,
+                  filter: dimmed ? 'grayscale(0.6) opacity(0.5)' : undefined,
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  boxShadow: isFalse ? `0 8px 28px ${PALETTE.terracotta}55` : 'none',
+                  transition: 'all 0.5s',
+                }}>
+                  <span style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: isFalse ? PALETTE.terracotta : PALETTE.inkDeep,
+                    color: PALETTE.cream,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: F_HAND, fontSize: 18, fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {i + 1}
+                  </span>
+                  <span style={{
+                    flex: 1, fontFamily: F_HAND, fontSize: 'min(2.6vh, 2vw)',
+                    color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.2,
+                  }}>
+                    {s}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {revealed && falseIdx >= 0 && (
+            <div style={{
+              textAlign: 'center', padding: '14px 22px', borderRadius: 14,
+              background: `${PALETTE.terracotta}26`,
+              border: `2.5px solid ${PALETTE.terracotta}`,
+              animation: 'gFadeIn 0.6s ease-out both',
+            }}>
+              <BlockCapsHeading size="md" color={PALETTE.terracotta} glow>
+                {de ? `Aussage ${falseIdx + 1} war falsch` : `Statement ${falseIdx + 1} was the imposter`}
+              </BlockCapsHeading>
+            </div>
+          )}
+          {eliminated.size > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {Array.from(eliminated).map(eid => {
+                const t = state.teams.find(x => x.id === eid);
+                if (!t) return null;
+                return (
+                  <div key={eid} style={{
+                    opacity: 0.5, filter: 'grayscale(0.6)',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 12px', borderRadius: 999,
+                    background: `${PALETTE.cream}11`,
+                  }}>
+                    <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={26}
+                      color={softTeamColor(t.avatarId)} withGrain={false} />
+                    <span style={{
+                      fontFamily: F_BODY, fontSize: 11, color: PALETTE.cream,
+                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>
+                      {t.name} · {de ? 'raus' : 'out'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </CenterArea>
+    </>
   );
 }
 

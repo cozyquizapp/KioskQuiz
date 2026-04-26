@@ -9,7 +9,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Billboard, MeshReflectorMaterial } from '@react-three/drei';
-import { EffectComposer, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Vignette, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
@@ -46,7 +46,7 @@ const SIZE = 7;
 const TILE = 1.6;
 const OFFSET = ((SIZE - 1) * TILE) / 2;
 
-type Variant = 1 | 2 | 3 | 4;
+type Variant = 1 | 2 | 3 | 4 | 5;
 
 // ── Cluster-Sizes BFS (4er-Nachbarschaft) ─────────────────────────────────
 // Wird einmal beim Modul-Load berechnet. Variant 4 nutzt diese Map, um die
@@ -185,6 +185,7 @@ const VARIANTS: { id: Variant; title: string; sub: string; accent: string }[] = 
   { id: 2, title: '② Sockel + Kopf',      sub: 'Team-farbiger 3D-Sockel mit Avatar-Portrait',                       accent: '#3B82F6' },
   { id: 3, title: '③ 2D-Plan (Morph-Base)', sub: 'Flacher Stadtplan mit Straßen + Innenhöfen — gleiche Topologie wie 3D, morphbar', accent: '#10B981' },
   { id: 4, title: '④ Habitat (Tier-Häuser)', sub: 'Häuschen wachsen mit Cluster-Größe · Pagode bei Stapel · Joker-Sparkle-Ring', accent: '#EC4899' },
+  { id: 5, title: '⑤ Lantern Field 🏮', sub: 'Schwebende Papier-Laternen in Teamfarbe · Pagoden-Stapel-Tower · Embers · Bloom-Glow', accent: '#FB923C' },
 ];
 
 // Gebäude-Typ pro Zelle deterministisch bestimmen (wie QQ3DGrid-Ansatz)
@@ -210,26 +211,34 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
       </div>
     );
   }
+  // Variant 5 (Lantern Field) bekommt eigenes Setting: dunklerer Hintergrund,
+  // schwächere Ambient/Direct-Lights damit die Laternen-Emissive-Glows als
+  // Hauptlichtquelle wirken — Bloom-Pipeline pusht das in „derbe Wow".
+  const isLantern = variant === 5;
+  const bgColor = isLantern ? '#04060c' : '#0b0d14';
+
   return (
     <div style={{ width: '100%', height: h, borderRadius: 12, overflow: 'hidden' }}>
       <Canvas
         shadows
         dpr={[1, 2]}
         camera={{ position: [11, 10.5, 13], fov: 32 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isLantern ? 0.85 : 1.0 }}
       >
         {/* Epischer Nacht-Look, konsistent mit dem Beamer-Theme */}
-        <color attach="background" args={['#0b0d14']} />
-        <fog attach="fog" args={['#0b0d14', 16, 38]} />
+        <color attach="background" args={[bgColor]} />
+        <fog attach="fog" args={[bgColor, isLantern ? 12 : 16, isLantern ? 32 : 38]} />
 
-        {/* Dezente Umgebungsfüllung — hellt Schatten auf, warmer Amber-Ground */}
-        <hemisphereLight args={['#6d80a8', '#2a1f14', 0.55]} />
+        {/* Dezente Umgebungsfüllung — bei Laternen-Variante stark gedimmt,
+            damit die emissive Laternen-Glows wirklich der Hauptbeleuchter sind. */}
+        <hemisphereLight args={['#6d80a8', '#2a1f14', isLantern ? 0.16 : 0.55]} />
 
-        {/* Key-Light: warmer Amber-Spot, wie das Beamer-Theme */}
+        {/* Key-Light: warmer Amber-Spot, wie das Beamer-Theme — bei Laternen
+            stark reduziert, sonst würde es die Lanterns überstrahlen. */}
         <directionalLight
           position={[6, 18, 6]}
-          intensity={1.6}
-          color="#ffc880"
+          intensity={isLantern ? 0.35 : 1.6}
+          color={isLantern ? '#a08070' : '#ffc880'}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -245,11 +254,16 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
         {/* Rim-Light gegenüberliegend, kühler Akzent */}
         <directionalLight position={[-6, 10, -6]} intensity={0.4} color="#7c9cff" />
 
-        <Ground />
+        {/* Boden: Variante 5 hat einen Lake-Reflector statt Asphalt — die
+            Laternen spiegeln sich nach unten, doppelter Wow-Effekt. */}
+        {isLantern ? <LanternPondGround /> : <Ground />}
         {variant === 1 && <Streets />}
         {variant === 1 && <ChaflanPlazas />}
         {variant === 1 && <StreetTrees />}
-        {variant !== 1 && <GridLines />}
+        {!isLantern && variant !== 1 && <GridLines />}
+
+        {/* Embers — schwebende Glühpartikel, nur in Variant 5. */}
+        {isLantern && <Embers count={75} />}
 
         {DEMO_GRID.flatMap((row, r) => row.map((cell, c) => {
           const x = (c * TILE) - OFFSET;
@@ -295,6 +309,7 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
 
           if (!owner) {
             if (variant === 4) return <MeadowMound key={key} x={x} z={z} seed={r * 11 + c * 7} />;
+            if (variant === 5) return <DarkStoneTile key={key} x={x} z={z} seed={r * 11 + c * 7} />;
             return <EmptyPlot key={key} x={x} z={z} />;
           }
           const avatar = AVATARS[owner];
@@ -313,6 +328,19 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
               />
             );
           }
+          if (variant === 5) {
+            return (
+              <LanternCell
+                key={key}
+                x={x} z={z}
+                avatar={avatar}
+                joker={joker}
+                stacked={cell.stacked ?? 0}
+                frozen={!!cell.frozen}
+                seed={r * 13 + c * 9}
+              />
+            );
+          }
           return null;
         }))}
 
@@ -326,10 +354,24 @@ function SceneHost({ variant, big, emptyStyle = 'plaza' }: { variant: Variant; b
           autoRotateSpeed={0.4}
         />
 
-        {/* Post-Processing — Tag: nur dezente Vignette, kein Bloom */}
-        <EffectComposer multisampling={0}>
-          <Vignette eskil={false} offset={0.4} darkness={0.35} />
-        </EffectComposer>
+        {/* Post-Processing — Variant 5 mit Bloom fuer das richtige Laternen-
+            Glow-Drama; Vignette dunkler. Andere Varianten bleiben dezent. */}
+        {isLantern ? (
+          <EffectComposer multisampling={0}>
+            <Bloom
+              luminanceThreshold={0.32}
+              luminanceSmoothing={0.5}
+              intensity={1.15}
+              mipmapBlur
+              radius={0.78}
+            />
+            <Vignette eskil={false} offset={0.4} darkness={0.62} />
+          </EffectComposer>
+        ) : (
+          <EffectComposer multisampling={0}>
+            <Vignette eskil={false} offset={0.4} darkness={0.35} />
+          </EffectComposer>
+        )}
       </Canvas>
     </div>
   );
@@ -3227,6 +3269,337 @@ function HabitatCell({ x, z, avatar, joker, stacked, frozen, clusterSize, seed }
             transparent
             opacity={0.88}
           />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑤ LANTERN FIELD — Schwebende Papier-Laternen, Bloom-Glow, Embers, Lake-Reflector.
+// Maximaler Wow-Faktor: Lanterns sind die einzige relevante Lichtquelle, alles
+// andere ist gedimmt. Bloom auf den emissive-Materialien ergibt das Glow-Halo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Reflektierender, fast-schwarzer „Bambussee"-Boden — die Laternen spiegeln sich.
+function LanternPondGround() {
+  const groundSize = SIZE * TILE * 1.8;
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[groundSize, groundSize]} />
+        <MeshReflectorMaterial
+          blur={[280, 90]}
+          resolution={1024}
+          mixBlur={1.0}
+          mixStrength={1.6}
+          roughness={0.85}
+          depthScale={0.35}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.4}
+          color="#070a14"
+          metalness={0.4}
+          mirror={0.18}
+        />
+      </mesh>
+      {/* Subtiler Außenring in tiefem Indigo, damit der Übergang zum BG sanft ist */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]}>
+        <ringGeometry args={[groundSize / 2, groundSize / 2 + 1.5, 64]} />
+        <meshBasicMaterial color="#080c18" toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+// Embers — Glühpartikel, die langsam aufsteigen und ausfaden. Pseudo-zufällig
+// per Seed gestreut, jeder Funken hat seinen eigenen Lebenszyklus.
+function Embers({ count }: { count: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const seeds = useMemo(() => {
+    return Array.from({ length: count }).map((_, i) => {
+      const r = rngFromSeed(i * 17 + 3);
+      return {
+        x: (r() - 0.5) * SIZE * TILE * 1.3,
+        z: (r() - 0.5) * SIZE * TILE * 1.3,
+        yStart: r() * 5,
+        speed: 0.18 + r() * 0.32,
+        size: 0.018 + r() * 0.028,
+        phase: r() * Math.PI * 2,
+        sway: 0.08 + r() * 0.18,
+        hueShift: r(),
+      };
+    });
+  }, [count]);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < seeds.length; i++) {
+      const m = meshRefs.current[i];
+      if (!m) continue;
+      const s = seeds[i];
+      const ageY = (s.yStart + t * s.speed) % 5.5;
+      m.position.y = 0.1 + ageY;
+      m.position.x = s.x + Math.sin(t * 0.6 + s.phase) * s.sway;
+      m.position.z = s.z + Math.cos(t * 0.45 + s.phase * 1.2) * s.sway;
+      // Fadet hoch raus
+      const fade = Math.max(0, 1 - ageY / 5.5);
+      const mat = m.material as THREE.MeshBasicMaterial;
+      if (mat) mat.opacity = fade * 0.85;
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      {seeds.map((s, i) => (
+        <mesh
+          key={i}
+          ref={el => { meshRefs.current[i] = el; }}
+          position={[s.x, s.yStart, s.z]}
+        >
+          <sphereGeometry args={[s.size, 6, 6]} />
+          <meshBasicMaterial
+            color={s.hueShift > 0.6 ? '#ffd28a' : s.hueShift > 0.3 ? '#ff9d4a' : '#ff7a2a'}
+            toneMapped={false}
+            transparent
+            opacity={0.8}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Eine einzelne Papier-Laterne: vertikales Sphere/Capsule mit Rippen, oben + unten
+// dunklere Holz-Caps, hängt an einer Schnur die nach oben verschwindet.
+// Emissive-Material in Teamfarbe → wird vom Bloom als Glow rausgeholt.
+// Nutzung als Building-Block für LanternCell und LanternTower.
+function PaperLanternBody({
+  color, size = 1.0, intensity = 1.0, swing = 0, frozen = false, joker = false,
+}: {
+  color: string; size?: number; intensity?: number; swing?: number; frozen?: boolean; joker?: boolean;
+}) {
+  const innerColor = frozen ? '#dceaff' : joker ? '#fff4cc' : '#fff5d4';
+  const emissiveColor = frozen ? '#7ec5ff' : joker ? '#fbbf24' : color;
+  const wireColor = frozen ? '#9ec5e8' : '#c98a3a';
+
+  return (
+    <group rotation={[0, 0, swing]}>
+      {/* Hauptkörper — leicht abgeflachte Sphere (Papier-Laternen sind oben/unten flacher) */}
+      <mesh castShadow>
+        <sphereGeometry args={[0.32 * size, 24, 18]} />
+        <meshStandardMaterial
+          color={innerColor}
+          emissive={emissiveColor}
+          emissiveIntensity={2.2 * intensity}
+          roughness={0.6}
+          transparent
+          opacity={0.94}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Hellere Innenkern-Sphere (kleinere Sphere mit höherer Emissive-Intensity)
+          gibt den weichen Glühkern, den Bloom dann zum Halo expandiert. */}
+      <mesh>
+        <sphereGeometry args={[0.18 * size, 16, 12]} />
+        <meshBasicMaterial color={emissiveColor} toneMapped={false} transparent opacity={0.9} />
+      </mesh>
+      {/* Horizontale Rippen — 5 dünne Tori auf verschiedenen Höhen */}
+      {[-0.18, -0.09, 0, 0.09, 0.18].map((y, i) => (
+        <mesh key={i} position={[0, y * size, 0]}>
+          <torusGeometry args={[0.32 * size * (1 - Math.abs(y) * 0.6), 0.008 * size, 6, 28]} />
+          <meshStandardMaterial color={wireColor} roughness={0.7} metalness={0.2} />
+        </mesh>
+      ))}
+      {/* Oberer Holz-Cap */}
+      <mesh position={[0, 0.27 * size, 0]} castShadow>
+        <cylinderGeometry args={[0.13 * size, 0.18 * size, 0.06 * size, 12]} />
+        <meshStandardMaterial color="#3a2614" roughness={0.85} />
+      </mesh>
+      {/* Unterer Holz-Cap mit kleiner Quaste */}
+      <mesh position={[0, -0.27 * size, 0]} castShadow>
+        <cylinderGeometry args={[0.18 * size, 0.13 * size, 0.06 * size, 12]} />
+        <meshStandardMaterial color="#3a2614" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, -0.36 * size, 0]}>
+        <coneGeometry args={[0.04 * size, 0.12 * size, 6]} />
+        <meshStandardMaterial color={joker ? '#fde68a' : '#b8602a'} emissive={joker ? '#fbbf24' : '#000'} emissiveIntensity={joker ? 0.5 : 0} roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+// LanternCell — eine schwebende Laterne über einem dunklen Fels-Sockel.
+// Sanftes Pendeln + Bobbing. Bei Joker = goldene Riesen-Laterne mit Sparkle-Ring.
+// Bei Stapel = Pagoden-Tower (3 Laternen vertikal). Bei Frozen = Eis-Laterne.
+function LanternCell({ x, z, avatar, joker, stacked, frozen, seed }: {
+  x: number; z: number; avatar: typeof AVATARS[AvatarKey];
+  joker: boolean; stacked: number; frozen: boolean; seed: number;
+}) {
+  const tex = useAvatarTexture(avatar.emoji);
+  const lanternRef = useRef<THREE.Group>(null);
+  const sparkleRef = useRef<THREE.Group>(null);
+  const avatarRef = useRef<THREE.Group>(null);
+
+  const isTower = stacked > 0;
+  const lanternSize = joker ? 1.35 : isTower ? 0.85 : 1.0;
+  const hangY = isTower ? 1.45 : 0.85;
+  const swingPhase = seed * 0.83;
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (lanternRef.current) {
+      // sanftes Pendeln + leichter Bob
+      lanternRef.current.rotation.z = Math.sin(t * 0.7 + swingPhase) * 0.06;
+      lanternRef.current.position.y = hangY + Math.sin(t * 0.9 + swingPhase) * 0.025;
+    }
+    if (sparkleRef.current) {
+      sparkleRef.current.rotation.y = t * 1.0;
+      const s = 0.95 + Math.sin(t * 2.4 + swingPhase) * 0.06;
+      sparkleRef.current.scale.setScalar(s);
+    }
+    if (avatarRef.current) {
+      avatarRef.current.position.y = 0.18 + Math.sin(t * 1.3 + swingPhase * 1.4) * 0.025;
+    }
+  });
+
+  // Real point light fuer den Lake-Reflector — wird auf Boden gespiegelt.
+  // distance + decay so gewählt, dass nur 1-2 Tiles um die Laterne erleuchtet werden.
+  const lightColor = frozen ? '#7ec5ff' : joker ? '#fbbf24' : avatar.color;
+  const lightIntensity = joker ? 1.6 : isTower ? 1.2 : 0.85;
+
+  return (
+    <group position={[x, 0, z]}>
+      {/* Boden-Sockel: dunkler Fels in matter Teamfarbe */}
+      <mesh position={[0, 0.04, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.42, 0.46, 0.08, 16]} />
+        <meshStandardMaterial color="#1a1d28" roughness={0.92} metalness={0.05} />
+      </mesh>
+      {/* Farbiger Glow-Ring auf dem Sockel — Marker für Team-Owner */}
+      <mesh position={[0, 0.085, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.36, 0.44, 32]} />
+        <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.85} />
+      </mesh>
+
+      {/* Pol/Stab fuer Tower-Spine, sonst nur sub­tiler Steinhaufen */}
+      {isTower && (
+        <mesh position={[0, 0.7, 0]} castShadow>
+          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
+          <meshStandardMaterial color="#3a2614" roughness={0.8} />
+        </mesh>
+      )}
+
+      {/* Avatar als Billboard knapp über dem Sockel */}
+      <group ref={avatarRef} position={[0, 0.18, 0]}>
+        <Billboard>
+          {/* Soft glow disc behind */}
+          <mesh position={[0, 0, -0.005]}>
+            <circleGeometry args={[0.22, 24]} />
+            <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.32} />
+          </mesh>
+          <mesh>
+            <planeGeometry args={[0.36, 0.36]} />
+            <meshBasicMaterial map={tex} transparent alphaTest={0.04} toneMapped={false} />
+          </mesh>
+        </Billboard>
+      </group>
+
+      {/* Laternen-Schnur die hochläuft (subtil, fast nur Andeutung) */}
+      <mesh position={[0, hangY + 0.7, 0]}>
+        <cylinderGeometry args={[0.004, 0.004, 1.4, 4]} />
+        <meshBasicMaterial color="#1a1208" transparent opacity={0.8} toneMapped={false} />
+      </mesh>
+
+      {/* DIE LATERNE(N) */}
+      <group ref={lanternRef} position={[0, hangY, 0]}>
+        {isTower ? (
+          // PAGODEN-TOWER: 3 Laternen vertikal mit kleinen Holz-Stützen
+          <>
+            {[0, 1, 2].map(i => {
+              const tierSize = 0.95 - i * 0.16;
+              const tierY = -0.5 + i * 0.55;
+              return (
+                <group key={i} position={[0, tierY, 0]}>
+                  <PaperLanternBody color={avatar.color} size={tierSize} intensity={1.1} joker={joker} frozen={frozen} />
+                  {/* Mini-Pagoden-Dach über jeder Laterne */}
+                  <mesh position={[0, 0.32 * tierSize + 0.04, 0]} castShadow rotation={[0, Math.PI / 6, 0]}>
+                    <coneGeometry args={[0.36 * tierSize, 0.13, 6]} />
+                    <meshStandardMaterial
+                      color={avatar.color}
+                      emissive={avatar.color}
+                      emissiveIntensity={0.45}
+                      roughness={0.5}
+                      metalness={0.2}
+                    />
+                  </mesh>
+                </group>
+              );
+            })}
+            {/* Goldene Spitze ganz oben */}
+            <mesh position={[0, 1.25, 0]} castShadow>
+              <coneGeometry args={[0.06, 0.18, 6]} />
+              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.5} metalness={0.7} roughness={0.3} toneMapped={false} />
+            </mesh>
+          </>
+        ) : (
+          <PaperLanternBody color={avatar.color} size={lanternSize} intensity={joker ? 1.6 : 1.0} joker={joker} frozen={frozen} />
+        )}
+      </group>
+
+      {/* Joker: rotierender Sparkle-Ring um die Riesen-Laterne */}
+      {joker && (
+        <group ref={sparkleRef} position={[0, hangY, 0]}>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+            const angle = (i / 8) * Math.PI * 2;
+            const r = 0.65;
+            return (
+              <mesh key={i} position={[Math.cos(angle) * r, 0, Math.sin(angle) * r]}>
+                <sphereGeometry args={[0.05, 10, 10]} />
+                <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={2.6} toneMapped={false} />
+              </mesh>
+            );
+          })}
+        </group>
+      )}
+
+      {/* Echte Punktlicht in der Laterne — beleuchtet leicht den Boden + Reflector */}
+      <pointLight
+        position={[0, hangY, 0]}
+        color={lightColor}
+        intensity={lightIntensity}
+        distance={isTower ? 4.5 : 3.2}
+        decay={1.8}
+        castShadow={false}
+      />
+
+      {/* Frozen: Eiskristall-Aura schwach um die Laterne */}
+      {frozen && !isTower && (
+        <mesh position={[0, hangY, 0]}>
+          <sphereGeometry args={[0.55, 16, 12]} />
+          <meshBasicMaterial color="#7ec5ff" toneMapped={false} transparent opacity={0.08} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Dunkles Stein-Tile fuer freie Felder im Lantern Field — fast unsichtbar,
+// damit die Laternen das Auge fuehren.
+function DarkStoneTile({ x, z, seed }: { x: number; z: number; seed: number }) {
+  const rng = useMemo(() => rngFromSeed(seed), [seed]);
+  const rotY = rng() * Math.PI * 2;
+  const scale = 0.92 + rng() * 0.16;
+  return (
+    <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
+      <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.42 * scale, 12]} />
+        <meshStandardMaterial color="#0c0f18" roughness={0.94} metalness={0.05} />
+      </mesh>
+      {/* Subtiler Moos-Akzent in dunkelgrün — nur 30% der Tiles, per Seed entschieden */}
+      {rng() < 0.3 && (
+        <mesh position={[(rng() - 0.5) * 0.4, 0.028, (rng() - 0.5) * 0.4]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.06 + rng() * 0.05, 8]} />
+          <meshStandardMaterial color="#1f3624" roughness={0.95} emissive="#0a1410" emissiveIntensity={0.3} />
         </mesh>
       )}
     </group>

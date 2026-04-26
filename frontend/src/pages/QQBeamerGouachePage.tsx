@@ -135,8 +135,8 @@ function PhaseRouter({
     if (q.category === 'SCHAETZCHEN') return <SchaetzchenView state={state} q={q} de={de} revealed={revealed} />;
     if (q.category === 'MUCHO')       return <MuchoView state={state} q={q} de={de} revealed={revealed} />;
     if (q.category === 'CHEESE')      return <CheeseView state={state} q={q} de={de} revealed={revealed} />;
-    if (q.category === 'BUNTE_TUETE') return <BunteTueteView state={state} q={q} de={de} revealed={revealed} />;
-    // ZEHN_VON_ZEHN folgt in eigenem Item
+    if (q.category === 'BUNTE_TUETE')   return <BunteTueteView state={state} q={q} de={de} revealed={revealed} />;
+    if (q.category === 'ZEHN_VON_ZEHN') return <AllInView state={state} q={q} de={de} revealed={revealed} />;
     return <PhasePlaceholderCard state={state} de={de} />;
   }
 
@@ -677,6 +677,137 @@ function ImposterView({ state, q, de, revealed }: {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      </CenterArea>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ZEHN_VON_ZEHN — 3 Optionen, Teams verteilen 10 Punkte; höchste Bets
+// werden im Reveal sichtbar, korrekte Option grün hervorgehoben.
+// ─────────────────────────────────────────────────────────────────────────
+
+function AllInView({ state, q, de, revealed }: {
+  state: QQStateUpdate; q: QQQuestion; de: boolean; revealed: boolean;
+}) {
+  const text = (de ? q.text : q.textEn) ?? q.text;
+  const opts = (de ? q.options : q.optionsEn) ?? q.options ?? [];
+  const correctIdx = q.correctOptionIndex ?? -1;
+  const step = state.zvzRevealStep ?? 0;
+
+  // Top-Bets pro Option ableiten (Komma-separierte Punkte als String)
+  const topBets = useMemo(() => {
+    return opts.map((_, optIdx) => {
+      const entries = state.answers
+        .map(a => {
+          const pts = a.text.split(',').map(x => parseInt(x.trim(), 10));
+          return { teamId: a.teamId, pts: pts[optIdx] ?? 0 };
+        })
+        .filter(e => e.pts > 0);
+      if (entries.length === 0) return { maxPts: 0, teamIds: [] as string[] };
+      const maxPts = Math.max(...entries.map(e => e.pts));
+      return {
+        maxPts,
+        teamIds: entries.filter(e => e.pts === maxPts).map(e => e.teamId),
+      };
+    });
+  }, [opts, state.answers]);
+
+  return (
+    <>
+      <QuestionHeader state={state} q={q} de={de} />
+      <CenterArea>
+        <div style={{ width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)' }}>
+          <PaperCard washColor={PALETTE.cream} padding="clamp(20px, 3vh, 40px)" style={{ textAlign: 'center' }}>
+            <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+              {de ? '10 von 10' : 'All In'}
+            </BlockCapsHeading>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(6vh, 4.6vw)',
+              color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 12,
+            }}>
+              {text}
+            </div>
+          </PaperCard>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 'clamp(10px, 1.5vw, 18px)',
+          }}>
+            {opts.map((opt, i) => {
+              const top = topBets[i];
+              const showBet = revealed && step >= 1 && top && top.maxPts > 0;
+              const isCorrect = revealed && step >= 2 && correctIdx === i;
+              const dimmed = revealed && step >= 2 && correctIdx !== i;
+              return (
+                <div key={i} style={{
+                  padding: 'clamp(16px, 2.4vh, 28px) clamp(14px, 1.6vw, 24px)',
+                  borderRadius: 20,
+                  background: isCorrect ? `${PALETTE.sage}33` : `${PALETTE.cream}f0`,
+                  border: `3px solid ${isCorrect ? PALETTE.sage : PALETTE.inkSoft + '55'}`,
+                  boxShadow: isCorrect
+                    ? `0 14px 40px ${PALETTE.sage}55, 0 0 70px ${PALETTE.sage}66`
+                    : '0 8px 22px rgba(31,58,95,0.14)',
+                  filter: dimmed ? 'grayscale(0.6) opacity(0.5)' : undefined,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  transition: 'all 0.5s ease',
+                  textAlign: 'center',
+                  minHeight: 'min(28vh, 24vw)',
+                }}>
+                  <span style={{
+                    width: 'min(8vh, 6vw)', height: 'min(8vh, 6vw)',
+                    minWidth: 56, minHeight: 56,
+                    borderRadius: '50%',
+                    background: isCorrect ? PALETTE.sage : PALETTE.inkDeep,
+                    color: PALETTE.cream,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: F_HAND, fontSize: 'min(5vh, 3.6vw)', fontWeight: 700,
+                  }}>
+                    {i + 1}
+                  </span>
+                  <span style={{
+                    fontFamily: F_HAND, fontSize: 'min(3.6vh, 2.6vw)',
+                    color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.15,
+                  }}>
+                    {opt}
+                  </span>
+                  {showBet && (
+                    <div style={{
+                      marginTop: 'auto',
+                      animation: 'gFadeIn 0.5s ease-out both',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    }}>
+                      <BlockCapsHeading size="sm" color={PALETTE.terracotta}>
+                        {de ? 'Höchste Wette' : 'Top bet'}
+                      </BlockCapsHeading>
+                      <div style={{
+                        fontFamily: F_HAND, fontSize: 'min(7vh, 5vw)',
+                        color: isCorrect ? PALETTE.sage : PALETTE.terracotta, fontWeight: 700,
+                        lineHeight: 1,
+                      }}>
+                        {top.maxPts}
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                        {top.teamIds.slice(0, 4).map(tid => {
+                          const t = state.teams.find(x => x.id === tid);
+                          if (!t) return null;
+                          return (
+                            <PaintedAvatar key={tid} slug={qqGetAvatar(t.avatarId).slug}
+                              size={32} color={softTeamColor(t.avatarId)} withGrain={false} />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {!revealed && (
+            <div style={{ textAlign: 'center' }}>
+              <AnswerTracker state={state} de={de} />
             </div>
           )}
         </div>

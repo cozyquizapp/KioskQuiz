@@ -404,12 +404,14 @@ function HLTimerPill({ timerEndsAt }: { timerEndsAt: number | null }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// TEAMS_REVEAL — gestaffelte Vorstellung mit Outro „Viel Glück"
-// Anchor: state.teamsRevealStartedAt; pro Team 900ms Delay.
+// TEAMS_REVEAL — 1:1 vom Original. Title ruft "Heute spielen…", dann
+// staggern Teams einzeln rein mit Slam-Animation (translateY+scale+rotate
+// mit blur), Flash-Overlay beim Auftauchen, Pulse-Idle-Animation. Outro
+// "Viel Glück!" nach allen Teams. Layout dynamisch: 6→1 Reihe, 7→4+3,
+// 8→4+4, 9→5+4, 10→5+5, ≥11 dynamisch.
 // ─────────────────────────────────────────────────────────────────────────
 
 function TeamsRevealView({ state, de }: { state: QQStateUpdate; de: boolean }) {
-  const { w: vw, h: vh } = useViewportSize();
   const teams = state.teams.filter(t => t.connected).length > 0
     ? state.teams.filter(t => t.connected)
     : state.teams;
@@ -428,72 +430,194 @@ function TeamsRevealView({ state, de }: { state: QQStateUpdate; de: boolean }) {
   const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
 
-  // Avatar-Größe je nach Teamzahl + Viewport
-  const avatarSize = Math.round(Math.max(80, Math.min(vh * 0.20, vw * 0.10, 200)));
+  // Layout — exakt wie Original
+  const n = teams.length;
+  const rowSizes: number[] =
+    n <= 6 ? [n]
+    : n === 7 ? [4, 3]
+    : n === 8 ? [4, 4]
+    : n === 9 ? [5, 4]
+    : n === 10 ? [5, 5]
+    : (() => {
+        const rows = Math.ceil(n / 4);
+        const base = Math.floor(n / rows);
+        const extra = n - base * rows;
+        return Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
+      })();
+  const many = n > 5;
+  const multiRow = rowSizes.length > 1;
+  const discSizeStr = multiRow
+    ? 'clamp(110px, 11vw, 180px)'
+    : many ? 'clamp(130px, 13vw, 210px)' : 'clamp(160px, 17vw, 260px)';
+  const nameFontStr = multiRow ? 'clamp(20px, 2.4vw, 32px)' : 'clamp(22px, 2.6vw, 36px)';
+
+  // Number-Größe für PaintedAvatar (braucht number)
+  const { w: vw, h: vh } = useViewportSize();
+  const discSizePx = multiRow
+    ? Math.round(Math.max(110, Math.min(vw * 0.11, 180)))
+    : many
+      ? Math.round(Math.max(130, Math.min(vw * 0.13, 210)))
+      : Math.round(Math.max(160, Math.min(vw * 0.17, 260)));
+  void vh;
 
   return (
-    <CenterArea>
-      <div style={{ textAlign: 'center', width: '100%' }}>
+    <>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <PhaseBackdrop phase="teamsReveal" />
+      </div>
+
+      <div style={{
+        flex: 1, position: 'relative', zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        <style>{`
+          @keyframes qqTrTitle {
+            0%   { opacity: 0; transform: translateY(-30px) scale(0.8); letter-spacing: 0.5em; }
+            100% { opacity: 1; transform: translateY(0)     scale(1);   letter-spacing: 0.12em; }
+          }
+          @keyframes qqTrSlam {
+            0%   { opacity: 0; transform: translateY(-80vh) scale(2) rotate(-18deg); filter: blur(6px); }
+            55%  { opacity: 1; transform: translateY(8%)    scale(1.15) rotate(3deg); filter: blur(0); }
+            75%  { transform: translateY(-2%) scale(0.96) rotate(-1deg); }
+            100% { transform: translateY(0)    scale(1) rotate(0deg); }
+          }
+          @keyframes qqTrFlash {
+            0%   { opacity: 0; }
+            10%  { opacity: 0.9; }
+            100% { opacity: 0; }
+          }
+          @keyframes qqTrGood {
+            0%   { opacity: 0; transform: scale(0.7); }
+            60%  { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes qqTrPulse {
+            0%,100% { transform: scale(1); }
+            50%     { transform: scale(1.04); }
+          }
+        `}</style>
+
+        {/* Backdrop spotlight (warmer Glow im Zentrum) */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `radial-gradient(circle at 50% 40%, ${PALETTE.amberGlow}26 0%, transparent 55%)`,
+          pointerEvents: 'none',
+        }} />
+
         {/* Title */}
         <div style={{
-          opacity: elapsed >= 0 ? 1 : 0,
-          transform: elapsed >= titleDur ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'all 0.8s ease-out',
-          marginBottom: 36,
+          fontFamily: F_HAND_CAPS,
+          fontSize: 'clamp(36px, 5.2vw, 82px)', fontWeight: 700, color: PALETTE.cream,
+          textTransform: 'uppercase', letterSpacing: '0.12em',
+          animation: `qqTrTitle ${titleDur}ms cubic-bezier(.2,.8,.2,1) 0ms both`,
+          textShadow: `0 4px 20px ${PALETTE.amberGlow}55`,
+          marginBottom: 'clamp(24px, 3vw, 48px)',
         }}>
-          <BlockCapsHeading size="xl" color={PALETTE.cream} glow>
-            {de ? 'Die Teams' : 'The Teams'}
-          </BlockCapsHeading>
+          🎬 {de ? 'Heute spielen…' : 'Tonight’s teams…'}
         </div>
 
-        {/* Teams Stagger */}
+        {/* Teams Grid */}
+        {(() => {
+          let cursor = 0;
+          return (
+            <div style={{
+              display: 'flex', flexDirection: 'column',
+              gap: 'clamp(18px, 2.4vw, 36px)',
+              alignItems: 'center', maxWidth: '92vw',
+            }}>
+              {rowSizes.map((size, rIdx) => {
+                const slice = teams.slice(cursor, cursor + size);
+                const startI = cursor;
+                cursor += size;
+                return (
+                  <div key={rIdx} style={{
+                    display: 'flex', gap: 'clamp(12px, 2vw, 28px)',
+                    justifyContent: 'center', flexWrap: 'nowrap',
+                  }}>
+                    {slice.map((t, j) => {
+                      const i = startI + j;
+                      const shown = i < revealedCount;
+                      const slamDelay = titleDur + i * perTeamDelay;
+                      const teamColor = softTeamColor(t.avatarId);
+                      const slug = qqGetAvatar(t.avatarId).slug;
+                      return (
+                        <div key={t.id} style={{
+                          position: 'relative',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                          opacity: shown ? 1 : 0,
+                          animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
+                          animationDelay: shown ? '0ms' : `${slamDelay}ms`,
+                        }}>
+                          {/* Avatar-Disc mit Glow */}
+                          <div style={{
+                            position: 'relative',
+                            width: discSizeStr, height: discSizeStr,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
+                            filter: shown ? `drop-shadow(0 12px 40px ${teamColor}aa) drop-shadow(0 0 60px ${teamColor}88)` : 'none',
+                          }}>
+                            <PaintedAvatar slug={slug} size={discSizePx}
+                              color={teamColor} withGrain={false} />
+                            {/* Flash overlay on slam */}
+                            {shown && (
+                              <div style={{
+                                position: 'absolute', inset: 0,
+                                borderRadius: '50%',
+                                background: PALETTE.cream,
+                                pointerEvents: 'none',
+                                animation: 'qqTrFlash 600ms ease-out both',
+                              }} />
+                            )}
+                          </div>
+                          {/* Team name pill */}
+                          <div title={t.name} style={{
+                            padding: '6px 16px', borderRadius: 14,
+                            background: teamColor,
+                            color: PALETTE.cream,
+                            fontFamily: F_HAND_CAPS, fontWeight: 700,
+                            fontSize: nameFontStr,
+                            letterSpacing: '0.04em',
+                            boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
+                            whiteSpace: 'nowrap',
+                            maxWidth: multiRow ? '22vw' : '18vw',
+                            overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}>
+                            {t.name.length > (multiRow ? 14 : 16)
+                              ? t.name.slice(0, (multiRow ? 13 : 15)) + '…'
+                              : t.name}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* "Viel Glück!" — Outro mit reservierter Höhe */}
         <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
-          gap: 'clamp(16px, 2.5vw, 36px)',
+          marginTop: 'clamp(32px, 4vw, 64px)',
+          height: 'clamp(38px, 5.2vw, 80px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {teams.map((t, i) => {
-            const visible = i < revealedCount;
-            const color = softTeamColor(t.avatarId);
-            return (
-              <div key={t.id} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.7)',
-                transition: 'all 0.7s cubic-bezier(0.34,1.56,0.64,1)',
-              }}>
-                <div style={{ filter: visible ? 'url(#warmGlow)' : undefined }}>
-                  <PaintedAvatar
-                    slug={qqGetAvatar(t.avatarId).slug}
-                    size={avatarSize}
-                    color={color}
-                    withGrain={false}
-                  />
-                </div>
-                <div style={{
-                  fontFamily: F_HAND, fontSize: 'min(4.4vh, 3.4vw)',
-                  color, fontWeight: 700, lineHeight: 1,
-                  textShadow: `0 4px 14px ${color}66`,
-                }}>
-                  {t.name}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Outro: VIEL GLÜCK */}
-        {showGoodLuck && (
           <div style={{
-            marginTop: 56,
-            animation: 'gFadeIn 0.8s ease-out both',
+            fontFamily: F_HAND_CAPS,
+            fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 700,
+            color: PALETTE.amberGlow,
+            textTransform: 'uppercase', letterSpacing: '0.15em',
+            textShadow: `0 4px 24px ${PALETTE.amberGlow}88`,
+            opacity: showGoodLuck ? 1 : 0,
+            transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
+            animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
           }}>
-            <BlockCapsHeading size="xl" color={PALETTE.amberGlow} glow>
-              {de ? 'Viel Glück' : 'Good luck'}
-            </BlockCapsHeading>
+            ✨ {de ? 'Viel Glück!' : 'Good luck!'} ✨
           </div>
-        )}
+        </div>
       </div>
-    </CenterArea>
+    </>
   );
 }
 

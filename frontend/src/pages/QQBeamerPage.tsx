@@ -27,6 +27,7 @@ import {
   startLobbyLoop, stopLobbyLoop,
   playShieldActivate, playStapelStamp, playSanduhrFlip, playTeamJoin, playSwapActivate,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
+  playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -493,8 +494,46 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       if (s.correctTeamId) playCorrectFor(cat);
       else playWrongFor(cat);
     }
-    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') playGameOver();
+    if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
+      playGameOver();
+      // Cozy-Wolf-Stinger: ein einzelner ferner Howl ~600ms nach Fanfare,
+      // wirkt wie ein Signaturmoment statt generischem End-Beep.
+      window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
+    }
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lagerfeuer-Loop als Atmosphäre-Layer: läuft in Lobby/Pause/Phase-Intro.
+  // Sehr leise (~4% master volume), Brown-Noise + sporadische Knister-Pops.
+  useEffect(() => {
+    if (s.musicMuted || s.globalMuted) { stopCampfireLoop(); return; }
+    const ambientPhase = s.phase === 'LOBBY' || s.phase === 'PAUSED' || s.phase === 'PHASE_INTRO' || s.phase === 'RULES';
+    if (ambientPhase) startCampfireLoop();
+    else stopCampfireLoop();
+    return () => stopCampfireLoop();
+  }, [s.phase, s.musicMuted, s.globalMuted]);
+
+  // Avatar-Jingle wenn ein neues Team joint — pro Avatar eigenes Mini-Timbre.
+  // Erkennt frische Joins via teamIds-Diff (gleiche Logik wie Wave-Anim in
+  // LobbyView). Spielt nur wenn SFX aktiv und neues Team echt neu (nicht
+  // beim initialen Mount mit existierenden Teams).
+  const prevTeamIdsForJingleRef = useRef<Set<string>>(new Set(s.teams.map(t => t.id)));
+  useEffect(() => {
+    if (s.sfxMuted) {
+      prevTeamIdsForJingleRef.current = new Set(s.teams.map(t => t.id));
+      return;
+    }
+    const cur = new Set(s.teams.map(t => t.id));
+    const prev = prevTeamIdsForJingleRef.current;
+    const fresh = s.teams.filter(t => !prev.has(t.id));
+    prevTeamIdsForJingleRef.current = cur;
+    // Nur jinglen wenn vorher schon Teams da waren (kein Mass-Jingle beim Beamer-Mount).
+    if (fresh.length > 0 && prev.size > 0 && s.phase === 'LOBBY') {
+      // Stagger: pro Avatar ~250ms versetzt
+      fresh.forEach((t, i) => {
+        window.setTimeout(() => { try { playAvatarJingle(t.avatarId); } catch {} }, i * 250);
+      });
+    }
+  }, [s.teams, s.sfxMuted, s.phase]);
 
   // Neuer Frage-Cue bei jeder neuen Question-ID.
   useEffect(() => {

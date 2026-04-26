@@ -912,3 +912,208 @@ function playUrlOneShot(url: string): void {
   el.volume = masterVolume;
   el.play().catch(() => {});
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// WOW-Sounds — Cozy-Soundscape statt generic Beeps
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Wolf-Howl: warmer ansteigender Ton, leicht vibrato, lange Fading-Tail.
+ *  Statt klassischer Fanfare beim Game-Over (oder als zusätzlicher Stinger). */
+export function playWolfHowl(): void {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Tiefer warmer Grundton, langsam ansteigend
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(180, t);
+  osc.frequency.exponentialRampToValueAtTime(330, t + 0.4);
+  osc.frequency.exponentialRampToValueAtTime(440, t + 1.6);
+  osc.frequency.exponentialRampToValueAtTime(310, t + 2.6);
+  // Vibrato für "Howl"-Charakter
+  const lfo = ac.createOscillator();
+  const lfoGain = ac.createGain();
+  lfo.type = 'sine';
+  lfo.frequency.value = 5.5;
+  lfoGain.gain.value = 8;
+  lfo.connect(lfoGain).connect(osc.frequency);
+  // Hülle (Attack/Sustain/Release)
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.18, t + 0.5);
+  gain.gain.exponentialRampToValueAtTime(0.14, t + 1.6);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.8);
+  // Sub-Bass-Layer für Wärme
+  const sub = ac.createOscillator();
+  const subGain = ac.createGain();
+  sub.type = 'sine';
+  sub.frequency.setValueAtTime(110, t);
+  sub.frequency.exponentialRampToValueAtTime(165, t + 1.5);
+  subGain.gain.setValueAtTime(0.0001, t);
+  subGain.gain.exponentialRampToValueAtTime(0.08, t + 0.4);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+  osc.connect(gain).connect(ac.destination);
+  sub.connect(subGain).connect(ac.destination);
+  osc.start(t); lfo.start(t); sub.start(t);
+  osc.stop(t + 2.9); lfo.stop(t + 2.9); sub.stop(t + 2.7);
+}
+
+/** Wood-Klick: warmer dumpfer „Klack" auf Holztisch — alternative für
+ *  Field-Placed/Cell-Tap. Kürzer und wärmer als der bestehende Synth. */
+export function playWoodKnock(): void {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Dumpfer Burst (low-freq sine + noise)
+  tone(160, 'sine', t, 0.04, 0.18, 0.001, 0.04, ac);
+  tone(280, 'triangle', t + 0.005, 0.05, 0.10, 0.001, 0.04, ac);
+  // Schneller Noise-Burst für „Klack"-Anschlag
+  const buf = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / data.length);
+  }
+  const noise = ac.createBufferSource();
+  noise.buffer = buf;
+  const noiseGain = ac.createGain();
+  noiseGain.gain.value = 0.06 * masterVolume;
+  // Lowpass für Holz-Charakter
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 800;
+  noise.connect(lp).connect(noiseGain).connect(ac.destination);
+  noise.start(t);
+  noise.stop(t + 0.05);
+}
+
+/** Pro Avatar ein eigenes Mini-Jingle beim Joinen — ~0.6-0.9s.
+ *  Charakter-Mapping: jeder Avatar kriegt sein eigenes Timbre.
+ *  Unterscheidet sich vom generischen playTeamJoin (das bleibt für alle Teams).
+ */
+export function playAvatarJingle(avatarId: string): void {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  switch (avatarId) {
+    case 'fox': // Hund — freundlich, aufgeregt, 3 schnelle Bell-Notes
+      tone(659, 'triangle', t,        0.10, 0.10, 0.005, 0.05, ac);
+      tone(880, 'triangle', t + 0.10, 0.10, 0.10, 0.005, 0.05, ac);
+      tone(1175, 'triangle', t + 0.20, 0.16, 0.12, 0.005, 0.06, ac);
+      break;
+    case 'frog': // Faultier — gemächlich, tief, langsam ansteigend
+      tone(220, 'sine', t,        0.30, 0.12, 0.04, 0.10, ac);
+      tone(330, 'sine', t + 0.20, 0.40, 0.10, 0.05, 0.15, ac);
+      break;
+    case 'panda': // Pinguin — niedlich, hoch trillernd
+      tone(1320, 'square', t,        0.06, 0.06, 0.001, 0.04, ac);
+      tone(1568, 'square', t + 0.06, 0.06, 0.06, 0.001, 0.04, ac);
+      tone(1760, 'square', t + 0.12, 0.06, 0.06, 0.001, 0.04, ac);
+      tone(1976, 'square', t + 0.18, 0.10, 0.08, 0.001, 0.05, ac);
+      break;
+    case 'rabbit': // Koala — sanft, holzig, mid-range
+      tone(523, 'triangle', t,        0.20, 0.10, 0.008, 0.08, ac);
+      tone(659, 'triangle', t + 0.15, 0.20, 0.09, 0.008, 0.08, ac);
+      tone(784, 'triangle', t + 0.30, 0.30, 0.08, 0.008, 0.10, ac);
+      break;
+    case 'unicorn': // Giraffe — elegant, slide upward
+      tone(440, 'sine', t,        0.15, 0.10, 0.01, 0.06, ac);
+      tone(554, 'sine', t + 0.10, 0.15, 0.10, 0.01, 0.06, ac);
+      tone(659, 'sine', t + 0.20, 0.15, 0.10, 0.01, 0.06, ac);
+      tone(880, 'sine', t + 0.30, 0.30, 0.12, 0.01, 0.10, ac);
+      break;
+    case 'raccoon': // Waschbär — neugierig, 4 schnelle Klicks
+      tone(880, 'square', t,        0.05, 0.08, 0.001, 0.03, ac);
+      tone(988, 'square', t + 0.07, 0.05, 0.08, 0.001, 0.03, ac);
+      tone(1175, 'square', t + 0.14, 0.05, 0.08, 0.001, 0.03, ac);
+      tone(1320, 'square', t + 0.22, 0.10, 0.10, 0.001, 0.05, ac);
+      break;
+    case 'cow': // Kuh — warm, breit, brummiges Mid-Range
+      tone(165, 'sawtooth', t,        0.40, 0.08, 0.04, 0.15, ac);
+      tone(247, 'triangle', t + 0.10, 0.30, 0.10, 0.02, 0.10, ac);
+      break;
+    case 'cat': // Capybara — entspannt, leise zwei Töne
+      tone(330, 'sine', t,        0.25, 0.08, 0.03, 0.10, ac);
+      tone(415, 'sine', t + 0.18, 0.30, 0.08, 0.03, 0.12, ac);
+      break;
+    default: // Fallback: generisches Hi
+      tone(523, 'sine', t,         0.16, 0.10, 0.01, 0.06, ac);
+      tone(659, 'sine', t + 0.08,  0.18, 0.10, 0.01, 0.06, ac);
+      tone(784, 'sine', t + 0.18,  0.20, 0.08, 0.01, 0.05, ac);
+  }
+}
+
+/** Sanfter Lagerfeuer-Knister-Loop als Atmosphäre-Layer.
+ *  Brown-Noise-basiert mit sporadischen Pop-Bursts. Sehr leise (~0.04
+ *  master volume). Idempotent: Doppel-Start startet nicht zweimal.
+ *  Wird in Lobby/Pause/Phase-Intro mitlaufen — komplementär zu lobbyLoop. */
+let campfireActive = false;
+let campfireSource: AudioBufferSourceNode | null = null;
+let campfireGain: GainNode | null = null;
+let campfirePopTimer: number | null = null;
+
+export function startCampfireLoop(): void {
+  if (campfireActive) return;
+  const ac = getCtx();
+  if (!ac) return;
+  campfireActive = true;
+  // Brown-Noise-Buffer (1.5s loop)
+  const len = Math.floor(ac.sampleRate * 1.5);
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < len; i++) {
+    const white = Math.random() * 2 - 1;
+    last = (last + 0.02 * white) / 1.02;
+    data[i] = last * 3.5;
+  }
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  // Lowpass-Filter für „weiches Knistern" + Bandpass für Mid-Crackle
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 600;
+  const gain = ac.createGain();
+  gain.gain.value = 0.04 * masterVolume; // sehr leise
+  src.connect(lp).connect(gain).connect(ac.destination);
+  src.start();
+  campfireSource = src;
+  campfireGain = gain;
+  // Sporadische Pop-Bursts (kurzes high-freq tick) alle 1-3s
+  const schedulePop = () => {
+    if (!campfireActive) return;
+    const popDelay = 1000 + Math.random() * 2500;
+    campfirePopTimer = window.setTimeout(() => {
+      if (!campfireActive) return;
+      const ac2 = getCtx();
+      if (ac2) {
+        const t2 = ac2.currentTime;
+        tone(2200 + Math.random() * 800, 'square', t2, 0.025, 0.018, 0.001, 0.02, ac2);
+      }
+      schedulePop();
+    }, popDelay);
+  };
+  schedulePop();
+}
+
+export function stopCampfireLoop(): void {
+  if (!campfireActive) return;
+  campfireActive = false;
+  if (campfirePopTimer !== null) {
+    clearTimeout(campfirePopTimer);
+    campfirePopTimer = null;
+  }
+  if (campfireSource && campfireGain) {
+    const ac = getCtx();
+    if (ac) {
+      try {
+        campfireGain.gain.setValueAtTime(campfireGain.gain.value, ac.currentTime);
+        campfireGain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.6);
+        const src = campfireSource;
+        setTimeout(() => { try { src.stop(); } catch {} }, 700);
+      } catch { try { campfireSource.stop(); } catch {} }
+    }
+  }
+  campfireSource = null;
+  campfireGain = null;
+}

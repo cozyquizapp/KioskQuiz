@@ -1903,7 +1903,7 @@ function MuchoOptionsReveal({
       columnGap: 18,
       rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
       paddingBottom: expandedLayout ? 'clamp(70px, 8.5vh, 110px)' : 0,
-      marginBottom: 'clamp(20px, 2.8vh, 40px)',
+      marginBottom: 'clamp(14px, 1.8vh, 28px)',
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s ease 0.1s both',
       transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1), margin-bottom 0.6s ease',
@@ -7904,11 +7904,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const everyoneSurvived = survivorCount === totalCount;
               const hpMsg = isEn
                 ? (everyoneSurvived
-                    ? 'all survived — each gets a tile!'
-                    : `${survivorCount} survived — each gets a tile!`)
+                    ? 'all survived — each gets an action!'
+                    : `${survivorCount} survived — each gets an action!`)
                 : (everyoneSurvived
-                    ? 'alle überlebt — jedes Team bekommt ein Feld!'
-                    : `${survivorCount} haben überlebt — jedes Team bekommt ein Feld!`);
+                    ? 'alle überlebt — jedes Team bekommt eine Aktion!'
+                    : `${survivorCount} haben überlebt — jedes Team bekommt eine Aktion!`);
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',

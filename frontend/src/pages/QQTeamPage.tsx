@@ -18,6 +18,7 @@ import {
   playQuestionStart, playRoundStart,
   setVolume, setSoundConfig,
 } from '../utils/sounds';
+import { haptic } from '../utils/haptics';
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
 const t = {
@@ -611,32 +612,54 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
       playRoundStart();
       playFanfare();
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+      haptic('turn');
     }
     // Einheitlicher Soundcue beim Start einer neuen Frage (jede neue Question-ID).
     if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion && s.currentQuestion.id !== prevQuestionIdRef.current) {
       prevQuestionIdRef.current = s.currentQuestion.id;
       playQuestionStart();
-      if (navigator.vibrate) navigator.vibrate(25);
+      haptic('tap');
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
+      // Fastest = correctTeamId, "richtig dabei" = currentQuestionWinners ohne fastest.
+      const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
       if (s.correctTeamId === myTeamId) {
         playCorrect();
-        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        haptic('fastest');
+      } else if (winners.includes(myTeamId)) {
+        playCorrect();
+        haptic('correct');
       } else {
         playWrong();
-        if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 80]);
+        haptic('wrong');
       }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) {
       playScoreUp();
-      if (navigator.vibrate) navigator.vibrate([30, 15, 30, 15, 60]);
+      haptic('turn');
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
       playFanfare();
-      if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50, 30, 100]);
+      // Win-Haptic NUR fürs Sieger-Team (Memory: keine Bloßstellung der Verlierer).
+      const sorted = [...s.teams].sort((a, b) =>
+        b.largestConnected - a.largestConnected || b.totalCells - a.totalCells);
+      if (sorted[0]?.id === myTeamId) {
+        haptic('win');
+      }
     }
   }, [s.phase, s.correctTeamId, s.currentQuestion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Joker-Earned-Tracker: wenn jokersEarned für mein Team hochzählt, vibriert
+  // das Phone fühlbar — der Joker ist eine eigene Belohnung jenseits der
+  // normalen Punktzahl.
+  const prevJokerCountRef = useRef<number>(s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0);
+  useEffect(() => {
+    const now = s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0;
+    if (now > prevJokerCountRef.current) {
+      haptic('jokerEarned');
+    }
+    prevJokerCountRef.current = now;
+  }, [s.teamPhaseStats, myTeamId]);
 
   // E3 Klau-Toast: wenn ein eigenes Feld gerade geklaut wird.
   const [stolenToast, setStolenToast] = useState<{ id: number; by: string } | null>(null);
@@ -665,7 +688,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     prevMyOwnedRef.current = myOwned;
     if (stealer) {
       setStolenToast({ id: Date.now(), by: stealer });
-      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+      haptic('stolen');
       setTimeout(() => setStolenToast(null), 3200);
     }
   }, [s.grid, myTeamId]); // eslint-disable-line react-hooks/exhaustive-deps

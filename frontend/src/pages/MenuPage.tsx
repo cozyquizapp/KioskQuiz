@@ -30,6 +30,7 @@ const qqLinks: LinkItem[] = [
   { path: '/city-lab',              label: 'City Lab (3D)',    emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats · Lantern Field' },
   { path: '/gouache',               label: 'Gouache Lab',      emoji: '🎨', note: 'Aquarell-/Bilderbuch-Stil — komplette Stilstudie + Live-Avatar-Status' },
   { path: '/lobby-gouache',         label: 'Lobby (Gouache)',  emoji: '🎈', note: 'Echte Welcome-Lobby im Aquarell-Look — selber Socket-Room wie /beamer' },
+  { path: '/team-gouache',          label: 'Team (Gouache)',   emoji: '📱', note: 'Phone-Variante im Aquarell-Look — Schätzchen/Mucho/Cheese live spielbar' },
 ];
 
 // ── Legacy ────────────────────────────────────────────────────────────────────

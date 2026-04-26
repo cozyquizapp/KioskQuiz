@@ -35,7 +35,8 @@ Status:
 - [x] Stilstudie auf `/gouache` (im Menü als „Gouache Lab" 🎨)
 - [x] PWA-Build-Fix (unkomprimierte PNGs aus Precache excludet)
 - [x] **Phase 1**: `/lobby-gouache` — echte Welcome-Lobby mit Live-Sockets (parallel zu `/beamer`)
-- [ ] **Phase 2-4**: Team / Spielende / Beamer mit allen 5 Kategorien
+- [x] **Phase 2**: `/team-gouache` — Phone-View mit Setup + Schätzchen/Mucho/Cheese live spielbar
+- [ ] **Phase 3-4**: Spielende / Beamer mit allen 5 Kategorien
 - [ ] **Phase 5**: PNG-Komprimierung (sharp/squoosh, 200-500 KB pro Bild)
 - [ ] **Phase 6**: Theme-Switch im Moderator-Setup
 

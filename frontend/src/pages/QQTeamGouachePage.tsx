@@ -1,0 +1,1004 @@
+// QQ Team Gouache — Phone-View im Aquarell-Look (Phase 2 der Migration).
+//
+// Strikt parallel zur produktiven `/team` (QQTeamPage.tsx). Selber
+// Socket-Room ('default'), selbe localStorage-teamId — d.h. wer auf
+// dieser Variante joint, ist im echten Spiel mit drin und tauscht den
+// Avatar 1:1 mit der Cozy-Team-Page.
+//
+// MVP-Scope:
+//   - Setup (Avatar + Team-Name) → echtes qq:joinTeam
+//   - Lobby/Wait (post-join, vor Spielstart)
+//   - QUESTION_ACTIVE:
+//       SCHAETZCHEN  → number-input
+//       MUCHO        → 4-Option-Buttons (A/B/C/D)
+//       CHEESE       → free text input
+//       (Hot Potato/Top5/Order/Map/Imposter/ZvZ → freundlicher Hinweis,
+//        dafür weiter /team nutzen — UX dort ist komplex)
+//   - QUESTION_REVEAL → warst-du-richtig-Feedback
+//   - GAME_OVER → Sieger-Plakette
+//   - Sonst → atmosphärische "warte"-Ansicht
+//
+// Antworten werden via `qq:submitAnswer` an dieselbe Backend-Pipeline
+// geschickt wie die produktive Page.
+
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQQSocket } from '../hooks/useQQSocket';
+import {
+  QQ_AVATARS, QQStateUpdate, QQTeam, QQQuestion,
+  qqGetAvatar, qqAvatarLabel,
+} from '../../../shared/quarterQuizTypes';
+import {
+  PALETTE, F_HAND, F_BODY, softTeamColor,
+  GouacheFilters, PaintedKeyframes, usePaintFonts,
+  PaperCard,
+  PaintedAvatar,
+  PaintedHills, PaintedStars, PaintedMoon, PaintedBird,
+} from '../gouache';
+
+const QQ_ROOM = 'default';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// teamId — geteilt mit der produktiven Page (gleicher localStorage-Key)
+// ─────────────────────────────────────────────────────────────────────────────
+function getOrCreateTeamId(): string {
+  const key = 'qq_teamId';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = `team-${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function QQTeamGouachePage() {
+  usePaintFonts();
+  const roomCode = QQ_ROOM;
+  const [teamId] = useState(getOrCreateTeamId);
+  const { state, connected, emit } = useQQSocket(roomCode);
+
+  const [avatarId, setAvatarId] = useState<string>(() => sessionStorage.getItem('qq_avatarId') ?? 'fox');
+  const [teamName, setTeamName] = useState<string>(() => sessionStorage.getItem('qq_teamName') ?? '');
+  const [joined, setJoined] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Auto-Rejoin wenn wir einen gespeicherten Namen haben
+  useEffect(() => {
+    if (joined || !connected) return;
+    const storedName = sessionStorage.getItem('qq_teamName');
+    if (storedName) {
+      emit('qq:joinTeam', { roomCode, teamId, teamName: storedName, avatarId }).then((ack: any) => {
+        if (ack?.ok) setJoined(true);
+      });
+    }
+  }, [connected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset joined bei disconnect → Auto-Rejoin feuert beim reconnect
+  useEffect(() => {
+    if (!connected && joined) setJoined(false);
+  }, [connected, joined]);
+
+  // Live: blockierte Avatare aus dem State entfernen
+  const takenAvatarIds = (state?.teams ?? []).filter(t => t.id !== teamId).map(t => t.avatarId);
+  useEffect(() => {
+    if (joined) return;
+    if (takenAvatarIds.includes(avatarId)) {
+      const free = QQ_AVATARS.find(a => !takenAvatarIds.includes(a.id));
+      if (free) setAvatarId(free.id);
+    }
+  }, [takenAvatarIds.join(','), joined, avatarId]);
+
+  async function handleJoin(name: string, ava: string) {
+    if (!name.trim()) return;
+    setError(null);
+    sessionStorage.setItem('qq_teamName', name.trim());
+    sessionStorage.setItem('qq_avatarId', ava);
+    const ack: any = await emit('qq:joinTeam', { roomCode, teamId, teamName: name.trim(), avatarId: ava });
+    if (ack?.ok) setJoined(true);
+    else setError(ack?.error ?? 'Beitritt fehlgeschlagen');
+  }
+
+  const myTeam = state?.teams.find(t => t.id === teamId) ?? null;
+
+  return (
+    <PageShell myTeam={myTeam} avatarId={avatarId}>
+      {!joined ? (
+        <SetupView
+          avatarId={avatarId}
+          setAvatarId={setAvatarId}
+          teamName={teamName}
+          setTeamName={setTeamName}
+          takenAvatarIds={takenAvatarIds}
+          connected={connected}
+          error={error}
+          onJoin={() => handleJoin(teamName, avatarId)}
+        />
+      ) : !state ? (
+        <ConnectingCard connected={connected} />
+      ) : !myTeam ? (
+        <RejoinFailCard onClear={() => {
+          sessionStorage.removeItem('qq_teamName');
+          sessionStorage.removeItem('qq_avatarId');
+          setJoined(false);
+        }} />
+      ) : (
+        <GameRouter
+          state={state}
+          myTeam={myTeam}
+          myTeamId={teamId}
+          emit={emit}
+          roomCode={roomCode}
+        />
+      )}
+    </PageShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PageShell — Aquarell-Hintergrund, Header, Footer, Phone-Container
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PageShell({
+  myTeam, avatarId, children,
+}: { myTeam: QQTeam | null; avatarId: string; children: React.ReactNode }) {
+  const headerColor = myTeam ? softTeamColor(myTeam.avatarId) : softTeamColor(avatarId);
+  return (
+    <div style={{
+      minHeight: '100vh', width: '100%',
+      background: `linear-gradient(180deg, ${PALETTE.inkDeep} 0%, ${PALETTE.inkSoft} 50%, ${PALETTE.sage} 100%)`,
+      position: 'relative', overflow: 'hidden',
+      fontFamily: F_BODY, color: PALETTE.cream,
+      paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)',
+    }}>
+      <GouacheFilters />
+      <PaintedKeyframes />
+
+      {/* Atmosphäre — sparsam für Mobile */}
+      <PaintedStars count={18} />
+      <div style={{ position: 'absolute', top: 14, right: 22, zIndex: 1 }}>
+        <PaintedMoon size={48} />
+      </div>
+      <PaintedBird x="76%" y="6%" size={20} />
+
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none' }}>
+        <PaintedHills width={1200} height={140} />
+      </div>
+
+      <div style={{
+        position: 'relative', zIndex: 5,
+        maxWidth: 460, margin: '0 auto',
+        padding: 'calc(env(safe-area-inset-top) + 18px) 18px 12px',
+        display: 'flex', flexDirection: 'column', gap: 18, minHeight: '100vh',
+      }}>
+        <Header myTeam={myTeam} headerColor={headerColor} />
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {children}
+        </main>
+        <Footer />
+      </div>
+
+      <PageStyles />
+    </div>
+  );
+}
+
+function Header({ myTeam, headerColor }: { myTeam: QQTeam | null; headerColor: string }) {
+  return (
+    <header style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '4px 4px 0',
+    }}>
+      <div>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 10, letterSpacing: '0.28em',
+          color: PALETTE.cream, opacity: 0.78, textTransform: 'uppercase',
+        }}>
+          a cozy wolf production
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 36, color: PALETTE.cream,
+          fontWeight: 700, lineHeight: 1, marginTop: 2,
+          textShadow: '0 4px 14px rgba(0,0,0,0.45)',
+        }}>
+          CozyQuiz
+        </div>
+      </div>
+      {myTeam && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '6px 10px 6px 6px', borderRadius: 999,
+          background: `${PALETTE.cream}1f`,
+          border: `1px solid ${headerColor}aa`,
+          maxWidth: 220,
+        }}>
+          <PaintedAvatar slug={qqGetAvatar(myTeam.avatarId).slug} size={36} color={headerColor} withGrain={false} />
+          <div style={{
+            fontFamily: F_HAND, fontSize: 22, color: PALETTE.cream,
+            lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            maxWidth: 140,
+          }} title={myTeam.name}>
+            {myTeam.name}
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      gap: 10, fontFamily: F_BODY, fontSize: 11,
+      color: `${PALETTE.cream}aa`, letterSpacing: '0.06em',
+    }}>
+      <span>Aquarell-Lab · echte Sockets</span>
+      <Link to="/team" style={{
+        color: PALETTE.cream, textDecoration: 'none',
+        padding: '4px 10px', borderRadius: 999,
+        background: `${PALETTE.cream}14`, border: `1px solid ${PALETTE.cream}33`,
+      }}>
+        Cozy-Team →
+      </Link>
+    </footer>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SetupView — Avatar-Grid + Name → Join
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SetupView({
+  avatarId, setAvatarId, teamName, setTeamName, takenAvatarIds,
+  connected, error, onJoin,
+}: {
+  avatarId: string;
+  setAvatarId: (id: string) => void;
+  teamName: string;
+  setTeamName: (n: string) => void;
+  takenAvatarIds: string[];
+  connected: boolean;
+  error: string | null;
+  onJoin: () => void;
+}) {
+  const canJoin = connected && teamName.trim().length > 0 && !takenAvatarIds.includes(avatarId);
+  const myColor = softTeamColor(avatarId);
+  return (
+    <>
+      <PaperCard washColor={PALETTE.cream} padding={20}>
+        <SectionHeading n="01" title="Wähle deinen Avatar" sub="Jedes Team trägt seine Farbe" />
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16,
+        }}>
+          {QQ_AVATARS.map(a => {
+            const taken = takenAvatarIds.includes(a.id);
+            const sel = avatarId === a.id;
+            const color = softTeamColor(a.id);
+            return (
+              <button
+                key={a.id}
+                onClick={() => !taken && setAvatarId(a.id)}
+                disabled={taken}
+                aria-pressed={sel}
+                aria-label={qqAvatarLabel(a.id, 'de')}
+                style={{
+                  position: 'relative',
+                  padding: 6, borderRadius: 14,
+                  background: sel ? `${color}26` : `${PALETTE.cream}88`,
+                  border: `2px solid ${sel ? color : `${PALETTE.inkSoft}33`}`,
+                  cursor: taken ? 'not-allowed' : 'pointer',
+                  opacity: taken ? 0.35 : 1,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.18s ease',
+                  boxShadow: sel ? `0 6px 18px ${color}66` : 'none',
+                }}
+              >
+                <PaintedAvatar slug={a.slug} size={56} color={color} withGrain={false} />
+                <div style={{
+                  fontFamily: F_HAND, fontSize: 16, color: PALETTE.inkDeep, lineHeight: 1,
+                  fontWeight: 700,
+                }}>
+                  {qqAvatarLabel(a.id, 'de')}
+                </div>
+                {taken && (
+                  <div style={{
+                    position: 'absolute', top: 4, right: 4,
+                    padding: '2px 6px', borderRadius: 999,
+                    fontFamily: F_BODY, fontSize: 9, fontWeight: 700,
+                    background: PALETTE.inkDeep, color: PALETTE.cream,
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>
+                    vergeben
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </PaperCard>
+
+      <PaperCard washColor={PALETTE.cream} padding={20}>
+        <SectionHeading n="02" title="Team-Name" sub="Wie sollen wir euch rufen?" />
+        <input
+          type="text"
+          value={teamName}
+          onChange={e => setTeamName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && canJoin) onJoin(); }}
+          placeholder="z.B. Die Wilden"
+          autoComplete="off"
+          maxLength={24}
+          style={{
+            width: '100%', boxSizing: 'border-box', marginTop: 14,
+            padding: '14px 16px', borderRadius: 12,
+            border: `2px solid ${teamName ? myColor : `${PALETTE.inkSoft}55`}`,
+            background: PALETTE.cream,
+            fontFamily: F_HAND, fontSize: 26, color: PALETTE.inkDeep,
+            outline: 'none', transition: 'all 0.2s',
+            boxShadow: teamName ? `0 4px 14px ${myColor}33` : 'none',
+          }}
+        />
+        {error && (
+          <div style={{
+            marginTop: 10, padding: '8px 12px', borderRadius: 10,
+            background: `${PALETTE.terracotta}22`, color: PALETTE.terracotta,
+            fontFamily: F_BODY, fontSize: 13, fontWeight: 600,
+          }}>
+            {error}
+          </div>
+        )}
+        <button
+          onClick={onJoin}
+          disabled={!canJoin}
+          style={{
+            width: '100%', marginTop: 16,
+            padding: '14px 20px', borderRadius: 999,
+            background: canJoin ? PALETTE.terracotta : `${PALETTE.terracotta}55`,
+            color: PALETTE.cream,
+            border: 'none', cursor: canJoin ? 'pointer' : 'not-allowed',
+            fontFamily: F_HAND, fontSize: 26, fontWeight: 700,
+            letterSpacing: '0.02em',
+            boxShadow: canJoin ? '0 8px 22px rgba(224,122,95,0.42), inset 0 -3px 0 rgba(0,0,0,0.12)' : 'none',
+            filter: canJoin ? 'url(#paintFrame)' : 'none',
+            transition: 'all 0.2s',
+          }}
+        >
+          {connected ? 'Spiel beitreten' : 'Verbinde …'}
+        </button>
+      </PaperCard>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// In-Game Router
+// ─────────────────────────────────────────────────────────────────────────────
+
+function GameRouter({
+  state, myTeam, myTeamId, emit, roomCode,
+}: {
+  state: QQStateUpdate; myTeam: QQTeam; myTeamId: string;
+  emit: any; roomCode: string;
+}) {
+  const phase = state.phase;
+  if (phase === 'LOBBY')          return <LobbyWaitCard state={state} myTeam={myTeam} />;
+  if (phase === 'GAME_OVER')      return <GameOverCard state={state} myTeam={myTeam} />;
+  if (phase === 'QUESTION_ACTIVE') return <ActiveQuestionCard state={state} myTeam={myTeam} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />;
+  if (phase === 'QUESTION_REVEAL') return <RevealCard state={state} myTeam={myTeam} myTeamId={myTeamId} />;
+  return <WaitingPhaseCard state={state} myTeam={myTeam} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Connecting / Rejoin / Lobby Wait
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ConnectingCard({ connected }: { connected: boolean }) {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={28}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 32, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05 }}>
+          {connected ? 'Lade Spielzustand …' : 'Suche Verbindung …'}
+        </div>
+        <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 12, fontStyle: 'italic' }}>
+          Bei einem frisch aufwachenden Server kann das einen Moment dauern.
+        </div>
+      </div>
+    </PaperCard>
+  );
+}
+
+function RejoinFailCard({ onClear }: { onClear: () => void }) {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ fontFamily: F_HAND, fontSize: 28, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.1 }}>
+        Dein Team ist nicht mehr im Spiel
+      </div>
+      <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 10, fontStyle: 'italic' }}>
+        Wahrscheinlich wurde die Lobby zurückgesetzt. Tippe unten, um neu beizutreten.
+      </div>
+      <button
+        onClick={onClear}
+        style={{
+          marginTop: 18, padding: '12px 18px', borderRadius: 999,
+          background: PALETTE.terracotta, color: PALETTE.cream,
+          border: 'none', cursor: 'pointer',
+          fontFamily: F_HAND, fontSize: 22, fontWeight: 700,
+          boxShadow: '0 6px 18px rgba(224,122,95,0.4)',
+        }}
+      >
+        Neu beitreten
+      </button>
+    </PaperCard>
+  );
+}
+
+function LobbyWaitCard({ state, myTeam }: { state: QQStateUpdate; myTeam: QQTeam }) {
+  const teamCount = state.teams.length;
+  const ready = teamCount >= 2;
+  const myColor = softTeamColor(myTeam.avatarId);
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', position: 'relative' }}>
+          <PaintedAvatar slug={qqGetAvatar(myTeam.avatarId).slug} size={108} color={myColor} withGrain={false} />
+        </div>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.24em',
+          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+          marginTop: 18,
+        }}>
+          {ready ? 'bereit · gleich geht’s los' : 'warteraum'}
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 36, color: PALETTE.inkDeep,
+          fontWeight: 700, lineHeight: 1.05, marginTop: 4,
+        }}>
+          {ready ? `Hallo, ${myTeam.name}!` : `Warte auf weitere Teams …`}
+        </div>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft,
+          marginTop: 10, fontStyle: 'italic',
+        }}>
+          {teamCount} {teamCount === 1 ? 'Team' : 'Teams'} im Raum.
+        </div>
+      </div>
+
+      {/* Mit-Teams kleine Avatar-Reihe */}
+      {state.teams.length > 1 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
+          marginTop: 22, paddingTop: 18,
+          borderTop: `1px dashed ${PALETTE.inkSoft}44`,
+        }}>
+          {state.teams.map(t => {
+            const isMe = t.id === myTeam.id;
+            const color = softTeamColor(t.avatarId);
+            return (
+              <div key={t.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                opacity: t.connected ? 1 : 0.45,
+              }}>
+                <PaintedAvatar slug={qqGetAvatar(t.avatarId).slug} size={42} color={color} withGrain={false} />
+                <div style={{
+                  fontFamily: F_BODY, fontSize: 10,
+                  color: isMe ? color : PALETTE.inkSoft, fontWeight: isMe ? 700 : 500,
+                  maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }} title={t.name}>
+                  {t.name}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Question Active
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ActiveQuestionCard({
+  state, myTeam, myTeamId, emit, roomCode,
+}: {
+  state: QQStateUpdate; myTeam: QQTeam; myTeamId: string;
+  emit: any; roomCode: string;
+}) {
+  const q = state.currentQuestion;
+  const myAnswer = state.answers.find(a => a.teamId === myTeamId);
+  const myColor = softTeamColor(myTeam.avatarId);
+
+  if (!q) {
+    return <NeutralCard title="Bereit machen …" body="Die Frage wird gleich gestellt." />;
+  }
+
+  if (myAnswer) {
+    return <SubmittedCard text={myAnswer.text} state={state} question={q} />;
+  }
+
+  async function submitText(text: string) {
+    if (!text.trim()) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
+  }
+
+  // Nur drei Kategorien werden in der Aquarell-MVP gespielt — der Rest
+  // verweist auf /team. So bleibt der Scope klein.
+  if (q.category === 'SCHAETZCHEN') {
+    return <SchaetzchenCard q={q} onSubmit={submitText} myColor={myColor} />;
+  }
+  if (q.category === 'MUCHO') {
+    return <MuchoCard q={q} onSubmit={submitText} myColor={myColor} />;
+  }
+  if (q.category === 'CHEESE') {
+    return <CheeseCard q={q} onSubmit={submitText} myColor={myColor} />;
+  }
+  // BUNTE_TUETE, ZEHN_VON_ZEHN
+  return <UnsupportedCategoryCard q={q} />;
+}
+
+function QuestionTopline({ q, color }: { q: QQQuestion; color: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      marginBottom: 12, gap: 8, flexWrap: 'wrap',
+    }}>
+      <div style={{
+        fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.22em',
+        color: color, fontWeight: 700, textTransform: 'uppercase',
+      }}>
+        {q.category} · Frage {q.questionIndexInPhase + 1} / 5
+      </div>
+      <div style={{
+        fontFamily: F_BODY, fontSize: 11, color: PALETTE.inkSoft, fontStyle: 'italic',
+      }}>
+        Phase {q.phaseIndex}
+      </div>
+    </div>
+  );
+}
+
+function QuestionText({ text, sub }: { text: string; sub?: string }) {
+  return (
+    <>
+      <div style={{
+        fontFamily: F_HAND, fontSize: 'clamp(28px, 7vw, 38px)',
+        color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.1,
+      }}>
+        {text}
+      </div>
+      {sub && (
+        <div style={{
+          fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft,
+          marginTop: 6, fontStyle: 'italic',
+        }}>
+          {sub}
+        </div>
+      )}
+    </>
+  );
+}
+
+function SchaetzchenCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 80); }, []);
+  const canSubmit = val.trim().length > 0 && !isNaN(Number(val));
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} sub={q.unit ? `in ${q.unit}` : undefined} />
+      <input
+        ref={ref}
+        type="number"
+        inputMode="decimal"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' && canSubmit) onSubmit(val); }}
+        placeholder="Deine Schätzung"
+        style={{
+          width: '100%', boxSizing: 'border-box', marginTop: 18,
+          padding: '14px 16px', borderRadius: 12,
+          border: `2px solid ${val ? myColor : `${PALETTE.inkSoft}55`}`,
+          background: PALETTE.cream,
+          fontFamily: F_HAND, fontSize: 32, color: PALETTE.inkDeep,
+          outline: 'none', textAlign: 'center',
+          boxShadow: val ? `0 4px 14px ${myColor}33` : 'none',
+        }}
+      />
+      <SubmitButton disabled={!canSubmit} myColor={myColor} onClick={() => onSubmit(val)}>
+        Schätzung abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+function MuchoCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const [pickIdx, setPickIdx] = useState<number | null>(null);
+  const opts = q.options ?? [];
+  const letters = ['A', 'B', 'C', 'D'];
+  // Wir feuern die Antwort beim Tippen direkt ab — UX-Pattern wie auf der
+  // produktiven Page (kein zweiter Klick nötig).
+  async function pick(i: number) {
+    if (pickIdx !== null) return;
+    setPickIdx(i);
+    if (navigator.vibrate) navigator.vibrate(30);
+    await onSubmit(String(i));
+  }
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} />
+      <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+        {opts.map((opt, i) => {
+          const sel = pickIdx === i;
+          return (
+            <button
+              key={i}
+              onClick={() => pick(i)}
+              disabled={pickIdx !== null}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '14px 16px', borderRadius: 14,
+                background: sel ? `${myColor}26` : `${PALETTE.cream}d0`,
+                border: `2px solid ${sel ? myColor : `${PALETTE.inkSoft}33`}`,
+                cursor: pickIdx !== null ? 'default' : 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+                boxShadow: sel ? `0 6px 18px ${myColor}55` : 'none',
+                opacity: pickIdx !== null && !sel ? 0.45 : 1,
+              }}
+            >
+              <span style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: sel ? myColor : `${PALETTE.inkDeep}eb`,
+                color: PALETTE.cream,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: F_HAND, fontSize: 22, fontWeight: 700,
+                flexShrink: 0,
+              }}>
+                {letters[i] ?? i + 1}
+              </span>
+              <span style={{
+                fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep,
+                lineHeight: 1.15, fontWeight: 700,
+              }}>
+                {opt}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </PaperCard>
+  );
+}
+
+function CheeseCard({ q, onSubmit, myColor }: { q: QQQuestion; onSubmit: (s: string) => Promise<void>; myColor: string }) {
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 80); }, []);
+  const canSubmit = val.trim().length > 0;
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} />
+      <input
+        ref={ref}
+        type="text"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' && canSubmit) onSubmit(val); }}
+        placeholder="Antwort eingeben …"
+        autoComplete="off"
+        style={{
+          width: '100%', boxSizing: 'border-box', marginTop: 18,
+          padding: '14px 16px', borderRadius: 12,
+          border: `2px solid ${val ? myColor : `${PALETTE.inkSoft}55`}`,
+          background: PALETTE.cream,
+          fontFamily: F_HAND, fontSize: 26, color: PALETTE.inkDeep,
+          outline: 'none',
+          boxShadow: val ? `0 4px 14px ${myColor}33` : 'none',
+        }}
+      />
+      <SubmitButton disabled={!canSubmit} myColor={myColor} onClick={() => onSubmit(val)}>
+        Antwort abschicken
+      </SubmitButton>
+    </PaperCard>
+  );
+}
+
+function UnsupportedCategoryCard({ q }: { q: QQQuestion }) {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <QuestionTopline q={q} color={PALETTE.terracotta} />
+      <QuestionText text={q.text} />
+      <div style={{
+        marginTop: 18, padding: '14px 16px', borderRadius: 12,
+        background: `${PALETTE.ochre}22`, border: `1.5px dashed ${PALETTE.ochre}`,
+        fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkDeep, lineHeight: 1.5,
+      }}>
+        <div style={{ fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep, fontWeight: 700, marginBottom: 4 }}>
+          Diese Kategorie ist im Aquarell-Test noch nicht da.
+        </div>
+        Öffne fix{' '}
+        <Link to="/team" style={{ color: PALETTE.terracotta, fontWeight: 700, textDecoration: 'underline' }}>/team</Link>
+        {' '}im Browser — dort kannst du diese Frage normal mitspielen.
+      </div>
+    </PaperCard>
+  );
+}
+
+function SubmitButton({
+  disabled, myColor, onClick, children,
+}: { disabled: boolean; myColor: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: '100%', marginTop: 16,
+        padding: '14px 20px', borderRadius: 999,
+        background: disabled ? `${myColor}55` : myColor,
+        color: PALETTE.cream,
+        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        fontFamily: F_HAND, fontSize: 24, fontWeight: 700,
+        letterSpacing: '0.02em',
+        boxShadow: disabled ? 'none' : `0 8px 22px ${myColor}66, inset 0 -3px 0 rgba(0,0,0,0.12)`,
+        filter: disabled ? 'none' : 'url(#paintFrame)',
+        transition: 'all 0.2s',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Submitted / Reveal / GameOver / Waiting
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SubmittedCard({ text, state, question }: { text: string; state: QQStateUpdate; question: QQQuestion }) {
+  const totalTeams = state.teams.length;
+  const answered = state.answers.length;
+  let displayText = text;
+  if (question.category === 'MUCHO' && question.options) {
+    const idx = parseInt(text, 10);
+    if (!isNaN(idx) && question.options[idx]) {
+      displayText = `${['A', 'B', 'C', 'D'][idx] ?? idx + 1}. ${question.options[idx]}`;
+    }
+  }
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.24em',
+          color: PALETTE.sage, fontWeight: 700, textTransform: 'uppercase',
+        }}>
+          ✓ abgegeben
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 38, color: PALETTE.inkDeep,
+          fontWeight: 700, lineHeight: 1.05, marginTop: 6,
+        }}>
+          {displayText}
+        </div>
+        <div style={{
+          marginTop: 16, padding: '10px 16px',
+          display: 'inline-block', borderRadius: 999,
+          background: `${PALETTE.sage}26`, border: `1.5px solid ${PALETTE.sage}88`,
+          fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkDeep,
+        }}>
+          {answered} / {totalTeams} haben geantwortet
+        </div>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkSoft,
+          marginTop: 14, fontStyle: 'italic',
+        }}>
+          Lehn dich zurück — der Beamer zeigt die Auflösung.
+        </div>
+      </div>
+    </PaperCard>
+  );
+}
+
+function RevealCard({ state, myTeam, myTeamId }: { state: QQStateUpdate; myTeam: QQTeam; myTeamId: string }) {
+  const winners = state.currentQuestionWinners ?? (state.correctTeamId ? [state.correctTeamId] : []);
+  const isWinner = winners.includes(myTeamId);
+  const isFastest = winners[0] === myTeamId;
+  const myColor = softTeamColor(myTeam.avatarId);
+  const accent = isWinner ? PALETTE.sage : PALETTE.inkSoft;
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.24em',
+          color: accent, fontWeight: 700, textTransform: 'uppercase',
+        }}>
+          {isWinner ? (isFastest ? 'fast & richtig' : 'richtig') : 'auflösung'}
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 40, color: PALETTE.inkDeep,
+          fontWeight: 700, lineHeight: 1.05, marginTop: 6,
+        }}>
+          {isWinner ? (isFastest ? 'Du warst die schnellste Hand!' : 'Richtig getippt!') : 'Diesmal nicht ihr.'}
+        </div>
+        {state.revealedAnswer && (
+          <div style={{
+            marginTop: 18, padding: '12px 16px', borderRadius: 12,
+            background: `${PALETTE.cream}d0`, border: `1.5px solid ${myColor}55`,
+          }}>
+            <div style={{ fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.18em', color: PALETTE.inkSoft, textTransform: 'uppercase' }}>
+              Lösung
+            </div>
+            <div style={{ fontFamily: F_HAND, fontSize: 30, color: PALETTE.inkDeep, fontWeight: 700, marginTop: 2 }}>
+              {state.revealedAnswer}
+            </div>
+          </div>
+        )}
+        <div style={{
+          fontFamily: F_BODY, fontSize: 13, color: PALETTE.inkSoft,
+          marginTop: 18, fontStyle: 'italic',
+        }}>
+          {isWinner
+            ? 'Gleich darfst du auf den Beamer schauen — ihr setzt ein Feld.'
+            : 'Sammelt euch für die nächste Runde.'}
+        </div>
+      </div>
+    </PaperCard>
+  );
+}
+
+function GameOverCard({ state, myTeam }: { state: QQStateUpdate; myTeam: QQTeam }) {
+  const sorted = [...state.teams].sort((a, b) => b.largestConnected - a.largestConnected || b.totalCells - a.totalCells);
+  const winner = sorted[0];
+  const iWon = winner?.id === myTeam.id;
+  const myRank = sorted.findIndex(t => t.id === myTeam.id) + 1;
+  const myColor = softTeamColor(myTeam.avatarId);
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.32em',
+          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+        }}>
+          spielende
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 44, color: PALETTE.inkDeep,
+          fontWeight: 700, lineHeight: 1.05, marginTop: 6,
+        }}>
+          {iWon ? 'Ihr habt gewonnen!' : winner ? `${winner.name} gewinnt.` : 'Schönes Spiel.'}
+        </div>
+        <div style={{
+          marginTop: 18, padding: '12px 16px', borderRadius: 12,
+          background: `${myColor}22`, border: `1.5px solid ${myColor}88`,
+          display: 'inline-flex', alignItems: 'center', gap: 12,
+        }}>
+          <PaintedAvatar slug={qqGetAvatar(myTeam.avatarId).slug} size={56} color={myColor} withGrain={false} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontFamily: F_HAND, fontSize: 24, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1 }}>
+              Platz {myRank} für {myTeam.name}
+            </div>
+            <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft, marginTop: 2 }}>
+              {myTeam.largestConnected} zusammenhängend · {myTeam.totalCells} Felder gesamt
+            </div>
+          </div>
+        </div>
+      </div>
+    </PaperCard>
+  );
+}
+
+function WaitingPhaseCard({ state, myTeam }: { state: QQStateUpdate; myTeam: QQTeam }) {
+  const isPending = state.pendingFor === myTeam.id;
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 11, letterSpacing: '0.24em',
+          color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+        }}>
+          {humanPhaseLabel(state.phase)}
+        </div>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 36, color: PALETTE.inkDeep,
+          fontWeight: 700, lineHeight: 1.05, marginTop: 6,
+        }}>
+          {isPending ? 'Ihr seid dran!' : 'Schaut auf den Beamer'}
+        </div>
+        {isPending ? (
+          <div style={{
+            marginTop: 16, padding: '12px 14px', borderRadius: 12,
+            background: `${PALETTE.terracotta}22`, border: `1.5px dashed ${PALETTE.terracotta}`,
+            fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkDeep,
+          }}>
+            Diese Phase (Feld setzen / klauen / stapeln) läuft im Aquarell-Test noch nicht.
+            Tippt kurz auf <Link to="/team" style={{ color: PALETTE.terracotta, fontWeight: 700 }}>/team</Link> —
+            der Cozy-Beamer-Pfad führt euch durch.
+          </div>
+        ) : (
+          <div style={{
+            fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft,
+            marginTop: 12, fontStyle: 'italic',
+          }}>
+            Sobald die nächste Frage kommt, wacht das Phone wieder auf.
+          </div>
+        )}
+      </div>
+    </PaperCard>
+  );
+}
+
+function NeutralCard({ title, body }: { title: string; body: string }) {
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={24}>
+      <div style={{ fontFamily: F_HAND, fontSize: 30, color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.1 }}>
+        {title}
+      </div>
+      <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 8, fontStyle: 'italic' }}>
+        {body}
+      </div>
+    </PaperCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionHeading({ n, title, sub }: { n: string; title: string; sub: string }) {
+  return (
+    <div>
+      <div style={{
+        fontFamily: F_BODY, fontSize: 10, letterSpacing: '0.22em',
+        color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+      }}>
+        Schritt {n}
+      </div>
+      <div style={{
+        fontFamily: F_HAND, fontSize: 30, color: PALETTE.inkDeep,
+        marginTop: 2, lineHeight: 1, fontWeight: 700,
+      }}>
+        {title}
+      </div>
+      <div style={{
+        fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft,
+        marginTop: 4, fontStyle: 'italic',
+      }}>
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+function humanPhaseLabel(phase: string): string {
+  switch (phase) {
+    case 'RULES':            return 'spielregeln';
+    case 'TEAMS_REVEAL':     return 'team-vorstellung';
+    case 'PHASE_INTRO':      return 'neue runde startet';
+    case 'PLACEMENT':        return 'platzierung';
+    case 'COMEBACK_CHOICE':  return 'comeback';
+    case 'PAUSED':           return 'kurze pause';
+    case 'THANKS':           return 'danke fürs spielen';
+    default:                 return phase.toLowerCase();
+  }
+}
+
+function PageStyles() {
+  return (
+    <style>{`
+      html, body, #root { background: ${PALETTE.inkDeep}; }
+      input::placeholder { color: ${PALETTE.inkSoft}88; font-style: italic; font-family: ${F_BODY}; font-size: 18px; }
+      button:focus-visible, input:focus-visible {
+        outline: 2px solid ${PALETTE.ochre};
+        outline-offset: 2px;
+      }
+    `}</style>
+  );
+}

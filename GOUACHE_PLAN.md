@@ -13,7 +13,7 @@ CozyQuiz hat ab sofort **zwei parallele Visual-Welten**:
 | Welt | Stimmung | Status | Live-Pfade |
 |---|---|---|---|
 | **Cozy Dark** *(bestehend, „klassisch")* | Dunkler Beamer, warme Amber-Spots, Fireflies, satte Saturation | ✅ Production-ready, alle Spiele laufen darauf | `/beamer`, `/team`, `/moderator`, `/lobby` |
-| **Gouache** *(neu, „Bilderbuch")* | Cremepapier, gemalte Aquarell-Wäschen, handgeschriebene Headings (Caveat), gedämpfte Erdtöne | 🚧 Lab-Stilstudie + Library + 16 echte Aquarell-Avatare + erste echte Live-Page (Lobby) | `/gouache` (Studie), `/lobby-gouache` (live), zukünftig `/beamer-gouache`, `/team-gouache` |
+| **Gouache** *(neu, „Bilderbuch")* | Cremepapier, gemalte Aquarell-Wäschen, handgeschriebene Headings (Caveat), gedämpfte Erdtöne | 🚧 Lab-Stilstudie + Library + 16 Aquarell-Avatare + Lobby- & Team-Page live | `/gouache` (Studie), `/lobby-gouache` (live), `/team-gouache` (live, 3 Kategorien), zukünftig `/beamer-gouache` |
 
 **Wichtig**: Der alte Stil bleibt **als Safety unverändert**. Solange wir noch nicht alle Gouache-Live-Pages durchgetestet haben, läuft jedes echte Quiz weiter im Cozy-Dark-Stil. Erst wenn der parallele Pfad voll funktioniert → entscheiden wir per Theme-Switch im Setup.
 
@@ -136,14 +136,31 @@ crasht — fehlende fallen still auf cozy-cast zurück.
 - **Sicherheit**: keine Edits an QQBeamerPage / qqShared / Backend.
   Nur eine neue Page + 1 Zeile in App.tsx + 1 Zeile in MenuPage.
 
-### Phase 2 — Team-Page (Phone)
+### Phase 2 — Team-Page (Phone) ✅ (live seit 2026-04-26)
 
-**`/team-gouache`**
+**`/team-gouache`** — `frontend/src/pages/QQTeamGouachePage.tsx`
 
-- Phone-View für Spielende
+- Phone-View für Spielende, geteilter `localStorage.qq_teamId` mit `/team`
+  → wer hier joint, ist im echten Spiel mit drin
 - Autark testbar während der Beamer noch im alten Stil läuft
-- 3 Sub-Screens: Frage-Eingabe, Feedback (Richtig/Falsch), Ergebnis
-- Reuses: socket events, answer-submission flow
+- State-Branches:
+  1. **SetupView** — 4×2 Avatar-Grid (PaintedAvatar in `softTeamColor`),
+     Team-Name-Input, vergebene Avatare gesperrt + Auto-Switch
+  2. **LobbyWaitCard** — eigener Avatar groß + Teamliste mit allen anderen
+  3. **ActiveQuestionCard** routet nach Kategorie:
+     - SCHAETZCHEN → number-input
+     - MUCHO → 4-Option-Buttons (A/B/C/D), Auto-Submit beim Tap
+     - CHEESE → free text input
+     - BUNTE_TUETE / ZEHN_VON_ZEHN → UnsupportedCategoryCard mit Verweis
+       auf `/team` (komplexere UI noch nicht migriert)
+  4. **SubmittedCard** — Bestätigung + answered-count
+  5. **RevealCard** — schaut auf `currentQuestionWinners[0]` für „fastest" /
+     „richtig" / „diesmal nicht"
+  6. **GameOverCard** — Sieger + eigener Rang (largestConnected → totalCells)
+  7. **WaitingPhaseCard** — alle anderen Phasen, mit Hinweis falls
+     `pendingFor === myTeam.id` (Placement noch nicht im Aquarell)
+- Antworten via `qq:submitAnswer` → identische Backend-Pipeline
+- Auto-Rejoin via sessionStorage; Avatar im Header rendert eigene Identität
 
 ### Phase 3 — Spielende-Page
 

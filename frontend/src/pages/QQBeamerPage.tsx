@@ -1977,15 +1977,15 @@ function MuchoOptionsReveal({
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
             </div>
-            {/* Voter-Reihe: sitzt auf der unteren Card-Linie (Avatare halb innerhalb,
-                halb ausserhalb der Card → wirkt wie "an die Card geheftet").
-                Zeit-Pill haengt direkt unter dem Avatar-Kreis (ueberlappt den unteren Rand).
-                justifyContent:center damit einzelne Avatare unter der Card zentriert
-                stehen (nicht links verloren). */}
+            {/* Voter-Reihe: haengt unter der Card (Avatare 80% rausragend, nur
+                der obere Top-Edge scrapt die Card-Unterkante) damit der
+                Antwort-Text nicht verdeckt wird. Zeit-Pill direkt unter dem
+                Avatar-Kreis. justifyContent:center damit einzelne Avatare
+                unter der Card zentriert stehen. */}
             {voterShow && voters.length > 0 && (
               <div style={{
                 position: 'absolute', left: 8, right: 8, bottom: 0,
-                transform: 'translateY(50%)',
+                transform: 'translateY(80%)',
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
                 justifyContent: 'center',
                 gap: voters.length > 4 ? 6 : 10,
@@ -3720,8 +3720,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:order': {
               emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
               lines: {
-                de: ['Sortiert richtig — pro Treffer 1 Punkt.'],
-                en: ['Sort correctly — 1 point per hit.'],
+                de: ['Sortiert richtig — meiste Treffer gewinnt.'],
+                en: ['Sort correctly — most hits wins.'],
               },
             },
             'BUNTE_TUETE:map': {

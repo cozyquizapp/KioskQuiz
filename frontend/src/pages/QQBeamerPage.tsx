@@ -6557,37 +6557,45 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
-            {/* Team-Answer-Progress — sitzt absolut auf dem oberen Card-Rand,
-                halb überlappend (untere Hälfte ragt in die Card rein, obere
-                ragt darüber). Kein eigener Strip-Bg → Avatare „kleben" direkt
-                an der Card-Edge. Avatar-Kreise nutzen den natural Avatar-Look
-                (wie in Mucho/Schätzchen) ohne extra Color-Glow. */}
+            {/* Team-Answer-Progress — Avatare haengen UNTER der Card, halb
+                ueberlappend mit der Card-Unterkante (obere Haelfte in der
+                Card, untere haengt darunter raus). Kein Strip-Bg → Avatare
+                „kleben" direkt an der Edge. Schwarzer Avatar-Bg innerhalb
+                des Kreises (wie Mucho-Voter) damit sie auch auf hellem
+                Foto-Hintergrund lesbar sind. */}
             {!revealed && s.teams.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                bottom: '100%', left: 0, right: 0,
-                transform: 'translateY(50%)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                pointerEvents: 'none', zIndex: 9,
-                animation: 'contentReveal 0.45s ease 0.35s both',
-              }}>
+              <>
+                {/* Klein-Text als Eyebrow am unteren Card-Rand innen */}
                 <div style={{
-                  fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
-                  color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.95)',
+                  position: 'absolute',
+                  bottom: 8, left: 0, right: 0,
+                  textAlign: 'center',
+                  fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 800,
+                  color: s.allAnswered ? '#86EFAC' : 'rgba(226,232,240,0.85)',
                   transition: 'color 0.3s ease',
-                  letterSpacing: '0.04em',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.85)',
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  pointerEvents: 'none', zIndex: 8,
+                  animation: 'contentReveal 0.45s ease 0.35s both',
                 }}>
                   {s.allAnswered
-                    ? (lang === 'en' ? '✅ All teams answered!' : '✅ Alle Teams haben geantwortet!')
+                    ? (lang === 'en' ? '✅ All teams answered' : '✅ Alle Teams geantwortet')
                     : `${s.answers.length}/${s.teams.length} Teams`}
                 </div>
+                {/* Avatar-Reihe */}
                 {(() => {
                   const tc = s.teams.length;
                   const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
                   const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, flexWrap: 'wrap' }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%', left: 0, right: 0,
+                      transform: 'translateY(-50%)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      gap, flexWrap: 'wrap',
+                      pointerEvents: 'none', zIndex: 9,
+                      animation: 'contentReveal 0.45s ease 0.4s both',
+                    }}>
                       {s.teams.map(tm => {
                         const answered = s.answers.some(a => a.teamId === tm.id);
                         return (
@@ -6599,7 +6607,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             filter: answered ? 'none' : 'grayscale(0.4)',
                             transition: 'opacity 0.4s ease, filter 0.4s ease',
                           }}>
-                            <QQTeamAvatar avatarId={tm.avatarId} size={av} />
+                            <QQTeamAvatar
+                              avatarId={tm.avatarId}
+                              size={av}
+                              style={{
+                                background: '#0d0a06',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.55)',
+                              }}
+                            />
                             {answered && (
                               <div style={{
                                 position: 'absolute', bottom: -2, right: -2,
@@ -6616,7 +6631,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     </div>
                   );
                 })()}
-              </div>
+              </>
             )}
 
             {/* Category pill — fade out on reveal */}

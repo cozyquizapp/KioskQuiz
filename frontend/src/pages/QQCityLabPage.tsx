@@ -117,6 +117,48 @@ function useAvatarImageTexture(imageUrl: string): THREE.Texture {
   }, [imageUrl]);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ExtrudedAvatar — flacher Sprite wird durch Z-Layer-Stacking zu einem
+// fake-volumetrischen Modell. Trick: 8-12 Planes mit gleicher Avatar-Textur
+// werden mit minimalem Z-Versatz hintereinander gestapelt; alphaTest haut
+// die transparenten Bereiche raus, sodass nur die Avatar-Silhouette in
+// Z-Richtung extrudiert wird. Layer in der Mitte werden subtil abgedunkelt
+// (fake-AO) → das Auge liest „echte Tiefe", obwohl alles aus 2D-Planes
+// besteht. Funktioniert exakt wie Canvas „3D Maker"-Output.
+function ExtrudedAvatar({
+  texture, size = 0.5, depth = 0.07, layers = 10,
+}: {
+  texture: THREE.Texture; size?: number; depth?: number; layers?: number;
+}) {
+  return (
+    <group>
+      {Array.from({ length: layers }).map((_, i) => {
+        const z = (i / (layers - 1) - 0.5) * depth;
+        // Front (i = layers-1) ist hellster Layer, mittlere Layer dunkler
+        // (fake-AO), back (i = 0) wieder leicht heller. Erzeugt sichtbare
+        // Tiefe ohne explizites Lighting.
+        const fromFront = (layers - 1 - i) / (layers - 1);
+        const aoCenter = 1 - 4 * fromFront * (1 - fromFront); // 0 an den Enden, 1 in der Mitte
+        const tint = 1.0 - aoCenter * 0.35;
+        return (
+          <mesh key={i} position={[0, 0, z]}>
+            <planeGeometry args={[size, size]} />
+            <meshBasicMaterial
+              map={texture}
+              transparent
+              alphaTest={0.5}
+              color={new THREE.Color(tint, tint, tint)}
+              side={THREE.DoubleSide}
+              toneMapped={false}
+              depthWrite={i === layers - 1}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 type EmptyStyle = 'plaza' | 'brache' | 'beige' | 'ghost';
@@ -3461,7 +3503,8 @@ function BalloonBody({
 }
 
 // Wicker-Basket (Gondola) — kleine Korbgeflecht-Box am Boden des Ballons.
-// Trägt das Avatar-PNG als Front-Billboard.
+// Trägt den Avatar als ExtrudedAvatar (Z-gestapelte Planes für Tiefe) +
+// Team-Color-Ring drumherum (Canva-3D-Maker-Style).
 function BalloonBasket({
   size = 1.0, avatarTex, color,
 }: {
@@ -3469,6 +3512,8 @@ function BalloonBasket({
 }) {
   const basketR = 0.18 * size;
   const basketH = 0.16 * size;
+  const avatarSize = basketR * 2.4;
+  const ringR = avatarSize * 0.46;
   return (
     <group>
       {/* Korpus — leicht konisch (oben breiter), Korbgeflecht-Braun */}
@@ -3488,18 +3533,42 @@ function BalloonBasket({
           <meshStandardMaterial color="#4a2a14" roughness={0.9} />
         </mesh>
       ))}
-      {/* Avatar-PNG als Front-Billboard (zeigt immer zur Kamera) */}
-      <Billboard position={[0, basketH * 0.05, 0]}>
-        {/* Soft Glow-Disc dahinter in Teamfarbe — Avatar pop't damit aus dem Korb */}
-        <mesh position={[0, 0, -0.005]}>
-          <circleGeometry args={[basketR * 1.3, 24]} />
-          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.4} />
+
+      {/* ── 3D-Avatar im Korb mit Canva-Style Ring drumherum ──
+          NICHT als Billboard — die Z-gestapelten Planes brauchen ein festes
+          Forward-Direction, damit das Auge die Tiefe wahrnimmt wenn die
+          OrbitControls die Kamera schwenken. */}
+      <group position={[0, basketH * 0.55, 0]}>
+        {/* Glow-Disc dahinter (klein, fängt das Auge zum Avatar) */}
+        <mesh position={[0, 0, -0.06]}>
+          <circleGeometry args={[ringR * 1.05, 28]} />
+          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.32} />
         </mesh>
+        {/* ExtrudedAvatar: flaches PNG bekommt durch Z-Layer-Stacking Tiefe */}
+        <ExtrudedAvatar
+          texture={avatarTex}
+          size={avatarSize}
+          depth={0.08 * size}
+          layers={10}
+        />
+        {/* Canva-Style Team-Color-Ring um den Avatar — extrudiert via Torus,
+            sieht aus wie ein 3D-Reifen aus dem die Animal-Cutout schaut. */}
         <mesh>
-          <planeGeometry args={[basketR * 2.2, basketR * 2.2]} />
-          <meshBasicMaterial map={avatarTex} transparent alphaTest={0.04} toneMapped={false} />
+          <torusGeometry args={[ringR, 0.022 * size, 12, 36]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.65}
+            metalness={0.35}
+            roughness={0.32}
+          />
         </mesh>
-      </Billboard>
+        {/* Innerer Ring-Schatten (dunklere Innenkante macht den Reifen runder) */}
+        <mesh>
+          <torusGeometry args={[ringR * 0.93, 0.008 * size, 8, 32]} />
+          <meshStandardMaterial color={color} roughness={0.85} opacity={0.55} transparent />
+        </mesh>
+      </group>
     </group>
   );
 }

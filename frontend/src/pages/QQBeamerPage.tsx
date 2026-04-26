@@ -9528,68 +9528,173 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '48px 64px', position: 'relative', overflow: 'hidden',
-      gap: 32,
+      padding: '40px 64px 56px', position: 'relative', overflow: 'hidden',
+      gap: 28,
     }}>
       <Fireflies />
 
-      {/* Title mit Glow-Pulse in Mode-Farbe */}
+      {/* Ambient ring-light hinter dem Hero — pulsiert in Mode-Farbe */}
       <div style={{
-        fontSize: 'clamp(28px, 3.2vw, 48px)', fontWeight: 900,
-        color: modeAccent,
-        display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 5,
-        animation: 'lobbyPulse 3s ease-in-out infinite',
-        whiteSpace: 'nowrap',
-        textShadow: `0 0 24px ${modeGlow}, 0 0 48px ${modeGlow}`,
-        letterSpacing: '0.02em',
+        position: 'absolute',
+        top: '14%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(720px, 70vw)',
+        height: 'min(720px, 70vw)',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${modeGlow} 0%, transparent 65%)`,
+        opacity: 0.65,
+        animation: 'qqPauseAura 7s ease-in-out infinite',
+        pointerEvents: 'none',
+        zIndex: 1,
+      }} />
+
+      {/* Hero — Eyebrow + Big Title + Subtitle */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        animation: 'panelSlideIn 0.7s cubic-bezier(0.22,1,0.36,1) both',
       }}>
-        {mode === 'preGame'
-          ? <><QQEmojiIcon emoji="✨"/> {de ? 'Gleich geht\'s los' : 'Starting soon'}</>
-          : <>⏸ {de ? 'Kurze Pause' : 'Short Break'}</>}
+        {/* Eyebrow-Pill (Mode-Tag) */}
+        <div style={{
+          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+          color: modeAccent,
+          letterSpacing: '0.32em', textTransform: 'uppercase',
+          padding: '5px 16px', borderRadius: 999,
+          background: `linear-gradient(180deg, ${modeAccent}22, ${modeAccent}0c)`,
+          border: `1px solid ${modeAccentDim}`,
+          boxShadow: `0 0 18px ${modeGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
+          animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
+        }}>
+          {mode === 'preGame' ? '✨ Lagerfeuer brennt' : '⏸ Atempause'}
+        </div>
+
+        {/* Big Title — größer, mit breathe-Glow */}
+        <div style={{
+          fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
+          color: modeAccent,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.05,
+          textShadow: `0 0 32px ${modeGlow}, 0 0 72px ${modeGlow}`,
+          animation: 'qqPauseTitleBreathe 4.5s ease-in-out infinite',
+          whiteSpace: 'nowrap',
+        }}>
+          {mode === 'preGame'
+            ? (de ? "Gleich geht's los" : 'Starting soon')
+            : (de ? 'Kurze Pause' : 'Short Break')}
+        </div>
+
+        {/* Subtitle — leicht kleiner, in cozy cream */}
+        <div style={{
+          fontSize: 'clamp(15px, 1.5vw, 21px)', fontWeight: 700,
+          color: '#a8a395', letterSpacing: '0.04em',
+          marginTop: 4,
+          textShadow: '0 1px 0 rgba(0,0,0,0.4)',
+        }}>
+          {mode === 'preGame'
+            ? (de ? 'Setup wird abgeschlossen — gleich joinen die Teams' : 'Setup wrapping up — teams joining soon')
+            : (de ? 'Gönn dir kurz — gleich geht es weiter' : 'Take five — back in a moment')}
+        </div>
       </div>
 
       {/* Records panel — mit Slide-In pro Panel-Wechsel */}
       {activePanel && (
         <div style={{
-          width: '100%', maxWidth: 900, position: 'relative', zIndex: 5,
+          width: '100%', maxWidth: 920, position: 'relative', zIndex: 5,
         }}>
           <div key={activePanel.key} style={{
-            background: cardBg, borderRadius: 24, padding: 'clamp(28px, 3.5vw, 48px)',
+            background: cardBg,
+            borderRadius: 26,
+            padding: 'clamp(28px, 3.5vw, 48px)',
             border: `1px solid ${modeAccentDim}`,
-            boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 -2px 0 ${modeAccent} inset`,
-            animation: 'panelSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both',
+            boxShadow:
+              `0 14px 48px rgba(0,0,0,0.55),` +
+              `0 0 64px ${modeGlow},` +
+              `0 0 0 1px rgba(255,235,200,0.04) inset,` +
+              `0 -3px 0 ${modeAccent} inset`,
+            animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
             position: 'relative', overflow: 'hidden',
           }}>
-            {/* Akzent-Streifen oben */}
+            {/* Akzent-Streifen oben (animated shimmer) */}
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: 3,
               background: `linear-gradient(90deg, transparent, ${modeAccent}, transparent)`,
+              animation: 'qqPauseShimmer 6s linear infinite',
+              backgroundSize: '200% 100%',
             }} />
-            {activePanel.node}
+            {/* Subtle Inner-Glow oben-rechts */}
+            <div style={{
+              position: 'absolute', top: -120, right: -120, width: 320, height: 320,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${modeAccent}1c 0%, transparent 70%)`,
+              pointerEvents: 'none',
+            }} />
+            <div style={{ position: 'relative' }}>{activePanel.node}</div>
           </div>
           {panels.length > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 18 }}>
-              {panels.map((_, i) => (
-                <div key={i} style={{
-                  width: i === panelIdx % panels.length ? 22 : 10, height: 10,
-                  borderRadius: 999,
-                  background: i === panelIdx % panels.length ? modeAccent : 'rgba(255,255,255,0.15)',
-                  transition: 'all 0.3s',
-                }} />
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 22 }}>
+              {panels.map((_, i) => {
+                const isActive = i === panelIdx % panels.length;
+                return (
+                  <div key={i} style={{
+                    width: isActive ? 32 : 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: isActive
+                      ? `linear-gradient(90deg, ${modeAccent}, ${modeAccent}aa)`
+                      : 'rgba(255,235,200,0.16)',
+                    boxShadow: isActive ? `0 0 10px ${modeGlow}` : 'none',
+                    transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+                  }} />
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Hint */}
+      {/* Hint mit Lagerfeuer-Sparkle */}
       <div style={{
-        fontSize: 'clamp(16px, 1.8vw, 24px)', color: '#64748b', fontWeight: 700,
+        display: 'inline-flex', alignItems: 'center', gap: 10,
+        fontSize: 'clamp(15px, 1.6vw, 22px)', color: '#a8a395', fontWeight: 700,
         position: 'relative', zIndex: 5,
-        letterSpacing: '0.03em',
+        letterSpacing: '0.04em',
       }}>
-        {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
+        <span style={{
+          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+          background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+          animation: 'qqPauseDot 1.6s ease-in-out infinite',
+        }} />
+        {de ? "Gleich geht's weiter…" : 'Continuing soon…'}
+        <span style={{
+          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+          background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+          animation: 'qqPauseDot 1.6s ease-in-out 0.3s infinite',
+        }} />
       </div>
+
+      <style>{`
+        @keyframes qqPauseAura {
+          0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
+          50% { opacity: 0.8; transform: translateX(-50%) scale(1.06); }
+        }
+        @keyframes qqPauseTitleBreathe {
+          0%, 100% { letter-spacing: -0.01em; filter: brightness(1); }
+          50% { letter-spacing: 0.005em; filter: brightness(1.08); }
+        }
+        @keyframes qqPauseEyebrowFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes qqPauseShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes qqPauseDot {
+          0%, 100% { opacity: 0.4; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -2463,6 +2463,9 @@ function SetupView({
   const GOLD_SOFT = 'rgba(245,158,11,0.15)';
   const GOLD_BORDER = 'rgba(245,158,11,0.45)';
 
+  // Erweiterte Optionen (Comeback-Timer, Bestenliste-Reset, Apply-Sounds-All)
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   const sectionCard: React.CSSProperties = {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02))',
     border: '1px solid rgba(255,255,255,0.08)',
@@ -2501,25 +2504,73 @@ function SetupView({
     transition: 'all 0.15s',
   });
 
-  return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18, paddingBottom: 100, paddingTop: 12 }}>
+  // ── Helpers für die neue Pill-Row ─────────────────────────────────────────
+  // Segmented-Group-Pill (warm cozy, gold-Akzent für aktive)
+  const segPill = (active: boolean, accent = GOLD): React.CSSProperties => ({
+    padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+    fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
+    background: active ? accent : 'transparent',
+    color: active ? '#1a1206' : '#a8a395',
+    boxShadow: active ? `0 2px 0 rgba(0,0,0,0.35), 0 0 16px ${accent}55` : 'none',
+    transition: 'all 0.15s',
+    minWidth: 38,
+  });
+  const segGroup: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 2,
+    padding: 4, borderRadius: 12,
+    background: 'rgba(0,0,0,0.32)',
+    border: '1px solid rgba(255,235,200,0.08)',
+    boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.45)',
+  };
+  const settingRow: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 4px', minHeight: 44,
+  };
+  const settingLabel: React.CSSProperties = {
+    fontSize: 11, fontWeight: 900, color: '#a8a395',
+    letterSpacing: '0.1em', textTransform: 'uppercase',
+    minWidth: 92, display: 'inline-flex', alignItems: 'center', gap: 6,
+  };
 
-      {/* ── Fragensatz-Auswahl (Hero-Card) ── */}
+  const draft = drafts.find(x => x.id === selectedDraftId);
+  const fitNeeded = phases * 5;
+  const fitOK = draft ? draft.questionCount === fitNeeded : false;
+
+  return (
+    <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 120, paddingTop: 8 }}>
+
+      {/* ── HERO: Fragensatz (groß, gold-glow, Dropdown im Fokus) ── */}
       <div style={{
-        ...sectionCard,
-        background: `linear-gradient(180deg, ${GOLD_SOFT}, rgba(245,158,11,0.03))`,
+        position: 'relative', overflow: 'hidden',
+        padding: '24px 28px 22px', borderRadius: 22,
+        background:
+          'radial-gradient(ellipse at 0% 0%, rgba(245,158,11,0.22), transparent 55%),' +
+          'radial-gradient(ellipse at 100% 100%, rgba(244,114,182,0.14), transparent 60%),' +
+          'linear-gradient(180deg, #1f1610, #150e08)',
         border: `1px solid ${GOLD_BORDER}`,
+        boxShadow:
+          '0 12px 36px rgba(0,0,0,0.5),' +
+          '0 0 60px rgba(245,158,11,0.10),' +
+          'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
-        <div style={sectionTitle}>📚 Fragensatz</div>
+        <div style={{
+          fontSize: 11, fontWeight: 900, color: GOLD, marginBottom: 10,
+          letterSpacing: '0.16em', textTransform: 'uppercase',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+        }}>
+          <span>📚 Fragensatz</span>
+          {savingSound && <span style={{ fontSize: 10, color: GOLD, fontWeight: 700, opacity: 0.7 }}>• speichert…</span>}
+        </div>
         <select
           value={selectedDraftId}
           onChange={e => setSelectedDraftId(e.target.value)}
           style={{
-            width: '100%', padding: '12px 16px', borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.12)',
-            background: 'rgba(0,0,0,0.35)', color: '#f8fafc',
-            fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
+            width: '100%', padding: '14px 18px', borderRadius: 14,
+            border: '1px solid rgba(245,158,11,0.4)',
+            background: 'rgba(0,0,0,0.45)', color: '#fef3c7',
+            fontFamily: 'inherit', fontSize: 18, fontWeight: 800,
             cursor: 'pointer', outline: 'none',
+            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4), 0 0 24px rgba(245,158,11,0.06)',
           }}
         >
           {drafts.length === 0 && <option value="">— keine Drafts —</option>}
@@ -2530,242 +2581,258 @@ function SetupView({
           ))}
         </select>
         {selectedDraft && (
-          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-            Ausgewählt: <strong style={{ color: GOLD }}>{selectedDraft.title}</strong> · {selectedDraft.questionCount} Fragen
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            marginTop: 10, fontSize: 12, color: '#a8a395', fontWeight: 700,
+          }}>
+            <span>{selectedDraft.questionCount} Fragen</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span style={{
+              fontSize: 11, fontWeight: 900,
+              color: fitOK ? '#86efac' : '#fbbf24',
+              padding: '2px 10px', borderRadius: 999,
+              background: fitOK ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
+              border: `1px solid ${fitOK ? 'rgba(34,197,94,0.32)' : 'rgba(251,191,36,0.32)'}`,
+            }}>
+              {fitOK ? `✓ passt für ${phases} Runden` : `⚠ ${selectedDraft.questionCount}/${fitNeeded} — Set hat ${selectedDraft.questionCount === 20 ? '4' : selectedDraft.questionCount === 15 ? '3' : '?'} Runden`}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Teams-Lobby + QR + Dev-Fill wandern in die LobbyView (nach "Setup abschließen") */}
-
-      {/* ── Zwei-Spalten-Grid: Spielregeln | Show-Feel ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
-
-        {/* Spielregeln */}
-        <div style={sectionCard}>
-          <div style={sectionTitle}>🎮 Spielregeln</div>
-
-          <div style={{ marginBottom: 14 }}>
-            <div style={fieldLabel}>Runden</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {([3, 4] as const).map(n => (
-                <button key={n} onClick={() => setPhases(n)} style={pillBtn(phases === n)}>{n}</button>
-              ))}
-              {(() => {
-                const d = drafts.find(x => x.id === selectedDraftId);
-                if (!d) return null;
-                const needed = phases * 5;
-                if (d.questionCount === needed) {
-                  return (
-                    <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 700, marginLeft: 4 }}>
-                      ✓ {d.questionCount} Fragen passen
-                    </span>
-                  );
-                }
-                return (
-                  <span style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, marginLeft: 4 }}>
-                    ⚠ {d.questionCount}/{needed} Fragen — Set hat {d.questionCount === 20 ? '4' : d.questionCount === 15 ? '3' : '?'} Runden
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 14 }}>
-            <div style={fieldLabel}>Timer-Default</div>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {[15, 30, 45, 60, 90].map(t => (
-                <button
-                  key={t}
-                  onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
-                  style={pillBtn(s.timerDurationSec === t)}
-                >{t}s</button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div style={fieldLabel}>Sprache</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {(['de', 'en', 'both'] as const).map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
-                  style={{
-                    ...pillBtn(s.language === lang),
-                    fontSize: 22, padding: '6px 14px',
-                  }}
-                >{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Show-Feel */}
-        <div style={sectionCard}>
-          <div style={sectionTitle}>🎨 Show-Feel</div>
-
-          <div>
-            <div style={fieldLabel}>3D-Grid-Transition</div>
-            <button
-              onClick={() => emit('qq:setEnable3D', { roomCode, enabled: !s.enable3DTransition })}
-              style={toggleBtn(s.enable3DTransition)}
-            >
-              {s.enable3DTransition ? '✓ 2D → 3D Fahrt beim Placement' : '○ Nur 2D Grid'}
-            </button>
-          </div>
-
-          {/* Comeback H/L-Mini-Game: Timer pro Runde (Mehr oder Weniger) */}
-          <div>
-            <div style={fieldLabel}>Comeback „Mehr oder Weniger" — Timer pro Runde</div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="number"
-                min={3}
-                max={60}
-                value={s.comebackHLTimerSec ?? 10}
-                onChange={e => {
-                  const v = Math.max(3, Math.min(60, Number(e.target.value) || 10));
-                  emit('qq:comebackHLTimer', { roomCode, seconds: v });
-                }}
-                style={{
-                  flex: 1, padding: '7px 12px', borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(0,0,0,0.35)', color: '#e2e8f0',
-                  fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              />
-              <span style={{ fontSize: 12, fontWeight: 800, color: '#64748b' }}>Sek</span>
-            </div>
-            <div style={{ fontSize: 10, color: '#64748b', marginTop: 4, lineHeight: 1.4 }}>
-              Zeit pro H/L-Runde beim Comeback (3-60 Sek). Default: 10 s.
-            </div>
-          </div>
-
-          {/* Bestenliste-Reset — nach Test-Spielen alle Dummy-Siege aus der
-              Lobby-/Pause-Rotation loeschen. Einmaliger Reset-Knopf fuer den
-              Moderator. */}
-          <div>
-            <div style={fieldLabel}>Bestenliste (Lobby/Pause)</div>
-            <button
-              onClick={async () => {
-                if (!window.confirm('Wirklich ALLE gespeicherten Spiel-Ergebnisse loeschen? Die Bestenliste startet bei 0. Diese Aktion ist nicht ruekgaengig zu machen.')) return;
-                try {
-                  const r = await fetch('/api/qq/gameresults', { method: 'DELETE' });
-                  const d = await r.json();
-                  if (d.ok) {
-                    alert(`Bestenliste geloescht: ${d.deleted ?? 0} Eintraege entfernt.`);
-                  } else {
-                    alert('Fehler beim Loeschen.');
-                  }
-                } catch {
-                  alert('Netzwerkfehler beim Loeschen.');
-                }
-              }}
-              style={{
-                padding: '7px 14px', borderRadius: 8, fontFamily: 'inherit',
-                fontWeight: 800, fontSize: 12, cursor: 'pointer',
-                border: '1px solid rgba(239,68,68,0.45)',
-                background: 'rgba(239,68,68,0.1)',
-                color: '#f87171',
-                width: '100%',
-              }}
-              title="Alle Spiel-Ergebnisse aus der Datenbank loeschen (Bestenliste-Reset)"
-            >
-              🗑 Bestenliste leeren (Dummy-Daten weg)
-            </button>
-            <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>
-              Loescht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Eintraege bis zum naechsten echten Spielende.
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Sound-Card (volle Breite) ── */}
-      <div style={sectionCard}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-          <div style={sectionTitle}>
-            🔊 Sounds
-            {selectedDraft && <span style={{ color: '#64748b', fontWeight: 600, fontSize: 11 }}>für {selectedDraft.title}</span>}
-            {savingSound && <span style={{ fontSize: 10, color: GOLD, fontWeight: 700 }}>• speichert…</span>}
-          </div>
-          {qqDraftId && (
-            <button
-              onClick={applySoundsToAllDrafts}
-              disabled={savingSound}
-              style={{
-                padding: '6px 12px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
-                border: `1px solid ${GOLD_BORDER}`, background: GOLD_SOFT,
-                color: GOLD, fontSize: 11, fontWeight: 800, fontFamily: 'inherit',
-              }}
-              title="Diese Sounds auf alle Fragensätze übernehmen"
-            >📋 Auf alle Fragensätze übernehmen</button>
-          )}
-        </div>
-
-        {/* Master-Steuerung */}
+      {/* ── QUICK-SETTINGS — alles auf einen Blick als Pill-Reihen ── */}
+      <div style={{
+        padding: '14px 20px',
+        borderRadius: 18,
+        background: 'linear-gradient(180deg, rgba(255,235,200,0.045), rgba(255,235,200,0.015))',
+        border: '1px solid rgba(255,220,180,0.10)',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
         <div style={{
-          display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
-          padding: '10px 14px', borderRadius: 10, background: 'rgba(0,0,0,0.2)',
-          marginBottom: 14, border: '1px solid rgba(255,255,255,0.05)',
-        }}>
-          <button
-            onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
-            style={{
-              padding: '7px 13px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-              border: `1px solid ${s.musicMuted ? '#EF4444' : '#22C55E'}`,
-              background: s.musicMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-              color: s.musicMuted ? '#EF4444' : '#22C55E',
-            }}>{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
-          <button
-            onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
-            style={{
-              padding: '7px 13px', borderRadius: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-              border: `1px solid ${s.sfxMuted ? '#EF4444' : '#22C55E'}`,
-              background: s.sfxMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-              color: s.sfxMuted ? '#EF4444' : '#22C55E',
-            }}>{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Lautstärke</span>
+          fontSize: 11, fontWeight: 900, color: '#6b6555',
+          letterSpacing: '0.16em', textTransform: 'uppercase',
+          marginBottom: 6,
+        }}>⚡ Quick-Settings</div>
+
+        {/* Runden */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🎮 Runden</span>
+          <div style={segGroup}>
+            {([3, 4] as const).map(n => (
+              <button key={n} onClick={() => setPhases(n)} style={segPill(phases === n)}>{n}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Timer */}
+        <div style={settingRow}>
+          <span style={settingLabel}>⏱ Timer</span>
+          <div style={segGroup}>
+            {[15, 30, 45, 60, 90].map(t => (
+              <button
+                key={t}
+                onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
+                style={segPill(s.timerDurationSec === t)}
+              >{t}s</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sprache */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🌐 Sprache</span>
+          <div style={segGroup}>
+            {(['de', 'en', 'both'] as const).map(lang => (
+              <button
+                key={lang}
+                onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
+                style={{ ...segPill(s.language === lang), fontSize: 18, padding: '4px 12px' }}
+                title={lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'Beide (Flip)'}
+              >{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3D-Grid-Transition */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🏙 Grid</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:setEnable3D', { roomCode, enabled: false })} style={segPill(!s.enable3DTransition)}>2D</button>
+            <button onClick={() => emit('qq:setEnable3D', { roomCode, enabled: true })} style={segPill(!!s.enable3DTransition, '#A78BFA')}>2D → 3D</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {s.enable3DTransition ? 'Cinematic Fahrt beim Placement' : 'Flat 2D, schneller'}
+          </span>
+        </div>
+
+        {/* Sound: Mute + Volume + Custom-Toggle in einer Reihe */}
+        <div style={{ ...settingRow, flexWrap: 'wrap' }}>
+          <span style={settingLabel}>🔊 Sound</span>
+          <div style={segGroup}>
+            <button
+              onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
+              style={segPill(!s.musicMuted, '#22C55E')}
+              title="Musik an/aus"
+            >{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
+            <button
+              onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
+              style={segPill(!s.sfxMuted, '#22C55E')}
+              title="SFX an/aus"
+            >{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 160 }}>
             <input
               type="range" min={0} max={100} step={5}
               value={Math.round((s.volume ?? 0.8) * 100)}
               onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
               style={{ flex: 1, accentColor: GOLD }}
             />
-            <span style={{ fontSize: 11, color: '#94a3b8', minWidth: 30, fontWeight: 700 }}>
+            <span style={{ fontSize: 12, color: '#fef3c7', minWidth: 36, fontWeight: 800, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
               {Math.round((s.volume ?? 0.8) * 100)}%
             </span>
           </div>
         </div>
+      </div>
 
+      {/* ── ERWEITERTE OPTIONEN — collapsible ───────────────────────────── */}
+      <div style={{
+        borderRadius: 16,
+        background: 'linear-gradient(180deg, rgba(255,235,200,0.025), rgba(255,235,200,0.008))',
+        border: '1px solid rgba(255,220,180,0.08)',
+      }}>
         <button
-          onClick={() => setCustomSoundsOpen(v => !v)}
+          onClick={() => setAdvancedOpen(v => !v)}
           style={{
-            width: '100%', padding: '10px 14px', borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.03)', color: '#94a3b8',
-            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 18px', borderRadius: 16,
+            border: 'none', background: 'transparent',
+            color: '#a8a395', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+            letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer',
           }}
         >
-          <span>🎵 Custom Sounds pro Slot (Timer-Loop, Korrekt, Falsch …)</span>
-          <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: customSoundsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              display: 'inline-block', transition: 'transform 0.25s ease',
+              transform: advancedOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+            }}>▶</span>
+            ⚙ Erweiterte Optionen
+            {!advancedOpen && (
+              <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
+                · Comeback-Timer · Custom Sounds · Bestenliste-Reset
+              </span>
+            )}
+          </span>
         </button>
 
-        {customSoundsOpen && (
-          <div style={{ marginTop: 10 }}>
-            <QQSoundPanel
-              config={draftSoundConfig}
-              onChange={cfg => {
-                setDraftSoundConfig(cfg);
-                setLocalSoundConfig(cfg);
-                emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
-                persistDraftSoundConfig(cfg);
-              }}
-            />
+        {advancedOpen && (
+          <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Comeback Timer */}
+            <div>
+              <div style={fieldLabel}>⚡ Comeback „Mehr oder Weniger" — Timer pro Runde</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', maxWidth: 280 }}>
+                <input
+                  type="number"
+                  min={3}
+                  max={60}
+                  value={s.comebackHLTimerSec ?? 10}
+                  onChange={e => {
+                    const v = Math.max(3, Math.min(60, Number(e.target.value) || 10));
+                    emit('qq:comebackHLTimer', { roomCode, seconds: v });
+                  }}
+                  style={{
+                    flex: 1, padding: '8px 14px', borderRadius: 10,
+                    border: '1px solid rgba(255,220,180,0.18)',
+                    background: 'rgba(0,0,0,0.4)', color: '#fef3c7',
+                    fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                />
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#6b6555' }}>Sek</span>
+              </div>
+              <div style={{ fontSize: 10, color: '#6b6555', marginTop: 4 }}>
+                Zeit pro H/L-Runde beim Comeback (3-60 s). Default: 10 s.
+              </div>
+            </div>
+
+            {/* Custom Sounds Slot */}
+            <div>
+              <div style={fieldLabel}>🎵 Custom Sounds pro Slot</div>
+              <button
+                onClick={() => setCustomSoundsOpen(v => !v)}
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 10,
+                  border: '1px solid rgba(255,220,180,0.12)',
+                  background: 'rgba(255,235,200,0.03)', color: '#a8a395',
+                  cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}
+              >
+                <span>Timer-Loop, Korrekt, Falsch, Phase-Intro …</span>
+                <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: customSoundsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+              </button>
+              {customSoundsOpen && (
+                <div style={{ marginTop: 10 }}>
+                  <QQSoundPanel
+                    config={draftSoundConfig}
+                    onChange={cfg => {
+                      setDraftSoundConfig(cfg);
+                      setLocalSoundConfig(cfg);
+                      emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
+                      persistDraftSoundConfig(cfg);
+                    }}
+                  />
+                </div>
+              )}
+              {qqDraftId && (
+                <button
+                  onClick={applySoundsToAllDrafts}
+                  disabled={savingSound}
+                  style={{
+                    marginTop: 8,
+                    padding: '7px 14px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
+                    border: `1px solid ${GOLD_BORDER}`, background: GOLD_SOFT,
+                    color: GOLD, fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                  }}
+                  title="Diese Sounds auf alle Fragensätze übernehmen"
+                >📋 Sounds auf alle Fragensätze übernehmen</button>
+              )}
+            </div>
+
+            {/* Bestenliste leeren */}
+            <div>
+              <div style={fieldLabel}>🗑 Bestenliste (Lobby/Pause)</div>
+              <button
+                onClick={async () => {
+                  if (!window.confirm('Wirklich ALLE gespeicherten Spiel-Ergebnisse loeschen? Die Bestenliste startet bei 0. Diese Aktion ist nicht ruekgaengig zu machen.')) return;
+                  try {
+                    const r = await fetch('/api/qq/gameresults', { method: 'DELETE' });
+                    const d = await r.json();
+                    if (d.ok) {
+                      alert(`Bestenliste geloescht: ${d.deleted ?? 0} Eintraege entfernt.`);
+                    } else {
+                      alert('Fehler beim Loeschen.');
+                    }
+                  } catch {
+                    alert('Netzwerkfehler beim Loeschen.');
+                  }
+                }}
+                style={{
+                  padding: '8px 14px', borderRadius: 10, fontFamily: 'inherit',
+                  fontWeight: 800, fontSize: 12, cursor: 'pointer',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  background: 'rgba(239,68,68,0.08)',
+                  color: '#fca5a5',
+                }}
+                title="Alle Spiel-Ergebnisse aus der Datenbank loeschen (Bestenliste-Reset)"
+              >
+                Bestenliste leeren (Dummy-Daten weg)
+              </button>
+              <div style={{ fontSize: 10, color: '#6b6555', marginTop: 4 }}>
+                Loescht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Eintraege bis zum naechsten echten Spielende.
+              </div>
+            </div>
           </div>
         )}
       </div>

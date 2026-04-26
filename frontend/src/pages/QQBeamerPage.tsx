@@ -9789,12 +9789,19 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#F59E0B';
 
+  // Layout: Bei vielen Teams (>=6) wird die Rankings-Liste 2-spaltig gepackt,
+  // damit nichts unten rausläuft (Replay-Overlay erscheint zudem nach 5.5s am
+  // unteren Bildrand). Hero etwas kompakter als zuvor, justify-content: flex-
+  // start verhindert dass alles vom center aus überfließt.
+  const teamCount = sorted.length;
+  const useTwoColRanks = teamCount >= 6; // 1 Winner + ≥5 in Rankings → 2-spaltig
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: 'flex-start',
       position: 'relative', overflow: 'hidden',
-      padding: '32px 48px',
+      padding: 'clamp(16px, 2.5vh, 32px) 48px clamp(20px, 3vh, 40px)',
+      gap: 'clamp(8px, 1.2vh, 18px)',
     }}>
       {/* Ambient glow behind winner */}
       <div style={{
@@ -9808,28 +9815,28 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 
       {/* Title — klein, oben */}
       <div style={{
-        fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 800,
-        color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
+        fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 800,
+        color: '#94a3b8', letterSpacing: '0.18em', textTransform: 'uppercase',
         animation: 'contentReveal 0.6s ease both',
-        position: 'relative', zIndex: 5, marginBottom: 12,
+        position: 'relative', zIndex: 5,
       }}>
         {lang === 'en' ? 'Game Over' : 'Spielende'}
       </div>
 
-      {/* Hero — Trophy + Avatar + Name + Score, zentral und dominant */}
+      {/* Hero — Trophy + Avatar + Name + Score, kompakt & oben zentriert */}
       {winner && (
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
           animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
-          position: 'relative', zIndex: 5, marginBottom: 'clamp(16px, 2vh, 28px)',
+          position: 'relative', zIndex: 5,
         }}>
           <div style={{
-            fontSize: 'clamp(36px, 4.4vw, 56px)',
+            fontSize: 'clamp(28px, 3.4vw, 44px)',
             animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
           }}><QQEmojiIcon emoji="🏆"/></div>
 
-          <div style={{ position: 'relative', display: 'inline-block', marginTop: 4 }}>
-            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(96px, 12vw, 144px)'} style={{
+          <div style={{ position: 'relative', display: 'inline-block', marginTop: 2 }}>
+            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(72px, 9vw, 112px)'} style={{
               boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
               animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
             }} />
@@ -9859,10 +9866,10 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
 
           <div title={winner.name} style={{
-            fontSize: 'clamp(36px, 5.2vw, 64px)', fontWeight: 900,
+            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900,
             color: winnerColor,
             animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
-            marginTop: 10,
+            marginTop: 6,
             maxWidth: '90%',
             padding: '0 0.5em',
             whiteSpace: 'nowrap',
@@ -9871,11 +9878,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
 
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 16, marginTop: 2,
+            display: 'flex', alignItems: 'center', gap: 16,
             animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
           }}>
             <span style={{
-              fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 900,
+              fontSize: 'clamp(15px, 1.8vw, 22px)', fontWeight: 900,
               color: '#EAB308',
               textShadow: '0 0 18px rgba(234,179,8,0.45)',
             }}>
@@ -9886,41 +9893,44 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       )}
 
       {/* Untere Sektion: 2-spaltig — Grid links | Rankings rechts.
-          Hero sitzt drueber zentriert, Grid wird kompakter, Rankings haben
-          nun direkt neben dem Grid Platz (statt darunter wegzuscrollen). */}
+          Bei vielen Teams (≥6) werden die Rankings selbst noch 2-spaltig
+          gepackt, damit nichts unten rausläuft (Replay-Overlay erscheint
+          zudem nach 5.5s am unteren Bildrand). */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto minmax(0, 1fr)',
         alignItems: 'start',
-        gap: 'clamp(20px, 2.5vw, 40px)',
+        gap: 'clamp(16px, 2vw, 32px)',
         width: '100%', maxWidth: 1500, justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
-        {/* Grid links — kompakter als zuvor (max 420px), damit Rankings rechts
+        {/* Grid links — kompakter (max 360px), damit Rankings rechts
             ihren Raum bekommen. */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
           animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
         }}>
           <div style={{
-            padding: 12, borderRadius: 18,
+            padding: 10, borderRadius: 18,
             background: 'rgba(255,255,255,0.03)',
             border: `2px solid ${winnerColor}44`,
             boxShadow: `0 0 36px ${winnerColor}2a, 0 8px 28px rgba(0,0,0,0.4)`,
           }}>
-            <GridDisplay state={s} maxSize={Math.min(420, typeof window !== 'undefined' ? window.innerHeight * 0.42 : 360)} highlightTeam={winner?.id ?? null} showJoker />
+            <GridDisplay state={s} maxSize={Math.min(360, typeof window !== 'undefined' ? window.innerHeight * 0.36 : 320)} highlightTeam={winner?.id ?? null} showJoker />
           </div>
         </div>
 
-      {/* Rankings — rechts neben dem Grid, vertikal. */}
+      {/* Rankings — rechts neben dem Grid. Bei ≥6 Teams 2-spaltig. */}
       {sorted.length > 1 && (() => {
         const others = sorted.slice(1);
         const wn = others.length;
-        const compact = wn > 5;
+        const compact = wn > 4;
         return (
           <div style={{
-            display: 'flex', flexDirection: 'column',
-            gap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
+            display: 'grid',
+            gridTemplateColumns: useTwoColRanks ? '1fr 1fr' : '1fr',
+            columnGap: 'clamp(8px, 1vw, 14px)',
+            rowGap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
             width: '100%', maxWidth: 760,
             position: 'relative', zIndex: 5,
             animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',

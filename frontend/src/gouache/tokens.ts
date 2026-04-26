@@ -11,6 +11,7 @@
 // gouache-Subseiten konsistent aussehen.
 
 export const PALETTE = {
+  // Basis-Tinten
   inkDeep:    '#1F3A5F',   // tiefes Indigo-Blau (Nachthimmel)
   inkSoft:    '#3D5A80',   // gedämpftes Mittel-Blau
   sage:       '#7A9E7E',   // gedämpftes Salbei-Grün
@@ -20,15 +21,31 @@ export const PALETTE = {
   terracotta: '#E07A5F',   // warme Akzent-Erde
   ochre:      '#D9A05B',   // Ocker für Sterne/Akzente
   charcoal:   '#2D2A26',   // dunkler Tinte-Ton
+
+  // Bilderbuch-Inspiration (aus Aquarell-Reference-Sheet) — gedämpfte,
+  // tiefe Pastell-Töne mit „Pfirsich-Himmel"- und „Mitternachts-Türkis"-Vibes.
+  peach:        '#F2D9B5',   // sandiger Pfirsich-Himmel
+  peachWarm:    '#E8B695',   // warmer Pfirsich-Übergang
+  dusk:         '#2B4A5D',   // tiefes Mitternachts-Türkis (Unterwasser)
+  mist:         '#4F7B7E',   // Türkis-Nebel (atmosph. Wash)
+  amberGlow:    '#F4A93C',   // warmer Goldglow (Lampen-Halo)
+  lavenderDusk: '#6E5878',   // Lila Berg-Schatten
 } as const;
 
 export type GouachePaletteKey = keyof typeof PALETTE;
 
-// Font-Stacks. Die echten Schriften (Caveat, Lora) lädst du über
-// usePaintFonts(). Fallbacks sind absichtlich systemnah, damit beim
+// Font-Stacks. Die echten Schriften (Caveat, Patrick Hand SC, Lora) lädst du
+// über usePaintFonts(). Fallbacks sind absichtlich systemnah, damit beim
 // Initial-Render nicht alles nackt aussieht bis Google Fonts da sind.
-export const F_HAND = "'Caveat', 'Kalam', 'Patrick Hand', cursive";
-export const F_BODY = "'Lora', 'Cormorant Garamond', Georgia, serif";
+//
+// F_HAND      — flowy Cursive für Marke + persönliche Elemente (CozyQuiz, Team-Namen)
+// F_HAND_CAPS — Block-Caps-Hand-Schrift für Slogan-Headings im Bilderbuch-Stil
+//               (z.B. „BALD GEHT'S LOS", „RICHTIG!", „SPIELREGELN").
+//               Nutze immer mit text-transform: uppercase + leichtem letter-spacing.
+// F_BODY      — warmer Serif für Lese-Text
+export const F_HAND      = "'Caveat', 'Kalam', 'Patrick Hand', cursive";
+export const F_HAND_CAPS = "'Patrick Hand SC', 'Architects Daughter', 'Caveat', cursive";
+export const F_BODY      = "'Lora', 'Cormorant Garamond', Georgia, serif";
 
 // Wieder­verwendbare Schatten-Layer für PaperCards / Buttons / Avatare.
 export const SHADOWS = {
@@ -47,18 +64,30 @@ export const RADIUS = {
 
 // SVG-Data-URI für Paper-Grain. Wird per CSS background-image auf Papier-
 // flächen gelegt. Kein externes Asset nötig.
+//
+// baseFrequency 0.45 (gröber) + opacity 0.32 (sichtbarer) → der Papier-Korn
+// wird zur prägenden Textur statt nur subtilem Overlay (passt zu Bilderbuch-
+// Aquarell-Inspiration).
 export const PAPER_GRAIN_BG =
-  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>` +
-  `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/>` +
-  `<feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0 0.74  0 0 0 0.16 0'/></filter>` +
-  `<rect width='200' height='200' filter='url(%23n)'/></svg>")`;
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>` +
+  `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.45' numOctaves='3' seed='5'/>` +
+  `<feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0 0.74  0 0 0 0.32 0'/></filter>` +
+  `<rect width='240' height='240' filter='url(%23n)'/></svg>")`;
 
 // Größeres, weicheres Paper-Pattern für Page-Backgrounds.
+// Lange Wellen (0.35) + 3 Oktaven → tiefes Aquarell-Wash-Gefühl.
 export const PAPER_BG =
-  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>` +
-  `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2'/>` +
-  `<feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.78  0 0 0 0 0.65  0 0 0 0.18 0'/></filter>` +
-  `<rect width='400' height='400' filter='url(%23n)'/></svg>")`;
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='480' height='480'>` +
+  `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.35' numOctaves='3' seed='9'/>` +
+  `<feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.78  0 0 0 0 0.65  0 0 0 0.28 0'/></filter>` +
+  `<rect width='480' height='480' filter='url(%23n)'/></svg>")`;
+
+// Canvas-Cross-Hatch-Pattern — feines Leinwand-Geflecht für „rauer Papier"-
+// Look auf großen Hintergrundflächen. Kombiniert mit PAPER_BG ergibt das
+// eine zweischichtige Textur (Wash + Hatch) wie auf rauem Aquarellpapier.
+export const CANVAS_HATCH_BG =
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>` +
+  `<path d='M0 0L8 8M8 0L0 8' stroke='%232D2A26' stroke-opacity='0.06' stroke-width='0.4'/></svg>")`;
 
 // ─────────────────────────────────────────────────────────────────────────
 // Team-Farben — exakte Hoodie-Hex aus den gemalten Aquarell-Avataren.

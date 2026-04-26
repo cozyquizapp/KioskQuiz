@@ -5,7 +5,11 @@
 import { useEffect, useState } from 'react';
 
 const LINK_ID = 'qq-gouache-fonts';
-const HREF = 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap';
+// Caveat (cursive Heading)  — Marke „CozyQuiz", Team-Namen, persönliche Note
+// Patrick Hand SC (Block-Caps) — Slogan-Headings im Bilderbuch-Stil
+//                                 (z.B. „BALD GEHT'S LOS", „RICHTIG!")
+// Lora (serif)             — Body
+const HREF = 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand+SC&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap';
 
 export function usePaintFonts(): boolean {
   const [ready, setReady] = useState(() => !!document.getElementById(LINK_ID));

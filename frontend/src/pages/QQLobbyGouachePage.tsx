@@ -24,9 +24,9 @@ import {
   QQStateUpdate, QQTeam, qqGetAvatar,
 } from '../../../shared/quarterQuizTypes';
 import {
-  PALETTE, F_HAND, F_BODY, softTeamColor,
+  PALETTE, F_HAND, F_HAND_CAPS, F_BODY, softTeamColor,
   GouacheFilters, PaintedKeyframes, usePaintFonts,
-  PaperCard,
+  PaperCard, PaintedMist, BlockCapsHeading,
   PaintedAvatar,
   PaintedBalloon, PaintedMoon, PaintedHills, PaintedStars, PaintedBird,
 } from '../gouache';
@@ -77,7 +77,6 @@ export default function QQLobbyGouachePage() {
   return (
     <div style={{
       height: '100vh', width: '100vw',
-      background: `linear-gradient(180deg, ${PALETTE.inkDeep} 0%, ${PALETTE.inkSoft} 55%, ${PALETTE.sage} 100%)`,
       position: 'relative', overflow: 'hidden',
       fontFamily: F_BODY, color: PALETTE.cream,
       display: 'flex', flexDirection: 'column',
@@ -86,6 +85,17 @@ export default function QQLobbyGouachePage() {
     }}>
       <GouacheFilters />
       <PaintedKeyframes />
+
+      {/* Atmosphärischer Wash-Hintergrund (mehrlagige radiale Wäschen + Papier-Korn) */}
+      <PaintedMist
+        baseColor={PALETTE.inkDeep}
+        washes={[
+          { color: PALETTE.dusk,         cx: '50%', cy: '85%', r: '60%', opacity: 0.7 },
+          { color: PALETTE.lavenderDusk, cx: '20%', cy: '55%', r: '45%', opacity: 0.35 },
+          { color: PALETTE.mist,         cx: '78%', cy: '70%', r: '40%', opacity: 0.30 },
+          { color: PALETTE.peach,        cx: '60%', cy: '12%', r: '35%', opacity: 0.18 },
+        ]}
+      />
 
       {/* Atmosphäre — gemalter Nachthimmel */}
       <PaintedStars count={32} />
@@ -136,7 +146,7 @@ export default function QQLobbyGouachePage() {
 // Lobby Main Grid — exakt das Original-Layout, nur Gouache-Components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: boolean; roomCode: string }) {
+export function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: boolean; roomCode: string }) {
   const joinUrl = `${window.location.origin}/team`;
   const teams = state.teams;
   const teamCount = teams.length;
@@ -178,16 +188,16 @@ function LobbyMainGrid({ state, de, roomCode }: { state: QQStateUpdate; de: bool
         display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vh, 16px)',
         alignItems: 'stretch', justifyContent: 'center',
       }}>
-        {/* Header über dem Grid */}
-        <div style={{
-          fontFamily: F_BODY,
-          fontSize: 'min(2vh, 1.5vw)', fontWeight: 700,
-          color: `${PALETTE.cream}cc`,
-          letterSpacing: '0.18em', textTransform: 'uppercase',
-          textAlign: 'center',
-          flexShrink: 0,
-        }}>
-          {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
+        {/* Header über dem Grid (Block-Caps-Hand-Schrift) */}
+        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+          <span style={{
+            fontFamily: F_HAND_CAPS,
+            fontSize: 'min(3vh, 2.2vw)', fontWeight: 400,
+            color: `${PALETTE.cream}dd`,
+            letterSpacing: '0.06em',
+          }}>
+            {de ? `${teamCount} TEAMS AM TISCH` : `${teamCount} TEAMS AT THE TABLE`}
+          </span>
         </div>
 
         {teamCount === 0 ? (
@@ -237,13 +247,10 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
       </div>
 
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontFamily: F_HAND,
-          fontSize: 'min(3.4vh, 2.8vw)', color: PALETTE.cream, fontWeight: 700,
-          lineHeight: 1, marginBottom: 6,
-          textShadow: '0 4px 16px rgba(0,0,0,0.5)',
-        }}>
-          {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
+        <div style={{ marginBottom: 6, lineHeight: 1, textShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+          <BlockCapsHeading size="md" color={PALETTE.cream}>
+            {de ? 'Scannen & mitspielen' : 'Scan & join'}
+          </BlockCapsHeading>
         </div>
         <div style={{
           fontSize: 'min(1.6vh, 1.3vw)',
@@ -418,14 +425,14 @@ function TeamCard({
 function EmptyTeamsPanel({ de }: { de: boolean }) {
   return (
     <div style={{
-      fontFamily: F_HAND,
-      color: PALETTE.cream, fontSize: 'min(3.4vh, 2.6vw)', fontWeight: 700,
       animation: 'gTwinkle 2.5s ease-in-out infinite', textAlign: 'center',
       padding: 'clamp(20px, 4vh, 56px) 24px',
       border: `2px dashed ${PALETTE.cream}44`, borderRadius: 22,
       background: `${PALETTE.inkDeep}33`,
     }}>
-      {de ? 'Warte auf Teams …' : 'Waiting for teams …'}
+      <BlockCapsHeading size="md" color={PALETTE.cream}>
+        {de ? 'Warte auf Teams' : 'Waiting for teams'}
+      </BlockCapsHeading>
     </div>
   );
 }
@@ -435,34 +442,31 @@ function StatusLine({ de, teamCount, connectedCount }: { de: boolean; teamCount:
   let color: string;
   let pulsing = false;
   if (teamCount === 0) {
-    label = de ? '📱 Scannt den Code um beizutreten' : '📱 Scan to join';
-    color = PALETTE.ochre;
+    label = de ? 'Scannt den Code um beizutreten' : 'Scan the code to join';
+    color = PALETTE.amberGlow;
   } else if (teamCount < 2) {
-    label = de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!';
-    color = PALETTE.ochre;
+    label = de ? 'Noch ein Team fehlt' : 'One more team needed';
+    color = PALETTE.amberGlow;
   } else if (teamCount >= 5) {
-    label = de ? `🔥 ${teamCount} Teams sind dabei!` : `🔥 ${teamCount} teams are in!`;
+    label = de ? `${teamCount} Teams sind dabei` : `${teamCount} teams are in`;
     color = PALETTE.sageLight;
     pulsing = true;
   } else if (connectedCount === teamCount) {
-    label = de ? '🚀 Gleich geht’s los!' : '🚀 Let’s go!';
+    label = de ? 'Gleich geht’s los' : 'Almost ready';
     color = PALETTE.sageLight;
     pulsing = true;
   } else {
-    label = de ? `${connectedCount}/${teamCount} verbunden` : `${connectedCount}/${teamCount} connected`;
-    color = PALETTE.ochre;
+    label = de ? `${connectedCount} von ${teamCount} verbunden` : `${connectedCount} of ${teamCount} connected`;
+    color = PALETTE.amberGlow;
   }
   return (
     <div style={{
-      fontFamily: F_HAND,
-      fontSize: 'min(3vh, 2.4vw)', fontWeight: 700, textAlign: 'center',
-      color,
-      letterSpacing: '0.02em',
-      textShadow: '0 2px 10px rgba(0,0,0,0.45)',
+      textAlign: 'center', flexShrink: 0,
       animation: pulsing ? 'gTwinkle 2.5s ease-in-out infinite' : undefined,
-      flexShrink: 0,
     }}>
-      {label}
+      <BlockCapsHeading size="md" color={color} glow={pulsing}>
+        {label}
+      </BlockCapsHeading>
     </div>
   );
 }

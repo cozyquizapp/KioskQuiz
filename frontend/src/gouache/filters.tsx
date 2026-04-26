@@ -42,6 +42,30 @@ export function GouacheFilters() {
           <feGaussianBlur stdDeviation="0.6" />
         </filter>
 
+        {/* Warm-Glow — radialer Halo wie eine Lampe/ein leuchtendes Subjekt
+            in Bilderbuch-Illustrationen. Wird auf Hero-Elemente (Avatar bei
+            Reveal, leuchtende Cards, Score-Badges) gelegt. */}
+        <filter id="warmGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="14" result="blur" />
+          <feColorMatrix in="blur" values="
+            1.6 0   0   0 0
+            0   1.2 0   0 0
+            0   0   0.6 0 0
+            0   0   0   1 0
+          " result="warm" />
+          <feMerge>
+            <feMergeNode in="warm" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Rougher Watercolor-Edge — stärkerer Wobble für „handgemalt"-Look
+            auf Hero-Cards und Slogan-Headings. */}
+        <filter id="watercolorEdgeRough" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="13" />
+          <feDisplacementMap in="SourceGraphic" scale="6" />
+        </filter>
+
         {/* Avatar-Sepia: dämpft Saturation, fügt warmen Touch hinzu. */}
         <filter id="avatarGouache">
           <feColorMatrix type="matrix" values="

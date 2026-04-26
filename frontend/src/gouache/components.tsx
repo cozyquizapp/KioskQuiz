@@ -5,7 +5,7 @@
 // die filter-Properties nicht.
 
 import { CSSProperties } from 'react';
-import { PALETTE, F_HAND, F_BODY, SHADOWS, RADIUS, PAPER_GRAIN_BG } from './tokens';
+import { PALETTE, F_HAND, F_HAND_CAPS, F_BODY, SHADOWS, RADIUS, PAPER_GRAIN_BG, CANVAS_HATCH_BG } from './tokens';
 import { useGouacheAvatar } from './useGouacheAvatar';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -29,12 +29,21 @@ export function PaperCard({
       boxShadow: SHADOWS.card,
       ...style,
     }}>
-      {/* Grain-Overlay */}
+      {/* Grain-Overlay (gröbere Textur, sichtbarer) */}
       <div style={{
         position: 'absolute', inset: 0,
         borderRadius: RADIUS.card,
         backgroundImage: PAPER_GRAIN_BG,
         opacity: 0.55,
+        mixBlendMode: 'multiply',
+        pointerEvents: 'none',
+      }} />
+      {/* Canvas-Hatch (subtiles Leinwand-Geflecht) */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        borderRadius: RADIUS.card,
+        backgroundImage: CANVAS_HATCH_BG,
+        opacity: 0.7,
         mixBlendMode: 'multiply',
         pointerEvents: 'none',
       }} />
@@ -48,6 +57,95 @@ export function PaperCard({
         }} />
       )}
       <div style={{ position: 'relative' }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// BlockCapsHeading — Slogan-Headings im Bilderbuch-Stil (Patrick Hand SC)
+// für kurze, kraftvolle Botschaften wie „BALD GEHT'S LOS", „RICHTIG!".
+// Nicht für Marken-Wortmarken (CozyQuiz) oder Eigennamen — die bleiben Caveat.
+// ─────────────────────────────────────────────────────────────────────────
+export function BlockCapsHeading({
+  children, color = PALETTE.inkDeep, size = 'md', glow = false, style,
+}: {
+  children: React.ReactNode;
+  color?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  glow?: boolean;
+  style?: CSSProperties;
+}) {
+  const fs = {
+    sm: 'min(3.5vh, 2.4vw)',
+    md: 'min(5vh, 3.6vw)',
+    lg: 'min(7vh, 5vw)',
+    xl: 'min(10vh, 7vw)',
+  }[size];
+  return (
+    <span style={{
+      fontFamily: F_HAND_CAPS,
+      fontSize: fs,
+      color,
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+      lineHeight: 1.05,
+      fontWeight: 400,
+      textShadow: glow ? `0 0 24px ${color}66, 0 0 48px ${color}33` : undefined,
+      filter: 'url(#watercolorEdge)',
+      display: 'inline-block',
+      ...style,
+    }}>
+      {children}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PaintedMist — atmosphärischer mehrlagiger Wash-Hintergrund.
+// Drei radial-Gradient-Layer übereinander mit unterschiedlichen Farben +
+// Positionen ergeben das „nebelige Aquarell"-Gefühl der Bilderbuch-Reference.
+//
+// Standardmäßig: Pfirsich-Sandhimmel oben → Mitternachts-Türkis unten,
+// mit Lavendel-Schatten als Tiefe. Override via `washes` für andere Stimmungen.
+// ─────────────────────────────────────────────────────────────────────────
+export type MistWash = { color: string; cx: string; cy: string; r: string; opacity?: number };
+
+export function PaintedMist({
+  washes,
+  baseColor = PALETTE.dusk,
+  style,
+}: {
+  washes?: MistWash[];
+  baseColor?: string;
+  style?: CSSProperties;
+}) {
+  const defaultWashes: MistWash[] = [
+    { color: PALETTE.peach,        cx: '70%', cy: '20%', r: '55%', opacity: 0.55 },
+    { color: PALETTE.lavenderDusk, cx: '15%', cy: '85%', r: '50%', opacity: 0.45 },
+    { color: PALETTE.mist,         cx: '50%', cy: '60%', r: '70%', opacity: 0.35 },
+    { color: PALETTE.amberGlow,    cx: '85%', cy: '75%', r: '30%', opacity: 0.25 },
+  ];
+  const w = washes ?? defaultWashes;
+  const layers = w
+    .map(x => {
+      const alpha = Math.round((x.opacity ?? 0.5) * 255).toString(16).padStart(2, '0');
+      return `radial-gradient(circle at ${x.cx} ${x.cy}, ${x.color}${alpha} 0%, transparent ${x.r})`;
+    })
+    .join(', ');
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', inset: 0, zIndex: 0,
+      background: `${layers}, ${baseColor}`,
+      ...style,
+    }}>
+      {/* Papier-Korn obendrauf für die typische „rauhe Aquarell"-Oberfläche */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: PAPER_GRAIN_BG,
+        opacity: 0.45,
+        mixBlendMode: 'multiply',
+        pointerEvents: 'none',
+      }} />
     </div>
   );
 }

@@ -21,7 +21,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
-  QQStateUpdate, QQTeam, qqGetAvatar, qqAvatarLabel,
+  QQStateUpdate, QQTeam, qqGetAvatar,
 } from '../../../shared/quarterQuizTypes';
 import {
   PALETTE, F_HAND, F_BODY, softTeamColor,
@@ -293,44 +293,49 @@ function QrColumn({ joinUrl, de, roomCode }: { joinUrl: string; de: boolean; roo
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Teams-Grid — 2-spaltig wachsend (User-Override), Cards hochkant
-//   1 Team   = 1 Card mittig (1 Spalte)
-//   2 Teams  = 2 Spalten × 1 Reihe
-//   3-4      = 2 Spalten × 2 Reihen
-//   5-6      = 2 Spalten × 3 Reihen
-//   7-8      = 2 Spalten × 4 Reihen
+// Teams-Grid — Spaltenzahl dynamisch nach Teamcount für quadratische Cards
+//   1     → 1 Spalte (max-width)
+//   2     → 2 Spalten × 1 Reihe
+//   3     → 3 Spalten × 1 Reihe
+//   4     → 4 Spalten × 1 Reihe
+//   5-6   → 3 Spalten × 2 Reihen
+//   7-8   → 4 Spalten × 2 Reihen
+// Cards stehen immer hochkant: Avatar oben, Name + Status drunter.
 // ─────────────────────────────────────────────────────────────────────────────
+
+function colsFor(count: number): number {
+  if (count <= 4) return Math.max(1, count);
+  if (count <= 6) return 3;
+  return 4;
+}
 
 function TeamsGrid({ teams, waveIds }: { teams: QQTeam[]; waveIds: Set<string> }) {
   const teamCount = teams.length;
-  const cols = teamCount === 1 ? 1 : 2;
-  // Ab 5 Teams kompaktere Cards (sonst sprengt es vertikal).
-  const compact = teamCount > 4;
-  // 1 Team mittig — nicht volle Breite, sondern hübsch in der Mitte.
-  const justifyItems = teamCount === 1 ? 'center' : 'stretch';
+  const cols = colsFor(teamCount);
+  const rows = Math.ceil(teamCount / cols);
+  // „compact" = wenn mehr als 1 Reihe; dann müssen Cards vertikal kleiner werden.
+  const compact = rows > 1;
 
-  // Avatar-Größe an Viewport-Höhe gekoppelt: pro Reihe muss eine Card
-  // (Padding + Avatar + Gap + Name + Status) ins verfügbare vertikale
-  // Budget passen. PaintedAvatar erwartet number → wir rechnen hier in JS
-  // damit's auf Beamer/Fernseher/Laptop dynamisch skaliert.
+  // Avatar-Größe an Viewport gekoppelt — sowohl Höhe als auch Breite cappen,
+  // sodass das Layout auf Beamer/Fernseher/Laptop dynamisch atmet.
   const { w: vw, h: vh } = useViewportSize();
   const avatarSize = useMemo(() => {
-    if (compact) {
-      // 5-8 Teams = 4 Reihen → Avatar darf max ~10% vh sein
-      return Math.round(Math.max(56, Math.min(vh * 0.10, vw * 0.07, 130)));
-    }
-    // 1-4 Teams = 1-2 Reihen → mehr Platz pro Card
-    return Math.round(Math.max(90, Math.min(vh * 0.18, vw * 0.12, 220)));
-  }, [vw, vh, compact]);
+    // pro-Spalte verfügbare Breite × ~50% (Card-Padding + Schriftraum)
+    const widthBudget = (vw * 0.55) / cols * 0.55;
+    // pro-Reihe verfügbare Höhe × ~50% (Padding + Name + Status)
+    const heightBudget = (vh * 0.7) / rows * 0.5;
+    const px = Math.min(widthBudget, heightBudget);
+    return Math.round(Math.max(56, Math.min(px, 220)));
+  }, [vw, vh, cols, rows]);
 
   return (
     <div style={{
       display: 'grid',
       gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      gap: compact ? 'clamp(8px, 1.2vh, 14px)' : 'clamp(10px, 1.6vh, 20px)',
-      justifyItems,
-      // Bei 1 Team Card-Breite begrenzen statt volle Spalte
-      ...(teamCount === 1 ? { width: 'min(420px, 100%)', justifySelf: 'center', margin: '0 auto' } : null),
+      gap: compact ? 'clamp(8px, 1.4vh, 16px)' : 'clamp(12px, 1.8vh, 22px)',
+      justifyItems: 'stretch',
+      // Bei 1 Team Card auf hübsche max-width clampen
+      ...(teamCount === 1 ? { width: 'min(360px, 100%)', justifySelf: 'center', margin: '0 auto' } : null),
       minHeight: 0,
     }}>
       {teams.map((t, i) => (
@@ -392,16 +397,14 @@ function TeamCard({
         </div>
         <div style={{
           fontFamily: F_BODY,
-          fontSize: compact ? 'min(1.5vh, 1.2vw)' : 'min(1.8vh, 1.4vw)',
+          fontSize: compact ? 'min(1.7vh, 1.3vw)' : 'min(2vh, 1.5vw)',
           fontWeight: 700,
           color: team.connected ? ringColor : `${PALETTE.inkSoft}aa`,
           marginTop: 4,
           letterSpacing: '0.04em',
           fontStyle: team.connected ? 'normal' : 'italic',
         }}>
-          {team.connected
-            ? `● bereit · ${qqAvatarLabel(team.avatarId, 'de')}`
-            : `○ offline · ${qqAvatarLabel(team.avatarId, 'de')}`}
+          {team.connected ? '● bereit' : '○ offline'}
         </div>
       </div>
     </div>

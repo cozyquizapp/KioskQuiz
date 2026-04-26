@@ -125,6 +125,57 @@ export function hoodieColor(avatarId: string, fallback = PALETTE.sage): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Kategorie-Farben — direkt vom Cozy-Quiz übernommen, damit beide Welten
+// dieselbe visuelle Identität pro Kategorie haben.
+//
+// CAT_ACCENT     — leuchtende Akzent-Farbe (Pills, Borders, Glows)
+// CAT_BADGE_BG   — Gradient-Background für Kategorie-Badges (Frage-Header)
+// CAT_PASTEL     — gedämpfte Aquarell-Wash-Variante (Backdrops, Cards-BG)
+// CAT_DEEP       — tiefere Aquarell-Variante (Berg-Schatten, Tiefe in Sky)
+//
+// Mapping: SCHAETZCHEN=amber, MUCHO=blue, BUNTE_TUETE=red, ZEHN_VON_ZEHN=green,
+// CHEESE=purple. Mapping ist FIX und identisch zum Cozy-Quiz.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type QQCategoryKey =
+  | 'SCHAETZCHEN' | 'MUCHO' | 'BUNTE_TUETE' | 'ZEHN_VON_ZEHN' | 'CHEESE';
+
+export const CAT_ACCENT: Record<QQCategoryKey, string> = {
+  SCHAETZCHEN:   '#EAB308',  // Amber
+  MUCHO:         '#60A5FA',  // Blue
+  BUNTE_TUETE:   '#F87171',  // Red
+  ZEHN_VON_ZEHN: '#34D399',  // Green
+  CHEESE:        '#A78BFA',  // Purple
+};
+
+export const CAT_BADGE_BG: Record<QQCategoryKey, string> = {
+  SCHAETZCHEN:   'linear-gradient(135deg, #A16207, #EAB308)',
+  MUCHO:         'linear-gradient(135deg, #1E3A8A, #2563EB)',
+  BUNTE_TUETE:   'linear-gradient(135deg, #991B1B, #DC2626)',
+  ZEHN_VON_ZEHN: 'linear-gradient(135deg, #065F46, #059669)',
+  CHEESE:        'linear-gradient(135deg, #4C1D95, #7C3AED)',
+};
+
+// Pastell-Wash-Töne für Aquarell-Backdrops — gedämpfte Bilderbuch-Versionen
+// der Cozy-Akzent-Farben, in denen wir Kategorie-Stimmungen malen.
+export const CAT_PASTEL: Record<QQCategoryKey, string> = {
+  SCHAETZCHEN:   '#D9A05B',  // honig-ocker (Wiesen-Sommer)
+  MUCHO:         '#5B7FA5',  // gedämpftes Stahl-Mittagblau
+  BUNTE_TUETE:   '#C8543F',  // Korallen-Terracotta
+  ZEHN_VON_ZEHN: '#7A9E7E',  // Salbei-Sage
+  CHEESE:        '#8B6B9C',  // Pflaumen-Lavendel
+};
+
+// Tiefere Aquarell-Variante für Schatten/Berg-Silhouetten/Sky-Tiefe
+export const CAT_DEEP: Record<QQCategoryKey, string> = {
+  SCHAETZCHEN:   '#7C5817',  // dunkler Honigschatten
+  MUCHO:         '#1F3A5F',  // Mitternachtsblau (= inkDeep)
+  BUNTE_TUETE:   '#7A2C20',  // tiefe Korallen-Erde
+  ZEHN_VON_ZEHN: '#3F5C42',  // Wald-Sage
+  CHEESE:        '#3F2D55',  // Aubergine
+};
+
+// ─────────────────────────────────────────────────────────────────────────
 // Avatar-URLs
 // ─────────────────────────────────────────────────────────────────────────
 export const GOUACHE_AVATAR_PATH = '/avatars/gouache';

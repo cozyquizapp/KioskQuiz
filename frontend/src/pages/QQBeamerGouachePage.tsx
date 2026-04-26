@@ -140,11 +140,265 @@ function PhaseRouter({
     return <PhasePlaceholderCard state={state} de={de} />;
   }
 
-  if (phase === 'PLACEMENT')    return <PlacementView state={state} de={de} />;
-  if (phase === 'TEAMS_REVEAL') return <TeamsRevealView state={state} de={de} />;
+  if (phase === 'PLACEMENT')       return <PlacementView state={state} de={de} />;
+  if (phase === 'TEAMS_REVEAL')    return <TeamsRevealView state={state} de={de} />;
+  if (phase === 'COMEBACK_CHOICE') return <ComebackView state={state} de={de} />;
 
-  // COMEBACK_CHOICE folgt in eigenem Item.
   return <PhasePlaceholderCard state={state} de={de} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// COMEBACK_CHOICE — letztes Team bekommt eine zweite Chance.
+// Modi:
+//  - comebackHL gesetzt → Higher/Lower Mini-Game (intro/question/reveal/done/steal)
+//  - sonst Intro-Slides (comebackIntroStep 0/1/2 mit Aktions-Auswahl)
+// ─────────────────────────────────────────────────────────────────────────
+
+function ComebackView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  if (state.comebackHL) {
+    return <HigherLowerView state={state} de={de} hl={state.comebackHL} />;
+  }
+  return <ComebackIntroView state={state} de={de} />;
+}
+
+function ComebackIntroView({ state, de }: { state: QQStateUpdate; de: boolean }) {
+  const step = state.comebackIntroStep ?? 0;
+  const cbTeam = state.comebackTeamId ? state.teams.find(t => t.id === state.comebackTeamId) : null;
+  const color = cbTeam ? softTeamColor(cbTeam.avatarId) : PALETTE.terracotta;
+  const titles: Array<{ de: string; en: string; sub?: { de: string; en: string } }> = [
+    { de: 'Comeback-Chance', en: 'Comeback chance', sub: { de: 'Auch von hinten kann man gewinnen.', en: 'You can come back from behind.' } },
+    { de: 'Diese Runde geht an euch', en: 'This round is yours' },
+    { de: 'Wählt eure Aktion', en: 'Choose your action' },
+  ];
+  const t = titles[Math.min(step, titles.length - 1)];
+  return (
+    <CenterArea>
+      <div style={{ textAlign: 'center', animation: 'gFadeIn 0.5s ease-out both' }}>
+        <BlockCapsHeading size="lg" color={color} glow>
+          {de ? t.de : t.en}
+        </BlockCapsHeading>
+        {cbTeam && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 18, marginTop: 28,
+            padding: '20px 32px', borderRadius: 28,
+            background: `${PALETTE.cream}f0`,
+            border: `4px solid ${color}`,
+            boxShadow: `0 18px 44px ${color}55`,
+          }}>
+            <div style={{ filter: 'url(#warmGlow)' }}>
+              <PaintedAvatar slug={qqGetAvatar(cbTeam.avatarId).slug} size={120}
+                color={color} withGrain={false} />
+            </div>
+            <div style={{
+              fontFamily: F_HAND, fontSize: 'min(7vh, 5vw)',
+              color, fontWeight: 700, lineHeight: 1,
+              textShadow: `0 4px 14px ${color}44`,
+            }}>
+              {cbTeam.name}
+            </div>
+          </div>
+        )}
+        {t.sub && (
+          <div style={{
+            fontFamily: F_BODY, fontSize: 'min(2.4vh, 1.8vw)',
+            color: `${PALETTE.cream}cc`, fontStyle: 'italic',
+            marginTop: 26, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6,
+          }}>
+            {de ? t.sub.de : t.sub.en}
+          </div>
+        )}
+      </div>
+    </CenterArea>
+  );
+}
+
+function HigherLowerView({ state, de, hl }: {
+  state: QQStateUpdate; de: boolean;
+  hl: NonNullable<QQStateUpdate['comebackHL']>;
+}) {
+  const players = hl.teamIds.map(id => state.teams.find(t => t.id === id)).filter((t): t is QQTeam => !!t);
+  const phase = hl.phase;
+  const pair = hl.currentPair;
+  return (
+    <>
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+        flexShrink: 0, position: 'relative', zIndex: 5, padding: '0 12px',
+      }}>
+        <BlockCapsHeading size="md" color={PALETTE.amberGlow} glow>
+          {de ? 'Höher oder Tiefer' : 'Higher or Lower'}
+        </BlockCapsHeading>
+        <span style={{
+          padding: '4px 12px', borderRadius: 999,
+          background: `${PALETTE.cream}1f`,
+          border: `1.5px solid ${PALETTE.cream}55`,
+          fontFamily: F_HAND_CAPS, fontSize: 'min(2.2vh, 1.6vw)',
+          color: PALETTE.cream, letterSpacing: '0.08em',
+        }}>
+          {de ? `Runde ${hl.round + 1} von ${hl.rounds}` : `Round ${hl.round + 1} of ${hl.rounds}`}
+        </span>
+        <HLTimerPill timerEndsAt={hl.timerEndsAt} />
+      </header>
+
+      <CenterArea>
+        <div style={{ width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vh, 26px)' }}>
+          {/* Player Pills */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+            {players.map(p => {
+              const ans = hl.answers[p.id];
+              const correct = hl.correctThisRound.includes(p.id);
+              const wins = hl.winnings[p.id] ?? 0;
+              const color = softTeamColor(p.avatarId);
+              return (
+                <div key={p.id} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 10,
+                  padding: '8px 16px', borderRadius: 999,
+                  background: `${color}26`, border: `2px solid ${color}`,
+                  boxShadow: phase === 'reveal' && correct ? `0 0 24px ${PALETTE.sage}aa` : undefined,
+                }}>
+                  <PaintedAvatar slug={qqGetAvatar(p.avatarId).slug} size={44} color={color} withGrain={false} />
+                  <div>
+                    <div style={{
+                      fontFamily: F_HAND, fontSize: 'min(2.6vh, 2vw)',
+                      color: PALETTE.cream, fontWeight: 700, lineHeight: 1,
+                    }}>
+                      {p.name}
+                    </div>
+                    <div style={{
+                      fontFamily: F_BODY, fontSize: 11, color,
+                      letterSpacing: '0.06em', marginTop: 2,
+                    }}>
+                      {ans
+                        ? (phase === 'reveal'
+                            ? (correct ? (de ? '✓ richtig' : '✓ correct') : (de ? '✗ daneben' : '✗ wrong'))
+                            : (de ? 'getippt' : 'tipped'))
+                        : (de ? 'wartet …' : 'waiting …')}
+                      {wins > 0 && ` · ${wins} ⭐`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pair */}
+          {pair && (
+            <PaperCard washColor={PALETTE.cream} padding="clamp(20px, 3vh, 36px)" style={{ textAlign: 'center' }}>
+              <div style={{
+                fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.22em',
+                color: PALETTE.terracotta, fontWeight: 700, textTransform: 'uppercase',
+              }}>
+                {pair.category} · {pair.unit}
+              </div>
+              {pair.customQuestion ? (
+                <div style={{
+                  fontFamily: F_HAND, fontSize: 'min(5vh, 4vw)',
+                  color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1.05, marginTop: 12,
+                }}>
+                  {pair.customQuestion}
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+                  alignItems: 'center', gap: 18, marginTop: 18,
+                }}>
+                  <HLAnchor label={pair.anchorLabel} value={pair.anchorValue} unit={pair.unit} revealed />
+                  <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+                    vs.
+                  </BlockCapsHeading>
+                  <HLAnchor label={pair.subjectLabel} value={pair.subjectValue}
+                    unit={pair.unit} revealed={phase === 'reveal'} />
+                </div>
+              )}
+              {phase === 'question' && (
+                <div style={{
+                  marginTop: 22, display: 'flex', justifyContent: 'center', gap: 18,
+                }}>
+                  <BlockCapsHeading size="md" color={PALETTE.sage}>
+                    {de ? 'Höher?' : 'Higher?'}
+                  </BlockCapsHeading>
+                  <BlockCapsHeading size="md" color={PALETTE.lavenderDusk}>
+                    {de ? 'Tiefer?' : 'Lower?'}
+                  </BlockCapsHeading>
+                </div>
+              )}
+            </PaperCard>
+          )}
+
+          {/* Done / Steal phase hint */}
+          {(phase === 'done' || phase === 'steal') && (
+            <div style={{ textAlign: 'center' }}>
+              <BlockCapsHeading size="md" color={PALETTE.amberGlow} glow>
+                {phase === 'steal'
+                  ? (de ? 'Felder klauen' : 'Steal fields')
+                  : (de ? 'Mini-Game vorbei' : 'Mini-game done')}
+              </BlockCapsHeading>
+            </div>
+          )}
+        </div>
+      </CenterArea>
+    </>
+  );
+}
+
+function HLAnchor({ label, value, unit, revealed }: {
+  label: string; value: number; unit: string; revealed: boolean;
+}) {
+  return (
+    <div style={{
+      padding: '14px 20px', borderRadius: 16,
+      background: `${PALETTE.cream}d0`,
+      border: `2.5px solid ${PALETTE.inkSoft}33`,
+      textAlign: 'center',
+    }}>
+      <div style={{
+        fontFamily: F_HAND, fontSize: 'min(3.6vh, 2.8vw)',
+        color: PALETTE.inkDeep, fontWeight: 700, lineHeight: 1,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontFamily: F_HAND, fontSize: 'min(6vh, 4.4vw)',
+        color: revealed ? PALETTE.terracotta : PALETTE.inkSoft,
+        fontWeight: 700, lineHeight: 1, marginTop: 6,
+      }}>
+        {revealed ? value.toLocaleString('de-DE') : '???'}
+      </div>
+      <div style={{
+        fontFamily: F_BODY, fontSize: 11, color: PALETTE.inkSoft,
+        letterSpacing: '0.08em', marginTop: 4,
+      }}>
+        {unit}
+      </div>
+    </div>
+  );
+}
+
+function HLTimerPill({ timerEndsAt }: { timerEndsAt: number | null }) {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!timerEndsAt) { setSecs(null); return; }
+    const tick = () => setSecs(Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [timerEndsAt]);
+  if (secs == null) return null;
+  const urgent = secs <= 3;
+  const color = urgent ? PALETTE.terracotta : PALETTE.cream;
+  return (
+    <div style={{
+      padding: '4px 14px', borderRadius: 999,
+      background: urgent ? `${PALETTE.terracotta}33` : `${PALETTE.cream}1f`,
+      border: `1.5px solid ${color}88`,
+      animation: urgent ? 'gTwinkle 0.6s ease-in-out infinite' : undefined,
+      fontFamily: F_HAND, fontSize: 'min(2.6vh, 2vw)',
+      fontWeight: 700, color,
+      fontVariantNumeric: 'tabular-nums', minWidth: 48, textAlign: 'center',
+    }}>
+      {secs}s
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

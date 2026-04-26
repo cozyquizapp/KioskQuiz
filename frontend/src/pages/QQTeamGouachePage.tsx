@@ -389,6 +389,8 @@ function GameRouter({
   if (phase === 'GAME_OVER')      return <GameOverCard state={state} myTeam={myTeam} />;
   if (phase === 'QUESTION_ACTIVE') return <ActiveQuestionCard state={state} myTeam={myTeam} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />;
   if (phase === 'QUESTION_REVEAL') return <RevealCard state={state} myTeam={myTeam} myTeamId={myTeamId} />;
+  if (phase === 'PLACEMENT')       return <PlacementInteractionCard state={state} myTeam={myTeam} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />;
+  if (phase === 'COMEBACK_CHOICE') return <ComebackInteractionCard state={state} myTeam={myTeam} myTeamId={myTeamId} emit={emit} roomCode={roomCode} />;
   return <WaitingPhaseCard state={state} myTeam={myTeam} />;
 }
 
@@ -1352,6 +1354,514 @@ function GameOverCard({ state, myTeam }: { state: QQStateUpdate; myTeam: QQTeam 
       </div>
     </PaperCard>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PLACEMENT Interaction — wenn pendingFor === me, tap-bares Mini-Grid
+// + Action-Wahl. Sonst: read-only Grid mit "X wählt gerade …"-Header.
+// ─────────────────────────────────────────────────────────────────────────
+
+type FreeAction = 'place' | 'steal' | 'sandLock' | 'shield' | 'stapel';
+
+function PlacementInteractionCard({
+  state, myTeam, myTeamId, emit, roomCode,
+}: {
+  state: QQStateUpdate; myTeam: QQTeam; myTeamId: string; emit: any; roomCode: string;
+}) {
+  const myColor = softTeamColor(myTeam.avatarId);
+  const isMyTurn = state.pendingFor === myTeamId;
+  const action = state.pendingAction;
+  const pendingTeam = state.pendingFor ? state.teams.find(t => t.id === state.pendingFor) : null;
+  const [freeMode, setFreeMode] = useState<FreeAction | null>(null);
+
+  // Reset freeMode bei pending-Wechsel
+  useEffect(() => { if (!isMyTurn) setFreeMode(null); }, [isMyTurn, action]);
+
+  if (!isMyTurn) {
+    return (
+      <PaperCard washColor={PALETTE.cream} padding={20}>
+        <div style={{ textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>
+            Platzierung
+          </BlockCapsHeading>
+          <div style={{
+            fontFamily: F_HAND, fontSize: 28, color: PALETTE.inkDeep,
+            fontWeight: 700, marginTop: 6, lineHeight: 1.05,
+          }}>
+            {pendingTeam ? `${pendingTeam.name} ist dran` : 'Warte auf das nächste Team'}
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <MiniGrid state={state} myTeamId={myTeamId} onPick={null} mode="readonly" />
+        </div>
+      </PaperCard>
+    );
+  }
+
+  // FREE-Action benötigt erst Wahl, sonst direkt Grid-Tap
+  if (action === 'FREE' && !freeMode) {
+    return (
+      <FreeActionPicker state={state} myColor={myColor} onPick={setFreeMode} />
+    );
+  }
+
+  const effectiveAction: FreeAction | null = (() => {
+    if (action === 'PLACE_1' || action === 'PLACE_2') return 'place';
+    if (action === 'STEAL_1') return 'steal';
+    if (action === 'SANDUHR_1') return 'sandLock';
+    if (action === 'SHIELD_1') return 'shield';
+    if (action === 'STAPEL_1') return 'stapel';
+    if (action === 'FREE') return freeMode;
+    return null;
+  })();
+
+  if (action === 'SWAP_1') {
+    return (
+      <PaperCard washColor={PALETTE.cream} padding={20}>
+        <div style={{ textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>Tauschen</BlockCapsHeading>
+          <div style={{ fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft, marginTop: 12, fontStyle: 'italic' }}>
+            Diese Aktion (zwei Felder tauschen) läuft im Aquarell-Test noch nicht.
+            Öffne kurz <a href="/team" style={{ color: PALETTE.terracotta, fontWeight: 700 }}>/team</a> dafür.
+          </div>
+        </div>
+      </PaperCard>
+    );
+  }
+
+  async function handlePick(r: number, c: number) {
+    if (!effectiveAction) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    const evt: Record<FreeAction, string> = {
+      place:    'qq:placeCell',
+      steal:    'qq:stealCell',
+      sandLock: 'qq:sandLockCell',
+      shield:   'qq:shieldCell',
+      stapel:   'qq:stapelCell',
+    };
+    await emit(evt[effectiveAction], { roomCode, teamId: myTeamId, row: r, col: c });
+  }
+
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <div style={{ textAlign: 'center' }}>
+        <BlockCapsHeading size="md" color={myColor} glow>
+          Du bist dran
+        </BlockCapsHeading>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 26, color: PALETTE.inkDeep,
+          fontWeight: 700, marginTop: 6, lineHeight: 1.05,
+        }}>
+          {actionTitle(effectiveAction, action)}
+        </div>
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <MiniGrid
+          state={state}
+          myTeamId={myTeamId}
+          onPick={handlePick}
+          mode={effectiveAction}
+        />
+      </div>
+      {action === 'FREE' && freeMode && (
+        <button onClick={() => setFreeMode(null)} style={{
+          width: '100%', marginTop: 12, padding: '10px 18px', borderRadius: 999,
+          background: 'transparent', color: PALETTE.inkSoft,
+          border: `1.5px solid ${PALETTE.inkSoft}66`, cursor: 'pointer',
+          fontFamily: F_HAND, fontSize: 18, fontWeight: 700,
+        }}>
+          ← andere Aktion wählen
+        </button>
+      )}
+    </PaperCard>
+  );
+}
+
+function actionTitle(eff: FreeAction | null, raw: string | null): string {
+  if (eff === 'place')    return raw === 'PLACE_2' ? '📍 Tippe auf 2 freie Felder' : '📍 Tippe auf ein freies Feld';
+  if (eff === 'steal')    return '⚡ Tippe auf ein gegnerisches Feld';
+  if (eff === 'sandLock') return '⏳ Bann: tippe ein Feld zum Sperren';
+  if (eff === 'shield')   return '🛡 Schütze ein eigenes Feld';
+  if (eff === 'stapel')   return '🪨 Stapeln: tippe ein eigenes Feld';
+  return 'Wähle ein Feld';
+}
+
+function FreeActionPicker({ state, myColor, onPick }: {
+  state: QQStateUpdate; myColor: string; onPick: (a: FreeAction) => void;
+}) {
+  const phase = state.gamePhaseIndex ?? 1;
+  // Phase 3 typisch: place / steal / sanduhr ; Phase 4: steal / swap / stapel
+  const opts: Array<{ key: FreeAction; emoji: string; label: string }> = phase >= 4
+    ? [
+      { key: 'steal',  emoji: '⚡', label: 'Klauen' },
+      { key: 'stapel', emoji: '🪨', label: 'Stapeln' },
+    ]
+    : [
+      { key: 'place',    emoji: '📍', label: 'Setzen' },
+      { key: 'steal',    emoji: '⚡', label: 'Klauen' },
+      { key: 'sandLock', emoji: '⏳', label: 'Bann' },
+    ];
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <BlockCapsHeading size="md" color={myColor} glow>Du bist dran</BlockCapsHeading>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 24, color: PALETTE.inkDeep,
+          fontWeight: 700, marginTop: 6, lineHeight: 1.1,
+        }}>
+          Wähle deine Aktion
+        </div>
+      </div>
+      <div style={{ display: 'grid', gap: 10 }}>
+        {opts.map(o => (
+          <button key={o.key} onClick={() => onPick(o.key)} style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 18px', borderRadius: 14,
+            background: `${myColor}1f`, border: `2.5px solid ${myColor}88`,
+            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+            boxShadow: `0 6px 18px ${myColor}33`,
+          }}>
+            <span style={{ fontSize: 32 }}>{o.emoji}</span>
+            <span style={{
+              fontFamily: F_HAND, fontSize: 24,
+              color: PALETTE.inkDeep, fontWeight: 700,
+            }}>
+              {o.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </PaperCard>
+  );
+}
+
+// MiniGrid — kompakte Cell-Matrix für Phone (tap auf Feld)
+function MiniGrid({
+  state, myTeamId, onPick, mode,
+}: {
+  state: QQStateUpdate;
+  myTeamId: string;
+  onPick: ((r: number, c: number) => void) | null;
+  mode: FreeAction | 'readonly' | null;
+}) {
+  const grid = state.grid;
+  const size = state.gridSize;
+  // Tap-Validation
+  function canTap(cell: { row: number; col: number; ownerId: string | null; stuck?: boolean; shielded?: boolean; sandLockTtl?: number }): boolean {
+    if (!onPick) return false;
+    const isOwn = cell.ownerId === myTeamId;
+    const isEmpty = cell.ownerId == null;
+    const isOpp = !isEmpty && !isOwn;
+    const locked = (cell.sandLockTtl ?? 0) > 0;
+    if (locked) return false;
+    if (mode === 'place')    return isEmpty;
+    if (mode === 'steal')    return isOpp && !cell.shielded && !cell.stuck;
+    if (mode === 'sandLock') return !isOwn && !cell.stuck && !cell.shielded;
+    if (mode === 'shield')   return isOwn && !cell.shielded && !cell.stuck;
+    if (mode === 'stapel')   return isOwn && !cell.stuck;
+    return false;
+  }
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(${size}, 1fr)`,
+      gap: 4, padding: 8, borderRadius: 14,
+      background: `${PALETTE.inkSoft}11`,
+      border: `1.5px dashed ${PALETTE.inkSoft}33`,
+    }}>
+      {grid.flat().map(cell => {
+        const team = cell.ownerId ? state.teams.find(t => t.id === cell.ownerId) : null;
+        const color = team ? softTeamColor(team.avatarId) : null;
+        const tappable = canTap(cell);
+        const isMine = cell.ownerId === myTeamId;
+        return (
+          <button
+            key={`${cell.row}-${cell.col}`}
+            onClick={() => tappable && onPick && onPick(cell.row, cell.col)}
+            disabled={!tappable}
+            style={{
+              aspectRatio: '1 / 1',
+              borderRadius: 8,
+              background: color ? `${color}33` : `${PALETTE.cream}d0`,
+              border: `2px solid ${
+                tappable ? PALETTE.terracotta
+                  : color ? color + 'aa' : PALETTE.inkSoft + '33'
+              }`,
+              cursor: tappable ? 'pointer' : 'default',
+              animation: tappable ? 'gTwinkle 1.4s ease-in-out infinite' : undefined,
+              padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+              fontFamily: F_HAND, fontSize: 12, fontWeight: 700,
+              color: PALETTE.inkDeep,
+            }}
+            title={isMine ? 'mein Feld' : team?.name ?? 'leer'}
+          >
+            {team && (
+              <span style={{
+                width: '70%', height: '70%', borderRadius: '50%',
+                background: `${color}aa`, opacity: cell.stuck ? 1 : 0.85,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: PALETTE.cream, fontSize: 10,
+              }}>
+                {team.name[0]?.toUpperCase()}
+              </span>
+            )}
+            {cell.jokerFormed && (
+              <span style={{
+                position: 'absolute', top: 1, right: 2,
+                color: PALETTE.amberGlow, fontSize: 10, lineHeight: 1,
+                textShadow: `0 0 4px ${PALETTE.amberGlow}`,
+              }}>★</span>
+            )}
+            {cell.stuck && (
+              <span style={{
+                position: 'absolute', bottom: 1, right: 2,
+                fontSize: 8, color: PALETTE.inkDeep, fontWeight: 700,
+              }}>×2</span>
+            )}
+            {(cell.sandLockTtl ?? 0) > 0 && (
+              <span style={{ position: 'absolute', top: 1, left: 2, fontSize: 10 }}>⏳</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// COMEBACK_CHOICE — H/L-Game-Antwort (höher/tiefer) oder Aktion-Wahl
+// ─────────────────────────────────────────────────────────────────────────
+
+function ComebackInteractionCard({
+  state, myTeam, myTeamId, emit, roomCode,
+}: {
+  state: QQStateUpdate; myTeam: QQTeam; myTeamId: string; emit: any; roomCode: string;
+}) {
+  const myColor = softTeamColor(myTeam.avatarId);
+  const isCbTeam = state.comebackTeamId === myTeamId
+    || (state.comebackHL?.teamIds ?? []).includes(myTeamId);
+
+  if (!isCbTeam) {
+    const cbTeam = state.comebackTeamId ? state.teams.find(t => t.id === state.comebackTeamId) : null;
+    return (
+      <PaperCard washColor={PALETTE.cream} padding={20}>
+        <div style={{ textAlign: 'center' }}>
+          <BlockCapsHeading size="md" color={PALETTE.terracotta}>Comeback läuft</BlockCapsHeading>
+          <div style={{
+            fontFamily: F_HAND, fontSize: 24, color: PALETTE.inkDeep,
+            fontWeight: 700, marginTop: 8, lineHeight: 1.05,
+          }}>
+            {cbTeam ? `${cbTeam.name} bekommt eine zweite Chance` : 'Das letzte Team bekommt eine zweite Chance'}
+          </div>
+          <div style={{
+            fontFamily: F_BODY, fontSize: 14, color: PALETTE.inkSoft,
+            marginTop: 12, fontStyle: 'italic',
+          }}>
+            Schau auf den Beamer — gleich geht's weiter.
+          </div>
+        </div>
+      </PaperCard>
+    );
+  }
+
+  // H/L-Game aktiv
+  if (state.comebackHL) {
+    return <HLChoiceCard state={state} myTeamId={myTeamId} emit={emit} roomCode={roomCode} myColor={myColor} hl={state.comebackHL} />;
+  }
+
+  // Sonst: Action-Wahl (PLACE_2 / STEAL_1) — sehr selten in der Trinity-Mechanik
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <div style={{ textAlign: 'center' }}>
+        <BlockCapsHeading size="md" color={myColor} glow>Deine Comeback-Chance</BlockCapsHeading>
+        <div style={{
+          fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep,
+          fontWeight: 700, marginTop: 8, lineHeight: 1.1,
+        }}>
+          Wähle deine Aktion
+        </div>
+      </div>
+      <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+        <button onClick={async () => {
+          if (navigator.vibrate) navigator.vibrate(40);
+          await emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: 'PLACE_2' });
+        }} style={comebackOptStyle(myColor)}>
+          <span style={{ fontSize: 28 }}>📍</span>
+          <span><strong style={{ fontFamily: F_HAND, fontSize: 22 }}>2 Felder setzen</strong>
+            <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft, marginTop: 2 }}>
+              Platziere 2 freie Felder
+            </div>
+          </span>
+        </button>
+        <button onClick={async () => {
+          if (navigator.vibrate) navigator.vibrate(40);
+          await emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: 'STEAL_1' });
+        }} style={comebackOptStyle(myColor)}>
+          <span style={{ fontSize: 28 }}>⚡</span>
+          <span><strong style={{ fontFamily: F_HAND, fontSize: 22 }}>1 Feld klauen</strong>
+            <div style={{ fontFamily: F_BODY, fontSize: 12, color: PALETTE.inkSoft, marginTop: 2 }}>
+              Nimm ein fremdes Feld
+            </div>
+          </span>
+        </button>
+      </div>
+    </PaperCard>
+  );
+}
+
+function comebackOptStyle(color: string): React.CSSProperties {
+  return {
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '14px 18px', borderRadius: 14,
+    background: `${color}1f`, border: `2.5px solid ${color}88`,
+    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+    color: PALETTE.inkDeep,
+    boxShadow: `0 6px 18px ${color}33`,
+  };
+}
+
+function HLChoiceCard({
+  state, myTeamId, emit, roomCode, myColor, hl,
+}: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string;
+  myColor: string;
+  hl: NonNullable<QQStateUpdate['comebackHL']>;
+}) {
+  const pair = hl.currentPair;
+  const myAns = hl.answers[myTeamId];
+  const phase = hl.phase;
+  const correctThis = hl.correctThisRound.includes(myTeamId);
+  const wins = hl.winnings[myTeamId] ?? 0;
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!hl.timerEndsAt) { setSecs(null); return; }
+    const tick = () => setSecs(Math.max(0, Math.ceil((hl.timerEndsAt! - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [hl.timerEndsAt]);
+
+  async function answer(choice: 'higher' | 'lower') {
+    if (myAns) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    await emit('qq:comebackHLAnswer', { roomCode, teamId: myTeamId, choice });
+  }
+
+  return (
+    <PaperCard washColor={PALETTE.cream} padding={20}>
+      <div style={{ textAlign: 'center' }}>
+        <BlockCapsHeading size="md" color={PALETTE.amberGlow} glow>Höher oder Tiefer</BlockCapsHeading>
+        <div style={{
+          fontFamily: F_BODY, fontSize: 12, letterSpacing: '0.18em',
+          color: PALETTE.inkSoft, fontWeight: 700, textTransform: 'uppercase', marginTop: 6,
+        }}>
+          Runde {hl.round + 1} von {hl.rounds} {wins > 0 && ` · ⭐ ${wins}`}
+        </div>
+      </div>
+
+      {pair && (
+        <div style={{
+          marginTop: 16, padding: '14px 16px', borderRadius: 14,
+          background: `${PALETTE.cream}d0`,
+          border: `2px solid ${PALETTE.inkSoft}33`,
+          textAlign: 'center',
+        }}>
+          {pair.customQuestion ? (
+            <div style={{
+              fontFamily: F_HAND, fontSize: 22, color: PALETTE.inkDeep,
+              fontWeight: 700, lineHeight: 1.1,
+            }}>
+              {pair.customQuestion}
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+              alignItems: 'center', gap: 10,
+            }}>
+              <div>
+                <div style={{ fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700 }}>
+                  {pair.anchorLabel}
+                </div>
+                <div style={{ fontFamily: F_HAND, fontSize: 28, color: PALETTE.terracotta, fontWeight: 700 }}>
+                  {pair.anchorValue.toLocaleString('de-DE')}
+                </div>
+                <div style={{ fontFamily: F_BODY, fontSize: 11, color: PALETTE.inkSoft }}>{pair.unit}</div>
+              </div>
+              <span style={{ fontFamily: F_HAND_CAPS, fontSize: 14, color: PALETTE.inkSoft, letterSpacing: '0.06em' }}>vs.</span>
+              <div>
+                <div style={{ fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700 }}>
+                  {pair.subjectLabel}
+                </div>
+                <div style={{
+                  fontFamily: F_HAND, fontSize: 28,
+                  color: phase === 'reveal' ? PALETTE.terracotta : PALETTE.inkSoft, fontWeight: 700,
+                }}>
+                  {phase === 'reveal' ? pair.subjectValue.toLocaleString('de-DE') : '???'}
+                </div>
+                <div style={{ fontFamily: F_BODY, fontSize: 11, color: PALETTE.inkSoft }}>{pair.unit}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {secs !== null && phase === 'question' && (
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <span style={{
+            fontFamily: F_HAND, fontSize: 30, fontWeight: 700,
+            color: secs <= 3 ? PALETTE.terracotta : PALETTE.inkDeep,
+            animation: secs <= 3 ? 'gTwinkle 0.6s ease-in-out infinite' : undefined,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {secs}s
+          </span>
+        </div>
+      )}
+
+      {phase === 'question' && !myAns && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+          <button onClick={() => answer('higher')} style={hlBtnStyle(PALETTE.sage)}>↑ Höher</button>
+          <button onClick={() => answer('lower')} style={hlBtnStyle(PALETTE.lavenderDusk)}>↓ Tiefer</button>
+        </div>
+      )}
+
+      {myAns && phase === 'question' && (
+        <div style={{
+          marginTop: 14, padding: '10px 14px', borderRadius: 12,
+          background: `${myColor}26`, border: `1.5px solid ${myColor}88`,
+          textAlign: 'center', fontFamily: F_HAND, fontSize: 18, color: PALETTE.inkDeep, fontWeight: 700,
+        }}>
+          ✓ Du hast {myAns === 'higher' ? '↑ Höher' : '↓ Tiefer'} gewählt
+        </div>
+      )}
+
+      {phase === 'reveal' && (
+        <div style={{
+          marginTop: 14, padding: '14px 16px', borderRadius: 12,
+          background: correctThis ? `${PALETTE.sage}26` : `${PALETTE.terracotta}22`,
+          border: `2px solid ${correctThis ? PALETTE.sage : PALETTE.terracotta}88`,
+          textAlign: 'center',
+        }}>
+          <BlockCapsHeading size="md" color={correctThis ? PALETTE.sage : PALETTE.terracotta} glow={correctThis}>
+            {correctThis ? 'Richtig!' : 'Daneben'}
+          </BlockCapsHeading>
+        </div>
+      )}
+    </PaperCard>
+  );
+}
+
+function hlBtnStyle(color: string): React.CSSProperties {
+  return {
+    padding: '16px 18px', borderRadius: 14,
+    background: color, color: PALETTE.cream,
+    border: 'none', cursor: 'pointer',
+    fontFamily: F_HAND, fontSize: 22, fontWeight: 700,
+    boxShadow: `0 8px 22px ${color}66, inset 0 -3px 0 rgba(0,0,0,0.12)`,
+    filter: 'url(#paintFrame)',
+  };
 }
 
 function WaitingPhaseCard({ state, myTeam }: { state: QQStateUpdate; myTeam: QQTeam }) {

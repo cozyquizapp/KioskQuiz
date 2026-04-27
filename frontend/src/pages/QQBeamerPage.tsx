@@ -3154,7 +3154,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
     BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
-    CHEESE:        { de: 'Erkennt ihr das Bild?', en: 'Can you identify the image?' },
+    CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
   };
   const catExplain = cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '';
 
@@ -8411,14 +8411,15 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 // staggered von links nach rechts auf der Zielziffer mit kurzem Bounce-Pulse.
 // Trennzeichen (.,/) bleiben statisch. Total ~1.4-1.8s je nach Stellenzahl.
 // ═══════════════════════════════════════════════════════════════════════════════
-function SlotMachineNumber({ value, fontSize, color, glow }: {
+function SlotMachineNumber({ value, fontSize, color, glow, isYear }: {
   value: number;
   fontSize: string;
   color: string;
   glow?: string;
+  isYear?: boolean;
 }) {
-  // Final-String mit Tausenderpunkten (z.B. "1.500.000")
-  const targetStr = value.toLocaleString('de-DE');
+  // Jahreszahlen ohne Tausendertrennzeichen (z.B. „1900"), sonst „1.500.000".
+  const targetStr = isYear ? String(Math.round(value)) : value.toLocaleString('de-DE');
   const chars = useMemo(() => targetStr.split(''), [targetStr]);
   const digitPositions = useMemo(() => chars.map((c, i) => /\d/.test(c) ? i : -1).filter(i => i >= 0), [chars]);
 
@@ -8515,7 +8516,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`);
 
   // Nummer kompakt formatieren: 3800000 → 3,8M | 15000 → 15k | 300 → 300
+  // Bei Jahreszahlen kein Tausendertrennzeichen (1900 statt 1.900).
+  const isYearUnitHL = /jahr|year/i.test(hl?.currentPair?.unit ?? '');
   const fmtHL = (n: number) => {
+    if (isYearUnitHL) return String(Math.round(n));
     const abs = Math.abs(n);
     if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
     if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';
@@ -8679,6 +8683,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   fontSize="clamp(44px, 6vw, 92px)"
                   color="#FBBF24"
                   glow="rgba(251,191,36,0.5)"
+                  isYear={isYearUnitHL}
                 />
               ) : (
                 <span style={{
@@ -8872,13 +8877,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 800, marginBottom: 18 }}>
             {lang === 'en'
-              ? 'Before the final round every team gets a fair chance: the team currently in last place receives a Comeback-Boost.'
-              : 'Vor der letzten Runde bekommt jedes Team eine faire Chance: Das Team, das gerade auf dem letzten Platz liegt, erhält einen Comeback-Boost.'}
+              ? 'Last place gets a Comeback-Boost.'
+              : 'Letzter Platz bekommt einen Comeback-Boost.'}
           </div>
           <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
             {lang === 'en'
-              ? 'Catch-up by stealing cells from the current leader(s).'
-              : 'Aufholen durch gezielten Klau beim Führenden.'}
+              ? 'Steal cells from the leader.'
+              : 'Klauen beim Führenden.'}
           </div>
         </div>
       )}
@@ -9796,11 +9801,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 
   // Layout: Variante B — 2-Spalten "Awards-Look".
   // Links: Grid riesig (volle Bildhoehe). Rechts: schmaler Side-Panel mit
-  // Title, Hero (Trophy/Avatar/Name/Score) und Rankings vertikal gestapelt.
-  // Bei vielen Teams (>=8) wird die Rankings-Liste 2-spaltig damit nichts
-  // unten rauslaeuft.
-  const teamCount = sorted.length;
-  const useTwoColRanks = teamCount >= 8; // schwellig hoeher: in der schmalen Side-Spalte ist 2-col enger
+  // Title, Hero (Trophy/Avatar/Name/Score) und alle anderen Teams in EINER
+  // horizontalen Reihe darunter.
   return (
     <div style={{
       flex: 1, display: 'grid',
@@ -9929,68 +9931,70 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         </div>
         )}
 
-        {/* Rankings — direkt unter dem Hero, vertikal in der Side-Spalte */}
+        {/* Rankings — alle anderen Teams in EINER Reihe unter dem Sieger.
+            Jedes Team wird zu einer kleinen vertikalen Mini-Card (Medaille,
+            Avatar, Name, Score). Bei vielen Teams werden die Cards enger. */}
         {sorted.length > 1 && (() => {
           const others = sorted.slice(1);
           const wn = others.length;
-          const compact = wn > 4;
+          // Avatar-Größe abhängig von Team-Zahl, damit alles in eine Reihe passt
+          const avatarSize = wn <= 3 ? 'clamp(48px, 4.4vw, 68px)'
+                            : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
+                            : wn <= 7 ? 'clamp(34px, 3vw, 46px)'
+                                       : 'clamp(28px, 2.4vw, 38px)';
+          const nameFs   = wn <= 5 ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(10px, 0.95vw, 12px)';
+          const scoreFs  = wn <= 5 ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(12px, 1.25vw, 16px)';
+          const cardPad  = wn <= 5 ? '8px 6px' : '6px 4px';
           return (
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: useTwoColRanks ? '1fr 1fr' : '1fr',
-              columnGap: 'clamp(6px, 0.8vw, 10px)',
-              rowGap: compact ? 'clamp(4px, 0.5vh, 8px)' : 'clamp(6px, 0.7vh, 10px)',
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
+              alignItems: 'stretch',
+              justifyContent: 'center',
+              gap: wn <= 4 ? 'clamp(8px, 1vw, 14px)' : 'clamp(4px, 0.6vw, 8px)',
               width: '100%',
               marginTop: 'clamp(6px, 1vh, 14px)',
               animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
             }}>
               {others.map((tm, i) => {
                 const rank = i + 2;
-                const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
                 const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
                 return (
                   <div key={tm.id} style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto auto 1fr auto auto',
-                    alignItems: 'center',
-                    gap: compact ? 'clamp(6px, 0.8vw, 12px)' : 'clamp(8px, 1vw, 14px)',
-                    padding: compact ? '6px 12px' : '8px 14px',
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: 4,
+                    padding: cardPad,
                     borderRadius: 12,
-                    background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
+                    background: `linear-gradient(180deg, ${tm.color}1a, ${tm.color}08)`,
                     border: `1.5px solid ${tm.color}55`,
                     boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
                     animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
-                    minWidth: 0,
                   }}>
                     <span style={{
-                      fontSize: compact ? 'clamp(13px, 1.3vw, 18px)' : 'clamp(15px, 1.5vw, 20px)',
-                      fontWeight: 900, flexShrink: 0,
+                      fontSize: 'clamp(11px, 1.1vw, 14px)',
+                      fontWeight: 900,
                       color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
-                      minWidth: medal ? 0 : compact ? 22 : 26,
+                      lineHeight: 1,
                     }}>
                       {medal ? <QQEmojiIcon emoji={medal}/> : `#${rank}`}
                     </span>
-                    <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(28px, 2.6vw, 36px)' : 'clamp(32px, 2.8vw, 42px)'} style={{ flexShrink: 0 }} />
-                    <span style={{
-                      fontSize: compact ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(15px, 1.5vw, 20px)',
+                    <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} />
+                    <span title={tm.name} style={{
+                      fontSize: nameFs,
                       fontWeight: 900, color: tm.color, lineHeight: 1.1,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      maxWidth: '100%',
                     }}>{tm.name}</span>
                     <span style={{
-                      fontSize: compact ? 'clamp(13px, 1.3vw, 17px)' : 'clamp(14px, 1.4vw, 19px)',
+                      fontSize: scoreFs,
                       fontWeight: 900, color: '#FDE68A',
-                      fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                     }}>
                       {tm.largestConnected}
                     </span>
-                    {!compact && !useTwoColRanks && (
-                      <span style={{
-                        fontSize: 'clamp(10px, 1vw, 13px)',
-                        color: '#64748b', fontWeight: 600, flexShrink: 0,
-                      }}>
-                        ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
-                      </span>
-                    )}
                   </div>
                 );
               })}

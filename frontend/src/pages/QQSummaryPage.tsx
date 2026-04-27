@@ -267,7 +267,7 @@ export default function QQSummaryPage() {
                   <img src={av.image} alt={av.label} style={{
                     width: 56, height: 56, borderRadius: '50%',
                     objectFit: 'cover',
-                    background: t.color, padding: 2,
+                    background: '#0f172a', border: `2px solid ${t.color}`,
                   }} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
@@ -372,7 +372,7 @@ export default function QQSummaryPage() {
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', width: 22 }}>{i + 1}.</span>
                 <img src={tAv.image} alt={tAv.label} style={{
                   width: 28, height: 28, borderRadius: '50%', objectFit: 'cover',
-                  background: t.color, padding: 1,
+                  background: '#0f172a', border: `1.5px solid ${t.color}`,
                 }} />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{t.name}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
@@ -650,7 +650,7 @@ function Superlatives({ teams, selectedId, lang }: {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <img src={av.image} alt={av.label} style={{
                   width: 38, height: 38, borderRadius: '50%',
-                  objectFit: 'cover', background: title.winner.color, padding: 2,
+                  objectFit: 'cover', background: '#0f172a', border: `2px solid ${title.winner.color}`,
                 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
                   <span style={{

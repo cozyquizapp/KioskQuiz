@@ -3561,7 +3561,9 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
   const comebackTeam = s.teams.find(t => t.id === s.comebackTeamId);
   const hl = s.comebackHL;
   const myTeam = s.teams.find(t => t.id === myTeamId);
+  const isYearUnitHL = /jahr|year/i.test(hl?.currentPair?.unit ?? '');
   const fmtHL = (n: number) => {
+    if (isYearUnitHL) return String(Math.round(n));
     const abs = Math.abs(n);
     if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
     if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';

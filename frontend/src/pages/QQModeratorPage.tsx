@@ -1370,6 +1370,7 @@ export default function QQModeratorPage() {
                 answers={s.answers}
                 teams={s.teams}
                 targetValue={s.currentQuestion.targetValue}
+                unit={s.currentQuestion.unit}
                 correctTeamId={s.correctTeamId}
                 phase={s.phase}
                 roomCode={roomCode}
@@ -1873,10 +1874,13 @@ function TimerPill({ endsAt }: { endsAt: number }) {
 
 // ── Schätzchen ranking ────────────────────────────────────────────────────────
 
-function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roomCode, emit }: {
-  answers: any[]; teams: any[]; targetValue: number; correctTeamId: string | null;
+function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phase, roomCode, emit }: {
+  answers: any[]; teams: any[]; targetValue: number; unit?: string; correctTeamId: string | null;
   phase: string; roomCode: string; emit: any;
 }) {
+  // Jahreszahlen ohne Tausendertrennzeichen anzeigen (1900 statt 1.900).
+  const isYearUnit = /jahr|year/i.test(unit ?? '');
+  const fmtNum = (n: number) => isYearUnit ? String(Math.round(n)) : n.toLocaleString('de-DE');
   // Parse + rank answers by distance
   const ranked = answers
     .map(a => {
@@ -1892,7 +1896,7 @@ function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roo
   return (
     <div style={{ ...card, borderColor: 'rgba(245,158,11,0.35)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#F59E0B', fontWeight: 900 }}>{targetValue.toLocaleString('de-DE')}</span></div>
+        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#F59E0B', fontWeight: 900 }}>{fmtNum(targetValue)}</span></div>
         {phase === 'QUESTION_REVEAL' && !correctTeamId && autoWinnerId && (
           <span style={{ fontSize: 11, color: '#64748b' }}>Auto-Auswertung aktiv</span>
         )}
@@ -1928,13 +1932,13 @@ function SchaetzRanking({ answers, teams, targetValue, correctTeamId, phase, roo
                 <div style={{ flex: 1 }}>
                   <span style={{ fontWeight: 800, color: r.team?.color ?? '#94a3b8' }}>{r.team?.name ?? r.teamId}</span>
                   <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: '#e2e8f0' }}>
-                    {r.parsed !== Infinity && !Number.isNaN(r.parsed) ? r.parsed.toLocaleString('de-DE') : r.text}
+                    {r.parsed !== Infinity && !Number.isNaN(r.parsed) ? fmtNum(r.parsed) : r.text}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {r.distance !== Infinity ? (
                     <span style={{ fontSize: 12, color: isWinner ? '#4ade80' : '#64748b', fontWeight: 700 }}>
-                      {r.distance === 0 ? '✓ Exakt' : `±${r.distance.toLocaleString('de-DE')}`}
+                      {r.distance === 0 ? '✓ Exakt' : `±${fmtNum(r.distance)}`}
                     </span>
                   ) : (
                     <span style={{ fontSize: 11, color: '#475569' }}>—</span>

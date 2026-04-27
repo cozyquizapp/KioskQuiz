@@ -7862,185 +7862,171 @@ function persistQQDrafts() {
 }
 
 // ── Sample QQ Drafts ─────────────────────────────────────────────────────────
+// 5 bunt gemischte Allgemeinwissens-Drafts ("Vol. 1" bis "Vol. 5").
+// Erstellt aus inspirations_now_i_know_v1.md (siehe Repo-Root).
+// Imposter-Variante (BUNTE_TUETE / oneOfEight) wurde komplett vermieden —
+// im Code drin aber im Quiz abgestellt.
 function createSampleQQDrafts(): typeof qqDrafts {
-  const CATS = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'] as const;
   const now = Date.now();
 
   function q(id: string, phase: number, qi: number, cat: string, data: Record<string, any>) {
     return { id, category: cat, phaseIndex: phase, questionIndexInPhase: qi, text: '', answer: '', ...data };
   }
 
-  // Draft 1: Allgemeinwissen
-  const d1id = 'qq-sample-allgemeinwissen';
-  const d1qs = [
+  // ─── VOL. 1 ─────────────────────────────────────────────────────────────
+  const v1 = 'qq-vol-1';
+  const v1qs = [
     // Phase 1
-    q(`${d1id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Länder gibt es auf der Welt?', answer: '195', targetValue: 195 }),
-    q(`${d1id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Land der Erde?', answer: 'Russland', options: ['Kanada', 'Russland', 'China', 'USA'], optionsEn: ['Canada', 'Russia', 'China', 'USA'], correctOptionIndex: 1 }),
-    q(`${d1id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein europäisches Land — reihum!', answer: 'Deutschland, Frankreich, Spanien, Italien, Polen, Niederlande, Belgien, Österreich, Schweiz, Schweden, Norwegen, Dänemark, Finnland, Portugal, Griechenland, Tschechien, Ungarn, Rumänien, Bulgarien, Kroatien, Slowenien, Slowakei, Estland, Lettland, Litauen, Irland, Großbritannien, Island, Luxemburg, Malta, Zypern, Albanien, Serbien, Bosnien-Herzegowina, Nordmazedonien, Montenegro, Moldau, Ukraine, Weißrussland, Liechtenstein, Monaco, Andorra, San Marino, Vatikan, Kosovo', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d1id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Farbe hat die Sonne beim Untergang?', answer: 'Rot/Orange', options: ['Rot/Orange', 'Gelb', 'Weiß'], correctOptionIndex: 0 }),
-    q(`${d1id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches berühmte Bauwerk ist das?', answer: 'Eiffelturm' }),
+    q(`${v1}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Knochen hat ein erwachsener Mensch?', textEn: 'How many bones does an adult human have?', answer: '206', targetValue: 206, unit: 'Knochen', funFact: 'Babys werden mit etwa 270 Knochen geboren — viele verwachsen später miteinander.' }),
+    q(`${v1}-p1-1`, 1, 1, 'MUCHO', { text: 'Welcher Planet hat die meisten Monde in unserem Sonnensystem (Stand 2024)?', textEn: 'Which planet has the most moons in our solar system (as of 2024)?', answer: 'Saturn', options: ['Jupiter', 'Saturn', 'Uranus', 'Neptun'], optionsEn: ['Jupiter', 'Saturn', 'Uranus', 'Neptune'], correctOptionIndex: 1, funFact: 'Saturn hat Jupiter 2023 mit 146 bestätigten Monden überholt.' }),
+    q(`${v1}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein Land in Europa — reihum!', textEn: 'Name a country in Europe — one by one!', answer: 'Deutschland, Frankreich, Italien, Spanien, Portugal, Niederlande, Belgien, Luxemburg, Dänemark, Schweden, Norwegen, Finnland, Island, Irland, Vereinigtes Königreich, Polen, Tschechien, Slowakei, Österreich, Schweiz, Ungarn, Rumänien, Bulgarien, Griechenland, Kroatien, Slowenien, Serbien, Bosnien und Herzegowina, Montenegro, Nordmazedonien, Albanien, Kosovo, Estland, Lettland, Litauen, Weißrussland, Ukraine, Moldau, Russland, Türkei, Malta, Zypern, Andorra, Monaco, Liechtenstein, San Marino, Vatikanstadt', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v1}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Ozean ist der größte der Erde?', textEn: 'Which ocean is the largest on Earth?', answer: 'Pazifik', options: ['Atlantik', 'Pazifik', 'Indischer Ozean'], optionsEn: ['Atlantic', 'Pacific', 'Indian Ocean'], correctOptionIndex: 1, funFact: 'Der Pazifik bedeckt etwa ein Drittel der Erdoberfläche.' }),
+    q(`${v1}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Bauwerk ist hier zu sehen?', textEn: 'Which building is shown here?', answer: 'Eiffelturm', answerEn: 'Eiffel Tower' }),
     // Phase 2
-    q(`${d1id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie hoch ist der Mount Everest in Metern?', answer: '8849', targetValue: 8849, unit: 'm' }),
-    q(`${d1id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welcher Planet ist der Sonne am nächsten?', answer: 'Merkur', options: ['Venus', 'Merkur', 'Mars', 'Jupiter'], correctOptionIndex: 1 }),
-    q(`${d1id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 bevölkerungsreichsten Länder!', answer: 'China, Indien, USA, Indonesien, Pakistan', bunteTuete: { kind: 'top5', answers: ['China', 'Indien', 'USA', 'Indonesien', 'Pakistan'] } }),
-    q(`${d1id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Kontinente gibt es?', answer: '7', options: ['5', '6', '7'], correctOptionIndex: 2 }),
-    q(`${d1id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche Flagge ist das?', answer: 'Japan' }),
+    q(`${v1}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie hoch ist der Mount Everest in Metern?', textEn: 'How tall is Mount Everest in meters?', answer: '8849', targetValue: 8849, unit: 'm', funFact: 'Der Everest wächst weiter — die indische Platte schiebt ihn jährlich rund 4 mm nach oben.' }),
+    q(`${v1}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Element hat das chemische Symbol „Au"?', textEn: 'Which element has the chemical symbol „Au"?', answer: 'Gold', options: ['Silber', 'Aluminium', 'Gold', 'Argon'], optionsEn: ['Silver', 'Aluminum', 'Gold', 'Argon'], correctOptionIndex: 2, funFact: '„Au" kommt vom lateinischen „aurum".' }),
+    q(`${v1}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier deutschen Städte nach Einwohnerzahl, beginnend mit der größten!', textEn: 'Sort these four German cities by population, starting with the largest!', answer: 'Berlin, Hamburg, München, Köln', bunteTuete: { kind: 'order', items: ['München', 'Berlin', 'Köln', 'Hamburg'], correctOrder: [1, 3, 0, 2], criteria: 'meiste Einwohner zuerst', itemValues: ['1,5 Mio', '3,8 Mio', '1,1 Mio', '1,9 Mio'] }, funFact: 'Berlin ist die einzige deutsche Stadt mit über 3 Mio Einwohnern.' }),
+    q(`${v1}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Land liegt die Stadt Marrakesch?', textEn: 'In which country is the city of Marrakech located?', answer: 'Marokko', options: ['Algerien', 'Marokko', 'Tunesien'], optionsEn: ['Algeria', 'Morocco', 'Tunisia'], correctOptionIndex: 1, funFact: 'Marrakesch wird auch „die Rote Stadt" genannt.' }),
+    q(`${v1}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Tier ist hier abgebildet?', textEn: 'Which animal is pictured here?', answer: 'Erdmännchen', answerEn: 'Meerkat' }),
     // Phase 3
-    q(`${d1id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr wurde die Berliner Mauer gebaut?', answer: '1961', targetValue: 1961 }),
-    q(`${d1id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer malte die Mona Lisa?', answer: 'Leonardo da Vinci', options: ['Michelangelo', 'Leonardo da Vinci', 'Raphael', 'Donatello'], correctOptionIndex: 1 }),
-    q(`${d1id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Erfindungen in die richtige Reihenfolge!', answer: 'Buchdruck, Dampfmaschine, Telefon, Internet', bunteTuete: { kind: 'order', items: ['Telefon', 'Internet', 'Buchdruck', 'Dampfmaschine'], correctOrder: [2, 3, 0, 1], criteria: 'älteste zuerst', itemValues: ['1876', '1969', '~1450', '1769'] } }),
-    q(`${d1id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptstadt von Australien?', answer: 'Canberra', options: ['Sydney', 'Melbourne', 'Canberra'], correctOptionIndex: 2 }),
-    q(`${d1id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Axolotl' }),
+    q(`${v1}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Zähne hat ein erwachsener Mensch (inklusive Weisheitszähne)?', textEn: 'How many teeth does an adult human have (including wisdom teeth)?', answer: '32', targetValue: 32, unit: 'Zähne', funFact: 'Etwa 35 % der Menschen haben gar keine Weisheitszähne.' }),
+    q(`${v1}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Fluss fließt durch Wien?', textEn: 'Which river flows through Vienna?', answer: 'Donau', options: ['Donau', 'Rhein', 'Elbe', 'Mosel'], optionsEn: ['Danube', 'Rhine', 'Elbe', 'Moselle'], correctOptionIndex: 0, funFact: 'Die Donau durchfließt 10 Länder — mehr als jeder andere Fluss der Welt.' }),
+    q(`${v1}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eines der 5 bevölkerungsreichsten Länder der Welt (Stand 2024)!', textEn: 'Name one of the 5 most populous countries in the world (as of 2024)!', answer: 'Indien, China, USA, Indonesien, Pakistan', bunteTuete: { kind: 'top5', answers: ['Indien', 'China', 'USA', 'Indonesien', 'Pakistan'] }, funFact: 'Indien hat 2023 China überholt.' }),
+    q(`${v1}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Künstler malte das Werk „Sternennacht"?', textEn: 'Which artist painted „The Starry Night"?', answer: 'Vincent van Gogh', options: ['Claude Monet', 'Vincent van Gogh', 'Paul Cézanne'], optionsEn: ['Claude Monet', 'Vincent van Gogh', 'Paul Cézanne'], correctOptionIndex: 1, funFact: 'Van Gogh malte „Sternennacht" 1889 in einer Nervenheilanstalt.' }),
+    q(`${v1}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche Frucht ist hier zu sehen?', textEn: 'Which fruit is shown here?', answer: 'Granatapfel', answerEn: 'Pomegranate' }),
+    // Phase 4
+    q(`${v1}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr fiel die Berliner Mauer?', textEn: 'In which year did the Berlin Wall fall?', answer: '1989', targetValue: 1989, funFact: 'Folge einer missverständlichen Pressekonferenz von Günter Schabowski.' }),
+    q(`${v1}-p4-1`, 4, 1, 'MUCHO', { text: 'Welches Organ produziert das Hormon Insulin?', textEn: 'Which organ produces the hormone insulin?', answer: 'Bauchspeicheldrüse', options: ['Leber', 'Niere', 'Bauchspeicheldrüse', 'Milz'], optionsEn: ['Liver', 'Kidney', 'Pancreas', 'Spleen'], correctOptionIndex: 2, funFact: 'Insulin wurde 1921 entdeckt — Patent für 1 Dollar verkauft.' }),
+    q(`${v1}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Canberra, die Hauptstadt Australiens? Setz einen Pin!', textEn: 'Where is Canberra, the capital of Australia? Place a pin!', answer: 'Canberra', bunteTuete: { kind: 'map', lat: -35.2809, lng: 149.1300, targetLabel: 'Canberra' }, funFact: 'Canberra wurde als Kompromiss-Hauptstadt gegründet, weil sich Sydney und Melbourne nicht einigen konnten.' }),
+    q(`${v1}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Komponist schrieb die „Mondscheinsonate"?', textEn: 'Which composer wrote the „Moonlight Sonata"?', answer: 'Beethoven', options: ['Mozart', 'Beethoven', 'Chopin'], optionsEn: ['Mozart', 'Beethoven', 'Chopin'], correctOptionIndex: 1, funFact: 'Beethoven nannte sie nie so — der Titel kam erst nach seinem Tod von einem Kritiker.' }),
+    q(`${v1}-p4-4`, 4, 4, 'CHEESE', { text: 'Welcher Schauspieler ist hier zu sehen?', textEn: 'Which actor is shown here?', answer: 'Leonardo DiCaprio', answerEn: 'Leonardo DiCaprio' }),
   ];
 
-  // Draft 2: Pop & Kultur
-  const d2id = 'qq-sample-popkultur';
-  const d2qs = [
+  // ─── VOL. 2 ─────────────────────────────────────────────────────────────
+  const v2 = 'qq-vol-2';
+  const v2qs = [
     // Phase 1
-    q(`${d2id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Spotify-Streams hat der meistgestreamte Song aller Zeiten (Blinding Lights)?', answer: '4,5 Milliarden', targetValue: 4500000000 }),
-    q(`${d2id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welcher Film gewann 2024 den Oscar für den besten Film?', answer: 'Oppenheimer', options: ['Barbie', 'Oppenheimer', 'Killers of the Flower Moon', 'Poor Things'], correctOptionIndex: 1 }),
-    q(`${d2id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne eine Marvel-Figur — reihum!', answer: 'Iron Man, Spider-Man, Thor, Hulk, Captain America, Black Widow, Hawkeye, Doctor Strange, Black Panther, Scarlet Witch, Vision, Falcon, Winter Soldier, Ant-Man, Wasp, Star-Lord, Gamora, Rocket, Groot, Drax, Loki, Wolverine, Deadpool, Daredevil, Punisher, Captain Marvel, Nick Fury, Miles Morales, Shuri, Okoye, Valkyrie, Nebula, Mantis, Yelena, Bucky, Magneto, Storm, Cyclops, Jean Grey, Professor X, Beast, Gambit, Rogue, Jubilee', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d2id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Serie hat die meisten Emmy-Auszeichnungen?', answer: 'Game of Thrones', options: ['Breaking Bad', 'Game of Thrones', 'Friends'], correctOptionIndex: 1 }),
-    q(`${d2id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welcher Film ist das?', answer: 'Jurassic Park' }),
+    q(`${v2}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Studioalben veröffentlichten die Beatles offiziell?', textEn: 'How many studio albums did the Beatles officially release?', answer: '13', targetValue: 13, unit: 'Alben', funFact: 'Die Beatles waren nur 8 Jahre lang offiziell aktiv — von 1962 bis 1970.' }),
+    q(`${v2}-p1-1`, 1, 1, 'MUCHO', { text: 'In welchem Jahr fanden die ersten modernen Olympischen Spiele statt?', textEn: 'In which year were the first modern Olympic Games held?', answer: '1896', options: ['1888', '1896', '1900', '1912'], optionsEn: ['1888', '1896', '1900', '1912'], correctOptionIndex: 1, funFact: 'Die ersten Spiele in Athen hatten 241 Athleten aus 14 Ländern.' }),
+    q(`${v2}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne eine Sportart, die bei den Sommer-Olympischen Spielen vertreten ist — reihum!', textEn: 'Name a sport featured in the Summer Olympics — one by one!', answer: 'Schwimmen, Leichtathletik, Turnen, Fußball, Basketball, Volleyball, Beachvolleyball, Handball, Wasserball, Tennis, Tischtennis, Badminton, Bogenschießen, Boxen, Judo, Karate, Taekwondo, Ringen, Fechten, Gewichtheben, Rudern, Kanu, Segeln, Surfen, Triathlon, Reiten, Radsport, Mountainbike, BMX, Hockey, Rugby, Golf, Skateboarden, Sportklettern, Trampolin, Synchronschwimmen, Wasserspringen, Moderner Fünfkampf, Schießen, Softball, Baseball, Hindernislauf, Marathon, Diskuswurf, Speerwurf', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v2}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Band veröffentlichte das Album „The Dark Side of the Moon"?', textEn: 'Which band released the album „The Dark Side of the Moon"?', answer: 'Pink Floyd', options: ['Led Zeppelin', 'Pink Floyd', 'The Rolling Stones'], optionsEn: ['Led Zeppelin', 'Pink Floyd', 'The Rolling Stones'], correctOptionIndex: 1, funFact: 'Hielt sich 741 Wochen in den Billboard 200 — länger als jedes andere Album.' }),
+    q(`${v2}-p1-4`, 1, 4, 'CHEESE', { text: 'Welche Filmfigur ist hier zu sehen?', textEn: 'Which movie character is shown here?', answer: 'Yoda', answerEn: 'Yoda' }),
     // Phase 2
-    q(`${d2id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Folgen hat die Serie "Die Simpsons" (ca.)?', answer: '770', targetValue: 770 }),
-    q(`${d2id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wer singt "Bohemian Rhapsody"?', answer: 'Queen', options: ['The Beatles', 'Queen', 'Led Zeppelin', 'Pink Floyd'], correctOptionIndex: 1 }),
-    q(`${d2id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 meistverkauften Videospiele aller Zeiten!', answer: 'Minecraft, GTA V, Tetris, Wii Sports, PUBG', bunteTuete: { kind: 'top5', answers: ['Minecraft', 'GTA V', 'Tetris', 'Wii Sports', 'PUBG'] } }),
-    q(`${d2id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Jahr erschien das erste iPhone?', answer: '2007', options: ['2005', '2007', '2009'], correctOptionIndex: 1 }),
-    q(`${d2id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Album-Cover ist das?', answer: 'Abbey Road' }),
+    q(`${v2}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie lange dauerte der Hundertjährige Krieg in Jahren?', textEn: 'How long did the Hundred Years\' War last in years?', answer: '116', targetValue: 116, unit: 'Jahre', funFact: 'Tatsächlich 116 Jahre — von 1337 bis 1453.' }),
+    q(`${v2}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land gewann die Fußball-Weltmeisterschaft 2022?', textEn: 'Which country won the FIFA World Cup 2022?', answer: 'Argentinien', options: ['Brasilien', 'Frankreich', 'Argentinien', 'Deutschland'], optionsEn: ['Brazil', 'France', 'Argentina', 'Germany'], correctOptionIndex: 2, funFact: 'Argentiniens dritter WM-Titel und Lionel Messis erster.' }),
+    q(`${v2}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Wo wurde der Großteil der „Herr der Ringe"-Trilogie gedreht? Setz einen Pin!', textEn: 'Where was most of the „Lord of the Rings" trilogy filmed? Place a pin!', answer: 'Neuseeland', bunteTuete: { kind: 'map', lat: -40.9006, lng: 174.8860, targetLabel: 'Neuseeland' }, funFact: 'Peter Jackson drehte die komplette Trilogie an über 150 Drehorten in Neuseeland.' }),
+    q(`${v2}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Streamingplattform produzierte „Stranger Things"?', textEn: 'Which streaming platform produced „Stranger Things"?', answer: 'Netflix', options: ['Amazon Prime', 'Disney+', 'Netflix'], optionsEn: ['Amazon Prime', 'Disney+', 'Netflix'], correctOptionIndex: 2, funFact: 'Wurde vor Netflix von 15 anderen Sendern abgelehnt.' }),
+    q(`${v2}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Musikinstrument ist hier zu sehen?', textEn: 'Which musical instrument is shown here?', answer: 'Saxophon', answerEn: 'Saxophone' }),
     // Phase 3
-    q(`${d2id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Harry-Potter-Bücher gibt es?', answer: '7', targetValue: 7 }),
-    q(`${d2id}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer spielt Jack Sparrow?', answer: 'Johnny Depp', options: ['Brad Pitt', 'Johnny Depp', 'Orlando Bloom', 'Leonardo DiCaprio'], correctOptionIndex: 1 }),
-    q(`${d2id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Bringe diese Disney-Filme in die richtige Reihenfolge!', answer: 'Schneewittchen, Der König der Löwen, Frozen, Encanto', bunteTuete: { kind: 'order', items: ['Frozen', 'Der König der Löwen', 'Encanto', 'Schneewittchen'], correctOrder: [3, 1, 0, 2], criteria: 'ältester Film zuerst', itemValues: ['2013', '1994', '2021', '1937'] } }),
-    q(`${d2id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land hat die meisten Fußball-WM-Titel?', answer: 'Brasilien', options: ['Deutschland', 'Brasilien', 'Argentinien'], correctOptionIndex: 1 }),
-    q(`${d2id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche berühmte Person ist das?', answer: 'Albert Einstein' }),
+    q(`${v2}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Spieler stehen pro Mannschaft beim Eishockey gleichzeitig auf dem Eis (inkl. Torwart)?', textEn: 'How many players per team are on the ice at the same time in ice hockey (including the goalie)?', answer: '6', targetValue: 6, unit: 'Spieler', funFact: 'Im Eishockey-Profibereich werden pro Spiel oft mehr als 30 Spieler eingewechselt.' }),
+    q(`${v2}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Tennisspieler hält den Rekord für die meisten Grand-Slam-Titel im Herrentennis (Stand 2024)?', textEn: 'Which tennis player holds the record for the most men\'s Grand Slam titles (as of 2024)?', answer: 'Novak Djokovic', options: ['Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Pete Sampras'], optionsEn: ['Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Pete Sampras'], correctOptionIndex: 2, funFact: 'Stellte 2023 mit seinem 24. Grand-Slam-Titel den Rekord von Margaret Court bei den Frauen ein.' }),
+    q(`${v2}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen der 5 erfolgreichsten Filme aller Zeiten an den Kinokassen (weltweit, Stand 2024)!', textEn: 'Name one of the 5 highest-grossing films of all time (worldwide, as of 2024)!', answer: 'Avatar, Avengers: Endgame, Avatar: The Way of Water, Titanic, Star Wars: The Force Awakens', bunteTuete: { kind: 'top5', answers: ['Avatar', 'Avengers: Endgame', 'Avatar: The Way of Water', 'Titanic', 'Star Wars: The Force Awakens'] }, funFact: 'James Cameron hat drei der fünf erfolgreichsten Filme aller Zeiten gedreht.' }),
+    q(`${v2}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Sänger trägt den Spitznamen „The King of Pop"?', textEn: 'Which singer carries the nickname „The King of Pop"?', answer: 'Michael Jackson', options: ['Elvis Presley', 'Michael Jackson', 'Prince'], optionsEn: ['Elvis Presley', 'Michael Jackson', 'Prince'], correctOptionIndex: 1, funFact: 'Den Titel verlieh ihm Elizabeth Taylor 1989.' }),
+    q(`${v2}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Fußballstadion ist hier zu sehen?', textEn: 'Which football stadium is shown here?', answer: 'Wembley-Stadion', answerEn: 'Wembley Stadium' }),
+    // Phase 4
+    q(`${v2}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr veröffentlichte Apple das erste iPhone?', textEn: 'In which year did Apple release the first iPhone?', answer: '2007', targetValue: 2007, funFact: 'Steve Jobs nannte es „drei Geräte in einem" — iPod, Telefon und Internetkommunikator.' }),
+    q(`${v2}-p4-1`, 4, 1, 'MUCHO', { text: 'In welcher Stadt steht das Kolosseum?', textEn: 'In which city is the Colosseum located?', answer: 'Rom', options: ['Athen', 'Rom', 'Florenz', 'Pompeji'], optionsEn: ['Athens', 'Rome', 'Florence', 'Pompeii'], correctOptionIndex: 1, funFact: 'Konnte rund 50.000 Zuschauer fassen — und wurde manchmal sogar geflutet für Schiffsschlachten.' }),
+    q(`${v2}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Filme nach Erscheinungsjahr, beginnend mit dem ältesten!', textEn: 'Sort these four movies by release year, starting with the oldest!', answer: 'Star Wars, Pulp Fiction, Matrix, Inception', bunteTuete: { kind: 'order', items: ['Pulp Fiction', 'Inception', 'Star Wars', 'Matrix'], correctOrder: [2, 0, 3, 1], criteria: 'ältester Film zuerst', itemValues: ['1994', '2010', '1977', '1999'] }, funFact: 'Star Wars hieß bei Erscheinen einfach „Star Wars" — der Untertitel „Episode IV" kam erst 1981 dazu.' }),
+    q(`${v2}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Hollywoodstar spielte die Hauptrolle in „Mission: Impossible"?', textEn: 'Which Hollywood star played the lead in „Mission: Impossible"?', answer: 'Tom Cruise', options: ['Brad Pitt', 'Tom Cruise', 'Matt Damon'], optionsEn: ['Brad Pitt', 'Tom Cruise', 'Matt Damon'], correctOptionIndex: 1, funFact: 'Macht fast alle seine Stunts selbst — inklusive Sprung vom Burj Khalifa.' }),
+    q(`${v2}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Logo ist hier abgebildet?', textEn: 'Which logo is shown here?', answer: 'Nike', answerEn: 'Nike' }),
   ];
 
-  // Draft 3: Hamburg
-  const d3id = 'qq-sample-hamburg';
-  const d3qs = [
-    // Phase 1 — Stadt & Leben (bunte Tüte: top5)
-    q(`${d3id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Einwohner hat Hamburg (gerundet auf Tausend)?', answer: '1.900.000', targetValue: 1900000, unit: 'Einwohner' }),
-    q(`${d3id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welche Stadt hat mehr Einwohner: Hamburg oder München?', answer: 'Hamburg', options: ['Hamburg', 'München', 'Etwa gleich viele', 'Köln'], correctOptionIndex: 0, funFact: 'Hamburg hat rund 1,9 Mio. Einwohner, München ~1,5 Mio. Hamburg ist die zweitgrößte Stadt Deutschlands.' }),
-    q(`${d3id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 größten Stadtteile Hamburgs nach Einwohnerzahl!', answer: 'Rahlstedt, Billstedt, Wandsbek, Eimsbüttel, Winterhude', bunteTuete: { kind: 'top5', answers: ['Rahlstedt', 'Billstedt', 'Wandsbek', 'Eimsbüttel', 'Winterhude'] } }),
-    q(`${d3id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Bundesland liegt Hamburg?', answer: 'Hamburg (Stadtstaat)', options: ['Niedersachsen', 'Hamburg (Stadtstaat)', 'Schleswig-Holstein'], correctOptionIndex: 1 }),
-    q(`${d3id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Hamburger Wahrzeichen ist das?', answer: 'Elbphilharmonie' }),
-    // Phase 2 — Hafen & Wasser (bunte Tüte: order)
-    q(`${d3id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Brücken hat Hamburg ungefähr?', answer: '2500', targetValue: 2500, funFact: 'Hamburg hat mehr Brücken als Venedig, Amsterdam und London zusammen.' }),
-    q(`${d3id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wie heißt der große See mitten in Hamburg?', answer: 'Alster', options: ['Elbe', 'Alster', 'Bille', 'Isebek'], correctOptionIndex: 1 }),
-    q(`${d3id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Hamburger Bauwerke in die richtige Reihenfolge ihrer Eröffnung!', answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Rathaus', 'Michel', 'Köhlbrandbrücke'], correctOrder: [2, 1, 3, 0], criteria: 'nach Eröffnungsjahr (älteste zuerst)', itemValues: ['2017', '1897', '1786', '1974'] }, funFact: 'Michel 1786, Rathaus 1897, Köhlbrandbrücke 1974, Elbphilharmonie 2017.' }),
-    q(`${d3id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher ist der größte Seehafen Deutschlands?', answer: 'Hamburg', options: ['Hamburg', 'Bremerhaven', 'Wilhelmshaven'], correctOptionIndex: 0 }),
-    q(`${d3id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche berühmte Brücke ist das?', answer: 'Köhlbrandbrücke' }),
-    // Phase 3 — St. Pauli & Kiez (bunte Tüte: hotPotato)
-    q(`${d3id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie lang ist die Reeperbahn in Metern?', answer: '930', targetValue: 930, unit: 'm' }),
-    q(`${d3id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welchem Hamburger Club spielten die Beatles 1960-1962?', answer: 'Star-Club', options: ['Molotow', 'Star-Club', 'Grosse Freiheit 36', 'Docks'], correctOptionIndex: 1 }),
-    q(`${d3id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine Straße oder einen Ort auf der Reeperbahn/St. Pauli — reihum!', answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor, Spielbudenplatz, Reeperbahn, Hans-Albers-Platz, Silbersackstraße, Beatles-Platz, Indra-Club, Kaiserkeller, Operettenhaus, Schmidt Theater, Schmidts Tivoli, Talstraße, Hopfenstraße, Hamburger Berg, Esso-Häuser, Heiligengeistfeld, Park Fiction, Pinguin-Bar, Mojo Club, Molotow, St.-Pauli-Kirche, Bernhard-Nocht-Straße', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d3id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Liga spielt der FC St. Pauli in der Saison 2024/25?', answer: 'Bundesliga', options: ['Bundesliga', '2. Bundesliga', '3. Liga'], correctOptionIndex: 0, funFact: 'St. Pauli ist nach langer Zeit 2024 in die Bundesliga aufgestiegen.' }),
-    q(`${d3id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches St.-Pauli-Symbol ist das?', answer: 'Totenkopf (St.-Pauli-Logo)' }),
-    // Phase 4 — Essen & Kultur (bunte Tüte: map)
-    q(`${d3id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr wurde der Hamburger Fischmarkt gegründet?', answer: '1703', targetValue: 1703 }),
-    q(`${d3id}-p4-1`, 4, 1, 'MUCHO', { text: 'Was isst man traditionell als Hamburger Spezialität?', answer: 'Franzbrötchen', options: ['Currywurst', 'Franzbrötchen', 'Döner', 'Brezel'], correctOptionIndex: 1 }),
-    q(`${d3id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt die Speicherstadt in Hamburg? Setz einen Pin!', answer: 'Speicherstadt, HafenCity', bunteTuete: { kind: 'map', lat: 53.5438, lng: 9.9887, targetLabel: 'Speicherstadt, Hamburg' } }),
-    q(`${d3id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Wie heißt die berühmteste Hamburger Musical-Show?', answer: 'Der König der Löwen', options: ['Cats', 'Der König der Löwen', 'Mamma Mia'], correctOptionIndex: 1 }),
-    q(`${d3id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Hamburger Gebäude ist das?', answer: 'Michel (St.-Michaelis-Kirche)' }),
+  // ─── VOL. 3 ─────────────────────────────────────────────────────────────
+  const v3 = 'qq-vol-3';
+  const v3qs = [
+    // Phase 1
+    q(`${v3}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Theaterstücke schrieb William Shakespeare insgesamt (ungefähr)?', textEn: 'How many plays did William Shakespeare write in total (approximately)?', answer: '39', targetValue: 39, unit: 'Theaterstücke', funFact: 'Shakespeare prägte etwa 1700 neue englische Wörter.' }),
+    q(`${v3}-p1-1`, 1, 1, 'MUCHO', { text: 'Welcher römische Kaiser ließ Rom angeblich brennen?', textEn: 'Which Roman emperor allegedly burned Rome down?', answer: 'Nero', options: ['Augustus', 'Caligula', 'Nero', 'Konstantin'], optionsEn: ['Augustus', 'Caligula', 'Nero', 'Constantine'], correctOptionIndex: 2, funFact: 'Historiker bezweifeln heute, dass Nero den Brand legte — er war zur Zeit des Feuers gar nicht in Rom.' }),
+    q(`${v3}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein Buch der Weltliteratur — reihum!', textEn: 'Name a book from world literature — one by one!', answer: 'Don Quijote, Krieg und Frieden, Anna Karenina, Schuld und Sühne, Die Brüder Karamasow, Hamlet, Romeo und Julia, Faust, Die Verwandlung, Der Prozess, Ulysses, 1984, Animal Farm, Brave New World, Der große Gatsby, Stolz und Vorurteil, Jane Eyre, Wuthering Heights, Madame Bovary, Les Misérables, Der Graf von Monte Christo, Die drei Musketiere, Moby Dick, Vom Winde verweht, Der Fänger im Roggen, Lolita, Hundert Jahre Einsamkeit, Der Herr der Ringe, Der kleine Prinz, Die Odyssee, Die Ilias, Die Göttliche Komödie, Decamerone, Effi Briest, Die Buddenbrooks, Der Zauberberg, Der Steppenwolf, Siddhartha, Im Westen nichts Neues, Die Blechtrommel, Der Vorleser, Sofies Welt, Der Name der Rose, Schöne neue Welt', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v3}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Maler schnitt sich ein Ohr ab?', textEn: 'Which painter cut off his own ear?', answer: 'Vincent van Gogh', options: ['Pablo Picasso', 'Vincent van Gogh', 'Salvador Dalí'], optionsEn: ['Pablo Picasso', 'Vincent van Gogh', 'Salvador Dalí'], correctOptionIndex: 1, funFact: 'Van Gogh schnitt sich nur einen Teil des linken Ohrs ab.' }),
+    q(`${v3}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Gemälde ist hier zu sehen?', textEn: 'Which painting is shown here?', answer: 'Mona Lisa', answerEn: 'Mona Lisa' }),
+    // Phase 2
+    q(`${v3}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr begann der Erste Weltkrieg?', textEn: 'In which year did World War I begin?', answer: '1914', targetValue: 1914, funFact: 'Auslöser war das Attentat von Sarajevo am 28. Juni 1914.' }),
+    q(`${v3}-p2-1`, 2, 1, 'MUCHO', { text: 'Wer schrieb den Roman „Die Verwandlung"?', textEn: 'Who wrote the novel „The Metamorphosis"?', answer: 'Franz Kafka', options: ['Thomas Mann', 'Franz Kafka', 'Hermann Hesse', 'Bertolt Brecht'], optionsEn: ['Thomas Mann', 'Franz Kafka', 'Hermann Hesse', 'Bertolt Brecht'], correctOptionIndex: 1, funFact: 'Kafka wollte vor seinem Tod, dass alle seine unveröffentlichten Werke verbrannt werden.' }),
+    q(`${v3}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Wo liegt Istanbul? Setz einen Pin!', textEn: 'Where is Istanbul? Place a pin!', answer: 'Istanbul', bunteTuete: { kind: 'map', lat: 41.0082, lng: 28.9784, targetLabel: 'Istanbul' }, funFact: 'Istanbul ist die einzige Stadt der Welt, die auf zwei Kontinenten liegt — Europa und Asien.' }),
+    q(`${v3}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welche antike Kultur baute die Pyramiden von Gizeh?', textEn: 'Which ancient culture built the pyramids of Giza?', answer: 'Ägypter', options: ['Sumerer', 'Ägypter', 'Maya'], optionsEn: ['Sumerians', 'Egyptians', 'Maya'], correctOptionIndex: 1, funFact: 'Die Cheops-Pyramide war über 3800 Jahre lang das höchste Bauwerk der Welt.' }),
+    q(`${v3}-p2-4`, 2, 4, 'CHEESE', { text: 'Welcher historische Anführer ist hier abgebildet?', textEn: 'Which historical leader is shown here?', answer: 'Napoleon', answerEn: 'Napoleon' }),
+    // Phase 3
+    q(`${v3}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Tasten hat ein Standardklavier?', textEn: 'How many keys does a standard piano have?', answer: '88', targetValue: 88, unit: 'Tasten', funFact: '52 weiße + 36 schwarze — diese Anordnung etablierte sich um 1880.' }),
+    q(`${v3}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer war die erste Frau, die einen Nobelpreis gewann?', textEn: 'Who was the first woman to win a Nobel Prize?', answer: 'Marie Curie', options: ['Marie Curie', 'Mutter Teresa', 'Dorothy Hodgkin', 'Selma Lagerlöf'], optionsEn: ['Marie Curie', 'Mother Teresa', 'Dorothy Hodgkin', 'Selma Lagerlöf'], correctOptionIndex: 0, funFact: 'Bis heute die einzige Person mit Nobelpreisen in zwei verschiedenen Wissenschaften — Physik und Chemie.' }),
+    q(`${v3}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Schriftsteller nach Geburtsjahr, beginnend mit dem ältesten!', textEn: 'Sort these four writers by birth year, starting with the oldest!', answer: 'Shakespeare, Goethe, Twain, Hemingway', bunteTuete: { kind: 'order', items: ['Goethe', 'Hemingway', 'Shakespeare', 'Twain'], correctOrder: [2, 0, 3, 1], criteria: 'ältester zuerst', itemValues: ['1749', '1899', '1564', '1835'] }, funFact: 'Shakespeare und Cervantes starben am gleichen Datum — 23. April 1616.' }),
+    q(`${v3}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Sprache wird im Vatikan offiziell gesprochen?', textEn: 'Which language is officially spoken in the Vatican?', answer: 'Latein', options: ['Italienisch', 'Latein', 'Französisch'], optionsEn: ['Italian', 'Latin', 'French'], correctOptionIndex: 1, funFact: 'Sogar Geldautomaten zeigen Latein an.' }),
+    q(`${v3}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches berühmte Bauwerk ist hier zu sehen?', textEn: 'Which famous landmark is shown here?', answer: 'Akropolis', answerEn: 'Acropolis' }),
+    // Phase 4
+    q(`${v3}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Zeilen hat ein klassisches Sonett?', textEn: 'How many lines does a classic sonnet have?', answer: '14', targetValue: 14, unit: 'Zeilen', funFact: 'Petrarca schrieb 366 Sonette an seine Geliebte Laura.' }),
+    q(`${v3}-p4-1`, 4, 1, 'MUCHO', { text: 'Welche Königin Ägyptens hatte Beziehungen zu Julius Cäsar und Marcus Antonius?', textEn: 'Which Queen of Egypt had relationships with both Julius Caesar and Mark Antony?', answer: 'Kleopatra', options: ['Nofretete', 'Hatschepsut', 'Kleopatra', 'Isis'], optionsEn: ['Nefertiti', 'Hatshepsut', 'Cleopatra', 'Isis'], correctOptionIndex: 2, funFact: 'Kleopatra lebte näher an der Mondlandung als am Bau der Pyramiden.' }),
+    q(`${v3}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Nenne eine der 5 ältesten Universitäten Europas!', textEn: 'Name one of the 5 oldest universities in Europe!', answer: 'Bologna, Oxford, Salamanca, Paris, Cambridge', bunteTuete: { kind: 'top5', answers: ['Bologna', 'Oxford', 'Salamanca', 'Paris', 'Cambridge'] }, funFact: 'Bologna wurde 1088 gegründet und gilt als die älteste durchgehend bestehende Universität der Welt.' }),
+    q(`${v3}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher griechische Philosoph war Schüler von Sokrates und Lehrer von Aristoteles?', textEn: 'Which Greek philosopher was a student of Socrates and teacher of Aristotle?', answer: 'Platon', options: ['Platon', 'Pythagoras', 'Epikur'], optionsEn: ['Plato', 'Pythagoras', 'Epicurus'], correctOptionIndex: 0, funFact: 'Platons echter Name war Aristokles — „Platon" („der Breite") war ein Spitzname.' }),
+    q(`${v3}-p4-4`, 4, 4, 'CHEESE', { text: 'Welche Skulptur ist hier abgebildet?', textEn: 'Which sculpture is shown here?', answer: 'Der Denker', answerEn: 'The Thinker' }),
   ];
 
-  // Draft 4: Natur & Tiere
-  const d4id = 'qq-sample-natur-tiere';
-  const d4qs = [
-    // Phase 1 — Säugetiere (top5)
-    q(`${d4id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie schnell kann ein Gepard maximal laufen (km/h)?', answer: '112', targetValue: 112, unit: 'km/h' }),
-    q(`${d4id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Landtier der Welt?', answer: 'Afrikanischer Elefant', options: ['Nashorn', 'Afrikanischer Elefant', 'Giraffe', 'Flusspferd'], correctOptionIndex: 1 }),
-    q(`${d4id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 schwersten Landtiere!', answer: 'Afrikanischer Elefant, Asiatischer Elefant, Breitmaulnashorn, Flusspferd, Spitzmaulnashorn', bunteTuete: { kind: 'top5', answers: ['Afrikanischer Elefant', 'Asiatischer Elefant', 'Breitmaulnashorn', 'Flusspferd', 'Spitzmaulnashorn'] } }),
-    q(`${d4id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Zu welcher Tiergruppe gehören Wale?', answer: 'Säugetiere', options: ['Fische', 'Säugetiere', 'Reptilien'], correctOptionIndex: 1 }),
-    q(`${d4id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Rotfuchs' }),
-    // Phase 2 — Vögel & Insekten (order)
-    q(`${d4id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Flügelschläge pro Sekunde hat ein Kolibri (ca.)?', answer: '80', targetValue: 80 }),
-    q(`${d4id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welcher Vogel kann NICHT fliegen?', answer: 'Pinguin', options: ['Albatros', 'Pinguin', 'Kolibri', 'Adler'], correctOptionIndex: 1 }),
-    q(`${d4id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Tiere nach ihrer Lebensdauer in die richtige Reihenfolge!', answer: 'Eintagsfliege, Maus, Hund, Grönlandwal', bunteTuete: { kind: 'order', items: ['Grönlandwal', 'Hund', 'Eintagsfliege', 'Maus'], correctOrder: [2, 3, 1, 0], criteria: 'kürzeste zuerst', itemValues: ['200+ Jahre', '~12 Jahre', '1 Tag', '~2 Jahre'] }, funFact: 'Eintagsfliege 1 Tag, Maus ~2 Jahre, Hund ~12 Jahre, Grönlandwal 200+ Jahre.' }),
-    q(`${d4id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Beine hat eine Spinne?', answer: '8', options: ['6', '8', '10'], correctOptionIndex: 1 }),
-    q(`${d4id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welcher Vogel ist das?', answer: 'Flamingo' }),
-    // Phase 3 — Pflanzen & Wald (hotPotato)
-    q(`${d4id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie hoch kann ein Mammutbaum maximal werden (m)?', answer: '115', targetValue: 115, unit: 'm' }),
-    q(`${d4id}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Baum verliert im Winter NICHT seine Blätter?', answer: 'Tanne', options: ['Buche', 'Eiche', 'Tanne', 'Birke'], correctOptionIndex: 2 }),
-    q(`${d4id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen Baum, der in Deutschland wächst — reihum!', answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde, Kiefer, Ahorn, Esche, Erle, Pappel, Weide, Kastanie, Ulme, Lärche, Hainbuche, Eberesche, Wacholder, Holunder, Walnuss, Robinie, Platane, Mehlbeere, Edelkastanie, Mammutbaum, Douglasie, Eibe, Stechpalme, Hasel, Schwarzerle, Sandbirke, Stieleiche, Rotbuche, Spitzahorn, Bergahorn, Silberweide', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d4id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Gas geben Pflanzen bei der Photosynthese ab?', answer: 'Sauerstoff', options: ['Sauerstoff', 'Stickstoff', 'CO₂'], correctOptionIndex: 0 }),
-    q(`${d4id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche Pflanze ist das?', answer: 'Sonnenblume' }),
-    // Phase 4 — Wasser & Meer (map)
-    q(`${d4id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie tief ist der tiefste Punkt des Ozeans (Marianengraben) in Metern?', answer: '10984', targetValue: 10984, unit: 'm' }),
-    q(`${d4id}-p4-1`, 4, 1, 'MUCHO', { text: 'Welches ist der größte Ozean?', answer: 'Pazifischer Ozean', options: ['Atlantik', 'Pazifik', 'Indischer Ozean', 'Arktischer Ozean'], correctOptionIndex: 1 }),
-    q(`${d4id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt das Great Barrier Reef? Setz einen Pin!', answer: 'Ostküste Australien', bunteTuete: { kind: 'map', lat: -18.2871, lng: 147.6992, targetLabel: 'Great Barrier Reef, Australien' } }),
-    q(`${d4id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Zu welcher Tiergruppe gehört der Oktopus?', answer: 'Weichtiere', options: ['Wirbeltiere', 'Weichtiere', 'Krebstiere'], correctOptionIndex: 1 }),
-    q(`${d4id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Meerestier ist das?', answer: 'Seepferdchen' }),
+  // ─── VOL. 4 ─────────────────────────────────────────────────────────────
+  const v4 = 'qq-vol-4';
+  const v4qs = [
+    // Phase 1
+    q(`${v4}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Tasten hat eine Standard-QWERTZ-Tastatur (deutsche Variante, ohne Numpad)?', textEn: 'How many keys does a standard QWERTZ keyboard have (German layout, without numpad)?', answer: '87', targetValue: 87, unit: 'Tasten', funFact: 'Die QWERTZ-Anordnung wurde 1868 erfunden — angeblich um Hebel-Verhakungen zu verhindern.' }),
+    q(`${v4}-p1-1`, 1, 1, 'MUCHO', { text: 'Wer gilt als Erfinder der Glühbirne (in der modernen, kommerziell erfolgreichen Form)?', textEn: 'Who is considered the inventor of the light bulb (modern, commercially successful form)?', answer: 'Thomas Edison', options: ['Nikola Tesla', 'Thomas Edison', 'Alessandro Volta', 'Werner von Siemens'], optionsEn: ['Nikola Tesla', 'Thomas Edison', 'Alessandro Volta', 'Werner von Siemens'], correctOptionIndex: 1, funFact: 'Edison probierte über 6000 Materialien als Glühfaden aus.' }),
+    q(`${v4}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne einen Vornamen, der in Deutschland gebräuchlich ist — reihum!', textEn: 'Name a first name commonly used in Germany — one by one!', answer: 'Anna, Lena, Marie, Mia, Emma, Sophie, Hannah, Emilia, Lina, Lea, Laura, Sarah, Julia, Lisa, Nina, Katharina, Christina, Vanessa, Jessica, Stefanie, Maximilian, Alexander, Paul, Felix, Lukas, Leon, Jonas, Tim, Tom, Finn, Ben, Noah, Elias, Jan, Markus, Michael, Thomas, Andreas, Stefan, Florian, Sebastian, Daniel, Christian, Matthias, Philipp, Tobias, Martin, Peter, Klaus, Hans, Werner, Jürgen, Wolfgang, Helmut, Helga, Renate, Gabi, Petra, Sabine, Susanne', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v4}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Programmiersprache wurde nach einer britischen Comedy-Truppe benannt?', textEn: 'Which programming language was named after a British comedy troupe?', answer: 'Python', options: ['Java', 'Python', 'Ruby'], optionsEn: ['Java', 'Python', 'Ruby'], correctOptionIndex: 1, funFact: 'Erfinder Guido van Rossum benannte Python nach „Monty Python\'s Flying Circus".' }),
+    q(`${v4}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Gewürz ist hier zu sehen?', textEn: 'Which spice is shown here?', answer: 'Zimt', answerEn: 'Cinnamon' }),
+    // Phase 2
+    q(`${v4}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Megabyte hat 1 Gigabyte (offiziell, dezimal)?', textEn: 'How many megabytes are in 1 gigabyte (official, decimal)?', answer: '1000', targetValue: 1000, unit: 'MB', funFact: 'Die erste kommerzielle Festplatte (IBM 1956) wog über eine Tonne und speicherte 5 MB.' }),
+    q(`${v4}-p2-1`, 2, 1, 'MUCHO', { text: 'Welche Firma entwickelte das Betriebssystem Windows?', textEn: 'Which company developed the Windows operating system?', answer: 'Microsoft', options: ['Apple', 'IBM', 'Microsoft', 'Intel'], optionsEn: ['Apple', 'IBM', 'Microsoft', 'Intel'], correctOptionIndex: 2, funFact: 'Bill Gates und Paul Allen gründeten Microsoft 1975 — beide hatten ihr Studium dafür abgebrochen.' }),
+    q(`${v4}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Wo befindet sich Apples Hauptquartier („Apple Park")? Setz einen Pin!', textEn: 'Where is Apple\'s headquarters („Apple Park")? Place a pin!', answer: 'Cupertino, Kalifornien', bunteTuete: { kind: 'map', lat: 37.3349, lng: -122.0090, targetLabel: 'Cupertino, USA' }, funFact: 'Der ringförmige Apple Park hat einen Innenhof mit 9000 Bäumen und Platz für 12.000 Mitarbeiter.' }),
+    q(`${v4}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Firma stellt den Suchmaschinen-Marktführer Google her?', textEn: 'Which company owns the market-leading search engine Google?', answer: 'Alphabet', options: ['Meta', 'Alphabet', 'Amazon'], optionsEn: ['Meta', 'Alphabet', 'Amazon'], correctOptionIndex: 1, funFact: 'Google hieß ursprünglich „BackRub" — und wurde nach „Googol" umbenannt, der Zahl mit 100 Nullen.' }),
+    q(`${v4}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Werkzeug ist hier abgebildet?', textEn: 'Which tool is shown here?', answer: 'Schraubenschlüssel', answerEn: 'Wrench' }),
+    // Phase 3
+    q(`${v4}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Pizzen werden in Italien jährlich pro Person konsumiert (Durchschnitt)?', textEn: 'How many pizzas does an average person in Italy consume per year?', answer: '30', targetValue: 30, unit: 'Pizzen', funFact: 'Die Pizza Margherita wurde 1889 für Königin Margherita von Savoyen kreiert.' }),
+    q(`${v4}-p3-1`, 3, 1, 'MUCHO', { text: 'Aus welcher Pflanze wird Schokolade hergestellt?', textEn: 'From which plant is chocolate made?', answer: 'Kakaobohne', options: ['Kaffeebohne', 'Kakaobohne', 'Sojabohne', 'Vanilleschote'], optionsEn: ['Coffee bean', 'Cocoa bean', 'Soybean', 'Vanilla pod'], correctOptionIndex: 1, funFact: 'Die Azteken nutzten Kakaobohnen als Zahlungsmittel.' }),
+    q(`${v4}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Erfindungen nach Erfindungsjahr, beginnend mit der ältesten!', textEn: 'Sort these four inventions by year, starting with the oldest!', answer: 'Buchdruck, Telefon, Fernsehen, Internet', bunteTuete: { kind: 'order', items: ['Telefon', 'Internet', 'Buchdruck', 'Fernsehen'], correctOrder: [2, 0, 3, 1], criteria: 'älteste zuerst', itemValues: ['1876', '1969', '~1450', '1925'] }, funFact: 'Gutenbergs Buchdruck war in China schon 400 Jahre früher bekannt — wurde dort aber nie populär.' }),
+    q(`${v4}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land ist Heimat des Käses Camembert?', textEn: 'Which country is the home of Camembert cheese?', answer: 'Frankreich', options: ['Italien', 'Schweiz', 'Frankreich'], optionsEn: ['Italy', 'Switzerland', 'France'], correctOptionIndex: 2, funFact: 'Camembert wurde 1791 in der Normandie erfunden.' }),
+    q(`${v4}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche Frucht ist hier zu sehen?', textEn: 'Which fruit is shown here?', answer: 'Drachenfrucht', answerEn: 'Dragon fruit' }),
+    // Phase 4
+    q(`${v4}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Sprachen werden weltweit ungefähr gesprochen?', textEn: 'Approximately how many languages are spoken worldwide?', answer: '7000', targetValue: 7000, unit: 'Sprachen', funFact: 'Etwa 40 % aller Sprachen gelten als bedroht — alle zwei Wochen stirbt eine aus.' }),
+    q(`${v4}-p4-1`, 4, 1, 'MUCHO', { text: 'In welchem Land wurde der Espresso erfunden?', textEn: 'In which country was espresso invented?', answer: 'Italien', options: ['Frankreich', 'Italien', 'Spanien', 'Türkei'], optionsEn: ['France', 'Italy', 'Spain', 'Turkey'], correctOptionIndex: 1, funFact: 'Die erste Espressomaschine wurde 1884 in Turin patentiert.' }),
+    q(`${v4}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Nenne eine der 5 bevölkerungsreichsten Städte der Welt (Stand 2024, Metropolregion)!', textEn: 'Name one of the 5 most populous cities in the world (as of 2024, metropolitan area)!', answer: 'Tokio, Delhi, Shanghai, São Paulo, Mexiko-Stadt', bunteTuete: { kind: 'top5', answers: ['Tokio', 'Delhi', 'Shanghai', 'São Paulo', 'Mexiko-Stadt'] }, funFact: 'In Tokios Metropolregion leben rund 37 Millionen Menschen — mehr als in ganz Kanada.' }),
+    q(`${v4}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Tier ist das schnellste an Land?', textEn: 'Which animal is the fastest on land?', answer: 'Gepard', options: ['Löwe', 'Gepard', 'Pferd'], optionsEn: ['Lion', 'Cheetah', 'Horse'], correctOptionIndex: 1, funFact: 'Geparde erreichen bis zu 110 km/h — können diese Geschwindigkeit aber nur 20–30 Sekunden lang halten.' }),
+    q(`${v4}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Verkehrsmittel ist hier abgebildet?', textEn: 'Which means of transport is shown here?', answer: 'Heißluftballon', answerEn: 'Hot air balloon' }),
   ];
 
-  // Draft 5: Sport
-  const d5id = 'qq-sample-sport';
-  const d5qs = [
-    // Phase 1 — Fußball (top5)
-    q(`${d5id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Tore schoss Lionel Messi bis Ende 2023 für sein Land Argentinien (ca.)?', answer: '108', targetValue: 108 }),
-    q(`${d5id}-p1-1`, 1, 1, 'MUCHO', { text: 'Wer wurde 2022 Fußball-Weltmeister?', answer: 'Argentinien', options: ['Frankreich', 'Argentinien', 'Brasilien', 'Deutschland'], correctOptionIndex: 1 }),
-    q(`${d5id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 Rekord-Weltmeister (Männer-Fußball)!', answer: 'Brasilien (5), Deutschland (4), Italien (4), Argentinien (3), Frankreich (2)', bunteTuete: { kind: 'top5', answers: ['Brasilien', 'Deutschland', 'Italien', 'Argentinien', 'Frankreich'] } }),
-    q(`${d5id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Spieler stehen pro Mannschaft auf dem Feld (ohne Torwart)?', answer: '10', options: ['9', '10', '11'], correctOptionIndex: 1, funFact: '11 insgesamt — also 10 Feldspieler plus Torwart.' }),
-    q(`${d5id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Stadion ist das?', answer: 'Allianz Arena (München)' }),
-    // Phase 2 — Olympia (order)
-    q(`${d5id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr fanden die ersten modernen Olympischen Spiele statt?', answer: '1896', targetValue: 1896 }),
-    q(`${d5id}-p2-1`, 2, 1, 'MUCHO', { text: 'In welcher Stadt fanden 2024 die Sommerolympiade statt?', answer: 'Paris', options: ['Tokio', 'Paris', 'Los Angeles', 'London'], correctOptionIndex: 1 }),
-    q(`${d5id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Olympia-Städte in chronologische Reihenfolge!', answer: 'München, Barcelona, London, Paris', bunteTuete: { kind: 'order', items: ['Paris 2024', 'München 1972', 'London 2012', 'Barcelona 1992'], correctOrder: [1, 3, 2, 0], criteria: 'älteste zuerst' } }),
-    q(`${d5id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Ringe hat das Olympia-Symbol?', answer: '5', options: ['4', '5', '6'], correctOptionIndex: 1 }),
-    q(`${d5id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche Sportart ist das?', answer: 'Bogenschießen' }),
-    // Phase 3 — Individualsport (hotPotato)
-    q(`${d5id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Grand-Slam-Titel hat Novak Djokovic bis Ende 2024 gewonnen?', answer: '24', targetValue: 24 }),
-    q(`${d5id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welcher Sportart gibt es "Strikes" und "Spares"?', answer: 'Bowling', options: ['Bowling', 'Baseball', 'Golf', 'Eishockey'], correctOptionIndex: 0 }),
-    q(`${d5id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine olympische Sportart — reihum!', answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo, Tennis, Basketball, Fußball, Volleyball, Hockey, Rudern, Kanu, Segeln, Reiten, Fechten, Bogenschießen, Sportschießen, Radfahren, Triathlon, Marathon, Tischtennis, Badminton, Handball, Wasserball, Synchronschwimmen, Springreiten, Dressur, Gewichtheben, Ringen, Taekwondo, Karate, Skateboarding, Surfen, Klettern, Beachvolleyball, BMX, Mountainbike, Trampolin, Kunstturnen, Rhythmische Sportgymnastik, Wasserspringen, Stabhochsprung, Hochsprung, Weitsprung, Diskuswerfen, Kugelstoßen, Speerwerfen, Hammerwerfen, Hürdenlauf, Staffel', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d5id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Löcher hat ein Standard-Golfplatz?', answer: '18', options: ['9', '18', '27'], correctOptionIndex: 1 }),
-    q(`${d5id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welcher Sportler ist das?', answer: 'Usain Bolt' }),
-    // Phase 4 — Stadien (map)
-    q(`${d5id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Zuschauer passen ins Camp Nou (FC Barcelona)?', answer: '99354', targetValue: 99354 }),
-    q(`${d5id}-p4-1`, 4, 1, 'MUCHO', { text: 'Wo steht das Maracanã-Stadion?', answer: 'Rio de Janeiro', options: ['São Paulo', 'Rio de Janeiro', 'Buenos Aires', 'Brasília'], correctOptionIndex: 1 }),
-    q(`${d5id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Wembley-Stadium? Setz einen Pin!', answer: 'London', bunteTuete: { kind: 'map', lat: 51.5560, lng: -0.2795, targetLabel: 'Wembley Stadium, London' } }),
-    q(`${d5id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Stadt steht das Olympiastadion Berlin?', answer: 'Berlin', options: ['Berlin', 'München', 'Hamburg'], correctOptionIndex: 0 }),
-    q(`${d5id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Stadion ist das?', answer: 'Wembley Stadium' }),
-  ];
-
-  // Draft 6: Essen & Trinken
-  const d6id = 'qq-sample-essen-trinken';
-  const d6qs = [
-    // Phase 1 — Deutsche Küche (top5)
-    q(`${d6id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele verschiedene Brotsorten gibt es in Deutschland (ca.)?', answer: '3200', targetValue: 3200 }),
-    q(`${d6id}-p1-1`, 1, 1, 'MUCHO', { text: 'Aus welchem Bundesland stammt die Currywurst?', answer: 'Berlin', options: ['Hamburg', 'Berlin', 'NRW', 'Bayern'], correctOptionIndex: 1, funFact: 'Erfunden 1949 von Herta Heuwer in Berlin.' }),
-    q(`${d6id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 beliebtesten Brotsorten in Deutschland!', answer: 'Mischbrot, Toastbrot, Vollkornbrot, Roggenbrot, Weizenbrot', bunteTuete: { kind: 'top5', answers: ['Mischbrot', 'Toastbrot', 'Vollkornbrot', 'Roggenbrot', 'Weizenbrot'] } }),
-    q(`${d6id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Wie wird Sauerkraut traditionell hergestellt?', answer: 'Fermentation', options: ['Fermentation', 'Kochen', 'Trocknen'], correctOptionIndex: 0 }),
-    q(`${d6id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches deutsche Gericht ist das?', answer: 'Schweinshaxe' }),
-    // Phase 2 — Süßes & Desserts (order)
-    q(`${d6id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viel Zucker (g) enthält eine 0,33l-Cola?', answer: '35', targetValue: 35, unit: 'g' }),
-    q(`${d6id}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land hat die Praline erfunden?', answer: 'Belgien', options: ['Frankreich', 'Belgien', 'Schweiz', 'Italien'], correctOptionIndex: 1 }),
-    q(`${d6id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Desserts nach ihrem Kaloriengehalt pro 100g!', answer: 'Obstsalat, Vanilleeis, Schwarzwälder Kirschtorte, Sahnetorte', bunteTuete: { kind: 'order', items: ['Sahnetorte', 'Obstsalat', 'Schwarzwälder Kirschtorte', 'Vanilleeis'], correctOrder: [1, 3, 2, 0], criteria: 'wenigste Kalorien zuerst', itemValues: ['~370 kcal', '~50 kcal', '~280 kcal', '~210 kcal'] } }),
-    q(`${d6id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Was ist die Hauptzutat in Marzipan?', answer: 'Mandeln', options: ['Nüsse', 'Mandeln', 'Kokos'], correctOptionIndex: 1 }),
-    q(`${d6id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Dessert ist das?', answer: 'Crème brûlée' }),
-    // Phase 3 — Getränke (hotPotato)
-    q(`${d6id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Liter Bier trinkt ein Deutscher pro Jahr im Durchschnitt?', answer: '90', targetValue: 90, unit: 'l' }),
-    q(`${d6id}-p3-1`, 3, 1, 'MUCHO', { text: 'Aus welcher Pflanze wird Tequila gemacht?', answer: 'Agave', options: ['Agave', 'Kaktus', 'Zuckerrohr', 'Mais'], correctOptionIndex: 0 }),
-    q(`${d6id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen alkoholfreien Cocktail oder ein Erfrischungsgetränk — reihum!', answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee, Limonade, Apfelschorle, Cola, Fanta, Sprite, Mineralwasser, Saftschorle, Smoothie, Tonic Water, Bitter Lemon, Spezi, Mate, Energy Drink, Kaffee, Tee, Kakao, Milch, Buttermilch, Kefir, Coconut Water, Lassi, Maracuja-Saft, Orangensaft, Apfelsaft, Multivitaminsaft, Tomatensaft, Karottensaft, Ananassaft, Cranberry-Saft, Ginger Ale, Ginger Beer, Bionade, Almdudler, Schorle, Pina Colada (Virgin), Strawberry Daiquiri (Virgin)', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d6id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Getränk enthält KEIN Koffein?', answer: 'Rooibos-Tee', options: ['Schwarzer Tee', 'Grüner Tee', 'Rooibos-Tee'], correctOptionIndex: 2 }),
-    q(`${d6id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Getränk ist das?', answer: 'Aperol Spritz' }),
-    // Phase 4 — International (map)
-    q(`${d6id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Pizzen werden weltweit pro Tag gebacken (Millionen)?', answer: '14', targetValue: 14, unit: 'Mio' }),
-    q(`${d6id}-p4-1`, 4, 1, 'MUCHO', { text: 'Aus welchem Land stammt Sushi ursprünglich?', answer: 'Japan', options: ['China', 'Japan', 'Korea', 'Thailand'], correctOptionIndex: 1 }),
-    q(`${d6id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Neapel (Heimat der Pizza)? Setz einen Pin!', answer: 'Süditalien', bunteTuete: { kind: 'map', lat: 40.8518, lng: 14.2681, targetLabel: 'Neapel, Italien' } }),
-    q(`${d6id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Land ist der größte Käseproduzent Europas?', answer: 'Deutschland', options: ['Frankreich', 'Deutschland', 'Italien'], correctOptionIndex: 1, funFact: 'Deutschland produziert ~2,3 Mio. Tonnen Käse/Jahr, vor Frankreich.' }),
-    q(`${d6id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Gericht ist das?', answer: 'Paella' }),
+  // ─── VOL. 5 ─────────────────────────────────────────────────────────────
+  const v5 = 'qq-vol-5';
+  const v5qs = [
+    // Phase 1
+    q(`${v5}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Felder hat ein Schachbrett?', textEn: 'How many squares does a chess board have?', answer: '64', targetValue: 64, unit: 'Felder', funFact: 'Es gibt mehr mögliche Schachpartien als Atome im beobachtbaren Universum.' }),
+    q(`${v5}-p1-1`, 1, 1, 'MUCHO', { text: 'In welcher Sportart wird der Begriff „Birdie" verwendet?', textEn: 'In which sport is the term „birdie" used?', answer: 'Golf', options: ['Tennis', 'Golf', 'Bowling', 'Cricket'], optionsEn: ['Tennis', 'Golf', 'Bowling', 'Cricket'], correctOptionIndex: 1, funFact: '„Birdie" entstand um 1899 in den USA — „Bird" war damals Slang für „großartig".' }),
+    q(`${v5}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein chemisches Element — reihum!', textEn: 'Name a chemical element — one by one!', answer: 'Wasserstoff, Helium, Lithium, Beryllium, Bor, Kohlenstoff, Stickstoff, Sauerstoff, Fluor, Neon, Natrium, Magnesium, Aluminium, Silizium, Phosphor, Schwefel, Chlor, Argon, Kalium, Calcium, Eisen, Kupfer, Zink, Gold, Silber, Platin, Quecksilber, Blei, Zinn, Nickel, Chrom, Mangan, Cobalt, Wolfram, Uran, Plutonium, Radium, Iod, Brom, Selen, Titan, Vanadium, Krypton, Xenon, Radon, Cäsium, Barium, Strontium, Rubidium', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v5}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Sportart wird mit einem Schläger und einem Federball gespielt?', textEn: 'Which sport is played with a racket and a shuttlecock?', answer: 'Badminton', options: ['Tennis', 'Squash', 'Badminton'], optionsEn: ['Tennis', 'Squash', 'Badminton'], correctOptionIndex: 2, funFact: 'Federbälle erreichen beim Profi-Badminton über 400 km/h — schneller als bei jeder anderen Schlägersportart.' }),
+    q(`${v5}-p1-4`, 1, 4, 'CHEESE', { text: 'Welcher Sportler ist hier zu sehen?', textEn: 'Which athlete is shown here?', answer: 'Usain Bolt', answerEn: 'Usain Bolt' }),
+    // Phase 2
+    q(`${v5}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Spieler stehen pro Mannschaft beim Volleyball gleichzeitig auf dem Feld?', textEn: 'How many players per team are on the court at the same time in volleyball?', answer: '6', targetValue: 6, unit: 'Spieler', funFact: 'Volleyball wurde 1895 in den USA als sanftere Alternative zu Basketball erfunden.' }),
+    q(`${v5}-p2-1`, 2, 1, 'MUCHO', { text: 'In welchem Land wurde Judo erfunden?', textEn: 'In which country was judo invented?', answer: 'Japan', options: ['China', 'Japan', 'Korea', 'Thailand'], optionsEn: ['China', 'Japan', 'Korea', 'Thailand'], correctOptionIndex: 1, funFact: 'Judo bedeutet wörtlich „sanfter Weg" — Erfinder Jigorō Kanō wollte 1882 eine weniger gefährliche Form des Jiu-Jitsu schaffen.' }),
+    q(`${v5}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nenne eines der 5 schwersten Landtiere der Welt!', textEn: 'Name one of the 5 heaviest land animals!', answer: 'Afrikanischer Elefant, Asiatischer Elefant, Flusspferd, Breitmaulnashorn, Giraffe', bunteTuete: { kind: 'top5', answers: ['Afrikanischer Elefant', 'Asiatischer Elefant', 'Flusspferd', 'Breitmaulnashorn', 'Giraffe'] }, funFact: 'Ein ausgewachsener Afrikanischer Elefantenbulle kann bis zu 6 Tonnen wiegen.' }),
+    q(`${v5}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welches ist das größte Säugetier der Welt?', textEn: 'What is the largest mammal in the world?', answer: 'Blauwal', options: ['Afrikanischer Elefant', 'Pottwal', 'Blauwal'], optionsEn: ['African elephant', 'Sperm whale', 'Blue whale'], correctOptionIndex: 2, funFact: 'Das Herz eines Blauwals wiegt allein rund 180 kg.' }),
+    q(`${v5}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche Pflanze ist hier zu sehen?', textEn: 'Which plant is shown here?', answer: 'Sonnenblume', answerEn: 'Sunflower' }),
+    // Phase 3
+    q(`${v5}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Minuten dauert ein offizielles Fußballspiel (reine Spielzeit, ohne Nachspielzeit)?', textEn: 'How many minutes does an official football match last (regulation time)?', answer: '90', targetValue: 90, unit: 'Minuten', funFact: 'Die längste Nachspielzeit in einem WM-Spiel betrug 14 Minuten — Iran gegen England 2022.' }),
+    q(`${v5}-p3-1`, 3, 1, 'MUCHO', { text: 'Welches Gas atmen Pflanzen für die Photosynthese ein?', textEn: 'Which gas do plants take in for photosynthesis?', answer: 'Kohlendioxid', options: ['Sauerstoff', 'Stickstoff', 'Kohlendioxid', 'Methan'], optionsEn: ['Oxygen', 'Nitrogen', 'Carbon dioxide', 'Methane'], correctOptionIndex: 2, funFact: 'Eine ausgewachsene Buche produziert ~5 kg Sauerstoff pro Tag — genug für rund 10 Menschen.' }),
+    q(`${v5}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Berge nach Höhe, beginnend mit dem höchsten!', textEn: 'Sort these four mountains by height, starting with the highest!', answer: 'Mont Blanc, Matterhorn, Großglockner, Zugspitze', bunteTuete: { kind: 'order', items: ['Großglockner', 'Zugspitze', 'Mont Blanc', 'Matterhorn'], correctOrder: [2, 3, 0, 1], criteria: 'höchster zuerst', itemValues: ['3798 m', '2962 m', '4810 m', '4478 m'] }, funFact: 'Das Matterhorn wurde erst 1865 erstbestiegen — vier der sieben Erstbesteiger starben beim Abstieg.' }),
+    q(`${v5}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Sportart spielen die „New York Yankees"?', textEn: 'In which sport do the „New York Yankees" play?', answer: 'Baseball', options: ['Baseball', 'Basketball', 'American Football'], optionsEn: ['Baseball', 'Basketball', 'American football'], correctOptionIndex: 0, funFact: 'Die Yankees haben 27 World-Series-Titel gewonnen — mehr als jedes andere Team in der MLB.' }),
+    q(`${v5}-p3-4`, 3, 4, 'CHEESE', { text: 'Welcher Wissenschaftler ist hier abgebildet?', textEn: 'Which scientist is shown here?', answer: 'Albert Einstein', answerEn: 'Albert Einstein' }),
+    // Phase 4
+    q(`${v5}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie schnell ist die Lichtgeschwindigkeit ungefähr (in Kilometern pro Sekunde)?', textEn: 'How fast is the speed of light approximately (in kilometers per second)?', answer: '299792', targetValue: 299792, unit: 'km/s', funFact: 'Sonnenlicht braucht etwa 8 Minuten und 20 Sekunden, um zur Erde zu gelangen.' }),
+    q(`${v5}-p4-1`, 4, 1, 'MUCHO', { text: 'Wer hält den 100-Meter-Sprint-Weltrekord der Männer (Stand 2024)?', textEn: 'Who holds the men\'s 100-meter sprint world record (as of 2024)?', answer: 'Usain Bolt', options: ['Carl Lewis', 'Usain Bolt', 'Yohan Blake', 'Tyson Gay'], optionsEn: ['Carl Lewis', 'Usain Bolt', 'Yohan Blake', 'Tyson Gay'], correctOptionIndex: 1, funFact: 'Bolts Weltrekord von 9,58 Sekunden steht seit der WM 2009 in Berlin.' }),
+    q(`${v5}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Rio de Janeiro? Setz einen Pin!', textEn: 'Where is Rio de Janeiro? Place a pin!', answer: 'Rio de Janeiro', bunteTuete: { kind: 'map', lat: -22.9068, lng: -43.1729, targetLabel: 'Rio de Janeiro' }, funFact: 'Die Christus-Statue auf dem Corcovado ist 38 Meter hoch.' }),
+    q(`${v5}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Naturgewalt misst die Richterskala?', textEn: 'Which natural phenomenon does the Richter scale measure?', answer: 'Erdbeben', options: ['Erdbeben', 'Wirbelstürme', 'Vulkanausbrüche'], optionsEn: ['Earthquakes', 'Hurricanes', 'Volcanic eruptions'], correctOptionIndex: 0, funFact: 'Die Richterskala ist logarithmisch — Stärke 7 setzt rund 32-mal mehr Energie frei als Stärke 6.' }),
+    q(`${v5}-p4-4`, 4, 4, 'CHEESE', { text: 'Welcher Vogel ist hier zu sehen?', textEn: 'Which bird is shown here?', answer: 'Flamingo', answerEn: 'Flamingo' }),
   ];
 
   return [
-    { id: d1id, title: '🧠 Allgemeinwissen', phases: 3 as const, language: 'both', questions: d1qs, createdAt: now - 5000, updatedAt: now - 5000 },
-    { id: d2id, title: '🎬 Pop & Kultur', phases: 3 as const, language: 'both', questions: d2qs, createdAt: now - 4000, updatedAt: now - 4000 },
-    { id: d3id, title: '🆕 ⚓ Hamburg', phases: 4 as const, language: 'both', questions: d3qs, createdAt: now - 3000, updatedAt: now - 3000 },
-    { id: d4id, title: '🆕 🦊 Natur & Tiere', phases: 4 as const, language: 'both', questions: d4qs, createdAt: now - 2000, updatedAt: now - 2000 },
-    { id: d5id, title: '🆕 ⚽ Sport', phases: 4 as const, language: 'both', questions: d5qs, createdAt: now - 1000, updatedAt: now - 1000 },
-    { id: d6id, title: '🆕 🍳 Essen & Trinken', phases: 4 as const, language: 'both', questions: d6qs, createdAt: now, updatedAt: now },
+    { id: v1, title: '🧠 Allgemeinwissen Vol. 1', phases: 4 as const, language: 'both', questions: v1qs, createdAt: now - 5000, updatedAt: now - 5000 },
+    { id: v2, title: '🧠 Allgemeinwissen Vol. 2', phases: 4 as const, language: 'both', questions: v2qs, createdAt: now - 4000, updatedAt: now - 4000 },
+    { id: v3, title: '🧠 Allgemeinwissen Vol. 3', phases: 4 as const, language: 'both', questions: v3qs, createdAt: now - 3000, updatedAt: now - 3000 },
+    { id: v4, title: '🧠 Allgemeinwissen Vol. 4', phases: 4 as const, language: 'both', questions: v4qs, createdAt: now - 2000, updatedAt: now - 2000 },
+    { id: v5, title: '🧠 Allgemeinwissen Vol. 5', phases: 4 as const, language: 'both', questions: v5qs, createdAt: now - 1000, updatedAt: now - 1000 },
   ];
 }
+
 
 // Load persisted QQ drafts on startup
 try {
@@ -8071,95 +8057,24 @@ if (qqDrafts.length === 0) {
   if (changed) persistQQDrafts();
 }
 
-// ── Backfill itemValues für Order-Fragen ───────────────────────────────────
-// Persistierte Drafts (file + DB) wurden vor dem itemValues-Update geseeded
-// und enthalten die Werte nicht. Diese Migration matched Order-Fragen über
-// ihre items-Reihenfolge und ergänzt die fehlenden Werte. Idempotent — ein
-// einmal migrierter Draft wird nicht nochmal angefasst.
-const ORDER_VALUES_BY_ITEMS_KEY: Record<string, string[]> = {
-  // Natur & Tiere — Lebensdauer
-  'Grönlandwal|Hund|Eintagsfliege|Maus': ['200+ Jahre', '~12 Jahre', '1 Tag', '~2 Jahre'],
-  // Allgemeinwissen — Erfindungen (Jahreszahlen)
-  'Telefon|Internet|Buchdruck|Dampfmaschine': ['1876', '1969', '~1450', '1769'],
-  // Disney-Filme (Erscheinungsjahr)
-  'Frozen|Der König der Löwen|Encanto|Schneewittchen': ['2013', '1994', '2021', '1937'],
-  // Hamburger Bauwerke (Eröffnungsjahr)
-  'Elbphilharmonie|Rathaus|Michel|Köhlbrandbrücke': ['2017', '1897', '1786', '1974'],
-  // Desserts (Kalorien)
-  'Sahnetorte|Obstsalat|Schwarzwälder Kirschtorte|Vanilleeis': ['~370 kcal', '~50 kcal', '~280 kcal', '~210 kcal'],
-};
-
-function backfillOrderItemValues(draft: any): boolean {
-  if (!draft || !Array.isArray(draft.questions)) return false;
-  let changed = false;
-  for (const q of draft.questions) {
-    const bt = q?.bunteTuete;
-    if (!bt || bt.kind !== 'order') continue;
-    if (Array.isArray(bt.itemValues) && bt.itemValues.length === (bt.items?.length ?? 0)) continue;
-    const key = (bt.items ?? []).join('|');
-    const values = ORDER_VALUES_BY_ITEMS_KEY[key];
-    if (values) {
-      bt.itemValues = values;
-      changed = true;
-    }
-  }
-  return changed;
+// ── Migration: alte Themen-Sample-Drafts entfernen ────────────────────────
+// Stand 2026-04-27: Die alten Themen-Drafts (qq-sample-allgemeinwissen,
+// qq-sample-popkultur, qq-sample-hamburg, qq-sample-natur-tiere, qq-sample-
+// sport, qq-sample-essen-trinken) wurden ersetzt durch 5 bunt gemischte
+// Allgemeinwissens-Drafts (qq-vol-1 bis qq-vol-5). Diese Migration räumt
+// persistierte Drafts mit alten Sample-IDs aus File + DB auf.
+function isLegacySampleDraft(id: string | null | undefined): boolean {
+  return typeof id === 'string' && id.startsWith('qq-sample-');
 }
 
-// ── Backfill Hot-Potato + ZvZ Updates ─────────────────────────────────────
-// Sample-Drafts wurden 2026-04-27 inhaltlich verbessert (Hot-Potato-Listen
-// von 3-6 auf 25-40 erweitert, 5 ZvZ Ja/Nein-Fragen zu 3-Options umgeschrie-
-// ben). Diese Migration zieht persistierte Drafts (file + DB) per question-id
-// auf den neuen Stand. Idempotent: matched per ID + überschreibt nur wenn
-// sich answer/options/correctOptionIndex tatsächlich unterscheidet.
-const QUESTION_CONTENT_OVERRIDES: Record<string, { text?: string; answer?: string; options?: string[]; correctOptionIndex?: number }> = {
-  // Hot-Potato — answer-Liste deutlich erweitert
-  'qq-sample-allgemeinwissen-p1-2': { answer: 'Deutschland, Frankreich, Spanien, Italien, Polen, Niederlande, Belgien, Österreich, Schweiz, Schweden, Norwegen, Dänemark, Finnland, Portugal, Griechenland, Tschechien, Ungarn, Rumänien, Bulgarien, Kroatien, Slowenien, Slowakei, Estland, Lettland, Litauen, Irland, Großbritannien, Island, Luxemburg, Malta, Zypern, Albanien, Serbien, Bosnien-Herzegowina, Nordmazedonien, Montenegro, Moldau, Ukraine, Weißrussland, Liechtenstein, Monaco, Andorra, San Marino, Vatikan, Kosovo' },
-  'qq-sample-popkultur-p1-2': { answer: 'Iron Man, Spider-Man, Thor, Hulk, Captain America, Black Widow, Hawkeye, Doctor Strange, Black Panther, Scarlet Witch, Vision, Falcon, Winter Soldier, Ant-Man, Wasp, Star-Lord, Gamora, Rocket, Groot, Drax, Loki, Wolverine, Deadpool, Daredevil, Punisher, Captain Marvel, Nick Fury, Miles Morales, Shuri, Okoye, Valkyrie, Nebula, Mantis, Yelena, Bucky, Magneto, Storm, Cyclops, Jean Grey, Professor X, Beast, Gambit, Rogue, Jubilee' },
-  'qq-sample-hamburg-p3-2':       { answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor, Spielbudenplatz, Reeperbahn, Hans-Albers-Platz, Silbersackstraße, Beatles-Platz, Indra-Club, Kaiserkeller, Operettenhaus, Schmidt Theater, Schmidts Tivoli, Talstraße, Hopfenstraße, Hamburger Berg, Esso-Häuser, Heiligengeistfeld, Park Fiction, Pinguin-Bar, Mojo Club, Molotow, St.-Pauli-Kirche, Bernhard-Nocht-Straße' },
-  'qq-sample-natur-tiere-p3-2':   { answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde, Kiefer, Ahorn, Esche, Erle, Pappel, Weide, Kastanie, Ulme, Lärche, Hainbuche, Eberesche, Wacholder, Holunder, Walnuss, Robinie, Platane, Mehlbeere, Edelkastanie, Mammutbaum, Douglasie, Eibe, Stechpalme, Hasel, Schwarzerle, Sandbirke, Stieleiche, Rotbuche, Spitzahorn, Bergahorn, Silberweide' },
-  'qq-sample-sport-p3-2':         { answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo, Tennis, Basketball, Fußball, Volleyball, Hockey, Rudern, Kanu, Segeln, Reiten, Fechten, Bogenschießen, Sportschießen, Radfahren, Triathlon, Marathon, Tischtennis, Badminton, Handball, Wasserball, Synchronschwimmen, Springreiten, Dressur, Gewichtheben, Ringen, Taekwondo, Karate, Skateboarding, Surfen, Klettern, Beachvolleyball, BMX, Mountainbike, Trampolin, Kunstturnen, Rhythmische Sportgymnastik, Wasserspringen, Stabhochsprung, Hochsprung, Weitsprung, Diskuswerfen, Kugelstoßen, Speerwerfen, Hammerwerfen, Hürdenlauf, Staffel' },
-  'qq-sample-essen-trinken-p3-2': { answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee, Limonade, Apfelschorle, Cola, Fanta, Sprite, Mineralwasser, Saftschorle, Smoothie, Tonic Water, Bitter Lemon, Spezi, Mate, Energy Drink, Kaffee, Tee, Kakao, Milch, Buttermilch, Kefir, Coconut Water, Lassi, Maracuja-Saft, Orangensaft, Apfelsaft, Multivitaminsaft, Tomatensaft, Karottensaft, Ananassaft, Cranberry-Saft, Ginger Ale, Ginger Beer, Bionade, Almdudler, Schorle, Pina Colada (Virgin), Strawberry Daiquiri (Virgin)' },
-  // ZvZ Ja/Nein → 3-Options
-  'qq-sample-hamburg-p2-3':       { text: 'Welcher ist der größte Seehafen Deutschlands?', answer: 'Hamburg', options: ['Hamburg', 'Bremerhaven', 'Wilhelmshaven'], correctOptionIndex: 0 },
-  'qq-sample-natur-tiere-p1-3':   { text: 'Zu welcher Tiergruppe gehören Wale?', answer: 'Säugetiere', options: ['Fische', 'Säugetiere', 'Reptilien'], correctOptionIndex: 1 },
-  'qq-sample-natur-tiere-p3-3':   { text: 'Welches Gas geben Pflanzen bei der Photosynthese ab?', answer: 'Sauerstoff', options: ['Sauerstoff', 'Stickstoff', 'CO₂'], correctOptionIndex: 0 },
-  'qq-sample-natur-tiere-p4-3':   { text: 'Zu welcher Tiergruppe gehört der Oktopus?', answer: 'Weichtiere', options: ['Wirbeltiere', 'Weichtiere', 'Krebstiere'], correctOptionIndex: 1 },
-  'qq-sample-essen-trinken-p1-3': { text: 'Wie wird Sauerkraut traditionell hergestellt?', answer: 'Fermentation', options: ['Fermentation', 'Kochen', 'Trocknen'], correctOptionIndex: 0 },
-};
-
-function applyQuestionContentOverrides(draft: any): boolean {
-  if (!draft || !Array.isArray(draft.questions)) return false;
-  let changed = false;
-  for (const q of draft.questions) {
-    const override = QUESTION_CONTENT_OVERRIDES[q?.id];
-    if (!override) continue;
-    if (override.text !== undefined && q.text !== override.text) {
-      q.text = override.text; changed = true;
-    }
-    if (override.answer !== undefined && q.answer !== override.answer) {
-      q.answer = override.answer; changed = true;
-    }
-    if (override.options !== undefined && JSON.stringify(q.options) !== JSON.stringify(override.options)) {
-      q.options = override.options; changed = true;
-    }
-    if (override.correctOptionIndex !== undefined && q.correctOptionIndex !== override.correctOptionIndex) {
-      q.correctOptionIndex = override.correctOptionIndex; changed = true;
-    }
-  }
-  return changed;
-}
-
-// Initial-Backfill auf file-backed drafts beim Startup
+// Initial-Cleanup auf file-backed drafts beim Startup
 {
-  let changed = false;
-  for (const d of qqDrafts) {
-    if (backfillOrderItemValues(d)) changed = true;
-    if (applyQuestionContentOverrides(d)) changed = true;
-  }
-  if (changed) {
+  const before = qqDrafts.length;
+  qqDrafts = qqDrafts.filter(d => !isLegacySampleDraft(d.id));
+  const removed = before - qqDrafts.length;
+  if (removed > 0) {
     persistQQDrafts();
-    console.log('[migration] Order itemValues + Question-Content backfilled (file)');
+    console.log(`[migration] Removed ${removed} legacy qq-sample-* drafts from file storage`);
   }
 }
 
@@ -8168,24 +8083,23 @@ app.get('/api/qq/drafts', async (_req, res) => {
   if (cached) return res.json(cached);
   if (await ensureDraftDbConnection()) {
     const dbDrafts = await getAllQQDraftsFromDB();
-    // Migrate Order-Fragen + Question-Content-Overrides — in DB persistieren
-    // falls backfill greift (one-time migrations für veraltete Drafts).
-    for (const d of dbDrafts) {
-      let touched = false;
-      if (backfillOrderItemValues(d)) touched = true;
-      if (applyQuestionContentOverrides(d)) touched = true;
-      if (touched) {
-        try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+    // Cleanup: alte qq-sample-* Drafts aus DB löschen (Migration 2026-04-27).
+    const legacyDrafts = dbDrafts.filter((d: any) => isLegacySampleDraft(d.id));
+    if (legacyDrafts.length > 0) {
+      for (const ld of legacyDrafts) {
+        try { await deleteQQDraftFromDB(ld.id); } catch { /* ignore */ }
       }
+      console.log(`[migration] Removed ${legacyDrafts.length} legacy qq-sample-* drafts from DB`);
     }
+    const cleanDbDrafts = dbDrafts.filter((d: any) => !isLegacySampleDraft(d.id));
     // Merge any file-backed drafts that aren't yet in DB
-    const dbIds = new Set(dbDrafts.map((d: any) => d.id));
+    const dbIds = new Set(cleanDbDrafts.map((d: any) => d.id));
     const fileDrafts = qqDrafts.filter(d => !dbIds.has(d.id));
     // Sync file-only drafts into DB for future
     for (const fd of fileDrafts) {
       try { await saveQQDraftToDB(fd); } catch { /* ignore */ }
     }
-    const merged = [...dbDrafts, ...fileDrafts].sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+    const merged = [...cleanDbDrafts, ...fileDrafts].sort((a: any, b: any) => b.updatedAt - a.updatedAt);
     cache.set('qqDrafts', merged, 120);
     return res.json(merged);
   }
@@ -8214,25 +8128,16 @@ app.post('/api/qq/drafts', async (req, res) => {
 });
 
 app.get('/api/qq/drafts/:id', async (req, res) => {
+  // Legacy qq-sample-* Drafts wurden 2026-04-27 ersetzt — direkt 404.
+  if (isLegacySampleDraft(req.params.id)) {
+    return res.status(404).json({ error: 'Draft nicht gefunden (veraltet — bitte aus aktueller Liste wählen)' });
+  }
   if (await ensureDraftDbConnection()) {
     const draft = await getQQDraftFromDB(req.params.id);
-    if (draft) {
-      // One-time migrations: itemValues + Question-Content-Overrides
-      let touched = false;
-      if (backfillOrderItemValues(draft)) touched = true;
-      if (applyQuestionContentOverrides(draft)) touched = true;
-      if (touched) {
-        try { await saveQQDraftToDB(draft); cache.del('qqDrafts'); } catch { /* ignore */ }
-      }
-      return res.json(draft);
-    }
+    if (draft) return res.json(draft);
   }
   const draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
-  let touched = false;
-  if (backfillOrderItemValues(draft)) touched = true;
-  if (applyQuestionContentOverrides(draft)) touched = true;
-  if (touched) persistQQDrafts();
   res.json(draft);
 });
 

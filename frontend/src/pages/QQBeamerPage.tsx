@@ -1240,6 +1240,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
           )}
           {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
+          {s.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={s} />}
           {s.phase === 'PAUSED'          && <PausedView state={s} />}
           {s.phase === 'GAME_OVER'       && <GameOverView state={s} roomCode={roomCode} />}
           {s.phase === 'THANKS'          && <ThanksView state={s} roomCode={roomCode} />}
@@ -9780,6 +9781,331 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           50% { opacity: 1; transform: scale(1.15); }
         }
       `}</style>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4×4 CONNECTIONS — Finalrunde (Beamer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CONNECTIONS_GROUP_COLORS = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA']; // gelb, grün, blau, lila
+
+export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const c = s.connections;
+  if (!c) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+        {lang === 'de' ? 'Connections wird vorbereitet…' : 'Connections is loading…'}
+      </div>
+    );
+  }
+
+  // Map: item → { groupId | null (noch nicht gefunden), color | null }
+  // Globale „gefundene Gruppen" = Vereinigung über alle Teams
+  const globallyFoundGroupIds = new Set<string>();
+  for (const teamId of Object.keys(c.teamProgress)) {
+    for (const gid of c.teamProgress[teamId].foundGroupIds) globallyFoundGroupIds.add(gid);
+  }
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'stretch', justifyContent: 'center',
+      gap: 'clamp(10px, 1.4vh, 18px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px)',
+      position: 'relative',
+    }}>
+      <Fireflies color="rgba(251,191,36,0.30)" />
+      <ConnectionsHeader state={s} />
+      {c.phase === 'intro' && <ConnectionsIntro state={s} />}
+      {(c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement') && (
+        <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
+      )}
+      {(c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement') && (
+        <ConnectionsTeamProgress state={s} />
+      )}
+    </div>
+  );
+}
+
+function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const c = s.connections!;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      gap: 16, position: 'relative', zIndex: 5,
+    }}>
+      <div>
+        <div style={{
+          fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
+          color: '#FBBF24', letterSpacing: '0.18em', textTransform: 'uppercase',
+        }}>
+          {lang === 'de' ? '4×4 Connections — Finale' : '4×4 Connections — Final'}
+        </div>
+        <div style={{ fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900, color: '#fde68a', lineHeight: 1.05 }}>
+          {lang === 'de' ? 'Findet die 4 Gruppen' : 'Find the 4 groups'}
+        </div>
+      </div>
+      {c.phase === 'active' && <ConnectionsTimer endsAt={c.endsAt} />}
+      {c.phase === 'reveal' && (
+        <div style={{
+          padding: '10px 18px', borderRadius: 14,
+          background: 'rgba(251,191,36,0.15)', border: '2px solid rgba(251,191,36,0.45)',
+          fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 900, color: '#fde68a',
+        }}>
+          {lang === 'de' ? 'Auflösung' : 'Reveal'}
+        </div>
+      )}
+      {c.phase === 'placement' && (
+        <div style={{
+          padding: '10px 18px', borderRadius: 14,
+          background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.45)',
+          fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 900, color: '#86EFAC',
+        }}>
+          {lang === 'de' ? 'Setzen läuft' : 'Placement'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConnectionsTimer({ endsAt }: { endsAt: number }) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      setRemaining(r);
+    }, 250);
+    return () => clearInterval(iv);
+  }, [endsAt]);
+  const m = Math.floor(remaining / 60);
+  const sec = Math.floor(remaining % 60);
+  const urgent = remaining <= 30;
+  return (
+    <div style={{
+      padding: '10px 18px', borderRadius: 14,
+      background: urgent ? 'rgba(239,68,68,0.22)' : 'rgba(251,191,36,0.15)',
+      border: `2px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.45)'}`,
+      fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
+      color: urgent ? '#FCA5A5' : '#FDE68A', fontVariantNumeric: 'tabular-nums',
+      animation: urgent ? 'pulse 0.8s ease-in-out infinite alternate' : undefined,
+    }}>
+      ⏱ {String(m).padStart(2, '0')}:{String(sec).padStart(2, '0')}
+    </div>
+  );
+}
+
+function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const c = s.connections!;
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 24, position: 'relative', zIndex: 5,
+      padding: 'clamp(20px, 4vh, 50px) clamp(24px, 4vw, 60px)',
+      borderRadius: 28,
+      background: 'rgba(251,191,36,0.06)',
+      border: '2px solid rgba(251,191,36,0.32)',
+      boxShadow: '0 0 60px rgba(251,191,36,0.15)',
+      animation: 'contentReveal 0.5s ease 0.2s both',
+    }}>
+      <div style={{ fontSize: 'clamp(60px, 8vw, 110px)' }}>🔗</div>
+      <div style={{
+        fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
+        color: '#fde68a', textAlign: 'center', lineHeight: 1.2, maxWidth: 1200,
+      }}>
+        {lang === 'de'
+          ? '16 Begriffe · 4 Gruppen · Findet die Verbindungen'
+          : '16 terms · 4 groups · Find the connections'}
+      </div>
+      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100 }}>
+        <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? `Wählt 4 Begriffe → „Gruppe abgeben"` : `Pick 4 terms → "Submit group"`} />
+        <ConnectionsRulePill emoji="🏆" text={lang === 'de' ? `1 Gruppe = 1 Aktion (max 4)` : `1 group = 1 action (max 4)`} />
+        <ConnectionsRulePill emoji="❌" text={lang === 'de' ? `${c.maxFailedAttempts} Fehlversuche → raus` : `${c.maxFailedAttempts} fails → out`} />
+        <ConnectionsRulePill emoji="⏱" text={lang === 'de' ? `${Math.floor(c.durationSec / 60)} Min Zeit` : `${Math.floor(c.durationSec / 60)} min`} />
+      </div>
+    </div>
+  );
+}
+
+function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '12px 22px', borderRadius: 999,
+      background: 'rgba(255,255,255,0.04)',
+      border: '1.5px solid rgba(251,191,36,0.32)',
+      fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 800, color: '#e2e8f0',
+    }}>
+      <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>{emoji}</span>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
+  state: QQStateUpdate;
+  globallyFoundGroupIds: Set<string>;
+}) {
+  const c = s.connections!;
+  const lang = useLangFlip(s.language);
+  const isReveal = c.phase === 'reveal' || c.phase === 'placement';
+  // Bei reveal: alle Items werden ihrer Gruppe nach gefärbt
+  // Bei active: nur global-gefundene Gruppen werden „gegrayt" (kein Spoiler-Verstoß weil ja schon raus)
+  const itemToGroup = new Map<string, { id: string; idx: number; name: string; color: string }>();
+  c.payload.groups.forEach((g, i) => {
+    g.items.forEach(it => {
+      itemToGroup.set(it, { id: g.id, idx: i, name: lang === 'de' ? g.name : (g.nameEn ?? g.name), color: CONNECTIONS_GROUP_COLORS[i] });
+    });
+  });
+
+  // Bei reveal: gruppieren wir die items zeilenweise nach group-Reihenfolge
+  let displayOrder = c.itemOrder;
+  if (isReveal) {
+    displayOrder = c.payload.groups.flatMap(g => g.items);
+  }
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: 'clamp(8px, 1vw, 14px)',
+      width: '100%', maxWidth: 1200, margin: '0 auto',
+      position: 'relative', zIndex: 5,
+    }}>
+      {displayOrder.map((item, i) => {
+        const grp = itemToGroup.get(item);
+        const isGlobalFound = grp ? globallyFoundGroupIds.has(grp.id) : false;
+        const showColored = isReveal || isGlobalFound;
+        return (
+          <div key={`${item}-${i}`} style={{
+            padding: 'clamp(14px, 1.8vw, 22px) clamp(8px, 1vw, 14px)',
+            borderRadius: 14,
+            textAlign: 'center',
+            fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
+            background: showColored && grp
+              ? `linear-gradient(135deg, ${grp.color}38, ${grp.color}18)`
+              : 'rgba(255,255,255,0.05)',
+            border: showColored && grp
+              ? `2px solid ${grp.color}`
+              : '2px solid rgba(255,255,255,0.10)',
+            color: showColored && grp ? '#fff' : '#e2e8f0',
+            boxShadow: showColored && grp ? `0 0 18px ${grp.color}33` : 'none',
+            minHeight: 'clamp(60px, 8vh, 100px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.3s ease',
+            animation: isReveal ? `contentReveal 0.4s ease ${i * 0.04}s both` : undefined,
+          }}>
+            {item}
+          </div>
+        );
+      })}
+      {isReveal && (
+        <div style={{
+          gridColumn: '1 / -1',
+          marginTop: 'clamp(8px, 1vh, 14px)',
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 'clamp(8px, 1vw, 14px)',
+        }}>
+          {c.payload.groups.map((g, i) => (
+            <div key={g.id} style={{
+              padding: '8px 14px', borderRadius: 10,
+              background: `${CONNECTIONS_GROUP_COLORS[i]}22`,
+              border: `1.5px solid ${CONNECTIONS_GROUP_COLORS[i]}`,
+              color: '#fff', fontWeight: 800, fontSize: 'clamp(13px, 1.3vw, 18px)',
+              textAlign: 'center',
+            }}>
+              {lang === 'de' ? g.name : (g.nameEn ?? g.name)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConnectionsTeamProgress({ state: s }: { state: QQStateUpdate }) {
+  const c = s.connections!;
+  const lang = useLangFlip(s.language);
+  // Sortierung: aktive Phase = nach foundCount + Speed live; reveal/placement = placementOrder
+  const isReveal = c.phase === 'reveal' || c.phase === 'placement';
+  const teamsOrdered = isReveal && c.placementOrder.length > 0
+    ? [...c.placementOrder, ...s.teams.filter(t => !c.placementOrder.includes(t.id)).map(t => t.id)]
+    : s.teams.map(t => t.id);
+
+  return (
+    <div style={{
+      display: 'flex', gap: 'clamp(8px, 1vw, 14px)',
+      flexWrap: 'wrap', justifyContent: 'center',
+      position: 'relative', zIndex: 5,
+    }}>
+      {teamsOrdered.map((teamId, idx) => {
+        const tm = s.teams.find(t => t.id === teamId);
+        if (!tm) return null;
+        const tp = c.teamProgress[teamId];
+        const found = tp?.foundGroupIds.length ?? 0;
+        const fails = tp?.failedAttempts ?? 0;
+        const locked = tp?.isLockedOut ?? false;
+        const isActiveTeam = c.phase === 'placement' && c.placementOrder[c.placementCursor] === teamId;
+        const rankBadge = isReveal && c.placementOrder.includes(teamId) ? `#${c.placementOrder.indexOf(teamId) + 1}` : null;
+        return (
+          <div key={teamId} style={{
+            padding: '8px 14px', borderRadius: 14,
+            background: isActiveTeam ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
+            border: `2px solid ${isActiveTeam ? tm.color : (locked ? 'rgba(239,68,68,0.4)' : `${tm.color}55`)}`,
+            display: 'flex', alignItems: 'center', gap: 10,
+            opacity: locked && !isReveal ? 0.55 : 1,
+            transition: 'all 0.3s ease',
+            boxShadow: isActiveTeam ? `0 0 24px ${tm.color}55` : undefined,
+          }}>
+            {rankBadge && (
+              <span style={{
+                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#FDE68A',
+                width: 26, textAlign: 'center',
+              }}>{rankBadge}</span>
+            )}
+            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(34px, 3.4vw, 50px)'} />
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{
+                fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 900, color: tm.color,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140,
+              }}>{tm.name}</span>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {[0,1,2,3].map(i => (
+                  <span key={i} style={{
+                    width: 10, height: 10, borderRadius: 3,
+                    background: i < found ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                    border: i < found ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
+                  }} />
+                ))}
+                {fails > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#FCA5A5', marginLeft: 4 }}>
+                    ✕{fails}
+                  </span>
+                )}
+                {locked && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#FCA5A5', marginLeft: 4 }}>
+                    {lang === 'de' ? 'raus' : 'out'}
+                  </span>
+                )}
+              </span>
+            </div>
+            {c.phase === 'placement' && isActiveTeam && (
+              <span style={{
+                marginLeft: 6, padding: '2px 10px', borderRadius: 999,
+                background: '#22C55E', color: '#0a1f0d',
+                fontSize: 11, fontWeight: 900, letterSpacing: 0.4, textTransform: 'uppercase',
+              }}>
+                {lang === 'de' ? `setzt ×${c.placementRemaining}` : `places ×${c.placementRemaining}`}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -3,8 +3,19 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  QQStateUpdate, QQSoundConfig,
+  QQStateUpdate, QQSoundConfig, QQConnectionsPayload,
 } from '../../../shared/quarterQuizTypes';
+
+// Hardcoded Demo-Payload für Connections (kein Editor erstmal — siehe Spec).
+// 4 Gruppen à 4 Items mit ein paar bewussten Doppeldeutigkeiten.
+const QQ_CONNECTIONS_DEMO_PAYLOAD: QQConnectionsPayload = {
+  groups: [
+    { id: 'g1', name: 'Kaffeesorten',         nameEn: 'Coffee types',     items: ['Java', 'Mocha', 'Latte', 'Espresso'],            difficulty: 1 },
+    { id: 'g2', name: 'Programmiersprachen',  nameEn: 'Languages',        items: ['Python', 'Ruby', 'Swift', 'Rust'],               difficulty: 2 },
+    { id: 'g3', name: 'Edelsteine',           nameEn: 'Gemstones',        items: ['Diamant', 'Saphir', 'Smaragd', 'Topas'],         difficulty: 3 },
+    { id: 'g4', name: 'Apple-Produkte',       nameEn: 'Apple products',   items: ['iPhone', 'iPad', 'MacBook', 'Watch'],            difficulty: 4 },
+  ],
+};
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
@@ -673,6 +684,7 @@ export default function QQModeratorPage() {
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
+      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 CONNECTIONS', color: '#FBBF24', sub: s.connections?.phase ?? '' };
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
       case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#F59E0B', sub: 'QR-Code für Summary' };
@@ -1252,6 +1264,11 @@ export default function QQModeratorPage() {
                   <ComebackControls state={s} roomCode={roomCode} emit={emit} />
                 )}
 
+                {/* ── 4×4 CONNECTIONS ── */}
+                {s.phase === 'CONNECTIONS_4X4' && (
+                  <ConnectionsControls state={s} roomCode={roomCode} emit={emit} />
+                )}
+
                 {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (
                   <>
@@ -1269,9 +1286,19 @@ export default function QQModeratorPage() {
 
                 {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
-                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
-                    ▶ Weiter
-                  </PrimaryBtn>
+                  <>
+                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
+                      ▶ Weiter
+                    </PrimaryBtn>
+                    <Btn color="#FBBF24" outline onClick={() => emit('qq:connectionsStart', {
+                      roomCode,
+                      payload: QQ_CONNECTIONS_DEMO_PAYLOAD,
+                      durationSec: s.connectionsTimerSec,
+                      maxFailedAttempts: s.connectionsMaxFails,
+                    })}>
+                      🔗 Connections (Demo)
+                    </Btn>
+                  </>
                 )}
 
                 {/* ── Separator ── */}
@@ -1750,6 +1777,10 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
     title: 'Comeback-Runde',
     text: 'Das zurückliegende Team darf einen Joker einsetzen. Erkläre kurz die Optionen und baue Spannung auf — das kann die Runde drehen!',
   },
+  CONNECTIONS_4X4: {
+    title: '4×4 Connections — Finale',
+    text: '16 Begriffe, 4 versteckte Gruppen. Teams jagen parallel und tippen 4 Items als Gruppen-Tipp. Pro gefundene Gruppe = 1 Aktion. Ranking: meiste Gruppen, schnellste zuerst bei Gleichstand. Heize an, achte auf den Timer.',
+  },
   PAUSED: {
     title: 'Pause',
     text: 'Kurze Verschnaufpause. Nutze die Zeit für eine Anekdote, einen kurzen Überblick über den Spielstand oder um auf die nächste Runde einzustimmen.',
@@ -2074,6 +2105,61 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
       <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
         {labels[Math.min(step, 2)]}
       </PrimaryBtn>
+    </div>
+  );
+}
+
+// 4×4 Connections — Moderator-Controls (Start/Begin/Force-Reveal/Placement)
+function ConnectionsControls({ state: s, roomCode, emit }: any) {
+  const c = s.connections;
+  if (!c) return null;
+  const phase = c.phase;
+  // Live-Stats
+  const teamIds = Object.keys(c.teamProgress ?? {});
+  const totalTeams = teamIds.length;
+  const finished = teamIds.filter((id: string) => (c.teamProgress[id]?.finishedAt ?? null) != null).length;
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', letterSpacing: 0.4, textTransform: 'uppercase' }}>
+        🔗 Connections · {phase}
+      </span>
+      {phase === 'intro' && (
+        <PrimaryBtn color="#FBBF24" onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
+          ▶ Spielzeit starten ({c.durationSec}s)
+        </PrimaryBtn>
+      )}
+      {phase === 'active' && (
+        <>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+            {finished}/{totalTeams} fertig
+          </span>
+          <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:connectionsForceReveal', { roomCode })}>
+            ⏹ Auflösen
+          </PrimaryBtn>
+        </>
+      )}
+      {phase === 'reveal' && (
+        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:connectionsToPlacement', { roomCode })} hotkey="Space">
+          ▶ Setzen starten
+        </PrimaryBtn>
+      )}
+      {phase === 'placement' && (
+        <span style={{ fontSize: 12, color: '#94a3b8' }}>
+          Setzen läuft — Cursor #{(c.placementCursor ?? 0) + 1}/{(c.placementOrder ?? []).length}, ×{c.placementRemaining}
+        </span>
+      )}
+      {phase === 'done' && (
+        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:connectionsClear', { roomCode })}>
+          ✓ Fertig — State löschen
+        </PrimaryBtn>
+      )}
+      <button onClick={() => emit('qq:connectionsClear', { roomCode })} style={{
+        padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
+        background: 'transparent', color: '#FCA5A5', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+      }}>
+        Abbrechen
+      </button>
     </div>
   );
 }
@@ -2969,6 +3055,43 @@ function LobbyView({
           }}
           title="Zurück ins Setup"
         >⎌ Zurück zum Setup</button>
+      </div>
+
+      {/* Debug: Connections-Demo-Starter */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 10,
+        marginBottom: 14, justifyContent: 'center', alignItems: 'center',
+        padding: '10px 14px', borderRadius: 12,
+        background: 'rgba(251,191,36,0.05)', border: '1px dashed rgba(251,191,36,0.25)',
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          🧪 Connections-Demo
+        </span>
+        <label style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
+          Timer
+          <input type="number" min={60} max={600} value={s.connectionsTimerSec ?? 180}
+            onChange={e => emit('qq:connectionsSettings', { roomCode, timerSec: Number(e.target.value) })}
+            style={{ width: 60, padding: '4px 6px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', fontFamily: 'inherit', fontSize: 12 }} />
+          s
+        </label>
+        <label style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
+          Max Fehler
+          <input type="number" min={0} max={10} value={s.connectionsMaxFails ?? 2}
+            onChange={e => emit('qq:connectionsSettings', { roomCode, maxFails: Number(e.target.value) })}
+            style={{ width: 50, padding: '4px 6px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', fontFamily: 'inherit', fontSize: 12 }} />
+        </label>
+        <button onClick={() => emit('qq:connectionsStart', {
+          roomCode,
+          payload: QQ_CONNECTIONS_DEMO_PAYLOAD,
+          durationSec: s.connectionsTimerSec ?? 180,
+          maxFailedAttempts: s.connectionsMaxFails ?? 2,
+        })} style={{
+          padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 900,
+          border: '1px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.18)',
+          color: '#FDE68A', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em',
+        }}>
+          🔗 Demo starten
+        </button>
       </div>
 
       {/* QR + Teams */}

@@ -897,6 +897,9 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         {s.phase === 'COMEBACK_CHOICE' && (
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
+        {s.phase === 'CONNECTIONS_4X4' && (
+          <ConnectionsTeamCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
+        )}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
         {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
@@ -3884,6 +3887,244 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         })}
       </div>
     </CozyCard>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4×4 CONNECTIONS — Team-Card (Multi-Select + Submit)
+// ═══════════════════════════════════════════════════════════════════════════════
+const CONN_GROUP_COLORS = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA'];
+
+function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }: {
+  state: QQStateUpdate;
+  myTeamId: string;
+  emit: (event: string, payload: unknown) => void;
+  roomCode: string;
+  lang?: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const c = s.connections;
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const teamColor = myTeam?.color ?? '#FBBF24';
+
+  if (!c) {
+    return (
+      <CozyCard borderColor="#FBBF24">
+        <div style={{ padding: 18, textAlign: 'center', color: '#94a3b8' }}>
+          {de ? 'Connections wird vorbereitet…' : 'Loading…'}
+        </div>
+      </CozyCard>
+    );
+  }
+
+  const tp = c.teamProgress[myTeamId];
+  const found = tp?.foundGroupIds.length ?? 0;
+  const fails = tp?.failedAttempts ?? 0;
+  const locked = tp?.isLockedOut ?? false;
+  const isFinished = (tp?.finishedAt ?? null) != null;
+  const selected = tp?.selectedItems ?? [];
+  // Items aus eigenen gefundenen Gruppen
+  const myFoundItems = new Set<string>();
+  (tp?.foundGroupIds ?? []).forEach(gid => {
+    const g = c.payload.groups.find(gg => gg.id === gid);
+    g?.items.forEach(it => myFoundItems.add(it));
+  });
+  // Map item → meine gefundene Gruppe (für Färbung)
+  const itemToMyGroup = new Map<string, { idx: number; color: string }>();
+  (tp?.foundGroupIds ?? []).forEach(gid => {
+    const g = c.payload.groups.find(gg => gg.id === gid);
+    if (!g) return;
+    const idx = c.payload.groups.findIndex(gg => gg.id === gid);
+    g.items.forEach(it => itemToMyGroup.set(it, { idx, color: CONN_GROUP_COLORS[idx] }));
+  });
+
+  // Phase-spezifische Hauptansicht
+  if (c.phase === 'intro') {
+    return (
+      <CozyCard borderColor="#FBBF24">
+        <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ fontSize: 48 }}>🔗</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#fde68a' }}>
+            {de ? 'Finalrunde: 4×4 Connections' : 'Final: 4×4 Connections'}
+          </div>
+          <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+            {de
+              ? `16 Begriffe, 4 versteckte Gruppen à 4 Items. Wählt 4 Begriffe → „Gruppe abgeben". Pro gefundener Gruppe = 1 Aktion. ${c.maxFailedAttempts} Fehler erlaubt.`
+              : `16 terms, 4 hidden groups of 4. Pick 4 → "Submit group". 1 group = 1 action. ${c.maxFailedAttempts} fails allowed.`}
+          </div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+            {de ? 'Wartet aufs Startsignal…' : 'Waiting for moderator…'}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
+  if (c.phase === 'reveal' || c.phase === 'placement' || c.phase === 'done') {
+    return (
+      <CozyCard borderColor={teamColor}>
+        <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: teamColor }}>
+              {myTeam?.name}
+            </span>
+            <span style={{
+              padding: '4px 12px', borderRadius: 999,
+              background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.5)',
+              fontSize: 12, fontWeight: 900, color: '#86EFAC',
+            }}>
+              {found} {de ? 'Gruppen' : 'groups'} {found > 0 ? `→ ×${found} ${de ? 'Aktionen' : 'actions'}` : ''}
+            </span>
+          </div>
+          {locked && (
+            <div style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 800, textAlign: 'center' }}>
+              {de ? `Ausgeschieden nach ${fails} Fehlversuchen` : `Out after ${fails} fails`}
+            </div>
+          )}
+          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+            {c.phase === 'placement'
+              ? (de ? 'Schaut auf den Beamer — Setzen läuft.' : 'Watch the beamer — placement in progress.')
+              : (de ? 'Auflösung läuft…' : 'Reveal in progress…')}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
+  // c.phase === 'active' → Spielzeit
+  return (
+    <CozyCard borderColor={teamColor}>
+      <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Header: Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[0,1,2,3].map(i => (
+              <span key={i} style={{
+                width: 14, height: 14, borderRadius: 4,
+                background: i < found ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                border: i < found ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
+              }} />
+            ))}
+          </div>
+          <ConnectionsTeamTimer endsAt={c.endsAt} />
+          <span style={{
+            padding: '3px 10px', borderRadius: 999,
+            background: fails > 0 ? 'rgba(239,68,68,0.18)' : 'rgba(255,255,255,0.05)',
+            border: `1.5px solid ${fails > 0 ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
+            fontSize: 11, fontWeight: 900,
+            color: fails > 0 ? '#FCA5A5' : '#94a3b8',
+          }}>
+            {de ? 'Fehler' : 'Fails'} {fails}/{c.maxFailedAttempts}
+          </span>
+        </div>
+
+        {locked || isFinished ? (
+          <div style={{
+            padding: 14, textAlign: 'center', borderRadius: 12,
+            background: locked ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.10)',
+            border: `1.5px solid ${locked ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.4)'}`,
+            color: locked ? '#FCA5A5' : '#86EFAC',
+            fontWeight: 800, fontSize: 14,
+          }}>
+            {locked
+              ? (de ? `🚫 Ausgeschieden — wartet auf Auflösung.` : `🚫 Out — wait for reveal.`)
+              : (de ? `✓ Alle 4 Gruppen gefunden! Wartet aufs Auflösen.` : `✓ All 4 groups found! Wait for reveal.`)}
+          </div>
+        ) : (
+          <>
+            {/* 4×4 Grid */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 6, width: '100%',
+            }}>
+              {c.itemOrder.map((item, i) => {
+                const isMyFound = myFoundItems.has(item);
+                const myGroupColor = itemToMyGroup.get(item)?.color;
+                const isSelected = selected.includes(item);
+                const disabled = isMyFound;
+                return (
+                  <button
+                    key={`${item}-${i}`}
+                    disabled={disabled}
+                    onClick={() => emit('qq:connectionsSelectItem', { roomCode, teamId: myTeamId, item })}
+                    style={{
+                      padding: '10px 4px', borderRadius: 10,
+                      background: isMyFound && myGroupColor
+                        ? `linear-gradient(135deg, ${myGroupColor}38, ${myGroupColor}15)`
+                        : isSelected
+                          ? `${teamColor}30`
+                          : 'rgba(255,255,255,0.04)',
+                      border: isMyFound && myGroupColor
+                        ? `2px solid ${myGroupColor}`
+                        : isSelected
+                          ? `2px solid ${teamColor}`
+                          : '2px solid rgba(255,255,255,0.10)',
+                      color: isMyFound ? '#fff' : isSelected ? '#fff' : '#e2e8f0',
+                      fontSize: 12, fontWeight: 800, lineHeight: 1.15,
+                      cursor: disabled ? 'default' : 'pointer',
+                      minHeight: 56,
+                      opacity: disabled ? 0.7 : 1,
+                      transition: 'all 0.18s ease',
+                      fontFamily: 'inherit',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Submit-Button */}
+            <button
+              disabled={selected.length !== 4}
+              onClick={() => emit('qq:connectionsSubmit', { roomCode, teamId: myTeamId })}
+              style={{
+                padding: '14px 18px', borderRadius: 14,
+                border: 'none',
+                background: selected.length === 4
+                  ? 'linear-gradient(135deg, #22C55E, #16A34A)'
+                  : 'rgba(255,255,255,0.06)',
+                color: selected.length === 4 ? '#0a1f0d' : '#64748b',
+                fontSize: 16, fontWeight: 900,
+                cursor: selected.length === 4 ? 'pointer' : 'not-allowed',
+                boxShadow: selected.length === 4 ? '0 4px 14px rgba(34,197,94,0.4)' : 'none',
+                fontFamily: 'inherit',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
+              }}
+            >
+              {selected.length === 4
+                ? (de ? '✓ Gruppe abgeben' : '✓ Submit group')
+                : (de ? `${selected.length}/4 ausgewählt` : `${selected.length}/4 selected`)}
+            </button>
+          </>
+        )}
+      </div>
+    </CozyCard>
+  );
+}
+
+function ConnectionsTeamTimer({ endsAt }: { endsAt: number }) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setRemaining(Math.max(0, (endsAt - Date.now()) / 1000));
+    }, 500);
+    return () => clearInterval(iv);
+  }, [endsAt]);
+  const m = Math.floor(remaining / 60);
+  const sec = Math.floor(remaining % 60);
+  const urgent = remaining <= 30;
+  return (
+    <span style={{
+      padding: '3px 10px', borderRadius: 999,
+      background: urgent ? 'rgba(239,68,68,0.18)' : 'rgba(251,191,36,0.15)',
+      border: `1.5px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.4)'}`,
+      fontSize: 13, fontWeight: 900, color: urgent ? '#FCA5A5' : '#FDE68A',
+      fontVariantNumeric: 'tabular-nums',
+    }}>
+      ⏱ {String(m).padStart(2, '0')}:{String(sec).padStart(2, '0')}
+    </span>
   );
 }
 

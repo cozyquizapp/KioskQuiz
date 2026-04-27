@@ -7876,7 +7876,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 1
     q(`${d1id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Länder gibt es auf der Welt?', answer: '195', targetValue: 195 }),
     q(`${d1id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Land der Erde?', answer: 'Russland', options: ['Kanada', 'Russland', 'China', 'USA'], optionsEn: ['Canada', 'Russia', 'China', 'USA'], correctOptionIndex: 1 }),
-    q(`${d1id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein europäisches Land — reihum!', answer: 'Deutschland, Frankreich, Spanien…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d1id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein europäisches Land — reihum!', answer: 'Deutschland, Frankreich, Spanien, Italien, Polen, Niederlande, Belgien, Österreich, Schweiz, Schweden, Norwegen, Dänemark, Finnland, Portugal, Griechenland, Tschechien, Ungarn, Rumänien, Bulgarien, Kroatien, Slowenien, Slowakei, Estland, Lettland, Litauen, Irland, Großbritannien, Island, Luxemburg, Malta, Zypern, Albanien, Serbien, Bosnien-Herzegowina, Nordmazedonien, Montenegro, Moldau, Ukraine, Weißrussland, Liechtenstein, Monaco, Andorra, San Marino, Vatikan, Kosovo', bunteTuete: { kind: 'hotPotato' } }),
     q(`${d1id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Farbe hat die Sonne beim Untergang?', answer: 'Rot/Orange', options: ['Rot/Orange', 'Gelb', 'Weiß'], correctOptionIndex: 0 }),
     q(`${d1id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches berühmte Bauwerk ist das?', answer: 'Eiffelturm' }),
     // Phase 2
@@ -7899,7 +7899,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 1
     q(`${d2id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Spotify-Streams hat der meistgestreamte Song aller Zeiten (Blinding Lights)?', answer: '4,5 Milliarden', targetValue: 4500000000 }),
     q(`${d2id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welcher Film gewann 2024 den Oscar für den besten Film?', answer: 'Oppenheimer', options: ['Barbie', 'Oppenheimer', 'Killers of the Flower Moon', 'Poor Things'], correctOptionIndex: 1 }),
-    q(`${d2id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne eine Marvel-Figur — reihum!', answer: 'Iron Man, Spider-Man, Thor…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d2id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne eine Marvel-Figur — reihum!', answer: 'Iron Man, Spider-Man, Thor, Hulk, Captain America, Black Widow, Hawkeye, Doctor Strange, Black Panther, Scarlet Witch, Vision, Falcon, Winter Soldier, Ant-Man, Wasp, Star-Lord, Gamora, Rocket, Groot, Drax, Loki, Wolverine, Deadpool, Daredevil, Punisher, Captain Marvel, Nick Fury, Miles Morales, Shuri, Okoye, Valkyrie, Nebula, Mantis, Yelena, Bucky, Magneto, Storm, Cyclops, Jean Grey, Professor X, Beast, Gambit, Rogue, Jubilee', bunteTuete: { kind: 'hotPotato' } }),
     q(`${d2id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Serie hat die meisten Emmy-Auszeichnungen?', answer: 'Game of Thrones', options: ['Breaking Bad', 'Game of Thrones', 'Friends'], correctOptionIndex: 1 }),
     q(`${d2id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welcher Film ist das?', answer: 'Jurassic Park' }),
     // Phase 2
@@ -7929,12 +7929,12 @@ function createSampleQQDrafts(): typeof qqDrafts {
     q(`${d3id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Brücken hat Hamburg ungefähr?', answer: '2500', targetValue: 2500, funFact: 'Hamburg hat mehr Brücken als Venedig, Amsterdam und London zusammen.' }),
     q(`${d3id}-p2-1`, 2, 1, 'MUCHO', { text: 'Wie heißt der große See mitten in Hamburg?', answer: 'Alster', options: ['Elbe', 'Alster', 'Bille', 'Isebek'], correctOptionIndex: 1 }),
     q(`${d3id}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Bringe diese Hamburger Bauwerke in die richtige Reihenfolge ihrer Eröffnung!', answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Rathaus', 'Michel', 'Köhlbrandbrücke'], correctOrder: [2, 1, 3, 0], criteria: 'nach Eröffnungsjahr (älteste zuerst)', itemValues: ['2017', '1897', '1786', '1974'] }, funFact: 'Michel 1786, Rathaus 1897, Köhlbrandbrücke 1974, Elbphilharmonie 2017.' }),
-    q(`${d3id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Hamburg ist der größte Seehafen Deutschlands — stimmt das?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d3id}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher ist der größte Seehafen Deutschlands?', answer: 'Hamburg', options: ['Hamburg', 'Bremerhaven', 'Wilhelmshaven'], correctOptionIndex: 0 }),
     q(`${d3id}-p2-4`, 2, 4, 'CHEESE', { text: 'Welche berühmte Brücke ist das?', answer: 'Köhlbrandbrücke' }),
     // Phase 3 — St. Pauli & Kiez (bunte Tüte: hotPotato)
     q(`${d3id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie lang ist die Reeperbahn in Metern?', answer: '930', targetValue: 930, unit: 'm' }),
     q(`${d3id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welchem Hamburger Club spielten die Beatles 1960-1962?', answer: 'Star-Club', options: ['Molotow', 'Star-Club', 'Grosse Freiheit 36', 'Docks'], correctOptionIndex: 1 }),
-    q(`${d3id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine Straße oder einen Ort auf der Reeperbahn/St. Pauli — reihum!', answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d3id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine Straße oder einen Ort auf der Reeperbahn/St. Pauli — reihum!', answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor, Spielbudenplatz, Reeperbahn, Hans-Albers-Platz, Silbersackstraße, Beatles-Platz, Indra-Club, Kaiserkeller, Operettenhaus, Schmidt Theater, Schmidts Tivoli, Talstraße, Hopfenstraße, Hamburger Berg, Esso-Häuser, Heiligengeistfeld, Park Fiction, Pinguin-Bar, Mojo Club, Molotow, St.-Pauli-Kirche, Bernhard-Nocht-Straße', bunteTuete: { kind: 'hotPotato' } }),
     q(`${d3id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Liga spielt der FC St. Pauli in der Saison 2024/25?', answer: 'Bundesliga', options: ['Bundesliga', '2. Bundesliga', '3. Liga'], correctOptionIndex: 0, funFact: 'St. Pauli ist nach langer Zeit 2024 in die Bundesliga aufgestiegen.' }),
     q(`${d3id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches St.-Pauli-Symbol ist das?', answer: 'Totenkopf (St.-Pauli-Logo)' }),
     // Phase 4 — Essen & Kultur (bunte Tüte: map)
@@ -7952,7 +7952,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     q(`${d4id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie schnell kann ein Gepard maximal laufen (km/h)?', answer: '112', targetValue: 112, unit: 'km/h' }),
     q(`${d4id}-p1-1`, 1, 1, 'MUCHO', { text: 'Welches ist das größte Landtier der Welt?', answer: 'Afrikanischer Elefant', options: ['Nashorn', 'Afrikanischer Elefant', 'Giraffe', 'Flusspferd'], correctOptionIndex: 1 }),
     q(`${d4id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 schwersten Landtiere!', answer: 'Afrikanischer Elefant, Asiatischer Elefant, Breitmaulnashorn, Flusspferd, Spitzmaulnashorn', bunteTuete: { kind: 'top5', answers: ['Afrikanischer Elefant', 'Asiatischer Elefant', 'Breitmaulnashorn', 'Flusspferd', 'Spitzmaulnashorn'] } }),
-    q(`${d4id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Sind Wale Fische?', answer: 'Nein (Säugetiere)', options: ['Ja', 'Nein (Säugetiere)'], correctOptionIndex: 1 }),
+    q(`${d4id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Zu welcher Tiergruppe gehören Wale?', answer: 'Säugetiere', options: ['Fische', 'Säugetiere', 'Reptilien'], correctOptionIndex: 1 }),
     q(`${d4id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Tier ist das?', answer: 'Rotfuchs' }),
     // Phase 2 — Vögel & Insekten (order)
     q(`${d4id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Flügelschläge pro Sekunde hat ein Kolibri (ca.)?', answer: '80', targetValue: 80 }),
@@ -7963,14 +7963,14 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3 — Pflanzen & Wald (hotPotato)
     q(`${d4id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie hoch kann ein Mammutbaum maximal werden (m)?', answer: '115', targetValue: 115, unit: 'm' }),
     q(`${d4id}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Baum verliert im Winter NICHT seine Blätter?', answer: 'Tanne', options: ['Buche', 'Eiche', 'Tanne', 'Birke'], correctOptionIndex: 2 }),
-    q(`${d4id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen Baum, der in Deutschland wächst — reihum!', answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde…', bunteTuete: { kind: 'hotPotato' } }),
-    q(`${d4id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Produzieren Pflanzen Sauerstoff?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d4id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen Baum, der in Deutschland wächst — reihum!', answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde, Kiefer, Ahorn, Esche, Erle, Pappel, Weide, Kastanie, Ulme, Lärche, Hainbuche, Eberesche, Wacholder, Holunder, Walnuss, Robinie, Platane, Mehlbeere, Edelkastanie, Mammutbaum, Douglasie, Eibe, Stechpalme, Hasel, Schwarzerle, Sandbirke, Stieleiche, Rotbuche, Spitzahorn, Bergahorn, Silberweide', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d4id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Gas geben Pflanzen bei der Photosynthese ab?', answer: 'Sauerstoff', options: ['Sauerstoff', 'Stickstoff', 'CO₂'], correctOptionIndex: 0 }),
     q(`${d4id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welche Pflanze ist das?', answer: 'Sonnenblume' }),
     // Phase 4 — Wasser & Meer (map)
     q(`${d4id}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie tief ist der tiefste Punkt des Ozeans (Marianengraben) in Metern?', answer: '10984', targetValue: 10984, unit: 'm' }),
     q(`${d4id}-p4-1`, 4, 1, 'MUCHO', { text: 'Welches ist der größte Ozean?', answer: 'Pazifischer Ozean', options: ['Atlantik', 'Pazifik', 'Indischer Ozean', 'Arktischer Ozean'], correctOptionIndex: 1 }),
     q(`${d4id}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt das Great Barrier Reef? Setz einen Pin!', answer: 'Ostküste Australien', bunteTuete: { kind: 'map', lat: -18.2871, lng: 147.6992, targetLabel: 'Great Barrier Reef, Australien' } }),
-    q(`${d4id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Ist ein Oktopus ein Wirbeltier?', answer: 'Nein', options: ['Ja', 'Nein'], correctOptionIndex: 1 }),
+    q(`${d4id}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Zu welcher Tiergruppe gehört der Oktopus?', answer: 'Weichtiere', options: ['Wirbeltiere', 'Weichtiere', 'Krebstiere'], correctOptionIndex: 1 }),
     q(`${d4id}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Meerestier ist das?', answer: 'Seepferdchen' }),
   ];
 
@@ -7992,7 +7992,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3 — Individualsport (hotPotato)
     q(`${d5id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Grand-Slam-Titel hat Novak Djokovic bis Ende 2024 gewonnen?', answer: '24', targetValue: 24 }),
     q(`${d5id}-p3-1`, 3, 1, 'MUCHO', { text: 'In welcher Sportart gibt es "Strikes" und "Spares"?', answer: 'Bowling', options: ['Bowling', 'Baseball', 'Golf', 'Eishockey'], correctOptionIndex: 0 }),
-    q(`${d5id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine olympische Sportart — reihum!', answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d5id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne eine olympische Sportart — reihum!', answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo, Tennis, Basketball, Fußball, Volleyball, Hockey, Rudern, Kanu, Segeln, Reiten, Fechten, Bogenschießen, Sportschießen, Radfahren, Triathlon, Marathon, Tischtennis, Badminton, Handball, Wasserball, Synchronschwimmen, Springreiten, Dressur, Gewichtheben, Ringen, Taekwondo, Karate, Skateboarding, Surfen, Klettern, Beachvolleyball, BMX, Mountainbike, Trampolin, Kunstturnen, Rhythmische Sportgymnastik, Wasserspringen, Stabhochsprung, Hochsprung, Weitsprung, Diskuswerfen, Kugelstoßen, Speerwerfen, Hammerwerfen, Hürdenlauf, Staffel', bunteTuete: { kind: 'hotPotato' } }),
     q(`${d5id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Wie viele Löcher hat ein Standard-Golfplatz?', answer: '18', options: ['9', '18', '27'], correctOptionIndex: 1 }),
     q(`${d5id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welcher Sportler ist das?', answer: 'Usain Bolt' }),
     // Phase 4 — Stadien (map)
@@ -8010,7 +8010,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     q(`${d6id}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele verschiedene Brotsorten gibt es in Deutschland (ca.)?', answer: '3200', targetValue: 3200 }),
     q(`${d6id}-p1-1`, 1, 1, 'MUCHO', { text: 'Aus welchem Bundesland stammt die Currywurst?', answer: 'Berlin', options: ['Hamburg', 'Berlin', 'NRW', 'Bayern'], correctOptionIndex: 1, funFact: 'Erfunden 1949 von Herta Heuwer in Berlin.' }),
     q(`${d6id}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne die Top 5 beliebtesten Brotsorten in Deutschland!', answer: 'Mischbrot, Toastbrot, Vollkornbrot, Roggenbrot, Weizenbrot', bunteTuete: { kind: 'top5', answers: ['Mischbrot', 'Toastbrot', 'Vollkornbrot', 'Roggenbrot', 'Weizenbrot'] } }),
-    q(`${d6id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Ist Sauerkraut fermentiert?', answer: 'Ja', options: ['Ja', 'Nein'], correctOptionIndex: 0 }),
+    q(`${d6id}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Wie wird Sauerkraut traditionell hergestellt?', answer: 'Fermentation', options: ['Fermentation', 'Kochen', 'Trocknen'], correctOptionIndex: 0 }),
     q(`${d6id}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches deutsche Gericht ist das?', answer: 'Schweinshaxe' }),
     // Phase 2 — Süßes & Desserts (order)
     q(`${d6id}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viel Zucker (g) enthält eine 0,33l-Cola?', answer: '35', targetValue: 35, unit: 'g' }),
@@ -8021,7 +8021,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3 — Getränke (hotPotato)
     q(`${d6id}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Liter Bier trinkt ein Deutscher pro Jahr im Durchschnitt?', answer: '90', targetValue: 90, unit: 'l' }),
     q(`${d6id}-p3-1`, 3, 1, 'MUCHO', { text: 'Aus welcher Pflanze wird Tequila gemacht?', answer: 'Agave', options: ['Agave', 'Kaktus', 'Zuckerrohr', 'Mais'], correctOptionIndex: 0 }),
-    q(`${d6id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen alkoholfreien Cocktail oder ein Erfrischungsgetränk — reihum!', answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee…', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${d6id}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen alkoholfreien Cocktail oder ein Erfrischungsgetränk — reihum!', answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee, Limonade, Apfelschorle, Cola, Fanta, Sprite, Mineralwasser, Saftschorle, Smoothie, Tonic Water, Bitter Lemon, Spezi, Mate, Energy Drink, Kaffee, Tee, Kakao, Milch, Buttermilch, Kefir, Coconut Water, Lassi, Maracuja-Saft, Orangensaft, Apfelsaft, Multivitaminsaft, Tomatensaft, Karottensaft, Ananassaft, Cranberry-Saft, Ginger Ale, Ginger Beer, Bionade, Almdudler, Schorle, Pina Colada (Virgin), Strawberry Daiquiri (Virgin)', bunteTuete: { kind: 'hotPotato' } }),
     q(`${d6id}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Getränk enthält KEIN Koffein?', answer: 'Rooibos-Tee', options: ['Schwarzer Tee', 'Grüner Tee', 'Rooibos-Tee'], correctOptionIndex: 2 }),
     q(`${d6id}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Getränk ist das?', answer: 'Aperol Spritz' }),
     // Phase 4 — International (map)
@@ -8106,15 +8106,60 @@ function backfillOrderItemValues(draft: any): boolean {
   return changed;
 }
 
+// ── Backfill Hot-Potato + ZvZ Updates ─────────────────────────────────────
+// Sample-Drafts wurden 2026-04-27 inhaltlich verbessert (Hot-Potato-Listen
+// von 3-6 auf 25-40 erweitert, 5 ZvZ Ja/Nein-Fragen zu 3-Options umgeschrie-
+// ben). Diese Migration zieht persistierte Drafts (file + DB) per question-id
+// auf den neuen Stand. Idempotent: matched per ID + überschreibt nur wenn
+// sich answer/options/correctOptionIndex tatsächlich unterscheidet.
+const QUESTION_CONTENT_OVERRIDES: Record<string, { text?: string; answer?: string; options?: string[]; correctOptionIndex?: number }> = {
+  // Hot-Potato — answer-Liste deutlich erweitert
+  'qq-sample-allgemeinwissen-p1-2': { answer: 'Deutschland, Frankreich, Spanien, Italien, Polen, Niederlande, Belgien, Österreich, Schweiz, Schweden, Norwegen, Dänemark, Finnland, Portugal, Griechenland, Tschechien, Ungarn, Rumänien, Bulgarien, Kroatien, Slowenien, Slowakei, Estland, Lettland, Litauen, Irland, Großbritannien, Island, Luxemburg, Malta, Zypern, Albanien, Serbien, Bosnien-Herzegowina, Nordmazedonien, Montenegro, Moldau, Ukraine, Weißrussland, Liechtenstein, Monaco, Andorra, San Marino, Vatikan, Kosovo' },
+  'qq-sample-popkultur-p1-2': { answer: 'Iron Man, Spider-Man, Thor, Hulk, Captain America, Black Widow, Hawkeye, Doctor Strange, Black Panther, Scarlet Witch, Vision, Falcon, Winter Soldier, Ant-Man, Wasp, Star-Lord, Gamora, Rocket, Groot, Drax, Loki, Wolverine, Deadpool, Daredevil, Punisher, Captain Marvel, Nick Fury, Miles Morales, Shuri, Okoye, Valkyrie, Nebula, Mantis, Yelena, Bucky, Magneto, Storm, Cyclops, Jean Grey, Professor X, Beast, Gambit, Rogue, Jubilee' },
+  'qq-sample-hamburg-p3-2':       { answer: 'Große Freiheit, Herbertstraße, Davidwache, Millerntor, Spielbudenplatz, Reeperbahn, Hans-Albers-Platz, Silbersackstraße, Beatles-Platz, Indra-Club, Kaiserkeller, Operettenhaus, Schmidt Theater, Schmidts Tivoli, Talstraße, Hopfenstraße, Hamburger Berg, Esso-Häuser, Heiligengeistfeld, Park Fiction, Pinguin-Bar, Mojo Club, Molotow, St.-Pauli-Kirche, Bernhard-Nocht-Straße' },
+  'qq-sample-natur-tiere-p3-2':   { answer: 'Eiche, Buche, Fichte, Tanne, Birke, Linde, Kiefer, Ahorn, Esche, Erle, Pappel, Weide, Kastanie, Ulme, Lärche, Hainbuche, Eberesche, Wacholder, Holunder, Walnuss, Robinie, Platane, Mehlbeere, Edelkastanie, Mammutbaum, Douglasie, Eibe, Stechpalme, Hasel, Schwarzerle, Sandbirke, Stieleiche, Rotbuche, Spitzahorn, Bergahorn, Silberweide' },
+  'qq-sample-sport-p3-2':         { answer: 'Schwimmen, Turnen, Leichtathletik, Boxen, Judo, Tennis, Basketball, Fußball, Volleyball, Hockey, Rudern, Kanu, Segeln, Reiten, Fechten, Bogenschießen, Sportschießen, Radfahren, Triathlon, Marathon, Tischtennis, Badminton, Handball, Wasserball, Synchronschwimmen, Springreiten, Dressur, Gewichtheben, Ringen, Taekwondo, Karate, Skateboarding, Surfen, Klettern, Beachvolleyball, BMX, Mountainbike, Trampolin, Kunstturnen, Rhythmische Sportgymnastik, Wasserspringen, Stabhochsprung, Hochsprung, Weitsprung, Diskuswerfen, Kugelstoßen, Speerwerfen, Hammerwerfen, Hürdenlauf, Staffel' },
+  'qq-sample-essen-trinken-p3-2': { answer: 'Virgin Mojito, Shirley Temple, Ipanema, Eistee, Limonade, Apfelschorle, Cola, Fanta, Sprite, Mineralwasser, Saftschorle, Smoothie, Tonic Water, Bitter Lemon, Spezi, Mate, Energy Drink, Kaffee, Tee, Kakao, Milch, Buttermilch, Kefir, Coconut Water, Lassi, Maracuja-Saft, Orangensaft, Apfelsaft, Multivitaminsaft, Tomatensaft, Karottensaft, Ananassaft, Cranberry-Saft, Ginger Ale, Ginger Beer, Bionade, Almdudler, Schorle, Pina Colada (Virgin), Strawberry Daiquiri (Virgin)' },
+  // ZvZ Ja/Nein → 3-Options
+  'qq-sample-hamburg-p2-3':       { text: 'Welcher ist der größte Seehafen Deutschlands?', answer: 'Hamburg', options: ['Hamburg', 'Bremerhaven', 'Wilhelmshaven'], correctOptionIndex: 0 },
+  'qq-sample-natur-tiere-p1-3':   { text: 'Zu welcher Tiergruppe gehören Wale?', answer: 'Säugetiere', options: ['Fische', 'Säugetiere', 'Reptilien'], correctOptionIndex: 1 },
+  'qq-sample-natur-tiere-p3-3':   { text: 'Welches Gas geben Pflanzen bei der Photosynthese ab?', answer: 'Sauerstoff', options: ['Sauerstoff', 'Stickstoff', 'CO₂'], correctOptionIndex: 0 },
+  'qq-sample-natur-tiere-p4-3':   { text: 'Zu welcher Tiergruppe gehört der Oktopus?', answer: 'Weichtiere', options: ['Wirbeltiere', 'Weichtiere', 'Krebstiere'], correctOptionIndex: 1 },
+  'qq-sample-essen-trinken-p1-3': { text: 'Wie wird Sauerkraut traditionell hergestellt?', answer: 'Fermentation', options: ['Fermentation', 'Kochen', 'Trocknen'], correctOptionIndex: 0 },
+};
+
+function applyQuestionContentOverrides(draft: any): boolean {
+  if (!draft || !Array.isArray(draft.questions)) return false;
+  let changed = false;
+  for (const q of draft.questions) {
+    const override = QUESTION_CONTENT_OVERRIDES[q?.id];
+    if (!override) continue;
+    if (override.text !== undefined && q.text !== override.text) {
+      q.text = override.text; changed = true;
+    }
+    if (override.answer !== undefined && q.answer !== override.answer) {
+      q.answer = override.answer; changed = true;
+    }
+    if (override.options !== undefined && JSON.stringify(q.options) !== JSON.stringify(override.options)) {
+      q.options = override.options; changed = true;
+    }
+    if (override.correctOptionIndex !== undefined && q.correctOptionIndex !== override.correctOptionIndex) {
+      q.correctOptionIndex = override.correctOptionIndex; changed = true;
+    }
+  }
+  return changed;
+}
+
 // Initial-Backfill auf file-backed drafts beim Startup
 {
   let changed = false;
   for (const d of qqDrafts) {
     if (backfillOrderItemValues(d)) changed = true;
+    if (applyQuestionContentOverrides(d)) changed = true;
   }
   if (changed) {
     persistQQDrafts();
-    console.log('[migration] Order-Frage itemValues backfilled (file)');
+    console.log('[migration] Order itemValues + Question-Content backfilled (file)');
   }
 }
 
@@ -8123,10 +8168,13 @@ app.get('/api/qq/drafts', async (_req, res) => {
   if (cached) return res.json(cached);
   if (await ensureDraftDbConnection()) {
     const dbDrafts = await getAllQQDraftsFromDB();
-    // Migrate Order-Fragen ohne itemValues — auch in DB persistieren falls
-    // backfill greift (one-time migration für vor-itemValues-Drafts).
+    // Migrate Order-Fragen + Question-Content-Overrides — in DB persistieren
+    // falls backfill greift (one-time migrations für veraltete Drafts).
     for (const d of dbDrafts) {
-      if (backfillOrderItemValues(d)) {
+      let touched = false;
+      if (backfillOrderItemValues(d)) touched = true;
+      if (applyQuestionContentOverrides(d)) touched = true;
+      if (touched) {
         try { await saveQQDraftToDB(d); } catch { /* ignore */ }
       }
     }
@@ -8169,8 +8217,11 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
   if (await ensureDraftDbConnection()) {
     const draft = await getQQDraftFromDB(req.params.id);
     if (draft) {
-      // Backfill itemValues falls noch fehlt + persistieren (one-time migration)
-      if (backfillOrderItemValues(draft)) {
+      // One-time migrations: itemValues + Question-Content-Overrides
+      let touched = false;
+      if (backfillOrderItemValues(draft)) touched = true;
+      if (applyQuestionContentOverrides(draft)) touched = true;
+      if (touched) {
         try { await saveQQDraftToDB(draft); cache.del('qqDrafts'); } catch { /* ignore */ }
       }
       return res.json(draft);
@@ -8178,7 +8229,10 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
   }
   const draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
-  if (backfillOrderItemValues(draft)) persistQQDrafts();
+  let touched = false;
+  if (backfillOrderItemValues(draft)) touched = true;
+  if (applyQuestionContentOverrides(draft)) touched = true;
+  if (touched) persistQQDrafts();
   res.json(draft);
 });
 

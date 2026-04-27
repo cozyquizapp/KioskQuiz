@@ -7,6 +7,7 @@ import {
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
+  QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -54,6 +55,14 @@ export interface QQRoomState {
   comebackHL: QQComebackHLState | null;
   /** Moderator-einstellbar: Timer pro H/L-Runde in Sekunden. */
   comebackHLTimerSec: number;
+  /** 4×4 Connections — null wenn nicht aktiv. */
+  connections: QQConnectionsState | null;
+  /** Default-Timer für Connections (im Setup anpassbar). */
+  connectionsTimerSec: number;
+  /** Default-Fehlversuche bei Connections (im Setup anpassbar). */
+  connectionsMaxFails: number;
+  /** Timer-Handle für Connections-Auto-Reveal. Not persisted. */
+  _connectionsTimerHandle: ReturnType<typeof setTimeout> | null;
   swapFirstCell: { row: number; col: number; ownerId: string } | null;
   language: QQLanguage;
   // Timer
@@ -231,6 +240,10 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       comebackStealsDone: [],
       comebackHL: null,
       comebackHLTimerSec: QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
+      connections: null,
+      connectionsTimerSec: QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
+      connectionsMaxFails: QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
+      _connectionsTimerHandle: null,
       swapFirstCell: null,
       language: 'both',
       timerDurationSec: 30,
@@ -2603,6 +2616,9 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackStealPaused:  !!room._comebackStealPaused,
     comebackHL:           room.comebackHL ?? null,
     comebackHLTimerSec:   room.comebackHLTimerSec ?? 10,
+    connections:          room.connections ?? null,
+    connectionsTimerSec:  room.connectionsTimerSec ?? QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
+    connectionsMaxFails:  room.connectionsMaxFails ?? QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
       : null,
@@ -2868,4 +2884,283 @@ function assertValidCoord(room: QQRoomState, row: number, col: number): void {
   ) {
     throw new QQError('INVALID_COORD', `Ungültige Koordinate (${row}, ${col}).`);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4×4 CONNECTIONS — Finalrunde
+// ═══════════════════════════════════════════════════════════════════════════════
+// Eigenständige Mini-Game-Phase. Teams jagen parallel: 16 Items in 4×4-Raster,
+// 4 Gruppen à 4 Items. Pro gefundene Gruppe = 1 Aktion. Reihenfolge der Aktionen:
+// foundCount DESC, dann finishedAt ASC (schnellster zuerst bei Tie).
+
+function clearConnectionsTimer(room: QQRoomState): void {
+  if (room._connectionsTimerHandle) {
+    clearTimeout(room._connectionsTimerHandle);
+    room._connectionsTimerHandle = null;
+  }
+}
+
+/** Fisher-Yates shuffle für Item-Reihenfolge. */
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Initialisiert eine Connections-Runde.
+ * Übergänge: phase = 'CONNECTIONS_4X4', state.connections.phase = 'intro'.
+ * Moderator muss dann advance() rufen, um auf 'active' zu wechseln (Timer-Start).
+ */
+export function qqConnectionsStart(
+  room: QQRoomState,
+  payload: import('../../../shared/quarterQuizTypes').QQConnectionsPayload,
+  opts?: { durationSec?: number; maxFailedAttempts?: number; onTimeout?: () => void }
+): void {
+  if (!payload.groups || payload.groups.length !== 4) {
+    throw new QQError('CONNECTIONS_INVALID', 'Connections braucht genau 4 Gruppen.');
+  }
+  for (const g of payload.groups) {
+    if (!g.items || g.items.length !== 4) {
+      throw new QQError('CONNECTIONS_INVALID', `Gruppe „${g.name}" braucht genau 4 Items.`);
+    }
+  }
+
+  clearConnectionsTimer(room);
+
+  const allItems = payload.groups.flatMap(g => g.items);
+  const itemOrder = payload.itemOrder && payload.itemOrder.length === 16
+    ? payload.itemOrder.slice()
+    : shuffleArray(allItems);
+
+  const durationSec = opts?.durationSec ?? room.connectionsTimerSec;
+  const maxFails = opts?.maxFailedAttempts ?? room.connectionsMaxFails;
+
+  const teamProgress: Record<string, import('../../../shared/quarterQuizTypes').QQConnectionsTeamProgress> = {};
+  for (const teamId of room.joinOrder) {
+    teamProgress[teamId] = {
+      foundGroupIds: [],
+      failedAttempts: 0,
+      isLockedOut: false,
+      selectedItems: [],
+      finishedAt: null,
+    };
+  }
+
+  const now = Date.now();
+  room.connections = {
+    payload,
+    itemOrder,
+    durationSec,
+    maxFailedAttempts: maxFails,
+    startedAt: now,
+    endsAt: now + durationSec * 1000,
+    teamProgress,
+    phase: 'intro',
+    placementOrder: [],
+    placementCursor: 0,
+    placementRemaining: 0,
+  };
+  room.phase = 'CONNECTIONS_4X4';
+  room.lastActivityAt = now;
+}
+
+/** Wechselt von 'intro' auf 'active' und startet den Timer. */
+export function qqConnectionsBegin(room: QQRoomState, onTimeout: () => void): void {
+  const c = room.connections;
+  if (!c) throw new QQError('NOT_ACTIVE', 'Keine Connections-Runde aktiv.');
+  if (c.phase !== 'intro') throw new QQError('WRONG_SUBPHASE', `Connections-Phase ist „${c.phase}".`);
+
+  const now = Date.now();
+  c.startedAt = now;
+  c.endsAt = now + c.durationSec * 1000;
+  c.phase = 'active';
+
+  clearConnectionsTimer(room);
+  room._connectionsTimerHandle = setTimeout(() => {
+    room._connectionsTimerHandle = null;
+    onTimeout();
+  }, c.durationSec * 1000);
+  room.lastActivityAt = now;
+}
+
+/** Toggle Item-Auswahl beim Team. Max 4 ausgewählt. Locked-out Teams werden ignoriert. */
+export function qqConnectionsSelectItem(
+  room: QQRoomState,
+  teamId: string,
+  item: string
+): void {
+  const c = room.connections;
+  if (!c || c.phase !== 'active') return;
+  const tp = c.teamProgress[teamId];
+  if (!tp || tp.isLockedOut || tp.finishedAt != null) return;
+  if (!c.itemOrder.includes(item)) return;
+  // Items aus bereits gefundenen Gruppen sind tot
+  const usedItems = new Set<string>();
+  for (const gid of tp.foundGroupIds) {
+    const g = c.payload.groups.find(g => g.id === gid);
+    g?.items.forEach(it => usedItems.add(it));
+  }
+  if (usedItems.has(item)) return;
+
+  const idx = tp.selectedItems.indexOf(item);
+  if (idx >= 0) {
+    tp.selectedItems.splice(idx, 1);
+  } else if (tp.selectedItems.length < 4) {
+    tp.selectedItems.push(item);
+  }
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * Submit der aktuellen 4-Item-Auswahl. Returnt das Ergebnis (group | null bei Fail).
+ * Bei Treffer: foundGroupIds += group, selectedItems geleert.
+ * Bei Fail: failedAttempts++, ggf. lockout.
+ */
+export function qqConnectionsSubmitGroup(
+  room: QQRoomState,
+  teamId: string
+): { matched: boolean; groupId: string | null; locked: boolean; finished: boolean } {
+  const c = room.connections;
+  if (!c || c.phase !== 'active') {
+    return { matched: false, groupId: null, locked: false, finished: false };
+  }
+  const tp = c.teamProgress[teamId];
+  if (!tp) return { matched: false, groupId: null, locked: false, finished: false };
+  if (tp.isLockedOut || tp.finishedAt != null) {
+    return { matched: false, groupId: null, locked: true, finished: tp.finishedAt != null };
+  }
+  if (tp.selectedItems.length !== 4) {
+    return { matched: false, groupId: null, locked: false, finished: false };
+  }
+
+  // Match? — gibt es eine Gruppe deren Items genau die Auswahl sind?
+  const sel = new Set(tp.selectedItems);
+  const matchedGroup = c.payload.groups.find(g =>
+    !tp.foundGroupIds.includes(g.id) &&
+    g.items.length === 4 &&
+    g.items.every(it => sel.has(it))
+  );
+
+  const now = Date.now();
+  room.lastActivityAt = now;
+
+  if (matchedGroup) {
+    tp.foundGroupIds.push(matchedGroup.id);
+    tp.selectedItems = [];
+    const finished = tp.foundGroupIds.length >= 4;
+    if (finished) tp.finishedAt = now;
+    return { matched: true, groupId: matchedGroup.id, locked: false, finished };
+  } else {
+    tp.failedAttempts += 1;
+    tp.selectedItems = [];
+    const locked = tp.failedAttempts >= c.maxFailedAttempts;
+    if (locked) {
+      tp.isLockedOut = true;
+      tp.finishedAt = now;
+    }
+    return { matched: false, groupId: null, locked, finished: locked };
+  }
+}
+
+/** Sind alle aktiven Teams fertig (4 Gruppen oder lockout)? */
+export function qqConnectionsAllDone(room: QQRoomState): boolean {
+  const c = room.connections;
+  if (!c) return false;
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]?.connected) continue;
+    const tp = c.teamProgress[teamId];
+    if (!tp) continue;
+    if (tp.finishedAt == null) return false;
+  }
+  return true;
+}
+
+/** Übergang active → reveal. Stoppt Timer. */
+export function qqConnectionsToReveal(room: QQRoomState): void {
+  const c = room.connections;
+  if (!c) return;
+  clearConnectionsTimer(room);
+  c.phase = 'reveal';
+  // Teams ohne finishedAt bekommen jetzt einen (= Timer-End-Zeitpunkt).
+  const now = Date.now();
+  for (const teamId of room.joinOrder) {
+    const tp = c.teamProgress[teamId];
+    if (tp && tp.finishedAt == null) tp.finishedAt = now;
+  }
+  // Placement-Order bestimmen: foundCount DESC, finishedAt ASC.
+  const sorted = room.joinOrder
+    .filter(teamId => room.teams[teamId])
+    .map(teamId => ({
+      teamId,
+      foundCount: c.teamProgress[teamId]?.foundGroupIds.length ?? 0,
+      finishedAt: c.teamProgress[teamId]?.finishedAt ?? Number.MAX_SAFE_INTEGER,
+    }))
+    .sort((a, b) =>
+      (b.foundCount - a.foundCount) || (a.finishedAt - b.finishedAt)
+    );
+  c.placementOrder = sorted.filter(s => s.foundCount > 0).map(s => s.teamId);
+  c.placementCursor = 0;
+  c.placementRemaining = c.placementOrder.length > 0
+    ? c.teamProgress[c.placementOrder[0]].foundGroupIds.length
+    : 0;
+  room.lastActivityAt = now;
+}
+
+/** Wechsel reveal → placement. Setzt pendingFor auf das Top-Team. */
+export function qqConnectionsToPlacement(room: QQRoomState): void {
+  const c = room.connections;
+  if (!c) return;
+  c.phase = 'placement';
+  if (c.placementOrder.length === 0) {
+    // Niemand hat Aktionen verdient → direkt zu done.
+    c.phase = 'done';
+    room.pendingFor = null;
+    room.pendingAction = null;
+    return;
+  }
+  room.pendingFor = c.placementOrder[0];
+  room.pendingAction = 'PLACE_1';
+  c.placementCursor = 0;
+  c.placementRemaining = c.teamProgress[c.placementOrder[0]].foundGroupIds.length;
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * Aufruf nach jedem Placement während der Connections-Placement-Phase.
+ * Dekrementiert remaining und schaltet ggf. zum nächsten Team weiter.
+ * Returnt true, wenn alle Aktionen abgearbeitet wurden (→ phase='done').
+ */
+export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
+  const c = room.connections;
+  if (!c || c.phase !== 'placement') return false;
+  c.placementRemaining -= 1;
+  if (c.placementRemaining > 0) {
+    // selbes Team setzt nochmal
+    room.pendingFor = c.placementOrder[c.placementCursor];
+    room.pendingAction = 'PLACE_1';
+    return false;
+  }
+  // Nächstes Team
+  c.placementCursor += 1;
+  if (c.placementCursor >= c.placementOrder.length) {
+    c.phase = 'done';
+    room.pendingFor = null;
+    room.pendingAction = null;
+    return true;
+  }
+  const nextTeam = c.placementOrder[c.placementCursor];
+  c.placementRemaining = c.teamProgress[nextTeam].foundGroupIds.length;
+  room.pendingFor = nextTeam;
+  room.pendingAction = 'PLACE_1';
+  return false;
+}
+
+/** Räumt Connections-State + Timer auf — z.B. nach Phase done oder Reset. */
+export function qqConnectionsClear(room: QQRoomState): void {
+  clearConnectionsTimer(room);
+  room.connections = null;
 }

@@ -36,7 +36,14 @@ import {
   qqImposterStart, qqImposterChoose, qqImposterForceEliminate,
   qqFlushQuestionToHistory,
   qqSkipCurrentPlacement,
+  qqConnectionsStart, qqConnectionsBegin, qqConnectionsSelectItem,
+  qqConnectionsSubmitGroup, qqConnectionsAllDone, qqConnectionsToReveal,
+  qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
 } from './qqRooms';
+import {
+  QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
+  QQConnectionsPayload,
+} from '../../../shared/quarterQuizTypes';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
 
@@ -1580,6 +1587,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqPlaceCell(room, payload.teamId, payload.row, payload.col);
+        // Connections-Placement: nach jedem Setzen Cursor weiterschalten
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          qqConnectionsAfterPlacement(room);
+        }
         broadcast(io, payload.roomCode);
         // Falls noch Dummy in der placementQueue → weiter automatisch platzieren
         maybeAutoPlace(io, payload.roomCode);
@@ -1969,6 +1980,128 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const s = Math.max(3, Math.min(60, Math.round(payload.seconds)));
         room.comebackHLTimerSec = s;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4×4 Connections (Finalrunde)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Moderator startet Connections — landet in phase=CONNECTIONS_4X4, sub='intro'. */
+    socket.on('qq:connectionsStart', (
+      payload: { roomCode: string; payload: QQConnectionsPayload; durationSec?: number; maxFailedAttempts?: number },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqConnectionsStart(room, payload.payload, {
+          durationSec: payload.durationSec,
+          maxFailedAttempts: payload.maxFailedAttempts,
+        });
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: intro → active (Spielzeit + Timer-Start). */
+    socket.on('qq:connectionsBegin', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqConnectionsBegin(room, () => {
+          // Auto-Reveal bei Timer-Ende
+          const r = getQQRoom(payload.roomCode);
+          if (r && r.connections && r.connections.phase === 'active') {
+            qqConnectionsToReveal(r);
+            broadcast(io, payload.roomCode);
+          }
+        });
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Team togglet eine Item-Auswahl. */
+    socket.on('qq:connectionsSelectItem', (
+      payload: { roomCode: string; teamId: string; item: string },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqConnectionsSelectItem(room, payload.teamId, payload.item);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Team submittet die aktuelle 4-Item-Auswahl. */
+    socket.on('qq:connectionsSubmit', (
+      payload: { roomCode: string; teamId: string },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const result = qqConnectionsSubmitGroup(room, payload.teamId);
+        // Auto-End wenn ALLE Teams fertig (4 Gruppen oder lockout) → reveal
+        if (qqConnectionsAllDone(room) && room.connections?.phase === 'active') {
+          qqConnectionsToReveal(room);
+        }
+        broadcast(io, payload.roomCode);
+        if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator-Force-Reveal (vor Timer-Ende). */
+    socket.on('qq:connectionsForceReveal', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.connections && room.connections.phase === 'active') {
+          qqConnectionsToReveal(room);
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: reveal → placement (Top-Team setzt zuerst). */
+    socket.on('qq:connectionsToPlacement', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.connections && room.connections.phase === 'reveal') {
+          qqConnectionsToPlacement(room);
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Connections beenden → State löschen + zurück zur normalen Phase. */
+    socket.on('qq:connectionsClear', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqConnectionsClear(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Default-Timer / Max-Fails einstellen (im Setup). */
+    socket.on('qq:connectionsSettings', (
+      payload: { roomCode: string; timerSec?: number; maxFails?: number },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (typeof payload.timerSec === 'number') {
+          room.connectionsTimerSec = Math.max(
+            QQ_CONNECTIONS_TIMER_MIN_SEC,
+            Math.min(QQ_CONNECTIONS_TIMER_MAX_SEC, Math.round(payload.timerSec))
+          );
+        }
+        if (typeof payload.maxFails === 'number') {
+          room.connectionsMaxFails = Math.max(0, Math.min(10, Math.round(payload.maxFails)));
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

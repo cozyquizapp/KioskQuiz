@@ -85,6 +85,7 @@ export type QQPhase =
   | 'QUESTION_REVEAL'   // Answer shown, winning team about to place
   | 'PLACEMENT'         // Winning team places / steals a cell
   | 'COMEBACK_CHOICE'   // Last-place team picks comeback action before Phase 3
+  | 'CONNECTIONS_4X4'   // 4×4 Connections Finalrunde (eigenes Mini-Game, Sub-Phase via state.connections.phase)
   | 'PAUSED'            // Moderator-triggered pause — shows records/leaderboard
   | 'GAME_OVER'         // Final state, territory winner shown
   | 'THANKS';           // Danke-fürs-Spielen-Folie mit QR nach der Siegerehrung
@@ -240,6 +241,75 @@ export interface QQHLPair {
 
 /** Moderator-wählbare Zeit pro H/L-Runde. */
 export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 10;
+
+// ── 4×4 Connections (Finalrunde) ─────────────────────────────────────────────
+// 16 Begriffe in 4×4 Raster. 4 Gruppen à 4 Items. Teams jagen parallel und
+// markieren bis zu 4 Items zum Submit. Pro gefundener Gruppe gibts 1 Aktion.
+// Ranking nach gefundenen Gruppen (DESC), Tie-Break nach finishedAt (ASC).
+
+/** Default-Werte. Im Setup pro Spiel anpassbar. */
+export const QQ_CONNECTIONS_TIMER_DEFAULT_SEC = 180;          // 3 Min
+export const QQ_CONNECTIONS_TIMER_MIN_SEC = 60;
+export const QQ_CONNECTIONS_TIMER_MAX_SEC = 600;
+export const QQ_CONNECTIONS_MAX_FAILS_DEFAULT = 2;
+
+export interface QQConnectionsGroup {
+  id: string;             // 'g1' | 'g2' | 'g3' | 'g4'
+  name: string;           // Gruppen-Bezeichnung, z.B. „Kaffeesorten"
+  nameEn?: string;
+  items: string[];        // genau 4
+  itemsEn?: string[];
+  /** 1=einfach, 4=schwer — nur visueller Cue (Farbe/Label im Reveal). */
+  difficulty?: 1 | 2 | 3 | 4;
+}
+
+export interface QQConnectionsPayload {
+  /** Genau 4 Gruppen à 4 Items → 16 Items insgesamt. */
+  groups: QQConnectionsGroup[];
+  /** Optional: feste Item-Reihenfolge im 4×4 Raster (16 strings).
+   *  Ohne → Server shuffelt einmal beim Start. */
+  itemOrder?: string[];
+}
+
+export interface QQConnectionsTeamProgress {
+  /** Gruppen-IDs in Reihenfolge des Findens. */
+  foundGroupIds: string[];
+  /** Falsch-Submits dieses Teams. */
+  failedAttempts: number;
+  /** True, sobald failedAttempts >= maxFailedAttempts. */
+  isLockedOut: boolean;
+  /** Aktuelle Vor-Submit-Auswahl (max 4 Items). */
+  selectedItems: string[];
+  /** Timestamp bei dem das Team „fertig" wurde (4. Gruppe gefunden ODER lockout). */
+  finishedAt: number | null;
+}
+
+export interface QQConnectionsState {
+  payload: QQConnectionsPayload;
+  /** Effektive Item-Reihenfolge (16 strings) — vom Server fixiert beim Start. */
+  itemOrder: string[];
+  /** Konfiguration zum Spielzeitpunkt fixiert. */
+  durationSec: number;
+  maxFailedAttempts: number;
+  /** Server-Timestamps (ms). */
+  startedAt: number;
+  endsAt: number;
+  /** Pro Team Fortschritt. */
+  teamProgress: Record<string, QQConnectionsTeamProgress>;
+  /** Sub-Phase innerhalb der Connections-Runde:
+   *  - 'intro'     = Mechanik-Erklärung (Moderator advanced)
+   *  - 'active'    = Spielzeit (Teams tippen)
+   *  - 'reveal'   = Auflösung — alle Gruppen gefärbt, Ranking sichtbar
+   *  - 'placement' = Aktionen abarbeiten (Top-Team setzt zuerst, dann nächstes …)
+   *  - 'done'      = alle Aktionen verbraucht → Übergang zu nächster Phase */
+  phase: 'intro' | 'active' | 'reveal' | 'placement' | 'done';
+  /** Reihenfolge der Teams für Placement (sortiert: foundCount DESC, finishedAt ASC). */
+  placementOrder: string[];
+  /** Aktuelles Team in Placement (= placementOrder[placementCursor]). */
+  placementCursor: number;
+  /** Wie viele Aktionen das aktuelle Team noch setzen darf (zählt von foundGroupIds.length runter). */
+  placementRemaining: number;
+}
 
 export interface QQComebackHLState {
   /** Anzahl der H/L-Runden insgesamt (1..3, abh. von Balance + tied-Last-Cap). */
@@ -629,6 +699,12 @@ export interface QQStateUpdate {
   comebackHL: QQComebackHLState | null;
   /** Moderator-einstellbarer Timer pro H/L-Runde in Sekunden (Default 10s). */
   comebackHLTimerSec: number;
+  /** 4×4 Connections Finalrunde — null wenn nicht aktiv. */
+  connections: QQConnectionsState | null;
+  /** Moderator-einstellbarer Default-Timer in Sekunden für Connections (Default 180s). */
+  connectionsTimerSec: number;
+  /** Moderator-einstellbare Fehlversuche bei Connections (Default 2). */
+  connectionsMaxFails: number;
   swapFirstCell: { row: number; col: number } | null;  // for SWAP_2 mid-action
   language: QQLanguage;
   // Timer

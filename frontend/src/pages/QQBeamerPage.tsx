@@ -7117,7 +7117,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               <span style={{
                                 fontSize: 'clamp(20px, 2.2vw, 30px)',
                                 fontWeight: 900,
-                                color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                                // Bet-Zahl in Team-Farbe (sofort erkennbar wer wo gesetzt
+                                // hat) + Gold-Text-Shadow als gemeinsamer Akzent.
+                                color: tm.color, fontVariantNumeric: 'tabular-nums',
+                                textShadow: '0 0 12px rgba(251,191,36,0.45), 0 1px 2px rgba(0,0,0,0.6)',
                               }}>{pts}</span>
                               {isFastest && (
                                 <SpeedBoltMarker top={-12} right={-8} />
@@ -7201,7 +7204,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{
                           fontSize: 'clamp(14px, 1.6vw, 22px)',
                           fontWeight: 900,
-                          color: '#FBBF24', fontVariantNumeric: 'tabular-nums',
+                          color: tm.color, fontVariantNumeric: 'tabular-nums',
+                          textShadow: '0 0 10px rgba(251,191,36,0.4), 0 1px 2px rgba(0,0,0,0.6)',
                         }}>{pts}</span>
                       </div>
                     ))}
@@ -9790,54 +9794,86 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#F59E0B';
 
-  // Layout: Bei vielen Teams (>=6) wird die Rankings-Liste 2-spaltig gepackt,
-  // damit nichts unten rausläuft (Replay-Overlay erscheint zudem nach 5.5s am
-  // unteren Bildrand). Hero etwas kompakter als zuvor, justify-content: flex-
-  // start verhindert dass alles vom center aus überfließt.
+  // Layout: Variante B — 2-Spalten "Awards-Look".
+  // Links: Grid riesig (volle Bildhoehe). Rechts: schmaler Side-Panel mit
+  // Title, Hero (Trophy/Avatar/Name/Score) und Rankings vertikal gestapelt.
+  // Bei vielen Teams (>=8) wird die Rankings-Liste 2-spaltig damit nichts
+  // unten rauslaeuft.
   const teamCount = sorted.length;
-  const useTwoColRanks = teamCount >= 6; // 1 Winner + ≥5 in Rankings → 2-spaltig
+  const useTwoColRanks = teamCount >= 8; // schwellig hoeher: in der schmalen Side-Spalte ist 2-col enger
   return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'flex-start',
+      flex: 1, display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) clamp(360px, 32vw, 520px)',
+      alignItems: 'stretch', gap: 'clamp(16px, 2vw, 36px)',
       position: 'relative', overflow: 'hidden',
-      padding: 'clamp(16px, 2.5vh, 32px) 48px clamp(20px, 3vh, 40px)',
-      gap: 'clamp(8px, 1.2vh, 18px)',
+      padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px) clamp(20px, 2.5vh, 36px)',
     }}>
-      {/* Ambient glow behind winner */}
+      {/* Ambient glow */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: `radial-gradient(ellipse at 30% 35%, ${winnerColor}25 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
+        background: `radial-gradient(ellipse at 25% 50%, ${winnerColor}28 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
       }} />
 
       {/* Confetti */}
       <ConfettiOverlay />
       <Fireflies color={`${winnerColor}55`} />
 
-      {/* Title — klein, oben */}
+      {/* ── LINKE SPALTE: Grid riesig, full-height ─────────────────────── */}
       <div style={{
-        fontSize: 'clamp(16px, 1.8vw, 22px)', fontWeight: 800,
-        color: '#94a3b8', letterSpacing: '0.18em', textTransform: 'uppercase',
-        animation: 'contentReveal 0.6s ease both',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 5,
+        animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 0.6s both',
+        minWidth: 0,
       }}>
-        {lang === 'en' ? 'Game Over' : 'Spielende'}
+        <div style={{
+          padding: 16, borderRadius: 26,
+          background: 'rgba(255,255,255,0.03)',
+          border: `2px solid ${winnerColor}55`,
+          boxShadow: `0 0 60px ${winnerColor}33, 0 12px 40px rgba(0,0,0,0.5)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <GridDisplay
+            state={s}
+            maxSize={typeof window !== 'undefined'
+              ? Math.min(window.innerHeight * 0.82, window.innerWidth * 0.55)
+              : 700}
+            highlightTeam={winner?.id ?? null}
+            showJoker
+          />
+        </div>
       </div>
 
-      {/* Hero — Trophy + Avatar + Name + Score, kompakt & oben zentriert */}
-      {winner && (
+      {/* ── RECHTE SPALTE: Title + Hero + Rankings vertikal ────────────── */}
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-start',
+        gap: 'clamp(8px, 1.2vh, 16px)',
+        position: 'relative', zIndex: 5,
+        minWidth: 0, paddingTop: 'clamp(8px, 1.5vh, 20px)',
+      }}>
+        {/* Title — klein, oben */}
+        <div style={{
+          fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
+          color: '#94a3b8', letterSpacing: '0.18em', textTransform: 'uppercase',
+          animation: 'contentReveal 0.6s ease both',
+        }}>
+          {lang === 'en' ? 'Game Over' : 'Spielende'}
+        </div>
+
+        {/* Hero — Trophy + Avatar + Name + Score */}
+        {winner && (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
           animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
-          position: 'relative', zIndex: 5,
         }}>
           <div style={{
-            fontSize: 'clamp(28px, 3.4vw, 44px)',
+            fontSize: 'clamp(28px, 3vw, 42px)',
             animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
           }}><QQEmojiIcon emoji="🏆"/></div>
 
           <div style={{ position: 'relative', display: 'inline-block', marginTop: 2 }}>
-            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(72px, 9vw, 112px)'} style={{
+            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(80px, 8vw, 120px)'} style={{
               boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
               animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
             }} />
@@ -9867,7 +9903,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
 
           <div title={winner.name} style={{
-            fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900,
+            fontSize: 'clamp(24px, 2.6vw, 38px)', fontWeight: 900,
             color: winnerColor,
             animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
             marginTop: 6,
@@ -9875,7 +9911,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             padding: '0 0.5em',
             whiteSpace: 'nowrap',
           }}>
-            {truncName(winner.name, 18)}
+            {truncName(winner.name, 16)}
           </div>
 
           <div style={{
@@ -9883,7 +9919,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
           }}>
             <span style={{
-              fontSize: 'clamp(15px, 1.8vw, 22px)', fontWeight: 900,
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
               color: '#EAB308',
               textShadow: '0 0 18px rgba(234,179,8,0.45)',
             }}>
@@ -9891,104 +9927,76 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             </span>
           </div>
         </div>
-      )}
+        )}
 
-      {/* Untere Sektion: 2-spaltig — Grid links | Rankings rechts.
-          Bei vielen Teams (≥6) werden die Rankings selbst noch 2-spaltig
-          gepackt, damit nichts unten rausläuft (Replay-Overlay erscheint
-          zudem nach 5.5s am unteren Bildrand). */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'auto minmax(0, 1fr)',
-        alignItems: 'start',
-        gap: 'clamp(16px, 2vw, 32px)',
-        width: '100%', maxWidth: 1500, justifyContent: 'center',
-        position: 'relative', zIndex: 5,
-      }}>
-        {/* Grid links — wieder groß (max 540px), kein Recap mehr der Platz
-            klauen würde. Rankings rechts werden bei vielen Teams 2-spaltig. */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-          animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.4s both',
-        }}>
-          <div style={{
-            padding: 14, borderRadius: 22,
-            background: 'rgba(255,255,255,0.03)',
-            border: `2px solid ${winnerColor}44`,
-            boxShadow: `0 0 36px ${winnerColor}2a, 0 8px 28px rgba(0,0,0,0.4)`,
-          }}>
-            <GridDisplay state={s} maxSize={Math.min(540, typeof window !== 'undefined' ? window.innerHeight * 0.5 : 480)} highlightTeam={winner?.id ?? null} showJoker />
-          </div>
-        </div>
-
-      {/* Rankings — rechts neben dem Grid. Bei ≥6 Teams 2-spaltig. */}
-      {sorted.length > 1 && (() => {
-        const others = sorted.slice(1);
-        const wn = others.length;
-        const compact = wn > 4;
-        return (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: useTwoColRanks ? '1fr 1fr' : '1fr',
-            columnGap: 'clamp(8px, 1vw, 14px)',
-            rowGap: compact ? 'clamp(4px, 0.6vh, 8px)' : 'clamp(6px, 0.8vh, 12px)',
-            width: '100%', maxWidth: 760,
-            position: 'relative', zIndex: 5,
-            animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
-          }}>
-            {others.map((tm, i) => {
-              const rank = i + 2;
-              const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
-              const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
-              return (
-                <div key={tm.id} style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto auto 1fr auto auto',
-                  alignItems: 'center',
-                  gap: compact ? 'clamp(8px, 1vw, 14px)' : 'clamp(10px, 1.2vw, 18px)',
-                  padding: compact ? '8px 16px' : '10px 20px',
-                  borderRadius: 14,
-                  background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
-                  border: `1.5px solid ${tm.color}55`,
-                  boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
-                  animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
-                  minWidth: 0,
-                }}>
-                  <span style={{
-                    fontSize: compact ? 'clamp(15px, 1.5vw, 20px)' : 'clamp(17px, 1.7vw, 24px)',
-                    fontWeight: 900, flexShrink: 0,
-                    color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
-                    minWidth: medal ? 0 : compact ? 26 : 30,
+        {/* Rankings — direkt unter dem Hero, vertikal in der Side-Spalte */}
+        {sorted.length > 1 && (() => {
+          const others = sorted.slice(1);
+          const wn = others.length;
+          const compact = wn > 4;
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: useTwoColRanks ? '1fr 1fr' : '1fr',
+              columnGap: 'clamp(6px, 0.8vw, 10px)',
+              rowGap: compact ? 'clamp(4px, 0.5vh, 8px)' : 'clamp(6px, 0.7vh, 10px)',
+              width: '100%',
+              marginTop: 'clamp(6px, 1vh, 14px)',
+              animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
+            }}>
+              {others.map((tm, i) => {
+                const rank = i + 2;
+                const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+                const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+                return (
+                  <div key={tm.id} style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto auto 1fr auto auto',
+                    alignItems: 'center',
+                    gap: compact ? 'clamp(6px, 0.8vw, 12px)' : 'clamp(8px, 1vw, 14px)',
+                    padding: compact ? '6px 12px' : '8px 14px',
+                    borderRadius: 12,
+                    background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
+                    border: `1.5px solid ${tm.color}55`,
+                    boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
+                    animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
+                    minWidth: 0,
                   }}>
-                    {medal ? <QQEmojiIcon emoji={medal}/> : `#${rank}`}
-                  </span>
-                  <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(36px, 3.4vw, 46px)' : 'clamp(40px, 3.8vw, 52px)'} style={{ flexShrink: 0 }} />
-                  <span style={{
-                    fontSize: compact ? 'clamp(17px, 1.8vw, 24px)' : 'clamp(19px, 2vw, 28px)',
-                    fontWeight: 900, color: tm.color, lineHeight: 1.1,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>{tm.name}</span>
-                  <span style={{
-                    fontSize: compact ? 'clamp(14px, 1.5vw, 19px)' : 'clamp(16px, 1.7vw, 22px)',
-                    fontWeight: 900, color: '#FDE68A',
-                    fontVariantNumeric: 'tabular-nums', flexShrink: 0,
-                  }}>
-                    {tm.largestConnected}
-                  </span>
-                  {!compact && (
                     <span style={{
-                      fontSize: 'clamp(11px, 1.1vw, 14px)',
-                      color: '#64748b', fontWeight: 600, flexShrink: 0,
+                      fontSize: compact ? 'clamp(13px, 1.3vw, 18px)' : 'clamp(15px, 1.5vw, 20px)',
+                      fontWeight: 900, flexShrink: 0,
+                      color: rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
+                      minWidth: medal ? 0 : compact ? 22 : 26,
                     }}>
-                      ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
+                      {medal ? <QQEmojiIcon emoji={medal}/> : `#${rank}`}
                     </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
+                    <QQTeamAvatar avatarId={tm.avatarId} size={compact ? 'clamp(28px, 2.6vw, 36px)' : 'clamp(32px, 2.8vw, 42px)'} style={{ flexShrink: 0 }} />
+                    <span style={{
+                      fontSize: compact ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(15px, 1.5vw, 20px)',
+                      fontWeight: 900, color: tm.color, lineHeight: 1.1,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>{tm.name}</span>
+                    <span style={{
+                      fontSize: compact ? 'clamp(13px, 1.3vw, 17px)' : 'clamp(14px, 1.4vw, 19px)',
+                      fontWeight: 900, color: '#FDE68A',
+                      fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+                    }}>
+                      {tm.largestConnected}
+                    </span>
+                    {!compact && !useTwoColRanks && (
+                      <span style={{
+                        fontSize: 'clamp(10px, 1vw, 13px)',
+                        color: '#64748b', fontWeight: 600, flexShrink: 0,
+                      }}>
+                        ({cellCount} {lang === 'de' ? 'ges.' : 'tot.'})
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

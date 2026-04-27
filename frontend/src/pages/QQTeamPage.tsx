@@ -1666,14 +1666,17 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             myRank = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
           }
 
+          // Wenn man auch richtig war — egal welcher Rang — kriegt man eine
+          // Aktion via Placement-Queue. Nachricht macht klar: ihr seid dran,
+          // nur eben nach den schnelleren richtigen Teams.
           const loseMsg = iWasAlsoCorrect
             ? (myRank >= 2
                 ? (isEn
-                    ? `✓ Correct! You place #${myRank} (after ${winnerTeam.name})`
-                    : `✓ Richtig! Ihr platziert als Nr. ${myRank} (nach ${winnerTeam.name})`)
+                    ? `✓ Also correct! You place #${myRank} — coming up right after.`
+                    : `✓ Auch richtig! Ihr platziert als Nr. ${myRank} — gleich seid ihr dran.`)
                 : (isEn
-                    ? `⏱ Correct, but ${winnerTeam.name} was faster!`
-                    : `⏱ Richtig, aber ${winnerTeam.name} war schneller!`))
+                    ? `✓ Correct! Placement coming up right after ${winnerTeam.name}.`
+                    : `✓ Richtig! Ihr setzt gleich nach ${winnerTeam.name}.`))
             : cat === 'SCHAETZCHEN'
               ? (isEn ? `😔 ${winnerTeam.name} was closer.` : `😔 Leider war ${winnerTeam.name} näher dran.`)
               : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
@@ -2974,6 +2977,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     setTimeout(() => setTappedCell(null), 300);
     if (typeof navigator.vibrate === 'function') navigator.vibrate(20);
 
+    // 2-Tap-Bestaetigung: zweiter Tap auf dasselbe pending-Feld → direkt
+    // confirmen. Tap auf ein anderes Feld unten in der jeweiligen Branch
+    // ersetzt das pendingPick (Cancel implizit).
+    if (pendingPick && pendingPick.r === r && pendingPick.c === c) {
+      await confirmPendingPick();
+      return;
+    }
+
     // COMEBACK SWAP_2: two opponent cells from different teams
     if (isSwapComeback) {
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
@@ -3256,8 +3267,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           textAlign: 'center',
         }}>
           {lang === 'de'
-            ? <><QQEmojiIcon emoji="✅"/> Richtig — aber nicht das schnellste Team.<br/>Du darfst an <b>{positionLabel} Position</b> setzen.</>
-            : <><QQEmojiIcon emoji="✅"/> Correct — but not the fastest team.<br/>You place in <b>{positionLabel} position</b>.</>}
+            ? <><QQEmojiIcon emoji="✅"/> Auch richtig! Ihr setzt jetzt — als <b>{positionLabel}</b>.</>
+            : <><QQEmojiIcon emoji="✅"/> Also correct! You're placing now — in <b>{positionLabel}</b>.</>}
         </div>
       )}
 
@@ -3492,43 +3503,29 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
             )}
           </div>
 
-          {/* Pending-Pick Confirm-/Cancel-Bar — verhindert Misstaps auf grossem Grid.
-              Erst Tap → Highlight, dann Bestaetigen (oder Anderes Feld). */}
+          {/* Pending-Pick Hint — Bottom-Buttons entfernt zugunsten 2-Tap-
+              Confirm direkt am Grid (Wolfs Wunsch). Hint-Text macht den
+              Flow transparent. */}
           {pendingPick && (
             <div style={{
-              marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10,
+              marginTop: 12, padding: '10px 14px', borderRadius: 12,
+              background: `linear-gradient(135deg, ${actionColor}1a, ${actionColor}08)`,
+              border: `1.5px solid ${actionColor}55`,
+              fontSize: 14, fontWeight: 800, color: '#e2e8f0', textAlign: 'center',
+              lineHeight: 1.4,
+              animation: 'tcfloat 1.6s ease-in-out infinite',
             }}>
-              <div style={{
-                fontSize: 13, fontWeight: 800, color: '#e2e8f0', textAlign: 'center',
-                lineHeight: 1.3,
-              }}>
-                {pendingPick.kind === 'place'  ? (lang === 'de' ? 'Hier setzen?' : 'Place here?')
-                : pendingPick.kind === 'steal' ? (lang === 'de' ? 'Dieses Feld klauen?' : 'Steal this cell?')
-                : pendingPick.kind === 'ban'   ? (lang === 'de' ? 'Dieses Feld bannen?' : 'Ban this cell?')
-                : pendingPick.kind === 'shield'? (lang === 'de' ? 'Dieses Feld schützen?' : 'Shield this cell?')
-                :                                (lang === 'de' ? 'Dieses Feld stapeln?' : 'Stack this cell?')}
+              <div style={{ marginBottom: 4 }}>
+                {pendingPick.kind === 'place'  ? (lang === 'de' ? '👉 Hier setzen?' : '👉 Place here?')
+                : pendingPick.kind === 'steal' ? (lang === 'de' ? '👉 Dieses Feld klauen?' : '👉 Steal this cell?')
+                : pendingPick.kind === 'ban'   ? (lang === 'de' ? '👉 Dieses Feld bannen?' : '👉 Ban this cell?')
+                : pendingPick.kind === 'shield'? (lang === 'de' ? '👉 Dieses Feld schützen?' : '👉 Shield this cell?')
+                :                                (lang === 'de' ? '👉 Dieses Feld stapeln?' : '👉 Stack this cell?')}
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={cancelPendingPick} style={{
-                  flex: 1, padding: '12px 10px', borderRadius: 12,
-                  border: '1.5px solid rgba(148,163,184,0.4)',
-                  background: 'rgba(148,163,184,0.1)',
-                  color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit',
-                  fontSize: 14, fontWeight: 800,
-                }}>
-                  ✕ {lang === 'de' ? 'Anderes Feld' : 'Other cell'}
-                </button>
-                <button onClick={confirmPendingPick} style={{
-                  flex: 1.4, padding: '12px 10px', borderRadius: 12,
-                  border: `2px solid ${actionColor}`,
-                  background: `linear-gradient(135deg, ${actionColor}, ${actionColor}cc)`,
-                  color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
-                  fontSize: 16, fontWeight: 900,
-                  boxShadow: `0 4px 14px ${actionColor}55, 0 0 18px ${actionColor}44`,
-                  letterSpacing: '0.02em',
-                }}>
-                  ✓ {lang === 'de' ? 'Bestätigen' : 'Confirm'}
-                </button>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>
+                {lang === 'de'
+                  ? 'Tippe nochmal zum Bestätigen — oder ein anderes Feld zum Wechseln.'
+                  : 'Tap again to confirm — or another cell to switch.'}
               </div>
             </div>
           )}

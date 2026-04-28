@@ -712,6 +712,29 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevPhaseRef.current = s.phase;
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Get-Ready Countdown: PAUSED → andere Phase oder RULES → PHASE_INTRO ──
+  // (User-Wunsch 2026-04-28: 'nach pause weiter drücken vlt mit timer starten,
+  // bei quiz start nach regeln vor runde 1 auch ein timer'). 3-2-1-Overlay
+  // gibt den Spielern Zeit zum Handy-Schnappen / Aufmerksamkeit-Sammeln.
+  const prevReadyPhaseRef = useRef(s.phase);
+  const [getReady, setGetReady] = useState<{ id: number; reason: 'resume' | 'start' } | null>(null);
+  useEffect(() => {
+    const prev = prevReadyPhaseRef.current;
+    prevReadyPhaseRef.current = s.phase;
+    // 1) Resume nach Pause — egal in welche Phase wir zurückkehren
+    if (prev === 'PAUSED' && s.phase !== 'PAUSED' && s.phase !== 'LOBBY') {
+      setGetReady({ id: Date.now(), reason: 'resume' });
+      const t = window.setTimeout(() => setGetReady(null), 3200);
+      return () => window.clearTimeout(t);
+    }
+    // 2) Quiz-Start nach Regeln → erste Runde
+    if (prev === 'RULES' && s.phase === 'PHASE_INTRO' && s.gamePhaseIndex === 1) {
+      setGetReady({ id: Date.now(), reason: 'start' });
+      const t = window.setTimeout(() => setGetReady(null), 3200);
+      return () => window.clearTimeout(t);
+    }
+  }, [s.phase, s.gamePhaseIndex]);
+
   // ── Sound: sync volume & config from server state ──
   // Volume only applies to SFX (music has its own volume handling)
   useEffect(() => {
@@ -1446,6 +1469,75 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Phase-Wechsel ist ohnehin visuell klar. Perfect-Round-Info bleibt
           via roundCorrectsRef gespeichert — kann spaeter in PhaseIntro
           oder Summary als Badge eingebaut werden wenn gewuenscht. */}
+
+      {/* Get-Ready-Countdown — 3-2-1 Vor Quiz-Start oder nach Pause-Resume.
+          User-Wunsch 2026-04-28: Spielern kurz Zeit geben Handys zu greifen
+          / Aufmerksamkeit zu sammeln statt direkt in die nächste Frage zu
+          springen. CSS-only countdown via 3 Spans + Timing — kein JS-Tick
+          nötig, das Overlay verschwindet komplett nach 3.2s. */}
+      {getReady && (
+        <div
+          key={getReady.id}
+          aria-hidden
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9998,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexDirection: 'column', gap: 18,
+            background: 'radial-gradient(ellipse at center, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 60%, rgba(13,10,6,0.55) 100%)',
+            backdropFilter: 'blur(14px) saturate(1.1)',
+            WebkitBackdropFilter: 'blur(14px) saturate(1.1)',
+            pointerEvents: 'none',
+            animation: 'qqGetReadyOverlay 3.2s ease both',
+          }}
+        >
+          <div style={{
+            fontFamily: fontFam,
+            fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
+            color: '#FBBF24', letterSpacing: '0.32em', textTransform: 'uppercase',
+            textShadow: '0 0 18px rgba(251,191,36,0.6)',
+            animation: 'qqGetReadyEyebrow 0.6s ease 0.1s both',
+          }}>
+            {getReady.reason === 'start'
+              ? (s.language === 'en' ? '🐺 Get ready' : '🐺 Macht euch bereit')
+              : (s.language === 'en' ? '🐺 Back in' : '🐺 Weiter geht\'s in')}
+          </div>
+          <div style={{
+            position: 'relative',
+            width: 'clamp(180px, 22vw, 320px)',
+            height: 'clamp(180px, 22vw, 320px)',
+          }}>
+            {[3, 2, 1].map((n, i) => (
+              <div key={n} style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: fontFam,
+                fontSize: 'clamp(140px, 18vw, 240px)', fontWeight: 900, lineHeight: 1,
+                color: '#FFEFC9',
+                textShadow:
+                  '0 0 24px rgba(251,191,36,0.8), ' +
+                  '0 0 60px rgba(251,191,36,0.5), ' +
+                  '0 0 120px rgba(251,191,36,0.3), ' +
+                  '0 6px 0 rgba(0,0,0,0.5), ' +
+                  '0 18px 32px rgba(0,0,0,0.6)',
+                animation: `qqGetReadyCount 1s cubic-bezier(0.34,1.56,0.64,1) ${0.25 + i * 0.95}s both`,
+                opacity: 0,
+              }}>
+                {n}
+              </div>
+            ))}
+          </div>
+          <div style={{
+            fontFamily: fontFam,
+            fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 800,
+            color: '#cbd5e1', letterSpacing: '0.04em',
+            animation: 'qqGetReadyEyebrow 0.6s ease 0.3s both',
+          }}>
+            {getReady.reason === 'start'
+              ? (s.language === 'en' ? 'First round starts!' : 'Runde 1 startet!')
+              : (s.language === 'en' ? 'We\'re back!' : 'Es geht weiter!')}
+          </div>
+        </div>
+      )}
 
       {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
       {flashKey > 0 && (
@@ -8076,14 +8168,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         flexDirection: (hasImg && img.layout === 'window-left') ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s ease both',
       }}>
-        {/* ── Main content — full width, vertically + horizontally centered ──
-            Beim Mucho/ZvZ-Reveal mit Winner-Card unten brauchen wir flex-start
-            damit die Card nicht unten abgeschnitten wird (overflow:hidden +
-            center clipt sonst aus beiden Richtungen). */}
+        {/* ── Main content — full width, vertically + horizontally distributed ──
+            User-Feedback 2026-04-28: Beim Reveal 'kleben' alle Cards in der
+            oberen Hälfte, untere Hälfte leer. Lösung: space-around statt
+            flex-start für MUCHO/ZvZ — verteilt Frage / Antwort / Avatar-Reihe /
+            Winner-Card gleichmäßig über die volle Höhe.
+            Vorher war flex-start gewählt damit Winner-Card unten nicht clippt;
+            mit space-around + gemeinsamem padding-bottom (clamp 16-40px) bleibt
+            das ebenso sicher und füllt den unteren Halbraum sinnvoll. */}
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           padding: 'clamp(12px, 1.5vh, 24px) clamp(28px, 4vw, 64px) clamp(16px, 2vh, 40px)',
-          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'flex-start' : 'center',
+          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-around' : 'center',
           alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden',
         }}>
 
@@ -8171,16 +8267,43 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease, padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
                 opacity: revealed ? 0.45 : 1,
               }}>
-                {/* key kombiniert Sprache + Reveal-State → bei Reveal-Wechsel
-                    remountet der Text einmalig und fadet sauber zur neuen Größe
-                    (statt mid-Animation umzubrechen). */}
-                <div key={`${lang}-${shrinkOnReveal ? 'small' : 'big'}`} style={{
-                  fontSize: shrinkOnReveal ? qFontSizeShrunk : qFontSize,
-                  fontWeight: 900, lineHeight: 1.22,
-                  color: '#F1F5F9',
-                  animation: 'langFadeIn 0.45s ease both',
+                {/* Cross-Fade zwischen großem (Frage) und kleinem (Reveal) Text.
+                    User-Feedback 2026-04-28: 'Wechsel zu heftig' beim alten
+                    key-Re-Mount. Jetzt: Grid-Stack mit beiden Versionen, eine
+                    fadet aus während die andere mit kurzem Versatz reinfadet.
+                    Der Container nimmt die Größe der jeweils sichtbaren Version
+                    durch grid-template-rows-Trick — kein Snap, sauberer Übergang. */}
+                <div key={lang} style={{
+                  display: 'grid',
+                  gridTemplateAreas: '"q"',
+                  width: '100%',
+                  animation: 'langFadeIn 0.4s ease both',
                 }}>
-                  {qText}
+                  <div style={{
+                    gridArea: 'q',
+                    fontSize: qFontSize,
+                    fontWeight: 900, lineHeight: 1.22,
+                    color: '#F1F5F9',
+                    opacity: shrinkOnReveal ? 0 : 1,
+                    transform: shrinkOnReveal ? 'scale(0.96)' : 'scale(1)',
+                    transition: 'opacity 0.35s ease, transform 0.45s cubic-bezier(0.4,0,0.2,1)',
+                    pointerEvents: shrinkOnReveal ? 'none' : 'auto',
+                  }}>
+                    {qText}
+                  </div>
+                  <div style={{
+                    gridArea: 'q',
+                    fontSize: qFontSizeShrunk,
+                    fontWeight: 900, lineHeight: 1.22,
+                    color: '#F1F5F9',
+                    opacity: shrinkOnReveal ? 1 : 0,
+                    transform: shrinkOnReveal ? 'scale(1)' : 'scale(1.04)',
+                    transition: 'opacity 0.45s ease 0.1s, transform 0.5s cubic-bezier(0.4,0,0.2,1) 0.05s',
+                    pointerEvents: shrinkOnReveal ? 'auto' : 'none',
+                    alignSelf: 'center', justifySelf: 'center',
+                  }}>
+                    {qText}
+                  </div>
                 </div>
               </div>
             );
@@ -10235,7 +10358,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative', zIndex: 5,
             marginBottom: 8,
           }}>
-            {lang === 'en' ? 'The last shall be first.' : 'Die Letzten werden die Ersten.'}
+            {lang === 'en' ? 'The last shall be first.' : 'Die Letzten werden die Ersten sein.'}
           </div>
           <div key="intro0" style={{
             maxWidth: 1100, textAlign: 'center',
@@ -10628,16 +10751,50 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
+  // ── Pause-Wolf-Sprüche — witzige Pause-Begleiter (User-Wunsch 2026-04-28) ──
+  // CozyWolf checkt regelmäßig ein während die Spieler ne Pause machen. Kein
+  // Spruch ist aufdringlich — alles freundlich-fürsorglich-spielerisch.
+  if (mode === 'pause') {
+    const pauseSlogans = de
+      ? [
+          'Habt ihr noch Getränke?',
+          'Muss noch jemand aufs Klo?',
+          'Strecken erlaubt — gleich geht\'s weiter!',
+          'Schon ein Snack besorgt?',
+          'Kurz die Beine vertreten?',
+          'Wer hat den nächsten Sieg im Kopf?',
+          'Schaut mal kurz nach den anderen.',
+        ]
+      : [
+          'Anyone need a drink?',
+          'Bathroom break time?',
+          'Stretch a bit — back soon!',
+          'Snacks topped up?',
+          'Quick walk before round 2?',
+          'Who\'s plotting the next win?',
+          'Check on the others while we\'re paused.',
+        ];
+    panels.push({ key: 'pauseWolf', node: (
+      <BrandLoopPanel slogans={pauseSlogans} de={de} />
+    )});
+  }
+
   // Fortschrittsbaum — nur in Pause (nicht im Pre-Game, da kein Spiel läuft)
+  // User-Feedback 2026-04-28: 'Progress-Bar in Pause sehr klein' → Tree wird
+  // jetzt in 'hero' rendered (größere Dots + Labels + Wolf-Avatar) und in einem
+  // großen Wrapper-Container für ordentliche Präsenz.
   if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
     panels.push({ key: 'progress', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
           {de ? 'Wo sind wir?' : 'Where are we?'}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <QQProgressTree state={s} variant="inline" />
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          minHeight: 'clamp(140px, 18vh, 220px)',
+        }}>
+          <QQProgressTree state={s} variant="hero" />
         </div>
       </div>
     )});

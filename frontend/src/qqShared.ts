@@ -561,6 +561,25 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
     50%      { transform: translateY(-1px) scale(1.005); filter: brightness(1.06); }
   }
+  /* Get-Ready-Overlay: kompletter Container fadet rein, hält 2.6s, fadet weich raus. */
+  @keyframes qqGetReadyOverlay {
+    0%   { opacity: 0; backdrop-filter: blur(0) saturate(1); }
+    8%   { opacity: 1; backdrop-filter: blur(14px) saturate(1.1); }
+    88%  { opacity: 1; backdrop-filter: blur(14px) saturate(1.1); }
+    100% { opacity: 0; backdrop-filter: blur(0) saturate(1); }
+  }
+  /* Eyebrow- und Subtitle-Slide-In über dem Get-Ready-Countdown. */
+  @keyframes qqGetReadyEyebrow {
+    0%   { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  /* Pro Ziffer (3, 2, 1): dramatisch reinpoppen, kurz halten, schnell raus. */
+  @keyframes qqGetReadyCount {
+    0%   { opacity: 0; transform: scale(2.2); filter: blur(8px); }
+    18%  { opacity: 1; transform: scale(1); filter: blur(0); }
+    72%  { opacity: 1; transform: scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: scale(0.55); filter: blur(2px); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

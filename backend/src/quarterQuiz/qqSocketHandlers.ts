@@ -41,6 +41,7 @@ import {
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
   qqOnlyConnectStart, qqOnlyConnectAdvanceHint, qqOnlyConnectSubmitGuess,
   qqOnlyConnectRevealAll, qqOnlyConnectReset, qqOnlyConnectAllDone,
+  qqOnlyConnectAutoFinish,
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
@@ -1316,19 +1317,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
           qqStopTimer(room);
         }
         // Auto-start 4 gewinnt (onlyConnect): erster Hint sofort sichtbar,
-        // Auto-Advance-Timer für Hint 2 läuft. Standard-Timer wird gestoppt
-        // (eigener Hint-Timer ist self-paced).
+        // Auto-Advance-Timer für nächste Hinweise läuft. Wenn der letzte
+        // Hint-Timer abläuft → AutoFinish (Standard-Reveal-Pipeline).
         if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
-          qqOnlyConnectStart(room, () => {
+          const ocAdvance = () => {
             const r = getQQRoom(payload.roomCode);
             if (!r) return;
-            qqOnlyConnectAdvanceHint(r, () => {
-              const r2 = getQQRoom(payload.roomCode);
-              if (!r2) return;
+            if (r.onlyConnectHintIndex >= 3) {
+              // Letzter Hinweis durch → Standard-Reveal triggern (Autoplay greift dann)
+              qqOnlyConnectAutoFinish(r);
               broadcast(io, payload.roomCode);
-            });
+              return;
+            }
+            qqOnlyConnectAdvanceHint(r, ocAdvance);
             broadcast(io, payload.roomCode);
-          });
+          };
+          qqOnlyConnectStart(room, ocAdvance);
           qqStopTimer(room);
         }
         // Auto-start Bluff: write-Phase, eigener Timer.
@@ -2416,10 +2420,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqOnlyConnectSubmitGuess(room, payload.teamId, payload.text);
         // Multi-Winner: wenn alle Teams entweder richtig oder gesperrt sind,
-        // automatisch alle Hinweise aufdecken (force-reveal vorbereitet) und
-        // beenden den Auto-Timer.
+        // automatisch zu QUESTION_REVEAL überführen + Winner markieren. So greift
+        // die Standard-Pipeline (Placement-Queue, Aktionen, Autoplay) automatisch.
         if (qqOnlyConnectAllDone(room)) {
-          qqOnlyConnectRevealAll(room);
+          qqOnlyConnectAutoFinish(room);
         }
         broadcast(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
@@ -2430,21 +2434,31 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:onlyConnectAdvanceHint', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqOnlyConnectAdvanceHint(room, () => {
+        // Selbe Logik wie Auto-Advance: nach letztem Hint AutoFinish
+        const ocAdvance = () => {
           const r = getQQRoom(payload.roomCode);
           if (!r) return;
+          if (r.onlyConnectHintIndex >= 3) {
+            qqOnlyConnectAutoFinish(r);
+            broadcast(io, payload.roomCode);
+            return;
+          }
+          qqOnlyConnectAdvanceHint(r, ocAdvance);
           broadcast(io, payload.roomCode);
-        });
+        };
+        qqOnlyConnectAdvanceHint(room, ocAdvance);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
 
-    /** Moderator: alle restlichen Hinweise aufdecken (Auflösungs-Vorbereitung). */
+    /** Moderator: alle restlichen Hinweise aufdecken + zu Reveal überführen. */
     socket.on('qq:onlyConnectRevealAll', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqOnlyConnectRevealAll(room);
+        // Direkt zur Standard-Reveal-Phase weiter, damit Autoplay/Pipeline greift
+        qqOnlyConnectAutoFinish(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

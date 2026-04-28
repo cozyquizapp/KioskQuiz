@@ -3503,6 +3503,30 @@ export function qqOnlyConnectRevealAll(room: QQRoomState): void {
   room.onlyConnectHintRevealedAt = Date.now();
 }
 
+/**
+ * Auto-Transition zu QUESTION_REVEAL + markCorrect für onlyConnect-Fragen.
+ * Wird aufgerufen wenn alle Teams fertig sind oder der Hint-Timer ausgelaufen
+ * ist. Idempotent — nur 1× pro Frage (Phase wechsel verhindert Re-Entry).
+ */
+export function qqOnlyConnectAutoFinish(room: QQRoomState): void {
+  if (room.phase !== 'QUESTION_ACTIVE') return;
+  const q = room.currentQuestion;
+  if (!q || q.bunteTuete?.kind !== 'onlyConnect') return;
+  clearOnlyConnectHintTimer(room);
+  // Standard-Reveal-Phase setzen
+  room.phase = 'QUESTION_REVEAL';
+  const oc = q.bunteTuete;
+  const revAns = (room.language === 'en' && oc.answerEn ? oc.answerEn : oc.answer) ?? '';
+  room.revealedAnswer = revAns;
+  qqStopTimer(room);
+  // Mark Winner: alle korrekten Teams in Reihenfolge (atHintIdx ASC, submittedAt ASC)
+  const evalResult = evalOnlyConnect(room);
+  if (evalResult.winnerTeamIds.length > 0) {
+    qqMarkCorrect(room, evalResult.winnerTeamIds);
+  }
+  room.lastActivityAt = Date.now();
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLUFF (Fibbage-Style) — BunteTüete Sub-Mechanik
 // ═══════════════════════════════════════════════════════════════════════════════

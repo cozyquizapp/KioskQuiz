@@ -3912,7 +3912,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
     return (
       <CozyCard borderColor="#FBBF24">
         <div style={{ padding: 18, textAlign: 'center', color: '#94a3b8' }}>
-          {de ? 'Connections wird vorbereitet…' : 'Loading…'}
+          {de ? '4×4 wird vorbereitet…' : 'Loading…'}
         </div>
       </CozyCard>
     );
@@ -3946,7 +3946,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', textAlign: 'center' }}>
           <div style={{ fontSize: 48 }}>🔗</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fde68a' }}>
-            {de ? 'Finalrunde: 4×4 Connections' : 'Final: 4×4 Connections'}
+            {de ? 'Finale: 4×4' : 'Final: 4×4'}
           </div>
           <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
             {de

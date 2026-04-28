@@ -9800,7 +9800,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   if (!c) {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-        {lang === 'de' ? 'Connections wird vorbereitet…' : 'Connections is loading…'}
+        {lang === 'de' ? '4×4 wird vorbereitet…' : '4×4 is loading…'}
       </div>
     );
   }

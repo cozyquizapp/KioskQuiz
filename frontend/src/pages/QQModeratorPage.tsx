@@ -694,7 +694,7 @@ export default function QQModeratorPage() {
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
-      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 CONNECTIONS', color: '#FBBF24', sub: s.connections?.phase ?? '' };
+      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#FBBF24', sub: s.connections?.phase ?? '' };
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
       case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#F59E0B', sub: 'QR-Code für Summary' };
@@ -1306,7 +1306,7 @@ export default function QQModeratorPage() {
                       durationSec: s.connectionsTimerSec,
                       maxFailedAttempts: s.connectionsMaxFails,
                     })}>
-                      🔗 Connections (Demo)
+                      🔗 4×4 (Demo)
                     </Btn>
                   </>
                 )}
@@ -1788,7 +1788,7 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
     text: 'Das zurückliegende Team darf einen Joker einsetzen. Erkläre kurz die Optionen und baue Spannung auf — das kann die Runde drehen!',
   },
   CONNECTIONS_4X4: {
-    title: '4×4 Connections — Finale',
+    title: '4×4 — Finale',
     text: '16 Begriffe, 4 versteckte Gruppen. Teams jagen parallel und tippen 4 Items als Gruppen-Tipp. Pro gefundene Gruppe = 1 Aktion. Ranking: meiste Gruppen, schnellste zuerst bei Gleichstand. Heize an, achte auf den Timer.',
   },
   PAUSED: {
@@ -2132,7 +2132,7 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', letterSpacing: 0.4, textTransform: 'uppercase' }}>
-        🔗 Connections · {phase}
+        🔗 4×4 · {phase}
       </span>
       {phase === 'intro' && (
         <PrimaryBtn color="#FBBF24" onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
@@ -2783,7 +2783,7 @@ function SetupView({
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {s.connectionsEnabled !== false ? '4×4 Connections nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
+            {s.connectionsEnabled !== false ? '4×4 nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
           </span>
         </div>
 
@@ -3105,7 +3105,7 @@ function LobbyView({
         background: 'rgba(251,191,36,0.05)', border: '1px dashed rgba(251,191,36,0.25)',
       }}>
         <span style={{ fontSize: 11, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          🧪 Connections-Demo
+          🧪 4×4 Demo
         </span>
         <label style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
           Timer

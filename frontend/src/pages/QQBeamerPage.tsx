@@ -4023,6 +4023,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 en: ['Take turns — first to stall is out'],
               },
             },
+            'BUNTE_TUETE:onlyConnect': {
+              emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' },
+              lines: {
+                de: ['4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.'],
+                en: ['4 clues, one answer — guess earlier for more points.'],
+              },
+            },
+            'BUNTE_TUETE:bluff': {
+              emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' },
+              lines: {
+                de: ['Erfindet plausible Falsch-Antworten und ratet die echte.'],
+                en: ['Invent plausible fake answers — then spot the real one.'],
+              },
+            },
           };
 
           const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');

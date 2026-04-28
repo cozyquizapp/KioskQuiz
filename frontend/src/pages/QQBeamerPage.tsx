@@ -1735,7 +1735,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🧩',
-      title: 'Das große Finale',
+      title: 'Großes Finale',
       color: '#A78BFA',
       lines: [
         '16 Begriffe · 4 Gruppen finden',
@@ -1833,7 +1833,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🧩',
-      title: 'The Big Finale',
+      title: 'Grand Finale',
       color: '#A78BFA',
       lines: [
         '16 terms · find 4 hidden groups',
@@ -4072,17 +4072,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
-              {/* "So geht's" badge */}
-              <div style={{
-                marginTop: 28, padding: '6px 22px', borderRadius: 999,
-                background: `${catColor}18`, border: `1.5px solid ${catColor}33`,
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 800,
-                color: `${catColor}88`, letterSpacing: '0.06em',
-                animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.8s both',
-                position: 'relative', zIndex: 5,
-              }}>
-                {lang === 'de' ? '📱 Antwort auf dem Handy' : '📱 Answer on your phone'}
-              </div>
+              {/* User-Wunsch 2026-04-28: 'Antwort auf dem Handy' Hint überall
+                  raus — auf dem Beamer redundant, auf dem Handy doppelt. */}
             </>
           );
         })()
@@ -7932,11 +7923,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 background: cardBg,
-                border: `2px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}22`}`,
+                // User-Wunsch 2026-04-28: Frage-Card kriegt Kategorie-Farbe als
+                // Border + sanfter Glow drumherum — sofort erkennbar welche
+                // Kategorie gerade läuft, ohne dass man auf die Pill schauen muss.
+                border: `2.5px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}88`}`,
                 borderRadius: 28,
                 boxShadow: revealed
                   ? '0 4px 16px rgba(0,0,0,0.3)'
-                  : `0 0 60px ${accent}15, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
                 padding: shrinkOnReveal
                   ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'
                   : 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
@@ -10952,10 +10946,10 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections!;
   const accent = '#FBBF24';
-  // Naming: aktuell „4×4 Connections — Finale". Wenn Wolf entscheidet wird's zu
-  // „Quartett" / „Quartet" o.ä. — dann nur diese zwei Strings tauschen.
-  const labelDe = '4×4 — Finale';
-  const labelEn = '4×4 — Final';
+  // Event-Wording — kurz und groß auf der Bühne. „Großes Finale" griffig
+  // genug für Live-Quiz, vermeidet das technische „4×4 Connections".
+  const labelDe = 'Großes Finale';
+  const labelEn = 'Grand Finale';
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -11049,20 +11043,27 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
       boxShadow: '0 0 60px rgba(251,191,36,0.15)',
       animation: 'contentReveal 0.5s ease 0.2s both',
     }}>
-      <div style={{ fontSize: 'clamp(60px, 8vw, 110px)' }}>🔗</div>
+      <div style={{ fontSize: 'clamp(60px, 8vw, 110px)' }}>🧩</div>
       <div style={{
-        fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
-        color: '#fde68a', textAlign: 'center', lineHeight: 1.2, maxWidth: 1200,
+        fontSize: 'clamp(34px, 4.4vw, 64px)', fontWeight: 900,
+        color: '#fde68a', textAlign: 'center', lineHeight: 1.1, maxWidth: 1200,
+        textShadow: '0 0 40px rgba(251,191,36,0.4)',
+      }}>
+        {lang === 'de' ? 'Großes Finale' : 'Grand Finale'}
+      </div>
+      <div style={{
+        fontSize: 'clamp(20px, 2.4vw, 34px)', fontWeight: 700,
+        color: '#e2e8f0', textAlign: 'center', lineHeight: 1.3, maxWidth: 1100,
       }}>
         {lang === 'de'
-          ? '16 Begriffe · 4 Gruppen · Findet die Verbindungen'
-          : '16 terms · 4 groups · Find the connections'}
+          ? 'Findet 4 Gruppen — gewinnt Felder fürs Spielfeld.'
+          : 'Find 4 groups — earn cells on the board.'}
       </div>
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100 }}>
-        <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? `Wählt 4 Begriffe → „Gruppe abgeben"` : `Pick 4 terms → "Submit group"`} />
-        <ConnectionsRulePill emoji="🏆" text={lang === 'de' ? `1 Gruppe = 1 Aktion (max 4)` : `1 group = 1 action (max 4)`} />
-        <ConnectionsRulePill emoji="❌" text={lang === 'de' ? `${c.maxFailedAttempts} Fehlversuche → raus` : `${c.maxFailedAttempts} fails → out`} />
-        <ConnectionsRulePill emoji="⏱" text={lang === 'de' ? `${Math.floor(c.durationSec / 60)} Min Zeit` : `${Math.floor(c.durationSec / 60)} min`} />
+        <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? '4 Begriffe → abgeben' : '4 terms → submit'} />
+        <ConnectionsRulePill emoji="🏆" text={lang === 'de' ? '1 Gruppe = 1 Aktion' : '1 group = 1 action'} />
+        <ConnectionsRulePill emoji="❌" text={lang === 'de' ? `${c.maxFailedAttempts} Fehler → raus` : `${c.maxFailedAttempts} fails → out`} />
+        <ConnectionsRulePill emoji="⏱" text={lang === 'de' ? `${Math.floor(c.durationSec / 60)} Min` : `${Math.floor(c.durationSec / 60)} min`} />
       </div>
     </div>
   );

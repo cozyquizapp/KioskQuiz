@@ -137,14 +137,22 @@ export default function QQModeratorPage() {
   useEffect(() => {
     fetch('/api/qq/drafts').then(r => r.json()).catch(() => []).then((qqDrafts: any[]) => {
       const qq: DraftSummary[] = Array.isArray(qqDrafts)
-        ? qqDrafts.map((d: any) => ({
-            id: `qq:${d.id}`,
-            title: `🎯 ${d.title}`,
-            date: null,
-            updatedAt: d.updatedAt ?? 0,
-            questionCount: d.questions?.length ?? 0,
-            phases: (d.phases === 4 ? 4 : 3) as 3 | 4,
-          }))
+        ? qqDrafts.map((d: any) => {
+            const qCount = d.questions?.length ?? 0;
+            // Bug-Fix 2026-04-28: Vorher wurden alle Drafts ohne explizites
+            // `phases` auf 3 gemappt → User wählte 4 Runden, useEffect-Auto-
+            // Downgrade fiel sofort auf 3 zurück → Display zeigte 'Runde X/3'.
+            // Jetzt: explizites phases respektieren, sonst aus Question-Count.
+            const phases = d.phases === 3 ? 3 : d.phases === 4 ? 4 : (qCount >= 20 ? 4 : 3);
+            return {
+              id: `qq:${d.id}`,
+              title: `🎯 ${d.title}`,
+              date: null,
+              updatedAt: d.updatedAt ?? 0,
+              questionCount: qCount,
+              phases: phases as 3 | 4,
+            };
+          })
         : [];
       const sorted = qq.sort((a, b) => b.updatedAt - a.updatedAt);
       setDrafts(sorted);

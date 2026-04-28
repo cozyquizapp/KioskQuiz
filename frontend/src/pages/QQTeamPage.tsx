@@ -4442,15 +4442,24 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
   if (c.phase === 'intro') {
     return (
       <CozyCard borderColor="#FBBF24">
-        <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: 48 }}>🔗</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#fde68a' }}>
-            {de ? 'Finale: 4×4' : 'Final: 4×4'}
+        <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ fontSize: 48 }}>🧩</div>
+          {/* Synchron mit Beamer-Header: 'Großes Finale' / 'Grand Finale'. */}
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#fde68a', textShadow: '0 0 20px rgba(251,191,36,0.4)' }}>
+            {de ? 'Großes Finale' : 'Grand Finale'}
           </div>
-          <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4 }}>
             {de
-              ? `16 Begriffe, 4 versteckte Gruppen à 4 Items. Wählt 4 Begriffe → „Gruppe abgeben". Pro gefundener Gruppe = 1 Aktion. ${c.maxFailedAttempts} Fehler erlaubt.`
-              : `16 terms, 4 hidden groups of 4. Pick 4 → "Submit group". 1 group = 1 action. ${c.maxFailedAttempts} fails allowed.`}
+              ? 'Findet 4 Gruppen — gewinnt Felder fürs Spielfeld.'
+              : 'Find 4 groups — earn cells on the board.'}
+          </div>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 6,
+            fontSize: 13, color: '#cbd5e1', lineHeight: 1.4,
+          }}>
+            <div>🎯 {de ? '4 Begriffe wählen → abgeben' : 'Pick 4 → submit'}</div>
+            <div>🏆 {de ? '1 Gruppe = 1 Aktion' : '1 group = 1 action'}</div>
+            <div>❌ {de ? `${c.maxFailedAttempts} Fehler erlaubt` : `${c.maxFailedAttempts} fails allowed`}</div>
           </div>
           <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
             {de ? 'Wartet aufs Startsignal…' : 'Waiting for moderator…'}

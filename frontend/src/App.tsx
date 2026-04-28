@@ -35,6 +35,7 @@ const QQTeamGouachePage   = React.lazy(() => import('./pages/QQTeamGouachePage')
 const QQBeamerGouachePage = React.lazy(() => import('./pages/QQBeamerGouachePage'));
 const QQRoundLabPage      = React.lazy(() => import('./pages/QQRoundLabPage'));
 const QQRevealLabPage     = React.lazy(() => import('./pages/QQRevealLabPage'));
+const QQCozyLabPage       = React.lazy(() => import('./pages/QQCozyLabPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -173,6 +174,7 @@ function App() {
           <Route path="/beamer-gouache" element={<QQErrorBoundary source="beamer-gouache"><QQBeamerGouachePage /></QQErrorBoundary>} />
           <Route path="/round-lab"  element={<PinGate><QQRoundLabPage /></PinGate>} />
           <Route path="/reveal-lab" element={<PinGate><QQRevealLabPage /></PinGate>} />
+          <Route path="/cozy-lab"   element={<PinGate><QQCozyLabPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
 
           {/* ── Altes CozyQuiz (Archiv) ───────────────────────────── */}

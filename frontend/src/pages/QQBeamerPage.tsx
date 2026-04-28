@@ -9474,12 +9474,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>{pair.unit}</div>
           </div>
 
-          {/* Vergleichs-Icon — bei Reveal smooth swap zu MEHR↑/WENIGER↓ */}
+          {/* Vergleichs-Icon — bei Reveal smooth swap zu MEHR↑/WENIGER↓.
+              minWidth fest damit „?" → „MEHR ↑" KEIN Layout-Shift verursacht
+              (sonst rutschen Anchor- und Subject-Card seitlich, was wie eine
+              komplette Page-Transition wirkt). */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             fontWeight: 900, color: '#FBBF24',
             textShadow: '0 0 20px rgba(251,191,36,0.5)',
             letterSpacing: '0.08em',
+            minWidth: 'clamp(140px, 14vw, 200px)',
             // Bei reveal: groessere font + scale-pop wenn sich Wert aendert
             fontSize: isReveal ? 'clamp(28px, 3.4vw, 48px)' : 'clamp(40px, 5vw, 80px)',
             transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
@@ -9522,23 +9526,38 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
             }}>
-              {isReveal ? (
-                <SlotMachineNumber
-                  value={pair.subjectValue}
-                  fontSize="clamp(44px, 6vw, 92px)"
-                  color="#FBBF24"
-                  glow="rgba(251,191,36,0.5)"
-                  isYear={isYearUnitHL}
-                />
-              ) : (
-                <span style={{
-                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
-                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  textShadow: '0 0 28px rgba(251,191,36,0.45)',
-                  animation: 'timerVignettePulse 1.2s ease-in-out infinite',
-                }}>???</span>
-              )}
+              {/* Unsichtbarer Platzhalter mit dem ECHTEN Wert reserviert die
+                  Breite schon in der Frage-Phase. Sonst springt die Card beim
+                  Reveal von „???" (~3em) auf z.B. „1.500.000" (~12em) →
+                  ganzes Grid reflowt → wirkt wie eine neue Folie. */}
+              <span aria-hidden style={{
+                fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900,
+                fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                visibility: 'hidden', whiteSpace: 'nowrap',
+              }}>{fmtHL(pair.subjectValue)}</span>
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {isReveal ? (
+                  <SlotMachineNumber
+                    value={pair.subjectValue}
+                    fontSize="clamp(44px, 6vw, 92px)"
+                    color="#FBBF24"
+                    glow="rgba(251,191,36,0.5)"
+                    isYear={isYearUnitHL}
+                  />
+                ) : (
+                  <span style={{
+                    fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                    fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                    textShadow: '0 0 28px rgba(251,191,36,0.45)',
+                    animation: 'timerVignettePulse 1.2s ease-in-out infinite',
+                  }}>???</span>
+                )}
+              </div>
             </div>
             <div style={{
               fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,

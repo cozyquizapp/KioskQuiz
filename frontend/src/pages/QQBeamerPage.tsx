@@ -235,6 +235,29 @@ function imgFilter(img: { brightness?: number; contrast?: number; blur?: number 
   return parts.length ? parts.join(' ') : undefined;
 }
 
+/**
+ * Formatiert die aufgelöste Antwort für den Beamer.
+ * - lang='de': nur DE
+ * - lang='en' + DE existiert separat: 'EN / DE' (damit Spieler die DE auf
+ *   ihren Phones spielen die Lösung wiedererkennen, auch wenn der Beamer
+ *   auf EN steht)
+ * - lang='en' + nur EN: nur EN
+ */
+function formatRevealedAnswer(
+  lang: 'de' | 'en',
+  de: string | null | undefined,
+  en: string | null | undefined,
+): string {
+  const deTrim = (de ?? '').trim();
+  const enTrim = (en ?? '').trim();
+  if (lang === 'de') return deTrim || enTrim;
+  // EN-Modus
+  if (enTrim && deTrim && enTrim.toLowerCase() !== deTrim.toLowerCase()) {
+    return `${enTrim} / ${deTrim}`;
+  }
+  return enTrim || deTrim;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Main page
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -4964,7 +4987,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteBluff;
   const phase = s.bluffPhase;
   const accent = '#F472B6'; // pink
-  const realText = (lang === 'en' && bt.realAnswerEn ? bt.realAnswerEn : bt.realAnswer) ?? '';
+  const realText = formatRevealedAnswer(lang, bt.realAnswer, bt.realAnswerEn);
 
   const submitCount = Object.keys(s.bluffSubmissions ?? {}).filter(id => s.bluffSubmissions[id]?.trim()).length;
   const totalActive = s.teams.filter(t => t.connected).length;
@@ -5412,7 +5435,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
-  const answer = (lang === 'en' && bt.answerEn ? bt.answerEn : bt.answer) ?? '';
+  const answer = formatRevealedAnswer(lang, bt.answer, bt.answerEn);
   // Per-Team-Modell: Beamer zeigt MIN(...indices) damit kein Spoiler.
   // Teams die mehr Hinweise haben sehen sie nur auf eigenem /team.
   const hintIndicesArr = Object.values(s.onlyConnectHintIndices ?? {});
@@ -7050,7 +7073,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
             zIndex: 1000,
           }}>
-            {lang === 'en' && q.answerEn ? q.answerEn : q.answer}
+            {formatRevealedAnswer(lang, q.answer, q.answerEn)}
           </div>
         )}
       </div>
@@ -8227,7 +8250,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     position: 'relative', zIndex: 1,
                     visibility: cheeseHideContent ? 'hidden' : 'visible',
                   }}>
-                    {lang === 'en' && q.answerEn ? q.answerEn : s.revealedAnswer}
+                    {formatRevealedAnswer(lang, s.revealedAnswer ?? q.answer, q.answerEn)}
                   </span>
                   {correctTeams.length > 0 && (
                     <div style={{
@@ -9364,14 +9387,10 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               }
               return actionVerb(s.pendingAction, lang);
             })()}
-            activeActionDesc={(() => {
-              if (!team || !s.teamPhaseStats[team.id]) return undefined;
-              // Comeback-Klau: keine Description — Label „Klauen" reicht.
-              if (s.comebackHL && s.comebackHL.phase === 'steal' && s.comebackHL.currentStealer === team.id) {
-                return undefined;
-              }
-              return actionDesc(s.pendingAction, s.teamPhaseStats[team.id], lang);
-            })()}
+            activeActionDesc={undefined /* User-Feedback: lange Beschreibung
+              ('Wähle 2 freie Felder') war in der Team-Liste neben dem Grid zu
+              klein zum Lesen. Verb-Label oben („📍 Setzen") reicht — die exakte
+              Aktion sieht das Team auf seinem /team-Device. */}
           />
         </div>
       </div>

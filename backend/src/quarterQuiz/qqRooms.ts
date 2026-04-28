@@ -393,6 +393,15 @@ export function qqJoinTeam(
   if (avatarTaken) {
     throw new QQError('AVATAR_TAKEN', 'Dieser Avatar ist bereits vergeben.');
   }
+  // Name exclusivity: gleiche Namen verwirren Mod + Reveals (case-insensitive,
+  // getrimmt — „Wölfe" und „wölfe " gelten als identisch).
+  const nameLower = (teamName ?? '').trim().toLowerCase();
+  if (nameLower) {
+    const nameTaken = Object.values(room.teams).some(t => (t.name ?? '').trim().toLowerCase() === nameLower);
+    if (nameTaken) {
+      throw new QQError('NAME_TAKEN', 'Dieser Team-Name ist bereits vergeben.');
+    }
+  }
   // Color is derived from the chosen avatar (each avatar has a fixed signature color)
   const avatar = QQ_AVATARS.find(a => a.id === avatarId);
   const color = avatar?.color ?? QQ_TEAM_PALETTE[existingCount % QQ_TEAM_PALETTE.length];

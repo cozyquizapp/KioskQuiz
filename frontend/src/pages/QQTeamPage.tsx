@@ -368,6 +368,10 @@ export default function QQTeamPage() {
   };
 
   const takenAvatarIds = (state?.teams ?? []).map(t => t.avatarId);
+  // Doppelten Team-Namen blocken (case-insensitive, getrimmt). Wenn dasselbe
+  // Wort in der Lobby zweimal vorkommt, kann der Mod (und am Ende beim Reveal
+  // selbst) nicht mehr unterscheiden wer gemeint ist.
+  const takenTeamNamesLower = (state?.teams ?? []).map(t => (t.name ?? '').trim().toLowerCase());
 
   // Auto-switch to a free avatar if current selection gets taken
   useEffect(() => {
@@ -383,6 +387,7 @@ export default function QQTeamPage() {
       connected={connected} error={error} onJoin={joinRoom}
       lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
       takenAvatarIds={takenAvatarIds}
+      takenTeamNamesLower={takenTeamNamesLower}
     />;
   }
   if (!state) {
@@ -399,12 +404,15 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds }: {
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds, takenTeamNamesLower }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
   takenAvatarIds: string[];
+  takenTeamNamesLower: string[];
 }) {
+  const trimmedNameLower = teamName.trim().toLowerCase();
+  const nameTaken = trimmedNameLower.length > 0 && takenTeamNamesLower.includes(trimmedNameLower);
   // Track which avatar was just picked for the burst animation
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
@@ -556,17 +564,28 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               placeholder={t.setup.placeholder[lang]}
               style={{
                 ...cozyInput,
-                border: '1px solid rgba(234,179,8,0.25)',
-                background: 'rgba(234,179,8,0.06)',
+                border: nameTaken
+                  ? '1px solid rgba(239,68,68,0.55)'
+                  : '1px solid rgba(234,179,8,0.25)',
+                background: nameTaken
+                  ? 'rgba(239,68,68,0.06)'
+                  : 'rgba(234,179,8,0.06)',
               }}
               autoFocus
               maxLength={20}
-              onKeyDown={e => e.key === 'Enter' && teamName.trim() && onJoin()}
+              onKeyDown={e => e.key === 'Enter' && teamName.trim() && !nameTaken && onJoin()}
             />
-            {error && (
+            {nameTaken && (
+              <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, marginTop: 4, fontWeight: 700 }}>
+                {lang === 'de'
+                  ? '⚠ Dieser Name ist schon vergeben — bitte anderen wählen.'
+                  : '⚠ Name already taken — please choose another.'}
+              </div>
+            )}
+            {error && !nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}
-            <CozyBtn color="#22C55E" onClick={onJoin} disabled={!teamName.trim()}>
+            <CozyBtn color="#22C55E" onClick={onJoin} disabled={!teamName.trim() || nameTaken}>
               {t.setup.join[lang]}
             </CozyBtn>
           </CozyCard>
@@ -2020,13 +2039,38 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         </div>
       )}
 
-      {/* Trost-Message: eigene Antwort abgegeben, aber nicht gewonnen. Kein Shaming,
-          nur Ermutigung. Nicht zeigen wenn man die Runde gewonnen hat. */}
+      {/* Result-Message:
+          - korrekt + nicht erster: „Auch richtig — als 2./3./..." (kein Shaming!)
+          - falsch: zufällige Trost-Message (kein Shaming, nur Ermutigung)
+          Nicht zeigen wenn man die Runde komplett gewonnen hat (eigener Erfolg
+          wird woanders gefeiert). */}
       {isRevealed && !iWon && iSubmitted && (() => {
+        const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+        const myWinPosition = winners.indexOf(myTeamId); // -1 = nicht in den Gewinnern
+        // Korrekt aber nicht erster
+        if (myWinPosition > 0) {
+          const n = myWinPosition + 1;
+          const positionDe = n === 2 ? '2.' : n === 3 ? '3.' : `${n}.`;
+          const positionEn = n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+          return (
+            <div style={{
+              marginTop: 8, padding: '10px 14px', borderRadius: 12, textAlign: 'center',
+              background: 'rgba(34,197,94,0.10)',
+              border: '1px solid rgba(34,197,94,0.30)',
+              fontSize: 13, fontWeight: 700, color: '#86EFAC',
+              animation: 'tcTrostIn 0.5s ease 0.45s both',
+            }}>
+              <QQEmojiIcon emoji="✅"/>{' '}
+              {lang === 'de'
+                ? <>Auch richtig — als <b>{positionDe}</b></>
+                : <>Also correct — in <b>{positionEn}</b></>}
+            </div>
+          );
+        }
+        // Falsch
         const msgs = lang === 'de'
           ? ['Knapp daneben!', 'Nächste Chance gleich!', 'Dran bleiben!', 'Fast erwischt!', 'Weiter so!']
           : ['So close!', 'Next chance is coming!', 'Stay in it!', 'Almost there!', 'Keep going!'];
-        // Deterministisch per Question-ID — kein Flackern bei Re-Render.
         const pick = msgs[Math.abs(hashString(q.id)) % msgs.length];
         return (
           <div style={{

@@ -1402,45 +1402,56 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // Timer expired — just broadcast, moderator controls reveal manually
           broadcast(io, payload.roomCode);
         });
-        // Auto-start Hot Potato if the activated question is a hotPotato type
-        if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
-          qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
-        }
-        // Auto-start Imposter (oneOfEight) and stop timer (it's self-paced)
-        if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
-          qqImposterStart(room);
-          qqStopTimer(room);
-        }
-        // Auto-start 4 gewinnt (onlyConnect): jedes Team beginnt bei Hint 0.
-        // KEIN Auto-Timer — Teams schalten Hinweise selbst frei via /team.
-        // Standard-Question-Timer wird gestoppt (eigenes Per-Team-Modell).
-        if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
-          qqOnlyConnectStart(room);
-          qqStopTimer(room);
-        }
-        // Auto-start Bluff: write-Phase, eigener Timer.
-        if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
-          qqBluffStartWrite(room, () => bluffWriteTimeout(io, payload.roomCode));
-          qqStopTimer(room);
+        // qqActivateQuestion kann früh zurückkehren wenn nur ein PHASE_INTRO-
+        // Sub-Step weitergezählt wurde (Round-Title → Rule-Reminder → Category
+        // → Category-Explanation → eigentliche Aktivierung). In diesem Fall
+        // bleibt phase='PHASE_INTRO'. Sub-Mechanik-Starts dürfen NUR feuern
+        // wenn die Frage tatsächlich aktiv wurde — sonst startet z.B. Bluff
+        // schon beim ersten Space seinen 60s-Write-Timer und läuft durch
+        // alle Phasen während der Mod noch durch die Intro-Folien klickt.
+        if (room.phase === 'QUESTION_ACTIVE') {
+          // Auto-start Hot Potato if the activated question is a hotPotato type
+          if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+            qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
+          }
+          // Auto-start Imposter (oneOfEight) and stop timer (it's self-paced)
+          if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
+            qqImposterStart(room);
+            qqStopTimer(room);
+          }
+          // Auto-start 4 gewinnt (onlyConnect): jedes Team beginnt bei Hint 0.
+          // KEIN Auto-Timer — Teams schalten Hinweise selbst frei via /team.
+          // Standard-Question-Timer wird gestoppt (eigenes Per-Team-Modell).
+          if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+            qqOnlyConnectStart(room);
+            qqStopTimer(room);
+          }
+          // Auto-start Bluff: write-Phase, eigener Timer.
+          if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+            qqBluffStartWrite(room, () => bluffWriteTimeout(io, payload.roomCode));
+            qqStopTimer(room);
+          }
         }
         broadcast(io, payload.roomCode);
-        // Bluff Dummy-AI: Dummies tippen bluffs nach Verzögerung.
-        if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
-          maybeAutoBluffWrite(io, payload.roomCode);
-        }
-        // 4 gewinnt Dummy-AI: Dummies schalten Hinweise frei + tippen.
-        if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
-          stopOnlyConnectAiTimers(payload.roomCode);
-          maybeAutoOnlyConnect(io, payload.roomCode);
-        }
-        // Dummies automatisch antworten lassen
-        maybeAutoSimulateAnswers(io, payload.roomCode);
-        // Hot Potato / Imposter: falls aktives Team ein Dummy ist, Kette starten.
-        if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
-          maybeAutoHotPotato(io, payload.roomCode);
-        }
-        if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
-          maybeAutoImposter(io, payload.roomCode);
+        if (room.phase === 'QUESTION_ACTIVE') {
+          // Bluff Dummy-AI: Dummies tippen bluffs nach Verzögerung.
+          if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+            maybeAutoBluffWrite(io, payload.roomCode);
+          }
+          // 4 gewinnt Dummy-AI: Dummies schalten Hinweise frei + tippen.
+          if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+            stopOnlyConnectAiTimers(payload.roomCode);
+            maybeAutoOnlyConnect(io, payload.roomCode);
+          }
+          // Dummies automatisch antworten lassen
+          maybeAutoSimulateAnswers(io, payload.roomCode);
+          // Hot Potato / Imposter: falls aktives Team ein Dummy ist, Kette starten.
+          if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+            maybeAutoHotPotato(io, payload.roomCode);
+          }
+          if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
+            maybeAutoImposter(io, payload.roomCode);
+          }
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

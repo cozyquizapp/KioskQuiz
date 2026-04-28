@@ -1648,17 +1648,19 @@ type RulesSlide = {
 };
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
+  // Kein 'Finale' mehr in den Runden-Bezeichnungen — das echte Finale ist
+  // seit Connections das 4×4-Mini-Game am Ende, nicht die letzte Quiz-Runde.
   const abilityLines = totalPhases === 3
     ? [
-        'Jede Runde bringt etwas Neues:',
-        'Runde 2: Klauen',
-        'Finale (Runde 3): Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
+        'Jede Runde schaltet etwas frei:',
+        'Runde 2: Klauen — fremdes Feld stibitzen.',
+        'Runde 3: Stapeln — eigenes Feld dauerhaft sichern + 1 Bonus-Pkt.',
       ]
     : [
-        'Jede Runde bringt etwas Neues:',
-        'Runde 2: Klauen',
-        'Runde 3: Stapeln (eigenes Feld +1 Punkt, dauerhaft sicher)',
-        'Finale: Stapeln bleibt — mehr Zeit, mehr Fragen',
+        'Jede Runde schaltet etwas frei:',
+        'Runde 2: Klauen — fremdes Feld stibitzen.',
+        'Runde 3: Stapeln — eigenes Feld dauerhaft sichern + 1 Bonus-Pkt.',
+        'Runde 4: Stapeln bleibt — letzte Quiz-Runde vor dem Finale.',
       ];
   return [
     {
@@ -1666,7 +1668,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Das Ziel',
       color: '#3B82F6',
       lines: [
-        'Sammelt Felder — das größte zusammenhängende Gebiet gewinnt.',
+        'Sammelt Felder auf dem Spielfeld.',
+        'Das größte zusammenhängende Gebiet am Ende gewinnt.',
       ],
     },
     {
@@ -1674,20 +1677,39 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'So läuft\'s',
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} Runden · 5 Kategorien`,
-        'Richtige Antwort → Feld setzen',
-        '2×2 Block oder 4 in einer Reihe = Bonus-Feld!',
-        'Bei Gleichstand entscheidet Tempo.',
+        `${totalPhases} Quiz-Runden · 5 Kategorien pro Runde`,
+        'Richtige Antwort → Feld setzen oder klauen',
+        'Bei Gleichstand entscheidet wer schneller war',
       ],
     },
     {
       icon: '🗺',
       title: 'Dein Weg durchs Quiz',
       color: '#FBBF24',
-      lines: [
-        // Lines bleiben leer — die Slide rendert nur den Tree groß.
-      ],
+      lines: [],
       treeShowcase: true,
+    },
+    {
+      // Joker explizit eigene Folie mit Mini-Grid-Beispiel.
+      icon: '⭐',
+      title: 'Joker-Bonus',
+      color: '#FBBF24',
+      lines: [
+        'Wer 4 eigene Felder als 2×2-Block ODER 4 in einer Reihe formt:',
+        'Bekommt sofort 1 Bonus-Feld zum freien Setzen.',
+        'Maximal 2 Joker pro Team im ganzen Spiel.',
+      ],
+      grid: {
+        cells: [
+          ['A', 'A', null, 'A'],
+          ['A', 'A', null, 'A'],
+          [null, null, null, 'A'],
+          [null, null, null, 'A'],
+        ],
+        colorA: '#3B82F6', colorB: '#EF4444',
+        label: 'Beide zählen — jedes Muster bringt 1 Joker',
+      },
+      extra: '⭐ Achtung: ein Feld zählt nur einmal als Joker-Block.',
     },
     {
       icon: '🔓',
@@ -1700,30 +1722,54 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
     },
     {
+      // Bunte-Tüte erklären — pro Runde eine Überraschungs-Mechanik.
+      icon: '🎁',
+      title: 'Bunte Tüte',
+      color: '#EF4444',
+      lines: [
+        'Eine der 5 Kategorien pro Runde ist eine Überraschung.',
+        'Mögliche Mechaniken: 4 gewinnt 🧩, Bluff 🎭, Hot Potato 🔥, Top 5 🏆, Reihenfolge 📋, CozyGuessr 🗺️.',
+        'Die Regeln werden vor jeder Bunte-Tüte-Frage kurz erklärt.',
+      ],
+    },
+    {
       icon: '🔄',
       title: 'Comeback',
       color: '#10B981',
       lines: [
-        'Die Letzten werden die Ersten sein — oder wie war das?',
-        'Vor dem Finale gibt\'s eine Aufholchance. Überraschung!',
+        'Das letzte Team (oder mehrere bei Gleichstand) bekommt einen Boost.',
+        'Kurzes „Mehr oder Weniger?"-Mini-Quiz — jeder Treffer klaut 1 Feld vom 1. Platz.',
+        'Wieder im Rennen für das große Finale!',
       ],
-      extra: 'Viel Spaß — möge das beste Team gewinnen! 🎉',
+    },
+    {
+      // 4×4-Finale eigene Folie.
+      icon: '🧩',
+      title: 'Das große Finale',
+      color: '#A78BFA',
+      lines: [
+        '16 Begriffe · findet 4 versteckte Gruppen à 4 Items.',
+        'Jede gefundene Gruppe = 1 Aktion auf dem Hauptspielfeld.',
+        'Reihenfolge: meiste Gruppen zuerst, bei Gleichstand zählt Tempo.',
+      ],
+      extra: '🏆 Das größte zusammenhängende Gebiet nach dem Finale gewinnt!',
     },
   ];
 }
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
+  // 'Final' is no longer a quiz round — the real final is the 4×4 mini-game.
   const abilityLines = totalPhases === 3
     ? [
-        'Each round adds something:',
-        'Round 2: Steal',
-        'Final (Round 3): Stack (own tile +1 point, permanently safe)',
+        'Each round unlocks something:',
+        'Round 2: Steal — grab an opponent\'s cell.',
+        'Round 3: Stack — lock your tile + 1 bonus pt.',
       ]
     : [
-        'Each round adds something:',
-        'Round 2: Steal',
-        'Round 3: Stack (own tile +1 point, permanently safe)',
-        'Final: Stack stays — more time, more questions',
+        'Each round unlocks something:',
+        'Round 2: Steal — grab an opponent\'s cell.',
+        'Round 3: Stack — lock your tile + 1 bonus pt.',
+        'Round 4: Stack stays — last quiz round before the finale.',
       ];
   return [
     {
@@ -1731,7 +1777,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'The Goal',
       color: '#3B82F6',
       lines: [
-        'Claim cells — biggest connected area wins.',
+        'Claim cells on the board.',
+        'Largest connected area at the end wins.',
       ],
     },
     {
@@ -1739,10 +1786,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'How It Works',
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} rounds · 5 categories`,
-        'Right answer → place a cell',
-        '2×2 block or 4 in a row = bonus tile!',
-        'Tie? Speed decides.',
+        `${totalPhases} quiz rounds · 5 categories per round`,
+        'Right answer → place or steal a cell',
+        'Tie? Whoever was faster decides.',
       ],
     },
     {
@@ -1751,6 +1797,27 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: '#FBBF24',
       lines: [],
       treeShowcase: true,
+    },
+    {
+      icon: '⭐',
+      title: 'Joker Bonus',
+      color: '#FBBF24',
+      lines: [
+        'Form 4 of your own cells as a 2×2 block OR 4 in a row:',
+        'Get an instant bonus cell to place anywhere.',
+        'Max 2 jokers per team for the whole game.',
+      ],
+      grid: {
+        cells: [
+          ['A', 'A', null, 'A'],
+          ['A', 'A', null, 'A'],
+          [null, null, null, 'A'],
+          [null, null, null, 'A'],
+        ],
+        colorA: '#3B82F6', colorB: '#EF4444',
+        label: 'Both count — each pattern earns 1 joker',
+      },
+      extra: '⭐ Note: a cell only counts once per joker pattern.',
     },
     {
       icon: '🔓',
@@ -1763,14 +1830,35 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       ],
     },
     {
+      icon: '🎁',
+      title: 'Lucky Bag',
+      color: '#EF4444',
+      lines: [
+        'One of the 5 categories per round is a surprise mechanic.',
+        'Possible: Connect 4 🧩, Bluff 🎭, Hot Potato 🔥, Top 5 🏆, Order 📋, CozyGuessr 🗺️.',
+        'Each one\'s rules are explained briefly before the question.',
+      ],
+    },
+    {
       icon: '🔄',
       title: 'Comeback',
       color: '#10B981',
       lines: [
-        'The last shall be first — or so they say.',
-        'Before the final: a catch-up for last place. Surprise!',
+        'The last-place team (or several if tied) gets a boost.',
+        'Quick "Higher or Lower?" mini-quiz — each hit steals 1 cell from the leader.',
+        'Back in the race for the big finale!',
       ],
-      extra: 'Good luck — may the best team win! 🎉',
+    },
+    {
+      icon: '🧩',
+      title: 'The Big Finale',
+      color: '#A78BFA',
+      lines: [
+        '16 terms · find 4 hidden groups of 4 each.',
+        'Each group found = 1 action on the main grid.',
+        'Order: most groups first, ties broken by speed.',
+      ],
+      extra: '🏆 Largest connected area after the finale wins!',
     },
   ];
 }

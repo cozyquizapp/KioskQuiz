@@ -751,6 +751,15 @@ export default function QQModeratorPage() {
             className="qm-ghost"
             title="Zurück zum Hauptmenü"
           >⌂ Menü</button>
+          {/* Zurück zum Setup — nur sichtbar wenn Setup abgeschlossen aber
+              noch in Lobby (vor Spielstart). Konsistent mit Menü-Button. */}
+          {joined && s && s.phase === 'LOBBY' && s.setupDone && (
+            <button
+              onClick={() => setSetupDone(false)}
+              className="qm-ghost"
+              title="Zurück zum Setup (Fragenset, Runden, Timer)"
+            >⚙ Setup</button>
+          )}
           <span style={badgeStyle('#3B82F6')}>CozyQuiz</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
         </div>
@@ -3457,23 +3466,28 @@ function LobbyView({
                 <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.08em' }}>
                   🧪 TEST
                 </span>
-                <button
-                  onClick={async () => {
-                    const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ count: 8 }),
-                    });
-                    if (!r.ok) {
-                      const d = await r.json().catch(() => ({}));
-                      alert(`Fehler: ${d.error ?? r.statusText}`);
-                    }
-                  }}
-                  style={{
-                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                    border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
-                    color: '#F59E0B', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
-                  }}
-                >+ 8 Dummy-Teams joinen</button>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {([1, 3, 5, 7, 8] as const).map(n => (
+                    <button
+                      key={n}
+                      onClick={async () => {
+                        const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ count: n }),
+                        });
+                        if (!r.ok) {
+                          const d = await r.json().catch(() => ({}));
+                          alert(`Fehler: ${d.error ?? r.statusText}`);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                        border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
+                        color: '#F59E0B', fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                      }}
+                    >+ {n} {n === 1 ? 'Dummy' : 'Dummies'}</button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

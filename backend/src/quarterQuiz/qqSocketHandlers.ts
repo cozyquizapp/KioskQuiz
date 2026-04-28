@@ -1468,6 +1468,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Sub-Mechaniken mit eigener Reveal-Pipeline routen — Standard-Reveal
         // würde sonst den Auto-Finish-Pfad umgehen + Phase nicht korrekt setzen.
         const subKind = room.currentQuestion?.bunteTuete?.kind;
+        // Mucho/ZvZ: erster Step (Phase-Wechsel ohne sichtbares Event) wird
+        // mit Avatar-Cascade verschmolzen — User-Wunsch 2026-04-28: 'der
+        // Zwischenschritt macht eh nichts'. Wir setzen muchoRevealStep /
+        // zvzRevealStep direkt auf 1 mit dem ersten Space.
+        const cat = room.currentQuestion?.category;
+        const isMuchoOrZvz = (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') && room.phase === 'QUESTION_ACTIVE';
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
           // Standard-Reveal: alle Hints zeigen, eval, phase=QUESTION_REVEAL.
           // Gate entfernt seit 2026-04-28 — onlyConnect nutzt jetzt den
@@ -1507,6 +1513,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         qqRevealAnswer(room);
         // Run evaluation immediately so correctTeamId is set — moderator sees winner
         try { applyAutoEval(room); } catch { /* ignore if already evaluated */ }
+        // Mucho/ZvZ: ersten Reveal-Step (Avatar-Cascade) sofort mit dem
+        // Phase-Wechsel verschmelzen. Der reine 'Question-Fade'-Step war
+        // visuell leer und verwirrte mit dem Reveal-Sound-Trigger.
+        if (isMuchoOrZvz) {
+          if (cat === 'MUCHO')         room.muchoRevealStep = 1;
+          if (cat === 'ZEHN_VON_ZEHN') room.zvzRevealStep   = 1;
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

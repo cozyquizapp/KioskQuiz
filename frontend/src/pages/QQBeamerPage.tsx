@@ -8291,17 +8291,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         animation: 'contentReveal 0.35s ease both',
       }}>
         {/* ── Main content — full width, vertically + horizontally distributed ──
-            User-Feedback 2026-04-28: Beim Reveal 'kleben' alle Cards in der
-            oberen Hälfte, untere Hälfte leer. Lösung: space-around statt
-            flex-start für MUCHO/ZvZ.
-            2026-04-28-v2: User: 'Mucho Winner-Border oben/unten abgeschnitten'.
+            History:
+            - 'flex-start' kleben oben → schlecht
+            - 'space-around' verteilt → aber: User-Feedback 2026-04-28-v3:
+              'wenn niedrige bets rausgehen + winner card kommt, verschieben
+              sich die oberen Cards mit'.
+              Mit space-around verteilen sich ALLE Items neu wenn die Anzahl
+              wechselt → upper Cards wackeln.
+            - LÖSUNG: flex-start (top-anchor stabil), aber gap ergänzt so dass
+              Cards atmen statt zu kleben. Untere Inhalte (Voter-Reihe, Winner-
+              Card) wachsen einfach nach unten ohne den Rest zu verschieben.
             Vertikales overflow visible erlaubt, dass Card-Glow + Winner-Border
             nicht durch overflow:hidden geclipped werden. Horizontal bleibt
             hidden für seitliche Effekte. */}
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           padding: 'clamp(20px, 3vh, 44px) clamp(28px, 4vw, 64px) clamp(24px, 3.5vh, 56px)',
-          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-around' : 'center',
+          // flex-start für ALLE Reveal-Phasen → upper Cards stehen stabil.
+          // Bei nicht-revealed (active) center bleibt für saubere Mitte.
+          justifyContent: revealed ? 'flex-start' : 'center',
+          // Atmender Gap zwischen Sections, damit es bei flex-start nicht
+          // zu zusammengedrängt aussieht.
+          gap: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(14px, 2vh, 28px)' : 0,
           alignItems: 'center', position: 'relative', zIndex: 5,
           overflowX: 'hidden', overflowY: 'visible',
         }}>

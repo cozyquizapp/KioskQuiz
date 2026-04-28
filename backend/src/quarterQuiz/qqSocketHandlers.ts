@@ -800,13 +800,14 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       if (live.onlyConnectGuesses.some(g => g.teamId === localTeamId && g.correct)) return;
 
       const curIdx = live.onlyConnectHintIndices[localTeamId] ?? 0;
-      // Tipp-Wahrscheinlichkeit pro Hint-Level: 0→15 %, 1→35 %, 2→60 %, 3→100 %
-      const guessProb = curIdx === 0 ? 0.15 : curIdx === 1 ? 0.35 : curIdx === 2 ? 0.60 : 1.0;
+      // Auto-Hint-Reveal seit 2026-04-28: Hints kommen auf dem Timer
+      // automatisch — Dummies entscheiden NUR ob sie jetzt schon tippen
+      // oder weiter abwarten. Mit höherem Hint-Level steigt die Lust zu raten.
+      const guessProb = curIdx === 0 ? 0.10 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.55 : 0.95;
       const shouldGuess = Math.random() < guessProb;
 
-      if (!shouldGuess && curIdx < 3) {
-        qqOnlyConnectAdvanceTeamHint(live, localTeamId);
-        broadcast(io, roomCode);
+      if (!shouldGuess) {
+        // Diese Runde noch nicht tippen — re-schedule für später
         maybeAutoOnlyConnect(io, roomCode);
         return;
       }
@@ -1419,12 +1420,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
             qqImposterStart(room);
             qqStopTimer(room);
           }
-          // Auto-start 4 gewinnt (onlyConnect): jedes Team beginnt bei Hint 0.
-          // KEIN Auto-Timer — Teams schalten Hinweise selbst frei via /team.
-          // Standard-Question-Timer wird gestoppt (eigenes Per-Team-Modell).
+          // Auto-start 4 gewinnt (onlyConnect): nutzt seit 2026-04-28 den
+          // Standard-Question-Timer (User-Wunsch: 'gleicher Flow wie alle
+          // Kategorien'). Hints werden global synchron alle ~timerDur/4
+          // Sekunden auto-advanced. qqStopTimer NICHT mehr — Standard-Timer
+          // läuft (gestartet in qqActivateQuestion).
           if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
-            qqOnlyConnectStart(room);
-            qqStopTimer(room);
+            qqOnlyConnectStart(room, () => broadcast(io, payload.roomCode));
           }
           // Auto-start Bluff: write-Phase, eigener Timer.
           if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
@@ -1464,19 +1466,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // würde sonst den Auto-Finish-Pfad umgehen + Phase nicht korrekt setzen.
         const subKind = room.currentQuestion?.bunteTuete?.kind;
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
-          // Schutz gegen versehentliches Premature-Reveal durch Mod-Space:
-          // 4 gewinnt hat keinen Timer + keine sichtbare Phase-Progression im
-          // Mod-UI, deshalb kann ein Doppel-Klick die Eingabe-Phase überspringen.
-          // Reveal nur wenn mindestens irgendwas passiert ist (Tipp ODER mind.
-          // 1 Hint freigeschaltet). Sonst silent no-op — Mod muss expliziten
-          // 'Auflösen'-Button drücken (qq:onlyConnectRevealAll).
-          const hasAnyGuess = (room.onlyConnectGuesses ?? []).length > 0;
-          const allUnlockedSomething = Object.values(room.onlyConnectHintIndices ?? {})
-            .some(idx => (idx ?? 0) >= 1);
-          if (!hasAnyGuess && !allUnlockedSomething) {
-            ok(ack);
-            return;
-          }
+          // Standard-Reveal: alle Hints zeigen, eval, phase=QUESTION_REVEAL.
+          // Gate entfernt seit 2026-04-28 — onlyConnect nutzt jetzt den
+          // Standard-Flow mit Timer, deshalb ist das Mod-Space-Reveal in
+          // Ordnung wie bei Mucho/Schätzchen.
           qqOnlyConnectRevealAll(room);
           qqOnlyConnectAutoFinish(room);
           broadcast(io, payload.roomCode);

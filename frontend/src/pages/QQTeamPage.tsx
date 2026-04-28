@@ -2860,9 +2860,10 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
-  // Per-Team-Modell: jedes Team hat eigenen Index, schaltet selbst frei.
+  // Auto-Hint-Reveal seit 2026-04-28: alle Teams sehen synchron den gleichen
+  // Hint-Index, der vom Backend-Timer global advanced wird. /team kann nicht
+  // mehr selbst freischalten.
   const hintIdx = Math.max(0, (s.onlyConnectHintIndices ?? {})[myTeamId] ?? 0);
-  const canUnlockMore = hintIdx < 3;
   const pointsIfWinNow = Math.max(1, 4 - hintIdx);
   const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
   // Multi-Winner: hat MEIN Team schon richtig gelegen?
@@ -2880,11 +2881,6 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
     if (text.length < 1) return;
     emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
     setVal('');
-  };
-
-  const unlockNext = () => {
-    if (alreadyAnswered || !canUnlockMore) return;
-    emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId });
   };
 
   return (
@@ -2920,49 +2916,22 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         })}
       </div>
 
-      {/* Punkte-Anzeige + Unlock-Button (per-Team-Modell) */}
+      {/* Punkte-Anzeige (Auto-Hint-Reveal seit 2026-04-28: Hints werden mit
+          dem Timer global synchron freigeschaltet — kein manueller Unlock).
+          Anzeige: aktueller Hint-Stand + Punktewert beim Tippen jetzt. */}
       {!alreadyAnswered && (
         <div style={{
-          display: 'flex', flexDirection: 'column', gap: 8,
-          padding: '10px 12px', borderRadius: 12,
+          padding: '10px 14px', borderRadius: 12,
           background: 'rgba(255,255,255,0.04)',
           border: '1.5px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontSize: 12, fontWeight: 800, color: '#94A3B8',
+          letterSpacing: '0.05em', textTransform: 'uppercase',
         }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontSize: 12, fontWeight: 800, color: '#94A3B8',
-            letterSpacing: '0.05em', textTransform: 'uppercase',
-          }}>
-            <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
-            <span style={{ color: '#FBBF24' }}>
-              {lang === 'de' ? `Wert: ${pointsIfWinNow} Pkt` : `Worth: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
-            </span>
-          </div>
-          {canUnlockMore ? (
-            <button
-              onClick={unlockNext}
-              style={{
-                padding: '12px 14px', borderRadius: 12,
-                background: 'rgba(167,139,250,0.18)',
-                border: '1.5px solid rgba(167,139,250,0.5)',
-                color: '#DDD6FE', fontFamily: 'inherit', fontSize: 14, fontWeight: 900,
-                cursor: 'pointer', letterSpacing: '0.04em',
-                boxShadow: '0 2px 8px rgba(167,139,250,0.2)',
-              }}
-            >
-              {lang === 'de'
-                ? `+ Nächsten Hinweis freischalten  (dann ${Math.max(1, pointsIfWinNow - 1)} Pkt)`
-                : `+ Unlock next clue  (then ${Math.max(1, pointsIfWinNow - 1)} pt${Math.max(1, pointsIfWinNow - 1) !== 1 ? 's' : ''})`}
-            </button>
-          ) : (
-            <div style={{
-              padding: '10px 12px', borderRadius: 10, textAlign: 'center',
-              background: 'rgba(255,255,255,0.03)',
-              fontSize: 12, fontWeight: 700, color: '#64748b',
-            }}>
-              {lang === 'de' ? 'Alle Hinweise sichtbar' : 'All clues revealed'}
-            </div>
-          )}
+          <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
+          <span style={{ color: '#FBBF24' }}>
+            {lang === 'de' ? `Tippen jetzt: ${pointsIfWinNow} Pkt` : `Guess now: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
+          </span>
         </div>
       )}
 

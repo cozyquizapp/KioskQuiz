@@ -832,14 +832,16 @@ export function qqActivateQuestion(
   // qq:activateQuestion-Handler nachträglich gestartet, damit Callbacks gebunden werden können).
   qqOnlyConnectReset(room);
   qqBluffReset(room);
-  // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
+  // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer.
+  // Bluff hat eigene write/vote-Timer.
+  // 4 gewinnt nutzt seit 2026-04-28 wieder den Standard-Timer (User-Wunsch:
+  // 'gleicher Flow wie alle Kategorien'). Hints werden global synchron auto-
+  // advanced via interner qqOnlyConnectStart-Timer.
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
-  const isOnlyConnect = room.currentQuestion?.category === 'BUNTE_TUETE'
-    && room.currentQuestion.bunteTuete?.kind === 'onlyConnect';
   const isBluff = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'bluff';
-  if (isHotPotato || isOnlyConnect || isBluff) {
+  if (isHotPotato || isBluff) {
     qqStopTimer(room);
   } else {
     qqStartTimer(room, onTimerExpire);
@@ -3464,8 +3466,18 @@ export function qqOnlyConnectReset(room: QQRoomState): void {
 /**
  * Start: jedes verbundene Team beginnt bei Hint-Index 0.
  * Reset zuerst (falls vorherige Frage State hinterlassen hat).
+ *
+ * 4 gewinnt nutzt seit 2026-04-28 wieder den Standard-Question-Flow:
+ * - Question-Timer läuft (qqStartTimer) wie bei Mucho/Schätzchen
+ * - Hints werden GLOBAL synchron alle ~timerDurationSec/4 Sekunden
+ *   automatisch aufgedeckt (kein Per-Team-Unlock mehr)
+ * - Score: 4-atHintIdx Punkte basierend auf globalem Hint-Stand zur
+ *   Submit-Zeit
+ *
+ * onAdvanceTick wird vom Caller geliefert um nach jedem Hint-Advance
+ * zu broadcasten.
  */
-export function qqOnlyConnectStart(room: QQRoomState): void {
+export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void): void {
   qqOnlyConnectReset(room);
   const now = Date.now();
   for (const teamId of room.joinOrder) {
@@ -3474,23 +3486,58 @@ export function qqOnlyConnectStart(room: QQRoomState): void {
     room.onlyConnectHintRevealedAt[teamId] = now;
   }
   room.lastActivityAt = now;
+
+  // Hint-Advance-Timer: nach 1/4 Question-Time → Hint 2, dann 2/4 → Hint 3,
+  // 3/4 → Hint 4. Letzter Tick erreicht Index 3 (alle 4 Hints sichtbar).
+  // Question-Timer läuft separat und triggert bei Ablauf den standard
+  // qq:revealAnswer-Pfad.
+  const totalMs = (room.timerDurationSec ?? 30) * 1000;
+  const stepMs = Math.max(2000, Math.floor(totalMs / 4)); // mind. 2s zwischen Hints
+  let nextStep = 1; // Start bei 0, erster Tick erhöht auf 1
+  const tick = (): void => {
+    const live = room; // closure
+    if (live.phase !== 'QUESTION_ACTIVE') return;
+    if (live.currentQuestion?.bunteTuete?.kind !== 'onlyConnect') return;
+    if (nextStep > 3) return;
+    qqOnlyConnectAdvanceAllTeams(live, nextStep);
+    nextStep += 1;
+    if (onAdvanceTick) try { onAdvanceTick(); } catch {}
+    if (nextStep <= 3) {
+      live._onlyConnectHintTimerHandle = setTimeout(tick, stepMs);
+    } else {
+      live._onlyConnectHintTimerHandle = null;
+    }
+  };
+  room._onlyConnectHintTimerHandle = setTimeout(tick, stepMs);
 }
 
 /**
- * Per-Team Hint freischalten. Team kann nicht über Hint 3 hinaus.
- * Returnt den neuen Hint-Index oder null wenn nicht erhöhbar.
+ * Globaler Hint-Advance: setzt ALLE Teams (die noch nicht richtig/gesperrt
+ * sind) auf den gegebenen Hint-Index. Wird vom Auto-Timer aufgerufen.
  */
-export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, teamId: string): number | null {
-  if (!room.teams[teamId]) return null;
-  // Wer schon richtig oder gesperrt ist, kann eh nicht mehr nutzen — aber
-  // Anzeige soll trotzdem funktionieren (z.B. nach falsch & locked: alle Hinweise).
-  const cur = room.onlyConnectHintIndices[teamId] ?? 0;
+export function qqOnlyConnectAdvanceAllTeams(room: QQRoomState, hintIdx: number): void {
+  const idx = Math.max(0, Math.min(3, hintIdx));
+  const now = Date.now();
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]) continue;
+    // Locked-Out / schon korrekte Teams trotzdem mit anheben — sehen die
+    // Hints am Beamer eh, aber atHintIdx-Score wurde schon eingefroren.
+    room.onlyConnectHintIndices[teamId] = idx;
+    room.onlyConnectHintRevealedAt[teamId] = now;
+  }
+  room.lastActivityAt = now;
+}
+
+/**
+ * Per-Team Hint-Advance — DEPRECATED seit 2026-04-28.
+ * Bleibt für Backward-Compat falls alte Clients noch das Socket triggern,
+ * aber rechnet jetzt einfach den globalen Tick weiter (alle Teams synchron).
+ */
+export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, _teamId: string): number | null {
+  const cur = Math.max(0, Math.min(3, ...Object.values(room.onlyConnectHintIndices ?? { _: 0 })));
   if (cur >= 3) return cur;
-  const next = cur + 1;
-  room.onlyConnectHintIndices[teamId] = next;
-  room.onlyConnectHintRevealedAt[teamId] = Date.now();
-  room.lastActivityAt = Date.now();
-  return next;
+  qqOnlyConnectAdvanceAllTeams(room, cur + 1);
+  return cur + 1;
 }
 
 /** Globaler min-Index across alle Teams — für Beamer-Anzeige (kein Spoiler). */

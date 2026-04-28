@@ -41,6 +41,9 @@ import {
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
   qqOnlyConnectStart, qqOnlyConnectAdvanceHint, qqOnlyConnectSubmitGuess,
   qqOnlyConnectRevealAll, qqOnlyConnectReset,
+  qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
+  qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
+  qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -500,6 +503,123 @@ export function maybeAutoImposter(io: SocketIOServer, roomCode: string): void {
       }
     } catch { /* skip */ }
   }, delay);
+}
+
+/**
+ * Bluff: Write-Timer-Timeout-Handler. Erzwingt Übergang zu review (oder vote).
+ * Wird auch aufgerufen wenn alle Teams submitted haben (vor Timer-Ende).
+ */
+function bluffWriteTimeout(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || room.bluffPhase !== 'write') return;
+  qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, roomCode));
+  broadcast(io, roomCode);
+  // Nach Mutation: TS-narrow refresh durch Re-Read
+  if ((room.bluffPhase as string) === 'vote') {
+    maybeAutoBluffVote(io, roomCode);
+  }
+}
+
+/**
+ * Bluff: Vote-Timer-Timeout-Handler. Erzwingt Übergang zu reveal.
+ * Wird auch aufgerufen wenn alle Teams voted haben.
+ */
+function bluffVoteTimeout(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || room.bluffPhase !== 'vote') return;
+  qqBluffAdvanceFromVote(room);
+  broadcast(io, roomCode);
+}
+
+/**
+ * Bluff Dummy-AI während write-Phase: nach 3-8s tippt jeder Dummy einen
+ * plausibel klingenden Bluff. Aktuell sehr simpel: random year / fake answer.
+ */
+function maybeAutoBluffWrite(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || room.bluffPhase !== 'write') return;
+  for (const teamId of room.joinOrder) {
+    if (!isDummy(room, teamId)) continue;
+    if (room.bluffSubmissions[teamId]) continue;
+    const delay = 3000 + Math.random() * 5000;
+    const localTeamId = teamId;
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.bluffPhase !== 'write') return;
+      if (live.bluffSubmissions[localTeamId]) return;
+      // Bluff generieren — kontextabhängig falls die echte Antwort eine Zahl ist
+      const q = live.currentQuestion;
+      const real = q?.bunteTuete?.kind === 'bluff' ? q.bunteTuete.realAnswer ?? '' : '';
+      const fakeAnswer = generateDummyBluff(real);
+      qqBluffSubmit(live, localTeamId, fakeAnswer);
+      // Wenn jetzt alle eingereicht haben → früher zur Review/Vote-Phase
+      if (qqBluffAllSubmitted(live)) {
+        qqBluffAdvanceFromWrite(live, () => bluffVoteTimeout(io, roomCode));
+        broadcast(io, roomCode);
+        if ((live.bluffPhase as string) === 'vote') maybeAutoBluffVote(io, roomCode);
+      } else {
+        broadcast(io, roomCode);
+      }
+    }, delay);
+  }
+}
+
+/**
+ * Bluff Dummy-AI während vote-Phase: nach 4-9s wählt jeder Dummy zufällig
+ * (kann sein eigener Bluff nicht — Server filtert Doppel-Vote eh).
+ */
+function maybeAutoBluffVote(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room || room.bluffPhase !== 'vote') return;
+  for (const teamId of room.joinOrder) {
+    if (!isDummy(room, teamId)) continue;
+    if (room.bluffVotes[teamId]) continue;
+    const localTeamId = teamId;
+    const delay = 4000 + Math.random() * 5000;
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.bluffPhase !== 'vote') return;
+      if (live.bluffVotes[localTeamId]) return;
+      // Verfügbare Optionen: nicht eigener Bluff
+      const candidates = live.bluffOptions.filter(o => {
+        if (o.source === 'team' && o.contributors.includes(localTeamId)) return false;
+        return true;
+      });
+      if (candidates.length === 0) return;
+      // Skill: 40% Chance den echten Bluff zu wählen, sonst zufällig.
+      const real = candidates.find(o => o.source === 'real');
+      const beCorrect = Math.random() < 0.4;
+      const choice = (beCorrect && real) ? real : candidates[Math.floor(Math.random() * candidates.length)];
+      qqBluffVote(live, localTeamId, choice.id);
+      if (qqBluffAllVoted(live)) {
+        qqBluffAdvanceFromVote(live);
+        broadcast(io, roomCode);
+      } else {
+        broadcast(io, roomCode);
+      }
+    }, delay);
+  }
+}
+
+/** Helper: zufälliger Bluff-Text. Bei Zahl-Antworten: ähnliche Zahl. */
+function generateDummyBluff(real: string): string {
+  const trimmed = (real ?? '').trim();
+  // Reine Zahl?
+  const num = Number(trimmed.replace(/\./g, '').replace(/,/g, '.'));
+  if (Number.isFinite(num) && /\d/.test(trimmed)) {
+    // Zahl ±10-30% verändern, gerundet
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const factor = 1 + sign * (0.1 + Math.random() * 0.2);
+    const rounded = Math.round(num * factor);
+    return String(rounded);
+  }
+  // Generischer Text-Bluff (für nicht-Zahl-Antworten)
+  const fillers = [
+    'Theodor Wagner', 'Bertha Schmidt', 'Otto Hansen',
+    'In den 1920er-Jahren', '1888', '1956', '1974',
+    'Albert Lichtblick', 'Henry Watson', 'Eleanora Blanche',
+  ];
+  return fillers[Math.floor(Math.random() * fillers.length)];
 }
 
 /** Pro Raum + Team max ein laufender Connections-AI-Timer. Verhindert,
@@ -1210,7 +1330,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
           });
           qqStopTimer(room);
         }
+        // Auto-start Bluff: write-Phase, eigener Timer.
+        if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+          qqBluffStartWrite(room, () => bluffWriteTimeout(io, payload.roomCode));
+          qqStopTimer(room);
+        }
         broadcast(io, payload.roomCode);
+        // Bluff Dummy-AI: Dummies tippen bluffs nach Verzögerung.
+        if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+          maybeAutoBluffWrite(io, payload.roomCode);
+        }
         // Dummies automatisch antworten lassen
         maybeAutoSimulateAnswers(io, payload.roomCode);
         // Hot Potato / Imposter: falls aktives Team ein Dummy ist, Kette starten.
@@ -2323,6 +2452,120 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const s = Math.max(5, Math.min(60, Math.round(payload.seconds)));
         room.onlyConnectHintDurationSec = s;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Bluff (Fibbage-Style) — BunteTüete Sub-Mechanik
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Team submittet seinen Bluff-Text (write-Phase). */
+    socket.on('qq:bluffSubmit', (
+      payload: { roomCode: string; teamId: string; text: string },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqBluffSubmit(room, payload.teamId, payload.text);
+        // Wenn alle (echten) Teams submitted haben, früher zur nächsten Phase
+        if (room.bluffPhase === 'write' && qqBluffAllSubmitted(room)) {
+          qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, payload.roomCode));
+          if ((room.bluffPhase as string) === 'vote') maybeAutoBluffVote(io, payload.roomCode);
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Force-Advance write → review/vote (z.B. Timer skippen). */
+    socket.on('qq:bluffForceAdvanceWrite', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.bluffPhase === 'write') {
+          qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, payload.roomCode));
+          broadcast(io, payload.roomCode);
+          if ((room.bluffPhase as string) === 'vote') maybeAutoBluffVote(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Bluff-Submission ablehnen (review-Phase). */
+    socket.on('qq:bluffReject', (
+      payload: { roomCode: string; teamId: string; rejected: boolean },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (payload.rejected) {
+          qqBluffRejectSubmission(room, payload.teamId);
+        } else {
+          qqBluffUnrejectSubmission(room, payload.teamId);
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Review fertig → Vote-Phase. */
+    socket.on('qq:bluffFinishReview', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.bluffPhase === 'review') {
+          qqBluffFinishReview(room, () => bluffVoteTimeout(io, payload.roomCode));
+          broadcast(io, payload.roomCode);
+          maybeAutoBluffVote(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Team votet für eine Option. */
+    socket.on('qq:bluffVote', (
+      payload: { roomCode: string; teamId: string; optionId: string },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const result = qqBluffVote(room, payload.teamId, payload.optionId);
+        if (result.ok && room.bluffPhase === 'vote' && qqBluffAllVoted(room)) {
+          qqBluffAdvanceFromVote(room);
+        }
+        broadcast(io, payload.roomCode);
+        if (typeof ack === 'function') (ack as AckFn)({ ok: result.ok, error: result.reason } as any);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Force-Advance vote → reveal. */
+    socket.on('qq:bluffForceAdvanceVote', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.bluffPhase === 'vote') {
+          qqBluffAdvanceFromVote(room);
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Mod-Review-Toggle und Phasen-Timer einstellen (Setup). */
+    socket.on('qq:bluffSettings', (
+      payload: { roomCode: string; writeSec?: number; voteSec?: number; modReview?: boolean },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (typeof payload.writeSec === 'number') {
+          room.bluffWriteDurationSec = Math.max(10, Math.min(120, Math.round(payload.writeSec)));
+        }
+        if (typeof payload.voteSec === 'number') {
+          room.bluffVoteDurationSec = Math.max(10, Math.min(120, Math.round(payload.voteSec)));
+        }
+        if (typeof payload.modReview === 'boolean') {
+          room.bluffModeratorReview = payload.modReview;
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

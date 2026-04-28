@@ -287,6 +287,37 @@ export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 10;
 /** Default Sekunden zwischen Hint-Reveals bei 4 gewinnt / Only Connect. */
 export const QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC = 15;
 
+/** Bluff: Default-Sekunden für Schreib- und Vote-Phase. */
+export const QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC = 30;
+export const QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC = 30;
+
+/**
+ * Eine Bluff-Voting-Option. Entweder die echte Antwort oder ein Team-Bluff.
+ * Bei Duplikat-Bluffs werden contributors gemerged (z.B. ['t1', 't3'] wenn
+ * beide denselben Bluff geschrieben haben).
+ */
+export interface QQBluffOption {
+  /** Stable ID (für vote-Auswahl). 'real' für die echte Antwort, sonst random/teambased. */
+  id: string;
+  /** Sichtbarer Bluff-Text. */
+  text: string;
+  /** 'real' = echte Antwort, 'team' = Team-Bluff (mit mind. 1 contributor). */
+  source: 'real' | 'team';
+  /** Team-IDs die diesen Bluff geschrieben haben (leer bei 'real'). */
+  contributors: string[];
+}
+
+export interface QQBluffPoints {
+  /** +2 wenn das Team die echte Antwort gefunden hat. */
+  foundReal: number;
+  /** +1 pro anderem Team das auf den eigenen Bluff reingefallen ist. */
+  blufferBonus: number;
+  /** Sonderbonus +3 wenn das Team versehentlich die echte Antwort getippt hat. */
+  truthAccident: number;
+  /** Summe für Tie-Break / Aktion-Auswertung. */
+  total: number;
+}
+
 // ── 4×4 Connections (Finalrunde) ─────────────────────────────────────────────
 // 16 Begriffe in 4×4 Raster. 4 Gruppen à 4 Items. Teams jagen parallel und
 // markieren bis zu 4 Items zum Submit. Pro gefundener Gruppe gibts 1 Aktion.
@@ -804,6 +835,29 @@ export interface QQStateUpdate {
   onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
   /** Moderator-einstellbare Sekunden bis Auto-Advance des nächsten Hinweises (Default 15). */
   onlyConnectHintDurationSec: number;
+  // Bluff (BUNTE_TUETE kind=bluff)
+  /** Aktuelle Bluff-Sub-Phase. Null wenn nicht aktiv. */
+  bluffPhase: 'write' | 'review' | 'vote' | 'reveal' | null;
+  /** Server-Timestamp Ende der Schreib-Phase (write). */
+  bluffWriteEndsAt: number | null;
+  /** Server-Timestamp Ende der Vote-Phase. */
+  bluffVoteEndsAt: number | null;
+  /** Per-Team eingereichter Bluff-Text. */
+  bluffSubmissions: Record<string, string>;
+  /** Voting-Optionen, gemerged bei Duplikaten, gefiltert wenn = echte Antwort. */
+  bluffOptions: QQBluffOption[];
+  /** Per-Team gewählte Option-ID (vote phase). */
+  bluffVotes: Record<string, string>;
+  /** Per-Team computed Teilpunkte (reveal phase). */
+  bluffPoints: Record<string, QQBluffPoints>;
+  /** Moderator-konfigurierbar: Sekunden für Schreib-Phase. */
+  bluffWriteDurationSec: number;
+  /** Moderator-konfigurierbar: Sekunden für Vote-Phase. */
+  bluffVoteDurationSec: number;
+  /** Setup-Toggle: Moderator-Vorprüfung der Bluffs vor Voting? Default false. */
+  bluffModeratorReview: boolean;
+  /** Bei review: Bluffs die der Moderator gelöscht/zensiert hat (teamId-set). */
+  bluffRejected: string[];
   // Last placed cell — for beamer placement animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Cells temporarily frozen (expire after next placement), already reflected in grid.frozen

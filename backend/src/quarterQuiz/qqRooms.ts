@@ -10,6 +10,7 @@ import {
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
   QQ_CONNECTIONS_FALLBACK_PAYLOAD,
   QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
+  QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC, QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -105,6 +106,20 @@ export interface QQRoomState {
   onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
   onlyConnectHintDurationSec: number;                                       // Sekunden zwischen Hint-Reveals
   _onlyConnectHintTimerHandle: ReturnType<typeof setTimeout> | null;        // Auto-Advance-Timer (nicht persistiert)
+  // Bluff (BUNTE_TUETE kind=bluff)
+  bluffPhase: 'write' | 'review' | 'vote' | 'reveal' | null;
+  bluffWriteEndsAt: number | null;
+  bluffVoteEndsAt: number | null;
+  bluffSubmissions: Record<string, string>;
+  bluffOptions: import('../../../shared/quarterQuizTypes').QQBluffOption[];
+  bluffVotes: Record<string, string>;
+  bluffPoints: Record<string, import('../../../shared/quarterQuizTypes').QQBluffPoints>;
+  bluffWriteDurationSec: number;
+  bluffVoteDurationSec: number;
+  bluffModeratorReview: boolean;
+  bluffRejected: string[];
+  _bluffWriteTimerHandle: ReturnType<typeof setTimeout> | null;
+  _bluffVoteTimerHandle: ReturnType<typeof setTimeout> | null;
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
   // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
@@ -290,6 +305,19 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       onlyConnectGuesses: [],
       onlyConnectHintDurationSec: QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
       _onlyConnectHintTimerHandle: null,
+      bluffPhase: null,
+      bluffWriteEndsAt: null,
+      bluffVoteEndsAt: null,
+      bluffSubmissions: {},
+      bluffOptions: [],
+      bluffVotes: {},
+      bluffPoints: {},
+      bluffWriteDurationSec: QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC,
+      bluffVoteDurationSec: QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
+      bluffModeratorReview: false,
+      bluffRejected: [],
+      _bluffWriteTimerHandle: null,
+      _bluffVoteTimerHandle: null,
       lastPlacedCell: null,
       frozenCells: [],
       shieldedCells: [],
@@ -780,16 +808,18 @@ export function qqActivateQuestion(
   room.muchoRevealStep = 0;
   room.zvzRevealStep = 0;
   room.cheeseRevealStep = 0;
-  // 4 gewinnt: State pro Frage zurücksetzen (Sub-Mechanik wird via socket
-  // qq:activateQuestion-Handler nachträglich gestartet, damit der onAdvance-
-  // Callback dort gebunden werden kann).
+  // 4 gewinnt + Bluff: State pro Frage zurücksetzen (Sub-Mechanik wird via socket
+  // qq:activateQuestion-Handler nachträglich gestartet, damit Callbacks gebunden werden können).
   qqOnlyConnectReset(room);
+  qqBluffReset(room);
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
   const isOnlyConnect = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'onlyConnect';
-  if (isHotPotato || isOnlyConnect) {
+  const isBluff = room.currentQuestion?.category === 'BUNTE_TUETE'
+    && room.currentQuestion.bunteTuete?.kind === 'bluff';
+  if (isHotPotato || isOnlyConnect || isBluff) {
     qqStopTimer(room);
   } else {
     qqStartTimer(room, onTimerExpire);
@@ -1020,6 +1050,7 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
     case 'order':       return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
     case 'map':         return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
     case 'onlyConnect': return evalOnlyConnect(room);
+    case 'bluff':       return evalBluff(room);
     default:            return { winnerTeamIds: [], earnedPoints: {} };
   }
 }
@@ -2758,6 +2789,17 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     onlyConnectWinnerHintIdx:    room.onlyConnectWinnerHintIdx ?? null,
     onlyConnectGuesses:          room.onlyConnectGuesses ?? [],
     onlyConnectHintDurationSec:  room.onlyConnectHintDurationSec ?? QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
+    bluffPhase:                  room.bluffPhase ?? null,
+    bluffWriteEndsAt:            room.bluffWriteEndsAt ?? null,
+    bluffVoteEndsAt:             room.bluffVoteEndsAt ?? null,
+    bluffSubmissions:            room.bluffSubmissions ?? {},
+    bluffOptions:                room.bluffOptions ?? [],
+    bluffVotes:                  room.bluffVotes ?? {},
+    bluffPoints:                 room.bluffPoints ?? {},
+    bluffWriteDurationSec:       room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC,
+    bluffVoteDurationSec:        room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
+    bluffModeratorReview:        room.bluffModeratorReview ?? false,
+    bluffRejected:               room.bluffRejected ?? [],
     lastPlacedCell:        room.lastPlacedCell,
     frozenCells:      room.frozenCells,
     shieldedCells:    room.shieldedCells,
@@ -3436,4 +3478,306 @@ export function qqOnlyConnectRevealAll(room: QQRoomState): void {
   room.onlyConnectHintIndex = 3;
   room.onlyConnectHintRevealedAt = Date.now();
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BLUFF (Fibbage-Style) — BunteTüete Sub-Mechanik
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3 Phasen:
+//   write: jedes Team tippt eine plausible Falsch-Antwort.
+//   review (optional): Moderator filtert Spam/Beleidigungen raus.
+//   vote: Bluffs + echte Antwort gemischt → Teams stimmen ab.
+//   reveal: echte Antwort hervorgehoben, Punkte verteilt.
+// Punkte (Teilpunkte wie Top5):
+//   +2 wenn Team die echte Antwort gewählt hat.
+//   +1 für jeden Reinfall auf den eigenen Bluff.
+//   +3 Sonderbonus wenn Team versehentlich genau die echte Antwort getippt hat.
+// Aktion-Vergabe wie Top5: meiste Teilpunkte → setzt; Tie = alle, schnellster zuerst.
+
+function clearBluffWriteTimer(room: QQRoomState): void {
+  if (room._bluffWriteTimerHandle) {
+    clearTimeout(room._bluffWriteTimerHandle);
+    room._bluffWriteTimerHandle = null;
+  }
+}
+function clearBluffVoteTimer(room: QQRoomState): void {
+  if (room._bluffVoteTimerHandle) {
+    clearTimeout(room._bluffVoteTimerHandle);
+    room._bluffVoteTimerHandle = null;
+  }
+}
+function clearBluffTimers(room: QQRoomState): void {
+  clearBluffWriteTimer(room);
+  clearBluffVoteTimer(room);
+}
+
+function normalizeBluffText(s: string): string {
+  return (s ?? '').trim().replace(/\s+/g, ' ');
+}
+function bluffMatchesReal(submitted: string, real: string, realEn?: string): boolean {
+  const sub = normalizeBluffText(submitted).toLowerCase();
+  if (sub.length < 1) return false;
+  const candidates = [real, realEn ?? ''].map(c => normalizeBluffText(c).toLowerCase()).filter(Boolean);
+  return candidates.some(c => c === sub);
+}
+
+/** Reset Bluff-State (z.B. beim Frage-Wechsel). */
+export function qqBluffReset(room: QQRoomState): void {
+  clearBluffTimers(room);
+  room.bluffPhase = null;
+  room.bluffWriteEndsAt = null;
+  room.bluffVoteEndsAt = null;
+  room.bluffSubmissions = {};
+  room.bluffOptions = [];
+  room.bluffVotes = {};
+  room.bluffPoints = {};
+  room.bluffRejected = [];
+}
+
+/** Phase 1 starten: Schreib-Phase. */
+export function qqBluffStartWrite(
+  room: QQRoomState,
+  onWriteTimeout: () => void
+): void {
+  qqBluffReset(room);
+  const now = Date.now();
+  room.bluffPhase = 'write';
+  room.bluffWriteEndsAt = now + (room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC) * 1000;
+  clearBluffWriteTimer(room);
+  room._bluffWriteTimerHandle = setTimeout(() => {
+    room._bluffWriteTimerHandle = null;
+    onWriteTimeout();
+  }, (room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC) * 1000);
+  room.lastActivityAt = now;
+}
+
+/** Team submittet einen Bluff-Text (write phase). */
+export function qqBluffSubmit(
+  room: QQRoomState,
+  teamId: string,
+  text: string
+): void {
+  if (room.bluffPhase !== 'write') return;
+  if (!room.teams[teamId]) return;
+  const cleaned = normalizeBluffText(text).slice(0, 200);
+  if (!cleaned) {
+    delete room.bluffSubmissions[teamId];
+    return;
+  }
+  room.bluffSubmissions[teamId] = cleaned;
+  room.lastActivityAt = Date.now();
+}
+
+/** Sind alle verbundenen Teams mit ihrem Bluff fertig? */
+export function qqBluffAllSubmitted(room: QQRoomState): boolean {
+  for (const teamId of room.joinOrder) {
+    const t = room.teams[teamId];
+    if (!t || !t.connected) continue;
+    const sub = room.bluffSubmissions[teamId];
+    if (!sub || !sub.trim()) return false;
+  }
+  return true;
+}
+
+/**
+ * Übergang write → review (wenn moderatorReview an) ODER write → vote.
+ * Wird aufgerufen wenn alle eingereicht haben oder Timer abgelaufen ist.
+ */
+export function qqBluffAdvanceFromWrite(
+  room: QQRoomState,
+  onVoteTimeout: () => void
+): void {
+  if (room.bluffPhase !== 'write') return;
+  clearBluffWriteTimer(room);
+  if (room.bluffModeratorReview) {
+    room.bluffPhase = 'review';
+    room.lastActivityAt = Date.now();
+    return;
+  }
+  qqBluffEnterVote(room, onVoteTimeout);
+}
+
+/** Moderator: nach Review weiter zu Vote. */
+export function qqBluffFinishReview(
+  room: QQRoomState,
+  onVoteTimeout: () => void
+): void {
+  if (room.bluffPhase !== 'review') return;
+  qqBluffEnterVote(room, onVoteTimeout);
+}
+
+/** Moderator-Review: einzelnen Bluff ablehnen (zensiert). */
+export function qqBluffRejectSubmission(room: QQRoomState, teamId: string): void {
+  if (room.bluffPhase !== 'review') return;
+  if (!room.bluffRejected.includes(teamId)) {
+    room.bluffRejected.push(teamId);
+  }
+  room.lastActivityAt = Date.now();
+}
+export function qqBluffUnrejectSubmission(room: QQRoomState, teamId: string): void {
+  if (room.bluffPhase !== 'review') return;
+  room.bluffRejected = room.bluffRejected.filter(id => id !== teamId);
+  room.lastActivityAt = Date.now();
+}
+
+/** Vote-Phase aufbauen: Optionen mergen, mit echter Antwort mischen, Timer starten. */
+function qqBluffEnterVote(
+  room: QQRoomState,
+  onVoteTimeout: () => void
+): void {
+  const q = room.currentQuestion;
+  const bt = q?.bunteTuete?.kind === 'bluff' ? q.bunteTuete : null;
+  const realDe = bt?.realAnswer ?? q?.answer ?? '';
+  const realEn = bt?.realAnswerEn ?? q?.answerEn ?? '';
+
+  // Sammle Bluffs: ignoriere abgelehnte + leere; merge Duplikate (case-insensitive).
+  // Bluff = echte Antwort → wird ausgeblendet (truthAccident-Bonus später).
+  const bluffsByNormalized = new Map<string, { text: string; contributors: string[] }>();
+  for (const teamId of Object.keys(room.bluffSubmissions)) {
+    if (room.bluffRejected.includes(teamId)) continue;
+    const text = normalizeBluffText(room.bluffSubmissions[teamId]);
+    if (!text) continue;
+    if (bluffMatchesReal(text, realDe, realEn)) continue;  // truthAccident, kein Bluff-Eintrag
+    const key = text.toLowerCase();
+    const existing = bluffsByNormalized.get(key);
+    if (existing) {
+      existing.contributors.push(teamId);
+    } else {
+      bluffsByNormalized.set(key, { text, contributors: [teamId] });
+    }
+  }
+
+  // Optionen-Liste: real + alle merged Bluffs, geshuffelt.
+  const options: import('../../../shared/quarterQuizTypes').QQBluffOption[] = [
+    { id: 'real', text: realDe, source: 'real', contributors: [] },
+  ];
+  let nextId = 1;
+  for (const { text, contributors } of bluffsByNormalized.values()) {
+    options.push({ id: `b${nextId++}`, text, source: 'team', contributors });
+  }
+  // Fisher-Yates Shuffle (verhindert dass „real" immer zuerst steht)
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  const now = Date.now();
+  room.bluffOptions = options;
+  room.bluffVotes = {};
+  room.bluffPhase = 'vote';
+  room.bluffVoteEndsAt = now + (room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC) * 1000;
+  clearBluffVoteTimer(room);
+  room._bluffVoteTimerHandle = setTimeout(() => {
+    room._bluffVoteTimerHandle = null;
+    onVoteTimeout();
+  }, (room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC) * 1000);
+  room.lastActivityAt = now;
+}
+
+/** Team votet für eine Option-ID (vote phase). Eigener Bluff verboten. */
+export function qqBluffVote(
+  room: QQRoomState,
+  teamId: string,
+  optionId: string
+): { ok: boolean; reason?: string } {
+  if (room.bluffPhase !== 'vote') return { ok: false, reason: 'WRONG_PHASE' };
+  if (!room.teams[teamId]) return { ok: false, reason: 'UNKNOWN_TEAM' };
+  const opt = room.bluffOptions.find(o => o.id === optionId);
+  if (!opt) return { ok: false, reason: 'UNKNOWN_OPTION' };
+  if (opt.source === 'team' && opt.contributors.includes(teamId)) {
+    return { ok: false, reason: 'OWN_BLUFF' };
+  }
+  room.bluffVotes[teamId] = optionId;
+  room.lastActivityAt = Date.now();
+  return { ok: true };
+}
+
+/** Sind alle verbundenen Teams mit ihrem Vote fertig? */
+export function qqBluffAllVoted(room: QQRoomState): boolean {
+  for (const teamId of room.joinOrder) {
+    const t = room.teams[teamId];
+    if (!t || !t.connected) continue;
+    if (!room.bluffVotes[teamId]) return false;
+  }
+  return true;
+}
+
+/** Vote → reveal. Berechnet Teilpunkte. */
+export function qqBluffAdvanceFromVote(room: QQRoomState): void {
+  if (room.bluffPhase !== 'vote') return;
+  clearBluffVoteTimer(room);
+
+  const q = room.currentQuestion;
+  const bt = q?.bunteTuete?.kind === 'bluff' ? q.bunteTuete : null;
+  const realDe = bt?.realAnswer ?? q?.answer ?? '';
+  const realEn = bt?.realAnswerEn ?? q?.answerEn ?? '';
+
+  // Punkte initialisieren
+  const points: Record<string, import('../../../shared/quarterQuizTypes').QQBluffPoints> = {};
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]) continue;
+    points[teamId] = { foundReal: 0, blufferBonus: 0, truthAccident: 0, total: 0 };
+  }
+
+  // truthAccident: Teams die genau die echte Antwort getippt hatten
+  for (const teamId of Object.keys(room.bluffSubmissions)) {
+    const text = room.bluffSubmissions[teamId];
+    if (bluffMatchesReal(text, realDe, realEn) && points[teamId]) {
+      points[teamId].truthAccident = 3;
+    }
+  }
+
+  // foundReal: Teams die für die 'real'-Option gevotet haben
+  const realOpt = room.bluffOptions.find(o => o.source === 'real');
+  if (realOpt) {
+    for (const teamId of Object.keys(room.bluffVotes)) {
+      if (room.bluffVotes[teamId] === realOpt.id && points[teamId]) {
+        points[teamId].foundReal = 2;
+      }
+    }
+  }
+
+  // blufferBonus: für jedes Team-Bluff: jeder Reinfall = +1 für jeden contributor.
+  for (const opt of room.bluffOptions) {
+    if (opt.source !== 'team') continue;
+    let foolCount = 0;
+    for (const teamId of Object.keys(room.bluffVotes)) {
+      if (room.bluffVotes[teamId] === opt.id && !opt.contributors.includes(teamId)) {
+        foolCount += 1;
+      }
+    }
+    if (foolCount === 0) continue;
+    // Bei merged Bluffs: jeder contributor bekommt foolCount/contributors.length (gerundet)
+    // ABER: User-Spec sagt Punkte teilen. Praxis: jeder bekommt foolCount voll, simpler.
+    // Mein Default: foolCount durch contributors teilen, mindestens 1 wenn foolCount > 0.
+    const each = Math.max(1, Math.floor(foolCount / opt.contributors.length));
+    for (const c of opt.contributors) {
+      if (points[c]) points[c].blufferBonus += each;
+    }
+  }
+
+  // Total
+  for (const teamId of Object.keys(points)) {
+    const p = points[teamId];
+    p.total = p.foundReal + p.blufferBonus + p.truthAccident;
+  }
+
+  room.bluffPoints = points;
+  room.bluffPhase = 'reveal';
+  room.lastActivityAt = Date.now();
+}
+
+/** Eval bei QUESTION_REVEAL: meiste Teilpunkte gewinnt; Tie = alle, schnellste zuerst. */
+export function evalBluff(room: QQRoomState): { winnerTeamIds: string[]; earnedPoints: Record<string, number> } {
+  const points = room.bluffPoints ?? {};
+  const teamIds = Object.keys(points);
+  if (teamIds.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  let max = 0;
+  for (const id of teamIds) max = Math.max(max, points[id]?.total ?? 0);
+  if (max === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  const winners = teamIds.filter(id => (points[id]?.total ?? 0) === max);
+  const earnedPoints: Record<string, number> = {};
+  for (const id of teamIds) earnedPoints[id] = points[id]?.total ?? 0;
+  return { winnerTeamIds: winners, earnedPoints };
+}
+
 

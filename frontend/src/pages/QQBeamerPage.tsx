@@ -12,6 +12,7 @@ import {
   QQSlideTemplates,
   QQLanguage,
   QQSoundSlot,
+  QQ_MAX_JOKERS_PER_GAME,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -1234,6 +1235,57 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     s.bluffPhase, s.bluffSubmissions, s.bluffVotes,
     s.sfxMuted, s.currentQuestion?.id,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Comeback H/L Sounds — bisher komplett stumm ─────────────────────────────
+  // - phase 'question' (start) → playQuestionStart
+  // - phase 'reveal'           → playReveal (Drama-Moment)
+  // - jede neue Antwort         → tick
+  const prevHlPhaseRef = useRef<string | null>(null);
+  const prevHlAnsweredCountRef = useRef(0);
+  const prevHlRoundRef = useRef<number>(-1);
+  useEffect(() => {
+    const hl = s.comebackHL;
+    if (!hl) {
+      prevHlPhaseRef.current = null;
+      prevHlAnsweredCountRef.current = 0;
+      prevHlRoundRef.current = -1;
+      return;
+    }
+    if (s.sfxMuted) {
+      prevHlPhaseRef.current = hl.phase;
+      prevHlAnsweredCountRef.current = (hl.answeredThisRound ?? []).length;
+      prevHlRoundRef.current = hl.round;
+      return;
+    }
+    // Neue Runde → reset answered-count baseline
+    if (hl.round !== prevHlRoundRef.current) {
+      prevHlAnsweredCountRef.current = 0;
+      prevHlRoundRef.current = hl.round;
+    }
+    // Phase-Wechsel
+    if (hl.phase !== prevHlPhaseRef.current) {
+      if (hl.phase === 'question') {
+        try { playQuestionStart(); } catch {}
+      } else if (hl.phase === 'reveal') {
+        try { playReveal(); } catch {}
+        // Kurz danach: Fanfare wenn jemand richtig lag
+        if ((hl.correctThisRound ?? []).length > 0) {
+          window.setTimeout(() => { try { playCorrect(); } catch {} }, 600);
+        } else {
+          window.setTimeout(() => { try { playWrong(); } catch {} }, 600);
+        }
+      } else if (hl.phase === 'steal') {
+        try { playFieldPlaced(); } catch {}
+      }
+      prevHlPhaseRef.current = hl.phase;
+    }
+    // Answers-Tick: jeder neue Submit klick'.
+    const ansN = (hl.answeredThisRound ?? []).length;
+    if (ansN > prevHlAnsweredCountRef.current) {
+      try { playTick(); } catch {}
+    }
+    prevHlAnsweredCountRef.current = ansN;
+  }, [s.comebackHL, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: play question musicUrl ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -9950,19 +10002,27 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
                     maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{truncName(tm.name, 10)}</div>
-                  {isReveal && teamWin > 0 && (
-                    <div style={{
-                      marginTop: 2, padding: '3px 10px', borderRadius: 999,
-                      background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
-                      fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
-                      fontVariantNumeric: 'tabular-nums',
-                      animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-                    }}>
-                      <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
-                        ? (lang === 'en' ? 'cell' : 'Feld')
-                        : (lang === 'en' ? 'cells' : 'Felder')}
-                    </div>
-                  )}
+                  {/* Winnings-Slot mit RESERVIERTER Höhe — gleich groß in question und
+                      reveal, damit das Avatar-Grid nicht um die Pill-Höhe nach unten
+                      wächst und die Anchor/Subject-Cards re-zentriert werden. */}
+                  <div style={{
+                    minHeight: 'clamp(22px, 2.6vw, 30px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {isReveal && teamWin > 0 && (
+                      <div style={{
+                        padding: '3px 10px', borderRadius: 999,
+                        background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
+                        fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
+                        fontVariantNumeric: 'tabular-nums',
+                        animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+                      }}>
+                        <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
+                          ? (lang === 'en' ? 'cell' : 'Feld')
+                          : (lang === 'en' ? 'cells' : 'Felder')}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -12641,26 +12701,35 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 }}>👑</span>
               )}
               {/* B2 Joker-Badge (persistent): ⭐{n} unten rechts am Avatar.
-                  Dunkles Pill + Gold-Outline → kontrastsicher auch auf gelben
-                  Avataren (Giraffe/Pinguin mit gelbem Hoodie). */}
-              {teamPhaseStats && (teamPhaseStats[t.id]?.jokersEarned ?? 0) > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  bottom: dense ? -4 : -6,
-                  right: dense ? -6 : -8,
-                  padding: '2px 7px',
-                  borderRadius: 999,
-                  background: '#0d0a06',
-                  border: '2px solid #FBBF24',
-                  fontSize: dense ? 13 : 16,
-                  fontWeight: 900,
-                  color: '#FBBF24',
-                  lineHeight: 1,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 12px rgba(251,191,36,0.5)',
-                  display: 'inline-flex', alignItems: 'center', gap: 3,
-                  pointerEvents: 'none',
-                }}><QQEmojiIcon emoji="⭐"/>{teamPhaseStats[t.id].jokersEarned}</span>
-              )}
+                  Zeigt VERFÜGBARE Joker (REMAINING), nicht earned-counter — sonst
+                  bleibt der Stern selbst nach Verbrauch sichtbar und User denkt
+                  "ich hab noch Joker". jokersEarned ist game-wide-cap (max 2),
+                  jeder earned-Joker wird sofort als Bonus-Placement konsumiert.
+                  Im Team-View werden 2 Slots gezeigt mit gray-out — auf dem Beamer
+                  reicht "wieviele sind noch verfügbar". */}
+              {(() => {
+                const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
+                const remaining = QQ_MAX_JOKERS_PER_GAME - earned;
+                if (remaining <= 0) return null;
+                return (
+                  <span style={{
+                    position: 'absolute',
+                    bottom: dense ? -4 : -6,
+                    right: dense ? -6 : -8,
+                    padding: '2px 7px',
+                    borderRadius: 999,
+                    background: '#0d0a06',
+                    border: '2px solid #FBBF24',
+                    fontSize: dense ? 13 : 16,
+                    fontWeight: 900,
+                    color: '#FBBF24',
+                    lineHeight: 1,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 12px rgba(251,191,36,0.5)',
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                    pointerEvents: 'none',
+                  }}><QQEmojiIcon emoji="⭐"/>{remaining}</span>
+                );
+              })()}
               {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}
               {jokerEarners.has(t.id) && (
                 <span

@@ -7885,7 +7885,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 2
     q(`${v1}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie hoch ist der Mount Everest in Metern?', textEn: 'How tall is Mount Everest in meters?', answer: '8849', targetValue: 8849, unit: 'm', funFact: 'Der Everest wächst weiter — die indische Platte schiebt ihn jährlich rund 4 mm nach oben.' }),
     q(`${v1}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Element hat das chemische Symbol „Au"?', textEn: 'Which element has the chemical symbol „Au"?', answer: 'Gold', options: ['Silber', 'Aluminium', 'Gold', 'Argon'], optionsEn: ['Silver', 'Aluminum', 'Gold', 'Argon'], correctOptionIndex: 2, funFact: '„Au" kommt vom lateinischen „aurum".' }),
-    q(`${v1}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier deutschen Städte nach Einwohnerzahl, beginnend mit der größten!', textEn: 'Sort these four German cities by population, starting with the largest!', answer: 'Berlin, Hamburg, München, Köln', bunteTuete: { kind: 'order', items: ['München', 'Berlin', 'Köln', 'Hamburg'], correctOrder: [1, 3, 0, 2], criteria: 'meiste Einwohner zuerst', itemValues: ['1,5 Mio', '3,8 Mio', '1,1 Mio', '1,9 Mio'] }, funFact: 'Berlin ist die einzige deutsche Stadt mit über 3 Mio Einwohnern.' }),
+    q(`${v1}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Was verbindet diese Komponisten?', textEn: 'What connects these composers?', answer: 'Komponisten mit 9 Sinfonien', answerEn: 'Composers with 9 symphonies', bunteTuete: { kind: 'onlyConnect', hints: ['Beethoven', 'Schubert', 'Dvořák', 'Mahler'], hintsEn: ['Beethoven', 'Schubert', 'Dvořák', 'Mahler'], answer: 'Komponisten mit 9 Sinfonien', answerEn: 'Composers with 9 symphonies', acceptedAnswers: ['9 Sinfonien', 'neun Sinfonien', '9 Symphonien', 'neun Symphonien', 'Fluch der Neunten'], acceptedAnswersEn: ['9 symphonies', 'nine symphonies', 'curse of the ninth'] }, funFact: 'Mahler hatte Angst vor dem „Fluch der Neunten" — viele Komponisten starben nach ihrer 9. Sinfonie. Er nannte seine 10. erst „Lied von der Erde", um den Fluch zu umgehen.' }),
     q(`${v1}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'In welchem Land liegt die Stadt Marrakesch?', textEn: 'In which country is the city of Marrakech located?', answer: 'Marokko', options: ['Algerien', 'Marokko', 'Tunesien'], optionsEn: ['Algeria', 'Morocco', 'Tunisia'], correctOptionIndex: 1, funFact: 'Marrakesch wird auch „die Rote Stadt" genannt.' }),
     q(`${v1}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Tier ist hier abgebildet?', textEn: 'Which animal is pictured here?', answer: 'Erdmännchen', answerEn: 'Meerkat' }),
     // Phase 3
@@ -7897,7 +7897,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 4
     q(`${v1}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr fiel die Berliner Mauer?', textEn: 'In which year did the Berlin Wall fall?', answer: '1989', targetValue: 1989, funFact: 'Folge einer missverständlichen Pressekonferenz von Günter Schabowski.' }),
     q(`${v1}-p4-1`, 4, 1, 'MUCHO', { text: 'Welches Organ produziert das Hormon Insulin?', textEn: 'Which organ produces the hormone insulin?', answer: 'Bauchspeicheldrüse', options: ['Leber', 'Niere', 'Bauchspeicheldrüse', 'Milz'], optionsEn: ['Liver', 'Kidney', 'Pancreas', 'Spleen'], correctOptionIndex: 2, funFact: 'Insulin wurde 1921 entdeckt — Patent für 1 Dollar verkauft.' }),
-    q(`${v1}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Canberra, die Hauptstadt Australiens? Setz einen Pin!', textEn: 'Where is Canberra, the capital of Australia? Place a pin!', answer: 'Canberra', bunteTuete: { kind: 'map', lat: -35.2809, lng: 149.1300, targetLabel: 'Canberra' }, funFact: 'Canberra wurde als Kompromiss-Hauptstadt gegründet, weil sich Sydney und Melbourne nicht einigen konnten.' }),
+    q(`${v1}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wie hieß die Suchmaschine Google in der ersten Version 1996?', textEn: 'What was Google\'s original name in its first version in 1996?', answer: 'BackRub', answerEn: 'BackRub', bunteTuete: { kind: 'bluff', realAnswer: 'BackRub', realAnswerEn: 'BackRub' }, funFact: '„BackRub" hieß sie weil das Tool Backlinks (Hyperlinks zurück) analysierte. Larry Page und Sergey Brin tauften es 1997 in „Google" um — als Verschreibung von „Googol" (10^100).' }),
     q(`${v1}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Komponist schrieb die „Mondscheinsonate"?', textEn: 'Which composer wrote the „Moonlight Sonata"?', answer: 'Beethoven', options: ['Mozart', 'Beethoven', 'Chopin'], optionsEn: ['Mozart', 'Beethoven', 'Chopin'], correctOptionIndex: 1, funFact: 'Beethoven nannte sie nie so — der Titel kam erst nach seinem Tod von einem Kritiker.' }),
     q(`${v1}-p4-4`, 4, 4, 'CHEESE', { text: 'Welcher Schauspieler ist hier zu sehen?', textEn: 'Which actor is shown here?', answer: 'Leonardo DiCaprio', answerEn: 'Leonardo DiCaprio' }),
   ];
@@ -7914,13 +7914,13 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 2
     q(`${v2}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie lange dauerte der Hundertjährige Krieg in Jahren?', textEn: 'How long did the Hundred Years\' War last in years?', answer: '116', targetValue: 116, unit: 'Jahre', funFact: 'Tatsächlich 116 Jahre — von 1337 bis 1453.' }),
     q(`${v2}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land gewann die Fußball-Weltmeisterschaft 2022?', textEn: 'Which country won the FIFA World Cup 2022?', answer: 'Argentinien', options: ['Brasilien', 'Frankreich', 'Argentinien', 'Deutschland'], optionsEn: ['Brazil', 'France', 'Argentina', 'Germany'], correctOptionIndex: 2, funFact: 'Argentiniens dritter WM-Titel und Lionel Messis erster.' }),
-    q(`${v2}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Wo wurde der Großteil der „Herr der Ringe"-Trilogie gedreht? Setz einen Pin!', textEn: 'Where was most of the „Lord of the Rings" trilogy filmed? Place a pin!', answer: 'Neuseeland', bunteTuete: { kind: 'map', lat: -40.9006, lng: 174.8860, targetLabel: 'Neuseeland' }, funFact: 'Peter Jackson drehte die komplette Trilogie an über 150 Drehorten in Neuseeland.' }),
+    q(`${v2}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Was haben diese Filme gemeinsam?', textEn: 'What do these movies have in common?', answer: 'Filme mit Tom Hanks', answerEn: 'Tom Hanks movies', bunteTuete: { kind: 'onlyConnect', hints: ['Forrest Gump', 'Cast Away', 'Apollo 13', 'Toy Story'], hintsEn: ['Forrest Gump', 'Cast Away', 'Apollo 13', 'Toy Story'], answer: 'Filme mit Tom Hanks', answerEn: 'Tom Hanks movies', acceptedAnswers: ['Tom Hanks', 'Hanks', 'mit Tom Hanks', 'Tom Hanks Filme'], acceptedAnswersEn: ['Tom Hanks', 'Hanks', 'Tom Hanks movies'] }, funFact: 'Tom Hanks gewann zweimal in Folge den Oscar als Bester Hauptdarsteller (1994 für Philadelphia, 1995 für Forrest Gump). Davor schaffte das nur Spencer Tracy.' }),
     q(`${v2}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Streamingplattform produzierte „Stranger Things"?', textEn: 'Which streaming platform produced „Stranger Things"?', answer: 'Netflix', options: ['Amazon Prime', 'Disney+', 'Netflix'], optionsEn: ['Amazon Prime', 'Disney+', 'Netflix'], correctOptionIndex: 2, funFact: 'Wurde vor Netflix von 15 anderen Sendern abgelehnt.' }),
     q(`${v2}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Musikinstrument ist hier zu sehen?', textEn: 'Which musical instrument is shown here?', answer: 'Saxophon', answerEn: 'Saxophone' }),
     // Phase 3
     q(`${v2}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Spieler stehen pro Mannschaft beim Eishockey gleichzeitig auf dem Eis (inkl. Torwart)?', textEn: 'How many players per team are on the ice at the same time in ice hockey (including the goalie)?', answer: '6', targetValue: 6, unit: 'Spieler', funFact: 'Im Eishockey-Profibereich werden pro Spiel oft mehr als 30 Spieler eingewechselt.' }),
     q(`${v2}-p3-1`, 3, 1, 'MUCHO', { text: 'Welcher Tennisspieler hält den Rekord für die meisten Grand-Slam-Titel im Herrentennis (Stand 2024)?', textEn: 'Which tennis player holds the record for the most men\'s Grand Slam titles (as of 2024)?', answer: 'Novak Djokovic', options: ['Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Pete Sampras'], optionsEn: ['Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Pete Sampras'], correctOptionIndex: 2, funFact: 'Stellte 2023 mit seinem 24. Grand-Slam-Titel den Rekord von Margaret Court bei den Frauen ein.' }),
-    q(`${v2}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Nenne einen der 5 erfolgreichsten Filme aller Zeiten an den Kinokassen (weltweit, Stand 2024)!', textEn: 'Name one of the 5 highest-grossing films of all time (worldwide, as of 2024)!', answer: 'Avatar, Avengers: Endgame, Avatar: The Way of Water, Titanic, Star Wars: The Force Awakens', bunteTuete: { kind: 'top5', answers: ['Avatar', 'Avengers: Endgame', 'Avatar: The Way of Water', 'Titanic', 'Star Wars: The Force Awakens'] }, funFact: 'James Cameron hat drei der fünf erfolgreichsten Filme aller Zeiten gedreht.' }),
+    q(`${v2}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Wie hieß das offizielle Maskottchen der Olympischen Sommerspiele 1972 in München?', textEn: 'What was the official mascot of the 1972 Munich Summer Olympics?', answer: 'Waldi', answerEn: 'Waldi', bunteTuete: { kind: 'bluff', realAnswer: 'Waldi', realAnswerEn: 'Waldi' }, funFact: 'Waldi war ein bunter Dackel — und das allererste offizielle Maskottchen der Sommer-Olympiade überhaupt. Designt von Otl Aicher.' }),
     q(`${v2}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Sänger trägt den Spitznamen „The King of Pop"?', textEn: 'Which singer carries the nickname „The King of Pop"?', answer: 'Michael Jackson', options: ['Elvis Presley', 'Michael Jackson', 'Prince'], optionsEn: ['Elvis Presley', 'Michael Jackson', 'Prince'], correctOptionIndex: 1, funFact: 'Den Titel verlieh ihm Elizabeth Taylor 1989.' }),
     q(`${v2}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches Fußballstadion ist hier zu sehen?', textEn: 'Which football stadium is shown here?', answer: 'Wembley-Stadion', answerEn: 'Wembley Stadium' }),
     // Phase 4
@@ -7949,13 +7949,13 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 3
     q(`${v3}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Tasten hat ein Standardklavier?', textEn: 'How many keys does a standard piano have?', answer: '88', targetValue: 88, unit: 'Tasten', funFact: '52 weiße + 36 schwarze — diese Anordnung etablierte sich um 1880.' }),
     q(`${v3}-p3-1`, 3, 1, 'MUCHO', { text: 'Wer war die erste Frau, die einen Nobelpreis gewann?', textEn: 'Who was the first woman to win a Nobel Prize?', answer: 'Marie Curie', options: ['Marie Curie', 'Mutter Teresa', 'Dorothy Hodgkin', 'Selma Lagerlöf'], optionsEn: ['Marie Curie', 'Mother Teresa', 'Dorothy Hodgkin', 'Selma Lagerlöf'], correctOptionIndex: 0, funFact: 'Bis heute die einzige Person mit Nobelpreisen in zwei verschiedenen Wissenschaften — Physik und Chemie.' }),
-    q(`${v3}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Schriftsteller nach Geburtsjahr, beginnend mit dem ältesten!', textEn: 'Sort these four writers by birth year, starting with the oldest!', answer: 'Shakespeare, Goethe, Twain, Hemingway', bunteTuete: { kind: 'order', items: ['Goethe', 'Hemingway', 'Shakespeare', 'Twain'], correctOrder: [2, 0, 3, 1], criteria: 'ältester zuerst', itemValues: ['1749', '1899', '1564', '1835'] }, funFact: 'Shakespeare und Cervantes starben am gleichen Datum — 23. April 1616.' }),
+    q(`${v3}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Was verbindet diese Personen?', textEn: 'What connects these people?', answer: 'Nobelpreisträger Physik', answerEn: 'Nobel Prize in Physics', bunteTuete: { kind: 'onlyConnect', hints: ['Marie Curie', 'Albert Einstein', 'Max Planck', 'Werner Heisenberg'], hintsEn: ['Marie Curie', 'Albert Einstein', 'Max Planck', 'Werner Heisenberg'], answer: 'Nobelpreisträger Physik', answerEn: 'Nobel Prize in Physics', acceptedAnswers: ['Nobelpreis Physik', 'Nobelpreisträger', 'Physik-Nobelpreis', 'Physik Nobelpreis', 'Nobelpreis'], acceptedAnswersEn: ['Nobel Prize Physics', 'Nobel laureates', 'physics Nobel', 'Nobel Prize'] }, funFact: 'Marie Curie war die erste Person mit zwei Nobelpreisen in verschiedenen Wissenschaften — Physik 1903 und Chemie 1911.' }),
     q(`${v3}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Sprache wird im Vatikan offiziell gesprochen?', textEn: 'Which language is officially spoken in the Vatican?', answer: 'Latein', options: ['Italienisch', 'Latein', 'Französisch'], optionsEn: ['Italian', 'Latin', 'French'], correctOptionIndex: 1, funFact: 'Sogar Geldautomaten zeigen Latein an.' }),
     q(`${v3}-p3-4`, 3, 4, 'CHEESE', { text: 'Welches berühmte Bauwerk ist hier zu sehen?', textEn: 'Which famous landmark is shown here?', answer: 'Akropolis', answerEn: 'Acropolis' }),
     // Phase 4
     q(`${v3}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie viele Zeilen hat ein klassisches Sonett?', textEn: 'How many lines does a classic sonnet have?', answer: '14', targetValue: 14, unit: 'Zeilen', funFact: 'Petrarca schrieb 366 Sonette an seine Geliebte Laura.' }),
     q(`${v3}-p4-1`, 4, 1, 'MUCHO', { text: 'Welche Königin Ägyptens hatte Beziehungen zu Julius Cäsar und Marcus Antonius?', textEn: 'Which Queen of Egypt had relationships with both Julius Caesar and Mark Antony?', answer: 'Kleopatra', options: ['Nofretete', 'Hatschepsut', 'Kleopatra', 'Isis'], optionsEn: ['Nefertiti', 'Hatshepsut', 'Cleopatra', 'Isis'], correctOptionIndex: 2, funFact: 'Kleopatra lebte näher an der Mondlandung als am Bau der Pyramiden.' }),
-    q(`${v3}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Nenne eine der 5 ältesten Universitäten Europas!', textEn: 'Name one of the 5 oldest universities in Europe!', answer: 'Bologna, Oxford, Salamanca, Paris, Cambridge', bunteTuete: { kind: 'top5', answers: ['Bologna', 'Oxford', 'Salamanca', 'Paris', 'Cambridge'] }, funFact: 'Bologna wurde 1088 gegründet und gilt als die älteste durchgehend bestehende Universität der Welt.' }),
+    q(`${v3}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wie alt wurde Jeanne Calment, die älteste je dokumentierte Person der Welt?', textEn: 'How old was Jeanne Calment, the oldest documented person ever?', answer: '122', answerEn: '122', bunteTuete: { kind: 'bluff', realAnswer: '122', realAnswerEn: '122' }, funFact: 'Jeanne Calment lebte 1875 bis 1997. Sie traf Vincent van Gogh als Teenager im Atelier ihres Onkels und überlebte den Mauerfall.' }),
     q(`${v3}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher griechische Philosoph war Schüler von Sokrates und Lehrer von Aristoteles?', textEn: 'Which Greek philosopher was a student of Socrates and teacher of Aristotle?', answer: 'Platon', options: ['Platon', 'Pythagoras', 'Epikur'], optionsEn: ['Plato', 'Pythagoras', 'Epicurus'], correctOptionIndex: 0, funFact: 'Platons echter Name war Aristokles — „Platon" („der Breite") war ein Spitzname.' }),
     q(`${v3}-p4-4`, 4, 4, 'CHEESE', { text: 'Welche Skulptur ist hier abgebildet?', textEn: 'Which sculpture is shown here?', answer: 'Der Denker', answerEn: 'The Thinker' }),
   ];
@@ -7966,13 +7966,13 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 1
     q(`${v4}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Tasten hat eine Standard-QWERTZ-Tastatur (deutsche Variante, ohne Numpad)?', textEn: 'How many keys does a standard QWERTZ keyboard have (German layout, without numpad)?', answer: '87', targetValue: 87, unit: 'Tasten', funFact: 'Die QWERTZ-Anordnung wurde 1868 erfunden — angeblich um Hebel-Verhakungen zu verhindern.' }),
     q(`${v4}-p1-1`, 1, 1, 'MUCHO', { text: 'Wer gilt als Erfinder der Glühbirne (in der modernen, kommerziell erfolgreichen Form)?', textEn: 'Who is considered the inventor of the light bulb (modern, commercially successful form)?', answer: 'Thomas Edison', options: ['Nikola Tesla', 'Thomas Edison', 'Alessandro Volta', 'Werner von Siemens'], optionsEn: ['Nikola Tesla', 'Thomas Edison', 'Alessandro Volta', 'Werner von Siemens'], correctOptionIndex: 1, funFact: 'Edison probierte über 6000 Materialien als Glühfaden aus.' }),
-    q(`${v4}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne einen Vornamen, der in Deutschland gebräuchlich ist — reihum!', textEn: 'Name a first name commonly used in Germany — one by one!', answer: 'Anna, Lena, Marie, Mia, Emma, Sophie, Hannah, Emilia, Lina, Lea, Laura, Sarah, Julia, Lisa, Nina, Katharina, Christina, Vanessa, Jessica, Stefanie, Maximilian, Alexander, Paul, Felix, Lukas, Leon, Jonas, Tim, Tom, Finn, Ben, Noah, Elias, Jan, Markus, Michael, Thomas, Andreas, Stefan, Florian, Sebastian, Daniel, Christian, Matthias, Philipp, Tobias, Martin, Peter, Klaus, Hans, Werner, Jürgen, Wolfgang, Helmut, Helga, Renate, Gabi, Petra, Sabine, Susanne', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v4}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Was verbindet diese Begriffe?', textEn: 'What connects these terms?', answer: 'Apple-Produkte', answerEn: 'Apple products', bunteTuete: { kind: 'onlyConnect', hints: ['Lisa', 'Macintosh', 'Newton', 'iPhone'], hintsEn: ['Lisa', 'Macintosh', 'Newton', 'iPhone'], answer: 'Apple-Produkte', answerEn: 'Apple products', acceptedAnswers: ['Apple', 'Apple Produkte', 'Apple-Produkte', 'Mac', 'Apple Computer'], acceptedAnswersEn: ['Apple', 'Apple products', 'Apple computers', 'Mac'] }, funFact: 'Lisa war Apples erster Computer mit grafischer Oberfläche (1983) und ein kommerzieller Flop. Steve Jobs nannte sie nach seiner Tochter, behauptete aber öffentlich, der Name stehe für „Local Integrated Software Architecture".' }),
     q(`${v4}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Programmiersprache wurde nach einer britischen Comedy-Truppe benannt?', textEn: 'Which programming language was named after a British comedy troupe?', answer: 'Python', options: ['Java', 'Python', 'Ruby'], optionsEn: ['Java', 'Python', 'Ruby'], correctOptionIndex: 1, funFact: 'Erfinder Guido van Rossum benannte Python nach „Monty Python\'s Flying Circus".' }),
     q(`${v4}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Gewürz ist hier zu sehen?', textEn: 'Which spice is shown here?', answer: 'Zimt', answerEn: 'Cinnamon' }),
     // Phase 2
     q(`${v4}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Megabyte hat 1 Gigabyte (offiziell, dezimal)?', textEn: 'How many megabytes are in 1 gigabyte (official, decimal)?', answer: '1000', targetValue: 1000, unit: 'MB', funFact: 'Die erste kommerzielle Festplatte (IBM 1956) wog über eine Tonne und speicherte 5 MB.' }),
     q(`${v4}-p2-1`, 2, 1, 'MUCHO', { text: 'Welche Firma entwickelte das Betriebssystem Windows?', textEn: 'Which company developed the Windows operating system?', answer: 'Microsoft', options: ['Apple', 'IBM', 'Microsoft', 'Intel'], optionsEn: ['Apple', 'IBM', 'Microsoft', 'Intel'], correctOptionIndex: 2, funFact: 'Bill Gates und Paul Allen gründeten Microsoft 1975 — beide hatten ihr Studium dafür abgebrochen.' }),
-    q(`${v4}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Wo befindet sich Apples Hauptquartier („Apple Park")? Setz einen Pin!', textEn: 'Where is Apple\'s headquarters („Apple Park")? Place a pin!', answer: 'Cupertino, Kalifornien', bunteTuete: { kind: 'map', lat: 37.3349, lng: -122.0090, targetLabel: 'Cupertino, USA' }, funFact: 'Der ringförmige Apple Park hat einen Innenhof mit 9000 Bäumen und Platz für 12.000 Mitarbeiter.' }),
+    q(`${v4}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Aus wie vielen Inseln besteht Indonesien ungefähr (offizielle Schätzung)?', textEn: 'How many islands does Indonesia consist of approximately (official estimate)?', answer: '17.508', answerEn: '17,508', bunteTuete: { kind: 'bluff', realAnswer: '17.508', realAnswerEn: '17,508' }, funFact: 'Davon sind nur etwa 6.000 bewohnt. Indonesien ist der größte Inselstaat der Welt — quer durch drei Zeitzonen.' }),
     q(`${v4}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Firma stellt den Suchmaschinen-Marktführer Google her?', textEn: 'Which company owns the market-leading search engine Google?', answer: 'Alphabet', options: ['Meta', 'Alphabet', 'Amazon'], optionsEn: ['Meta', 'Alphabet', 'Amazon'], correctOptionIndex: 1, funFact: 'Google hieß ursprünglich „BackRub" — und wurde nach „Googol" umbenannt, der Zahl mit 100 Nullen.' }),
     q(`${v4}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Werkzeug ist hier abgebildet?', textEn: 'Which tool is shown here?', answer: 'Schraubenschlüssel', answerEn: 'Wrench' }),
     // Phase 3
@@ -7995,7 +7995,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 1
     q(`${v5}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Felder hat ein Schachbrett?', textEn: 'How many squares does a chess board have?', answer: '64', targetValue: 64, unit: 'Felder', funFact: 'Es gibt mehr mögliche Schachpartien als Atome im beobachtbaren Universum.' }),
     q(`${v5}-p1-1`, 1, 1, 'MUCHO', { text: 'In welcher Sportart wird der Begriff „Birdie" verwendet?', textEn: 'In which sport is the term „birdie" used?', answer: 'Golf', options: ['Tennis', 'Golf', 'Bowling', 'Cricket'], optionsEn: ['Tennis', 'Golf', 'Bowling', 'Cricket'], correctOptionIndex: 1, funFact: '„Birdie" entstand um 1899 in den USA — „Bird" war damals Slang für „großartig".' }),
-    q(`${v5}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein chemisches Element — reihum!', textEn: 'Name a chemical element — one by one!', answer: 'Wasserstoff, Helium, Lithium, Beryllium, Bor, Kohlenstoff, Stickstoff, Sauerstoff, Fluor, Neon, Natrium, Magnesium, Aluminium, Silizium, Phosphor, Schwefel, Chlor, Argon, Kalium, Calcium, Eisen, Kupfer, Zink, Gold, Silber, Platin, Quecksilber, Blei, Zinn, Nickel, Chrom, Mangan, Cobalt, Wolfram, Uran, Plutonium, Radium, Iod, Brom, Selen, Titan, Vanadium, Krypton, Xenon, Radon, Cäsium, Barium, Strontium, Rubidium', bunteTuete: { kind: 'hotPotato' } }),
+    q(`${v5}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Was verbindet diese Begriffe?', textEn: 'What connects these terms?', answer: 'Sternzeichen', answerEn: 'Zodiac signs', bunteTuete: { kind: 'onlyConnect', hints: ['Stier', 'Krebs', 'Fische', 'Widder'], hintsEn: ['Taurus', 'Cancer', 'Pisces', 'Aries'], answer: 'Sternzeichen', answerEn: 'Zodiac signs', acceptedAnswers: ['Sternzeichen', 'Tierkreiszeichen', 'Tierkreis', 'Horoskop', 'Zodiac'], acceptedAnswersEn: ['zodiac', 'zodiac signs', 'star signs', 'horoscope'] }, funFact: 'Es gibt offiziell 12 Sternzeichen, aber die Sonne kreuzt tatsächlich 13 Sternbilder. Schlangenträger („Ophiuchus") wurde aus dem Zodiak gestrichen, weil 12 mathematisch sauberer war.' }),
     q(`${v5}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Sportart wird mit einem Schläger und einem Federball gespielt?', textEn: 'Which sport is played with a racket and a shuttlecock?', answer: 'Badminton', options: ['Tennis', 'Squash', 'Badminton'], optionsEn: ['Tennis', 'Squash', 'Badminton'], correctOptionIndex: 2, funFact: 'Federbälle erreichen beim Profi-Badminton über 400 km/h — schneller als bei jeder anderen Schlägersportart.' }),
     q(`${v5}-p1-4`, 1, 4, 'CHEESE', { text: 'Welcher Sportler ist hier zu sehen?', textEn: 'Which athlete is shown here?', answer: 'Usain Bolt', answerEn: 'Usain Bolt' }),
     // Phase 2
@@ -8013,7 +8013,7 @@ function createSampleQQDrafts(): typeof qqDrafts {
     // Phase 4
     q(`${v5}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'Wie schnell ist die Lichtgeschwindigkeit ungefähr (in Kilometern pro Sekunde)?', textEn: 'How fast is the speed of light approximately (in kilometers per second)?', answer: '299792', targetValue: 299792, unit: 'km/s', funFact: 'Sonnenlicht braucht etwa 8 Minuten und 20 Sekunden, um zur Erde zu gelangen.' }),
     q(`${v5}-p4-1`, 4, 1, 'MUCHO', { text: 'Wer hält den 100-Meter-Sprint-Weltrekord der Männer (Stand 2024)?', textEn: 'Who holds the men\'s 100-meter sprint world record (as of 2024)?', answer: 'Usain Bolt', options: ['Carl Lewis', 'Usain Bolt', 'Yohan Blake', 'Tyson Gay'], optionsEn: ['Carl Lewis', 'Usain Bolt', 'Yohan Blake', 'Tyson Gay'], correctOptionIndex: 1, funFact: 'Bolts Weltrekord von 9,58 Sekunden steht seit der WM 2009 in Berlin.' }),
-    q(`${v5}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Wo liegt Rio de Janeiro? Setz einen Pin!', textEn: 'Where is Rio de Janeiro? Place a pin!', answer: 'Rio de Janeiro', bunteTuete: { kind: 'map', lat: -22.9068, lng: -43.1729, targetLabel: 'Rio de Janeiro' }, funFact: 'Die Christus-Statue auf dem Corcovado ist 38 Meter hoch.' }),
+    q(`${v5}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'In welchem Jahr wurde Zahnpasta erstmals in einer Tube verkauft?', textEn: 'In which year was toothpaste first sold in a tube?', answer: '1892', answerEn: '1892', bunteTuete: { kind: 'bluff', realAnswer: '1892', realAnswerEn: '1892' }, funFact: 'Davor wurde Zahnpasta in Pulverform oder als feste Paste in Tiegeln verkauft. Der amerikanische Zahnarzt Washington Sheffield kam auf die Idee, sie in Metall-Tuben abzufüllen.' }),
     q(`${v5}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welche Naturgewalt misst die Richterskala?', textEn: 'Which natural phenomenon does the Richter scale measure?', answer: 'Erdbeben', options: ['Erdbeben', 'Wirbelstürme', 'Vulkanausbrüche'], optionsEn: ['Earthquakes', 'Hurricanes', 'Volcanic eruptions'], correctOptionIndex: 0, funFact: 'Die Richterskala ist logarithmisch — Stärke 7 setzt rund 32-mal mehr Energie frei als Stärke 6.' }),
     q(`${v5}-p4-4`, 4, 4, 'CHEESE', { text: 'Welcher Vogel ist hier zu sehen?', textEn: 'Which bird is shown here?', answer: 'Flamingo', answerEn: 'Flamingo' }),
   ];
@@ -8078,6 +8078,37 @@ function isLegacySampleDraft(id: string | null | undefined): boolean {
   }
 }
 
+// ── Migration 2026-04-28: qq-vol-* Drafts mit 4 gewinnt + Bluff anreichern ─
+// Bestehende Drafts (file + DB) ohne onlyConnect/bluff-Fragen werden mit dem
+// aktuellen Seed-Inhalt überschrieben. Verhindert dass alte Production-Drafts
+// die neuen Sub-Mechaniken nicht zeigen.
+function draftHasNewSubMechanics(draft: any): boolean {
+  return Array.isArray(draft?.questions) && draft.questions.some((q: any) =>
+    q?.bunteTuete?.kind === 'onlyConnect' || q?.bunteTuete?.kind === 'bluff'
+  );
+}
+function isQQVolDraft(id: string | undefined | null): boolean {
+  return typeof id === 'string' && /^qq-vol-[1-5]$/.test(id);
+}
+{
+  const fresh = createSampleQQDrafts();
+  const freshById = new Map(fresh.map(d => [d.id, d]));
+  let changed = false;
+  for (let i = 0; i < qqDrafts.length; i++) {
+    const d = qqDrafts[i];
+    if (!isQQVolDraft(d.id)) continue;
+    if (draftHasNewSubMechanics(d)) continue;
+    const fd = freshById.get(d.id);
+    if (!fd) continue;
+    qqDrafts[i] = { ...fd, updatedAt: Date.now() };
+    changed = true;
+  }
+  if (changed) {
+    persistQQDrafts();
+    console.log('[migration] Refreshed qq-vol-* drafts in file storage with 4 gewinnt + Bluff');
+  }
+}
+
 app.get('/api/qq/drafts', async (_req, res) => {
   const cached = cache.get<any[]>('qqDrafts');
   if (cached) return res.json(cached);
@@ -8091,7 +8122,25 @@ app.get('/api/qq/drafts', async (_req, res) => {
       }
       console.log(`[migration] Removed ${legacyDrafts.length} legacy qq-sample-* drafts from DB`);
     }
-    const cleanDbDrafts = dbDrafts.filter((d: any) => !isLegacySampleDraft(d.id));
+    let cleanDbDrafts = dbDrafts.filter((d: any) => !isLegacySampleDraft(d.id));
+    // Migration 2026-04-28: qq-vol-* ohne onlyConnect/bluff in DB überschreiben
+    const fresh = createSampleQQDrafts();
+    const freshById = new Map(fresh.map(d => [d.id, d]));
+    let dbVolRefreshed = 0;
+    for (let i = 0; i < cleanDbDrafts.length; i++) {
+      const d: any = cleanDbDrafts[i];
+      if (!isQQVolDraft(d.id)) continue;
+      if (draftHasNewSubMechanics(d)) continue;
+      const fd = freshById.get(d.id);
+      if (!fd) continue;
+      const refreshed = { ...fd, updatedAt: Date.now() };
+      cleanDbDrafts[i] = refreshed;
+      try { await saveQQDraftToDB(refreshed); } catch { /* ignore */ }
+      dbVolRefreshed++;
+    }
+    if (dbVolRefreshed > 0) {
+      console.log(`[migration] Refreshed ${dbVolRefreshed} qq-vol-* drafts in DB with 4 gewinnt + Bluff`);
+    }
     // Merge any file-backed drafts that aren't yet in DB
     const dbIds = new Set(cleanDbDrafts.map((d: any) => d.id));
     const fileDrafts = qqDrafts.filter(d => !dbIds.has(d.id));

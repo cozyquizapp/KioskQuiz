@@ -2627,8 +2627,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         const lockStep = nonEmpty + 1;
         if (room.muchoRevealStep === 0) {
-          // Klick 1 → alle Voter freigeben (Frontend staggered intern)
-          room.muchoRevealStep = nonEmpty;
+          // Klick 1 → alle Voter freigeben (Frontend staggered intern).
+          // Edge-Case nonEmpty=0 (kein Team hat geantwortet): step bleibt sonst
+          // bei 0 → Autoplay-Endless-Loop. Direkt auf lockStep springen.
+          room.muchoRevealStep = nonEmpty === 0 ? lockStep : nonEmpty;
           broadcast(io, payload.roomCode);
         } else if (room.muchoRevealStep < lockStep) {
           // Klick 2 → korrekte Option + Sieger

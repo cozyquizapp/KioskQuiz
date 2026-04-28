@@ -10270,20 +10270,26 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   }, [slogans.length]);
   const current = slogans[idx % slogans.length];
   return (
+    // Grid-Layout statt flex+justifyContent:center — verhindert Layout-Shift,
+    // wenn die intrinsische Breite der Text-Spalte sich ändert. Wolf-Spalte hat
+    // exakt Wolf-Breite, Text-Spalte hat FESTE Breite (clamp). Beide Spalten ändern
+    // ihre Größe nicht, wenn der Slogan-Text wechselt → Wolf bleibt 100% an Ort.
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 28, justifyContent: 'center',
+      display: 'grid',
+      gridTemplateColumns: 'auto auto',
+      alignItems: 'center',
+      columnGap: 28,
       padding: '8px 4px',
-      // Kein flexWrap — Wolf darf nie unter den Text rutschen
+      // Pinnt das Grid horizontal in die Panel-Mitte
+      justifyContent: 'center',
     }}>
-      <div style={{ flexShrink: 0 }}>
-        <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" speaking={true} />
-      </div>
+      <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" speaking={true} />
       <div style={{
-        display: 'flex', flexDirection: 'column', gap: 8,
-        flex: '1 1 auto', minWidth: 0,
-        // Reservierte Höhe = Eyebrow + gap + max Slogan-Box
-        // damit die Card nicht atmet, wenn Slogan-Länge unterschiedlich
+        // Feste Breite — egal wie kurz/lang der Slogan ist
+        width: 'clamp(260px, 38vw, 540px)',
+        // Feste Höhe — Eyebrow + Slogan-Box ohne Atmen
         minHeight: 'clamp(96px, 11vw, 144px)',
+        display: 'flex', flexDirection: 'column', gap: 8,
         justifyContent: 'center',
       }}>
         <div style={{

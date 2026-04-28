@@ -7156,10 +7156,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // No separate "image only" phase — question + image appear together.
   // Active: fullscreen image + frosted question card + timer
   // Reveal: fullscreen image + frosted answer card + winner
-  const cheeseOverlay = isCheese && hasImg;
+  // Hinweis: CHEESE-Overlay-UI (Antwort-Card, Team-Avatare, Reveal) MUSS auch ohne Bild
+  // rendern — sonst ist die Frage unspielbar. Nur der fullscreen-Image-Layer wird ausgeblendet.
+  const cheeseOverlay = isCheese;
   const cheeseWithQuestion = cheeseOverlay && !revealed;
   const isCheeseReveal = cheeseOverlay && revealed;
-  const cheeseFullscreen = cheeseOverlay;
+  const cheeseFullscreen = isCheese && hasImg;
 
   // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';

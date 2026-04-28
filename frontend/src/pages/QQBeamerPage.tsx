@@ -9805,13 +9805,6 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
     );
   }
 
-  // Map: item → { groupId | null (noch nicht gefunden), color | null }
-  // Globale „gefundene Gruppen" = Vereinigung über alle Teams
-  const globallyFoundGroupIds = new Set<string>();
-  for (const teamId of Object.keys(c.teamProgress)) {
-    for (const gid of c.teamProgress[teamId].foundGroupIds) globallyFoundGroupIds.add(gid);
-  }
-
   const showBoard = c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement';
 
   return (
@@ -9827,7 +9820,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
       {c.phase === 'intro' && <ConnectionsIntro state={s} />}
       {showBoard && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 0 }}>
-          <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
+          <ConnectionsGrid state={s} />
         </div>
       )}
       {showBoard && <ConnectionsAnswerStatus state={s} />}
@@ -9977,15 +9970,15 @@ function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
   );
 }
 
-function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
+function ConnectionsGrid({ state: s }: {
   state: QQStateUpdate;
-  globallyFoundGroupIds: Set<string>;
 }) {
   const c = s.connections!;
   const lang = useLangFlip(s.language);
   const isReveal = c.phase === 'reveal' || c.phase === 'placement';
-  // Bei reveal: alle Items werden ihrer Gruppe nach gefärbt
-  // Bei active: nur global-gefundene Gruppen werden „gegrayt" (kein Spoiler-Verstoß weil ja schon raus)
+  // SPOILER-SAFE: Auf dem Beamer wird NUR im Reveal eingefärbt. Während Active
+  // bleibt alles neutral, sonst könnten Teams die noch tippen die Lösung
+  // anderer Teams direkt auf dem Beamer ablesen.
   const itemToGroup = new Map<string, { id: string; idx: number; name: string; color: string }>();
   c.payload.groups.forEach((g, i) => {
     g.items.forEach(it => {
@@ -10009,8 +10002,7 @@ function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
     }}>
       {displayOrder.map((item, i) => {
         const grp = itemToGroup.get(item);
-        const isGlobalFound = grp ? globallyFoundGroupIds.has(grp.id) : false;
-        const showColored = isReveal || isGlobalFound;
+        const showColored = isReveal && !!grp;
         return (
           <div key={`${item}-${i}`} style={{
             padding: 'clamp(14px, 1.8vw, 22px) clamp(8px, 1vw, 14px)',

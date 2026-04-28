@@ -14,17 +14,19 @@ interface Props {
   showcaseStepMs?: number;
 }
 
+// Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
+// das 4×4-Mini-Game — wird separat als Bonus-Knoten am Tree-Ende gerendert.
 const PHASE_LABELS_DE: Record<QQGamePhaseIndex, string> = {
   1: 'Runde 1',
   2: 'Runde 2',
   3: 'Runde 3',
-  4: 'Finale',
+  4: 'Runde 4',
 };
 const PHASE_LABELS_EN: Record<QQGamePhaseIndex, string> = {
   1: 'Round 1',
   2: 'Round 2',
   3: 'Round 3',
-  4: 'Finale',
+  4: 'Round 4',
 };
 
 export default function QQProgressTree({
@@ -354,6 +356,56 @@ export default function QQProgressTree({
               </div>
             );
           })}
+
+          {/* Großes Finale (4×4 Connections) — separater Bonus-Knoten am
+              Tree-Ende. Goldenes 🧩-Dot mit Glow, größer als Quiz-Dots
+              (klare Hierarchie: das ist DAS Highlight). User-Wunsch
+              2026-04-28: 'Finale soll im Progress-Tree sichtbar sein'. */}
+          {state.connectionsEnabled !== false && (() => {
+            const finaleSize = Math.round(dotSize * 1.35);
+            const finaleColor = '#A78BFA';
+            const isFinaleActive = state.phase === 'CONNECTIONS_4X4';
+            const isFinalePast = state.phase === 'GAME_OVER' || state.phase === 'THANKS';
+            return (
+              <div style={{
+                marginLeft: phaseGap, // gleicher Abstand wie zwischen Phasen
+                display: 'flex', alignItems: 'center', gap: 6,
+                position: 'relative', zIndex: 2,
+              }}>
+                {/* Trenner-Strich vom letzten Dot zum Finale-Dot */}
+                <div style={{
+                  width: Math.round(dotSize * 0.4), height: 2,
+                  background: 'linear-gradient(90deg, rgba(148,163,184,0.4), rgba(167,139,250,0.6))',
+                  borderRadius: 2,
+                }} />
+                <div
+                  title={lang === 'de' ? 'Großes Finale (4×4)' : 'Grand Finale (4×4)'}
+                  style={{
+                    width: finaleSize,
+                    height: finaleSize,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: Math.round(finaleSize * 0.55),
+                    background: isFinaleActive
+                      ? finaleColor
+                      : isFinalePast
+                        ? 'rgba(167,139,250,0.25)'
+                        : `linear-gradient(135deg, ${finaleColor}33, ${finaleColor}11)`,
+                    border: `2.5px solid ${isFinaleActive ? '#fff' : finaleColor}`,
+                    boxShadow: isFinaleActive
+                      ? `0 0 0 4px ${finaleColor}55, 0 6px 14px ${finaleColor}88, 0 0 28px ${finaleColor}aa`
+                      : isFinalePast
+                        ? 'none'
+                        : `0 0 14px ${finaleColor}55`,
+                    opacity: isFinalePast ? 0.55 : 1,
+                    filter: isFinalePast ? 'grayscale(1)' : 'none',
+                    animation: isFinaleActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
+                    transition: 'all 0.45s cubic-bezier(0.22,1,0.36,1)',
+                  }}
+                >🧩</div>
+              </div>
+            );
+          })()}
 
           {/* Wolf-Avatar — sitzt auf dem aktuellen Dot, springt bei Wechsel
               im Bogen zum neuen Dot (gleiche Geste wie RoundMiniTree). */}

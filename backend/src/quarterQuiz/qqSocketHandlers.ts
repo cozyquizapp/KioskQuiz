@@ -1390,7 +1390,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:startGame', (payload: QQStartGamePayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 3, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig);
+        // Default 4 statt 3 — die Standard-Drafts (qq-vol-*) sind 4-Runden-Sets,
+        // und ein silent-3 wenn frontend den Wert nicht sendet hat schon einmal
+        // zu 'nur 3 Runden im Tree' geführt.
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

@@ -1119,6 +1119,80 @@ export default function QQModeratorPage() {
                   );
                 })()}
 
+                {/* Bluff controls */}
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'bluff' && (() => {
+                  const bp = s.bluffPhase;
+                  const totalActive = s.teams.filter(t => t.connected).length;
+                  const submitCount = Object.keys(s.bluffSubmissions ?? {}).filter(id => s.bluffSubmissions[id]?.trim()).length;
+                  const voteCount = Object.keys(s.bluffVotes ?? {}).length;
+                  const submissions = Object.entries(s.bluffSubmissions ?? {}).filter(([, t]) => t?.trim());
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{
+                        fontSize: 13, color: '#fff', background: '#F472B6',
+                        padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 800,
+                      }}>
+                        🎭 Bluff · {bp ?? '—'}
+                        {bp === 'write' && ` · ${submitCount}/${totalActive} eingereicht`}
+                        {bp === 'vote' && ` · ${voteCount}/${totalActive} gevotet`}
+                      </div>
+                      {bp === 'write' && (
+                        <Btn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceWrite', { roomCode })}>
+                          ⏹ Schreib-Phase beenden →
+                        </Btn>
+                      )}
+                      {bp === 'review' && (
+                        <>
+                          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                            👮 Bluffs prüfen — ✕ klicken um zu zensieren
+                          </div>
+                          {submissions.map(([teamId, text]) => {
+                            const tm = s.teams.find(t => t.id === teamId);
+                            const rejected = (s.bluffRejected ?? []).includes(teamId);
+                            return (
+                              <div key={teamId} style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '6px 10px', borderRadius: 8,
+                                background: rejected ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${rejected ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                opacity: rejected ? 0.55 : 1,
+                              }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: tm?.color ?? '#94a3b8', minWidth: 56 }}>
+                                  {tm?.name ?? teamId}
+                                </span>
+                                <span style={{
+                                  flex: 1, fontSize: 12, color: rejected ? '#FCA5A5' : '#e2e8f0',
+                                  textDecoration: rejected ? 'line-through' : undefined,
+                                  wordBreak: 'break-word',
+                                }}>{text}</span>
+                                <button onClick={() => emit('qq:bluffReject', { roomCode, teamId, rejected: !rejected })}
+                                  style={{
+                                    padding: '2px 8px', borderRadius: 6, cursor: 'pointer',
+                                    border: '1px solid rgba(239,68,68,0.4)', background: rejected ? 'rgba(239,68,68,0.18)' : 'transparent',
+                                    color: rejected ? '#fff' : '#FCA5A5', fontSize: 11, fontWeight: 800, fontFamily: 'inherit',
+                                  }}>
+                                  {rejected ? '↺' : '✕'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                          <PrimaryBtn color="#22C55E" onClick={() => emit('qq:bluffFinishReview', { roomCode })} hotkey="Space">
+                            ▶ Voting starten
+                          </PrimaryBtn>
+                        </>
+                      )}
+                      {bp === 'vote' && (
+                        <Btn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceVote', { roomCode })}>
+                          ⏹ Voting beenden →
+                        </Btn>
+                      )}
+                      {bp === 'reveal' && (
+                        <div style={{ fontSize: 12, color: '#86EFAC' }}>✓ Reveal läuft — Space → nächste Frage</div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* ── QUESTION REVEAL ── */}
                 {s.phase === 'QUESTION_REVEAL' && (() => {
                   const qRev = s.currentQuestion;
@@ -2824,6 +2898,18 @@ function SetupView({
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {s.shuffleQuestionsInRound !== false ? 'Kategorien werden in jeder Runde gemischt' : 'Reihenfolge wie im Draft'}
+          </span>
+        </div>
+
+        {/* Bluff: Moderator-Review-Toggle */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🎭 Bluff-Check</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: false })} style={segPill(!s.bluffModeratorReview)}>Aus</button>
+            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: true })} style={segPill(!!s.bluffModeratorReview, '#F472B6')}>An</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {s.bluffModeratorReview ? 'Moderator filtert Bluffs vor dem Voting' : 'Bluffs gehen direkt ins Voting'}
           </span>
         </div>
 

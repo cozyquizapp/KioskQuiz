@@ -2236,6 +2236,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'onlyConnect') return <OnlyConnectInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
+    if (kind === 'bluff') return <BluffInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
   }
   // Fallback
   return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
@@ -2548,6 +2549,204 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
 }
 
 // ── 4 gewinnt / Only Connect: progressive Hinweise + Freitext-Tipp ────────────
+// ── Bluff: 3-Phasen-Team-Input ────────────────────────────────────────────────
+function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
+}) {
+  const phase = s.bluffPhase;
+  const myBluff = (s.bluffSubmissions ?? {})[myTeamId] ?? '';
+  const myVote = (s.bluffVotes ?? {})[myTeamId];
+  const myPoints = (s.bluffPoints ?? {})[myTeamId];
+  const [val, setVal] = useState(myBluff);
+  const [submitted, setSubmitted] = useState(!!myBluff);
+
+  // Sync state from server (e.g. when other teams join)
+  useEffect(() => {
+    if (myBluff && !submitted) {
+      setSubmitted(true);
+      setVal(myBluff);
+    }
+  }, [myBluff, submitted]);
+
+  const submit = () => {
+    if (submitted) return;
+    const text = val.trim();
+    if (text.length < 1) return;
+    emit('qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
+    setSubmitted(true);
+  };
+
+  const vote = (optId: string) => {
+    if (myVote) return;
+    emit('qq:bluffVote', { roomCode, teamId: myTeamId, optionId: optId });
+  };
+
+  // ── Write Phase ─────────────────────────────────────────────────────────
+  if (phase === 'write' || !phase) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          padding: '10px 14px', borderRadius: 12,
+          background: 'rgba(244,114,182,0.12)', border: '1.5px solid rgba(244,114,182,0.3)',
+          fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
+        }}>
+          {lang === 'de'
+            ? '🎭 Erfindet eine plausibel klingende Falsch-Antwort. Andere Teams werden dafür stimmen — wer reinfällt, bringt euch Punkte!'
+            : '🎭 Make up a plausible-sounding wrong answer. Other teams will vote — fooling them earns you points!'}
+        </div>
+        <input
+          value={val}
+          onChange={e => !submitted && setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+          disabled={submitted}
+          placeholder={lang === 'de' ? 'Erfundene Antwort…' : 'Your made-up answer…'}
+          maxLength={200}
+          style={{
+            padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
+            border: `2px solid ${val ? catColor : 'rgba(255,255,255,0.08)'}`,
+            background: submitted ? 'rgba(34,197,94,0.10)' : (val ? `${catColor}0d` : 'rgba(255,255,255,0.04)'),
+            color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
+            outline: 'none', transition: 'all 0.18s',
+          }}
+        />
+        <button
+          disabled={val.trim().length < 1 || submitted}
+          onClick={submit}
+          style={{
+            padding: '14px 18px', borderRadius: 14, border: 'none',
+            background: submitted ? 'rgba(34,197,94,0.18)'
+              : val.trim().length >= 1 ? `linear-gradient(135deg, ${catColor}, ${catColor}cc)` : 'rgba(255,255,255,0.06)',
+            color: submitted ? '#86EFAC' : (val.trim().length >= 1 ? '#fff' : '#64748b'),
+            fontSize: 16, fontWeight: 900, fontFamily: 'inherit',
+            cursor: submitted ? 'default' : (val.trim().length >= 1 ? 'pointer' : 'not-allowed'),
+            letterSpacing: '0.05em', textTransform: 'uppercase',
+          }}
+        >
+          {submitted ? (lang === 'de' ? '✓ Eingereicht — andere warten' : '✓ Submitted — waiting on others') : (lang === 'de' ? '✓ Bluff abgeben' : '✓ Submit bluff')}
+        </button>
+        {submitted && (
+          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 600, lineHeight: 1.4 }}>
+            {lang === 'de' ? 'Sobald alle eingereicht haben, geht\'s zum Voting.' : 'Once everyone\'s in, voting starts.'}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Review Phase ────────────────────────────────────────────────────────
+  if (phase === 'review') {
+    return (
+      <div style={{
+        padding: '14px 16px', borderRadius: 12,
+        background: 'rgba(244,114,182,0.10)', border: '1.5px solid rgba(244,114,182,0.3)',
+        textAlign: 'center', fontSize: 14, color: '#fbcfe8', fontWeight: 700,
+      }}>
+        {lang === 'de' ? '👮 Moderator prüft die Bluffs… gleich geht\'s weiter.' : '👮 Moderator reviewing bluffs… one moment.'}
+      </div>
+    );
+  }
+
+  // ── Vote Phase ──────────────────────────────────────────────────────────
+  if (phase === 'vote') {
+    const opts = s.bluffOptions ?? [];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{
+          padding: '10px 14px', borderRadius: 12,
+          background: 'rgba(244,114,182,0.12)', border: '1.5px solid rgba(244,114,182,0.3)',
+          fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
+        }}>
+          {lang === 'de'
+            ? `🗳 Welche Antwort ist die ECHTE? (${myVote ? '✓ Gewählt' : 'Bitte wählen'})`
+            : `🗳 Which answer is REAL? (${myVote ? '✓ Voted' : 'Pick one'})`}
+        </div>
+        {opts.map((opt, i) => {
+          const isOwn = opt.source === 'team' && opt.contributors.includes(myTeamId);
+          const chosen = myVote === opt.id;
+          const disabled = isOwn || !!myVote;
+          return (
+            <button
+              key={opt.id}
+              onClick={() => !disabled && vote(opt.id)}
+              disabled={disabled}
+              style={{
+                padding: '14px 16px', borderRadius: 12, border: 'none',
+                textAlign: 'left',
+                background: chosen ? `${catColor}30`
+                  : isOwn ? 'rgba(255,255,255,0.02)'
+                  : 'rgba(255,255,255,0.05)',
+                border_: undefined,
+                outline: chosen ? `2px solid ${catColor}` : `1.5px solid ${isOwn ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
+                color: isOwn ? '#475569' : '#F1F5F9',
+                fontFamily: 'inherit', fontSize: 16, fontWeight: 800,
+                cursor: disabled ? 'default' : 'pointer',
+                opacity: isOwn ? 0.5 : 1,
+                display: 'flex', alignItems: 'center', gap: 10,
+                transition: 'all 0.18s',
+              } as any}
+            >
+              <span style={{
+                width: 26, height: 26, borderRadius: '50%',
+                background: chosen ? catColor : 'rgba(255,255,255,0.08)',
+                color: chosen ? '#fff' : '#94a3b8',
+                fontSize: 13, fontWeight: 900,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>{String.fromCharCode(65 + i)}</span>
+              <span style={{ flex: 1, wordBreak: 'break-word' }}>{opt.text}</span>
+              {isOwn && (
+                <span style={{ fontSize: 10, color: '#475569', fontWeight: 800 }}>
+                  {lang === 'de' ? 'dein Bluff' : 'your bluff'}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        {myVote && (
+          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 600 }}>
+            {lang === 'de' ? 'Stimme abgegeben — wartet auf den Rest.' : 'Voted — waiting on others.'}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Reveal Phase ────────────────────────────────────────────────────────
+  if (phase === 'reveal') {
+    const total = myPoints?.total ?? 0;
+    const breakdown: string[] = [];
+    if ((myPoints?.foundReal ?? 0) > 0) breakdown.push(lang === 'de' ? `+${myPoints!.foundReal} Echt erkannt` : `+${myPoints!.foundReal} found real`);
+    if ((myPoints?.blufferBonus ?? 0) > 0) breakdown.push(lang === 'de' ? `+${myPoints!.blufferBonus} Reingefallen` : `+${myPoints!.blufferBonus} fooled others`);
+    if ((myPoints?.truthAccident ?? 0) > 0) breakdown.push(lang === 'de' ? `+${myPoints!.truthAccident} Zufall die Wahrheit getippt!` : `+${myPoints!.truthAccident} accidental truth!`);
+    return (
+      <div style={{
+        padding: '16px 18px', borderRadius: 14,
+        background: total > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
+        border: total > 0 ? '1.5px solid rgba(34,197,94,0.45)' : '1.5px solid rgba(255,255,255,0.10)',
+        display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center',
+      }}>
+        <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          {lang === 'de' ? 'Eure Teilpunkte' : 'Your points'}
+        </div>
+        <div style={{
+          fontSize: 32, fontWeight: 900,
+          color: total > 0 ? '#86EFAC' : '#94a3b8',
+        }}>{total}</div>
+        {breakdown.length > 0 && (
+          <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
+            {breakdown.join(' · ')}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+          {lang === 'de' ? 'Schau auf den Beamer — Auflösung läuft.' : 'Check the beamer — reveal in progress.'}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
 }) {

@@ -4820,6 +4820,380 @@ const QQMapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
  *   - Winner-Team mit Avatar + atHintIdx-Badge
  *   - Alle 4 Hints sichtbar
  */
+/**
+ * Bluff — Beamer-Layout für die 3 Phasen + Reveal.
+ *  write:  Frage + „Teams schreiben Bluffs" + Submission-Counter + Avatare ✓
+ *  review: Frage + Bluffs in einer Liste + ✕-Buttons (Moderator filtert)
+ *  vote:   Frage + Optionen mit Vote-Counter pro Option
+ *  reveal: Echte Antwort hervorgehoben + per-Option Avatare die gewählt haben
+ *          + per-Bluff-Box wer den Bluff geschrieben hat + Punktevergabe
+ */
+function BluffBeamerView({ state: s, lang, revealed }: {
+  state: QQStateUpdate; lang: 'de' | 'en'; revealed: boolean;
+}) {
+  const q = s.currentQuestion!;
+  const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteBluff;
+  const phase = s.bluffPhase;
+  const accent = '#F472B6'; // pink
+  const realText = (lang === 'en' && bt.realAnswerEn ? bt.realAnswerEn : bt.realAnswer) ?? '';
+
+  const submitCount = Object.keys(s.bluffSubmissions ?? {}).filter(id => s.bluffSubmissions[id]?.trim()).length;
+  const totalActive = s.teams.filter(t => t.connected).length;
+  const voteCount = Object.keys(s.bluffVotes ?? {}).length;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(14px, 2vh, 24px)',
+      padding: 'clamp(20px, 2.5vh, 36px) clamp(24px, 3vw, 48px) clamp(16px, 2vh, 28px)',
+      position: 'relative',
+    }}>
+      <Fireflies color={`${accent}55`} />
+
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        gap: 16, position: 'relative', zIndex: 5,
+      }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 10,
+          padding: '8px 22px', borderRadius: 999,
+          background: `${accent}22`, border: `2px solid ${accent}44`,
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          animation: 'contentReveal 0.35s ease both',
+        }}>
+          <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)', lineHeight: 1 }}>🎭</span>
+          <span style={{
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+            color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>{lang === 'de' ? 'Bluff' : 'Bluff'}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {!revealed && phase && (
+            <div style={{
+              padding: '8px 16px', borderRadius: 999,
+              background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
+            }}>
+              {phase === 'write' && (lang === 'de' ? `📝 Bluffs schreiben (${submitCount}/${totalActive})` : `📝 Writing (${submitCount}/${totalActive})`)}
+              {phase === 'review' && (lang === 'de' ? `👮 Moderator-Check` : `👮 Moderator check`)}
+              {phase === 'vote' && (lang === 'de' ? `🗳 Abstimmen (${voteCount}/${totalActive})` : `🗳 Voting (${voteCount}/${totalActive})`)}
+              {phase === 'reveal' && (lang === 'de' ? `🎉 Auflösung` : `🎉 Reveal`)}
+            </div>
+          )}
+          {phase === 'write' && s.bluffWriteEndsAt && <BluffTimer endsAt={s.bluffWriteEndsAt} accent={accent} />}
+          {phase === 'vote' && s.bluffVoteEndsAt && <BluffTimer endsAt={s.bluffVoteEndsAt} accent={accent} />}
+        </div>
+      </div>
+
+      {/* Frage */}
+      <div style={{
+        textAlign: 'center', position: 'relative', zIndex: 5,
+        animation: 'contentReveal 0.5s ease 0.1s both',
+      }}>
+        <div style={{
+          fontSize: 'clamp(28px, 3.4vw, 52px)', fontWeight: 900,
+          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+        }}>
+          {lang === 'en' && q.textEn ? q.textEn : q.text}
+        </div>
+      </div>
+
+      {/* Phase-spezifischer Inhalt */}
+      {phase === 'write' && <BluffWriteScreen state={s} accent={accent} lang={lang} />}
+      {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
+      {phase === 'vote' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={false} />}
+      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
+
+      {/* Reveal: Echte Antwort prominent + Top-Punkte */}
+      {phase === 'reveal' && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          padding: 'clamp(14px, 1.8vh, 24px)',
+          borderRadius: 22,
+          background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
+          border: '2px solid rgba(34,197,94,0.45)',
+          boxShadow: '0 0 40px rgba(34,197,94,0.25)',
+          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+          position: 'relative', zIndex: 5,
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
+            color: '#86EFAC', letterSpacing: '0.18em', textTransform: 'uppercase',
+          }}>
+            {lang === 'de' ? 'Echte Antwort' : 'Real answer'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(32px, 4.5vw, 64px)', fontWeight: 900,
+            color: '#22C55E', textShadow: '0 0 30px rgba(34,197,94,0.4)',
+            textAlign: 'center', lineHeight: 1.1,
+          }}>
+            {realText}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BluffTimer({ endsAt, accent }: { endsAt: number; accent: string }) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => setRemaining(Math.max(0, (endsAt - Date.now()) / 1000)), 250);
+    return () => clearInterval(iv);
+  }, [endsAt]);
+  const sec = Math.ceil(remaining);
+  const urgent = sec <= 10;
+  return (
+    <div style={{
+      padding: '8px 18px', borderRadius: 999,
+      background: urgent ? 'rgba(239,68,68,0.22)' : `${accent}22`,
+      border: `2px solid ${urgent ? '#EF4444' : `${accent}55`}`,
+      fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900,
+      color: urgent ? '#FCA5A5' : '#F8FAFC', fontVariantNumeric: 'tabular-nums',
+      animation: urgent ? 'pulse 0.8s ease-in-out infinite alternate' : undefined,
+    }}>
+      ⏱ {sec}s
+    </div>
+  );
+}
+
+function BluffWriteScreen({ state: s, accent, lang }: {
+  state: QQStateUpdate; accent: string; lang: 'de' | 'en';
+}) {
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 24,
+      position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        fontSize: 'clamp(60px, 8vw, 110px)',
+        animation: 'cfloat 4s ease-in-out infinite',
+      }}>📝</div>
+      <div style={{
+        fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
+        color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
+      }}>
+        {lang === 'de'
+          ? 'Erfindet eine plausible Falsch-Antwort auf eurem Handy!'
+          : 'Make up a plausible wrong answer on your phone!'}
+      </div>
+      {/* Avatar-Reihe — wer hat schon submitted? */}
+      <div style={{
+        display: 'flex', gap: 'clamp(12px, 1.6vw, 22px)', flexWrap: 'wrap',
+        justifyContent: 'center', marginTop: 12,
+      }}>
+        {s.teams.map(tm => {
+          const submitted = !!(s.bluffSubmissions ?? {})[tm.id]?.trim();
+          return (
+            <div key={tm.id} title={tm.name} style={{
+              position: 'relative',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              opacity: submitted ? 1 : 0.55,
+              filter: submitted ? 'none' : 'grayscale(0.4)',
+              transition: 'opacity 0.4s ease, filter 0.4s ease',
+            }}>
+              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(56px, 6vw, 84px)'} style={{
+                background: '#0d0a06',
+                boxShadow: submitted
+                  ? `0 0 0 2px ${accent}, 0 0 16px ${accent}77, 0 4px 10px rgba(0,0,0,0.55)`
+                  : `0 0 0 2px ${tm.color}66, 0 4px 10px rgba(0,0,0,0.55)`,
+              }} />
+              {submitted && (
+                <div style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#22C55E', border: '2px solid #0D0A06',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 900, color: '#fff',
+                  animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>✓</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BluffReviewScreen({ state: s, accent, lang }: {
+  state: QQStateUpdate; accent: string; lang: 'de' | 'en';
+}) {
+  void accent;
+  const submissions = Object.entries(s.bluffSubmissions ?? {}).filter(([, t]) => t?.trim());
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 14,
+      position: 'relative', zIndex: 5,
+      padding: 'clamp(16px, 2vh, 28px)',
+    }}>
+      <div style={{
+        fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 800,
+        color: '#94a3b8', textAlign: 'center',
+      }}>
+        {lang === 'de'
+          ? '👮 Moderator prüft die Bluffs… Bluffs werden für die Spieler nicht angezeigt.'
+          : '👮 Moderator reviewing bluffs… not visible to players.'}
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 10, width: '100%', maxWidth: 1100,
+      }}>
+        {submissions.map(([teamId, text]) => {
+          const tm = s.teams.find(t => t.id === teamId);
+          const rejected = (s.bluffRejected ?? []).includes(teamId);
+          return (
+            <div key={teamId} style={{
+              padding: '10px 14px', borderRadius: 12,
+              background: rejected ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${rejected ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              opacity: rejected ? 0.6 : 1,
+              display: 'flex', flexDirection: 'column', gap: 6,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {tm && <QQTeamAvatar avatarId={tm.avatarId} size={20} />}
+                <span style={{
+                  fontSize: 11, fontWeight: 900, color: tm?.color ?? '#94a3b8',
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>{tm?.name ?? teamId}</span>
+                {rejected && (
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: '#FCA5A5', fontWeight: 800 }}>
+                    {lang === 'de' ? 'abgelehnt' : 'rejected'}
+                  </span>
+                )}
+              </div>
+              <div style={{
+                fontSize: 14, fontWeight: 700,
+                color: rejected ? '#FCA5A5' : '#F1F5F9',
+                textDecoration: rejected ? 'line-through' : undefined,
+                wordBreak: 'break-word',
+              }}>{text}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BluffVoteScreen({ state: s, accent, lang, revealed }: {
+  state: QQStateUpdate; accent: string; lang: 'de' | 'en'; revealed: boolean;
+}) {
+  void accent;
+  const opts = s.bluffOptions ?? [];
+  // pro Option: welche Teams haben gewählt?
+  const votersByOption: Record<string, string[]> = {};
+  for (const [teamId, optId] of Object.entries(s.bluffVotes ?? {})) {
+    if (!votersByOption[optId]) votersByOption[optId] = [];
+    votersByOption[optId].push(teamId);
+  }
+
+  return (
+    <div style={{
+      flex: 1, display: 'grid',
+      gridTemplateColumns: opts.length > 4 ? 'repeat(2, 1fr)' : '1fr',
+      gap: 'clamp(8px, 1vw, 14px)',
+      maxWidth: 1100, width: '100%', margin: '0 auto',
+      position: 'relative', zIndex: 5,
+      animation: 'contentReveal 0.5s ease 0.15s both',
+    }}>
+      {opts.map((opt, i) => {
+        const isReal = opt.source === 'real';
+        const showAsReal = revealed && isReal;
+        const voters = votersByOption[opt.id] ?? [];
+        const contributors = opt.source === 'team' ? opt.contributors : [];
+        return (
+          <div key={opt.id} style={{
+            padding: 'clamp(12px, 1.4vh, 18px) clamp(14px, 1.6vw, 22px)',
+            borderRadius: 14,
+            background: showAsReal
+              ? 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(34,197,94,0.06))'
+              : 'rgba(255,255,255,0.04)',
+            border: showAsReal
+              ? '2px solid #22C55E'
+              : '1.5px solid rgba(255,255,255,0.10)',
+            boxShadow: showAsReal ? '0 0 26px rgba(34,197,94,0.35)' : 'none',
+            display: 'flex', flexDirection: 'column', gap: 8,
+            transition: 'all 0.4s ease',
+            animation: revealed ? `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.3 + i * 0.1}s both` : undefined,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: showAsReal ? '#22C55E' : 'rgba(255,255,255,0.08)',
+                color: showAsReal ? '#0a1f0d' : '#94a3b8',
+                fontSize: 13, fontWeight: 900,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>{String.fromCharCode(65 + i)}</span>
+              <span style={{
+                flex: 1, fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
+                color: showAsReal ? '#22C55E' : '#F1F5F9', wordBreak: 'break-word',
+              }}>{opt.text}</span>
+              {showAsReal && (
+                <span style={{
+                  padding: '4px 10px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.25)', border: '1.5px solid #22C55E',
+                  fontSize: 11, fontWeight: 900, color: '#86EFAC',
+                  whiteSpace: 'nowrap',
+                }}>
+                  ✓ {lang === 'de' ? 'echt' : 'real'}
+                </span>
+              )}
+            </div>
+            {/* Voter-Avatare (nur im Reveal anzeigen) */}
+            {revealed && voters.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4 }}>
+                  {lang === 'de' ? 'Wählten' : 'Voted'}
+                </span>
+                {voters.map(vid => {
+                  const tm = s.teams.find(t => t.id === vid);
+                  if (!tm) return null;
+                  return (
+                    <QQTeamAvatar key={vid} avatarId={tm.avatarId} size={26} style={{
+                      boxShadow: `0 0 0 1.5px ${tm.color}99`,
+                    }} />
+                  );
+                })}
+              </div>
+            )}
+            {/* Bluff-Author-Avatare (nur im Reveal, nur bei team-bluffs) */}
+            {revealed && contributors.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4 }}>
+                  🎭 {lang === 'de' ? 'Bluff von' : 'Bluffed by'}
+                </span>
+                {contributors.map(cid => {
+                  const tm = s.teams.find(t => t.id === cid);
+                  if (!tm) return null;
+                  return (
+                    <QQTeamAvatar key={cid} avatarId={tm.avatarId} size={26} style={{
+                      boxShadow: `0 0 0 1.5px ${tm.color}99`,
+                    }} />
+                  );
+                })}
+              </div>
+            )}
+            {/* Vote-Counter (während aktivem Vote, ohne Avatare) */}
+            {!revealed && voters.length > 0 && (
+              <div style={{
+                fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                letterSpacing: '0.06em',
+              }}>
+                {voters.length} {lang === 'de' ? 'Stimme(n)' : 'vote(s)'}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   state: QQStateUpdate; lang: 'de' | 'en'; revealed: boolean;
 }) {
@@ -6643,6 +7017,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'onlyConnect';
   if (isOnlyConnect) {
     return <OnlyConnectBeamerView state={s} lang={lang} revealed={revealed} />;
+  }
+
+  // ── Bluff: eigene 3-Phasen-Layout-Komponente ─────────────────────────────
+  const isBluff = q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'bluff';
+  if (isBluff) {
+    return <BluffBeamerView state={s} lang={lang} revealed={revealed} />;
   }
 
   // ── Order two-column reveal (Lucky Bag: bring in correct order) ────────

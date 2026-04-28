@@ -3763,6 +3763,25 @@ export function qqBluffAdvanceFromVote(room: QQRoomState): void {
 
   room.bluffPoints = points;
   room.bluffPhase = 'reveal';
+  // Auto-Transition zu QUESTION_REVEAL + markCorrect: das offizielle Phase-
+  // Bookkeeping macht die Standard-Pipeline möglich (Placement-Queue, Aktionen,
+  // …). Der Beamer rendert weiterhin BluffBeamerView, weil das auf der
+  // Frage-kind matched, nicht auf room.phase.
+  if (room.phase === 'QUESTION_ACTIVE') {
+    room.phase = 'QUESTION_REVEAL';
+    const q = room.currentQuestion;
+    let revAns = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
+    if (!revAns && q?.bunteTuete?.kind === 'bluff') {
+      revAns = q.bunteTuete.realAnswer ?? '';
+    }
+    room.revealedAnswer = revAns;
+    qqStopTimer(room);
+    // Auto-mark Winner: meiste Teilpunkte → Placement-Queue
+    const evalResult = evalBluff(room);
+    if (evalResult.winnerTeamIds.length > 0) {
+      qqMarkCorrect(room, evalResult.winnerTeamIds);
+    }
+  }
   room.lastActivityAt = Date.now();
 }
 

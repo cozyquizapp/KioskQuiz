@@ -4005,8 +4005,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum antworten — zu langsam = raus.'],
-                en: ['Answer in turn — too slow = out.'],
+                de: ['Reihum antworten — wer hängt verliert'],
+                en: ['Take turns — first to stall is out'],
               },
             },
           };
@@ -7585,34 +7585,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
           pointerEvents: 'none',
         }}>
-          {/* Konsistente Kategorie-Pill oben links — gleiche Position wie bei
-              den anderen Kategorien (Mucho/Schätzchen/etc.). Ersetzt die
-              mittige PICTURE-THIS-Pill IN der Card. */}
-          {!revealed && (
+          {/* Konsistente Kategorie-Pill oben links — bleibt im Reveal sichtbar
+              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren). */}
+          <div style={{
+            position: 'absolute', top: 20, left: 48, zIndex: 10,
+            animation: 'contentReveal 0.35s ease both',
+          }}>
             <div style={{
-              position: 'absolute', top: 20, left: 48, zIndex: 10,
-              animation: 'contentReveal 0.35s ease both',
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 22px', borderRadius: 999,
+              background: `${accent}22`, border: `2px solid ${accent}44`,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
             }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 10,
-                padding: '8px 22px', borderRadius: 999,
-                background: `${accent}22`, border: `2px solid ${accent}44`,
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}>
-                {(() => {
-                  const slug = qqCatSlug(cat as string);
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
-                })()}
-                <span style={{
-                  fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-                  color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
-              </div>
+              {(() => {
+                const slug = qqCatSlug(cat as string);
+                return slug
+                  ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
+                  : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
+              })()}
+              <span style={{
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+                color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
             </div>
-          )}
+          </div>
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}
           {s.timerEndsAt && (
             <div style={{
@@ -7888,15 +7885,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         flexDirection: (hasImg && img.layout === 'window-left') ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s ease both',
       }}>
-        {/* ── Main content — full width, vertically + horizontally centered ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'clamp(12px, 1.5vh, 24px) clamp(28px, 4vw, 64px) clamp(16px, 2vh, 40px)', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden' }}>
+        {/* ── Main content — full width, vertically + horizontally centered ──
+            Beim Mucho/ZvZ-Reveal mit Winner-Card unten brauchen wir flex-start
+            damit die Card nicht unten abgeschnitten wird (overflow:hidden +
+            center clipt sonst aus beiden Richtungen). */}
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          padding: 'clamp(12px, 1.5vh, 24px) clamp(28px, 4vw, 64px) clamp(16px, 2vh, 40px)',
+          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'flex-start' : 'center',
+          alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden',
+        }}>
 
-          {/* Category badge — top left corner */}
+          {/* Category badge — top left corner. Bleibt auch im Reveal sichtbar
+              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren). */}
           <div style={{
             position: 'absolute', top: 20, left: 48, zIndex: 10,
-            opacity: revealed ? 0 : 1,
-            transition: 'opacity 0.3s ease',
-            pointerEvents: revealed ? 'none' : 'auto',
           }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
@@ -7946,13 +7949,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 background: cardBg,
-                // User-Wunsch 2026-04-28: Frage-Card kriegt Kategorie-Farbe als
-                // Border + sanfter Glow drumherum — sofort erkennbar welche
-                // Kategorie gerade läuft, ohne dass man auf die Pill schauen muss.
-                border: `2.5px solid ${revealed ? 'rgba(255,255,255,0.04)' : `${accent}88`}`,
+                // Frage-Card kriegt Kategorie-Farbe als Border + sanfter Glow.
+                // User-Wunsch 2026-04-28: bleibt auch im Reveal sichtbar (vorher
+                // verblasste die Border zu rgba weak — wirkte als wäre die
+                // Kategorie weg). Im Reveal nur dezent gedimmt.
+                border: `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
                 borderRadius: 28,
                 boxShadow: revealed
-                  ? '0 4px 16px rgba(0,0,0,0.3)'
+                  ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
                   : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
                 padding: shrinkOnReveal
                   ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'

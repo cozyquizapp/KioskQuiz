@@ -43,20 +43,24 @@ export default function QQProgressTree({
   const phaseLabels = lang === 'en' ? PHASE_LABELS_EN : PHASE_LABELS_DE;
   const totalPhases = state.totalPhases || 4;
 
-  // Showcase-Sweep: cycelt durch alle Phasen, hebt jede 2.2s lang hervor.
-  // Reset auf -1 = Pause (alle gleich gedimmt), dann 0..n-1.
+  // Showcase-Sweep: cycelt durch alle Phasen + Finale, hebt jede ~2.2s lang
+  // hervor. Index -1 = Pause, 0..totalPhases-1 = Quiz-Phase, totalPhases =
+  // Großes Finale (falls connectionsEnabled).
+  const showcaseHasFinale = state.connectionsEnabled !== false;
+  const showcaseStepCount = totalPhases + (showcaseHasFinale ? 1 : 0);
   const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
   useEffect(() => {
     if (!showcaseMode) return;
     let i = -1;
     const tick = () => {
-      i = (i + 1) % (totalPhases + 1); // +1 für initialen Pause-Step
-      setShowcasePhaseIdx(i - 1); // -1 = Pause, 0..n-1 = Phase highlight
+      i = (i + 1) % (showcaseStepCount + 1); // +1 für initialen Pause-Step
+      setShowcasePhaseIdx(i - 1); // -1 = Pause, 0..n-1 = Phase / Finale
     };
-    tick(); // Erster Reset auf -1
+    tick();
     const id = setInterval(tick, showcaseStepMs);
     return () => clearInterval(id);
-  }, [showcaseMode, totalPhases, showcaseStepMs]);
+  }, [showcaseMode, totalPhases, showcaseHasFinale, showcaseStepCount, showcaseStepMs]);
+  const showcaseOnFinale = showcaseMode && showcaseHasFinale && showcasePhaseIdx === totalPhases;
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -121,16 +125,31 @@ export default function QQProgressTree({
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
+  // Finale-Knoten am Ende: 35% größeres Dot + Trenner-Linie davor.
+  const showFinale = state.connectionsEnabled !== false;
+  const finaleDotSize = Math.round(dotSize * 1.35);
+  const finaleConnectorWidth = Math.round(dotSize * 0.4);
+  let finaleCenter = 0;
+  if (showFinale) {
+    cursor += phaseGap;
+    cursor += finaleConnectorWidth;
+    cursor += 6; // gap zwischen Connector und Finale-Knoten (siehe JSX)
+    finaleCenter = cursor + finaleDotSize / 2;
+    cursor += finaleDotSize;
+  }
   const totalWidth = cursor;
   const treeCenter = totalWidth / 2;
 
-  // Showcase-Pan: bringt die hervorgehobene Phase ins Viewport-Zentrum.
-  // -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
+  // Showcase-Pan: bringt die hervorgehobene Phase (oder Finale) ins Viewport-
+  // Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
   const showcaseTargetPhase = showcaseMode
     ? (showcasePhaseIdx >= 0 ? showcasePhaseIdx : 0)
     : -1;
-  const panOffset = (isShowcase && showcaseTargetPhase >= 0 && phaseCenters[showcaseTargetPhase] != null)
-    ? treeCenter - phaseCenters[showcaseTargetPhase]
+  const showcaseTargetCenter = isShowcase
+    ? (showcaseOnFinale ? finaleCenter : phaseCenters[showcaseTargetPhase] ?? null)
+    : null;
+  const panOffset = (showcaseTargetCenter != null)
+    ? treeCenter - showcaseTargetCenter
     : 0;
 
   // Progress: von Center des ersten Dots bis Center des Wolf-Dots (displayIdx).
@@ -150,9 +169,14 @@ export default function QQProgressTree({
   })();
   const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
   const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
-  const currentCenter = dotCenters[wolfDotIdx] ?? firstCenter;
+  // Wolf-Position: bei CONNECTIONS_4X4 (oder GAME_OVER nach Finale) UND im
+  // Showcase-Last-Step sitzt der Wolf auf dem Finale-Knoten. Sonst auf
+  // dem aktuellen Quiz-Dot.
+  const wolfOnFinale = showFinale && (showcaseOnFinale
+    || state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS');
+  const currentCenter = wolfOnFinale ? finaleCenter : (dotCenters[wolfDotIdx] ?? firstCenter);
   const trackStart = firstCenter;
-  const trackEnd = lastCenter;
+  const trackEnd = wolfOnFinale ? finaleCenter : lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
@@ -364,7 +388,8 @@ export default function QQProgressTree({
           {state.connectionsEnabled !== false && (() => {
             const finaleSize = Math.round(dotSize * 1.35);
             const finaleColor = '#A78BFA';
-            const isFinaleActive = state.phase === 'CONNECTIONS_4X4';
+            // Aktiv = real während CONNECTIONS_4X4 ODER Showcase-Last-Step.
+            const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
             const isFinalePast = state.phase === 'GAME_OVER' || state.phase === 'THANKS';
             return (
               <div style={{

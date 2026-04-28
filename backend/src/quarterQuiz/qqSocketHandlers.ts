@@ -1514,11 +1514,21 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Run evaluation immediately so correctTeamId is set — moderator sees winner
         try { applyAutoEval(room); } catch { /* ignore if already evaluated */ }
         // Mucho/ZvZ: ersten Reveal-Step (Avatar-Cascade) sofort mit dem
-        // Phase-Wechsel verschmelzen. Der reine 'Question-Fade'-Step war
-        // visuell leer und verwirrte mit dem Reveal-Sound-Trigger.
+        // Phase-Wechsel verschmelzen. User-Wunsch 2026-04-28: 'alle teams
+        // auf allen antworten bei space setzen' — Mucho springt direkt auf
+        // nonEmpty (alle Voter sichtbar), ZvZ direkt auf 1 (Cascade-Step).
         if (isMuchoOrZvz) {
-          if (cat === 'MUCHO')         room.muchoRevealStep = 1;
-          if (cat === 'ZEHN_VON_ZEHN') room.zvzRevealStep   = 1;
+          if (cat === 'MUCHO' && room.currentQuestion?.options) {
+            let nonEmpty = 0;
+            for (let i = 0; i < room.currentQuestion.options.length; i++) {
+              if (room.answers.some(a => a.text === String(i))) nonEmpty++;
+            }
+            // nonEmpty = akt1Max (Anzahl Optionen mit ≥1 Voter). Frontend
+            // staggered intern in 750ms-Schritten alle einblendet.
+            const lockStep = nonEmpty + 1;
+            room.muchoRevealStep = nonEmpty === 0 ? lockStep : nonEmpty;
+          }
+          if (cat === 'ZEHN_VON_ZEHN') room.zvzRevealStep = 1;
         }
         broadcast(io, payload.roomCode);
         ok(ack);

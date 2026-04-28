@@ -269,7 +269,7 @@ export default function QQModeratorPage() {
         // Slide 2 (Tree-Showcase) braucht länger wegen Pan-Sweep durch alle
         // Phasen (4 Phasen × 2.8s = 11.2s + initialer Pause + Lese-Puffer).
         delayMs = rIdx === 2 ? 16500 : 8000;
-        const totalSlides = 5;
+        const totalSlides = 8;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -481,7 +481,7 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 4 Folien: Ziel / So läuft's / Neue Fähigkeiten / Comeback
         // (entspricht buildRulesSlidesDe/En in QQBeamerPage.tsx)
-        const totalSlides = 5;
+        const totalSlides = 8;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -587,7 +587,7 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault();
       if (s.phase === 'RULES') {
-        const totalSlides = 5;
+        const totalSlides = 8;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -2456,17 +2456,29 @@ function IdleHint({ state }: { state: QQStateUpdate }) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = 5;
+  const totalSlides = 8;
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
   const isFirst = idx <= -2;
   const isLast = idx >= totalSlides - 1;
+  // Live-Spiegel der Regel-Folien (synchron mit buildRulesSlidesDe in
+  // QQBeamerPage). Hilft dem Mod zu sehen WAS gerade auf dem Beamer steht.
+  const slideTitles = [
+    '🏆 Das Ziel',
+    '⚡ So läuft\'s',
+    '🗺 Roadmap',
+    '⭐ Joker-Bonus',
+    '🔓 Neue Fähigkeiten',
+    '🎁 Bunte Tüte',
+    '🔄 Comeback',
+    '🧩 Großes Finale',
+  ];
   const label = isWelcome
     ? '🎬 Willkommen'
     : isRulesIntro
       ? '📣 Regel-Intro'
-      : `📖 Folie ${idx + 1} / ${totalSlides}`;
+      : `📖 ${slideTitles[idx] ?? `Folie ${idx + 1}`}  (${idx + 1}/${totalSlides})`;
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 13, fontWeight: 800, color: '#8B5CF6' }}>

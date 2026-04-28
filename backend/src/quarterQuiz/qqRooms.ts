@@ -1362,7 +1362,15 @@ export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): voi
 export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | null | '' {
   const alive = getAliveTeams(room);
   if (alive.length === 0) return '';
-  if (alive.length === 1) return alive[0];
+  // Mindestens-eine-Runde-Schutz: alive-Team(s) müssen mind. 1× am Zug
+  // gewesen sein bevor die Runde endet. Sonst kann ein User „abgebrochen"
+  // werden ohne je Eingabe gehabt zu haben (z.B. wenn alle Dummies früh
+  // ausscheiden und der echte User sole-survivor ist ohne je geantwortet
+  // zu haben). User-Wunsch 2026-04-28.
+  const aliveHadTurn = alive.every(id =>
+    room.hotPotatoQualified.includes(id) || room.hotPotatoEliminated.includes(id)
+  );
+  if (alive.length === 1 && aliveHadTurn) return alive[0];
 
   // Pool-Erschöpfung: wenn alle gültigen Antworten der Frage verbraucht sind,
   // kann kein neuer Antwort-Turn mehr gespielt werden → Runde endet.
@@ -1373,7 +1381,7 @@ export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | n
       .split(/[,;]/)
       .map(a => a.replace(/[…\.]+$/, '').trim())
       .filter(a => a.length > 0);
-    if (validAnswers.length > 0 && room.hotPotatoUsedAnswers.length >= validAnswers.length) {
+    if (validAnswers.length > 0 && room.hotPotatoUsedAnswers.length >= validAnswers.length && aliveHadTurn) {
       return alive;
     }
   }

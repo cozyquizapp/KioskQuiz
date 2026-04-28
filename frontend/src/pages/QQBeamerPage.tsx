@@ -1648,19 +1648,15 @@ type RulesSlide = {
 };
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
-  // Kein 'Finale' mehr in den Runden-Bezeichnungen — das echte Finale ist
-  // seit Connections das 4×4-Mini-Game am Ende, nicht die letzte Quiz-Runde.
   const abilityLines = totalPhases === 3
     ? [
-        'Jede Runde schaltet etwas frei:',
-        'Runde 2: Klauen — fremdes Feld stibitzen.',
-        'Runde 3: Stapeln — eigenes Feld dauerhaft sichern + 1 Bonus-Pkt.',
+        'Runde 2: Klauen freigeschaltet',
+        'Runde 3: Stapeln — sichert euer Feld dauerhaft + 1 Bonus-Punkt',
       ]
     : [
-        'Jede Runde schaltet etwas frei:',
-        'Runde 2: Klauen — fremdes Feld stibitzen.',
-        'Runde 3: Stapeln — eigenes Feld dauerhaft sichern + 1 Bonus-Pkt.',
-        'Runde 4: Stapeln bleibt — letzte Quiz-Runde vor dem Finale.',
+        'Runde 2: Klauen freigeschaltet',
+        'Runde 3: Stapeln — Feld dauerhaft sichern + 1 Bonus-Punkt',
+        'Runde 4: alles bleibt — letzte Quiz-Runde',
       ];
   return [
     {
@@ -1668,8 +1664,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Das Ziel',
       color: '#3B82F6',
       lines: [
-        'Sammelt Felder auf dem Spielfeld.',
-        'Das größte zusammenhängende Gebiet am Ende gewinnt.',
+        'Größtes zusammenhängendes Gebiet gewinnt.',
       ],
     },
     {
@@ -1677,9 +1672,9 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'So läuft\'s',
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} Quiz-Runden · 5 Kategorien pro Runde`,
-        'Richtige Antwort → Feld setzen oder klauen',
-        'Bei Gleichstand entscheidet wer schneller war',
+        `${totalPhases} Runden · 5 Kategorien`,
+        'Richtige Antwort → Feld setzen',
+        'Tempo entscheidet bei Gleichstand',
       ],
     },
     {
@@ -1695,9 +1690,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Joker-Bonus',
       color: '#FBBF24',
       lines: [
-        'Wer 4 eigene Felder als 2×2-Block ODER 4 in einer Reihe formt:',
-        'Bekommt sofort 1 Bonus-Feld zum freien Setzen.',
-        'Maximal 2 Joker pro Team im ganzen Spiel.',
+        '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld',
+        'Max. 2 Joker pro Team',
       ],
       grid: {
         cells: [
@@ -1707,9 +1701,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
           [null, null, null, 'A'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
-        label: 'Beide zählen — jedes Muster bringt 1 Joker',
+        label: 'Beide Muster zählen',
       },
-      extra: '⭐ Achtung: ein Feld zählt nur einmal als Joker-Block.',
     },
     {
       icon: '🔓',
@@ -1722,54 +1715,47 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
     },
     {
-      // Bunte-Tüte erklären — pro Runde eine Überraschungs-Mechanik.
       icon: '🎁',
       title: 'Bunte Tüte',
       color: '#EF4444',
       lines: [
-        'Eine der 5 Kategorien pro Runde ist eine Überraschung.',
-        'Mögliche Mechaniken: 4 gewinnt 🧩, Bluff 🎭, Hot Potato 🔥, Top 5 🏆, Reihenfolge 📋, CozyGuessr 🗺️.',
-        'Die Regeln werden vor jeder Bunte-Tüte-Frage kurz erklärt.',
+        'Eine Kategorie pro Runde ist eine Überraschung',
+        '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr',
       ],
+      extra: 'Regeln werden vor jeder Frage kurz erklärt',
     },
     {
       icon: '🔄',
       title: 'Comeback',
       color: '#10B981',
       lines: [
-        'Das letzte Team (oder mehrere bei Gleichstand) bekommt einen Boost.',
-        'Kurzes „Mehr oder Weniger?"-Mini-Quiz — jeder Treffer klaut 1 Feld vom 1. Platz.',
-        'Wieder im Rennen für das große Finale!',
+        'Letztes Team holt vor dem Finale auf',
+        '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz',
       ],
     },
     {
-      // 4×4-Finale eigene Folie.
       icon: '🧩',
       title: 'Das große Finale',
       color: '#A78BFA',
       lines: [
-        '16 Begriffe · findet 4 versteckte Gruppen à 4 Items.',
-        'Jede gefundene Gruppe = 1 Aktion auf dem Hauptspielfeld.',
-        'Reihenfolge: meiste Gruppen zuerst, bei Gleichstand zählt Tempo.',
+        '16 Begriffe · 4 Gruppen finden',
+        'Pro Gruppe = 1 Aktion auf dem Spielfeld',
       ],
-      extra: '🏆 Das größte zusammenhängende Gebiet nach dem Finale gewinnt!',
+      extra: '🏆 Größtes Gebiet danach gewinnt',
     },
   ];
 }
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
-  // 'Final' is no longer a quiz round — the real final is the 4×4 mini-game.
   const abilityLines = totalPhases === 3
     ? [
-        'Each round unlocks something:',
-        'Round 2: Steal — grab an opponent\'s cell.',
-        'Round 3: Stack — lock your tile + 1 bonus pt.',
+        'Round 2: Steal unlocked',
+        'Round 3: Stack — lock your tile + 1 bonus pt',
       ]
     : [
-        'Each round unlocks something:',
-        'Round 2: Steal — grab an opponent\'s cell.',
-        'Round 3: Stack — lock your tile + 1 bonus pt.',
-        'Round 4: Stack stays — last quiz round before the finale.',
+        'Round 2: Steal unlocked',
+        'Round 3: Stack — lock your tile + 1 bonus pt',
+        'Round 4: everything stays — last quiz round',
       ];
   return [
     {
@@ -1777,8 +1763,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'The Goal',
       color: '#3B82F6',
       lines: [
-        'Claim cells on the board.',
-        'Largest connected area at the end wins.',
+        'Largest connected area wins.',
       ],
     },
     {
@@ -1786,9 +1771,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'How It Works',
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} quiz rounds · 5 categories per round`,
-        'Right answer → place or steal a cell',
-        'Tie? Whoever was faster decides.',
+        `${totalPhases} rounds · 5 categories`,
+        'Right answer → place a cell',
+        'Speed decides ties',
       ],
     },
     {
@@ -1803,9 +1788,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Joker Bonus',
       color: '#FBBF24',
       lines: [
-        'Form 4 of your own cells as a 2×2 block OR 4 in a row:',
-        'Get an instant bonus cell to place anywhere.',
-        'Max 2 jokers per team for the whole game.',
+        '2×2 block or 4 in a row = 1 bonus tile',
+        'Max 2 jokers per team',
       ],
       grid: {
         cells: [
@@ -1815,9 +1799,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
           [null, null, null, 'A'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
-        label: 'Both count — each pattern earns 1 joker',
+        label: 'Both patterns count',
       },
-      extra: '⭐ Note: a cell only counts once per joker pattern.',
     },
     {
       icon: '🔓',
@@ -1834,19 +1817,18 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Lucky Bag',
       color: '#EF4444',
       lines: [
-        'One of the 5 categories per round is a surprise mechanic.',
-        'Possible: Connect 4 🧩, Bluff 🎭, Hot Potato 🔥, Top 5 🏆, Order 📋, CozyGuessr 🗺️.',
-        'Each one\'s rules are explained briefly before the question.',
+        'One category per round is a surprise',
+        'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr',
       ],
+      extra: 'Rules explained before each question',
     },
     {
       icon: '🔄',
       title: 'Comeback',
       color: '#10B981',
       lines: [
-        'The last-place team (or several if tied) gets a boost.',
-        'Quick "Higher or Lower?" mini-quiz — each hit steals 1 cell from the leader.',
-        'Back in the race for the big finale!',
+        'Last-place team catches up before the finale',
+        '"Higher or Lower?" — each hit steals from the leader',
       ],
     },
     {
@@ -1854,11 +1836,10 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'The Big Finale',
       color: '#A78BFA',
       lines: [
-        '16 terms · find 4 hidden groups of 4 each.',
-        'Each group found = 1 action on the main grid.',
-        'Order: most groups first, ties broken by speed.',
+        '16 terms · find 4 hidden groups',
+        'Each group = 1 action on the board',
       ],
-      extra: '🏆 Largest connected area after the finale wins!',
+      extra: '🏆 Largest area after wins',
     },
   ];
 }
@@ -2566,26 +2547,29 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
         backdropFilter: 'blur(10px)',
       }}>
-        {/* Icon + title row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)', marginBottom: 'clamp(16px, 2.5vh, 32px)' }}>
+        {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
+            Stage-Look statt links-rechts-Layout. */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(8px, 1vh, 14px)', marginBottom: 'clamp(16px, 2.5vh, 28px)',
+          textAlign: 'center',
+        }}>
           <span style={{
             fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
             filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
           }}><QQEmojiIcon emoji={slide.icon}/></span>
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 800, letterSpacing: '0.16em',
-              textTransform: 'uppercase', color: `${slide.color}88`, marginBottom: 6,
-            }}>
-              {lang === 'de' ? `Spielregeln` : `Game Rules`}
-            </div>
-            <div style={{
-              fontSize: 'clamp(44px,7vw,88px)', fontWeight: 900, lineHeight: 1.05,
-              color: slide.color,
-              textShadow: `0 0 60px ${slide.color}44, 0 3px 0 rgba(0,0,0,0.3)`,
-            }}>
-              {slide.title}
-            </div>
+          <div style={{
+            fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 800, letterSpacing: '0.16em',
+            textTransform: 'uppercase', color: `${slide.color}88`,
+          }}>
+            {lang === 'de' ? `Spielregeln` : `Game Rules`}
+          </div>
+          <div style={{
+            fontSize: 'clamp(44px,7vw,88px)', fontWeight: 900, lineHeight: 1.05,
+            color: slide.color,
+            textShadow: `0 0 60px ${slide.color}44, 0 3px 0 rgba(0,0,0,0.3)`,
+          }}>
+            {slide.title}
           </div>
         </div>
 
@@ -2642,20 +2626,20 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
-          {/* Text lines */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 20px)', flex: 1 }}>
+          {/* Text lines — zentriert für Quiz-Event-Look (kein Bullet-Liste-
+              Eindruck, klare Stage-Präsentation). */}
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            gap: 'clamp(10px, 1.5vh, 20px)', flex: 1,
+            alignItems: 'center', textAlign: 'center',
+          }}>
             {slide.lines.map((line, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 'clamp(10px, 1.2vw, 18px)',
                 animation: `contentReveal 0.4s ease ${0.1 + i * 0.12}s both`,
+                maxWidth: 920,
               }}>
-                <div style={{
-                  width: 12, height: 12, borderRadius: '50%',
-                  background: slide.color, marginTop: 10, flexShrink: 0,
-                  boxShadow: `0 0 10px ${slide.color}66`,
-                }} />
                 <span style={{
-                  fontSize: 'clamp(22px,3vw,42px)', fontWeight: 700,
+                  fontSize: 'clamp(22px,3vw,40px)', fontWeight: 700,
                   color: '#e2e8f0', lineHeight: 1.3,
                 }}>{line}</span>
               </div>
@@ -2691,7 +2675,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           {slide.grid && <RulesMiniGrid grid={slide.grid} slideColor={slide.color} />}
         </div>
 
-        {/* Extra callout */}
+        {/* Extra callout — zentriert */}
         {slide.extra && (
           <div style={{
             marginTop: 'clamp(16px, 2.5vh, 32px)', padding: 'clamp(12px, 1.8vh, 20px) clamp(18px, 2.2vw, 28px)', borderRadius: 18,
@@ -2700,6 +2684,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             color: slide.color,
             animation: 'contentReveal 0.5s ease 0.4s both',
             textShadow: `0 0 24px ${slide.color}33`,
+            textAlign: 'center',
           }}>
             {slide.extra}
           </div>
@@ -3243,9 +3228,11 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 
   if (phaseEntries.length === 0 || firstIdx < 0) return null;
 
-  const DOT = 60;
-  const GAP = 26;
-  const WOLF = DOT + 12;
+  // User-Wunsch 2026-04-28: Mini-Tree unter „Runde N" darf größer sein.
+  // 60→84 ergibt ~40% größere Dots, der Wolf wandert ebenfalls größer mit.
+  const DOT = 84;
+  const GAP = 32;
+  const WOLF = DOT + 14;
   const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
   const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
   const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);

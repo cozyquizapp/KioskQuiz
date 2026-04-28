@@ -2,7 +2,7 @@
 
 > Pub-Quiz-App mit Territorium-Grid-Mechanik. 2-10 Teams, Beamer-Show + Phone-Eingabe.
 > Solo-Projekt von Wolf (cozywolf-Marke).
-> **Letztes Update**: 2026-04-26 · Branch: `main`
+> **Letztes Update**: 2026-04-28 · Branch: `main`
 
 ---
 
@@ -19,26 +19,89 @@
 
 ## Aktiver Block
 
-### 🎨 Gouache-Stil als Parallel-Theme (seit 2026-04-26)
+### 🆕 Drei neue Spielmechaniken (seit 2026-04-28)
 
-Aquarell-/Bilderbuch-Variante wird **parallel zum bestehenden Cozy-Dark** aufgebaut.
-Alter Stil bleibt während der Migration unangetastet — Live-Quizze laufen weiter
-im klassischen Look.
+Großer Schub: 4×4-Finalrunde + 2 neue Bunte-Tüete-Sub-Mechaniken sind komplett
+in die App integriert (Backend + Frontend + Builder + Dummy-AI + Auto-Flow +
+Setup-Toggles). Alle 5 Sample-Drafts (qq-vol-1 bis qq-vol-5) wurden mit
+Test-Fragen für die neuen Mechaniken angereichert (siehe „Test-Routen" unten).
 
-**Komplette Doku, Avatar-Hex-Werte, Migration-Plan, Verbots-Liste**:
-👉 **[`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)**
+#### 🔗 4×4 Connections — eigene Finalrunde
+- 16 Begriffe in 4×4-Raster, 4 versteckte Gruppen à 4 Items
+- Teams jagen **parallel** auf eigenem Phone, sehen sich Submissions ab anderer Teams nicht
+- Beamer **spoiler-safe**: Tiles werden erst im Reveal eingefärbt
+- Pro gefundener Gruppe = 1 Aktion. Ranking: meiste Gruppen → schnellster bei Tie
+- Eigene Phase `CONNECTIONS_4X4` mit Sub-Phasen `intro → active → reveal → placement → done`
+- Auto-Trigger ans Ende von Runde 4 (Setup-Toggle „🔗 Finale: An/Aus")
+- Skip-Button für Notfälle, Done → GAME_OVER per Space
+- Live-Status-Reihe wie CHEESE (✓ / ✕ / 🏁 pro Team)
+- Default-Timer 3 Min, Max-Fails 2 (im Setup anpassbar)
+- Avatare auf Gruppen-Labels im Reveal (wer fand was, sortiert nach Speed)
+- Dummy-AI funktioniert (60 % Chance auf echte Gruppe, fallback zufällige 4er)
 
-Status:
-- [x] Library `frontend/src/gouache/` — Tokens + SVG-Filter + 11 Painted-Components
-- [x] 16 Aquarell-Avatare (8 Tiere × open/closed eyes) in `public/avatars/gouache/`
-- [x] Auto-Fallback-Hook (Gouache-PNG wenn da, sonst cozy-cast)
-- [x] Stilstudie auf `/gouache` (im Menü als „Gouache Lab" 🎨)
-- [x] PWA-Build-Fix (unkomprimierte PNGs aus Precache excludet)
-- [x] **Phase 1**: `/lobby-gouache` — echte Welcome-Lobby mit Live-Sockets (parallel zu `/beamer`)
-- [x] **Phase 2**: `/team-gouache` — Phone-View mit Setup + Schätzchen/Mucho/Cheese live spielbar
-- [ ] **Phase 3-4**: Spielende / Beamer mit allen 5 Kategorien
-- [ ] **Phase 5**: PNG-Komprimierung (sharp/squoosh, 200-500 KB pro Bild)
-- [ ] **Phase 6**: Theme-Switch im Moderator-Setup
+#### 🧩 4 gewinnt (Only Connect) — BunteTüete-Sub
+- 4 Hinweise nacheinander aufgedeckt (Default 15 s zwischen Hinweisen)
+- Teams raten Verbindungs-Begriff per Freitext (1 Versuch — falsch = gesperrt)
+- **Multi-Winner**: alle korrekten Teams gewinnen, sortiert nach `(atHintIdx ASC, submittedAt ASC)`
+- Punkte (Stat): 4/3/2/1 je nach Hint-Index
+- Auto-Transition zu QUESTION_REVEAL wenn alle Teams fertig oder letzter Hint-Timer
+  abläuft (Standard-Pipeline greift dann für Placement)
+- Beamer: 4 Hint-Slots als Grid, aktueller Hint pulsiert; Reveal zeigt Lösung +
+  alle Winner sortiert mit 🥇🥈🥉 + Punkte-Pillen
+- Match-Logik wie CHEESE (case-insensitive, substring-match, acceptedAnswers-Liste)
+- Dummy-AI funktioniert
+
+#### 🎭 Bluff (Fibbage-Style) — BunteTüete-Sub
+- 3 Phasen: **write** → (review optional) → **vote** → **reveal**
+- Teams tippen plausible Falsch-Antwort, dann Voting auf gemischte Liste
+- **Per-Team Random-4-Subset**: jedes Team sieht real + 3 zufällige andere Bluffs
+  (NICHT eigener Bluff — kein Filter-Frust). Bei vielen Teams keine Beamer-Spoiler.
+- Beamer während Vote: KEINE Optionen sichtbar, nur 🗳 + Live-Counter + Avatar-✓
+- Reveal: voller Pool mit Voter-Avataren + Bluff-Author-Avataren pro Option
+- Punkte (Teilpunkte wie Top-5):
+  - +2 wenn Team echte Antwort gewählt hat
+  - +1 pro Reinfall auf eigenen Bluff (bei merged Bluffs aufgeteilt)
+  - +3 Truth-Accident wenn Bluff = echte Antwort (gefiltert, nicht in Optionen)
+- Aktion an Top-Team(s), Speed-Tie-Break wie sonst
+- Setup-Toggle „🎭 Bluff-Check" (Moderator-Review der Bluffs vor Voting, Default Aus)
+- Phasen-Timer Default 30+30 s, im Setup anpassbar
+- Auto-Transition zu QUESTION_REVEAL nach Vote → Standard-Pipeline + qqMarkCorrect
+- Dummy-AI funktioniert (Number-Bluff bei Zahl-Antworten ±10-30 %, sonst Filler-Liste)
+
+#### Setup-Toggles (alle in der Lobby-Quick-Settings)
+- **🎮 Runden 3/4** — Default 4. 20q-Draft + Klick auf 3 truncated auf 15 Fragen
+- **🔗 Finale An/Aus** — `connectionsEnabled` (default an)
+- **🔀 Reihenfolge** — Zufällig vs. aus Draft (default zufällig, mit
+  Anti-Adjacency an Rundengrenzen)
+- **🎭 Bluff-Check** — Moderator-Review der Bluffs (default aus)
+
+#### Sample-Drafts — Test-Routen pro Vol
+
+| Draft | 🧩 4 gewinnt | 🎭 Bluff |
+|---|---|---|
+| Vol 1 | P2: Komponisten 9 Sinfonien | P4: Google-Originalname (BackRub) |
+| Vol 2 | P2: Tom Hanks Filme | P3: Olympia '72 Maskottchen (Waldi) |
+| Vol 3 | P3: Nobelpreis Physik | P4: Jeanne Calment Lebensalter (122) |
+| Vol 4 | P1: Apple-Produkte | P2: Inseln Indonesiens (17.508) |
+| Vol 5 | P1: Sternzeichen | P4: Zahnpasta-Tube Jahr (1892) |
+
+Vol 4 / Vol 5 sind die schnellsten Test-Pfade (4 gewinnt direkt in Phase 1).
+
+Migration: bestehende qq-vol-* Drafts in File + DB werden beim nächsten
+Backend-Start automatisch refresht (Detection: hasNewSubMechanics).
+
+#### Gefixte Bugs (relativ neu)
+- Auto-Flow am Ende von Runde 4 → 4×4 starten (`b1c65e8a` `ecc053d0`)
+- Autoplay-Endless-Loop bei MUCHO mit `nonEmpty=0` (`e1972c12`)
+- Spoiler-Leak bei 4×4 (Beamer färbte Tiles während Active) (`6feca3db`)
+- Truth-Accident-Handling (Bluff = real → ausgefiltert + Sonderbonus)
+- Connection-Avatare-Race-Layout (mehrere Iterationen, finaler Stand: Status-Reihe wie CHEESE) (`daa39fb4`)
+
+### 🎨 Gouache-Stil als Parallel-Theme (pausiert seit 2026-04-26)
+
+Aquarell-Variante liegt auf Eis — Fokus auf Cozy-Quiz-Optimierung. Bestehende
+`/lobby-gouache` und `/team-gouache` Pages bleiben als Spielwiese.
+Komplette Doku: [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)
 
 ---
 
@@ -208,6 +271,10 @@ backend/.env.example                        — Alle Env-Vars als Template
 
 ## Bekannte Bugs
 
+- **CHEESE-Fragen in qq-vol-* Drafts haben aktuell KEINE Bilder** — Drafts werden
+  nur mit Text + Antwort gespawnt. Bilder müssen via QQ Builder pro Frage hochgeladen
+  oder per URL gepflegt werden. Ohne Bild ist die Frage praktisch unspielbar.
+  → Ticket: Auto-Image-Insert oder Frontend-Fallback bei fehlendem Bild.
 - MongoDB Films-Frage hat falsches `bunteTuete`-Feld (enthält Football oneOfEight statt Films)
   — direkt in DB fixen
 - `CreatorCanvasPage.tsx` hat TypeScript-Errors — pre-existing, Cozy60, ignorieren

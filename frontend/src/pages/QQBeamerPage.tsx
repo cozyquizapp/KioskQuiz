@@ -8509,9 +8509,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 // der Chip mit Goldrand reicht.
                 const showTimePills = isCorrect && highestBets.length > 1;
                 return (
-                  <div key={i} style={{ position: 'relative' }}>
+                  <div key={i} style={{ position: 'relative', display: 'flex', height: '100%' }}>
                     <div style={{
                       position: 'relative', overflow: 'hidden',
+                      // 2026-04-28: User-Wunsch — alle 3 ZvZ-Cards gleich hoch.
+                      // Wenn eine Option 2-zeilig wird, soll der Rest mitwachsen,
+                      // sonst wirken die Cards inkonsistent. flex:1 + height:100%
+                      // zwingt die Inner-Card auf Row-Höhe.
+                      flex: 1,
                       borderRadius: 20, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                       border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,

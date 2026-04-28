@@ -9650,15 +9650,23 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             fontWeight: 900, color: '#FBBF24',
             textShadow: '0 0 20px rgba(251,191,36,0.5)',
             letterSpacing: '0.08em',
+            // Feste Box damit Question→Reveal kein Wackeln verursacht (Cards
+            // links/rechts blieben sonst trotz minWidth durch Höhen-Reflow
+            // versetzt).
             minWidth: 'clamp(140px, 14vw, 200px)',
-            // Bei reveal: groessere font + scale-pop wenn sich Wert aendert
-            fontSize: isReveal ? 'clamp(28px, 3.4vw, 48px)' : 'clamp(40px, 5vw, 80px)',
-            transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
+            height: 'clamp(80px, 9vw, 130px)',
+            // Font-Size konstant: Reveal-Text ist länger (MEHR ↑ vs ?) — wenn
+            // wir font-size shrinken sieht es zwar passend aus, schiebt aber
+            // visuell. Stattdessen feste mittlere Größe für beide States.
+            fontSize: 'clamp(34px, 4.2vw, 60px)',
           }}>
             <span
               key={isReveal ? 'reveal' : 'q'}
               style={{
-                animation: isReveal ? 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) 0.3s both' : undefined,
+                // Sanfter Cross-Fade ohne Scale — vorher revealAnswerBam mit
+                // scale 0.8→1.04→1 bouncte den Text. User-Wunsch 2026-04-28:
+                // 'nur die Zahl wechselt sich, kein Wackeln drumherum'.
+                animation: isReveal ? 'comebackHLFadeIn 0.5s ease 0.25s both' : undefined,
                 display: 'inline-block',
               }}
             >
@@ -9666,9 +9674,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </span>
           </div>
 
-          {/* Subject-Card: zu erratender Wert. Border + Glow werden bei
-              Reveal staerker (solid + dicker). Inhalt bleibt strukturell
-              gleich — nur ??? wird zur SlotMachineNumber. */}
+          {/* Subject-Card: zu erratender Wert. Inhalt bleibt strukturell
+              gleich — nur ??? wird zur SlotMachineNumber. Border-Width fix
+              auf 3px (vorher 2→3px Sprung beim Reveal verursachte 2px-
+              Layout-Shift). Border-Style wechselt zwar dashed→solid, das
+              ist aber nur visuell und verschiebt nichts. */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
@@ -9677,13 +9687,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               : 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))',
             border: isReveal
               ? '3px solid #FBBF24'
-              : '2px dashed rgba(251,191,36,0.55)',
+              : '3px dashed rgba(251,191,36,0.55)',
             boxShadow: isReveal
               ? '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)'
               : '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
-            transition: 'background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease',
+            transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
@@ -11653,6 +11663,24 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
 
   // Track newly placed cells for pop animation (#5) + stolen cells + neighbor reactions + board shake
   const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
+  // Joker-formation-Diff: trackt cells die GERADE jokerFormed=true geworden sind,
+  // damit sie kurz pulsieren (User-Wunsch 2026-04-28: Joker sichtbarer machen).
+  const jokerKey = s.grid.flatMap(row => row.map(c => c.jokerFormed ? '1' : '0')).join('');
+  const prevJokerKeyRef = useRef<string>(jokerKey);
+  const justFormedJokerRef = useRef<Set<string>>(new Set());
+  if (jokerKey !== prevJokerKeyRef.current) {
+    const fresh = new Set<string>();
+    s.grid.forEach((row, r) => row.forEach((cell, c) => {
+      const idx = r * s.gridSize + c;
+      const prevWas1 = prevJokerKeyRef.current[idx] === '1';
+      if (cell.jokerFormed && !prevWas1) fresh.add(`${r}-${c}`);
+    }));
+    if (fresh.size > 0) {
+      justFormedJokerRef.current = fresh;
+      setTimeout(() => { justFormedJokerRef.current = new Set(); }, 2200);
+    }
+    prevJokerKeyRef.current = jokerKey;
+  }
   // Initial-Snapshot = aktueller Stand, damit beim Mount KEIN Diff feuert
   // (sonst wuerde Zelle (0,0) als „neu" erkannt, weil ''.split(',') nur ein Element ergibt).
   const prevGridRef = useRef<string>(gridKey);
@@ -11742,6 +11770,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const isFlash = flashCellKey === `${r}-${c}`;
             const isAccent = isNew || isStolen || isFlash;
             const showStar = showJoker && cell.jokerFormed;
+            // Joker GERADE geformt → 2.2s Goldglow-Pulse als Beamer-Highlight.
+            const isJustFormedJoker = justFormedJokerRef.current.has(`${r}-${c}`);
             const isFrozen = cell.frozen;
             const isStuck = cell.stuck;
             const isShielded = !!cell.shielded && !cell.stuck;
@@ -11754,7 +11784,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 width: cellSize, height: cellSize, borderRadius: cellRadius,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
-                zIndex: isAccent ? 5 : isStuck ? 4 : 1,
+                zIndex: isJustFormedJoker ? 6 : (isAccent ? 5 : isStuck ? 4 : 1),
                 // 3D-Lift fuer Stapel: Cell wird um 3px gehoben + bekommt einen
                 // tiefen Drop-Shadow → wirkt physisch hoeher als die Nachbarn.
                 transform: isStuck ? 'translateY(-3px)' : undefined,
@@ -11762,7 +11792,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(251,191,36,0.45))'
                   : undefined,
                 transition: 'transform 0.4s cubic-bezier(0.34,1.4,0.64,1), filter 0.4s ease',
-                animation: isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
+                animation: isJustFormedJoker
+                  ? 'jokerCellPulse 2.2s cubic-bezier(0.4,0,0.2,1) both'
+                  : isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
               }}>
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{

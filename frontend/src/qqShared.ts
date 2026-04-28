@@ -458,6 +458,21 @@ export const QQ_BEAMER_CSS = `
     70%  { transform: scale(0.98); filter: brightness(1.05); }
     100% { transform: scale(1); filter: brightness(1); }
   }
+  /* Sanfter Cross-Fade ohne Scale — für Comeback-HL Reveal damit beim
+     ?→MEHR↑/WENIGER↓ Wechsel KEIN Scale-Wackeln entsteht. */
+  @keyframes comebackHLFadeIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  /* Joker-Cell-Pulse — wenn ein Team gerade ein 2×2 oder 4×1 geformt hat,
+     leuchten die beteiligten Zellen 2.2s gold auf. */
+  @keyframes jokerCellPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.0), 0 0 0 0 rgba(251,191,36,0.0); }
+    20%  { box-shadow: 0 0 0 4px rgba(251,191,36,0.95), 0 0 28px 8px rgba(251,191,36,0.85); }
+    50%  { box-shadow: 0 0 0 6px rgba(251,191,36,0.7), 0 0 40px 14px rgba(251,191,36,0.6); }
+    80%  { box-shadow: 0 0 0 3px rgba(251,191,36,0.45), 0 0 22px 6px rgba(251,191,36,0.35); }
+    100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0), 0 0 0 0 rgba(251,191,36,0.0); }
+  }
   /* Kaskade: Team-Avatare poppen einzeln auf die Option — leichter Magnet-Drop von oben mit Bounce + Glow */
   @keyframes muchoVoterDrop {
     0%   { opacity: 0; transform: translateY(-28px) scale(0.55) rotate(-8deg); filter: brightness(1.8) drop-shadow(0 0 12px rgba(255,255,255,0.4)); }

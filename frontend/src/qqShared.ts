@@ -580,6 +580,12 @@ export const QQ_BEAMER_CSS = `
     72%  { opacity: 1; transform: scale(1); filter: blur(0); }
     100% { opacity: 0; transform: scale(0.55); filter: blur(2px); }
   }
+  /* Comeback H/L Round-Wechsel: nur der Frage-Text fadet sanft durch,
+     Card-Layout drumherum bleibt 100% stehen. */
+  @keyframes qqHlQuestionFade {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

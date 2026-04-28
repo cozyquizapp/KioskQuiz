@@ -716,24 +716,44 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // (User-Wunsch 2026-04-28: 'nach pause weiter drücken vlt mit timer starten,
   // bei quiz start nach regeln vor runde 1 auch ein timer'). 3-2-1-Overlay
   // gibt den Spielern Zeit zum Handy-Schnappen / Aufmerksamkeit-Sammeln.
+  // 2026-04-28-Update: Während Countdown wird der ALTE Bildschirm gefreezed
+  // (PausedView / RulesView) — User-Wunsch 'pause darf keinen bug auslösen'.
+  // Sonst rendert die neue Phase schon hinter dem Backdrop-Blur und
+  // animiert/spielt durch.
   const prevReadyPhaseRef = useRef(s.phase);
   const [getReady, setGetReady] = useState<{ id: number; reason: 'resume' | 'start' } | null>(null);
+  // Snapshot-Ref: hält den State-Stand vom Moment des Phase-Wechsels — wird
+  // während des Countdowns gerendert statt des Live-States.
+  const frozenStateRef = useRef<QQStateUpdate | null>(null);
   useEffect(() => {
     const prev = prevReadyPhaseRef.current;
     prevReadyPhaseRef.current = s.phase;
     // 1) Resume nach Pause — egal in welche Phase wir zurückkehren
     if (prev === 'PAUSED' && s.phase !== 'PAUSED' && s.phase !== 'LOBBY') {
+      // Wir frieren den letzten PausedView-State (mit phase=PAUSED) — der ist
+      // im aktuellen `s` allerdings schon überschrieben. Workaround:
+      // erzeugen einen Pseudo-State der phase erzwingt.
+      frozenStateRef.current = { ...s, phase: 'PAUSED' as any };
       setGetReady({ id: Date.now(), reason: 'resume' });
-      const t = window.setTimeout(() => setGetReady(null), 3200);
+      const t = window.setTimeout(() => {
+        frozenStateRef.current = null;
+        setGetReady(null);
+      }, 3200);
       return () => window.clearTimeout(t);
     }
     // 2) Quiz-Start nach Regeln → erste Runde
     if (prev === 'RULES' && s.phase === 'PHASE_INTRO' && s.gamePhaseIndex === 1) {
+      frozenStateRef.current = { ...s, phase: 'RULES' as any };
       setGetReady({ id: Date.now(), reason: 'start' });
-      const t = window.setTimeout(() => setGetReady(null), 3200);
+      const t = window.setTimeout(() => {
+        frozenStateRef.current = null;
+        setGetReady(null);
+      }, 3200);
       return () => window.clearTimeout(t);
     }
   }, [s.phase, s.gamePhaseIndex]);
+  // Während Countdown rendern wir den frozen-Snapshot statt des Live-States.
+  const renderState: QQStateUpdate = (getReady && frozenStateRef.current) ? frozenStateRef.current : s;
 
   // ── Sound: sync volume & config from server state ──
   // Volume only applies to SFX (music has its own volume handling)
@@ -896,12 +916,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     // bei jedem Team-Wechsel an. Die Musik laeuft fuer die gesamte HP-Runde.
   }, [s.timerEndsAt, s.phase, s.musicMuted, s.currentQuestion?.id, s.currentQuestion?.musicUrl, s.currentQuestion?.category]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Music: Lobby-Loop in Lobby / Welcome / RULES / Pause ──
+  // ── Music: Lobby-Loop in Lobby / Welcome / RULES / Pause / FINALE ──
   // Erweitert auf alle RULES-Slides (vorher nur Welcome bei -2), damit
   // der Regel-Walkthrough nicht in komplett stillem Raum stattfindet.
+  // 2026-04-28: CONNECTIONS_4X4 (Großes Finale) bekommt auch Hintergrund-Musik
+  // (User-Wunsch: 'während Finale keine Musik und keine Sounds' war Bug).
   useEffect(() => {
     const inRules = s.phase === 'RULES';
-    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || inRules);
+    const inFinale = s.phase === 'CONNECTIONS_4X4';
+    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || inRules || inFinale);
     if (shouldLoop) {
       resumeAudio();
       startLobbyLoop();
@@ -1259,6 +1282,46 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     s.sfxMuted, s.currentQuestion?.id,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Finale (CONNECTIONS_4X4) Sounds ─────────────────────────────────────────
+  // (User-Wunsch 2026-04-28: 'während Finale keine Musik und keine Sounds').
+  // Music siehe oben (lobby-loop in CONNECTIONS_4X4 phase). SFX tracken hier
+  // das Connections-State für Group-Found / Phase-Wechsel.
+  const prevConnPhaseRef = useRef<string | null>(null);
+  const prevConnFoundCountsRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const c = s.connections;
+    if (!c) {
+      prevConnPhaseRef.current = null;
+      prevConnFoundCountsRef.current = {};
+      return;
+    }
+    if (s.sfxMuted) {
+      prevConnPhaseRef.current = c.phase;
+      Object.keys(c.teamProgress).forEach(id => {
+        prevConnFoundCountsRef.current[id] = c.teamProgress[id]?.foundGroupIds.length ?? 0;
+      });
+      return;
+    }
+    // Phase-Wechsel
+    if (c.phase !== prevConnPhaseRef.current) {
+      if (c.phase === 'active' && prevConnPhaseRef.current === 'intro') {
+        try { playQuestionStart(); } catch {}
+      } else if (c.phase === 'reveal') {
+        try { playFanfare(); } catch {}
+      }
+      prevConnPhaseRef.current = c.phase;
+    }
+    // Pro neu gefundener Gruppe pro Team einen playCorrect-Klick
+    Object.entries(c.teamProgress).forEach(([id, tp]) => {
+      const now = tp?.foundGroupIds.length ?? 0;
+      const before = prevConnFoundCountsRef.current[id] ?? 0;
+      if (now > before) {
+        try { playCorrect(); } catch {}
+      }
+      prevConnFoundCountsRef.current[id] = now;
+    });
+  }, [s.connections, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Comeback H/L Sounds — bisher komplett stumm ─────────────────────────────
   // - phase 'question' (start) → playQuestionStart
   // - phase 'reveal'           → playReveal (Drama-Moment)
@@ -1428,24 +1491,27 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             willChange: 'transform, opacity, filter',
           }}
         >
-          {s.phase === 'LOBBY' && !s.setupDone && <PausedView state={s} mode="preGame" />}
-          {s.phase === 'LOBBY' && s.setupDone  && <LobbyView state={s} />}
-          {s.phase === 'RULES'           && <RulesView state={s} />}
-          {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={s} />}
-          {s.phase === 'PHASE_INTRO'     && <PhaseIntroView state={s} />}
-          {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && !placementFlash && (
-            <QuestionView key={s.currentQuestion?.id} state={s} revealed={s.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
+          {/* Während Countdown: renderState ist Snapshot der vorherigen Phase
+              (PausedView / RulesView bleiben sichtbar und gefreezed). Nach
+              Countdown schwenkt automatisch zum Live-State. */}
+          {renderState.phase === 'LOBBY' && !renderState.setupDone && <PausedView state={renderState} mode="preGame" />}
+          {renderState.phase === 'LOBBY' && renderState.setupDone  && <LobbyView state={renderState} />}
+          {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
+          {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
+          {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}
+          {(renderState.phase === 'QUESTION_ACTIVE' || renderState.phase === 'QUESTION_REVEAL') && !placementFlash && (
+            <QuestionView key={renderState.currentQuestion?.id} state={renderState} revealed={renderState.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
           )}
-          {s.phase === 'PLACEMENT'       && <PlacementView key={`place-${s.questionIndex}`} state={s} use3D={use3D} enable3DTransition={s.enable3DTransition} />}
+          {renderState.phase === 'PLACEMENT'       && <PlacementView key={`place-${renderState.questionIndex}`} state={renderState} use3D={use3D} enable3DTransition={renderState.enable3DTransition} />}
           {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
           {placementFlash && (
             <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
           )}
-          {s.phase === 'COMEBACK_CHOICE' && <ComebackView state={s} />}
-          {s.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={s} />}
-          {s.phase === 'PAUSED'          && <PausedView state={s} />}
-          {s.phase === 'GAME_OVER'       && <GameOverView state={s} roomCode={roomCode} />}
-          {s.phase === 'THANKS'          && <ThanksView state={s} roomCode={roomCode} />}
+          {renderState.phase === 'COMEBACK_CHOICE' && <ComebackView state={renderState} />}
+          {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
+          {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
+          {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
+          {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
         </div>
       )}
 
@@ -10025,13 +10091,27 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Frage-Text — Format-B custom, Format-A auto-generiert */}
+        {/* Frage-Text — Format-B custom, Format-A auto-generiert.
+            User-Wunsch 2026-04-28: Beim Rundenwechsel soll NUR der Frage-Text
+            sich austauschen, nicht die ganze Card neu animieren ('keine neue
+            Folie'). Inner-key auf hl.round → smoother Cross-Fade nur des
+            Texts. Reservierte minHeight verhindert Card-Hop bei kürzeren
+            Fragen. */}
         <div style={{
-          fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 800, color: '#F1F5F9',
-          textAlign: 'center', maxWidth: 1200, lineHeight: 1.3,
-          animation: 'contentReveal 0.4s ease 0.1s both',
+          minHeight: 'clamp(58px, 7vh, 96px)',
+          maxWidth: 1200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {questionText}
+          <div
+            key={`hlq-${hl.round}`}
+            style={{
+              fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 800, color: '#F1F5F9',
+              textAlign: 'center', lineHeight: 1.3,
+              animation: 'qqHlQuestionFade 0.6s ease both',
+            }}
+          >
+            {questionText}
+          </div>
         </div>
 
         {/* Anchor + Subject - zwei Karten nebeneinander */}
@@ -10779,11 +10859,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // Fortschrittsbaum — nur in Pause (nicht im Pre-Game, da kein Spiel läuft)
-  // User-Feedback 2026-04-28: 'Progress-Bar in Pause sehr klein' → Tree wird
-  // jetzt in 'hero' rendered (größere Dots + Labels + Wolf-Avatar) und in einem
-  // großen Wrapper-Container für ordentliche Präsenz.
+  // Aktuelle Runde — kompakt (User-Feedback 2026-04-28: 'die ganze progress
+  // bar ist zu lang, zeige am besten nur die aktuelle Runde'). Statt der
+  // vollen Tree-Übersicht jetzt: Runden-Pille + Frage-Fortschritt + RoundMiniTree
+  // (nur Dots der aktuellen Runde) — passt in einer Card-Zeile.
   if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
+    const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
+    const roundColor = phaseColors[((s.gamePhaseIndex ?? 1) - 1) % 3];
+    const questionInPhase = (s.questionIndex % 5) + 1;
     panels.push({ key: 'progress', node: (
       <div>
         <div style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -10791,10 +10874,72 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {de ? 'Wo sind wir?' : 'Where are we?'}
         </div>
         <div style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          minHeight: 'clamp(140px, 18vh, 220px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
         }}>
-          <QQProgressTree state={s} variant="hero" />
+          {/* Big Round Pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 14,
+            padding: '14px 32px', borderRadius: 999,
+            background: `${roundColor}20`,
+            border: `2.5px solid ${roundColor}`,
+            boxShadow: `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          }}>
+            <span style={{
+              fontSize: 'clamp(36px, 4.5vw, 64px)', fontWeight: 900,
+              color: roundColor, lineHeight: 1,
+              textShadow: `0 0 16px ${roundColor}88`,
+            }}>{s.gamePhaseIndex}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1.1 }}>
+              <span style={{
+                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900,
+                color: `${roundColor}cc`, letterSpacing: '0.18em', textTransform: 'uppercase',
+              }}>
+                {de ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}` : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
+              </span>
+              <span style={{
+                fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 800,
+                color: '#e2e8f0',
+              }}>
+                {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+              </span>
+            </div>
+          </div>
+          {/* Mini-Tree der aktuellen Runde */}
+          <RoundMiniTree state={s} catColor={roundColor} />
+        </div>
+      </div>
+    )});
+
+    // Aktuelles Grid als eigener Slide (User-Wunsch 2026-04-28: 'gerne das
+    // aktuelle grid auf einem der slides'). Reuse MiniGrid mit großzügiger Größe.
+    panels.push({ key: 'currentGrid', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
+          {de ? 'Aktuelles Brett' : 'Current Board'}
+        </div>
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          padding: 'clamp(14px, 2vw, 28px)',
+        }}>
+          <MiniGrid state={s} size={420} />
+        </div>
+        {/* Mini-Legende: Team-Avatare mit Cell-Counts unter dem Grid */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12,
+          marginTop: 14,
+        }}>
+          {[...s.teams].sort((a, b) => b.totalCells - a.totalCells).map(t => (
+            <div key={t.id} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 12px', borderRadius: 999,
+              background: `${t.color}15`,
+              border: `1.5px solid ${t.color}55`,
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} size={28} />
+              <span style={{ fontWeight: 900, color: t.color, fontSize: 14 }}>{t.totalCells}</span>
+            </div>
+          ))}
         </div>
       </div>
     )});
@@ -11475,7 +11620,16 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
     );
   }
 
-  const showBoard = c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement';
+  // Bug-Fix 2026-04-28 (10-prompt-old): Während c.phase === 'placement' soll
+  // das TERRITORY-GRID gezeigt werden (wo die Teams setzen), nicht das 4×4-
+  // Items-Grid. Das 4×4 hat seine Funktion erfüllt — jetzt ist Placement
+  // wichtig, sonst sieht man "Setzen läuft" ohne Grid zum Setzen. Wir
+  // delegieren an PlacementView (gleiches Look wie nach normaler Runde).
+  if (c.phase === 'placement') {
+    return <PlacementView state={s} />;
+  }
+
+  const showBoard = c.phase === 'active' || c.phase === 'reveal';
 
   return (
     <div style={{
@@ -11594,35 +11748,52 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
 function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections!;
+  // 2026-04-28 Resize: User-Feedback 'so riesig und nicht so wie der rest'.
+  // Card-Wrapper raus → free-floating Elements wie in PhaseIntroView. Sizing
+  // angeglichen: Title in 3D-Layered-Glow-Stil wie Cat-Titles, Pills bleiben.
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      gap: 24, position: 'relative', zIndex: 5,
-      padding: 'clamp(20px, 4vh, 50px) clamp(24px, 4vw, 60px)',
-      borderRadius: 28,
-      background: 'rgba(251,191,36,0.06)',
-      border: '2px solid rgba(251,191,36,0.32)',
-      boxShadow: '0 0 60px rgba(251,191,36,0.15)',
-      animation: 'contentReveal 0.5s ease 0.2s both',
+      gap: 20, position: 'relative', zIndex: 5,
+      padding: 'clamp(12px, 2vh, 24px) clamp(16px, 3vw, 40px)',
+      animation: 'contentReveal 0.5s ease 0.15s both',
     }}>
-      <div style={{ fontSize: 'clamp(60px, 8vw, 110px)' }}>🧩</div>
       <div style={{
-        fontSize: 'clamp(34px, 4.4vw, 64px)', fontWeight: 900,
-        color: '#fde68a', textAlign: 'center', lineHeight: 1.1, maxWidth: 1200,
-        textShadow: '0 0 40px rgba(251,191,36,0.4)',
+        fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 1,
+        animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both, cfloat 4s ease-in-out 1s infinite',
+        filter: 'drop-shadow(0 4px 18px rgba(251,191,36,0.45))',
+      }}>🧩</div>
+      <div style={{
+        fontFamily: "'Nunito', system-ui, sans-serif",
+        fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
+        color: '#FBBF24',
+        textAlign: 'center',
+        letterSpacing: '-0.005em',
+        textShadow:
+          '0 0 14px rgba(251,191,36,0.65), ' +
+          '0 0 40px rgba(251,191,36,0.45), ' +
+          '0 0 96px rgba(251,191,36,0.25), ' +
+          '0 5px 0 rgba(0,0,0,0.45), ' +
+          '0 14px 28px rgba(0,0,0,0.55)',
+        animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
       }}>
         {lang === 'de' ? 'Großes Finale' : 'Grand Finale'}
       </div>
       <div style={{
-        fontSize: 'clamp(20px, 2.4vw, 34px)', fontWeight: 700,
-        color: '#e2e8f0', textAlign: 'center', lineHeight: 1.3, maxWidth: 1100,
+        fontSize: 'clamp(22px, 2.7vw, 38px)', fontWeight: 800,
+        color: '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1100,
+        textShadow: '0 0 22px rgba(251,191,36,0.3)',
+        animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
       }}>
         {lang === 'de'
           ? 'Findet 4 Gruppen — gewinnt Felder fürs Spielfeld.'
           : 'Find 4 groups — earn cells on the board.'}
       </div>
-      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100 }}>
+      <div style={{
+        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100,
+        animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
+      }}>
         <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? '4 Begriffe → abgeben' : '4 terms → submit'} />
         <ConnectionsRulePill emoji="🏆" text={lang === 'de' ? '1 Gruppe = 1 Aktion' : '1 group = 1 action'} />
         <ConnectionsRulePill emoji="❌" text={lang === 'de' ? `${c.maxFailedAttempts} Fehler → raus` : `${c.maxFailedAttempts} fails → out`} />
@@ -11967,31 +12138,45 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           {lang === 'en' ? 'Game Over' : 'Spielende'}
         </div>
 
-        {/* Hero — Trophy + Avatar + Name + Score */}
-        {winner && (
+        {/* Hero — Trophy + Avatar + Name + Score.
+            User-Wunsch 2026-04-28: 'auflösen letztes team, dann vorletztes usw
+            bis zum Sieger (den als letztes)'. Winner-Hero bekommt einen
+            gestaffelten Delay basierend auf Anzahl Teams: jedes andere Team
+            wird zuerst revealed, dann erst der Sieger. */}
+        {winner && (() => {
+          const otherCount = sorted.length - 1;
+          // Pro anderem Team ~0.9s reveal-step, plus 0.6s Initial-Pause.
+          const winnerHeroDelay = 0.6 + otherCount * 0.9;
+          const trophyDelay = winnerHeroDelay + 0.5;
+          const sparkleStartDelay = winnerHeroDelay + 1.0;
+          const nameGlowDelay = winnerHeroDelay + 0.7;
+          const scoreCountDelay = winnerHeroDelay + 0.9;
+          const avatarShakeDelay = winnerHeroDelay + 0.4;
+          const avatarBreatheDelay = winnerHeroDelay + 1.1;
+          return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-          animation: 'finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both',
+          animation: `finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) ${winnerHeroDelay}s both`,
         }}>
           <div style={{
             fontSize: 'clamp(28px, 3vw, 42px)',
-            animation: 'finaleStarBurst 0.5s ease 0.9s both, finaleTrophyFloat 3.4s ease-in-out 1.5s infinite',
+            animation: `finaleStarBurst 0.5s ease ${trophyDelay}s both, finaleTrophyFloat 3.4s ease-in-out ${trophyDelay + 0.6}s infinite`,
           }}><QQEmojiIcon emoji="🏆"/></div>
 
           <div style={{ position: 'relative', display: 'inline-block', marginTop: 2 }}>
             <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(80px, 8vw, 120px)'} style={{
               boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}33`,
-              animation: 'celebShake 0.6s ease 1.2s both, finaleAvatarBreathe 4s ease-in-out 1.9s infinite',
+              animation: `celebShake 0.6s ease ${avatarShakeDelay}s both, finaleAvatarBreathe 4s ease-in-out ${avatarBreatheDelay}s infinite`,
             }} />
             {([
-              { top: '-8%',  left: '12%', delay: 1.8, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
-              { top: '18%',  left: '-10%', delay: 2.4, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
-              { top: '60%',  left: '-6%', delay: 3.1, dur: 2.6, size: 'clamp(10px, 1.1vw, 16px)' },
-              { top: '92%',  left: '32%', delay: 2.0, dur: 3.0, size: 'clamp(12px, 1.4vw, 20px)' },
-              { top: '88%',  left: '78%', delay: 2.7, dur: 2.8, size: 'clamp(14px, 1.6vw, 22px)' },
-              { top: '56%',  left: '102%', delay: 3.3, dur: 2.4, size: 'clamp(10px, 1.2vw, 16px)' },
-              { top: '14%',  left: '96%', delay: 2.2, dur: 3.4, size: 'clamp(12px, 1.4vw, 18px)' },
-              { top: '-6%',  left: '74%', delay: 2.9, dur: 2.6, size: 'clamp(14px, 1.5vw, 22px)' },
+              { top: '-8%',  left: '12%', delay: 0.0, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
+              { top: '18%',  left: '-10%', delay: 0.6, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
+              { top: '60%',  left: '-6%', delay: 1.3, dur: 2.6, size: 'clamp(10px, 1.1vw, 16px)' },
+              { top: '92%',  left: '32%', delay: 0.2, dur: 3.0, size: 'clamp(12px, 1.4vw, 20px)' },
+              { top: '88%',  left: '78%', delay: 0.9, dur: 2.8, size: 'clamp(14px, 1.6vw, 22px)' },
+              { top: '56%',  left: '102%', delay: 1.5, dur: 2.4, size: 'clamp(10px, 1.2vw, 16px)' },
+              { top: '14%',  left: '96%', delay: 0.4, dur: 3.4, size: 'clamp(12px, 1.4vw, 18px)' },
+              { top: '-6%',  left: '74%', delay: 1.1, dur: 2.6, size: 'clamp(14px, 1.5vw, 22px)' },
             ]).map((sp, i) => (
               <span key={i} style={{
                 position: 'absolute',
@@ -12001,7 +12186,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 lineHeight: 1,
                 color: '#FBBF24',
                 textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(255,255,255,0.6)`,
-                animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sp.delay}s infinite`,
+                animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sparkleStartDelay + sp.delay}s infinite`,
                 pointerEvents: 'none',
                 zIndex: 6,
               }}>✦</span>
@@ -12011,7 +12196,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           <div title={winner.name} style={{
             fontSize: 'clamp(24px, 2.6vw, 38px)', fontWeight: 900,
             color: winnerColor,
-            animation: 'finaleGlow 3s ease-in-out 1.5s infinite',
+            animation: `finaleGlow 3s ease-in-out ${nameGlowDelay}s infinite`,
             marginTop: 6,
             maxWidth: '90%',
             padding: '0 0.5em',
@@ -12022,7 +12207,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16,
-            animation: 'finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) 1.8s both',
+            animation: `finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) ${scoreCountDelay}s both`,
           }}>
             <span style={{
               fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
@@ -12033,49 +12218,63 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             </span>
           </div>
         </div>
-        )}
+          );
+        })()}
 
-        {/* Rankings — alle anderen Teams in EINER Reihe unter dem Sieger.
-            Jedes Team wird zu einer kleinen vertikalen Mini-Card (Medaille,
-            Avatar, Name, Score). Bei vielen Teams werden die Cards enger. */}
+        {/* Rankings — alle anderen Teams.
+            User-Wunsch 2026-04-28:
+            (1) Reveal-Reihenfolge: letztes Team zuerst, dann aufsteigend bis
+                zum 2. Platz (Sieger erscheint als Climax danach via
+                winnerHeroDelay). Index-basierte Animation reverse'd:
+                letztes Team-Card animiert bei 0.6s, vorletzte bei 1.5s, etc.
+            (2) Bei wenigen Teams (≤3 andere = 4 Teams insgesamt): vertikale
+                Spalte unter dem Sieger statt horizontaler Row. */}
         {sorted.length > 1 && (() => {
           const others = sorted.slice(1);
           const wn = others.length;
+          const useColumn = wn <= 3;
           // Avatar-Größe abhängig von Team-Zahl, damit alles in eine Reihe passt
-          const avatarSize = wn <= 3 ? 'clamp(48px, 4.4vw, 68px)'
+          const avatarSize = useColumn ? 'clamp(50px, 4.6vw, 72px)'
                             : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
                             : wn <= 7 ? 'clamp(34px, 3vw, 46px)'
                                        : 'clamp(28px, 2.4vw, 38px)';
-          const nameFs   = wn <= 5 ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(10px, 0.95vw, 12px)';
-          const scoreFs  = wn <= 5 ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(12px, 1.25vw, 16px)';
-          const cardPad  = wn <= 5 ? '8px 6px' : '6px 4px';
+          const nameFs   = useColumn ? 'clamp(13px, 1.4vw, 18px)' : wn <= 5 ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(10px, 0.95vw, 12px)';
+          const scoreFs  = useColumn ? 'clamp(16px, 1.7vw, 22px)' : wn <= 5 ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(12px, 1.25vw, 16px)';
+          const cardPad  = useColumn ? '10px 14px' : wn <= 5 ? '8px 6px' : '6px 4px';
+          // Reverse-Reveal: letztes (höchster Index) zuerst, niedrigster (Silver) zuletzt.
+          // Pro Team-Step ~0.9s.
+          const revealStep = 0.9;
           return (
             <div style={{
               display: 'flex',
-              flexDirection: 'row',
+              flexDirection: useColumn ? 'column' : 'row',
               flexWrap: 'nowrap',
               alignItems: 'stretch',
               justifyContent: 'center',
-              gap: wn <= 4 ? 'clamp(8px, 1vw, 14px)' : 'clamp(4px, 0.6vw, 8px)',
+              gap: useColumn ? 'clamp(6px, 1vh, 10px)' : (wn <= 4 ? 'clamp(8px, 1vw, 14px)' : 'clamp(4px, 0.6vw, 8px)'),
               width: '100%',
               marginTop: 'clamp(6px, 1vh, 14px)',
-              animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 1.6s both',
             }}>
               {others.map((tm, i) => {
                 const rank = i + 2;
                 const medal = rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+                // Reveal-Order: letztes Team zuerst (höchster i = niedrigster rank)
+                const revealOrderIdx = (others.length - 1) - i;
+                const revealDelay = 0.6 + revealOrderIdx * revealStep;
                 return (
                   <div key={tm.id} style={{
-                    flex: '1 1 0',
+                    flex: useColumn ? '0 0 auto' : '1 1 0',
                     minWidth: 0,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: 4,
+                    display: 'flex',
+                    flexDirection: useColumn ? 'row' : 'column',
+                    alignItems: 'center',
+                    gap: useColumn ? 12 : 4,
                     padding: cardPad,
                     borderRadius: 12,
-                    background: `linear-gradient(180deg, ${tm.color}1a, ${tm.color}08)`,
+                    background: `linear-gradient(${useColumn ? '90deg' : '180deg'}, ${tm.color}1a, ${tm.color}08)`,
                     border: `1.5px solid ${tm.color}55`,
                     boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
-                    animation: `finaleRank 0.5s cubic-bezier(0.34,1.2,0.64,1) ${2.0 + i * 0.08}s both`,
+                    animation: `finaleRank 0.55s cubic-bezier(0.34,1.2,0.64,1) ${revealDelay}s both`,
                   }}>
                     <span style={{
                       fontSize: 'clamp(11px, 1.1vw, 14px)',

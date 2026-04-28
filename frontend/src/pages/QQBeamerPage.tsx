@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo, Fragment } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, memo, Fragment } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -12843,6 +12843,35 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
   // F2: Rank-Change-Indikator (up/down Pfeil pro Team).
   const [rankChanges, setRankChanges] = useState<Record<string, 'up' | 'down'>>({});
+  // FLIP-Animation für Row-Reorder (User-Wunsch 2026-04-28: 'Swap zu schnell,
+  // smoother darstellen'). Snapshotted Positionen vor dem Re-Render → nach
+  // dem Re-Render Inverse-Transform anwenden, dann zur Identität animieren.
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const prevRowPositions = useRef<Record<string, number>>({});
+  useLayoutEffect(() => {
+    const els = rowRefs.current;
+    Object.entries(els).forEach(([id, el]) => {
+      if (!el) return;
+      const newTop = el.offsetTop;
+      const oldTop = prevRowPositions.current[id];
+      if (oldTop != null && oldTop !== newTop) {
+        const dy = oldTop - newTop;
+        // Inverse-Transform sofort, ohne Transition, dann zur Identität animieren
+        el.style.transition = 'none';
+        el.style.transform = `translateY(${dy}px)`;
+        // Zwei rAFs → erlaubt dem Browser den initialen Stil zu setzen,
+        // bevor die Transition aktiviert wird (verhindert dass die Animation
+        // weggesnappt wird).
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            el.style.transition = 'transform 0.7s cubic-bezier(0.34,1.05,0.5,1)';
+            el.style.transform = 'translateY(0)';
+          });
+        });
+      }
+      prevRowPositions.current[id] = newTop;
+    });
+  });
   useEffect(() => {
     const next: Record<string, 'up' | 'down'> = {};
     sorted.forEach((t, i) => {
@@ -12947,7 +12976,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
         const isActive = t.id === activeTeamId;
         const medal = medalFor(i, t.largestConnected);
         return (
-        <div key={t.id} style={{
+        <div
+          key={t.id}
+          ref={el => { rowRefs.current[t.id] = el; }}
+          style={{
           display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
           opacity: activeTeamId && !isActive ? 0.42 : 1,
@@ -12957,8 +12989,11 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           background: isActive ? `linear-gradient(135deg, ${t.color}22, ${t.color}08)` : 'transparent',
           border: isActive ? `2px solid ${t.color}` : '2px solid transparent',
           boxShadow: isActive ? `0 0 28px ${t.color}55, 0 0 60px ${t.color}22, inset 0 0 12px ${t.color}18` : 'none',
+          // transition: nur opacity/padding/background/box-shadow — die transform-
+          // transition wird im FLIP-Hook on-the-fly gesetzt.
           transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
           position: 'relative', overflow: 'visible',
+          willChange: 'transform',
         }}>
           {/* Hot-Seat-Spotlight wurde entfernt (Wolfs Wunsch) — der Box-Ring
               + Border am Container reichen als visueller Anker für das aktive
@@ -13047,8 +13082,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   zIndex: 9,
                 }} title={`${streaks[t.id]}x in Folge`}><QQEmojiIcon emoji="🔥"/></span>
               )}
-              {/* F2 Rank-Change-Indikator: Pfeil hoch/runter bei Platztausch. */}
-              {rankChanges[t.id] && (
+              {/* F2 Rank-Change-Pfeile entfernt 2026-04-28 (User-Wunsch:
+                  "die kleinen pfeile sind weird"). Der Swap selber
+                  läuft jetzt smooth via FLIP-Animation auf der Row (siehe
+                  useLayoutEffect rowRefs unten) — das vermittelt die
+                  Rang-Änderung visuell ohne extra Indikator. */}
+              {false && rankChanges[t.id] && (
                 <span aria-hidden style={{
                   position: 'absolute',
                   top: '50%',

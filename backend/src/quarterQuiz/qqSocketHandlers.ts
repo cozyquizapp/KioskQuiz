@@ -41,7 +41,7 @@ import {
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
   qqOnlyConnectStart, qqOnlyConnectAdvanceTeamHint, qqOnlyConnectSubmitGuess,
   qqOnlyConnectRevealAll, qqOnlyConnectReset, qqOnlyConnectAllDone,
-  qqOnlyConnectAutoFinish,
+  qqOnlyConnectAutoFinish, qqOnlyConnectMinHintReached,
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
@@ -803,7 +803,10 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       // Auto-Hint-Reveal seit 2026-04-28: Hints kommen auf dem Timer
       // automatisch — Dummies entscheiden NUR ob sie jetzt schon tippen
       // oder weiter abwarten. Mit höherem Hint-Level steigt die Lust zu raten.
-      const guessProb = curIdx === 0 ? 0.10 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.55 : 0.95;
+      // 2026-04-28: bei idx=0 NIE tippen — sonst beenden Dummies in
+      // Pure-Test-Lobbys die Runde bevor irgendwas zu sehen ist. Realistisch
+      // ist auch: erster Hinweis allein gibt selten genug Sicherheit.
+      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.55 : 0.95;
       const shouldGuess = Math.random() < guessProb;
 
       if (!shouldGuess) {
@@ -827,7 +830,11 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
         }
       }
       qqOnlyConnectSubmitGuess(live, localTeamId, guessText);
-      if (qqOnlyConnectAllDone(live)) {
+      // AutoFinish nur wenn mindestens Hint 2 (idx=1) gezeigt wurde — sonst
+      // beenden Dummies in Pure-Test-Lobbys die Runde in 5s. Wenn AllDone aber
+      // MinHint nicht erreicht: tick() in qqOnlyConnectStart triggert AutoFinish
+      // beim nächsten Hint-Advance.
+      if (qqOnlyConnectAllDone(live) && qqOnlyConnectMinHintReached(live)) {
         qqOnlyConnectAutoFinish(live);
       }
       broadcast(io, roomCode);
@@ -2588,7 +2595,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Multi-Winner: wenn alle Teams entweder richtig oder gesperrt sind,
         // automatisch zu QUESTION_REVEAL überführen + Winner markieren. So greift
         // die Standard-Pipeline (Placement-Queue, Aktionen, Autoplay) automatisch.
-        if (qqOnlyConnectAllDone(room)) {
+        // 2026-04-28 Gate: AutoFinish erst ab Hint 2 (idx=1) — verhindert
+        // Insta-End wenn Dummies in Test-Lobby alle in <5s schon locked sind.
+        // Falls AllDone aber MinHint noch nicht erreicht: Hint-Tick im
+        // qqOnlyConnectStart triggert AutoFinish beim nächsten Advance.
+        if (qqOnlyConnectAllDone(room) && qqOnlyConnectMinHintReached(room)) {
           qqOnlyConnectAutoFinish(room);
         }
         broadcast(io, payload.roomCode);

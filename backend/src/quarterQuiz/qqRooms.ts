@@ -3527,6 +3527,16 @@ export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void
     qqOnlyConnectAdvanceAllTeams(live, nextStep);
     nextStep += 1;
     if (onAdvanceTick) try { onAdvanceTick(); } catch {}
+    // Nach Hint-Advance: falls alle Teams schon fertig (z.B. Dummies haben
+    // früher locked/correct'd), JETZT AutoFinish — vorher wurde es vom
+    // MinHint-Gate blockiert. (2026-04-28 Bug-Fix: Dummies durften nicht mehr
+    // in unter 5s die Runde beenden bevor irgendwas sichtbar wurde.)
+    if (qqOnlyConnectAllDone(live) && qqOnlyConnectMinHintReached(live)) {
+      qqOnlyConnectAutoFinish(live);
+      live._onlyConnectHintTimerHandle = null;
+      if (onAdvanceTick) try { onAdvanceTick(); } catch {}
+      return;
+    }
     if (nextStep <= 3) {
       live._onlyConnectHintTimerHandle = setTimeout(tick, stepMs);
     } else {
@@ -3641,6 +3651,16 @@ export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
     if (!correct && !locked) return false;
   }
   return true;
+}
+
+/** Min-Hint-Gate für AutoFinish: 4 gewinnt darf nicht beendet werden bevor
+ *  mindestens Hint 2 (idx=1) sichtbar war — sonst beenden Dummies in einer
+ *  reinen Test-Lobby die Runde in 5s und der User sieht nichts. (Bug
+ *  2026-04-28: 'runde bricht direkt ab ohne dass jemand gespielt hat'). */
+export function qqOnlyConnectMinHintReached(room: QQRoomState): boolean {
+  const indices = Object.values(room.onlyConnectHintIndices ?? {});
+  if (indices.length === 0) return false;
+  return Math.max(...indices) >= 1;
 }
 
 /** Moderator-Force-Reveal: setzt ALLE Teams auf Hint 3 (= alle Hinweise sichtbar). */

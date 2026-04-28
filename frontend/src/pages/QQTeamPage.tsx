@@ -4048,7 +4048,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                     disabled={disabled}
                     onClick={() => emit('qq:connectionsSelectItem', { roomCode, teamId: myTeamId, item })}
                     style={{
-                      padding: '10px 4px', borderRadius: 10,
+                      padding: '8px 2px', borderRadius: 10,
                       background: isMyFound && myGroupColor
                         ? `linear-gradient(135deg, ${myGroupColor}38, ${myGroupColor}15)`
                         : isSelected
@@ -4060,13 +4060,17 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                           ? `2px solid ${teamColor}`
                           : '2px solid rgba(255,255,255,0.10)',
                       color: isMyFound ? '#fff' : isSelected ? '#fff' : '#e2e8f0',
-                      fontSize: 12, fontWeight: 800, lineHeight: 1.15,
+                      fontSize: 'clamp(10px, 3vw, 13px)',
+                      fontWeight: 800, lineHeight: 1.1,
                       cursor: disabled ? 'default' : 'pointer',
                       minHeight: 56,
                       opacity: disabled ? 0.7 : 1,
                       transition: 'all 0.18s ease',
                       fontFamily: 'inherit',
-                      wordBreak: 'break-word',
+                      // Bricht NUR ein Wort, das länger als die Spalte ist (kein Char-by-Char-Stacking).
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
+                      hyphens: 'auto',
                     }}
                   >
                     {item}

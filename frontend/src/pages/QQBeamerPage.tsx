@@ -9835,44 +9835,69 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
+/**
+ * Header — gleicher Stil wie bei Mucho/Cheese-Fragen:
+ * - Kategorie-Pill oben links (Icon + Name + Akzent-Border)
+ * - Timer/Phase-Status oben rechts
+ * Statt absolute-Positionierung ein flex-row, weil ConnectionsBeamerView
+ * bereits einen padded container hat.
+ */
 function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections!;
+  const accent = '#FBBF24';
+  // Naming: aktuell „4×4 Connections — Finale". Wenn Wolf entscheidet wird's zu
+  // „Quartett" / „Quartet" o.ä. — dann nur diese zwei Strings tauschen.
+  const labelDe = '4×4 — Finale';
+  const labelEn = '4×4 — Final';
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
       gap: 16, position: 'relative', zIndex: 5,
     }}>
-      <div>
-        <div style={{
-          fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
-          color: '#FBBF24', letterSpacing: '0.18em', textTransform: 'uppercase',
-        }}>
-          {lang === 'de' ? '4×4 Connections — Finale' : '4×4 Connections — Final'}
-        </div>
-        <div style={{ fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900, color: '#fde68a', lineHeight: 1.05 }}>
-          {lang === 'de' ? 'Findet die 4 Gruppen' : 'Find the 4 groups'}
-        </div>
+      {/* Kategorie-Pill links — gleiche Optik wie bei den anderen Fragen */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 10,
+        padding: '8px 22px', borderRadius: 999,
+        background: `${accent}22`, border: `2px solid ${accent}44`,
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        animation: 'contentReveal 0.35s ease both',
+      }}>
+        <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)', lineHeight: 1 }}>🔗</span>
+        <span style={{
+          fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+          color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>{lang === 'de' ? labelDe : labelEn}</span>
       </div>
-      {c.phase === 'active' && <ConnectionsTimer endsAt={c.endsAt} />}
-      {c.phase === 'reveal' && (
-        <div style={{
-          padding: '10px 18px', borderRadius: 14,
-          background: 'rgba(251,191,36,0.15)', border: '2px solid rgba(251,191,36,0.45)',
-          fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 900, color: '#fde68a',
-        }}>
-          {lang === 'de' ? 'Auflösung' : 'Reveal'}
-        </div>
-      )}
-      {c.phase === 'placement' && (
-        <div style={{
-          padding: '10px 18px', borderRadius: 14,
-          background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.45)',
-          fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 900, color: '#86EFAC',
-        }}>
-          {lang === 'de' ? 'Setzen läuft' : 'Placement'}
-        </div>
-      )}
+
+      {/* Status / Timer rechts */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        animation: 'contentReveal 0.5s ease 0.2s both',
+      }}>
+        {c.phase === 'active' && <ConnectionsTimer endsAt={c.endsAt} />}
+        {c.phase === 'reveal' && (
+          <div style={{
+            padding: '8px 18px', borderRadius: 999,
+            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#fde68a',
+            letterSpacing: '0.06em',
+          }}>
+            {lang === 'de' ? 'Auflösung' : 'Reveal'}
+          </div>
+        )}
+        {c.phase === 'placement' && (
+          <div style={{
+            padding: '8px 18px', borderRadius: 999,
+            background: 'rgba(34,197,94,0.18)', border: '2px solid rgba(34,197,94,0.5)',
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#86EFAC',
+            letterSpacing: '0.06em',
+          }}>
+            {lang === 'de' ? 'Setzen läuft' : 'Placement'}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

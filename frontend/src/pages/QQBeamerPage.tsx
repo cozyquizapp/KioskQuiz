@@ -2651,6 +2651,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // F1 Team-Join-Wave: tracke frisch dazugekommene Teams, Card bekommt
   // zusaetzlich zur Entry-Animation einen Wink-Shake + Glow-Burst.
   const prevTeamIdsRef = useRef<Set<string>>(new Set());
+  // „seen" = schon mal in dieser Lobby-Session gemountet. Verhindert dass
+  // beim Wave-Ende die teamCardIn-Animation erneut feuert (sonst flackert
+  // die Karte: einblenden → kurz weg → wieder da).
+  const seenTeamIdsRef = useRef<Set<string>>(new Set());
   const [waveIds, setWaveIds] = useState<Set<string>>(new Set());
   useEffect(() => {
     const curIds = new Set(s.teams.map(t => t.id));
@@ -2664,6 +2668,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       setWaveIds(new Set(newJoins));
       setTimeout(() => setWaveIds(new Set()), 1400);
     }
+  }, [s.teams]);
+  // Nach jedem Render alle aktuellen Teams als „seen" markieren — fortan
+  // bekommen sie KEIN teamCardIn mehr (würde sonst beim Wave-End-Re-Render
+  // erneut feuern).
+  useEffect(() => {
+    for (const t of s.teams) seenTeamIdsRef.current.add(t.id);
   }, [s.teams]);
 
   // Dynamic status text
@@ -2767,7 +2777,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               color: '#FBBF24', letterSpacing: '0.04em',
               textShadow: '0 1px 2px rgba(0,0,0,0.6)',
             }}>
-              CozyWolf 🐺
+              CozyWolf
             </span>
           </div>
         </div>
@@ -2806,6 +2816,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               {s.teams.map((t, i) => {
                 const compact = teamCount > 6;
                 const isFreshJoin = waveIds.has(t.id);
+                // Schon mal gerendert? Dann KEINE Entry-Animation mehr feuern,
+                // sonst flackert die Karte beim Wave-End (Animation-Property
+                // wechselt von teamJoinWave → teamCardIn → opacity:0-Frame).
+                const wasSeen = seenTeamIdsRef.current.has(t.id);
                 return (
                   <div key={t.id} style={{
                     padding: compact
@@ -2820,9 +2834,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     display: 'flex', alignItems: 'center',
                     gap: compact ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(14px, 1.6vw, 20px)',
                     // F1: frisch joinende Teams kriegen wink-Shake + Glow-Burst.
+                    // Bereits gesehene Teams (wasSeen) bekommen KEINE Animation
+                    // mehr — sonst spielt teamCardIn nach Wave-Ende erneut und
+                    // die Karte flackert (out → in).
                     animation: isFreshJoin
                       ? 'teamJoinWave 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
-                      : `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
+                      : wasSeen
+                        ? undefined
+                        : `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
                     transition: 'box-shadow 0.6s ease, border-color 0.6s ease',
                     minWidth: 0,
                     position: 'relative',
@@ -11502,7 +11521,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             letterSpacing: '0.04em',
             textShadow: '0 1px 2px rgba(0,0,0,0.6)',
           }}>
-            CozyWolf 🐺
+            CozyWolf
           </span>
           <span style={{
             fontSize: 16, fontWeight: 800, color: '#cbd5e1', letterSpacing: '0.06em',

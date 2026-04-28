@@ -5965,6 +5965,15 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           const teamsAtThisHint = revealed
             ? correctSorted.filter(g => g.atHintIdx === i)
             : [];
+          // 2026-04-28: Auch Locked-Teams (Dummies/Teams die falsch geraten
+          // haben) auf 'ihrem' Hint anzeigen — User-Frage 'spielen die dummys
+          // connect 4? sie sind nicht zu sehen'. Sie spielen, aber wenn sie
+          // falsch raten → locked. Mit grauem Avatar + ✕ wird das sichtbar.
+          const lockedAtThisHint = revealed
+            ? (s.onlyConnectGuesses ?? [])
+                .filter(g => !g.correct && g.atHintIdx === i)
+                .sort((a, b) => a.submittedAt - b.submittedAt)
+            : [];
           return (
             <div key={i} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -6006,8 +6015,9 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               }}>
                 {isVisible ? hintText : '?'}
               </div>
-              {/* Reveal: Team-Avatare auf diesem Hint */}
-              {revealed && teamsAtThisHint.length > 0 && (
+              {/* Reveal: Team-Avatare auf diesem Hint — richtige Teams gold,
+                  locked Teams (falsche Antwort) grau mit ✕. */}
+              {revealed && (teamsAtThisHint.length > 0 || lockedAtThisHint.length > 0) && (
                 <div style={{
                   display: 'flex', flexWrap: 'wrap', gap: 6,
                   justifyContent: 'center', marginTop: 6,
@@ -6015,12 +6025,13 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                   borderTop: `1px dashed ${hintColor}55`,
                   width: '100%',
                 }}>
+                  {/* Richtig: gold ring + 🥇 für schnellsten */}
                   {teamsAtThisHint.map((g, gIdx) => {
                     const tm = s.teams.find(t => t.id === g.teamId);
                     if (!tm) return null;
-                    const isFastest = gIdx === 0; // Schnellster auf diesem Hint
+                    const isFastest = gIdx === 0;
                     return (
-                      <div key={g.teamId} style={{
+                      <div key={`c-${g.teamId}`} style={{
                         position: 'relative',
                         animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.15 + gIdx * 0.08}s both`,
                       }}>
@@ -6041,6 +6052,35 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                             filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))',
                           }}>🥇</span>
                         )}
+                      </div>
+                    );
+                  })}
+                  {/* Locked (falsch geraten an genau diesem Hint): grau + ✕ */}
+                  {lockedAtThisHint.map((g, gIdx) => {
+                    const tm = s.teams.find(t => t.id === g.teamId);
+                    if (!tm) return null;
+                    return (
+                      <div key={`l-${g.teamId}`} style={{
+                        position: 'relative',
+                        opacity: 0.6,
+                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.6 + i * 0.15 + gIdx * 0.06}s both`,
+                      }}>
+                        <QQTeamAvatar
+                          avatarId={tm.avatarId}
+                          size={'clamp(32px, 3.4vw, 44px)'}
+                          style={{
+                            filter: 'grayscale(0.65)',
+                            boxShadow: `0 0 0 2px rgba(148,163,184,0.6)`,
+                          }}
+                        />
+                        <span aria-hidden style={{
+                          position: 'absolute',
+                          bottom: -4, right: -4,
+                          width: 18, height: 18, borderRadius: '50%',
+                          background: '#EF4444', border: '2px solid #0D0A06',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
+                        }}>✕</span>
                       </div>
                     );
                   })}

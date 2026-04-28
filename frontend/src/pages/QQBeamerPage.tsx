@@ -10258,6 +10258,9 @@ type FunStats = {
 };
 
 // Brand-Loop für PreGame: AnimatedCozyWolf + zyklischer Slogan
+// Wichtig (User-Wunsch): Wolf-Position, Card-Größe und Text-Position bleiben STABIL
+// beim Wechsel — nur der Text-Inhalt fadet weich aus/ein. Reservierte Höhe + absolute
+// Positionierung des Slogans verhindern Layout-Shift bei unterschiedlichen Slogan-Längen.
 function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -10269,29 +10272,48 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 28, justifyContent: 'center',
-      padding: '8px 4px', flexWrap: 'wrap',
+      padding: '8px 4px',
+      // Kein flexWrap — Wolf darf nie unter den Text rutschen
     }}>
-      <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" speaking={true} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+      <div style={{ flexShrink: 0 }}>
+        <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" speaking={true} />
+      </div>
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 8,
+        flex: '1 1 auto', minWidth: 0,
+        // Reservierte Höhe = Eyebrow + gap + max Slogan-Box
+        // damit die Card nicht atmet, wenn Slogan-Länge unterschiedlich
+        minHeight: 'clamp(96px, 11vw, 144px)',
+        justifyContent: 'center',
+      }}>
         <div style={{
           fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
           color: '#FBBF24',
           letterSpacing: '0.32em', textTransform: 'uppercase',
         }}>
-          {de ? 'Cozy Quiz' : 'Cozy Quiz'}
+          Cozy Quiz
         </div>
-        <div
-          key={current}
-          style={{
-            fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
-            color: '#FFEFC9',
-            lineHeight: 1.1,
-            letterSpacing: '-0.005em',
-            textShadow: '0 2px 0 rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.2)',
-            animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
-          }}
-        >
-          {current}
+        {/* Slogan-Box mit fester Höhe + absoluter Positionierung → Text fadet nur, Layout fix */}
+        <div style={{
+          position: 'relative',
+          minHeight: 'clamp(56px, 7vw, 100px)',
+        }}>
+          <div
+            key={current}
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center',
+              fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
+              color: '#FFEFC9',
+              lineHeight: 1.1,
+              letterSpacing: '-0.005em',
+              textShadow: '0 2px 0 rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.2)',
+              animation: 'qqSloganFade 0.7s ease-in-out both',
+              willChange: 'opacity',
+            }}
+          >
+            {current}
+          </div>
         </div>
       </div>
     </div>
@@ -11058,6 +11080,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         @keyframes qqPauseDot {
           0%, 100% { opacity: 0.4; transform: scale(0.85); }
           50% { opacity: 1; transform: scale(1.15); }
+        }
+        /* Slogan-Wechsel im BrandLoopPanel — reines Cross-Fade ohne Bewegung,
+           damit Wolf und Card-Größe stabil bleiben (User-Wunsch). */
+        @keyframes qqSloganFade {
+          0%   { opacity: 0; }
+          25%  { opacity: 0; }
+          100% { opacity: 1; }
         }
       `}</style>
     </div>

@@ -1073,7 +1073,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                   e.preventDefault();
                   const cur = img.scale ?? 1;
                   const delta = e.deltaY > 0 ? -0.05 : 0.05;
-                  const minScale = q.category === 'CHEESE' ? 1 : 0.1;
+                  const minScale = q.category === 'CHEESE' ? 0.5 : 0.1;
                   setImg({ scale: Math.round(Math.max(minScale, Math.min(3, cur + delta)) * 100) / 100 });
                 }}
                 onTouchStart={e => {
@@ -1095,21 +1095,40 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 }}
               >
                 {q.category === 'CHEESE' ? (() => {
-                  // CHEESE: muss immer Vollbild bleiben. cover + scale(>=1) + position = Crop.
-                  const z = Math.max(1, img.scale ?? 1);
+                  // CHEESE Preview spiegelt Beamer-Rendering: blurred cover backdrop +
+                  // sharp contain foreground. scale=1 zeigt das vollständige Bild
+                  // (kein Crop), scale>1 zoomt rein, scale<1 lässt Backdrop um das
+                  // Bild herum sichtbar werden.
+                  const z = img.scale ?? 1;
                   const px = 50 + (img.offsetX ?? 0) / 2;
                   const py = 50 + (img.offsetY ?? 0) / 2;
+                  const url = img.bgRemovedUrl ?? img.url;
                   return (
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      backgroundImage: `url(${img.bgRemovedUrl ?? img.url})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: `${px}% ${py}%`,
-                      backgroundRepeat: 'no-repeat',
-                      transform: `scale(${z})${img.rotation ? ` rotate(${img.rotation}deg)` : ''}`,
-                      transformOrigin: `${px}% ${py}%`,
-                      pointerEvents: 'none', transition: 'background-position 0.05s, transform 0.05s',
-                    }} />
+                    <>
+                      {/* Layer 1: blurred backdrop */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: `url(${url})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        filter: 'blur(20px) brightness(0.45) saturate(1.1)',
+                        transform: 'scale(1.15)',
+                        transformOrigin: 'center',
+                        pointerEvents: 'none',
+                      }} />
+                      {/* Layer 2: sharp contain foreground */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: `url(${url})`,
+                        backgroundSize: 'contain',
+                        backgroundPosition: `${px}% ${py}%`,
+                        backgroundRepeat: 'no-repeat',
+                        transform: `scale(${z})${img.rotation ? ` rotate(${img.rotation}deg)` : ''}`,
+                        transformOrigin: `${px}% ${py}%`,
+                        pointerEvents: 'none', transition: 'background-position 0.05s, transform 0.05s',
+                      }} />
+                    </>
                   );
                 })() : (
                   <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
@@ -1146,13 +1165,13 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>
                     Zoom ({((img.scale ?? 1) * 100).toFixed(0)}%)
-                    {q.category === 'CHEESE' && <span style={{ color: '#334155', fontSize: 9 }}> · min 100%</span>}
+                    {q.category === 'CHEESE' && <span style={{ color: '#334155', fontSize: 9 }}> · 100% = ganzes Bild</span>}
                   </div>
                   <input
                     type="range"
-                    min={q.category === 'CHEESE' ? 100 : 10}
+                    min={q.category === 'CHEESE' ? 50 : 10}
                     max={300}
-                    value={Math.max((img.scale ?? 1) * 100, q.category === 'CHEESE' ? 100 : 10)}
+                    value={Math.max((img.scale ?? 1) * 100, q.category === 'CHEESE' ? 50 : 10)}
                     onChange={e => setImg({ scale: Number(e.target.value) / 100 })}
                     style={{ width: '100%' }}
                   />

@@ -7181,6 +7181,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* I1 Kategorie-Partikel (fliegende Zahlen/Buchstaben) entfernt —
           lenkten vom Fragentext ab. Stattdessen faerben wir die Fireflies
           weiter unten in der Kategorie-Farbe. */}
+      {/* CHEESE ohne Bild: dezenter Placeholder im Hintergrund (Gradient + 📸-Icon),
+          damit die Frage spielbar bleibt aber visuell klar ist „hier sollte ein Bild sein". */}
+      {isCheese && !hasImg && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1,
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0d0a06',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 14,
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            fontSize: 'clamp(120px, 18vw, 240px)', opacity: 0.18,
+            animation: 'cfloat 4s ease-in-out infinite',
+          }}>📸</div>
+          <div style={{
+            fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 800,
+            color: '#a78bfa', letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.55,
+          }}>
+            {lang === 'de' ? 'Bild fehlt — Frage trotzdem spielbar' : 'No image — question still playable'}
+          </div>
+        </div>
+      )}
       {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
       {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
         // CHEESE Crop: offsetX/Y steuern background-position, scale steuert Zoom.

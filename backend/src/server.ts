@@ -8109,6 +8109,90 @@ function isQQVolDraft(id: string | undefined | null): boolean {
   }
 }
 
+// ── Migration 2026-04-28: CHEESE-Bilder via Wikipedia REST API anreichern ─
+// CHEESE-Fragen in qq-vol-* Drafts haben keine `image.url`. Wir holen pro
+// Frage den Thumbnail aus der Wikipedia-Summary-API (DE bevorzugt, EN als
+// Fallback) und persistieren in den Draft. Einmalig pro Draft (idempotent).
+const QQ_CHEESE_WIKIPEDIA_TITLES: Record<string, { de?: string; en?: string }> = {
+  // Vol 1
+  'qq-vol-1-p1-4': { de: 'Eiffelturm', en: 'Eiffel_Tower' },
+  'qq-vol-1-p2-4': { de: 'Erdmännchen', en: 'Meerkat' },
+  'qq-vol-1-p3-4': { de: 'Granatapfel', en: 'Pomegranate' },
+  'qq-vol-1-p4-4': { de: 'Leonardo_DiCaprio', en: 'Leonardo_DiCaprio' },
+  // Vol 2
+  'qq-vol-2-p1-4': { en: 'Yoda' }, // DE-Artikel hat kein Bild
+  'qq-vol-2-p2-4': { de: 'Saxophon', en: 'Saxophone' },
+  'qq-vol-2-p3-4': { en: 'Wembley_Stadium' }, // DE-Artikel hat kein Bild
+  'qq-vol-2-p4-4': { de: 'Nike_(Unternehmen)', en: 'Nike,_Inc.' },
+  // Vol 3
+  'qq-vol-3-p1-4': { de: 'Mona_Lisa', en: 'Mona_Lisa' },
+  'qq-vol-3-p2-4': { en: 'Napoleon' }, // DE liefert Wappen statt Porträt
+  'qq-vol-3-p3-4': { de: 'Akropolis_(Athen)', en: 'Acropolis_of_Athens' },
+  'qq-vol-3-p4-4': { de: 'Der_Denker', en: 'The_Thinker' },
+  // Vol 4
+  'qq-vol-4-p1-4': { de: 'Zimt', en: 'Cinnamon' },
+  'qq-vol-4-p2-4': { de: 'Schraubenschlüssel', en: 'Wrench' },
+  'qq-vol-4-p3-4': { de: 'Pitahaya', en: 'Pitaya' },
+  'qq-vol-4-p4-4': { de: 'Heißluftballon', en: 'Hot_air_balloon' },
+  // Vol 5
+  'qq-vol-5-p1-4': { de: 'Usain_Bolt', en: 'Usain_Bolt' },
+  'qq-vol-5-p2-4': { de: 'Sonnenblume', en: 'Common_sunflower' },
+  'qq-vol-5-p3-4': { de: 'Albert_Einstein', en: 'Albert_Einstein' },
+  'qq-vol-5-p4-4': { de: 'Flamingos', en: 'Flamingo' },
+};
+
+async function fetchWikipediaThumbnail(title: string, lang: 'de' | 'en'): Promise<string | null> {
+  try {
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'CozyQuiz-CheeseImageEnricher/1.0 (cozyquiz.app)' },
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    // Bevorzuge originalimage (höhere Auflösung) wenn da, sonst thumbnail
+    return data?.originalimage?.source ?? data?.thumbnail?.source ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function enrichCheeseImagesInDraft(draft: any): Promise<boolean> {
+  if (!Array.isArray(draft?.questions)) return false;
+  let changed = false;
+  for (const q of draft.questions) {
+    if (q?.category !== 'CHEESE') continue;
+    if (q?.image?.url) continue; // schon ein Bild
+    const titles = QQ_CHEESE_WIKIPEDIA_TITLES[q?.id];
+    if (!titles) continue;
+    let url: string | null = null;
+    if (titles.de) url = await fetchWikipediaThumbnail(titles.de, 'de');
+    if (!url && titles.en) url = await fetchWikipediaThumbnail(titles.en, 'en');
+    if (url) {
+      q.image = { url, layout: 'fullscreen', animation: 'none' };
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+// Migration läuft asynchron im Hintergrund (kein await — Server-Start nicht blockieren).
+(async () => {
+  try {
+    let anyChanged = false;
+    for (const d of qqDrafts) {
+      if (!isQQVolDraft(d.id)) continue;
+      const c = await enrichCheeseImagesInDraft(d);
+      if (c) anyChanged = true;
+    }
+    if (anyChanged) {
+      persistQQDrafts();
+      console.log('[migration] Enriched CHEESE images in qq-vol-* drafts (file storage)');
+    }
+  } catch (err) {
+    console.error('[migration] CHEESE-image enrichment failed:', err);
+  }
+})();
+
 app.get('/api/qq/drafts', async (_req, res) => {
   const cached = cache.get<any[]>('qqDrafts');
   if (cached) return res.json(cached);
@@ -8140,6 +8224,20 @@ app.get('/api/qq/drafts', async (_req, res) => {
     }
     if (dbVolRefreshed > 0) {
       console.log(`[migration] Refreshed ${dbVolRefreshed} qq-vol-* drafts in DB with 4 gewinnt + Bluff`);
+    }
+    // CHEESE-Image-Enrichment in DB (idempotent — pro Frage erst wenn image fehlt)
+    let dbCheeseEnriched = 0;
+    for (let i = 0; i < cleanDbDrafts.length; i++) {
+      const d: any = cleanDbDrafts[i];
+      if (!isQQVolDraft(d.id)) continue;
+      const c = await enrichCheeseImagesInDraft(d);
+      if (c) {
+        try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+        dbCheeseEnriched++;
+      }
+    }
+    if (dbCheeseEnriched > 0) {
+      console.log(`[migration] Enriched CHEESE images in ${dbCheeseEnriched} DB drafts via Wikipedia`);
     }
     // Merge any file-backed drafts that aren't yet in DB
     const dbIds = new Set(cleanDbDrafts.map((d: any) => d.id));

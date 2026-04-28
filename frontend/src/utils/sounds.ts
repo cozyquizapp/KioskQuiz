@@ -817,14 +817,12 @@ export function playScoreUp() {
 /** Pool von Lobby-Musik-Tracks. Beim Start wird einer zufällig gewählt
  *  (User-Wunsch 2026-04-28: 4 MP3s shuffle). Die Files müssen in
  *  /frontend/public/sounds/ liegen — fehlende Dateien werden bei Load-Fehler
- *  übersprungen, der Player nimmt dann automatisch den nächsten Track.
- *  Hauptdatei lobby-welcome.mp3 bleibt als Fallback wenn keine der 1-4 da ist. */
+ *  übersprungen, der Player nimmt dann automatisch den nächsten Track. */
 const LOBBY_TRACK_POOL = [
   '/sounds/lobby-welcome-1.mp3',
   '/sounds/lobby-welcome-2.mp3',
   '/sounds/lobby-welcome-3.mp3',
   '/sounds/lobby-welcome-4.mp3',
-  '/sounds/lobby-welcome.mp3', // Legacy/Fallback
 ];
 
 /** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.

@@ -10257,6 +10257,47 @@ type FunStats = {
   } | null;
 };
 
+// Brand-Loop für PreGame: AnimatedCozyWolf + zyklischer Slogan
+function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (slogans.length <= 1) return;
+    const id = setInterval(() => setIdx(p => (p + 1) % slogans.length), 4500);
+    return () => clearInterval(id);
+  }, [slogans.length]);
+  const current = slogans[idx % slogans.length];
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 28, justifyContent: 'center',
+      padding: '8px 4px', flexWrap: 'wrap',
+    }}>
+      <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" speaking={true} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+        <div style={{
+          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+          color: '#FBBF24',
+          letterSpacing: '0.32em', textTransform: 'uppercase',
+        }}>
+          {de ? 'Cozy Quiz' : 'Cozy Quiz'}
+        </div>
+        <div
+          key={current}
+          style={{
+            fontSize: 'clamp(28px, 3.4vw, 48px)', fontWeight: 900,
+            color: '#FFEFC9',
+            lineHeight: 1.1,
+            letterSpacing: '-0.005em',
+            textShadow: '0 2px 0 rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.2)',
+            animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
+          }}
+        >
+          {current}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Kategorie-Akzente fürs Panel-Design (konsistent mit Beamer-Quiz)
 const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: string }> = {
   SCHAETZCHEN:   { color: '#EAB308', emoji: '🎯', label: 'Schätzchen' },
@@ -10293,6 +10334,77 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
+
+  // ── Brand-Loop & How-To — nur in PreGame (füllen leeren Vor-Spiel-State) ──
+  if (mode === 'preGame') {
+    // Rotierende Sprüche im Brand-Panel (Index zyklisch in der Komponente unten)
+    const brandSlogans = de
+      ? [
+          'Heute Abend: Quiz.',
+          'Snacks bereit?',
+          'Lehn dich zurück.',
+          'Augen auf — gleich geht’s los.',
+          'Kein Druck. Nur Spaß.',
+        ]
+      : [
+          'Tonight: Quiz.',
+          'Snacks ready?',
+          'Settle in.',
+          'Eyes up — starting soon.',
+          'No pressure. Just fun.',
+        ];
+
+    panels.push({ key: 'brandLoop', node: (
+      <BrandLoopPanel slogans={brandSlogans} de={de} />
+    )});
+
+    // Wie funktioniert's — 4 Mini-Cards
+    const howItems = de
+      ? [
+          { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone.' },
+          { icon: '🎯', title: '4 Runden + Finale', desc: 'Verschiedene Spielmodi auf dem Brett — wer am Ende führt, gewinnt.' },
+          { icon: '🃏', title: 'Joker sammeln', desc: 'Volle Reihe? Joker freigespielt — einsetzen für Mut oder Schutz.' },
+          { icon: '🦊', title: 'Brett erobern', desc: 'Felder gehören dem Team, das die Frage gewinnt.' },
+        ]
+      : [
+          { icon: '📱', title: 'On your phone', desc: 'Each team plays on their own smartphone.' },
+          { icon: '🎯', title: '4 rounds + finale', desc: 'Different modes on the grid — leader at the end wins.' },
+          { icon: '🃏', title: 'Earn jokers', desc: 'Full row? Joker unlocked — bet bold or shield up.' },
+          { icon: '🦊', title: 'Conquer the grid', desc: 'Cells belong to the team that wins the question.' },
+        ];
+
+    panels.push({ key: 'howItWorks', node: (
+      <div>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>📖</span>
+          {de ? 'Wie funktioniert’s?' : 'How it works'}
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 14,
+        }}>
+          {howItems.map((it, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 14,
+              padding: '14px 16px',
+              borderRadius: 16,
+              background: 'rgba(255,235,200,0.04)',
+              border: '1px solid rgba(255,235,200,0.10)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              animation: `panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) ${0.08 * i}s both`,
+            }}>
+              <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(17px, 1.9vw, 24px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
+                <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#cbd5e1', lineHeight: 1.4 }}>{it.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )});
+  }
 
   // Fortschrittsbaum — nur in Pause (nicht im Pre-Game, da kein Spiel läuft)
   if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
@@ -10846,18 +10958,6 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             ? (de ? "Gleich geht's los" : 'Starting soon')
             : (de ? 'Kurze Pause' : 'Short Break')}
         </div>
-
-        {/* Subtitle — leicht kleiner, in cozy cream */}
-        <div style={{
-          fontSize: 'clamp(15px, 1.5vw, 21px)', fontWeight: 700,
-          color: '#a8a395', letterSpacing: '0.04em',
-          marginTop: 4,
-          textShadow: '0 1px 0 rgba(0,0,0,0.4)',
-        }}>
-          {mode === 'preGame'
-            ? (de ? 'Setup wird abgeschlossen — gleich joinen die Teams' : 'Setup wrapping up — teams joining soon')
-            : (de ? 'Gönn dir kurz — gleich geht es weiter' : 'Take five — back in a moment')}
-        </div>
       </div>
 
       {/* Records panel — mit Slide-In pro Panel-Wechsel */}
@@ -10916,25 +11016,27 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       )}
 
-      {/* Hint mit Lagerfeuer-Sparkle */}
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 10,
-        fontSize: 'clamp(15px, 1.6vw, 22px)', color: '#a8a395', fontWeight: 700,
-        position: 'relative', zIndex: 5,
-        letterSpacing: '0.04em',
-      }}>
-        <span style={{
-          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-          background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
-          animation: 'qqPauseDot 1.6s ease-in-out infinite',
-        }} />
-        {de ? "Gleich geht's weiter…" : 'Continuing soon…'}
-        <span style={{
-          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-          background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
-          animation: 'qqPauseDot 1.6s ease-in-out 0.3s infinite',
-        }} />
-      </div>
+      {/* Hint mit Lagerfeuer-Sparkle — nur im Pause-Mode (im PreGame redundant zum großen Titel) */}
+      {mode === 'pause' && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 10,
+          fontSize: 'clamp(15px, 1.6vw, 22px)', color: '#a8a395', fontWeight: 700,
+          position: 'relative', zIndex: 5,
+          letterSpacing: '0.04em',
+        }}>
+          <span style={{
+            display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+            background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+            animation: 'qqPauseDot 1.6s ease-in-out infinite',
+          }} />
+          {de ? "Gleich geht's weiter…" : 'Continuing soon…'}
+          <span style={{
+            display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+            background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+            animation: 'qqPauseDot 1.6s ease-in-out 0.3s infinite',
+          }} />
+        </div>
+      )}
 
       <style>{`
         @keyframes qqPauseAura {

@@ -3147,8 +3147,6 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Category info for upcoming question
   const cat = s.currentQuestion?.category as QQCategory | undefined;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
-  const catLabel = catInfo ? catInfo[lang] : '';
-  const catEmoji = catInfo?.emoji ?? '';
   const CAT_COLORS: Record<string, string> = {
     SCHAETZCHEN: '#EAB308', MUCHO: '#3B82F6', BUNTE_TUETE: '#EF4444',
     ZEHN_VON_ZEHN: '#10B981', CHEESE: '#8B5CF6',
@@ -3163,7 +3161,62 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
     CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
   };
-  const catExplain = cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '';
+
+  // BUNTE_TUETE: pro Sub-Mechanik eigene Vorstellung (Name, Emoji, 1-Zeiler).
+  // Sonst sähe „4 gewinnt" und „Bluff" und „Hot Potato" alle gleich aus
+  // („Bunte Tüte · Überraschungs-Mechanik") — dem Publikum entgeht der Reiz
+  // der jeweiligen Mechanik komplett.
+  const BUNTE_SUB_INTRO: Record<string, { de: { name: string; explain: string }; en: { name: string; explain: string }; emoji: string }> = {
+    onlyConnect: {
+      emoji: '🧩',
+      de: { name: '4 gewinnt',     explain: '4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.' },
+      en: { name: 'Only Connect',  explain: '4 clues, one answer — guess earlier for more points.' },
+    },
+    bluff: {
+      emoji: '🎭',
+      de: { name: 'Bluff',         explain: 'Erfindet plausible Falsch-Antworten und ratet die echte.' },
+      en: { name: 'Bluff',         explain: 'Make up plausible fake answers and find the real one.' },
+    },
+    hotPotato: {
+      emoji: '🔥',
+      de: { name: 'Heiße Kartoffel', explain: 'Reihum Begriffe nennen — wer hängt, verliert.' },
+      en: { name: 'Hot Potato',    explain: 'Take turns naming items — first to stall loses.' },
+    },
+    top5: {
+      emoji: '🏆',
+      de: { name: 'Top 5',         explain: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.' },
+      en: { name: 'Top 5',         explain: 'Guess the most common answers — higher rank, more points.' },
+    },
+    oneOfEight: {
+      emoji: '🕵️',
+      de: { name: 'Imposter',      explain: 'Findet die EINE falsche Aussage zwischen 7 wahren.' },
+      en: { name: 'Imposter',      explain: 'Spot the ONE false statement among 7 true ones.' },
+    },
+    order: {
+      emoji: '📋',
+      de: { name: 'Reihenfolge',   explain: 'Sortiert in der richtigen Reihenfolge.' },
+      en: { name: 'Order',         explain: 'Sort in the correct order.' },
+    },
+    map: {
+      emoji: '🗺️',
+      de: { name: 'CozyGuessr',    explain: 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.' },
+      en: { name: 'CozyGuessr',    explain: 'Guess the location on the map — closer means more points.' },
+    },
+  };
+  const bunteKind = cat === 'BUNTE_TUETE'
+    ? (s.currentQuestion?.bunteTuete?.kind as keyof typeof BUNTE_SUB_INTRO | undefined)
+    : undefined;
+  const bunteSub = bunteKind ? BUNTE_SUB_INTRO[bunteKind] : undefined;
+
+  const catLabel = bunteSub
+    ? bunteSub[lang].name
+    : (catInfo ? catInfo[lang] : '');
+  const catEmoji = bunteSub
+    ? bunteSub.emoji
+    : (catInfo?.emoji ?? '');
+  const catExplain = bunteSub
+    ? bunteSub[lang].explain
+    : (cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '');
 
   // ── Rule reminders per round ──
   // Subtitle ueber den Action-Cards. Beschreibt knapp wie die Wahl funktioniert,
@@ -3872,17 +3925,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
           {cat && (
             <>
-              {/* Emoji/Icon — float idle. Wenn Kategorie-PNG verfügbar → das, sonst Emoji-Fallback. */}
+              {/* Emoji/Icon — float idle. Bei BUNTE_TUETE: Sub-Mechanik-Icon
+                  (sonst sähen 4 gewinnt, Bluff, Hot Potato … alle gleich aus). */}
               <div style={{
                 fontSize: 'clamp(80px, 14vw, 180px)', lineHeight: 1,
                 animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both, cfloat 4s ease-in-out 1s infinite',
                 position: 'relative', zIndex: 5,
               }}>
                 {(() => {
-                  const slug = qqCatSlug(cat as string);
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(120px, 18vw, 240px)'} alt={catLabel} />
-                    : catEmoji;
+                  const subSlug = bunteKind ? qqSubSlug(bunteKind) : null;
+                  const slug = subSlug ?? qqCatSlug(cat as string);
+                  if (slug) return <QQIcon slug={slug} size={'clamp(120px, 18vw, 240px)'} alt={catLabel} />;
+                  return catEmoji;
                 })()}
               </div>
 

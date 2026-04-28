@@ -98,8 +98,8 @@ export interface QQRoomState {
   imposterChosenIndices: number[];  // statement indices already picked (correct ones)
   imposterEliminated: string[];     // teams who picked the false statement
   // 4 gewinnt / Connect 4 (BUNTE_TUETE kind=onlyConnect)
-  onlyConnectHintIndex: number;                                             // -1 = nicht gestartet, 0..3 = aktueller Hint
-  onlyConnectHintRevealedAt: number | null;                                 // timestamp aktueller Hint
+  onlyConnectHintIndices: Record<string, number>;                            // teamId → 0..3 (per-team hint level)
+  onlyConnectHintRevealedAt: Record<string, number>;                         // teamId → timestamp last hint unlock
   onlyConnectLockedTeams: string[];                                         // gesperrte Teams
   onlyConnectWinnerTeamId: string | null;                                   // erstes richtiges Team
   onlyConnectWinnerHintIdx: number | null;                                  // Hint-Index bei Gewinn
@@ -298,8 +298,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       imposterQueue: [],
       imposterChosenIndices: [],
       imposterEliminated: [],
-      onlyConnectHintIndex: -1,
-      onlyConnectHintRevealedAt: null,
+      onlyConnectHintIndices: {},
+      onlyConnectHintRevealedAt: {},
       onlyConnectLockedTeams: [],
       onlyConnectWinnerTeamId: null,
       onlyConnectWinnerHintIdx: null,
@@ -2790,8 +2790,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
-    onlyConnectHintIndex:        room.onlyConnectHintIndex ?? -1,
-    onlyConnectHintRevealedAt:   room.onlyConnectHintRevealedAt ?? null,
+    onlyConnectHintIndices:      room.onlyConnectHintIndices ?? {},
+    onlyConnectHintRevealedAt:   room.onlyConnectHintRevealedAt ?? {},
     onlyConnectLockedTeams:      room.onlyConnectLockedTeams ?? [],
     onlyConnectWinnerTeamId:     room.onlyConnectWinnerTeamId ?? null,
     onlyConnectWinnerHintIdx:    room.onlyConnectWinnerHintIdx ?? null,
@@ -3369,8 +3369,8 @@ function onlyConnectMatches(submitted: string, accepted: string[]): boolean {
 /** Reset onlyConnect-State (z.B. beim Wechsel zur nächsten Frage). */
 export function qqOnlyConnectReset(room: QQRoomState): void {
   clearOnlyConnectHintTimer(room);
-  room.onlyConnectHintIndex = -1;
-  room.onlyConnectHintRevealedAt = null;
+  room.onlyConnectHintIndices = {};
+  room.onlyConnectHintRevealedAt = {};
   room.onlyConnectLockedTeams = [];
   room.onlyConnectWinnerTeamId = null;
   room.onlyConnectWinnerHintIdx = null;
@@ -3378,52 +3378,42 @@ export function qqOnlyConnectReset(room: QQRoomState): void {
 }
 
 /**
- * Start: zeigt den ersten Hint. Setzt einen Timer für den nächsten Hint.
+ * Start: jedes verbundene Team beginnt bei Hint-Index 0.
  * Reset zuerst (falls vorherige Frage State hinterlassen hat).
  */
-export function qqOnlyConnectStart(
-  room: QQRoomState,
-  onAdvance: () => void
-): void {
+export function qqOnlyConnectStart(room: QQRoomState): void {
   qqOnlyConnectReset(room);
-  room.onlyConnectHintIndex = 0;
-  room.onlyConnectHintRevealedAt = Date.now();
-  // Auto-Advance nach onlyConnectHintDurationSec
-  scheduleNextHint(room, onAdvance);
-  room.lastActivityAt = Date.now();
-}
-
-function scheduleNextHint(room: QQRoomState, onAdvance: () => void): void {
-  clearOnlyConnectHintTimer(room);
-  // Nicht weiter wenn schon bei Hint 3 (letzter). Multi-Winner: andere Teams
-  // können noch antworten, also Timer NICHT bei erstem Winner stoppen.
-  if (room.onlyConnectHintIndex >= 3) return;
-  const dur = (room.onlyConnectHintDurationSec ?? QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC) * 1000;
-  room._onlyConnectHintTimerHandle = setTimeout(() => {
-    room._onlyConnectHintTimerHandle = null;
-    onAdvance();
-  }, dur);
+  const now = Date.now();
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]) continue;
+    room.onlyConnectHintIndices[teamId] = 0;
+    room.onlyConnectHintRevealedAt[teamId] = now;
+  }
+  room.lastActivityAt = now;
 }
 
 /**
- * Schaltet einen Hint weiter — manuell vom Moderator oder via Timer.
- * Bei Hint 3 (letzter) wird kein neuer Timer gesetzt.
- * Returnt true wenn ein Hint aufgedeckt wurde, false wenn schon bei letztem.
+ * Per-Team Hint freischalten. Team kann nicht über Hint 3 hinaus.
+ * Returnt den neuen Hint-Index oder null wenn nicht erhöhbar.
  */
-export function qqOnlyConnectAdvanceHint(
-  room: QQRoomState,
-  onAdvance: () => void
-): boolean {
-  // Multi-Winner: Timer läuft auch nach erstem Winner weiter, andere können antworten.
-  if (room.onlyConnectHintIndex >= 3) {
-    clearOnlyConnectHintTimer(room);
-    return false;
-  }
-  room.onlyConnectHintIndex += 1;
-  room.onlyConnectHintRevealedAt = Date.now();
-  scheduleNextHint(room, onAdvance);
+export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, teamId: string): number | null {
+  if (!room.teams[teamId]) return null;
+  // Wer schon richtig oder gesperrt ist, kann eh nicht mehr nutzen — aber
+  // Anzeige soll trotzdem funktionieren (z.B. nach falsch & locked: alle Hinweise).
+  const cur = room.onlyConnectHintIndices[teamId] ?? 0;
+  if (cur >= 3) return cur;
+  const next = cur + 1;
+  room.onlyConnectHintIndices[teamId] = next;
+  room.onlyConnectHintRevealedAt[teamId] = Date.now();
   room.lastActivityAt = Date.now();
-  return true;
+  return next;
+}
+
+/** Globaler min-Index across alle Teams — für Beamer-Anzeige (kein Spoiler). */
+export function qqOnlyConnectGlobalMinHint(room: QQRoomState): number {
+  const values = Object.values(room.onlyConnectHintIndices);
+  if (values.length === 0) return 0;
+  return Math.min(...values);
 }
 
 /**
@@ -3464,7 +3454,8 @@ export function qqOnlyConnectSubmitGuess(
   ].filter(Boolean);
   const isMatch = onlyConnectMatches(text, accepted);
   const now = Date.now();
-  const atHintIdx = Math.max(0, room.onlyConnectHintIndex);
+  // Per-Team-Modell: atHintIdx = der eigene Hint-Stand des Teams
+  const atHintIdx = Math.max(0, room.onlyConnectHintIndices[teamId] ?? 0);
   room.onlyConnectGuesses.push({
     teamId, text: String(text ?? '').slice(0, 200),
     correct: isMatch, submittedAt: now, atHintIdx,
@@ -3496,11 +3487,15 @@ export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
   return true;
 }
 
-/** Moderator-Force-Reveal: deckt alle restlichen Hinweise auf, beendet Auto-Timer. */
+/** Moderator-Force-Reveal: setzt ALLE Teams auf Hint 3 (= alle Hinweise sichtbar). */
 export function qqOnlyConnectRevealAll(room: QQRoomState): void {
   clearOnlyConnectHintTimer(room);
-  room.onlyConnectHintIndex = 3;
-  room.onlyConnectHintRevealedAt = Date.now();
+  const now = Date.now();
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]) continue;
+    room.onlyConnectHintIndices[teamId] = 3;
+    room.onlyConnectHintRevealedAt[teamId] = now;
+  }
 }
 
 /**

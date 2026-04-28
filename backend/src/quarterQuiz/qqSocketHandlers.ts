@@ -39,7 +39,7 @@ import {
   qqConnectionsStart, qqConnectionsBegin, qqConnectionsSelectItem,
   qqConnectionsSubmitGroup, qqConnectionsAllDone, qqConnectionsToReveal,
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
-  qqOnlyConnectStart, qqOnlyConnectAdvanceHint, qqOnlyConnectSubmitGuess,
+  qqOnlyConnectStart, qqOnlyConnectAdvanceTeamHint, qqOnlyConnectSubmitGuess,
   qqOnlyConnectRevealAll, qqOnlyConnectReset, qqOnlyConnectAllDone,
   qqOnlyConnectAutoFinish,
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
@@ -1316,23 +1316,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           qqImposterStart(room);
           qqStopTimer(room);
         }
-        // Auto-start 4 gewinnt (onlyConnect): erster Hint sofort sichtbar,
-        // Auto-Advance-Timer für nächste Hinweise läuft. Wenn der letzte
-        // Hint-Timer abläuft → AutoFinish (Standard-Reveal-Pipeline).
+        // Auto-start 4 gewinnt (onlyConnect): jedes Team beginnt bei Hint 0.
+        // KEIN Auto-Timer — Teams schalten Hinweise selbst frei via /team.
+        // Standard-Question-Timer wird gestoppt (eigenes Per-Team-Modell).
         if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
-          const ocAdvance = () => {
-            const r = getQQRoom(payload.roomCode);
-            if (!r) return;
-            if (r.onlyConnectHintIndex >= 3) {
-              // Letzter Hinweis durch → Standard-Reveal triggern (Autoplay greift dann)
-              qqOnlyConnectAutoFinish(r);
-              broadcast(io, payload.roomCode);
-              return;
-            }
-            qqOnlyConnectAdvanceHint(r, ocAdvance);
-            broadcast(io, payload.roomCode);
-          };
-          qqOnlyConnectStart(room, ocAdvance);
+          qqOnlyConnectStart(room);
           qqStopTimer(room);
         }
         // Auto-start Bluff: write-Phase, eigener Timer.
@@ -2430,23 +2418,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    /** Moderator: nächsten Hint manuell aufdecken (sonst läuft Auto-Timer). */
-    socket.on('qq:onlyConnectAdvanceHint', (payload: { roomCode: string }, ack?: unknown) => {
+    /** Team schaltet seinen nächsten Hinweis frei (per-team Modell). */
+    socket.on('qq:onlyConnectAdvanceTeamHint', (
+      payload: { roomCode: string; teamId: string },
+      ack?: unknown
+    ) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        // Selbe Logik wie Auto-Advance: nach letztem Hint AutoFinish
-        const ocAdvance = () => {
-          const r = getQQRoom(payload.roomCode);
-          if (!r) return;
-          if (r.onlyConnectHintIndex >= 3) {
-            qqOnlyConnectAutoFinish(r);
-            broadcast(io, payload.roomCode);
-            return;
-          }
-          qqOnlyConnectAdvanceHint(r, ocAdvance);
-          broadcast(io, payload.roomCode);
-        };
-        qqOnlyConnectAdvanceHint(room, ocAdvance);
+        qqOnlyConnectAdvanceTeamHint(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

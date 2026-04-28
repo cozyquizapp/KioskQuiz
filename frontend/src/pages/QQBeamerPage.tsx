@@ -5284,7 +5284,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
   const answer = (lang === 'en' && bt.answerEn ? bt.answerEn : bt.answer) ?? '';
-  const hintIdx = revealed ? 3 : Math.max(0, s.onlyConnectHintIndex ?? 0);
+  // Per-Team-Modell: Beamer zeigt MIN(...indices) damit kein Spoiler.
+  // Teams die mehr Hinweise haben sehen sie nur auf eigenem /team.
+  const hintIndicesArr = Object.values(s.onlyConnectHintIndices ?? {});
+  const hintIdx = revealed
+    ? 3
+    : (hintIndicesArr.length > 0 ? Math.min(...hintIndicesArr) : 0);
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
   const accent = '#A78BFA';
   // Multi-Winner: alle korrekten Teams sortiert nach (atHintIdx ASC, submittedAt ASC)

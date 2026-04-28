@@ -1105,34 +1105,51 @@ export default function QQModeratorPage() {
                   </div>
                 )}
 
-                {/* 4 gewinnt / Only Connect controls */}
+                {/* 4 gewinnt / Only Connect controls — Per-Team-Modell */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'onlyConnect' && (() => {
-                  const hintIdx = s.onlyConnectHintIndex ?? -1;
+                  const hintIndices = s.onlyConnectHintIndices ?? {};
+                  const allTeams = s.teams;
                   const correctCount = (s.onlyConnectGuesses ?? []).filter(g => g.correct).length;
-                  const lockedNames = (s.onlyConnectLockedTeams ?? [])
-                    .map(id => s.teams.find(t => t.id === id)?.name)
-                    .filter(Boolean) as string[];
+                  const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
+                  const wonSet = new Set((s.onlyConnectGuesses ?? []).filter(g => g.correct).map(g => g.teamId));
+                  const indicesArr = allTeams.map(t => hintIndices[t.id] ?? 0);
+                  const minIdx = indicesArr.length > 0 ? Math.min(...indicesArr) : 0;
+                  const maxIdx = indicesArr.length > 0 ? Math.max(...indicesArr) : 0;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ fontSize: 13, color: '#fff', background: '#A78BFA',
                         padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 800,
                       }}>
-                        🧩 Hinweis {Math.max(1, hintIdx + 1)} / 4
+                        🧩 Hinweise (Beamer) {Math.max(1, minIdx + 1)} / 4
+                        {minIdx !== maxIdx && <> · max {maxIdx + 1}</>}
                         {correctCount > 0 && <> · 🏆 {correctCount}× richtig</>}
                       </div>
-                      {hintIdx < 3 && (
-                        <Btn color="#A78BFA" onClick={() => emit('qq:onlyConnectAdvanceHint', { roomCode })}>
-                          ▶ Nächster Hinweis
-                        </Btn>
-                      )}
+                      {/* Per-Team Hint-Status */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {allTeams.map(t => {
+                          const idx = hintIndices[t.id] ?? 0;
+                          const won = wonSet.has(t.id);
+                          const locked = lockedSet.has(t.id);
+                          return (
+                            <div key={t.id} title={`${t.name}: Hinweis ${idx + 1}/4`} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              padding: '2px 8px', borderRadius: 999,
+                              border: `1px solid ${t.color}55`,
+                              background: won ? 'rgba(34,197,94,0.15)' : locked ? 'rgba(239,68,68,0.10)' : 'transparent',
+                              color: t.color, fontSize: 10, fontWeight: 800,
+                            }}>
+                              {t.name} · {idx + 1}/4
+                              {won && ' ✓'}
+                              {locked && ' ✕'}
+                            </div>
+                          );
+                        })}
+                      </div>
                       <Btn color="#F59E0B" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
-                        ⏹ Alle Hinweise zeigen
+                        ⏹ Alle Hinweise zeigen (Reveal)
                       </Btn>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                        Auto-Timer: {s.onlyConnectHintDurationSec ?? 15}s ·
-                        {lockedNames.length > 0
-                          ? <> Gesperrt: {lockedNames.join(', ')}</>
-                          : <> Niemand gesperrt</>}
+                        Teams schalten Hinweise selbst auf /team frei. Beamer zeigt MIN-Index.
                       </div>
                     </div>
                   );

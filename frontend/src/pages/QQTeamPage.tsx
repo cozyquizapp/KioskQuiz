@@ -2755,7 +2755,10 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
-  const hintIdx = Math.max(0, s.onlyConnectHintIndex ?? 0);
+  // Per-Team-Modell: jedes Team hat eigenen Index, schaltet selbst frei.
+  const hintIdx = Math.max(0, (s.onlyConnectHintIndices ?? {})[myTeamId] ?? 0);
+  const canUnlockMore = hintIdx < 3;
+  const pointsIfWinNow = Math.max(1, 4 - hintIdx);
   const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
   // Multi-Winner: hat MEIN Team schon richtig gelegen?
   const isMyWin = (s.onlyConnectGuesses ?? []).some(g => g.teamId === myTeamId && g.correct);
@@ -2772,6 +2775,11 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
     if (text.length < 1) return;
     emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
     setVal('');
+  };
+
+  const unlockNext = () => {
+    if (alreadyAnswered || !canUnlockMore) return;
+    emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId });
   };
 
   return (
@@ -2806,6 +2814,52 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
           );
         })}
       </div>
+
+      {/* Punkte-Anzeige + Unlock-Button (per-Team-Modell) */}
+      {!alreadyAnswered && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 8,
+          padding: '10px 12px', borderRadius: 12,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1.5px solid rgba(255,255,255,0.08)',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontSize: 12, fontWeight: 800, color: '#94A3B8',
+            letterSpacing: '0.05em', textTransform: 'uppercase',
+          }}>
+            <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
+            <span style={{ color: '#FBBF24' }}>
+              {lang === 'de' ? `Wert: ${pointsIfWinNow} Pkt` : `Worth: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+          {canUnlockMore ? (
+            <button
+              onClick={unlockNext}
+              style={{
+                padding: '12px 14px', borderRadius: 12, border: 'none',
+                background: 'rgba(167,139,250,0.18)',
+                border: '1.5px solid rgba(167,139,250,0.5)',
+                color: '#DDD6FE', fontFamily: 'inherit', fontSize: 14, fontWeight: 900,
+                cursor: 'pointer', letterSpacing: '0.04em',
+                boxShadow: '0 2px 8px rgba(167,139,250,0.2)',
+              }}
+            >
+              {lang === 'de'
+                ? `+ Nächsten Hinweis freischalten  (dann ${Math.max(1, pointsIfWinNow - 1)} Pkt)`
+                : `+ Unlock next clue  (then ${Math.max(1, pointsIfWinNow - 1)} pt${Math.max(1, pointsIfWinNow - 1) !== 1 ? 's' : ''})`}
+            </button>
+          ) : (
+            <div style={{
+              padding: '10px 12px', borderRadius: 10, textAlign: 'center',
+              background: 'rgba(255,255,255,0.03)',
+              fontSize: 12, fontWeight: 700, color: '#64748b',
+            }}>
+              {lang === 'de' ? 'Alle Hinweise sichtbar' : 'All clues revealed'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}
       {isMyWin && (

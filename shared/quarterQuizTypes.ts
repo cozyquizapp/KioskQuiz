@@ -821,19 +821,21 @@ export interface QQStateUpdate {
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)
   imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
   // 4 gewinnt / Connect 4 (BUNTE_TUETE kind=onlyConnect)
-  /** Aktuell sichtbarer Hint-Index (0..3). -1 = noch nicht gestartet. */
-  onlyConnectHintIndex: number;
-  /** Server-Timestamp wann der aktuelle Hint angezeigt wurde. */
-  onlyConnectHintRevealedAt: number | null;
+  /** Per-Team Hint-Index (0..3). Jedes Team schaltet individuell frei → Strategie:
+   *  weniger Hinweise = mehr Punkte. Beamer zeigt min(...indices) damit kein Spoiler. */
+  onlyConnectHintIndices: Record<string, number>;
+  /** Per-Team Timestamp wann der aktuelle Hinweis freigeschaltet wurde. */
+  onlyConnectHintRevealedAt: Record<string, number>;
   /** Teams die schon falsch getippt haben — gesperrt für diese Frage. */
   onlyConnectLockedTeams: string[];
-  /** Erstes richtig-tippendes Team. Null wenn noch keiner. */
+  /** Erstes richtig-tippendes Team. Null wenn noch keiner.
+   *  (Wird primär für Display genutzt — die Eval-Liste kommt aus onlyConnectGuesses.) */
   onlyConnectWinnerTeamId: string | null;
   /** Bei welchem Hint-Index (0..3) wurde gelöst — für Punkte-Skala. */
   onlyConnectWinnerHintIdx: number | null;
   /** Per-Team Submission (für Beamer-Display + Logging). */
   onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
-  /** Moderator-einstellbare Sekunden bis Auto-Advance des nächsten Hinweises (Default 15). */
+  /** Deprecated mit Per-Team-Modell — bleibt im Type aus Backward-Compat. */
   onlyConnectHintDurationSec: number;
   // Bluff (BUNTE_TUETE kind=bluff)
   /** Aktuelle Bluff-Sub-Phase. Null wenn nicht aktiv. */

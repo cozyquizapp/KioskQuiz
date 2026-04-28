@@ -814,12 +814,60 @@ export function playScoreUp() {
   tone(1108.73, 'sine', t + 0.1, 0.14, 0.15, 0.005, 0.1, ac);
 }
 
-/** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent. */
+/** Pool von Lobby-Musik-Tracks. Beim Start wird einer zufällig gewählt
+ *  (User-Wunsch 2026-04-28: 4 MP3s shuffle). Die Files müssen in
+ *  /frontend/public/sounds/ liegen — fehlende Dateien werden bei Load-Fehler
+ *  übersprungen, der Player nimmt dann automatisch den nächsten Track.
+ *  Hauptdatei lobby-welcome.mp3 bleibt als Fallback wenn keine der 1-4 da ist. */
+const LOBBY_TRACK_POOL = [
+  '/sounds/lobby-welcome-1.mp3',
+  '/sounds/lobby-welcome-2.mp3',
+  '/sounds/lobby-welcome-3.mp3',
+  '/sounds/lobby-welcome-4.mp3',
+  '/sounds/lobby-welcome.mp3', // Legacy/Fallback
+];
+
+/** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.
+ *  Picked random track from pool. Wenn die Datei nicht existiert, fällt
+ *  HTMLAudioElement auf error → wir versuchen den nächsten Track. */
 export function startLobbyLoop() {
   if (lobbyLoopActive) return;
   if (!isSlotEnabled('lobbyWelcome')) return;
-  const url = resolveSlotUrl('lobbyWelcome');
-  if (!url) return; // kein Synth-Fallback für Loop
+  // Custom-URL aus soundConfig hat Priorität (Mod hat eigene Datei hochgeladen)
+  const customUrl = soundConfig.lobbyWelcome;
+  if (typeof customUrl === 'string' && customUrl.length > 0) {
+    startLobbyTrackFromUrl(customUrl);
+    return;
+  }
+  // Sonst: zufälligen Track aus Pool wählen, mit Fallback-Kette bei 404
+  const shuffled = [...LOBBY_TRACK_POOL].sort(() => Math.random() - 0.5);
+  tryStartLobbyTrackFromPool(shuffled, 0);
+}
+
+function tryStartLobbyTrackFromPool(pool: string[], idx: number): void {
+  if (idx >= pool.length) return; // alle durch — Lobby bleibt still
+  const url = pool[idx];
+  const audio = new Audio(url);
+  audio.addEventListener('error', () => {
+    // Diese Datei nicht da — nächste probieren
+    if (lobbyAudioEl === audio) lobbyAudioEl = null;
+    tryStartLobbyTrackFromPool(pool, idx + 1);
+  }, { once: true });
+  audio.addEventListener('canplay', () => {
+    // Nur einrasten wenn noch nichts anderes läuft
+    if (lobbyLoopActive) return;
+    lobbyLoopActive = true;
+    lobbyAudioEl = audio;
+    audio.volume = masterVolume * musicDuckFactor;
+    audio.currentTime = 0;
+    audio.loop = true;
+    audio.play().catch(() => {});
+  }, { once: true });
+  audio.preload = 'auto';
+  audio.load();
+}
+
+function startLobbyTrackFromUrl(url: string): void {
   lobbyLoopActive = true;
   lobbyAudioEl = getOrCreateAudio(url);
   lobbyAudioEl.volume = masterVolume * musicDuckFactor;

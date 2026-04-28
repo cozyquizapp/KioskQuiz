@@ -2878,14 +2878,16 @@ function SetupView({
     border: '1px solid rgba(255,235,200,0.08)',
     boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.45)',
   };
+  // Kompakter — User-Wunsch 2026-04-28: 'fühlt sich noch nicht so nice an'.
+  // Vorher: padding 10px + minHeight 44. Jetzt 6/36 → ~30 % weniger Whitespace.
   const settingRow: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '10px 4px', minHeight: 44,
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '6px 4px', minHeight: 36,
   };
   const settingLabel: React.CSSProperties = {
     fontSize: 11, fontWeight: 900, color: '#a8a395',
-    letterSpacing: '0.1em', textTransform: 'uppercase',
-    minWidth: 92, display: 'inline-flex', alignItems: 'center', gap: 6,
+    letterSpacing: '0.08em', textTransform: 'uppercase',
+    minWidth: 86, display: 'inline-flex', alignItems: 'center', gap: 6,
   };
 
   const draft = drafts.find(x => x.id === selectedDraftId);
@@ -2897,10 +2899,10 @@ function SetupView({
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 120, paddingTop: 8 }}>
 
-      {/* ── HERO: Fragensatz (groß, gold-glow, Dropdown im Fokus) ── */}
+      {/* ── HERO: Fragensatz als Karten-Grid (statt Dropdown) ── */}
       <div style={{
         position: 'relative', overflow: 'hidden',
-        padding: '24px 28px 22px', borderRadius: 22,
+        padding: '20px 24px 22px', borderRadius: 22,
         background:
           'radial-gradient(ellipse at 0% 0%, rgba(245,158,11,0.22), transparent 55%),' +
           'radial-gradient(ellipse at 100% 100%, rgba(244,114,182,0.14), transparent 60%),' +
@@ -2912,55 +2914,82 @@ function SetupView({
           'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 900, color: GOLD, marginBottom: 10,
+          fontSize: 11, fontWeight: 900, color: GOLD, marginBottom: 12,
           letterSpacing: '0.16em', textTransform: 'uppercase',
-          display: 'inline-flex', alignItems: 'center', gap: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
-          <span>📚 Fragensatz</span>
+          <span>📚 Fragensatz wählen</span>
           {savingSound && <span style={{ fontSize: 10, color: GOLD, fontWeight: 700, opacity: 0.7 }}>• speichert…</span>}
         </div>
-        <select
-          value={selectedDraftId}
-          onChange={e => setSelectedDraftId(e.target.value)}
-          style={{
-            width: '100%', padding: '14px 18px', borderRadius: 14,
-            border: '1px solid rgba(245,158,11,0.4)',
-            background: 'rgba(0,0,0,0.45)', color: '#fef3c7',
-            fontFamily: 'inherit', fontSize: 18, fontWeight: 800,
-            cursor: 'pointer', outline: 'none',
-            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4), 0 0 24px rgba(245,158,11,0.06)',
-          }}
-        >
-          {drafts.length === 0 && <option value="">— keine Drafts —</option>}
-          {drafts.map(d => (
-            <option key={d.id} value={d.id}>
-              {d.title} · {d.questionCount} Fragen
-            </option>
-          ))}
-        </select>
-        {selectedDraft && (
+        {drafts.length === 0 ? (
+          <div style={{ color: '#a8a395', fontSize: 14, fontStyle: 'italic', padding: '20px 0' }}>
+            Keine Fragensätze gefunden. Im Builder anlegen oder importieren.
+          </div>
+        ) : (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-            marginTop: 10, fontSize: 12, color: '#a8a395', fontWeight: 700,
+            display: 'grid', gap: 10,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           }}>
-            <span>{selectedDraft.questionCount} Fragen</span>
-            <span style={{ opacity: 0.4 }}>·</span>
-            <span style={{
-              fontSize: 11, fontWeight: 900,
-              color: fitOK ? '#86efac' : '#fbbf24',
-              padding: '2px 10px', borderRadius: 999,
-              background: fitOK ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
-              border: `1px solid ${fitOK ? 'rgba(34,197,94,0.32)' : 'rgba(251,191,36,0.32)'}`,
-            }}>
-              {fitOK
-                ? (fitTruncate
-                    ? `✓ passt — Set hat ${selectedDraft.questionCount}, kürze auf ${fitNeeded} (${phases} Runden)`
-                    : `✓ passt für ${phases} Runden`)
-                : `⚠ ${selectedDraft.questionCount}/${fitNeeded} — Set hat nur ${Math.floor(selectedDraft.questionCount / 5)} Runden`}
-            </span>
+            {drafts.map(d => {
+              const sel = d.id === selectedDraftId;
+              const draftFit = d.questionCount >= phases * 5;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedDraftId(d.id)}
+                  style={{
+                    textAlign: 'left',
+                    padding: '12px 14px', borderRadius: 14,
+                    border: sel ? `2px solid ${GOLD}` : '1.5px solid rgba(255,220,180,0.12)',
+                    background: sel
+                      ? 'linear-gradient(180deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06))'
+                      : 'rgba(0,0,0,0.32)',
+                    color: '#fef3c7', cursor: 'pointer', fontFamily: 'inherit',
+                    boxShadow: sel
+                      ? '0 6px 18px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
+                      : 'inset 0 1px 0 rgba(0,0,0,0.4)',
+                    transition: 'all 0.15s',
+                    display: 'flex', flexDirection: 'column', gap: 6,
+                  }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 900, lineHeight: 1.2,
+                    color: sel ? '#fef3c7' : '#e2e8f0',
+                  }}>{d.title}</div>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                    fontSize: 11, fontWeight: 700, color: '#a8a395',
+                  }}>
+                    <span>{d.questionCount} Fragen</span>
+                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span style={{
+                      padding: '1px 8px', borderRadius: 999,
+                      background: draftFit ? 'rgba(34,197,94,0.14)' : 'rgba(251,191,36,0.14)',
+                      border: `1px solid ${draftFit ? 'rgba(34,197,94,0.32)' : 'rgba(251,191,36,0.32)'}`,
+                      color: draftFit ? '#86efac' : '#fde68a',
+                      fontWeight: 800,
+                    }}>{draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {selectedDraft && fitTruncate && (
+          <div style={{
+            marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fde68a',
+            padding: '6px 12px', borderRadius: 8,
+            background: 'rgba(251,191,36,0.10)',
+            border: '1px solid rgba(251,191,36,0.25)',
+          }}>
+            ℹ Set hat {selectedDraft.questionCount} Fragen — nutze die ersten {fitNeeded} ({phases} Runden × 5)
           </div>
         )}
       </div>
+
+      {/* ── SCHEDULE-VORSCHAU — was kommt in welcher Runde ── */}
+      {selectedDraft && fitOK && (
+        <SchedulePreview draftId={qqDraftId} phases={phases} />
+      )}
 
       {/* ── QUICK-SETTINGS — alles auf einen Blick als Pill-Reihen ── */}
       <div style={{
@@ -3235,6 +3264,37 @@ function SetupView({
         )}
       </div>
 
+      {/* ── Start-Voraussetzungen-Check (vor dem Sticky-Button) ──
+          User-Wunsch 2026-04-28: 'Vorbedingungen sichtbar machen vor dem
+          Klick, statt Alert nach Klick'. Listet die Checks die noch fehlen. */}
+      {(() => {
+        const issues: string[] = [];
+        if (!selectedDraftId) issues.push('Kein Fragensatz gewählt');
+        else if (!fitOK) issues.push(`Fragensatz hat ${selectedDraft?.questionCount ?? 0} Fragen — für ${phases} Runden braucht es ${fitNeeded}`);
+        const teamCount = s.teams.length;
+        if (teamCount === 0) issues.push('Noch keine Teams beigetreten (Start trotzdem möglich, dann ohne Spieler)');
+        if (issues.length === 0) return null;
+        return (
+          <div style={{
+            padding: '10px 16px', borderRadius: 12,
+            background: 'rgba(251,191,36,0.06)',
+            border: '1px solid rgba(251,191,36,0.25)',
+            marginBottom: 4, fontSize: 12, fontWeight: 700, color: '#fde68a',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fbbf24', marginBottom: 2 }}>
+              Vor dem Start
+            </div>
+            {issues.map((iss, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                <span style={{ color: '#fbbf24' }}>•</span>
+                <span>{iss}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* ── Sticky Start-Footer ── */}
       <div style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50,
@@ -3277,6 +3337,87 @@ function SetupView({
         </div>
       </div>
 
+    </div>
+  );
+}
+
+// ── Schedule-Vorschau im Setup ──
+// Zeigt pro Runde die Kategorien-Sequenz aus dem aktuell gewählten Draft.
+// Hilft dem Mod schon vor dem Start zu sehen ob's gut verteilt ist.
+function SchedulePreview({ draftId, phases }: { draftId: string; phases: 3 | 4 }) {
+  const [questions, setQuestions] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (!draftId) return;
+    let cancelled = false;
+    fetch(`/api/qq/drafts/${encodeURIComponent(draftId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.questions) setQuestions(d.questions); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [draftId]);
+  if (!questions) return null;
+  // Pro Phase 1..N die Fragen extrahieren
+  const byPhase: Record<number, any[]> = {};
+  for (const q of questions) {
+    const p = q.phaseIndex;
+    if (p < 1 || p > phases) continue;
+    if (!byPhase[p]) byPhase[p] = [];
+    byPhase[p].push(q);
+  }
+  const CAT_EMOJI: Record<string, string> = {
+    SCHAETZCHEN: '🎯', MUCHO: '🅰️', BUNTE_TUETE: '🎁',
+    ZEHN_VON_ZEHN: '🎰', CHEESE: '📸',
+  };
+  const SUB_EMOJI: Record<string, string> = {
+    onlyConnect: '🧩', bluff: '🎭', hotPotato: '🔥',
+    top5: '🏆', oneOfEight: '🕵️', order: '📋', map: '🗺️',
+  };
+  return (
+    <div style={{
+      padding: '14px 18px', borderRadius: 16,
+      background: 'linear-gradient(180deg, rgba(255,235,200,0.04), rgba(255,235,200,0.012))',
+      border: '1px solid rgba(255,220,180,0.10)',
+      boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+    }}>
+      <div style={{
+        fontSize: 11, fontWeight: 900, color: '#6b6555',
+        letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 10,
+      }}>🗺 Schedule-Vorschau</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {Array.from({ length: phases }, (_, i) => i + 1).map(p => {
+          const entries = byPhase[p] ?? [];
+          return (
+            <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: '#fde68a',
+                minWidth: 70, letterSpacing: '0.06em',
+              }}>Runde {p}</div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {entries.map((q, i) => {
+                  const isBT = q.category === 'BUNTE_TUETE';
+                  const sub = isBT ? q.bunteTuete?.kind : null;
+                  const emoji = isBT && sub ? (SUB_EMOJI[sub] ?? '🎁') : (CAT_EMOJI[q.category] ?? '?');
+                  const tip = isBT && sub
+                    ? `${q.category} (${sub})`
+                    : q.category;
+                  return (
+                    <span key={i} title={tip} style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 28, height: 28, borderRadius: 8,
+                      background: 'rgba(255,235,200,0.06)',
+                      border: '1px solid rgba(255,220,180,0.14)',
+                      fontSize: 16,
+                    }}>{emoji}</span>
+                  );
+                })}
+                {entries.length === 0 && (
+                  <span style={{ fontSize: 11, color: '#6b6555', fontStyle: 'italic' }}>— keine Fragen —</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

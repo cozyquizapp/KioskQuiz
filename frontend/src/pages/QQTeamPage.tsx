@@ -1306,17 +1306,18 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
 function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const colors = ['#3B82F6', '#F59E0B', '#EF4444', '#A855F7'];
   const color  = colors[(s.gamePhaseIndex - 1) % 4];
-  const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] };
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Alles auf eine Karte!'],
-                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'All or nothing!'] };
+  // Quiz-Runden heißen immer „Runde N". Das echte „Finale" ist seit
+  // Connections-Einführung das 4×4-Mini-Game.
+  const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Letzte Quiz-Runde!'],
+                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'Last quiz round!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
   const showRules    = isFirstOfRound && s.introStep === 1;
   const showCategory = !isFirstOfRound || s.introStep >= 2;
-  const isFinal = s.gamePhaseIndex === s.totalPhases;
-  const phaseName = isFinal ? (lang === 'de' ? 'Finale' : 'Final') : names[lang][s.gamePhaseIndex];
-  const phaseDesc = isFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in') : descs[lang][s.gamePhaseIndex];
+  const phaseName = names[lang][s.gamePhaseIndex];
+  const phaseDesc = descs[lang][s.gamePhaseIndex];
 
   const cat = s.currentQuestion?.category;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;

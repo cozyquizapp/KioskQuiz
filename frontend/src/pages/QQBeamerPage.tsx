@@ -161,9 +161,11 @@ const bt = {
     freeDesc: { de: 'Setzen oder Klauen', en: 'Place or steal' },
   },
   phase: {
-    names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Finale'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Final'] },
-    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Stapeln freigeschaltet!', 'Alles auf eine Karte!'],
-             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Stack unlocked!', 'All or nothing!'] },
+    // Quiz-Runden heißen immer „Runde N". Das echte „Finale" ist seit
+    // Connections-Einführung das 4×4-Mini-Game (eigene Phase, eigener Header).
+    names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Stapeln freigeschaltet!', 'Letzte Quiz-Runde!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Stack unlocked!', 'Last quiz round!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -3131,9 +3133,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
   const phaseNamesRaw = bt.phase.names[lang];
   const phaseDescsRaw = bt.phase.descs[lang];
-  const isFinal = s.gamePhaseIndex === s.totalPhases;
-  const phaseName = isFinal ? (lang === 'de' ? 'Finale' : 'Final') : phaseNamesRaw[s.gamePhaseIndex];
-  const phaseDesc = isFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in') : phaseDescsRaw[s.gamePhaseIndex];
+  // „Finale" ist seit Connections-Einführung das 4×4-Mini-Game, NICHT mehr die
+  // letzte Quiz-Runde. Quiz-Runden werden immer als „Runde N" angezeigt — auch
+  // die letzte. Falls Connections deaktiviert ist und die letzte Quiz-Runde
+  // gleichzeitig das Spielende ist, behält sie trotzdem ihren „Runde N"-Titel
+  // (das echte Finale-Drama liegt bei der Connections-Phase).
+  const phaseName = phaseNamesRaw[s.gamePhaseIndex];
+  const phaseDesc = phaseDescsRaw[s.gamePhaseIndex];
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -3180,8 +3186,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     },
     4: {
       emoji: '🏯',
-      de: ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
-      en: ['Per correct answer choose one action:', 'Final round — everything stays available!'],
+      de: s.connectionsEnabled !== false
+        ? ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Quiz-Runde — danach kommt das Finale!']
+        : ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
+      en: s.connectionsEnabled !== false
+        ? ['Per correct answer choose one action:', 'Last quiz round — finale follows!']
+        : ['Per correct answer choose one action:', 'Final round — everything stays available!'],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
@@ -3209,16 +3219,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
   const prevIdx = s.gamePhaseIndex - 1;
-  const prevIsFinal = prevIdx === s.totalPhases;
   const prevColor = phaseColors[Math.max(0, prevIdx - 1) % 3];
-  const prevPhaseName = prevIdx < 1
-    ? phaseName
-    : prevIsFinal ? (lang === 'de' ? 'Finale' : 'Final')
-    : phaseNamesRaw[prevIdx];
-  const prevPhaseDesc = prevIdx < 1
-    ? phaseDesc
-    : prevIsFinal ? (lang === 'de' ? 'Alles aufs Spiel' : 'All in')
-    : phaseDescsRaw[prevIdx];
+  const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
+  const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
 
   const displayColor = transitioning ? prevColor : color;
   const displayPhaseDesc = transitioning ? prevPhaseDesc : phaseDesc;
@@ -3233,10 +3236,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const prevDigit = prevTitleMatch ? prevTitleMatch[2] : '';
   const newDigit  = newTitleMatch  ? newTitleMatch[2]  : '';
 
-  // Finale-Roll: vorige Runde war "Runde N", neue ist "Finale/Final".
-  // Die alte "Runde N" fällt, und "FINALE" rollt von oben rein – gleiche Choreo
-  // wie der Ziffer-Flip, aber mit Wort-Roll statt Ziffer-Roll + Gold-Gradient.
-  const isFinaleTransition = hasRoundTransition && isFinal && !!prevTitleMatch && !canDigitFlip;
+  // Finale-Roll-Animation deaktiviert seit „Finale" jetzt das 4×4-Connections-
+  // Mini-Game ist und Quiz-Runden immer „Runde N" heißen. Variablen bleiben
+  // als no-op für die Render-Pfade unten.
+  const isFinaleTransition = false;
   const finaleWord = lang === 'de' ? 'FINALE' : 'FINAL';
   const prevRoundFull = prevTitleMatch ? `${prevTitleMatch[1]} ${prevTitleMatch[2]}` : '';
 

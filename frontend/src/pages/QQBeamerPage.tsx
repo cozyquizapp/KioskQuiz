@@ -7799,13 +7799,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
             // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
             const expandedLayout = zvzStep >= 1;
+            // Wenn auf einer Option viele Top-Bets liegen (4+ Teams gleicher
+            // Höchstwert), brauchen wir mehr Platz unter den Cards damit die
+            // Avatare nicht in die nächste Reihe rutschen.
+            const maxChips = Math.max(0, ...zvzHighestPerOption.map(h => h?.teamIds?.length ?? 0));
+            const heavyChips = maxChips >= 4;
             return (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               columnGap: 18,
-              rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
-              paddingBottom: expandedLayout ? 'clamp(62px, 7.5vh, 96px)' : 0,
+              rowGap: expandedLayout ? (heavyChips ? 'clamp(110px, 14vh, 160px)' : 'clamp(80px, 10vh, 120px)') : 18,
+              paddingBottom: expandedLayout ? (heavyChips ? 'clamp(96px, 11vh, 140px)' : 'clamp(62px, 7.5vh, 96px)') : 0,
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
@@ -7884,29 +7889,46 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {/* Top-Bet-Chips: haengen UNTER der Card (nur ein kleiner Lip
                         ueberlappt den Card-Rand). ZvZ-Cards sind flach → wenn
                         Chips mittig auf der Linie sitzen, ueberdecken sie das Label. */}
-                    {highestVisibleOpt && highestBets.length > 0 && (
+                    {highestVisibleOpt && highestBets.length > 0 && (() => {
+                      const cnt = highestBets.length;
+                      // Chip-Tiers nach Anzahl gleichplatzierter Top-Bets pro Option:
+                      // bei 4+ massiv schrumpfen, sonst rutschen Chips in 2. Reihe und
+                      // ueberlagern die naechste Card-Zeile.
+                      const tier: 'lg' | 'md' | 'sm' | 'xs' =
+                        cnt >= 5 ? 'xs' : cnt >= 4 ? 'sm' : cnt >= 3 ? 'md' : 'lg';
+                      const avSz =
+                        tier === 'xs' ? 'clamp(28px, 2.8vw, 40px)' :
+                        tier === 'sm' ? 'clamp(36px, 3.6vw, 52px)' :
+                        tier === 'md' ? 'clamp(44px, 4.6vw, 64px)' :
+                                        'clamp(52px, 5.4vw, 76px)';
+                      const ptsFs =
+                        tier === 'xs' ? 'clamp(14px, 1.5vw, 20px)' :
+                        tier === 'sm' ? 'clamp(16px, 1.8vw, 24px)' :
+                        tier === 'md' ? 'clamp(18px, 2vw, 28px)' :
+                                        'clamp(20px, 2.2vw, 30px)';
+                      const padR = tier === 'xs' ? 10 : tier === 'sm' ? 12 : tier === 'md' ? 14 : 18;
+                      const innerGap = tier === 'xs' ? 4 : tier === 'sm' ? 6 : 8;
+                      const outerGap = cnt >= 4 ? 4 : cnt > 2 ? 6 : 10;
+                      return (
                       <div style={{
                         position: 'absolute', left: 8, right: 8, bottom: 0,
                         transform: 'translateY(72%)',
                         display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
                         justifyContent: 'center',
-                        gap: highestBets.length > 3 ? 6 : 10,
+                        gap: outerGap,
                         pointerEvents: 'none', zIndex: 5,
                       }}>
                         {highestBets.map(({ team: tm, pts, submittedAt }, bi) => {
                           const timeSec = t0 ? Math.max(0, (submittedAt - t0) / 1000) : null;
                           const isFastest = showTimePills && bi === 0;
-                          // Avatar etwas kleiner wenn viele Chips, damit kein Ueberlappen
-                          const many = highestBets.length > 3;
-                          const avSz = many ? 'clamp(44px, 4.6vw, 64px)' : 'clamp(52px, 5.4vw, 76px)';
                           // Dim-Logik bewusst entfernt (User-Feedback): ZvZ-Voter-Chips
                           // bleiben voll opak auf allen Optionen, Falsch-Markierung
                           // laeuft nur ueber die Card selbst (Rand + Text gedimmt).
                           return (
                             <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                               position: 'relative',
-                              display: 'flex', alignItems: 'center', gap: 8,
-                              padding: '4px 18px 4px 4px',
+                              display: 'flex', alignItems: 'center', gap: innerGap,
+                              padding: `2px ${padR}px 2px 2px`,
                               borderRadius: 999,
                               background: 'rgba(0,0,0,0.7)',
                               border: isFastest ? '3px solid #FBBF24' : `2px solid ${tm.color}`,
@@ -7917,7 +7939,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             }}>
                               <QQTeamAvatar avatarId={tm.avatarId} size={avSz} />
                               <span style={{
-                                fontSize: 'clamp(20px, 2.2vw, 30px)',
+                                fontSize: ptsFs,
                                 fontWeight: 900,
                                 // Bet-Zahl in Team-Farbe (sofort erkennbar wer wo gesetzt
                                 // hat) + Gold-Text-Shadow als gemeinsamer Akzent.
@@ -7950,7 +7972,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           );
                         })}
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}

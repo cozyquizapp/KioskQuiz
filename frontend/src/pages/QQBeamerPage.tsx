@@ -5805,19 +5805,46 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 </span>
               )}
             </div>
-            {/* Voter-Avatare (nur im Reveal anzeigen) */}
+            {/* Voter-Avatare im Reveal — bigger, prominenter, wie bei MUCHO.
+                User-Wunsch 2026-04-28: 'wer wo gesetzt hat anzeigen wie bei
+                MUCHO nur eventuell mehr antworten'. */}
             {revealed && voters.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4 }}>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center',
+                marginTop: 8, paddingTop: 8,
+                borderTop: '1px dashed rgba(255,255,255,0.10)',
+              }}>
+                <span style={{
+                  fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 800,
+                  color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  marginRight: 4,
+                }}>
                   {lang === 'de' ? 'Wählten' : 'Voted'}
                 </span>
-                {voters.map(vid => {
+                {voters.map((vid, vIdx) => {
                   const tm = s.teams.find(t => t.id === vid);
                   if (!tm) return null;
                   return (
-                    <QQTeamAvatar key={vid} avatarId={tm.avatarId} size={26} style={{
-                      boxShadow: `0 0 0 1.5px ${tm.color}99`,
-                    }} />
+                    <div key={vid} title={tm.name} style={{
+                      position: 'relative',
+                      animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.08 + vIdx * 0.06}s both`,
+                    }}>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(38px, 4vw, 52px)'} style={{
+                        boxShadow: showAsReal
+                          ? `0 0 0 2.5px #22C55E, 0 0 14px rgba(34,197,94,0.5)`
+                          : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}66`,
+                      }} />
+                      {showAsReal && (
+                        <span aria-hidden style={{
+                          position: 'absolute',
+                          top: -6, right: -6,
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: '#22C55E', border: '2px solid #0D0A06',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
+                        }}>✓</span>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -6165,7 +6192,9 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         </div>
       )}
 
-      {/* Team-Status-Reihe (analog CHEESE/4×4) */}
+      {/* Team-Status-Reihe (analog CHEESE/4×4)
+          Zeigt zusätzlich Strike-Dots für Teams die schon falsch geraten haben
+          aber noch nicht locked sind (nach 3 Strikes locked). */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: 'clamp(10px, 1.6vw, 22px)', flexWrap: 'wrap',
@@ -6176,13 +6205,14 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           const isLocked = lockedSet.has(tm.id);
           const isWinner = winnerSet.has(tm.id);
           const dim = !isLocked && !isWinner;
+          const strikes = (s.onlyConnectStrikes ?? {})[tm.id] ?? 0;
           return (
-            <div key={tm.id} title={tm.name} style={{
+            <div key={tm.id} title={`${tm.name}${strikes > 0 ? ` · ${strikes} Strikes` : ''}`} style={{
               position: 'relative',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               flexShrink: 0,
-              opacity: dim ? 0.55 : 1,
-              filter: dim ? 'grayscale(0.4)' : 'none',
+              opacity: dim && strikes === 0 ? 0.55 : 1,
+              filter: dim && strikes === 0 ? 'grayscale(0.4)' : 'none',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(48px, 5vw, 72px)'} style={{
@@ -6204,13 +6234,29 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               )}
               {isLocked && !isWinner && (
                 <div style={{
-                  position: 'absolute', bottom: -4, right: -4,
+                  position: 'absolute', top: '38%', right: -4,
                   width: 26, height: 26, borderRadius: '50%',
                   background: '#EF4444', border: '2px solid #0D0A06',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, fontWeight: 900, color: '#fff', lineHeight: 1,
                   animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
                 }}>✕</div>
+              )}
+              {/* Strike-Dots: 3 Slots, gefüllt = strike, leer = noch frei.
+                  Nach 3 Strikes → locked (✕ erscheint statt Dots). */}
+              {!isWinner && !isLocked && strikes > 0 && (
+                <div style={{
+                  display: 'flex', gap: 3, alignItems: 'center',
+                }}>
+                  {[0, 1, 2].map(idx => (
+                    <span key={idx} style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: idx < strikes ? '#EF4444' : 'rgba(148,163,184,0.25)',
+                      boxShadow: idx < strikes ? '0 0 6px rgba(239,68,68,0.6)' : 'none',
+                      transition: 'background 0.3s ease, box-shadow 0.3s ease',
+                    }} />
+                  ))}
+                </div>
               )}
             </div>
           );

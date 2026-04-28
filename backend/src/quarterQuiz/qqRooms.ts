@@ -100,7 +100,8 @@ export interface QQRoomState {
   // 4 gewinnt / Connect 4 (BUNTE_TUETE kind=onlyConnect)
   onlyConnectHintIndices: Record<string, number>;                            // teamId → 0..3 (per-team hint level)
   onlyConnectHintRevealedAt: Record<string, number>;                         // teamId → timestamp last hint unlock
-  onlyConnectLockedTeams: string[];                                         // gesperrte Teams
+  onlyConnectLockedTeams: string[];                                         // gesperrte Teams (3 Strikes)
+  onlyConnectStrikes: Record<string, number>;                               // teamId → wrong-guess count (max 3)
   onlyConnectWinnerTeamId: string | null;                                   // erstes richtiges Team
   onlyConnectWinnerHintIdx: number | null;                                  // Hint-Index bei Gewinn
   onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
@@ -310,6 +311,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       onlyConnectHintIndices: {},
       onlyConnectHintRevealedAt: {},
       onlyConnectLockedTeams: [],
+      onlyConnectStrikes: {},
       onlyConnectWinnerTeamId: null,
       onlyConnectWinnerHintIdx: null,
       onlyConnectGuesses: [],
@@ -2838,6 +2840,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     onlyConnectHintIndices:      room.onlyConnectHintIndices ?? {},
     onlyConnectHintRevealedAt:   room.onlyConnectHintRevealedAt ?? {},
     onlyConnectLockedTeams:      room.onlyConnectLockedTeams ?? [],
+    onlyConnectStrikes:          room.onlyConnectStrikes ?? {},
     onlyConnectWinnerTeamId:     room.onlyConnectWinnerTeamId ?? null,
     onlyConnectWinnerHintIdx:    room.onlyConnectWinnerHintIdx ?? null,
     onlyConnectGuesses:          room.onlyConnectGuesses ?? [],
@@ -3483,10 +3486,15 @@ export function qqOnlyConnectReset(room: QQRoomState): void {
   room.onlyConnectHintIndices = {};
   room.onlyConnectHintRevealedAt = {};
   room.onlyConnectLockedTeams = [];
+  room.onlyConnectStrikes = {};
   room.onlyConnectWinnerTeamId = null;
   room.onlyConnectWinnerHintIdx = null;
   room.onlyConnectGuesses = [];
 }
+
+/** Strikes-Limit für 4 gewinnt: nach N falschen Tipps wird das Team gesperrt.
+ *  User-Wunsch 2026-04-28: '3 strikes statt 1'. */
+export const QQ_ONLY_CONNECT_MAX_STRIKES = 3;
 
 /**
  * Start: jedes verbundene Team beginnt bei Hint-Index 0.
@@ -3635,10 +3643,17 @@ export function qqOnlyConnectSubmitGuess(
     }
     // Timer NICHT mehr clearen — andere Teams können noch tippen.
   } else {
-    room.onlyConnectLockedTeams.push(teamId);
+    // Strike erhöhen — erst nach QQ_ONLY_CONNECT_MAX_STRIKES Fehlern locked.
+    // (User-Wunsch 2026-04-28: '3 strikes statt 1', mehr Spielzeit pro Team.)
+    const before = room.onlyConnectStrikes[teamId] ?? 0;
+    room.onlyConnectStrikes[teamId] = before + 1;
+    if (room.onlyConnectStrikes[teamId] >= QQ_ONLY_CONNECT_MAX_STRIKES) {
+      room.onlyConnectLockedTeams.push(teamId);
+    }
   }
   room.lastActivityAt = now;
-  return { matched: isMatch, locked: !isMatch, alreadyAnswered: false };
+  const nowLocked = room.onlyConnectLockedTeams.includes(teamId);
+  return { matched: isMatch, locked: !isMatch && nowLocked, alreadyAnswered: false };
 }
 
 /** True wenn alle verbundenen Teams entweder richtig liegen oder gesperrt sind. */

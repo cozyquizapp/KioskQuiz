@@ -826,8 +826,10 @@ export interface QQStateUpdate {
   onlyConnectHintIndices: Record<string, number>;
   /** Per-Team Timestamp wann der aktuelle Hinweis freigeschaltet wurde. */
   onlyConnectHintRevealedAt: Record<string, number>;
-  /** Teams die schon falsch getippt haben — gesperrt für diese Frage. */
+  /** Teams die nach 3 Strikes gesperrt wurden — keine weiteren Tipps mehr. */
   onlyConnectLockedTeams: string[];
+  /** Strikes pro Team (0..3). 3 Strikes → locked. */
+  onlyConnectStrikes: Record<string, number>;
   /** Erstes richtig-tippendes Team. Null wenn noch keiner.
    *  (Wird primär für Display genutzt — die Eval-Liste kommt aus onlyConnectGuesses.) */
   onlyConnectWinnerTeamId: string | null;

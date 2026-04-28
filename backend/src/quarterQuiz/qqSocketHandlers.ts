@@ -1496,9 +1496,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // Gleicher Schutz: Bluff hat write/vote-Timer aber Mod könnte trotzdem
           // zu früh drücken. Nur weiterschalten wenn mind. 1 Submit oder Vote
           // schon vorliegt — sonst silent no-op.
+          // 2026-04-28: User-Bug 'bei bluff 0/5 teams haben gewählt? und dann
+          // kommt reveal?' — Mod-Space im vote-Phase ohne Votes triggerte direkt
+          // reveal. Jetzt auch im vote-Phase silent-no-op bei 0 Votes.
           const hasSubmit = Object.values(room.bluffSubmissions ?? {}).some(t => t?.trim());
           const hasVote = Object.keys(room.bluffVotes ?? {}).length > 0;
           if (!hasSubmit && !hasVote && room.bluffPhase === 'write') {
+            ok(ack);
+            return;
+          }
+          if (!hasVote && room.bluffPhase === 'vote') {
+            // 0 Votes — nicht advancen, sonst kommt reveal ohne irgendwas.
+            // Mod muss warten bis mind. 1 Team gevotet hat (Dummies tippen
+            // nach 4-9s automatisch).
             ok(ack);
             return;
           }

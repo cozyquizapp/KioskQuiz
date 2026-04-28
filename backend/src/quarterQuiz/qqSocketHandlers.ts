@@ -1464,6 +1464,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // würde sonst den Auto-Finish-Pfad umgehen + Phase nicht korrekt setzen.
         const subKind = room.currentQuestion?.bunteTuete?.kind;
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
+          // Schutz gegen versehentliches Premature-Reveal durch Mod-Space:
+          // 4 gewinnt hat keinen Timer + keine sichtbare Phase-Progression im
+          // Mod-UI, deshalb kann ein Doppel-Klick die Eingabe-Phase überspringen.
+          // Reveal nur wenn mindestens irgendwas passiert ist (Tipp ODER mind.
+          // 1 Hint freigeschaltet). Sonst silent no-op — Mod muss expliziten
+          // 'Auflösen'-Button drücken (qq:onlyConnectRevealAll).
+          const hasAnyGuess = (room.onlyConnectGuesses ?? []).length > 0;
+          const allUnlockedSomething = Object.values(room.onlyConnectHintIndices ?? {})
+            .some(idx => (idx ?? 0) >= 1);
+          if (!hasAnyGuess && !allUnlockedSomething) {
+            ok(ack);
+            return;
+          }
           qqOnlyConnectRevealAll(room);
           qqOnlyConnectAutoFinish(room);
           broadcast(io, payload.roomCode);
@@ -1471,6 +1484,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
           return;
         }
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'bluff') {
+          // Gleicher Schutz: Bluff hat write/vote-Timer aber Mod könnte trotzdem
+          // zu früh drücken. Nur weiterschalten wenn mind. 1 Submit oder Vote
+          // schon vorliegt — sonst silent no-op.
+          const hasSubmit = Object.values(room.bluffSubmissions ?? {}).some(t => t?.trim());
+          const hasVote = Object.keys(room.bluffVotes ?? {}).length > 0;
+          if (!hasSubmit && !hasVote && room.bluffPhase === 'write') {
+            ok(ack);
+            return;
+          }
           // Bluff je nach Phase abschließen: write/review → direkt zu vote-end,
           // vote → reveal triggern.
           if (room.bluffPhase === 'write') {

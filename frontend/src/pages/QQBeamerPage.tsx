@@ -1411,7 +1411,17 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
       const cat = s.currentQuestion?.category;
       if (cat === 'SCHAETZCHEN')   return 'QUESTION_SCHAETZCHEN';
       if (cat === 'MUCHO')         return 'QUESTION_MUCHO';
-      if (cat === 'BUNTE_TUETE')   return 'QUESTION_BUNTE_TUETE';
+      if (cat === 'BUNTE_TUETE') {
+        // Sub-Mechaniken mit eigenen dedizierten Beamer-Views (OnlyConnect,
+        // Bluff, HotPotato, Top5, Order, Map, Imposter) NICHT durch Custom-
+        // Template überschreiben — sonst rendert nur ein leerer BG mit
+        // Fireflies (Template kennt keine ph_-Slots für diese Layouts).
+        const kind = s.currentQuestion?.bunteTuete?.kind;
+        const hasDedicatedView = kind === 'onlyConnect' || kind === 'bluff'
+          || kind === 'hotPotato' || kind === 'top5' || kind === 'order'
+          || kind === 'map' || kind === 'oneOfEight';
+        return hasDedicatedView ? null : 'QUESTION_BUNTE_TUETE';
+      }
       if (cat === 'ZEHN_VON_ZEHN') return 'QUESTION_ZEHN';
       if (cat === 'CHEESE')        return 'QUESTION_CHEESE';
       return null;
@@ -9450,7 +9460,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               flyoverSignal={flyoverSignal}
             />
           ) : (
-            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={activeTeamId} showJoker={false} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={activeTeamId} showJoker={true} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
           )}
         </div>
         <div style={{
@@ -9743,26 +9753,19 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </span>
           </div>
 
-          {/* Subject-Card: zu erratender Wert. Inhalt bleibt strukturell
-              gleich — nur ??? wird zur SlotMachineNumber. Border-Width fix
-              auf 3px (vorher 2→3px Sprung beim Reveal verursachte 2px-
-              Layout-Shift). Border-Style wechselt zwar dashed→solid, das
-              ist aber nur visuell und verschiebt nichts. */}
+          {/* Subject-Card: 100 % statisches Layout — Border, Background,
+              Glow ALLES KONSTANT zwischen Question und Reveal. Nur die
+              ??? → Zahl-Stelle innen wechselt via Cross-Fade. User-Wunsch
+              2026-04-28: 'Cards sollen sich nicht verändern, richte gleich
+              so aus dass es passt'. */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 26,
-            background: isReveal
-              ? 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.06))'
-              : 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))',
-            border: isReveal
-              ? '3px solid #FBBF24'
-              : '3px dashed rgba(251,191,36,0.55)',
-            boxShadow: isReveal
-              ? '0 0 48px rgba(251,191,36,0.35), 0 8px 28px rgba(0,0,0,0.4)'
-              : '0 0 40px rgba(251,191,36,0.22), 0 8px 28px rgba(0,0,0,0.4)',
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
+            border: '3px solid rgba(251,191,36,0.7)',
+            boxShadow: '0 0 44px rgba(251,191,36,0.28), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
-            transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
@@ -9787,22 +9790,27 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 position: 'absolute', inset: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {isReveal ? (
-                  <SlotMachineNumber
-                    value={pair.subjectValue}
-                    fontSize="clamp(44px, 6vw, 92px)"
-                    color="#FBBF24"
-                    glow="rgba(251,191,36,0.5)"
-                    isYear={isYearUnitHL}
-                  />
-                ) : (
-                  <span style={{
-                    fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
-                    fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                    textShadow: '0 0 28px rgba(251,191,36,0.45)',
-                    animation: 'timerVignettePulse 1.2s ease-in-out infinite',
-                  }}>???</span>
-                )}
+                {/* Beide Spans übereinander gerendert; opacity flippt smooth.
+                    Slot-Machine-Drop entfernt — User-Wunsch: 'nur die Zahl
+                    wechselt, kein Wackeln'. */}
+                <span style={{
+                  position: 'absolute',
+                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                  textShadow: '0 0 28px rgba(251,191,36,0.45)',
+                  opacity: isReveal ? 0 : 1,
+                  transition: 'opacity 0.5s ease',
+                  animation: isReveal ? undefined : 'timerVignettePulse 1.2s ease-in-out infinite',
+                }}>???</span>
+                <span style={{
+                  position: 'absolute',
+                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                  textShadow: '0 0 32px rgba(251,191,36,0.55)',
+                  opacity: isReveal ? 1 : 0,
+                  transition: 'opacity 0.5s ease 0.15s',
+                  whiteSpace: 'nowrap',
+                }}>{fmtHL(pair.subjectValue)}</span>
               </div>
             </div>
             <div style={{
@@ -11822,19 +11830,25 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
 
   return (
     <div style={{ animation: shakeTick > 0 ? 'boardShake 0.45s ease-out' : undefined }} key={`shake-${shakeTick}`}>
-      {/* Grid — game board styling */}
+      {/* Grid — Border + Glow in Team-Farbe wenn ein Team gerade dran ist
+          (PLACEMENT-Phase). User-Wunsch 2026-04-28: 'Grid soll die Glow-Farbe
+          am Rand haben welches Team gerade setzt'. */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
         gap,
         background: 'rgba(255,255,255,0.03)',
         padding: 10, borderRadius: 18,
-        border: `2px solid ${highlightTeam ? `${activeColor}22` : 'rgba(255,255,255,0.06)'}`,
+        border: `3px solid ${highlightTeam ? `${activeColor}cc` : 'rgba(255,255,255,0.06)'}`,
         boxShadow: highlightTeam
-          ? `0 0 40px ${activeColor}15, inset 0 1px 0 rgba(255,255,255,0.04)`
+          ? `0 0 0 1px ${activeColor}66, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(255,255,255,0.04)`
           : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
-        animation: 'gridIdle 4s ease-in-out infinite',
+        animation: highlightTeam
+          ? 'gridActiveTeamGlow 2.4s ease-in-out infinite'
+          : 'gridIdle 4s ease-in-out infinite',
         transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
+        // CSS-Var für Animation-Pulse (Team-Color als Pulse-Farbe).
+        ['--active-team-color' as any]: activeColor || 'transparent',
       }}>
         {s.grid.flatMap((row, r) =>
           row.map((cell, c) => {

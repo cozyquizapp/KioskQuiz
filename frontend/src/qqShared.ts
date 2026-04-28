@@ -473,6 +473,26 @@ export const QQ_BEAMER_CSS = `
     80%  { box-shadow: 0 0 0 3px rgba(251,191,36,0.45), 0 0 22px 6px rgba(251,191,36,0.35); }
     100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0), 0 0 0 0 rgba(251,191,36,0.0); }
   }
+  /* Grid-Border-Glow wenn ein Team gerade dran ist (PLACEMENT-Phase) —
+     pulsiert sanft mit der Team-Farbe (CSS-Var --active-team-color). */
+  @keyframes gridActiveTeamGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px var(--active-team-color),
+        0 0 80px var(--active-team-color),
+        0 0 32px var(--active-team-color),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      filter: brightness(1);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px var(--active-team-color),
+        0 0 100px var(--active-team-color),
+        0 0 48px var(--active-team-color),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      filter: brightness(1.06);
+    }
+  }
   /* Kaskade: Team-Avatare poppen einzeln auf die Option — leichter Magnet-Drop von oben mit Bounce + Glow */
   @keyframes muchoVoterDrop {
     0%   { opacity: 0; transform: translateY(-28px) scale(0.55) rotate(-8deg); filter: brightness(1.8) drop-shadow(0 0 12px rgba(255,255,255,0.4)); }

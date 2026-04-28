@@ -1674,7 +1674,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: 'Das Ziel',
       color: '#3B82F6',
       lines: [
-        'Größtes zusammenhängendes Gebiet gewinnt.',
+        'Größtes zusammenhängendes Gebiet gewinnt',
       ],
     },
     {
@@ -1773,7 +1773,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: 'The Goal',
       color: '#3B82F6',
       lines: [
-        'Largest connected area wins.',
+        'Largest connected area wins',
       ],
     },
     {

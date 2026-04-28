@@ -10011,98 +10011,240 @@ function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 'clamp(8px, 1vw, 14px)',
         }}>
-          {c.payload.groups.map((g, i) => (
-            <div key={g.id} style={{
-              padding: '8px 14px', borderRadius: 10,
-              background: `${CONNECTIONS_GROUP_COLORS[i]}22`,
-              border: `1.5px solid ${CONNECTIONS_GROUP_COLORS[i]}`,
-              color: '#fff', fontWeight: 800, fontSize: 'clamp(13px, 1.3vw, 18px)',
-              textAlign: 'center',
-            }}>
-              {lang === 'de' ? g.name : (g.nameEn ?? g.name)}
-            </div>
-          ))}
+          {c.payload.groups.map((g, i) => {
+            // Teams die diese Gruppe gefunden haben — Reihenfolge: schnellster zuerst
+            // (sortiert nach Index, an dem sie's in foundGroupIds einreihten = ungefähr
+            // Reihenfolge der Funde, exakte Speed-Order kommt aus placementOrder).
+            const finders = s.teams.filter(t =>
+              c.teamProgress[t.id]?.foundGroupIds.includes(g.id)
+            );
+            // Sort: nach placementOrder Position (= Speed) wenn vorhanden
+            finders.sort((a, b) => {
+              const ia = c.placementOrder.indexOf(a.id);
+              const ib = c.placementOrder.indexOf(b.id);
+              if (ia === -1 && ib === -1) return 0;
+              if (ia === -1) return 1;
+              if (ib === -1) return -1;
+              return ia - ib;
+            });
+            const color = CONNECTIONS_GROUP_COLORS[i];
+            return (
+              <div key={g.id} style={{
+                padding: '10px 14px 14px', borderRadius: 12,
+                background: `${color}22`,
+                border: `1.5px solid ${color}`,
+                color: '#fff', fontWeight: 800, fontSize: 'clamp(13px, 1.3vw, 18px)',
+                textAlign: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                animation: `contentReveal 0.5s ease ${0.6 + i * 0.12}s both`,
+              }}>
+                <div style={{ lineHeight: 1.2 }}>
+                  {lang === 'de' ? g.name : (g.nameEn ?? g.name)}
+                </div>
+                {finders.length > 0 && (
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                    gap: 'clamp(4px, 0.5vw, 8px)',
+                  }}>
+                    {finders.map((tm, fIdx) => (
+                      <div key={tm.id} title={tm.name} style={{
+                        position: 'relative',
+                        animation: `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.9 + i * 0.12 + fIdx * 0.08}s both`,
+                      }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 3.4vw, 52px)'} style={{
+                          boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,
+                        }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
+/**
+ * Live-Rennen — horizontaler Track mit 5 Checkpoints (Start, 1, 2, 3, 4 Gruppen = Ziel).
+ * Avatar pro Team gleitet entsprechend foundCount entlang. Während Placement
+ * wird das aktive Team hervorgehoben + Aktion-Counter „setzt ×N" gezeigt.
+ * Während Active wird der Track als Spannungsanzeige genutzt — wer ist vorn?
+ */
 function ConnectionsTeamProgress({ state: s }: { state: QQStateUpdate }) {
   const c = s.connections!;
   const lang = useLangFlip(s.language);
-  // Sortierung: aktive Phase = nach foundCount + Speed live; reveal/placement = placementOrder
   const isReveal = c.phase === 'reveal' || c.phase === 'placement';
-  const teamsOrdered = isReveal && c.placementOrder.length > 0
-    ? [...c.placementOrder, ...s.teams.filter(t => !c.placementOrder.includes(t.id)).map(t => t.id)]
-    : s.teams.map(t => t.id);
+  const teamsAll = s.teams.slice();
+
+  // Track-Layout: 5 Checkpoints (0..4 Gruppen). Avatare positionieren wir prozentual.
+  // Lane-Höhe: jedes Team eine eigene Lane für klare Übersicht.
 
   return (
     <div style={{
-      display: 'flex', gap: 'clamp(8px, 1vw, 14px)',
-      flexWrap: 'wrap', justifyContent: 'center',
+      width: '100%', maxWidth: 1200, margin: '0 auto',
+      padding: 'clamp(8px, 1vh, 14px) clamp(8px, 1vw, 16px)',
+      borderRadius: 18,
+      background: 'rgba(255,255,255,0.025)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
       position: 'relative', zIndex: 5,
+      display: 'flex', flexDirection: 'column', gap: 'clamp(4px, 0.5vh, 8px)',
     }}>
-      {teamsOrdered.map((teamId, idx) => {
-        const tm = s.teams.find(t => t.id === teamId);
-        if (!tm) return null;
-        const tp = c.teamProgress[teamId];
+      {/* Track-Header mit Checkpoint-Markern */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'clamp(120px, 12vw, 160px) 1fr',
+        alignItems: 'center', gap: 12,
+        fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+        color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
+      }}>
+        <span style={{ paddingLeft: 6 }}>{lang === 'de' ? 'Rennen' : 'Race'}</span>
+        <div style={{ position: 'relative', height: 14 }}>
+          {[0, 1, 2, 3, 4].map(n => {
+            const left = (n / 4) * 100;
+            const isGoal = n === 4;
+            return (
+              <div key={n} style={{
+                position: 'absolute', left: `${left}%`, top: 0,
+                transform: 'translateX(-50%)',
+                fontSize: 11, fontWeight: 900,
+                color: isGoal ? '#FBBF24' : '#64748b',
+              }}>
+                {isGoal ? '🏁' : n}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Eine Lane pro Team */}
+      {teamsAll.map((tm) => {
+        const tp = c.teamProgress[tm.id];
         const found = tp?.foundGroupIds.length ?? 0;
         const fails = tp?.failedAttempts ?? 0;
         const locked = tp?.isLockedOut ?? false;
-        const isActiveTeam = c.phase === 'placement' && c.placementOrder[c.placementCursor] === teamId;
-        const rankBadge = isReveal && c.placementOrder.includes(teamId) ? `#${c.placementOrder.indexOf(teamId) + 1}` : null;
+        const finishedAt = tp?.finishedAt ?? null;
+        const isWinner = found >= 4 && finishedAt != null;
+        const rank = isReveal && c.placementOrder.includes(tm.id)
+          ? c.placementOrder.indexOf(tm.id) + 1
+          : null;
+        const isActiveTeam = c.phase === 'placement' && c.placementOrder[c.placementCursor] === tm.id;
+        const pct = (found / 4) * 100;
+
         return (
-          <div key={teamId} style={{
-            padding: '8px 14px', borderRadius: 14,
-            background: isActiveTeam ? `${tm.color}22` : 'rgba(255,255,255,0.04)',
-            border: `2px solid ${isActiveTeam ? tm.color : (locked ? 'rgba(239,68,68,0.4)' : `${tm.color}55`)}`,
-            display: 'flex', alignItems: 'center', gap: 10,
-            opacity: locked && !isReveal ? 0.55 : 1,
-            transition: 'all 0.3s ease',
-            boxShadow: isActiveTeam ? `0 0 24px ${tm.color}55` : undefined,
+          <div key={tm.id} style={{
+            display: 'grid',
+            gridTemplateColumns: 'clamp(120px, 12vw, 160px) 1fr',
+            alignItems: 'center', gap: 12,
+            opacity: locked && !isReveal ? 0.6 : 1,
           }}>
-            {rankBadge && (
-              <span style={{
-                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#FDE68A',
-                width: 26, textAlign: 'center',
-              }}>{rankBadge}</span>
-            )}
-            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(34px, 3.4vw, 50px)'} />
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{
-                fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 900, color: tm.color,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140,
+            {/* Team-Label links */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '4px 8px', borderRadius: 10,
+              background: isActiveTeam ? `${tm.color}22` : 'transparent',
+              border: isActiveTeam ? `1.5px solid ${tm.color}` : '1.5px solid transparent',
+              transition: 'all 0.3s ease',
+              minWidth: 0,
+            }}>
+              {rank != null && (
+                <span style={{
+                  fontSize: 11, fontWeight: 900, color: rank === 1 ? '#FBBF24' : '#94a3b8',
+                  minWidth: 18, textAlign: 'right',
+                }}>#{rank}</span>
+              )}
+              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 2.6vw, 38px)'} />
+              <span title={tm.name} style={{
+                fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900, color: tm.color,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                flex: 1, minWidth: 0,
               }}>{tm.name}</span>
-              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {[0,1,2,3].map(i => (
-                  <span key={i} style={{
-                    width: 10, height: 10, borderRadius: 3,
-                    background: i < found ? '#22C55E' : 'rgba(255,255,255,0.10)',
-                    border: i < found ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
-                  }} />
-                ))}
-                {fails > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#FCA5A5', marginLeft: 4 }}>
-                    ✕{fails}
-                  </span>
-                )}
-                {locked && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#FCA5A5', marginLeft: 4 }}>
-                    {lang === 'de' ? 'raus' : 'out'}
-                  </span>
-                )}
-              </span>
+              {locked && !isWinner && (
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#FCA5A5' }}>
+                  ✕{fails}
+                </span>
+              )}
             </div>
-            {c.phase === 'placement' && isActiveTeam && (
-              <span style={{
-                marginLeft: 6, padding: '2px 10px', borderRadius: 999,
-                background: '#22C55E', color: '#0a1f0d',
-                fontSize: 11, fontWeight: 900, letterSpacing: 0.4, textTransform: 'uppercase',
+
+            {/* Lane rechts */}
+            <div style={{
+              position: 'relative',
+              height: 'clamp(28px, 3vh, 40px)',
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${tm.color}33`,
+              overflow: 'visible',
+            }}>
+              {/* Checkpoint-Linien */}
+              {[1, 2, 3, 4].map(n => {
+                const left = (n / 4) * 100;
+                const reached = found >= n;
+                return (
+                  <div key={n} style={{
+                    position: 'absolute', left: `${left}%`, top: 0, bottom: 0,
+                    width: 2, marginLeft: -1,
+                    background: reached
+                      ? CONNECTIONS_GROUP_COLORS[n - 1]
+                      : 'rgba(255,255,255,0.10)',
+                    boxShadow: reached ? `0 0 8px ${CONNECTIONS_GROUP_COLORS[n - 1]}88` : 'none',
+                    transition: 'all 0.4s ease',
+                  }} />
+                );
+              })}
+
+              {/* Progress-Fill */}
+              <div style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0,
+                width: `${pct}%`,
+                background: `linear-gradient(90deg, ${tm.color}33, ${tm.color}66)`,
+                borderRadius: 999,
+                transition: 'width 0.7s cubic-bezier(0.34,1.4,0.64,1)',
+                boxShadow: `0 0 18px ${tm.color}55`,
+              }} />
+
+              {/* Avatar als Läufer */}
+              <div style={{
+                position: 'absolute', left: `${pct}%`, top: '50%',
+                transform: 'translate(-50%, -50%)',
+                transition: 'left 0.7s cubic-bezier(0.34,1.4,0.64,1)',
+                animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : (found > 0 && c.phase === 'active' ? 'cfloat 2.4s ease-in-out infinite' : undefined),
+                zIndex: 4,
               }}>
-                {lang === 'de' ? `setzt ×${c.placementRemaining}` : `places ×${c.placementRemaining}`}
-              </span>
-            )}
+                <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 2.8vh, 40px)'} style={{
+                  boxShadow: isWinner
+                    ? `0 0 0 3px #FBBF24, 0 0 18px #FBBF2488`
+                    : isActiveTeam
+                      ? `0 0 0 2px ${tm.color}, 0 0 22px ${tm.color}cc`
+                      : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}66`,
+                }} />
+                {isWinner && (
+                  <span style={{
+                    position: 'absolute', top: -16, left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: 16, lineHeight: 1,
+                    animation: 'cfloat 1.6s ease-in-out infinite',
+                  }}>🏁</span>
+                )}
+              </div>
+
+              {/* Active-Team-Pill rechts: „setzt ×N" */}
+              {isActiveTeam && (
+                <span style={{
+                  position: 'absolute', right: 6, top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '2px 10px', borderRadius: 999,
+                  background: '#22C55E', color: '#0a1f0d',
+                  fontSize: 10, fontWeight: 900, letterSpacing: 0.3, textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(34,197,94,0.45)',
+                }}>
+                  {lang === 'de' ? `×${c.placementRemaining}` : `×${c.placementRemaining}`}
+                </span>
+              )}
+            </div>
           </div>
         );
       })}

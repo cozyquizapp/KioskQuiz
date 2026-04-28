@@ -1337,8 +1337,10 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   // Quiz-Runden heißen immer „Runde N". Das echte „Finale" ist seit
   // Connections-Einführung das 4×4-Mini-Game.
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Bann & Schild!', 'Letzte Quiz-Runde!'],
-                   en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Ban & Shield!', 'Last quiz round!'] };
+  // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
+  // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Letzte Quiz-Runde — danach kommt das Finale!'],
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Last quiz round — finale follows!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -1350,13 +1352,63 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const cat = s.currentQuestion?.category;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
   const catColor = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat]) : color;
+  // Synchron mit Beamer (QQBeamerPage CAT_EXPLAIN + BUNTE_SUB_INTRO).
+  // User-Wunsch 2026-04-28: Texte auf /team mit Beamer abgleichen.
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
     SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
-    MUCHO:         { de: 'Wählt schnell die richtige Antwort!', en: 'Pick the right answer — fast!' },
+    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
     BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
-    CHEESE:        { de: 'Erkennt ihr das Bild?', en: 'Can you identify the image?' },
+    CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
   };
+  // Pro BUNTE_TUETE-Sub-Mechanik eigener 1-Zeiler (sonst stand bei 4 gewinnt
+  // und Bluff nur das generische „Überraschungs-Mechanik").
+  const BUNTE_SUB_INTRO: Record<string, { name: { de: string; en: string }; explain: { de: string; en: string }; emoji: string }> = {
+    onlyConnect: {
+      emoji: '🧩',
+      name:    { de: '4 gewinnt',     en: 'Only Connect' },
+      explain: { de: '4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.',
+                 en: '4 clues, one answer — guess earlier for more points.' },
+    },
+    bluff: {
+      emoji: '🎭',
+      name:    { de: 'Bluff',         en: 'Bluff' },
+      explain: { de: 'Erfindet plausible Falsch-Antworten und ratet die echte.',
+                 en: 'Make up plausible fake answers and find the real one.' },
+    },
+    hotPotato: {
+      emoji: '🔥',
+      name:    { de: 'Heiße Kartoffel', en: 'Hot Potato' },
+      explain: { de: 'Reihum Begriffe nennen — wer hängt, verliert.',
+                 en: 'Take turns naming items — first to stall loses.' },
+    },
+    top5: {
+      emoji: '🏆',
+      name:    { de: 'Top 5',         en: 'Top 5' },
+      explain: { de: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.',
+                 en: 'Guess the most common answers — higher rank, more points.' },
+    },
+    oneOfEight: {
+      emoji: '🕵️',
+      name:    { de: 'Imposter',      en: 'Imposter' },
+      explain: { de: 'Findet die EINE falsche Aussage zwischen 7 wahren.',
+                 en: 'Spot the ONE false statement among 7 true ones.' },
+    },
+    order: {
+      emoji: '📋',
+      name:    { de: 'Reihenfolge',   en: 'Order' },
+      explain: { de: 'Sortiert in der richtigen Reihenfolge.',
+                 en: 'Sort in the correct order.' },
+    },
+    map: {
+      emoji: '🗺️',
+      name:    { de: 'CozyGuessr',    en: 'CozyGuessr' },
+      explain: { de: 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.',
+                 en: 'Guess the location on the map — closer means more points.' },
+    },
+  };
+  const bunteKind = cat === 'BUNTE_TUETE' ? (s.currentQuestion?.bunteTuete?.kind as string | undefined) : undefined;
+  const bunteSub = bunteKind ? BUNTE_SUB_INTRO[bunteKind] : undefined;
 
   // Card border — round color for round intro, category color for category steps
   const introBorder = showCategory ? catColor : color;
@@ -1381,11 +1433,13 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
         ) : showRules ? (
           /* Rule reminder */
           (() => {
+            // Synchron mit Beamer ROUND_RULES. Bann/Schild/Tauschen sind raus,
+            // aktuelle Trinity ist Setzen/Klauen/Stapeln.
             const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
               1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
-              2: { emoji: '⚔️', de: ['2 Felder + Klauen!'], en: ['2 tiles + Stealing!'] },
-              3: { emoji: '⏳', de: ['Freie Aktionswahl', 'Bann & Schild!'], en: ['Free action choice', 'Ban & Shield!'] },
-              4: { emoji: '🔄', de: ['Tauschen & Stapeln!'], en: ['Swap & Stack!'] },
+              2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 tiles or steal', 'Per correct answer'] },
+              3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
+              4: { emoji: '🏯', de: ['Letzte Quiz-Runde', 'danach kommt das Finale'], en: ['Last quiz round', 'finale follows'] },
             };
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
             return (
@@ -1430,12 +1484,14 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Guess It' }, lines: { de: ['Gebt eine Zahl als Schätzung ein', 'Nächste Antwort gewinnt!'], en: ['Enter a number', 'Closest answer wins!'] } },
               MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
-              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Bild erkennen, Antwort eintippen!'], en: ['Identify the image, type your answer!'] } },
-              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['So viele Antworten wie möglich nennen!'], en: ['Name as many answers as you can!'] } },
-              'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['8 Aussagen — eine ist falsch!'], en: ['8 statements — one is false!'] } },
-              'BUNTE_TUETE:order':      { emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Bringt die Begriffe in die richtige Ordnung!'], en: ['Sort the items correctly!'] } },
-              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'Wo ist das?', en: 'Where Is It?' }, lines: { de: ['Markiert den Ort auf der Karte!'], en: ['Mark the spot on the map!'] } },
-              'BUNTE_TUETE:hotPotato':  { emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten — keine Antwort = raus!'], en: ['Take turns — no answer = out!'] } },
+              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Was ist das?', 'Erste richtige Antwort gewinnt'], en: ['What is this?', 'First correct answer wins'] } },
+              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Nennt die häufigsten Antworten', 'Je oben, desto mehr Punkte'], en: ['Name the most common answers', 'Higher rank = more points'] } },
+              'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['Findet die EINE falsche Aussage', 'unter 7 wahren'], en: ['Spot the ONE false statement', 'among 7 true ones'] } },
+              'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
+              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Je näher, desto mehr Punkte'], en: ['Guess the location on the map', 'Closer = more points'] } },
+              'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum Begriffe nennen', 'Wer hängt, verliert'], en: ['Take turns naming items', 'First to stall loses'] } },
+              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Hinweise, eine Lösung', 'Wer früher tippt, holt mehr Punkte'], en: ['4 clues, one answer', 'Guess earlier for more points'] } },
+              'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },
             };
             const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');
             const info = TC_INTRO[key] ?? TC_INTRO[cat ?? ''];
@@ -3586,7 +3642,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(14, Math.floor(miniCellSize * 0.6))} /> : null}
+                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(18, Math.floor(miniCellSize * 0.85))} /> : null}
                       </div>
                     );
                   })
@@ -3908,7 +3964,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           ? 'stealCrashIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both'
                           : undefined,
                     }}>
-                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={28} /> : null}
+                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(24, Math.floor(cellSize * 0.82))} /> : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (
@@ -3980,6 +4036,22 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
             color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
           🔙 {lang === 'de' ? 'Andere Comeback-Aktion wählen' : 'Choose different comeback action'}
+        </button>
+      )}
+
+      {/* Aktion-Abbrechen wenn freeMode gesetzt aber Grid noch nicht offen
+          ist. Sonst war der einzige Cancel-Button im Grid-Subtree → User kam
+          nach Free-Mode-Wahl nicht mehr zurück ins Action-Menü ohne erst
+          selecting zu starten. */}
+      {isMyTurn && (isFree || pa === 'PLACE_2') && freeMode && !selecting && (
+        <button
+          onClick={() => { setFreeMode(null); setSwapFirst(null); setPendingPick(null); }}
+          style={{
+            marginTop: 12, width: '100%', padding: '10px 12px', borderRadius: 10,
+            border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
+            color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+          }}>
+          🔙 {lang === 'de' ? 'Andere Aktion wählen' : 'Choose different action'}
         </button>
       )}
     </CozyCard>

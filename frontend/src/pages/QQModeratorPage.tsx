@@ -34,7 +34,7 @@ interface DraftSummary {
 
 export default function QQModeratorPage() {
   const roomCode = QQ_ROOM;
-  const [phases, setPhases] = useState<3 | 4>(3);
+  const [phases, setPhases] = useState<3 | 4>(4);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
@@ -132,14 +132,15 @@ export default function QQModeratorPage() {
     }
   }, [state?.soundConfig]);
 
-  // Auto-sync phases when user selects a draft (take draft's own phases, or derive from questionCount)
+  // Phases-Default: 4 Runden. Wenn der gewählte Draft nur 15 Fragen hat
+  // (3-Runden-Set), fallen wir auf 3 zurück — sonst wäre 4 nicht spielbar.
+  // Bei 20q-Drafts bleibt 4 stehen; User kann manuell auf 3 klicken (truncate).
   useEffect(() => {
     if (!selectedDraftId) return;
     const d = drafts.find(x => x.id === selectedDraftId);
     if (!d) return;
-    // Prefer draft's saved phases; else derive from question count (15 → 3, 20 → 4)
-    const derived = d.phases ?? (d.questionCount === 20 ? 4 : d.questionCount === 15 ? 3 : null);
-    if (derived && derived !== phases) setPhases(derived);
+    const draftMaxPhases = d.phases ?? (d.questionCount >= 20 ? 4 : d.questionCount >= 15 ? 3 : null);
+    if (draftMaxPhases === 3 && phases === 4) setPhases(3);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDraftId, drafts]);
 
@@ -167,13 +168,14 @@ export default function QQModeratorPage() {
     if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
     const teamCount = state?.teams.length ?? 0;
     if (teamCount === 0 && !window.confirm('Noch keine Teams verbunden — wirklich starten?')) return;
-    // Preflight: phases * 5 must match the draft's question count
+    // Preflight: prüfe ob Draft genug Fragen für die gewählte Rundenzahl hat.
+    // Mehr Fragen als nötig (20q-Draft + 3 Runden) → wir kürzen client-seitig auf phases*5.
     const summary = drafts.find(d => d.id === selectedDraftId);
-    if (summary && summary.questionCount !== phases * 5) {
-      const suggest = summary.questionCount === 20 ? 4 : summary.questionCount === 15 ? 3 : null;
+    const needed = phases * 5;
+    if (summary && summary.questionCount < needed) {
       alert(
-        `Das Set hat ${summary.questionCount} Fragen, aber ${phases} Runden brauchen ${phases * 5}.` +
-        (suggest ? `\n\nTipp: Stelle die Runden auf ${suggest}.` : '\n\nBitte Set prüfen oder Runden anpassen.')
+        `Das Set hat nur ${summary.questionCount} Fragen — für ${phases} Runden bräuchte es ${needed}.\n\n` +
+        `Stelle die Runden auf ${Math.floor(summary.questionCount / 5)} oder wähle ein größeres Set.`
       );
       return;
     }
@@ -192,6 +194,14 @@ export default function QQModeratorPage() {
     slideTemplates = draft.slideTemplates;
     soundConfig = draft.soundConfig;
     if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
+    // Truncate auf die gewählte Rundenzahl: nur Fragen aus phaseIndex 1..phases.
+    if (questions.length > needed) {
+      questions = questions.filter(q => (q.phaseIndex ?? 1) <= phases).slice(0, needed);
+      if (questions.length !== needed) {
+        // Fallback: nimm einfach die ersten N (sollte nie greifen wenn phaseIndex sauber gepflegt ist)
+        questions = (draft.questions ?? []).slice(0, needed);
+      }
+    }
     const qqDraftId = qqId;
     const qqDraftTitle = qqDraftId ? (drafts.find(d => d.id === qqDraftId)?.title ?? undefined) : undefined;
     const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig });
@@ -2627,7 +2637,9 @@ function SetupView({
 
   const draft = drafts.find(x => x.id === selectedDraftId);
   const fitNeeded = phases * 5;
-  const fitOK = draft ? draft.questionCount === fitNeeded : false;
+  // OK = genug Fragen vorhanden (gleich oder mehr); bei mehr wird truncated.
+  const fitOK = draft ? draft.questionCount >= fitNeeded : false;
+  const fitTruncate = draft ? draft.questionCount > fitNeeded : false;
 
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 120, paddingTop: 8 }}>
@@ -2687,7 +2699,11 @@ function SetupView({
               background: fitOK ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
               border: `1px solid ${fitOK ? 'rgba(34,197,94,0.32)' : 'rgba(251,191,36,0.32)'}`,
             }}>
-              {fitOK ? `✓ passt für ${phases} Runden` : `⚠ ${selectedDraft.questionCount}/${fitNeeded} — Set hat ${selectedDraft.questionCount === 20 ? '4' : selectedDraft.questionCount === 15 ? '3' : '?'} Runden`}
+              {fitOK
+                ? (fitTruncate
+                    ? `✓ passt — Set hat ${selectedDraft.questionCount}, kürze auf ${fitNeeded} (${phases} Runden)`
+                    : `✓ passt für ${phases} Runden`)
+                : `⚠ ${selectedDraft.questionCount}/${fitNeeded} — Set hat nur ${Math.floor(selectedDraft.questionCount / 5)} Runden`}
             </span>
           </div>
         )}
@@ -2756,6 +2772,30 @@ function SetupView({
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {s.enable3DTransition ? 'Cinematic Fahrt beim Placement' : 'Flat 2D, schneller'}
+          </span>
+        </div>
+
+        {/* Finalrunde 4×4 Connections */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🔗 Finale</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#FBBF24')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {s.connectionsEnabled !== false ? '4×4 Connections nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
+          </span>
+        </div>
+
+        {/* Reihenfolge der Fragen innerhalb der Runde */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🔀 Reihenfolge</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: true })} style={segPill(s.shuffleQuestionsInRound !== false, '#A78BFA')}>Zufällig</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: false })} style={segPill(s.shuffleQuestionsInRound === false)}>Aus Draft</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {s.shuffleQuestionsInRound !== false ? 'Kategorien werden in jeder Runde gemischt' : 'Reihenfolge wie im Draft'}
           </span>
         </div>
 

@@ -2241,6 +2241,24 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
+    socket.on('qq:setQuizOptions', (
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (typeof payload.connectionsEnabled === 'boolean') {
+          room.connectionsEnabled = payload.connectionsEnabled;
+        }
+        if (typeof payload.shuffleQuestionsInRound === 'boolean') {
+          room.shuffleQuestionsInRound = payload.shuffleQuestionsInRound;
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── MUCHO Step-Reveal (vereinfachter 2-Klick-Flow ab 2026-04-26) ──────────
     // Klick 1: alle Voter werden auf dem Beamer auto-staggered eingeblendet.
     // Klick 2: korrekte Option grün markieren + Siegerteam-Card.

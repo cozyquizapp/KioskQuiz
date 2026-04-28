@@ -63,6 +63,10 @@ export interface QQRoomState {
   connectionsMaxFails: number;
   /** Timer-Handle für Connections-Auto-Reveal. Not persisted. */
   _connectionsTimerHandle: ReturnType<typeof setTimeout> | null;
+  /** Setup-Toggle: spielt die Finalrunde 4×4 Connections in diesem Run? Default true. */
+  connectionsEnabled: boolean;
+  /** Setup-Toggle: Kategorie-Reihenfolge innerhalb jeder Runde randomisieren? Default true. */
+  shuffleQuestionsInRound: boolean;
   swapFirstCell: { row: number; col: number; ownerId: string } | null;
   language: QQLanguage;
   // Timer
@@ -244,6 +248,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       connectionsTimerSec: QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
       connectionsMaxFails: QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
       _connectionsTimerHandle: null,
+      connectionsEnabled: true,
+      shuffleQuestionsInRound: true,
       swapFirstCell: null,
       language: 'both',
       timerDurationSec: 30,
@@ -434,10 +440,57 @@ export function qqStartGame(
     // BUNTE_TUETE / CHEESE haben eigene Payload-Formen → kein generischer Check.
   }
 
+  // ── Shuffle innerhalb der Runde ────────────────────────────────────────────
+  // Wenn shuffleQuestionsInRound aktiv ist, mischen wir die 5 Fragen jeder
+  // Runde untereinander durch (Phase-Zuordnung bleibt erhalten). Anti-Adjacency
+  // an Rundengrenzen: wenn die letzte Frage von Runde N und die erste von Runde
+  // N+1 dieselbe Kategorie haben, swappen wir Frage 1 von Runde N+1 mit einer
+  // anderen Frage derselben Runde (falls vorhanden).
+  let processedQuestions = questions;
+  if (room.shuffleQuestionsInRound) {
+    const byPhase: Record<number, QQQuestion[]> = {};
+    for (const q of questions) {
+      const p = q.phaseIndex;
+      if (!byPhase[p]) byPhase[p] = [];
+      byPhase[p].push(q);
+    }
+    for (const p of Object.keys(byPhase)) {
+      const arr = byPhase[Number(p)];
+      // Fisher-Yates
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    const phaseList = Object.keys(byPhase).map(Number).sort((a, b) => a - b);
+    for (let i = 1; i < phaseList.length; i++) {
+      const prev = byPhase[phaseList[i - 1]];
+      const curr = byPhase[phaseList[i]];
+      const lastCat = prev[prev.length - 1].category;
+      if (curr[0].category === lastCat && curr.length > 1) {
+        // Swap mit erstem nicht-gleichen Kandidaten
+        const swapIdx = curr.findIndex(q => q.category !== lastCat);
+        if (swapIdx > 0) {
+          [curr[0], curr[swapIdx]] = [curr[swapIdx], curr[0]];
+        }
+      }
+    }
+    processedQuestions = phaseList.flatMap(p => byPhase[p]);
+    // questionIndexInPhase neu setzen (für UI-Konsistenz)
+    let iInPhase = 0;
+    let lastPhase = -1;
+    processedQuestions = processedQuestions.map(q => {
+      if (q.phaseIndex !== lastPhase) { iInPhase = 0; lastPhase = q.phaseIndex; }
+      const updated = { ...q, questionIndexInPhase: iInPhase };
+      iInPhase++;
+      return updated;
+    });
+  }
+
   const gs = qqGridSize(teamCount);
   room.gridSize = gs;
   room.grid     = buildEmptyGrid(gs);
-  room.questions = questions;
+  room.questions = processedQuestions;
   room.totalPhases = phases;
   room.language  = language;
   room.questionIndex  = 0;
@@ -450,7 +503,7 @@ export function qqStartGame(
   room.rulesSlideIndex = -2;
   room.teamsRevealStartedAt = null;
   room.introStep      = 0;
-  room.currentQuestion = questions[0];
+  room.currentQuestion = processedQuestions[0];
   room.revealedAnswer  = null;
   room.correctTeamId   = null;
   room.pendingFor      = null;
@@ -2619,6 +2672,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     connections:          room.connections ?? null,
     connectionsTimerSec:  room.connectionsTimerSec ?? QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
     connectionsMaxFails:  room.connectionsMaxFails ?? QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
+    connectionsEnabled:   room.connectionsEnabled ?? true,
+    shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
       : null,

@@ -705,6 +705,10 @@ export interface QQStateUpdate {
   connectionsTimerSec: number;
   /** Moderator-einstellbare Fehlversuche bei Connections (Default 2). */
   connectionsMaxFails: number;
+  /** Setup-Toggle: Finalrunde 4×4 Connections in diesem Run spielen? Default true. */
+  connectionsEnabled: boolean;
+  /** Setup-Toggle: Kategorie-Reihenfolge innerhalb jeder Runde randomisieren? Default true. */
+  shuffleQuestionsInRound: boolean;
   swapFirstCell: { row: number; col: number } | null;  // for SWAP_2 mid-action
   language: QQLanguage;
   // Timer

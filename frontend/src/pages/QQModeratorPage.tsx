@@ -382,6 +382,27 @@ export default function QQModeratorPage() {
       case 'PAUSED':
         // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
         break;
+      case 'CONNECTIONS_4X4': {
+        // 4×4-Finale durchspielen: Sub-Phasen via state.connections.phase steuern.
+        // - intro:     Lesepause für die Mechanik-Erklärung, dann Spielzeit starten
+        // - active:    nichts tun (Timer läuft, Dummies spielen, Auto-End wenn alle done)
+        // - reveal:    Lesepause für Gruppen-Avatare, dann Placement starten
+        // - placement: nichts (Dummies platzieren, qqConnectionsAfterPlacement schaltet weiter)
+        // - done:      kurz Pause, dann nextQuestion → transitioniert zu GAME_OVER
+        const cp = s.connections?.phase;
+        if (cp === 'intro') {
+          delayMs = 8000;
+          action = () => emit('qq:connectionsBegin', { roomCode });
+        } else if (cp === 'reveal') {
+          delayMs = 9000; // Gruppen-Labels + Avatar-Cascade lesen lassen
+          action = () => emit('qq:connectionsToPlacement', { roomCode });
+        } else if (cp === 'done') {
+          delayMs = 4000;
+          action = () => emit('qq:nextQuestion', { roomCode });
+        }
+        // active / placement: kein Auto-Klick, läuft selbst-getrieben
+        break;
+      }
     }
     if (!action) return;
     const handle = window.setTimeout(action, delayMs);
@@ -391,6 +412,7 @@ export default function QQModeratorPage() {
     state?.phase, state?.rulesSlideIndex, state?.allAnswered,
     state?.introStep, state?.categoryIsNew,
     state?.comebackIntroStep,
+    state?.connections?.phase,
     state?.muchoRevealStep, state?.zvzRevealStep, state?.cheeseRevealStep, state?.mapRevealStep,
     state?.pendingFor, state?.currentQuestion?.id, state?.answers?.length,
   ]); // eslint-disable-line react-hooks/exhaustive-deps

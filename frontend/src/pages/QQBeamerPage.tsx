@@ -7182,10 +7182,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           lenkten vom Fragentext ab. Stattdessen faerben wir die Fireflies
           weiter unten in der Kategorie-Farbe. */}
       {/* CHEESE ohne Bild: dezenter Placeholder im Hintergrund (Gradient + 📸-Icon),
-          damit die Frage spielbar bleibt aber visuell klar ist „hier sollte ein Bild sein". */}
+          damit die Frage spielbar bleibt aber visuell klar ist „hier sollte ein Bild sein".
+          position:absolute (NICHT fixed) — fixed wird durch BeamerFrame-Transform-Stacking-Context geclippt. */}
       {isCheese && !hasImg && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 1,
+          position: 'absolute', inset: 0, zIndex: 1,
           background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0d0a06',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 14,

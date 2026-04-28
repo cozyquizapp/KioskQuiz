@@ -8186,6 +8186,9 @@ async function enrichCheeseImagesInDraft(draft: any): Promise<boolean> {
     }
     if (anyChanged) {
       persistQQDrafts();
+      // Cache invalidieren — sonst sehen Frontend-Clients die ersten 2 min
+      // noch Drafts ohne Bilder (cache.set in GET /api/qq/drafts).
+      cache.del('qqDrafts');
       console.log('[migration] Enriched CHEESE images in qq-vol-* drafts (file storage)');
     }
   } catch (err) {

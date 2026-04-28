@@ -747,6 +747,96 @@ function stopConnectionsAiTimers(roomCode: string): void {
   m.clear();
 }
 
+/** Pro Raum + Team max ein laufender OnlyConnect-AI-Timer. */
+const onlyConnectAiTimers: Map<string, Map<string, ReturnType<typeof setTimeout>>> = new Map();
+
+function getOnlyConnectAiTimerMap(roomCode: string): Map<string, ReturnType<typeof setTimeout>> {
+  let m = onlyConnectAiTimers.get(roomCode);
+  if (!m) { m = new Map(); onlyConnectAiTimers.set(roomCode, m); }
+  return m;
+}
+
+function stopOnlyConnectAiTimers(roomCode: string, teamId?: string): void {
+  const m = onlyConnectAiTimers.get(roomCode);
+  if (!m) return;
+  if (teamId) {
+    const h = m.get(teamId);
+    if (h) { clearTimeout(h); m.delete(teamId); }
+  } else {
+    for (const h of m.values()) clearTimeout(h);
+    m.clear();
+  }
+}
+
+/**
+ * 4 gewinnt / Only Connect — Dummy-AI.
+ * Pro Dummy: nach 4-12s entscheidet er sich zwischen Hint freischalten oder
+ * Tippen. Höherer Hint-Stand → höhere Tipp- und Treffer-Wahrscheinlichkeit.
+ * Reschedult sich selbst bis Team gesperrt oder richtig.
+ */
+export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'QUESTION_ACTIVE') return;
+  if (room.currentQuestion?.bunteTuete?.kind !== 'onlyConnect') return;
+
+  const timers = getOnlyConnectAiTimerMap(roomCode);
+
+  for (const teamId of room.joinOrder) {
+    if (!isDummy(room, teamId)) continue;
+    if (room.onlyConnectLockedTeams.includes(teamId)) continue;
+    if (room.onlyConnectGuesses.some(g => g.teamId === teamId && g.correct)) continue;
+    if (timers.has(teamId)) continue;
+
+    const localTeamId = teamId;
+    const delay = 4000 + Math.random() * 8000; // 4-12s
+    const handle = setTimeout(() => {
+      timers.delete(localTeamId);
+      const live = getQQRoom(roomCode);
+      if (!live) return;
+      if (live.phase !== 'QUESTION_ACTIVE') return;
+      if (live.currentQuestion?.bunteTuete?.kind !== 'onlyConnect') return;
+      if (live.onlyConnectLockedTeams.includes(localTeamId)) return;
+      if (live.onlyConnectGuesses.some(g => g.teamId === localTeamId && g.correct)) return;
+
+      const curIdx = live.onlyConnectHintIndices[localTeamId] ?? 0;
+      // Tipp-Wahrscheinlichkeit pro Hint-Level: 0→15 %, 1→35 %, 2→60 %, 3→100 %
+      const guessProb = curIdx === 0 ? 0.15 : curIdx === 1 ? 0.35 : curIdx === 2 ? 0.60 : 1.0;
+      const shouldGuess = Math.random() < guessProb;
+
+      if (!shouldGuess && curIdx < 3) {
+        qqOnlyConnectAdvanceTeamHint(live, localTeamId);
+        broadcast(io, roomCode);
+        maybeAutoOnlyConnect(io, roomCode);
+        return;
+      }
+
+      // Submit guess: Treffer-Wahrscheinlichkeit steigt mit Hint-Level
+      const accProb = curIdx === 0 ? 0.20 : curIdx === 1 ? 0.40 : curIdx === 2 ? 0.65 : 0.85;
+      const beCorrect = Math.random() < accProb;
+      const oc = live.currentQuestion?.bunteTuete?.kind === 'onlyConnect'
+        ? live.currentQuestion.bunteTuete : null;
+      let guessText = 'unsinn';
+      if (oc) {
+        if (beCorrect) {
+          guessText = (oc.answer ?? '').trim() || 'unsinn';
+        } else {
+          const wrongs = ['kaffee', 'pasta', 'lila pferde', 'fahrrad', 'irgendwas', 'mond', 'salami'];
+          guessText = wrongs[Math.floor(Math.random() * wrongs.length)];
+        }
+      }
+      qqOnlyConnectSubmitGuess(live, localTeamId, guessText);
+      if (qqOnlyConnectAllDone(live)) {
+        qqOnlyConnectAutoFinish(live);
+      }
+      broadcast(io, roomCode);
+      maybeAutoOnlyConnect(io, roomCode);
+    }, delay);
+
+    timers.set(localTeamId, handle);
+  }
+}
+
 /**
  * Wenn QUESTION_ACTIVE + Dummies im Raum, lass Dummies gestaffelt antworten
  * (gleichmäßig über das Timer-Fenster verteilt, mit Jitter).
@@ -764,6 +854,11 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
   // Auto-Handler (maybeAutoHotPotato / maybeAutoImposter). Die werden nach
   // qq:hotPotatoStart / qq:imposterStart gezündet.
   if (q.category === 'BUNTE_TUETE' && (q.bunteTuete?.kind === 'hotPotato' || q.bunteTuete?.kind === 'oneOfEight')) {
+    return;
+  }
+  // 4 gewinnt + Bluff nutzen ebenfalls eigene Submit-Pfade — kein Dummy-Submit
+  // über die Standard-Answer-Pipeline.
+  if (q.category === 'BUNTE_TUETE' && (q.bunteTuete?.kind === 'onlyConnect' || q.bunteTuete?.kind === 'bluff')) {
     return;
   }
 
@@ -1332,6 +1427,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Bluff Dummy-AI: Dummies tippen bluffs nach Verzögerung.
         if (room.currentQuestion?.bunteTuete?.kind === 'bluff') {
           maybeAutoBluffWrite(io, payload.roomCode);
+        }
+        // 4 gewinnt Dummy-AI: Dummies schalten Hinweise frei + tippen.
+        if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+          stopOnlyConnectAiTimers(payload.roomCode);
+          maybeAutoOnlyConnect(io, payload.roomCode);
         }
         // Dummies automatisch antworten lassen
         maybeAutoSimulateAnswers(io, payload.roomCode);

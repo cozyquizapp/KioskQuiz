@@ -827,7 +827,10 @@ const LOBBY_TRACK_POOL = [
 
 /** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.
  *  Picked random track from pool. Wenn die Datei nicht existiert, fällt
- *  HTMLAudioElement auf error → wir versuchen den nächsten Track. */
+ *  HTMLAudioElement auf error → wir versuchen den nächsten Track.
+ *  Nach jedem Track-Ende wird zum nächsten im geshuffelten Pool gewechselt;
+ *  am Pool-Ende neu shuffeln (mit Anti-Repeat: erster neuer Track darf nicht
+ *  derselbe sein wie der zuletzt gespielte). */
 export function startLobbyLoop() {
   if (lobbyLoopActive) return;
   if (!isSlotEnabled('lobbyWelcome')) return;
@@ -839,27 +842,50 @@ export function startLobbyLoop() {
   }
   // Sonst: zufälligen Track aus Pool wählen, mit Fallback-Kette bei 404
   const shuffled = [...LOBBY_TRACK_POOL].sort(() => Math.random() - 0.5);
-  tryStartLobbyTrackFromPool(shuffled, 0);
+  playLobbyTrackAtIndex(shuffled, 0);
 }
 
-function tryStartLobbyTrackFromPool(pool: string[], idx: number): void {
-  if (idx >= pool.length) return; // alle durch — Lobby bleibt still
+function reshuffleAvoiding(lastUrl: string | null): string[] {
+  const shuffled = [...LOBBY_TRACK_POOL].sort(() => Math.random() - 0.5);
+  // Anti-Repeat: wenn ersten der neuen Reihe = letzter gespielter, einmal rotieren
+  if (lastUrl && shuffled.length > 1 && shuffled[0] === lastUrl) {
+    const [first, ...rest] = shuffled;
+    return [...rest, first];
+  }
+  return shuffled;
+}
+
+function playLobbyTrackAtIndex(pool: string[], idx: number): void {
+  if (idx >= pool.length) {
+    // Pool durch — neu shuffeln und weitermachen, falls noch aktiv
+    if (!lobbyLoopActive) return;
+    const lastUrl = pool[pool.length - 1] ?? null;
+    const next = reshuffleAvoiding(lastUrl);
+    playLobbyTrackAtIndex(next, 0);
+    return;
+  }
   const url = pool[idx];
   const audio = new Audio(url);
   audio.addEventListener('error', () => {
-    // Diese Datei nicht da — nächste probieren
+    // Diese Datei nicht da — nächste probieren (ohne loopActive zu setzen)
     if (lobbyAudioEl === audio) lobbyAudioEl = null;
-    tryStartLobbyTrackFromPool(pool, idx + 1);
+    playLobbyTrackAtIndex(pool, idx + 1);
   }, { once: true });
   audio.addEventListener('canplay', () => {
-    // Nur einrasten wenn noch nichts anderes läuft
-    if (lobbyLoopActive) return;
+    // Wenn schon ein anderer Track läuft (z.B. parallel gestartet), abbrechen
+    if (lobbyLoopActive && lobbyAudioEl && lobbyAudioEl !== audio) return;
     lobbyLoopActive = true;
     lobbyAudioEl = audio;
     audio.volume = masterVolume * musicDuckFactor;
     audio.currentTime = 0;
-    audio.loop = true;
+    audio.loop = false; // KEIN auto-loop — wir wechseln per ended-Event zum nächsten
     audio.play().catch(() => {});
+  }, { once: true });
+  audio.addEventListener('ended', () => {
+    // Nur weitermachen wenn das hier noch der aktive Track ist (sonst wurde gestoppt/gewechselt)
+    if (lobbyAudioEl !== audio) return;
+    if (!lobbyLoopActive) return;
+    playLobbyTrackAtIndex(pool, idx + 1);
   }, { once: true });
   audio.preload = 'auto';
   audio.load();

@@ -2648,7 +2648,9 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
 
   // ── Vote Phase ──────────────────────────────────────────────────────────
   if (phase === 'vote') {
-    const opts = s.bluffOptions ?? [];
+    // Per-Team Subset: jedes Team sieht real + 3 zufällige andere Bluffs.
+    // Fallback auf globalen Pool falls Subset noch nicht da ist (race).
+    const opts = (s.bluffOptionsByTeam ?? {})[myTeamId] ?? s.bluffOptions ?? [];
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{
@@ -2755,16 +2757,17 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
   const hintIdx = Math.max(0, s.onlyConnectHintIndex ?? 0);
   const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
-  const winnerId = s.onlyConnectWinnerTeamId;
-  const isMyWin = winnerId === myTeamId;
-  const someoneWon = !!winnerId;
+  // Multi-Winner: hat MEIN Team schon richtig gelegen?
+  const isMyWin = (s.onlyConnectGuesses ?? []).some(g => g.teamId === myTeamId && g.correct);
+  // alreadyAnswered = ich hab schon submittet (egal ob richtig oder gesperrt)
+  const alreadyAnswered = isMyWin || isLocked;
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (!isLocked && !someoneWon) ref.current?.focus(); }, [isLocked, someoneWon]);
+  useEffect(() => { if (!alreadyAnswered) ref.current?.focus(); }, [alreadyAnswered]);
 
   const submit = () => {
-    if (isLocked || someoneWon) return;
+    if (alreadyAnswered) return;
     const text = val.trim();
     if (text.length < 1) return;
     emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
@@ -2777,7 +2780,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {[0, 1, 2, 3].map(i => {
           const isVisible = i <= hintIdx;
-          const isCurrent = i === hintIdx && !someoneWon;
+          const isCurrent = i === hintIdx && !alreadyAnswered;
           const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
           return (
             <div key={i} style={{
@@ -2804,16 +2807,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         })}
       </div>
 
-      {/* Status-Banner */}
-      {someoneWon && !isMyWin && (
-        <div style={{
-          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
-          background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.10)',
-          fontSize: 13, fontWeight: 800, color: '#94a3b8',
-        }}>
-          {lang === 'de' ? '🏆 Ein anderes Team war zuerst.' : '🏆 Another team got it first.'}
-        </div>
-      )}
+      {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}
       {isMyWin && (
         <div style={{
           padding: '10px 14px', borderRadius: 10, textAlign: 'center',
@@ -2823,7 +2817,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
           {lang === 'de' ? '✓ Richtig! Wartet auf Auflösung.' : '✓ Correct! Wait for reveal.'}
         </div>
       )}
-      {isLocked && !someoneWon && (
+      {isLocked && (
         <div style={{
           padding: '10px 14px', borderRadius: 10, textAlign: 'center',
           background: 'rgba(239,68,68,0.10)', border: '1.5px solid rgba(239,68,68,0.4)',
@@ -2833,8 +2827,8 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         </div>
       )}
 
-      {/* Freitext-Eingabe (nur wenn nicht locked + niemand gewonnen) */}
-      {!isLocked && !someoneWon && (
+      {/* Freitext-Eingabe (nur wenn nicht locked + nicht selbst gewonnen) */}
+      {!alreadyAnswered && (
         <>
           <input
             ref={ref}

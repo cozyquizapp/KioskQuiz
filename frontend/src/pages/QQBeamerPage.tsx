@@ -4902,7 +4902,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
       {/* Phase-spezifischer Inhalt */}
       {phase === 'write' && <BluffWriteScreen state={s} accent={accent} lang={lang} />}
       {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
-      {phase === 'vote' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={false} />}
+      {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
       {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
 
       {/* Reveal: Echte Antwort prominent + Top-Punkte */}
@@ -5079,6 +5079,89 @@ function BluffReviewScreen({ state: s, accent, lang }: {
   );
 }
 
+/**
+ * Vote-Phase auf dem Beamer: KEINE Optionen anzeigen (jedes Team sieht ein
+ * eigenes Random-4-Subset auf seinem Phone). Stattdessen großes Voting-
+ * Spannungs-Banner + Avatare mit ✓-Status pro Submit.
+ */
+function BluffVoteWaitingScreen({ state: s, accent, lang }: {
+  state: QQStateUpdate; accent: string; lang: 'de' | 'en';
+}) {
+  const totalActive = s.teams.filter(t => t.connected).length;
+  const voted = Object.keys(s.bluffVotes ?? {}).length;
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 24,
+      position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        fontSize: 'clamp(60px, 8vw, 110px)',
+        animation: 'cfloat 4s ease-in-out infinite',
+      }}>🗳</div>
+      <div style={{
+        fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
+        color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
+      }}>
+        {lang === 'de'
+          ? 'Welche Antwort ist die echte? Tippt auf eurem Handy!'
+          : 'Which answer is real? Tap on your phone!'}
+      </div>
+      <div style={{
+        padding: '8px 22px', borderRadius: 999,
+        background: `${accent}22`, border: `2px solid ${accent}66`,
+        fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#fbcfe8',
+      }}>
+        {lang === 'de' ? `${voted} / ${totalActive} Teams haben gewählt` : `${voted} / ${totalActive} teams voted`}
+      </div>
+      {/* Avatar-Reihe — wer hat schon gewählt? */}
+      <div style={{
+        display: 'flex', gap: 'clamp(12px, 1.6vw, 22px)', flexWrap: 'wrap',
+        justifyContent: 'center', marginTop: 12,
+      }}>
+        {s.teams.map(tm => {
+          const voted = !!(s.bluffVotes ?? {})[tm.id];
+          return (
+            <div key={tm.id} title={tm.name} style={{
+              position: 'relative',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              opacity: voted ? 1 : 0.55,
+              filter: voted ? 'none' : 'grayscale(0.4)',
+              transition: 'opacity 0.4s ease, filter 0.4s ease',
+            }}>
+              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(56px, 6vw, 84px)'} style={{
+                background: '#0d0a06',
+                boxShadow: voted
+                  ? `0 0 0 2px ${accent}, 0 0 16px ${accent}77, 0 4px 10px rgba(0,0,0,0.55)`
+                  : `0 0 0 2px ${tm.color}66, 0 4px 10px rgba(0,0,0,0.55)`,
+              }} />
+              {voted && (
+                <div style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#22C55E', border: '2px solid #0D0A06',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 900, color: '#fff',
+                  animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>✓</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{
+        fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 700,
+        color: '#94a3b8', textAlign: 'center', marginTop: 8, opacity: 0.8,
+        maxWidth: 700, lineHeight: 1.5,
+      }}>
+        {lang === 'de'
+          ? 'Jedes Team sieht 4 zufällige Antworten — auch die echte. Kein Spickeln vom Beamer!'
+          : 'Each team sees 4 random answers — including the real one. No peeking!'}
+      </div>
+    </div>
+  );
+}
+
 function BluffVoteScreen({ state: s, accent, lang, revealed }: {
   state: QQStateUpdate; accent: string; lang: 'de' | 'en'; revealed: boolean;
 }) {
@@ -5202,12 +5285,16 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
   const answer = (lang === 'en' && bt.answerEn ? bt.answerEn : bt.answer) ?? '';
   const hintIdx = revealed ? 3 : Math.max(0, s.onlyConnectHintIndex ?? 0);
-  const winnerId = s.onlyConnectWinnerTeamId;
-  const winnerHintIdx = s.onlyConnectWinnerHintIdx;
-  const winnerTeam = winnerId ? s.teams.find(t => t.id === winnerId) : null;
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
   const accent = '#A78BFA';
-  const points = winnerHintIdx != null ? Math.max(1, 4 - winnerHintIdx) : 0;
+  // Multi-Winner: alle korrekten Teams sortiert nach (atHintIdx ASC, submittedAt ASC)
+  const correctSorted = (s.onlyConnectGuesses ?? [])
+    .filter(g => g.correct)
+    .slice()
+    .sort((a, b) => (a.atHintIdx - b.atHintIdx) || (a.submittedAt - b.submittedAt));
+  const winnerSet = new Set(correctSorted.map(g => g.teamId));
+  const winnerByTeam: Record<string, { atHintIdx: number; submittedAt: number; rank: number }> = {};
+  correctSorted.forEach((g, idx) => { winnerByTeam[g.teamId] = { atHintIdx: g.atHintIdx, submittedAt: g.submittedAt, rank: idx + 1 }; });
 
   return (
     <div style={{
@@ -5352,26 +5439,50 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           }}>
             {answer}
           </div>
-          {winnerTeam && (
+          {correctSorted.length > 0 && (
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 22px', borderRadius: 999,
-              background: `${winnerTeam.color}22`, border: `2px solid ${winnerTeam.color}`,
-              animation: 'phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
             }}>
-              <QQTeamAvatar avatarId={winnerTeam.avatarId} size={48} style={{
-                boxShadow: `0 0 0 2px ${winnerTeam.color}, 0 0 12px ${winnerTeam.color}88`,
-              }} />
-              <span style={{
-                fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: winnerTeam.color,
-              }}>{winnerTeam.name}</span>
-              <span style={{
-                marginLeft: 6, padding: '4px 12px', borderRadius: 999,
-                background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.45)',
-                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#86EFAC',
+              <div style={{
+                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
+                color: '#86EFAC', letterSpacing: '0.14em', textTransform: 'uppercase',
               }}>
-                {lang === 'de' ? `bei Hinweis ${(winnerHintIdx ?? 0) + 1} · ${points} Pkt` : `at clue ${(winnerHintIdx ?? 0) + 1} · ${points} pts`}
-              </span>
+                {lang === 'de' ? `🏆 ${correctSorted.length} richtig` : `🏆 ${correctSorted.length} correct`}
+              </div>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
+              }}>
+                {correctSorted.map((g, idx) => {
+                  const tm = s.teams.find(t => t.id === g.teamId);
+                  if (!tm) return null;
+                  const pts = Math.max(1, 4 - g.atHintIdx);
+                  const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                  return (
+                    <div key={g.teamId} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 14px', borderRadius: 999,
+                      background: `${tm.color}22`, border: `2px solid ${tm.color}`,
+                      animation: `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + idx * 0.1}s both`,
+                    }}>
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>{medal}</span>
+                      <QQTeamAvatar avatarId={tm.avatarId} size={32} style={{
+                        boxShadow: `0 0 0 2px ${tm.color}, 0 0 8px ${tm.color}77`,
+                      }} />
+                      <span style={{
+                        fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: tm.color,
+                      }}>{tm.name}</span>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 999,
+                        background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.4)',
+                        fontSize: 11, fontWeight: 800, color: '#86EFAC',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {lang === 'de' ? `H${g.atHintIdx + 1} · ${pts} Pkt` : `H${g.atHintIdx + 1} · ${pts} pts`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -5386,7 +5497,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
       }}>
         {s.teams.map((tm) => {
           const isLocked = lockedSet.has(tm.id);
-          const isWinner = winnerId === tm.id;
+          const isWinner = winnerSet.has(tm.id);
           const dim = !isLocked && !isWinner;
           return (
             <div key={tm.id} title={tm.name} style={{

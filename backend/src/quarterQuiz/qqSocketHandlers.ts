@@ -40,7 +40,7 @@ import {
   qqConnectionsSubmitGroup, qqConnectionsAllDone, qqConnectionsToReveal,
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
   qqOnlyConnectStart, qqOnlyConnectAdvanceHint, qqOnlyConnectSubmitGuess,
-  qqOnlyConnectRevealAll, qqOnlyConnectReset,
+  qqOnlyConnectRevealAll, qqOnlyConnectReset, qqOnlyConnectAllDone,
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
@@ -580,8 +580,9 @@ function maybeAutoBluffVote(io: SocketIOServer, roomCode: string): void {
       const live = getQQRoom(roomCode);
       if (!live || live.bluffPhase !== 'vote') return;
       if (live.bluffVotes[localTeamId]) return;
-      // Verfügbare Optionen: nicht eigener Bluff
-      const candidates = live.bluffOptions.filter(o => {
+      // Verfügbare Optionen: aus dem Team-eigenen Subset (real + 3 random)
+      const teamOpts = live.bluffOptionsByTeam[localTeamId] ?? live.bluffOptions;
+      const candidates = teamOpts.filter(o => {
         if (o.source === 'team' && o.contributors.includes(localTeamId)) return false;
         return true;
       });
@@ -2414,6 +2415,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqOnlyConnectSubmitGuess(room, payload.teamId, payload.text);
+        // Multi-Winner: wenn alle Teams entweder richtig oder gesperrt sind,
+        // automatisch alle Hinweise aufdecken (force-reveal vorbereitet) und
+        // beenden den Auto-Timer.
+        if (qqOnlyConnectAllDone(room)) {
+          qqOnlyConnectRevealAll(room);
+        }
         broadcast(io, payload.roomCode);
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }

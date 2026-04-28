@@ -112,6 +112,7 @@ export interface QQRoomState {
   bluffVoteEndsAt: number | null;
   bluffSubmissions: Record<string, string>;
   bluffOptions: import('../../../shared/quarterQuizTypes').QQBluffOption[];
+  bluffOptionsByTeam: Record<string, import('../../../shared/quarterQuizTypes').QQBluffOption[]>;
   bluffVotes: Record<string, string>;
   bluffPoints: Record<string, import('../../../shared/quarterQuizTypes').QQBluffPoints>;
   bluffWriteDurationSec: number;
@@ -310,6 +311,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       bluffVoteEndsAt: null,
       bluffSubmissions: {},
       bluffOptions: [],
+      bluffOptionsByTeam: {},
       bluffVotes: {},
       bluffPoints: {},
       bluffWriteDurationSec: QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC,
@@ -1055,18 +1057,24 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
   }
 }
 
-// onlyConnect: winner ist genau das Team, das während QUESTION_ACTIVE als
-// erstes richtig gelegen hat (room.onlyConnectWinnerTeamId). Punkte-Skala
-// 4/3/2/1 je nach Hint-Index liefern wir als „earnedPoints", das Frontend
-// kann das für Stat-Anzeige nutzen — die Aktions-Vergabe folgt aber wie
-// gewohnt nur dem winner (1 Aktion).
+// onlyConnect Multi-Winner: alle Teams die während QUESTION_ACTIVE richtig
+// getippt haben gelten als Sieger. Reihenfolge:
+//   1. atHintIdx ASC (wer mit weniger Hinweisen löste)
+//   2. submittedAt ASC (bei gleichem Hint-Index: schnelleres Team zuerst)
+// Alle bekommen eine Aktion (1 Feld). Earned points nur als Stat-Anzeige.
 function evalOnlyConnect(room: QQRoomState): QQEvalResult {
-  const winnerId = room.onlyConnectWinnerTeamId;
-  if (!winnerId) return { winnerTeamIds: [], earnedPoints: {} };
-  const hintIdx = room.onlyConnectWinnerHintIdx ?? 0;
-  // 4 Punkte bei Hint 1 (idx 0), 3 bei Hint 2 ... 1 bei Hint 4 (idx 3)
-  const points = Math.max(1, 4 - hintIdx);
-  return { winnerTeamIds: [winnerId], earnedPoints: { [winnerId]: points } };
+  const correct = (room.onlyConnectGuesses ?? [])
+    .filter(g => g.correct)
+    .sort((a, b) => (a.atHintIdx - b.atHintIdx) || (a.submittedAt - b.submittedAt));
+  if (correct.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  const winnerTeamIds: string[] = [];
+  const earnedPoints: Record<string, number> = {};
+  for (const g of correct) {
+    if (winnerTeamIds.includes(g.teamId)) continue; // dedupe — sollte nicht passieren wegen 1-Versuch
+    winnerTeamIds.push(g.teamId);
+    earnedPoints[g.teamId] = Math.max(1, 4 - g.atHintIdx);
+  }
+  return { winnerTeamIds, earnedPoints };
 }
 
 // oneOfEight: teams submit the index (as string) of the statement they think is false
@@ -2794,6 +2802,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     bluffVoteEndsAt:             room.bluffVoteEndsAt ?? null,
     bluffSubmissions:            room.bluffSubmissions ?? {},
     bluffOptions:                room.bluffOptions ?? [],
+    bluffOptionsByTeam:          room.bluffOptionsByTeam ?? {},
     bluffVotes:                  room.bluffVotes ?? {},
     bluffPoints:                 room.bluffPoints ?? {},
     bluffWriteDurationSec:       room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC,
@@ -3386,9 +3395,9 @@ export function qqOnlyConnectStart(
 
 function scheduleNextHint(room: QQRoomState, onAdvance: () => void): void {
   clearOnlyConnectHintTimer(room);
-  // Nicht weiter wenn schon bei Hint 3 (letzter) oder Winner gefunden
+  // Nicht weiter wenn schon bei Hint 3 (letzter). Multi-Winner: andere Teams
+  // können noch antworten, also Timer NICHT bei erstem Winner stoppen.
   if (room.onlyConnectHintIndex >= 3) return;
-  if (room.onlyConnectWinnerTeamId) return;
   const dur = (room.onlyConnectHintDurationSec ?? QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC) * 1000;
   room._onlyConnectHintTimerHandle = setTimeout(() => {
     room._onlyConnectHintTimerHandle = null;
@@ -3405,10 +3414,7 @@ export function qqOnlyConnectAdvanceHint(
   room: QQRoomState,
   onAdvance: () => void
 ): boolean {
-  if (room.onlyConnectWinnerTeamId) {
-    clearOnlyConnectHintTimer(room);
-    return false;
-  }
+  // Multi-Winner: Timer läuft auch nach erstem Winner weiter, andere können antworten.
   if (room.onlyConnectHintIndex >= 3) {
     clearOnlyConnectHintTimer(room);
     return false;
@@ -3421,32 +3427,34 @@ export function qqOnlyConnectAdvanceHint(
 }
 
 /**
- * Team submittet einen Tipp.
- * - Schon gesperrt? → ignoriert (sollte FE auch verhindern).
- * - Schon Winner gesetzt? → späte Submits werden trotzdem geloggt mit correct=false
- *   (da Spielzeit für die Frage vorbei ist), damit Spam nicht durchkommt.
- * - Match → Team wird Winner, atHintIdx wird festgehalten.
- * - Kein Match → Team kommt auf onlyConnectLockedTeams, Submit wird geloggt.
+ * Team submittet einen Tipp. Multi-Winner-Modell:
+ * - Mehrere Teams können richtig liegen — jedes hat 1 Versuch.
+ * - Falsch → gesperrt für die Frage.
+ * - Richtig → in onlyConnectGuesses mit atHintIdx + submittedAt vermerkt.
+ *   Mehrere richtige → bei Auswertung sortiert nach (atHintIdx ASC, submittedAt ASC).
+ * - onlyConnectWinnerTeamId / WinnerHintIdx werden vom ERSTEN Korrekten gefüllt
+ *   (für Beamer-Display) — alle weiteren landen nur in onlyConnectGuesses.
  */
 export function qqOnlyConnectSubmitGuess(
   room: QQRoomState,
   teamId: string,
   text: string
-): { matched: boolean; locked: boolean; alreadyWon: boolean } {
+): { matched: boolean; locked: boolean; alreadyAnswered: boolean } {
   if (!room.teams[teamId]) {
-    return { matched: false, locked: false, alreadyWon: false };
+    return { matched: false, locked: false, alreadyAnswered: false };
   }
+  // 1 Versuch pro Team — egal ob locked oder schon richtig
   if (room.onlyConnectLockedTeams.includes(teamId)) {
-    return { matched: false, locked: true, alreadyWon: !!room.onlyConnectWinnerTeamId };
+    return { matched: false, locked: true, alreadyAnswered: true };
   }
-  if (room.onlyConnectWinnerTeamId) {
-    // Späte Tipps nach Lösung werden ignoriert (würde Punktevergabe stören)
-    return { matched: false, locked: false, alreadyWon: true };
+  const alreadyCorrect = room.onlyConnectGuesses.some(g => g.teamId === teamId && g.correct);
+  if (alreadyCorrect) {
+    return { matched: false, locked: false, alreadyAnswered: true };
   }
   const q = room.currentQuestion;
   const oc = q?.bunteTuete?.kind === 'onlyConnect' ? q.bunteTuete : null;
   if (!oc) {
-    return { matched: false, locked: false, alreadyWon: false };
+    return { matched: false, locked: false, alreadyAnswered: false };
   }
   const accepted = [
     oc.answer,
@@ -3462,14 +3470,30 @@ export function qqOnlyConnectSubmitGuess(
     correct: isMatch, submittedAt: now, atHintIdx,
   });
   if (isMatch) {
-    room.onlyConnectWinnerTeamId = teamId;
-    room.onlyConnectWinnerHintIdx = atHintIdx;
-    clearOnlyConnectHintTimer(room);
+    // Erstes Korrektes setzt die Display-Infos, weitere bleiben „still" und
+    // landen nur in onlyConnectGuesses für die Eval.
+    if (!room.onlyConnectWinnerTeamId) {
+      room.onlyConnectWinnerTeamId = teamId;
+      room.onlyConnectWinnerHintIdx = atHintIdx;
+    }
+    // Timer NICHT mehr clearen — andere Teams können noch tippen.
   } else {
     room.onlyConnectLockedTeams.push(teamId);
   }
   room.lastActivityAt = now;
-  return { matched: isMatch, locked: !isMatch, alreadyWon: false };
+  return { matched: isMatch, locked: !isMatch, alreadyAnswered: false };
+}
+
+/** True wenn alle verbundenen Teams entweder richtig liegen oder gesperrt sind. */
+export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
+  for (const teamId of room.joinOrder) {
+    const t = room.teams[teamId];
+    if (!t || !t.connected) continue;
+    const correct = room.onlyConnectGuesses.some(g => g.teamId === teamId && g.correct);
+    const locked = room.onlyConnectLockedTeams.includes(teamId);
+    if (!correct && !locked) return false;
+  }
+  return true;
 }
 
 /** Moderator-Force-Reveal: deckt alle restlichen Hinweise auf, beendet Auto-Timer. */
@@ -3513,6 +3537,16 @@ function clearBluffTimers(room: QQRoomState): void {
 function normalizeBluffText(s: string): string {
   return (s ?? '').trim().replace(/\s+/g, ' ');
 }
+
+/** Fisher-Yates shuffle und nimm die ersten N Elemente. */
+function pickRandomN<T>(arr: T[], n: number): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, Math.min(n, a.length));
+}
 function bluffMatchesReal(submitted: string, real: string, realEn?: string): boolean {
   const sub = normalizeBluffText(submitted).toLowerCase();
   if (sub.length < 1) return false;
@@ -3528,6 +3562,7 @@ export function qqBluffReset(room: QQRoomState): void {
   room.bluffVoteEndsAt = null;
   room.bluffSubmissions = {};
   room.bluffOptions = [];
+  room.bluffOptionsByTeam = {};
   room.bluffVotes = {};
   room.bluffPoints = {};
   room.bluffRejected = [];
@@ -3646,22 +3681,39 @@ function qqBluffEnterVote(
     }
   }
 
-  // Optionen-Liste: real + alle merged Bluffs, geshuffelt.
-  const options: import('../../../shared/quarterQuizTypes').QQBluffOption[] = [
+  // Globaler Pool: real + alle merged Bluffs.
+  const allOptions: import('../../../shared/quarterQuizTypes').QQBluffOption[] = [
     { id: 'real', text: realDe, source: 'real', contributors: [] },
   ];
   let nextId = 1;
   for (const { text, contributors } of bluffsByNormalized.values()) {
-    options.push({ id: `b${nextId++}`, text, source: 'team', contributors });
+    allOptions.push({ id: `b${nextId++}`, text, source: 'team', contributors });
   }
-  // Fisher-Yates Shuffle (verhindert dass „real" immer zuerst steht)
-  for (let i = options.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [options[i], options[j]] = [options[j], options[i]];
+
+  // Per-Team Subset: jedes Team sieht real + 3 zufällige ANDERE Bluffs (nicht
+  // den eigenen). Bei wenigen Teams (<4 Bluffs verfügbar) so viele wie möglich.
+  const teamBluffs = allOptions.filter(o => o.source === 'team');
+  const realOption = allOptions.find(o => o.source === 'real')!;
+  const optionsByTeam: Record<string, import('../../../shared/quarterQuizTypes').QQBluffOption[]> = {};
+  const SUBSET_SIZE = 4;  // real + 3 weitere
+  for (const teamId of room.joinOrder) {
+    if (!room.teams[teamId]) continue;
+    // Teilnahme-Bluffs: nicht der eigene
+    const candidates = teamBluffs.filter(o => !o.contributors.includes(teamId));
+    // Random pick min(3, candidates.length)
+    const picked = pickRandomN(candidates, SUBSET_SIZE - 1);
+    const teamSet = [realOption, ...picked];
+    // Shuffle (real-Option soll nicht immer erste sein)
+    for (let i = teamSet.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [teamSet[i], teamSet[j]] = [teamSet[j], teamSet[i]];
+    }
+    optionsByTeam[teamId] = teamSet;
   }
 
   const now = Date.now();
-  room.bluffOptions = options;
+  room.bluffOptions = allOptions;
+  room.bluffOptionsByTeam = optionsByTeam;
   room.bluffVotes = {};
   room.bluffPhase = 'vote';
   room.bluffVoteEndsAt = now + (room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC) * 1000;
@@ -3681,7 +3733,9 @@ export function qqBluffVote(
 ): { ok: boolean; reason?: string } {
   if (room.bluffPhase !== 'vote') return { ok: false, reason: 'WRONG_PHASE' };
   if (!room.teams[teamId]) return { ok: false, reason: 'UNKNOWN_TEAM' };
-  const opt = room.bluffOptions.find(o => o.id === optionId);
+  // Validate gegen das Team-eigene Subset (oder Fallback auf globalen Pool)
+  const teamOpts = room.bluffOptionsByTeam[teamId] ?? room.bluffOptions;
+  const opt = teamOpts.find(o => o.id === optionId);
   if (!opt) return { ok: false, reason: 'UNKNOWN_OPTION' };
   if (opt.source === 'team' && opt.contributors.includes(teamId)) {
     return { ok: false, reason: 'OWN_BLUFF' };

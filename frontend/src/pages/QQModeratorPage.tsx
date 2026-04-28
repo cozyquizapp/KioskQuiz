@@ -1086,8 +1086,7 @@ export default function QQModeratorPage() {
                 {/* 4 gewinnt / Only Connect controls */}
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'onlyConnect' && (() => {
                   const hintIdx = s.onlyConnectHintIndex ?? -1;
-                  const winnerId = s.onlyConnectWinnerTeamId;
-                  const winner = winnerId ? s.teams.find(t => t.id === winnerId) : null;
+                  const correctCount = (s.onlyConnectGuesses ?? []).filter(g => g.correct).length;
                   const lockedNames = (s.onlyConnectLockedTeams ?? [])
                     .map(id => s.teams.find(t => t.id === id)?.name)
                     .filter(Boolean) as string[];
@@ -1097,18 +1096,16 @@ export default function QQModeratorPage() {
                         padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 800,
                       }}>
                         🧩 Hinweis {Math.max(1, hintIdx + 1)} / 4
-                        {winner && <> · 🏆 {winner.name}</>}
+                        {correctCount > 0 && <> · 🏆 {correctCount}× richtig</>}
                       </div>
-                      {!winner && hintIdx < 3 && (
+                      {hintIdx < 3 && (
                         <Btn color="#A78BFA" onClick={() => emit('qq:onlyConnectAdvanceHint', { roomCode })}>
                           ▶ Nächster Hinweis
                         </Btn>
                       )}
-                      {!winner && (
-                        <Btn color="#F59E0B" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
-                          ⏹ Alle Hinweise zeigen
-                        </Btn>
-                      )}
+                      <Btn color="#F59E0B" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
+                        ⏹ Alle Hinweise zeigen
+                      </Btn>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>
                         Auto-Timer: {s.onlyConnectHintDurationSec ?? 15}s ·
                         {lockedNames.length > 0

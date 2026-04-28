@@ -844,8 +844,13 @@ export interface QQStateUpdate {
   bluffVoteEndsAt: number | null;
   /** Per-Team eingereichter Bluff-Text. */
   bluffSubmissions: Record<string, string>;
-  /** Voting-Optionen, gemerged bei Duplikaten, gefiltert wenn = echte Antwort. */
+  /** Globaler Pool aller Voting-Optionen (real + alle Team-Bluffs nach Dedupe).
+   *  Wird für Reveal/Eval genutzt. Beamer zeigt diesen Pool im Reveal. */
   bluffOptions: QQBluffOption[];
+  /** Per-Team random 4er-Subset (real + 3 zufällige andere Bluffs). Jedes
+   *  Team sieht NUR seine eigenen 4 Optionen → kompakter & vermeidet
+   *  Beamer-Spoiler bei vielen Teams. */
+  bluffOptionsByTeam: Record<string, QQBluffOption[]>;
   /** Per-Team gewählte Option-ID (vote phase). */
   bluffVotes: Record<string, string>;
   /** Per-Team computed Teilpunkte (reveal phase). */

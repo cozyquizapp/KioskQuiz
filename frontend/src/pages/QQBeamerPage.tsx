@@ -2818,6 +2818,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // die Karte: einblenden → kurz weg → wieder da).
   const seenTeamIdsRef = useRef<Set<string>>(new Set());
   const [waveIds, setWaveIds] = useState<Set<string>>(new Set());
+  // Welcome-Banner: zeigt 'Willkommen, {Team}!' kurz prominent in der Mitte
+  // wenn ein neues Team joint (User-Wunsch 2026-04-28). Banner overlayt — Lobby
+  // bleibt im Hintergrund sichtbar.
+  const [welcomeTeamId, setWelcomeTeamId] = useState<string | null>(null);
+  const welcomeTimerRef = useRef<number | null>(null);
   useEffect(() => {
     const curIds = new Set(s.teams.map(t => t.id));
     const prev = prevTeamIdsRef.current;
@@ -2829,8 +2834,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       // initialen Teams „neu" und der Glow-Burst waere ueberfluessig).
       setWaveIds(new Set(newJoins));
       setTimeout(() => setWaveIds(new Set()), 1400);
+      // Welcome-Banner für den letzten neuen Join (bei Mehrfach-Join nur einer
+      // sichtbar, sonst stapelt sich's). Re-trigger durch clearTimeout möglich.
+      const lastJoin = newJoins[newJoins.length - 1];
+      setWelcomeTeamId(lastJoin);
+      if (welcomeTimerRef.current) window.clearTimeout(welcomeTimerRef.current);
+      welcomeTimerRef.current = window.setTimeout(() => setWelcomeTeamId(null), 3200);
     }
   }, [s.teams]);
+  useEffect(() => () => { if (welcomeTimerRef.current) window.clearTimeout(welcomeTimerRef.current); }, []);
+  const welcomedTeam = welcomeTeamId ? s.teams.find(t => t.id === welcomeTeamId) : null;
   // Nach jedem Render alle aktuellen Teams als „seen" markieren — fortan
   // bekommen sie KEIN teamCardIn mehr (würde sonst beim Wave-End-Re-Render
   // erneut feuern).
@@ -2851,8 +2864,60 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
       position: 'relative', overflow: 'hidden',
       gap: 'clamp(10px, 1.5vh, 20px)',
+      // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: nicht so schwarz, an
+      // Setup-Look angleichen). Doppelter Radial-Gradient: oben-mitte amber-Glow,
+      // unten-rechts indigo-Glow auf #0D0A06-Base — exakt wie QQModeratorPage.
+      background:
+        'radial-gradient(ellipse at 50% -10%, rgba(245,158,11,0.10), transparent 55%), ' +
+        'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
+        'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
+        '#0D0A06',
     }}>
       <Fireflies />
+
+      {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint */}
+      {welcomedTeam && (
+        <div style={{
+          position: 'absolute', top: '38%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 50,
+          padding: 'clamp(20px, 2.6vh, 36px) clamp(36px, 5vw, 72px)',
+          borderRadius: 28,
+          background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
+          border: `3px solid ${welcomedTeam.color}`,
+          boxShadow: `0 0 60px ${welcomedTeam.color}99, 0 14px 44px rgba(0,0,0,0.6)`,
+          animation: 'qqWelcomeBanner 3.2s cubic-bezier(0.22,1,0.36,1) both',
+          pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
+          maxWidth: '80vw',
+        }}>
+          <QQTeamAvatar avatarId={welcomedTeam.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
+            boxShadow: `0 0 24px ${welcomedTeam.color}88`,
+            flexShrink: 0,
+          }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            <div style={{
+              fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+              color: welcomedTeam.color, letterSpacing: '0.22em', textTransform: 'uppercase',
+              textShadow: `0 0 14px ${welcomedTeam.color}66`,
+            }}>
+              {de ? '✨ Willkommen' : '✨ Welcome'}
+            </div>
+            <div style={{
+              fontFamily: fontFam,
+              fontSize: 'clamp(34px, 4.6vw, 72px)', fontWeight: 900,
+              color: '#FFEFC9', lineHeight: 1.05,
+              letterSpacing: '-0.005em',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden', textOverflow: 'ellipsis',
+              maxWidth: '60vw',
+              textShadow: `0 0 28px ${welcomedTeam.color}66, 0 2px 0 rgba(0,0,0,0.4)`,
+            }}>
+              {welcomedTeam.name}!
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Top: Title (compact, centered) — CozyWolf-Branding nur noch unter QR ── */}
       <div style={{
@@ -2863,9 +2928,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         <div style={{
           fontFamily: fontFam,
           fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
-          background: 'linear-gradient(135deg, #e2e8f0 40%, #94a3b8)',
+          background: 'linear-gradient(135deg, #FDE68A 40%, #FBBF24)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           letterSpacing: '-0.02em',
+          textShadow: '0 0 40px rgba(251,191,36,0.18)',
         }}>
           CozyQuiz
         </div>
@@ -11007,6 +11073,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 64px 56px', position: 'relative', overflow: 'hidden',
       gap: 28,
+      // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: PreGame/Pause weniger
+      // schwarz, an Setup-Look angleichen). Mode-Akzent ergänzt das mit dem
+      // großen Glow-Ring weiter unten.
+      background:
+        `radial-gradient(ellipse at 50% -10%, ${modeAccent}1A, transparent 55%), ` +
+        `radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ` +
+        `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
+        '#0D0A06',
     }}>
       <Fireflies />
 

@@ -274,6 +274,33 @@ export default function QQProgressTree({
               </div>
             );
           })}
+          {/* Finale-Label — über dem Finale-Knoten. Spalten-Breite muss exakt
+              der Finale-Block-Breite (Trenner + gap + Dot) entsprechen, damit
+              der Text mittig über dem Dot landet. (User-Wunsch 2026-04-28:
+              'über finale auch finale schreiben wie bei runde') */}
+          {showFinale && (() => {
+            const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
+            const finaleLabelColor = isFinaleActive
+              ? (isShowcase ? '#FBBF24' : variant === 'inline' ? '#FBBF24' : '#b45309')
+              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
+            return (
+              <div style={{
+                width: finaleConnectorWidth + 6 + finaleDotSize,
+                textAlign: 'center',
+                fontSize: phaseNameSize,
+                fontWeight: 900,
+                color: finaleLabelColor,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+                flexShrink: 0,
+                textShadow: (isShowcase && isFinaleActive) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
+                transform: (isShowcase && isFinaleActive) ? 'translateY(-2px)' : 'translateY(0)',
+                transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+              }}>
+                {lang === 'de' ? 'Finale' : 'Finale'}
+              </div>
+            );
+          })()}
         </div>
         )}
 

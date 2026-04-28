@@ -547,6 +547,14 @@ export const QQ_BEAMER_CSS = `
     60%  { opacity: 1; transform: translateY(-2px) scale(1.003); filter: blur(0); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
+  /* Welcome-Team-Banner in der Lobby: pop-in, 2.4s halten, weich raus. */
+  @keyframes qqWelcomeBanner {
+    0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.85); }
+    12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    20%  { transform: translate(-50%, -50%) scale(1); }
+    80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

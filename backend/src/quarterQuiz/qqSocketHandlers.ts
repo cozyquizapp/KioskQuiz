@@ -1460,6 +1460,32 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:revealAnswer', (payload: QQRevealAnswerPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // Sub-Mechaniken mit eigener Reveal-Pipeline routen — Standard-Reveal
+        // würde sonst den Auto-Finish-Pfad umgehen + Phase nicht korrekt setzen.
+        const subKind = room.currentQuestion?.bunteTuete?.kind;
+        if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
+          qqOnlyConnectRevealAll(room);
+          qqOnlyConnectAutoFinish(room);
+          broadcast(io, payload.roomCode);
+          ok(ack);
+          return;
+        }
+        if (room.phase === 'QUESTION_ACTIVE' && subKind === 'bluff') {
+          // Bluff je nach Phase abschließen: write/review → direkt zu vote-end,
+          // vote → reveal triggern.
+          if (room.bluffPhase === 'write') {
+            qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, payload.roomCode));
+          }
+          if (room.bluffPhase === 'review') {
+            qqBluffFinishReview(room, () => bluffVoteTimeout(io, payload.roomCode));
+          }
+          if (room.bluffPhase === 'vote' || room.bluffPhase === 'reveal') {
+            qqBluffAdvanceFromVote(room);
+          }
+          broadcast(io, payload.roomCode);
+          ok(ack);
+          return;
+        }
         qqRevealAnswer(room);
         // Run evaluation immediately so correctTeamId is set — moderator sees winner
         try { applyAutoEval(room); } catch { /* ignore if already evaluated */ }

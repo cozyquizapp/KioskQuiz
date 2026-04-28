@@ -916,9 +916,18 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         {s.phase === 'COMEBACK_CHOICE' && (
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
-        {s.phase === 'CONNECTIONS_4X4' && (
-          <ConnectionsTeamCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
-        )}
+        {s.phase === 'CONNECTIONS_4X4' && (() => {
+          // 4×4-Finale Sub-Phasen:
+          // - active/reveal: ConnectionsTeamCard zeigt das 16-Items-Grid bzw. die
+          //   Status-Card.
+          // - placement + ich bin pendingFor: standard PlacementCard rendern,
+          //   damit ich auf das echte Spielfeld tappen kann (sonst stand nur
+          //   „Schaut auf den Beamer" da, Grid kam nie).
+          if (s.connections?.phase === 'placement' && s.pendingFor === myTeamId) {
+            return <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={true} emit={emit} roomCode={roomCode} lang={lang} />;
+          }
+          return <ConnectionsTeamCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
+        })()}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
         {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
@@ -1446,12 +1455,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
                     marginTop: i === 0 ? 8 : 2,
                   }}>{line}</div>
                 ))}
-                <div style={{
-                  marginTop: 10, fontSize: 12, fontWeight: 700,
-                  color: `${catColor}66`, letterSpacing: '0.04em',
-                }}>
-                  {lang === 'de' ? '📱 Antwort auf dem Handy' : '📱 Answer on your phone'}
-                </div>
+                {/* User-Wunsch 2026-04-28: 'Antwort auf dem Handy' war redundant
+                    auf dem Handy selbst. Komplett raus. */}
               </>
             );
           })()
@@ -2881,7 +2886,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             <button
               onClick={unlockNext}
               style={{
-                padding: '12px 14px', borderRadius: 12, border: 'none',
+                padding: '12px 14px', borderRadius: 12,
                 background: 'rgba(167,139,250,0.18)',
                 border: '1.5px solid rgba(167,139,250,0.5)',
                 color: '#DDD6FE', fontFamily: 'inherit', fontSize: 14, fontWeight: 900,

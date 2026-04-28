@@ -4807,6 +4807,258 @@ const QQMapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
 };
 
 /**
+ * 4 gewinnt / Only Connect — Beamer-Layout für active + reveal.
+ *
+ * Active:
+ *   - Frage oben (z.B. „Was verbindet diese Begriffe?")
+ *   - 4 Hint-Slots: aufgedeckte Hinweise farblich, kommende verschleiert
+ *   - Aktuell sichtbarer Hint pulsiert leicht
+ *   - Team-Status-Reihe unten (✓ wenn correct, ✕ wenn locked, sonst dim)
+ *
+ * Reveal:
+ *   - Antwort prominent in Gold
+ *   - Winner-Team mit Avatar + atHintIdx-Badge
+ *   - Alle 4 Hints sichtbar
+ */
+function OnlyConnectBeamerView({ state: s, lang, revealed }: {
+  state: QQStateUpdate; lang: 'de' | 'en'; revealed: boolean;
+}) {
+  const q = s.currentQuestion!;
+  const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
+  const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
+  const answer = (lang === 'en' && bt.answerEn ? bt.answerEn : bt.answer) ?? '';
+  const hintIdx = revealed ? 3 : Math.max(0, s.onlyConnectHintIndex ?? 0);
+  const winnerId = s.onlyConnectWinnerTeamId;
+  const winnerHintIdx = s.onlyConnectWinnerHintIdx;
+  const winnerTeam = winnerId ? s.teams.find(t => t.id === winnerId) : null;
+  const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
+  const accent = '#A78BFA';
+  const points = winnerHintIdx != null ? Math.max(1, 4 - winnerHintIdx) : 0;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(14px, 2vh, 24px)',
+      padding: 'clamp(20px, 2.5vh, 36px) clamp(24px, 3vw, 48px) clamp(16px, 2vh, 28px)',
+      position: 'relative',
+    }}>
+      <Fireflies color={`${accent}55`} />
+
+      {/* Header — Pill links, Status/Timer rechts (genau wie 4×4-Header) */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        gap: 16, position: 'relative', zIndex: 5,
+      }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 10,
+          padding: '8px 22px', borderRadius: 999,
+          background: `${accent}22`, border: `2px solid ${accent}44`,
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          animation: 'contentReveal 0.35s ease both',
+        }}>
+          <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)', lineHeight: 1 }}>🧩</span>
+          <span style={{
+            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+            color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>{lang === 'de' ? '4 gewinnt' : 'Connect 4'}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {!revealed && (
+            <div style={{
+              padding: '8px 16px', borderRadius: 999,
+              background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
+            }}>
+              {lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}
+            </div>
+          )}
+          {revealed && (
+            <div style={{
+              padding: '8px 18px', borderRadius: 999,
+              background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
+              fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#fde68a',
+              letterSpacing: '0.06em',
+            }}>
+              {lang === 'de' ? 'Auflösung' : 'Reveal'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Frage oben mittig */}
+      <div style={{
+        textAlign: 'center', position: 'relative', zIndex: 5,
+        animation: 'contentReveal 0.5s ease 0.1s both',
+      }}>
+        <div style={{
+          fontSize: 'clamp(26px, 3vw, 44px)', fontWeight: 900,
+          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+        }}>
+          {lang === 'en' && q.textEn ? q.textEn : (q.text || (lang === 'de' ? 'Was verbindet diese Hinweise?' : 'What connects these clues?'))}
+        </div>
+      </div>
+
+      {/* 4 Hint-Slots, jeweils horizontal nebeneinander */}
+      <div style={{
+        flex: 1,
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 'clamp(10px, 1.4vw, 22px)',
+        alignItems: 'stretch', position: 'relative', zIndex: 5,
+        maxWidth: 1280, width: '100%', margin: '0 auto',
+      }}>
+        {[0, 1, 2, 3].map(i => {
+          const isVisible = revealed || i <= hintIdx;
+          const isCurrent = !revealed && i === hintIdx;
+          const isPast = !revealed && i < hintIdx;
+          const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
+          const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+          return (
+            <div key={i} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: 'clamp(18px, 2vh, 28px) clamp(10px, 1vw, 16px)',
+              borderRadius: 18,
+              background: isVisible
+                ? `linear-gradient(180deg, ${hintColor}28, ${hintColor}10)`
+                : 'rgba(255,255,255,0.03)',
+              border: isVisible
+                ? `2px solid ${hintColor}${isCurrent ? 'cc' : '88'}`
+                : '2px dashed rgba(255,255,255,0.10)',
+              boxShadow: isCurrent
+                ? `0 0 28px ${hintColor}66`
+                : isVisible ? `0 0 14px ${hintColor}33` : 'none',
+              opacity: isVisible ? 1 : 0.55,
+              transition: 'all 0.5s ease',
+              animation: isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined,
+              minHeight: 'clamp(140px, 22vh, 220px)',
+              justifyContent: 'center', textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+                color: isVisible ? hintColor : '#475569',
+                letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12,
+              }}>
+                {lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}
+                {isPast && <span style={{ marginLeft: 6 }}>✓</span>}
+              </div>
+              <div style={{
+                fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
+                color: isVisible ? '#F1F5F9' : 'transparent',
+                lineHeight: 1.2,
+                animation: isCurrent ? 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+              }}>
+                {isVisible ? hintText : '?'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Reveal: Antwort + Winner */}
+      {revealed && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          padding: 'clamp(16px, 2vh, 28px)',
+          borderRadius: 22,
+          background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
+          border: '2px solid rgba(251,191,36,0.45)',
+          boxShadow: '0 0 40px rgba(251,191,36,0.25)',
+          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+          position: 'relative', zIndex: 5,
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
+            color: '#FDE68A', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.85,
+          }}>
+            {lang === 'de' ? 'Lösung' : 'Answer'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 900,
+            color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.35)',
+            textAlign: 'center', lineHeight: 1.1,
+          }}>
+            {answer}
+          </div>
+          {winnerTeam && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 22px', borderRadius: 999,
+              background: `${winnerTeam.color}22`, border: `2px solid ${winnerTeam.color}`,
+              animation: 'phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
+            }}>
+              <QQTeamAvatar avatarId={winnerTeam.avatarId} size={48} style={{
+                boxShadow: `0 0 0 2px ${winnerTeam.color}, 0 0 12px ${winnerTeam.color}88`,
+              }} />
+              <span style={{
+                fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900, color: winnerTeam.color,
+              }}>{winnerTeam.name}</span>
+              <span style={{
+                marginLeft: 6, padding: '4px 12px', borderRadius: 999,
+                background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.45)',
+                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#86EFAC',
+              }}>
+                {lang === 'de' ? `bei Hinweis ${(winnerHintIdx ?? 0) + 1} · ${points} Pkt` : `at clue ${(winnerHintIdx ?? 0) + 1} · ${points} pts`}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Team-Status-Reihe (analog CHEESE/4×4) */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(10px, 1.6vw, 22px)', flexWrap: 'wrap',
+        position: 'relative', zIndex: 5,
+        animation: 'contentReveal 0.45s ease 0.2s both',
+      }}>
+        {s.teams.map((tm) => {
+          const isLocked = lockedSet.has(tm.id);
+          const isWinner = winnerId === tm.id;
+          const dim = !isLocked && !isWinner;
+          return (
+            <div key={tm.id} title={tm.name} style={{
+              position: 'relative',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              opacity: dim ? 0.55 : 1,
+              filter: dim ? 'grayscale(0.4)' : 'none',
+              transition: 'opacity 0.4s ease, filter 0.4s ease',
+            }}>
+              <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(48px, 5vw, 72px)'} style={{
+                background: '#0d0a06',
+                boxShadow: isWinner
+                  ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
+                  : `0 0 0 2px ${tm.color}66, 0 4px 10px rgba(0,0,0,0.55)`,
+              }} />
+              {isWinner && (
+                <div style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: '#FBBF24', border: '2px solid #0D0A06',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, lineHeight: 1,
+                  boxShadow: '0 0 12px rgba(251,191,36,0.55)',
+                  animation: 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>🏆</div>
+              )}
+              {isLocked && !isWinner && (
+                <div style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: '#EF4444', border: '2px solid #0D0A06',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 900, color: '#fff', lineHeight: 1,
+                  animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>✕</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Top-5 Reveal: zweispaltige Show-Seite.
  * Links: Frage + Gewinner-Block. Rechts: Top-5-Liste die sequentiell 5→1 aufdeckt.
  * Nach jeder Antwort erscheinen Avatare (oder X-Kreis wenn niemand) mit Pop-Animation.
@@ -6384,6 +6636,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'top5';
   if (isTop5Reveal) {
     return <Top5Reveal state={s} lang={lang} />;
+  }
+
+  // ── 4 gewinnt / Only Connect: eigene Layout-Komponente für active + reveal ──
+  const isOnlyConnect = q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'onlyConnect';
+  if (isOnlyConnect) {
+    return <OnlyConnectBeamerView state={s} lang={lang} revealed={revealed} />;
   }
 
   // ── Order two-column reveal (Lucky Bag: bring in correct order) ────────

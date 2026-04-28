@@ -46,7 +46,7 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
   'none': 'Keine', 'float': 'Schweben', 'zoom-in': 'Zoom',
   'reveal': 'Aufdecken', 'slide-in': 'Einfahren',
 };
-const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'oneOfEight', 'order', 'map'];
+const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'oneOfEight', 'order', 'map', 'onlyConnect', 'bluff'];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function makeEmptyQuestion(phaseIndex: number, questionIndexInPhase: number, category: QQCategory, draftId: string): QQQuestion {
@@ -1448,7 +1448,10 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
                   else if (k === 'top5') bt = { kind: 'top5', answers: ['', '', '', '', ''] };
                   else if (k === 'oneOfEight') bt = { kind: 'oneOfEight', statements: ['', '', '', '', '', '', '', ''], falseIndex: 0 };
                   else if (k === 'order') bt = { kind: 'order', items: ['', '', ''], correctOrder: [0, 1, 2] };
-                  else bt = { kind: 'map', lat: 53.55, lng: 10.0, targetLabel: '' };
+                  else if (k === 'map') bt = { kind: 'map', lat: 53.55, lng: 10.0, targetLabel: '' };
+                  else if (k === 'onlyConnect') bt = { kind: 'onlyConnect', hints: ['', '', '', ''], answer: '' };
+                  else if (k === 'bluff') bt = { kind: 'bluff', realAnswer: '' };
+                  else bt = { kind: 'hotPotato' };
                   onChange({ ...q, bunteTuete: bt });
                 }} style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${active ? catColor + '66' : 'rgba(255,255,255,0.08)'}`, background: active ? catColor + '22' : 'rgba(255,255,255,0.03)', color: active ? catColor : '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, textAlign: 'left' }}>
                   {lbl.emoji} {lbl.de}
@@ -1597,6 +1600,89 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
       </div>
     );
   }
+
+  // 4 GEWINNT / Only Connect ──────────────────────────────────────────────────
+  if (bt.kind === 'onlyConnect') {
+    const hints = bt.hints ?? ['', '', '', ''];
+    const hintsEn = bt.hintsEn ?? ['', '', '', ''];
+    const accepted = bt.acceptedAnswers ?? [];
+    const acceptedEn = bt.acceptedAnswersEn ?? [];
+    const setHint = (i: number, val: string) => {
+      const a = [...hints]; a[i] = val;
+      onChange({ ...q, bunteTuete: { ...bt, hints: a } });
+    };
+    const setHintEn = (i: number, val: string) => {
+      const a = [...hintsEn]; a[i] = val;
+      onChange({ ...q, bunteTuete: { ...bt, hintsEn: a } });
+    };
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.25)', fontSize: 12, color: '#94a3b8' }}>
+          🧩 4 Hinweise werden nacheinander aufgedeckt (Hinweis 1 zeigt am wenigsten, Hinweis 4 am meisten). Teams raten den Verbindungs-Begriff per Freitext. 1 Tipp pro Team — falsch → gesperrt.
+        </div>
+        <div>
+          <label style={labelStyle}>Hinweise (DE) — von schwer (1) zu leicht (4)</label>
+          {[0, 1, 2, 3].map(i => (
+            <input key={i} value={hints[i] ?? ''} onChange={e => setHint(i, e.target.value)}
+              style={{ ...inputStyle, marginTop: 4 }}
+              placeholder={`Hinweis ${i + 1}…`} />
+          ))}
+        </div>
+        <div>
+          <label style={labelStyle}>Hints (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+          {[0, 1, 2, 3].map(i => (
+            <input key={i} value={hintsEn[i] ?? ''} onChange={e => setHintEn(i, e.target.value)}
+              style={{ ...inputStyle, marginTop: 4 }}
+              placeholder={`Clue ${i + 1}…`} />
+          ))}
+        </div>
+        <div>
+          <label style={labelStyle}>Lösung (DE)</label>
+          <input value={bt.answer ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, answer: e.target.value }, answer: e.target.value })}
+            style={inputStyle} placeholder="z.B. Komponisten mit 9 Sinfonien" />
+        </div>
+        <div>
+          <label style={labelStyle}>Answer (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+          <input value={bt.answerEn ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, answerEn: e.target.value }, answerEn: e.target.value })}
+            style={inputStyle} placeholder="e.g. Composers with 9 symphonies" />
+        </div>
+        <div>
+          <label style={labelStyle}>Akzeptierte Schreibweisen (DE) <span style={{ color: '#334155' }}>opt., komma-getrennt</span></label>
+          <input value={accepted.join(', ')} onChange={e => onChange({ ...q, bunteTuete: { ...bt, acceptedAnswers: e.target.value.split(',').map(s => s.trim()).filter(Boolean) } })}
+            style={inputStyle} placeholder="z.B. 9 Sinfonien, neun Sinfonien, 9 Symphonien" />
+        </div>
+        <div>
+          <label style={labelStyle}>Accepted spellings (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+          <input value={acceptedEn.join(', ')} onChange={e => onChange({ ...q, bunteTuete: { ...bt, acceptedAnswersEn: e.target.value.split(',').map(s => s.trim()).filter(Boolean) } })}
+            style={inputStyle} placeholder="e.g. 9 symphonies, nine symphonies" />
+        </div>
+      </div>
+    );
+  }
+
+  // BLUFF — Implementation folgt, hier minimaler Editor ───────────────────────
+  if (bt.kind === 'bluff') return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(244,114,182,0.10)', border: '1px solid rgba(244,114,182,0.3)', fontSize: 12, color: '#94a3b8' }}>
+        🎭 Teams erfinden eine plausible Falsch-Antwort. Phase 2: alle Bluffs + die echte Antwort werden gemischt angezeigt, Teams stimmen ab. <strong>Implementation folgt — Frontend kommt im nächsten Schritt.</strong>
+      </div>
+      <div>
+        <label style={labelStyle}>Frage</label>
+        <input value={q.text ?? ''} onChange={e => onChange({ ...q, text: e.target.value })}
+          style={inputStyle} placeholder="z.B. In welchem Jahr wurde der erste elektrische Toaster patentiert?" />
+      </div>
+      <div>
+        <label style={labelStyle}>Echte Antwort (DE)</label>
+        <input value={bt.realAnswer ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, realAnswer: e.target.value }, answer: e.target.value })}
+          style={inputStyle} placeholder="z.B. 1909" />
+      </div>
+      <div>
+        <label style={labelStyle}>Real answer (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+        <input value={bt.realAnswerEn ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, realAnswerEn: e.target.value }, answerEn: e.target.value })}
+          style={inputStyle} placeholder="e.g. 1909" />
+      </div>
+    </div>
+  );
 
   // MAP / Pin It ───────────────────────────────────────────────────────────────
   if (bt.kind === 'map') return (

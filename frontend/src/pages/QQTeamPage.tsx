@@ -2235,6 +2235,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
     if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
+    if (kind === 'onlyConnect') return <OnlyConnectInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
   }
   // Fallback
   return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
@@ -2542,6 +2543,136 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
         </div>
       ))}
       <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={filled >= 1} submitted={false} catColor={catColor} />
+    </div>
+  );
+}
+
+// ── 4 gewinnt / Only Connect: progressive Hinweise + Freitext-Tipp ────────────
+function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
+}) {
+  const q = s.currentQuestion!;
+  const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
+  const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
+  const hintIdx = Math.max(0, s.onlyConnectHintIndex ?? 0);
+  const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
+  const winnerId = s.onlyConnectWinnerTeamId;
+  const isMyWin = winnerId === myTeamId;
+  const someoneWon = !!winnerId;
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (!isLocked && !someoneWon) ref.current?.focus(); }, [isLocked, someoneWon]);
+
+  const submit = () => {
+    if (isLocked || someoneWon) return;
+    const text = val.trim();
+    if (text.length < 1) return;
+    emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
+    setVal('');
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* 4 Hint-Slots vertikal — wie auf Beamer aber kompakter */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {[0, 1, 2, 3].map(i => {
+          const isVisible = i <= hintIdx;
+          const isCurrent = i === hintIdx && !someoneWon;
+          const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 12px', borderRadius: 10,
+              background: isVisible ? `${hintColor}18` : 'rgba(255,255,255,0.03)',
+              border: isVisible ? `1.5px solid ${hintColor}66` : '1.5px dashed rgba(255,255,255,0.10)',
+              boxShadow: isCurrent ? `0 0 12px ${hintColor}44` : 'none',
+              opacity: isVisible ? 1 : 0.6,
+              transition: 'all 0.4s ease',
+            }}>
+              <span style={{
+                fontSize: 10, fontWeight: 900,
+                color: isVisible ? hintColor : '#475569',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                width: 32, textAlign: 'center',
+              }}>{lang === 'de' ? `H${i+1}` : `C${i+1}`}</span>
+              <span style={{
+                fontSize: 16, fontWeight: 800,
+                color: isVisible ? '#F1F5F9' : 'transparent',
+              }}>{isVisible ? hintsAll[i] : '?'}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Status-Banner */}
+      {someoneWon && !isMyWin && (
+        <div style={{
+          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.10)',
+          fontSize: 13, fontWeight: 800, color: '#94a3b8',
+        }}>
+          {lang === 'de' ? '🏆 Ein anderes Team war zuerst.' : '🏆 Another team got it first.'}
+        </div>
+      )}
+      {isMyWin && (
+        <div style={{
+          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.45)',
+          fontSize: 14, fontWeight: 900, color: '#86EFAC',
+        }}>
+          {lang === 'de' ? '✓ Richtig! Wartet auf Auflösung.' : '✓ Correct! Wait for reveal.'}
+        </div>
+      )}
+      {isLocked && !someoneWon && (
+        <div style={{
+          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(239,68,68,0.10)', border: '1.5px solid rgba(239,68,68,0.4)',
+          fontSize: 13, fontWeight: 800, color: '#FCA5A5',
+        }}>
+          {lang === 'de' ? '✕ Falsch — gesperrt für diese Frage.' : '✕ Wrong — locked out for this question.'}
+        </div>
+      )}
+
+      {/* Freitext-Eingabe (nur wenn nicht locked + niemand gewonnen) */}
+      {!isLocked && !someoneWon && (
+        <>
+          <input
+            ref={ref}
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+            placeholder={lang === 'de' ? 'Verbindung tippen…' : 'Your guess…'}
+            style={{
+              padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
+              border: `2px solid ${val ? catColor : 'rgba(255,255,255,0.08)'}`,
+              background: val ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
+              color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
+              outline: 'none', transition: 'all 0.18s',
+            }}
+          />
+          <button
+            disabled={val.trim().length < 1}
+            onClick={submit}
+            style={{
+              padding: '14px 18px', borderRadius: 14, border: 'none',
+              background: val.trim().length >= 1
+                ? `linear-gradient(135deg, ${catColor}, ${catColor}cc)`
+                : 'rgba(255,255,255,0.06)',
+              color: val.trim().length >= 1 ? '#0a1f0d' : '#64748b',
+              fontSize: 16, fontWeight: 900, fontFamily: 'inherit',
+              cursor: val.trim().length >= 1 ? 'pointer' : 'not-allowed',
+              boxShadow: val.trim().length >= 1 ? `0 4px 14px ${catColor}66` : 'none',
+              letterSpacing: '0.05em', textTransform: 'uppercase',
+            }}
+          >
+            {lang === 'de' ? '✓ Tipp abgeben (1×)' : '✓ Submit guess (1×)'}
+          </button>
+          <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 600 }}>
+            {lang === 'de' ? '⚠ Nur ein Tipp — falsch = gesperrt für diese Frage' : '⚠ One try only — wrong = locked out'}
+          </div>
+        </>
+      )}
     </div>
   );
 }

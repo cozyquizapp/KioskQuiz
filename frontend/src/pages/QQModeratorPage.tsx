@@ -1083,6 +1083,42 @@ export default function QQModeratorPage() {
                   </div>
                 )}
 
+                {/* 4 gewinnt / Only Connect controls */}
+                {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'onlyConnect' && (() => {
+                  const hintIdx = s.onlyConnectHintIndex ?? -1;
+                  const winnerId = s.onlyConnectWinnerTeamId;
+                  const winner = winnerId ? s.teams.find(t => t.id === winnerId) : null;
+                  const lockedNames = (s.onlyConnectLockedTeams ?? [])
+                    .map(id => s.teams.find(t => t.id === id)?.name)
+                    .filter(Boolean) as string[];
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ fontSize: 13, color: '#fff', background: '#A78BFA',
+                        padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 800,
+                      }}>
+                        🧩 Hinweis {Math.max(1, hintIdx + 1)} / 4
+                        {winner && <> · 🏆 {winner.name}</>}
+                      </div>
+                      {!winner && hintIdx < 3 && (
+                        <Btn color="#A78BFA" onClick={() => emit('qq:onlyConnectAdvanceHint', { roomCode })}>
+                          ▶ Nächster Hinweis
+                        </Btn>
+                      )}
+                      {!winner && (
+                        <Btn color="#F59E0B" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
+                          ⏹ Alle Hinweise zeigen
+                        </Btn>
+                      )}
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                        Auto-Timer: {s.onlyConnectHintDurationSec ?? 15}s ·
+                        {lockedNames.length > 0
+                          ? <> Gesperrt: {lockedNames.join(', ')}</>
+                          : <> Niemand gesperrt</>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* ── QUESTION REVEAL ── */}
                 {s.phase === 'QUESTION_REVEAL' && (() => {
                   const qRev = s.currentQuestion;

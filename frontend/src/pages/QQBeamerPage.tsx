@@ -8131,23 +8131,42 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }
               return null;
             };
+            // Density-Skalierung: bei vielen Antworten Pills/Font kompakter, sonst sprengen sie den Beamer.
+            const N = allAnswers.length;
+            const tier =
+              N <= 12 ? 'lg'
+              : N <= 25 ? 'md'
+              : N <= 50 ? 'sm'
+              : 'xs';
+            const tierStyles = {
+              lg: { fontSize: 'clamp(16px, 1.8vw, 24px)', pad: '8px 18px', padAvatar: '4px 16px 4px 4px', avatarSize: 'clamp(30px, 3vw, 40px)', gap: 10, headerFs: 'clamp(20px, 2.4vw, 32px)', containerPad: '18px 22px', stagger: 0.05 },
+              md: { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px', padAvatar: '3px 12px 3px 3px', avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6, headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.025 },
+              sm: { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px', padAvatar: '2px 9px 2px 2px', avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4, headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.012 },
+              xs: { fontSize: 'clamp(10px, 1vw, 13px)', pad: '2px 7px', padAvatar: '2px 7px 2px 2px', avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3, headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px', stagger: 0.008 },
+            }[tier];
             return (
               <div style={{
-                width: '100%', maxWidth: 1400, marginBottom: 'clamp(8px, 1.2vh, 24px)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                width: '100%', maxWidth: 1400,
+                marginBottom: 'clamp(8px, 1.2vh, 24px)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
                 animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
               }}>
                 <div style={{
-                  fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
+                  fontSize: tierStyles.headerFs, fontWeight: 900,
                   color: '#86efac', letterSpacing: 0.5,
                 }}>
                   <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'All possible answers' : 'Alle möglichen Antworten'}
+                  <span style={{ marginLeft: 8, fontSize: '0.7em', opacity: 0.7 }}>· {N}</span>
                 </div>
                 <div style={{
-                  display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
-                  padding: '18px 22px', borderRadius: 22,
+                  display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                  gap: tierStyles.gap,
+                  padding: tierStyles.containerPad, borderRadius: 22,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
+                  // Höhe begrenzen damit Beamer-Layout nicht überläuft
+                  maxHeight: 'clamp(220px, 32vh, 380px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);
@@ -8155,24 +8174,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       u === a.toLowerCase().trim() || u.includes(a.toLowerCase().trim()) || a.toLowerCase().trim().includes(u)
                     );
                     const authorTeam = authorId ? s.teams.find(t => t.id === authorId) : null;
+                    // Bei xs/sm-Density: Avatare nur bei genannten Antworten anzeigen
+                    const showAvatar = !!authorTeam && (tier !== 'xs');
                     return (
                       <div key={`${a}-${i}`} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        padding: authorTeam ? '4px 16px 4px 4px' : '8px 18px',
+                        display: 'inline-flex', alignItems: 'center', gap: tier === 'lg' ? 8 : 4,
+                        padding: showAvatar ? tierStyles.padAvatar : tierStyles.pad,
                         borderRadius: 999,
-                        fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
+                        fontSize: tierStyles.fontSize, fontWeight: 800,
                         background: named ? 'rgba(34,197,94,0.22)' : 'rgba(15,23,42,0.5)',
-                        border: `2px solid ${authorTeam ? authorTeam.color : (named ? '#22C55E' : 'rgba(148,163,184,0.25)')}`,
+                        border: `${tier === 'xs' ? 1 : 2}px solid ${authorTeam ? authorTeam.color : (named ? '#22C55E' : 'rgba(148,163,184,0.25)')}`,
                         color: named ? '#86efac' : '#94a3b8',
-                        animation: `contentReveal 0.4s ease ${0.2 + i * 0.05}s both`,
-                        boxShadow: authorTeam ? `0 0 12px ${authorTeam.color}44` : 'none',
+                        animation: `contentReveal 0.4s ease ${0.2 + i * tierStyles.stagger}s both`,
+                        boxShadow: authorTeam && tier !== 'xs' ? `0 0 8px ${authorTeam.color}44` : 'none',
                       }}>
-                        {authorTeam && (
-                          <QQTeamAvatar avatarId={authorTeam.avatarId} size={'clamp(30px, 3vw, 40px)'} title={authorTeam.name} style={{
+                        {showAvatar && authorTeam && (
+                          <QQTeamAvatar avatarId={authorTeam.avatarId} size={tierStyles.avatarSize} title={authorTeam.name} style={{
                             flexShrink: 0,
                           }} />
                         )}
-                        <span>{named ? '✓ ' : ''}{a}</span>
+                        <span>{named ? (tier === 'xs' || tier === 'sm' ? '✓' : '✓ ') : ''}{a}</span>
                       </div>
                     );
                   })}

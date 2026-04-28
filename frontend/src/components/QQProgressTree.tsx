@@ -420,7 +420,11 @@ export default function QQProgressTree({
             const isFinalePast = state.phase === 'GAME_OVER' || state.phase === 'THANKS';
             return (
               <div style={{
-                marginLeft: phaseGap, // gleicher Abstand wie zwischen Phasen
+                // 2026-04-28: marginLeft entfernt — Parent-Container hat schon
+                // gap:phaseGap zwischen Items. Doppelter Abstand verschob den
+                // Finale-Dot um phaseGap nach rechts → Label saß nicht mittig
+                // drüber. Jetzt spacing exakt = ein phaseGap (gleich wie
+                // zwischen den Phase-Groups, gleich wie zwischen Labels).
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative', zIndex: 2,
               }}>

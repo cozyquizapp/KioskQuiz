@@ -1706,7 +1706,16 @@ export function qqPlaceCell(
   row: number,
   col: number
 ): { jokersAwarded: number } {
-  assertPhase(room, ['PLACEMENT']);
+  // 2026-04-28-Bug-Fix: Während CONNECTIONS_4X4 mit c.phase === 'placement'
+  // setzen die Top-Teams ihre verdienten Felder auf das Territory-Grid. Ohne
+  // diese Phase im Allow-List warf qqPlaceCell → Dummies konnten nicht
+  // setzen, Reveal hing fest. (User-Bug 'reveal nach 4x4 bleibt aus + Bots
+  // setzen keine Felder danach'.)
+  const isConnectionsPlacement =
+    room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement';
+  if (!isConnectionsPlacement) {
+    assertPhase(room, ['PLACEMENT']);
+  }
   assertPendingFor(room, teamId);
   assertValidCoord(room, row, col);
 

@@ -8376,29 +8376,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         flexDirection: (hasImg && img.layout === 'window-left') ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s ease both',
       }}>
-        {/* ── Main content — full width, vertically + horizontally distributed ──
-            History:
-            - 'flex-start' kleben oben → schlecht
-            - 'space-around' verteilt → aber: User-Feedback 2026-04-28-v3:
-              'wenn niedrige bets rausgehen + winner card kommt, verschieben
-              sich die oberen Cards mit'.
-              Mit space-around verteilen sich ALLE Items neu wenn die Anzahl
-              wechselt → upper Cards wackeln.
-            - LÖSUNG: flex-start (top-anchor stabil), aber gap ergänzt so dass
-              Cards atmen statt zu kleben. Untere Inhalte (Voter-Reihe, Winner-
-              Card) wachsen einfach nach unten ohne den Rest zu verschieben.
+        {/* ── Main content — full width, vertically distributed ──
+            Final approach (2026-04-28-v4):
+            - space-between für MUCHO/ZvZ Reveal: Frage-Card top-anchored,
+              Winner-Card (last item) bottom-anchored, dazwischen verteilen
+              sich Options/Voter-Reihe natürlich.
+            - Hinzu kommt ein <Spacer flex:1/> zwischen Voter-Avataren und
+              Winner-Card → der Spacer absorbiert Layout-Änderungen, sodass
+              upper Cards stabil stehen wenn Winner erscheint.
+            - Bei nicht-revealed (active) center bleibt für saubere Mitte.
             Vertikales overflow visible erlaubt, dass Card-Glow + Winner-Border
-            nicht durch overflow:hidden geclipped werden. Horizontal bleibt
-            hidden für seitliche Effekte. */}
+            nicht durch overflow:hidden geclipped werden. */}
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           padding: 'clamp(20px, 3vh, 44px) clamp(28px, 4vw, 64px) clamp(24px, 3.5vh, 56px)',
-          // flex-start für ALLE Reveal-Phasen → upper Cards stehen stabil.
-          // Bei nicht-revealed (active) center bleibt für saubere Mitte.
-          justifyContent: revealed ? 'flex-start' : 'center',
-          // Atmender Gap zwischen Sections, damit es bei flex-start nicht
-          // zu zusammengedrängt aussieht.
-          gap: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(14px, 2vh, 28px)' : 0,
+          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center',
+          // Mehr atmender Gap zwischen Sections — Cards sollen nicht kleben.
+          gap: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(20px, 3vh, 40px)' : 0,
           alignItems: 'center', position: 'relative', zIndex: 5,
           overflowX: 'hidden', overflowY: 'visible',
         }}>
@@ -12349,36 +12343,36 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         })()}
 
         {/* Rankings — alle anderen Teams.
-            User-Wunsch 2026-04-28:
+            User-Wunsch 2026-04-28-v2:
             (1) Reveal-Reihenfolge: letztes Team zuerst, dann aufsteigend bis
-                zum 2. Platz (Sieger erscheint als Climax danach via
-                winnerHeroDelay). Index-basierte Animation reverse'd:
-                letztes Team-Card animiert bei 0.6s, vorletzte bei 1.5s, etc.
-            (2) Bei wenigen Teams (≤3 andere = 4 Teams insgesamt): vertikale
-                Spalte unter dem Sieger statt horizontaler Row. */}
+                zum 2. Platz. Sieger als Climax danach via winnerHeroDelay.
+            (2) Layout: untereinander statt horizontale Reihe. Bei wenigen
+                Teams + Platz → 1 Spalte, sonst 2 Spalten (statt einer langen
+                horizontalen Reihe wie vorher). */}
         {sorted.length > 1 && (() => {
           const others = sorted.slice(1);
           const wn = others.length;
-          const useColumn = wn <= 3;
-          // Avatar-Größe abhängig von Team-Zahl, damit alles in eine Reihe passt
-          const avatarSize = useColumn ? 'clamp(50px, 4.6vw, 72px)'
-                            : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
-                            : wn <= 7 ? 'clamp(34px, 3vw, 46px)'
-                                       : 'clamp(28px, 2.4vw, 38px)';
-          const nameFs   = useColumn ? 'clamp(13px, 1.4vw, 18px)' : wn <= 5 ? 'clamp(11px, 1.1vw, 14px)' : 'clamp(10px, 0.95vw, 12px)';
-          const scoreFs  = useColumn ? 'clamp(16px, 1.7vw, 22px)' : wn <= 5 ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(12px, 1.25vw, 16px)';
-          const cardPad  = useColumn ? '10px 14px' : wn <= 5 ? '8px 6px' : '6px 4px';
+          // 1col: ≤3 andere = 4 Teams insgesamt → entspannte vertikale Anordnung.
+          // 2col: ab 4 anderen → balanciert in 2 Säulen, max 4 Reihen bei 8 Teams.
+          const cols = wn <= 3 ? 1 : 2;
+          // Avatar-Größe — bei 2col sind die Cards halb so breit, also etwas kleiner.
+          const avatarSize = cols === 1
+            ? 'clamp(50px, 4.6vw, 72px)'
+            : wn <= 5 ? 'clamp(42px, 3.8vw, 60px)'
+                      : 'clamp(38px, 3.4vw, 52px)';
+          const nameFs   = cols === 1 ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(12px, 1.25vw, 16px)';
+          const scoreFs  = cols === 1 ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(14px, 1.5vw, 19px)';
+          const cardPad  = cols === 1 ? '10px 14px' : '8px 12px';
           // Reverse-Reveal: letztes (höchster Index) zuerst, niedrigster (Silver) zuletzt.
           // Pro Team-Step ~0.9s.
           const revealStep = 0.9;
           return (
             <div style={{
-              display: 'flex',
-              flexDirection: useColumn ? 'column' : 'row',
-              flexWrap: 'nowrap',
+              display: 'grid',
+              gridTemplateColumns: cols === 1 ? '1fr' : '1fr 1fr',
               alignItems: 'stretch',
               justifyContent: 'center',
-              gap: useColumn ? 'clamp(6px, 1vh, 10px)' : (wn <= 4 ? 'clamp(8px, 1vw, 14px)' : 'clamp(4px, 0.6vw, 8px)'),
+              gap: 'clamp(6px, 1vh, 10px)',
               width: '100%',
               marginTop: 'clamp(6px, 1vh, 14px)',
             }}>
@@ -12390,15 +12384,14 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 const revealDelay = 0.6 + revealOrderIdx * revealStep;
                 return (
                   <div key={tm.id} style={{
-                    flex: useColumn ? '0 0 auto' : '1 1 0',
                     minWidth: 0,
                     display: 'flex',
-                    flexDirection: useColumn ? 'row' : 'column',
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    gap: useColumn ? 12 : 4,
+                    gap: 12,
                     padding: cardPad,
                     borderRadius: 12,
-                    background: `linear-gradient(${useColumn ? '90deg' : '180deg'}, ${tm.color}1a, ${tm.color}08)`,
+                    background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
                     border: `1.5px solid ${tm.color}55`,
                     boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
                     animation: `finaleRank 0.55s cubic-bezier(0.34,1.2,0.64,1) ${revealDelay}s both`,

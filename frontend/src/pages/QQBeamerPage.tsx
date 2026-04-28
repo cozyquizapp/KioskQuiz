@@ -734,7 +734,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playFanfare();
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
-      playRevealFor(s.currentQuestion?.category);
+      // Mucho + ZvZ haben Multi-Step-Reveals (Step 0 = Pause, Step 1 = Avatar-
+      // Cascade, Step 2 = Lock-Green). Phase-Wechsel ist visuell nur eine
+      // dezente Question-Fade — Reveal-Sound wäre hier zu früh. Stattdessen
+      // beim ersten muchoRevealStep/zvzRevealStep getriggert (siehe unten).
+      const cat = s.currentQuestion?.category;
+      const skipPhaseSound = cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN';
+      if (!skipPhaseSound) {
+        playRevealFor(cat);
+      }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
       const cat = s.currentQuestion?.category;
@@ -1121,13 +1129,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       if (q?.category === 'MUCHO') {
         const distinctVoterOptions = new Set(s.answers.map(a => a.text)).size;
         const lockStep = distinctVoterOptions + 1;
+        // Beim ersten Step (Avatar-Cascade) den verschobenen Reveal-Sound
+        // nachholen — vorher feuerte er beim Phase-Wechsel ohne sichtbares
+        // Event. Beim Lock-Step regulärer Bestätigungs-Sound.
         if (curr.mucho >= lockStep) playCorrect();
+        else if (prev.mucho === 0) playRevealFor('MUCHO');
         else playFieldPlaced();
       }
     }
     // ZEHN_VON_ZEHN: Cascade-Step → Plopp, Final → Fanfare.
     if (curr.zvz > prev.zvz) {
       if (curr.zvz >= 2) playFanfare();
+      else if (prev.zvz === 0) playRevealFor('ZEHN_VON_ZEHN');
       else playFieldPlaced();
     }
     // CHEESE: Step 1 = Lösung grün, Step 2 = Avatare auf den Treffern.

@@ -11639,6 +11639,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             minHeight: 'clamp(380px, 50vh, 560px)',
             animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
             position: 'relative', overflow: 'hidden',
+            // Flex-Column → Inner-Content kann via flex:1 auf volle Card-Höhe
+            // wachsen + sich vertikal zentrieren.
+            display: 'flex', flexDirection: 'column',
           }}>
             {/* Akzent-Streifen oben (animated shimmer) */}
             <div style={{
@@ -11655,11 +11658,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               pointerEvents: 'none',
             }} />
             {/* Inner content — key sorgt für Re-Mount + Cross-Fade-Animation
-                bei Panel-Wechsel. Card-Hülle bleibt stabil. */}
+                bei Panel-Wechsel. Card-Hülle bleibt stabil. flex:1 + justify
+                center → Inhalt sitzt vertikal mittig in der Card (User-Wunsch
+                'Wolf und Text zentriert mittig'). */}
             <div
               key={activePanel.key}
               style={{
                 position: 'relative',
+                flex: 1,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 animation: 'qqPanelContentFade 0.7s cubic-bezier(0.22,1,0.36,1) both',
               }}
             >

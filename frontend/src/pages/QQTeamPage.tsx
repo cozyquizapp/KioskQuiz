@@ -1481,7 +1481,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
           (() => {
             const btKind = s.currentQuestion?.bunteTuete?.kind;
             const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
-              SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Guess It' }, lines: { de: ['Gebt eine Zahl als Schätzung ein', 'Nächste Antwort gewinnt!'], en: ['Enter a number', 'Closest answer wins!'] } },
+              SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Close Call' }, lines: { de: ['Wer am nächsten dran liegt, gewinnt', 'Knapp dran zählt auch'], en: ['Closest guess wins', 'Near misses also count'] } },
               MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
               CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Picture This', en: 'Picture This' }, lines: { de: ['Was ist das?', 'Erste richtige Antwort gewinnt'], en: ['What is this?', 'First correct answer wins'] } },

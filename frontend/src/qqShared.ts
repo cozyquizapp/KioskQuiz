@@ -555,6 +555,12 @@ export const QQ_BEAMER_CSS = `
     80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     100% { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
   }
+  /* Kategorie-Intro-Title: dezenter Glow-Atemzug zwischen weicherem & etwas
+     intensiverem Layered-Shadow. Subtil, nicht ablenkend — nur 'lebendig'. */
+  @keyframes qqCatTitleBreathe {
+    0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+    50%      { transform: translateY(-1px) scale(1.005); filter: brightness(1.06); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

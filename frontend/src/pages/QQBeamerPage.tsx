@@ -4211,16 +4211,30 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 })()}
               </div>
 
-              {/* Category/mechanic name */}
+              {/* Category/mechanic name — 3D-Stack-Look mit layered glow.
+                  (User-Wunsch 2026-04-28: 'kategorie intro text mit nicem
+                  Glow oder 3D'). Mehrere textShadow-Layer ergeben:
+                  - Inner-Glow (kräftig, scharf um den Buchstaben)
+                  - Mid-Glow (weicher, bunt)
+                  - Ambient (dezenter Schein in den Hintergrund)
+                  - 3D-Drop (harte schwarze Kante darunter = Tiefe)
+                  - Soft-Drop (weiche Schattenwolke = Räumlichkeit) */}
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
-                textShadow: `0 0 80px ${catColor}44`,
+                textShadow:
+                  `0 0 14px ${catColor}99, ` +
+                  `0 0 40px ${catColor}66, ` +
+                  `0 0 96px ${catColor}33, ` +
+                  `0 5px 0 rgba(0,0,0,0.45), ` +
+                  `0 14px 28px rgba(0,0,0,0.55)`,
                 marginTop: 12,
-                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both',
+                animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
                 position: 'relative', zIndex: 5,
                 textAlign: 'center',
+                letterSpacing: '-0.005em',
+                willChange: 'text-shadow, transform',
               }}>{info.title[lang]}</div>
 
               {/* Explanation lines */}
@@ -7581,11 +7595,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // deshalb gleiche Größen wie normale Kategorien. Nur im Reveal wird geshrunken
   // (qFontSizeShrunk weiter unten), damit die Rangfolge darunter passt.
   // min(vw, vh) verhindert Overflow nach oben/unten auf niedrigen Displays.
-  const qFontSize = qText.length > 200 ? 'clamp(26px, min(3vw, 4.5vh), 44px)'
-    : qText.length > 120 ? 'clamp(32px, min(3.8vw, 6vh), 58px)'
-    : qText.length > 80  ? 'clamp(36px, min(4.5vw, 7vh), 72px)'
-    : qText.length > 40  ? 'clamp(42px, min(5.2vw, 8vh), 84px)'
-    : 'clamp(48px, min(6vw, 9vh), 96px)';
+  // 2026-04-28: User-Wunsch 'unten ist noch Platz, lass den Text größer' — vw+vh
+  // Caps angehoben + min/max der clamps großzügiger. Lange Texte (>200) bleiben
+  // moderat klein, kurze Fragen wirken jetzt richtig satt am Beamer.
+  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4vw, 5vh), 50px)'
+    : qText.length > 120 ? 'clamp(36px, min(4.4vw, 6.8vh), 68px)'
+    : qText.length > 80  ? 'clamp(42px, min(5.4vw, 8vh), 86px)'
+    : qText.length > 40  ? 'clamp(50px, min(6.4vw, 9vh), 104px)'
+    : 'clamp(58px, min(7.6vw, 10vh), 124px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -7804,12 +7821,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
-            border: `${isCheeseReveal ? 3 : 1}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}2a`}`,
+            // Vor Reveal: kräftiger Kategorie-Glow wie bei MUCHO/ZvZ. (User-Wunsch
+            // 2026-04-28: 'bei cheese darf die frage vor reveal umrandet sein
+            // von kategorie farben glow wie bei anderen').
+            border: `${isCheeseReveal ? 3 : 2.5}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}88`}`,
             borderRadius: 28,
             padding: isCheeseReveal ? '28px 48px' : '36px 56px',
             boxShadow: isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}66, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
-              : `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
+              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.1s both'
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
@@ -8108,7 +8128,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Question card — Text schrumpft beim Reveal generell, damit mehr
               Platz für Antwort-Card + Avatar-Cascade + Winner-Card bleibt.
               User-Wunsch 2026-04-28: 'Fragetext im Reveal nur sekundär,
-              kann kleiner sein'. Vorher nur bei Schätzchen geschrumpft. */}
+              kann kleiner sein'. Vorher nur bei Schätzchen geschrumpft.
+              SHRINK-METHODE 2026-04-28: vorher font-size-Animation, die führte
+              zu Re-Wrap während der Transition (Buchstaben 'zappeln'). Jetzt:
+              key-Re-Mount auf das innere Span — Text fadet kurz durch (langFadeIn)
+              statt während des Resize zu hüpfen. Card-Padding fadet sich
+              gleichzeitig schmaler — wirkt wie ein gemeinsamer 'collapse'. */}
           {(() => {
             const shrinkOnReveal = revealed;
             // Gleiche Größen-Staffelung wie qFontSize, nur kleiner — Text fließt gleich um
@@ -8116,10 +8141,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? (qText.length > 120 ? 'clamp(14px, 1.4vw, 22px)'
                 : qText.length > 60 ? 'clamp(16px, 1.8vw, 26px)'
                 : 'clamp(18px, 2vw, 30px)')
-              : qText.length > 200 ? 'clamp(18px, 2.1vw, 30px)'
-              : qText.length > 120 ? 'clamp(22px, 2.7vw, 40px)'
-              : qText.length > 60  ? 'clamp(26px, 3.6vw, 52px)'
-              : 'clamp(32px, 4.2vw, 64px)';
+              : qText.length > 200 ? 'clamp(20px, 2.4vw, 36px)'
+              : qText.length > 120 ? 'clamp(26px, 3.2vw, 48px)'
+              : qText.length > 60  ? 'clamp(32px, 4vw, 60px)'
+              : 'clamp(38px, 4.8vw, 72px)';
             return (
               <div style={{
                 background: cardBg,
@@ -8134,7 +8159,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
                 padding: shrinkOnReveal
                   ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'
-                  : 'clamp(20px, 3vh, 48px) clamp(28px, 4vw, 64px)',
+                  // Aktive Frage: paddingLeft großzügig genug, dass die
+                  // Kategorie-Pille (top:20, left:48, ~~50-180px breit) den
+                  // Fragetext nicht überlappt. Vorher: clamp(28px, 4vw, 64px)
+                  // → bei langem Text rutschten die ersten Worte unter die Pill.
+                  : 'clamp(28px, 4vh, 56px) clamp(140px, 14vw, 220px) clamp(22px, 3vh, 48px)',
                 marginBottom: 'clamp(20px, 2.8vh, 44px)',
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
@@ -8142,12 +8171,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease, padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
                 opacity: revealed ? 0.45 : 1,
               }}>
-                <div key={lang} style={{
+                {/* key kombiniert Sprache + Reveal-State → bei Reveal-Wechsel
+                    remountet der Text einmalig und fadet sauber zur neuen Größe
+                    (statt mid-Animation umzubrechen). */}
+                <div key={`${lang}-${shrinkOnReveal ? 'small' : 'big'}`} style={{
                   fontSize: shrinkOnReveal ? qFontSizeShrunk : qFontSize,
                   fontWeight: 900, lineHeight: 1.22,
                   color: '#F1F5F9',
-                  animation: 'langFadeIn 0.4s ease both',
-                  transition: 'font-size 0.55s cubic-bezier(0.34,1.4,0.64,1)',
+                  animation: 'langFadeIn 0.45s ease both',
                 }}>
                   {qText}
                 </div>
@@ -10184,26 +10215,49 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Step 0: Was ist Comeback */}
       {step === 0 && (
-        <div key="intro0" style={{
-          maxWidth: 1100, textAlign: 'center',
-          padding: '36px 48px', borderRadius: 28,
-          background: 'rgba(251,191,36,0.08)',
-          border: '2px solid rgba(251,191,36,0.35)',
-          boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
-          animation: 'contentReveal 0.5s ease 0.2s both',
-          position: 'relative', zIndex: 5,
-        }}>
-          <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 800, marginBottom: 18 }}>
-            {lang === 'en'
-              ? 'Last place gets a Comeback-Boost.'
-              : 'Letzter Platz bekommt einen Comeback-Boost.'}
+        <>
+          {/* Slogan-Hero — biblisches Bonmot dramatisch über der Erklär-Card.
+              (User-Wunsch 2026-04-28: 'comeback text, die letzten werden die
+              ersten?'). Layered-Glow + 3D-Drop wie das Kategorie-Intro. */}
+          <div key="intro0-slogan" style={{
+            fontFamily: 'Nunito, system-ui, sans-serif',
+            fontSize: 'clamp(40px, 6vw, 96px)', fontWeight: 900, lineHeight: 1.05,
+            color: '#FBBF24',
+            textAlign: 'center',
+            letterSpacing: '-0.005em',
+            textShadow:
+              '0 0 14px rgba(251,191,36,0.65), ' +
+              '0 0 40px rgba(251,191,36,0.45), ' +
+              '0 0 96px rgba(251,191,36,0.25), ' +
+              '0 5px 0 rgba(0,0,0,0.45), ' +
+              '0 14px 28px rgba(0,0,0,0.55)',
+            animation: 'phasePop 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.1s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
+            position: 'relative', zIndex: 5,
+            marginBottom: 8,
+          }}>
+            {lang === 'en' ? 'The last shall be first.' : 'Die Letzten werden die Ersten.'}
           </div>
-          <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
-            {lang === 'en'
-              ? 'Steal cells from the leader.'
-              : 'Klauen beim Führenden.'}
+          <div key="intro0" style={{
+            maxWidth: 1100, textAlign: 'center',
+            padding: '36px 48px', borderRadius: 28,
+            background: 'rgba(251,191,36,0.08)',
+            border: '2px solid rgba(251,191,36,0.35)',
+            boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
+            animation: 'contentReveal 0.5s ease 0.4s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 800, marginBottom: 18 }}>
+              {lang === 'en'
+                ? 'Last place gets a Comeback-Boost.'
+                : 'Letzter Platz bekommt einen Comeback-Boost.'}
+            </div>
+            <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
+              {lang === 'en'
+                ? 'Steal cells from the leader.'
+                : 'Klauen beim Führenden.'}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Step 1+: Team hero — bei H/L mit Tied-Last mehrere Teams zeigen,

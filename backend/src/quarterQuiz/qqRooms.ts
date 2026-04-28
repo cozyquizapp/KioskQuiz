@@ -202,6 +202,15 @@ export interface QQRoomState {
   // Hot-Potato-Per-Turn-Timer beim Pause einfrieren
   _hotPotatoOnExpire?: (() => void) | null;
   _hotPotatoTurnRemainingMs?: number;
+  // Bluff-Timer beim Pause einfrieren — Callbacks werden in den Start-Funktionen
+  // gespeichert, damit qqResume() ohne erneuten Closure-Capture re-arm kann.
+  _bluffWriteOnExpire?: (() => void) | null;
+  _bluffWriteRemainingMs?: number;
+  _bluffVoteOnExpire?: (() => void) | null;
+  _bluffVoteRemainingMs?: number;
+  // Connections-Timer beim Pause einfrieren
+  _connectionsOnExpire?: (() => void) | null;
+  _connectionsRemainingMs?: number;
   // Fun stats — accumulated across questions
   questionHistory: Array<{
     questionText: string;
@@ -2933,6 +2942,33 @@ export function qqPause(room: QQRoomState): void {
     clearTimeout(room._mapRevealTimerHandle);
     room._mapRevealTimerHandle = null;
   }
+  // Pause Bluff-Write-Timer (sonst springt von write → review/vote während Pause)
+  if (room._bluffWriteTimerHandle) {
+    clearTimeout(room._bluffWriteTimerHandle);
+    room._bluffWriteTimerHandle = null;
+    if (room.bluffWriteEndsAt) {
+      room._bluffWriteRemainingMs = Math.max(0, room.bluffWriteEndsAt - Date.now());
+      room.bluffWriteEndsAt = null;
+    }
+  }
+  // Pause Bluff-Vote-Timer (sonst springt von vote → reveal während Pause)
+  if (room._bluffVoteTimerHandle) {
+    clearTimeout(room._bluffVoteTimerHandle);
+    room._bluffVoteTimerHandle = null;
+    if (room.bluffVoteEndsAt) {
+      room._bluffVoteRemainingMs = Math.max(0, room.bluffVoteEndsAt - Date.now());
+      room.bluffVoteEndsAt = null;
+    }
+  }
+  // Pause Connections-Timer (sonst Auto-Reveal/Lockout während Pause)
+  if (room._connectionsTimerHandle) {
+    clearTimeout(room._connectionsTimerHandle);
+    room._connectionsTimerHandle = null;
+    if (room.connections?.endsAt) {
+      room._connectionsRemainingMs = Math.max(0, room.connections.endsAt - Date.now());
+      room.connections.endsAt = 0;
+    }
+  }
   room.phase = 'PAUSED';
   room.lastActivityAt = Date.now();
 }
@@ -2964,6 +3000,43 @@ export function qqResume(room: QQRoomState): void {
     room._hotPotatoTimerHandle = setTimeout(onExpire, remainMs);
   }
   delete room._hotPotatoTurnRemainingMs;
+  // Resume Bluff-Write-Timer
+  if (room._bluffWriteRemainingMs != null && room._bluffWriteRemainingMs > 0 && room._bluffWriteOnExpire) {
+    const remainMs = room._bluffWriteRemainingMs;
+    room.bluffWriteEndsAt = Date.now() + remainMs;
+    const onExpire = room._bluffWriteOnExpire;
+    room._bluffWriteTimerHandle = setTimeout(() => {
+      room._bluffWriteTimerHandle = null;
+      room._bluffWriteOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete room._bluffWriteRemainingMs;
+  // Resume Bluff-Vote-Timer
+  if (room._bluffVoteRemainingMs != null && room._bluffVoteRemainingMs > 0 && room._bluffVoteOnExpire) {
+    const remainMs = room._bluffVoteRemainingMs;
+    room.bluffVoteEndsAt = Date.now() + remainMs;
+    const onExpire = room._bluffVoteOnExpire;
+    room._bluffVoteTimerHandle = setTimeout(() => {
+      room._bluffVoteTimerHandle = null;
+      room._bluffVoteOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete room._bluffVoteRemainingMs;
+  // Resume Connections-Timer
+  if (room._connectionsRemainingMs != null && room._connectionsRemainingMs > 0
+      && room._connectionsOnExpire && room.connections) {
+    const remainMs = room._connectionsRemainingMs;
+    room.connections.endsAt = Date.now() + remainMs;
+    const onExpire = room._connectionsOnExpire;
+    room._connectionsTimerHandle = setTimeout(() => {
+      room._connectionsTimerHandle = null;
+      room._connectionsOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete room._connectionsRemainingMs;
   room.lastActivityAt = Date.now();
 }
 
@@ -3151,8 +3224,10 @@ export function qqConnectionsBegin(room: QQRoomState, onTimeout: () => void): vo
   c.phase = 'active';
 
   clearConnectionsTimer(room);
+  room._connectionsOnExpire = onTimeout;
   room._connectionsTimerHandle = setTimeout(() => {
     room._connectionsTimerHandle = null;
+    room._connectionsOnExpire = null;
     onTimeout();
   }, c.durationSec * 1000);
   room.lastActivityAt = now;
@@ -3597,8 +3672,10 @@ export function qqBluffStartWrite(
   room.bluffPhase = 'write';
   room.bluffWriteEndsAt = now + (room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC) * 1000;
   clearBluffWriteTimer(room);
+  room._bluffWriteOnExpire = onWriteTimeout;
   room._bluffWriteTimerHandle = setTimeout(() => {
     room._bluffWriteTimerHandle = null;
+    room._bluffWriteOnExpire = null;
     onWriteTimeout();
   }, (room.bluffWriteDurationSec ?? QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC) * 1000);
   room.lastActivityAt = now;
@@ -3737,8 +3814,10 @@ function qqBluffEnterVote(
   room.bluffPhase = 'vote';
   room.bluffVoteEndsAt = now + (room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC) * 1000;
   clearBluffVoteTimer(room);
+  room._bluffVoteOnExpire = onVoteTimeout;
   room._bluffVoteTimerHandle = setTimeout(() => {
     room._bluffVoteTimerHandle = null;
+    room._bluffVoteOnExpire = null;
     onVoteTimeout();
   }, (room.bluffVoteDurationSec ?? QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC) * 1000);
   room.lastActivityAt = now;

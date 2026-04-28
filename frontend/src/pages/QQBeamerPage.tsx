@@ -764,15 +764,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }
   }, [s.phase]);
 
-  // Lagerfeuer-Loop als Atmosphäre-Layer: läuft in Lobby/Pause/Phase-Intro.
-  // Sehr leise (~4% master volume), Brown-Noise + sporadische Knister-Pops.
-  useEffect(() => {
-    if (s.musicMuted || s.globalMuted) { stopCampfireLoop(); return; }
-    const ambientPhase = s.phase === 'LOBBY' || s.phase === 'PAUSED' || s.phase === 'PHASE_INTRO' || s.phase === 'RULES';
-    if (ambientPhase) startCampfireLoop();
-    else stopCampfireLoop();
-    return () => stopCampfireLoop();
-  }, [s.phase, s.musicMuted, s.globalMuted]);
+  // Lagerfeuer-Loop deaktiviert (User-Wunsch 2026-04-28: hat zu sehr gestört).
+  // Code bleibt stehen falls wir's später als optionales Toggle wieder aktivieren.
+  useEffect(() => { stopCampfireLoop(); return () => stopCampfireLoop(); }, []);
 
   // Avatar-Jingle wenn ein neues Team joint — pro Avatar eigenes Mini-Timbre.
   // Erkennt frische Joins via teamIds-Diff (gleiche Logik wie Wave-Anim in
@@ -1123,6 +1117,87 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playFieldPlaced();
     }
   }, [s.muchoRevealStep, s.zvzRevealStep, s.cheeseRevealStep, s.mapRevealStep, s.phase, s.sfxMuted, s.currentQuestion?.id, s.answers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Bunte-Tüte-Sub-Mechanik-Sounds: HotPotato / OnlyConnect / Bluff ────────
+  // Diese Mechaniken hatten bisher kein Audio — Beamer war stumm während die
+  // Action lief. Tracking via Refs damit jeder State-Sprung genau 1× klingt.
+  const prevHpEliminatedRef = useRef(0);
+  const prevHpActiveTeamRef = useRef<string | null>(null);
+  const prevOcGuessCountRef = useRef(0);
+  const prevBluffPhaseRef = useRef<string | null>(null);
+  const prevBluffSubmitCountRef = useRef(0);
+  const prevBluffVoteCountRef = useRef(0);
+  const prevSubMechQidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const qid = s.currentQuestion?.id ?? null;
+    // Frage-Wechsel: alle Baselines reset, kein Sound.
+    if (qid !== prevSubMechQidRef.current) {
+      prevSubMechQidRef.current = qid;
+      prevHpEliminatedRef.current = (s.hotPotatoEliminated ?? []).length;
+      prevHpActiveTeamRef.current = s.hotPotatoActiveTeamId ?? null;
+      prevOcGuessCountRef.current = (s.onlyConnectGuesses ?? []).length;
+      prevBluffPhaseRef.current = s.bluffPhase ?? null;
+      prevBluffSubmitCountRef.current = Object.values(s.bluffSubmissions ?? {}).filter(t => t?.trim()).length;
+      prevBluffVoteCountRef.current = Object.keys(s.bluffVotes ?? {}).length;
+      return;
+    }
+    if (s.sfxMuted) {
+      // Werte trotzdem nachziehen, damit nach Unmute kein Riesensprung kommt.
+      prevHpEliminatedRef.current = (s.hotPotatoEliminated ?? []).length;
+      prevHpActiveTeamRef.current = s.hotPotatoActiveTeamId ?? null;
+      prevOcGuessCountRef.current = (s.onlyConnectGuesses ?? []).length;
+      prevBluffPhaseRef.current = s.bluffPhase ?? null;
+      prevBluffSubmitCountRef.current = Object.values(s.bluffSubmissions ?? {}).filter(t => t?.trim()).length;
+      prevBluffVoteCountRef.current = Object.keys(s.bluffVotes ?? {}).length;
+      return;
+    }
+
+    // HotPotato: neues Team eliminiert → playWrong.
+    const hpElim = (s.hotPotatoEliminated ?? []).length;
+    if (hpElim > prevHpEliminatedRef.current) {
+      try { playWrong(); } catch {}
+    }
+    prevHpEliminatedRef.current = hpElim;
+    // HotPotato: aktives Team wechselt → playTick (Zug weitergegeben).
+    const hpActive = s.hotPotatoActiveTeamId ?? null;
+    if (hpActive && hpActive !== prevHpActiveTeamRef.current && prevHpActiveTeamRef.current != null) {
+      try { playTick(); } catch {}
+    }
+    prevHpActiveTeamRef.current = hpActive;
+
+    // OnlyConnect: neuer Tipp eingegangen → richtig=playCorrect, falsch=playWrong.
+    const ocGuesses = s.onlyConnectGuesses ?? [];
+    if (ocGuesses.length > prevOcGuessCountRef.current) {
+      const newGuess = ocGuesses[ocGuesses.length - 1];
+      if (newGuess?.correct) { try { playCorrect(); } catch {} }
+      else { try { playWrong(); } catch {} }
+    }
+    prevOcGuessCountRef.current = ocGuesses.length;
+
+    // Bluff: Phase-Übergänge.
+    const bp = s.bluffPhase ?? null;
+    if (bp !== prevBluffPhaseRef.current) {
+      if (bp === 'review' || bp === 'vote') { try { playFieldPlaced(); } catch {} }
+      else if (bp === 'reveal') { try { playFanfare(); } catch {} }
+    }
+    prevBluffPhaseRef.current = bp;
+    // Bluff: jeder neue Submit/Vote = leiser Plopp.
+    const bSubmits = Object.values(s.bluffSubmissions ?? {}).filter(t => t?.trim()).length;
+    if (bSubmits > prevBluffSubmitCountRef.current) {
+      try { playTick(); } catch {}
+    }
+    prevBluffSubmitCountRef.current = bSubmits;
+    const bVotes = Object.keys(s.bluffVotes ?? {}).length;
+    if (bVotes > prevBluffVoteCountRef.current) {
+      try { playTick(); } catch {}
+    }
+    prevBluffVoteCountRef.current = bVotes;
+  }, [
+    s.hotPotatoEliminated, s.hotPotatoActiveTeamId,
+    s.onlyConnectGuesses,
+    s.bluffPhase, s.bluffSubmissions, s.bluffVotes,
+    s.sfxMuted, s.currentQuestion?.id,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: play question musicUrl ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -3106,7 +3181,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
       <div style={{
         position: 'absolute', top: '50%', left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
-        background: '#fff',
+        background: '#1a1209',
         backgroundImage: 'url(/logo.png)',
         backgroundSize: '88%',
         backgroundRepeat: 'no-repeat',

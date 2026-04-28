@@ -369,7 +369,7 @@ export default function QQProgressTree({
                 width: wolfSize,
                 height: wolfSize,
                 borderRadius: '50%',
-                background: '#fff',
+                background: '#1a1209',
                 backgroundImage: 'url(/logo.png)',
                 backgroundSize: '112%',
                 backgroundRepeat: 'no-repeat',

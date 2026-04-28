@@ -838,7 +838,7 @@ export default function QQModeratorPage() {
           </label>
           {autoplayEnabled && (
             <span style={{ fontSize: 11, color: 'var(--qm-text-muted)', fontWeight: 600 }}>
-              · advances Phasen automatisch · Pause-Button erscheint im Banner waehrend des Spiels
+              · läuft Phasen automatisch durch · Pause-Button erscheint im Banner während des Spiels
             </span>
           )}
         </div>

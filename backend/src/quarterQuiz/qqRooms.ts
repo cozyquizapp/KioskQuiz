@@ -8,6 +8,7 @@ import {
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
+  QQ_CONNECTIONS_FALLBACK_PAYLOAD,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -2416,6 +2417,15 @@ export function qqNextQuestion(room: QQRoomState): void {
     return;
   }
 
+  // 4×4-Finale: wenn die Sub-Phase 'done' ist (alle Aktionen platziert), führt
+  // Moderator-Space zu GAME_OVER über. Connections-State wird dabei aufgeräumt.
+  if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'done') {
+    updateTerritories(room);
+    room.connections = null;
+    room.phase = 'GAME_OVER';
+    return;
+  }
+
   // Double-Press-Guard: Wenn der Moderator Space/„Nächste Frage" doppelt drückt,
   // darf der 2. Call nicht ein zweites Mal Comeback triggern. Phase ist nach dem
   // 1. Call bereits COMEBACK_CHOICE / PHASE_INTRO / GAME_OVER — in diesen Zuständen
@@ -2463,7 +2473,16 @@ export function qqNextQuestion(room: QQRoomState): void {
     const next = (room.gamePhaseIndex + 1) as QQGamePhaseIndex;
     if (room.gamePhaseIndex >= room.totalPhases) {
       updateTerritories(room);
-      room.phase = 'GAME_OVER';
+      // Letzte Quiz-Runde durch — wenn 4×4-Finale aktiviert, springen wir
+      // erst dorthin (Sub-Phase 'intro'). Sonst direkt GAME_OVER.
+      if (room.connectionsEnabled) {
+        qqConnectionsStart(room, QQ_CONNECTIONS_FALLBACK_PAYLOAD, {
+          durationSec: room.connectionsTimerSec,
+          maxFailedAttempts: room.connectionsMaxFails,
+        });
+      } else {
+        room.phase = 'GAME_OVER';
+      }
     } else if (next === room.totalPhases) {
       // Before final phase → comeback
       qqTriggerComeback(room);

@@ -3,19 +3,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  QQStateUpdate, QQSoundConfig, QQConnectionsPayload,
+  QQStateUpdate, QQSoundConfig,
 } from '../../../shared/quarterQuizTypes';
-
-// Hardcoded Demo-Payload für Connections (kein Editor erstmal — siehe Spec).
-// 4 Gruppen à 4 Items mit ein paar bewussten Doppeldeutigkeiten.
-const QQ_CONNECTIONS_DEMO_PAYLOAD: QQConnectionsPayload = {
-  groups: [
-    { id: 'g1', name: 'Kaffeesorten',         nameEn: 'Coffee types',     items: ['Java', 'Mocha', 'Latte', 'Espresso'],            difficulty: 1 },
-    { id: 'g2', name: 'Programmiersprachen',  nameEn: 'Languages',        items: ['Python', 'Ruby', 'Swift', 'Rust'],               difficulty: 2 },
-    { id: 'g3', name: 'Edelsteine',           nameEn: 'Gemstones',        items: ['Diamant', 'Saphir', 'Smaragd', 'Topas'],         difficulty: 3 },
-    { id: 'g4', name: 'Apple-Produkte',       nameEn: 'Apple products',   items: ['iPhone', 'iPad', 'MacBook', 'Watch'],            difficulty: 4 },
-  ],
-};
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
@@ -1253,17 +1242,20 @@ export default function QQModeratorPage() {
                   const nextIdx = s.questionIndex + 1;
                   const QPP = 5;
                   const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
-                  const isGameOver = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
+                  const isLastPhase = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
+                  const goesToConnections = isLastPhase && s.connectionsEnabled !== false;
                   const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
-                  const label = isGameOver
-                    ? '🏆 Spielende'
-                    : isBeforeFinal
-                      ? '⚡ Comeback-Phase'
-                      : isEndOfPhase
-                        ? `→ Runde ${s.gamePhaseIndex + 1}`
-                        : '→ Nächste Frage';
+                  const label = goesToConnections
+                    ? '🔗 4×4 Finale starten'
+                    : isLastPhase
+                      ? '🏆 Spielende'
+                      : isBeforeFinal
+                        ? '⚡ Comeback-Phase'
+                        : isEndOfPhase
+                          ? `→ Runde ${s.gamePhaseIndex + 1}`
+                          : '→ Nächste Frage';
                   return (
-                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={goesToConnections ? '#FBBF24' : '#22C55E'} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );
@@ -1296,19 +1288,9 @@ export default function QQModeratorPage() {
 
                 {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
-                  <>
-                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
-                      ▶ Weiter
-                    </PrimaryBtn>
-                    <Btn color="#FBBF24" outline onClick={() => emit('qq:connectionsStart', {
-                      roomCode,
-                      payload: QQ_CONNECTIONS_DEMO_PAYLOAD,
-                      durationSec: s.connectionsTimerSec,
-                      maxFailedAttempts: s.connectionsMaxFails,
-                    })}>
-                      🔗 4×4 (Demo)
-                    </Btn>
-                  </>
+                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
+                    ▶ Weiter
+                  </PrimaryBtn>
                 )}
 
                 {/* ── Separator ── */}
@@ -2160,16 +2142,26 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
         </span>
       )}
       {phase === 'done' && (
-        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:connectionsClear', { roomCode })}>
-          ✓ Fertig — State löschen
+        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+          🏆 Spielende
         </PrimaryBtn>
       )}
-      <button onClick={() => emit('qq:connectionsClear', { roomCode })} style={{
-        padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
-        background: 'transparent', color: '#FCA5A5', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-      }}>
-        Abbrechen
-      </button>
+      {/* Skip: 4×4 abbrechen und direkt zu Game Over springen — falls
+          unterwegs etwas klemmt oder die Moderator-Person das Finale
+          überspringen will. */}
+      {phase !== 'done' && (
+        <button onClick={() => {
+          if (window.confirm('4×4 abbrechen und direkt zu Game Over?')) {
+            emit('qq:connectionsSkipToGameOver', { roomCode });
+          }
+        }} style={{
+          padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
+          background: 'transparent', color: '#FCA5A5', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          marginLeft: 'auto',
+        }} title="4×4 überspringen → Game Over">
+          ⏭ Skip → Spielende
+        </button>
+      )}
     </div>
   );
 }
@@ -3095,43 +3087,6 @@ function LobbyView({
           }}
           title="Zurück ins Setup"
         >⎌ Zurück zum Setup</button>
-      </div>
-
-      {/* Debug: Connections-Demo-Starter */}
-      <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: 10,
-        marginBottom: 14, justifyContent: 'center', alignItems: 'center',
-        padding: '10px 14px', borderRadius: 12,
-        background: 'rgba(251,191,36,0.05)', border: '1px dashed rgba(251,191,36,0.25)',
-      }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          🧪 4×4 Demo
-        </span>
-        <label style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
-          Timer
-          <input type="number" min={60} max={600} value={s.connectionsTimerSec ?? 180}
-            onChange={e => emit('qq:connectionsSettings', { roomCode, timerSec: Number(e.target.value) })}
-            style={{ width: 60, padding: '4px 6px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', fontFamily: 'inherit', fontSize: 12 }} />
-          s
-        </label>
-        <label style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
-          Max Fehler
-          <input type="number" min={0} max={10} value={s.connectionsMaxFails ?? 2}
-            onChange={e => emit('qq:connectionsSettings', { roomCode, maxFails: Number(e.target.value) })}
-            style={{ width: 50, padding: '4px 6px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', fontFamily: 'inherit', fontSize: 12 }} />
-        </label>
-        <button onClick={() => emit('qq:connectionsStart', {
-          roomCode,
-          payload: QQ_CONNECTIONS_DEMO_PAYLOAD,
-          durationSec: s.connectionsTimerSec ?? 180,
-          maxFailedAttempts: s.connectionsMaxFails ?? 2,
-        })} style={{
-          padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 900,
-          border: '1px solid rgba(251,191,36,0.5)', background: 'rgba(251,191,36,0.18)',
-          color: '#FDE68A', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em',
-        }}>
-          🔗 Demo starten
-        </button>
       </div>
 
       {/* QR + Teams */}

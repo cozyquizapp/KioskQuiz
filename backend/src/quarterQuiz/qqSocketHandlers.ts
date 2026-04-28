@@ -2220,6 +2220,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    /** Moderator: 4×4 abbrechen und direkt zu GAME_OVER springen. */
+    socket.on('qq:connectionsSkipToGameOver', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.phase === 'CONNECTIONS_4X4') {
+          qqConnectionsClear(room);
+          stopConnectionsAiTimers(payload.roomCode);
+          room.phase = 'GAME_OVER';
+          broadcast(io, payload.roomCode);
+        }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     /** Default-Timer / Max-Fails einstellen (im Setup). */
     socket.on('qq:connectionsSettings', (
       payload: { roomCode: string; timerSec?: number; maxFails?: number },

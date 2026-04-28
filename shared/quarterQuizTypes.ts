@@ -253,6 +253,20 @@ export const QQ_CONNECTIONS_TIMER_MIN_SEC = 60;
 export const QQ_CONNECTIONS_TIMER_MAX_SEC = 600;
 export const QQ_CONNECTIONS_MAX_FAILS_DEFAULT = 2;
 
+/**
+ * Fallback-Payload für 4×4. Wird verwendet wenn ein Run keine eigene Payload
+ * im Draft hat (Editor folgt). Erste Drafts haben oft noch keinen 4×4-Eintrag,
+ * daher der hardcoded Default.
+ */
+export const QQ_CONNECTIONS_FALLBACK_PAYLOAD: QQConnectionsPayload = {
+  groups: [
+    { id: 'g1', name: 'Kaffeesorten',        nameEn: 'Coffee types',  items: ['Java', 'Mocha', 'Latte', 'Espresso'], difficulty: 1 },
+    { id: 'g2', name: 'Programmiersprachen', nameEn: 'Languages',     items: ['Python', 'Ruby', 'Swift', 'Rust'],    difficulty: 2 },
+    { id: 'g3', name: 'Edelsteine',          nameEn: 'Gemstones',     items: ['Diamant', 'Saphir', 'Smaragd', 'Topas'], difficulty: 3 },
+    { id: 'g4', name: 'Apple-Produkte',      nameEn: 'Apple products',items: ['iPhone', 'iPad', 'MacBook', 'Watch'], difficulty: 4 },
+  ],
+};
+
 export interface QQConnectionsGroup {
   id: string;             // 'g1' | 'g2' | 'g3' | 'g4'
   name: string;           // Gruppen-Bezeichnung, z.B. „Kaffeesorten"

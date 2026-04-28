@@ -9812,10 +9812,12 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
     for (const gid of c.teamProgress[teamId].foundGroupIds) globallyFoundGroupIds.add(gid);
   }
 
+  const showBoard = c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement';
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'stretch', justifyContent: 'center',
+      alignItems: 'stretch',
       gap: 'clamp(10px, 1.4vh, 18px)',
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px)',
       position: 'relative',
@@ -9823,11 +9825,22 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
       <Fireflies color="rgba(251,191,36,0.30)" />
       <ConnectionsHeader state={s} />
       {c.phase === 'intro' && <ConnectionsIntro state={s} />}
-      {(c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement') && (
-        <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
-      )}
-      {(c.phase === 'active' || c.phase === 'reveal' || c.phase === 'placement') && (
-        <ConnectionsTeamProgress state={s} />
+      {showBoard && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'row',
+          gap: 'clamp(10px, 1.2vw, 20px)',
+          minHeight: 0,
+          alignItems: 'stretch',
+        }}>
+          {/* Linke Spalte: Grid + Gruppen-Labels */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+            <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
+          </div>
+          {/* Rechte Spalte: vertikales Rennen mit 4 Sektoren */}
+          <div style={{ width: 'clamp(220px, 22vw, 300px)', display: 'flex', flexDirection: 'column' }}>
+            <ConnectionsRaceTrack state={s} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -10071,143 +10084,153 @@ function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
 }
 
 /**
- * Status-Pill-Reihe — alle Teams sortiert nach Fortschritt in einer Zeile.
- * Pro Pill: [Avatar][Name][4 Gruppen-farbene Pips]. Pips werden in der Farbe
- * der gefundenen Gruppe gefüllt (gelb/grün/blau/lila). Re-Sort bei Fortschritt
- * gibt das „Rennen"-Feeling ohne Track-Overlap.
+ * Vertikales Rennen rechts — 5 Sektoren von 🏁 (oben) bis Start (unten).
+ * Sektor = aktuelle Anzahl gefundener Gruppen pro Team. Avatare werden im
+ * 2-Spalten-Grid pro Sektor gestapelt (2x2x2 bei Crowding). Sektor-Farbe folgt
+ * den Gruppen-Farben (gelb/grün/blau/lila), Goal in Gold.
  */
-function ConnectionsTeamProgress({ state: s }: { state: QQStateUpdate }) {
+function ConnectionsRaceTrack({ state: s }: { state: QQStateUpdate }) {
   const c = s.connections!;
   const lang = useLangFlip(s.language);
   const isPlacement = c.phase === 'placement';
 
-  // Sortierung: foundCount DESC, dann finishedAt ASC (schnellster bei Tie),
-  // dann nach joinOrder als Tie-Break. Locked-out + 0 Gruppen sinken nach hinten.
-  const ranked = s.teams.slice().sort((a, b) => {
-    const ta = c.teamProgress[a.id];
-    const tb = c.teamProgress[b.id];
-    const fa = ta?.foundGroupIds.length ?? 0;
-    const fb = tb?.foundGroupIds.length ?? 0;
-    if (fa !== fb) return fb - fa;
-    const finA = ta?.finishedAt ?? Number.MAX_SAFE_INTEGER;
-    const finB = tb?.finishedAt ?? Number.MAX_SAFE_INTEGER;
-    if (finA !== finB) return finA - finB;
-    return 0;
-  });
+  // Sektor-Mapping: foundCount → Sektor-Index (0..4)
+  // Avatare innerhalb eines Sektors werden nach finishedAt sortiert (zuerst
+  // fertig zuerst angezeigt). Locked-out aber 0 gefunden bleiben in Start.
+  const teamsBySector: Record<number, typeof s.teams> = { 0: [], 1: [], 2: [], 3: [], 4: [] };
+  for (const tm of s.teams) {
+    const tp = c.teamProgress[tm.id];
+    const found = tp?.foundGroupIds.length ?? 0;
+    teamsBySector[found].push(tm);
+  }
+  // Innerhalb des Sektors: schnellste finished zuerst, dann unfinished
+  for (const k of [0, 1, 2, 3, 4]) {
+    teamsBySector[k].sort((a, b) => {
+      const fa = c.teamProgress[a.id]?.finishedAt ?? Number.MAX_SAFE_INTEGER;
+      const fb = c.teamProgress[b.id]?.finishedAt ?? Number.MAX_SAFE_INTEGER;
+      return fa - fb;
+    });
+  }
+
+  // Sektoren von oben nach unten: 4 (Goal) → 3 → 2 → 1 → 0 (Start)
+  const sectors: Array<{ idx: number; label: string; color: string; isGoal?: boolean }> = [
+    { idx: 4, label: lang === 'de' ? '🏁 Ziel' : '🏁 Goal', color: '#FBBF24', isGoal: true },
+    { idx: 3, label: '3 / 4', color: CONNECTIONS_GROUP_COLORS[3] },
+    { idx: 2, label: '2 / 4', color: CONNECTIONS_GROUP_COLORS[2] },
+    { idx: 1, label: '1 / 4', color: CONNECTIONS_GROUP_COLORS[1] },
+    { idx: 0, label: lang === 'de' ? 'Start' : 'Start', color: '#64748b' },
+  ];
 
   return (
     <div style={{
-      width: '100%', maxWidth: 1280, margin: '0 auto',
-      padding: 'clamp(8px, 1vh, 12px) clamp(10px, 1.2vw, 18px)',
-      borderRadius: 16,
+      flex: 1, display: 'flex', flexDirection: 'column',
+      gap: 'clamp(4px, 0.5vh, 8px)',
+      padding: 'clamp(8px, 1vh, 12px) clamp(8px, 0.8vw, 12px)',
+      borderRadius: 14,
       background: 'rgba(255,255,255,0.025)',
       border: '1px solid rgba(255,255,255,0.06)',
       boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
       position: 'relative', zIndex: 5,
-      display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
-      alignItems: 'center', justifyContent: 'center',
-      gap: 'clamp(6px, 0.8vw, 12px)',
+      minHeight: 0,
     }}>
       <span style={{
-        fontSize: 'clamp(9px, 0.9vw, 12px)', fontWeight: 900,
-        color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
-        marginRight: 4,
+        fontSize: 'clamp(9px, 0.85vw, 12px)', fontWeight: 900,
+        color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
+        textAlign: 'center', paddingBottom: 2,
       }}>{lang === 'de' ? '🏁 Rennen' : '🏁 Race'}</span>
 
-      {ranked.map((tm, rankIdx) => {
-        const tp = c.teamProgress[tm.id];
-        const found = tp?.foundGroupIds.length ?? 0;
-        const fails = tp?.failedAttempts ?? 0;
-        const locked = tp?.isLockedOut ?? false;
-        const finishedAt = tp?.finishedAt ?? null;
-        const isWinner = found >= 4 && finishedAt != null;
-        const isActiveTeam = isPlacement && c.placementOrder[c.placementCursor] === tm.id;
-        const rank = rankIdx + 1;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
-
-        // Pips: 4 Slots, gefüllt in Reihenfolge der gefundenen Gruppen mit
-        // der entsprechenden Gruppen-Farbe.
-        const foundIds = tp?.foundGroupIds ?? [];
-        const pipColors: (string | null)[] = [];
-        for (let i = 0; i < 4; i++) {
-          const gid = foundIds[i];
-          if (!gid) { pipColors.push(null); continue; }
-          const gIdx = c.payload.groups.findIndex(g => g.id === gid);
-          pipColors.push(gIdx >= 0 ? CONNECTIONS_GROUP_COLORS[gIdx] : null);
-        }
-
+      {sectors.map((sec) => {
+        const occupants = teamsBySector[sec.idx];
+        const hasOccupants = occupants.length > 0;
         return (
-          <div key={tm.id} title={tm.name} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '5px 10px 5px 6px',
-            borderRadius: 999,
-            background: isWinner
-              ? 'linear-gradient(135deg, rgba(251,191,36,0.16), rgba(251,191,36,0.04))'
-              : isActiveTeam
-                ? `${tm.color}20`
-                : 'rgba(255,255,255,0.04)',
-            border: `2px solid ${
-              isWinner ? '#FBBF24'
-              : isActiveTeam ? tm.color
-              : locked ? 'rgba(239,68,68,0.4)'
-              : `${tm.color}55`
-            }`,
-            opacity: locked && !isWinner ? 0.6 : 1,
-            transition: 'background 0.4s ease, border 0.4s ease',
-            boxShadow: isActiveTeam ? `0 0 18px ${tm.color}66` : isWinner ? '0 0 14px rgba(251,191,36,0.45)' : undefined,
-            animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
+          <div key={sec.idx} style={{
+            flex: sec.isGoal ? 1.4 : 1,
+            minHeight: 'clamp(38px, 5vh, 60px)',
+            padding: '4px 6px',
+            borderRadius: 10,
+            background: hasOccupants
+              ? `linear-gradient(135deg, ${sec.color}22, ${sec.color}06)`
+              : 'rgba(255,255,255,0.02)',
+            border: `1.5px solid ${hasOccupants ? `${sec.color}88` : 'rgba(255,255,255,0.06)'}`,
+            boxShadow: sec.isGoal && hasOccupants ? `0 0 16px ${sec.color}55` : 'none',
+            display: 'flex', flexDirection: 'column',
+            transition: 'all 0.5s ease',
+            position: 'relative', overflow: 'hidden',
           }}>
-            {/* Rank-Badge */}
+            {/* Sektor-Label */}
             <span style={{
-              fontSize: medal ? 'clamp(13px, 1.2vw, 17px)' : 'clamp(10px, 1vw, 13px)',
-              fontWeight: 900,
-              color: rank === 1 ? '#FBBF24' : rank === 2 ? '#cbd5e1' : rank === 3 ? '#CD7F32' : '#94a3b8',
-              minWidth: 18, textAlign: 'center', lineHeight: 1,
-            }}>
-              {medal ?? `#${rank}`}
-            </span>
-            {/* Avatar */}
-            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(28px, 2.6vw, 38px)'} style={{
-              boxShadow: `0 0 0 2px ${tm.color}66`,
-            }} />
-            {/* Name */}
-            <span style={{
-              fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-              color: tm.color,
-              maxWidth: 'clamp(60px, 7vw, 100px)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>{tm.name}</span>
-            {/* 4 Pips */}
-            <span style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-              {pipColors.map((col, i) => (
-                <span key={i} style={{
-                  width: 'clamp(8px, 0.8vw, 11px)',
-                  height: 'clamp(8px, 0.8vw, 11px)',
-                  borderRadius: 3,
-                  background: col ?? 'rgba(255,255,255,0.08)',
-                  border: col ? `1px solid ${col}` : '1px solid rgba(255,255,255,0.18)',
-                  boxShadow: col ? `0 0 6px ${col}88` : 'none',
-                  transition: 'background 0.4s ease, box-shadow 0.4s ease',
-                }} />
-              ))}
-            </span>
-            {/* Status-Suffix */}
-            {isActiveTeam && (
-              <span style={{
-                marginLeft: 2, padding: '1px 7px', borderRadius: 999,
-                background: '#22C55E', color: '#0a1f0d',
-                fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
-                whiteSpace: 'nowrap',
-              }}>×{c.placementRemaining}</span>
-            )}
-            {locked && !isWinner && (
-              <span style={{
-                fontSize: 10, fontWeight: 900, color: '#FCA5A5',
-                whiteSpace: 'nowrap',
-              }}>✕{fails}</span>
-            )}
-            {isWinner && (
-              <span style={{ fontSize: 14, lineHeight: 1 }}>🏁</span>
+              fontSize: 'clamp(9px, 0.85vw, 12px)', fontWeight: 900,
+              color: sec.color,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              opacity: hasOccupants ? 1 : 0.5,
+              padding: '1px 4px',
+            }}>{sec.label}</span>
+
+            {/* 2-Spalten-Avatar-Grid */}
+            {hasOccupants && (
+              <div style={{
+                flex: 1,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 4,
+                alignContent: 'center',
+                marginTop: 2,
+              }}>
+                {occupants.map((tm) => {
+                  const tp = c.teamProgress[tm.id];
+                  const fails = tp?.failedAttempts ?? 0;
+                  const locked = tp?.isLockedOut ?? false;
+                  const isActiveTeam = isPlacement && c.placementOrder[c.placementCursor] === tm.id;
+                  const rank = c.placementOrder.indexOf(tm.id);
+                  const showRank = sec.isGoal && rank >= 0;
+                  return (
+                    <div key={tm.id} title={tm.name} style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '2px 4px', borderRadius: 8,
+                      background: isActiveTeam ? `${tm.color}22` : 'transparent',
+                      border: `1.5px solid ${isActiveTeam ? tm.color : 'transparent'}`,
+                      animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
+                      opacity: locked && !sec.isGoal ? 0.55 : 1,
+                      filter: locked && !sec.isGoal ? 'grayscale(0.4)' : 'none',
+                      minWidth: 0,
+                    }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(22px, 2.2vw, 32px)'} style={{
+                          boxShadow: sec.isGoal
+                            ? `0 0 0 2px #FBBF24, 0 0 8px #FBBF2488`
+                            : `0 0 0 1.5px ${tm.color}99`,
+                        }} />
+                        {showRank && rank < 3 && (
+                          <span style={{
+                            position: 'absolute', top: -6, right: -6,
+                            fontSize: 11, lineHeight: 1,
+                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+                          }}>{rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'}</span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 'clamp(9px, 0.85vw, 11px)', fontWeight: 900,
+                        color: tm.color, lineHeight: 1.1,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        minWidth: 0,
+                      }}>
+                        {tm.name}
+                        {locked && !sec.isGoal && (
+                          <span style={{ color: '#FCA5A5', marginLeft: 4 }}>✕{fails}</span>
+                        )}
+                      </span>
+                      {isActiveTeam && (
+                        <span style={{
+                          marginLeft: 'auto', padding: '1px 5px', borderRadius: 999,
+                          background: '#22C55E', color: '#0a1f0d',
+                          fontSize: 9, fontWeight: 900,
+                          flexShrink: 0,
+                        }}>×{c.placementRemaining}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         );

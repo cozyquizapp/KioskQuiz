@@ -521,6 +521,92 @@ export default function QQBuilderPage() {
                 ))}
               </div>
             )}
+
+            {/* 4 gewinnt / Only Connect: 4 Hinweise + Antwort */}
+            {activeQ.category === 'BUNTE_TUETE' && activeQ.bunteTuete?.kind === 'onlyConnect' && (() => {
+              const oc = activeQ.bunteTuete;
+              const hints = (oc.hints ?? []);
+              const hintColors = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA'];
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4, width: '90%', maxWidth: 720 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
+                    🧩 4 Hinweise
+                  </div>
+                  {[0, 1, 2, 3].map(i => {
+                    const h = hints[i];
+                    const col = hintColors[i];
+                    return (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 16px', borderRadius: 10,
+                        background: h ? `${col}1a` : 'rgba(255,255,255,0.04)',
+                        border: `1.5px solid ${h ? `${col}66` : 'rgba(255,255,255,0.08)'}`,
+                      }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: col, letterSpacing: '0.08em', minWidth: 32 }}>H{i + 1}</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: h ? '#F1F5F9' : '#475569', fontStyle: h ? 'normal' : 'italic' }}>
+                          {h || '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {oc.answer && (
+                    <div style={{
+                      marginTop: 8, padding: '12px 20px', borderRadius: 12,
+                      background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.5)',
+                      fontSize: 22, fontWeight: 900, color: '#86efac', textAlign: 'center',
+                    }}>✓ {oc.answer}</div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Bluff: echte Antwort prominent */}
+            {activeQ.category === 'BUNTE_TUETE' && activeQ.bunteTuete?.kind === 'bluff' && (() => {
+              const bf = activeQ.bunteTuete;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4, width: '80%', maxWidth: 600 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#F472B6', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
+                    🎭 Bluff · echte Antwort
+                  </div>
+                  <div style={{
+                    padding: '16px 24px', borderRadius: 14,
+                    background: bf.realAnswer ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.04)',
+                    border: bf.realAnswer ? '2px solid rgba(34,197,94,0.5)' : '2px dashed rgba(255,255,255,0.12)',
+                    fontSize: 28, fontWeight: 900,
+                    color: bf.realAnswer ? '#86efac' : '#475569',
+                    textAlign: 'center',
+                    fontStyle: bf.realAnswer ? 'normal' : 'italic',
+                  }}>
+                    {bf.realAnswer ? `✓ ${bf.realAnswer}` : '(noch keine echte Antwort gesetzt)'}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* SCHAETZCHEN: Zielwert + Einheit */}
+            {activeQ.category === 'SCHAETZCHEN' && activeQ.targetValue != null && (
+              <div style={{
+                marginTop: 8, padding: '12px 24px', borderRadius: 12,
+                background: 'rgba(245,158,11,0.18)', border: '2px solid rgba(245,158,11,0.5)',
+                fontSize: 24, fontWeight: 900, color: '#fde68a', textAlign: 'center',
+              }}>
+                🎯 {activeQ.targetValue.toLocaleString('de-DE')}{activeQ.unit ? ` ${activeQ.unit}` : ''}
+              </div>
+            )}
+
+            {/* Plain answer für sonstige offene BUNTE_TUETE / CHEESE */}
+            {!activeQ.options && activeQ.answer
+              && activeQ.category !== 'SCHAETZCHEN'
+              && activeQ.bunteTuete?.kind !== 'onlyConnect'
+              && activeQ.bunteTuete?.kind !== 'bluff'
+              && (
+                <div style={{
+                  marginTop: 4, padding: '10px 22px', borderRadius: 12,
+                  background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.5)',
+                  fontSize: 22, fontWeight: 900, color: '#86efac',
+                }}>✓ {activeQ.answer}</div>
+              )}
+
             <div style={{ position: 'absolute', bottom: 16, right: 20, fontSize: 12, color: '#334155' }}>Phase {activeQ.phaseIndex} · Slot {activeQ.questionIndexInPhase + 1}</div>
           </div>
         </div>

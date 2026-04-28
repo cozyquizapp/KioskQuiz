@@ -5942,7 +5942,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* 4 Hint-Slots, jeweils horizontal nebeneinander */}
+      {/* 4 Hint-Slots, jeweils horizontal nebeneinander.
+          User-Wunsch 2026-04-28: Im Reveal die Team-Avatare auf dem Hint
+          anzeigen, an dem sie es richtig hatten. Schnellster bei Tie mit
+          Gold-Ring + 🥇-Badge markiert. */}
       <div style={{
         flex: 1,
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
@@ -5956,6 +5959,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           const isPast = !revealed && i < hintIdx;
           const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
           const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+          // Reveal-only: Teams die GENAU auf diesem Hint richtig waren
+          // (atHintIdx === i), nach submittedAt sortiert. Erstes Team = 'fastest'
+          // (bekommt Gold-Ring auch wenn nur 1 Team auf diesem Hint richtig war).
+          const teamsAtThisHint = revealed
+            ? correctSorted.filter(g => g.atHintIdx === i)
+            : [];
           return (
             <div key={i} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -5974,24 +5983,69 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               transition: 'all 0.5s ease',
               animation: isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined,
               minHeight: 'clamp(140px, 22vh, 220px)',
-              justifyContent: 'center', textAlign: 'center',
+              justifyContent: 'flex-start', textAlign: 'center',
+              gap: 8,
             }}>
               <div style={{
                 fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
                 color: isVisible ? hintColor : '#475569',
-                letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12,
+                letterSpacing: '0.14em', textTransform: 'uppercase',
               }}>
                 {lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}
                 {isPast && <span style={{ marginLeft: 6 }}>✓</span>}
+                {revealed && teamsAtThisHint.length > 0 && (
+                  <span style={{ marginLeft: 6 }}>· {Math.max(1, 4 - i)} Pkt</span>
+                )}
               </div>
               <div style={{
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
                 color: isVisible ? '#F1F5F9' : 'transparent',
                 lineHeight: 1.2,
                 animation: isCurrent ? 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {isVisible ? hintText : '?'}
               </div>
+              {/* Reveal: Team-Avatare auf diesem Hint */}
+              {revealed && teamsAtThisHint.length > 0 && (
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: 6,
+                  justifyContent: 'center', marginTop: 6,
+                  paddingTop: 8,
+                  borderTop: `1px dashed ${hintColor}55`,
+                  width: '100%',
+                }}>
+                  {teamsAtThisHint.map((g, gIdx) => {
+                    const tm = s.teams.find(t => t.id === g.teamId);
+                    if (!tm) return null;
+                    const isFastest = gIdx === 0; // Schnellster auf diesem Hint
+                    return (
+                      <div key={g.teamId} style={{
+                        position: 'relative',
+                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.15 + gIdx * 0.08}s both`,
+                      }}>
+                        <QQTeamAvatar
+                          avatarId={tm.avatarId}
+                          size={'clamp(36px, 4vw, 52px)'}
+                          style={{
+                            boxShadow: isFastest
+                              ? `0 0 0 3px #FBBF24, 0 0 18px rgba(251,191,36,0.65), 0 0 6px ${tm.color}88`
+                              : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}66`,
+                          }}
+                        />
+                        {isFastest && (
+                          <span aria-hidden style={{
+                            position: 'absolute',
+                            top: -10, right: -8,
+                            fontSize: 18, lineHeight: 1,
+                            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))',
+                          }}>🥇</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
@@ -7749,18 +7803,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const isOrderBt = q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order';
-  // Order-BunteTüte hat in der Question-Phase keine Items am Beamer (Phone-Eingabe),
-  // deshalb gleiche Größen wie normale Kategorien. Nur im Reveal wird geshrunken
-  // (qFontSizeShrunk weiter unten), damit die Rangfolge darunter passt.
-  // min(vw, vh) verhindert Overflow nach oben/unten auf niedrigen Displays.
-  // 2026-04-28: User-Wunsch 'unten ist noch Platz, lass den Text größer' — vw+vh
-  // Caps angehoben + min/max der clamps großzügiger. Lange Texte (>200) bleiben
-  // moderat klein, kurze Fragen wirken jetzt richtig satt am Beamer.
-  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4vw, 5vh), 50px)'
-    : qText.length > 120 ? 'clamp(36px, min(4.4vw, 6.8vh), 68px)'
-    : qText.length > 80  ? 'clamp(42px, min(5.4vw, 8vh), 86px)'
-    : qText.length > 40  ? 'clamp(50px, min(6.4vw, 9vh), 104px)'
-    : 'clamp(58px, min(7.6vw, 10vh), 124px)';
+  // 2026-04-28-v3 (User: 'fragecards die kleiner werden zappelig — könnten
+  // wir die cards nicht von Anfang an etwas kleiner machen?'). Wir wählen
+  // jetzt EINE moderate Größe für ALLE Phasen (Question + Reveal). Kein
+  // shrink mehr → kein zappeln. Sizing knapp aber lesbar; Reveal-Phase
+  // dimmt nur opacity statt zu shrinken.
+  const qFontSize = qText.length > 200 ? 'clamp(22px, min(2.6vw, 4vh), 38px)'
+    : qText.length > 120 ? 'clamp(28px, min(3.2vw, 5vh), 48px)'
+    : qText.length > 80  ? 'clamp(32px, min(3.8vw, 5.6vh), 58px)'
+    : qText.length > 40  ? 'clamp(36px, min(4.2vw, 6vh), 66px)'
+    : 'clamp(40px, min(4.8vw, 6.5vh), 76px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -7972,10 +8024,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
           <div style={{
             position: 'relative',
-            width: '100%', maxWidth: 900,
+            // 2026-04-28: User-Wunsch 'CHEESE Frage+Reveal-Card unten breit
+            // machen' → maxWidth raus, full width minus padding der parent.
+            // Kompensiert: leichtes Side-Padding via `width: calc(...)` damit
+            // die Card sich nicht in die Bildschirmkanten reinpresst.
+            width: 'calc(100% - clamp(40px, 6vw, 96px))', maxWidth: 1600,
             minHeight: revealed
-              ? (hasImg ? 'clamp(380px, 44vh, 500px)' : 'clamp(220px, 28vh, 320px)')
-              : (hasImg ? 'clamp(140px, 18vh, 220px)' : 'clamp(120px, 16vh, 180px)'),
+              ? (hasImg ? 'clamp(360px, 42vh, 480px)' : 'clamp(220px, 28vh, 320px)')
+              : (hasImg ? 'clamp(120px, 16vh, 200px)' : 'clamp(110px, 14vh, 170px)'),
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
@@ -8237,16 +8293,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         {/* ── Main content — full width, vertically + horizontally distributed ──
             User-Feedback 2026-04-28: Beim Reveal 'kleben' alle Cards in der
             oberen Hälfte, untere Hälfte leer. Lösung: space-around statt
-            flex-start für MUCHO/ZvZ — verteilt Frage / Antwort / Avatar-Reihe /
-            Winner-Card gleichmäßig über die volle Höhe.
-            Vorher war flex-start gewählt damit Winner-Card unten nicht clippt;
-            mit space-around + gemeinsamem padding-bottom (clamp 16-40px) bleibt
-            das ebenso sicher und füllt den unteren Halbraum sinnvoll. */}
+            flex-start für MUCHO/ZvZ.
+            2026-04-28-v2: User: 'Mucho Winner-Border oben/unten abgeschnitten'.
+            Vertikales overflow visible erlaubt, dass Card-Glow + Winner-Border
+            nicht durch overflow:hidden geclipped werden. Horizontal bleibt
+            hidden für seitliche Effekte. */}
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          padding: 'clamp(12px, 1.5vh, 24px) clamp(28px, 4vw, 64px) clamp(16px, 2vh, 40px)',
+          padding: 'clamp(20px, 3vh, 44px) clamp(28px, 4vw, 64px) clamp(24px, 3.5vh, 56px)',
           justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-around' : 'center',
-          alignItems: 'center', position: 'relative', zIndex: 5, overflow: 'hidden',
+          alignItems: 'center', position: 'relative', zIndex: 5,
+          overflowX: 'hidden', overflowY: 'visible',
         }}>
 
           {/* Category badge — top left corner. Bleibt auch im Reveal sichtbar
@@ -8287,89 +8344,39 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Question card — Text schrumpft beim Reveal generell, damit mehr
-              Platz für Antwort-Card + Avatar-Cascade + Winner-Card bleibt.
-              User-Wunsch 2026-04-28: 'Fragetext im Reveal nur sekundär,
-              kann kleiner sein'. Vorher nur bei Schätzchen geschrumpft.
-              SHRINK-METHODE 2026-04-28: vorher font-size-Animation, die führte
-              zu Re-Wrap während der Transition (Buchstaben 'zappeln'). Jetzt:
-              key-Re-Mount auf das innere Span — Text fadet kurz durch (langFadeIn)
-              statt während des Resize zu hüpfen. Card-Padding fadet sich
-              gleichzeitig schmaler — wirkt wie ein gemeinsamer 'collapse'. */}
+          {/* Question card — KEIN Resize mehr zwischen Question und Reveal
+              (User-Feedback 2026-04-28: 'cards zappelig beim kleiner werden').
+              Card und Text behalten ihre Größe, nur Opacity dimmt (1 → 0.45)
+              und Padding bleibt konstant. So gibt's GAR keine Resize-Bewegung
+              mehr — der Reveal-Indikator ist allein das Dimmen + die neuen
+              Avatar/Answer-Cards die darunter erscheinen. */}
           {(() => {
-            const shrinkOnReveal = revealed;
-            // Gleiche Größen-Staffelung wie qFontSize, nur kleiner — Text fließt gleich um
-            const qFontSizeShrunk = isOrderBt
-              ? (qText.length > 120 ? 'clamp(14px, 1.4vw, 22px)'
-                : qText.length > 60 ? 'clamp(16px, 1.8vw, 26px)'
-                : 'clamp(18px, 2vw, 30px)')
-              : qText.length > 200 ? 'clamp(20px, 2.4vw, 36px)'
-              : qText.length > 120 ? 'clamp(26px, 3.2vw, 48px)'
-              : qText.length > 60  ? 'clamp(32px, 4vw, 60px)'
-              : 'clamp(38px, 4.8vw, 72px)';
             return (
               <div style={{
                 background: cardBg,
-                // Frage-Card kriegt Kategorie-Farbe als Border + sanfter Glow.
-                // User-Wunsch 2026-04-28: bleibt auch im Reveal sichtbar (vorher
-                // verblasste die Border zu rgba weak — wirkte als wäre die
-                // Kategorie weg). Im Reveal nur dezent gedimmt.
                 border: `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
                 borderRadius: 28,
                 boxShadow: revealed
                   ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
                   : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-                padding: shrinkOnReveal
-                  ? 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.5vw, 40px)'
-                  // Aktive Frage: paddingLeft großzügig genug, dass die
-                  // Kategorie-Pille (top:20, left:48, ~~50-180px breit) den
-                  // Fragetext nicht überlappt. Vorher: clamp(28px, 4vw, 64px)
-                  // → bei langem Text rutschten die ersten Worte unter die Pill.
-                  : 'clamp(28px, 4vh, 56px) clamp(140px, 14vw, 220px) clamp(22px, 3vh, 48px)',
-                marginBottom: 'clamp(20px, 2.8vh, 44px)',
+                // EIN konsistentes Padding für beide Phasen — keine Padding-
+                // Animation mehr. paddingLeft großzügig damit die Kategorie-
+                // Pille (top:20, left:48) nicht überlappt.
+                padding: 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)',
+                marginBottom: 'clamp(16px, 2.2vh, 32px)',
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
                 animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, filter 0.5s ease, padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
-                opacity: revealed ? 0.45 : 1,
+                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease',
+                opacity: revealed ? 0.55 : 1,
               }}>
-                {/* Cross-Fade zwischen großem (Frage) und kleinem (Reveal) Text.
-                    User-Feedback 2026-04-28: 'Wechsel zu heftig' beim alten
-                    key-Re-Mount. Jetzt: Grid-Stack mit beiden Versionen, eine
-                    fadet aus während die andere mit kurzem Versatz reinfadet.
-                    Der Container nimmt die Größe der jeweils sichtbaren Version
-                    durch grid-template-rows-Trick — kein Snap, sauberer Übergang. */}
                 <div key={lang} style={{
-                  display: 'grid',
-                  gridTemplateAreas: '"q"',
-                  width: '100%',
+                  fontSize: qFontSize,
+                  fontWeight: 900, lineHeight: 1.22,
+                  color: '#F1F5F9',
                   animation: 'langFadeIn 0.4s ease both',
                 }}>
-                  <div style={{
-                    gridArea: 'q',
-                    fontSize: qFontSize,
-                    fontWeight: 900, lineHeight: 1.22,
-                    color: '#F1F5F9',
-                    opacity: shrinkOnReveal ? 0 : 1,
-                    transform: shrinkOnReveal ? 'scale(0.96)' : 'scale(1)',
-                    transition: 'opacity 0.35s ease, transform 0.45s cubic-bezier(0.4,0,0.2,1)',
-                    pointerEvents: shrinkOnReveal ? 'none' : 'auto',
-                  }}>
-                    {qText}
-                  </div>
-                  <div style={{
-                    gridArea: 'q',
-                    fontSize: qFontSizeShrunk,
-                    fontWeight: 900, lineHeight: 1.22,
-                    color: '#F1F5F9',
-                    opacity: shrinkOnReveal ? 1 : 0,
-                    transform: shrinkOnReveal ? 'scale(1)' : 'scale(1.04)',
-                    transition: 'opacity 0.45s ease 0.1s, transform 0.5s cubic-bezier(0.4,0,0.2,1) 0.05s',
-                    pointerEvents: shrinkOnReveal ? 'auto' : 'none',
-                    alignSelf: 'center', justifySelf: 'center',
-                  }}>
-                    {qText}
-                  </div>
+                  {qText}
                 </div>
               </div>
             );
@@ -10630,7 +10637,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // PAUSED — Records / Leaderboard display
 // ═══════════════════════════════════════════════════════════════════════════════
 
-type LeaderEntry = { name: string; wins: number; games: number };
+type LeaderEntry = { name: string; wins: number; games: number; avatarId?: string | null; lastPlayedAt?: number | null };
 type FunStats = {
   highestScore: { teamName: string; score: number; draftTitle: string } | null;
   closestGame: { teams: string[]; gap: number; draftTitle: string } | null;
@@ -11008,6 +11015,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           const teamColor = sessionTeam?.color ?? (i === 0 ? '#FBBF24' : i === 1 ? '#CBD5E1' : i === 2 ? '#F97316' : '#94A3B8');
           const shown = Math.min(entry.wins, maxVisibleWins);
           const overflow = entry.wins - shown;
+          // 2026-04-28: Avatar primär aus Session-Team, sonst aus Backend-
+          // Cache (avatarId vom letzten Spiel). So zeigen sich Avatare auch
+          // wenn das Team gerade nicht in der aktuellen Session ist.
+          const avatarId = sessionTeam?.avatarId ?? entry.avatarId ?? null;
+          // 'Hat gespielt am'-Hint — nur wenn lastPlayedAt da, klein darunter.
+          const lastPlayedLabel = entry.lastPlayedAt
+            ? new Date(entry.lastPlayedAt).toLocaleDateString(de ? 'de-DE' : 'en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })
+            : null;
           return (
           <div key={entry.name} style={{
             display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
@@ -11016,14 +11031,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <span style={{ fontSize: 'clamp(26px, 3vw, 38px)', width: 46, textAlign: 'center', flexShrink: 0 }}>
               {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
             </span>
-            {sessionTeam
-              ? <QQTeamAvatar avatarId={sessionTeam.avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
+            {avatarId
+              ? <QQTeamAvatar avatarId={avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
               : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#241a10', flexShrink: 0 }} />
             }
-            <span style={{
-              flex: 1, fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
-            }}>{entry.name}</span>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{
+                fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{entry.name}</span>
+              {lastPlayedLabel && (
+                <span style={{
+                  fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b',
+                  fontWeight: 600, letterSpacing: '0.04em',
+                }}>
+                  {de ? `zuletzt: ${lastPlayedLabel} · ${entry.games} Spiele` : `last: ${lastPlayedLabel} · ${entry.games} games`}
+                </span>
+              )}
+            </div>
             {/* Subway-Stationen: ein Dot pro Sieg, skaliert relativ zum Maximum */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, minWidth: 0 }}>
               {Array.from({ length: shown }).map((_, k) => (

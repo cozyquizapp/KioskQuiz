@@ -8342,16 +8342,38 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
     const results = await getQQGameResults(200);
     const wins: Record<string, number> = {};
     const gamesPlayed: Record<string, number> = {};
+    // 2026-04-28: pro Name auch avatarId + lastPlayedAt mitspeichern, damit
+    // die Beamer-Bestenliste Avatare und 'hat gespielt am'-Datum zeigen kann.
+    // Wir nehmen die avatarId des JÜNGSTEN Auftritts (Teams können Avatare
+    // wechseln zwischen Spielen).
+    const avatarById: Record<string, string | null> = {};
+    const lastPlayedAt: Record<string, number> = {};
+    // Results sind nach playedAt DESC sortiert (frischeste zuerst) — siehe
+    // getQQGameResults. Daher 'first wins' für avatarId/lastPlayedAt.
     for (const r of results) {
       if (Array.isArray(r.teams)) {
         for (const t of r.teams) {
-          if (t?.name) gamesPlayed[t.name] = (gamesPlayed[t.name] || 0) + 1;
+          if (t?.name) {
+            gamesPlayed[t.name] = (gamesPlayed[t.name] || 0) + 1;
+            if (avatarById[t.name] === undefined && t.avatarId) {
+              avatarById[t.name] = t.avatarId;
+            }
+            if (lastPlayedAt[t.name] === undefined && typeof r.playedAt === 'number') {
+              lastPlayedAt[t.name] = r.playedAt;
+            }
+          }
         }
       }
       if (r.winner) wins[r.winner] = (wins[r.winner] || 0) + 1;
     }
     const leaderboard = Object.entries(wins)
-      .map(([name, w]) => ({ name, wins: w, games: gamesPlayed[name] || w }))
+      .map(([name, w]) => ({
+        name,
+        wins: w,
+        games: gamesPlayed[name] || w,
+        avatarId: avatarById[name] ?? null,
+        lastPlayedAt: lastPlayedAt[name] ?? null,
+      }))
       .sort((a, b) => b.wins - a.wins || b.games - a.games)
       .slice(0, 10);
     const recent = results.slice(0, 5).map(r => ({

@@ -125,15 +125,14 @@ export default function QQProgressTree({
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
-  // Finale-Knoten am Ende: 35% größeres Dot + Trenner-Linie davor.
+  // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
+  // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
+  // unter dem FINALE-Label.
   const showFinale = state.connectionsEnabled !== false;
   const finaleDotSize = Math.round(dotSize * 1.35);
-  const finaleConnectorWidth = Math.round(dotSize * 0.4);
   let finaleCenter = 0;
   if (showFinale) {
     cursor += phaseGap;
-    cursor += finaleConnectorWidth;
-    cursor += 6; // gap zwischen Connector und Finale-Knoten (siehe JSX)
     finaleCenter = cursor + finaleDotSize / 2;
     cursor += finaleDotSize;
   }
@@ -285,7 +284,7 @@ export default function QQProgressTree({
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
             return (
               <div style={{
-                width: finaleConnectorWidth + 6 + finaleDotSize,
+                width: finaleDotSize,
                 textAlign: 'center',
                 fontSize: phaseNameSize,
                 fontWeight: 900,
@@ -410,8 +409,9 @@ export default function QQProgressTree({
 
           {/* Großes Finale (4×4 Connections) — separater Bonus-Knoten am
               Tree-Ende. Goldenes 🧩-Dot mit Glow, größer als Quiz-Dots
-              (klare Hierarchie: das ist DAS Highlight). User-Wunsch
-              2026-04-28: 'Finale soll im Progress-Tree sichtbar sein'. */}
+              (klare Hierarchie: das ist DAS Highlight).
+              User-Wunsch 2026-04-28-v2: Trenner-Strich raus, Dot mittig
+              unter dem 'FINALE'-Label. */}
           {state.connectionsEnabled !== false && (() => {
             const finaleSize = Math.round(dotSize * 1.35);
             const finaleColor = '#A78BFA';
@@ -421,15 +421,9 @@ export default function QQProgressTree({
             return (
               <div style={{
                 marginLeft: phaseGap, // gleicher Abstand wie zwischen Phasen
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative', zIndex: 2,
               }}>
-                {/* Trenner-Strich vom letzten Dot zum Finale-Dot */}
-                <div style={{
-                  width: Math.round(dotSize * 0.4), height: 2,
-                  background: 'linear-gradient(90deg, rgba(148,163,184,0.4), rgba(167,139,250,0.6))',
-                  borderRadius: 2,
-                }} />
                 <div
                   title={lang === 'de' ? 'Großes Finale (4×4)' : 'Grand Finale (4×4)'}
                   style={{

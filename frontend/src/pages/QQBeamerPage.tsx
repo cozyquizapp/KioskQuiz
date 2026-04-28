@@ -7213,21 +7213,37 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       )}
       {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
       {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
-        // CHEESE Crop: offsetX/Y steuern background-position, scale steuert Zoom.
-        // scale wird ≥1 geclampt damit das Bild IMMER das volle Beamer-Bild füllt
-        // (keine schwarzen Ränder). backgroundSize 'cover' + positionX/Y = klassischer Crop.
+        // CHEESE: 3-Schicht-Aufbau gegen Aspect-Ratio-Crop.
+        // 1) Blurred cover backdrop — füllt 16:9-Beamer, kein schwarzer Rand
+        // 2) Sharp CONTAIN foreground — komplettes Bild sichtbar (Mona Lisas Kopf bleibt drin)
+        // 3) Dunkler Vignette-Overlay — Lesbarkeit der Antwort-Card
+        // offsetX/Y/scale wirken auf Layer 2; scale=1 (default) zeigt vollständiges Bild.
         const cheeseOX = img!.offsetX ?? 0;
         const cheeseOY = img!.offsetY ?? 0;
-        const cheeseZoom = Math.max(1, img!.scale ?? 1);
-        // mappt -100..100 → 0..100% background-position (50 = center)
+        const cheeseZoom = img!.scale ?? 1;
         const cheesePosX = 50 + cheeseOX / 2;
         const cheesePosY = 50 + cheeseOY / 2;
         return (
         <>
+          {/* Layer 1: blurred cover backdrop (CHEESE only) */}
+          {cheeseFullscreen && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 49,
+              backgroundImage: `url(${img!.url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              filter: 'blur(36px) brightness(0.45) saturate(1.1)',
+              transform: 'scale(1.15)',
+              transformOrigin: 'center',
+              animation: 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both',
+            }} />
+          )}
+          {/* Layer 2: sharp foreground (contain für CHEESE, cover für legacy fullscreen) */}
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 50 : 1,
             backgroundImage: `url(${img!.url})`,
-            backgroundSize: 'cover',
+            backgroundSize: cheeseFullscreen ? 'contain' : 'cover',
             backgroundPosition: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
             backgroundRepeat: 'no-repeat',
             clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
@@ -7242,6 +7258,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             opacity: img!.opacity ?? 1,
             filter: imgFilter(img!),
           }} />
+          {/* Layer 3: vignette overlay */}
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen

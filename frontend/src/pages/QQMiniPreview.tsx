@@ -127,6 +127,66 @@ export function QQMiniPreview({ question: q }: { question: QQQuestion }) {
             ✓ {q.answer}
           </div>
         )}
+
+        {/* 4 gewinnt / Only Connect: 4 Hinweise + Antwort */}
+        {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'onlyConnect' && (() => {
+          const oc = q.bunteTuete;
+          const hints = (oc.hints ?? []).slice(0, 4);
+          const hintColors = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA'];
+          return (
+            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{
+                fontSize: 9, fontWeight: 900, color: '#A78BFA',
+                letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 1,
+              }}>🧩 4 Hinweise</div>
+              {[0, 1, 2, 3].map(i => {
+                const h = hints[i];
+                const col = hintColors[i];
+                return (
+                  <div key={i} style={{
+                    fontSize: 9, padding: '2px 6px', borderRadius: 4,
+                    background: h ? `${col}1a` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${h ? `${col}66` : 'rgba(255,255,255,0.08)'}`,
+                    color: h ? '#e2e8f0' : '#475569',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    fontWeight: 700,
+                  }}>
+                    <span style={{ color: col, fontWeight: 900, marginRight: 4 }}>H{i + 1}</span>
+                    {h || <span style={{ fontStyle: 'italic' }}>—</span>}
+                  </div>
+                );
+              })}
+              {oc.answer && (
+                <div style={{
+                  fontSize: 10, fontWeight: 900, color: '#86efac', marginTop: 2,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>✓ {oc.answer}</div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Bluff: echte Antwort + Bluff-Badge */}
+        {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'bluff' && (() => {
+          const bf = q.bunteTuete;
+          return (
+            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <div style={{
+                fontSize: 9, fontWeight: 900, color: '#F472B6',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>🎭 Bluff · echte Antwort</div>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: '#86efac',
+                padding: '3px 8px', borderRadius: 4,
+                background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.4)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                ✓ {bf.realAnswer || <span style={{ color: '#475569', fontStyle: 'italic' }}>(noch keine Antwort)</span>}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

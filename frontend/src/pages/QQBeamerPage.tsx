@@ -9826,22 +9826,11 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
       <ConnectionsHeader state={s} />
       {c.phase === 'intro' && <ConnectionsIntro state={s} />}
       {showBoard && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'row',
-          gap: 'clamp(10px, 1.2vw, 20px)',
-          minHeight: 0,
-          alignItems: 'stretch',
-        }}>
-          {/* Linke Spalte: Grid + Gruppen-Labels */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-            <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
-          </div>
-          {/* Rechte Spalte: vertikales Rennen mit 4 Sektoren */}
-          <div style={{ width: 'clamp(220px, 22vw, 300px)', display: 'flex', flexDirection: 'column' }}>
-            <ConnectionsRaceTrack state={s} />
-          </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 0 }}>
+          <ConnectionsGrid state={s} globallyFoundGroupIds={globallyFoundGroupIds} />
         </div>
       )}
+      {showBoard && <ConnectionsAnswerStatus state={s} />}
     </div>
   );
 }
@@ -10084,153 +10073,98 @@ function ConnectionsGrid({ state: s, globallyFoundGroupIds }: {
 }
 
 /**
- * Vertikales Rennen rechts — 5 Sektoren von 🏁 (oben) bis Start (unten).
- * Sektor = aktuelle Anzahl gefundener Gruppen pro Team. Avatare werden im
- * 2-Spalten-Grid pro Sektor gestapelt (2x2x2 bei Crowding). Sektor-Farbe folgt
- * den Gruppen-Farben (gelb/grün/blau/lila), Goal in Gold.
+ * Antwort-Status-Reihe unten — gleicher Stil wie CHEESE/MUCHO/etc.:
+ * Avatar mit kleinem Status-Badge unten rechts.
+ *  - Aktiv aber noch keine Submit: dim
+ *  - Mind. 1 Submit (Treffer ODER Fehler): grüner ✓
+ *  - Lockout: roter ✕ mit Fail-Count
+ *  - Sieger (4 Gruppen): goldener 🏁
+ *  - Active Setz-Team in placement: grüner ×N-Badge
  */
-function ConnectionsRaceTrack({ state: s }: { state: QQStateUpdate }) {
+function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
   const c = s.connections!;
-  const lang = useLangFlip(s.language);
   const isPlacement = c.phase === 'placement';
-
-  // Sektor-Mapping: foundCount → Sektor-Index (0..4)
-  // Avatare innerhalb eines Sektors werden nach finishedAt sortiert (zuerst
-  // fertig zuerst angezeigt). Locked-out aber 0 gefunden bleiben in Start.
-  const teamsBySector: Record<number, typeof s.teams> = { 0: [], 1: [], 2: [], 3: [], 4: [] };
-  for (const tm of s.teams) {
-    const tp = c.teamProgress[tm.id];
-    const found = tp?.foundGroupIds.length ?? 0;
-    teamsBySector[found].push(tm);
-  }
-  // Innerhalb des Sektors: schnellste finished zuerst, dann unfinished
-  for (const k of [0, 1, 2, 3, 4]) {
-    teamsBySector[k].sort((a, b) => {
-      const fa = c.teamProgress[a.id]?.finishedAt ?? Number.MAX_SAFE_INTEGER;
-      const fb = c.teamProgress[b.id]?.finishedAt ?? Number.MAX_SAFE_INTEGER;
-      return fa - fb;
-    });
-  }
-
-  // Sektoren von oben nach unten: 4 (Goal) → 3 → 2 → 1 → 0 (Start)
-  const sectors: Array<{ idx: number; label: string; color: string; isGoal?: boolean }> = [
-    { idx: 4, label: lang === 'de' ? '🏁 Ziel' : '🏁 Goal', color: '#FBBF24', isGoal: true },
-    { idx: 3, label: '3 / 4', color: CONNECTIONS_GROUP_COLORS[3] },
-    { idx: 2, label: '2 / 4', color: CONNECTIONS_GROUP_COLORS[2] },
-    { idx: 1, label: '1 / 4', color: CONNECTIONS_GROUP_COLORS[1] },
-    { idx: 0, label: lang === 'de' ? 'Start' : 'Start', color: '#64748b' },
-  ];
 
   return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      gap: 'clamp(4px, 0.5vh, 8px)',
-      padding: 'clamp(8px, 1vh, 12px) clamp(8px, 0.8vw, 12px)',
-      borderRadius: 14,
-      background: 'rgba(255,255,255,0.025)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(10px, 1.6vw, 22px)', flexWrap: 'wrap',
+      padding: 'clamp(8px, 1vh, 14px) clamp(12px, 1.4vw, 20px)',
       position: 'relative', zIndex: 5,
-      minHeight: 0,
+      animation: 'contentReveal 0.45s ease 0.2s both',
     }}>
-      <span style={{
-        fontSize: 'clamp(9px, 0.85vw, 12px)', fontWeight: 900,
-        color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
-        textAlign: 'center', paddingBottom: 2,
-      }}>{lang === 'de' ? '🏁 Rennen' : '🏁 Race'}</span>
-
-      {sectors.map((sec) => {
-        const occupants = teamsBySector[sec.idx];
-        const hasOccupants = occupants.length > 0;
+      {s.teams.map((tm) => {
+        const tp = c.teamProgress[tm.id];
+        const found = tp?.foundGroupIds.length ?? 0;
+        const fails = tp?.failedAttempts ?? 0;
+        const locked = tp?.isLockedOut ?? false;
+        const finished = (tp?.finishedAt ?? null) != null;
+        const isWinner = found >= 4;
+        const hasActivity = found > 0 || fails > 0;
+        const isActiveTeam = isPlacement && c.placementOrder[c.placementCursor] === tm.id;
+        // Dim wenn weder Aktivität noch fertig
+        const dim = !hasActivity && !finished;
         return (
-          <div key={sec.idx} style={{
-            flex: sec.isGoal ? 1.4 : 1,
-            minHeight: 'clamp(38px, 5vh, 60px)',
-            padding: '4px 6px',
-            borderRadius: 10,
-            background: hasOccupants
-              ? `linear-gradient(135deg, ${sec.color}22, ${sec.color}06)`
-              : 'rgba(255,255,255,0.02)',
-            border: `1.5px solid ${hasOccupants ? `${sec.color}88` : 'rgba(255,255,255,0.06)'}`,
-            boxShadow: sec.isGoal && hasOccupants ? `0 0 16px ${sec.color}55` : 'none',
-            display: 'flex', flexDirection: 'column',
-            transition: 'all 0.5s ease',
-            position: 'relative', overflow: 'hidden',
+          <div key={tm.id} title={tm.name} style={{
+            position: 'relative',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            opacity: dim ? 0.55 : 1,
+            filter: dim ? 'grayscale(0.4)' : (locked ? 'grayscale(0.2)' : 'none'),
+            transition: 'opacity 0.4s ease, filter 0.4s ease',
+            animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
           }}>
-            {/* Sektor-Label */}
-            <span style={{
-              fontSize: 'clamp(9px, 0.85vw, 12px)', fontWeight: 900,
-              color: sec.color,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              opacity: hasOccupants ? 1 : 0.5,
-              padding: '1px 4px',
-            }}>{sec.label}</span>
-
-            {/* 2-Spalten-Avatar-Grid */}
-            {hasOccupants && (
+            <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(56px, 6vw, 84px)'} style={{
+              background: '#0d0a06',
+              boxShadow: isWinner
+                ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
+                : isActiveTeam
+                  ? `0 0 0 2px ${tm.color}, 0 0 16px ${tm.color}aa`
+                  : `0 0 0 2px ${tm.color}66, 0 4px 10px rgba(0,0,0,0.55)`,
+            }} />
+            {/* Status-Badge unten rechts */}
+            {isWinner && (
               <div style={{
-                flex: 1,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 4,
-                alignContent: 'center',
-                marginTop: 2,
-              }}>
-                {occupants.map((tm) => {
-                  const tp = c.teamProgress[tm.id];
-                  const fails = tp?.failedAttempts ?? 0;
-                  const locked = tp?.isLockedOut ?? false;
-                  const isActiveTeam = isPlacement && c.placementOrder[c.placementCursor] === tm.id;
-                  const rank = c.placementOrder.indexOf(tm.id);
-                  const showRank = sec.isGoal && rank >= 0;
-                  return (
-                    <div key={tm.id} title={tm.name} style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '2px 4px', borderRadius: 8,
-                      background: isActiveTeam ? `${tm.color}22` : 'transparent',
-                      border: `1.5px solid ${isActiveTeam ? tm.color : 'transparent'}`,
-                      animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
-                      opacity: locked && !sec.isGoal ? 0.55 : 1,
-                      filter: locked && !sec.isGoal ? 'grayscale(0.4)' : 'none',
-                      minWidth: 0,
-                    }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(22px, 2.2vw, 32px)'} style={{
-                          boxShadow: sec.isGoal
-                            ? `0 0 0 2px #FBBF24, 0 0 8px #FBBF2488`
-                            : `0 0 0 1.5px ${tm.color}99`,
-                        }} />
-                        {showRank && rank < 3 && (
-                          <span style={{
-                            position: 'absolute', top: -6, right: -6,
-                            fontSize: 11, lineHeight: 1,
-                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
-                          }}>{rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'}</span>
-                        )}
-                      </div>
-                      <span style={{
-                        fontSize: 'clamp(9px, 0.85vw, 11px)', fontWeight: 900,
-                        color: tm.color, lineHeight: 1.1,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        minWidth: 0,
-                      }}>
-                        {tm.name}
-                        {locked && !sec.isGoal && (
-                          <span style={{ color: '#FCA5A5', marginLeft: 4 }}>✕{fails}</span>
-                        )}
-                      </span>
-                      {isActiveTeam && (
-                        <span style={{
-                          marginLeft: 'auto', padding: '1px 5px', borderRadius: 999,
-                          background: '#22C55E', color: '#0a1f0d',
-                          fontSize: 9, fontWeight: 900,
-                          flexShrink: 0,
-                        }}>×{c.placementRemaining}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                position: 'absolute', bottom: -4, right: -4,
+                width: 28, height: 28, borderRadius: '50%',
+                background: '#FBBF24', border: '2px solid #0D0A06',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14, fontWeight: 900, lineHeight: 1,
+                boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+                animation: 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+              }}>🏁</div>
+            )}
+            {!isWinner && locked && (
+              <div style={{
+                position: 'absolute', bottom: -4, right: -4,
+                minWidth: 28, height: 28, padding: '0 6px', borderRadius: 14,
+                background: '#EF4444', border: '2px solid #0D0A06',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1,
+                animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+              }}>✕{fails}</div>
+            )}
+            {!isWinner && !locked && hasActivity && (
+              <div style={{
+                position: 'absolute', bottom: -4, right: -4,
+                width: 28, height: 28, borderRadius: '50%',
+                background: '#22C55E', border: '2px solid #0D0A06',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1,
+                animation: 'bAnswerCheck 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+              }}>✓</div>
+            )}
+            {/* Setz-×N-Pille während Placement */}
+            {isActiveTeam && (
+              <div style={{
+                position: 'absolute', top: -10, left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '2px 8px', borderRadius: 999,
+                background: '#22C55E', color: '#0a1f0d',
+                fontSize: 11, fontWeight: 900, letterSpacing: 0.4,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(34,197,94,0.55)',
+              }}>×{c.placementRemaining}</div>
             )}
           </div>
         );

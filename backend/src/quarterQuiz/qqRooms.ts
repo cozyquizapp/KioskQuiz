@@ -2729,8 +2729,25 @@ function finishPlacement(room: QQRoomState): void {
     return;
   }
 
-  // --- RESET jokerFormed after joker bonus placements/steals are completed ---
-  // Only reset if no more bonus placements are pending (placementsLeft == 0 for all teams)
+  // --- RESET jokerFormed cells of the team that just finished placing ---
+  // User-Wunsch 2026-04-28: Sterne sollen direkt nach dem Joker-Placement
+  // verschwinden (Avatare wieder sichtbar), nicht erst wenn ALLE Teams done.
+  // Wir resetten pro Team das gerade fertig wurde — neue Formationen setzen
+  // jokerFormed wieder.
+  const justFinishedTeam = room.pendingFor;
+  if (justFinishedTeam) {
+    const stats = room.teamPhaseStats[justFinishedTeam];
+    if (stats && stats.placementsLeft === 0) {
+      for (let r = 0; r < room.gridSize; r++) {
+        for (let c = 0; c < room.gridSize; c++) {
+          if (room.grid[r][c].ownerId === justFinishedTeam) {
+            room.grid[r][c].jokerFormed = false;
+          }
+        }
+      }
+    }
+  }
+  // Globaler Fallback: wenn alle Teams fertig sind, ALLE jokerFormed reset.
   const allDone = Object.values(room.teamPhaseStats).every(stats => stats.placementsLeft === 0);
   if (allDone) {
     for (let r = 0; r < room.gridSize; r++) {

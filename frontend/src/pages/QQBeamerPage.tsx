@@ -1269,10 +1269,24 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const templateType = resolveTemplateType(s);
   // These phases always use built-in views — custom templates not supported
   const builtinOnly = s.phase === 'LOBBY' || s.phase === 'RULES' || s.phase === 'TEAMS_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'THANKS';
+  // Sub-Mechaniken mit dedizierten Beamer-Views NIE durch Custom-Templates
+  // überschreiben — weder per-Frage (`q-${q.id}`) noch per-Kategorie. Welle 5
+  // hat nur den Category-Pfad gegated, der per-Frage-Pfad überschrieb die
+  // dedizierte View aber weiterhin → leerer BG mit Fireflies. User-Bug
+  // 4 gewinnt durch 6 Welle-Iterationen unbehoben — Plan-Agent fand die
+  // Lücke 2026-04-28.
+  const subKindForGate = s.currentQuestion?.bunteTuete?.kind;
+  const hasDedicatedView = s.currentQuestion?.category === 'BUNTE_TUETE' && (
+    subKindForGate === 'onlyConnect' || subKindForGate === 'bluff' ||
+    subKindForGate === 'hotPotato' || subKindForGate === 'top5' ||
+    subKindForGate === 'order' || subKindForGate === 'map' ||
+    subKindForGate === 'oneOfEight'
+  );
+  const allowCustomTemplate = !builtinOnly && !hasDedicatedView;
   // Per-question override takes priority over category template
-  const perQKey = !builtinOnly && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
+  const perQKey = allowCustomTemplate && s.currentQuestion ? `q-${s.currentQuestion.id}` : null;
   const rawPerQ = perQKey ? slideTemplates[perQKey] : undefined;
-  const rawCategoryTemplate = !builtinOnly && templateType ? slideTemplates[templateType] : undefined;
+  const rawCategoryTemplate = allowCustomTemplate && templateType ? slideTemplates[templateType] : undefined;
   const rawActiveTemplate = rawPerQ?.elements?.length ? rawPerQ : rawCategoryTemplate;
   // Only use custom template if it has actual elements to render
   const activeTemplate = rawActiveTemplate?.elements?.length ? rawActiveTemplate : undefined;
@@ -7625,9 +7639,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Frosted question/answer card — bottom.
               POP-Transition: minHeight waechst dynamisch beim Reveal.
-              Mit Bild: waehrend QUESTION_ACTIVE so kompakt wie moeglich, damit das
-              Bild prominent bleibt; beim Reveal waechst sie fuer Loesung+Avatare.
-              Ohne Bild: nochmal kompakter. */}
+              Beim Reveal: Border + Glow in der Farbe des SCHNELLSTEN korrekten
+              Teams (User-Wunsch 2026-04-28: konsistent mit Mucho/ZvZ wo der
+              Sieger-Frame bunt ist). Wenn niemand richtig: Standard-Akzent. */}
+          {(() => {
+            // Schnellstes korrektes Team finden (für Reveal-Glow)
+            const fastestColor = (() => {
+              if (!isCheeseReveal) return null;
+              const correctDE = (q.answer ?? '').trim().toLowerCase();
+              const correctEN = (q.answerEn ?? '').trim().toLowerCase();
+              const correctSet = [correctDE, correctEN].filter(Boolean);
+              if (correctSet.length === 0) return null;
+              const matchesAns = (sub: string) => {
+                const ss = sub.trim().toLowerCase();
+                if (ss.length < 2) return false;
+                return correctSet.some(c => c === ss || ss.includes(c) || (c.length > 3 && c.includes(ss) && ss.length >= 3));
+              };
+              const earliest = [...s.answers]
+                .filter(a => matchesAns(a.text))
+                .sort((a, b) => a.submittedAt - b.submittedAt)[0];
+              if (!earliest) return null;
+              return s.teams.find(t => t.id === earliest.teamId)?.color ?? null;
+            })();
+            const revealGlowColor = fastestColor ?? '#22C55E';
+            return (
           <div style={{
             position: 'relative',
             width: '100%', maxWidth: 900,
@@ -7637,10 +7672,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
             WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
-            border: `1px solid ${isCheeseReveal ? 'rgba(255,255,255,0.10)' : `${accent}2a`}`,
+            border: `${isCheeseReveal ? 3 : 1}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}2a`}`,
             borderRadius: 28,
             padding: isCheeseReveal ? '28px 48px' : '36px 56px',
-            boxShadow: `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
+            boxShadow: isCheeseReveal
+              ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}66, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
+              : `0 24px 80px rgba(0,0,0,0.5), 0 0 40px ${accent}15`,
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.1s both'
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
@@ -7876,6 +7913,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             })()}
 
           </div>
+            );
+          })()}
         </div>
       )}
 
@@ -7934,9 +7973,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Question card — beim Schätzchen-Reveal schrumpft Text + Padding via transition, damit mehr Platz für den Zeitstrahl entsteht (kein Reflow / Umbruch) */}
+          {/* Question card — Text schrumpft beim Reveal generell, damit mehr
+              Platz für Antwort-Card + Avatar-Cascade + Winner-Card bleibt.
+              User-Wunsch 2026-04-28: 'Fragetext im Reveal nur sekundär,
+              kann kleiner sein'. Vorher nur bei Schätzchen geschrumpft. */}
           {(() => {
-            const shrinkOnReveal = revealed && q.category === 'SCHAETZCHEN';
+            const shrinkOnReveal = revealed;
             // Gleiche Größen-Staffelung wie qFontSize, nur kleiner — Text fließt gleich um
             const qFontSizeShrunk = isOrderBt
               ? (qText.length > 120 ? 'clamp(14px, 1.4vw, 22px)'

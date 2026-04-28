@@ -9,6 +9,7 @@ import {
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
   QQ_CONNECTIONS_FALLBACK_PAYLOAD,
+  QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -95,6 +96,15 @@ export interface QQRoomState {
   imposterQueue: string[];          // round-robin order
   imposterChosenIndices: number[];  // statement indices already picked (correct ones)
   imposterEliminated: string[];     // teams who picked the false statement
+  // 4 gewinnt / Connect 4 (BUNTE_TUETE kind=onlyConnect)
+  onlyConnectHintIndex: number;                                             // -1 = nicht gestartet, 0..3 = aktueller Hint
+  onlyConnectHintRevealedAt: number | null;                                 // timestamp aktueller Hint
+  onlyConnectLockedTeams: string[];                                         // gesperrte Teams
+  onlyConnectWinnerTeamId: string | null;                                   // erstes richtiges Team
+  onlyConnectWinnerHintIdx: number | null;                                  // Hint-Index bei Gewinn
+  onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
+  onlyConnectHintDurationSec: number;                                       // Sekunden zwischen Hint-Reveals
+  _onlyConnectHintTimerHandle: ReturnType<typeof setTimeout> | null;        // Auto-Advance-Timer (nicht persistiert)
   // CHEESE (Picture This) — moderator-controlled image reveal
   imageRevealed: boolean;
   // CozyGuessr (BUNTE_TUETE kind=map) — moderator-controlled progressive reveal
@@ -272,6 +282,14 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       imposterQueue: [],
       imposterChosenIndices: [],
       imposterEliminated: [],
+      onlyConnectHintIndex: -1,
+      onlyConnectHintRevealedAt: null,
+      onlyConnectLockedTeams: [],
+      onlyConnectWinnerTeamId: null,
+      onlyConnectWinnerHintIdx: null,
+      onlyConnectGuesses: [],
+      onlyConnectHintDurationSec: QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
+      _onlyConnectHintTimerHandle: null,
       lastPlacedCell: null,
       frozenCells: [],
       shieldedCells: [],
@@ -762,10 +780,16 @@ export function qqActivateQuestion(
   room.muchoRevealStep = 0;
   room.zvzRevealStep = 0;
   room.cheeseRevealStep = 0;
+  // 4 gewinnt: State pro Frage zurücksetzen (Sub-Mechanik wird via socket
+  // qq:activateQuestion-Handler nachträglich gestartet, damit der onAdvance-
+  // Callback dort gebunden werden kann).
+  qqOnlyConnectReset(room);
   // Hot Potato has its own per-turn timer (hotPotatoTurnEndsAt) — no global question timer
   const isHotPotato = room.currentQuestion?.category === 'BUNTE_TUETE'
     && room.currentQuestion.bunteTuete?.kind === 'hotPotato';
-  if (isHotPotato) {
+  const isOnlyConnect = room.currentQuestion?.category === 'BUNTE_TUETE'
+    && room.currentQuestion.bunteTuete?.kind === 'onlyConnect';
+  if (isHotPotato || isOnlyConnect) {
     qqStopTimer(room);
   } else {
     qqStartTimer(room, onTimerExpire);
@@ -990,13 +1014,28 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
   if (!bt) return { winnerTeamIds: [], earnedPoints: {} };
 
   switch (bt.kind) {
-    case 'hotPotato':  return { winnerTeamIds: [], earnedPoints: {} }; // handled via hotPotatoCorrect
-    case 'oneOfEight': return evalOneOfEight(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight);
-    case 'top5':       return evalTop5(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5);
-    case 'order':      return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
-    case 'map':        return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
-    default:           return { winnerTeamIds: [], earnedPoints: {} };
+    case 'hotPotato':   return { winnerTeamIds: [], earnedPoints: {} }; // handled via hotPotatoCorrect
+    case 'oneOfEight':  return evalOneOfEight(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight);
+    case 'top5':        return evalTop5(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5);
+    case 'order':       return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
+    case 'map':         return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
+    case 'onlyConnect': return evalOnlyConnect(room);
+    default:            return { winnerTeamIds: [], earnedPoints: {} };
   }
+}
+
+// onlyConnect: winner ist genau das Team, das während QUESTION_ACTIVE als
+// erstes richtig gelegen hat (room.onlyConnectWinnerTeamId). Punkte-Skala
+// 4/3/2/1 je nach Hint-Index liefern wir als „earnedPoints", das Frontend
+// kann das für Stat-Anzeige nutzen — die Aktions-Vergabe folgt aber wie
+// gewohnt nur dem winner (1 Aktion).
+function evalOnlyConnect(room: QQRoomState): QQEvalResult {
+  const winnerId = room.onlyConnectWinnerTeamId;
+  if (!winnerId) return { winnerTeamIds: [], earnedPoints: {} };
+  const hintIdx = room.onlyConnectWinnerHintIdx ?? 0;
+  // 4 Punkte bei Hint 1 (idx 0), 3 bei Hint 2 ... 1 bei Hint 4 (idx 3)
+  const points = Math.max(1, 4 - hintIdx);
+  return { winnerTeamIds: [winnerId], earnedPoints: { [winnerId]: points } };
 }
 
 // oneOfEight: teams submit the index (as string) of the statement they think is false
@@ -2712,6 +2751,13 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
+    onlyConnectHintIndex:        room.onlyConnectHintIndex ?? -1,
+    onlyConnectHintRevealedAt:   room.onlyConnectHintRevealedAt ?? null,
+    onlyConnectLockedTeams:      room.onlyConnectLockedTeams ?? [],
+    onlyConnectWinnerTeamId:     room.onlyConnectWinnerTeamId ?? null,
+    onlyConnectWinnerHintIdx:    room.onlyConnectWinnerHintIdx ?? null,
+    onlyConnectGuesses:          room.onlyConnectGuesses ?? [],
+    onlyConnectHintDurationSec:  room.onlyConnectHintDurationSec ?? QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
     lastPlacedCell:        room.lastPlacedCell,
     frozenCells:      room.frozenCells,
     shieldedCells:    room.shieldedCells,
@@ -3238,3 +3284,156 @@ export function qqConnectionsClear(room: QQRoomState): void {
   clearConnectionsTimer(room);
   room.connections = null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4 GEWINNT / Only Connect — BunteTüete Sub-Mechanik
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4 Hinweise werden nacheinander aufgedeckt. Teams raten Verbindungs-Begriff
+// per Freitext. 1 Tipp ist frei, falsch → gesperrt für die Frage.
+// Wer richtig liegt: bekommt Teilpunkte (4 bei Hint-1 ... 1 bei Hint-4).
+// Auswertung läuft wie bei Top-5: meiste Teilpunkte → Aktion, schnellster bei Tie.
+
+function clearOnlyConnectHintTimer(room: QQRoomState): void {
+  if (room._onlyConnectHintTimerHandle) {
+    clearTimeout(room._onlyConnectHintTimerHandle);
+    room._onlyConnectHintTimerHandle = null;
+  }
+}
+
+function normalizeOnlyConnectGuess(s: string): string {
+  return (s ?? '').trim().toLowerCase();
+}
+
+/** Match wie bei CHEESE: case-insensitive, substring/eq. */
+function onlyConnectMatches(submitted: string, accepted: string[]): boolean {
+  const sub = normalizeOnlyConnectGuess(submitted);
+  if (sub.length < 2) return false;
+  return accepted.some(c => {
+    const cc = normalizeOnlyConnectGuess(c);
+    if (!cc) return false;
+    return sub === cc || sub.includes(cc) || (cc.length > 3 && cc.includes(sub) && sub.length >= 3);
+  });
+}
+
+/** Reset onlyConnect-State (z.B. beim Wechsel zur nächsten Frage). */
+export function qqOnlyConnectReset(room: QQRoomState): void {
+  clearOnlyConnectHintTimer(room);
+  room.onlyConnectHintIndex = -1;
+  room.onlyConnectHintRevealedAt = null;
+  room.onlyConnectLockedTeams = [];
+  room.onlyConnectWinnerTeamId = null;
+  room.onlyConnectWinnerHintIdx = null;
+  room.onlyConnectGuesses = [];
+}
+
+/**
+ * Start: zeigt den ersten Hint. Setzt einen Timer für den nächsten Hint.
+ * Reset zuerst (falls vorherige Frage State hinterlassen hat).
+ */
+export function qqOnlyConnectStart(
+  room: QQRoomState,
+  onAdvance: () => void
+): void {
+  qqOnlyConnectReset(room);
+  room.onlyConnectHintIndex = 0;
+  room.onlyConnectHintRevealedAt = Date.now();
+  // Auto-Advance nach onlyConnectHintDurationSec
+  scheduleNextHint(room, onAdvance);
+  room.lastActivityAt = Date.now();
+}
+
+function scheduleNextHint(room: QQRoomState, onAdvance: () => void): void {
+  clearOnlyConnectHintTimer(room);
+  // Nicht weiter wenn schon bei Hint 3 (letzter) oder Winner gefunden
+  if (room.onlyConnectHintIndex >= 3) return;
+  if (room.onlyConnectWinnerTeamId) return;
+  const dur = (room.onlyConnectHintDurationSec ?? QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC) * 1000;
+  room._onlyConnectHintTimerHandle = setTimeout(() => {
+    room._onlyConnectHintTimerHandle = null;
+    onAdvance();
+  }, dur);
+}
+
+/**
+ * Schaltet einen Hint weiter — manuell vom Moderator oder via Timer.
+ * Bei Hint 3 (letzter) wird kein neuer Timer gesetzt.
+ * Returnt true wenn ein Hint aufgedeckt wurde, false wenn schon bei letztem.
+ */
+export function qqOnlyConnectAdvanceHint(
+  room: QQRoomState,
+  onAdvance: () => void
+): boolean {
+  if (room.onlyConnectWinnerTeamId) {
+    clearOnlyConnectHintTimer(room);
+    return false;
+  }
+  if (room.onlyConnectHintIndex >= 3) {
+    clearOnlyConnectHintTimer(room);
+    return false;
+  }
+  room.onlyConnectHintIndex += 1;
+  room.onlyConnectHintRevealedAt = Date.now();
+  scheduleNextHint(room, onAdvance);
+  room.lastActivityAt = Date.now();
+  return true;
+}
+
+/**
+ * Team submittet einen Tipp.
+ * - Schon gesperrt? → ignoriert (sollte FE auch verhindern).
+ * - Schon Winner gesetzt? → späte Submits werden trotzdem geloggt mit correct=false
+ *   (da Spielzeit für die Frage vorbei ist), damit Spam nicht durchkommt.
+ * - Match → Team wird Winner, atHintIdx wird festgehalten.
+ * - Kein Match → Team kommt auf onlyConnectLockedTeams, Submit wird geloggt.
+ */
+export function qqOnlyConnectSubmitGuess(
+  room: QQRoomState,
+  teamId: string,
+  text: string
+): { matched: boolean; locked: boolean; alreadyWon: boolean } {
+  if (!room.teams[teamId]) {
+    return { matched: false, locked: false, alreadyWon: false };
+  }
+  if (room.onlyConnectLockedTeams.includes(teamId)) {
+    return { matched: false, locked: true, alreadyWon: !!room.onlyConnectWinnerTeamId };
+  }
+  if (room.onlyConnectWinnerTeamId) {
+    // Späte Tipps nach Lösung werden ignoriert (würde Punktevergabe stören)
+    return { matched: false, locked: false, alreadyWon: true };
+  }
+  const q = room.currentQuestion;
+  const oc = q?.bunteTuete?.kind === 'onlyConnect' ? q.bunteTuete : null;
+  if (!oc) {
+    return { matched: false, locked: false, alreadyWon: false };
+  }
+  const accepted = [
+    oc.answer,
+    ...(oc.acceptedAnswers ?? []),
+    oc.answerEn ?? '',
+    ...(oc.acceptedAnswersEn ?? []),
+  ].filter(Boolean);
+  const isMatch = onlyConnectMatches(text, accepted);
+  const now = Date.now();
+  const atHintIdx = Math.max(0, room.onlyConnectHintIndex);
+  room.onlyConnectGuesses.push({
+    teamId, text: String(text ?? '').slice(0, 200),
+    correct: isMatch, submittedAt: now, atHintIdx,
+  });
+  if (isMatch) {
+    room.onlyConnectWinnerTeamId = teamId;
+    room.onlyConnectWinnerHintIdx = atHintIdx;
+    clearOnlyConnectHintTimer(room);
+  } else {
+    room.onlyConnectLockedTeams.push(teamId);
+  }
+  room.lastActivityAt = now;
+  return { matched: isMatch, locked: !isMatch, alreadyWon: false };
+}
+
+/** Moderator-Force-Reveal: deckt alle restlichen Hinweise auf, beendet Auto-Timer. */
+export function qqOnlyConnectRevealAll(room: QQRoomState): void {
+  clearOnlyConnectHintTimer(room);
+  room.onlyConnectHintIndex = 3;
+  room.onlyConnectHintRevealedAt = Date.now();
+}
+

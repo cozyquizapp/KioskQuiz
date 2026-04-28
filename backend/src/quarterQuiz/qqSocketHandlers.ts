@@ -39,6 +39,8 @@ import {
   qqConnectionsStart, qqConnectionsBegin, qqConnectionsSelectItem,
   qqConnectionsSubmitGroup, qqConnectionsAllDone, qqConnectionsToReveal,
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
+  qqOnlyConnectStart, qqOnlyConnectAdvanceHint, qqOnlyConnectSubmitGuess,
+  qqOnlyConnectRevealAll, qqOnlyConnectReset,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -1192,6 +1194,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
           qqImposterStart(room);
           qqStopTimer(room);
         }
+        // Auto-start 4 gewinnt (onlyConnect): erster Hint sofort sichtbar,
+        // Auto-Advance-Timer für Hint 2 läuft. Standard-Timer wird gestoppt
+        // (eigener Hint-Timer ist self-paced).
+        if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+          qqOnlyConnectStart(room, () => {
+            const r = getQQRoom(payload.roomCode);
+            if (!r) return;
+            qqOnlyConnectAdvanceHint(r, () => {
+              const r2 = getQQRoom(payload.roomCode);
+              if (!r2) return;
+              broadcast(io, payload.roomCode);
+            });
+            broadcast(io, payload.roomCode);
+          });
+          qqStopTimer(room);
+        }
         broadcast(io, payload.roomCode);
         // Dummies automatisch antworten lassen
         maybeAutoSimulateAnswers(io, payload.roomCode);
@@ -2250,6 +2268,61 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (typeof payload.maxFails === 'number') {
           room.connectionsMaxFails = Math.max(0, Math.min(10, Math.round(payload.maxFails)));
         }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4 gewinnt / Only Connect — BunteTüete Sub-Mechanik
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Team submittet einen Tipp. */
+    socket.on('qq:onlyConnectGuess', (
+      payload: { roomCode: string; teamId: string; text: string },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const result = qqOnlyConnectSubmitGuess(room, payload.teamId, payload.text);
+        broadcast(io, payload.roomCode);
+        if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: nächsten Hint manuell aufdecken (sonst läuft Auto-Timer). */
+    socket.on('qq:onlyConnectAdvanceHint', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqOnlyConnectAdvanceHint(room, () => {
+          const r = getQQRoom(payload.roomCode);
+          if (!r) return;
+          broadcast(io, payload.roomCode);
+        });
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: alle restlichen Hinweise aufdecken (Auflösungs-Vorbereitung). */
+    socket.on('qq:onlyConnectRevealAll', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqOnlyConnectRevealAll(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    /** Moderator: Hint-Timer-Sekunden setzen. */
+    socket.on('qq:onlyConnectHintTimer', (
+      payload: { roomCode: string; seconds: number },
+      ack?: unknown
+    ) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const s = Math.max(5, Math.min(60, Math.round(payload.seconds)));
+        room.onlyConnectHintDurationSec = s;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

@@ -25,14 +25,18 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
 };
 
 // ── Bunte Tüte sub-mechanics ──────────────────────────────────────────────────
-export type QQBunteTueteKind = 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map';
+export type QQBunteTueteKind =
+  | 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map'
+  | 'onlyConnect' | 'bluff';
 
 export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: string; emoji: string }> = {
-  hotPotato:  { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },
-  top5:       { de: 'Top 5',           en: 'Top 5',      emoji: '🏆' },
-  oneOfEight: { de: 'Imposter',        en: 'Imposter',   emoji: '🕵️' },
-  order:      { de: 'Fix It',          en: 'Fix It',     emoji: '🔀' },
-  map:        { de: 'Pin It',          en: 'Pin It',     emoji: '📍' },
+  hotPotato:   { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },
+  top5:        { de: 'Top 5',           en: 'Top 5',      emoji: '🏆' },
+  oneOfEight:  { de: 'Imposter',        en: 'Imposter',   emoji: '🕵️' },
+  order:       { de: 'Fix It',          en: 'Fix It',     emoji: '🔀' },
+  map:         { de: 'Pin It',          en: 'Pin It',     emoji: '📍' },
+  onlyConnect: { de: '4 gewinnt',       en: 'Connect 4',  emoji: '🧩' },
+  bluff:       { de: 'Bluff',           en: 'Bluff',      emoji: '🎭' },
 };
 
 export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
@@ -147,12 +151,50 @@ export interface QQBunteTueteHotPotato {
   // No extra fields — text/answer from parent QQQuestion
 }
 
+/**
+ * 4 gewinnt / Connect 4: 4 Hinweise werden nacheinander aufgedeckt. Teams
+ * raten den verbindenden Begriff per Freitext. Wer als Erstes richtig liegt
+ * gewinnt — bei Tie alle aus dem Tie, schnellstes setzt zuerst (wie sonst).
+ * Anti-Spam: 1 Tipp ist frei, danach gesperrt.
+ */
+export interface QQBunteTueteOnlyConnect {
+  kind: 'onlyConnect';
+  /** Genau 4 Hinweise. Werden Index-für-Index aufgedeckt. */
+  hints: string[];
+  hintsEn?: string[];
+  /** Kanonische Antwort. */
+  answer: string;
+  answerEn?: string;
+  /** Optionale Alternativ-Schreibweisen — Match wie bei CHEESE
+   *  (case-insensitive, substring/sub-substring). */
+  acceptedAnswers?: string[];
+  acceptedAnswersEn?: string[];
+}
+
+/**
+ * Bluff / Fibbage-Style: obskure Frage, jedes Team tippt eine erfundene
+ * Antwort. Phase 2: alle Bluffs + die echte Antwort werden gemischt
+ * angezeigt, Teams stimmen ab. Doppelte Punktquelle:
+ *   - +2 Teilpunkte für Team das die echte Antwort wählt
+ *   - +1 Teilpunkt pro Team, das auf deinen Bluff reinfällt
+ * Wer am Ende meiste Teilpunkte → setzt (wie Top5).
+ */
+export interface QQBunteTueteBluff {
+  kind: 'bluff';
+  /** Frage-Text wird aus QQQuestion.text/textEn übernommen. */
+  /** Echte Antwort. */
+  realAnswer: string;
+  realAnswerEn?: string;
+}
+
 export type QQBunteTuetePayload =
   | QQBunteTueteTop5
   | QQBunteTueteOneOfEight
   | QQBunteTueteOrder
   | QQBunteTueteMap
-  | QQBunteTueteHotPotato;
+  | QQBunteTueteHotPotato
+  | QQBunteTueteOnlyConnect
+  | QQBunteTueteBluff;
 
 // ── Questions ─────────────────────────────────────────────────────────────────
 export interface QQQuestion {
@@ -241,6 +283,9 @@ export interface QQHLPair {
 
 /** Moderator-wählbare Zeit pro H/L-Runde. */
 export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 10;
+
+/** Default Sekunden zwischen Hint-Reveals bei 4 gewinnt / Only Connect. */
+export const QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC = 15;
 
 // ── 4×4 Connections (Finalrunde) ─────────────────────────────────────────────
 // 16 Begriffe in 4×4 Raster. 4 Gruppen à 4 Items. Teams jagen parallel und
@@ -744,6 +789,21 @@ export interface QQStateUpdate {
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)
   imposterEliminated: string[];         // teamIds eliminated (chose the false statement)
+  // 4 gewinnt / Connect 4 (BUNTE_TUETE kind=onlyConnect)
+  /** Aktuell sichtbarer Hint-Index (0..3). -1 = noch nicht gestartet. */
+  onlyConnectHintIndex: number;
+  /** Server-Timestamp wann der aktuelle Hint angezeigt wurde. */
+  onlyConnectHintRevealedAt: number | null;
+  /** Teams die schon falsch getippt haben — gesperrt für diese Frage. */
+  onlyConnectLockedTeams: string[];
+  /** Erstes richtig-tippendes Team. Null wenn noch keiner. */
+  onlyConnectWinnerTeamId: string | null;
+  /** Bei welchem Hint-Index (0..3) wurde gelöst — für Punkte-Skala. */
+  onlyConnectWinnerHintIdx: number | null;
+  /** Per-Team Submission (für Beamer-Display + Logging). */
+  onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
+  /** Moderator-einstellbare Sekunden bis Auto-Advance des nächsten Hinweises (Default 15). */
+  onlyConnectHintDurationSec: number;
   // Last placed cell — for beamer placement animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Cells temporarily frozen (expire after next placement), already reflected in grid.frozen

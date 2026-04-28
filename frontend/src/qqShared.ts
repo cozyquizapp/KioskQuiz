@@ -586,6 +586,13 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 0; transform: translateY(6px); }
     100% { opacity: 1; transform: translateY(0); }
   }
+  /* Pause/Lobby Panel-Inhalts-Wechsel: Card-Hülle bleibt stehen, nur der
+     innere Content fadet weich rein (mit minimalem Y-Lift + Blur-Out). */
+  @keyframes qqPanelContentFade {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.99); filter: blur(2px); }
+    50%  { opacity: 0.7; filter: blur(0); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

@@ -11613,12 +11613,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       </div>
 
-      {/* Records panel — mit Slide-In pro Panel-Wechsel */}
+      {/* Records panel — Card bleibt STABIL, nur der Inhalt wechselt mit
+          weicher Cross-Fade-Animation. (User-Wunsch 2026-04-28: 'card immer
+          gleich groß, nur Inhalte mit nicer Animation ändern'.)
+          - Card mountet einmal (kein key), bleibt während aller Panel-Wechsel
+          - Fixe minHeight verhindert Card-Resize bei Inhalts-Wechseln
+          - Inner content hat key={activePanel.key} → re-mount für Fade-Anim,
+            aber nur das innere Element. Card-Hülle, Border, Shimmer, Glow
+            laufen ungestört durch. */}
       {activePanel && (
         <div style={{
           width: '100%', maxWidth: 920, position: 'relative', zIndex: 5,
         }}>
-          <div key={activePanel.key} style={{
+          <div style={{
             background: cardBg,
             borderRadius: 26,
             padding: 'clamp(28px, 3.5vw, 48px)',
@@ -11628,6 +11635,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               `0 0 64px ${modeGlow},` +
               `0 0 0 1px rgba(255,235,200,0.04) inset,` +
               `0 -3px 0 ${modeAccent} inset`,
+            // Fixe Mindesthöhe — Card schwankt nicht mehr je nach Inhalt.
+            minHeight: 'clamp(380px, 50vh, 560px)',
             animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
             position: 'relative', overflow: 'hidden',
           }}>
@@ -11645,7 +11654,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               background: `radial-gradient(circle, ${modeAccent}1c 0%, transparent 70%)`,
               pointerEvents: 'none',
             }} />
-            <div style={{ position: 'relative' }}>{activePanel.node}</div>
+            {/* Inner content — key sorgt für Re-Mount + Cross-Fade-Animation
+                bei Panel-Wechsel. Card-Hülle bleibt stabil. */}
+            <div
+              key={activePanel.key}
+              style={{
+                position: 'relative',
+                animation: 'qqPanelContentFade 0.7s cubic-bezier(0.22,1,0.36,1) both',
+              }}
+            >
+              {activePanel.node}
+            </div>
           </div>
           {panels.length > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 22 }}>

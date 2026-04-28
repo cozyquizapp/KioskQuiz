@@ -500,6 +500,129 @@ export function maybeAutoImposter(io: SocketIOServer, roomCode: string): void {
   }, delay);
 }
 
+/** Pro Raum + Team max ein laufender Connections-AI-Timer. Verhindert,
+ *  dass mehrere maybeAutoConnections-Aufrufe Timer für dasselbe Team stapeln. */
+const connectionsAiTimers: Map<string, Map<string, ReturnType<typeof setTimeout>>> = new Map();
+
+function getConnAiTimerMap(roomCode: string): Map<string, ReturnType<typeof setTimeout>> {
+  let m = connectionsAiTimers.get(roomCode);
+  if (!m) { m = new Map(); connectionsAiTimers.set(roomCode, m); }
+  return m;
+}
+
+/**
+ * 4×4 Connections — Dummies während 'active' picken zufällig 4 Items und submitten.
+ * Skill: 60% Chance auf eine echte Gruppe (alle 4 Items derselben Gruppe), sonst
+ * gemischter Mist. Wird wiederholt aufgerufen bis Team finished/locked ist.
+ *
+ * Während 'placement': pendingFor-Dummy setzt via maybeAutoPlace-Pfad.
+ */
+export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'CONNECTIONS_4X4') return;
+  if (!room.connections) return;
+
+  // ── Placement-Phase: Dummy setzt das Feld ─────────────────────────────────
+  if (room.connections.phase === 'placement') {
+    const teamId = room.pendingFor;
+    if (!teamId || !isDummy(room, teamId)) return;
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'CONNECTIONS_4X4') return;
+      if (live.connections?.phase !== 'placement') return;
+      if (live.pendingFor !== teamId) return;
+      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+        availableKinds: ['PLACE'], phase: live.gamePhaseIndex,
+      });
+      if (!choice) {
+        qqSkipCurrentPlacement(live);
+        broadcast(io, roomCode);
+        if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
+        return;
+      }
+      try {
+        qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        if (live.connections?.phase === 'placement') qqConnectionsAfterPlacement(live);
+        broadcast(io, roomCode);
+        if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
+      } catch { /* skip */ }
+    }, 800 + Math.random() * 700);
+    return;
+  }
+
+  // ── Active-Phase: alle Dummies, die nicht fertig/locked sind, ticken ──────
+  if (room.connections.phase !== 'active') return;
+  const c = room.connections;
+  const timers = getConnAiTimerMap(roomCode);
+
+  for (const teamId of room.joinOrder) {
+    if (!isDummy(room, teamId)) continue;
+    const tp = c.teamProgress[teamId];
+    if (!tp || tp.isLockedOut || tp.finishedAt != null) continue;
+    // Bereits ein Timer für dieses Team scheduled? Dann skip — verhindert Duplikat-Stack.
+    if (timers.has(teamId)) continue;
+
+    // Items aus eigenen gefundenen Gruppen sind ausgeschlossen
+    const usedItems = new Set<string>();
+    for (const gid of tp.foundGroupIds) {
+      const g = c.payload.groups.find(gg => gg.id === gid);
+      g?.items.forEach(it => usedItems.add(it));
+    }
+
+    // Skill: 60% Chance versucht der Dummy bewusst eine echte Gruppe.
+    // Sonst mischt er Items aus mehreren Gruppen. Failed Attempts skalieren
+    // den Skill nicht — mehr Glück als Verstand.
+    const beCorrect = Math.random() < 0.6;
+    let pick: string[] = [];
+    if (beCorrect) {
+      const remainingGroups = c.payload.groups.filter(g => !tp.foundGroupIds.includes(g.id));
+      if (remainingGroups.length > 0) {
+        const g = remainingGroups[Math.floor(Math.random() * remainingGroups.length)];
+        pick = g.items.slice();
+      }
+    }
+    if (pick.length !== 4) {
+      const pool = c.itemOrder.filter(it => !usedItems.has(it));
+      const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+      pick = shuffled.slice(0, 4);
+    }
+
+    // Reaktionszeit: 4-9 Sek pro Versuch
+    const delay = 4000 + Math.random() * 5000;
+    const localTeamId = teamId;
+    const localPick = pick.slice();
+    const handle = setTimeout(() => {
+      timers.delete(localTeamId);
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'CONNECTIONS_4X4') return;
+      if (live.connections?.phase !== 'active') return;
+      const ltp = live.connections.teamProgress[localTeamId];
+      if (!ltp || ltp.isLockedOut || ltp.finishedAt != null) return;
+      // Selektion setzen (replace) und sofort submitten
+      ltp.selectedItems = localPick.slice();
+      const result = qqConnectionsSubmitGroup(live, localTeamId);
+      // Auto-Reveal wenn alle fertig
+      if (qqConnectionsAllDone(live) && live.connections?.phase === 'active') {
+        qqConnectionsToReveal(live);
+      }
+      broadcast(io, roomCode);
+      // Nochmal ticken wenn Dummy noch lebt (nächster Versuch)
+      if (live.connections?.phase === 'active') maybeAutoConnections(io, roomCode);
+      void result;
+    }, delay);
+    timers.set(teamId, handle);
+  }
+}
+
+/** Stoppe alle Connections-AI-Timer für einen Raum (z.B. bei Clear/Phase-End). */
+function stopConnectionsAiTimers(roomCode: string): void {
+  const m = connectionsAiTimers.get(roomCode);
+  if (!m) return;
+  for (const h of m.values()) clearTimeout(h);
+  m.clear();
+}
+
 /**
  * Wenn QUESTION_ACTIVE + Dummies im Raum, lass Dummies gestaffelt antworten
  * (gleichmäßig über das Timer-Fenster verteilt, mit Jitter).
@@ -1594,6 +1717,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         broadcast(io, payload.roomCode);
         // Falls noch Dummy in der placementQueue → weiter automatisch platzieren
         maybeAutoPlace(io, payload.roomCode);
+        // Connections-Placement: nächster Dummy weitermachen lassen
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          maybeAutoConnections(io, payload.roomCode);
+        }
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });
@@ -2014,10 +2141,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
           const r = getQQRoom(payload.roomCode);
           if (r && r.connections && r.connections.phase === 'active') {
             qqConnectionsToReveal(r);
+            stopConnectionsAiTimers(payload.roomCode);
             broadcast(io, payload.roomCode);
           }
         });
         broadcast(io, payload.roomCode);
+        // Dummies anschubsen
+        maybeAutoConnections(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -2058,6 +2188,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         if (room.connections && room.connections.phase === 'active') {
           qqConnectionsToReveal(room);
+          stopConnectionsAiTimers(payload.roomCode);
           broadcast(io, payload.roomCode);
         }
         ok(ack);
@@ -2071,6 +2202,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (room.connections && room.connections.phase === 'reveal') {
           qqConnectionsToPlacement(room);
           broadcast(io, payload.roomCode);
+          // Wenn das Top-Team ein Dummy ist, sofort losziehen lassen
+          maybeAutoConnections(io, payload.roomCode);
         }
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -2081,6 +2214,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqConnectionsClear(room);
+        stopConnectionsAiTimers(payload.roomCode);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

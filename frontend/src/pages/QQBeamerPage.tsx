@@ -11148,65 +11148,86 @@ function ConnectionsGrid({ state: s }: {
           </div>
         );
       })}
-      {isReveal && (
-        <div style={{
-          gridColumn: '1 / -1',
-          marginTop: 'clamp(8px, 1vh, 14px)',
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 'clamp(8px, 1vw, 14px)',
-        }}>
-          {c.payload.groups.map((g, i) => {
-            // Teams die diese Gruppe gefunden haben — Reihenfolge: schnellster zuerst
-            // (sortiert nach Index, an dem sie's in foundGroupIds einreihten = ungefähr
-            // Reihenfolge der Funde, exakte Speed-Order kommt aus placementOrder).
-            const finders = s.teams.filter(t =>
-              c.teamProgress[t.id]?.foundGroupIds.includes(g.id)
-            );
-            // Sort: nach placementOrder Position (= Speed) wenn vorhanden
-            finders.sort((a, b) => {
-              const ia = c.placementOrder.indexOf(a.id);
-              const ib = c.placementOrder.indexOf(b.id);
-              if (ia === -1 && ib === -1) return 0;
-              if (ia === -1) return 1;
-              if (ib === -1) return -1;
-              return ia - ib;
-            });
-            const color = CONNECTIONS_GROUP_COLORS[i];
-            return (
-              <div key={g.id} style={{
-                padding: '10px 14px 14px', borderRadius: 12,
-                background: `${color}22`,
-                border: `1.5px solid ${color}`,
-                color: '#fff', fontWeight: 800, fontSize: 'clamp(13px, 1.3vw, 18px)',
-                textAlign: 'center',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                animation: `contentReveal 0.5s ease ${0.6 + i * 0.12}s both`,
-              }}>
-                <div style={{ lineHeight: 1.2 }}>
-                  {lang === 'de' ? g.name : (g.nameEn ?? g.name)}
-                </div>
-                {finders.length > 0 && (
-                  <div style={{
-                    display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
-                    gap: 'clamp(4px, 0.5vw, 8px)',
-                  }}>
-                    {finders.map((tm, fIdx) => (
-                      <div key={tm.id} title={tm.name} style={{
-                        position: 'relative',
-                        animation: `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.9 + i * 0.12 + fIdx * 0.08}s both`,
-                      }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 3.4vw, 52px)'} style={{
-                          boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,
-                        }} />
-                      </div>
-                    ))}
+      {isReveal && (() => {
+        // Spannungskurve: Avatare werden in REVERSE-Placement-Order eingeblendet
+        // (letztes Team zuerst, top-Team zuletzt). Pro Team alle gefundenen
+        // Gruppen GLEICHZEITIG poppen, dann nächstes Team. Pro Team-Step ~1s
+        // damit man sieht wer gerade dran ist.
+        // placementOrder ist sortiert nach (foundCount DESC, finishedAt ASC) —
+        // also platzieren-Reihenfolge. Wir reversen für Spannung („und auf
+        // Platz N kommt …, auf Platz N-1 kommt …, und auf Platz 1 …").
+        const teamRevealSteps = [...c.placementOrder].reverse();
+        // Teams die NICHT in placementOrder sind (0 Gruppen gefunden) kommen
+        // zu Beginn (schwächste).
+        const teamsWithGroups = new Set(c.placementOrder);
+        const noGroupTeams = s.teams.filter(t => !teamsWithGroups.has(t.id) && c.teamProgress[t.id]).map(t => t.id);
+        const fullRevealOrder = [...noGroupTeams, ...teamRevealSteps];
+        // Pro Team: 1.0s Stepping-Delay + 0.4s Animation
+        const teamStepMs = 1000;
+        const baseDelay = 0.6; // nach Group-Cell-Reveal
+        const teamRevealDelay = (teamId: string): number => {
+          const idx = fullRevealOrder.indexOf(teamId);
+          if (idx < 0) return baseDelay;
+          return baseDelay + idx * (teamStepMs / 1000);
+        };
+        return (
+          <div style={{
+            gridColumn: '1 / -1',
+            marginTop: 'clamp(8px, 1vh, 14px)',
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 'clamp(8px, 1vw, 14px)',
+          }}>
+            {c.payload.groups.map((g, i) => {
+              const finders = s.teams.filter(t =>
+                c.teamProgress[t.id]?.foundGroupIds.includes(g.id)
+              );
+              finders.sort((a, b) => {
+                const ia = c.placementOrder.indexOf(a.id);
+                const ib = c.placementOrder.indexOf(b.id);
+                if (ia === -1 && ib === -1) return 0;
+                if (ia === -1) return 1;
+                if (ib === -1) return -1;
+                return ia - ib;
+              });
+              const color = CONNECTIONS_GROUP_COLORS[i];
+              return (
+                <div key={g.id} style={{
+                  padding: '10px 14px 14px', borderRadius: 12,
+                  background: `${color}22`,
+                  border: `1.5px solid ${color}`,
+                  color: '#fff', fontWeight: 800, fontSize: 'clamp(13px, 1.3vw, 18px)',
+                  textAlign: 'center',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  animation: `contentReveal 0.5s ease ${i * 0.06}s both`,
+                }}>
+                  <div style={{ lineHeight: 1.2 }}>
+                    {lang === 'de' ? g.name : (g.nameEn ?? g.name)}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  {finders.length > 0 && (
+                    <div style={{
+                      display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                      gap: 'clamp(4px, 0.5vw, 8px)',
+                    }}>
+                      {finders.map(tm => (
+                        <div key={tm.id} title={tm.name} style={{
+                          position: 'relative',
+                          // Suspense: pro Team eigener Delay (worst→best),
+                          // ALLE Gruppen eines Teams ploppen gleichzeitig.
+                          animation: `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${teamRevealDelay(tm.id)}s both`,
+                        }}>
+                          <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(36px, 3.4vw, 52px)'} style={{
+                            boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,
+                          }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }

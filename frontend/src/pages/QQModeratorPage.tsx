@@ -394,7 +394,9 @@ export default function QQModeratorPage() {
         // 4×4-Finale durchspielen: Sub-Phasen via state.connections.phase steuern.
         // - intro:     Lesepause für die Mechanik-Erklärung, dann Spielzeit starten
         // - active:    nichts tun (Timer läuft, Dummies spielen, Auto-End wenn alle done)
-        // - reveal:    Lesepause für Gruppen-Avatare, dann Placement starten
+        // - reveal:    Lesepause für Gruppen-Avatare (worst→best Spannungs-Cascade),
+        //              dann Placement starten. Dauer skaliert mit Team-Anzahl
+        //              (1s pro Team + 4s Buffer für Gruppen-Cells).
         // - placement: nichts (Dummies platzieren, qqConnectionsAfterPlacement schaltet weiter)
         // - done:      kurz Pause, dann nextQuestion → transitioniert zu GAME_OVER
         const cp = s.connections?.phase;
@@ -402,7 +404,8 @@ export default function QQModeratorPage() {
           delayMs = 8000;
           action = () => emit('qq:connectionsBegin', { roomCode });
         } else if (cp === 'reveal') {
-          delayMs = 9000; // Gruppen-Labels + Avatar-Cascade lesen lassen
+          const teamCount = s.teams.length;
+          delayMs = 4000 + teamCount * 1000; // 4s Base + 1s pro Team-Reveal
           action = () => emit('qq:connectionsToPlacement', { roomCode });
         } else if (cp === 'done') {
           delayMs = 4000;
@@ -522,6 +525,19 @@ export default function QQModeratorPage() {
       // PLACEMENT: grid shown, teams are placing — Space moves to next question (PHASE_INTRO)
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
+      // CONNECTIONS_4X4 (Großes Finale) — Space je nach Sub-Phase weiterschalten.
+      else if (s.phase === 'CONNECTIONS_4X4') {
+        const cp = s.connections?.phase;
+        if (cp === 'intro')          emitRef.current('qq:connectionsBegin', { roomCode });
+        else if (cp === 'active')    emitRef.current('qq:connectionsForceReveal', { roomCode });
+        else if (cp === 'reveal')    emitRef.current('qq:connectionsToPlacement', { roomCode });
+        else if (cp === 'placement' && !s.pendingFor) {
+          // Alle Setzungen durch — kann nur passieren wenn Auto-Flow fertig
+          // ist. Falls qqConnectionsAfterPlacement nicht greift: hart auf done.
+          emitRef.current('qq:connectionsToPlacement', { roomCode });
+        }
+        else if (cp === 'done')      emitRef.current('qq:nextQuestion', { roomCode });
+      }
       else if (s.phase === 'GAME_OVER')
         emitRef.current('qq:showThanks', { roomCode });
       return;
@@ -2266,6 +2282,7 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
   const finished = teamIds.filter((id: string) => (c.teamProgress[id]?.finishedAt ?? null) != null).length;
 
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 13, fontWeight: 800, color: '#FBBF24', letterSpacing: 0.4, textTransform: 'uppercase' }}>
         🔗 4×4 · {phase}
@@ -2316,6 +2333,75 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
           ⏭ Skip → Spielende
         </button>
       )}
+    </div>
+
+    {/* Team-Status-Übersicht: pro Team Avatar + Found-Groups + Fail-Counter.
+        Damit der Mod das Finale-Geschehen verfolgen kann (sonst sieht er nur
+        Phase + Buttons). User-Wunsch 2026-04-28. */}
+    {(phase === 'active' || phase === 'reveal' || phase === 'placement') && (
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 6, padding: '8px 10px', borderRadius: 10,
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        {s.teams.map((tm: any) => {
+          const tp = c.teamProgress?.[tm.id];
+          if (!tp) return null;
+          const foundCount = (tp.foundGroupIds ?? []).length;
+          const fails = tp.failedAttempts ?? 0;
+          const locked = tp.isLockedOut;
+          const finished = tp.finishedAt != null;
+          const isPlacing = phase === 'placement' && c.placementOrder?.[c.placementCursor ?? 0] === tm.id;
+          const statusBg = isPlacing ? 'rgba(34,197,94,0.18)'
+            : locked ? 'rgba(239,68,68,0.10)'
+            : finished ? 'rgba(251,191,36,0.10)'
+            : 'rgba(255,255,255,0.02)';
+          const statusBorder = isPlacing ? 'rgba(34,197,94,0.55)'
+            : locked ? 'rgba(239,68,68,0.4)'
+            : finished ? 'rgba(251,191,36,0.4)'
+            : tm.color + '44';
+          return (
+            <div key={tm.id} style={{
+              padding: '6px 10px', borderRadius: 8,
+              background: statusBg,
+              border: `1.5px solid ${statusBorder}`,
+              display: 'flex', flexDirection: 'column', gap: 4,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  width: 10, height: 10, borderRadius: '50%', background: tm.color,
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: 12, fontWeight: 800, color: '#e2e8f0',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+                }}>{tm.name}</span>
+                {isPlacing && <span style={{ fontSize: 10, fontWeight: 800, color: '#86efac' }}>SETZT</span>}
+                {locked && <span style={{ fontSize: 10, fontWeight: 800, color: '#FCA5A5' }}>RAUS</span>}
+                {finished && !locked && <span style={{ fontSize: 10, fontWeight: 800, color: '#FBBF24' }}>FERTIG</span>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                {/* Found-Groups als 4 Dots */}
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[0, 1, 2, 3].map(i => (
+                    <span key={i} style={{
+                      width: 8, height: 8, borderRadius: 2,
+                      background: i < foundCount ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                      border: i < foundCount ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
+                    }} />
+                  ))}
+                </div>
+                <span style={{ color: '#94a3b8' }}>· Gruppen {foundCount}/4</span>
+                {fails > 0 && <span style={{ color: '#FCA5A5', marginLeft: 'auto' }}>✕ {fails}/{c.maxFailedAttempts}</span>}
+                {phase === 'placement' && tp && tp.placementRemaining != null && tp.placementRemaining > 0 && (
+                  <span style={{ color: '#86efac', marginLeft: 'auto' }}>×{tp.placementRemaining}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
     </div>
   );
 }

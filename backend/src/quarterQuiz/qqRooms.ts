@@ -2726,7 +2726,10 @@ function updateTerritories(room: QQRoomState): void {
 // Wird verwendet, wenn (a) ein Dummy keinen gültigen Zug hat, (b) der Moderator
 // per Skip-Button das aktuelle Team überspringt.
 export function qqSkipCurrentPlacement(room: QQRoomState): void {
-  if (room.phase !== 'PLACEMENT' || !room.pendingFor) return;
+  // Erlaubt regulären PLACEMENT-Skip ODER Connections-Placement-Skip (Finale).
+  const isConnPlacement = room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement';
+  if (!isConnPlacement && room.phase !== 'PLACEMENT') return;
+  if (!room.pendingFor) return;
   const teamId = room.pendingFor;
   // Multi-Slot-Reste (PLACE_2, Joker-Bonus, pendingMultiSlot) verwerfen,
   // damit finishPlacement nicht in einer halben Runde hängen bleibt.
@@ -2734,6 +2737,13 @@ export function qqSkipCurrentPlacement(room: QQRoomState): void {
   if (stats) {
     stats.placementsLeft = 0;
     stats.pendingMultiSlot = 0;
+  }
+  // Bei Connections-Placement: alle restlichen Slots des aktuellen Teams
+  // verwerfen + zum nächsten Team springen.
+  if (isConnPlacement && room.connections) {
+    room.connections.placementRemaining = 0;
+    qqConnectionsAfterPlacement(room);
+    return;
   }
   finishPlacement(room);
 }

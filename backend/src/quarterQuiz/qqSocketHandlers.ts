@@ -2201,7 +2201,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqSwapOneCell(room, payload.teamId, payload.row, payload.col);
+        // Connections-Placement: Cursor erst NACH dem 2. Swap-Step advancen
+        // (result.done === true). Nach 1. Step (own cell) noch warten.
+        if (result.done && room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          qqConnectionsAfterPlacement(room);
+        }
         broadcast(io, payload.roomCode);
+        if (result.done && room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          maybeAutoConnections(io, payload.roomCode);
+        }
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });

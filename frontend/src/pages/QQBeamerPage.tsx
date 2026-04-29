@@ -1711,6 +1711,18 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   if (revealed) return null;
 
+  // 2026-04-29 (User-Feedback): Chips skalieren mit Anzahl, sonst kollidiert
+  // der Block bei 30+ genannten Antworten mit der Frage-Card oben.
+  // 4 Tiers: ≤8 = groß, ≤20 = medium, ≤32 = small, sonst = xs.
+  const n = used.length;
+  const tier: 'lg' | 'md' | 'sm' | 'xs' = n <= 8 ? 'lg' : n <= 20 ? 'md' : n <= 32 ? 'sm' : 'xs';
+  const chipStyles = {
+    lg: { fontSize: 'clamp(20px, 2.2vw, 32px)', padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
+    md: { fontSize: 'clamp(16px, 1.7vw, 24px)', padding: 'clamp(6px, 0.8vh, 11px) clamp(12px, 1.3vw, 20px)', gap: 8, border: 2, shadowAlpha: 0.15 },
+    sm: { fontSize: 'clamp(13px, 1.4vw, 19px)', padding: 'clamp(5px, 0.6vh, 8px) clamp(10px, 1.1vw, 16px)', gap: 6, border: 1.5, shadowAlpha: 0.12 },
+    xs: { fontSize: 'clamp(11px, 1.2vw, 16px)', padding: 'clamp(4px, 0.5vh, 7px) clamp(8px, 0.9vw, 13px)', gap: 5, border: 1, shadowAlpha: 0.10 },
+  }[tier];
+
   return (
     <div style={{
       position: 'absolute', bottom: 16, left: 0, right: 0,
@@ -1720,17 +1732,17 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       {/* Used answers list — prominent über dem Active-Team-Pill */}
       {used.length > 0 && (
         <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10,
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: chipStyles.gap,
           maxWidth: 'min(94vw, 1500px)',
         }}>
           {used.map((a, i) => (
             <div key={`${a}-${i}`} style={{
-              padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)',
+              padding: chipStyles.padding,
               borderRadius: 999,
               background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.10))',
-              border: '2px solid rgba(34,197,94,0.55)',
-              boxShadow: '0 4px 14px rgba(34,197,94,0.18)',
-              color: '#86efac', fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 800,
+              border: `${chipStyles.border}px solid rgba(34,197,94,0.55)`,
+              boxShadow: `0 4px 14px rgba(34,197,94,${chipStyles.shadowAlpha})`,
+              color: '#86efac', fontSize: chipStyles.fontSize, fontWeight: 800,
               letterSpacing: 0.2,
               animation: 'contentReveal 0.4s ease both',
             }}>
@@ -8356,10 +8368,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             - Bei nicht-revealed (active) center bleibt für saubere Mitte.
             Vertikales overflow visible erlaubt, dass Card-Glow + Winner-Border
             nicht durch overflow:hidden geclipped werden. */}
+        {(() => {
+          // 2026-04-29 (User-Feedback): Bei HotPotato mit vielen genannten
+          // Antworten kollidiert das Chip-Layout (bottom:16, wrap-up) mit der
+          // mittig-zentrierten Frage-Card. Ab 12 Chips Frage hochschieben
+          // (justifyContent: flex-start) damit unten Platz für den Chip-Block
+          // bleibt. Chips skalieren ihrerseits in HotPotatoBeamerView.
+          const isHotPotatoActive = q.category === 'BUNTE_TUETE'
+            && q.bunteTuete?.kind === 'hotPotato' && !revealed;
+          const hpUsedCount = (s.hotPotatoUsedAnswers?.length ?? 0);
+          const hpCompact = isHotPotatoActive && hpUsedCount > 12;
+          return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           padding: 'clamp(20px, 3vh, 44px) clamp(28px, 4vw, 64px) clamp(24px, 3.5vh, 56px)',
-          justifyContent: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center',
+          justifyContent: hpCompact
+            ? 'flex-start'
+            : (revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center'),
           // Mehr atmender Gap zwischen Sections — Cards sollen nicht kleben.
           gap: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(20px, 3vh, 40px)' : 0,
           alignItems: 'center', position: 'relative', zIndex: 5,
@@ -8409,8 +8434,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Card und Text behalten ihre Größe, nur Opacity dimmt (1 → 0.45)
               und Padding bleibt konstant. So gibt's GAR keine Resize-Bewegung
               mehr — der Reveal-Indikator ist allein das Dimmen + die neuen
-              Avatar/Answer-Cards die darunter erscheinen. */}
+              Avatar/Answer-Cards die darunter erscheinen.
+              2026-04-29 (User-Feedback): Bei HotPotato mit vielen Chips
+              (hpCompact) wird die Card flacher + Text kleiner, damit unten
+              Platz fuer den Chip-Block bleibt. */}
           {(() => {
+            const cardPadding = hpCompact
+              ? 'clamp(10px, 1.4vh, 18px) clamp(110px, 12vw, 180px) clamp(10px, 1.4vh, 18px)'
+              : 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)';
+            const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2vh, 16px)' : 'clamp(16px, 2.2vh, 32px)';
+            const cardFontSize = hpCompact ? 'clamp(22px, 2.6vw, 38px)' : qFontSize;
             return (
               <div style={{
                 background: cardBg,
@@ -8419,22 +8452,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 boxShadow: revealed
                   ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
                   : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-                // EIN konsistentes Padding für beide Phasen — keine Padding-
-                // Animation mehr. paddingLeft großzügig damit die Kategorie-
-                // Pille (top:20, left:48) nicht überlappt.
-                padding: 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)',
-                marginBottom: 'clamp(16px, 2.2vh, 32px)',
+                padding: cardPadding,
+                marginBottom: cardMarginBottom,
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
                 animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease',
+                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, padding 0.4s ease, margin-bottom 0.4s ease',
                 opacity: revealed ? 0.55 : 1,
               }}>
                 <div key={lang} style={{
-                  fontSize: qFontSize,
+                  fontSize: cardFontSize,
                   fontWeight: 900, lineHeight: 1.22,
                   color: '#F1F5F9',
                   animation: 'langFadeIn 0.4s ease both',
+                  transition: 'font-size 0.4s ease',
                 }}>
                   {qText}
                 </div>
@@ -9724,6 +9755,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
         </div>
+          );
+        })()}
 
         {/* ── Image window panel (window-left / window-right — NOT CHEESE, which uses overlay) ── */}
         {isWindow && (

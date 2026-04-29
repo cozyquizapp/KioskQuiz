@@ -10485,43 +10485,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
       </div>
-      {/* Sub-Header nur bei Step 0, kleiner (darunter), wenn schon bei Step 1+ */}
-      {bamActive && (
-        <div style={{
-          fontSize: 'clamp(18px, 2.2vw, 32px)', fontWeight: 800,
-          color: '#fde68a', textAlign: 'center', letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-          position: 'relative', zIndex: 7,
-        }}>
-          {lang === 'en' ? 'Last becomes first' : 'Die Letzten werden die Ersten'}
-        </div>
-      )}
+      {/* B14 (2026-04-29): Sub-Header 'Die Letzten werden die Ersten' komplett
+          entfernt — User-Wunsch: 'doppelt im Intro, beides Mal raus'. */}
 
       {/* Step 0: Was ist Comeback */}
       {step === 0 && (
         <>
-          {/* Slogan-Hero — biblisches Bonmot dramatisch über der Erklär-Card.
-              (User-Wunsch 2026-04-28: 'comeback text, die letzten werden die
-              ersten?'). Layered-Glow + 3D-Drop wie das Kategorie-Intro. */}
-          <div key="intro0-slogan" style={{
-            fontFamily: 'Nunito, system-ui, sans-serif',
-            fontSize: 'clamp(40px, 6vw, 96px)', fontWeight: 900, lineHeight: 1.05,
-            color: '#FBBF24',
-            textAlign: 'center',
-            letterSpacing: '-0.005em',
-            textShadow:
-              '0 0 14px rgba(251,191,36,0.65), ' +
-              '0 0 40px rgba(251,191,36,0.45), ' +
-              '0 0 96px rgba(251,191,36,0.25), ' +
-              '0 5px 0 rgba(0,0,0,0.45), ' +
-              '0 14px 28px rgba(0,0,0,0.55)',
-            animation: 'phasePop 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.1s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
-            position: 'relative', zIndex: 5,
-            marginBottom: 8,
-          }}>
-            {lang === 'en' ? 'The last shall be first.' : 'Die Letzten werden die Ersten sein.'}
-          </div>
           <div key="intro0" style={{
             maxWidth: 1100, textAlign: 'center',
             padding: '36px 48px', borderRadius: 28,

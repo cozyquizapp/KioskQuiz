@@ -2146,20 +2146,27 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             </div>
           );
         }
-        // Falsch
+        // Falsch — B10 (2026-04-29): User-Wunsch 'Leider falsch, naechstes
+        // Mal schafft ihr es'-Stil. Klare 2-zeilige Mitteilung: erst die
+        // Aussage 'Leider falsch', dann ermutigende Trost-Message.
         const msgs = lang === 'de'
-          ? ['Knapp daneben!', 'Nächste Chance gleich!', 'Dran bleiben!', 'Fast erwischt!', 'Weiter so!']
-          : ['So close!', 'Next chance is coming!', 'Stay in it!', 'Almost there!', 'Keep going!'];
+          ? ['Nächstes Mal schafft ihr es!', 'Knapp daneben — bleibt dran!', 'Fast erwischt — weiter so!', 'Nicht aufgeben — der nächste Punkt wartet!', 'Schade — aber gleich kommt eure Chance!']
+          : ["You'll get it next time!", 'So close — stay in it!', 'Almost there — keep going!', "Don't give up — your point is waiting!", 'Tough one — your chance is coming!'];
         const pick = msgs[Math.abs(hashString(q.id)) % msgs.length];
         return (
           <div style={{
-            marginTop: 8, padding: '9px 14px', borderRadius: 12, textAlign: 'center',
-            background: 'rgba(148,163,184,0.08)',
-            border: '1px dashed rgba(148,163,184,0.25)',
-            fontSize: 13, fontWeight: 700, color: '#cbd5e1',
+            marginTop: 8, padding: '12px 16px', borderRadius: 14, textAlign: 'center',
+            background: 'rgba(148,163,184,0.10)',
+            border: '1.5px dashed rgba(148,163,184,0.35)',
             animation: 'tcTrostIn 0.5s ease 0.45s both',
+            display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <QQEmojiIcon emoji="✨"/> {pick}
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#fca5a5' }}>
+              {lang === 'de' ? '😕 Leider falsch' : '😕 Sadly wrong'}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#cbd5e1' }}>
+              <QQEmojiIcon emoji="✨"/> {pick}
+            </div>
           </div>
         );
       })()}

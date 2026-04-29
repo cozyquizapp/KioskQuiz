@@ -3774,15 +3774,17 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     return (
                       <div key={`${r}-${c}`} style={{
                         aspectRatio: '1 / 1', borderRadius: 6,
+                        // B12 (2026-04-29): volle Sattigung — vorher opacity-Hex 'cc/88'
+                        // wirkte wie ein Filter ueber den Farben.
                         background: cellTeam
                           ? (isStuckCell
-                              ? `linear-gradient(135deg, ${cellTeam.color}ee, ${cellTeam.color}aa)`
-                              : `linear-gradient(135deg, ${cellTeam.color}cc, ${cellTeam.color}88)`)
+                              ? `linear-gradient(135deg, ${cellTeam.color}, ${cellTeam.color}dd)`
+                              : `linear-gradient(135deg, ${cellTeam.color}, ${cellTeam.color}dd)`)
                           : 'rgba(255,255,255,0.04)',
                         border: cellTeam
                           ? (isStuckCell
                               ? `2px solid #F59E0B`
-                              : `1.5px solid ${cellTeam.color}${isMine ? 'cc' : '66'}`)
+                              : `1.5px solid ${cellTeam.color}${isMine ? '' : 'aa'}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
@@ -4017,16 +4019,19 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     width: cellSize, height: cellSize, borderRadius: 6,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}66`
-                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}dd, ${team?.color ?? '#F59E0B'}aa)`
-                      : team ? `linear-gradient(135deg, ${team.color}bb, ${team.color}77)` : 'rgba(255,255,255,0.04)',
+                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}, ${team?.color ?? '#F59E0B'}dd)`
+                      : team ? `linear-gradient(135deg, ${team.color}, ${team.color}dd)` : 'rgba(255,255,255,0.04)',
                     border: isPending ? `3px dashed ${actionColor}`
                       : isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCandidate ? `2px solid #F59E0B`
-                      : clickable ? `2px solid ${actionColor}` : team ? `1px solid ${team.color}44` : '1px solid rgba(255,255,255,0.06)',
+                      : clickable ? `2px solid ${actionColor}` : team ? `1.5px solid ${team.color}aa` : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
-                    opacity: clickable || isSwapSelected ? 1 : team ? 0.85 : 0.3,
+                    // B12 (2026-04-29): non-clickable Team-Cells blieben auf opacity:0.85
+                    // sitzen — sah aus wie ein Filter ueber den Farben. Jetzt volle
+                    // Sattigung; nur leere Cells weiterhin gedimmt.
+                    opacity: team ? 1 : (clickable || isSwapSelected ? 1 : 0.3),
                     transition: 'all 0.15s',
                     boxShadow: isPending ? `0 0 0 4px ${actionColor}66, 0 0 22px ${actionColor}aa`
                       : isSwapSelected ? `0 0 14px ${actionColor}88`

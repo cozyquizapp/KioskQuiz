@@ -17,6 +17,7 @@ import {
   markJokerCells, findLastPlace,
 } from './qqBfs';
 import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
+import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -1044,18 +1045,18 @@ function evalSchaetzchen(room: QQRoomState, q: QQQuestion): QQEvalResult {
 }
 
 // ── CHEESE / Picture This (text match) ───────────────────────────────────────
+// B11 (2026-04-29): Fuzzy-Match via similarityScore (>=0.8) — toleriert
+// Tippfehler ('eifelturm' → 'eiffelturm') und Article-Strip; HotPotato/
+// OnlyConnect benutzen denselben Helper.
 function evalCheese(room: QQRoomState, q: QQQuestion): QQEvalResult {
-  const correctDE = (q.answer ?? '').trim().toLowerCase();
-  const correctEN = (q.answerEn ?? '').trim().toLowerCase();
-  const correct = new Set<string>([correctDE, correctEN].filter(Boolean));
+  const correctRaw = [q.answer, q.answerEn].filter(Boolean) as string[];
+  const correct = correctRaw.filter(c => c.trim().length >= 2);
 
   const winners: string[] = [];
   for (const ans of room.answers) {
-    const submitted = ans.text.trim().toLowerCase();
-    if (submitted.length < 2) continue; // too short to be a valid answer
-    const matches = [...correct].some(
-      c => c && (submitted === c || submitted.includes(c) || (c.length > 3 && c.includes(submitted) && submitted.length >= 3))
-    );
+    const submitted = ans.text.trim();
+    if (normalizeText(submitted).length < 2) continue;
+    const matches = correct.some(c => similarityScore(submitted, c) >= 0.8);
     if (matches) winners.push(ans.teamId);
   }
 
@@ -1123,22 +1124,32 @@ function evalTop5(
   room: QQRoomState,
   bt: import('../../../shared/quarterQuizTypes').QQBunteTueteTop5
 ): QQEvalResult {
-  const correctDE = (bt.answers ?? []).map(s => s.trim().toLowerCase()).filter(Boolean);
-  const correctEN = (bt.answersEn ?? []).map(s => s.trim().toLowerCase()).filter(Boolean);
-  const allCorrect = new Set([...correctDE, ...correctEN]);
+  // B11 (2026-04-29): Fuzzy-Match via similarityScore (>=0.8) — toleriert
+  // Tippfehler bei den 5 Antworten ('leonardo dicaprio' → 'leonardo di caprio').
+  const correctAll = ([...(bt.answers ?? []), ...(bt.answersEn ?? [])])
+    .map(s => s.trim())
+    .filter(Boolean);
 
-  if (allCorrect.size === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  if (correctAll.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
 
   for (const ans of room.answers) {
-    const submitted = ans.text.split('|').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const submitted = ans.text.split('|').map(s => s.trim()).filter(Boolean);
     let score = 0;
+    const matchedCorrect = new Set<number>();
     for (const s of submitted) {
-      // Check if submitted answer matches any correct answer (partial match)
-      const matched = [...allCorrect].some(c => c && (s === c || s.includes(c) || c.includes(s)));
-      if (matched) score++;
+      // Find first correct answer that fuzzy-matches and isn't already counted —
+      // verhindert dass eine einzige Eingabe mehrere richtige Antworten claimt.
+      for (let i = 0; i < correctAll.length; i++) {
+        if (matchedCorrect.has(i)) continue;
+        if (similarityScore(s, correctAll[i]) >= 0.8) {
+          matchedCorrect.add(i);
+          score++;
+          break;
+        }
+      }
     }
     scores.push({ teamId: ans.teamId, score });
     if (score > maxScore) maxScore = score;

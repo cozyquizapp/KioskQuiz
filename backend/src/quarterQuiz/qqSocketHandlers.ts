@@ -2106,9 +2106,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqPlaceCell(room, payload.teamId, payload.row, payload.col);
-        // Connections-Placement: nach jedem Setzen Cursor weiterschalten
+        // Connections-Placement: Cursor NUR weiterschalten wenn die ganze
+        // Action fertig ist (sonst frisst PLACE_2 zwei Slots statt einen).
+        // qqPlaceCell setzt pendingFor=null wenn finishPlacement gelaufen ist
+        // (= action voll abgeschlossen). Bei placementsLeft>0 ist noch eine
+        // 2. Setzung offen → kein Cursor-Advance.
         if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
-          qqConnectionsAfterPlacement(room);
+          const stats = room.teamPhaseStats[payload.teamId];
+          const stillHasPlacements = (stats?.placementsLeft ?? 0) > 0
+            || (stats?.pendingMultiSlot ?? 0) > 0;
+          if (!stillHasPlacements) {
+            qqConnectionsAfterPlacement(room);
+          }
         }
         broadcast(io, payload.roomCode);
         // Falls noch Dummy in der placementQueue → weiter automatisch platzieren

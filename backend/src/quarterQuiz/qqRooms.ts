@@ -2805,6 +2805,17 @@ function finishPlacement(room: QQRoomState): void {
 
   // Frozen cells bleiben bis zur nächsten Frage sichtbar — Reset passiert in qqNextQuestion.
 
+  // 2026-04-28-Bug-Fix: Wenn wir gerade im Connections-Placement sind, NICHT
+  // die Phase auf 'PLACEMENT' überschreiben — sonst geht das Finale-Routing
+  // kaputt (qqConnectionsAfterPlacement im Caller setzt pendingFor selbst,
+  // hier nichts überschreiben).
+  if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+    // pendingFor + pendingAction werden im Caller via qqConnectionsAfterPlacement
+    // korrekt für die nächste Aktion / Team gesetzt — hier NICHT nullen.
+    room.lastActivityAt = Date.now();
+    return;
+  }
+
   room.pendingFor    = null;
   room.pendingAction = null;
   // Stay in PLACEMENT with pendingFor=null so moderator sees "Nächste Frage"

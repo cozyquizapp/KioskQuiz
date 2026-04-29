@@ -3033,43 +3033,45 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint */}
+      {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint.
+          B8 (2026-04-29): User-Wunsch 'noch groesser, mittig'. top:50%,
+          Avatar + Title-Schrift deutlich vergroessert. */}
       {welcomedTeam && (
         <div style={{
-          position: 'absolute', top: '38%', left: '50%',
+          position: 'absolute', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 50,
-          padding: 'clamp(20px, 2.6vh, 36px) clamp(36px, 5vw, 72px)',
-          borderRadius: 28,
+          padding: 'clamp(32px, 4vh, 60px) clamp(56px, 7vw, 120px)',
+          borderRadius: 36,
           background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
-          border: `3px solid ${welcomedTeam.color}`,
-          boxShadow: `0 0 60px ${welcomedTeam.color}99, 0 14px 44px rgba(0,0,0,0.6)`,
+          border: `4px solid ${welcomedTeam.color}`,
+          boxShadow: `0 0 80px ${welcomedTeam.color}aa, 0 18px 60px rgba(0,0,0,0.7)`,
           animation: 'qqWelcomeBanner 3.2s cubic-bezier(0.22,1,0.36,1) both',
           pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
-          maxWidth: '80vw',
+          display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3vw, 44px)',
+          maxWidth: '90vw',
         }}>
-          <QQTeamAvatar avatarId={welcomedTeam.avatarId} size={'clamp(64px, 8vw, 110px)'} style={{
-            boxShadow: `0 0 24px ${welcomedTeam.color}88`,
+          <QQTeamAvatar avatarId={welcomedTeam.avatarId} size={'clamp(120px, 14vw, 200px)'} style={{
+            boxShadow: `0 0 32px ${welcomedTeam.color}aa`,
             flexShrink: 0,
           }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
             <div style={{
-              fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+              fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
               color: welcomedTeam.color, letterSpacing: '0.22em', textTransform: 'uppercase',
-              textShadow: `0 0 14px ${welcomedTeam.color}66`,
+              textShadow: `0 0 18px ${welcomedTeam.color}88`,
             }}>
               {de ? '✨ Willkommen' : '✨ Welcome'}
             </div>
             <div style={{
               fontFamily: fontFam,
-              fontSize: 'clamp(34px, 4.6vw, 72px)', fontWeight: 900,
-              color: '#FFEFC9', lineHeight: 1.05,
+              fontSize: 'clamp(56px, 7vw, 120px)', fontWeight: 900,
+              color: '#FFEFC9', lineHeight: 1.02,
               letterSpacing: '-0.005em',
               whiteSpace: 'nowrap',
               overflow: 'hidden', textOverflow: 'ellipsis',
-              maxWidth: '60vw',
-              textShadow: `0 0 28px ${welcomedTeam.color}66, 0 2px 0 rgba(0,0,0,0.4)`,
+              maxWidth: '70vw',
+              textShadow: `0 0 36px ${welcomedTeam.color}88, 0 4px 0 rgba(0,0,0,0.5)`,
             }}>
               {welcomedTeam.name}!
             </div>

@@ -8381,7 +8381,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          padding: 'clamp(20px, 3vh, 44px) clamp(28px, 4vw, 64px) clamp(24px, 3.5vh, 56px)',
+          // 2026-04-29: Top/Bottom-Padding angeglichen (vorher 20-44 oben vs
+          // 24-56 unten → asymmetrisch ~6-12px). Jetzt symmetrisch fuer alle
+          // Cases — User-Feedback 'unten mehr Platz als oben'.
+          padding: 'clamp(22px, 3.2vh, 50px) clamp(28px, 4vw, 64px)',
           justifyContent: hpCompact
             ? 'flex-start'
             : (revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center'),

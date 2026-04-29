@@ -3769,30 +3769,43 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     const isMine = cell.ownerId === myTeamId;
                     const inStreak = cellTeam ? hasAdjacentStreak(r, c, cell.ownerId) : false;
                     const isNew = newCells.has(`${r}-${c}`);
+                    // B6 (2026-04-29): Stuck-Cells (Stapeln) auch im Mini-Grid sichtbar.
+                    const isStuckCell = !!cell.stuck;
                     return (
                       <div key={`${r}-${c}`} style={{
                         aspectRatio: '1 / 1', borderRadius: 6,
                         background: cellTeam
-                          ? `linear-gradient(135deg, ${cellTeam.color}cc, ${cellTeam.color}88)`
+                          ? (isStuckCell
+                              ? `linear-gradient(135deg, ${cellTeam.color}ee, ${cellTeam.color}aa)`
+                              : `linear-gradient(135deg, ${cellTeam.color}cc, ${cellTeam.color}88)`)
                           : 'rgba(255,255,255,0.04)',
                         border: cellTeam
-                          ? `1.5px solid ${cellTeam.color}${isMine ? 'cc' : '66'}`
+                          ? (isStuckCell
+                              ? `2px solid #F59E0B`
+                              : `1.5px solid ${cellTeam.color}${isMine ? 'cc' : '66'}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
                         ['--cell-color' as string]: cellTeam?.color ?? 'transparent',
-                        boxShadow: isNew
-                          ? `0 0 14px ${cellTeam!.color}aa`
-                          : inStreak
-                            ? `0 0 8px ${cellTeam!.color}66, inset 0 1px 0 rgba(255,255,255,0.15)`
-                            : cellTeam
-                              ? `inset 0 1px 0 rgba(255,255,255,0.1)`
-                              : 'none',
+                        position: 'relative' as const,
+                        boxShadow: isStuckCell
+                          ? `0 0 6px rgba(245,158,11,0.55), inset 0 1px 0 rgba(255,255,255,0.15)`
+                          : isNew
+                            ? `0 0 14px ${cellTeam!.color}aa`
+                            : inStreak
+                              ? `0 0 8px ${cellTeam!.color}66, inset 0 1px 0 rgba(255,255,255,0.15)`
+                              : cellTeam
+                                ? `inset 0 1px 0 rgba(255,255,255,0.1)`
+                                : 'none',
                         animation: isNew ? 'tcCellClaim 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {cellTeam ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(18, Math.floor(miniCellSize * 0.85))} /> : null}
+                        {isStuckCell
+                          ? <QQEmojiIcon emoji="🏯"/>
+                          : cellTeam
+                            ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(18, Math.floor(miniCellSize * 0.85))} />
+                            : null}
                       </div>
                     );
                   })

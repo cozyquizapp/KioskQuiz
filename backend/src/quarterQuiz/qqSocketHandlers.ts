@@ -41,7 +41,7 @@ import {
   qqConnectionsToPlacement, qqConnectionsAfterPlacement, qqConnectionsClear,
   qqOnlyConnectStart, qqOnlyConnectAdvanceTeamHint, qqOnlyConnectSubmitGuess,
   qqOnlyConnectRevealAll, qqOnlyConnectReset, qqOnlyConnectAllDone,
-  qqOnlyConnectAutoFinish, qqOnlyConnectMinHintReached,
+  qqOnlyConnectAutoFinish, qqOnlyConnectMinHintReached, qqOnlyConnectCanAutoFinish,
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
@@ -866,11 +866,10 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
         }
       }
       qqOnlyConnectSubmitGuess(live, localTeamId, guessText);
-      // AutoFinish nur wenn mindestens Hint 2 (idx=1) gezeigt wurde — sonst
-      // beenden Dummies in Pure-Test-Lobbys die Runde in 5s. Wenn AllDone aber
-      // MinHint nicht erreicht: tick() in qqOnlyConnectStart triggert AutoFinish
-      // beim nächsten Hint-Advance.
-      if (qqOnlyConnectAllDone(live) && qqOnlyConnectMinHintReached(live)) {
+      // AutoFinish nur wenn AllDone + MinHint + MinDuration (qqOnlyConnectCanAutoFinish)
+      // — sonst beenden Dummies in Pure-Test-Lobbys die Runde in 5s. Greift
+      // beim naechsten Hint-Tick falls jetzt geblockt.
+      if (qqOnlyConnectCanAutoFinish(live)) {
         qqOnlyConnectAutoFinish(live);
       }
       broadcast(io, roomCode);
@@ -2694,9 +2693,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // die Standard-Pipeline (Placement-Queue, Aktionen, Autoplay) automatisch.
         // 2026-04-28 Gate: AutoFinish erst ab Hint 2 (idx=1) — verhindert
         // Insta-End wenn Dummies in Test-Lobby alle in <5s schon locked sind.
-        // Falls AllDone aber MinHint noch nicht erreicht: Hint-Tick im
-        // qqOnlyConnectStart triggert AutoFinish beim nächsten Advance.
-        if (qqOnlyConnectAllDone(room) && qqOnlyConnectMinHintReached(room)) {
+        // 2026-04-29 (B2): zusaetzlich Min-Duration 2.5s gegen weiteren Insta-End.
+        // Falls aktuell geblockt: Hint-Tick triggert AutoFinish beim naechsten Advance.
+        if (qqOnlyConnectCanAutoFinish(room)) {
           qqOnlyConnectAutoFinish(room);
         }
         broadcast(io, payload.roomCode);

@@ -108,6 +108,7 @@ export interface QQRoomState {
   onlyConnectGuesses: Array<{ teamId: string; text: string; correct: boolean; submittedAt: number; atHintIdx: number }>;
   onlyConnectHintDurationSec: number;                                       // Sekunden zwischen Hint-Reveals
   _onlyConnectHintTimerHandle: ReturnType<typeof setTimeout> | null;        // Auto-Advance-Timer (nicht persistiert)
+  _onlyConnectStartedAt?: number;                                            // ms-Timestamp Round-Start (für Min-Duration-Gate gegen Insta-End)
   // Bluff (BUNTE_TUETE kind=bluff)
   bluffPhase: 'write' | 'review' | 'vote' | 'reveal' | null;
   bluffWriteEndsAt: number | null;
@@ -3597,6 +3598,9 @@ export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void
     room.onlyConnectHintRevealedAt[teamId] = now;
   }
   room.lastActivityAt = now;
+  // B2 (2026-04-29): Min-Duration-Gate gegen Insta-End mit Dummies — die
+  // Runde darf nicht in <2.5s vorbei sein, sonst sieht der Spieler nichts.
+  room._onlyConnectStartedAt = now;
 
   // Hint-Advance-Timer: nach 1/4 Question-Time → Hint 2, dann 2/4 → Hint 3,
   // 3/4 → Hint 4. Letzter Tick erreicht Index 3 (alle 4 Hints sichtbar).
@@ -3617,7 +3621,7 @@ export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void
     // früher locked/correct'd), JETZT AutoFinish — vorher wurde es vom
     // MinHint-Gate blockiert. (2026-04-28 Bug-Fix: Dummies durften nicht mehr
     // in unter 5s die Runde beenden bevor irgendwas sichtbar wurde.)
-    if (qqOnlyConnectAllDone(live) && qqOnlyConnectMinHintReached(live)) {
+    if (qqOnlyConnectCanAutoFinish(live)) {
       qqOnlyConnectAutoFinish(live);
       live._onlyConnectHintTimerHandle = null;
       if (onAdvanceTick) try { onAdvanceTick(); } catch {}
@@ -3734,16 +3738,36 @@ export function qqOnlyConnectSubmitGuess(
   return { matched: isMatch, locked: !isMatch && nowLocked, alreadyAnswered: false };
 }
 
-/** True wenn alle verbundenen Teams entweder richtig liegen oder gesperrt sind. */
+/** True wenn alle verbundenen Teams entweder richtig liegen oder gesperrt sind.
+ *  B2 (2026-04-29): Defensive — bei 0 verbundenen Teams NICHT vacuous-true zurueckgeben,
+ *  sonst koennte AllDone+MinHint-Combo bei kurzzeitigem disconnect-Glitch AutoFinish triggern. */
 export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
+  let counted = 0;
   for (const teamId of room.joinOrder) {
     const t = room.teams[teamId];
     if (!t || !t.connected) continue;
+    counted++;
     const correct = room.onlyConnectGuesses.some(g => g.teamId === teamId && g.correct);
     const locked = room.onlyConnectLockedTeams.includes(teamId);
     if (!correct && !locked) return false;
   }
-  return true;
+  return counted > 0;
+}
+
+/** B2 (2026-04-29): Hartes Min-Duration-Gate — Runde darf nicht in unter 2.5s
+ *  vorbei sein. Greift falls AllDone+MinHint sofort beide true werden (z.B.
+ *  Dummies locken sich gegenseitig schnell ab). User-Wunsch: 'mind. so lange,
+ *  dass man was sieht'. */
+function onlyConnectMinDurationReached(room: QQRoomState): boolean {
+  if (!room._onlyConnectStartedAt) return true; // legacy: kein Gate, falls Feld nie gesetzt
+  return Date.now() - room._onlyConnectStartedAt >= 2500;
+}
+
+/** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit. */
+export function qqOnlyConnectCanAutoFinish(room: QQRoomState): boolean {
+  return qqOnlyConnectAllDone(room)
+    && qqOnlyConnectMinHintReached(room)
+    && onlyConnectMinDurationReached(room);
 }
 
 /** Min-Hint-Gate für AutoFinish: 4 gewinnt darf nicht beendet werden bevor

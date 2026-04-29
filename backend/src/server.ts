@@ -206,13 +206,32 @@ const blitzUploadDir = path.join(uploadRoot, 'blitz');
 
 // Healthcheck / Room-Check
 app.get('/api/health', (_req, res) => {
-  res.json({ 
+  res.json({
     ok: true,
     timestamp: new Date().toISOString(),
     db: isDBConnected() ? 'connected' : 'fallback',
     uptime: process.uptime()
   });
 });
+
+// 2026-04-28: Self-Keep-Alive für Render Free-Tier.
+// Render schläft Services nach 15 Min Inaktivität ein. Während aktivem
+// Spiel sollte das eh nicht passieren (Socket-Traffic wirkt als Activity),
+// aber: User hat im Autoplay-Test Render-Sleeps beobachtet. Möglicher Grund:
+// nur Outbound-Socket-Traffic, kein Inbound HTTP. Render zählt eventuell
+// nur HTTP-Requests als Activity → Self-Ping alle 10 Min via öffentlicher
+// URL.
+// RENDER_EXTERNAL_URL wird von Render automatisch als ENV gesetzt.
+// Für lokales Dev: Self-Ping wird übersprungen wenn URL fehlt.
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${RENDER_URL}/api/health`).catch(() => {});
+    } catch { /* ignore */ }
+  }, 10 * 60 * 1000); // 10 Min
+  console.log(`[keepalive] Self-ping every 10 min to ${RENDER_URL}/api/health`);
+}
 
 app.post('/api/translate', async (req, res) => {
   try {

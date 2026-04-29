@@ -713,26 +713,52 @@ export default function QQModeratorPage() {
   }, [s?.phase]);
 
   // Derive status text for the big banner
+  // 2026-04-29: bilingual — reagiert auf s.language ('en' / 'both' -> EN, sonst DE).
   function getStatusText(s: QQStateUpdate): { text: string; color: string; sub?: string } {
     const answeredCount = s.answers.length;
     const connectedTeams = s.teams.filter(t => t.connected).length;
+    const isEn = s.language === 'en';
     switch (s.phase) {
       case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
       case 'RULES': {
         const r = s.rulesSlideIndex ?? 0;
-        const sub = r === -2 ? 'Willkommen' : r === -1 ? 'Regel-Intro' : `Slide ${r + 1}`;
-        return { text: 'REGELN', color: '#6366f1', sub };
+        const sub = r === -2
+          ? (isEn ? 'Welcome' : 'Willkommen')
+          : r === -1
+            ? (isEn ? 'Rules intro' : 'Regel-Intro')
+            : (isEn ? `Slide ${r + 1}` : `Slide ${r + 1}`);
+        return { text: isEn ? 'RULES' : 'REGELN', color: '#6366f1', sub };
       }
-      case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
-      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
-      case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
-      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
-      case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
+      case 'TEAMS_REVEAL': return { text: isEn ? 'TEAM REVEAL' : 'TEAM-REVEAL', color: '#F97316', sub: isEn ? 'Epic intro running' : 'Epische Vorstellung läuft' };
+      case 'PHASE_INTRO': return {
+        text: isEn ? `ROUND ${s.gamePhaseIndex}` : `RUNDE ${s.gamePhaseIndex}`,
+        color: '#3B82F6',
+        sub: s.categoryIsNew
+          ? (isEn ? 'Category explanation' : 'Kategorie-Erklärung')
+          : (isEn ? `Intro step ${s.introStep}` : `Intro Step ${s.introStep}`),
+      };
+      case 'QUESTION_ACTIVE': return { text: isEn ? 'WAITING FOR ANSWERS' : 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
+      case 'QUESTION_REVEAL': return {
+        text: s.correctTeamId
+          ? (isEn ? 'ANSWER REVEALED' : 'ANTWORT AUFGEDECKT')
+          : (isEn ? 'ANSWER — NO WINNER' : 'ANTWORT — KEIN GEWINNER'),
+        color: '#F59E0B',
+        sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined,
+      };
+      case 'PLACEMENT': return {
+        text: s.pendingFor
+          ? (isEn ? 'PLACE FIELD' : 'FELD SETZEN')
+          : (isEn ? 'PLACEMENT DONE' : 'PLATZIERUNG FERTIG'),
+        color: '#EF4444',
+        sub: s.pendingFor
+          ? (isEn ? `${teamList.find(t => t.id === s.pendingFor)?.name} placing` : `${teamList.find(t => t.id === s.pendingFor)?.name} setzt`)
+          : undefined,
+      };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
-      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#FBBF24', sub: s.connections?.phase ?? '' };
-      case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
-      case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
-      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#F59E0B', sub: 'QR-Code für Summary' };
+      case 'CONNECTIONS_4X4': return { text: isEn ? '🔗 4×4 — FINALE' : '🔗 4×4 — FINALE', color: '#FBBF24', sub: s.connections?.phase ?? '' };
+      case 'PAUSED': return { text: isEn ? '⏸ PAUSE' : '⏸ PAUSE', color: '#F59E0B' };
+      case 'GAME_OVER': return { text: isEn ? '🏆 GAME OVER' : '🏆 SPIEL BEENDET', color: '#64748b' };
+      case 'THANKS': return { text: isEn ? '🙏 THANKS SLIDE' : '🙏 DANKE-FOLIE', color: '#F59E0B', sub: isEn ? 'QR code for summary' : 'QR-Code für Summary' };
       default: return { text: s.phase, color: '#475569' };
     }
   }
@@ -1002,15 +1028,17 @@ export default function QQModeratorPage() {
                   </div>
                 )}
 
-                {/* ── PHASE INTRO ── */}
+                {/* ── PHASE INTRO ──
+                    2026-04-29: bilingual labels — reagieren auf s.language. */}
                 {s.phase === 'PHASE_INTRO' && (() => {
                   const isFirstOfRound = (s.questionIndex % 5) === 0;
                   const catRevealStep = isFirstOfRound ? 2 : 0;
-                  let label = '▶ Frage aktivieren';
-                  if (isFirstOfRound && s.introStep === 0) label = '📋 Regeln zeigen';
-                  else if (isFirstOfRound && s.introStep === 1) label = '🎯 Kategorie zeigen';
-                  else if (s.introStep === catRevealStep && s.categoryIsNew) label = '💡 Kategorie erklären';
-                  else if (s.categoryIsNew) label = '▶ Frage aktivieren';
+                  const isEn = s.language === 'en';
+                  let label = isEn ? '▶ Activate question' : '▶ Frage aktivieren';
+                  if (isFirstOfRound && s.introStep === 0) label = isEn ? '📋 Show rules' : '📋 Regeln zeigen';
+                  else if (isFirstOfRound && s.introStep === 1) label = isEn ? '🎯 Show category' : '🎯 Kategorie zeigen';
+                  else if (s.introStep === catRevealStep && s.categoryIsNew) label = isEn ? '💡 Explain category' : '💡 Kategorie erklären';
+                  else if (s.categoryIsNew) label = isEn ? '▶ Activate question' : '▶ Frage aktivieren';
                   return (
                     <PrimaryBtn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }} hotkey="Space">
                       {label}
@@ -1021,7 +1049,7 @@ export default function QQModeratorPage() {
                 {/* ── QUESTION ACTIVE ── */}
                 {s.phase === 'QUESTION_ACTIVE' && (
                   <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="R">
-                    👁 Antwort aufdecken
+                    {s.language === 'en' ? '👁 Reveal answer' : '👁 Antwort aufdecken'}
                   </PrimaryBtn>
                 )}
 
@@ -1899,7 +1927,7 @@ export default function QQModeratorPage() {
 
             {/* Rangliste */}
             <div style={card}>
-              <div style={sectionLabel}>Rangliste</div>
+              <div style={sectionLabel}>{s.language === 'en' ? 'Standings' : 'Rangliste'}</div>
               {[...teamList].sort((a, b) => b.largestConnected - a.largestConnected).map((t, i) => (
                 <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
@@ -1918,8 +1946,11 @@ export default function QQModeratorPage() {
 }
 
 // ── Host notes (suggested moderator talking points per phase) ────────────────
+// 2026-04-29: bilingual — reagiert auf state.language ('en' -> EN, sonst DE).
 
-const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
+type HostNote = { title: string; text: string };
+
+const HOST_NOTES_DE: Record<string, HostNote> = {
   LOBBY: {
     title: 'Lobby — Teams einchecken',
     text: 'Begrüße dein Publikum. Weise Teams darauf hin, den QR-Code zu scannen, einen Avatar (inkl. Teamfarbe) und einen Teamnamen zu wählen. Warte, bis alle Teams bereit sind, bevor du startest.',
@@ -1966,9 +1997,61 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
   },
 };
 
+const HOST_NOTES_EN: Record<string, HostNote> = {
+  LOBBY: {
+    title: 'Lobby — Team check-in',
+    text: 'Welcome your audience. Tell teams to scan the QR code, pick an avatar (with team color) and a team name. Wait until all teams are ready before starting.',
+  },
+  RULES: {
+    title: 'Explain rules',
+    text: 'Walk through the rule slides quickly. Key point: every team that answers correctly places one tile on the grid. On ties, speed only decides who picks FIRST.',
+  },
+  PHASE_INTRO: {
+    title: 'Category intro',
+    text: 'Set the mood for the upcoming category. Briefly tease what it\'s about — build suspense before the first question.',
+  },
+  QUESTION_ACTIVE: {
+    title: 'Question live',
+    text: 'Read the question aloud. Remind teams: "Everyone answer on your phone at the same time!" Watch the timer and pump up the mood.',
+  },
+  QUESTION_REVEAL: {
+    title: 'Reveal answer',
+    text: 'Announce the correct answer with energy. Highlight close calls or surprising answers. Call out which teams got it right.',
+  },
+  PLACEMENT: {
+    title: 'Tile placement',
+    text: 'Every correct team now places a tile. On ties: fastest team picks first. Comment on strategic plays ("ah, clever block!").',
+  },
+  COMEBACK_CHOICE: {
+    title: 'Comeback round',
+    text: 'The trailing team gets a wildcard. Briefly explain the options and build suspense — this can flip the round!',
+  },
+  CONNECTIONS_4X4: {
+    title: '4×4 — Finale',
+    text: '16 terms, 4 hidden groups. Teams hunt in parallel and tap 4 items as a group guess. Each found group = 1 action. Ranking: most groups, fastest first on ties. Hype it up, watch the timer.',
+  },
+  PAUSED: {
+    title: 'Break',
+    text: 'Short breather. Use the time for an anecdote, a quick standings recap, or to set up the next round.',
+  },
+  GAME_OVER: {
+    title: 'Game over',
+    text: 'Announce the winner! Thank all teams for playing. Acknowledge special moments or comebacks from the match. Then press Space for the thanks slide.',
+  },
+  THANKS: {
+    title: 'Thanks slide',
+    text: 'Point to the QR code: team stats, feedback, and upcoming events on phone. Social-media push and goodie.',
+  },
+};
+
 function HostNotes({ state }: { state: QQStateUpdate }) {
   const phase = state.phase;
-  const baseNote = HOST_NOTES_DE[phase] ?? { title: phase, text: 'Kein Hinweis für diese Phase.' };
+  const isEn = state.language === 'en';
+  const noteMap = isEn ? HOST_NOTES_EN : HOST_NOTES_DE;
+  const fallback = isEn
+    ? { title: phase, text: 'No tip for this phase.' }
+    : { title: phase, text: 'Kein Hinweis für diese Phase.' };
+  const baseNote = noteMap[phase] ?? fallback;
   const customNote = state.currentQuestion?.hostNote?.trim();
   const funFact = state.currentQuestion?.funFact?.trim();
   const questionPhase = phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL' || phase === 'PLACEMENT';
@@ -1998,7 +2081,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         alignItems: 'center',
         gap: 8,
       }}>
-        <span>🎙️ Moderator-Tipp</span>
+        <span>{isEn ? '🎙️ Host tip' : '🎙️ Moderator-Tipp'}</span>
         <span style={{ opacity: 0.6, fontWeight: 600 }}>· {baseNote.title}</span>
       </div>
       <div style={{ color: '#d1d5db' }}>{baseNote.text}</div>
@@ -2010,7 +2093,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
           color: '#fef3c7',
           fontStyle: 'italic',
         }}>
-          <span style={{ fontWeight: 800, fontStyle: 'normal', color: '#FBBF24' }}>Frage-Notiz: </span>
+          <span style={{ fontWeight: 800, fontStyle: 'normal', color: '#FBBF24' }}>{isEn ? 'Question note: ' : 'Frage-Notiz: '}</span>
           {customNote}
         </div>
       )}
@@ -2034,7 +2117,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
             color: '#A855F7',
             marginBottom: 3,
           }}>
-            💡 Fun Fact (optional einwerfen)
+            {isEn ? '💡 Fun fact (drop in optionally)' : '💡 Fun Fact (optional einwerfen)'}
           </div>
           <div>{funFact}</div>
         </div>

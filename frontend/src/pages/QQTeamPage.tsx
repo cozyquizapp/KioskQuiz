@@ -278,6 +278,24 @@ const TEAM_CSS = `
 
 const QQ_ROOM = 'default';
 
+// ── Hook: deadline expiry (sticky once expired). Used to auto-submit + lock
+// inputs when a question/sub-phase timer runs out. Fires 150ms before the
+// actual deadline so the submit lands while the backend is still in
+// QUESTION_ACTIVE (the moderator advances reveal manually).
+function useExpiry(endsAt: number | null | undefined): boolean {
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    if (!endsAt) { setExpired(false); return; }
+    const lead = 150;
+    const ms = endsAt - lead - Date.now();
+    if (ms <= 0) { setExpired(true); return; }
+    setExpired(false);
+    const t = setTimeout(() => setExpired(true), ms);
+    return () => clearTimeout(t);
+  }, [endsAt]);
+  return expired;
+}
+
 function AnimatedDots() {
   return (
     <span aria-hidden>
@@ -2324,27 +2342,29 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   }
 
   // Route by category
-  if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-  if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
+  // B7: alle Standard-Inputs bekommen `timerEndsAt` für Auto-Submit on Expire.
+  const tEnd = s.timerEndsAt ?? null;
+  if (q.category === 'MUCHO') return <MuchoInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
+  if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
   if (q.category === 'SCHAETZCHEN') {
     const unit = lang === 'en' && q.unitEn ? q.unitEn : q.unit;
     const placeholder = unit
       ? (lang === 'de' ? `Deine Schätzung (${unit})` : `Your estimate (${unit})`)
       : (lang === 'de' ? 'Deine Schätzung' : 'Your estimate');
-    return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={placeholder} lang={lang} />;
+    return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={placeholder} lang={lang} timerEndsAt={tEnd} />;
   }
-  if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
+  if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} timerEndsAt={tEnd} />;
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
-    if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} />;
+    if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
-    if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
-    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} />;
+    if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
+    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'onlyConnect') return <OnlyConnectInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
     if (kind === 'bluff') return <BluffInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
   }
   // Fallback
-  return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} />;
+  return <TextInput catColor={catColor} onSubmit={submitText} placeholder={t.answer.enterAnswer[lang]} lang={lang} timerEndsAt={tEnd} />;
 }
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
@@ -2380,12 +2400,32 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
     }
   }, [isMyTurn, submitted]);
 
+  // B7: Auto-Submit beim HotPotato-Turn-Ende — sonst geht eingetippte Antwort
+  // verloren (Backend eliminiert das Team bei Timer-Ablauf). Fire 250ms vor
+  // Deadline, damit der Submit ankommt bevor der Eliminate-Callback feuert.
+  const expired = useExpiry(isMyTurn ? (s.hotPotatoTurnEndsAt ?? null) : null);
+  const valRef = useRef(val); valRef.current = val;
+  const submittedRef = useRef(submitted); submittedRef.current = submitted;
+  const firedRef = useRef(false);
+  useEffect(() => { firedRef.current = false; }, [s.hotPotatoActiveTeamId, s.hotPotatoTurnEndsAt]);
+  useEffect(() => {
+    if (expired && isMyTurn && !firedRef.current && !submittedRef.current) {
+      firedRef.current = true;
+      const text = valRef.current.trim();
+      if (text.length >= 1) {
+        if (navigator.vibrate) navigator.vibrate(40);
+        emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: text });
+        setVal('');
+      }
+    }
+  }, [expired, isMyTurn, emit, roomCode, myTeamId]);
+
   if (eliminated) return null; // eliminated teams see the status badge above, not the input
   if (!isMyTurn) return null;  // not your turn — status shown in the main view above
   if (submitted) return <SubmittedBadge text={s.hotPotatoLastAnswer!} lang={lang} />;
 
   async function submit() {
-    if (!val.trim()) return;
+    if (!val.trim() || expired) return;
     if (navigator.vibrate) navigator.vibrate(40);
     await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
     setVal('');
@@ -2418,8 +2458,9 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
         ref={ref}
         type="text"
         value={val}
-        onChange={e => setVal(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && val.trim() && submit()}
+        disabled={expired}
+        onChange={e => !expired && setVal(e.target.value)}
+        onKeyDown={e => !expired && e.key === 'Enter' && val.trim() && submit()}
         placeholder={t.answer.enterAnswer[lang]}
         aria-label={lang === 'de' ? 'Antwort eingeben' : 'Enter your answer'}
         autoComplete="off"
@@ -2430,20 +2471,32 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
           color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
           outline: 'none', transition: 'all 0.2s',
           boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
+          opacity: expired ? 0.6 : 1,
         }}
       />
-      <SubmitBtn onSubmit={submit} canSubmit={!!val.trim()} submitted={false} catColor={catColor} />
+      <SubmitBtn onSubmit={submit} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
   );
 }
 
 // ── Text input (Schätzchen + Picture This fallback) ───────────────────────────
-function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
-  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; lang?: 'de' | 'en';
+function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de', timerEndsAt }: {
+  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; lang?: 'de' | 'en'; timerEndsAt?: number | null;
 }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 120); }, []);
+  // B7: Bei Timer-Ende Auto-Submit (falls Text vorhanden) + Button-Lock.
+  const expired = useExpiry(timerEndsAt ?? null);
+  const valRef = useRef(val); valRef.current = val;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const v = valRef.current;
+      if (v.trim()) onSubmit(v);
+    }
+  }, [expired, onSubmit]);
   return (
     <div style={{ marginTop: 4 }}>
       <input
@@ -2452,11 +2505,12 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
         inputMode={numeric ? 'numeric' : 'text'}
         pattern={numeric ? '[0-9]*' : undefined}
         value={val}
-        onChange={e => setVal(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && val.trim() && onSubmit(val)}
+        onChange={e => !expired && setVal(e.target.value)}
+        onKeyDown={e => !expired && e.key === 'Enter' && val.trim() && onSubmit(val)}
         placeholder={placeholder ?? t.answer.enterAnswer[lang]}
         aria-label={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
         autoComplete="off"
+        disabled={expired}
         style={{
           width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
           border: `2px solid ${val ? catColor + '66' : 'rgba(255,255,255,0.1)'}`,
@@ -2464,9 +2518,10 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
           color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
           outline: 'none', transition: 'all 0.2s',
           boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
+          opacity: expired ? 0.6 : 1,
         }}
       />
-      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!!val.trim()} submitted={false} catColor={catColor} />
+      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -2475,10 +2530,22 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de' }: {
 const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
 const MUCHO_LABELS = ['A','B','C','D'];
 
-function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
+function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const [selected, setSelected] = useState<number | null>(null);
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
+
+  // B7: Auto-Submit on Timer-End wenn etwas ausgewählt; Buttons hart sperren.
+  const expired = useExpiry(timerEndsAt ?? null);
+  const selRef = useRef(selected); selRef.current = selected;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const s = selRef.current;
+      if (s !== null) onSubmit(String(s));
+    }
+  }, [expired, onSubmit]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
@@ -2489,7 +2556,8 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
         return (
           <button
             key={i}
-            onClick={() => setSelected(i)}
+            disabled={expired}
+            onClick={() => !expired && setSelected(i)}
             aria-label={`${MUCHO_LABELS[i]}: ${label}`}
             aria-pressed={isSelected}
             style={{
@@ -2527,7 +2595,7 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
       })}
       <SubmitBtn
         onSubmit={() => selected !== null && onSubmit(String(selected))}
-        canSubmit={selected !== null}
+        canSubmit={!expired && selected !== null}
         submitted={false}
         catColor={catColor}
       />
@@ -2539,14 +2607,29 @@ function MuchoInput({ question: q, catColor, onSubmit, lang }: { question: any; 
 const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
 const POOL = 10;
 
-function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
+function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
   // Bets-Array flexibel zur Options-Anzahl (früher hardcoded 3 → brach bei Ja/Nein-Fragen)
   const [bets, setBets] = useState(() => new Array(Math.max(opts.length, 2)).fill(0));
   const remaining = POOL - bets.reduce((a, b) => a + b, 0);
 
+  // B7: Auto-Submit on Timer-End. ZvZ braucht aber nur eingegebene Punkte
+  // (auch unvollständig), damit nichts verloren geht. Backend akzeptiert
+  // beliebige Verteilung als String "n,n,n".
+  const expired = useExpiry(timerEndsAt ?? null);
+  const betsRef = useRef(bets); betsRef.current = bets;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const b = betsRef.current;
+      if (b.some(v => v > 0)) onSubmit(b.join(','));
+    }
+  }, [expired, onSubmit]);
+
   function updateBet(i: number, delta: number) {
+    if (expired) return;
     setBets(prev => {
       const next = [...prev];
       const newVal = Math.max(0, Math.min(prev[i] + delta, prev[i] + remaining + (delta < 0 ? 0 : 0)));
@@ -2613,7 +2696,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
       })}
       <SubmitBtn
         onSubmit={() => onSubmit(bets.join(','))}
-        canSubmit={remaining === 0}
+        canSubmit={!expired && remaining === 0}
         submitted={false}
         catColor={catColor}
         label={remaining === 0 ? t.answer.submit[lang] : t.allIn.leftToDistribute[lang].replace('{n}', String(remaining))}
@@ -2623,9 +2706,22 @@ function AllInInput({ question: q, catColor, onSubmit, lang }: { question: any; 
 }
 
 // ── Top 5 ─────────────────────────────────────────────────────────────────────
-function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
+function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const [vals, setVals] = useState(['','','','','']);
   const filled = vals.filter(v => v.trim()).length;
+
+  // B7: Auto-Submit on Timer-End mit den bisher ausgefüllten Feldern.
+  const expired = useExpiry(timerEndsAt ?? null);
+  const valsRef = useRef(vals); valsRef.current = vals;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const filtered = valsRef.current.filter(v => v.trim());
+      if (filtered.length >= 1) onSubmit(filtered.join('|'));
+    }
+  }, [expired, onSubmit]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>
@@ -2636,7 +2732,8 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
           <div style={{ width: 24, height: 24, borderRadius: 6, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i+1}</div>
           <input
             value={v}
-            onChange={e => { const a = [...vals]; a[i] = e.target.value; setVals(a); }}
+            disabled={expired}
+            onChange={e => { if (expired) return; const a = [...vals]; a[i] = e.target.value; setVals(a); }}
             placeholder={lang === 'en' ? `Answer ${i+1}…` : `Antwort ${i+1}…`}
             style={{
               flex: 1, padding: '11px 14px', borderRadius: 12, boxSizing: 'border-box',
@@ -2644,11 +2741,12 @@ function Top5Input({ catColor, onSubmit, lang }: { catColor: string; onSubmit: (
               background: v ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
               color: '#F1F5F9', fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
               outline: 'none', transition: 'all 0.15s',
+              opacity: expired ? 0.6 : 1,
             }}
           />
         </div>
       ))}
-      <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={filled >= 1} submitted={false} catColor={catColor} />
+      <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={!expired && filled >= 1} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -2673,8 +2771,24 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     }
   }, [myBluff, submitted]);
 
+  // B7: Auto-Submit beim Ablauf der Write-Phase (falls Text vorhanden).
+  const writeExpired = useExpiry(phase === 'write' ? (s.bluffWriteEndsAt ?? null) : null);
+  const valRef = useRef(val); valRef.current = val;
+  const submittedRef = useRef(submitted); submittedRef.current = submitted;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (writeExpired && !firedRef.current && !submittedRef.current) {
+      firedRef.current = true;
+      const text = valRef.current.trim();
+      if (text.length >= 1) {
+        emit('qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
+        setSubmitted(true);
+      }
+    }
+  }, [writeExpired, emit, roomCode, myTeamId]);
+
   const submit = () => {
-    if (submitted) return;
+    if (submitted || writeExpired) return;
     const text = val.trim();
     if (text.length < 1) return;
     emit('qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
@@ -2701,9 +2815,9 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         </div>
         <input
           value={val}
-          onChange={e => !submitted && setVal(e.target.value)}
+          onChange={e => !submitted && !writeExpired && setVal(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-          disabled={submitted}
+          disabled={submitted || writeExpired}
           placeholder={lang === 'de' ? 'Erfundene Antwort…' : 'Your made-up answer…'}
           maxLength={200}
           style={{
@@ -2712,10 +2826,11 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
             background: submitted ? 'rgba(34,197,94,0.10)' : (val ? `${catColor}0d` : 'rgba(255,255,255,0.04)'),
             color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
             outline: 'none', transition: 'all 0.18s',
+            opacity: writeExpired && !submitted ? 0.6 : 1,
           }}
         />
         <button
-          disabled={val.trim().length < 1 || submitted}
+          disabled={val.trim().length < 1 || submitted || writeExpired}
           onClick={submit}
           style={{
             padding: '14px 18px', borderRadius: 14, border: 'none',
@@ -2875,8 +2990,23 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
 
   useEffect(() => { if (!alreadyAnswered) ref.current?.focus(); }, [alreadyAnswered]);
 
+  // B7: Auto-Submit bei Timer-End (falls Text vorhanden + nicht schon locked).
+  const expired = useExpiry(s.timerEndsAt ?? null);
+  const valRef = useRef(val); valRef.current = val;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current && !alreadyAnswered) {
+      firedRef.current = true;
+      const text = valRef.current.trim();
+      if (text.length >= 1) {
+        emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
+        setVal('');
+      }
+    }
+  }, [expired, alreadyAnswered, emit, roomCode, myTeamId]);
+
   const submit = () => {
-    if (alreadyAnswered) return;
+    if (alreadyAnswered || expired) return;
     const text = val.trim();
     if (text.length < 1) return;
     emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
@@ -2961,8 +3091,9 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
           <input
             ref={ref}
             value={val}
-            onChange={e => setVal(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+            disabled={expired}
+            onChange={e => !expired && setVal(e.target.value)}
+            onKeyDown={e => { if (!expired && e.key === 'Enter') submit(); }}
             placeholder={lang === 'de' ? 'Verbindung tippen…' : 'Your guess…'}
             style={{
               padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
@@ -2970,20 +3101,21 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
               background: val ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
               color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
               outline: 'none', transition: 'all 0.18s',
+              opacity: expired ? 0.6 : 1,
             }}
           />
           <button
-            disabled={val.trim().length < 1}
+            disabled={expired || val.trim().length < 1}
             onClick={submit}
             style={{
               padding: '14px 18px', borderRadius: 14, border: 'none',
-              background: val.trim().length >= 1
+              background: !expired && val.trim().length >= 1
                 ? `linear-gradient(135deg, ${catColor}, ${catColor}cc)`
                 : 'rgba(255,255,255,0.06)',
-              color: val.trim().length >= 1 ? '#0a1f0d' : '#64748b',
+              color: !expired && val.trim().length >= 1 ? '#0a1f0d' : '#64748b',
               fontSize: 16, fontWeight: 900, fontFamily: 'inherit',
-              cursor: val.trim().length >= 1 ? 'pointer' : 'not-allowed',
-              boxShadow: val.trim().length >= 1 ? `0 4px 14px ${catColor}66` : 'none',
+              cursor: !expired && val.trim().length >= 1 ? 'pointer' : 'not-allowed',
+              boxShadow: !expired && val.trim().length >= 1 ? `0 4px 14px ${catColor}66` : 'none',
               letterSpacing: '0.05em', textTransform: 'uppercase',
             }}
           >
@@ -3150,14 +3282,27 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
 }
 
 // ── Fix It: sortable list (no dnd-kit dep, manual reorder via buttons) ─────────
-function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en' }) {
+function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const bt = q.bunteTuete;
   const srcItems: string[] = (lang === 'en' && bt?.itemsEn?.some((s:string)=>s) ? bt.itemsEn : bt?.items) ?? [];
   // Shuffle on mount for challenge
   const [items, setItems] = useState(() => [...srcItems].sort(() => Math.random() - 0.5));
   const criteria = lang === 'en' ? (bt?.criteriaEn || bt?.criteria) : bt?.criteria;
 
+  // B7: Auto-Submit on Timer-End mit aktueller Reihenfolge.
+  const expired = useExpiry(timerEndsAt ?? null);
+  const itemsRef = useRef(items); itemsRef.current = items;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const it = itemsRef.current;
+      if (it.length > 0) onSubmit(it.join('|'));
+    }
+  }, [expired, onSubmit]);
+
   function move(i: number, dir: -1 | 1) {
+    if (expired) return;
     const j = i + dir;
     if (j < 0 || j >= items.length) return;
     const next = [...items];
@@ -3192,7 +3337,7 @@ function FixItInput({ question: q, catColor, onSubmit, lang }: { question: any; 
           </div>
         </div>
       ))}
-      <SubmitBtn onSubmit={() => onSubmit(items.join('|'))} canSubmit={items.length > 0} submitted={false} catColor={catColor} />
+      <SubmitBtn onSubmit={() => onSubmit(items.join('|'))} canSubmit={!expired && items.length > 0} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -3203,7 +3348,7 @@ function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => voi
   return null;
 }
 
-function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en' }) {
+function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null }) {
   const bt = q?.bunteTuete;
   const centerLat = bt?.lat ?? 51.1657;
   const centerLng = bt?.lng ?? 10.4515;
@@ -3211,8 +3356,23 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
   const [pin, setPin] = useState<[number, number] | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // B7: Auto-Submit on Timer-End wenn Pin gesetzt; sonst nur Lock.
+  const expired = useExpiry(timerEndsAt ?? null);
+  const pinRef = useRef(pin); pinRef.current = pin;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const p = pinRef.current;
+      if (p && !submitted) {
+        setSubmitted(true);
+        onSubmit(`${p[0]},${p[1]}`);
+      }
+    }
+  }, [expired, submitted, onSubmit]);
+
   function handleSubmit() {
-    if (!pin) return;
+    if (!pin || expired) return;
     setSubmitted(true);
     onSubmit(`${pin[0]},${pin[1]}`);
   }
@@ -3240,7 +3400,7 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
           attributionControl={false}
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MapClickHandler onPick={(lat, lng) => setPin([lat, lng])} />
+          <MapClickHandler onPick={(lat, lng) => { if (!expired) setPin([lat, lng]); }} />
           {pin && <Marker position={pin} />}
         </MapContainer>
       </div>
@@ -3248,7 +3408,7 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de' }: { question
         ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
         : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>{t.pinIt.noPin[lang]}</div>
       }
-      <SubmitBtn onSubmit={handleSubmit} canSubmit={!!pin} submitted={submitted} catColor={catColor} />
+      <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
     </div>
   );
 }

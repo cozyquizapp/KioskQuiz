@@ -8096,8 +8096,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Kompensiert: leichtes Side-Padding via `width: calc(...)` damit
             // die Card sich nicht in die Bildschirmkanten reinpresst.
             width: 'calc(100% - clamp(40px, 6vw, 96px))', maxWidth: 1600,
+            // 2026-04-29 (User-Feedback): Reveal-Card ~25% flacher — vorher
+            // verdeckte sie ~60% der Bildflaeche bei Picture-This-Bildern.
             minHeight: revealed
-              ? (hasImg ? 'clamp(360px, 42vh, 480px)' : 'clamp(220px, 28vh, 320px)')
+              ? (hasImg ? 'clamp(240px, 30vh, 360px)' : 'clamp(180px, 22vh, 260px)')
               : (hasImg ? 'clamp(120px, 16vh, 200px)' : 'clamp(110px, 14vh, 170px)'),
             background: 'rgba(13,10,6,0.38)',
             backdropFilter: 'blur(18px) saturate(1.25)',
@@ -8107,7 +8109,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // von kategorie farben glow wie bei anderen').
             border: `${isCheeseReveal ? 3 : 2.5}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}88`}`,
             borderRadius: 28,
-            padding: isCheeseReveal ? '28px 48px' : '36px 56px',
+            // Reveal-Padding kompakter (20 statt 28) damit das Bild oben mehr Platz behaelt.
+            padding: isCheeseReveal ? '20px 48px' : '36px 56px',
             boxShadow: isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}66, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
               : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
@@ -8200,14 +8203,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {/* Category pill IN der Card entfernt — die Pill sitzt jetzt
                 konsistent oben links wie bei den anderen Kategorien. */}
 
-            {/* Question text — no font-size change on reveal to prevent reflow */}
+            {/* Question text — vor Reveal voll, beim Reveal kleiner + gedimmt
+                (2026-04-29: damit Reveal-Card flacher wird und das Bild
+                oberhalb sichtbar bleibt). */}
             <div key={`cheese-${lang}`} style={{
-              fontSize: qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)' : 'clamp(36px, 5vw, 72px)',
+              fontSize: isCheeseReveal
+                ? 'clamp(20px, 2.6vw, 36px)'
+                : (qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)' : 'clamp(36px, 5vw, 72px)'),
               fontWeight: 900, lineHeight: 1.22,
               color: '#F1F5F9',
-              marginBottom: isCheeseReveal ? 16 : 0,
+              marginBottom: isCheeseReveal ? 8 : 0,
               animation: 'langFadeIn 0.4s ease both',
-              transition: 'opacity 0.4s ease, margin-bottom 0.3s ease',
+              transition: 'opacity 0.4s ease, margin-bottom 0.3s ease, font-size 0.4s ease',
               opacity: isCheeseReveal ? 0.55 : 1,
             }}>
               {lang === 'en' && q.textEn ? q.textEn : q.text}
@@ -8217,11 +8224,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {isCheeseReveal && s.revealedAnswer && (
               <div style={{
                 position: 'relative', overflow: 'hidden',
-                fontSize: 'clamp(32px, 4.5vw, 72px)', fontWeight: 900,
+                // 2026-04-29: 4.5vw -> 3.8vw / cap 72 -> 56 — flacher.
+                fontSize: 'clamp(28px, 3.8vw, 56px)', fontWeight: 900,
                 color: '#4ADE80',
                 animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
-                marginBottom: 8,
+                marginBottom: 6,
               }}>
                 <div style={{
                   position: 'absolute', top: 0, width: '60%', height: '100%',
@@ -8269,7 +8277,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <>
                 <div style={{
-                  marginTop: 14,
+                  marginTop: 8,
                   display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                   gap: 12, flexWrap: 'wrap', width: '100%',
                   animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.45s both',
@@ -8290,7 +8298,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           <QQTeamAvatar
                             avatarId={team.avatarId}
-                            size={isFastest ? 'clamp(76px, 8.4vw, 116px)' : 'clamp(58px, 6.4vw, 88px)'}
+                            // 2026-04-29: Avatare bei Reveal etwas kleiner — Card flacher.
+                            size={isFastest ? 'clamp(60px, 6.8vw, 92px)' : 'clamp(46px, 5.2vw, 70px)'}
                             style={{
                               border: isFastest ? '4px solid #FBBF24' : 'none',
                               boxShadow: isFastest
@@ -8322,7 +8331,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     „X hat es erkannt!" / „X hat es am schnellsten erkannt!" */}
                 {winnerTeam && (
                   <div style={{
-                    marginTop: 14,
+                    marginTop: 8,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
                     animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.85s both',
                   }}>

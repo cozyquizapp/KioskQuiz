@@ -1178,23 +1178,25 @@ function evalOrder(
 
   // Build the correct sequences in DE *and* EN — teams may submit either language,
   // and bots submit DE. Also accept numeric index submissions (older clients).
-  const correctDE = correctOrder.map(idx => (items[idx] ?? '').trim().toLowerCase());
-  const correctEN = correctOrder.map(idx => (itemsEn[idx] ?? '').trim().toLowerCase());
+  // B11-Erweiterung (2026-04-29): Text-Match nutzt similarityScore (>=0.8)
+  // statt strict-equal — Tippfehler bei langen Items zaehlen jetzt korrekt.
+  const correctDE = correctOrder.map(idx => (items[idx] ?? '').trim());
+  const correctEN = correctOrder.map(idx => (itemsEn[idx] ?? '').trim());
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
 
   for (const ans of room.answers) {
-    const submitted = ans.text.split('|').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const submitted = ans.text.split('|').map(s => s.trim()).filter(Boolean);
     let score = 0;
     for (let i = 0; i < Math.min(submitted.length, correctOrder.length); i++) {
       const s = submitted[i];
       // Index match (old format): "0|1|2"
       const asIdx = Number(s);
       if (Number.isFinite(asIdx) && asIdx === correctOrder[i]) { score++; continue; }
-      // Text match DE or EN
-      if (correctDE[i] && s === correctDE[i]) { score++; continue; }
-      if (correctEN[i] && s === correctEN[i]) { score++; continue; }
+      // Text match DE or EN — fuzzy
+      if (correctDE[i] && similarityScore(s, correctDE[i]) >= 0.8) { score++; continue; }
+      if (correctEN[i] && similarityScore(s, correctEN[i]) >= 0.8) { score++; continue; }
     }
     scores.push({ teamId: ans.teamId, score });
     if (score > maxScore) maxScore = score;
@@ -3672,19 +3674,12 @@ function clearOnlyConnectHintTimer(room: QQRoomState): void {
   }
 }
 
-function normalizeOnlyConnectGuess(s: string): string {
-  return (s ?? '').trim().toLowerCase();
-}
-
-/** Match wie bei CHEESE: case-insensitive, substring/eq. */
+/** B11-Erweiterung (2026-04-29): einheitlicher Fuzzy-Match via similarityScore
+ *  fuer ALLE Free-Text-Eingaben. Toleriert Tippfehler, Article-Strip, Substring. */
 function onlyConnectMatches(submitted: string, accepted: string[]): boolean {
-  const sub = normalizeOnlyConnectGuess(submitted);
-  if (sub.length < 2) return false;
-  return accepted.some(c => {
-    const cc = normalizeOnlyConnectGuess(c);
-    if (!cc) return false;
-    return sub === cc || sub.includes(cc) || (cc.length > 3 && cc.includes(sub) && sub.length >= 3);
-  });
+  const sub = (submitted ?? '').trim();
+  if (normalizeText(sub).length < 2) return false;
+  return accepted.some(c => c && similarityScore(sub, c) >= 0.8);
 }
 
 /** Reset onlyConnect-State (z.B. beim Wechsel zur nächsten Frage). */
@@ -3988,10 +3983,13 @@ function pickRandomN<T>(arr: T[], n: number): T[] {
   return a.slice(0, Math.min(n, a.length));
 }
 function bluffMatchesReal(submitted: string, real: string, realEn?: string): boolean {
-  const sub = normalizeBluffText(submitted).toLowerCase();
-  if (sub.length < 1) return false;
-  const candidates = [real, realEn ?? ''].map(c => normalizeBluffText(c).toLowerCase()).filter(Boolean);
-  return candidates.some(c => c === sub);
+  // B11-Erweiterung (2026-04-29): Fuzzy-Match auch fuer truthAccident-Detection.
+  // Wenn ein Team versehentlich quasi die echte Antwort schreibt (Tippfehler /
+  // Article weg), zaehlt das wie eine exakte Antwort.
+  const sub = normalizeBluffText(submitted);
+  if (normalizeText(sub).length < 1) return false;
+  const candidates = [real, realEn ?? ''].map(c => normalizeBluffText(c)).filter(Boolean);
+  return candidates.some(c => similarityScore(sub, c) >= 0.8);
 }
 
 /** Reset Bluff-State (z.B. beim Frage-Wechsel). */

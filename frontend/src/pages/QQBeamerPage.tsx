@@ -7403,66 +7403,20 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
   const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
 
-  // Cluster-Spread: Pins, die sehr nah beieinander stehen (z.B. alle in Australien),
-  // würden sich auf dem Beamer verdecken. Greedy-Clustering nach Großkreis-Distanz,
-  // dann werden Duplikate kreisförmig um den Anker verteilt.
-  // WICHTIG: Spread-Radius skaliert mit der Map-Spannweite, sonst verdecken sich Pins
-  // bei weit auseinander liegenden Antworten (FitBounds zoomt raus → 1° = wenige Pixel).
-  // displayLat/displayLng werden für das Map-Icon benutzt, lat/lng bleiben echt
-  // (Distanz-Berechnung + Bounds verwenden die echten Positionen).
+  // Pins werden EXAKT an der eingereichten Position dargestellt — kein
+  // Cluster-Spread mehr. (User-Wunsch 2026-04-28: 'pins müssen exakt gesetzt
+  // werden, nicht rundherum um das ziel'. Geoguessr-Look — falls Pins
+  // überlappen ist das die echte Information; bounds.fit zoomt automatisch
+  // näher rein wenn alle Pins eng beieinander liegen.)
   const displayPos = useMemo(() => {
-    const valid = scored.filter(p => p.lat != null && p.lng != null);
-    // Spannweite aller Antworten + Target → Spread proportional dazu wählen.
-    const allLats = [tLat, ...valid.map(p => p.lat)];
-    const allLngs = [tLng, ...valid.map(p => p.lng)];
-    const spanLat = Math.max(...allLats) - Math.min(...allLats);
-    const spanLng = Math.max(...allLngs) - Math.min(...allLngs);
-    const span = Math.max(spanLat, spanLng, 1); // mind. 1° (sonst Division-Probleme)
-    // Merge-Schwelle: 4% der Spannweite, Floor 0.3° (≈ 33km).
-    // Vorher Floor 2.5° (≈ 280km!) → bei Hamburg-Quiz mit teams in DE wurde
-    // ein 250m-naher Pin mit 200km-Pins in einem Cluster zusammengelegt und
-    // dann kreisfoermig verteilt — dadurch landete der eigentlich nahe Pin
-    // weit weg vom Target. Mit 0.3° bleiben enge Pins separat, weit verstreute
-    // Quizze (z.B. „weltweit") clustern weiterhin sinnvoll.
-    const MERGE_DEG = Math.max(0.3, span * 0.04);
-
-    const clusters: Array<typeof scored> = [];
-    for (const p of valid) {
-      let placed = false;
-      for (const cl of clusters) {
-        const avgLat = cl.reduce((s, q) => s + q.lat, 0) / cl.length;
-        const avgLng = cl.reduce((s, q) => s + q.lng, 0) / cl.length;
-        const dLat = p.lat - avgLat;
-        const dLng = (p.lng - avgLng) * Math.cos(avgLat * Math.PI / 180);
-        if (Math.hypot(dLat, dLng) < MERGE_DEG) {
-          cl.push(p);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) clusters.push([p]);
-    }
     const out = new Map<string, { lat: number; lng: number }>();
-    for (const list of clusters) {
-      if (list.length === 1) {
-        const p = list[0];
+    for (const p of scored) {
+      if (p.lat != null && p.lng != null) {
         out.set(p.teamId, { lat: p.lat, lng: p.lng });
-        continue;
       }
-      const avgLat = list.reduce((s, p) => s + p.lat, 0) / list.length;
-      const avgLng = list.reduce((s, p) => s + p.lng, 0) / list.length;
-      // Spread-Radius: 5% der Spannweite + Bonus pro Pin, Floor 0.4°
-      // (vorher Floor 2.0° = 220km, was bei DE-Quiz absurd weit war).
-      const radiusDeg = Math.max(0.4, span * 0.05 + list.length * 0.25);
-      list.forEach((p, i) => {
-        const angle = (i / list.length) * Math.PI * 2 - Math.PI / 2;
-        const dLat = radiusDeg * Math.sin(angle);
-        const dLng = radiusDeg * Math.cos(angle) / Math.max(0.3, Math.cos(avgLat * Math.PI / 180));
-        out.set(p.teamId, { lat: avgLat + dLat, lng: avgLng + dLng });
-      });
     }
     return out;
-  }, [scored, tLat, tLng]);
+  }, [scored]);
 
   const showTarget  = step >= 1;
   const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...

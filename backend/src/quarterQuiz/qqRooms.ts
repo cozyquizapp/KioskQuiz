@@ -1909,15 +1909,28 @@ export function qqStealCell(
     }
   }
 
-  // B5 (2026-04-29): Wenn STEAL als Joker-Bonus genutzt wurde und noch ein
-  // pendingMultiSlot (z.B. 2. Cell vom urspruenglichen PLACE_2) aussteht,
-  // jetzt resumen statt direkt finishPlacement — sonst geht die Restplatzierung
-  // verloren.
+  // B5 (2026-04-29): Wenn STEAL als Joker-Bonus genutzt wurde, einen Slot
+  // konsumieren. Vorher Bug: placementsLeft (von handleJokerDetection auf
+  // jokersAwarded gesetzt) blieb unbedekrementiert -> Leak bei jokersAwarded>=2
+  // oder Folge-Frage.
   const stStats = room.teamPhaseStats[teamId];
+  if (stStats && (stStats.placementsLeft ?? 0) > 0) {
+    stStats.placementsLeft -= 1;
+  }
+  // Wenn STEAL als Joker-Bonus genutzt wurde und noch ein pendingMultiSlot
+  // (z.B. 2. Cell vom urspruenglichen PLACE_2) aussteht, jetzt resumen statt
+  // direkt finishPlacement — sonst geht die Restplatzierung verloren.
   if (stStats && (stStats.pendingMultiSlot ?? 0) > 0) {
     stStats.placementsLeft = stStats.pendingMultiSlot!;
     stStats.pendingMultiSlot = 0;
     room.pendingAction = 'PLACE_1';
+    room.lastActivityAt = Date.now();
+    return { jokersAwarded };
+  }
+  // Falls noch placementsLeft > 0 nach Decrement (Multi-Joker-Bonus mit
+  // mehreren STEAL-Aktionen), dranbleiben mit nächstem STEAL_1.
+  if (stStats && stStats.placementsLeft > 0) {
+    room.pendingAction = jokerBonusAction(room);
     room.lastActivityAt = Date.now();
     return { jokersAwarded };
   }
@@ -2081,12 +2094,22 @@ export function qqStuckCell(
   stats.stapelsUsed = (stats.stapelsUsed ?? 0) + 1;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);
-  // B5 (2026-04-29): Wenn STAPEL als Joker-Bonus genutzt wurde und noch ein
-  // pendingMultiSlot aussteht, jetzt resumen statt direkt finishPlacement.
+  // B5 (2026-04-29): Wenn STAPEL als Joker-Bonus genutzt wurde, einen Slot
+  // konsumieren — sonst leakt placementsLeft in die naechste Frage.
+  if ((stats.placementsLeft ?? 0) > 0) {
+    stats.placementsLeft -= 1;
+  }
+  // Wenn noch ein pendingMultiSlot aussteht (urspruengliches PLACE_2), resumen.
   if ((stats.pendingMultiSlot ?? 0) > 0) {
     stats.placementsLeft = stats.pendingMultiSlot!;
     stats.pendingMultiSlot = 0;
     room.pendingAction = 'PLACE_1';
+    room.lastActivityAt = Date.now();
+    return;
+  }
+  // Falls Joker-Bonus weitere Aktionen haette (jokersAwarded>=2), dranbleiben.
+  if (stats.placementsLeft > 0) {
+    room.pendingAction = jokerBonusAction(room);
     room.lastActivityAt = Date.now();
     return;
   }

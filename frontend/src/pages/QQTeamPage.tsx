@@ -2373,7 +2373,13 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
 }) {
   const isMyTurn = s.hotPotatoActiveTeamId === myTeamId;
   const eliminated = s.hotPotatoEliminated.includes(myTeamId);
-  const submitted = !!s.hotPotatoLastAnswer && isMyTurn;
+  // B1 (2026-04-29): Im 'no strikes'-Modell (Commit c4d0404e) bleibt das Team
+  // nach falschem/duplikaten Submit aktiv und darf weiter tippen — Backend
+  // setzt nur lastAnswer als Feedback. Wir zeigen das als Hinweis-Chip über
+  // dem Input statt SubmittedBadge, sonst sperrt sich der Spieler selbst aus.
+  // Bei Treffer rotiert das Backend via qqHotPotatoNext und cleart lastAnswer
+  // (isMyTurn wird false -> Komponente blendet sich raus).
+  const lastAttempt = isMyTurn ? (s.hotPotatoLastAnswer || '') : '';
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -2393,23 +2399,22 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
   // Auto-focus when it becomes your turn.
   // preventScroll: true verhindert, dass Mobile-Browser den Header weg-scrollen.
   useEffect(() => {
-    if (isMyTurn && !submitted) {
+    if (isMyTurn) {
       setVal('');
       setTimeout(() => ref.current?.focus({ preventScroll: true }), 120);
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }
-  }, [isMyTurn, submitted]);
+  }, [isMyTurn]);
 
   // B7: Auto-Submit beim HotPotato-Turn-Ende — sonst geht eingetippte Antwort
   // verloren (Backend eliminiert das Team bei Timer-Ablauf). Fire 250ms vor
   // Deadline, damit der Submit ankommt bevor der Eliminate-Callback feuert.
   const expired = useExpiry(isMyTurn ? (s.hotPotatoTurnEndsAt ?? null) : null);
   const valRef = useRef(val); valRef.current = val;
-  const submittedRef = useRef(submitted); submittedRef.current = submitted;
   const firedRef = useRef(false);
   useEffect(() => { firedRef.current = false; }, [s.hotPotatoActiveTeamId, s.hotPotatoTurnEndsAt]);
   useEffect(() => {
-    if (expired && isMyTurn && !firedRef.current && !submittedRef.current) {
+    if (expired && isMyTurn && !firedRef.current) {
       firedRef.current = true;
       const text = valRef.current.trim();
       if (text.length >= 1) {
@@ -2422,7 +2427,6 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
 
   if (eliminated) return null; // eliminated teams see the status badge above, not the input
   if (!isMyTurn) return null;  // not your turn — status shown in the main view above
-  if (submitted) return <SubmittedBadge text={s.hotPotatoLastAnswer!} lang={lang} />;
 
   async function submit() {
     if (!val.trim() || expired) return;
@@ -2452,6 +2456,18 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
           }}>
             {secondsLeft}s
           </span>
+        </div>
+      )}
+      {/* B1: Letzte nicht akzeptierte Antwort als Hinweis-Chip — Team darf
+          weiter tippen (continuous typing seit c4d0404e). */}
+      {lastAttempt && (
+        <div style={{
+          marginBottom: 8, padding: '8px 12px', borderRadius: 10,
+          background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)',
+          fontSize: 13, fontWeight: 700, color: '#fca5a5', textAlign: 'center',
+          animation: 'tcpulse 0.4s ease-out',
+        }}>
+          {lang === 'de' ? `Nicht akzeptiert: „${lastAttempt}" — versuch's nochmal!` : `Not accepted: "${lastAttempt}" — try again!`}
         </div>
       )}
       <input

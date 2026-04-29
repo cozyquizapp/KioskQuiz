@@ -3686,8 +3686,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     },
     hotPotato: {
       emoji: '🔥',
-      de: { name: 'Heiße Kartoffel', explain: 'Reihum Begriffe nennen — wer hängt, verliert.' },
-      en: { name: 'Hot Potato',    explain: 'Take turns naming items — first to stall loses.' },
+      de: { name: 'Heiße Kartoffel', explain: 'Reihum antworten — keine Antwort vor Zeitende = raus.' },
+      en: { name: 'Hot Potato',    explain: 'Take turns — no answer before time runs out = out.' },
     },
     top5: {
       emoji: '🏆',
@@ -4305,8 +4305,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum antworten — wer hängt verliert'],
-                en: ['Take turns — first to stall is out'],
+                de: ['Reihum antworten — keine Antwort vor Zeitende = raus'],
+                en: ['Take turns — no answer before time runs out = out'],
               },
             },
             'BUNTE_TUETE:onlyConnect': {

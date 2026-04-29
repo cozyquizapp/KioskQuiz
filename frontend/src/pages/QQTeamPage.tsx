@@ -1397,8 +1397,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
     hotPotato: {
       emoji: '🔥',
       name:    { de: 'Heiße Kartoffel', en: 'Hot Potato' },
-      explain: { de: 'Reihum Begriffe nennen — wer hängt, verliert.',
-                 en: 'Take turns naming items — first to stall loses.' },
+      explain: { de: 'Reihum antworten — keine Antwort vor Zeitende = raus.',
+                 en: 'Take turns — no answer before time runs out = out.' },
     },
     top5: {
       emoji: '🏆',
@@ -1507,7 +1507,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['Findet die EINE falsche Aussage', 'unter 7 wahren'], en: ['Spot the ONE false statement', 'among 7 true ones'] } },
               'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
               'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Je näher, desto mehr Punkte'], en: ['Guess the location on the map', 'Closer = more points'] } },
-              'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum Begriffe nennen', 'Wer hängt, verliert'], en: ['Take turns naming items', 'First to stall loses'] } },
+              'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten', 'Keine Antwort vor Zeitende = raus'], en: ['Take turns', 'No answer before time runs out = out'] } },
               'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Hinweise, eine Lösung', 'Wer früher tippt, holt mehr Punkte'], en: ['4 clues, one answer', 'Guess earlier for more points'] } },
               'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },
             };

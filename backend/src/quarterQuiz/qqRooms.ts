@@ -2353,8 +2353,14 @@ export function qqComebackStealStartNext(room: QQRoomState): void {
   const leaders = qqComebackComputeLeaders(room, hl.teamIds);
   room.comebackStealTargets = leaders;
   room.comebackStealsDone = [];
-  if (leaders.length === 0 || hl.currentStealerRemaining === 0) {
-    // Kein Leader zum Klauen → direkt weiter
+  // B15 (2026-04-29): Auto-Skip wenn (a) keine Leader, (b) keine Steals offen
+  // ODER (c) kein klaubares Leader-Feld (alle stuck/shielded/frozen).
+  const hasStealable = leaders.length > 0 && room.grid.some(row => row.some(cell =>
+    cell.ownerId !== null && leaders.includes(cell.ownerId)
+    && !cell.stuck && !cell.shielded && !cell.frozen
+  ));
+  if (leaders.length === 0 || hl.currentStealerRemaining === 0 || !hasStealable) {
+    // Kein Klau moeglich → naechster Stealer.
     qqComebackStealStartNext(room);
     return;
   }
@@ -2404,7 +2410,13 @@ export function qqComebackStealResume(room: QQRoomState): void {
   const leaders = qqComebackComputeLeaders(room, hl.teamIds);
   room.comebackStealTargets = leaders;
   room.comebackStealsDone = [];
-  if (leaders.length === 0) {
+  // B15 (2026-04-29): Auto-Skip wenn keine klaubaren Leader-Cells mehr
+  // existieren (alle stuck/shielded/frozen). Sonst haengt das Spiel.
+  const hasStealable = leaders.length > 0 && room.grid.some(row => row.some(cell =>
+    cell.ownerId !== null && leaders.includes(cell.ownerId)
+    && !cell.stuck && !cell.shielded && !cell.frozen
+  ));
+  if (leaders.length === 0 || !hasStealable) {
     qqComebackStealStartNext(room);
     return;
   }
@@ -2775,6 +2787,21 @@ export function qqSkipCurrentPlacement(room: QQRoomState): void {
   // Erlaubt regulären PLACEMENT-Skip ODER Connections-Placement-Skip (Finale).
   const isConnPlacement = room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement';
   if (!isConnPlacement && room.phase !== 'PLACEMENT') return;
+  // B15 (2026-04-29): Comeback-Skip — auch waehrend der Steal-Pause akzeptieren.
+  // Wenn das Comeback-Team nicht klauen kann (alle Leader-Cells stuck/shielded),
+  // kann der Mod alle restlichen Slots dieses Stealers verwerfen und zum
+  // naechsten in der HL-Queue springen.
+  const isComebackHLActive = !!room.comebackHL && !!room.comebackHL.currentStealer
+    && (room.pendingAction === 'COMEBACK' || !!room._comebackStealPaused);
+  if (isComebackHLActive) {
+    const stealer = room.comebackHL!.currentStealer!;
+    const stats = room.teamPhaseStats[stealer];
+    if (stats) stats.placementsLeft = 0;
+    room.comebackHL!.currentStealerRemaining = 0;
+    delete room._comebackStealPaused;
+    qqComebackStealStartNext(room);
+    return;
+  }
   if (!room.pendingFor) return;
   const teamId = room.pendingFor;
   // Multi-Slot-Reste (PLACE_2, Joker-Bonus, pendingMultiSlot) verwerfen,

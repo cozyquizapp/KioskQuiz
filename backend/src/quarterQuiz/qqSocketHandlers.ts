@@ -512,10 +512,21 @@ export function maybeAutoImposter(io: SocketIOServer, roomCode: string): void {
 /**
  * Bluff: Write-Timer-Timeout-Handler. Erzwingt Übergang zu review (oder vote).
  * Wird auch aufgerufen wenn alle Teams submitted haben (vor Timer-Ende).
+ *
+ * B3 (2026-04-29): 0-Submit-Gate auch im Auto-Timer (vorher nur Mod-Space).
+ * Wenn beim Timer-Ablauf KEIN Team einen Bluff abgegeben hat, bleiben wir
+ * in write-Phase — Mod kann manuell skippen (qq:revealAnswer hat eigenen
+ * silent-no-op-Schutz). Verhindert vorzeitiges Reveal mit nur 'real'-Option.
  */
 function bluffWriteTimeout(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room || room.bluffPhase !== 'write') return;
+  const hasSubmit = Object.values(room.bluffSubmissions ?? {}).some(t => t?.trim());
+  if (!hasSubmit) {
+    // Niemand hat geblufft — nicht advancen. Nur broadcast (Phase bleibt write).
+    broadcast(io, roomCode);
+    return;
+  }
   qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, roomCode));
   broadcast(io, roomCode);
   // Nach Mutation: TS-narrow refresh durch Re-Read
@@ -527,10 +538,18 @@ function bluffWriteTimeout(io: SocketIOServer, roomCode: string): void {
 /**
  * Bluff: Vote-Timer-Timeout-Handler. Erzwingt Übergang zu reveal.
  * Wird auch aufgerufen wenn alle Teams voted haben.
+ *
+ * B3 (2026-04-29): 0-Vote-Gate auch im Auto-Timer. Wenn niemand gevotet
+ * hat, bleibt vote offen — Mod kann manuell skippen.
  */
 function bluffVoteTimeout(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room || room.bluffPhase !== 'vote') return;
+  const hasVote = Object.keys(room.bluffVotes ?? {}).length > 0;
+  if (!hasVote) {
+    broadcast(io, roomCode);
+    return;
+  }
   qqBluffAdvanceFromVote(room);
   broadcast(io, roomCode);
 }

@@ -398,9 +398,13 @@ export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
       const isDuplicate = live.hotPotatoUsedAnswers.some(
         u => normalizeText(u) === normalizedAnswer,
       );
+      // 2026-04-28 (User-Wunsch 'keine strikes'): Dummies eliminieren sich
+      // NICHT mehr auf falsche/Duplikat-Tipps. Sie versuchen es weiter bis
+      // Turn-Timer expired (= echte Eliminierung). Dummies tippen alle
+      // 900-2400ms eine neue Antwort.
       if (isDuplicate && normalizedAnswer.length > 0) {
+        // Duplikat → einfach kurz feedback, weiter tippen
         live.hotPotatoLastAnswer = trimmed;
-        qqHotPotatoEliminate(live, turnExpired);
       } else {
         const validList = validAnswers;
         const isMatch = validList.some(v => similarityScore(trimmed, v) >= 0.8);
@@ -410,9 +414,8 @@ export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
           qqHotPotatoMarkQualified(live, activeId);
           qqHotPotatoNext(live, turnExpired);
         } else {
-          // Als "falsch" behandeln → Dummy wird eliminiert
+          // Falsch → Timer läuft weiter, Dummy darf nochmal versuchen.
           live.hotPotatoLastAnswer = trimmed;
-          qqHotPotatoEliminate(live, turnExpired);
         }
       }
       broadcastQQ(io, roomCode);
@@ -1801,7 +1804,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Team submits their Hot Potato answer text — with auto-check
+    // Team submits their Hot Potato answer text — with auto-check.
+    // 2026-04-28 (User-Wunsch 'keine strikes'): kein Eliminieren auf falsche
+    // Tipps oder Duplikate mehr. Team kann während des Turn-Timers SO VIELE
+    // Antworten tippen wie sie schaffen. Nur Timer-Ablauf eliminiert.
     socket.on('qq:hotPotatoAnswer', (
       payload: { roomCode: string; teamId: string; answer: string },
       ack?: unknown,
@@ -1809,31 +1815,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const trimmed = payload.answer.slice(0, 500);
-        // Validate turn, but do NOT finalize lastAnswer yet — we decide per branch
         if (room.phase !== 'QUESTION_ACTIVE') { ok(ack); return; }
         if (room.hotPotatoActiveTeamId !== payload.teamId) { ok(ack); return; }
         room.lastActivityAt = Date.now();
 
-        // Auto-check: duplicate used answer → eliminate
         const normalizedAnswer = normalizeText(trimmed);
+        if (normalizedAnswer.length === 0) { ok(ack); return; }
+
+        // Duplikat: nicht eliminieren — kurz als lastAnswer markieren (für
+        // Visual-Feedback 'schon gesagt'), Timer läuft weiter.
         const isDuplicate = room.hotPotatoUsedAnswers.some(
           used => normalizeText(used) === normalizedAnswer
         );
-        if (isDuplicate && normalizedAnswer.length > 0) {
-          // Duplicate — auto-eliminate (record answer for reveal display)
+        if (isDuplicate) {
           room.hotPotatoLastAnswer = trimmed;
-          const next = qqHotPotatoEliminate(room, hotPotatoTurnExpired(payload.roomCode));
-          const winner = qqHotPotatoCheckWinner(room);
-          if (winner === '' || !next) {
-            qqClearHotPotatoTimer(room);
-            qqRevealAnswer(room);
-            qqMarkWrong(room);
-          } else if (winner) {
-            qqClearHotPotatoTimer(room);
-            qqRevealAnswer(room);
-            qqClearBuzz(room);
-            qqMarkCorrect(room, winner);
-          }
           broadcast(io, payload.roomCode);
           ok(ack);
           return;
@@ -1841,21 +1836,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
         // Auto-check: match against answer list
         const q = room.currentQuestion;
-        if (q && normalizedAnswer.length > 0) {
+        if (q) {
           const validAnswers = q.answer
             .split(/[,;]/)
             .map(a => a.replace(/[…\.]+$/, '').trim())
             .filter(a => a.length > 0);
-          const isMatch = validAnswers.some(valid => {
-            const score = similarityScore(trimmed, valid);
-            return score >= 0.8;
-          });
+          const isMatch = validAnswers.some(valid => similarityScore(trimmed, valid) >= 0.8);
           if (isMatch) {
+            // Treffer → akzeptieren + nächstes Team
             room.hotPotatoUsedAnswers.push(trimmed);
             room.hotPotatoAnswerAuthors.push(payload.teamId);
             qqHotPotatoMarkQualified(room, payload.teamId);
 
-            // Pool erschöpft oder nur noch 1 alive? → Runde endet sofort
             const winnerPre = qqHotPotatoCheckWinner(room);
             if (winnerPre && winnerPre !== '') {
               qqClearHotPotatoTimer(room);
@@ -1867,7 +1859,6 @@ export function registerQQHandlers(io: SocketIOServer): void {
               return;
             }
 
-            // Weiter: nächstes Team, nochmal prüfen
             const next = qqHotPotatoNext(room, hotPotatoTurnExpired(payload.roomCode));
             const winner = qqHotPotatoCheckWinner(room);
             if (winner === '' || !next) {
@@ -1887,7 +1878,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
           }
         }
 
-        // No auto-match — wait for moderator judgment
+        // Falsch geraten → nicht eliminieren, Timer läuft weiter, Team darf
+        // weiter tippen. lastAnswer wird trotzdem gespeichert für UI-Feedback
+        // ('Falsch, nochmal versuchen').
+        room.hotPotatoLastAnswer = trimmed;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

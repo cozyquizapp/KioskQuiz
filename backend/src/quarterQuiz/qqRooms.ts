@@ -2584,6 +2584,9 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.comebackHL      = null;
   delete room._comebackStealPaused;
   room.swapFirstCell   = null;
+  // B13 (2026-04-29): Joker-Visuals beim Phase-Wechsel komplett aufraeumen.
+  // jokerCounted bleibt erhalten (Re-Detection-Schutz), nur die Sterne weg.
+  clearAllJokerVisuals(room);
   for (const fc of room.frozenCells) {
     const cell = room.grid[fc.row]?.[fc.col];
     if (cell && !cell.stuck) cell.frozen = false;
@@ -2605,6 +2608,18 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   room.lastActivityAt = Date.now();
 }
 
+/** B13/B5 (2026-04-29): Defensive — entfernt jokerFormed-Visual-Marker
+ *  von ALLEN Cells. Wird an jedem Phase-Uebergang aufgerufen, damit
+ *  Sterne nie ueber Phasen/Comeback/GAME_OVER hinaus persistieren.
+ *  jokerCounted bleibt erhalten (Re-Detection-Schutz pro Spiel). */
+function clearAllJokerVisuals(room: QQRoomState): void {
+  for (let r = 0; r < room.gridSize; r++) {
+    for (let c = 0; c < room.gridSize; c++) {
+      room.grid[r][c].jokerFormed = false;
+    }
+  }
+}
+
 export function qqNextQuestion(room: QQRoomState): void {
   // Comeback-Steal-Pause: zwischen einzelnen Klau-Aktionen wartet das Spiel auf
   // Moderator-Space. Hier weiter zum naechsten Steal/Team — ohne andere Logik.
@@ -2618,6 +2633,7 @@ export function qqNextQuestion(room: QQRoomState): void {
   if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'done') {
     updateTerritories(room);
     room.connections = null;
+    clearAllJokerVisuals(room);
     room.phase = 'GAME_OVER';
     return;
   }
@@ -2671,6 +2687,10 @@ export function qqNextQuestion(room: QQRoomState): void {
       updateTerritories(room);
       // Letzte Quiz-Runde durch — wenn 4×4-Finale aktiviert, springen wir
       // erst dorthin (Sub-Phase 'intro'). Sonst direkt GAME_OVER.
+      // B13: vor Finale/GAME_OVER alle Joker-Sterne aufraeumen (defensiv —
+      // finishPlacement koennte den allDone-Reset verpasst haben, z.B. wenn
+      // der letzte Zug ueber Comeback/Connections ging).
+      clearAllJokerVisuals(room);
       if (room.connectionsEnabled) {
         qqConnectionsStart(room, QQ_CONNECTIONS_FALLBACK_PAYLOAD, {
           durationSec: room.connectionsTimerSec,

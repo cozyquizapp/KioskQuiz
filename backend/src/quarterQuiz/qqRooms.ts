@@ -1869,7 +1869,11 @@ export function qqStealCell(
 
   const prevOwner = cell.ownerId;
   cell.ownerId = teamId;
-  cell.jokerCounted = false; // B5/B13: Owner-Wechsel — Cell ist fuer neue Joker-Patterns frei.
+  // B5/B13 (2026-04-29): Owner-Wechsel raeumt Joker-Marker auf:
+  // - jokerCounted=false: Cell ist fuer neue Joker-Patterns frei
+  // - jokerFormed=false: Stern verschwindet (gehoerte zum Pattern des prev Owners)
+  cell.jokerCounted = false;
+  cell.jokerFormed = false;
   room.lastPlacedCell = { row, col, teamId, wasSteal: true };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
@@ -1954,6 +1958,9 @@ export function qqSwapCells(
   const tmpOwner = cellA.ownerId;
   cellA.ownerId  = cellB.ownerId;
   cellB.ownerId  = tmpOwner;
+  // B13: Swap raeumt Joker-Marker auf beiden Cells (Owner-Wechsel beidseitig).
+  cellA.jokerFormed = false; cellA.jokerCounted = false;
+  cellB.jokerFormed = false; cellB.jokerCounted = false;
 
   updateTerritories(room);
   finishPlacement(room);
@@ -2005,6 +2012,9 @@ export function qqSwapOneCell(
     const enemyOwner = cell.ownerId;
     cell.ownerId     = teamId;
     ownCell.ownerId  = enemyOwner;
+    // B13: Swap raeumt Joker-Marker auf beiden Cells.
+    cell.jokerFormed = false; cell.jokerCounted = false;
+    ownCell.jokerFormed = false; ownCell.jokerCounted = false;
     room.lastPlacedCell = { row, col, teamId, wasSteal: false };
     room.swapFirstCell  = null;
     updateTerritories(room);
@@ -2112,6 +2122,7 @@ export function qqSandLockCell(
   cell.ownerId     = null;
   cell.frozen      = false;
   cell.jokerFormed = false;
+  cell.jokerCounted = false; // B13: Bann raeumt Cell auf — fuer neue Patterns frei.
   cell.sandLockTtl = 3;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);

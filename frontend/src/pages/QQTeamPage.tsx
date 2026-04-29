@@ -3350,7 +3350,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   // Derived mode flags
   const isFree      = pa === 'FREE';
-  const isJoker     = pa === 'PLACE_1' && phase >= 2; // Joker bonus placement
+  // 2026-04-28: Connections-Placement (nach 4×4-Finale) nutzt auch PLACE_1 —
+  // das ist aber KEIN Joker-Bonus, sondern eine reguläre Setz-Aktion pro
+  // gefundener Gruppe. (User-Wunsch: 'nach finale soll normale aktion sein,
+  // nicht joker, 4 oberbegriffe = 4 aktionen'.)
+  const isConnectionsPlacement = s.phase === 'CONNECTIONS_4X4';
+  const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement; // Joker bonus placement
   const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   const isStuck     = pa === 'STAPEL_1' || (isFree && freeMode === 'STAPEL');

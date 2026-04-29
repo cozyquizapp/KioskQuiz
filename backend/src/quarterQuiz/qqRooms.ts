@@ -1372,7 +1372,18 @@ export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | n
   const aliveHadTurn = alive.every(id =>
     room.hotPotatoQualified.includes(id) || room.hotPotatoEliminated.includes(id)
   );
-  if (alive.length === 1 && aliveHadTurn) return alive[0];
+  // 2026-04-28-Bug-Fix: Wenn das letzte alive-Team gerade ACTIVE ist aber
+  // noch NICHT auf diese Runde geantwortet hat, dürfen wir nicht als Winner
+  // declaren — sie sollen ihre Runde noch tippen können. (User-Bug: 'letzte
+  // Person durfte nichts eintippen aber hat gewonnen'.) Erst wenn sie
+  // entweder schon eine Antwort abgegeben hat ODER sie nicht das aktive Team
+  // ist (jemand anderes wurde gerade eliminiert), zählt sie als Winner.
+  if (alive.length === 1 && aliveHadTurn) {
+    const last = alive[0];
+    const isActiveButHasntAnswered =
+      room.hotPotatoActiveTeamId === last && !room.hotPotatoLastAnswer;
+    if (!isActiveButHasntAnswered) return last;
+  }
 
   // Pool-Erschöpfung: wenn alle gültigen Antworten der Frage verbraucht sind,
   // kann kein neuer Antwort-Turn mehr gespielt werden → Runde endet.
@@ -1616,11 +1627,12 @@ function pendingActionForPhase(
     if (!hasFreeCell) return 'STEAL_1';
     return 'PLACE_2'; // team may switch to STEAL_1
   }
-  // Phase 3 & 4: free choice — but if grid is full there's nothing to place,
-  // so only klauen/spezial-aktionen. Force STEAL_1 as default entry so the
-  // Moderator-UI zeigt den Klauen-Modus sofort; spezial-aktionen bleiben
-  // weiterhin über qqChooseFreeAction möglich (Phase ≥ 3).
-  if (!hasFreeCell) return 'STEAL_1';
+  // Phase 3 & 4: free choice — auch wenn Grid voll. (User-Bug 2026-04-28:
+  // 'Stapeln ging gar nicht ab Runde 3, er ist direkt zum Klauen gesprungen'.
+  // Vorher war 'STEAL_1' bei vollem Grid Default → FREE-Menu wurde übersprungen
+  // → User konnte nicht stapeln. Jetzt bleiben wir in FREE — die Team-UI
+  // versteckt den PLACE-Button automatisch wenn keine freien Felder, aber
+  // STAPEL-Button bleibt sichtbar.)
   return 'FREE';
 }
 
@@ -1744,6 +1756,16 @@ export function qqPlaceCell(
     (action === 'COMEBACK' && room.comebackAction === 'PLACE_2') ||
     (action === 'PLACE_1' && stats.placementsLeft > 0); // joker-bonus-Runde
 
+  // 2026-04-28: User-Wunsch 'Joker = 1 Aktion der aktuellen Runde'. Joker
+  // setzt jetzt die richtige pendingAction je nach Phase + Grid-State:
+  //   Phase 1: PLACE_1 (einziges erlaubtes Tool).
+  //   Phase 2+: FREE wenn Grid frei (Auswahl PLACE/STEAL/STAPEL je nach Round),
+  //             STEAL_1 wenn Grid voll (sonst stuck).
+  const hasFreeCellNow = room.grid.some(r => r.some(c => c.ownerId === null));
+  const jokerPendingAction: typeof room.pendingAction = room.gamePhaseIndex === 1
+    ? 'PLACE_1'
+    : hasFreeCellNow ? 'FREE' : 'STEAL_1';
+
   if (usesMultiSlot) {
     stats.placementsLeft--;
     // Joker während laufender Multi-Slot-Runde: SOFORT platzieren (vor verbleibenden Regulär-Steinen)
@@ -1753,7 +1775,7 @@ export function qqPlaceCell(
         stats.pendingMultiSlot = (stats.pendingMultiSlot ?? 0) + stats.placementsLeft;
       }
       stats.placementsLeft = jokersAwarded;
-      room.pendingAction = 'PLACE_1';
+      room.pendingAction = jokerPendingAction;
       return { jokersAwarded };
     }
     if (stats.placementsLeft > 0) {
@@ -1765,7 +1787,7 @@ export function qqPlaceCell(
   const direct = usesMultiSlot ? 0 : jokersAwarded;
   if (direct > 0) {
     stats.placementsLeft = direct;
-    room.pendingAction = 'PLACE_1';
+    room.pendingAction = jokerPendingAction;
     return { jokersAwarded: direct };
   }
 
@@ -2670,10 +2692,18 @@ export function qqNextQuestion(room: QQRoomState): void {
 // Joker-Pattern: 2x2 Block ODER 4-in-a-row Linie (horizontal/vertikal).
 // Beide Patterns geben 1 Bonus-Cell pro Pattern. Cap: QQ_MAX_JOKERS_PER_GAME (=2).
 function handleJokerDetection(room: QQRoomState, teamId: string): number {
+  const stats = room.teamPhaseStats[teamId];
+  // 2026-04-28-Bug-Fix: User-Feedback 'Sterne auf großen Grids ohne dass Joker
+  // da war'. Sobald das Team-Cap erreicht ist, keine neuen Joker mehr
+  // detektieren UND auch keine Cells mehr markieren — sonst füllt sich das
+  // Grid Ende-Game mit „⭐"-Markierungen ohne Belohnung.
+  if (stats.jokersEarned >= QQ_MAX_JOKERS_PER_GAME) {
+    return 0;
+  }
+
   const newBlocks = detectNewJokers(room.grid, room.gridSize, teamId);
   if (newBlocks.length === 0) return 0;
 
-  const stats = room.teamPhaseStats[teamId];
   const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
   let toAward = Math.min(newBlocks.length, remaining);
 
@@ -2684,11 +2714,10 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
     toAward = Math.min(toAward, 1);
   }
 
-  // Markiere Cells aller detected Blocks (auch ueber Cap hinaus, damit sie
-  // nicht beim naechsten Place erneut zaehlen) — Bonus wird aber nur
-  // toAward-mal vergeben.
-  for (const block of newBlocks) {
-    markJokerCells(room.grid, block.cells);
+  // Markiere NUR die ersten `toAward` Blocks — Cells über dem Cap sind nicht
+  // belohnt und sollen visuell auch nicht als Joker erscheinen.
+  for (let i = 0; i < toAward; i++) {
+    markJokerCells(room.grid, newBlocks[i].cells);
   }
 
   stats.jokersEarned += toAward;

@@ -132,7 +132,7 @@ export const QQ_HL_POOL: readonly QQHLPair[] = [
   { id: 'gta5-sales', kind: 'anchor', category: 'filme', unit: 'Mio. verkaufte Einheiten',
     anchorLabel: 'GTA V', anchorValue: 205,
     subjectLabel: 'Minecraft', subjectValue: 300,
-    customQuestion: 'GTA V wurde ca. 205 Mio. mal verkauft. Mehr oder weniger als Minecraft?' },
+    customQuestion: 'GTA V wurde ca. 205 Mio. mal verkauft. Hat Minecraft mehr oder weniger verkauft?' },
   { id: 'imdb-office-breakingbad', kind: 'pair', category: 'filme', unit: 'IMDb-Rating',
     anchorLabel: 'The Office (US)', anchorValue: 9.0,
     subjectLabel: 'Breaking Bad', subjectValue: 9.5 },

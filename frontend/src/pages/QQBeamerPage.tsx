@@ -50,7 +50,7 @@ export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
 export const CAT_ACCENT = QQ_CAT_ACCENT;
 
 // Beamer-Namen bei 8 Teams / langen Team-Namen nicht reißen lassen.
-function truncName(name: string, max = 14): string {
+function truncName(name: string, max = 22): string {
   if (!name) return '';
   return name.length > max ? name.slice(0, max - 1) + '…' : name;
 }
@@ -4103,29 +4103,37 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 accent: string;
               };
               const ph = s.gamePhaseIndex;
-              const cards: ActionCardData[] =
-                ph === 1
-                  ? [
-                      { count: 1, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
-                    ]
-                  : ph === 2
-                  ? [
-                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color },
-                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
-                        limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
-                        accent: '#F59E0B' },
-                    ]
-                  : (ph === 3 || ph === 4)
-                  ? [
-                      { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
+              // 2026-04-28 (User-Wunsch): 'Platzieren'-Card nur anzeigen wenn
+              // noch freie Felder im Grid existieren (sonst irreführend in
+              // Runde 3/4 wenn Brett voll ist).
+              const hasFreeCells = s.grid.some(row => row.some(c => !c.ownerId));
+              const placeCard: ActionCardData | null = hasFreeCells
+                ? (ph === 1
+                    ? { count: 1, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color }
+                    : ph === 2
+                    ? { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color }
+                    : { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
                         limit: lang === 'en' ? 'while free cells' : 'wenn Feld frei',
-                        accent: color },
-                      { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
-                      { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
-                        limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
-                        accent: '#06B6D4' },
-                    ]
-                  : [];
+                        accent: color })
+                : null;
+              const cards: ActionCardData[] = ph === 1
+                ? (placeCard ? [placeCard] : [])
+                : ph === 2
+                ? [
+                    ...(placeCard ? [placeCard] : []),
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
+                      limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
+                      accent: '#F59E0B' },
+                  ]
+                : (ph === 3 || ph === 4)
+                ? [
+                    ...(placeCard ? [placeCard] : []),
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
+                    { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
+                      limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
+                      accent: '#06B6D4' },
+                  ]
+                : [];
               // Cards alle gleich gross + mittig + prominent. Statt 'compact-Modus'
               // bei vielen Cards behalten wir EINE Groesse und lassen flex die Breite
               // gleich verteilen. align-items: stretch sorgt fuer gleiche Hoehen.
@@ -4519,7 +4527,10 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const maxDistance = Math.max(1, ...scored.filter(s => Number.isFinite(s.distance)).map(s => s.distance));
         const unitStr = (q as any).unit ?? '';
         // Jahreszahlen ohne Tausenderpunkt — sonst sieht 1500 wie 1,5 aus.
-        const isYearUnit = /jahr|year/i.test(unitStr);
+        // Auto-Detection: int zwischen 1000-2100 sieht aus wie eine Jahreszahl.
+        // (User-Bug 2026-04-28: '1.914' erschien weil unit nicht 'Jahr' war.)
+        const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
+        const isYearUnit = /jahr|year/i.test(unitStr) || (q.targetValue != null && looksLikeYear(q.targetValue));
         const targetStr = q.targetValue != null
           ? (isYearUnit ? String(Math.round(q.targetValue)) : q.targetValue.toLocaleString('de-DE'))
           : '—';
@@ -7004,10 +7015,12 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   const q = s.currentQuestion!;
   const target = q.targetValue as number;
 
-  // Jahreszahlen (Unit enthaelt "Jahr"/"year") OHNE Tausenderpunkt formatieren —
-  // sonst stehen Werte wie 1500 als '1.500' da, was wie 1.5 aussieht und falsch ist.
+  // Jahreszahlen (Unit enthaelt "Jahr"/"year" ODER Wert sieht wie Jahr aus)
+  // OHNE Tausenderpunkt formatieren — sonst stehen Werte wie 1500 als '1.500'
+  // da, was wie 1.5 aussieht und falsch ist.
   const unitStr = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
-  const isYearUnit = /jahr|year/i.test(unitStr);
+  const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
+  const isYearUnit = /jahr|year/i.test(unitStr) || (target != null && looksLikeYear(target));
 
   const fmt = (n: number) => {
     const abs = Math.abs(n);
@@ -9174,7 +9187,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             });
             const targetPct = pctOf(target);
             const unitStrInline = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
-            const isYearUnitInline = /jahr|year/i.test(unitStrInline);
+            const looksLikeYearI = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
+            const isYearUnitInline = /jahr|year/i.test(unitStrInline) || (target != null && looksLikeYearI(target));
             const fmt = (n: number) => {
               const abs = Math.abs(n);
               if (isYearUnitInline) return String(Math.round(n));
@@ -9426,11 +9440,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
             <div style={{
               width: '100%', maxWidth: 1400,
-              maxHeight: showUnifiedWinner ? 560 : 0,
-              overflow: 'hidden',
+              // 2026-04-28: User-Bug 'Mucho Sieger-Card Border-Glow oben/unten
+              // abgeschnitten'. Vorher overflow:hidden → Box-Shadow geclipped.
+              // Jetzt overflow:visible — Card kann Glow zeigen. Transition über
+              // opacity + transform:scaleY statt max-height (kein Clipping).
+              overflow: 'visible',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: showUnifiedWinner ? 12 : 0,
-              transition: 'max-height 0.55s cubic-bezier(0.34,1.56,0.64,1), margin-bottom 0.4s ease',
+              opacity: showUnifiedWinner ? 1 : 0,
+              transform: showUnifiedWinner ? 'scaleY(1)' : 'scaleY(0)',
+              transformOrigin: 'top center',
+              maxHeight: showUnifiedWinner ? 'none' : 0,
+              transition: 'opacity 0.45s ease, transform 0.55s cubic-bezier(0.34,1.56,0.64,1), max-height 0.55s ease, margin-bottom 0.4s ease',
             }}>
               {showUnifiedWinner && (() => {
             const isEn = lang === 'en';
@@ -9560,7 +9581,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           fontWeight: 900, fontSize: 'clamp(20px, 2.6vw, 34px)', color: tm.color, lineHeight: 1.1,
                           textShadow: `0 0 24px ${tm.color}44`,
                           maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>{truncName(tm.name, 14)}</div>
+                        }}>{truncName(tm.name, 20)}</div>
                       </div>
                     ))}
                   </div>
@@ -10123,7 +10144,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
   // Nummer kompakt formatieren: 3800000 → 3,8M | 15000 → 15k | 300 → 300
   // Bei Jahreszahlen kein Tausendertrennzeichen (1900 statt 1.900).
-  const isYearUnitHL = /jahr|year/i.test(hl?.currentPair?.unit ?? '');
+  // Auto-Detection ergänzt: Werte 1000-2100 als Integer = Jahreszahl.
+  const looksLikeYearHL = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
+  const isYearUnitHL = /jahr|year/i.test(hl?.currentPair?.unit ?? '') ||
+    (hl?.currentPair?.subjectValue != null && looksLikeYearHL(hl.currentPair.subjectValue)) ||
+    (hl?.currentPair?.anchorValue != null && looksLikeYearHL(hl.currentPair.anchorValue));
   const fmtHL = (n: number) => {
     if (isYearUnitHL) return String(Math.round(n));
     const abs = Math.abs(n);
@@ -10404,7 +10429,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   <div style={{
                     fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
                     maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{truncName(tm.name, 10)}</div>
+                  }}>{truncName(tm.name, 18)}</div>
                   {/* Winnings-Slot mit RESERVIERTER Höhe — gleich groß in question und
                       reveal, damit das Avatar-Grid nicht um die Pill-Höhe nach unten
                       wächst und die Anchor/Subject-Cards re-zentriert werden. */}
@@ -10590,7 +10615,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: tm.color,
                       textShadow: `0 0 22px ${tm.color}55`,
                       maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{truncName(tm.name, 14)}</div>
+                    }}>{truncName(tm.name, 20)}</div>
                   </div>
                 ))}
               </div>

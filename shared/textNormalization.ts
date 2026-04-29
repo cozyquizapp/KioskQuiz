@@ -52,6 +52,23 @@ export const similarityScore = (a: string, b: string): number => {
   if (!normalizedA || !normalizedB) return 0;
   const maxLen = Math.max(normalizedA.length, normalizedB.length);
   if (maxLen === 0) return 1;
+  // 2026-04-28: Substring-Toleranz — wenn die kürzere Eingabe vollständig
+  // in der längeren steckt (z.B. 'herr der ringe' in 'der herr der ringe'),
+  // werten wir als Match. (User-Bug: 'fast richtige Antworten anerkennen'.)
+  // Mind. 4 Zeichen damit kurze Wörter wie 'er' nicht alles matchen.
+  if (normalizedA.length >= 4 && normalizedB.length >= 4) {
+    if (normalizedA.includes(normalizedB) || normalizedB.includes(normalizedA)) {
+      return 0.95;
+    }
+  }
+  // Auch tolerant gegen führende Artikel ('der/die/das/the/a/an' vorne).
+  // Strip dann nochmal vergleichen — falls strip ergibt Match: 0.92.
+  const stripArticle = (s: string) => s.replace(/^(der|die|das|the|a|an)\s+/, '');
+  const sA = stripArticle(normalizedA);
+  const sB = stripArticle(normalizedB);
+  if (sA !== normalizedA || sB !== normalizedB) {
+    if (sA === sB && sA.length >= 3) return 0.92;
+  }
   const distance = levenshteinDistance(normalizedA, normalizedB);
   return Math.max(0, 1 - distance / maxLen);
 };

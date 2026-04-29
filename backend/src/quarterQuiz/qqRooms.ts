@@ -1718,16 +1718,9 @@ export function qqPlaceCell(
   row: number,
   col: number
 ): { jokersAwarded: number } {
-  // 2026-04-28-Bug-Fix: Während CONNECTIONS_4X4 mit c.phase === 'placement'
-  // setzen die Top-Teams ihre verdienten Felder auf das Territory-Grid. Ohne
-  // diese Phase im Allow-List warf qqPlaceCell → Dummies konnten nicht
-  // setzen, Reveal hing fest. (User-Bug 'reveal nach 4x4 bleibt aus + Bots
-  // setzen keine Felder danach'.)
-  const isConnectionsPlacement =
-    room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement';
-  if (!isConnectionsPlacement) {
-    assertPhase(room, ['PLACEMENT']);
-  }
+  // assertPhase(['PLACEMENT']) erlaubt automatisch auch CONNECTIONS_4X4 +
+  // c.phase==='placement' (siehe assertPhase-Helper).
+  assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
   assertValidCoord(room, row, col);
 
@@ -1756,16 +1749,9 @@ export function qqPlaceCell(
     (action === 'COMEBACK' && room.comebackAction === 'PLACE_2') ||
     (action === 'PLACE_1' && stats.placementsLeft > 0); // joker-bonus-Runde
 
-  // 2026-04-28: User-Wunsch 'Joker = 1 Aktion der aktuellen Runde'. Joker
-  // setzt jetzt die richtige pendingAction je nach Phase + Grid-State:
-  //   Phase 1: PLACE_1 (einziges erlaubtes Tool).
-  //   Phase 2+: FREE wenn Grid frei (Auswahl PLACE/STEAL/STAPEL je nach Round),
-  //             STEAL_1 wenn Grid voll (sonst stuck).
-  const hasFreeCellNow = room.grid.some(r => r.some(c => c.ownerId === null));
-  const jokerPendingAction: typeof room.pendingAction = room.gamePhaseIndex === 1
-    ? 'PLACE_1'
-    : hasFreeCellNow ? 'FREE' : 'STEAL_1';
-
+  // 2026-04-28: User-Wunsch 'Joker = 1 Aktion der aktuellen Runde'. Helper
+  // jokerBonusAction(room) liefert PLACE_1 / FREE / STEAL_1 je nach Phase
+  // und Grid-State.
   if (usesMultiSlot) {
     stats.placementsLeft--;
     // Joker während laufender Multi-Slot-Runde: SOFORT platzieren (vor verbleibenden Regulär-Steinen)
@@ -1775,7 +1761,7 @@ export function qqPlaceCell(
         stats.pendingMultiSlot = (stats.pendingMultiSlot ?? 0) + stats.placementsLeft;
       }
       stats.placementsLeft = jokersAwarded;
-      room.pendingAction = jokerPendingAction;
+      room.pendingAction = jokerBonusAction(room);
       return { jokersAwarded };
     }
     if (stats.placementsLeft > 0) {
@@ -1787,7 +1773,7 @@ export function qqPlaceCell(
   const direct = usesMultiSlot ? 0 : jokersAwarded;
   if (direct > 0) {
     stats.placementsLeft = direct;
-    room.pendingAction = jokerPendingAction;
+    room.pendingAction = jokerBonusAction(room);
     return { jokersAwarded: direct };
   }
 
@@ -1866,7 +1852,7 @@ export function qqStealCell(
 
   if (jokersAwarded > 0) {
     room.teamPhaseStats[teamId].placementsLeft = jokersAwarded;
-    room.pendingAction = 'PLACE_1';
+    room.pendingAction = jokerBonusAction(room);
     return { jokersAwarded };
   }
 
@@ -3177,12 +3163,28 @@ export function qqResetRoom(room: QQRoomState): void {
 
 // ── Guard helpers ─────────────────────────────────────────────────────────────
 function assertPhase(room: QQRoomState, allowed: QQPhase[]): void {
+  // 2026-04-28: Connections-Placement-Phase wirkt wie ein PLACEMENT (User-Wunsch
+  // Finale-Aktionen = volle Round-4-Menü). Wenn die Funktion PLACEMENT erlaubt,
+  // gleiches Verhalten in CONNECTIONS_4X4 + c.phase==='placement'.
+  if (allowed.includes('PLACEMENT') &&
+      room.phase === 'CONNECTIONS_4X4' &&
+      room.connections?.phase === 'placement') {
+    return;
+  }
   if (!allowed.includes(room.phase)) {
     throw new QQError(
       'WRONG_PHASE',
       `Aktion nicht möglich in Phase "${room.phase}". Erwartet: ${allowed.join(', ')}.`
     );
   }
+}
+
+/** Joker-Bonus pendingAction: gibt 1 Aktion der aktuellen Runde — Phase 1 nur
+ *  PLACE_1, Phase 2+ FREE wenn Grid frei sonst STEAL_1. */
+function jokerBonusAction(room: QQRoomState): NonNullable<QQRoomState['pendingAction']> {
+  if (room.gamePhaseIndex === 1) return 'PLACE_1';
+  const hasFreeCellNow = room.grid.some(r => r.some(c => c.ownerId === null));
+  return hasFreeCellNow ? 'FREE' : 'STEAL_1';
 }
 
 function assertTeam(room: QQRoomState, teamId: string): void {
@@ -3433,7 +3435,11 @@ export function qqConnectionsToReveal(room: QQRoomState): void {
   room.lastActivityAt = now;
 }
 
-/** Wechsel reveal → placement. Setzt pendingFor auf das Top-Team. */
+/** Wechsel reveal → placement. Setzt pendingFor auf das Top-Team.
+ *  User-Wunsch 2026-04-28: Finale-Aktionen sind volle Round-3/4-Aktionen
+ *  (PLACE/STEAL/STAPEL/SANDUHR/SHIELD/SWAP je Phase). pendingAction='FREE'
+ *  öffnet das Action-Menü; Helper-Funktionen erlauben jetzt CONNECTIONS_4X4
+ *  + c.phase==='placement' wie reguläre PLACEMENT. */
 export function qqConnectionsToPlacement(room: QQRoomState): void {
   const c = room.connections;
   if (!c) return;
@@ -3446,7 +3452,9 @@ export function qqConnectionsToPlacement(room: QQRoomState): void {
     return;
   }
   room.pendingFor = c.placementOrder[0];
-  room.pendingAction = 'PLACE_1';
+  // Phase 1 hat technisch keine STEAL/STAPEL — aber Connections findet erst
+  // nach Phase 4 statt, also FREE ist hier safe.
+  room.pendingAction = 'FREE';
   c.placementCursor = 0;
   c.placementRemaining = c.teamProgress[c.placementOrder[0]].foundGroupIds.length;
   room.lastActivityAt = Date.now();
@@ -3462,9 +3470,9 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
   if (!c || c.phase !== 'placement') return false;
   c.placementRemaining -= 1;
   if (c.placementRemaining > 0) {
-    // selbes Team setzt nochmal
+    // selbes Team setzt nochmal — wieder mit voller Action-Auswahl
     room.pendingFor = c.placementOrder[c.placementCursor];
-    room.pendingAction = 'PLACE_1';
+    room.pendingAction = 'FREE';
     return false;
   }
   // Nächstes Team
@@ -3478,7 +3486,7 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
   const nextTeam = c.placementOrder[c.placementCursor];
   c.placementRemaining = c.teamProgress[nextTeam].foundGroupIds.length;
   room.pendingFor = nextTeam;
-  room.pendingAction = 'PLACE_1';
+  room.pendingAction = 'FREE';
   return false;
 }
 

@@ -647,7 +647,10 @@ export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void
   if (room.phase !== 'CONNECTIONS_4X4') return;
   if (!room.connections) return;
 
-  // ── Placement-Phase: Dummy setzt das Feld ─────────────────────────────────
+  // ── Placement-Phase: Dummy wählt + setzt Aktion (FREE-Menü) ────────────────
+  // 2026-04-28: Dummies bekommen jetzt das volle Round-3/4-Menü (PLACE/STEAL/
+  // STAPEL je nach was möglich ist). Vorher nur PLACE → Klauen/Stapeln im
+  // Finale-Placement war für Bots nicht verfügbar.
   if (room.connections.phase === 'placement') {
     const teamId = room.pendingFor;
     if (!teamId || !isDummy(room, teamId)) return;
@@ -656,8 +659,36 @@ export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void
       if (!live || live.phase !== 'CONNECTIONS_4X4') return;
       if (live.connections?.phase !== 'placement') return;
       if (live.pendingFor !== teamId) return;
+
+      // Falls pendingAction noch FREE: volle Auswahl wie in Round 3/4.
+      if (live.pendingAction === 'FREE') {
+        const kinds: DummyActionKind[] = [];
+        const hasFreeCellNow = live.grid.some(r => r.some(c => c.ownerId === null));
+        if (hasFreeCellNow) kinds.push('PLACE');
+        kinds.push('STEAL');
+        const stats = live.teamPhaseStats[teamId];
+        const stapelsUsedNow = stats?.stapelsUsed ?? 0;
+        if (live.gamePhaseIndex >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
+        const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: kinds, phase: live.gamePhaseIndex,
+        });
+        if (!choice) {
+          qqSkipCurrentPlacement(live);
+          broadcast(io, roomCode);
+          if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
+          return;
+        }
+        dispatchFreeChoice(io, roomCode, teamId, choice);
+        return;
+      }
+
+      // Falls pendingAction schon konkret (PLACE_1 / STEAL_1 / STAPEL_1) durch
+      // einen vorherigen Tick: direkt ausführen.
+      const concrete: DummyActionKind[] = live.pendingAction === 'STEAL_1' ? ['STEAL']
+                                        : live.pendingAction === 'STAPEL_1' ? ['STAPEL']
+                                        : ['PLACE'];
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['PLACE'], phase: live.gamePhaseIndex,
+        availableKinds: concrete, phase: live.gamePhaseIndex,
       });
       if (!choice) {
         qqSkipCurrentPlacement(live);
@@ -666,7 +697,9 @@ export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void
         return;
       }
       try {
-        qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        if (choice.kind === 'PLACE') qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
+        else if (choice.kind === 'STEAL') qqStealCell(live, teamId, choice.target!.row, choice.target!.col);
+        else if (choice.kind === 'STAPEL') qqStuckCell(live, teamId, choice.target!.row, choice.target!.col);
         if (live.connections?.phase === 'placement') qqConnectionsAfterPlacement(live);
         broadcast(io, roomCode);
         if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
@@ -1227,6 +1260,31 @@ export function maybeDummyAnswerHL(io: SocketIOServer, roomCode: string): void {
 }
 
 /** Hilfs-Dispatcher: aus FREE-Wahl erst chooseFreeAction, dann Follow-up. */
+/** True wenn aktuelle Phase eine Placement-Action erlaubt (PLACEMENT oder
+ *  CONNECTIONS_4X4 + connections.phase === 'placement' = Finale-Aktionen). */
+function isPlacementCtx(room: import('./qqRooms').QQRoomState): boolean {
+  if (room.phase === 'PLACEMENT') return true;
+  if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') return true;
+  return false;
+}
+
+/** Nach Action-Dispatch: connections-cursor advance + Tick. Wird aus
+ *  dispatchFreeChoice nach PLACE/STEAL/STAPEL/SANDUHR/SHIELD/SWAP gerufen. */
+function afterDispatchTick(io: SocketIOServer, roomCode: string): void {
+  const live = getQQRoom(roomCode);
+  if (!live) return;
+  if (live.phase === 'CONNECTIONS_4X4' && live.connections?.phase === 'placement') {
+    // Action verbraucht Slot; nächstes Team / done bestimmen
+    qqConnectionsAfterPlacement(live);
+    broadcastQQ(io, roomCode);
+    if (live.connections?.phase === 'placement' && live.pendingFor) {
+      maybeAutoConnections(io, roomCode);
+    }
+  } else if (live.phase === 'PLACEMENT' && live.pendingFor) {
+    maybeAutoPlace(io, roomCode);
+  }
+}
+
 function dispatchFreeChoice(
   io: SocketIOServer,
   roomCode: string,
@@ -1241,6 +1299,11 @@ function dispatchFreeChoice(
       broadcastQQ(io, roomCode);
       // PLACE_2 wird via erneuten maybeAutoPlace-Tick bedient.
       if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+      else if (live.phase === 'CONNECTIONS_4X4' && live.connections?.phase === 'placement' && live.pendingFor) {
+        // Connections: nach FREE→PLACE muss noch der eigentliche Place-Cell-
+        // Schritt folgen. maybeAutoConnections führt das aus.
+        maybeAutoConnections(io, roomCode);
+      }
       return;
     }
     if (choice.kind === 'STEAL') {
@@ -1249,12 +1312,12 @@ function dispatchFreeChoice(
       // Direkt selbes Ziel klauen, um nicht neu zu enumerieren.
       setTimeout(() => {
         const live2 = getQQRoom(roomCode);
-        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (!live2 || !isPlacementCtx(live2)) return;
         if (live2.pendingFor !== teamId || live2.pendingAction !== 'STEAL_1') return;
         try {
           qqStealCell(live2, teamId, choice.target!.row, choice.target!.col);
           broadcastQQ(io, roomCode);
-          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+          afterDispatchTick(io, roomCode);
         } catch { /* skip */ }
       }, 700);
       return;
@@ -1264,12 +1327,12 @@ function dispatchFreeChoice(
       broadcastQQ(io, roomCode);
       setTimeout(() => {
         const live2 = getQQRoom(roomCode);
-        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (!live2 || !isPlacementCtx(live2)) return;
         if (live2.pendingFor !== teamId || live2.pendingAction !== 'SANDUHR_1') return;
         try {
           qqSandLockCell(live2, teamId, choice.target!.row, choice.target!.col);
           broadcastQQ(io, roomCode);
-          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+          afterDispatchTick(io, roomCode);
         } catch { /* skip */ }
       }, 900);
       return;
@@ -1279,16 +1342,14 @@ function dispatchFreeChoice(
       broadcastQQ(io, roomCode);
       setTimeout(() => {
         const live2 = getQQRoom(roomCode);
-        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (!live2 || !isPlacementCtx(live2)) return;
         if (live2.pendingFor !== teamId) return;
         try {
-          // 1 Schild = 1 Feld (frueher: ganzes Cluster). Dummy braucht jetzt
-          // ein konkretes Target, das per `choice.target` geliefert wurde.
           if (live2.pendingAction === 'SHIELD_1' && choice.target) {
             qqShieldCell(live2, teamId, choice.target.row, choice.target.col);
           }
           broadcastQQ(io, roomCode);
-          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+          afterDispatchTick(io, roomCode);
         } catch { /* skip */ }
       }, 900);
       return;
@@ -1298,12 +1359,12 @@ function dispatchFreeChoice(
       broadcastQQ(io, roomCode);
       setTimeout(() => {
         const live2 = getQQRoom(roomCode);
-        if (!live2 || live2.phase !== 'PLACEMENT') return;
+        if (!live2 || !isPlacementCtx(live2)) return;
         if (live2.pendingFor !== teamId || live2.pendingAction !== 'STAPEL_1') return;
         try {
           qqStuckCell(live2, teamId, choice.target!.row, choice.target!.col);
           broadcastQQ(io, roomCode);
-          if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
+          afterDispatchTick(io, roomCode);
         } catch { /* skip */ }
       }, 900);
       return;
@@ -2064,8 +2125,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqStealCell(room, payload.teamId, payload.row, payload.col);
+        // Connections-Placement: nach jedem Klauen Cursor weiterschalten.
+        // (User-Wunsch: Finale-Aktionen = volle Round-3/4-Auswahl, also auch
+        // STEAL kann im Finale die Aktions-Slots verbrauchen.)
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          qqConnectionsAfterPlacement(room);
+        }
         broadcast(io, payload.roomCode);
         maybeAutoPlace(io, payload.roomCode);
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          maybeAutoConnections(io, payload.roomCode);
+        }
         if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
       } catch (e) { fail(ack, e); }
     });
@@ -2148,7 +2218,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqStuckCell(room, payload.teamId, payload.row, payload.col);
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          qqConnectionsAfterPlacement(room);
+        }
         broadcast(io, payload.roomCode);
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
+          maybeAutoConnections(io, payload.roomCode);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

@@ -12437,15 +12437,19 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     </span>
                     <QQTeamAvatar avatarId={tm.avatarId} size={avatarSize} />
                     <span title={tm.name} style={{
+                      // 2026-04-29: Name nimmt verbleibende Breite, Score haengt
+                      // sich per marginLeft:auto an die rechte Karten-Kante.
+                      flex: 1, minWidth: 0,
                       fontSize: nameFs,
                       fontWeight: 900, color: tm.color, lineHeight: 1.1,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      maxWidth: '100%',
                     }}>{tm.name}</span>
                     <span style={{
+                      marginLeft: 'auto',
                       fontSize: scoreFs,
                       fontWeight: 900, color: '#FDE68A',
                       fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                      flexShrink: 0,
                     }}>
                       {tm.largestConnected}
                     </span>

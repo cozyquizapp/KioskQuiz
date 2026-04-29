@@ -12357,17 +12357,27 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         {sorted.length > 1 && (() => {
           const others = sorted.slice(1);
           const wn = others.length;
-          // 1col: ≤3 andere = 4 Teams insgesamt → entspannte vertikale Anordnung.
-          // 2col: ab 4 anderen → balanciert in 2 Säulen, max 4 Reihen bei 8 Teams.
-          const cols = wn <= 3 ? 1 : 2;
-          // Avatar-Größe — bei 2col sind die Cards halb so breit, also etwas kleiner.
+          // 2026-04-28-v3: 1col bevorzugt — User-Wunsch 'unter der Sieger-Card
+          // ist genug Platz die Teams in einer Spalte anzuzeigen'.
+          // 1col: bis 6 andere Teams (= 7 total). Cards sind dann etwas
+          //        kompakter aber stehen sauber untereinander.
+          // 2col: erst ab 7 anderen (= 8 total) wenn vertikal nicht mehr passt.
+          const cols = wn <= 6 ? 1 : 2;
+          // Avatar-Größe — bei vielen Teams kleiner damit alle reinpassen.
           const avatarSize = cols === 1
-            ? 'clamp(50px, 4.6vw, 72px)'
-            : wn <= 5 ? 'clamp(42px, 3.8vw, 60px)'
-                      : 'clamp(38px, 3.4vw, 52px)';
-          const nameFs   = cols === 1 ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(12px, 1.25vw, 16px)';
-          const scoreFs  = cols === 1 ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(14px, 1.5vw, 19px)';
-          const cardPad  = cols === 1 ? '10px 14px' : '8px 12px';
+            ? wn <= 3 ? 'clamp(50px, 4.6vw, 72px)'
+                      : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
+                                : 'clamp(34px, 3.2vw, 48px)'
+            : 'clamp(38px, 3.4vw, 52px)';
+          const nameFs   = cols === 1
+            ? wn <= 4 ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(11px, 1.2vw, 15px)'
+            : 'clamp(12px, 1.25vw, 16px)';
+          const scoreFs  = cols === 1
+            ? wn <= 4 ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(14px, 1.5vw, 19px)'
+            : 'clamp(14px, 1.5vw, 19px)';
+          const cardPad  = cols === 1
+            ? wn <= 4 ? '10px 14px' : '7px 12px'
+            : '8px 12px';
           // Reverse-Reveal: letztes (höchster Index) zuerst, niedrigster (Silver) zuletzt.
           // Pro Team-Step ~0.9s.
           const revealStep = 0.9;

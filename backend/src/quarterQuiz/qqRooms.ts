@@ -3484,19 +3484,61 @@ export function qqConnectionsToPlacement(room: QQRoomState): void {
     room.pendingAction = null;
     return;
   }
-  room.pendingFor = c.placementOrder[0];
-  // Phase 1 hat technisch keine STEAL/STAPEL — aber Connections findet erst
-  // nach Phase 4 statt, also FREE ist hier safe.
-  room.pendingAction = 'FREE';
+  // B4 (2026-04-29): Auto-Skip falls erstes Team keine Aktion hat.
   c.placementCursor = 0;
-  c.placementRemaining = c.teamProgress[c.placementOrder[0]].foundGroupIds.length;
+  while (c.placementCursor < c.placementOrder.length) {
+    const team = c.placementOrder[c.placementCursor];
+    if (canConnectionsTeamDoAction(room, team)) {
+      room.pendingFor = team;
+      room.pendingAction = 'FREE';
+      c.placementRemaining = c.teamProgress[team].foundGroupIds.length;
+      room.lastActivityAt = Date.now();
+      return;
+    }
+    c.placementCursor += 1;
+  }
+  // Kein Team kann eine Aktion ausfuehren → direkt zu done.
+  c.phase = 'done';
+  room.pendingFor = null;
+  room.pendingAction = null;
   room.lastActivityAt = Date.now();
+}
+
+/** B4 (2026-04-29): Kann das Team aktuell ueberhaupt eine Action ausfuehren?
+ *  Im Finale ist 1 Action = PLACE×2 ODER STEAL×1 ODER STAPEL×1. Wenn keiner
+ *  dieser drei Wege gangbar ist, MUSS der Slot uebersprungen werden — sonst
+ *  haengt die UI im FREE-Menue ohne valides Target. */
+function canConnectionsTeamDoAction(room: QQRoomState, teamId: string): boolean {
+  // PLACE: braucht freies Feld (nicht gebannt).
+  const hasPlaceTarget = room.grid.some(row => row.some(cell =>
+    cell.ownerId === null && !cell.sandLockTtl
+  ));
+  if (hasPlaceTarget) return true;
+  // STEAL: braucht klaubares Gegnerfeld (nicht stuck/shielded/frozen).
+  const hasStealTarget = room.grid.some(row => row.some(cell =>
+    cell.ownerId !== null && cell.ownerId !== teamId
+    && !cell.stuck && !cell.shielded && !cell.frozen
+  ));
+  if (hasStealTarget) return true;
+  // STAPEL: braucht eigenes nicht-stuck Feld + Budget.
+  const stats = room.teamPhaseStats[teamId];
+  const hasStapelBudget = (stats?.stapelsUsed ?? 0) < QQ_MAX_STAPELS_PER_GAME;
+  const hasOwnNonStuck = room.grid.some(row => row.some(cell =>
+    cell.ownerId === teamId && !cell.stuck
+  ));
+  if (hasStapelBudget && hasOwnNonStuck) return true;
+  return false;
 }
 
 /**
  * Aufruf nach jedem Placement während der Connections-Placement-Phase.
  * Dekrementiert remaining und schaltet ggf. zum nächsten Team weiter.
  * Returnt true, wenn alle Aktionen abgearbeitet wurden (→ phase='done').
+ *
+ * B4 (2026-04-29): Auto-Skip wenn das pending Team keine valide Action mehr
+ * hat — alle restlichen Slots dieses Teams werden uebersprungen, naechstes
+ * Team kommt dran. Wiederholt bis ein Team eine Aktion ausfuehren kann oder
+ * alle Teams abgearbeitet sind.
  */
 export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
   const c = room.connections;
@@ -3504,23 +3546,37 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
   c.placementRemaining -= 1;
   if (c.placementRemaining > 0) {
     // selbes Team setzt nochmal — wieder mit voller Action-Auswahl
-    room.pendingFor = c.placementOrder[c.placementCursor];
+    const sameTeam = c.placementOrder[c.placementCursor];
+    // Falls das Team auch fuer den naechsten Slot keine Aktion mehr hat,
+    // alle restlichen Slots verwerfen (z.B. Grid voll + kein Steal-Target).
+    if (!canConnectionsTeamDoAction(room, sameTeam)) {
+      c.placementRemaining = 0;
+      // fall-through zum naechsten Team
+    } else {
+      room.pendingFor = sameTeam;
+      room.pendingAction = 'FREE';
+      return false;
+    }
+  }
+  // Nächstes Team — eventuell mehrere skippen wenn keiner Aktion ausfuehren kann.
+  while (true) {
+    c.placementCursor += 1;
+    if (c.placementCursor >= c.placementOrder.length) {
+      c.phase = 'done';
+      room.pendingFor = null;
+      room.pendingAction = null;
+      return true;
+    }
+    const nextTeam = c.placementOrder[c.placementCursor];
+    c.placementRemaining = c.teamProgress[nextTeam].foundGroupIds.length;
+    if (!canConnectionsTeamDoAction(room, nextTeam)) {
+      // Skip dieses Team komplett — naechstes pruefen.
+      continue;
+    }
+    room.pendingFor = nextTeam;
     room.pendingAction = 'FREE';
     return false;
   }
-  // Nächstes Team
-  c.placementCursor += 1;
-  if (c.placementCursor >= c.placementOrder.length) {
-    c.phase = 'done';
-    room.pendingFor = null;
-    room.pendingAction = null;
-    return true;
-  }
-  const nextTeam = c.placementOrder[c.placementCursor];
-  c.placementRemaining = c.teamProgress[nextTeam].foundGroupIds.length;
-  room.pendingFor = nextTeam;
-  room.pendingAction = 'FREE';
-  return false;
 }
 
 /** Räumt Connections-State + Timer auf — z.B. nach Phase done oder Reset. */

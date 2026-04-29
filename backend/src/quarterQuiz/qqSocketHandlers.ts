@@ -2123,10 +2123,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // qqPlaceCell setzt pendingFor=null wenn finishPlacement gelaufen ist
         // (= action voll abgeschlossen). Bei placementsLeft>0 ist noch eine
         // 2. Setzung offen → kein Cursor-Advance.
+        // B4 (2026-04-29): Grid-Full-Recovery — wenn nach 1. Cell von PLACE_2
+        // keine freien Felder mehr existieren, restliche Slots verwerfen und
+        // Action als verbraucht zaehlen (sonst haengt das System auf einem
+        // unerfuellbaren PLACE_2). Gilt analog fuer pendingMultiSlot.
         if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
           const stats = room.teamPhaseStats[payload.teamId];
-          const stillHasPlacements = (stats?.placementsLeft ?? 0) > 0
+          let stillHasPlacements = (stats?.placementsLeft ?? 0) > 0
             || (stats?.pendingMultiSlot ?? 0) > 0;
+          if (stillHasPlacements) {
+            const hasFreeCell = room.grid.some(r => r.some(cell => cell.ownerId === null && !cell.sandLockTtl));
+            if (!hasFreeCell) {
+              // Reste verwerfen, Action gilt als verbraucht.
+              if (stats) { stats.placementsLeft = 0; stats.pendingMultiSlot = 0; }
+              stillHasPlacements = false;
+            }
+          }
           if (!stillHasPlacements) {
             qqConnectionsAfterPlacement(room);
           }

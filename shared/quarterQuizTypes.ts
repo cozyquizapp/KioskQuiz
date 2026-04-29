@@ -101,7 +101,8 @@ export interface QQCell {
   row: number;
   col: number;
   ownerId: string | null;  // teamId or null = unclaimed
-  jokerFormed: boolean;    // this cell is part of a 2×2 already triggered
+  jokerFormed: boolean;    // VISUAL flag (Stern auf der Cell) — wird nach Placement zurueckgesetzt
+  jokerCounted?: boolean;  // LOGISCHER Flag — verhindert Re-Detection desselben Patterns auf naechster Frage (B5/B13)
   frozen?: boolean;        // frozen for 1 question (cannot be stolen)
   stuck?: boolean;         // permanently frozen via Stapeln (counts 2 pts, cannot be stolen)
   shielded?: boolean;      // protected until end of game (cannot be stolen/swapped). Max 2 per team per game.

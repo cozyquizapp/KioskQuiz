@@ -1676,8 +1676,18 @@ export function qqChooseFreeAction(
     // R3+R4: PLACE bleibt erlaubt SOLANGE freie Felder existieren — sobald Grid
     //        voll ist, koennen Teams nur noch klauen/spezial-Aktionen nutzen.
     if (!hasFreeCell) throw new QQError('NO_FREE_CELL', 'Keine freien Felder mehr.');
-    room.pendingAction = 'PLACE_2';
-    room.teamPhaseStats[teamId].placementsLeft = 2;
+    // B5 (2026-04-29): Wenn placementsLeft > 0, ist das ein Joker-Bonus-Kontext
+    // (handleJokerDetection hat placementsLeft = jokersAwarded gesetzt). Dann
+    // PLACE = 1 Aktion (PLACE_1), nicht 2 — sonst kriegt das Team 2 Cells als
+    // Joker-Bonus statt 1 und insgesamt mehr Felder als korrekt.
+    const tStats = room.teamPhaseStats[teamId];
+    if ((tStats.placementsLeft ?? 0) > 0) {
+      room.pendingAction = 'PLACE_1';
+      // placementsLeft bleibt = jokersAwarded (typischerweise 1)
+    } else {
+      room.pendingAction = 'PLACE_2';
+      tStats.placementsLeft = 2;
+    }
 
   } else if (action === 'FREEZE') {
     // Legacy — nicht mehr im FE-Menü, aber Handler bleibt für Abwärtskompatibilität.
@@ -1750,6 +1760,7 @@ export function qqPlaceCell(
   }
 
   cell.ownerId = teamId;
+  cell.jokerCounted = false; // B5/B13: Owner-Wechsel — Cell ist fuer neue Joker-Patterns frei.
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
@@ -1858,6 +1869,7 @@ export function qqStealCell(
 
   const prevOwner = cell.ownerId;
   cell.ownerId = teamId;
+  cell.jokerCounted = false; // B5/B13: Owner-Wechsel — Cell ist fuer neue Joker-Patterns frei.
   room.lastPlacedCell = { row, col, teamId, wasSteal: true };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
@@ -1889,6 +1901,19 @@ export function qqStealCell(
     if (stats && stats.placementsLeft > 0) {
       return { jokersAwarded };
     }
+  }
+
+  // B5 (2026-04-29): Wenn STEAL als Joker-Bonus genutzt wurde und noch ein
+  // pendingMultiSlot (z.B. 2. Cell vom urspruenglichen PLACE_2) aussteht,
+  // jetzt resumen statt direkt finishPlacement — sonst geht die Restplatzierung
+  // verloren.
+  const stStats = room.teamPhaseStats[teamId];
+  if (stStats && (stStats.pendingMultiSlot ?? 0) > 0) {
+    stStats.placementsLeft = stStats.pendingMultiSlot!;
+    stStats.pendingMultiSlot = 0;
+    room.pendingAction = 'PLACE_1';
+    room.lastActivityAt = Date.now();
+    return { jokersAwarded };
   }
 
   finishPlacement(room);
@@ -2044,6 +2069,15 @@ export function qqStuckCell(
   stats.stapelsUsed = (stats.stapelsUsed ?? 0) + 1;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);
+  // B5 (2026-04-29): Wenn STAPEL als Joker-Bonus genutzt wurde und noch ein
+  // pendingMultiSlot aussteht, jetzt resumen statt direkt finishPlacement.
+  if ((stats.pendingMultiSlot ?? 0) > 0) {
+    stats.placementsLeft = stats.pendingMultiSlot!;
+    stats.pendingMultiSlot = 0;
+    room.pendingAction = 'PLACE_1';
+    room.lastActivityAt = Date.now();
+    return;
+  }
   finishPlacement(room);
 }
 

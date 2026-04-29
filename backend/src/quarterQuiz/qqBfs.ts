@@ -125,22 +125,25 @@ export function detectNewJokers(
   teamId: string
 ): JokerBlock[] {
   const newBlocks: JokerBlock[] = [];
-  const ownedAndFresh = (r: number, c: number): boolean => {
+  // B5/B13 (2026-04-29): Re-Detection-Schutz. Pattern qualifiziert als NEU
+  // genau dann, wenn alle 4 Cells dem Team gehoeren UND mindestens eine Cell
+  // NOCH NICHT als Teil eines gezaehlten Joker-Patterns markiert ist
+  // (jokerCounted=permanent). Verhindert, dass das gleiche Muster nach Reset
+  // von jokerFormed (visueller Star) auf der naechsten Frage erneut Bonus
+  // gibt — erlaubt aber teilweise ueberlappende Folge-Pattern (z.B. 4-line
+  // entlang einer 2x2-Kante mit einer NEUEN Cell).
+  const owned = (r: number, c: number): boolean => {
     const cell = grid[r]?.[c];
-    return !!cell && cell.ownerId === teamId && !cell.jokerFormed;
+    return !!cell && cell.ownerId === teamId;
   };
+  const isNeverCounted = (r: number, c: number): boolean => !grid[r]?.[c]?.jokerCounted;
 
   // 2x2 squares
   for (let r = 0; r <= gridSize - 2; r++) {
     for (let c = 0; c <= gridSize - 2; c++) {
-      if (
-        ownedAndFresh(r, c) && ownedAndFresh(r, c + 1) &&
-        ownedAndFresh(r + 1, c) && ownedAndFresh(r + 1, c + 1)
-      ) {
-        newBlocks.push({
-          kind: '2x2',
-          cells: [{ r, c }, { r, c: c + 1 }, { r: r + 1, c }, { r: r + 1, c: c + 1 }],
-        });
+      const cells = [{ r, c }, { r, c: c + 1 }, { r: r + 1, c }, { r: r + 1, c: c + 1 }];
+      if (cells.every(p => owned(p.r, p.c)) && cells.some(p => isNeverCounted(p.r, p.c))) {
+        newBlocks.push({ kind: '2x2', cells });
       }
     }
   }
@@ -148,14 +151,9 @@ export function detectNewJokers(
   // 4-in-a-row horizontal
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c <= gridSize - 4; c++) {
-      if (
-        ownedAndFresh(r, c) && ownedAndFresh(r, c + 1) &&
-        ownedAndFresh(r, c + 2) && ownedAndFresh(r, c + 3)
-      ) {
-        newBlocks.push({
-          kind: '4line',
-          cells: [{ r, c }, { r, c: c + 1 }, { r, c: c + 2 }, { r, c: c + 3 }],
-        });
+      const cells = [{ r, c }, { r, c: c + 1 }, { r, c: c + 2 }, { r, c: c + 3 }];
+      if (cells.every(p => owned(p.r, p.c)) && cells.some(p => isNeverCounted(p.r, p.c))) {
+        newBlocks.push({ kind: '4line', cells });
       }
     }
   }
@@ -163,14 +161,9 @@ export function detectNewJokers(
   // 4-in-a-row vertical
   for (let c = 0; c < gridSize; c++) {
     for (let r = 0; r <= gridSize - 4; r++) {
-      if (
-        ownedAndFresh(r, c) && ownedAndFresh(r + 1, c) &&
-        ownedAndFresh(r + 2, c) && ownedAndFresh(r + 3, c)
-      ) {
-        newBlocks.push({
-          kind: '4line',
-          cells: [{ r, c }, { r: r + 1, c }, { r: r + 2, c }, { r: r + 3, c }],
-        });
+      const cells = [{ r, c }, { r: r + 1, c }, { r: r + 2, c }, { r: r + 3, c }];
+      if (cells.every(p => owned(p.r, p.c)) && cells.some(p => isNeverCounted(p.r, p.c))) {
+        newBlocks.push({ kind: '4line', cells });
       }
     }
   }
@@ -189,7 +182,10 @@ export function markJokerCells(
   cells: Array<{ r: number; c: number }>
 ): void {
   for (const { r, c } of cells) {
-    if (grid[r]?.[c]) grid[r][c].jokerFormed = true;
+    if (grid[r]?.[c]) {
+      grid[r][c].jokerFormed = true;
+      grid[r][c].jokerCounted = true; // B5/B13: permanent — verhindert Re-Detection
+    }
   }
 }
 

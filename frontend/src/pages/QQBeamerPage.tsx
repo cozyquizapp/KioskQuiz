@@ -11651,7 +11651,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           boxShadow: `0 0 18px ${modeGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
           animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
         }}>
-          {mode === 'preGame' ? '✨ Bereit zum Start' : '⏸ Atempause'}
+          {mode === 'preGame'
+            ? (de ? '✨ Bereit zum Start' : '✨ Ready to start')
+            : (de ? '⏸ Atempause' : '⏸ Breather')}
         </div>
 
         {/* Big Title — größer, mit breathe-Glow */}

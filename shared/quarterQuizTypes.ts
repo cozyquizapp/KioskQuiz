@@ -619,7 +619,7 @@ export type QQSoundSlot =
   // (correct/reveal-Slot), Sieger-Card-Einblendung (winnerCardReveal), Grid-
   // Einblendung in PLACEMENT-Phase (gridReveal) und Action-Card-Einblendung
   // ('eure aktion diese runde…' — actionMenuReveal).
-  | 'winnerCardReveal' | 'gridReveal' | 'actionMenuReveal' | 'placementTurn'
+  | 'winnerCardReveal' | 'gridReveal' | 'actionMenuReveal' | 'climaxFinish'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -654,7 +654,7 @@ export interface QQSoundConfig {
   winnerCardReveal?: string;
   gridReveal?: string;
   actionMenuReveal?: string;
-  placementTurn?: string;
+  climaxFinish?: string;
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -694,7 +694,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   winnerCardReveal:    '🏆 Sieger-Card erscheint',
   gridReveal:          '🗺️ Grid erscheint (Placement)',
   actionMenuReveal:    '🎯 Action-Card erscheint („eure Aktion …")',
-  placementTurn:       '🎲 Platzieren-Turn („dein Zug")',
+  climaxFinish:        '🎆 Climax-Finish (grünes Antwortfeld + WinnerCard)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -749,7 +749,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   winnerCardReveal:    '',
   gridReveal:          '',
   actionMenuReveal:    '',
-  placementTurn:       '',
+  climaxFinish:        '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

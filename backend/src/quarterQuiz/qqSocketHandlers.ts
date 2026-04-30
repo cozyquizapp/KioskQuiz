@@ -1014,6 +1014,10 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   const action = room.pendingAction;
   if (!action) return;
 
+  // 2026-04-30 v3 (User-Bug 'autoplay haengt nach joker'): explizite 700ms
+  // Verzoegerung pro Dummy-Aktion. Vorher 0ms → mehrere Recursive-Calls
+  // konnten in derselben Tick-Schleife auf-/wegracen, broadcast war noch
+  // nicht propagiert. Jetzt natuerlicheres Pacing + race-frei.
   setTimeout(() => {
     const live = getQQRoom(roomCode);
     if (!live || live.phase !== 'PLACEMENT') return;

@@ -1028,13 +1028,16 @@ export function playGridReveal() {
   tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
 }
 
-/** 2026-04-30 v3 (User-Wunsch): Climax-Finish-Sound — lange warme
- *  Krönungs-Glocke fuer Cascade-Endpunkte (Schaetzchen Top-Row, Top5/Order
- *  Platz 1, Cheese-Reveal Lösungsfeld, MUCHO/ZvZ Lock-Step). Layered
- *  Chord (perfect 4th + 5th + Octave) mit Sparkle-Top, ~2.5s sustain.
- *  Spielt SYNCHRON zu cascade-tone oder playCorrect — ergibt zusammen den
- *  „Yeah!"-Moment. Lauter als andere Slots damit hoerbar ueber Hintergrund. */
+/** 2026-04-30 v3 (User-Wunsch): Climax-Finish — lange warme Krönungs-Glocke
+ *  fuer Cascade-Endpunkte (Schaetzchen Top-Row, Top5/Order Platz 1, Cheese-
+ *  Reveal Lösungsfeld, MUCHO/ZvZ Lock-Step, WinnerCard-Pop). Layered Chord
+ *  (perfect 4th + 5th + Octave) mit Sparkle-Top, ~2.5s sustain.
+ *  v3 (User-Wunsch 2): jetzt richtiger Sound-Slot (climaxFinish) im Mod-Panel
+ *  konfigurierbar — User kann Custom-MP3 hochladen oder muten. */
 export function playClimaxFinish() {
+  if (!isSlotEnabled('climaxFinish')) return;
+  const url = resolveSlotUrl('climaxFinish');
+  if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -1047,22 +1050,6 @@ export function playClimaxFinish() {
   // Sparkle-Top (high octave bell decay)
   tone(1046.5, 'sine',     t + 0.20,  0.20, 1.10, 0.01, 0.30, ac); // C6
   tone(1568.0, 'sine',     t + 0.30,  0.14, 1.40, 0.01, 0.40, ac); // G6
-}
-
-/** 2026-04-30 v3: Placement-Turn — kurzer Wood-Bell-Tap pro Team-Zug
- *  in der PLACEMENT-Phase. Soll deutlich aber nicht aufdringlich sein, kein
- *  Krönungs-Akkord (das ist die WinnerCard). Hoehe G4-B4 (warmer Bereich). */
-export function playPlacementTurn() {
-  if (!isSlotEnabled('placementTurn')) return;
-  const url = resolveSlotUrl('placementTurn');
-  if (url) { playUrlOneShot(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Wood-Bell-Tap: kurzer Sine-Pluck mit leichter Triade.
-  tone(392.0, 'sine',     t,         0.18, 0.12, 0.003, 0.05, ac); // G4
-  tone(493.88, 'triangle', t + 0.04,  0.16, 0.16, 0.003, 0.06, ac); // B4
-  tone(987.77, 'sine',     t + 0.06,  0.08, 0.10, 0.002, 0.04, ac); // B5 sparkle
 }
 
 /** 2026-04-30 v2/v3: Action-Card erscheint („eure aktion diese runde…") —

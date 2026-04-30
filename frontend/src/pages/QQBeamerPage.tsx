@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playPlacementTurn, playClimaxFinish,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -3392,9 +3392,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     }
     if (showGoodLuck && !playedRef.current.has(-1)) {
       playedRef.current.add(-1);
+      // 2026-04-30 v3 (User-Feedback): Original-Fanfare fuer VIEL GLUECK
+      // wieder, der war besser. Bei Avataren bleibt die Pentatonik-Cascade.
       try { playFanfare(); } catch {}
-      // Top-Ton der Cascade als Krönung von 'VIEL GLÜCK!'
-      try { playAvatarCascadeNote(7, 8); } catch {}
     }
   }, [revealedCount, showGoodLuck, s.sfxMuted, teams.length]);
 
@@ -8065,11 +8065,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               wir alle Bild-Layer auf die LINKE Bildschirm-Haelfte. Question-
               Card-Overlay wandert in den rechten Streifen (siehe Overlay
               weiter unten). Nicht-Cheese und Landscape bleiben unveraendert. */}
-          {/* Layer 1: blurred cover backdrop (CHEESE only) */}
+          {/* Layer 1: blurred cover backdrop (CHEESE only).
+              2026-04-30 v3: Bei Portrait fuellt diese ueberall (full-screen),
+              damit der rechte Streifen (Card) nicht schwarz/leer wirkt. Sharp
+              Foreground (Layer 2) bleibt nur links — rechts sieht man also
+              das Bild als sanft-blurred Backdrop hinter der Card. */}
           {cheeseFullscreen && (
             <div style={{
-              position: 'fixed', top: 0, bottom: 0,
-              left: 0, right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
+              position: 'fixed', inset: 0,
               zIndex: 49,
               backgroundImage: `url(${img!.url})`,
               backgroundSize: 'cover',
@@ -8104,12 +8107,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             opacity: img!.opacity ?? 1,
             filter: imgFilter(img!),
           }} />
-          {/* Layer 3: vignette overlay */}
+          {/* Layer 3: vignette overlay.
+              2026-04-30 v3: Portrait → vignette FULL-screen (statt left-half),
+              damit der rechte Streifen denselben warmen dunklen Wash bekommt
+              wie der linke Bildbereich. Sharp Foreground bleibt nur links. */}
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute',
-            top: 0, bottom: 0,
-            left: 0,
-            right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
+            inset: 0,
             zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
               ? 'linear-gradient(180deg, rgba(13,10,6,0.35) 0%, rgba(13,10,6,0.20) 40%, rgba(13,10,6,0.20) 60%, rgba(13,10,6,0.40) 100%)'
@@ -8118,7 +8122,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
               ].join(', '),
             opacity: (revealed && !cheeseOverlay) ? 0.4 : 1,
-            transition: 'opacity 0.8s ease, right 0.5s ease',
+            transition: 'opacity 0.8s ease',
           }} />
         </>
         );
@@ -8564,16 +8568,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           overflowX: 'hidden', overflowY: 'visible',
         }}>
 
-          {/* 2026-04-30: Top-Bar mit Kategorie-Badge + Timer als FLEX-ROW —
-              vorher beide position:absolute, was bei kleinen Viewports oder
-              vollbreiten Cards ueber die Frage-Card lief. Jetzt Layout-Block,
-              die Card sitzt naturgemaess darunter und ueberlappt nie. */}
+          {/* 2026-04-30 v3: Top-Bar position:absolute damit der Inner-Wrapper
+              die volle Höhe nutzt — Card im Inner-Wrapper-Center == Viewport-
+              Center (User-Feedback: Card wirkte zu tief, weil Top-Bar in der
+              Flex-Höhe Platz fraß und Card-Center darunter rutschte).
+              Card ueberlappt das Badge nicht, weil Card-Maxima (Glow/Padding)
+              klein genug sind und Top-Bar oben bleibt. */}
           <div style={{
+            position: 'absolute',
+            top: 'clamp(22px, 3.2vh, 50px)',
+            left: 'clamp(28px, 4vw, 64px)',
+            right: 'clamp(28px, 4vw, 64px)',
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-            width: '100%', maxWidth: 1400,
-            marginBottom: 'clamp(8px, 1.4vh, 18px)',
             gap: 16,
-            position: 'relative', zIndex: 10,
+            zIndex: 10,
           }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
@@ -10060,21 +10068,9 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   const team = s.teams.find(tm => tm.id === activeTeamId);
   const teamColor = team?.color ?? '#94a3b8';
 
-  // 2026-04-30 v3 (User-Wunsch): Placement-Page hatte keinen per-Turn-Sound.
-  // Jeder Wechsel des aktiven Teams in PLACEMENT bekommt einen kurzen
-  // Wood-Bell-Tap (playPlacementTurn). Triggert nur bei echten pendingFor-
-  // Wechseln, nicht bei flashCell oder Comeback-Steal (sonst zu hektisch).
-  const prevPendingForRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (s.sfxMuted) return;
-    if (s.phase !== 'PLACEMENT') return;
-    const cur = s.pendingFor ?? null;
-    const prev = prevPendingForRef.current;
-    prevPendingForRef.current = cur;
-    if (cur && cur !== prev) {
-      try { playPlacementTurn(); } catch {}
-    }
-  }, [s.pendingFor, s.phase, s.sfxMuted]);
+  // 2026-04-30 v3 (User-Klaerung): playPlacementTurn entfernt — User meinte
+  // mit 'platzieren page' die Action-Cards (PHASE_INTRO), nicht das Grid.
+  // Per-Turn-Sound ueberlappte playFieldPlaced (Stamp) → Stamp wirkte weg.
 
   // ── 3D transition state machine ──
   // 'flat' = show 2D grid

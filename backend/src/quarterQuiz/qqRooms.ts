@@ -4296,12 +4296,14 @@ export function qqBluffAdvanceFromVote(room: QQRoomState): void {
     }
   }
 
-  // foundReal: Teams die für die 'real'-Option gevotet haben
+  // foundReal: Teams die für die 'real'-Option gevotet haben.
+  // 2026-04-30 v3 (User-Korrektur): 1 Teilpunkt statt 2 — vereinheitlicht
+  // mit blufferBonus, sodass die Quelle der Punkte einfach erklärbar bleibt.
   const realOpt = room.bluffOptions.find(o => o.source === 'real');
   if (realOpt) {
     for (const teamId of Object.keys(room.bluffVotes)) {
       if (room.bluffVotes[teamId] === realOpt.id && points[teamId]) {
-        points[teamId].foundReal = 2;
+        points[teamId].foundReal = 1;
       }
     }
   }
@@ -4363,7 +4365,17 @@ export function evalBluff(room: QQRoomState): { winnerTeamIds: string[]; earnedP
   let max = 0;
   for (const id of teamIds) max = Math.max(max, points[id]?.total ?? 0);
   if (max === 0) return { winnerTeamIds: [], earnedPoints: {} };
-  const winners = teamIds.filter(id => (points[id]?.total ?? 0) === max);
+  // 2026-04-30 v3 (User-Wunsch): Tie-Break = Vote-Submit-Schnelligkeit.
+  // Object.keys(bluffVotes) ist Insertion-Order = Reihenfolge der Vote-Submits,
+  // also der Vote-Speed-Tiebreak natuerlich gegeben. Schnellster waehlt zuerst.
+  const voteOrder = Object.keys(room.bluffVotes ?? {});
+  const winners = teamIds
+    .filter(id => (points[id]?.total ?? 0) === max)
+    .sort((a, b) => {
+      const ai = voteOrder.indexOf(a);
+      const bi = voteOrder.indexOf(b);
+      return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+    });
   const earnedPoints: Record<string, number> = {};
   for (const id of teamIds) earnedPoints[id] = points[id]?.total ?? 0;
   return { winnerTeamIds: winners, earnedPoints };

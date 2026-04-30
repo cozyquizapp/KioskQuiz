@@ -777,10 +777,6 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
       playRoundStart();
       playFanfare();
-      // 2026-04-30 v2: Action-Cards (eure aktion diese runde) erscheinen
-      // mit phasePop-Anim 0.85s delay. Sound 800ms nach Phase-Wechsel —
-      // 50ms vor dem visuellen Pop, psychoakustisch synchron.
-      window.setTimeout(() => { try { playActionMenuReveal(); } catch {} }, 800);
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       // Mucho + ZvZ haben Multi-Step-Reveals (Step 0 = Pause, Step 1 = Avatar-
@@ -808,6 +804,23 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
     }
   }, [s.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 2026-04-30 v3 (User-Bug): Action-Cards (eure aktion diese runde…)
+  // erscheinen erst bei introStep===1 (Rule-Reminder-Substep), nicht bei
+  // introStep===0 (Round-Announcement). Vorher feuerte der Sound zum
+  // falschen Zeitpunkt → User hoerte nichts wenn die Cards erschienen.
+  // Jetzt Trigger an introStep-Wechsel auf 1, mit phasePop-Sync (0.85s
+  // delay → Sound 800ms vor dem Pop, psychoakustisch synchron).
+  const prevIntroStepRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevIntroStepRef.current;
+    prevIntroStepRef.current = s.introStep ?? null;
+    if (s.sfxMuted) return;
+    if (s.phase !== 'PHASE_INTRO') return;
+    if (s.introStep === 1 && prev !== 1) {
+      window.setTimeout(() => { try { playActionMenuReveal(); } catch {} }, 800);
+    }
+  }, [s.phase, s.introStep, s.sfxMuted]);
 
   // ── Time-Travel-Recorder ──
   // Wir loggen während des Spiels Frage für Frage wer gewonnen hat —
@@ -5586,6 +5599,94 @@ function BluffBeamerView({ state: s, lang, revealed }: {
           </div>
         </div>
       )}
+
+      {/* 2026-04-30 v3 (User-Bug): WinnerCard mit Teilpunkte-Hinweis fuer
+          Bluff. Sieger = Team(s) mit den meisten bluffPoints.total. Bei Tie
+          alle gewinnen, schnellster (Vote-Submit-Order) waehlt zuerst. */}
+      {phase === 'reveal' && (() => {
+        const points = s.bluffPoints ?? {};
+        const teamIds = Object.keys(points);
+        if (teamIds.length === 0) return null;
+        let max = 0;
+        for (const id of teamIds) max = Math.max(max, points[id]?.total ?? 0);
+        if (max === 0) return null;
+        const voteOrder = Object.keys(s.bluffVotes ?? {});
+        const winners = teamIds
+          .filter(id => (points[id]?.total ?? 0) === max)
+          .sort((a, b) => {
+            const ai = voteOrder.indexOf(a);
+            const bi = voteOrder.indexOf(b);
+            return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+          });
+        const winnerTeam = s.teams.find(t => t.id === winners[0]);
+        if (!winnerTeam) return null;
+        const isCoTie = winners.length > 1;
+        const wPts = points[winnerTeam.id];
+        return (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+            padding: 'clamp(16px, 2vh, 28px) clamp(24px, 3vw, 44px)',
+            borderRadius: 28,
+            background: `linear-gradient(135deg, ${winnerTeam.color}26, ${winnerTeam.color}08)`,
+            border: `3px solid ${winnerTeam.color}88`,
+            boxShadow: `0 0 60px ${winnerTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+            animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(16px, 2vw, 28px)',
+            }}>
+              <QQTeamAvatar avatarId={winnerTeam.avatarId} size={'clamp(56px, 7vw, 96px)'} style={{
+                boxShadow: `0 0 28px ${winnerTeam.color}77`,
+                animation: 'celebShake 0.6s ease 1.1s both',
+              }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontWeight: 900, fontSize: 'clamp(28px, 4vw, 56px)',
+                  color: winnerTeam.color, lineHeight: 1.1,
+                  textShadow: `0 0 30px ${winnerTeam.color}55`,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {truncName(winnerTeam.name, 18)}
+                </div>
+                <div style={{
+                  color: '#cbd5e1', fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
+                  marginTop: 4,
+                }}>
+                  {isCoTie
+                    ? (lang === 'de' ? `Mit ${winners.length - 1} weiteren — meiste Teilpunkte` : `Tied with ${winners.length - 1} more — most partial points`)
+                    : (lang === 'de' ? 'meiste Teilpunkte!' : 'most partial points!')}
+                </div>
+              </div>
+            </div>
+            {/* Teilpunkte-Breakdown */}
+            <div style={{
+              display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center',
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700, color: '#e2e8f0',
+            }}>
+              {(wPts?.foundReal ?? 0) > 0 && (
+                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(34,197,94,0.18)' }}>
+                  ✅ {wPts!.foundReal} · {lang === 'de' ? 'echte Antwort' : 'real answer'}
+                </span>
+              )}
+              {(wPts?.blufferBonus ?? 0) > 0 && (
+                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(244,114,182,0.18)' }}>
+                  🎭 {wPts!.blufferBonus} · {lang === 'de' ? 'Reinfälle' : 'fooled'}
+                </span>
+              )}
+              {(wPts?.truthAccident ?? 0) > 0 && (
+                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(251,191,36,0.18)' }}>
+                  ⚡ {wPts!.truthAccident} · {lang === 'de' ? 'Zufallstreffer' : 'lucky hit'}
+                </span>
+              )}
+              <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.10)', fontWeight: 900 }}>
+                {wPts?.total ?? 0} {lang === 'de' ? 'gesamt' : 'total'}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -3391,32 +3391,33 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
 
-  // Sounds triggern pro Team (nur einmal je Index) — respektiert globalen SFX-Mute
-  // 2026-04-30 v3 (User-Wunsch): Pentatonik-Cascade auf 'Heute spielen…' —
-  // pro Team ein aufsteigender Ton, am Ende ('VIEL GLÜCK') der Top-Ton.
-  // playTeamReveal (Slam-Sound) bleibt parallel, damit der Slam-Down-Punch
-  // nicht verloren geht — nur der zusaetzliche Tonleiter-Ton dazu.
-  const playedRef = useRef<Set<number>>(new Set());
+  // 2026-04-30 v3 round 6 (User-Bug 'sound trifft avatar-erscheinen nicht'):
+  // Statt per 250ms-Tick auf revealedCount zu pollen (= Sound bis zu 250ms
+  // verspaetet), pre-scheduln wir alle Sounds via setTimeout am EXAKTEN
+  // ms-Anchor. So feuert der Cascade-Ton synchron zum Slam-Down.
+  // Nur 1× pro mount: wenn anchor neu gesetzt wird, Timer-Cleanup.
   useEffect(() => {
     if (s.sfxMuted) return;
     const cascadeTotal = teams.length + 1;
-    for (let i = 0; i < revealedCount; i++) {
-      if (!playedRef.current.has(i)) {
-        playedRef.current.add(i);
+    const timers: number[] = [];
+    for (let i = 0; i < teams.length; i++) {
+      const fireAt = anchor + titleDur + i * perTeamDelay;
+      const delay = Math.max(0, fireAt - Date.now());
+      timers.push(window.setTimeout(() => {
         try { playTeamReveal(); } catch {}
         try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
-      }
+      }, delay));
     }
-    if (showGoodLuck && !playedRef.current.has(-1)) {
-      playedRef.current.add(-1);
-      // 2026-04-30 v3 round 5 (User-Bug 'höre keinen Sound mehr'): VIEL
-      // GLUECK hat jetzt einen eigenen dedizierten Slot 'goodLuckFanfare'.
-      // Default-Synth ist deutlich lauter + reicher (Fanfare + Bass + Bells).
-      // playFanfare bleibt als Fallback-Layer fuer dramatischeren Eindruck.
+    // VIEL GLUECK: eigener Sound-Slot + Fallback-Fanfare
+    const goodLuckFireAt = anchor + goodLuckDelay;
+    const goodLuckMs = Math.max(0, goodLuckFireAt - Date.now());
+    timers.push(window.setTimeout(() => {
       try { playGoodLuckFanfare(); } catch {}
       try { playFanfare(); } catch {}
-    }
-  }, [revealedCount, showGoodLuck, s.sfxMuted, teams.length]);
+    }, goodLuckMs));
+    return () => { timers.forEach(t => window.clearTimeout(t)); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor, teams.length, s.sfxMuted]);
 
   return (
     <div style={{
@@ -8183,7 +8184,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               2026-04-30 v3: Bei Portrait fuellt diese ueberall (full-screen),
               damit der rechte Streifen (Card) nicht schwarz/leer wirkt. Sharp
               Foreground (Layer 2) bleibt nur links — rechts sieht man also
-              das Bild als sanft-blurred Backdrop hinter der Card. */}
+              das Bild als sanft-blurred Backdrop hinter der Card.
+              v3 round 5 (User-Bug 'fliegt aus mitte nach links'): fsExpand
+              clip-path ersetzt durch reinen opacity-Fade. Das clip-path-
+              Expand wirkte wie 'aus Mitte rauslaufen'. */}
           {cheeseFullscreen && (
             <div style={{
               position: 'fixed', inset: 0,
@@ -8195,7 +8199,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               filter: 'blur(36px) brightness(0.45) saturate(1.1)',
               transform: 'scale(1.15)',
               transformOrigin: 'center',
-              animation: 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both',
+              animation: 'contentReveal 0.6s ease both',
             }} />
           )}
           {/* Layer 2: sharp foreground (contain für CHEESE, cover für legacy fullscreen) */}
@@ -8210,8 +8214,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             backgroundPosition: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
             backgroundRepeat: 'no-repeat',
             clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
+            // v3 round 5: fsExpand-Animation ersetzt durch opacity-Fade fuer
+            // weicheres Erscheinen (kein 'fliegt aus mitte'-Effekt).
             animation: cheeseFullscreen
-              ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
+              ? 'contentReveal 0.7s ease both'
               : ((revealed && !cheeseOverlay) ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s both'),
             transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1), background-position 0.4s ease, transform 0.4s ease, right 0.5s ease',
             transform: cheeseFullscreen
@@ -8301,9 +8307,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           pointerEvents: 'none',
         }}>
           {/* Konsistente Kategorie-Pill oben links — bleibt im Reveal sichtbar
-              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren). */}
+              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren).
+              v3 round 5 (User-Bug 'Badge nicht left wie andere Kategorien'):
+              position:absolute relativ zum cheese-overlay-Container war bei
+              Portrait bei viewport-x:50%+48 (= rechts der Bildhälfte). Jetzt
+              position:fixed = viewport-top-left, stimmt mit anderen Kategorien
+              überein. zIndex 70 ueber alle Cheese-Layer (49-52) und Top-Bar (60). */}
           <div style={{
-            position: 'absolute', top: 20, left: 48, zIndex: 10,
+            position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', left: 'clamp(28px, 4vw, 64px)', zIndex: 70,
+            pointerEvents: 'auto',
             animation: 'contentReveal 0.35s ease both',
           }}>
             <div style={{
@@ -8328,7 +8340,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}
           {s.timerEndsAt && (
             <div style={{
-              position: 'absolute', top: 16, right: 48, zIndex: 10,
+              position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', right: 'clamp(28px, 4vw, 64px)', zIndex: 70,
               animation: 'contentReveal 0.5s ease 0.3s both',
               pointerEvents: revealed ? 'none' : 'auto',
               opacity: revealed ? 0 : 1,

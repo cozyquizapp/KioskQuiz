@@ -10897,11 +10897,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const modeAccent = mode === 'preGame' ? '#FBBF24' : '#A78BFA';
   const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)';
   const modeGlow = mode === 'preGame' ? 'rgba(251,191,36,0.28)' : 'rgba(167,139,250,0.28)';
-  const [de, setDe] = useState(true);
-  useEffect(() => {
-    const id = setInterval(() => setDe(p => !p), 8000);
-    return () => clearInterval(id);
-  }, []);
+  // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
+  // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
+  // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
+  // (wie ueberall sonst im Beamer via useLangFlip).
+  const lang = useLangFlip(s.language);
+  const de = lang === 'de';
 
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [totalGames, setTotalGames] = useState(0);

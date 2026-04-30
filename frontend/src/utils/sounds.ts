@@ -956,6 +956,22 @@ export function startFinaleLoop() {
   startLobbyLoop('custom-or-pool');
 }
 
+/** 2026-04-30 v3 round 6 (User-Wunsch BG-Musik fuers Comeback): analog
+ *  Finale-Loop, eigener Slot 'comebackMusic'. Fallback lobbyWelcome. */
+export function startComebackLoop() {
+  if (lobbyLoopActive) return;
+  if (!isSlotEnabled('comebackMusic')) {
+    startLobbyLoop('custom-or-pool');
+    return;
+  }
+  const customUrl = soundConfig.comebackMusic;
+  if (typeof customUrl === 'string' && customUrl.length > 0) {
+    startLobbyTrackFromUrl(customUrl);
+    return;
+  }
+  startLobbyLoop('custom-or-pool');
+}
+
 export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }
 export function playGameOver()      { playSlotOneShot('gameOver'); }

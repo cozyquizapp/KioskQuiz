@@ -1018,14 +1018,26 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   const action = room.pendingAction;
   if (!action) return;
 
-  // 2026-04-30 v3 (User-Bug 'autoplay haengt nach joker'): explizite 700ms
+  // 2026-04-30 v3 (User-Bug 'autoplay haengt nach joker'): explizite 1200ms
   // Verzoegerung pro Dummy-Aktion. Vorher 0ms → mehrere Recursive-Calls
   // konnten in derselben Tick-Schleife auf-/wegracen, broadcast war noch
   // nicht propagiert. Jetzt natuerlicheres Pacing + race-frei.
+  // v3 round 6 (User-Bug 'bot hat nach steal action aber nutzt sie nicht'):
+  // Vorher captured-action-Check schlug fehl wenn pendingAction zwischen
+  // Schedule und Fire wechselt (Joker-Bonus aendert FREE→STEAL_1→FREE).
+  // Jetzt: action LIVE neu lesen, wenn Team noch dran ist und neue Action
+  // vorhanden, naechsten Tick triggern statt zu droppen. */
   setTimeout(() => {
     const live = getQQRoom(roomCode);
     if (!live || live.phase !== 'PLACEMENT') return;
-    if (live.pendingFor !== teamId || live.pendingAction !== action) return;
+    if (live.pendingFor !== teamId) return;
+    // Action mismatch? Pendingaction wechselt zwischen Schedule und Fire
+    // (z.B. Joker-Bonus). Re-trigger statt droppen.
+    if (live.pendingAction !== action) {
+      if (live.pendingAction) maybeAutoPlace(io, roomCode);
+      return;
+    }
+    if (!live.pendingAction) return;
 
     const phase = live.gamePhaseIndex;
     const stats = live.teamPhaseStats[teamId];

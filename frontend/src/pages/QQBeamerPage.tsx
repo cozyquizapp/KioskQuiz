@@ -26,7 +26,7 @@ import {
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
-  startLobbyLoop, stopLobbyLoop, startFinaleLoop,
+  startLobbyLoop, stopLobbyLoop, startFinaleLoop, startComebackLoop,
   playStapelStamp, playTeamJoin,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
@@ -947,16 +947,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const inRules = s.phase === 'RULES';
     const inFinale = s.phase === 'CONNECTIONS_4X4';
     const inLobby = s.phase === 'LOBBY';
-    const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale);
+    const inComeback = s.phase === 'COMEBACK_CHOICE';
+    const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale || inComeback);
     if (shouldLoop) {
       resumeAudio();
       // 2026-04-30: Lobby/Setup nutzt IMMER den Pool (4 lobby-welcome Tracks).
       // Rules/Pause nutzen den Custom-Upload aus lobbyWelcome-Slot
-      // (mit Pool als Fallback). v3 round 6 (User-Wunsch): Finale hat
-      // jetzt eigenen Slot 'finaleMusic' — startFinaleLoop, fallback auf
-      // lobbyWelcome wenn kein Custom-Upload.
+      // (mit Pool als Fallback). v3 round 6 (User-Wunsch): Finale +
+      // Comeback haben eigene Slots 'finaleMusic' / 'comebackMusic',
+      // jeweils mit lobbyWelcome als Fallback.
       if (inFinale) {
         startFinaleLoop();
+      } else if (inComeback) {
+        startComebackLoop();
       } else {
         startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
       }
@@ -12751,9 +12754,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                       : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
                                 : 'clamp(34px, 3.2vw, 48px)'
             : 'clamp(38px, 3.4vw, 52px)';
+          // 2026-04-30 v3 round 6 (User-Bug 'team namen in tabelle hard to read'):
+          // Font-Sizes ~30-40% raufgesetzt damit die Namen aus Distanz klar
+          // lesbar sind. cols=1 (≤6 Teams) bekommt richtigen Boost.
           const nameFs   = cols === 1
-            ? wn <= 4 ? 'clamp(13px, 1.4vw, 18px)' : 'clamp(11px, 1.2vw, 15px)'
-            : 'clamp(12px, 1.25vw, 16px)';
+            ? wn <= 4 ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(15px, 1.6vw, 21px)'
+            : 'clamp(15px, 1.55vw, 20px)';
           const scoreFs  = cols === 1
             ? wn <= 4 ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(14px, 1.5vw, 19px)'
             : 'clamp(14px, 1.5vw, 19px)';

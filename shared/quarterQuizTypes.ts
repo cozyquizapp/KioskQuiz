@@ -619,7 +619,7 @@ export type QQSoundSlot =
   // (correct/reveal-Slot), Sieger-Card-Einblendung (winnerCardReveal), Grid-
   // Einblendung in PLACEMENT-Phase (gridReveal) und Action-Card-Einblendung
   // ('eure aktion diese runde…' — actionMenuReveal).
-  | 'winnerCardReveal' | 'gridReveal' | 'actionMenuReveal' | 'climaxFinish' | 'revealHighlight' | 'goodLuckFanfare' | 'finaleMusic'
+  | 'winnerCardReveal' | 'gridReveal' | 'actionMenuReveal' | 'climaxFinish' | 'revealHighlight' | 'goodLuckFanfare' | 'finaleMusic' | 'comebackMusic'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -658,6 +658,7 @@ export interface QQSoundConfig {
   revealHighlight?: string;
   goodLuckFanfare?: string;
   finaleMusic?: string;
+  comebackMusic?: string;
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -701,6 +702,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   revealHighlight:     '✨ Reveal-Highlight (grünes Antwortfeld erscheint)',
   goodLuckFanfare:     '🍀 Viel-Glück-Fanfare (Teams-Reveal Outro)',
   finaleMusic:         '🏁 Finale-Musik (4×4 Großes Finale Loop)',
+  comebackMusic:       '🔥 Comeback-Musik (H/L-Mini-Game Loop)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -759,6 +761,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   revealHighlight:     '',
   goodLuckFanfare:     '',
   finaleMusic:         '',
+  comebackMusic:       '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

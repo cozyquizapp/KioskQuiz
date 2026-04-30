@@ -438,7 +438,11 @@ export default function QQModeratorPage() {
           delayMs = 4000 + teamCount * 1000; // 4s Base + 1s pro Team-Reveal
           action = () => emit('qq:connectionsToPlacement', { roomCode });
         } else if (cp === 'done') {
-          delayMs = 4000;
+          // 2026-04-30 v3 round 6 (User-Bug 'grid wird zu früh ausgeblendet,
+          // leerer screen mit finale-badge'): 4s → 9s, damit das End-Grid
+          // mit allen Team-Placements lange genug sichtbar bleibt bevor
+          // GAME_OVER kommt.
+          delayMs = 9000;
           action = () => emit('qq:nextQuestion', { roomCode });
         }
         // active / placement: kein Auto-Klick, läuft selbst-getrieben

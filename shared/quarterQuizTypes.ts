@@ -714,7 +714,9 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   wrong:         '/sounds/wrong.wav',
   reveal:        '/sounds/reveal.wav',
   fanfare:       '/sounds/fanfare.wav',
-  lobbyWelcome:  '/sounds/lobby-welcome.mp3',
+  // 2026-04-30: leer = Pool-Logik in startLobbyLoop greift (4 Tracks geshuffelt).
+  // Vorher: '/sounds/lobby-welcome.mp3' (existierte nicht, war Legacy).
+  lobbyWelcome:  '',
   gameOver:      '/sounds/game-over.wav',
   teamReveal:    '/sounds/field-placed.wav',
   // Leer = synth-Fallback bis Moderator eigene Datei lädt.

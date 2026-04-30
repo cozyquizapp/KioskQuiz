@@ -825,6 +825,18 @@ const LOBBY_TRACK_POOL = [
   '/sounds/lobby-welcome-4.mp3',
 ];
 
+/** True wenn die Custom-URL einer der eingebauten Pool-Tracks oder die
+ *  Legacy-Default-URL ist. In dem Fall ignorieren wir die Custom-URL und
+ *  spielen den vollen 4er-Pool — verhindert dass „Sounds auf alle Quizze
+ *  uebernehmen" mit einer Pool-URL-Default den Pool defacto auf 1 Track
+ *  reduziert. */
+function isPoolTrackUrl(url: string): boolean {
+  if (LOBBY_TRACK_POOL.includes(url)) return true;
+  if (url === '/sounds/lobby-welcome.mp3') return true; // Legacy-Default
+  // Auch die absolute Variante (z.B. von resolveBackendUrl normalisiert)
+  return LOBBY_TRACK_POOL.some(p => url.endsWith(p));
+}
+
 /** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.
  *  2026-04-30: Random Start + Shuffle (User-Wunsch: 'random welches Lied
  *  wann kommt, muss nicht mit 1 anfangen'). Pool wird einmal geshuffelt,
@@ -832,9 +844,11 @@ const LOBBY_TRACK_POOL = [
 export function startLobbyLoop() {
   if (lobbyLoopActive) return;
   if (!isSlotEnabled('lobbyWelcome')) return;
-  // Custom-URL aus soundConfig hat Priorität (Mod hat eigene Datei hochgeladen)
+  // Custom-URL aus soundConfig hat Priorität — ABER nur wenn es wirklich
+  // eine eigene hochgeladene Datei ist. Pool-Tracks oder die Legacy-
+  // Default-URL fallen auf den vollen Pool zurueck.
   const customUrl = soundConfig.lobbyWelcome;
-  if (typeof customUrl === 'string' && customUrl.length > 0) {
+  if (typeof customUrl === 'string' && customUrl.length > 0 && !isPoolTrackUrl(customUrl)) {
     startLobbyTrackFromUrl(customUrl);
     return;
   }

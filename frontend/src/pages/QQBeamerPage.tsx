@@ -935,18 +935,27 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   //   sie geladen, sonst Fallback auf timerLoop.
   useEffect(() => {
     const bt: { kind?: string } | undefined = s.currentQuestion?.bunteTuete as any;
-    const isHotPotato = s.currentQuestion?.category === 'BUNTE_TUETE' && bt?.kind === 'hotPotato';
+    const cat = s.currentQuestion?.category;
+    const isHotPotato = cat === 'BUNTE_TUETE' && bt?.kind === 'hotPotato';
+    // 2026-04-30 v3 round 7 (User-Frage 'alle kategorien auch? gerade
+    // bunte tuete?'): Bluff und Imposter (oneOfEight) hatten qqStopTimer
+    // → s.timerEndsAt war null → kein Loop-Trigger → keine BG-Musik.
+    // Jetzt explizit jede BUNTE_TUETE-Sub als 'loop-erlaubt' markieren.
+    const isCustomTimerSub = cat === 'BUNTE_TUETE'
+      && (bt?.kind === 'bluff' || bt?.kind === 'oneOfEight'
+        || bt?.kind === 'hotPotato' || bt?.kind === 'onlyConnect'
+        || bt?.kind === 'top5' || bt?.kind === 'order'
+        || bt?.kind === 'map');
     const hasNormalTimer = !!s.timerEndsAt;
     const shouldLoop =
       !s.musicMuted
       && s.phase === 'QUESTION_ACTIVE'
       && !s.currentQuestion?.musicUrl
-      && (hasNormalTimer || isHotPotato);
+      && (hasNormalTimer || isHotPotato || isCustomTimerSub);
     if (!shouldLoop) {
       stopTimerLoop();
       return;
     }
-    const cat = s.currentQuestion?.category;
     const catSlot: QQSoundSlot | undefined =
       cat === 'SCHAETZCHEN'   ? 'catMusicSchaetzchen'
       : cat === 'MUCHO'         ? 'catMusicMucho'

@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -1162,24 +1162,53 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevRevealStepsRef.current = curr;
     if (s.phase !== 'QUESTION_REVEAL' || s.sfxMuted) return;
 
-    // MUCHO: Akt-1-Steps → Plopp; Lock-Step (Lösung grün) → Bestätigungs-Sound.
+    // MUCHO: Akt-1-Steps → Tonleiter pro Avatar; Lock-Step (Lösung grün) → Bestätigungs-Sound.
     if (curr.mucho > prev.mucho) {
       const q = s.currentQuestion;
       if (q?.category === 'MUCHO') {
         const distinctVoterOptions = new Set(s.answers.map(a => a.text)).size;
         const lockStep = distinctVoterOptions + 1;
-        // Beim ersten Step (Avatar-Cascade) den verschobenen Reveal-Sound
-        // nachholen — vorher feuerte er beim Phase-Wechsel ohne sichtbares
-        // Event. Beim Lock-Step regulärer Bestätigungs-Sound.
         if (curr.mucho >= lockStep) playCorrect();
-        else if (prev.mucho === 0) playRevealFor('MUCHO');
+        else if (prev.mucho === 0) {
+          // 2026-04-30: Cascade-Start — Tonleiter pro Voter-Avatar synchron
+          // mit der MUCHO-Animation. autoCap advanced alle 750ms eine Option,
+          // Voter pro Option erscheinen simultan. Hier scheduln wir dazu
+          // passend pro Voter einen aufsteigenden Pentatonik-Ton.
+          const opts = q.options ?? [];
+          const nonEmptyOrdered: number[] = [];
+          for (let i = 0; i < opts.length; i++) {
+            if (s.answers.some(a => a.text === String(i))) nonEmptyOrdered.push(i);
+          }
+          const allSorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
+          const total = allSorted.length;
+          let voterCount = 0;
+          nonEmptyOrdered.forEach((optIdx, optStep) => {
+            const optionVoters = s.answers
+              .filter(a => a.text === String(optIdx))
+              .sort((a, b) => a.submittedAt - b.submittedAt);
+            optionVoters.forEach((_voter, localIdx) => {
+              const myRank = voterCount;
+              voterCount++;
+              const delay = optStep * 750 + localIdx * 90;
+              window.setTimeout(() => { try { playAvatarCascadeNote(myRank, total); } catch {} }, delay);
+            });
+          });
+        }
         else playFieldPlaced();
       }
     }
-    // ZEHN_VON_ZEHN: Cascade-Step → Plopp, Final → Fanfare.
+    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → Fanfare.
     if (curr.zvz > prev.zvz) {
       if (curr.zvz >= 2) playFanfare();
-      else if (prev.zvz === 0) playRevealFor('ZEHN_VON_ZEHN');
+      else if (prev.zvz === 0) {
+        // 2026-04-30: Cascade-Start — Tonleiter pro Avatar.
+        // ZvZ zeigt alle Bets gleichzeitig; wir staggern die Toene mit ~150ms.
+        const allSorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
+        const total = allSorted.length;
+        allSorted.forEach((_a, idx) => {
+          window.setTimeout(() => { try { playAvatarCascadeNote(idx, total); } catch {} }, idx * 150);
+        });
+      }
       else playFieldPlaced();
     }
     // CHEESE: Step 1 = Lösung grün, Step 2 = Avatare auf den Treffern.
@@ -7804,15 +7833,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
-  // Greift wenn revealed=true UND eine Sieger-Card erscheint. Der 'gruen-
-  // faerben'-Sound (correct/reveal) wurde frueher schon abgespielt; hier
-  // noch ein 'Kroenungs'-Akkord beim sichtbaren Sieger-Banner.
+  // Synchron zur Animation: revealWinnerIn nutzt bannerDelay=0.7s, davor ist
+  // die Card auf scaleY(0)/opacity:0 — der Sound MUSS auch 700ms warten,
+  // sonst kommt er vor dem sichtbaren Banner (User-Feedback: 'sound kommt
+  // etwas früh'). 60ms Vorlauf damit Ton minimal vor dem Pop einsetzt =
+  // psychoakustisch synchron.
   const prevShowWinnerRef = useRef(false);
   useEffect(() => {
     const prev = prevShowWinnerRef.current;
     prevShowWinnerRef.current = showUnifiedWinner;
     if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && s.correctTeamId) {
-      try { playWinnerCardReveal(); } catch {}
+      const handle = window.setTimeout(() => {
+        try { playWinnerCardReveal(); } catch {}
+      }, 640);
+      return () => window.clearTimeout(handle);
     }
   }, [showUnifiedWinner, revealed, s.correctTeamId, s.sfxMuted]);
 

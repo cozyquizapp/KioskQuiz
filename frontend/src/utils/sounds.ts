@@ -968,6 +968,31 @@ export function playTeamJoin() {
   tone(783.99, 'sine', t + 0.18,  0.20, 0.08, 0.01, 0.05, ac);
 }
 
+/** 2026-04-30: Avatar-Cascade-Tonleiter — pro Avatar ein Ton, aufsteigend.
+ *  rank: 0..total-1, total: Anzahl Avatare insgesamt.
+ *  Skala: C-Dur-Pentatonik (C-D-E-G-A) — angenehm, kein dissonanter Ton.
+ *  Bei <= 5 Avataren spielt eine Oktave; bei mehr klimmt's in die naechste hoch.
+ *  Cozy-warmer Sine-Wave statt grellem Synth, kurzer Decay damit Cascade flowt. */
+export function playAvatarCascadeNote(rank: number, total: number): void {
+  const ac = getCtx();
+  if (!ac) return;
+  // C-Dur-Pentatonik: C4=261.63, D4=293.66, E4=329.63, G4=392.00, A4=440.00.
+  // Wir nutzen 8 Stufen ueber 1.5 Oktaven (max 8 Teams).
+  const scale = [
+    261.63, 293.66, 329.63, 392.00, 440.00,           // C4 D4 E4 G4 A4
+    523.25, 587.33, 659.25,                            // C5 D5 E5
+  ];
+  const safeTotal = Math.max(1, Math.min(total, scale.length));
+  const safeRank = Math.max(0, Math.min(rank, safeTotal - 1));
+  // Bei wenig Teams die Skala spreizen (Rank scaled) statt nur die ersten N Toene.
+  const idx = Math.round((safeRank / Math.max(safeTotal - 1, 1)) * (scale.length - 1));
+  const freq = scale[Math.min(idx, scale.length - 1)];
+  const t = ac.currentTime;
+  // Warmer Sine-Tone mit kurzer Bell-Note-Form.
+  tone(freq, 'sine',     t,         0.18, 0.18, 0.005, 0.06, ac);
+  tone(freq * 2, 'sine', t + 0.005, 0.06, 0.10, 0.003, 0.04, ac); // Oktav-Sparkle obenauf
+}
+
 /** 2026-04-30: Sieger-Card erscheint unten — warmer Krönungs-Akkord
  *  (Drei-Klang aufwaerts, 'Trommelwirbel zu Bell'-Gefuehl). */
 export function playWinnerCardReveal() {

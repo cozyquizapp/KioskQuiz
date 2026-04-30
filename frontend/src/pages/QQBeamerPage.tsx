@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -3408,8 +3408,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     }
     if (showGoodLuck && !playedRef.current.has(-1)) {
       playedRef.current.add(-1);
-      // 2026-04-30 v3 (User-Feedback): Original-Fanfare fuer VIEL GLUECK
-      // wieder, der war besser. Bei Avataren bleibt die Pentatonik-Cascade.
+      // 2026-04-30 v3 round 5 (User-Bug 'höre keinen Sound mehr'): VIEL
+      // GLUECK hat jetzt einen eigenen dedizierten Slot 'goodLuckFanfare'.
+      // Default-Synth ist deutlich lauter + reicher (Fanfare + Bass + Bells).
+      // playFanfare bleibt als Fallback-Layer fuer dramatischeren Eindruck.
+      try { playGoodLuckFanfare(); } catch {}
       try { playFanfare(); } catch {}
     }
   }, [revealedCount, showGoodLuck, s.sfxMuted, teams.length]);

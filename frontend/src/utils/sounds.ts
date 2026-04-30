@@ -1028,6 +1028,33 @@ export function playGridReveal() {
   tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
 }
 
+/** 2026-04-30 v3 round 5 (User-Bug 'höre keinen Sound bei VIEL GLÜCK mehr'):
+ *  Eigener dedizierter Slot fuer das Teams-Reveal-Outro 'VIEL GLÜCK!'.
+ *  Vorher feuerte playFanfare (generischer Slot, default-Synth recht leise).
+ *  Jetzt eigenstaendiger Slot 'goodLuckFanfare' im Mod-Panel ueberschreibbar
+ *  + lauter Layered-Synth als Default: Fanfare-Pattern + Bell-Triade-Stack
+ *  obenauf. Klingt nach 'Wettkampf-Beginn / Spotlight an'. */
+export function playGoodLuckFanfare() {
+  if (!isSlotEnabled('goodLuckFanfare')) return;
+  const url = resolveSlotUrl('goodLuckFanfare');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Layer 1: Fanfaren-Pattern (4 Toene aufsteigend, C-Dur Triade)
+  tone(523.25, 'triangle', t,         0.32, 0.18, 0.01, 0.10, ac); // C5
+  tone(659.25, 'triangle', t + 0.10,  0.34, 0.20, 0.01, 0.10, ac); // E5
+  tone(783.99, 'triangle', t + 0.20,  0.36, 0.22, 0.01, 0.12, ac); // G5
+  tone(1046.5, 'triangle', t + 0.30,  0.40, 0.45, 0.01, 0.18, ac); // C6 — Hauptton
+  // Layer 2: Warm-Bass (Octave drunter, langer Sustain fuer „Hall")
+  tone(261.63, 'sine',     t + 0.05,  0.28, 0.65, 0.02, 0.25, ac); // C4
+  tone(392.00, 'sine',     t + 0.15,  0.26, 0.70, 0.02, 0.25, ac); // G4
+  // Layer 3: Sparkle-Bells obenauf (hoehere Octave bei finalem Ton)
+  tone(1568.0, 'sine',     t + 0.40,  0.22, 0.55, 0.005, 0.22, ac); // G6
+  tone(2093.0, 'sine',     t + 0.50,  0.18, 0.65, 0.005, 0.28, ac); // C7
+  tone(2637.0, 'sine',     t + 0.60,  0.14, 0.75, 0.005, 0.35, ac); // E7
+}
+
 /** 2026-04-30 v3 round 4 (User-Wunsch differenzieren): Reveal-Highlight —
  *  leichter, kuerzerer Auflösungs-Akkord wenn das gruene Antwortfeld
  *  erscheint. Vorbereiteter Ton zum Climax — markiert „die Loesung ist

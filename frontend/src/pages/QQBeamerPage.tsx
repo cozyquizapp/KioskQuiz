@@ -10905,8 +10905,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ];
 
     panels.push({ key: 'howItWorks', node: (
-      <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ width: 'min(100%, 760px)' }}>
+        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
         </div>
@@ -10914,6 +10914,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: 14,
+          textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
           {howItems.map((it, i) => (
             <div key={i} style={{
@@ -11253,7 +11254,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     <div style={{
       fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900,
       color: accentColor ?? '#e2e8f0',
-      marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14,
+      marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
     }}>
       <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
       {de ? titleDe : titleEn}
@@ -11282,7 +11283,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const c = color ?? team?.color ?? '#FBBF24';
     const av = avatarId ?? team?.avatarId;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
         {av && <QQTeamAvatar avatarId={av} size={'clamp(46px, 5vw, 68px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${c}55` }} />}
         <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 42px)', color: c, textShadow: `0 0 18px ${c}44` }}>{name}</span>
       </div>
@@ -11318,7 +11319,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
         {teamLine(funStats.jokerKing.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
         </div>
       </div>
@@ -11331,7 +11332,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
         {teamLine(funStats.comebackKing.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
           {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
           <span style={{ color: '#94a3b8', fontSize: 'clamp(15px, 1.7vw, 20px)' }}>
             {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
@@ -11347,7 +11348,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🗡️', 'Steal-Master', 'Steal Master', '#EF4444')}
         {teamLine(funStats.stealMaster.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', '#EF4444')}
         </div>
       </div>
@@ -11360,7 +11361,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
         {teamLine(funStats.underdog.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
           {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', '#64748B')}
           <span style={{ color: '#94a3b8', fontSize: 'clamp(14px, 1.6vw, 18px)', alignSelf: 'center' }}>
@@ -11435,7 +11436,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('⚡', 'Schnellste Minute', 'Speed Demon', '#FACC15')}
         {teamLine(funStats.speedDemon.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
           {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
           <span style={{ color: '#94a3b8', fontSize: 'clamp(15px, 1.7vw, 20px)' }}>
             {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
@@ -11452,7 +11453,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🥔', 'Bunte-Tüte-Boss', 'Lucky Bag Boss', btColor)}
         {teamLine(funStats.potatoBoss.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
         </div>
       </div>
@@ -11669,7 +11670,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               style={{
                 position: 'relative',
                 flex: 1,
-                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                // 2026-04-30 (User-Wunsch): Stats-Texte horizontal + vertikal
+                // mittig im Card-Inneren ausrichten. justifyContent zentriert
+                // vertikal, alignItems horizontal, textAlign zieht inline-Text
+                // mit. Die einzelnen Panel-Nodes erben das Centering.
+                display: 'flex', flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                textAlign: 'center',
+                width: '100%',
                 animation: 'qqPanelContentFade 0.7s cubic-bezier(0.22,1,0.36,1) both',
               }}
             >

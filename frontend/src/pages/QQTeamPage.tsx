@@ -1385,8 +1385,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
     onlyConnect: {
       emoji: '🧩',
       name:    { de: '4 gewinnt',     en: 'Only Connect' },
-      explain: { de: '4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.',
-                 en: '4 clues, one answer — guess earlier for more points.' },
+      explain: { de: '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.',
+                 en: '4 clues, one answer — solve with fewest clues to win an action.' },
     },
     bluff: {
       emoji: '🎭',
@@ -1508,7 +1508,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
               'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Je näher, desto mehr Punkte'], en: ['Guess the location on the map', 'Closer = more points'] } },
               'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten', 'Keine Antwort vor Zeitende = raus'], en: ['Take turns', 'No answer before time runs out = out'] } },
-              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Hinweise, eine Lösung', 'Wer früher tippt, holt mehr Punkte'], en: ['4 clues, one answer', 'Guess earlier for more points'] } },
+              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Hinweise, eine Lösung', 'Wenigste Hinweise = 1 Aktion'], en: ['4 clues, one answer', 'Fewest clues = 1 action'] } },
               'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },
             };
             const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');

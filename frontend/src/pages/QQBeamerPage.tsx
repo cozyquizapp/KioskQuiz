@@ -790,12 +790,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
-      // 2026-04-30: Grid-Erscheinung bekommt eigenen Sound-Slot statt
-      // playCorrectFor zu reusen — vorher klang Grid-Slam wie 'gruen-
-      // faerben'. Bei Wrong-Answer bleibt es bei playWrongFor.
+      // 2026-04-30 v3 round 5 (User-Bug 'Grid-Öffnen-Sound ist weg'):
+      // playGridReveal ist der „Grid erscheint"-Slam, der IMMER feuern soll
+      // wenn das Grid sichtbar wird — unabhaengig davon ob jemand richtig lag.
+      // Bei Wrong-Answer zusaetzlich playWrongFor (kategorie-spez. Wrong).
       const cat = s.currentQuestion?.category;
-      if (s.correctTeamId) playGridReveal();
-      else playWrongFor(cat);
+      playGridReveal();
+      if (!s.correctTeamId) playWrongFor(cat);
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
       playGameOver();
@@ -3758,8 +3759,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const BUNTE_SUB_INTRO: Record<string, { de: { name: string; explain: string }; en: { name: string; explain: string }; emoji: string }> = {
     onlyConnect: {
       emoji: '🧩',
-      de: { name: '4 gewinnt',     explain: '4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.' },
-      en: { name: 'Only Connect',  explain: '4 clues, one answer — guess earlier for more points.' },
+      de: { name: '4 gewinnt',     explain: '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.' },
+      en: { name: 'Only Connect',  explain: '4 clues, one answer — solve with fewest clues to win an action.' },
     },
     bluff: {
       emoji: '🎭',
@@ -4394,8 +4395,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:onlyConnect': {
               emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' },
               lines: {
-                de: ['4 Hinweise, eine Lösung — wer früher tippt, holt mehr Punkte.'],
-                en: ['4 clues, one answer — guess earlier for more points.'],
+                de: ['4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.'],
+                en: ['4 clues, one answer — solve with fewest clues to win an action.'],
               },
             },
             'BUNTE_TUETE:bluff': {
@@ -8223,13 +8224,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Layer 3: vignette overlay.
               2026-04-30 v3: Portrait → vignette FULL-screen (statt left-half),
               damit der rechte Streifen denselben warmen dunklen Wash bekommt
-              wie der linke Bildbereich. Sharp Foreground bleibt nur links. */}
+              wie der linke Bildbereich. Sharp Foreground bleibt nur links.
+              v3 round 5 (User-Bug 'Bild oben/unten minimal abgeschnitten'):
+              Top/Bottom-Vignette deutlich reduziert (0.35/0.40 → 0.15/0.20),
+              damit das Bild bis an die Kanten sichtbar bleibt. */}
           <div style={{
             position: cheeseFullscreen ? 'fixed' : 'absolute',
             inset: 0,
             zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
-              ? 'linear-gradient(180deg, rgba(13,10,6,0.35) 0%, rgba(13,10,6,0.20) 40%, rgba(13,10,6,0.20) 60%, rgba(13,10,6,0.40) 100%)'
+              ? 'linear-gradient(180deg, rgba(13,10,6,0.15) 0%, rgba(13,10,6,0.06) 30%, rgba(13,10,6,0.06) 70%, rgba(13,10,6,0.20) 100%)'
               : [
                 'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
@@ -8686,7 +8690,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Center (User-Feedback: Card wirkte zu tief, weil Top-Bar in der
               Flex-Höhe Platz fraß und Card-Center darunter rutschte).
               Card ueberlappt das Badge nicht, weil Card-Maxima (Glow/Padding)
-              klein genug sind und Top-Bar oben bleibt. */}
+              klein genug sind und Top-Bar oben bleibt.
+              v3 round 5 (User-Bug 'CHEESE Kategorie-Badge soll top-left'):
+              zIndex 10 → 60, damit das Badge ueber dem Cheese-Overlay (z=52)
+              sichtbar bleibt. Sonst verdeckte Cheese den Badge. */}
           <div style={{
             position: 'absolute',
             top: 'clamp(22px, 3.2vh, 50px)',
@@ -8694,7 +8701,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             right: 'clamp(28px, 4vw, 64px)',
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
             gap: 16,
-            zIndex: 10,
+            zIndex: 60,
           }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,

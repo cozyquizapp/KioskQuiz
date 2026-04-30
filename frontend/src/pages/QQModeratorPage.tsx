@@ -308,15 +308,28 @@ export default function QQModeratorPage() {
         // Submit-Pipelines). Nach Timer-Ablauf muessten wir trotzdem revealen,
         // sonst haengt die Phase. Sub-Mechanik-spezifisch: wenn Timer expired
         // ist + 2s Karenz, qq:revealAnswer feuern.
+        // v3 round 5 (User-Bug 'connect-4 endet in 1 sekunde'): OnlyConnect
+        // hat Backend-Hard-Floor 25s. Frontend-Autoplay darf das nicht
+        // bypassen — Round-Start computen und gate. Bei Timer < 25s + dummies-
+        // only haengt Round natuerlich bis Backend's AutoFinish bei 25s+ feuert.
         else {
           const subKind = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
           const isCustomPipeline = q?.category === 'BUNTE_TUETE' &&
             (subKind === 'onlyConnect' || subKind === 'bluff' ||
              subKind === 'hotPotato' || subKind === 'oneOfEight');
           if (isCustomPipeline && s.timerEndsAt && Date.now() >= s.timerEndsAt) {
-            // Timer abgelaufen — kurze Karenz, dann reveal
-            delayMs = 2500;
-            action = () => emit('qq:revealAnswer', { roomCode });
+            // OnlyConnect: zusaetzlich 25s-Hard-Floor (Backend) respektieren.
+            const roundStart = s.timerEndsAt - (s.timerDurationSec ?? 30) * 1000;
+            const elapsed = Date.now() - roundStart;
+            const isOnlyConnect = subKind === 'onlyConnect';
+            if (isOnlyConnect && elapsed < 25000) {
+              // Hard-Floor noch nicht erreicht — Backend AutoFinish wartet.
+              // Wir warten auch.
+            } else {
+              // Timer abgelaufen — kurze Karenz, dann reveal
+              delayMs = 2500;
+              action = () => emit('qq:revealAnswer', { roomCode });
+            }
           }
         }
         break;

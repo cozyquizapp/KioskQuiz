@@ -864,8 +864,12 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       // 2026-04-28: bei idx=0 NIE tippen — sonst beenden Dummies in
       // Pure-Test-Lobbys die Runde bevor irgendwas zu sehen ist. Realistisch
       // ist auch: erster Hinweis allein gibt selten genug Sicherheit.
-      // 2026-04-30 v3: probs raufgesetzt damit dummies bis 25s sicher guessen.
-      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.55 : curIdx === 2 ? 0.85 : 1.0;
+      // 2026-04-30 v3 round 5 (User-Bug 'alle dummies werden als falsch
+      // angezeigt'): bei idx=1 zu aggressives Guessen (0.55) → 60% wrong → 3
+      // strikes vor Hint-Advance → alle locked. Jetzt konservativer:
+      // idx=1: 0.30 (warten auf bessere Hints), idx=2: 0.70, idx=3: 1.0.
+      // Mehr Hint-Wartezeit = bessere Treffer = weniger all-locked-Reveals.
+      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.70 : 1.0;
       const shouldGuess = Math.random() < guessProb;
 
       if (!shouldGuess) {

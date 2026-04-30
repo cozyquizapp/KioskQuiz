@@ -11691,8 +11691,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               `0 0 64px ${modeGlow},` +
               `0 0 0 1px rgba(255,235,200,0.04) inset,` +
               `0 -3px 0 ${modeAccent} inset`,
-            // Fixe Mindesthöhe — Card schwankt nicht mehr je nach Inhalt.
-            minHeight: 'clamp(380px, 50vh, 560px)',
+            // 2026-04-30 (User-Wunsch): Card-Groesse FIX, nur Text-Inhalt
+            // wechselt. Vorher minHeight -> Card konnte sich vergroessern bei
+            // mehr Content; jetzt height fixiert + overflow:hidden, sodass
+            // Panel-Wechsel smooth wirken (kein Layout-Shift mehr).
+            height: 'clamp(380px, 50vh, 560px)',
             animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
             position: 'relative', overflow: 'hidden',
             // Flex-Column → Inner-Content kann via flex:1 auf volle Card-Höhe

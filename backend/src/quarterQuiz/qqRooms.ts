@@ -3954,12 +3954,34 @@ export function qqOnlyConnectMinHintReached(room: QQRoomState): boolean {
   return Math.max(...indices) >= 1;
 }
 
-/** Moderator-Force-Reveal: setzt ALLE Teams auf Hint 3 (= alle Hinweise sichtbar). */
+/** Moderator-Force-Reveal: setzt ALLE Teams auf Hint 3 (= alle Hinweise sichtbar).
+ *  2026-04-30 v3 (User-Bug): Teams die nichts submittet haben (z.B. zoegerliche
+ *  Dummies, Mod-Force-Reveal vor Dummy-Tipp) tauchten im Reveal nicht auf den
+ *  Hinweisen auf. Wir fuegen jetzt fuer jeden silent-Team einen Pseudo-Guess
+ *  (correct=false, atHintIdx = letzter Hint den das Team gesehen hat) hinzu —
+ *  damit erscheint das Team beim entsprechenden Hint als 'locked'-Avatar
+ *  (grau mit X) und der User sieht, wo das Team waehrend des Reveals stand. */
 export function qqOnlyConnectRevealAll(room: QQRoomState): void {
   clearOnlyConnectHintTimer(room);
   const now = Date.now();
   for (const teamId of room.joinOrder) {
     if (!room.teams[teamId]) continue;
+    const lastSeenHint = Math.max(0, Math.min(3, room.onlyConnectHintIndices[teamId] ?? 0));
+    const hadAnyGuess = room.onlyConnectGuesses.some(g => g.teamId === teamId);
+    if (!hadAnyGuess) {
+      // Pseudo-Guess: text leer, correct=false, atHintIdx = letzter gesehener Hint.
+      // Locked=Team-ID gepushed damit AllDone-Check und Eval konsistent bleibt.
+      room.onlyConnectGuesses.push({
+        teamId,
+        text: '',
+        correct: false,
+        submittedAt: now,
+        atHintIdx: lastSeenHint,
+      });
+      if (!room.onlyConnectLockedTeams.includes(teamId)) {
+        room.onlyConnectLockedTeams.push(teamId);
+      }
+    }
     room.onlyConnectHintIndices[teamId] = 3;
     room.onlyConnectHintRevealedAt[teamId] = now;
   }

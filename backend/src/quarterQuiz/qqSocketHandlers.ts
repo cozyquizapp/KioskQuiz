@@ -844,7 +844,10 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
     if (timers.has(teamId)) continue;
 
     const localTeamId = teamId;
-    const delay = 4000 + Math.random() * 8000; // 4-12s
+    // 2026-04-30 v3 (User-Bug 'dummy avatare nicht auf hinweisen'): Delays
+    // 4-12s -> 3-7s = oefter Decision-Punkte pro Runde, dummies guessen
+    // zuverlaessiger waehrend der 25s-MinDuration.
+    const delay = 3000 + Math.random() * 4000;
     const handle = setTimeout(() => {
       timers.delete(localTeamId);
       const live = getQQRoom(roomCode);
@@ -861,7 +864,8 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       // 2026-04-28: bei idx=0 NIE tippen — sonst beenden Dummies in
       // Pure-Test-Lobbys die Runde bevor irgendwas zu sehen ist. Realistisch
       // ist auch: erster Hinweis allein gibt selten genug Sicherheit.
-      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.55 : 0.95;
+      // 2026-04-30 v3: probs raufgesetzt damit dummies bis 25s sicher guessen.
+      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.55 : curIdx === 2 ? 0.85 : 1.0;
       const shouldGuess = Math.random() < guessProb;
 
       if (!shouldGuess) {

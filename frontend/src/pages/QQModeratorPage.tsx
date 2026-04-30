@@ -297,13 +297,30 @@ export default function QQModeratorPage() {
         action = () => emit('qq:activateQuestion', { roomCode });
         break;
       }
-      case 'QUESTION_ACTIVE':
+      case 'QUESTION_ACTIVE': {
         // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.
         if (s.allAnswered) {
           delayMs = 2500; // kurzer „Timesup"-Puls abwarten
           action = () => emit('qq:revealAnswer', { roomCode });
         }
+        // 2026-04-30 v3 (User-Bug 'autoplay haengt nach connect-4 timer'):
+        // OnlyConnect/Bluff/HotPotato/Imposter setzen `allAnswered` nicht (eigene
+        // Submit-Pipelines). Nach Timer-Ablauf muessten wir trotzdem revealen,
+        // sonst haengt die Phase. Sub-Mechanik-spezifisch: wenn Timer expired
+        // ist + 2s Karenz, qq:revealAnswer feuern.
+        else {
+          const subKind = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+          const isCustomPipeline = q?.category === 'BUNTE_TUETE' &&
+            (subKind === 'onlyConnect' || subKind === 'bluff' ||
+             subKind === 'hotPotato' || subKind === 'oneOfEight');
+          if (isCustomPipeline && s.timerEndsAt && Date.now() >= s.timerEndsAt) {
+            // Timer abgelaufen — kurze Karenz, dann reveal
+            delayMs = 2500;
+            action = () => emit('qq:revealAnswer', { roomCode });
+          }
+        }
         break;
+      }
       case 'QUESTION_REVEAL': {
         const cat = q?.category;
         const bt: { kind?: string } | undefined = q?.bunteTuete as any;

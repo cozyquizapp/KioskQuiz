@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playPlacementTurn,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -3369,20 +3369,28 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const showGoodLuck = elapsed >= goodLuckDelay;
 
   // Sounds triggern pro Team (nur einmal je Index) — respektiert globalen SFX-Mute
+  // 2026-04-30 v3 (User-Wunsch): Pentatonik-Cascade auf 'Heute spielen…' —
+  // pro Team ein aufsteigender Ton, am Ende ('VIEL GLÜCK') der Top-Ton.
+  // playTeamReveal (Slam-Sound) bleibt parallel, damit der Slam-Down-Punch
+  // nicht verloren geht — nur der zusaetzliche Tonleiter-Ton dazu.
   const playedRef = useRef<Set<number>>(new Set());
   useEffect(() => {
     if (s.sfxMuted) return;
+    const cascadeTotal = teams.length + 1;
     for (let i = 0; i < revealedCount; i++) {
       if (!playedRef.current.has(i)) {
         playedRef.current.add(i);
         try { playTeamReveal(); } catch {}
+        try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
       }
     }
     if (showGoodLuck && !playedRef.current.has(-1)) {
       playedRef.current.add(-1);
       try { playFanfare(); } catch {}
+      // Top-Ton der Cascade als Krönung von 'VIEL GLÜCK!'
+      try { playAvatarCascadeNote(7, 8); } catch {}
     }
-  }, [revealedCount, showGoodLuck, s.sfxMuted]);
+  }, [revealedCount, showGoodLuck, s.sfxMuted, teams.length]);
 
   return (
     <div style={{
@@ -9999,6 +10007,22 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     ?? (isComebackStealActive ? s.comebackTeamId : null);
   const team = s.teams.find(tm => tm.id === activeTeamId);
   const teamColor = team?.color ?? '#94a3b8';
+
+  // 2026-04-30 v3 (User-Wunsch): Placement-Page hatte keinen per-Turn-Sound.
+  // Jeder Wechsel des aktiven Teams in PLACEMENT bekommt einen kurzen
+  // Wood-Bell-Tap (playPlacementTurn). Triggert nur bei echten pendingFor-
+  // Wechseln, nicht bei flashCell oder Comeback-Steal (sonst zu hektisch).
+  const prevPendingForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (s.sfxMuted) return;
+    if (s.phase !== 'PLACEMENT') return;
+    const cur = s.pendingFor ?? null;
+    const prev = prevPendingForRef.current;
+    prevPendingForRef.current = cur;
+    if (cur && cur !== prev) {
+      try { playPlacementTurn(); } catch {}
+    }
+  }, [s.pendingFor, s.phase, s.sfxMuted]);
 
   // ── 3D transition state machine ──
   // 'flat' = show 2D grid

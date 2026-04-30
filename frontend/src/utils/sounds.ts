@@ -826,10 +826,9 @@ const LOBBY_TRACK_POOL = [
 ];
 
 /** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.
- *  2026-04-30: Sequentiell statt Shuffle (User-Wunsch: 4 nacheinander).
- *  Reihenfolge: 1 → 2 → 3 → 4 → 1 → 2 ... (Loop ueber den ganzen Pool).
- *  Wenn die Datei nicht existiert, fällt HTMLAudioElement auf error → wir
- *  versuchen den nächsten Track. */
+ *  2026-04-30: Random Start + Shuffle (User-Wunsch: 'random welches Lied
+ *  wann kommt, muss nicht mit 1 anfangen'). Pool wird einmal geshuffelt,
+ *  dann sequentiell durchgespielt; am Ende neu shuffeln. */
 export function startLobbyLoop() {
   if (lobbyLoopActive) return;
   if (!isSlotEnabled('lobbyWelcome')) return;
@@ -839,16 +838,37 @@ export function startLobbyLoop() {
     startLobbyTrackFromUrl(customUrl);
     return;
   }
-  // Pool sequentiell durchgehen, am Ende von vorne.
+  // Geshuffelten Pool starten — random welches Lied zuerst kommt.
   lobbyLoopActive = true;
-  playLobbyTrackAtIndex(LOBBY_TRACK_POOL, 0);
+  const shuffled = shuffleLobbyPool(null);
+  playLobbyTrackAtIndex(shuffled, 0);
+}
+
+function shuffleLobbyPool(lastUrl: string | null): string[] {
+  const arr = [...LOBBY_TRACK_POOL];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  // Anti-Repeat: erster Track der neuen Runde darf nicht der letzte
+  // Track der alten Runde sein (sonst hoert man dasselbe Lied 2x in Folge).
+  if (lastUrl && arr.length > 1 && arr[0] === lastUrl) {
+    const [first, ...rest] = arr;
+    return [...rest, first];
+  }
+  return arr;
 }
 
 function playLobbyTrackAtIndex(pool: string[], idx: number): void {
   if (!lobbyLoopActive) return;
-  // Loop am Ende: zurueck auf 0
-  const realIdx = idx % pool.length;
-  const url = pool[realIdx];
+  // Pool durch? → neu shuffeln und von vorn.
+  if (idx >= pool.length) {
+    const lastUrl = pool[pool.length - 1] ?? null;
+    const next = shuffleLobbyPool(lastUrl);
+    playLobbyTrackAtIndex(next, 0);
+    return;
+  }
+  const url = pool[idx];
   const audio = new Audio(url);
   audio.addEventListener('error', () => {
     // Diese Datei nicht da — nächste probieren (skip ueber den 404er)

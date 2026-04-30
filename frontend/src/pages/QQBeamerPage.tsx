@@ -26,7 +26,7 @@ import {
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
-  startLobbyLoop, stopLobbyLoop,
+  startLobbyLoop, stopLobbyLoop, startFinaleLoop,
   playStapelStamp, playTeamJoin,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
@@ -951,11 +951,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (shouldLoop) {
       resumeAudio();
       // 2026-04-30: Lobby/Setup nutzt IMMER den Pool (4 lobby-welcome Tracks).
-      // Rules/Pause/Finale nutzen den Custom-Upload aus lobbyWelcome-Slot
-      // (mit Pool als Fallback). User-Wunsch: 'lobby-welcome-1..4 liefen
-      // immer während setup und lobby, während regeln lief dann LOBBY
-      // (vom moderator soundboard)'.
-      startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
+      // Rules/Pause nutzen den Custom-Upload aus lobbyWelcome-Slot
+      // (mit Pool als Fallback). v3 round 6 (User-Wunsch): Finale hat
+      // jetzt eigenen Slot 'finaleMusic' — startFinaleLoop, fallback auf
+      // lobbyWelcome wenn kein Custom-Upload.
+      if (inFinale) {
+        startFinaleLoop();
+      } else {
+        startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
+      }
     } else {
       stopLobbyLoop();
     }
@@ -5610,7 +5614,10 @@ function BluffBeamerView({ state: s, lang, revealed }: {
 
       {/* 2026-04-30 v3 (User-Bug): WinnerCard mit Teilpunkte-Hinweis fuer
           Bluff. Sieger = Team(s) mit den meisten bluffPoints.total. Bei Tie
-          alle gewinnen, schnellster (Vote-Submit-Order) waehlt zuerst. */}
+          alle gewinnen, schnellster (Vote-Submit-Order) waehlt zuerst.
+          v3 round 6 (User-Bug 'WinnerCard hinter BeamerView'): position:fixed
+          bottom statt im Flex-Flow → garantiert sichtbar, Vote-Screen kann
+          nicht mehr drueberlaufen. */}
       {phase === 'reveal' && (() => {
         const points = s.bluffPoints ?? {};
         const teamIds = Object.keys(points);
@@ -5632,6 +5639,12 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         const wPts = points[winnerTeam.id];
         return (
           <div style={{
+            position: 'fixed',
+            bottom: 'clamp(20px, 3vh, 36px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 70,
+            maxWidth: 'min(900px, 92vw)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
             padding: 'clamp(16px, 2vh, 28px) clamp(24px, 3vw, 44px)',
             borderRadius: 28,
@@ -5639,7 +5652,6 @@ function BluffBeamerView({ state: s, lang, revealed }: {
             border: `3px solid ${winnerTeam.color}88`,
             boxShadow: `0 0 60px ${winnerTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
             animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
-            position: 'relative', zIndex: 5,
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',

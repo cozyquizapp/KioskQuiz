@@ -936,6 +936,26 @@ export function stopLobbyLoop() {
   }
 }
 
+/** 2026-04-30 v3 round 6 (User-Wunsch eigener Slot fuer Finale-Musik):
+ *  Startet einen Loop aus dem 'finaleMusic'-Slot (Mod-Panel-konfigurierbar).
+ *  Fallback bei keinem Custom-Upload: lobbyWelcome (custom-or-pool), damit
+ *  Finale nie still ist. Reuse der lobby-Loop-Infrastruktur. */
+export function startFinaleLoop() {
+  if (lobbyLoopActive) return;
+  if (!isSlotEnabled('finaleMusic')) {
+    // Slot deaktiviert → trotzdem fallback, damit Finale nicht still ist.
+    startLobbyLoop('custom-or-pool');
+    return;
+  }
+  const customUrl = soundConfig.finaleMusic;
+  if (typeof customUrl === 'string' && customUrl.length > 0) {
+    startLobbyTrackFromUrl(customUrl);
+    return;
+  }
+  // Kein Custom-Upload → fallback auf lobbyWelcome.
+  startLobbyLoop('custom-or-pool');
+}
+
 export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }
 export function playGameOver()      { playSlotOneShot('gameOver'); }

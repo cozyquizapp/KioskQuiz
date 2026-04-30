@@ -3920,20 +3920,39 @@ export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
   return counted > 0;
 }
 
-/** B2 (2026-04-29): Hartes Min-Duration-Gate — Runde darf nicht in unter 2.5s
- *  vorbei sein. Greift falls AllDone+MinHint sofort beide true werden (z.B.
- *  Dummies locken sich gegenseitig schnell ab). User-Wunsch: 'mind. so lange,
- *  dass man was sieht'. */
+/** B2 (2026-04-29) + 2026-04-30: Hartes Min-Duration-Gate — Runde darf nicht
+ *  in unter 8s vorbei sein. Greift falls AllDone+MinHint sofort beide true
+ *  werden (z.B. Dummies locken sich gegenseitig schnell ab). User-Feedback
+ *  2026-04-30: 'bots beenden 4 connect runde nach 1 sekunde und es findet
+ *  kein reveal statt' -> 2.5s war zu kurz, jetzt 8s = ein voller Hint-Tick
+ *  bei Default-Timer (30s/4=7.5s) plus Buffer. Strict default: kein
+ *  startedAt -> definitiv blocken (sicherer als laufen lassen). */
 function onlyConnectMinDurationReached(room: QQRoomState): boolean {
-  if (!room._onlyConnectStartedAt) return true; // legacy: kein Gate, falls Feld nie gesetzt
-  return Date.now() - room._onlyConnectStartedAt >= 2500;
+  if (!room._onlyConnectStartedAt) return false; // strict: kein Start = nicht erlaubt
+  return Date.now() - room._onlyConnectStartedAt >= 8000;
+}
+
+/** B2-Erweiterung 2026-04-30: zusaetzliches Gate — Runde darf nicht enden
+ *  bevor mindestens 1 Team eine korrekte Guess abgegeben hat ODER mindestens
+ *  3 Hints sichtbar waren. Verhindert dass Pure-Dummy-Lobbys die Runde via
+ *  3-Strikes-Lockout aller Bots in <8s beenden ohne dass der Beamer eine
+ *  vernuenftige Reveal-Phase zeigen kann. */
+function onlyConnectMeaningfulProgress(room: QQRoomState): boolean {
+  // (a) Mindestens 1 korrekte Guess vorhanden -> Runde hatte einen Sieger
+  const hasCorrect = (room.onlyConnectGuesses ?? []).some(g => g.correct);
+  if (hasCorrect) return true;
+  // (b) Mindestens Hint 3 (idx>=2) sichtbar -> Spieler hatten 3 Hinweise Zeit
+  const indices = Object.values(room.onlyConnectHintIndices ?? {});
+  if (indices.length === 0) return false;
+  return Math.max(...indices) >= 2;
 }
 
 /** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit. */
 export function qqOnlyConnectCanAutoFinish(room: QQRoomState): boolean {
   return qqOnlyConnectAllDone(room)
     && qqOnlyConnectMinHintReached(room)
-    && onlyConnectMinDurationReached(room);
+    && onlyConnectMinDurationReached(room)
+    && onlyConnectMeaningfulProgress(room);
 }
 
 /** Min-Hint-Gate für AutoFinish: 4 gewinnt darf nicht beendet werden bevor

@@ -8079,11 +8079,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
           <div style={{
             position: 'relative',
-            // 2026-04-28: User-Wunsch 'CHEESE Frage+Reveal-Card unten breit
-            // machen' → maxWidth raus, full width minus padding der parent.
-            // Kompensiert: leichtes Side-Padding via `width: calc(...)` damit
-            // die Card sich nicht in die Bildschirmkanten reinpresst.
-            width: 'calc(100% - clamp(40px, 6vw, 96px))', maxWidth: 1600,
+            // 2026-04-30: Bei Reveal width:auto -> Card schrumpft auf Inhalt
+            // (Antwort-Text + Avatare). User-Feedback: 'cheese reveal feld
+            // dynamisch breit an text angepasst (ist extra breit aber da steht
+            // nichts)'. Vor-Reveal weiter full-width fuer die Frage.
+            width: isCheeseReveal ? 'auto' : 'calc(100% - clamp(40px, 6vw, 96px))',
+            minWidth: isCheeseReveal ? 'clamp(360px, 50vw, 720px)' : undefined,
+            maxWidth: isCheeseReveal ? 'min(calc(100% - clamp(40px, 6vw, 96px)), 1100px)' : 1600,
+            marginInline: 'auto',
             // 2026-04-29 (User-Feedback): Reveal-Card ~25% flacher — vorher
             // verdeckte sie ~60% der Bildflaeche bei Picture-This-Bildern.
             minHeight: revealed

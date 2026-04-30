@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -777,6 +777,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
       playRoundStart();
       playFanfare();
+      // 2026-04-30 v2: Action-Cards (eure aktion diese runde) erscheinen
+      // mit phasePop-Anim 0.85s delay. Sound 800ms nach Phase-Wechsel —
+      // 50ms vor dem visuellen Pop, psychoakustisch synchron.
+      window.setTimeout(() => { try { playActionMenuReveal(); } catch {} }, 800);
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       // Mucho + ZvZ haben Multi-Step-Reveals (Step 0 = Pause, Step 1 = Avatar-
@@ -1007,7 +1011,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // F1 Team-Join-Sound wird hier auch angehaengt (neue Team-IDs).
   // Swap-Sound: wenn zwischen zwei States zwei Cells gleichzeitig den Owner
   // wechseln UND ihre neuen Owner zu ihren vorherigen Gegner passen (= Swap).
-  const prevFlagsRef = useRef<{ shield: string; stuck: string; sand: string; teamIds: string; owners: string }>({
+  const prevFlagsRef = useRef<{ stuck: string; teamIds: string }>({
     stuck: '', teamIds: '',
   });
   useEffect(() => {
@@ -1162,25 +1166,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     prevRevealStepsRef.current = curr;
     if (s.phase !== 'QUESTION_REVEAL' || s.sfxMuted) return;
 
-    // MUCHO: Akt-1-Steps → Tonleiter pro Avatar; Lock-Step (Lösung grün) → Bestätigungs-Sound.
+    // MUCHO: Akt-1-Steps → Tonleiter pro Avatar; Lock-Step (Lösung grün) → naechster Cascade-Ton.
+    // 2026-04-30 v2 (User-Wunsch): Aufloesen + Winner-Card sind +2 Toene
+    // auf der gleichen Tonleiter NACH den Avataren. cascadeTotal = N+2,
+    // damit Avatare die unteren N Stufen, Reveal+Winner die obersten 2.
     if (curr.mucho > prev.mucho) {
       const q = s.currentQuestion;
       if (q?.category === 'MUCHO') {
         const distinctVoterOptions = new Set(s.answers.map(a => a.text)).size;
         const lockStep = distinctVoterOptions + 1;
-        if (curr.mucho >= lockStep) playCorrect();
+        const total = s.answers.length;
+        const cascadeTotal = total + 2; // +2 fuer Reveal-Highlight + WinnerCard
+        if (curr.mucho >= lockStep) {
+          // Aufloesen (Loesung gruen) = Cascade-Ton N (zweit-hoechster)
+          try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+        }
         else if (prev.mucho === 0) {
-          // 2026-04-30: Cascade-Start — Tonleiter pro Voter-Avatar synchron
+          // Cascade-Start — Tonleiter pro Voter-Avatar synchron
           // mit der MUCHO-Animation. autoCap advanced alle 750ms eine Option,
-          // Voter pro Option erscheinen simultan. Hier scheduln wir dazu
+          // Voter pro Option erscheinen simultan. Wir scheduln dazu
           // passend pro Voter einen aufsteigenden Pentatonik-Ton.
           const opts = q.options ?? [];
           const nonEmptyOrdered: number[] = [];
           for (let i = 0; i < opts.length; i++) {
             if (s.answers.some(a => a.text === String(i))) nonEmptyOrdered.push(i);
           }
-          const allSorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
-          const total = allSorted.length;
           let voterCount = 0;
           nonEmptyOrdered.forEach((optIdx, optStep) => {
             const optionVoters = s.answers
@@ -1190,23 +1200,27 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               const myRank = voterCount;
               voterCount++;
               const delay = optStep * 750 + localIdx * 90;
-              window.setTimeout(() => { try { playAvatarCascadeNote(myRank, total); } catch {} }, delay);
+              window.setTimeout(() => { try { playAvatarCascadeNote(myRank, cascadeTotal); } catch {} }, delay);
             });
           });
         }
         else playFieldPlaced();
       }
     }
-    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → Fanfare.
+    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → naechster Cascade-Ton.
     if (curr.zvz > prev.zvz) {
-      if (curr.zvz >= 2) playFanfare();
+      const total = s.answers.length;
+      const cascadeTotal = total + 2;
+      if (curr.zvz >= 2) {
+        // Aufloesen / Final = Cascade-Ton N (zweit-hoechster)
+        try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+      }
       else if (prev.zvz === 0) {
-        // 2026-04-30: Cascade-Start — Tonleiter pro Avatar.
+        // Cascade-Start — Tonleiter pro Avatar.
         // ZvZ zeigt alle Bets gleichzeitig; wir staggern die Toene mit ~150ms.
         const allSorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
-        const total = allSorted.length;
         allSorted.forEach((_a, idx) => {
-          window.setTimeout(() => { try { playAvatarCascadeNote(idx, total); } catch {} }, idx * 150);
+          window.setTimeout(() => { try { playAvatarCascadeNote(idx, cascadeTotal); } catch {} }, idx * 150);
         });
       }
       else playFieldPlaced();
@@ -2355,7 +2369,9 @@ function MuchoOptionsReveal({
       marginBottom: 'clamp(14px, 1.8vh, 28px)',
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s ease 0.1s both',
-      transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1), margin-bottom 0.6s ease',
+      // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing — User-Feedback
+      // 'cards verschieben sich zu hektisch'. ≥0.45s ist die neue Faustregel.
+      transition: 'row-gap 0.9s cubic-bezier(0.4,0,0.2,1), padding-bottom 0.9s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.9s ease',
     }}>
       {options.map((opt, i) => {
         const optImg = optionImages?.[i];
@@ -6400,13 +6416,17 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    // 2026-04-30 v2 (User-Wunsch): aufsteigende Pentatonik-Tonleiter pro
+    // aufgedeckter Zeile statt playReveal/playFanfare. cascadeTotal = n+1 —
+    // Plaetze nehmen Toene 0..n-1, WinnerCard danach den Top-Ton n.
+    const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i; // Erst Platz n (höchster Index), dann runter
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
-        // Sound: jeder Reveal ein sanfter Tick; letzter (Platz 1) eine Fanfare
         if (!s.sfxMuted) {
-          if (targetIdx === 0) playFanfare(); else playReveal();
+          // Reveal-Reihenfolge ist bottom->top, Tonleiter steigt parallel.
+          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -6750,12 +6770,14 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    // 2026-04-30 v2: Pentatonik-Cascade analog Top5.
+    const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
-          if (targetIdx === 0) playFanfare(); else playReveal();
+          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -7090,12 +7112,15 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    // 2026-04-30 v2: Pentatonik-Cascade analog Top5/Order — Tonleiter pro
+    // sichtbarem Platz, aufsteigend von #5 (bottom) zu #1 (top).
+    const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
-          if (targetIdx === 0) playFanfare(); else playReveal();
+          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -7838,17 +7863,36 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // sonst kommt er vor dem sichtbaren Banner (User-Feedback: 'sound kommt
   // etwas früh'). 60ms Vorlauf damit Ton minimal vor dem Pop einsetzt =
   // psychoakustisch synchron.
+  // 2026-04-30 v2: Fuer Cascade-Kategorien (MUCHO/ZvZ/Top5/Order) ist die
+  // Winner-Card der LETZTE Ton der Avatar-/Reveal-Tonleiter. Wir spielen
+  // stets den Top-Ton der Pentatonik-Skala (rank=7, total=8), damit er
+  // unabhaengig von cascadeTotal-Konvention immer auf C5/E5-Hoehe sitzt
+  // = optisch und musikalisch der Krönungston.
+  // Fuer Cheese / restliche Kategorien bleibt der warme Krönungs-Akkord.
   const prevShowWinnerRef = useRef(false);
   useEffect(() => {
     const prev = prevShowWinnerRef.current;
     prevShowWinnerRef.current = showUnifiedWinner;
     if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && s.correctTeamId) {
+      const cat = s.currentQuestion?.category;
+      const subKind = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
+      const isCascadeCategory =
+        cat === 'MUCHO' ||
+        cat === 'ZEHN_VON_ZEHN' ||
+        (cat === 'BUNTE_TUETE' && (subKind === 'top5' || subKind === 'order'));
       const handle = window.setTimeout(() => {
-        try { playWinnerCardReveal(); } catch {}
+        try {
+          if (isCascadeCategory) {
+            // Top-Ton der 8-stufigen Pentatonik-Skala (E5 bei rank=7, total=8)
+            playAvatarCascadeNote(7, 8);
+          } else {
+            playWinnerCardReveal();
+          }
+        } catch {}
       }, 640);
       return () => window.clearTimeout(handle);
     }
-  }, [showUnifiedWinner, revealed, s.correctTeamId, s.sfxMuted]);
+  }, [showUnifiedWinner, revealed, s.correctTeamId, s.sfxMuted, s.currentQuestion?.category, s.currentQuestion?.bunteTuete]);
 
   // ── CozyGuessr (map) full-screen reveal ─────────────────────────────────
   const isMapReveal = revealed
@@ -8160,7 +8204,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
-            transition: 'padding 0.4s ease, border-color 0.4s ease, min-height 0.5s cubic-bezier(0.34,1.56,0.64,1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+            // 2026-04-30 v2: width/min-width/max-width Transition explizit
+            // ergaenzt + alle Durations 0.4-0.5 → 0.7-0.85s, smooth-Regel.
+            transition: 'padding 0.7s cubic-bezier(0.4,0,0.2,1), border-color 0.55s ease, min-height 0.85s cubic-bezier(0.34,1.56,0.64,1), transform 0.7s cubic-bezier(0.34,1.56,0.64,1), width 0.7s cubic-bezier(0.4,0,0.2,1), min-width 0.7s cubic-bezier(0.4,0,0.2,1), max-width 0.7s cubic-bezier(0.4,0,0.2,1)',
             pointerEvents: 'auto',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -8428,14 +8474,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           const isHotPotatoActive = q.category === 'BUNTE_TUETE'
             && q.bunteTuete?.kind === 'hotPotato' && !revealed;
           const hpUsedCount = (s.hotPotatoUsedAnswers?.length ?? 0);
-          const hpCompact = isHotPotatoActive && hpUsedCount > 12;
-          // 2026-04-30: justifyContent betrifft nur den inneren Content-Wrapper
-          // (siehe weiter unten). Outer-Container haelt die Top-Bar (Badge+Timer)
-          // oben, Content-Wrapper darunter mit eigener Vertical-Centering-Logik.
+          // 2026-04-30 v2 (User-Feedback): Trigger 12->16 fuer ruhigeres
+          // mid-game-Layout (selteneres Snap-down). Transition wird in der
+          // Card-Style 0.4s -> 0.7s entspannter.
+          const hpCompact = isHotPotatoActive && hpUsedCount > 16;
+          // 2026-04-30 v2: MUCHO/ZvZ bekommen einen flex-Spacer ueber UND unter
+          // der Frage-Card — dadurch sitzt die Card vertikal MITTIG zwischen
+          // Top-Bar und Voter-Grid (statt zusammen mit Grid als Block zentriert,
+          // was die Card optisch in das obere Drittel rutschte). Der Voter-Grid
+          // bleibt am unteren Rand. Gilt fuer Q UND R — keine Layout-Aenderung
+          // beim Reveal (User-Feedback: 'cards verschieben sich zu oft').
+          const isMuchoOrZvz = q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN';
           const innerJustify = hpCompact
             ? 'flex-start'
-            : (revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center');
-          const innerGap = revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(20px, 3vh, 40px)' : 0;
+            : (isMuchoOrZvz ? 'flex-start' : 'center');
+          const innerGap = 0;
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
@@ -8500,6 +8553,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             alignItems: 'center', width: '100%',
           }}>
 
+          {/* 2026-04-30 v2: Spacer vor Card — fuer MUCHO/ZvZ vertikales
+              Centering der Frage-Card zwischen Top-Bar und Voter-Grid.
+              flex:1 zieht den verfuegbaren Raum vor der Card, ein zweiter
+              Spacer kommt nach der Card (vor dem Voter-Grid) — equal flex
+              Weights = Card sitzt mittig. */}
+          {isMuchoOrZvz && <div style={{ flex: 1, minHeight: 0 }} aria-hidden />}
+
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
               (User-Feedback 2026-04-28: 'cards zappelig beim kleiner werden').
               Card und Text behalten ihre Größe, nur Opacity dimmt (1 → 0.45)
@@ -8528,21 +8588,29 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
                 animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-                transition: 'box-shadow 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, padding 0.4s ease, margin-bottom 0.4s ease',
+                // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
+                // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
+                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.55s ease, padding 0.7s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1)',
                 opacity: revealed ? 0.55 : 1,
+                flexShrink: 0,
               }}>
                 <div key={lang} style={{
                   fontSize: cardFontSize,
                   fontWeight: 900, lineHeight: 1.22,
                   color: '#F1F5F9',
                   animation: 'langFadeIn 0.4s ease both',
-                  transition: 'font-size 0.4s ease',
+                  transition: 'font-size 0.7s cubic-bezier(0.4,0,0.2,1)',
                 }}>
                   {qText}
                 </div>
               </div>
             );
           })()}
+
+          {/* 2026-04-30 v2: Spacer NACH Card (vor Voter-Grid) — siehe oben.
+              Equal flex Weights mit dem Spacer ueber der Card → Card vertikal
+              mittig zwischen Top-Bar und Voter-Grid. */}
+          {isMuchoOrZvz && <div style={{ flex: 1, minHeight: 0 }} aria-hidden />}
 
           {/* Mobile-Hint („📱 Antwort auf dem Handy") entfernt 2026-04-26:
               Teams haben bereits die Eingabe-UI auf ihren Geraeten — der
@@ -8644,7 +8712,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',
-              transition: 'row-gap 0.6s cubic-bezier(0.34,1.4,0.64,1), padding-bottom 0.6s cubic-bezier(0.34,1.4,0.64,1)',
+              // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing analog MUCHO.
+              transition: 'row-gap 0.9s cubic-bezier(0.4,0,0.2,1), padding-bottom 0.9s cubic-bezier(0.4,0,0.2,1)',
             }}>
               {q.options.map((opt, i) => {
                 const optImg = q.optionImages?.[i];
@@ -9509,7 +9578,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               transform: showUnifiedWinner ? 'scaleY(1)' : 'scaleY(0)',
               transformOrigin: 'top center',
               maxHeight: showUnifiedWinner ? 'none' : 0,
-              transition: 'opacity 0.45s ease, transform 0.55s cubic-bezier(0.34,1.56,0.64,1), max-height 0.55s ease, margin-bottom 0.4s ease',
+              // 2026-04-30 v2: 0.45s/0.55s → 0.85s — User-Feedback
+              // 'cards verschieben sich zu oft' braucht entspanntere Pop-In-
+              // Animation. cubic-bezier mit weichem Out-Curve fuer ruhiges Premium-Feel.
+              transition: 'opacity 0.85s cubic-bezier(0.22,1,0.36,1), transform 0.85s cubic-bezier(0.34,1.56,0.64,1), max-height 0.85s cubic-bezier(0.22,1,0.36,1), margin-bottom 0.7s ease',
             }}>
               {showUnifiedWinner && (() => {
             const isEn = lang === 'en';

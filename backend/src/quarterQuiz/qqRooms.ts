@@ -3920,16 +3920,17 @@ export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
   return counted > 0;
 }
 
-/** B2 (2026-04-29) + 2026-04-30: Hartes Min-Duration-Gate — Runde darf nicht
- *  in unter 8s vorbei sein. Greift falls AllDone+MinHint sofort beide true
- *  werden (z.B. Dummies locken sich gegenseitig schnell ab). User-Feedback
- *  2026-04-30: 'bots beenden 4 connect runde nach 1 sekunde und es findet
- *  kein reveal statt' -> 2.5s war zu kurz, jetzt 8s = ein voller Hint-Tick
- *  bei Default-Timer (30s/4=7.5s) plus Buffer. Strict default: kein
- *  startedAt -> definitiv blocken (sicherer als laufen lassen). */
+/** B2 (2026-04-29) + 2026-04-30 v2: Hartes Min-Duration-Gate — Runde darf nicht
+ *  in unter 25s vorbei sein. User-Feedback 2026-04-30 (8 Iterationen vorher):
+ *  '4 connect mit dummys wird nicht aufgelöst — runde endet nach paar
+ *  sekunden, kein reveal'. Trotz mehrerer Gate-Tunings (2.5s/8s/MeaningfulProgress)
+ *  blieb das Symptom. Neuer Ansatz: Hard-Floor 25s — alle Gates raus,
+ *  Runde KANN unter keinen Umstaenden vor 25s enden, egal was Dummies tun.
+ *  Damit ist das Reveal-Display garantiert sichtbar — Dummies kommen pro
+ *  4-12s-Tick, also bei 25s sind ~3-4 Hints durch und Avatare auf Hints. */
 function onlyConnectMinDurationReached(room: QQRoomState): boolean {
   if (!room._onlyConnectStartedAt) return false; // strict: kein Start = nicht erlaubt
-  return Date.now() - room._onlyConnectStartedAt >= 8000;
+  return Date.now() - room._onlyConnectStartedAt >= 25000;
 }
 
 /** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit.

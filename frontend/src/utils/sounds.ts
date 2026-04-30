@@ -1028,6 +1028,25 @@ export function playGridReveal() {
   tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
 }
 
+/** 2026-04-30 v2: Action-Card erscheint („eure aktion diese runde…") —
+ *  weicher Bell-Triade, klar genug um den Action-Vorgang zu markieren ohne
+ *  GridReveal oder WinnerCardReveal zu kannibalisieren. Dreiklang aufwaerts
+ *  mit Sparkle obenauf — feiert das Tactical-Moment der Action-Wahl. */
+export function playActionMenuReveal() {
+  if (!isSlotEnabled('actionMenuReveal')) return;
+  const url = resolveSlotUrl('actionMenuReveal');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Aufsteigender Mini-Triade D5-F#5-A5 (D-Dur), Bell-artig.
+  tone(587.33, 'triangle', t,         0.20, 0.18, 0.005, 0.08, ac);
+  tone(739.99, 'sine',     t + 0.07,  0.20, 0.20, 0.005, 0.08, ac);
+  tone(880.00, 'sine',     t + 0.14,  0.22, 0.30, 0.005, 0.10, ac);
+  // Sparkle-Top
+  tone(1760,   'sine',     t + 0.18,  0.10, 0.20, 0.003, 0.06, ac);
+}
+
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */
 function playUrlOneShot(url: string): void {
   const el = new Audio(url);

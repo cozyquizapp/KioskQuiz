@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playPlacementTurn,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playPlacementTurn, playClimaxFinish,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -1178,8 +1178,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         const total = s.answers.length;
         const cascadeTotal = total + 2; // +2 fuer Reveal-Highlight + WinnerCard
         if (curr.mucho >= lockStep) {
-          // Aufloesen (Loesung gruen) = Cascade-Ton N (zweit-hoechster)
+          // Aufloesen (Loesung gruen) = Cascade-Ton N + Climax-Finish-Layer.
+          // 2026-04-30 v3 (User): 'climax sound IMMER bei gruenem antwortfeld'.
           try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+          try { playClimaxFinish(); } catch {}
         }
         else if (prev.mucho === 0) {
           // Cascade-Start — Tonleiter pro Voter-Avatar synchron
@@ -1212,8 +1214,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       const total = s.answers.length;
       const cascadeTotal = total + 2;
       if (curr.zvz >= 2) {
-        // Aufloesen / Final = Cascade-Ton N (zweit-hoechster)
+        // Aufloesen / Final = Cascade-Ton N + Climax-Finish-Layer.
         try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+        try { playClimaxFinish(); } catch {}
       }
       else if (prev.zvz === 0) {
         // Cascade-Start — Tonleiter pro Avatar.
@@ -1225,9 +1228,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
       else playFieldPlaced();
     }
-    // CHEESE: Step 1 = Lösung grün, Step 2 = Avatare auf den Treffern.
+    // CHEESE: Step 1 = Lösung grün → Climax-Finish (User-Wunsch climax bei
+    // gruenem Antwortfeld). Step 2 = Avatare auf den Treffern → fieldPlaced.
     if (curr.cheese > prev.cheese) {
-      if (curr.cheese === 1) playReveal();
+      if (curr.cheese === 1) {
+        try { playClimaxFinish(); } catch {}
+      }
       else playFieldPlaced();
     }
     // CozyGuessr (BUNTE_TUETE Map): jeder neue Pin = Plopp.
@@ -5975,6 +5981,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const winnerSet = new Set(correctSorted.map(g => g.teamId));
   const winnerByTeam: Record<string, { atHintIdx: number; submittedAt: number; rank: number }> = {};
   correctSorted.forEach((g, idx) => { winnerByTeam[g.teamId] = { atHintIdx: g.atHintIdx, submittedAt: g.submittedAt, rank: idx + 1 }; });
+  // 2026-04-30 v3 (User-Korrektur): Nur Teams mit dem niedrigsten atHintIdx
+  // sind echte Sieger (kriegen Aktion). Andere richtig liegende Teams am
+  // hoeheren Hint sieht man als Avatar, kriegen aber keine Medaille.
+  const minWinHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : -1;
 
   return (
     <div style={{
@@ -6099,9 +6109,9 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               }}>
                 {lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}
                 {isPast && <span style={{ marginLeft: 6 }}>✓</span>}
-                {revealed && teamsAtThisHint.length > 0 && (
-                  <span style={{ marginLeft: 6 }}>· {Math.max(1, 4 - i)} Pkt</span>
-                )}
+                {/* 2026-04-30 v3: 'X Pkt'-Label entfernt — Connect-4 vergibt
+                    keine Hinweis-basierten Punkte. Sieger = Team(s) mit
+                    wenigsten Hinweisen, bekommen 1 Aktion (wie sonst auch). */}
               </div>
               <div style={{
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
@@ -6122,11 +6132,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                   borderTop: `1px dashed ${hintColor}55`,
                   width: '100%',
                 }}>
-                  {/* Richtig: gold ring + 🥇 für schnellsten */}
+                  {/* Richtig — Sieger-Hint (== minWinHint): alle Teams gold + 🥇.
+                      Korrekt aber spaeter (höherer Hint): team-color, kein Medal. */}
                   {teamsAtThisHint.map((g, gIdx) => {
                     const tm = s.teams.find(t => t.id === g.teamId);
                     if (!tm) return null;
-                    const isFastest = gIdx === 0;
+                    const isWinnerHint = i === minWinHint;
                     return (
                       <div key={`c-${g.teamId}`} style={{
                         position: 'relative',
@@ -6136,12 +6147,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           avatarId={tm.avatarId}
                           size={'clamp(36px, 4vw, 52px)'}
                           style={{
-                            boxShadow: isFastest
+                            boxShadow: isWinnerHint
                               ? `0 0 0 3px #FBBF24, 0 0 18px rgba(251,191,36,0.65), 0 0 6px ${tm.color}88`
                               : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}66`,
                           }}
                         />
-                        {isFastest && (
+                        {isWinnerHint && (
                           <span aria-hidden style={{
                             position: 'absolute',
                             top: -10, right: -8,
@@ -6427,14 +6438,19 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
     // 2026-04-30 v2 (User-Wunsch): aufsteigende Pentatonik-Tonleiter pro
     // aufgedeckter Zeile statt playReveal/playFanfare. cascadeTotal = n+1 —
     // Plaetze nehmen Toene 0..n-1, WinnerCard danach den Top-Ton n.
+    // v3: bei Top-Row (Platz 1, i=n-1) zusaetzlich Climax-Finish layern.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i; // Erst Platz n (höchster Index), dann runter
+      const isTopRow = i === n - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
           // Reveal-Reihenfolge ist bottom->top, Tonleiter steigt parallel.
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+          if (isTopRow) {
+            try { playClimaxFinish(); } catch {}
+          }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -6779,13 +6795,18 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
     // 2026-04-30 v2: Pentatonik-Cascade analog Top5.
+    // v3: Top-Row (Platz 1, i=n-1) Climax-Finish-Layer.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
+      const isTopRow = i === n - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+          if (isTopRow) {
+            try { playClimaxFinish(); } catch {}
+          }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -7122,13 +7143,18 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
     const timers: ReturnType<typeof setTimeout>[] = [];
     // 2026-04-30 v2: Pentatonik-Cascade analog Top5/Order — Tonleiter pro
     // sichtbarem Platz, aufsteigend von #5 (bottom) zu #1 (top).
+    // v3: Top-Row (Platz 1, i=n-1) zusaetzlich Climax-Finish-Layer.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
+      const isTopRow = i === n - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+          if (isTopRow) {
+            try { playClimaxFinish(); } catch {}
+          }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
       timers.push(t);
@@ -7780,6 +7806,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
 
+  // 2026-04-30 v3 (User-Wunsch): Cheese Portrait → 2-Spalten-Layout.
+  // Image links voll Top-to-Bottom, Question-Card rechts vertikal mittig.
+  // Detection via natural-dimensions preload — kein Backend-Feld noetig.
+  const [isCheesePortrait, setIsCheesePortrait] = useState(false);
+  useEffect(() => {
+    if (!isCheese || !img?.url) {
+      setIsCheesePortrait(false);
+      return;
+    }
+    const tester = new globalThis.Image();
+    tester.onload = () => {
+      setIsCheesePortrait(tester.naturalHeight > tester.naturalWidth * 1.05); // 5% Toleranz
+    };
+    tester.onerror = () => setIsCheesePortrait(false);
+    tester.src = img.url;
+  }, [isCheese, img?.url]);
+
   // ── MUCHO: Winner-Card erst nach Jäger-Lock zeigen ──────────────────────
   // Spiegelt die Akt-2-Timing aus MuchoOptionsReveal (hop + lock + speedrun).
   // Solange Winner-Card verborgen ist bleibt die Spannungskurve intakt.
@@ -7871,12 +7914,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // sonst kommt er vor dem sichtbaren Banner (User-Feedback: 'sound kommt
   // etwas früh'). 60ms Vorlauf damit Ton minimal vor dem Pop einsetzt =
   // psychoakustisch synchron.
-  // 2026-04-30 v2: Fuer Cascade-Kategorien (MUCHO/ZvZ/Top5/Order) ist die
-  // Winner-Card der LETZTE Ton der Avatar-/Reveal-Tonleiter. Wir spielen
-  // stets den Top-Ton der Pentatonik-Skala (rank=7, total=8), damit er
-  // unabhaengig von cascadeTotal-Konvention immer auf C5/E5-Hoehe sitzt
-  // = optisch und musikalisch der Krönungston.
-  // Fuer Cheese / restliche Kategorien bleibt der warme Krönungs-Akkord.
+  // 2026-04-30 v3 (User-Wunsch climax IMMER bei WinnerCard): Beim Pop
+  // der WinnerCard layern wir Cascade-Top-Ton + Climax-Finish-Akkord
+  // gemeinsam — fuer alle Kategorien. So gibt's einheitlich den
+  // „Yeah!"-Moment beim Erscheinen der Sieger-Karte. playWinnerCardReveal
+  // bleibt als zusaetzlicher Bell-Layer (User kann es im Sound-Panel mute'n).
   const prevShowWinnerRef = useRef(false);
   useEffect(() => {
     const prev = prevShowWinnerRef.current;
@@ -7890,10 +7932,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         (cat === 'BUNTE_TUETE' && (subKind === 'top5' || subKind === 'order'));
       const handle = window.setTimeout(() => {
         try {
+          // Climax-Finish IMMER (User: 'climax sound IMMER bei WinnerCard')
+          playClimaxFinish();
           if (isCascadeCategory) {
-            // Top-Ton der 8-stufigen Pentatonik-Skala (E5 bei rank=7, total=8)
+            // Top-Ton der Cascade als zusaetzlicher Pentatonik-Layer
             playAvatarCascadeNote(7, 8);
           } else {
+            // Cheese / Hot Potato Winner: Krönungs-Akkord obendrauf
             playWinnerCardReveal();
           }
         } catch {}
@@ -8016,10 +8061,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         const cheesePosY = 50 + cheeseOY / 2;
         return (
         <>
+          {/* 2026-04-30 v3 (User-Wunsch): Bei Portrait-Foto in CHEESE clippen
+              wir alle Bild-Layer auf die LINKE Bildschirm-Haelfte. Question-
+              Card-Overlay wandert in den rechten Streifen (siehe Overlay
+              weiter unten). Nicht-Cheese und Landscape bleiben unveraendert. */}
           {/* Layer 1: blurred cover backdrop (CHEESE only) */}
           {cheeseFullscreen && (
             <div style={{
-              position: 'fixed', inset: 0, zIndex: 49,
+              position: 'fixed', top: 0, bottom: 0,
+              left: 0, right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
+              zIndex: 49,
               backgroundImage: `url(${img!.url})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -8032,7 +8083,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
           {/* Layer 2: sharp foreground (contain für CHEESE, cover für legacy fullscreen) */}
           <div style={{
-            position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 50 : 1,
+            position: cheeseFullscreen ? 'fixed' : 'absolute',
+            top: 0, bottom: 0,
+            left: 0,
+            right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
+            zIndex: cheeseFullscreen ? 50 : 1,
             backgroundImage: `url(${img!.url})`,
             backgroundSize: cheeseFullscreen ? 'contain' : 'cover',
             backgroundPosition: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
@@ -8041,7 +8096,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             animation: cheeseFullscreen
               ? 'fsExpand 1.0s cubic-bezier(0.4,0,0.2,1) both'
               : ((revealed && !cheeseOverlay) ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s both'),
-            transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1), background-position 0.4s ease, transform 0.4s ease',
+            transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1), background-position 0.4s ease, transform 0.4s ease, right 0.5s ease',
             transform: cheeseFullscreen
               ? `scale(${cheeseZoom})${img!.rotation ? ` rotate(${img!.rotation}deg)` : ''}`
               : `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
@@ -8051,7 +8106,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           }} />
           {/* Layer 3: vignette overlay */}
           <div style={{
-            position: cheeseFullscreen ? 'fixed' : 'absolute', inset: 0, zIndex: cheeseFullscreen ? 51 : 2,
+            position: cheeseFullscreen ? 'fixed' : 'absolute',
+            top: 0, bottom: 0,
+            left: 0,
+            right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
+            zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
               ? 'linear-gradient(180deg, rgba(13,10,6,0.35) 0%, rgba(13,10,6,0.20) 40%, rgba(13,10,6,0.20) 60%, rgba(13,10,6,0.40) 100%)'
               : [
@@ -8059,7 +8118,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
               ].join(', '),
             opacity: (revealed && !cheeseOverlay) ? 0.4 : 1,
-            transition: 'opacity 0.8s ease',
+            transition: 'opacity 0.8s ease, right 0.5s ease',
           }} />
         </>
         );
@@ -8103,17 +8162,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* ── CHEESE overlay cards (Phase 2 + Reveal) ── */}
       {(cheeseWithQuestion || isCheeseReveal) && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 52,
+          // 2026-04-30 v3: Bei Portrait-Foto wandert der Card-Container in den
+          // rechten Bildschirm-Streifen (50% breit) und Card sitzt dort vertikal
+          // mittig. Bei Landscape klassisch fullscreen + Card am unteren Rand.
+          position: 'fixed',
+          top: 0, bottom: 0,
+          left: isCheesePortrait ? '50%' : 0,
+          right: 0,
+          zIndex: 52,
           display: 'flex', flexDirection: 'column',
-          justifyContent: 'flex-end', alignItems: 'center',
-          // Bottom-Padding dynamisch:
-          //   - während QUESTION_ACTIVE: Platz unter der Card für die hängenden
-          //     Voter-Avatare (~50-60px)
-          //   - beim Reveal: zurück auf normales Padding, damit die Card
-          //     dichter am Bildrand sitzt und weniger vom Foto verdeckt
-          // Smooth transition zwischen beiden Zuständen.
-          padding: revealed ? '40px 48px 32px' : '40px 48px clamp(58px, 7vh, 92px)',
-          transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1)',
+          justifyContent: isCheesePortrait ? 'center' : 'flex-end',
+          alignItems: 'center',
+          padding: isCheesePortrait
+            ? 'clamp(20px, 3vh, 40px) clamp(20px, 2.5vw, 40px)'
+            : (revealed ? '40px 48px 32px' : '40px 48px clamp(58px, 7vh, 92px)'),
+          transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1), left 0.5s ease',
           pointerEvents: 'none',
         }}>
           {/* Konsistente Kategorie-Pill oben links — bleibt im Reveal sichtbar
@@ -8186,9 +8249,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // (Antwort-Text + Avatare). User-Feedback: 'cheese reveal feld
             // dynamisch breit an text angepasst (ist extra breit aber da steht
             // nichts)'. Vor-Reveal weiter full-width fuer die Frage.
-            width: isCheeseReveal ? 'auto' : 'calc(100% - clamp(40px, 6vw, 96px))',
-            minWidth: isCheeseReveal ? 'clamp(360px, 50vw, 720px)' : undefined,
-            maxWidth: isCheeseReveal ? 'min(calc(100% - clamp(40px, 6vw, 96px)), 1100px)' : 1600,
+            // 2026-04-30 v3: Portrait-Mode → Card sitzt im rechten 50%-Streifen,
+            // also schon eingeschraenkt im Container. width:100% reicht dort.
+            width: isCheesePortrait ? '100%' : (isCheeseReveal ? 'auto' : 'calc(100% - clamp(40px, 6vw, 96px))'),
+            minWidth: isCheeseReveal && !isCheesePortrait ? 'clamp(360px, 50vw, 720px)' : undefined,
+            maxWidth: isCheesePortrait ? '100%' : (isCheeseReveal ? 'min(calc(100% - clamp(40px, 6vw, 96px)), 1100px)' : 1600),
             marginInline: 'auto',
             // 2026-04-29 (User-Feedback): Reveal-Card ~25% flacher — vorher
             // verdeckte sie ~60% der Bildflaeche bei Picture-This-Bildern.
@@ -8486,16 +8551,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // mid-game-Layout (selteneres Snap-down). Transition wird in der
           // Card-Style 0.4s -> 0.7s entspannter.
           const hpCompact = isHotPotatoActive && hpUsedCount > 16;
-          // 2026-04-30 v2: MUCHO/ZvZ bekommen einen flex-Spacer ueber UND unter
-          // der Frage-Card — dadurch sitzt die Card vertikal MITTIG zwischen
-          // Top-Bar und Voter-Grid (statt zusammen mit Grid als Block zentriert,
-          // was die Card optisch in das obere Drittel rutschte). Der Voter-Grid
-          // bleibt am unteren Rand. Gilt fuer Q UND R — keine Layout-Aenderung
-          // beim Reveal (User-Feedback: 'cards verschieben sich zu oft').
-          const isMuchoOrZvz = q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN';
-          const innerJustify = hpCompact
-            ? 'flex-start'
-            : (isMuchoOrZvz ? 'flex-start' : 'center');
+          // 2026-04-30 v3 (User-Korrektur): Frage-Card immer vertikal mittig —
+          // zusammen mit Antwortoptionen darunter als 1 BLOCK fuer MUCHO/ZvZ.
+          // 'center' fuer alle Kategorien, hpCompact bleibt 'flex-start'.
+          const innerJustify = hpCompact ? 'flex-start' : 'center';
           const innerGap = 0;
           return (
         <div style={{
@@ -8561,13 +8620,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             alignItems: 'center', width: '100%',
           }}>
 
-          {/* 2026-04-30 v2: Spacer vor Card — fuer MUCHO/ZvZ vertikales
-              Centering der Frage-Card zwischen Top-Bar und Voter-Grid.
-              flex:1 zieht den verfuegbaren Raum vor der Card, ein zweiter
-              Spacer kommt nach der Card (vor dem Voter-Grid) — equal flex
-              Weights = Card sitzt mittig. */}
-          {isMuchoOrZvz && <div style={{ flex: 1, minHeight: 0 }} aria-hidden />}
-
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
               (User-Feedback 2026-04-28: 'cards zappelig beim kleiner werden').
               Card und Text behalten ihre Größe, nur Opacity dimmt (1 → 0.45)
@@ -8615,10 +8667,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
 
-          {/* 2026-04-30 v2: Spacer NACH Card (vor Voter-Grid) — siehe oben.
-              Equal flex Weights mit dem Spacer ueber der Card → Card vertikal
-              mittig zwischen Top-Bar und Voter-Grid. */}
-          {isMuchoOrZvz && <div style={{ flex: 1, minHeight: 0 }} aria-hidden />}
 
           {/* Mobile-Hint („📱 Antwort auf dem Handy") entfernt 2026-04-26:
               Teams haben bereits die Eingabe-UI auf ihren Geraeten — der
@@ -8715,8 +8763,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               columnGap: 18,
-              rowGap: expandedLayout ? (heavyChips ? 'clamp(110px, 14vh, 160px)' : 'clamp(80px, 10vh, 120px)') : 18,
-              paddingBottom: expandedLayout ? (heavyChips ? 'clamp(96px, 11vh, 140px)' : 'clamp(62px, 7.5vh, 96px)') : 0,
+              // 2026-04-30 v3 (User-Bug): Avatare am Voter-Grid-Tile-Boden
+              // wurden abgeschnitten weil paddingBottom zu knapp. Werte
+              // raufgesetzt: heavyChips 96→140, leicht 62→100. Avatare
+              // (Hängen unter dem Tile) brauchen genug Luft.
+              rowGap: expandedLayout ? (heavyChips ? 'clamp(140px, 17vh, 200px)' : 'clamp(100px, 12vh, 140px)') : 18,
+              paddingBottom: expandedLayout ? (heavyChips ? 'clamp(130px, 14vh, 180px)' : 'clamp(100px, 11vh, 140px)') : 0,
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s ease 0.1s both',

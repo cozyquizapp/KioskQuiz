@@ -1028,6 +1028,27 @@ export function playGridReveal() {
   tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
 }
 
+/** 2026-04-30 v3 (User-Wunsch): Climax-Finish-Sound — lange warme
+ *  Krönungs-Glocke fuer Cascade-Endpunkte (Schaetzchen Top-Row, Top5/Order
+ *  Platz 1, Cheese-Reveal Lösungsfeld, MUCHO/ZvZ Lock-Step). Layered
+ *  Chord (perfect 4th + 5th + Octave) mit Sparkle-Top, ~2.5s sustain.
+ *  Spielt SYNCHRON zu cascade-tone oder playCorrect — ergibt zusammen den
+ *  „Yeah!"-Moment. Lauter als andere Slots damit hoerbar ueber Hintergrund. */
+export function playClimaxFinish() {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Krönungs-Akkord: C-Dur Octave-Stack (C4-G4-C5-E5) mit warmer Bell-Form.
+  // ADSR: schneller Attack 0.02s, sustained ~2s mit langem decay.
+  tone(261.63, 'sine',     t,         0.32, 0.45, 0.02, 0.18, ac); // C4
+  tone(392.00, 'sine',     t + 0.05,  0.30, 0.55, 0.02, 0.20, ac); // G4
+  tone(523.25, 'triangle', t + 0.10,  0.34, 0.70, 0.02, 0.22, ac); // C5 — Hauptton
+  tone(659.25, 'sine',     t + 0.15,  0.28, 0.85, 0.02, 0.25, ac); // E5
+  // Sparkle-Top (high octave bell decay)
+  tone(1046.5, 'sine',     t + 0.20,  0.20, 1.10, 0.01, 0.30, ac); // C6
+  tone(1568.0, 'sine',     t + 0.30,  0.14, 1.40, 0.01, 0.40, ac); // G6
+}
+
 /** 2026-04-30 v3: Placement-Turn — kurzer Wood-Bell-Tap pro Team-Zug
  *  in der PLACEMENT-Phase. Soll deutlich aber nicht aufdringlich sein, kein
  *  Krönungs-Akkord (das ist die WinnerCard). Hoehe G4-B4 (warmer Bereich). */
@@ -1044,10 +1065,10 @@ export function playPlacementTurn() {
   tone(987.77, 'sine',     t + 0.06,  0.08, 0.10, 0.002, 0.04, ac); // B5 sparkle
 }
 
-/** 2026-04-30 v2: Action-Card erscheint („eure aktion diese runde…") —
- *  weicher Bell-Triade, klar genug um den Action-Vorgang zu markieren ohne
- *  GridReveal oder WinnerCardReveal zu kannibalisieren. Dreiklang aufwaerts
- *  mit Sparkle obenauf — feiert das Tactical-Moment der Action-Wahl. */
+/** 2026-04-30 v2/v3: Action-Card erscheint („eure aktion diese runde…") —
+ *  Bell-Triade, klar hoerbar damit User es ueber Hintergrund-Musik wahrnimmt.
+ *  v3: Volumes 0.20-0.22 → 0.34-0.40, Decay laenger fuer praesentere Bell.
+ *  Dreiklang aufwaerts mit Sparkle obenauf — feiert das Tactical-Moment. */
 export function playActionMenuReveal() {
   if (!isSlotEnabled('actionMenuReveal')) return;
   const url = resolveSlotUrl('actionMenuReveal');
@@ -1055,12 +1076,13 @@ export function playActionMenuReveal() {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Aufsteigender Mini-Triade D5-F#5-A5 (D-Dur), Bell-artig.
-  tone(587.33, 'triangle', t,         0.20, 0.18, 0.005, 0.08, ac);
-  tone(739.99, 'sine',     t + 0.07,  0.20, 0.20, 0.005, 0.08, ac);
-  tone(880.00, 'sine',     t + 0.14,  0.22, 0.30, 0.005, 0.10, ac);
+  // Aufsteigender Mini-Triade D5-F#5-A5 (D-Dur), Bell-artig — boosted.
+  tone(587.33, 'triangle', t,         0.36, 0.35, 0.008, 0.14, ac);
+  tone(739.99, 'sine',     t + 0.07,  0.36, 0.40, 0.008, 0.16, ac);
+  tone(880.00, 'sine',     t + 0.14,  0.40, 0.55, 0.008, 0.20, ac);
   // Sparkle-Top
-  tone(1760,   'sine',     t + 0.18,  0.10, 0.20, 0.003, 0.06, ac);
+  tone(1760,   'sine',     t + 0.18,  0.22, 0.40, 0.005, 0.12, ac);
+  tone(2349.32,'sine',     t + 0.24,  0.16, 0.55, 0.005, 0.18, ac);
 }
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */

@@ -1081,24 +1081,25 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
   }
 }
 
-// onlyConnect Multi-Winner: alle Teams die während QUESTION_ACTIVE richtig
-// getippt haben gelten als Sieger. Reihenfolge:
-//   1. atHintIdx ASC (wer mit weniger Hinweisen löste)
-//   2. submittedAt ASC (bei gleichem Hint-Index: schnelleres Team zuerst)
-// Alle bekommen eine Aktion (1 Feld). Earned points nur als Stat-Anzeige.
+// onlyConnect Winner-Modell (User-Korrektur 2026-04-30 v3):
+// Nur das/die Team(s) mit dem NIEDRIGSTEN atHintIdx unter den korrekten
+// Tipps gewinnen — bei Gleichstand alle, sortiert nach Schnelligkeit
+// (schnellster waehlt zuerst seine Aktion). Andere korrekte Teams am
+// hoeheren Hint kriegen NICHTS — analog zu MUCHO/Schaetzchen wo nur die
+// Top-Antworter eine Aktion gewinnen, nicht jeder der's irgendwann kannte.
+// Earned points = {} (1 Aktion pro Sieger, kein Punkte-Wert).
 function evalOnlyConnect(room: QQRoomState): QQEvalResult {
   const correct = (room.onlyConnectGuesses ?? [])
     .filter(g => g.correct)
     .sort((a, b) => (a.atHintIdx - b.atHintIdx) || (a.submittedAt - b.submittedAt));
   if (correct.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  const minHint = correct[0].atHintIdx;
   const winnerTeamIds: string[] = [];
-  const earnedPoints: Record<string, number> = {};
   for (const g of correct) {
-    if (winnerTeamIds.includes(g.teamId)) continue; // dedupe — sollte nicht passieren wegen 1-Versuch
-    winnerTeamIds.push(g.teamId);
-    earnedPoints[g.teamId] = Math.max(1, 4 - g.atHintIdx);
+    if (g.atHintIdx !== minHint) break; // sortiert ASC — sobald > minHint, fertig
+    if (!winnerTeamIds.includes(g.teamId)) winnerTeamIds.push(g.teamId);
   }
-  return { winnerTeamIds, earnedPoints };
+  return { winnerTeamIds, earnedPoints: {} };
 }
 
 // oneOfEight: teams submit the index (as string) of the statement they think is false

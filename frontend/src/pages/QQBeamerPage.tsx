@@ -924,10 +924,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   useEffect(() => {
     const inRules = s.phase === 'RULES';
     const inFinale = s.phase === 'CONNECTIONS_4X4';
-    const shouldLoop = !s.musicMuted && (s.phase === 'LOBBY' || s.phase === 'PAUSED' || inRules || inFinale);
+    const inLobby = s.phase === 'LOBBY';
+    const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale);
     if (shouldLoop) {
       resumeAudio();
-      startLobbyLoop();
+      // 2026-04-30: Lobby/Setup nutzt IMMER den Pool (4 lobby-welcome Tracks).
+      // Rules/Pause/Finale nutzen den Custom-Upload aus lobbyWelcome-Slot
+      // (mit Pool als Fallback). User-Wunsch: 'lobby-welcome-1..4 liefen
+      // immer während setup und lobby, während regeln lief dann LOBBY
+      // (vom moderator soundboard)'.
+      startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
     } else {
       stopLobbyLoop();
     }
@@ -945,8 +951,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const unlock = () => {
       resumeAudio();
       const inRules = stateSnapshot.phase === 'RULES';
-      const shouldLoop = !stateSnapshot.musicMuted && (stateSnapshot.phase === 'LOBBY' || stateSnapshot.phase === 'PAUSED' || inRules);
-      if (shouldLoop) startLobbyLoop();
+      const inLobby = stateSnapshot.phase === 'LOBBY';
+      const shouldLoop = !stateSnapshot.musicMuted && (inLobby || stateSnapshot.phase === 'PAUSED' || inRules);
+      if (shouldLoop) startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
     };
     const opts: AddEventListenerOptions = { once: true };
     window.addEventListener('click', unlock, opts);

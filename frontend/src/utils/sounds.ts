@@ -837,22 +837,27 @@ function isPoolTrackUrl(url: string): boolean {
   return LOBBY_TRACK_POOL.some(p => url.endsWith(p));
 }
 
-/** Startet die Lobby-Loop (Lobby / Welcome-Folie / Pause). Idempotent.
- *  2026-04-30: Random Start + Shuffle (User-Wunsch: 'random welches Lied
- *  wann kommt, muss nicht mit 1 anfangen'). Pool wird einmal geshuffelt,
- *  dann sequentiell durchgespielt; am Ende neu shuffeln. */
-export function startLobbyLoop() {
+/** Startet die Lobby-Loop. Mode bestimmt was abgespielt wird:
+ *  - 'pool-only' (Setup + Lobby-Phase): IMMER der 4er-Pool, geshuffelt.
+ *    Custom-Upload im lobbyWelcome-Slot wird ignoriert. User-Wunsch
+ *    2026-04-30: 'lobby-welcome-1..4 liefen immer während setup und lobby'.
+ *  - 'custom-or-pool' (Rules / Pause / Finale): Custom-Upload aus
+ *    lobbyWelcome bevorzugt, Pool als Fallback. User-Wunsch:
+ *    'während regeln lief dann LOBBY (vom moderator soundboard)'.
+ *  Idempotent — bereits laufender Loop wird nicht unterbrochen. */
+export function startLobbyLoop(mode: 'pool-only' | 'custom-or-pool' = 'custom-or-pool') {
   if (lobbyLoopActive) return;
   if (!isSlotEnabled('lobbyWelcome')) return;
-  // Custom-URL aus soundConfig hat Priorität — ABER nur wenn es wirklich
-  // eine eigene hochgeladene Datei ist. Pool-Tracks oder die Legacy-
-  // Default-URL fallen auf den vollen Pool zurueck.
-  const customUrl = soundConfig.lobbyWelcome;
-  if (typeof customUrl === 'string' && customUrl.length > 0 && !isPoolTrackUrl(customUrl)) {
-    startLobbyTrackFromUrl(customUrl);
-    return;
+  // Im 'custom-or-pool'-Mode: Custom-URL bevorzugt, Pool als Fallback.
+  // Pool-Tracks und Legacy-Default-URL gelten NICHT als echter Custom-Upload.
+  if (mode === 'custom-or-pool') {
+    const customUrl = soundConfig.lobbyWelcome;
+    if (typeof customUrl === 'string' && customUrl.length > 0 && !isPoolTrackUrl(customUrl)) {
+      startLobbyTrackFromUrl(customUrl);
+      return;
+    }
   }
-  // Geshuffelten Pool starten — random welches Lied zuerst kommt.
+  // 'pool-only' oder Custom-Fallback: geshuffelten Pool starten.
   lobbyLoopActive = true;
   const shuffled = shuffleLobbyPool(null);
   playLobbyTrackAtIndex(shuffled, 0);

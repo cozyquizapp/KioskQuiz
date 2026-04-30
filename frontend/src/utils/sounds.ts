@@ -968,6 +968,41 @@ export function playTeamJoin() {
   tone(783.99, 'sine', t + 0.18,  0.20, 0.08, 0.01, 0.05, ac);
 }
 
+/** 2026-04-30: Sieger-Card erscheint unten — warmer Krönungs-Akkord
+ *  (Drei-Klang aufwaerts, 'Trommelwirbel zu Bell'-Gefuehl). */
+export function playWinnerCardReveal() {
+  if (!isSlotEnabled('winnerCardReveal')) return;
+  const url = resolveSlotUrl('winnerCardReveal');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Warmer Krönungs-Akkord: G3 → C4 → E4 → G4 leicht versetzt, weicher Sine.
+  tone(196.0, 'sine',     t,         0.18, 0.20, 0.02, 0.10, ac);
+  tone(261.6, 'sine',     t + 0.08,  0.20, 0.22, 0.02, 0.10, ac);
+  tone(329.6, 'triangle', t + 0.16,  0.22, 0.30, 0.02, 0.12, ac);
+  tone(392.0, 'sine',     t + 0.24,  0.20, 0.40, 0.02, 0.15, ac);
+  // High-Bell-Sparkle obenauf
+  tone(1568,  'sine',     t + 0.30,  0.10, 0.30, 0.005, 0.08, ac);
+}
+
+/** 2026-04-30: Grid erscheint in PLACEMENT-Phase — softer Slam-Down-Thud
+ *  (tiefe Holz-Note + leichter Hall-Klick). Differenziert sich vom
+ *  'gruen-faerben'-Sound (correct/reveal). */
+export function playGridReveal() {
+  if (!isSlotEnabled('gridReveal')) return;
+  const url = resolveSlotUrl('gridReveal');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Tiefer Holz-Whoom + heller Click-Top-Layer
+  tone(110, 'sine',     t,         0.28, 0.18, 0.005, 0.08, ac);
+  tone(82,  'sine',     t + 0.02,  0.24, 0.28, 0.003, 0.10, ac);
+  tone(440, 'triangle', t + 0.04,  0.10, 0.06, 0.002, 0.04, ac);
+  tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
+}
+
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */
 function playUrlOneShot(url: string): void {
   const el = new Audio(url);

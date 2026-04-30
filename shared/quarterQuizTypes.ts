@@ -615,6 +615,10 @@ export type QQSoundSlot =
   // Aktion-spezifische Sounds (Trinity: Place/Steal/Stapel + Team-Join)
   // 2026-04-30: shieldActivate / sanduhrFlip / swapActivate entfernt (Mechaniken tot).
   | 'stapelStamp' | 'teamJoin'
+  // Reveal-Stages (2026-04-30): Differenzieren zwischen Loesung-faerbt-sich-gruen
+  // (correct/reveal-Slot), Sieger-Card-Einblendung (winnerCardReveal) und Grid-
+  // Einblendung in PLACEMENT-Phase (gridReveal).
+  | 'winnerCardReveal' | 'gridReveal'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -645,6 +649,9 @@ export interface QQSoundConfig {
   // Aktions-Sounds (Trinity)
   stapelStamp?: string;
   teamJoin?: string;
+  // Reveal-Stages
+  winnerCardReveal?: string;
+  gridReveal?: string;
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -681,6 +688,8 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   catMusicCheese:      '🧀 Cheese-Musik (Frage-Loop)',
   stapelStamp:         '🏯 Stapeln (Stempel-Thud)',
   teamJoin:             '👋 Team tritt bei',
+  winnerCardReveal:    '🏆 Sieger-Card erscheint',
+  gridReveal:          '🗺️ Grid erscheint (Placement)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -732,6 +741,8 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   // Aktions-Sounds: leer = Synth-Fallback bis Moderator eigene Datei laedt.
   stapelStamp:         '',
   teamJoin:            '',
+  winnerCardReveal:    '',
+  gridReveal:          '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

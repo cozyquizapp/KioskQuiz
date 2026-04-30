@@ -21,6 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
+  playWinnerCardReveal, playGridReveal,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -789,8 +790,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
+      // 2026-04-30: Grid-Erscheinung bekommt eigenen Sound-Slot statt
+      // playCorrectFor zu reusen — vorher klang Grid-Slam wie 'gruen-
+      // faerben'. Bei Wrong-Answer bleibt es bei playWrongFor.
       const cat = s.currentQuestion?.category;
-      if (s.correctTeamId) playCorrectFor(cat);
+      if (s.correctTeamId) playGridReveal();
       else playWrongFor(cat);
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
@@ -7798,6 +7802,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const showZvzWinner = cat !== 'ZEHN_VON_ZEHN' || zvzAkt3Ready;
   const showCheeseWinner = cat !== 'CHEESE' || cheeseShowAvatars;
   const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner;
+
+  // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
+  // Greift wenn revealed=true UND eine Sieger-Card erscheint. Der 'gruen-
+  // faerben'-Sound (correct/reveal) wurde frueher schon abgespielt; hier
+  // noch ein 'Kroenungs'-Akkord beim sichtbaren Sieger-Banner.
+  const prevShowWinnerRef = useRef(false);
+  useEffect(() => {
+    const prev = prevShowWinnerRef.current;
+    prevShowWinnerRef.current = showUnifiedWinner;
+    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && s.correctTeamId) {
+      try { playWinnerCardReveal(); } catch {}
+    }
+  }, [showUnifiedWinner, revealed, s.correctTeamId, s.sfxMuted]);
 
   // ── CozyGuessr (map) full-screen reveal ─────────────────────────────────
   const isMapReveal = revealed

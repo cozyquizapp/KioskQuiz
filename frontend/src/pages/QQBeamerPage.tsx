@@ -812,6 +812,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // falschen Zeitpunkt → User hoerte nichts wenn die Cards erschienen.
   // Jetzt Trigger an introStep-Wechsel auf 1, mit phasePop-Sync (0.85s
   // delay → Sound 800ms vor dem Pop, psychoakustisch synchron).
+  // v3 round 7 (Phase-Sound-Audit): substep 2 (Category-Reveal) + 3
+  // (Category-Explanation) bekommen ebenfalls einen entry-Sound, damit
+  // jede Folie hoerbar markiert ist.
   const prevIntroStepRef = useRef<number | null>(null);
   useEffect(() => {
     const prev = prevIntroStepRef.current;
@@ -820,8 +823,27 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.phase !== 'PHASE_INTRO') return;
     if (s.introStep === 1 && prev !== 1) {
       window.setTimeout(() => { try { playActionMenuReveal(); } catch {} }, 800);
+    } else if (s.introStep === 2 && prev !== 2) {
+      // Category-Reveal-Substep — kategorie-spez. Question-Start-Sound
+      try { playQuestionStartFor(s.currentQuestion?.category); } catch {}
+    } else if (s.introStep === 3 && prev !== 3) {
+      // Category-Explanation-Substep — leiserer Tick als Folien-Cue
+      try { playFieldPlaced(); } catch {}
     }
-  }, [s.phase, s.introStep, s.sfxMuted]);
+  }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category]);
+
+  // 2026-04-30 v3 round 7 (Phase-Sound-Audit): Pro RULES-Slide-Wechsel ein
+  // dezenter Tick-Sound, damit jede Folie hoerbar markiert ist.
+  const prevRulesSlideRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevRulesSlideRef.current;
+    prevRulesSlideRef.current = s.rulesSlideIndex ?? null;
+    if (s.sfxMuted) return;
+    if (s.phase !== 'RULES') return;
+    if (prev !== null && s.rulesSlideIndex != null && s.rulesSlideIndex !== prev) {
+      try { playFieldPlaced(); } catch {}
+    }
+  }, [s.phase, s.rulesSlideIndex, s.sfxMuted]);
 
   // ── Time-Travel-Recorder ──
   // Wir loggen während des Spiels Frage für Frage wer gewonnen hat —
@@ -1373,6 +1395,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         try { playQuestionStart(); } catch {}
       } else if (c.phase === 'reveal') {
         try { playFanfare(); } catch {}
+      } else if (c.phase === 'placement' && prevConnPhaseRef.current === 'reveal') {
+        // 2026-04-30 v3 round 7 (Phase-Sound-Audit): Placement-Eintritt im
+        // Finale war stumm. Grid erscheint → playGridReveal als
+        // 'jetzt geht's los'-Cue.
+        try { playGridReveal(); } catch {}
       }
       prevConnPhaseRef.current = c.phase;
     }
@@ -12136,7 +12163,10 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   // Items-Grid. Das 4×4 hat seine Funktion erfüllt — jetzt ist Placement
   // wichtig, sonst sieht man "Setzen läuft" ohne Grid zum Setzen. Wir
   // delegieren an PlacementView (gleiches Look wie nach normaler Runde).
-  if (c.phase === 'placement') {
+  // v3 round 7 (User-Bug 'leerer screen mit finale-badge nach setzen'):
+  // 'done'-Phase rendert das gleiche Placement-Grid, damit das End-Resultat
+  // sichtbar bleibt bis der Mod weiterklickt (oder Autoplay nach 9s feuert).
+  if (c.phase === 'placement' || c.phase === 'done') {
     return <PlacementView state={s} />;
   }
 

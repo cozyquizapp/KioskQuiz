@@ -144,7 +144,7 @@ const T = {
   cat_MUCHO:         { de: 'Mu-Cho', en: 'Mu-Cho' },
   cat_BUNTE_TUETE:   { de: 'Bunte T\u00FCte', en: 'Mixed Bag' },
   cat_ZEHN_VON_ZEHN: { de: 'All In', en: 'All In' },
-  cat_CHEESE:        { de: 'Picture This', en: 'Picture This' },
+  cat_CHEESE:        { de: 'Schau mal!', en: 'Picture This' },
 
   // Upcoming events
   nextQuizzes:   { de: 'N\u00E4chste Quizze', en: 'Upcoming quizzes' },

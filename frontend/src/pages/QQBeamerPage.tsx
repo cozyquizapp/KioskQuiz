@@ -4346,7 +4346,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               },
             },
             CHEESE: {
-              emoji: catEmoji, title: { de: 'Picture This', en: 'Picture This' },
+              emoji: catEmoji, title: { de: 'Schau mal!', en: 'Picture This' },
               lines: {
                 de: ['Erkennt das Bild — tippt die Antwort ins Handy.'],
                 en: ['Spot the image — type your answer.'],

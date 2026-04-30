@@ -21,7 +21,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
-  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish,
+  playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
@@ -1191,10 +1191,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         const total = s.answers.length;
         const cascadeTotal = total + 2; // +2 fuer Reveal-Highlight + WinnerCard
         if (curr.mucho >= lockStep) {
-          // Aufloesen (Loesung gruen) = Cascade-Ton N + Climax-Finish-Layer.
-          // 2026-04-30 v3 (User): 'climax sound IMMER bei gruenem antwortfeld'.
+          // Aufloesen (Loesung gruen) = Cascade-Ton N + leichterer Reveal-
+          // Highlight (statt Krönungs-Climax — der bleibt der WinnerCard
+          // vorbehalten, User-Wunsch 2026-04-30 round 4).
           try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
-          try { playClimaxFinish(); } catch {}
+          try { playRevealHighlight(); } catch {}
         }
         else if (prev.mucho === 0) {
           // Cascade-Start — Tonleiter pro Voter-Avatar synchron
@@ -1227,9 +1228,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       const total = s.answers.length;
       const cascadeTotal = total + 2;
       if (curr.zvz >= 2) {
-        // Aufloesen / Final = Cascade-Ton N + Climax-Finish-Layer.
+        // Aufloesen / Final = Cascade-Ton N + Reveal-Highlight (leichter,
+        // Climax bleibt der WinnerCard vorbehalten).
         try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
-        try { playClimaxFinish(); } catch {}
+        try { playRevealHighlight(); } catch {}
       }
       else if (prev.zvz === 0) {
         // Cascade-Start — Tonleiter pro Avatar.
@@ -1241,11 +1243,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
       else playFieldPlaced();
     }
-    // CHEESE: Step 1 = Lösung grün → Climax-Finish (User-Wunsch climax bei
-    // gruenem Antwortfeld). Step 2 = Avatare auf den Treffern → fieldPlaced.
+    // CHEESE: Step 1 = Lösung grün → Reveal-Highlight (leichter Auflösungs-
+    // Akkord, der finale Krönung-Climax kommt erst bei der WinnerCard).
+    // Step 2 = Avatare auf den Treffern → fieldPlaced.
     if (curr.cheese > prev.cheese) {
       if (curr.cheese === 1) {
-        try { playClimaxFinish(); } catch {}
+        try { playRevealHighlight(); } catch {}
       }
       else playFieldPlaced();
     }
@@ -6550,7 +6553,9 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           // Reveal-Reihenfolge ist bottom->top, Tonleiter steigt parallel.
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            try { playClimaxFinish(); } catch {}
+            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
+            // Climax kommt erst mit der WinnerCard.
+            try { playRevealHighlight(); } catch {}
           }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
@@ -6906,7 +6911,9 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            try { playClimaxFinish(); } catch {}
+            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
+            // Climax kommt erst mit der WinnerCard.
+            try { playRevealHighlight(); } catch {}
           }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
@@ -7254,7 +7261,9 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            try { playClimaxFinish(); } catch {}
+            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
+            // Climax kommt erst mit der WinnerCard.
+            try { playRevealHighlight(); } catch {}
           }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
@@ -10580,23 +10589,27 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
 
           {/* Vergleichs-Icon — bei Reveal smooth swap zu MEHR↑/WENIGER↓.
-              minWidth fest damit „?" → „MEHR ↑" KEIN Layout-Shift verursacht
-              (sonst rutschen Anchor- und Subject-Card seitlich, was wie eine
-              komplette Page-Transition wirkt). */}
+              2026-04-30 v3 round 4 (User-Bug 'cards rutschen nach außen'):
+              minWidth → FIXED width. Vorher konnte das Icon ueber minWidth
+              hinaus wachsen, wenn der Reveal-Text laenger ist als „?"
+              („WENIGER ↓" = 9 chars × 60px = ~280px) — dadurch wurden die
+              flex:1-Cards links/rechts schmaler/breiter und rutschten
+              optisch auseinander. Jetzt fest 280px max → garantiert keine
+              Card-Verschiebung. */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             fontWeight: 900, color: '#FBBF24',
             textShadow: '0 0 20px rgba(251,191,36,0.5)',
             letterSpacing: '0.08em',
-            // Feste Box damit Question→Reveal kein Wackeln verursacht (Cards
-            // links/rechts blieben sonst trotz minWidth durch Höhen-Reflow
-            // versetzt).
-            minWidth: 'clamp(140px, 14vw, 200px)',
+            // FIXED width — keine flex-Expansion durch laengeren Text.
+            width: 'clamp(220px, 18vw, 280px)',
+            flexShrink: 0,
             height: 'clamp(80px, 9vw, 130px)',
             // Font-Size konstant: Reveal-Text ist länger (MEHR ↑ vs ?) — wenn
             // wir font-size shrinken sieht es zwar passend aus, schiebt aber
             // visuell. Stattdessen feste mittlere Größe für beide States.
             fontSize: 'clamp(34px, 4.2vw, 60px)',
+            overflow: 'hidden', whiteSpace: 'nowrap',
           }}>
             <span
               key={isReveal ? 'reveal' : 'q'}

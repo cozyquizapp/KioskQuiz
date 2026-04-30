@@ -1028,12 +1028,35 @@ export function playGridReveal() {
   tone(880, 'sine',     t + 0.05,  0.06, 0.05, 0.001, 0.03, ac);
 }
 
+/** 2026-04-30 v3 round 4 (User-Wunsch differenzieren): Reveal-Highlight —
+ *  leichter, kuerzerer Auflösungs-Akkord wenn das gruene Antwortfeld
+ *  erscheint. Vorbereiteter Ton zum Climax — markiert „die Loesung ist
+ *  da", aber LASST den eigentlichen Krönungs-Akkord der WinnerCard noch
+ *  Raum (1.0s sustain vs 2.5s bei climaxFinish). */
+export function playRevealHighlight() {
+  if (!isSlotEnabled('revealHighlight')) return;
+  const url = resolveSlotUrl('revealHighlight');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Heller Auflösungs-Akkord: G-Dur Triade (G4-B4-D5) + Sparkle obenauf.
+  // Kuerzer (~1s), heller, nicht so dramatisch wie der Krönungs-Akkord.
+  tone(392.00, 'sine',     t,         0.26, 0.20, 0.01, 0.10, ac); // G4
+  tone(493.88, 'triangle', t + 0.04,  0.28, 0.28, 0.01, 0.12, ac); // B4
+  tone(587.33, 'sine',     t + 0.08,  0.28, 0.40, 0.01, 0.14, ac); // D5
+  // Heller Sparkle-Top
+  tone(987.77, 'sine',     t + 0.14,  0.18, 0.45, 0.005, 0.18, ac); // B5
+  tone(1318.5, 'sine',     t + 0.20,  0.12, 0.55, 0.005, 0.25, ac); // E6
+}
+
 /** 2026-04-30 v3 (User-Wunsch): Climax-Finish — lange warme Krönungs-Glocke
- *  fuer Cascade-Endpunkte (Schaetzchen Top-Row, Top5/Order Platz 1, Cheese-
- *  Reveal Lösungsfeld, MUCHO/ZvZ Lock-Step, WinnerCard-Pop). Layered Chord
- *  (perfect 4th + 5th + Octave) mit Sparkle-Top, ~2.5s sustain.
- *  v3 (User-Wunsch 2): jetzt richtiger Sound-Slot (climaxFinish) im Mod-Panel
- *  konfigurierbar — User kann Custom-MP3 hochladen oder muten. */
+ *  fuer die WinnerCard (Sieger-Card-Pop). Layered Chord (perfect 4th + 5th
+ *  + Octave) mit Sparkle-Top, ~2.5s sustain. Spielt SYNCHRON zu Cascade-
+ *  Top-Note auf der WinnerCard.
+ *  v3 round 4 (User-Wunsch differenzieren): kommt jetzt NUR noch beim
+ *  WinnerCard-Pop, nicht mehr beim grünen Antwortfeld (das hat seinen
+ *  eigenen leichteren Slot 'revealHighlight'). */
 export function playClimaxFinish() {
   if (!isSlotEnabled('climaxFinish')) return;
   const url = resolveSlotUrl('climaxFinish');

@@ -26,7 +26,7 @@ import {
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop,
-  playShieldActivate, playStapelStamp, playSanduhrFlip, playTeamJoin, playSwapActivate,
+  playStapelStamp, playTeamJoin,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
 } from '../utils/sounds';
@@ -997,37 +997,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Swap-Sound: wenn zwischen zwei States zwei Cells gleichzeitig den Owner
   // wechseln UND ihre neuen Owner zu ihren vorherigen Gegner passen (= Swap).
   const prevFlagsRef = useRef<{ shield: string; stuck: string; sand: string; teamIds: string; owners: string }>({
-    shield: '', stuck: '', sand: '', teamIds: '', owners: '',
+    stuck: '', teamIds: '',
   });
   useEffect(() => {
     if (s.sfxMuted) return;
-    const shieldKey = s.grid.flatMap((row, r) => row.map((c, ci) => c.shielded ? `${r}-${ci}` : '')).filter(Boolean).join(',');
+    // 2026-04-30: SHIELD/SANDUHR/SWAP entfernt — nur noch Trinity (Place/Steal/Stapel).
     const stuckKey = s.grid.flatMap((row, r) => row.map((c, ci) => c.stuck ? `${r}-${ci}` : '')).filter(Boolean).join(',');
-    const sandKey = s.grid.flatMap((row, r) => row.map((c, ci) => (c.sandLockTtl ?? 0) > 0 ? `${r}-${ci}` : '')).filter(Boolean).join(',');
     const teamIdsKey = s.teams.map(t => t.id).sort().join(',');
-    const ownersKey = s.grid.flatMap(row => row.map(c => c.ownerId ?? '')).join('|');
     const prev = prevFlagsRef.current;
     const grew = (a: string, b: string) => b.split(',').filter(Boolean).length > a.split(',').filter(Boolean).length;
-    if (prev.shield && grew(prev.shield, shieldKey)) playShieldActivate();
-    if (prev.stuck  && grew(prev.stuck,  stuckKey))  playStapelStamp();
-    if (prev.sand   && grew(prev.sand,   sandKey))   playSanduhrFlip();
+    if (prev.stuck   && grew(prev.stuck,   stuckKey))   playStapelStamp();
     if (prev.teamIds && grew(prev.teamIds, teamIdsKey) && s.phase === 'LOBBY') playTeamJoin();
-    // Swap-Detect: zwei Cells gleichzeitig Owner-Wechsel + Gegenseitig.
-    if (prev.owners && prev.owners !== ownersKey) {
-      const prevArr = prev.owners.split('|');
-      const size = s.gridSize;
-      const changes: Array<{ idx: number; from: string; to: string }> = [];
-      for (let i = 0; i < size * size; i++) {
-        const from = prevArr[i] ?? '';
-        const to = s.grid[Math.floor(i / size)][i % size].ownerId ?? '';
-        if (from !== to && from !== '' && to !== '') changes.push({ idx: i, from, to });
-      }
-      // Klassischer Swap: genau 2 Cells, Owner kreuzen sich (A↔B).
-      if (changes.length === 2 && changes[0].from === changes[1].to && changes[1].from === changes[0].to) {
-        playSwapActivate();
-      }
-    }
-    prevFlagsRef.current = { shield: shieldKey, stuck: stuckKey, sand: sandKey, teamIds: teamIdsKey, owners: ownersKey };
+    prevFlagsRef.current = { stuck: stuckKey, teamIds: teamIdsKey };
   }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // H2 First-Steal-Badge: beim ersten Klau der Partie ein „Steal unlocked!"-

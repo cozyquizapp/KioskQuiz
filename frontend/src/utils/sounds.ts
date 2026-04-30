@@ -914,20 +914,9 @@ export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }
 export function playGameOver()      { playSlotOneShot('gameOver'); }
 
-// ── Nice-to-Have Aktions-Sounds (D1-D3 + F1). ──────────────────────────────
+// ── Aktions-Sounds (Trinity: Place/Steal/Stapel) ──────────────────────────
 // Alle mit Synth-Fallback, damit sie ohne Custom-Upload funktionieren.
-export function playShieldActivate() {
-  if (!isSlotEnabled('shieldActivate')) return;
-  const url = resolveSlotUrl('shieldActivate');
-  if (url) { playUrlOneShot(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Metallisches "wumm": tiefer Sweep hoch, Brass-Anschlag.
-  tone(180, 'sawtooth', t, 0.22, 0.18, 0.01, 0.15, ac);
-  tone(360, 'triangle', t + 0.04, 0.18, 0.12, 0.008, 0.10, ac);
-  tone(720, 'sine',     t + 0.06, 0.16, 0.06, 0.005, 0.05, ac);
-}
+// 2026-04-30: SHIELD/SANDUHR/SWAP entfernt — Mechaniken seit Trinity-Cut tot.
 export function playStapelStamp() {
   if (!isSlotEnabled('stapelStamp')) return;
   const url = resolveSlotUrl('stapelStamp');
@@ -940,18 +929,6 @@ export function playStapelStamp() {
   tone(80,  'sine',   t + 0.015, 0.24, 0.18, 0.001, 0.06, ac);
   tone(2400, 'square', t + 0.02, 0.06, 0.03, 0.001, 0.02, ac);
 }
-export function playSanduhrFlip() {
-  if (!isSlotEnabled('sanduhrFlip')) return;
-  const url = resolveSlotUrl('sanduhrFlip');
-  if (url) { playUrlOneShot(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Glassy Ding-Tik + subtiles Rieseln (triangle highs).
-  tone(1760, 'triangle', t,         0.10, 0.25, 0.003, 0.04, ac);
-  tone(2640, 'sine',     t + 0.05,  0.08, 0.20, 0.002, 0.03, ac);
-  tone(3520, 'sine',     t + 0.12,  0.05, 0.14, 0.001, 0.03, ac);
-}
 export function playTeamJoin() {
   if (!isSlotEnabled('teamJoin')) return;
   const url = resolveSlotUrl('teamJoin');
@@ -963,19 +940,6 @@ export function playTeamJoin() {
   tone(523.25, 'sine', t,         0.16, 0.10, 0.01, 0.06, ac);
   tone(659.25, 'sine', t + 0.08,  0.18, 0.10, 0.01, 0.06, ac);
   tone(783.99, 'sine', t + 0.18,  0.20, 0.08, 0.01, 0.05, ac);
-}
-export function playSwapActivate() {
-  if (!isSlotEnabled('swapActivate')) return;
-  const url = resolveSlotUrl('swapActivate');
-  if (url) { playUrlOneShot(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Tausch: zwei Ton-Paare, kreuzend (einer fällt, einer steigt).
-  tone(880,    'triangle', t,         0.20, 0.12, 0.008, 0.06, ac);
-  tone(440,    'triangle', t,         0.20, 0.12, 0.008, 0.06, ac);
-  tone(587.33, 'triangle', t + 0.12,  0.18, 0.10, 0.008, 0.05, ac);
-  tone(659.25, 'triangle', t + 0.12,  0.18, 0.10, 0.008, 0.05, ac);
 }
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */

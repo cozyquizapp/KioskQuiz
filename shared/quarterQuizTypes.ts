@@ -612,8 +612,9 @@ export type QQSoundSlot =
   // hoechste Prio, dann diese Kategorie-Slots, dann timerLoop.
   | 'catMusicSchaetzchen' | 'catMusicMucho' | 'catMusicBunteTuete'
   | 'catMusicZehnVonZehn' | 'catMusicCheese'
-  // Aktion-spezifische Sounds (passend zu den Mikro-Animationen)
-  | 'shieldActivate' | 'stapelStamp' | 'sanduhrFlip' | 'teamJoin' | 'swapActivate'
+  // Aktion-spezifische Sounds (Trinity: Place/Steal/Stapel + Team-Join)
+  // 2026-04-30: shieldActivate / sanduhrFlip / swapActivate entfernt (Mechaniken tot).
+  | 'stapelStamp' | 'teamJoin'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -641,12 +642,9 @@ export interface QQSoundConfig {
   catMusicBunteTuete?: string;
   catMusicZehnVonZehn?: string;
   catMusicCheese?: string;
-  // Aktions-Sounds
-  shieldActivate?: string;
+  // Aktions-Sounds (Trinity)
   stapelStamp?: string;
-  sanduhrFlip?: string;
   teamJoin?: string;
-  swapActivate?: string;
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -681,11 +679,8 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   catMusicBunteTuete:  '🎁 Bunte-Tüte-Musik (Frage-Loop)',
   catMusicZehnVonZehn: '🎰 Quizzichoice-Musik (Frage-Loop)',
   catMusicCheese:      '🧀 Cheese-Musik (Frage-Loop)',
-  shieldActivate:      '🛡️ Schild aktivieren',
-  stapelStamp:         '📌 Stempel-Thud',
-  sanduhrFlip:         '⏳ Sanduhr umdrehen',
-  teamJoin:            '👋 Team tritt bei',
-  swapActivate:        '🔄 Tauschen',
+  stapelStamp:         '🏯 Stapeln (Stempel-Thud)',
+  teamJoin:             '👋 Team tritt bei',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -733,11 +728,8 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   catMusicZehnVonZehn: '',
   catMusicCheese:      '',
   // Aktions-Sounds: leer = Synth-Fallback bis Moderator eigene Datei laedt.
-  shieldActivate:      '',
   stapelStamp:         '',
-  sanduhrFlip:         '',
   teamJoin:            '',
-  swapActivate:        '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

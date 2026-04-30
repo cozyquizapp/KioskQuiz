@@ -10601,25 +10601,24 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           {/* Vergleichs-Icon — bei Reveal smooth swap zu MEHR↑/WENIGER↓.
               2026-04-30 v3 round 4 (User-Bug 'cards rutschen nach außen'):
               minWidth → FIXED width. Vorher konnte das Icon ueber minWidth
-              hinaus wachsen, wenn der Reveal-Text laenger ist als „?"
-              („WENIGER ↓" = 9 chars × 60px = ~280px) — dadurch wurden die
-              flex:1-Cards links/rechts schmaler/breiter und rutschten
-              optisch auseinander. Jetzt fest 280px max → garantiert keine
-              Card-Verschiebung. */}
+              hinaus wachsen, wenn der Reveal-Text laenger ist als „?".
+              Round 5 (User-Bug 'WENIGER abgeschnitten zwischen cards'):
+              Width 280 → 380px. „WENIGER ↓" mit 9 Zeichen + letterSpacing
+              braucht bei Max-Font 60px ~360-380px. 380 fest, statt mit
+              overflow:hidden zu clippen. Cards links/rechts sind etwas
+              schmaler aber stabil. */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             fontWeight: 900, color: '#FBBF24',
             textShadow: '0 0 20px rgba(251,191,36,0.5)',
             letterSpacing: '0.08em',
-            // FIXED width — keine flex-Expansion durch laengeren Text.
-            width: 'clamp(220px, 18vw, 280px)',
+            // FIXED width — keine flex-Expansion + breit genug fuer „WENIGER ↓".
+            width: 'clamp(260px, 22vw, 380px)',
             flexShrink: 0,
             height: 'clamp(80px, 9vw, 130px)',
-            // Font-Size konstant: Reveal-Text ist länger (MEHR ↑ vs ?) — wenn
-            // wir font-size shrinken sieht es zwar passend aus, schiebt aber
-            // visuell. Stattdessen feste mittlere Größe für beide States.
-            fontSize: 'clamp(34px, 4.2vw, 60px)',
-            overflow: 'hidden', whiteSpace: 'nowrap',
+            // Font-Size konstant fuer beide States.
+            fontSize: 'clamp(30px, 3.8vw, 54px)',
+            whiteSpace: 'nowrap',
           }}>
             <span
               key={isReveal ? 'reveal' : 'q'}

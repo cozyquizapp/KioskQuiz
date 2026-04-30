@@ -3932,27 +3932,15 @@ function onlyConnectMinDurationReached(room: QQRoomState): boolean {
   return Date.now() - room._onlyConnectStartedAt >= 8000;
 }
 
-/** B2-Erweiterung 2026-04-30: zusaetzliches Gate — Runde darf nicht enden
- *  bevor mindestens 1 Team eine korrekte Guess abgegeben hat ODER mindestens
- *  3 Hints sichtbar waren. Verhindert dass Pure-Dummy-Lobbys die Runde via
- *  3-Strikes-Lockout aller Bots in <8s beenden ohne dass der Beamer eine
- *  vernuenftige Reveal-Phase zeigen kann. */
-function onlyConnectMeaningfulProgress(room: QQRoomState): boolean {
-  // (a) Mindestens 1 korrekte Guess vorhanden -> Runde hatte einen Sieger
-  const hasCorrect = (room.onlyConnectGuesses ?? []).some(g => g.correct);
-  if (hasCorrect) return true;
-  // (b) Mindestens Hint 3 (idx>=2) sichtbar -> Spieler hatten 3 Hinweise Zeit
-  const indices = Object.values(room.onlyConnectHintIndices ?? {});
-  if (indices.length === 0) return false;
-  return Math.max(...indices) >= 2;
-}
-
-/** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit. */
+/** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit.
+ *  2026-04-30 Revision: MeaningfulProgress-Gate (verlangte Hint>=2 ODER
+ *  einen korrekten Guess) entfernt. Bei Pure-Dummy-Lobbys mit allen
+ *  Bots an idx=1 lockend hing die Runde dadurch endlos. MinDuration 8s
+ *  + MinHint (idx>=1) + AllDone reicht als Schutz gegen Insta-End. */
 export function qqOnlyConnectCanAutoFinish(room: QQRoomState): boolean {
   return qqOnlyConnectAllDone(room)
     && qqOnlyConnectMinHintReached(room)
-    && onlyConnectMinDurationReached(room)
-    && onlyConnectMeaningfulProgress(room);
+    && onlyConnectMinDurationReached(room);
 }
 
 /** Min-Hint-Gate für AutoFinish: 4 gewinnt darf nicht beendet werden bevor

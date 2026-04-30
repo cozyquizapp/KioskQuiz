@@ -8429,32 +8429,38 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             && q.bunteTuete?.kind === 'hotPotato' && !revealed;
           const hpUsedCount = (s.hotPotatoUsedAnswers?.length ?? 0);
           const hpCompact = isHotPotatoActive && hpUsedCount > 12;
+          // 2026-04-30: justifyContent betrifft nur den inneren Content-Wrapper
+          // (siehe weiter unten). Outer-Container haelt die Top-Bar (Badge+Timer)
+          // oben, Content-Wrapper darunter mit eigener Vertical-Centering-Logik.
+          const innerJustify = hpCompact
+            ? 'flex-start'
+            : (revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center');
+          const innerGap = revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(20px, 3vh, 40px)' : 0;
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          // 2026-04-29: Top/Bottom-Padding angeglichen (vorher 20-44 oben vs
-          // 24-56 unten → asymmetrisch ~6-12px). Jetzt symmetrisch fuer alle
-          // Cases — User-Feedback 'unten mehr Platz als oben'.
           padding: 'clamp(22px, 3.2vh, 50px) clamp(28px, 4vw, 64px)',
-          justifyContent: hpCompact
-            ? 'flex-start'
-            : (revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'space-between' : 'center'),
-          // Mehr atmender Gap zwischen Sections — Cards sollen nicht kleben.
-          gap: revealed && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN') ? 'clamp(20px, 3vh, 40px)' : 0,
           alignItems: 'center', position: 'relative', zIndex: 5,
           overflowX: 'hidden', overflowY: 'visible',
         }}>
 
-          {/* Category badge — top left corner. Bleibt auch im Reveal sichtbar
-              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren). */}
+          {/* 2026-04-30: Top-Bar mit Kategorie-Badge + Timer als FLEX-ROW —
+              vorher beide position:absolute, was bei kleinen Viewports oder
+              vollbreiten Cards ueber die Frage-Card lief. Jetzt Layout-Block,
+              die Card sitzt naturgemaess darunter und ueberlappt nie. */}
           <div style={{
-            position: 'absolute', top: 20, left: 48, zIndex: 10,
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            width: '100%', maxWidth: 1400,
+            marginBottom: 'clamp(8px, 1.4vh, 18px)',
+            gap: 16,
+            position: 'relative', zIndex: 10,
           }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '8px 22px', borderRadius: 999,
               background: `${accent}18`, border: `2px solid ${accent}44`,
               animation: 'contentReveal 0.35s ease both',
+              flexShrink: 0,
             }}>
               {(() => {
                 const slug = qqCatSlug(cat as string);
@@ -8469,19 +8475,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {lang === 'en' ? catLabel.en : catLabel.de}
               </span>
             </div>
+            {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
+                per-Turn-Timer in HotPotatoBeamerView). */}
+            {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
+              <div style={{
+                opacity: revealed ? 0 : 1,
+                transition: 'opacity 0.3s ease',
+                pointerEvents: revealed ? 'none' : 'auto',
+                flexShrink: 0,
+              }}>
+                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+              </div>
+            )}
           </div>
 
-          {/* Timer — top right corner (hidden for Hot Potato, which uses per-turn timer) */}
-          {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
-            <div style={{
-              position: 'absolute', top: 16, right: 48, zIndex: 10,
-              opacity: revealed ? 0 : 1,
-              transition: 'opacity 0.3s ease',
-              pointerEvents: revealed ? 'none' : 'auto',
-            }}>
-              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-            </div>
-          )}
+          {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
+              Frage-Card + alle Reveal-Inhalte. Bekommt das vertikale
+              Centering / space-between, die Top-Bar bleibt davon unbetroffen
+              an ihrem Platz oben. */}
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            justifyContent: innerJustify,
+            gap: innerGap,
+            alignItems: 'center', width: '100%',
+          }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
               (User-Feedback 2026-04-28: 'cards zappelig beim kleiner werden').
@@ -9808,6 +9825,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (
             <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
+          </div>{/* /Inner-Content-Wrapper */}
         </div>
           );
         })()}

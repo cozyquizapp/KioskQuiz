@@ -862,21 +862,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }
   }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category, s.gamePhaseIndex, s.grid]);
 
-  // 2026-04-30 v3 round 7 (Phase-Sound-Audit): Pro RULES-Slide-Wechsel ein
-  // dezenter Tick-Sound, damit jede Folie hoerbar markiert ist.
-  // v3 round 11 (User-Bug 'feld-gesetzt sound bei neuer regelseite unpassend'):
-  // playFieldPlaced (Stamp) → playTick (leiserer Page-Flip-Cue, passend zum
-  // Tutorial-Slide-Wechsel statt 'Tile placed').
-  const prevRulesSlideRef = useRef<number | null>(null);
-  useEffect(() => {
-    const prev = prevRulesSlideRef.current;
-    prevRulesSlideRef.current = s.rulesSlideIndex ?? null;
-    if (s.sfxMuted) return;
-    if (s.phase !== 'RULES') return;
-    if (prev !== null && s.rulesSlideIndex != null && s.rulesSlideIndex !== prev) {
-      try { playTick(); } catch {}
-    }
-  }, [s.phase, s.rulesSlideIndex, s.sfxMuted]);
+  // RULES-Slide-Wechsel: bewusst KEIN Sound (User-Wunsch 2026-05-01).
+  // Hintergrundmusik laeuft + Wolf moderiert live, da stoert ein zusaetzlicher
+  // Tick/Stamp pro Folie.
 
   // ── Time-Travel-Recorder ──
   // Wir loggen während des Spiels Frage für Frage wer gewonnen hat —

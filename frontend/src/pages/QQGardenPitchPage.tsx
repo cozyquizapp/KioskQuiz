@@ -3,93 +3,109 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 /**
  * CozyWolf Garden — Pitch / Mockup-Page mit Walkthrough
  *
- * Zeigt das Konzept als Live-Demo mit ALLEN Specials in Sequenz:
- * intro → sun-zones → saisons → spotlight-question → schrumpfen → finale.
- * 10 Teams (skalierbar fuer Festivals: jeder joint einem der 10 Teams).
- * Pixel-Floodfill auf 160x90-Grid (HTML5 Canvas), langsamere Animation
- * fuer ruhigeren Pitch-Eindruck.
+ * Live-Demo aller Specials in Sequenz:
+ * intro → sun-zones → saisons → spotlight → steal → shrink → finale.
+ * 10 Teams nach Farben benannt (festival-tauglich).
+ * Adaptive Map-Size je nach Spielerzahl-Preset.
  */
 
-// ── Konstanten ──────────────────────────────────────────────────────────────
-const COLS = 160;
-const ROWS = 90;
-const TOTAL_CELLS = COLS * ROWS;
-const TICK_MS = 130; // langsamer (vorher 80) fuer ruhigeren Pitch-Eindruck
-const RESET_PAUSE_MS = 3500;
+// ── Map-Size Presets ───────────────────────────────────────────────────────
+type SizePreset = 'small' | 'medium' | 'large';
+const SIZE_PRESETS: Record<SizePreset, { cols: number; rows: number; players: string; label: string }> = {
+  small:  { cols: 100, rows: 56, players: '20–60 Spieler',   label: 'Klein' },
+  medium: { cols: 160, rows: 90, players: '60–200 Spieler',  label: 'Mittel' },
+  large:  { cols: 220, rows: 124, players: '200–500+ Spieler', label: 'Groß' },
+};
 
-// Walkthrough-Phasen mit Tick-Bereichen
-type PhaseId = 'intro' | 'sun' | 'seasons' | 'spotlight' | 'shrink' | 'finale';
+const TICK_MS = 130;
+const RESET_PAUSE_MS = 4000;
+const FULL_THRESHOLD = 0.92; // 92% gefüllt = "voll" → Endgame
+
+// Walkthrough-Phasen
+type PhaseId = 'intro' | 'sun' | 'seasons' | 'spotlight' | 'steal' | 'shrink' | 'full' | 'finale';
 const PHASES: Array<{
   id: PhaseId; from: number; to: number; emoji: string; title: string; desc: string;
 }> = [
-  { id: 'intro',     from: 0,   to: 60,  emoji: '🌱', title: 'Gärten beginnen zu wachsen', desc: 'Jedes Team startet mit 1 Pixel an seinem Spawn-Punkt. Pro richtiger Antwort breitet sich das Territorium um seinen Rand aus.' },
-  { id: 'sun',       from: 60,  to: 130, emoji: '☀️', title: 'Sonnen-Zone erscheint', desc: 'Bonus-Mechanik: Pixel die innerhalb der Sonne wachsen, geben dem Team doppelte Wachstumsrate. Sonne wandert über die Karte — schnelle Teams nutzen sie.' },
-  { id: 'seasons',   from: 130, to: 200, emoji: '🍂', title: 'Saisonwechsel: Herbst', desc: 'Spiel hat 4 Saisons (Frühling → Sommer → Herbst → Winter). Jede Saison verändert Farb-Stimmung + Gameplay-Modifier — z. B. „Herbst: schwächere Teams wachsen +50% schneller" (Aufholmechanik).' },
-  { id: 'spotlight', from: 200, to: 270, emoji: '✨', title: 'Spotlight-Question — 3× Bonus!', desc: 'Alle 5 Fragen erscheint eine Spotlight-Question. Das Team mit der schnellsten richtigen Antwort bekommt 3× Wachstum. Hier holen die Wolfsrudel auf!' },
-  { id: 'shrink',    from: 270, to: 340, emoji: '🌧️', title: 'Eulen werden inaktiv...', desc: 'Wenn ein Team 2 Fragen in Folge keine Antwort gibt, schrumpft das Territorium am Rand. Verhindert dass Führende „aussteigen" und hält alle bis zum Ende dabei.' },
-  { id: 'finale',    from: 340, to: 420, emoji: '🏆', title: 'Finale — wer hat am meisten?', desc: 'Am Ende der Spielzeit wird das größte Territorium gefeiert. Die Karte ist ein lebendiges Mosaik aus dem gesamten Event.' },
+  { id: 'intro',     from: 0,   to: 60,  emoji: '🌱', title: 'Gärten beginnen zu wachsen', desc: 'Jedes Team startet mit 1 Pixel am Spawn-Punkt. Pro richtiger Antwort wachsen Pixel um den Rand des eigenen Territoriums.' },
+  { id: 'sun',       from: 60,  to: 120, emoji: '☀️', title: 'Sonnen-Zone', desc: 'Bonus-Mechanik: Pixel innerhalb der wandernden Sonne wachsen mit doppelter Rate. Teams, die schnell antworten, profitieren.' },
+  { id: 'seasons',   from: 120, to: 180, emoji: '🍂', title: 'Saisonwechsel: Herbst', desc: 'Spiel hat 4 Saisons. Jede verändert Stimmung + Modifier. Herbst: kleinere Teams wachsen +50% schneller (Catch-up gegen Runaway-Leader).' },
+  { id: 'spotlight', from: 180, to: 240, emoji: '✨', title: 'Spotlight-Question · 3× Bonus', desc: 'Alle 5 Fragen erscheint eine Spotlight-Question. Schnellste richtige Antwort = 3× Wachstum für eine Runde.' },
+  { id: 'steal',     from: 240, to: 320, emoji: '⚔️', title: 'Steal · Territorium übernehmen', desc: 'Wenn Pixel zweier Teams sich berühren, können sie geklaut werden. Pro richtiger Antwort gibt es eine Chance, Border-Pixel des Nachbarn zu erobern statt nur leeres Land zu nehmen.' },
+  { id: 'shrink',    from: 320, to: 380, emoji: '🌧️', title: 'Inaktive Teams schrumpfen', desc: 'Wenn ein Team 2 Fragen in Folge keine Antwort gibt, verliert es Pixel am Rand. Verhindert dass Führende „aussteigen" und hält alle bis zum Ende dabei.' },
+  { id: 'full',      from: 380, to: 440, emoji: '🌍', title: 'Karte fast voll · Endgame', desc: 'Sobald 92% gefüllt ist, wird Wachstum gestoppt. Das einzige was noch zählt: Steal. Wer in der Schluss-Phase am aggressivsten antwortet, übernimmt Territorium der Nachbarn.' },
+  { id: 'finale',    from: 440, to: 520, emoji: '🏆', title: 'Finale — Sieger-Team', desc: 'Größtes Territorium gewinnt. Die Karte ist ein lebendiges Mosaik des gesamten Events.' },
 ];
 
-// ── Demo-Teams (10 fuer Festival-Skalierung) ───────────────────────────────
+// ── Demo-Teams: 10 nach Farben ─────────────────────────────────────────────
 type DemoTeam = {
   id: string; name: string; color: string;
-  col: number; row: number; growth: number;
+  // Spawn als 0..1-Anteil von Cols/Rows (skaliert mit Map-Größe)
+  cx: number; cy: number;
+  growth: number;
 };
 
 const DEMO_TEAMS: DemoTeam[] = [
-  { id: 'a', name: 'Wolfsrudel', color: '#3B82F6', col: 12,  row: 14, growth: 3.0 },
-  { id: 'b', name: 'Pinguine',   color: '#10B981', col: 148, row: 14, growth: 2.6 },
-  { id: 'c', name: 'Faultiere',  color: '#F59E0B', col: 12,  row: 76, growth: 3.4 },
-  { id: 'd', name: 'Koalas',     color: '#A855F7', col: 148, row: 76, growth: 2.4 },
-  { id: 'e', name: 'Giraffen',   color: '#EC4899', col: 80,  row: 8,  growth: 2.8 },
-  { id: 'f', name: 'Waschbären', color: '#06B6D4', col: 80,  row: 82, growth: 2.0 },
-  { id: 'g', name: 'Füchse',     color: '#EF4444', col: 28,  row: 45, growth: 3.2 },
-  { id: 'h', name: 'Eulen',      color: '#FBBF24', col: 132, row: 45, growth: 1.8 },
-  { id: 'i', name: 'Bienen',     color: '#65A30D', col: 56,  row: 30, growth: 2.4 },
-  { id: 'j', name: 'Otter',      color: '#FB7185', col: 104, row: 60, growth: 2.6 },
+  { id: 'a', name: 'Blau',    color: '#3B82F6', cx: 0.075, cy: 0.16, growth: 3.0 },
+  { id: 'b', name: 'Grün',    color: '#10B981', cx: 0.925, cy: 0.16, growth: 2.6 },
+  { id: 'c', name: 'Gelb',    color: '#F59E0B', cx: 0.075, cy: 0.84, growth: 3.2 },
+  { id: 'd', name: 'Lila',    color: '#A855F7', cx: 0.925, cy: 0.84, growth: 2.4 },
+  { id: 'e', name: 'Pink',    color: '#EC4899', cx: 0.5,   cy: 0.10, growth: 2.8 },
+  { id: 'f', name: 'Türkis',  color: '#06B6D4', cx: 0.5,   cy: 0.90, growth: 2.0 },
+  { id: 'g', name: 'Rot',     color: '#EF4444', cx: 0.18,  cy: 0.50, growth: 3.0 },
+  { id: 'h', name: 'Orange',  color: '#FB923C', cx: 0.82,  cy: 0.50, growth: 1.8 },
+  { id: 'i', name: 'Limette', color: '#84CC16', cx: 0.35,  cy: 0.33, growth: 2.4 },
+  { id: 'j', name: 'Koralle', color: '#FB7185', cx: 0.65,  cy: 0.66, growth: 2.6 },
 ];
 
-const SPOTLIGHT_TEAM_IDX = 0; // Wolfsrudel kriegt Spotlight
-const SHRINK_TEAM_IDX = 7;    // Eulen schrumpfen
+const SPOTLIGHT_TEAM_IDX = 0; // Blau bekommt Spotlight
+const STEAL_TEAM_IDX = 6;     // Rot ist der Stealer
+const SHRINK_TEAM_IDX = 7;    // Orange schrumpft
 
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function QQGardenPitchPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [sizePreset, setSizePreset] = useState<SizePreset>('medium');
+  const { cols: COLS, rows: ROWS } = SIZE_PRESETS[sizePreset];
+  const TOTAL_CELLS = COLS * ROWS;
+
   const gridRef = useRef<Uint8Array>(new Uint8Array(TOTAL_CELLS));
   const [tick, setTick] = useState(0);
   const [running, setRunning] = useState(true);
   const [teamCounts, setTeamCounts] = useState<number[]>(DEMO_TEAMS.map(() => 0));
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [stealEvents, setStealEvents] = useState<number>(0);
 
-  // ── Phase basierend auf Tick ───────────────────────────────────────────
   const currentPhase = useMemo(() => {
     return PHASES.find(p => tick >= p.from && tick < p.to) ?? PHASES[PHASES.length - 1];
   }, [tick]);
 
   const finalTick = PHASES[PHASES.length - 1].to;
+  const totalFilled = teamCounts.reduce((a, b) => a + b, 0);
+  const fillPct = totalFilled / TOTAL_CELLS;
 
-  // ── Init: Seed-Pixel pro Team setzen ───────────────────────────────────
+  // ── Init Grid ───────────────────────────────────────────────────────────
   const resetGrid = useCallback(() => {
     const g = new Uint8Array(TOTAL_CELLS);
     DEMO_TEAMS.forEach((t, i) => {
-      const idx = t.row * COLS + t.col;
+      const col = Math.round(t.cx * (COLS - 1));
+      const row = Math.round(t.cy * (ROWS - 1));
+      const idx = row * COLS + col;
       g[idx] = i + 1;
     });
     gridRef.current = g;
     setTeamCounts(DEMO_TEAMS.map(() => 1));
-  }, []);
+    setStealEvents(0);
+  }, [COLS, ROWS, TOTAL_CELLS]);
 
   useEffect(() => { resetGrid(); }, [resetGrid]);
 
-  // ── Ticker ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!running) return;
     const iv = setInterval(() => setTick(t => t + 1), TICK_MS);
     return () => clearInterval(iv);
   }, [running]);
 
-  // ── Reset-Loop fuer Demo ────────────────────────────────────────────────
   useEffect(() => {
     if (tick > finalTick) {
       const t = setTimeout(() => {
@@ -100,7 +116,7 @@ export default function QQGardenPitchPage() {
     }
   }, [tick, finalTick, resetGrid]);
 
-  // ── Sun-Zone-Position waehrend sun-Phase ───────────────────────────────
+  // ── Sun-Zone ────────────────────────────────────────────────────────────
   const sunZone = useMemo(() => {
     if (currentPhase.id !== 'sun') return null;
     const localTick = tick - currentPhase.from;
@@ -109,20 +125,20 @@ export default function QQGardenPitchPage() {
     const cy = 50 + Math.sin(angle) * 18;
     return {
       x: cx, y: cy,
-      // Pixel-Koordinaten fuer Growth-Boost
       pcol: Math.round((cx / 100) * COLS),
       prow: Math.round((cy / 100) * ROWS),
       pulse: Math.sin(tick * 0.18) * 0.3 + 0.7,
     };
-  }, [tick, currentPhase]);
+  }, [tick, currentPhase, COLS, ROWS]);
 
-  // ── Per Tick: Wachstum + Phase-Modifier ─────────────────────────────────
+  // ── Per-Tick: Wachstum + Phase-Mechaniken ──────────────────────────────
   useEffect(() => {
     if (tick === 0) return;
     const g = gridRef.current;
     const newCounts = [...teamCounts];
+    let stealsThisTick = 0;
 
-    // SHRINK-Phase: Eulen verlieren Border-Pixel
+    // SHRINK: Orange verliert Border-Pixel
     if (currentPhase.id === 'shrink') {
       const teamId = SHRINK_TEAM_IDX + 1;
       const lossTargets: number[] = [];
@@ -135,12 +151,10 @@ export default function QQGardenPitchPage() {
         if (r < ROWS - 1) neighs.push((r + 1) * COLS + c);
         if (c > 0)        neighs.push(r * COLS + (c - 1));
         if (c < COLS - 1) neighs.push(r * COLS + (c + 1));
-        // Border-Cell = mind. 1 leerer Nachbar ODER mind. 1 fremder Nachbar
-        const isBorder = neighs.some(n => g[n] === 0 || (g[n] !== 0 && g[n] !== teamId));
+        const isBorder = neighs.some(n => g[n] !== teamId);
         if (isBorder) lossTargets.push(i);
       }
-      // 4-6 Pixel pro Tick verlieren
-      const lossCount = Math.min(5, lossTargets.length);
+      const lossCount = Math.min(6, lossTargets.length);
       for (let k = 0; k < lossCount; k++) {
         const idx = Math.floor(Math.random() * lossTargets.length);
         const cellIdx = lossTargets.splice(idx, 1)[0];
@@ -151,21 +165,30 @@ export default function QQGardenPitchPage() {
       }
     }
 
+    // FULL-Phase: nur noch Steal-Mechanik aktiv (kein Wachstum auf leere Felder)
+    const isFullPhase = currentPhase.id === 'full' || fillPct >= FULL_THRESHOLD;
+    // Steal-Phase oder Full-Phase: Steal aktiviert
+    const stealActive = currentPhase.id === 'steal' || isFullPhase;
+    // Im Full-Phase stealen alle Teams ein bisschen
+    const allTeamsCanSteal = isFullPhase;
+
     DEMO_TEAMS.forEach((team, ti) => {
       const teamId = ti + 1;
-      // Phase-Modifier auf growth-rate
       let growthMul = 1;
-      // Spotlight: Wolfsrudel waechst 3x
+
       if (currentPhase.id === 'spotlight' && ti === SPOTLIGHT_TEAM_IDX) growthMul = 3;
-      // Saisons (Herbst): kleinere Teams +50% (catch-up)
       if (currentPhase.id === 'seasons') {
         const myCount = teamCounts[ti] ?? 0;
         const maxCount = Math.max(...teamCounts, 1);
         if (myCount < maxCount * 0.5) growthMul = 1.5;
       }
 
-      // Border-Cells finden
-      const borders: number[] = [];
+      // STEAL-Phase: Rot wird aggressiv (steht für jemand der gerade hot ist)
+      const canStealAggressive = stealActive && (allTeamsCanSteal || ti === STEAL_TEAM_IDX);
+
+      // Sammle Border-Pixel: leere Nachbarn = grow, fremde Nachbarn = steal-target
+      const growBorders: number[] = [];
+      const stealTargets: number[] = [];
       for (let i = 0; i < g.length; i++) {
         if (g[i] !== teamId) continue;
         const r = Math.floor(i / COLS);
@@ -176,43 +199,64 @@ export default function QQGardenPitchPage() {
         if (c > 0)        neighs.push(r * COLS + (c - 1));
         if (c < COLS - 1) neighs.push(r * COLS + (c + 1));
         for (const n of neighs) {
-          if (g[n] === 0) borders.push(n);
+          if (g[n] === 0) growBorders.push(n);
+          else if (g[n] !== teamId) stealTargets.push(n);
         }
       }
-      const target = Math.round(team.growth * growthMul);
+
+      // Im Full-Phase kein normales Wachstum mehr
+      const target = isFullPhase ? 0 : Math.round(team.growth * growthMul);
+
+      // Normales Wachstum auf leere Felder
       const seen = new Set<number>();
-      for (let k = 0; k < target && borders.length > 0; k++) {
-        const idx = Math.floor(Math.random() * borders.length);
-        const cellIdx = borders[idx];
-        borders.splice(idx, 1);
+      for (let k = 0; k < target && growBorders.length > 0; k++) {
+        const idx = Math.floor(Math.random() * growBorders.length);
+        const cellIdx = growBorders[idx];
+        growBorders.splice(idx, 1);
         if (seen.has(cellIdx)) { k--; continue; }
         seen.add(cellIdx);
         if (g[cellIdx] === 0) {
           g[cellIdx] = teamId;
           newCounts[ti]++;
-          // SUN-ZONE Bonus: extra Pixel wenn nahe Sonne
+          // Sun-Bonus
           if (sunZone) {
             const r = Math.floor(cellIdx / COLS);
             const c = cellIdx % COLS;
             const dx = c - sunZone.pcol;
             const dy = r - sunZone.prow;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 14) {
-              // Doppeltes Wachstum: zusaetzlich noch 1 random border-cell
-              if (borders.length > 0) {
-                const idx2 = Math.floor(Math.random() * borders.length);
-                const cell2 = borders.splice(idx2, 1)[0];
-                if (g[cell2] === 0) {
-                  g[cell2] = teamId;
-                  newCounts[ti]++;
-                }
+            if (dist < 14 && growBorders.length > 0) {
+              const idx2 = Math.floor(Math.random() * growBorders.length);
+              const cell2 = growBorders.splice(idx2, 1)[0];
+              if (g[cell2] === 0) {
+                g[cell2] = teamId;
+                newCounts[ti]++;
               }
             }
           }
         }
       }
+
+      // STEAL: erobere fremde Border-Pixel
+      if (canStealAggressive && stealTargets.length > 0) {
+        const stealCount = isFullPhase
+          ? Math.min(2, stealTargets.length)        // alle Teams stealen 2/Tick im Endgame
+          : Math.min(4, stealTargets.length);       // Rot stealt 4/Tick in Steal-Phase
+        for (let k = 0; k < stealCount; k++) {
+          const idx = Math.floor(Math.random() * stealTargets.length);
+          const cellIdx = stealTargets.splice(idx, 1)[0];
+          const oldTeam = g[cellIdx];
+          if (oldTeam !== 0 && oldTeam !== teamId) {
+            g[cellIdx] = teamId;
+            newCounts[ti]++;
+            newCounts[oldTeam - 1]--;
+            stealsThisTick++;
+          }
+        }
+      }
     });
     setTeamCounts(newCounts);
+    if (stealsThisTick > 0) setStealEvents(s => s + stealsThisTick);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
@@ -230,11 +274,12 @@ export default function QQGardenPitchPage() {
       canvas.height = cssH * dpr;
     }
     ctx.imageSmoothingEnabled = false;
-    // Saison-Tönung des Backgrounds
     let bg = '#0A1322';
-    if (currentPhase.id === 'seasons') bg = '#1F1810'; // Herbst-warm
-    if (currentPhase.id === 'shrink') bg = '#0E1F2A';  // Regen-blau
-    if (currentPhase.id === 'finale') bg = '#160E26'; // Festlich-violett
+    if (currentPhase.id === 'seasons') bg = '#1F1810';
+    if (currentPhase.id === 'shrink')  bg = '#0E1F2A';
+    if (currentPhase.id === 'steal')   bg = '#1A0E14';
+    if (currentPhase.id === 'full')    bg = '#1A1208';
+    if (currentPhase.id === 'finale')  bg = '#160E26';
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const cellW = (cssW * dpr) / COLS;
@@ -254,15 +299,16 @@ export default function QQGardenPitchPage() {
         Math.ceil(cellH) + 1,
       );
     }
-    // Saison-Tint-Overlay
     if (currentPhase.id === 'seasons') {
-      ctx.fillStyle = 'rgba(251,146,60,0.10)'; // Herbst-orange-Schleier
+      ctx.fillStyle = 'rgba(251,146,60,0.10)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else if (currentPhase.id === 'shrink') {
-      ctx.fillStyle = 'rgba(56,189,248,0.06)'; // Kühler blauer Schleier
+      ctx.fillStyle = 'rgba(56,189,248,0.06)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (currentPhase.id === 'steal') {
+      ctx.fillStyle = 'rgba(239,68,68,0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    // Subtle vignette
     const grad = ctx.createRadialGradient(
       canvas.width / 2, canvas.height / 2, 0,
       canvas.width / 2, canvas.height / 2, canvas.width / 2,
@@ -271,9 +317,9 @@ export default function QQGardenPitchPage() {
     grad.addColorStop(1, 'rgba(0,0,0,0.45)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, [tick, currentPhase]);
+  }, [tick, currentPhase, COLS, ROWS]);
 
-  // ── Team-Labels: Centroid pro Team ────────────────────────────────────
+  // ── Team-Labels ────────────────────────────────────────────────────────
   const teamLabels = useMemo(() => {
     const g = gridRef.current;
     return DEMO_TEAMS.map((team, ti) => {
@@ -293,10 +339,11 @@ export default function QQGardenPitchPage() {
         y: (sumR / count / ROWS) * 100,
         cells: cellCount,
         isSpotlight: currentPhase.id === 'spotlight' && ti === SPOTLIGHT_TEAM_IDX,
-        isShrinking: currentPhase.id === 'shrink' && ti === SHRINK_TEAM_IDX,
+        isStealer:   currentPhase.id === 'steal'     && ti === STEAL_TEAM_IDX,
+        isShrinking: currentPhase.id === 'shrink'    && ti === SHRINK_TEAM_IDX,
       };
-    }).filter(Boolean) as Array<DemoTeam & { x: number; y: number; cells: number; isSpotlight: boolean; isShrinking: boolean }>;
-  }, [tick, teamCounts, currentPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+    }).filter(Boolean) as Array<DemoTeam & { x: number; y: number; cells: number; isSpotlight: boolean; isStealer: boolean; isShrinking: boolean }>;
+  }, [tick, teamCounts, currentPhase, COLS, ROWS]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fullscreen ─────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(() => {
@@ -315,7 +362,9 @@ export default function QQGardenPitchPage() {
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
 
-  // ── Rendering ──────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────
+  const sortedTeams = [...teamLabels].sort((a, b) => b.cells - a.cells);
+
   return (
     <div style={{
       minHeight: '100vh', background: 'radial-gradient(ellipse at center, #0F1B2A 0%, #060A12 70%)',
@@ -326,6 +375,7 @@ export default function QQGardenPitchPage() {
         @keyframes pitchFadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
         @keyframes pitchPulse  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
         @keyframes spotlightGlow { 0%,100% { text-shadow: 0 0 12px rgba(255,255,255,0.5); } 50% { text-shadow: 0 0 24px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.7); } }
+        @keyframes stealShake { 0%,100% { transform: translate(-50%, -50%); } 25% { transform: translate(-52%, -49%); } 75% { transform: translate(-48%, -51%); } }
       `}</style>
 
       <div style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -351,17 +401,47 @@ export default function QQGardenPitchPage() {
             fontSize: 'clamp(15px, 1.5vw, 19px)', color: '#94A3B8', margin: '0 auto', maxWidth: 760,
             lineHeight: 1.5,
           }}>
-            10 Teams, beliebige Spielerzahl. Jeder joint einem Team — pro richtiger Antwort
-            wachsen Pixel um den Spawn-Punkt. Demo zeigt alle 6 Phasen nacheinander.
+            10 Farb-Teams, beliebige Spielerzahl. Pixel wachsen pro richtiger Antwort, können
+            sich gegenseitig erobern (Steal), und das Endgame triggert sobald die Karte fast voll ist.
           </p>
         </div>
+
+        {/* Map-Size Picker */}
+        {!isFullscreen && (
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 20,
+            animation: 'pitchFadeIn 0.6s ease 0.05s both',
+          }}>
+            {(Object.keys(SIZE_PRESETS) as SizePreset[]).map(key => {
+              const preset = SIZE_PRESETS[key];
+              const active = sizePreset === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => { setSizePreset(key); setTick(0); }}
+                  style={{
+                    padding: '9px 18px', borderRadius: 12,
+                    background: active ? 'rgba(34,197,94,0.20)' : 'rgba(255,255,255,0.04)',
+                    border: active ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.10)',
+                    color: active ? '#86EFAC' : '#cbd5e1',
+                    fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {preset.label} · {preset.cols}×{preset.rows} <span style={{ opacity: 0.7, fontWeight: 600 }}>· {preset.players}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Live-Demo Canvas */}
         <div
           ref={containerRef}
           style={{
             position: 'relative', maxWidth: isFullscreen ? '100%' : 1200, margin: '0 auto 20px',
-            aspectRatio: isFullscreen ? undefined : '16/9',
+            aspectRatio: isFullscreen ? undefined : `${COLS}/${ROWS}`,
             width: isFullscreen ? '100vw' : undefined,
             height: isFullscreen ? '100vh' : undefined,
             borderRadius: isFullscreen ? 0 : 24,
@@ -377,7 +457,6 @@ export default function QQGardenPitchPage() {
             style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }}
           />
 
-          {/* Sun-Zone Overlay */}
           {sunZone && (
             <div style={{
               position: 'absolute',
@@ -395,7 +474,6 @@ export default function QQGardenPitchPage() {
             </div>
           )}
 
-          {/* Team-Labels */}
           {teamLabels.map(t => (
             <div key={t.id} style={{
               position: 'absolute',
@@ -404,16 +482,18 @@ export default function QQGardenPitchPage() {
               pointerEvents: 'none', zIndex: 4,
               textAlign: 'center',
               transition: 'left 0.5s ease, top 0.5s ease',
-              opacity: t.isShrinking ? 0.6 : 1,
+              opacity: t.isShrinking ? 0.55 : 1,
+              animation: t.isStealer ? 'stealShake 0.4s ease-in-out infinite' : undefined,
             }}>
               <div style={{
-                fontSize: t.isSpotlight ? 'clamp(20px, 2vw, 26px)' : 'clamp(15px, 1.5vw, 20px)',
+                fontSize: t.isSpotlight || t.isStealer ? 'clamp(20px, 2vw, 26px)' : 'clamp(15px, 1.5vw, 20px)',
                 fontWeight: 900, color: '#fff',
                 textShadow: '0 2px 8px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.7)',
                 letterSpacing: '0.02em',
                 animation: t.isSpotlight ? 'spotlightGlow 1.2s ease-in-out infinite' : undefined,
               }}>
                 {t.isSpotlight && '✨ '}
+                {t.isStealer && '⚔️ '}
                 {t.name}
                 {t.isShrinking && ' 🌧️'}
               </div>
@@ -438,16 +518,31 @@ export default function QQGardenPitchPage() {
             {currentPhase.emoji} {currentPhase.title}
           </div>
 
-          {/* HUD top-right: Teams */}
+          {/* HUD top-right: Fill % + Steals */}
           <div style={{
             position: 'absolute', top: 14, right: 18, zIndex: 5,
-            padding: '8px 16px', borderRadius: 999,
-            background: 'rgba(13,10,6,0.78)', border: '1.5px solid rgba(255,255,255,0.18)',
-            fontSize: 12, fontWeight: 800, color: '#cbd5e1',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            backdropFilter: 'blur(8px)',
+            display: 'flex', gap: 8,
           }}>
-            👥 10 Teams · ∞ Spieler
+            <div style={{
+              padding: '8px 14px', borderRadius: 999,
+              background: 'rgba(13,10,6,0.78)', border: '1.5px solid rgba(255,255,255,0.18)',
+              fontSize: 12, fontWeight: 800, color: '#cbd5e1',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              backdropFilter: 'blur(8px)',
+            }}>
+              🌍 {(fillPct * 100).toFixed(0)}% voll
+            </div>
+            {stealEvents > 0 && (
+              <div style={{
+                padding: '8px 14px', borderRadius: 999,
+                background: 'rgba(239,68,68,0.18)', border: '1.5px solid rgba(239,68,68,0.45)',
+                fontSize: 12, fontWeight: 800, color: '#FCA5A5',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                backdropFilter: 'blur(8px)',
+              }}>
+                ⚔️ {stealEvents} Steals
+              </div>
+            )}
           </div>
 
           {/* Phase-Beschreibung Bottom */}
@@ -483,7 +578,6 @@ export default function QQGardenPitchPage() {
             {isFullscreen ? '✕' : '⛶'}
           </button>
 
-          {/* Fullscreen-spezifische Phase-Progress-Bar oben */}
           {isFullscreen && (
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: 4,
@@ -498,7 +592,36 @@ export default function QQGardenPitchPage() {
           )}
         </div>
 
-        {/* Demo-Controls (nicht im Fullscreen, da sind Buttons in Canvas) */}
+        {/* Live-Leaderboard */}
+        {!isFullscreen && (
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 6,
+            marginBottom: 28, animation: 'pitchFadeIn 0.6s ease 0.15s both',
+          }}>
+            {sortedTeams.map((t, rank) => (
+              <div key={t.id} style={{
+                padding: '8px 12px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${t.color}40`,
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <span style={{
+                  width: 14, height: 14, borderRadius: 4,
+                  background: t.color, flexShrink: 0,
+                  boxShadow: `0 0 8px ${t.color}80`,
+                }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#F1F5F9' }}>
+                    {rank === 0 && '🥇 '}{rank === 1 && '🥈 '}{rank === 2 && '🥉 '}{t.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700 }}>{t.cells} Felder</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Demo-Controls */}
         {!isFullscreen && (
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <button
@@ -544,7 +667,7 @@ export default function QQGardenPitchPage() {
 
         {/* Phasen-Uebersicht */}
         {!isFullscreen && (
-          <Section title="🎬 Was du gerade siehst (Walkthrough)" delay="0.2s">
+          <Section title="🎬 Walkthrough-Phasen" delay="0.2s">
             <div style={{ display: 'grid', gap: 8 }}>
               {PHASES.map(p => {
                 const active = currentPhase.id === p.id;
@@ -580,22 +703,51 @@ export default function QQGardenPitchPage() {
           </Section>
         )}
 
+        {/* FAQ — direkte Antworten auf Kern-Designfragen */}
+        {!isFullscreen && (
+          <Section title="❓ Was du wissen willst" delay="0.3s">
+            <div style={{ display: 'grid', gap: 10 }}>
+              <FaqCard
+                q="Was passiert, wenn die Karte voll ist?"
+                a="Sobald 92% gefüllt sind, schaltet das Spiel ins Endgame: kein normales Wachstum mehr, nur noch Steal. Wer im Endgame am meisten richtig antwortet, übernimmt die Pixel der Nachbarn. Das hält Spannung bis zur letzten Sekunde — auch volle Karten haben Bewegung."
+              />
+              <FaqCard
+                q="Gibt es sowas wie Steal?"
+                a="Ja — Steal ist Kernmechanik, nicht Special. Wenn Pixel zweier Teams sich berühren, kann jede richtige Antwort statt Wachstum eine Eroberung auslösen. Im normalen Spiel ist Steal-Chance niedrig (~20%), in der dedizierten Steal-Phase und im Endgame steigt sie auf ~80%."
+              />
+              <FaqCard
+                q="Passt sich das Feld an die Spielerzahl an?"
+                a="Ja — 3 Presets oben wählbar. Klein 100×56 (5.600 Pixel) für 20–60 Spieler, Mittel 160×90 (14.400) für 60–200, Groß 220×124 (27.280) für 200–500+. Faustregel: ~50–100 Pixel pro Spieler über die ganze Spielzeit, damit die Karte am Ende wirklich voll wird."
+              />
+              <FaqCard
+                q="Wie viele Teams sind sinnvoll?"
+                a="10 Farb-Teams als Standard. Jeder Spieler joint einem Team (eigene Auswahl oder zufällig zugewiesen für Balance). Mit weniger Teams (4–6) wird es übersichtlicher aber langweiliger. Mehr als 10 Farben sind visuell schwer zu unterscheiden auf dem Beamer."
+              />
+              <FaqCard
+                q="Wie wird verhindert, dass starke Teams alles dominieren?"
+                a="Drei Catch-up-Mechaniken: (1) Saisonwechsel — kleinere Teams kriegen +50% Wachstum. (2) Spotlight-Question alle 5 Fragen mit 3× Bonus. (3) Schrumpfen — wer aussteigt verliert Pixel, hält Führende aktiv. Plus: Steal verhindert dass ein Team uneinholbar wird."
+              />
+            </div>
+          </Section>
+        )}
+
         {/* Pro/Con */}
         {!isFullscreen && (
           <Section title="⚖️ Pro / Con" delay="0.4s">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
               <ProConCard tone="pro" title="Pro" items={[
-                'Skaliert von 30 bis 500+ Personen ohne Architekturänderung',
-                'Visuell wow — pixelartige Territorien fühlen sich satisfying an',
-                'Cozy-Brand: friedlich + ästhetisch statt aggressiv-kompetitiv',
-                'Jede einzelne Antwort zählt sichtbar (Pixel)',
-                'Festival-tauglich: 10 fixe Teams, jeder joint einem',
+                'Skaliert von 20 bis 500+ Spielern via Map-Preset',
+                'Visuell wow — pixelartige Territorien wirken satisfying',
+                'Cozy-Brand: friedlich-ästhetisch statt aggressiv',
+                'Jede Antwort zählt sichtbar (1 Pixel = 1 Antwort)',
+                'Steal + Endgame halten Spannung bis zum Schluss',
+                '10 Farb-Teams = sofort verständlich, kein Branding nötig',
               ]} />
               <ProConCard tone="con" title="Con" items={[
-                'Weniger Strategie als das klassische Grid (Kein Klauen, Stapeln, Joker)',
-                'Risiko: Führendes Team baut Vorsprung aus → Schluss-Spannung leidet',
-                'Bedarf neuem Mod-Panel + Beamer-View (mittlerer Dev-Aufwand)',
-                'Balancing zwischen "Quantität (mehr Spieler)" vs "Qualität (% richtig)" muss stimmen',
+                'Weniger Strategie als klassisches Grid (kein Joker-System)',
+                'Balancing zwischen Wachstum/Steal/Catchup muss stimmen',
+                'Bedarf neuem Mod-Panel + Beamer-View (mittlerer Aufwand)',
+                'Bei <20 Spielern wirkt selbst die kleine Map zu leer',
               ]} />
             </div>
           </Section>
@@ -613,10 +765,9 @@ export default function QQGardenPitchPage() {
               Status · Pitch / Mockup
             </div>
             <div style={{ fontSize: 16, color: '#cbd5e1', lineHeight: 1.6, maxWidth: 720, margin: '0 auto' }}>
-              Diese Seite zeigt nur das KONZEPT mit Walkthrough aller Specials.
-              Geschätzter Dev-Aufwand: <b style={{ color: '#FDE68A' }}>~5-7 Tage</b> für Backend
-              (Team-Score, Floodfill, Sun-Zones, Spotlight-Logik, Schrumpfen) + Beamer-Canvas
-              + Team-Page-Anpassung.
+              Diese Seite zeigt nur das KONZEPT. Geschätzter Dev-Aufwand:{' '}
+              <b style={{ color: '#FDE68A' }}>~5–7 Tage</b> für Backend (Team-Score, Floodfill,
+              Steal-Logik, Sun-Zones, Endgame-Trigger) + Beamer-Canvas + Team-Page.
             </div>
           </div>
         )}
@@ -635,6 +786,22 @@ function Section({ title, delay, children }: { title: string; delay: string; chi
         letterSpacing: '-0.01em',
       }}>{title}</h2>
       {children}
+    </div>
+  );
+}
+
+function FaqCard({ q, a }: { q: string; a: string }) {
+  return (
+    <div style={{
+      padding: '14px 18px', borderRadius: 14,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div style={{
+        fontSize: 15, fontWeight: 900, color: '#F1F5F9', marginBottom: 6,
+        letterSpacing: '-0.005em',
+      }}>{q}</div>
+      <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.55 }}>{a}</div>
     </div>
   );
 }

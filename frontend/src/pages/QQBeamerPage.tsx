@@ -8439,12 +8439,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             pointerEvents: 'auto',
             animation: 'contentReveal 0.35s ease both',
           }}>
+            {/* v3 round 8 (User-Bug 'badge braucht dunklen bg bei hellem
+                untergrund'): Cozy-Dark-Backdrop (rgba 13,10,6 / 82% opacity)
+                + accent-color Border. Vorher war background nur accent22 =
+                ~13% opacity, was auf hellem Foto kaum lesbar war. */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '8px 22px', borderRadius: 999,
-              background: `${accent}22`, border: `2px solid ${accent}44`,
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
+              background: 'rgba(13,10,6,0.82)', border: `2px solid ${accent}aa`,
+              boxShadow: `0 4px 18px rgba(0,0,0,0.45), 0 0 18px ${accent}33`,
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
             }}>
               {(() => {
                 const slug = qqCatSlug(cat as string);
@@ -8458,7 +8463,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
             </div>
           </div>
-          {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal */}
+          {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal.
+              v3 round 8 (User-Bug 'timer auch bei hellem hintergrund schwer
+              sichtbar'): zusaetzlicher dunkler Kreis-Backdrop hinter dem
+              Timer-Ring fuer Kontrast auf hellen Fotos. */}
           {s.timerEndsAt && (
             <div style={{
               position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', right: 'clamp(28px, 4vw, 64px)', zIndex: 70,
@@ -8466,6 +8474,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               pointerEvents: revealed ? 'none' : 'auto',
               opacity: revealed ? 0 : 1,
               transition: 'opacity 0.35s ease',
+              padding: 12, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: `0 4px 22px rgba(0,0,0,0.45)`,
             }}>
               <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
             </div>

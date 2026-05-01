@@ -3526,6 +3526,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   // verspaetet), pre-scheduln wir alle Sounds via setTimeout am EXAKTEN
   // ms-Anchor. So feuert der Cascade-Ton synchron zum Slam-Down.
   // Nur 1× pro mount: wenn anchor neu gesetzt wird, Timer-Cleanup.
+  // v3 round 9 (User-Bug 'konstanter ton stoert hinter der cascade'):
+  // playTeamReveal (Slam-Sound, gleiche Pitch pro Team) entfernt — nur noch
+  // die aufsteigende Pentatonik-Cascade. Sauberer, kein Doppel-Layer mehr.
   useEffect(() => {
     if (s.sfxMuted) return;
     const cascadeTotal = teams.length + 1;
@@ -3534,7 +3537,6 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       const fireAt = anchor + titleDur + i * perTeamDelay;
       const delay = Math.max(0, fireAt - Date.now());
       timers.push(window.setTimeout(() => {
-        try { playTeamReveal(); } catch {}
         try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
       }, delay));
     }

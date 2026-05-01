@@ -858,18 +858,25 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       if (live.onlyConnectGuesses.some(g => g.teamId === localTeamId && g.correct)) return;
 
       const curIdx = live.onlyConnectHintIndices[localTeamId] ?? 0;
+      const curStrikes = live.onlyConnectStrikes[localTeamId] ?? 0;
       // Auto-Hint-Reveal seit 2026-04-28: Hints kommen auf dem Timer
       // automatisch — Dummies entscheiden NUR ob sie jetzt schon tippen
       // oder weiter abwarten. Mit höherem Hint-Level steigt die Lust zu raten.
       // 2026-04-28: bei idx=0 NIE tippen — sonst beenden Dummies in
       // Pure-Test-Lobbys die Runde bevor irgendwas zu sehen ist. Realistisch
       // ist auch: erster Hinweis allein gibt selten genug Sicherheit.
-      // 2026-04-30 v3 round 5 (User-Bug 'alle dummies werden als falsch
-      // angezeigt'): bei idx=1 zu aggressives Guessen (0.55) → 60% wrong → 3
-      // strikes vor Hint-Advance → alle locked. Jetzt konservativer:
-      // idx=1: 0.30 (warten auf bessere Hints), idx=2: 0.70, idx=3: 1.0.
-      // Mehr Hint-Wartezeit = bessere Treffer = weniger all-locked-Reveals.
-      const guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.30 : curIdx === 2 ? 0.70 : 1.0;
+      // 2026-04-30 v3 round 9 (User-Wunsch 'dummies smarter, nicht alle am
+      // hint 1 scheitern, auch weitere anschauen'):
+      // - idx=1: 0.30 → 0.12 (sehr selten tippen, fast immer warten)
+      // - idx=2: 0.70 → 0.55 (gemaessigt)
+      // - idx=3: 1.0 (immer tippen — letzter Hinweis erreicht)
+      // - 'Strike-Vorsicht': bei 2 Strikes nur noch tippen wenn idx=3
+      //   (= sicherster Hinweis, sonst Lock-Risiko zu hoch)
+      // - accProb hochgesetzt: idx=1: 0.40→0.55, idx=2: 0.65→0.78, idx=3: 0.85→0.92
+      //   damit die wenigen Tipps die fallen oefter richtig sind.
+      let guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.12 : curIdx === 2 ? 0.55 : 1.0;
+      // Strike-Vorsicht: 2 Strikes = nur bei idx=3 tippen, sonst warten.
+      if (curStrikes >= 2 && curIdx < 3) guessProb = 0;
       const shouldGuess = Math.random() < guessProb;
 
       if (!shouldGuess) {
@@ -879,7 +886,7 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
       }
 
       // Submit guess: Treffer-Wahrscheinlichkeit steigt mit Hint-Level
-      const accProb = curIdx === 0 ? 0.20 : curIdx === 1 ? 0.40 : curIdx === 2 ? 0.65 : 0.85;
+      const accProb = curIdx === 0 ? 0.20 : curIdx === 1 ? 0.55 : curIdx === 2 ? 0.78 : 0.92;
       const beCorrect = Math.random() < accProb;
       const oc = live.currentQuestion?.bunteTuete?.kind === 'onlyConnect'
         ? live.currentQuestion.bunteTuete : null;

@@ -116,6 +116,11 @@ function rehydrate(room: QQRoomState): QQRoomState {
   room._hotPotatoTimerHandle   = null;
   room._hotPotatoOnExpire      = null;
   room._mapRevealTimerHandle   = null;
+  // Falls die Session im Fenster zwischen Timer-Ablauf und Mod-Reveal
+  // gespeichert wurde: nach Rehydrate ist der Server in einem neuen Lauf,
+  // Phase wird auf PAUSED gesetzt (siehe unten). timerExpired-Flag aufs
+  // sichere Default zuruecksetzen (Resume ruft qqStartTimer = setzt sowieso).
+  room.timerExpired            = false;
 
   // Laufende Timer sind tot — in Pause einfrieren, damit Moderator bewusst
   // entscheidet. Ausnahme: bereits in PAUSED/LOBBY/GAME_OVER → belassen.

@@ -77,6 +77,12 @@ export interface QQRoomState {
   timerDurationSec: number;
   timerEndsAt: number | null;
   timerHandle: ReturnType<typeof setTimeout> | null;
+  // Bug 2026-05-01: zwischen Timer-Ablauf und Mod-Reveal blieb das Fenster offen,
+  // sodass Teams noch antworten konnten. timerExpired schlieSSt das Fenster.
+  // True = Timer ist regulaer abgelaufen (kein Reveal/Stop davor); reset auf
+  // false bei Start, Stop, neuer Frage. timerEndsAt=null ist mehrdeutig
+  // (entweder nie gestartet ODER abgelaufen) - daher dieser explizite Flag.
+  timerExpired: boolean;
   // Answers
   answers: QQAnswerEntry[];
   allAnswered: boolean;  // true when every connected team has submitted
@@ -294,6 +300,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       timerDurationSec: 30,
       timerEndsAt: null,
       timerHandle: null,
+      timerExpired: false,
       answers: [],
       allAnswered: false,
       buzzQueue: [],
@@ -607,6 +614,8 @@ export function qqStopTimer(room: QQRoomState): void {
   }
   room.timerEndsAt = null;
   room._timerOnExpire = null;
+  // Stop = manueller Reveal/Phase-Wechsel, NICHT Ablauf. Reset Flag.
+  room.timerExpired = false;
 }
 
 // onExpire is called by the socket handler to broadcast when timer ends
@@ -618,10 +627,14 @@ export function qqStartTimer(
   room._timerOnExpire = onExpire;
   const durationMs   = room.timerDurationSec * 1000;
   room.timerEndsAt   = Date.now() + durationMs;
+  room.timerExpired  = false;
   room.timerHandle   = setTimeout(() => {
     room.timerHandle = null;
     room.timerEndsAt = null;
     room._timerOnExpire = null;
+    // Wichtig: timerExpired bleibt true bis zum naechsten qqStartTimer/Stop.
+    // Damit blockt qqSubmitAnswer Antworten im Fenster Timer-Ablauf -> Reveal.
+    room.timerExpired = true;
     onExpire();
   }, durationMs);
 }
@@ -647,6 +660,12 @@ export function qqSubmitAnswer(
 ): { allAnswered: boolean } {
   if (room.phase !== 'QUESTION_ACTIVE') {
     throw new QQError('WRONG_PHASE', 'Antworten nur bei aktiver Frage möglich.');
+  }
+  // Bug 2026-05-01: nach Timer-Ablauf duerfen keine Antworten mehr eingehen,
+  // auch wenn der Mod noch nicht reveal'd hat. Frontend sperrt Inputs schon
+  // via useExpiry, hier ist die Server-Sicherung.
+  if (room.timerExpired) {
+    throw new QQError('TIMER_EXPIRED', 'Zeit abgelaufen — keine Antworten mehr möglich.');
   }
   assertTeam(room, teamId);
   // Only one answer per team per question

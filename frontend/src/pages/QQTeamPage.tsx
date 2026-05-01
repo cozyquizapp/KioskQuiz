@@ -911,7 +911,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             <button onClick={reconnect} style={{
               padding: '8px 20px', borderRadius: 10, fontFamily: 'inherit',
               fontWeight: 900, fontSize: 13, cursor: 'pointer',
-              background: 'rgba(239,68,68,0.25)', border: '1.5px solid #EF4444',
+              background: 'rgba(239,68,68,0.25)', border: '1px solid #EF4444',
               color: '#FCA5A5', animation: 'tcbtnpop 0.3s ease both',
             }}>
               {lang === 'de' ? '🔄 Jetzt neu verbinden' : '🔄 Reconnect now'}
@@ -1477,7 +1477,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
                 {s.gamePhaseIndex > 1 && (
                   <div style={{
                     display: 'inline-block', padding: '3px 14px', borderRadius: 999,
-                    background: `${color}22`, border: `1.5px solid ${color}44`,
+                    background: `${color}22`, border: `1px solid ${color}44`,
                     fontSize: 13, fontWeight: 900, color, letterSpacing: '0.1em',
                     marginBottom: 6,
                   }}>
@@ -1834,7 +1834,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             background: isCorrect === true ? 'rgba(34,197,94,0.10)'
               : isCorrect === false ? 'rgba(255,255,255,0.04)'
               : 'rgba(255,255,255,0.04)',
-            border: `1.5px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+            border: `1px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
             animation: 'tcreveal 0.35s ease 0.15s both',
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
@@ -1881,7 +1881,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   position: 'relative', overflow: 'hidden',
                   padding: '8px 10px', borderRadius: 10,
                   background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                  border: `1px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   {/* Bar */}
@@ -1938,7 +1938,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 10,
                   background: ok ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
-                  border: `1.5px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                  border: `1px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: '#64748b' }}>#{i+1}</span>
@@ -1999,7 +1999,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 10,
                   background: m ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
-                  border: `1.5px solid ${m ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                  border: `1px solid ${m ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{m ? '✓' : '✗'}</span>
@@ -2048,7 +2048,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 10,
                   background: isMe ? `${team?.color ?? '#3b82f6'}22` : 'rgba(255,255,255,0.04)',
-                  border: `1.5px solid ${isMe ? (team?.color ?? '#3b82f6') + '88' : 'rgba(255,255,255,0.08)'}`,
+                  border: `1px solid ${isMe ? (team?.color ?? '#3b82f6') + '88' : 'rgba(255,255,255,0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
@@ -2069,7 +2069,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           <div style={{
             marginTop: 10, padding: '10px 14px', borderRadius: 12,
             background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
-            border: `1.5px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
+            border: `1px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
@@ -2090,7 +2090,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           <div style={{
             marginTop: 10, padding: '10px 14px', borderRadius: 12,
             background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
-            border: `1.5px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
+            border: `1px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
@@ -2157,7 +2157,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           <div style={{
             marginTop: 8, padding: '12px 16px', borderRadius: 14, textAlign: 'center',
             background: 'rgba(148,163,184,0.10)',
-            border: '1.5px dashed rgba(148,163,184,0.35)',
+            border: '1px dashed rgba(148,163,184,0.35)',
             animation: 'tcTrostIn 0.5s ease 0.45s both',
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
@@ -2338,7 +2338,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '2px 8px 2px 2px', borderRadius: 999,
                 background: 'rgba(0,0,0,0.4)',
-                border: `1.5px solid ${t.color}66`,
+                border: `1px solid ${t.color}66`,
                 opacity: 0.85,
                 animation: 'tcpulse 1.8s ease-in-out infinite',
               }}>
@@ -2739,7 +2739,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             border: `2px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
             transition: 'all 0.15s',
             borderLeft: `4px solid ${color}`,
-            animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.08}s both`,
+            animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
           }}>
             <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
               <span style={{ fontSize: 12, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
@@ -2874,7 +2874,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{
           padding: '10px 14px', borderRadius: 12,
-          background: 'rgba(244,114,182,0.12)', border: '1.5px solid rgba(244,114,182,0.3)',
+          background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
           fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
         }}>
           {lang === 'de'
@@ -2920,7 +2920,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     return (
       <div style={{
         padding: '14px 16px', borderRadius: 12,
-        background: 'rgba(244,114,182,0.10)', border: '1.5px solid rgba(244,114,182,0.3)',
+        background: 'rgba(244,114,182,0.10)', border: '1px solid rgba(244,114,182,0.3)',
         textAlign: 'center', fontSize: 14, color: '#fbcfe8', fontWeight: 700,
       }}>
         {lang === 'de' ? '👮 Moderator prüft die Bluffs… gleich geht\'s weiter.' : '👮 Moderator reviewing bluffs… one moment.'}
@@ -2937,7 +2937,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{
           padding: '10px 14px', borderRadius: 12,
-          background: 'rgba(244,114,182,0.12)', border: '1.5px solid rgba(244,114,182,0.3)',
+          background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
           fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
         }}>
           {lang === 'de'
@@ -2960,13 +2960,14 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
                   : isOwn ? 'rgba(255,255,255,0.02)'
                   : 'rgba(255,255,255,0.05)',
                 border_: undefined,
-                outline: chosen ? `2px solid ${catColor}` : `1.5px solid ${isOwn ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
+                outline: chosen ? `2px solid ${catColor}` : `1px solid ${isOwn ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
                 color: isOwn ? '#475569' : '#F1F5F9',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 800,
                 cursor: disabled ? 'default' : 'pointer',
                 opacity: isOwn ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', gap: 10,
                 transition: 'all 0.18s',
+                animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
               } as any}
             >
               <span style={{
@@ -3006,7 +3007,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       <div style={{
         padding: '16px 18px', borderRadius: 14,
         background: total > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-        border: total > 0 ? '1.5px solid rgba(34,197,94,0.45)' : '1.5px solid rgba(255,255,255,0.10)',
+        border: total > 0 ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(255,255,255,0.10)',
         display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center',
       }}>
         <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -3088,7 +3089,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '10px 12px', borderRadius: 10,
               background: isVisible ? `${hintColor}18` : 'rgba(255,255,255,0.03)',
-              border: isVisible ? `1.5px solid ${hintColor}66` : '1.5px dashed rgba(255,255,255,0.10)',
+              border: isVisible ? `1px solid ${hintColor}66` : '1px dashed rgba(255,255,255,0.10)',
               boxShadow: isCurrent ? `0 0 12px ${hintColor}44` : 'none',
               opacity: isVisible ? 1 : 0.6,
               transition: 'all 0.4s ease',
@@ -3115,7 +3116,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         <div style={{
           padding: '10px 14px', borderRadius: 12,
           background: 'rgba(255,255,255,0.04)',
-          border: '1.5px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           fontSize: 12, fontWeight: 800, color: '#94A3B8',
           letterSpacing: '0.05em', textTransform: 'uppercase',
@@ -3131,7 +3132,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       {isMyWin && (
         <div style={{
           padding: '10px 14px', borderRadius: 10, textAlign: 'center',
-          background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.45)',
+          background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.45)',
           fontSize: 14, fontWeight: 900, color: '#86EFAC',
         }}>
           {lang === 'de' ? '✓ Richtig! Wartet auf Auflösung.' : '✓ Correct! Wait for reveal.'}
@@ -3140,7 +3141,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       {isLocked && (
         <div style={{
           padding: '10px 14px', borderRadius: 10, textAlign: 'center',
-          background: 'rgba(239,68,68,0.10)', border: '1.5px solid rgba(239,68,68,0.4)',
+          background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.4)',
           fontSize: 13, fontWeight: 800, color: '#FCA5A5',
         }}>
           {lang === 'de' ? '✕ Falsch — gesperrt für diese Frage.' : '✕ Wrong — locked out for this question.'}
@@ -3278,7 +3279,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
         onTouchEnd={handleTouchEnd}
         style={{
           borderRadius: 16, height: SLOT_H * 3, overflow: 'hidden', position: 'relative',
-          background: 'rgba(10,15,35,0.97)', border: '1.5px solid rgba(148,163,184,0.15)',
+          background: 'rgba(10,15,35,0.97)', border: '1px solid rgba(148,163,184,0.15)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           userSelect: 'none', touchAction: 'none',
         }}
@@ -3300,8 +3301,8 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
         <div key={clamped} style={{
           height: SLOT_H, padding: '0 48px 0 16px', display: 'flex', alignItems: 'center',
           background: 'rgba(148,45,89,0.18)',
-          borderTop: '1.5px solid rgba(148,45,89,0.5)',
-          borderBottom: '1.5px solid rgba(148,45,89,0.5)',
+          borderTop: '1px solid rgba(148,45,89,0.5)',
+          borderBottom: '1px solid rgba(148,45,89,0.5)',
           fontSize: 'clamp(14px,3.8vw,17px)', fontWeight: 800, color: '#ffe4f2',
           lineHeight: 1.35,
           animation: 'tcwheelslide 0.22s ease both',
@@ -3379,8 +3380,8 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
         <div key={item + i} style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 10px', borderRadius: 12,
-          background: 'rgba(26,32,53,0.9)', border: `1.5px solid ${catColor}22`,
-          animation: `tcoptIn 0.3s ease ${i * 0.05}s both`,
+          background: 'rgba(26,32,53,0.9)', border: `1px solid ${catColor}22`,
+          animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
         }}>
           <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor }}>
             {i + 1}
@@ -3823,7 +3824,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                         border: cellTeam
                           ? (isStuckCell
                               ? `2px solid #F59E0B`
-                              : `1.5px solid ${cellTeam.color}${isMine ? '' : 'aa'}`)
+                              : `1px solid ${cellTeam.color}${isMine ? '' : 'aa'}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
@@ -4063,7 +4064,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     border: isPending ? `3px dashed ${actionColor}`
                       : isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCandidate ? `2px solid #F59E0B`
-                      : clickable ? `2px solid ${actionColor}` : team ? `1.5px solid ${team.color}aa` : '1px solid rgba(255,255,255,0.06)',
+                      : clickable ? `2px solid ${actionColor}` : team ? `1px solid ${team.color}aa` : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
@@ -4204,7 +4205,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
             <div style={{
               marginTop: 12, padding: '10px 14px', borderRadius: 12,
               background: `linear-gradient(135deg, ${actionColor}1a, ${actionColor}08)`,
-              border: `1.5px solid ${actionColor}55`,
+              border: `1px solid ${actionColor}55`,
               fontSize: 14, fontWeight: 800, color: '#e2e8f0', textAlign: 'center',
               lineHeight: 1.4,
               animation: 'tcfloat 1.6s ease-in-out infinite',
@@ -4320,7 +4321,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         {/* Anchor-Info */}
         <div style={{
           padding: '12px 14px', borderRadius: 14,
-          background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.38)',
+          background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.38)',
           textAlign: 'center', marginBottom: 10,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#86efac', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
@@ -4338,7 +4339,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         <div style={{
           padding: '12px 14px', borderRadius: 14,
           background: isReveal ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.1)',
-          border: isReveal ? '2px solid #FBBF24' : '1.5px dashed rgba(251,191,36,0.5)',
+          border: isReveal ? '2px solid #FBBF24' : '1px dashed rgba(251,191,36,0.5)',
           textAlign: 'center', marginBottom: 14,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#FDE68A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
@@ -4356,7 +4357,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
             <div style={{
               marginTop: 6, padding: '4px 12px', borderRadius: 999,
               background: correctChoice === 'higher' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)',
-              border: `1.5px solid ${correctChoice === 'higher' ? '#22C55E' : '#EF4444'}`,
+              border: `1px solid ${correctChoice === 'higher' ? '#22C55E' : '#EF4444'}`,
               fontSize: 12, fontWeight: 900, color: '#fff',
               display: 'inline-block',
             }}>
@@ -4403,7 +4404,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         {!isReveal && answered && (
           <div style={{
             marginTop: 12, padding: '8px 12px', borderRadius: 10,
-            background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.4)',
+            background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)',
             fontSize: 13, fontWeight: 800, color: '#FDE68A', textAlign: 'center',
           }}>
             ⏳ {lang === 'en' ? 'Waiting for other teams…' : 'Warte auf andere Teams…'}
@@ -4686,7 +4687,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
             </span>
             <span style={{
               padding: '4px 12px', borderRadius: 999,
-              background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.5)',
+              background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.5)',
               fontSize: 12, fontWeight: 900, color: '#86EFAC',
             }}>
               {found} {de ? 'Gruppen' : 'groups'} {found > 0 ? `→ ×${found} ${de ? 'Aktionen' : 'actions'}` : ''}
@@ -4726,7 +4727,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
           <span style={{
             padding: '3px 10px', borderRadius: 999,
             background: fails > 0 ? 'rgba(239,68,68,0.18)' : 'rgba(255,255,255,0.05)',
-            border: `1.5px solid ${fails > 0 ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
+            border: `1px solid ${fails > 0 ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
             fontSize: 11, fontWeight: 900,
             color: fails > 0 ? '#FCA5A5' : '#94a3b8',
           }}>
@@ -4738,7 +4739,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
           <div style={{
             padding: 14, textAlign: 'center', borderRadius: 12,
             background: locked ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.10)',
-            border: `1.5px solid ${locked ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.4)'}`,
+            border: `1px solid ${locked ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.4)'}`,
             color: locked ? '#FCA5A5' : '#86EFAC',
             fontWeight: 800, fontSize: 14,
           }}>
@@ -4839,7 +4840,7 @@ function ConnectionsTeamTimer({ endsAt }: { endsAt: number }) {
     <span style={{
       padding: '3px 10px', borderRadius: 999,
       background: urgent ? 'rgba(239,68,68,0.18)' : 'rgba(251,191,36,0.15)',
-      border: `1.5px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.4)'}`,
+      border: `1px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.4)'}`,
       fontSize: 13, fontWeight: 900, color: urgent ? '#FCA5A5' : '#FDE68A',
       fontVariantNumeric: 'tabular-nums',
     }}>
@@ -4931,7 +4932,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
               <div style={{
                 display: 'inline-block', padding: '4px 14px', borderRadius: 999,
                 background: `${myTeam?.color ?? '#64748b'}18`,
-                border: `1.5px solid ${myTeam?.color ?? '#64748b'}44`,
+                border: `1px solid ${myTeam?.color ?? '#64748b'}44`,
                 fontSize: 14, fontWeight: 800, color: myTeam?.color ?? '#94a3b8',
               }}>
                 {lang === 'de' ? `Ihr: Platz ${myRank}` : `You: #${myRank}`}
@@ -5169,7 +5170,7 @@ function ReactionPad({
             style={{
               width: 48, height: 48, borderRadius: 14,
               background: tappedIdx === i ? `${accent}33` : 'rgba(255,255,255,0.06)',
-              border: `1.5px solid ${tappedIdx === i ? accent : 'rgba(255,255,255,0.10)'}`,
+              border: `1px solid ${tappedIdx === i ? accent : 'rgba(255,255,255,0.10)'}`,
               fontSize: 26, lineHeight: 1, cursor: 'pointer',
               transition: 'all 0.18s',
               transform: tappedIdx === i ? 'scale(1.18)' : 'scale(1)',

@@ -86,6 +86,12 @@ export interface QQRoomState {
   // Answers
   answers: QQAnswerEntry[];
   allAnswered: boolean;  // true when every connected team has submitted
+  // 2026-05-01: Disconnect-Grace fuer allAnswered-Berechnung. Wenn ein Team
+  // kurz disconnected (z.B. Phone-Bildschirm aus, Wifi-Glitch), zaehlt es
+  // weiter als „erwartet" - sonst wuerde allAnswered schlagartig wahr und
+  // Mod-Autoplay triggert Reveal bevor das Team reconnected ist. Map: teamId
+  // -> disconnect-timestamp-ms; wird bei Reconnect geleert.
+  _recentlyDisconnected?: { [teamId: string]: number };
   // Buzz (Hot Potato)
   buzzQueue: QQBuzzEntry[];
   // Hot Potato state
@@ -437,6 +443,14 @@ export function qqSetTeamConnected(
 ): void {
   if (room.teams[teamId]) {
     room.teams[teamId].connected = connected;
+    // Disconnect-Grace tracken (siehe `_recentlyDisconnected` Doku im
+    // Interface). Reconnect = clear, Disconnect = stamp setzen.
+    if (!room._recentlyDisconnected) room._recentlyDisconnected = {};
+    if (connected) {
+      delete room._recentlyDisconnected[teamId];
+    } else {
+      room._recentlyDisconnected[teamId] = Date.now();
+    }
   }
 }
 
@@ -678,8 +692,21 @@ export function qqSubmitAnswer(
     room.answers.push({ teamId, text: answer.trim(), submittedAt: Date.now() });
   }
   room.lastActivityAt = Date.now();
-  const connectedTeams = room.joinOrder.filter(id => room.teams[id]?.connected);
-  const allAnswered = connectedTeams.every(id => room.answers.some(a => a.teamId === id));
+  // 2026-05-01: Disconnect-Grace - frisch disconnectete Teams (<10s) zaehlen
+  // weiter als „erwartet" fuer allAnswered. Sonst wuerde Wolfs Phone bei
+  // kurzem Wifi-Glitch aus connectedTeams fallen, allAnswered schlagartig
+  // wahr werden, Mod-Autoplay triggers Reveal in 2.5s, und Wolf sieht beim
+  // Reconnect kein Antwortfeld mehr. Mit Grace bleibt der Slot offen.
+  const DISCONNECT_GRACE_MS = 10000;
+  const now = Date.now();
+  const expectedTeams = room.joinOrder.filter(id => {
+    const t = room.teams[id];
+    if (!t) return false;
+    if (t.connected) return true;
+    const since = room._recentlyDisconnected?.[id];
+    return since != null && (now - since) < DISCONNECT_GRACE_MS;
+  });
+  const allAnswered = expectedTeams.every(id => room.answers.some(a => a.teamId === id));
   room.allAnswered = allAnswered;
   // Stop timer when all teams have answered
   if (allAnswered) {

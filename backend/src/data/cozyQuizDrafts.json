@@ -1223,5 +1223,249 @@
     "updatedAt": 1767961750692,
     "status": "draft",
     "lastPublishedAt": null
+  },
+  {
+    "id": "cozy-draft-harry-potter",
+    "meta": {
+      "title": "🪄 Harry Potter Cozy Quiz",
+      "language": "de",
+      "date": null,
+      "description": "Test-Draft 2026-05-01: 12 Fragen quer durch die HP-Welt. Imposter/oneOfEight bewusst raus (User-Wunsch). Cheese-Bildfragen sind Platzhalter — Bilder im Studio nachpflegen."
+    },
+    "questions": [
+      {
+        "id": "hp-q01",
+        "question": "Wie viele Sickel ergeben einen Galleone?",
+        "questionEn": "How many Sickles make one Galleon?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 17,
+        "unit": "Sickel"
+      },
+      {
+        "id": "hp-q02",
+        "question": "Welcher Hauself dient der Familie Malfoy?",
+        "questionEn": "Which house-elf serves the Malfoy family?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Dobby",
+          "Kreacher",
+          "Winky",
+          "Hokey"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hp-q03",
+        "question": "Hagrid ist ein Halbriese.",
+        "questionEn": "Hagrid is a half-giant.",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Stimmt",
+          "Stimmt nicht"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "hp-q04",
+        "question": "Welcher Spruch lässt Gegenstände schweben?",
+        "questionEn": "Which spell makes objects levitate?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Wingardium Leviosa",
+          "Lumos Maxima",
+          "Alohomora",
+          "Expelliarmus"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hp-q05",
+        "question": "Cheese: Welches Hogwarts-Haus zeigt dieses Wappen?",
+        "questionEn": "Cheese: Which Hogwarts house does this crest belong to?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "hp-q06",
+        "question": "Bunte Tüte Order: Sortiert die Bücher chronologisch (Buch 1 oben).",
+        "questionEn": "Order: Sort the books in publication order (Book 1 on top).",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Ordnet die Bücher chronologisch nach Erscheinungsdatum.",
+          "items": [
+            { "id": "hp-q06-stein", "label": "Der Stein der Weisen" },
+            { "id": "hp-q06-kammer", "label": "Die Kammer des Schreckens" },
+            { "id": "hp-q06-azkaban", "label": "Der Gefangene von Askaban" },
+            { "id": "hp-q06-feuerkelch", "label": "Der Feuerkelch" },
+            { "id": "hp-q06-orden", "label": "Der Orden des Phönix" }
+          ],
+          "criteriaOptions": [
+            { "id": "default", "label": "Erscheinungsjahr", "direction": "asc" }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "hp-q06-stein",
+              "hp-q06-kammer",
+              "hp-q06-azkaban",
+              "hp-q06-feuerkelch",
+              "hp-q06-orden"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 2,
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "hp-q07",
+        "question": "Wie viele Treppen führen im Hogwarts-Schloss insgesamt? (Buch-Angabe)",
+        "questionEn": "How many staircases does Hogwarts Castle have? (per the books)",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 142,
+        "unit": "Treppen"
+      },
+      {
+        "id": "hp-q08",
+        "question": "Welcher Patronus passt zu Hermine Granger?",
+        "questionEn": "Which Patronus belongs to Hermione Granger?",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Otter",
+          "Hirsch",
+          "Schwan",
+          "Eichhörnchen"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hp-q09",
+        "question": "Cheese: Erkennt diesen magischen Gegenstand.",
+        "questionEn": "Cheese: Identify this magical object.",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "hp-q10",
+        "question": "Bunte Tüte Top 5: Welche Lehrer unterrichten dauerhaft an Hogwarts? (5 von 7 Optionen)",
+        "questionEn": "Top 5: Which teachers are permanent Hogwarts staff? (5 of 7 options)",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Wählt 5 Lehrer die dauerhaft an Hogwarts unterrichten (nicht nur 1 Schuljahr).",
+          "items": [
+            { "id": "hp-q10-mcgonagall", "label": "Minerva McGonagall" },
+            { "id": "hp-q10-snape", "label": "Severus Snape" },
+            { "id": "hp-q10-flitwick", "label": "Filius Flitwick" },
+            { "id": "hp-q10-sprout", "label": "Pomona Sprout" },
+            { "id": "hp-q10-hagrid", "label": "Rubeus Hagrid" }
+          ],
+          "correctOrder": [
+            "hp-q10-mcgonagall",
+            "hp-q10-snape",
+            "hp-q10-flitwick",
+            "hp-q10-sprout",
+            "hp-q10-hagrid"
+          ],
+          "scoringMode": "any-order",
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "hp-q11",
+        "question": "Bunte Tüte Bluff: Wie heißt das Tagebuch das Tom Riddle als Horkrux nutzt?",
+        "questionEn": "Bluff: What is the title on Tom Riddle's diary horcrux?",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "bluff",
+          "prompt": "Erfindet eine plausibel klingende Antwort. Andere Teams stimmen für die echte.",
+          "realAnswer": "T. M. Riddle",
+          "acceptedAnswers": ["T. M. Riddle", "Tom Marvolo Riddle", "Tom Riddle"],
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "hp-q12",
+        "question": "10 von 10: Wer ist Voldemorts Schlange?",
+        "questionEn": "10-of-10: Who is Voldemort's snake?",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Nagini",
+          "Basilisk",
+          "Slytherin"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      }
+    ],
+    "potato": {
+      "themes": [
+        { "id": "hp-pot-1", "title": "Sprüche & Zauber" },
+        { "id": "hp-pot-2", "title": "Hogwarts-Lehrer & Personal" },
+        { "id": "hp-pot-3", "title": "Magische Kreaturen" }
+      ]
+    },
+    "blitz": {
+      "themes": [
+        {
+          "id": "hp-blitz-1",
+          "title": "HP Quick-Recall",
+          "items": [
+            { "id": "hp-b1", "prompt": "Hauself, der Harry warnen wollte", "answer": "Dobby" },
+            { "id": "hp-b2", "prompt": "Goldene Schnatzfänger-Position", "answer": "Sucher", "aliases": ["Seeker"] },
+            { "id": "hp-b3", "prompt": "Voldemorts Geburtsname", "answer": "Tom Riddle", "aliases": ["Tom Marvolo Riddle"] },
+            { "id": "hp-b4", "prompt": "Hogwarts-Schulleiter Buch 1", "answer": "Albus Dumbledore", "aliases": ["Dumbledore"] },
+            { "id": "hp-b5", "prompt": "Harrys Patronus", "answer": "Hirsch", "aliases": ["Stag"] }
+          ]
+        }
+      ]
+    },
+    "createdAt": 1767961750692,
+    "updatedAt": 1767961750692,
+    "status": "draft",
+    "lastPublishedAt": null
   }
 ]

@@ -26,7 +26,7 @@ import {
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
   playTeamReveal, playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
-  startLobbyLoop, stopLobbyLoop, startFinaleLoop, startComebackLoop,
+  startLobbyLoop, stopLobbyLoop, startFinaleLoop, startComebackLoop, startGameOverLoop,
   playStapelStamp, playTeamJoin,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
@@ -799,8 +799,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       if (!s.correctTeamId) playWrongFor(cat);
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
-      playGameOver();
-      // Cozy-Wolf-Stinger: ein einzelner ferner Howl ~600ms nach Fanfare,
+      // v3 round 9 (User-Wunsch 'auf game over darf musik kommen nach
+      // dem mp3 das dafuer vorgesehen ist'): playGameOver one-shot
+      // entfernt — startGameOverLoop im Music-Effect kuemmert sich um
+      // den Loop ueber die ganze Game-Over-Anzeige.
+      // Cozy-Wolf-Stinger: ein einzelner ferner Howl ~600ms nach Loop-Start,
       // wirkt wie ein Signaturmoment statt generischem End-Beep.
       window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
     }
@@ -999,7 +1002,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const inFinale = s.phase === 'CONNECTIONS_4X4';
     const inLobby = s.phase === 'LOBBY';
     const inComeback = s.phase === 'COMEBACK_CHOICE';
-    const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale || inComeback);
+    const inGameOver = s.phase === 'GAME_OVER';
+    const inThanks = s.phase === 'THANKS';
+    const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale || inComeback || inGameOver || inThanks);
     if (shouldLoop) {
       resumeAudio();
       // 2026-04-30: Lobby/Setup nutzt IMMER den Pool (4 lobby-welcome Tracks).
@@ -1007,11 +1012,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // (mit Pool als Fallback). v3 round 6 (User-Wunsch): Finale +
       // Comeback haben eigene Slots 'finaleMusic' / 'comebackMusic',
       // jeweils mit lobbyWelcome als Fallback.
+      // v3 round 9 (User-Wunsch GAME_OVER + THANKS Musik):
+      // - GAME_OVER nutzt eigenen 'gameOver'-Slot (existiert schon, war
+      //   nur als one-shot getriggert). Jetzt als Loop fuer die ganze
+      //   Game-Over-Anzeige.
+      // - THANKS ('hope you had fun') wieder Lobby-Musik.
       if (inFinale) {
         startFinaleLoop();
       } else if (inComeback) {
         startComebackLoop();
+      } else if (inGameOver) {
+        startGameOverLoop();
       } else {
+        // LOBBY/PAUSED/RULES/THANKS → lobbyWelcome
         startLobbyLoop(inLobby ? 'pool-only' : 'custom-or-pool');
       }
     } else {
@@ -1197,6 +1210,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // bis alle Steine gesetzt sind — wir verlassen uns deshalb auf lastPlacedCell, das pro
   // einzelnem Placement auf dem Backend aktualisiert wird.
   const prevPlacementKeyRef = useRef<string | null>(null);
+  // 2026-04-30 v3 round 9 (User-Wunsch 'cascade-toene auch im finale beim
+  // setzen, fuer konsistenz'): pro Finale-Placement zusaetzlich zum
+  // playFieldPlaced einen aufsteigenden Pentatonik-Ton. Rank zaehlt hoch,
+  // Total = max-erwartete Placements (sum foundGroupIds.length).
+  const finalePlacementCountRef = useRef(0);
+  const finalePlacementQidRef = useRef<string | null>(null);
   useEffect(() => {
     const c = s.lastPlacedCell;
     if (!c) { prevPlacementKeyRef.current = null; return; }
@@ -1206,7 +1225,22 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.sfxMuted) return;
     if (c.wasSteal) playSteal();
     else playFieldPlaced();
-  }, [s.lastPlacedCell, s.sfxMuted]);
+    // Im Finale: zusaetzlich Cascade-Ton pro gesetztem Avatar.
+    if (s.phase === 'CONNECTIONS_4X4' && s.connections?.phase === 'placement') {
+      // Reset counter when entering finale or new round
+      const finaleKey = s.connections.payload?.toString() ?? 'finale';
+      if (finalePlacementQidRef.current !== finaleKey) {
+        finalePlacementQidRef.current = finaleKey;
+        finalePlacementCountRef.current = 0;
+      }
+      const expectedTotal = Object.values(s.connections.teamProgress ?? {})
+        .reduce((sum, tp) => sum + (tp?.foundGroupIds?.length ?? 0), 0);
+      const cascadeTotal = Math.max(2, expectedTotal + 1);
+      const rank = Math.min(finalePlacementCountRef.current, cascadeTotal - 1);
+      finalePlacementCountRef.current += 1;
+      try { playAvatarCascadeNote(rank, cascadeTotal); } catch {}
+    }
+  }, [s.lastPlacedCell, s.sfxMuted, s.phase, s.connections]);
 
   // ── Sound: Reveal-Step Plopps (Avatare auf Optionen / Map-Pins / Lösungs-Highlight)
   // Bei MUCHO/ZehnvonZehn/Cheese/CozyGuessr werden im REVEAL pro Moderator-Klick
@@ -10466,7 +10500,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
               flyoverSignal={flyoverSignal}
             />
           ) : (
-            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={activeTeamId} showJoker={true} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
+            <GridDisplay state={s} maxSize={gridMaxSize} highlightTeam={activeTeamId} showJoker={s.phase !== 'CONNECTIONS_4X4'} flashCellKey={flashCell ? `${flashCell.row}-${flashCell.col}` : null} />
           )}
         </div>
         <div style={{
@@ -12839,7 +12873,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
 
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 16,
+            display: 'flex', alignItems: 'center', gap: 16, flexDirection: 'column',
             animation: `finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) ${scoreCountDelay}s both`,
           }}>
             <span style={{
@@ -12848,6 +12882,13 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               textShadow: '0 0 18px rgba(234,179,8,0.45)',
             }}>
               {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected fields'}
+            </span>
+            {/* v3 round 9: totalCells als Tie-Break-Hint immer mit anzeigen */}
+            <span style={{
+              fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700,
+              color: '#94a3b8',
+            }}>
+              {winner.totalCells} {lang === 'de' ? 'Felder gesamt' : 'total fields'}
             </span>
           </div>
         </div>
@@ -12866,10 +12907,10 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           const wn = others.length;
           // 2026-04-28-v3: 1col bevorzugt — User-Wunsch 'unter der Sieger-Card
           // ist genug Platz die Teams in einer Spalte anzuzeigen'.
-          // 1col: bis 6 andere Teams (= 7 total). Cards sind dann etwas
-          //        kompakter aber stehen sauber untereinander.
-          // 2col: erst ab 7 anderen (= 8 total) wenn vertikal nicht mehr passt.
-          const cols = wn <= 6 ? 1 : 2;
+          // v3 round 9 (User-Bug 'wieso 2-spaltig bei 7-8 Teams'): 1-Spalte
+          // jetzt fuer ALLE Teams-Counts (7-8 inkl). Cards entsprechend
+          // kompakter (kleinere padding/font), aber konsistente Listen-Optik.
+          const cols = 1;
           // Avatar-Größe — bei vielen Teams kleiner damit alle reinpassen.
           const avatarSize = cols === 1
             ? wn <= 3 ? 'clamp(50px, 4.6vw, 72px)'
@@ -12938,18 +12979,43 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                       fontWeight: 900, color: tm.color, lineHeight: 1.1,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{tm.name}</span>
+                    {/* v3 round 9 (User-Wunsch 'tie-transparenz im game-over'):
+                        Zeige IMMER 'verbunden · gesamt' damit Tie-Break sichtbar ist
+                        (Sieger bei Tie auf largestConnected = mehr totalCells). */}
                     <span style={{
                       marginLeft: 'auto',
-                      fontSize: scoreFs,
-                      fontWeight: 900, color: '#FDE68A',
-                      fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                      display: 'inline-flex', alignItems: 'baseline', gap: 6,
+                      fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                       flexShrink: 0,
                     }}>
-                      {tm.largestConnected}
+                      <span style={{ fontSize: scoreFs, color: '#FDE68A' }}>{tm.largestConnected}</span>
+                      <span style={{
+                        fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#94a3b8', fontWeight: 700,
+                      }}>· {tm.totalCells}</span>
                     </span>
                   </div>
                 );
               })}
+              {/* Tie-Break-Hinweis am Ende der Liste, wenn Top-Plaetze tied sind */}
+              {(() => {
+                const winnerTop = winner?.largestConnected ?? 0;
+                const tiedAtTop = sorted.filter(t => t.largestConnected === winnerTop).length;
+                if (tiedAtTop < 2) return null;
+                return (
+                  <div style={{
+                    marginTop: 'clamp(8px, 1.2vh, 16px)',
+                    padding: '8px 14px', borderRadius: 12,
+                    background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.28)',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#FDE68A', fontWeight: 700,
+                    textAlign: 'center', lineHeight: 1.4,
+                    animation: `contentReveal 0.5s ease ${0.6 + others.length * 0.9 + 0.4}s both`,
+                  }}>
+                    {lang === 'de'
+                      ? `Gleichstand bei verbundenen Feldern (${tiedAtTop} Teams) — Sieger nach Gesamt-Feldern`
+                      : `Tied on connected fields (${tiedAtTop} teams) — winner by total fields`}
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}

@@ -956,6 +956,23 @@ export function startFinaleLoop() {
   startLobbyLoop('custom-or-pool');
 }
 
+/** 2026-04-30 v3 round 9 (User-Wunsch 'auf game over seite darf musik kommen
+ *  nach dem mp3 das dafuer vorgesehen ist'): GAME_OVER nutzt jetzt den
+ *  bestehenden 'gameOver'-Slot als Loop (vorher war's nur one-shot beim
+ *  Phase-Wechsel). Default-File ist /sounds/game-over.wav. */
+export function startGameOverLoop() {
+  if (lobbyLoopActive) return;
+  if (!isSlotEnabled('gameOver')) return;
+  const customUrl = soundConfig.gameOver;
+  if (typeof customUrl === 'string' && customUrl.length > 0) {
+    startLobbyTrackFromUrl(customUrl);
+    return;
+  }
+  // Fallback Default-URL
+  const defaultUrl = '/sounds/game-over.wav';
+  startLobbyTrackFromUrl(defaultUrl);
+}
+
 /** 2026-04-30 v3 round 6 (User-Wunsch BG-Musik fuers Comeback): analog
  *  Finale-Loop, eigener Slot 'comebackMusic'. Fallback lobbyWelcome. */
 export function startComebackLoop() {

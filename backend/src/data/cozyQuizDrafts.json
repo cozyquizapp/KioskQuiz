@@ -1467,5 +1467,247 @@
     "updatedAt": 1767961750692,
     "status": "draft",
     "lastPublishedAt": null
+  },
+  {
+    "id": "cozy-draft-hamburg",
+    "meta": {
+      "title": "🐟 Hamburg Cozy Quiz",
+      "language": "de",
+      "date": null,
+      "description": "Hamburg-Draft 2026-05-01 (neu gebaut nach altem Studio-Stand). Imposter raus (User-Wunsch), Cheese-Bilder leer = im Studio nachpflegen. 12 Fragen über 3 Segmente."
+    },
+    "questions": [
+      {
+        "id": "hh-q01",
+        "question": "Wie viele Brücken hat Hamburg insgesamt? (mehr als Venedig + Amsterdam zusammen)",
+        "questionEn": "How many bridges does Hamburg have? (more than Venice + Amsterdam combined)",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 2500,
+        "unit": "Brücken"
+      },
+      {
+        "id": "hh-q02",
+        "question": "Welcher Stadtteil ist Hamburgs ältester?",
+        "questionEn": "Which is Hamburg's oldest district?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Altstadt",
+          "St. Pauli",
+          "Eimsbüttel",
+          "Wandsbek"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hh-q03",
+        "question": "Hamburg hat mehr Konsulate als jede andere Stadt der Welt.",
+        "questionEn": "Hamburg has more consulates than any other city in the world.",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Stimmt",
+          "Stimmt nicht"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      },
+      {
+        "id": "hh-q04",
+        "question": "Cheese: Welches Hamburg-Wahrzeichen ist das?",
+        "questionEn": "Cheese: Which Hamburg landmark is this?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "hh-q05",
+        "question": "Welcher Klub spielt in der Imtech-Arena (heute Volksparkstadion)?",
+        "questionEn": "Which club plays at Imtech-Arena (now Volksparkstadion)?",
+        "points": 1,
+        "segmentIndex": 0,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Hamburger SV",
+          "FC St. Pauli",
+          "Werder Bremen",
+          "Holstein Kiel"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hh-q06",
+        "question": "Bunte Tüte Order: Sortiert die Hamburger Stadtteile nach Einwohnerzahl (größter oben).",
+        "questionEn": "Order: Sort Hamburg districts by population (largest on top).",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "order",
+          "prompt": "Größter Stadtteil oben.",
+          "items": [
+            { "id": "hh-q06-rahlstedt", "label": "Rahlstedt" },
+            { "id": "hh-q06-billstedt", "label": "Billstedt" },
+            { "id": "hh-q06-eimsbuettel", "label": "Eimsbüttel" },
+            { "id": "hh-q06-stpauli", "label": "St. Pauli" }
+          ],
+          "criteriaOptions": [
+            { "id": "default", "label": "Einwohner", "direction": "desc" }
+          ],
+          "defaultCriteriaId": "default",
+          "correctByCriteria": {
+            "default": [
+              "hh-q06-rahlstedt",
+              "hh-q06-billstedt",
+              "hh-q06-eimsbuettel",
+              "hh-q06-stpauli"
+            ]
+          },
+          "partialPoints": 1,
+          "fullPoints": 2,
+          "maxPoints": 2
+        }
+      },
+      {
+        "id": "hh-q07",
+        "question": "Wie viele Meter ist die Elbphilharmonie hoch?",
+        "questionEn": "How many meters tall is the Elbphilharmonie?",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Schaetzchen",
+        "mechanic": "estimate",
+        "targetValue": 110,
+        "unit": "Meter"
+      },
+      {
+        "id": "hh-q08",
+        "question": "Welches Hamburger Original ist KEIN Fischbrötchen?",
+        "questionEn": "Which Hamburg classic is NOT a fish sandwich?",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Mu-Cho",
+        "mechanic": "multipleChoice",
+        "options": [
+          "Pannfisch",
+          "Bismarck-Brötchen",
+          "Matjes-Brötchen",
+          "Backfisch-Brötchen"
+        ],
+        "correctIndex": 0
+      },
+      {
+        "id": "hh-q09",
+        "question": "Cheese: Welcher Hamburger Stadtteil ist auf dem Bild?",
+        "questionEn": "Cheese: Which Hamburg district is shown?",
+        "points": 2,
+        "segmentIndex": 1,
+        "category": "Cheese",
+        "mechanic": "imageQuestion",
+        "answer": "",
+        "imageUrl": ""
+      },
+      {
+        "id": "hh-q10",
+        "question": "Bunte Tüte Top 5: Welche dieser Bands kommen aus Hamburg?",
+        "questionEn": "Top 5: Which of these bands are from Hamburg?",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "top5",
+          "prompt": "Wählt 5 Bands die aus Hamburg stammen.",
+          "items": [
+            { "id": "hh-q10-tocotronic", "label": "Tocotronic" },
+            { "id": "hh-q10-fettesbrot", "label": "Fettes Brot" },
+            { "id": "hh-q10-deichkind", "label": "Deichkind" },
+            { "id": "hh-q10-beginner", "label": "Beginner" },
+            { "id": "hh-q10-revolverheld", "label": "Revolverheld" }
+          ],
+          "correctOrder": [
+            "hh-q10-tocotronic",
+            "hh-q10-fettesbrot",
+            "hh-q10-deichkind",
+            "hh-q10-beginner",
+            "hh-q10-revolverheld"
+          ],
+          "scoringMode": "any-order",
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "hh-q11",
+        "question": "Bunte Tüte Bluff: Wie hieß der erste Hamburger Bürgermeister nach 1945?",
+        "questionEn": "Bluff: Who was Hamburg's first mayor after 1945?",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "GemischteTuete",
+        "mechanic": "custom",
+        "type": "BUNTE_TUETE",
+        "bunteTuete": {
+          "kind": "bluff",
+          "prompt": "Erfindet eine plausibel klingende Antwort. Andere Teams stimmen für die echte.",
+          "realAnswer": "Rudolf Petersen",
+          "acceptedAnswers": ["Rudolf Petersen", "Petersen"],
+          "maxPoints": 3
+        }
+      },
+      {
+        "id": "hh-q12",
+        "question": "10 von 10: Welcher Fluss mündet bei Hamburg in die Elbe?",
+        "questionEn": "10-of-10: Which river flows into the Elbe near Hamburg?",
+        "points": 3,
+        "segmentIndex": 2,
+        "category": "Stimmts",
+        "mechanic": "betting",
+        "options": [
+          "Alster",
+          "Bille",
+          "Süderelbe"
+        ],
+        "correctIndex": 0,
+        "pointsPool": 10
+      }
+    ],
+    "potato": {
+      "themes": [
+        { "id": "hh-pot-1", "title": "Hamburger Stadtteile" },
+        { "id": "hh-pot-2", "title": "Hamburger Wahrzeichen" },
+        { "id": "hh-pot-3", "title": "Norddeutsche Spezialitäten" }
+      ]
+    },
+    "blitz": {
+      "themes": [
+        {
+          "id": "hh-blitz-1",
+          "title": "Hamburg Quick-Recall",
+          "items": [
+            { "id": "hh-b1", "prompt": "Berühmte Vergnügungsmeile", "answer": "Reeperbahn" },
+            { "id": "hh-b2", "prompt": "Konzertsaal in der HafenCity", "answer": "Elbphilharmonie", "aliases": ["Elphi"] },
+            { "id": "hh-b3", "prompt": "Größter Hamburger See", "answer": "Außenalster", "aliases": ["Alster"] },
+            { "id": "hh-b4", "prompt": "Welterbe-Speicherstadt-Material", "answer": "Backstein", "aliases": ["Klinker"] },
+            { "id": "hh-b5", "prompt": "Hamburger Sonntags-Tradition am Hafen", "answer": "Fischmarkt" }
+          ]
+        }
+      ]
+    },
+    "createdAt": 1767961750692,
+    "updatedAt": 1767961750692,
+    "status": "draft",
+    "lastPublishedAt": null
   }
 ]

@@ -1077,13 +1077,39 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     }
 
     // ── PLACE_2 (Phase 2, Entscheidung zwischen 2×Setzen und 1×Klauen) ──────
-    // 2026-05-01 (Wolfs Wunsch): Bots bevorzugen IMMER PLACE solange freie
-    // Felder existieren. STEAL/Klauen ist nur Fallback wenn Grid voll. Vorher
-    // konnte Score-Compare STEAL > 1.6×PLACE w&auml;hlen, was wirkte als ob Bots
-    // klauen w&auml;hrend Pl&auml;tze frei sind. Score-Compare entfernt.
+    // 2026-05-01 v2 (Wolfs Klarstellung): Klauen ist in R2 grunds&auml;tzlich
+    // erlaubt auch f&uuml;r Bots, soll aber nicht reflexartig statt Setzen
+    // gew&auml;hlt werden. Score-Compare bleibt (STEAL > 1.6&times;PLACE-Score), ABER
+    // mit Probability-Throttle: nur 35% Chance dass Bot wirklich klaut wenn
+    // es score-besser w&auml;re. Strategische Klau-Momente bleiben m&ouml;glich,
+    // aber Bots klauen nicht jedes Mal wenn sie k&ouml;nnten.
     if (action === 'PLACE_2') {
+      const firstSlot = (stats?.placementsLeft ?? 0) >= 2;
       const stealsUsed = stats?.stealsUsed ?? 0;
       const canSteal = stealsUsed < 2; // QQ_MAX_STEALS_PER_PHASE
+      if (firstSlot && canSteal) {
+        const placeChoiceCmp = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['PLACE'], phase,
+        }, 0);
+        const stealChoiceCmp = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['STEAL'], phase,
+        }, 0);
+        const placeScore2x = placeChoiceCmp ? placeChoiceCmp.score * 1.6 : -Infinity;
+        const stealScore   = stealChoiceCmp ? stealChoiceCmp.score : -Infinity;
+        const stealRoll = Math.random() < 0.35;
+        if (stealScore > placeScore2x && stealRoll && stealChoiceCmp) {
+          let switched = false;
+          try {
+            qqChooseFreeAction(live, teamId, 'STEAL');
+            switched = true;
+          } catch { /* f&auml;llt unten auf Setzen zur&uuml;ck */ }
+          if (switched) {
+            broadcastQQ(io, roomCode);
+            if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+            return;
+          }
+        }
+      }
       // Setzen (PLACE_2 erlaubt KEIN direktes Klauen — bei vollem Grid via chooseFreeAction('STEAL')).
       const placeChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
         availableKinds: ['PLACE'], phase,
@@ -1151,25 +1177,29 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     // ── FREE (Phase 3/4 volle Auswahl, Trinity-Mechanik) ──────────────────
     // R3+R4: PLACE (solange freie Felder) / STEAL / STAPEL (max 3 pro Spiel)
     // Bann/Schild/Tauschen sind aus dem Spiel.
-    // 2026-05-01 (Wolfs Wunsch): STEAL nur als Fallback wenn keine freien
-    // Felder mehr - vorher konnten Bots STEAL w&auml;hlen w&auml;hrend noch frei war,
-    // wirkte als nutzten sie Klauen als „Joker".
+    // 2026-05-01 v2 (Wolfs Klarstellung): STEAL ist grunds&auml;tzlich erlaubt,
+    // soll aber nicht reflexartig gew&auml;hlt werden. Wenn pickDummyAction STEAL
+    // w&auml;hlt obwohl freie Felder existieren, 65% Chance auf Fallback zu PLACE
+    // (= 35% STEAL bleibt). Damit klauen Bots strategisch aber nicht zu oft.
     if (action === 'FREE') {
       const kinds: DummyActionKind[] = [];
       const hasFreeCellNow = live.grid.some(row => row.some(c => c.ownerId === null));
+      if (hasFreeCellNow) kinds.push('PLACE');
+      kinds.push('STEAL');
       const stapelsUsedNow = stats?.stapelsUsed ?? 0;
-      if (hasFreeCellNow) {
-        kinds.push('PLACE');
-        if (phase >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
-        // STEAL absichtlich NICHT - solange PLACE m&ouml;glich, soll Bot setzen.
-      } else {
-        // Grid voll - jetzt ist STEAL erlaubt, ggf. zusammen mit STAPEL.
-        kinds.push('STEAL');
-        if (phase >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
-      }
-      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+      if (phase >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
+      let choice = pickDummyAction(live.grid, live.gridSize, teamId, {
         availableKinds: kinds, phase, shieldsUsed,
       });
+      // Throttle: STEAL nur 35% wenn freie Felder noch da sind. Sonst PLACE/STAPEL.
+      if (choice && choice.kind === 'STEAL' && hasFreeCellNow && Math.random() > 0.35) {
+        const fallbackKinds: DummyActionKind[] = ['PLACE'];
+        if (phase >= 3 && stapelsUsedNow < 3) fallbackKinds.push('STAPEL');
+        const placeAlt = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: fallbackKinds, phase, shieldsUsed,
+        });
+        if (placeAlt) choice = placeAlt;
+      }
       if (!choice) { skipStuckDummy(); return; }
       dispatchFreeChoice(io, roomCode, teamId, choice);
       return;

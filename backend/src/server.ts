@@ -1593,6 +1593,27 @@ const hydrateCozyDraft = (draft: CozyQuizDraft): CozyQuizDraft => ({
 
 cozyDrafts = cozyDrafts.map((draft) => hydrateCozyDraft(draft));
 
+// 2026-05-01: Auto-Seed Repo-Drafts in MongoDB. Wenn ein Draft im
+// cozyQuizDrafts.json existiert aber nicht in DB, wird er einmalig
+// gepusht. Existing DB-Drafts werden NICHT &uuml;berschrieben (User-Edits
+// bleiben). L&auml;uft nach DB-Connect; failt silently wenn DB offline.
+const seedRepoDraftsToDb = async (): Promise<void> => {
+  if (!await ensureDraftDbConnection()) return;
+  for (const repoDraft of cozyDrafts) {
+    try {
+      const exists = await getCozyDraftFromDB(repoDraft.id);
+      if (!exists) {
+        await saveCozyDraftToDB(repoDraft);
+        console.log(`[seed] Repo-Draft "${repoDraft.id}" in MongoDB gepusht`);
+      }
+    } catch (err) {
+      console.warn(`[seed] Konnte Draft "${repoDraft.id}" nicht seeden:`, (err as Error).message);
+    }
+  }
+};
+// Fire-and-forget; Seeding blockt Server-Start nicht.
+seedRepoDraftsToDb().catch(() => {});
+
 const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
   const id = `cozy-draft-${uuid().slice(0, 8)}`;
   const now = Date.now();

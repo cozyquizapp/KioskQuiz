@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, memo, Fragment } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
@@ -836,13 +836,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       if (ph === 1) cardCount = hasFreeCells ? 1 : 0;
       else if (ph === 2) cardCount = hasFreeCells ? 2 : 1;
       else cardCount = hasFreeCells ? 3 : 2;
-      const cardBaseMs = 800; // 50ms vor visuellem Pop bei 850ms
+      // v3 round 9 (User-Wunsch '1-2-3 hoeherwerdende toene'):
+      // Cascade-Toene statt gleichem actionMenuReveal pro Card. Total = cardCount
+      // damit die letzte Card immer den Top-Ton bekommt.
+      const cardBaseMs = 800;
       const cardStaggerMs = 1500;
       const handles: number[] = [];
       for (let i = 0; i < cardCount; i++) {
         const delay = cardBaseMs + i * cardStaggerMs;
         handles.push(window.setTimeout(() => {
-          try { playActionMenuReveal(); } catch {}
+          try { playAvatarCascadeNote(i, cardCount); } catch {}
         }, delay));
       }
       return () => { handles.forEach(h => window.clearTimeout(h)); };
@@ -7817,52 +7820,44 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     return b;
   }, [showTarget, onMapPins, tLat, tLng, displayPos]);
 
-  // 2026-04-30 v3 round 9 (User-Wunsch 'pin statt zielscheibe, gerne pin
-  // mit avatar im kreis und nadel auf ziel'): Target und Team-Markers
-  // jetzt als Pin-Shape (runder Kopf mit Inhalt + Nadel-Tip nach unten).
-  // iconAnchor sitzt am unteren Tip, damit die Nadel exakt auf der lat/lng
-  // landet. Target-Pin = gold/orange mit Flag-Emoji, Team-Pin = team-color
-  // mit Avatar im Kopf.
+  // 2026-04-30 v3 round 10 (User-Wunsch 'kannst du nicht den 📍-emote
+  // nutzen' + 'auflösung etwas unpraktisch, ziel sieht man gar nicht'):
+  // Target nutzt jetzt das 📍-Pin-Emoji XL mit Glow. Team-Markers haben
+  // Avatar oben + 📍-Pin unten der die Tip-Position markiert.
+  // iconAnchor sitzt am unteren Tip damit die Nadel exakt auf lat/lng landet.
+  // Geoguessr-Style: Target deutlich groesser & dauerhaft pulsierend, plus
+  // Distanz-Polylines vom Team-Pin zum Ziel (siehe Render unten).
   const targetIcon = useMemo(() => L.divIcon({
     className: 'qq-target-pin',
     html: `<div style="
-      position: relative; width: 72px; height: 92px;
+      position: relative; width: 88px; height: 110px;
       animation: mapTargetDrop 0.75s cubic-bezier(0.34,1.56,0.64,1) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
       transform-origin: 50% 100%;
+      filter: drop-shadow(0 0 18px rgba(251,191,36,0.95)) drop-shadow(0 8px 16px rgba(0,0,0,0.6));
     ">
-      <div style="
-        position: absolute; left: 0; top: 0;
-        width: 72px; height: 72px; border-radius: 50%;
-        background: radial-gradient(circle, #FDE68A 0%, #FBBF24 60%, #B45309 100%);
-        border: 4px solid #FEF3C7;
-        box-shadow: 0 0 0 8px rgba(251,191,36,0.25), 0 0 40px rgba(251,191,36,0.85), 0 8px 24px rgba(0,0,0,0.5);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 38px; line-height: 1;
-      ">🚩</div>
-      <div style="
-        position: absolute; left: 50%; top: 60px;
-        width: 0; height: 0;
-        border-left: 14px solid transparent;
-        border-right: 14px solid transparent;
-        border-top: 28px solid #FBBF24;
+      <span style="
+        position: absolute; left: 50%; top: 0;
         transform: translateX(-50%);
-        filter: drop-shadow(0 6px 8px rgba(0,0,0,0.45));
-      "></div>
+        font-size: 96px; line-height: 1;
+        color: #FBBF24;
+      ">📍</span>
       <div style="
-        position: absolute; left: 50%; bottom: -2px;
-        width: 6px; height: 6px; border-radius: 50%;
-        background: #78350F; transform: translateX(-50%);
-        box-shadow: 0 0 8px rgba(251,191,36,0.9);
+        position: absolute; left: 50%; bottom: -4px;
+        width: 10px; height: 10px; border-radius: 50%;
+        background: rgba(251,191,36,0.9);
+        box-shadow: 0 0 14px rgba(251,191,36,1), 0 0 28px rgba(251,191,36,0.6);
+        transform: translateX(-50%);
+        animation: qqTargetPulse 1.6s ease-in-out infinite;
       "></div>
     </div>`,
-    iconSize: [72, 92] as any,
-    iconAnchor: [36, 92] as any, // Tip an lat/lng
+    iconSize: [88, 110] as any,
+    iconAnchor: [44, 105] as any, // Pin-Tip an lat/lng (5px Offset, da Emoji-Tip nicht ganz unten)
   }), []);
 
   const makeTeamIcon = (color: string, imageUrl: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
-      position: relative; width: 56px; height: 72px;
+      position: relative; width: 56px; height: 78px;
       animation: qqTeamPinDrop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
       transform-origin: 50% 100%;
     ">
@@ -7880,24 +7875,16 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
         <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
       </div>
-      <div style="
-        position: absolute; left: 50%; top: 44px;
-        width: 0; height: 0;
-        border-left: 10px solid transparent;
-        border-right: 10px solid transparent;
-        border-top: 22px solid ${color};
+      <span style="
+        position: absolute; left: 50%; top: 38px;
         transform: translateX(-50%);
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-      "></div>
-      <div style="
-        position: absolute; left: 50%; bottom: 0;
-        width: 5px; height: 5px; border-radius: 50%;
-        background: #0f172a; transform: translateX(-50%);
-        box-shadow: 0 0 6px ${color}cc;
-      "></div>
+        font-size: 36px; line-height: 1;
+        color: ${color};
+        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.6));
+      ">📍</span>
     </div>`,
-    iconSize: [56, 72] as any,
-    iconAnchor: [28, 72] as any, // Tip an lat/lng
+    iconSize: [56, 78] as any,
+    iconAnchor: [28, 76] as any, // Pin-Tip an lat/lng
   });
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
@@ -7931,6 +7918,29 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           {showTarget && (
             <Marker position={[tLat, tLng] as any} icon={targetIcon} />
           )}
+          {/* v3 round 10 (User-Wunsch geoguessr-style 'ziel sieht man gar nicht'):
+              Distanz-Polylines vom Team-Pin zum Ziel — nur wenn target sichtbar
+              (showTarget) und beide on-map. team-color, dashed style fuer
+              Map-Pin-Verbindung-Look wie Geoguessr. */}
+          {showTarget && onMapPins.map(p => {
+            const team = s.teams.find(t => t.id === p.teamId);
+            if (!team) return null;
+            const dp = displayPos.get(p.teamId);
+            const lat = dp?.lat ?? p.lat;
+            const lng = dp?.lng ?? p.lng;
+            return (
+              <Polyline
+                key={`line-${p.teamId}`}
+                positions={[[lat, lng], [tLat, tLng]] as any}
+                pathOptions={{
+                  color: team.color,
+                  weight: 2.5,
+                  opacity: 0.65,
+                  dashArray: '6 8',
+                }}
+              />
+            );
+          })}
           {onMapPins.map(p => {
             const team = s.teams.find(t => t.id === p.teamId);
             if (!team) return null;

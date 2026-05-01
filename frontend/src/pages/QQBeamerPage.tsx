@@ -20,7 +20,7 @@ import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
-  resumeAudio, setVolume, setSoundConfig, playFanfare, playReveal, playCorrect,
+  resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playWinnerCardReveal, playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
@@ -773,6 +773,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   useEffect(() => {
     setVolume(s.sfxMuted ? 0 : s.volume);
   }, [s.sfxMuted, s.volume]);
+
+  // 2026-05-01 (Sound-Audit): Belt-and-Suspender Mute-Gate. Synct s.sfxMuted
+  // in eine globale Flag in sounds.ts. Falls ein play*-Aufrufer das
+  // 'if (s.sfxMuted) return'-Gate vergisst, blockt die globale Flag den
+  // Sound trotzdem.
+  useEffect(() => {
+    setSfxMuted(!!s.sfxMuted);
+  }, [s.sfxMuted]);
 
   useEffect(() => {
     setSoundConfig(s.soundConfig);

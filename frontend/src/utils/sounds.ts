@@ -88,6 +88,14 @@ export function getVolume() {
   return masterVolume;
 }
 
+/** 2026-05-01 (Sound-Audit): Belt-and-Suspender Mute-Gate.
+ * QQBeamerPage gated alle play*-Aufrufe via `if (s.sfxMuted) return`.
+ * Falls ein Pfad das vergisst, blockt diese globale Flag den Sound trotzdem.
+ * Wird via setSfxMuted(s.sfxMuted) im Beamer synchronisiert. */
+let _sfxMuted = false;
+export function setSfxMuted(muted: boolean) { _sfxMuted = !!muted; }
+export function isSfxMuted() { return _sfxMuted; }
+
 /** Set custom sound URLs. Call this when the draft/game starts. */
 export function setSoundConfig(config: QQSoundConfig | undefined) {
   soundConfig = config ?? {};
@@ -715,6 +723,7 @@ export const SYNTH_PRESETS: Partial<Record<QQSoundSlot, SlotPresets>> = {
 //   5. sonst                        → classic-Synth als letzter Fallback
 
 function playSlotOneShot(slot: QQSoundSlot) {
+  if (_sfxMuted) return;
   if (!isSlotEnabled(slot)) return;
   const custom = soundConfig[slot];
   if (typeof custom === 'string' && custom.length > 0) {
@@ -791,6 +800,7 @@ export function playRevealFor(category?: string | null)        { playSlotForCate
 export function playQuestionStartFor(category?: string | null) { playSlotForCategoryOrFallback('questionStart', category); }
 
 export function playTick() {
+  if (_sfxMuted) return;
   // Ticks never have custom overrides — they're too frequent
   const ac = getCtx();
   if (!ac) return;
@@ -799,6 +809,7 @@ export function playTick() {
 }
 
 export function playUrgentTick() {
+  if (_sfxMuted) return;
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -1027,6 +1038,7 @@ export function playTeamJoin() {
  *  Bei <= 5 Avataren spielt eine Oktave; bei mehr klimmt's in die naechste hoch.
  *  Cozy-warmer Sine-Wave statt grellem Synth, kurzer Decay damit Cascade flowt. */
 export function playAvatarCascadeNote(rank: number, total: number): void {
+  if (_sfxMuted) return;
   const ac = getCtx();
   if (!ac) return;
   // C-Dur-Pentatonik: C4=261.63, D4=293.66, E4=329.63, G4=392.00, A4=440.00.

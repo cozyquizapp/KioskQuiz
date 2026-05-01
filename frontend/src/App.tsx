@@ -30,6 +30,7 @@ const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQCityLabPage       = React.lazy(() => import('./pages/QQCityLabPage'));
 const QQGardenPitchPage   = React.lazy(() => import('./pages/QQGardenPitchPage'));
+const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQGouachePage       = React.lazy(() => import('./pages/QQGouachePage'));
 const QQLobbyGouachePage  = React.lazy(() => import('./pages/QQLobbyGouachePage'));
 const QQTeamGouachePage   = React.lazy(() => import('./pages/QQTeamGouachePage'));
@@ -170,6 +171,7 @@ function App() {
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/city-lab"   element={<PinGate><QQCityLabPage /></PinGate>} />
           <Route path="/garden-pitch" element={<PinGate><QQGardenPitchPage /></PinGate>} />
+          <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
           <Route path="/gouache"    element={<PinGate><QQGouachePage /></PinGate>} />
           <Route path="/lobby-gouache" element={<QQErrorBoundary source="lobby-gouache"><QQLobbyGouachePage /></QQErrorBoundary>} />
           <Route path="/team-gouache"   element={<QQErrorBoundary source="team-gouache"><QQTeamGouachePage /></QQErrorBoundary>} />

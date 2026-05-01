@@ -1404,14 +1404,20 @@ const createDefaultDemoDraft = (): CozyQuizDraft => {
 };
 
 try {
+  let loaded: unknown = null;
   if (fs.existsSync(cozyDraftsPath)) {
-    const loaded = JSON.parse(fs.readFileSync(cozyDraftsPath, 'utf-8'));
-    cozyDrafts = Array.isArray(loaded) && loaded.length > 0 ? loaded : [createDefaultDemoDraft()];
+    // Dev / lokal: aus File-System lesen (erlaubt persistCozyDrafts() spaeter)
+    loaded = JSON.parse(fs.readFileSync(cozyDraftsPath, 'utf-8'));
   } else {
-    // File doesn't exist, create with default
-    cozyDrafts = [createDefaultDemoDraft()];
-    persistCozyDrafts();
+    // Production-Build (Render): tsc kopiert JSON-Files NICHT ins dist/.
+    // require() mit resolveJsonModule:true inlined das File zur Compile-Zeit
+    // → JSON-Inhalt ist auch im dist-Build verfuegbar.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    loaded = require('./data/cozyQuizDrafts.json');
   }
+  cozyDrafts = Array.isArray(loaded) && loaded.length > 0
+    ? (loaded as CozyQuizDraft[])
+    : [createDefaultDemoDraft()];
 } catch {
   // Fallback: create default draft if JSON is corrupted
   console.error(`Fehler beim Laden von ${cozyDraftsPath} - nutze Demo-Draft als Fallback`);
@@ -1598,21 +1604,29 @@ cozyDrafts = cozyDrafts.map((draft) => hydrateCozyDraft(draft));
 // gepusht. Existing DB-Drafts werden NICHT &uuml;berschrieben (User-Edits
 // bleiben). L&auml;uft nach DB-Connect; failt silently wenn DB offline.
 const seedRepoDraftsToDb = async (): Promise<void> => {
-  if (!await ensureDraftDbConnection()) return;
+  console.log(`[seed] Pruefe ${cozyDrafts.length} Repo-Drafts auf DB-Sync...`);
+  const dbReady = await ensureDraftDbConnection();
+  if (!dbReady) {
+    console.log('[seed] DB nicht verbunden - skip');
+    return;
+  }
+  let pushedCount = 0;
   for (const repoDraft of cozyDrafts) {
     try {
       const exists = await getCozyDraftFromDB(repoDraft.id);
       if (!exists) {
         await saveCozyDraftToDB(repoDraft);
         console.log(`[seed] Repo-Draft "${repoDraft.id}" in MongoDB gepusht`);
+        pushedCount++;
       }
     } catch (err) {
       console.warn(`[seed] Konnte Draft "${repoDraft.id}" nicht seeden:`, (err as Error).message);
     }
   }
+  console.log(`[seed] Fertig - ${pushedCount} neue Drafts gepusht, ${cozyDrafts.length - pushedCount} schon in DB`);
 };
 // Fire-and-forget; Seeding blockt Server-Start nicht.
-seedRepoDraftsToDb().catch(() => {});
+seedRepoDraftsToDb().catch(err => console.warn('[seed] Fehler:', err));
 
 const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
   const id = `cozy-draft-${uuid().slice(0, 8)}`;

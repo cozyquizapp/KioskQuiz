@@ -466,6 +466,7 @@ export default function QQBeamerPage() {
 // ─────────────────────────────────────────────────────────────────────────
 
 function ReplayOverlay({ state }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(state.language);
   const [visible, setVisible] = useState(false);
   const [revealedIdx, setRevealedIdx] = useState(-1);
   const [phase, setPhase] = useState<'hidden' | 'intro' | 'replay' | 'done'>('hidden');
@@ -541,7 +542,7 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
           textAlign: 'center', marginBottom: 14,
           textShadow: '0 0 18px rgba(251,191,36,0.55)',
         }}>
-          ⏱ Spielverlauf · Recap
+          {lang === 'en' ? '⏱ Game Replay · Recap' : '⏱ Spielverlauf · Recap'}
         </div>
         <div style={{
           display: 'grid',

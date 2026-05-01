@@ -4284,3 +4284,52 @@ button:active:not(:disabled),
 .lock-pulse {
   animation: pulse-lock 0.6s ease-in-out;
 }
+
+/* ========================================
+   QQ Team-View Polish Patterns (2026-05-01)
+   Basis-Klassen fuer wiederkehrende Inline-Pattern.
+   Dynamische Farb-/State-Werte (catColor) bleiben inline.
+   ======================================== */
+.qq-team-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: #F1F5F9;
+  outline: none;
+  transition: all 0.2s;
+  border-style: solid;
+  border-width: 2px;
+}
+.qq-team-input::placeholder {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.qq-team-submit-btn {
+  width: 100%;
+  border-radius: 14px;
+  margin-top: 10px;
+  font-family: inherit;
+  font-weight: 900;
+  border-style: solid;
+  border-width: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.qq-team-waiting-card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}

@@ -2222,6 +2222,7 @@ const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
   return (
     <input
       ref={ref}
+      className="qq-team-input"
       type={type ?? 'text'}
       inputMode={inputMode}
       pattern={pattern}
@@ -2234,11 +2235,8 @@ const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
       autoComplete={autoComplete ?? 'off'}
       maxLength={maxLength}
       style={{
-        width: '100%', padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
-        border: `2px solid ${borderColor}`,
+        borderColor,
         background: bg,
-        color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
-        outline: 'none', transition: 'all 0.2s',
         boxShadow: value && !submitted ? `0 0 0 3px ${catColor}22` : 'none',
         opacity: disabled && !submitted ? 0.6 : 1,
       }}
@@ -2257,17 +2255,18 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
   const color = submitted ? '#fff' : canSubmit ? '#F1F5F9' : '#334155';
   return (
     <button
+      className="qq-team-submit-btn"
       onClick={onSubmit}
       disabled={!canSubmit || submitted}
       style={{
-        width: '100%', padding: canSubmit ? '16px' : '14px', borderRadius: 14, marginTop: 10,
-        border: `2px solid ${border}`, background: bg, color,
+        padding: canSubmit ? '16px' : '14px',
+        borderColor: border,
+        background: bg,
+        color,
         cursor: canSubmit && !submitted ? 'pointer' : 'default',
-        fontFamily: 'inherit', fontWeight: 900, fontSize: canSubmit ? 18 : 16,
+        fontSize: canSubmit ? 18 : 16,
         boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}66, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
-        transition: 'all 0.2s',
         animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
       }}
     >
       {submitted

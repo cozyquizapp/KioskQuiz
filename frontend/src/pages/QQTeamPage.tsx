@@ -287,7 +287,11 @@ const BEAMER_LOBBY_BG =
   'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
   'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
   '#0D0A06';
-const COZY_CARD_BG = 'linear-gradient(180deg, #1f1610, #150e08)';
+// 2026-05-01 V2: Wolfs Feedback - Beamer-COZY_CARD_BG (warm-braun) wirkt
+// auf Phone weiterhin zu braun. Phone braucht eine kuehlere Card-Tinte;
+// Slate mit minimalem Indigo-Hauch passt zum Beamer-Setup-Mix
+// (amber/indigo/pink) ohne braun zu werden.
+const COZY_CARD_BG = 'linear-gradient(180deg, #181828, #0E0E18)';
 
 // ── Hook: deadline expiry (sticky once expired). Used to auto-submit + lock
 // inputs when a question/sub-phase timer runs out. Fires 150ms before the
@@ -1612,7 +1616,21 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catAccent = QQ_CAT_ACCENT[q.category] ?? catColor;
   const catLabel = QQ_CATEGORY_LABELS[q.category];
-  const isRevealed = s.phase === 'QUESTION_REVEAL';
+  // Wolfs Feedback 2026-05-01: Phone darf Reveal nicht vor Beamer zeigen
+  // (sonst kennen Teams die Antwort schon, Spannung weg). Beamer hat
+  // Aufdeck-Animationen die ~1.5-2s dauern; Phone wartet daher nach Phase-
+  // Wechsel auf QUESTION_REVEAL bis der Beamer-Reveal sichtbar ist.
+  const phaseIsReveal = s.phase === 'QUESTION_REVEAL';
+  const [revealUnlocked, setRevealUnlocked] = useState(false);
+  useEffect(() => {
+    if (phaseIsReveal) {
+      const t = setTimeout(() => setRevealUnlocked(true), 1800);
+      return () => clearTimeout(t);
+    } else {
+      setRevealUnlocked(false);
+    }
+  }, [phaseIsReveal]);
+  const isRevealed = phaseIsReveal && revealUnlocked;
   const iWon = s.correctTeamId === myTeamId;
   const iSubmitted = !!s.answers.find(a => a.teamId === myTeamId);
   const isCheese = q.category === 'CHEESE';

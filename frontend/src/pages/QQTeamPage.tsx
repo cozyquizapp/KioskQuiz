@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -2182,6 +2182,71 @@ function hashString(s: string): number {
   return h;
 }
 
+// ── Standard text input (shared) ──────────────────────────────────────────────
+// Polish 2026-05-01: einheitliches Input-Styling für alle Phone-Eingabefelder
+// (TextInput, HotPotato, Top5, Bluff write, OnlyConnect). Fixe Werte:
+// padding 14×16, border 2px, radius 14, fontSize 18, fontWeight 700.
+type StandardInputProps = {
+  value: string;
+  onChange: (v: string) => void;
+  catColor: string;
+  placeholder?: string;
+  disabled?: boolean;
+  onEnter?: () => void;
+  type?: string;
+  inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'url' | 'search';
+  pattern?: string;
+  ariaLabel?: string;
+  autoComplete?: string;
+  maxLength?: number;
+  submitted?: boolean;   // grüner Erfolgs-Tint (Bluff write)
+  urgency?: boolean;     // roter Urgency-Tint wenn leer (HotPotato)
+};
+const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
+  value, onChange, catColor, placeholder, disabled, onEnter,
+  type, inputMode, pattern, ariaLabel, autoComplete, maxLength,
+  submitted, urgency,
+}, ref) => {
+  const borderColor = submitted
+    ? '#22C55E'
+    : value
+      ? `${catColor}66`
+      : urgency
+        ? 'rgba(239,68,68,0.3)'
+        : 'rgba(255,255,255,0.1)';
+  const bg = submitted
+    ? 'rgba(34,197,94,0.10)'
+    : value
+      ? `${catColor}10`
+      : 'rgba(255,255,255,0.05)';
+  return (
+    <input
+      ref={ref}
+      type={type ?? 'text'}
+      inputMode={inputMode}
+      pattern={pattern}
+      value={value}
+      disabled={disabled}
+      onChange={e => { if (!disabled) onChange(e.target.value); }}
+      onKeyDown={e => { if (!disabled && e.key === 'Enter' && onEnter) onEnter(); }}
+      placeholder={placeholder}
+      aria-label={ariaLabel ?? placeholder}
+      autoComplete={autoComplete ?? 'off'}
+      maxLength={maxLength}
+      style={{
+        width: '100%', padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
+        border: `2px solid ${borderColor}`,
+        background: bg,
+        color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
+        outline: 'none', transition: 'all 0.2s',
+        boxShadow: value && !submitted ? `0 0 0 3px ${catColor}22` : 'none',
+        opacity: disabled && !submitted ? 0.6 : 1,
+      }}
+    />
+  );
+});
+StandardInput.displayName = 'StandardInput';
+
 // ── Submit button (shared) ────────────────────────────────────────────────────
 function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang = 'de' }: {
   onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang?: 'de' | 'en';
@@ -2477,25 +2542,16 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
           {lang === 'de' ? `Nicht akzeptiert: „${lastAttempt}" — versuch's nochmal!` : `Not accepted: "${lastAttempt}" — try again!`}
         </div>
       )}
-      <input
+      <StandardInput
         ref={ref}
-        type="text"
         value={val}
-        disabled={expired}
-        onChange={e => !expired && setVal(e.target.value)}
-        onKeyDown={e => !expired && e.key === 'Enter' && val.trim() && submit()}
+        onChange={setVal}
+        onEnter={() => val.trim() && submit()}
+        catColor={catColor}
         placeholder={t.answer.enterAnswer[lang]}
-        aria-label={lang === 'de' ? 'Antwort eingeben' : 'Enter your answer'}
-        autoComplete="off"
-        style={{
-          width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
-          border: `2px solid ${val ? catColor + '66' : urgency ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-          background: val ? `${catColor}10` : 'rgba(255,255,255,0.05)',
-          color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
-          outline: 'none', transition: 'all 0.2s',
-          boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
-          opacity: expired ? 0.6 : 1,
-        }}
+        ariaLabel={lang === 'de' ? 'Antwort eingeben' : 'Enter your answer'}
+        disabled={expired}
+        urgency={urgency}
       />
       <SubmitBtn onSubmit={submit} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
@@ -2522,27 +2578,18 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de', time
   }, [expired, onSubmit]);
   return (
     <div style={{ marginTop: 4 }}>
-      <input
+      <StandardInput
         ref={ref}
+        value={val}
+        onChange={setVal}
+        onEnter={() => val.trim() && onSubmit(val)}
+        catColor={catColor}
         type={numeric ? 'number' : 'text'}
         inputMode={numeric ? 'numeric' : 'text'}
         pattern={numeric ? '[0-9]*' : undefined}
-        value={val}
-        onChange={e => !expired && setVal(e.target.value)}
-        onKeyDown={e => !expired && e.key === 'Enter' && val.trim() && onSubmit(val)}
         placeholder={placeholder ?? t.answer.enterAnswer[lang]}
-        aria-label={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
-        autoComplete="off"
+        ariaLabel={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
         disabled={expired}
-        style={{
-          width: '100%', padding: '15px 16px', borderRadius: 14, boxSizing: 'border-box',
-          border: `2px solid ${val ? catColor + '66' : 'rgba(255,255,255,0.1)'}`,
-          background: val ? `${catColor}10` : 'rgba(255,255,255,0.05)',
-          color: '#F1F5F9', fontFamily: 'inherit', fontSize: 20, fontWeight: 700,
-          outline: 'none', transition: 'all 0.2s',
-          boxShadow: val ? `0 0 0 3px ${catColor}22` : 'none',
-          opacity: expired ? 0.6 : 1,
-        }}
       />
       <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
@@ -2751,22 +2798,20 @@ function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor: string
         {lang === 'en' ? 'Enter up to 5 answers (order doesn\'t matter)' : 'Bis zu 5 Antworten eingeben (Reihenfolge egal)'}
       </div>
       {vals.map((v, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i+1}</div>
-          <input
-            value={v}
-            disabled={expired}
-            onChange={e => { if (expired) return; const a = [...vals]; a[i] = e.target.value; setVals(a); }}
-            placeholder={lang === 'en' ? `Answer ${i+1}…` : `Antwort ${i+1}…`}
-            style={{
-              flex: 1, padding: '11px 14px', borderRadius: 12, boxSizing: 'border-box',
-              border: `1.5px solid ${v ? catColor+'55' : 'rgba(255,255,255,0.08)'}`,
-              background: v ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
-              color: '#F1F5F9', fontFamily: 'inherit', fontSize: 16, fontWeight: 700,
-              outline: 'none', transition: 'all 0.15s',
-              opacity: expired ? 0.6 : 1,
-            }}
-          />
+        <div key={i} style={{
+          display: 'flex', gap: 8, alignItems: 'center',
+          animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+        }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i+1}</div>
+          <div style={{ flex: 1 }}>
+            <StandardInput
+              value={v}
+              onChange={(nv) => { const a = [...vals]; a[i] = nv; setVals(a); }}
+              catColor={catColor}
+              placeholder={lang === 'en' ? `Answer ${i+1}…` : `Antwort ${i+1}…`}
+              disabled={expired}
+            />
+          </div>
         </div>
       ))}
       <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={!expired && filled >= 1} submitted={false} catColor={catColor} />
@@ -2836,21 +2881,15 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
             ? '🎭 Erfindet eine plausibel klingende Falsch-Antwort. Andere Teams werden dafür stimmen — wer reinfällt, bringt euch Punkte!'
             : '🎭 Make up a plausible-sounding wrong answer. Other teams will vote — fooling them earns you points!'}
         </div>
-        <input
+        <StandardInput
           value={val}
-          onChange={e => !submitted && !writeExpired && setVal(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-          disabled={submitted || writeExpired}
+          onChange={setVal}
+          onEnter={submit}
+          catColor={catColor}
           placeholder={lang === 'de' ? 'Erfundene Antwort…' : 'Your made-up answer…'}
+          disabled={submitted || writeExpired}
           maxLength={200}
-          style={{
-            padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
-            border: `2px solid ${val ? catColor : 'rgba(255,255,255,0.08)'}`,
-            background: submitted ? 'rgba(34,197,94,0.10)' : (val ? `${catColor}0d` : 'rgba(255,255,255,0.04)'),
-            color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
-            outline: 'none', transition: 'all 0.18s',
-            opacity: writeExpired && !submitted ? 0.6 : 1,
-          }}
+          submitted={submitted}
         />
         <button
           disabled={val.trim().length < 1 || submitted || writeExpired}
@@ -3111,21 +3150,14 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       {/* Freitext-Eingabe (nur wenn nicht locked + nicht selbst gewonnen) */}
       {!alreadyAnswered && (
         <>
-          <input
+          <StandardInput
             ref={ref}
             value={val}
-            disabled={expired}
-            onChange={e => !expired && setVal(e.target.value)}
-            onKeyDown={e => { if (!expired && e.key === 'Enter') submit(); }}
+            onChange={setVal}
+            onEnter={submit}
+            catColor={catColor}
             placeholder={lang === 'de' ? 'Verbindung tippen…' : 'Your guess…'}
-            style={{
-              padding: '14px 16px', borderRadius: 14, boxSizing: 'border-box',
-              border: `2px solid ${val ? catColor : 'rgba(255,255,255,0.08)'}`,
-              background: val ? `${catColor}0d` : 'rgba(255,255,255,0.04)',
-              color: '#F1F5F9', fontFamily: 'inherit', fontSize: 18, fontWeight: 700,
-              outline: 'none', transition: 'all 0.18s',
-              opacity: expired ? 0.6 : 1,
-            }}
+            disabled={expired}
           />
           <button
             disabled={expired || val.trim().length < 1}

@@ -42,8 +42,8 @@ const t = {
     round: { de: 'Runde', en: 'Round' },
   },
   answer: {
-    submit: { de: 'Abschicken', en: 'Submit' },
-    submitted: { de: 'Abgeschickt', en: 'Submitted' },
+    submit: { de: 'Abgeben', en: 'Submit' },
+    submitted: { de: 'Abgegeben', en: 'Submitted' },
     choose: { de: 'Wählen', en: 'Choose' },
     given: { de: '✓ Abgegeben', en: '✓ Submitted' },
     enterAnswer: { de: 'Antwort eingeben…', en: 'Enter answer…' },
@@ -278,6 +278,17 @@ const TEAM_CSS = `
 
 const QQ_ROOM = 'default';
 
+// Beamer-Look fuer Phone-UI (User-Wunsch 2026-05-01: gleicher BG wie Beamer-
+// Setup/Lobby + COZY_CARD_BG-Gradient statt flat #1B1510). Spiegelt die
+// Konstanten in QQBeamerPage; bewusst dupliziert um Cross-Import auf den
+// grossen Beamer-Modul zu vermeiden.
+const BEAMER_LOBBY_BG =
+  'radial-gradient(ellipse at 50% -10%, rgba(245,158,11,0.10), transparent 55%), ' +
+  'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
+  'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
+  '#0D0A06';
+const COZY_CARD_BG = 'linear-gradient(180deg, #1f1610, #150e08)';
+
 // ── Hook: deadline expiry (sticky once expired). Used to auto-submit + lock
 // inputs when a question/sub-phase timer runs out. Fires 150ms before the
 // actual deadline so the submit lands while the backend is still in
@@ -458,7 +469,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   return (
     <div style={{
       ...darkPage,
-      background: `radial-gradient(ellipse at 50% 0%, rgba(254,240,138,0.10) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(234,179,8,0.06) 0%, transparent 45%), #0D0A06`,
+      background: BEAMER_LOBBY_BG,
     }}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
@@ -790,7 +801,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
     : s.phase === 'PLACEMENT' && cat
     ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}15 0%, transparent 55%), #0D0A06`)
-    : `radial-gradient(ellipse at 50% 0%, rgba(254,240,138,0.10) 0%, transparent 55%), #0D0A06`;
+    : BEAMER_LOBBY_BG;
 
   return (
     <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }}>
@@ -838,7 +849,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
             padding: '10px 14px', borderRadius: 16,
-            background: '#1B1510', border: '1px solid rgba(255,255,255,0.10)',
+            background: COZY_CARD_BG, border: '1px solid rgba(255,255,255,0.10)',
             boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
             <QQTeamAvatar avatarId={myTeam.avatarId} size={34} />
@@ -1327,7 +1338,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
           animation: 'tcreveal 0.5s ease 0.55s both',
         }}>
           {lang === 'en'
-            ? 'Handys bereit halten — gleich geht\'s los!'
+            ? 'Phones at the ready — here we go!'
             : 'Handy bereithalten — gleich geht\'s los!'}
         </div>
 
@@ -1442,7 +1453,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
               animation: 'tcfloat 3s ease-in-out infinite' }}>
-              {phaseName ?? `Round ${s.gamePhaseIndex}`}
+              {phaseName ?? `${lang === 'de' ? 'Runde' : 'Round'} ${s.gamePhaseIndex}`}
             </div>
             <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
               {phaseDesc ?? ''}
@@ -1803,6 +1814,10 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (!myAns) return null;
         let displayText = myAns.text;
         let isCorrect: boolean | null = null;
+        // Rang unter den richtigen Antworten (nur MUCHO/CHEESE — bei SCHAETZCHEN
+        // gibt's nur einen Sieger). Wird im Status-Text als „N. schnellstes Team"
+        // genutzt statt nacktem ✓.
+        let rankAmongCorrect: number | null = null;
         if (q.category === 'MUCHO' && q.options) {
           const idx = parseInt(myAns.text, 10);
           if (!isNaN(idx) && q.options[idx]) {
@@ -1810,6 +1825,12 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
           }
           isCorrect = q.correctOptionIndex != null && myAns.text === String(q.correctOptionIndex);
+          if (isCorrect && q.correctOptionIndex != null) {
+            const correctSorted = s.answers
+              .filter(a => a.text === String(q.correctOptionIndex))
+              .sort((a, b) => a.submittedAt - b.submittedAt);
+            rankAmongCorrect = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
+          }
         } else if (q.category === 'SCHAETZCHEN') {
           isCorrect = myAns.teamId === s.correctTeamId;
         } else if (q.category === 'CHEESE') {
@@ -1826,6 +1847,49 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3)
             );
           }
+          if (isCorrect) {
+            const isCorrCheese = (text: string) => {
+              const t = text.trim().toLowerCase();
+              return correctList.some(c =>
+                t === c || t.includes(c) || (c.length > 3 && c.includes(t) && t.length >= 3)
+              );
+            };
+            const correctSorted = s.answers
+              .filter(a => isCorrCheese(a.text))
+              .sort((a, b) => a.submittedAt - b.submittedAt);
+            rankAmongCorrect = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
+          }
+        }
+        // Status-Text: bei SCHAETZCHEN-Falsch entschärfen (es gibt keine objektiv
+        // falsche Schätzung, nur „weniger nah"). Bei MUCHO/CHEESE-Richtig den
+        // Rang anzeigen (z.B. „1. schnellstes Team", „2nd fastest").
+        const ordinalDe = (n: number) => `${n}.`;
+        const ordinalEn = (n: number) => {
+          const s2 = n % 100;
+          if (s2 >= 11 && s2 <= 13) return `${n}th`;
+          const last = n % 10;
+          if (last === 1) return `${n}st`;
+          if (last === 2) return `${n}nd`;
+          if (last === 3) return `${n}rd`;
+          return `${n}th`;
+        };
+        let statusText: string | null = null;
+        if (isCorrect === true) {
+          if (q.category === 'SCHAETZCHEN') {
+            statusText = lang === 'en' ? 'Closest estimate!' : 'Beste Schätzung!';
+          } else if (rankAmongCorrect && rankAmongCorrect > 0) {
+            statusText = lang === 'en'
+              ? `Correct — ${ordinalEn(rankAmongCorrect)} fastest team`
+              : `Richtig — ${ordinalDe(rankAmongCorrect)} schnellstes Team`;
+          } else {
+            statusText = lang === 'en' ? 'Correct!' : 'Richtig!';
+          }
+        } else if (isCorrect === false) {
+          if (q.category === 'SCHAETZCHEN') {
+            statusText = lang === 'en' ? 'Another team was closer' : 'Ein anderes Team war näher';
+          } else {
+            statusText = lang === 'en' ? 'Not correct' : 'Nicht richtig';
+          }
         }
         return (
           <div style={{
@@ -1836,18 +1900,29 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               : 'rgba(255,255,255,0.04)',
             border: `1px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
             animation: 'tcreveal 0.35s ease 0.15s both',
-            display: 'flex', alignItems: 'center', gap: 10,
+            display: 'flex', flexDirection: 'column', gap: 6,
           }}>
-            <span style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', letterSpacing: 0.4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-              {lang === 'en' ? 'Your answer' : 'Eure Antwort'}
-            </span>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? '#4ade80' : '#e2e8f0', wordBreak: 'break-word' }}>
-              {displayText || '—'}
-            </span>
-            {isCorrect !== null && (
-              <span style={{ fontSize: 18, fontWeight: 900, color: isCorrect ? '#4ade80' : '#f87171', flexShrink: 0 }}>
-                {isCorrect ? '✓' : '✗'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', letterSpacing: 0.4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                {lang === 'en' ? 'Your answer' : 'Eure Antwort'}
               </span>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? '#4ade80' : '#e2e8f0', wordBreak: 'break-word' }}>
+                {displayText || '—'}
+              </span>
+              {isCorrect !== null && (
+                <span style={{ fontSize: 18, fontWeight: 900, color: isCorrect ? '#4ade80' : '#f87171', flexShrink: 0 }}>
+                  {isCorrect ? '✓' : '✗'}
+                </span>
+              )}
+            </div>
+            {statusText && (
+              <div style={{
+                fontSize: 12, fontWeight: 700,
+                color: isCorrect ? '#86efac' : '#94a3b8',
+                paddingLeft: 2,
+              }}>
+                {statusText}
+              </div>
             )}
           </div>
         );
@@ -3798,17 +3873,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     return (
                       <div key={`${r}-${c}`} style={{
                         aspectRatio: '1 / 1', borderRadius: 6,
-                        // B12 (2026-04-29): volle Sattigung — vorher opacity-Hex 'cc/88'
-                        // wirkte wie ein Filter ueber den Farben.
+                        // Polish 2026-05-01: gedimmt (siehe grosses Grid). Avatar
+                        // braucht freien Kontrast, Team-Identitaet uebernimmt der
+                        // Border.
                         background: cellTeam
                           ? (isStuckCell
-                              ? `linear-gradient(135deg, ${cellTeam.color}, ${cellTeam.color}dd)`
-                              : `linear-gradient(135deg, ${cellTeam.color}, ${cellTeam.color}dd)`)
+                              ? `linear-gradient(135deg, ${cellTeam.color}55, ${cellTeam.color}2a)`
+                              : `linear-gradient(135deg, ${cellTeam.color}48, ${cellTeam.color}24)`)
                           : 'rgba(255,255,255,0.04)',
                         border: cellTeam
                           ? (isStuckCell
                               ? `2px solid #F59E0B`
-                              : `1px solid ${cellTeam.color}${isMine ? '' : 'aa'}`)
+                              : `2px solid ${cellTeam.color}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
@@ -4041,14 +4117,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
+                    // Polish 2026-05-01: Cell-Background gedimmt (vorher voll
+                    // gesaettigte Team-Color hat Avatare verschluckt). Jetzt
+                    // niedrige Color-Tinte als BG, Border voll gesaettigt = klar
+                    // erkennbarer Team-Identifier ohne Avatar-Konflikt.
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}66`
-                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}, ${team?.color ?? '#F59E0B'}dd)`
-                      : team ? `linear-gradient(135deg, ${team.color}, ${team.color}dd)` : 'rgba(255,255,255,0.04)',
+                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}55, ${team?.color ?? '#F59E0B'}2a)`
+                      : team ? `linear-gradient(135deg, ${team.color}48, ${team.color}24)` : 'rgba(255,255,255,0.04)',
                     border: isPending ? `3px dashed ${actionColor}`
                       : isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCandidate ? `2px solid #F59E0B`
-                      : clickable ? `2px solid ${actionColor}` : team ? `1px solid ${team.color}aa` : '1px solid rgba(255,255,255,0.06)',
+                      : clickable ? `2px solid ${actionColor}` : team ? `2px solid ${team.color}` : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
@@ -4557,7 +4637,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               style={{
                 padding: '14px 16px', borderRadius: 14,
                 cursor: disabled ? 'not-allowed' : 'pointer',
-                background: '#1B1510',
+                background: COZY_CARD_BG,
                 border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : opt.color + '44'}`,
                 textAlign: 'left', fontFamily: 'inherit',
                 display: 'flex', gap: 12, alignItems: 'center',
@@ -5018,7 +5098,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
         </div>
         {/* Skeleton card */}
         <div style={{
-          background: '#1B1510', borderRadius: 20, padding: '24px 18px',
+          background: COZY_CARD_BG, borderRadius: 20, padding: '24px 18px',
           border: '1px solid rgba(255,255,255,0.06)',
         }}>
           {[1, 2, 3].map(i => (
@@ -5059,7 +5139,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
 function CozyCard({ children, anim, borderColor, pulse }: { children: React.ReactNode; anim?: boolean; borderColor?: string; pulse?: boolean }) {
   return (
     <div style={{
-      background: '#1B1510',
+      background: COZY_CARD_BG,
       border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
       borderRadius: 20, padding: '20px 18px', marginBottom: 14,
       boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)${borderColor ? `, 0 0 20px ${borderColor}18` : ''}`,

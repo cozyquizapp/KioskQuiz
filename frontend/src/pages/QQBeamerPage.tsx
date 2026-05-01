@@ -8992,6 +8992,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)';
             const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2vh, 16px)' : 'clamp(16px, 2.2vh, 32px)';
             const cardFontSize = hpCompact ? 'clamp(22px, 2.6vw, 38px)' : qFontSize;
+            // 2026-04-30 v3 round 9 (User-Wunsch 'frage dynamisch nach oben
+            // schieben bei vielen chips, platz fuer groessere chips drunter'):
+            // HotPotato Card-Shift basiert auf chip-count. Smooth via
+            // transform translateY mit transition. Frage wird mit jeder
+            // Chip-Stufe weiter raufgeschoben — mehr Vertikalplatz fuer Chips
+            // ohne dass die Card in die Top-Bar (Badge bei top:50px) reinrutscht.
+            // Tiers: 0-12 = 0px, 13-20 = -8vh, 21-30 = -16vh, 31+ = -22vh
+            // (max -22vh ≈ -240px bei 1080p, Card landet bei ~30% statt 50%)
+            const chipShiftVh = isHotPotatoActive
+              ? hpUsedCount >= 31 ? -22
+              : hpUsedCount >= 21 ? -16
+              : hpUsedCount >= 13 ? -8
+              : 0
+              : 0;
             return (
               <div style={{
                 background: cardBg,
@@ -9007,9 +9021,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
                 // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                 // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
-                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.55s ease, padding 0.7s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1)',
+                // v3 round 9: transform-Transition fuer chip-shift smooth.
+                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.55s ease, padding 0.7s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1), transform 0.9s cubic-bezier(0.4,0,0.2,1)',
                 opacity: revealed ? 0.55 : 1,
                 flexShrink: 0,
+                transform: chipShiftVh !== 0 ? `translateY(${chipShiftVh}vh)` : undefined,
               }}>
                 <div key={lang} style={{
                   fontSize: cardFontSize,

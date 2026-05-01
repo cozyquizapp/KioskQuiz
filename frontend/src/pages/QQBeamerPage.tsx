@@ -51,6 +51,17 @@ export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
 export const CAT_ACCENT = QQ_CAT_ACCENT;
 
 // Beamer-Namen bei 8 Teams / langen Team-Namen nicht reißen lassen.
+/** 2026-05-01 (Konsistenz-Audit): Avatar-Groesse fuer Standings-Listen
+ * (PausedView + GameOverView). Vorher hatten beide unterschiedliche Logik
+ * was zu spuerbarem Avatar-Groessen-Sprung beim Wechsel Pause -> GameOver
+ * gefuehrt hat. Jetzt eine Quelle der Wahrheit. */
+export function getStandingAvatarSize(teamCount: number, twoCol = false): string {
+  if (twoCol) return 'clamp(26px, 2.8vw, 38px)';
+  if (teamCount <= 3) return 'clamp(50px, 4.6vw, 72px)';
+  if (teamCount <= 5) return 'clamp(40px, 3.6vw, 56px)';
+  return 'clamp(34px, 3.2vw, 48px)';
+}
+
 function truncName(name: string, max = 22): string {
   if (!name) return '';
   return name.length > max ? name.slice(0, max - 1) + '…' : name;
@@ -11739,12 +11750,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // Current game standings — bei >=5 Teams 2-spaltig, damit nichts überläuft
-  const sortedTeams = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  // Current game standings — Sortierung IDENTISCH zu GameOverView:
+  // largestConnected primary, totalCells als Tie-Breaker. Sonst kann das
+  // Pause-Ranking != End-Ranking sein und verwirrt Zuschauer.
+  // Bei >=5 Teams 2-spaltig, damit nichts ueberlaeuft.
+  const sortedTeams = [...s.teams].sort((a, b) =>
+    b.largestConnected - a.largestConnected
+    || b.totalCells - a.totalCells
+  );
   if (sortedTeams.length > 0) {
     const twoCol = sortedTeams.length >= 5;
     const rankSize = twoCol ? 'clamp(22px, 2.4vw, 32px)' : 'clamp(28px, 3.2vw, 42px)';
-    const avSize   = twoCol ? 'clamp(26px, 2.8vw, 38px)' : 'clamp(32px, 3.6vw, 48px)';
+    // Avatar-Groesse via shared Helper - konsistent zu GameOverView
+    const avSize   = getStandingAvatarSize(sortedTeams.length, twoCol);
     const nameSize = twoCol ? 'clamp(18px, 2vw, 26px)'  : 'clamp(22px, 2.6vw, 32px)';
     const valSize  = twoCol ? 'clamp(18px, 2vw, 26px)'  : 'clamp(22px, 2.6vw, 32px)';
     const unitSize = twoCol ? 'clamp(12px, 1.3vw, 16px)' : 'clamp(14px, 1.6vw, 20px)';
@@ -11775,8 +11793,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   flex: 1, fontWeight: 800, fontSize: nameSize, color: t.color,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
                 }}>{t.name}</span>
-                <span style={{ fontSize: valSize, fontWeight: 900, color: '#F59E0B', flexShrink: 0 }}>{t.totalCells}</span>
-                <span style={{ fontSize: unitSize, color: '#64748b', flexShrink: 0 }}>{de ? 'Felder' : 'cells'}</span>
+                {/* Score-Format IDENTISCH zu GameOverView: 'largestConnected · totalCells'.
+                 * largestConnected = Hauptwert (sortier-relevant), totalCells als Sub. */}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0,
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  <span style={{ fontSize: valSize, fontWeight: 900, color: '#FDE68A' }}>{t.largestConnected}</span>
+                  <span style={{ fontSize: unitSize, color: '#94a3b8', fontWeight: 700 }}>· {t.totalCells}</span>
+                </span>
               </div>
             );
           })}
@@ -13102,12 +13127,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           // jetzt fuer ALLE Teams-Counts (7-8 inkl). Cards entsprechend
           // kompakter (kleinere padding/font), aber konsistente Listen-Optik.
           const cols = 1;
-          // Avatar-Größe — bei vielen Teams kleiner damit alle reinpassen.
-          const avatarSize = cols === 1
-            ? wn <= 3 ? 'clamp(50px, 4.6vw, 72px)'
-                      : wn <= 5 ? 'clamp(40px, 3.6vw, 56px)'
-                                : 'clamp(34px, 3.2vw, 48px)'
-            : 'clamp(38px, 3.4vw, 52px)';
+          // Avatar-Groesse via shared Helper - konsistent zu PausedView-Standings
+          const avatarSize = getStandingAvatarSize(wn, false);
           // 2026-04-30 v3 round 6 (User-Bug 'team namen in tabelle hard to read'):
           // Font-Sizes ~30-40% raufgesetzt damit die Namen aus Distanz klar
           // lesbar sind. cols=1 (≤6 Teams) bekommt richtigen Boost.

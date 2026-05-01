@@ -778,6 +778,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playRoundStart();
       playFanfare();
     }
+    // Comeback-Intro: Animation ist maechtig, da gehoert ein Sound dazu
+    // (User-Wunsch 2026-05-01). Fanfare beim Phase-Enter.
+    if (s.phase === 'COMEBACK_CHOICE' && prev !== 'COMEBACK_CHOICE') {
+      playFanfare();
+    }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       // Mucho + ZvZ haben Multi-Step-Reveals (Step 0 = Pause, Step 1 = Avatar-
       // Cascade, Step 2 = Lock-Green). Phase-Wechsel ist visuell nur eine
@@ -1038,7 +1043,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       stopLobbyLoop();
     }
     return () => stopLobbyLoop();
-  }, [s.phase, s.musicMuted]); // eslint-disable-line react-hooks/exhaustive-deps
+    // 2026-05-01: connections.phase + comebackHL deps ergaenzt — sonst wird
+    // der Loop nicht (re)gestartet wenn z.B. connections.phase 'intro'→'active'
+    // wechselt waehrend s.phase konstant CONNECTIONS_4X4 bleibt. Vorher: Finale-
+    // Musik startete nicht waehrend der 3-Min-Phase.
+  }, [s.phase, s.musicMuted, s.connections?.phase, s.comebackHL?.phase, s.comebackHL?.timerEndsAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Audio-Unlock: Browser blockiert Autoplay bis zur ersten User-Interaktion
   // im Tab. Der Beamer-Tab bekommt aber selten echte Klicks (Moderator ist
@@ -6267,6 +6276,29 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   // hoeheren Hint sieht man als Avatar, kriegen aber keine Medaille.
   const minWinHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : -1;
 
+  // 2026-05-01 (Reveal-Cascade-Audit): Pentatonik-Cascade-Sound synchron zur
+  // CSS-Animation. Reihenfolge: Hint 0..3, pro Hint die korrekten Teams nach
+  // submittedAt. Stagger-Timings entsprechen den Animation-Delays unten
+  // (0.5s Init + 0.6s pro Hint + 0.25s pro Avatar im Hint).
+  useEffect(() => {
+    if (!revealed || s.sfxMuted) return;
+    const handles: number[] = [];
+    let cascadeIdx = 0;
+    const cascadeTotal = correctSorted.length + 1; // +1 fuer WinnerCard-Top-Ton
+    for (let hintI = 0; hintI < 4; hintI++) {
+      const teamsOnHint = correctSorted.filter(g => g.atHintIdx === hintI);
+      teamsOnHint.forEach((_g, gIdx) => {
+        const myIdx = cascadeIdx++;
+        const delayMs = (0.5 + hintI * 0.6 + gIdx * 0.25) * 1000 - 60;
+        handles.push(window.setTimeout(() => {
+          try { playAvatarCascadeNote(myIdx, cascadeTotal); } catch {}
+        }, Math.max(0, delayMs)));
+      });
+    }
+    return () => handles.forEach(h => window.clearTimeout(h));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed, correctSorted.length, s.sfxMuted]);
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -6422,7 +6454,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                     return (
                       <div key={`c-${g.teamId}`} style={{
                         position: 'relative',
-                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.15 + gIdx * 0.08}s both`,
+                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.6 + gIdx * 0.25}s both`,
                       }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId}
@@ -6452,7 +6484,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                       <div key={`l-${g.teamId}`} style={{
                         position: 'relative',
                         opacity: 0.6,
-                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.6 + i * 0.15 + gIdx * 0.06}s both`,
+                        animation: `phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.6 + i * 0.6 + gIdx * 0.15}s both`,
                       }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId}
@@ -8186,6 +8218,35 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     tester.src = img.url;
   }, [isCheese, img?.url]);
 
+  // ── CHEESE Cascade-Audit (2026-05-01): vorher fielen alle Treffer-Avatare
+  // gleichzeitig + stumm rein. Jetzt 850ms-Stagger pro Avatar (CSS) + synchron
+  // Pentatonik-Cascade-Toene wie Top5/Order. Spannung-Score 1/5 → 4/5.
+  const cheeseCorrectCount = useMemo(() => {
+    if (cat !== 'CHEESE' || !revealed || !s.revealedAnswer) return 0;
+    const corrList: string[] = [];
+    if (s.revealedAnswer) corrList.push(s.revealedAnswer.toLowerCase().trim());
+    if (q.answerEn) corrList.push(String(q.answerEn).toLowerCase().trim());
+    return s.answers.filter(a => {
+      const t = (a.text ?? '').toLowerCase().trim();
+      if (!t) return false;
+      return corrList.some(c => c === t || (c.length > 2 && (t.includes(c) || c.includes(t))));
+    }).length;
+  }, [cat, revealed, s.revealedAnswer, q.answerEn, s.answers]);
+
+  useEffect(() => {
+    if (cat !== 'CHEESE' || !revealed || cheeseCorrectCount === 0) return;
+    if (s.sfxMuted) return;
+    const cascadeTotal = cheeseCorrectCount + 1; // +1 fuer WinnerCard-Top-Ton
+    const handles: number[] = [];
+    for (let i = 0; i < cheeseCorrectCount; i++) {
+      const delay = i * 850 - 60; // 60ms Vorlauf fuer psychoakustische Sync
+      handles.push(window.setTimeout(() => {
+        try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+      }, Math.max(0, delay)));
+    }
+    return () => handles.forEach(h => window.clearTimeout(h));
+  }, [cat, revealed, cheeseCorrectCount, s.sfxMuted]);
+
   // ── MUCHO: Winner-Card erst nach Jäger-Lock zeigen ──────────────────────
   // Spiegelt die Akt-2-Timing aus MuchoOptionsReveal (hop + lock + speedrun).
   // Solange Winner-Card verborgen ist bleibt die Spannungskurve intakt.
@@ -8259,16 +8320,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   }, [zvzLocked]);
   const zvzAkt3Ready = cat === 'ZEHN_VON_ZEHN' ? zvzWinnerReady : true;
 
-  // ── CHEESE: Reveal sofort vollständig (keine Step-Gating mehr).
-  // Frueher: step 0/1/2 haben Loesung+Avatare progressiv gezeigt. Das fuehrte
-  // dazu dass der Reveal "nicht funktionierte" wenn die Steps nicht weitergeklickt
-  // wurden. Jetzt: sobald revealed → sofort gruene Loesung + Avatare + Winner.
+  // ── CHEESE: Lösung sofort gruen + Avatare cascadieren (850ms Stagger).
+  // 2026-05-01: Cascade-Audit — vorher fielen alle Avatare gleichzeitig rein,
+  // WinnerCard erschien direkt = "alles auf einmal"-Gefuehl. Jetzt: Avatare
+  // staffeln sich, WinnerCard wartet bis Cascade fertig ist.
   const cheeseShowGreen = true;
   const cheeseShowAvatars = true;
+  const [cheeseCascadeDone, setCheeseCascadeDone] = useState(false);
+  useEffect(() => {
+    if (cat !== 'CHEESE' || !revealed) { setCheeseCascadeDone(false); return; }
+    if (cheeseCorrectCount === 0) { setCheeseCascadeDone(true); return; }
+    const totalMs = cheeseCorrectCount * 850 + 200;
+    const t = window.setTimeout(() => setCheeseCascadeDone(true), totalMs);
+    return () => window.clearTimeout(t);
+  }, [cat, revealed, cheeseCorrectCount]);
 
   const showMuchoWinner = cat !== 'MUCHO' || muchoAkt3Ready;
   const showZvzWinner = cat !== 'ZEHN_VON_ZEHN' || zvzAkt3Ready;
-  const showCheeseWinner = cat !== 'CHEESE' || cheeseShowAvatars;
+  const showCheeseWinner = cat !== 'CHEESE' || cheeseCascadeDone;
   const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
@@ -9500,9 +9569,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       {correctTeams.map((ct, vi) => {
                         const timeSec = t0 ? Math.max(0, (ct.submittedAt - t0) / 1000) : null;
                         const isFastest = vi === 0;
-                        // CHEESE: jedes Team poppt zeitgesteuert (160ms Versatz); andere Kategorien bleiben bei bisheriger Animation.
+                        // CHEESE: 850ms-Stagger pro Avatar synchron zur Pentatonik-
+                        // Cascade (siehe useEffect oben). Vorher 160ms war zu schnell
+                        // und unspannend ("alle auf einmal"-Gefuehl).
                         const isCheeseCascade = q.category === 'CHEESE' && cheeseShowAvatars;
-                        const cascadeDelay = isCheeseCascade ? vi * 0.16 : 0.6;
+                        const cascadeDelay = isCheeseCascade ? vi * 0.85 : 0.6;
                         const avatarAnim = isCheeseCascade
                           ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${cascadeDelay}s both`
                           : `revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) ${cascadeDelay}s both`;

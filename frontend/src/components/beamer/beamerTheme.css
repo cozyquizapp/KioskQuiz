@@ -1794,7 +1794,11 @@
   position: relative;
   overflow: hidden;
   min-height: 0;
-  transition: all 0.35s ease;
+  /* 2026-05-01 Card-Wackeln-Fix: explizite Property-Liste statt 'all' damit
+   * Padding/Gap/Box-Shadow smooth wechseln wenn .has-submissions kommt
+   * (Card schrumpft 28px→14px). Vorher schien 'all' zu greifen, tat es bei
+   * has-submissions aber nicht zuverlaessig (Konflikt mit fadeUp-Animation). */
+  transition: padding 0.35s ease, gap 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
   animation: fadeUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   will-change: transform, opacity;
 }
@@ -2492,6 +2496,8 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 19px;
+  /* Smooth padding-Shrink wenn .has-submissions auf has-submissions geht */
+  transition: padding 0.35s ease;
 }
 
 .cozyTeamStatusDot {

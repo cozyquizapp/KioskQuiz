@@ -176,47 +176,38 @@ export function QQSoundPanel({ config, onChange }: {
               <div style={{ fontSize: 11, fontWeight: 800, color: labelCol }}>{label}</div>
               <div style={{ fontSize: 9, color: '#475569', fontWeight: 700 }}>{statusText}</div>
             </div>
-            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-              <label style={{
-                flex: 1, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
-                background: '#3B82F6', color: '#fff', fontSize: 11, fontWeight: 800,
-                textAlign: 'center', opacity: isUploading ? 0.6 : 1,
-                whiteSpace: 'nowrap',
-              }}>
+            {/* 2026-05-01 Konsistenz-Fix: Inline-Styles -> .qm-btn[data-small]
+             * damit Sound-Panel-Buttons gleich aussehen wie der Rest des
+             * Mod-Panels (Padding 5px 12px, Border-Radius 8px, font-size 12px). */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label className="qm-btn" data-small="true"
+                style={{ ['--qm-btn-color' as string]: '#3B82F6', flex: 1,
+                  justifyContent: 'center', cursor: 'pointer',
+                  opacity: isUploading ? 0.6 : 1, whiteSpace: 'nowrap' } as React.CSSProperties}>
                 {isUploading ? '⏳' : hasCustom ? '↑ Ersetzen' : '↑ Eigene Datei'}
                 <input type="file" accept="audio/*" style={{ display: 'none' }}
                   disabled={isUploading}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(slot, f); e.target.value = ''; }} />
               </label>
-              <button type="button" onClick={() => togglePreview(slot)} title="Vorhören"
+              <button type="button" className="qm-btn" data-small="true"
+                onClick={() => togglePreview(slot)} title="Vorhören"
                 disabled={!enabled}
-                style={{
-                  padding: '4px 8px', borderRadius: 6, border: 'none',
+                style={{ ['--qm-btn-color' as string]: isPreviewing ? '#F59E0B' : '#94a3b8',
                   cursor: enabled ? 'pointer' : 'not-allowed',
-                  background: isPreviewing ? '#F59E0B' : 'rgba(255,255,255,0.08)',
-                  color: isPreviewing ? '#000' : '#94a3b8', fontSize: 13, fontWeight: 800,
-                  fontFamily: 'inherit', opacity: enabled ? 1 : 0.4,
-                }}>
+                  opacity: enabled ? 1 : 0.4 } as React.CSSProperties}>
                 {isPreviewing ? '⏹' : '▶'}
               </button>
-              <button type="button" onClick={() => toggleEnabled(slot)}
+              <button type="button" className="qm-btn" data-small="true"
+                onClick={() => toggleEnabled(slot)}
                 title={enabled ? 'Diesen Slot stumm schalten' : 'Wieder aktivieren'}
-                style={{
-                  padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: enabled ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.18)',
-                  color: enabled ? '#94a3b8' : '#f87171',
-                  fontSize: 13, fontWeight: 800, fontFamily: 'inherit',
-                }}>
+                style={{ ['--qm-btn-color' as string]: enabled ? '#94a3b8' : '#EF4444' } as React.CSSProperties}>
                 {enabled ? '🔊' : '🔇'}
               </button>
               {hasCustom && (
-                <button type="button" onClick={() => clearSlot(slot)}
+                <button type="button" className="qm-btn" data-small="true"
+                  onClick={() => clearSlot(slot)}
                   title="Upload entfernen, Default verwenden"
-                  style={{
-                    padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                    background: 'rgba(239,68,68,0.12)', color: '#f87171', fontSize: 13,
-                    fontWeight: 800, fontFamily: 'inherit',
-                  }}>
+                  style={{ ['--qm-btn-color' as string]: '#EF4444' } as React.CSSProperties}>
                   ↺
                 </button>
               )}

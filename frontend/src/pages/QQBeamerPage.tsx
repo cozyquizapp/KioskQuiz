@@ -815,6 +815,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // v3 round 7 (Phase-Sound-Audit): substep 2 (Category-Reveal) + 3
   // (Category-Explanation) bekommen ebenfalls einen entry-Sound, damit
   // jede Folie hoerbar markiert ist.
+  // v3 round 8 (User-Wunsch 'cards aufploppen nacheinander, dann moderieren'):
+  // Pro Action-Card ein eigener Sound (gestaffelt 1.5s zwischen Cards).
+  // Card-Anzahl haengt von Phase + Grid-Free-Cells ab — gleiche Logik wie
+  // im Render-Code unten.
   const prevIntroStepRef = useRef<number | null>(null);
   useEffect(() => {
     const prev = prevIntroStepRef.current;
@@ -822,7 +826,23 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.sfxMuted) return;
     if (s.phase !== 'PHASE_INTRO') return;
     if (s.introStep === 1 && prev !== 1) {
-      window.setTimeout(() => { try { playActionMenuReveal(); } catch {} }, 800);
+      // Action-Card-Cascade: Card-Anzahl = Place(if free) + Steal(R2+) + Stapel(R3+)
+      const ph = s.gamePhaseIndex ?? 1;
+      const hasFreeCells = s.grid.some(row => row.some(c => !c.ownerId));
+      let cardCount = 0;
+      if (ph === 1) cardCount = hasFreeCells ? 1 : 0;
+      else if (ph === 2) cardCount = hasFreeCells ? 2 : 1;
+      else cardCount = hasFreeCells ? 3 : 2;
+      const cardBaseMs = 800; // 50ms vor visuellem Pop bei 850ms
+      const cardStaggerMs = 1500;
+      const handles: number[] = [];
+      for (let i = 0; i < cardCount; i++) {
+        const delay = cardBaseMs + i * cardStaggerMs;
+        handles.push(window.setTimeout(() => {
+          try { playActionMenuReveal(); } catch {}
+        }, delay));
+      }
+      return () => { handles.forEach(h => window.clearTimeout(h)); };
     } else if (s.introStep === 2 && prev !== 2) {
       // Category-Reveal-Substep — kategorie-spez. Question-Start-Sound
       try { playQuestionStartFor(s.currentQuestion?.category); } catch {}
@@ -830,7 +850,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Category-Explanation-Substep — leiserer Tick als Folien-Cue
       try { playFieldPlaced(); } catch {}
     }
-  }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category]);
+  }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category, s.gamePhaseIndex, s.grid]);
 
   // 2026-04-30 v3 round 7 (Phase-Sound-Audit): Pro RULES-Slide-Wechsel ein
   // dezenter Tick-Sound, damit jede Folie hoerbar markiert ist.
@@ -4302,6 +4322,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               const oder = lang === 'en' ? 'or' : 'oder';
               const cardCount = cards.length;
               // Single-Card → zentriert mit max-Breite, multi → flex evenly
+              // 2026-04-30 v3 round 8 (User-Wunsch 'cards aufploppen nacheinander
+              // damit ich moderieren kann'): pro Card gestaffelter Delay 1.5s,
+              // erste Card bei 0.85s. „oder"-Separator pop'pt 100ms vor naechster
+              // Card. Sound (playActionMenuReveal) pro Card synchron im
+              // separaten useEffect (siehe oben am Beginn der Komponente).
+              const cardStaggerMs = 1500;
+              const cardBaseMs = 850;
               return (
                 <div style={{
                   flex: 1, minHeight: 0,
@@ -4310,13 +4337,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   alignItems: 'stretch', justifyContent: 'center',
                   gap: 'clamp(10px, 1.6vw, 24px)',
                   width: '100%', maxWidth: 1700,
-                  animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                 }}>
                   {cards.map((c, i) => {
                     const iconSize = 'clamp(72px, 8.5vw, 132px)';
                     const iconNode = c.slug
                       ? <QQIcon slug={c.slug} size={iconSize} alt={c.label} />
                       : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
+                    const cardDelayMs = cardBaseMs + i * cardStaggerMs;
+                    const sepDelayMs = cardDelayMs - 100; // separator kurz vor card
                     return (
                       <Fragment key={i}>
                         {i > 0 && (
@@ -4326,6 +4354,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                             fontWeight: 900, color: '#94a3b8',
                             letterSpacing: '0.1em', textTransform: 'uppercase',
                             flex: '0 0 auto',
+                            animation: `phasePop 0.4s cubic-bezier(0.34,1.56,0.64,1) ${sepDelayMs / 1000}s both`,
                           }}>{oder}</div>
                         )}
                         <div style={{
@@ -4340,6 +4369,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
                           border: `3px solid ${c.accent}aa`,
                           boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+                          animation: `phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${cardDelayMs / 1000}s both`,
                         }}>
                           {/* Icon — gross + drop-shadow als Fokus-Element */}
                           <div style={{

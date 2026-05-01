@@ -7815,44 +7815,87 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     return b;
   }, [showTarget, onMapPins, tLat, tLng, displayPos]);
 
+  // 2026-04-30 v3 round 9 (User-Wunsch 'pin statt zielscheibe, gerne pin
+  // mit avatar im kreis und nadel auf ziel'): Target und Team-Markers
+  // jetzt als Pin-Shape (runder Kopf mit Inhalt + Nadel-Tip nach unten).
+  // iconAnchor sitzt am unteren Tip, damit die Nadel exakt auf der lat/lng
+  // landet. Target-Pin = gold/orange mit Flag-Emoji, Team-Pin = team-color
+  // mit Avatar im Kopf.
   const targetIcon = useMemo(() => L.divIcon({
     className: 'qq-target-pin',
     html: `<div style="
-      width: 72px; height: 72px; border-radius: 50%;
-      background: radial-gradient(circle, #FDE68A 0%, #FBBF24 60%, #B45309 100%);
-      border: 4px solid #FEF3C7;
-      box-shadow: 0 0 0 8px rgba(251,191,36,0.25), 0 0 40px rgba(251,191,36,0.85), 0 8px 24px rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
+      position: relative; width: 72px; height: 92px;
       animation: mapTargetDrop 0.75s cubic-bezier(0.34,1.56,0.64,1) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
-      position: relative;
+      transform-origin: 50% 100%;
     ">
-      <div style="position:absolute; inset:14px; border-radius:50%; border:3px solid #78350F;"></div>
-      <div style="position:absolute; left:50%; top:6px; bottom:6px; width:3px; background:#78350F; transform:translateX(-50%);"></div>
-      <div style="position:absolute; top:50%; left:6px; right:6px; height:3px; background:#78350F; transform:translateY(-50%);"></div>
-      <div style="width:14px; height:14px; border-radius:50%; background:#78350F; z-index:1;"></div>
+      <div style="
+        position: absolute; left: 0; top: 0;
+        width: 72px; height: 72px; border-radius: 50%;
+        background: radial-gradient(circle, #FDE68A 0%, #FBBF24 60%, #B45309 100%);
+        border: 4px solid #FEF3C7;
+        box-shadow: 0 0 0 8px rgba(251,191,36,0.25), 0 0 40px rgba(251,191,36,0.85), 0 8px 24px rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 38px; line-height: 1;
+      ">🚩</div>
+      <div style="
+        position: absolute; left: 50%; top: 60px;
+        width: 0; height: 0;
+        border-left: 14px solid transparent;
+        border-right: 14px solid transparent;
+        border-top: 28px solid #FBBF24;
+        transform: translateX(-50%);
+        filter: drop-shadow(0 6px 8px rgba(0,0,0,0.45));
+      "></div>
+      <div style="
+        position: absolute; left: 50%; bottom: -2px;
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #78350F; transform: translateX(-50%);
+        box-shadow: 0 0 8px rgba(251,191,36,0.9);
+      "></div>
     </div>`,
-    iconSize: [72, 72] as any,
-    iconAnchor: [36, 36] as any,
+    iconSize: [72, 92] as any,
+    iconAnchor: [36, 92] as any, // Tip an lat/lng
   }), []);
 
   const makeTeamIcon = (color: string, imageUrl: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
-      width: 48px; height: 48px; border-radius: 50%;
-      background: #0f172a;
-      border: 4px solid ${color};
-      box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}66;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
+      position: relative; width: 56px; height: 72px;
       animation: qqTeamPinDrop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
+      transform-origin: 50% 100%;
     ">
-      <img src="${imageUrl}" alt="" draggable="false"
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-        style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
-      <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
+      <div style="
+        position: absolute; left: 4px; top: 0;
+        width: 48px; height: 48px; border-radius: 50%;
+        background: #0f172a;
+        border: 4px solid ${color};
+        box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}66;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+      ">
+        <img src="${imageUrl}" alt="" draggable="false"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+          style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
+        <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
+      </div>
+      <div style="
+        position: absolute; left: 50%; top: 44px;
+        width: 0; height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 22px solid ${color};
+        transform: translateX(-50%);
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+      "></div>
+      <div style="
+        position: absolute; left: 50%; bottom: 0;
+        width: 5px; height: 5px; border-radius: 50%;
+        background: #0f172a; transform: translateX(-50%);
+        box-shadow: 0 0 6px ${color}cc;
+      "></div>
     </div>`,
-    iconSize: [48, 48] as any,
-    iconAnchor: [24, 24] as any,
+    iconSize: [56, 72] as any,
+    iconAnchor: [28, 72] as any, // Tip an lat/lng
   });
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');

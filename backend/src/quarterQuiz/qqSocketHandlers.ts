@@ -275,18 +275,24 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
   if (q.category === 'BUNTE_TUETE' && q.bunteTuete) {
     const bt = q.bunteTuete;
     // CozyGuessr (map): Pin als "lat,lng" — bei korrekt nah am Ziel, sonst
-    // weit weg gestreut (irgendwo auf der Erde).
+    // regional daneben (statt zufaelliger Welt-Punkt).
+    // 2026-04-30 v3 round 9 (User-Wunsch 'dummys auch in cozyguessr smarter'):
+    // Jitter bei correct: 6° → 2° (~110km, viel naeher am Ziel).
+    // Wrong: weltweit-zufaellig → regional ±15° (~1650km, gleicher Kontinent).
     if (bt.kind === 'map') {
       if (beCorrect) {
-        // ±3° Jitter um Ziel (~330km) → meist auf Kontinent, manchmal daneben
-        const lat = bt.lat + (Math.random() - 0.5) * 6;
-        const lng = bt.lng + (Math.random() - 0.5) * 6;
+        // ±1° Jitter um Ziel (~110km) → meistens fast auf der richtigen Stadt
+        const lat = bt.lat + (Math.random() - 0.5) * 2;
+        const lng = bt.lng + (Math.random() - 0.5) * 2;
         return `${lat.toFixed(4)},${lng.toFixed(4)}`;
       }
-      // Völlig daneben: zufälliger Punkt
-      const lat = -60 + Math.random() * 120;
-      const lng = -180 + Math.random() * 360;
-      return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+      // Wrong: regional daneben (~1650km Streuung) — gleicher Kontinent.
+      const lat = bt.lat + (Math.random() - 0.5) * 30;
+      const lng = bt.lng + (Math.random() - 0.5) * 30;
+      // Clamp auf Erd-Bereich
+      const clampedLat = Math.max(-85, Math.min(85, lat));
+      const clampedLng = ((lng + 540) % 360) - 180;
+      return `${clampedLat.toFixed(4)},${clampedLng.toFixed(4)}`;
     }
     // Top5: eine der gültigen Antworten
     if (bt.kind === 'top5') {

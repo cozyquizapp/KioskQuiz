@@ -1904,14 +1904,17 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   // 2026-04-29 (User-Feedback): Chips skalieren mit Anzahl, sonst kollidiert
   // der Block bei 30+ genannten Antworten mit der Frage-Card oben.
-  // 4 Tiers: ≤8 = groß, ≤20 = medium, ≤32 = small, sonst = xs.
+  // v3 round 10 (User-Bug 'noch nicht optimal'): Chip-Tiers eine Stufe
+  // hoeher (frueher md/lg) damit der Chip-Block den freigewordenen Platz
+  // nach oben (Card-Shift) fuellt. Schwellen weiter, lg/md bleiben laenger
+  // gross. Plus ein neuer xl-Tier fuer ≤8 Chips.
   const n = used.length;
-  const tier: 'lg' | 'md' | 'sm' | 'xs' = n <= 8 ? 'lg' : n <= 20 ? 'md' : n <= 32 ? 'sm' : 'xs';
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 8 ? 'xl' : n <= 18 ? 'lg' : n <= 32 ? 'md' : 'sm';
   const chipStyles = {
+    xl: { fontSize: 'clamp(24px, 2.6vw, 38px)', padding: 'clamp(10px, 1.2vh, 16px) clamp(18px, 1.8vw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2vw, 32px)', padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
-    md: { fontSize: 'clamp(16px, 1.7vw, 24px)', padding: 'clamp(6px, 0.8vh, 11px) clamp(12px, 1.3vw, 20px)', gap: 8, border: 2, shadowAlpha: 0.15 },
-    sm: { fontSize: 'clamp(13px, 1.4vw, 19px)', padding: 'clamp(5px, 0.6vh, 8px) clamp(10px, 1.1vw, 16px)', gap: 6, border: 1.5, shadowAlpha: 0.12 },
-    xs: { fontSize: 'clamp(11px, 1.2vw, 16px)', padding: 'clamp(4px, 0.5vh, 7px) clamp(8px, 0.9vw, 13px)', gap: 5, border: 1, shadowAlpha: 0.10 },
+    md: { fontSize: 'clamp(17px, 1.85vw, 26px)', padding: 'clamp(7px, 0.9vh, 12px) clamp(14px, 1.5vw, 22px)', gap: 9, border: 2, shadowAlpha: 0.15 },
+    sm: { fontSize: 'clamp(14px, 1.5vw, 21px)', padding: 'clamp(6px, 0.7vh, 10px) clamp(12px, 1.3vw, 18px)', gap: 7, border: 1.5, shadowAlpha: 0.13 },
   }[tier];
 
   return (
@@ -9002,18 +9005,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)';
             const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2vh, 16px)' : 'clamp(16px, 2.2vh, 32px)';
             const cardFontSize = hpCompact ? 'clamp(22px, 2.6vw, 38px)' : qFontSize;
-            // 2026-04-30 v3 round 9 (User-Wunsch 'frage dynamisch nach oben
-            // schieben bei vielen chips, platz fuer groessere chips drunter'):
-            // HotPotato Card-Shift basiert auf chip-count. Smooth via
-            // transform translateY mit transition. Frage wird mit jeder
-            // Chip-Stufe weiter raufgeschoben — mehr Vertikalplatz fuer Chips
-            // ohne dass die Card in die Top-Bar (Badge bei top:50px) reinrutscht.
-            // Tiers: 0-12 = 0px, 13-20 = -8vh, 21-30 = -16vh, 31+ = -22vh
-            // (max -22vh ≈ -240px bei 1080p, Card landet bei ~30% statt 50%)
+            // 2026-04-30 v3 round 10 (User-Wunsch 'noch nicht optimal'):
+            // Aggressiverer Card-Shift + im HotPotato-View groessere Chip-Tiers
+            // damit der Chip-Block nach oben waechst und das Loch in der
+            // Mitte fuellt. Tiers verdoppelt (-25vh max statt -22vh) und
+            // frueher startend (ab 9 Chips Shift).
+            // 0-8: 0vh (Card mittig, wenig Chips brauchen Platz)
+            // 9-16: -12vh
+            // 17-24: -22vh
+            // 25+: -32vh (Card landet bei ~18% von oben, dicht unter Badge)
             const chipShiftVh = isHotPotatoActive
-              ? hpUsedCount >= 31 ? -22
-              : hpUsedCount >= 21 ? -16
-              : hpUsedCount >= 13 ? -8
+              ? hpUsedCount >= 25 ? -32
+              : hpUsedCount >= 17 ? -22
+              : hpUsedCount >= 9 ? -12
               : 0
               : 0;
             return (

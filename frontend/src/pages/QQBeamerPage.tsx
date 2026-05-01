@@ -8854,8 +8854,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           const hpCompact = isHotPotatoActive && hpUsedCount > 16;
           // 2026-04-30 v3 (User-Korrektur): Frage-Card immer vertikal mittig —
           // zusammen mit Antwortoptionen darunter als 1 BLOCK fuer MUCHO/ZvZ.
-          // 'center' fuer alle Kategorien, hpCompact bleibt 'flex-start'.
-          const innerJustify = hpCompact ? 'flex-start' : 'center';
+          // 'center' fuer alle Kategorien (Regel 1).
+          // v3 round 9 (User-Bug 'hot potato lasst zu viel platz mitte, frage
+          // hängt im badge oben'): hpCompact override auf 'flex-start' entfernt.
+          // Chips sind position:absolute bottom:16, nehmen keinen Flex-Platz —
+          // Card kann ohne Overlap mittig sitzen. Compact-Padding bleibt aktiv.
+          const innerJustify = 'center';
           const innerGap = 0;
           return (
         <div style={{

@@ -1241,6 +1241,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           // mit der MUCHO-Animation. autoCap advanced alle 750ms eine Option,
           // Voter pro Option erscheinen simultan. Wir scheduln dazu
           // passend pro Voter einen aufsteigenden Pentatonik-Ton.
+          // v3 round 8 (User-Bug 'ton kommt viel zu früh'): autoCap-Tick startet
+          // bei t=750ms (NICHT t=0). Erste Voter-Pops also bei +750ms. Sounds
+          // wurden um eine Tick-Periode verschoben damit sie synchron zum
+          // visuellen Pop kommen, minus 60ms Lead-Time fuer psychoakustische
+          // Synchronitaet (Ohr nimmt Ton minimal vor Bild als sync wahr).
           const opts = q.options ?? [];
           const nonEmptyOrdered: number[] = [];
           for (let i = 0; i < opts.length; i++) {
@@ -1254,7 +1259,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             optionVoters.forEach((_voter, localIdx) => {
               const myRank = voterCount;
               voterCount++;
-              const delay = optStep * 750 + localIdx * 90;
+              const delay = (optStep + 1) * 750 - 60 + localIdx * 90;
               window.setTimeout(() => { try { playAvatarCascadeNote(myRank, cascadeTotal); } catch {} }, delay);
             });
           });
@@ -1273,11 +1278,39 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         try { playRevealHighlight(); } catch {}
       }
       else if (prev.zvz === 0) {
-        // Cascade-Start — Tonleiter pro Avatar.
-        // ZvZ zeigt alle Bets gleichzeitig; wir staggern die Toene mit ~150ms.
-        const allSorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
-        allSorted.forEach((_a, idx) => {
-          window.setTimeout(() => { try { playAvatarCascadeNote(idx, cascadeTotal); } catch {} }, idx * 150);
+        // Cascade-Start — Tonleiter pro Avatar synchron zur ZvZ-Animation.
+        // v3 round 8 (User-Bug 'ton kommt zu früh'): ZvZ enthuellt Optionen
+        // gestaffelt (200ms initial + 550ms pro Option, siehe zvzNonEmptyOptions
+        // forEach in line 7993). Sounds müssen pro Option-Batch + per-team-
+        // Stagger feuern, nicht stupide alle 150ms ab t=0.
+        const q = s.currentQuestion;
+        const opts = q?.options ?? [];
+        // Reihenfolge der Option-Reveals (Backend-Sortierung): nicht-leere
+        // Optionen in Index-Reihenfolge — passt zum Frontend-Cascade.
+        const nonEmptyOrderedZ: number[] = [];
+        for (let i = 0; i < opts.length; i++) {
+          if (s.answers.some(a => a.text.split(',').some((p, pi) => pi === i && Number(p) > 0))) {
+            nonEmptyOrderedZ.push(i);
+          }
+        }
+        let zvzVoterCount = 0;
+        nonEmptyOrderedZ.forEach((optIdx, optStep) => {
+          // Teams die auf optIdx gesetzt haben, sortiert nach submittedAt
+          const optionTeams = s.answers
+            .map(a => {
+              const parts = a.text.split(',').map(n => Number(n) || 0);
+              return { teamId: a.teamId, pts: parts[optIdx] ?? 0, submittedAt: a.submittedAt };
+            })
+            .filter(x => x.pts > 0)
+            .sort((a, b) => a.submittedAt - b.submittedAt);
+          optionTeams.forEach((_t, localIdx) => {
+            const myRank = zvzVoterCount;
+            zvzVoterCount++;
+            // Visual-Time = 200 (initial) + optStep*550 (option-batch). Sound
+            // 60ms davor + 90ms per-team-stagger fuer hoerbare Cascade.
+            const delay = 200 + optStep * 550 - 60 + localIdx * 90;
+            window.setTimeout(() => { try { playAvatarCascadeNote(myRank, cascadeTotal); } catch {} }, Math.max(0, delay));
+          });
         });
       }
       else playFieldPlaced();

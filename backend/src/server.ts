@@ -8098,6 +8098,22 @@ if (qqDrafts.length === 0) {
   persistQQDrafts();
 }
 
+// 2026-05-01: Extra-Test-Drafts (Harry Potter, Hamburg) mergen.
+// File-only Drafts werden in /api/qq/drafts ohnehin nach DB synced
+// (siehe Line ~8300), also reicht's hier qqDrafts in-memory zu erweitern.
+{
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { QQ_EXTRA_TEST_DRAFTS } = require('./data/qqExtraTestDrafts') as {
+    QQ_EXTRA_TEST_DRAFTS: typeof qqDrafts;
+  };
+  const existingIds = new Set(qqDrafts.map((d) => d.id));
+  const missing = QQ_EXTRA_TEST_DRAFTS.filter((d) => !existingIds.has(d.id));
+  if (missing.length > 0) {
+    qqDrafts = [...qqDrafts, ...missing];
+    console.log(`[seed-qq] ${missing.length} Extra-Test-Drafts geladen (${missing.map((d) => d.id).join(', ')})`);
+  }
+}
+
 // Migrate: mark the 4 newer sample drafts with 🆕 if not already tagged
 {
   const newIds = ['qq-sample-hamburg', 'qq-sample-natur-tiere', 'qq-sample-sport', 'qq-sample-essen-trinken'];

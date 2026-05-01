@@ -857,8 +857,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Category-Reveal-Substep — kategorie-spez. Question-Start-Sound
       try { playQuestionStartFor(s.currentQuestion?.category); } catch {}
     } else if (s.introStep === 3 && prev !== 3) {
-      // Category-Explanation-Substep — leiserer Tick als Folien-Cue
-      try { playFieldPlaced(); } catch {}
+      // Category-Explanation-Substep — User-Wunsch 2026-05-01:
+      // statt 'Feld-Setzen'-Stamp jetzt der Neue-Runde-Sound (passender
+      // zur Phase-Intro-Erklaerung als ein Tile-Plopp).
+      try { playRoundStart(); } catch {}
     }
   }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category, s.gamePhaseIndex, s.grid]);
 
@@ -1330,17 +1332,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         else playFieldPlaced();
       }
     }
-    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → naechster Cascade-Ton.
+    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → still.
     if (curr.zvz > prev.zvz) {
       const total = s.answers.length;
       const cascadeTotal = total + 2;
       if (curr.zvz >= 2) {
-        // v3 round 11 (User-Bug 'mehrere parallele sounds bei zvz reveal'):
-        // Vorher feuerten Cascade-Ton N + Reveal-Highlight gleichzeitig.
-        // Jetzt nur Reveal-Highlight (saubere 1-Layer 'antwort kommt'). Top-
-        // Cascade-Ton ist die WinnerCard. Das gibt eine klare 3-Schritt-
-        // Klimax: Cascade pro Team → Reveal-Highlight (Lock) → Climax (Winner).
-        try { playRevealHighlight(); } catch {}
+        // 2026-05-01 (User-Bug 'neben der cascade noch ein anderer sound'):
+        // playRevealHighlight entfernt — die Cascade-Toene laufen async via
+        // setTimeout, der Step-Wechsel auf 2 kann mid-cascade kommen und
+        // den Highlight-Sound parallel zur noch laufenden Cascade legen.
+        // Lock-Step jetzt rein visuell, WinnerCard liefert den Climax.
       }
       else if (prev.zvz === 0) {
         // Cascade-Start — Tonleiter pro Avatar synchron zur ZvZ-Animation.

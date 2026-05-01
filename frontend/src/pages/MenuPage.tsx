@@ -34,6 +34,7 @@ const extrasLinks: LinkItem[] = [
   { path: '/round-lab',           label: 'Wolf-Trail Lab',     emoji: '🐺', note: 'Prototyp: Wolf wandert den Tree entlang' },
   { path: '/reveal-lab',          label: 'Reveal-Lab',         emoji: '👥', note: 'Avatar-Layouts pro Kategorie vergleichen' },
   { path: '/city-lab',            label: 'City Lab (3D)',      emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats' },
+  { path: '/garden-pitch',        label: 'Garden Pitch',       emoji: '🌱', note: 'Mass-Quiz-Modus für 100+ Personen — Konzept-Demo' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
   // Admin & Stats

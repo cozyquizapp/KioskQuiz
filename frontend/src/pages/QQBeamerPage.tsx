@@ -6021,14 +6021,21 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
     votersByOption[optId].push(teamId);
   }
 
+  // 2026-04-30 v3 round 8 (User-Bug 'WinnerCard ueberlappt H-Bluff bei 8 Teams'):
+  // Bei 6+ Optionen 3 Spalten statt 2 — kompakteres Vertikal-Layout, das
+  // die fixed-bottom WinnerCard nicht mehr ueberdeckt. Bei <=5 Optionen
+  // einspaltig (vorher), 6-7 Optionen 2 Spalten, 8+ Optionen 3 Spalten.
+  const cols = opts.length >= 8 ? 3 : opts.length > 4 ? 2 : 1;
   return (
     <div style={{
       flex: 1, display: 'grid',
-      gridTemplateColumns: opts.length > 4 ? 'repeat(2, 1fr)' : '1fr',
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
       gap: 'clamp(8px, 1vw, 14px)',
-      maxWidth: 1100, width: '100%', margin: '0 auto',
+      maxWidth: cols === 3 ? 1400 : 1100, width: '100%', margin: '0 auto',
       position: 'relative', zIndex: 5,
       animation: 'contentReveal 0.5s ease 0.15s both',
+      // Platz unten reservieren fuer fixed-bottom WinnerCard (~140-180px hoch).
+      paddingBottom: revealed ? 'clamp(140px, 18vh, 220px)' : 0,
     }}>
       {opts.map((opt, i) => {
         const isReal = opt.source === 'real';

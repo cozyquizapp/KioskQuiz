@@ -1,57 +1,73 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 /**
- * CozyWolf Garden — Pitch / Mockup-Page
+ * CozyWolf Garden — Pitch / Mockup-Page mit Walkthrough
  *
- * Konzept-Demo fuer Mass-Quiz-Modus (100+ Personen). Statt 8x8-Grid
- * mit Felder-Setzen ein lebendiger "Garten" auf einem geteilten Canvas:
- * jedes Team hat einen Seed-Pixel, das per Floodfill um sich herum waechst.
- * Pro richtige Antwort gewinnt das Team weitere Pixel an seinem Rand.
- *
- * Visualisiert als Cellular Automaton (HTML5 Canvas) — diskrete Pixel
- * statt schwammiger Gradients. User-Feedback 2026-05-01: 'pixel zu fuellen
- * immer wieder um den startpunkt herum, breitet sich das gebiet aus'.
+ * Zeigt das Konzept als Live-Demo mit ALLEN Specials in Sequenz:
+ * intro → sun-zones → saisons → spotlight-question → schrumpfen → finale.
+ * 10 Teams (skalierbar fuer Festivals: jeder joint einem der 10 Teams).
+ * Pixel-Floodfill auf 160x90-Grid (HTML5 Canvas), langsamere Animation
+ * fuer ruhigeren Pitch-Eindruck.
  */
 
 // ── Konstanten ──────────────────────────────────────────────────────────────
 const COLS = 160;
-const ROWS = 90; // 16:9
+const ROWS = 90;
 const TOTAL_CELLS = COLS * ROWS;
-const TICK_MS = 80;
-const RESET_AT_TICK = 320;
-const RESET_PAUSE_MS = 2200;
+const TICK_MS = 130; // langsamer (vorher 80) fuer ruhigeren Pitch-Eindruck
+const RESET_PAUSE_MS = 3500;
 
-// ── Demo-Teams (Mock) ──────────────────────────────────────────────────────
+// Walkthrough-Phasen mit Tick-Bereichen
+type PhaseId = 'intro' | 'sun' | 'seasons' | 'spotlight' | 'shrink' | 'finale';
+const PHASES: Array<{
+  id: PhaseId; from: number; to: number; emoji: string; title: string; desc: string;
+}> = [
+  { id: 'intro',     from: 0,   to: 60,  emoji: '🌱', title: 'Gärten beginnen zu wachsen', desc: 'Jedes Team startet mit 1 Pixel an seinem Spawn-Punkt. Pro richtiger Antwort breitet sich das Territorium um seinen Rand aus.' },
+  { id: 'sun',       from: 60,  to: 130, emoji: '☀️', title: 'Sonnen-Zone erscheint', desc: 'Bonus-Mechanik: Pixel die innerhalb der Sonne wachsen, geben dem Team doppelte Wachstumsrate. Sonne wandert über die Karte — schnelle Teams nutzen sie.' },
+  { id: 'seasons',   from: 130, to: 200, emoji: '🍂', title: 'Saisonwechsel: Herbst', desc: 'Spiel hat 4 Saisons (Frühling → Sommer → Herbst → Winter). Jede Saison verändert Farb-Stimmung + Gameplay-Modifier — z. B. „Herbst: schwächere Teams wachsen +50% schneller" (Aufholmechanik).' },
+  { id: 'spotlight', from: 200, to: 270, emoji: '✨', title: 'Spotlight-Question — 3× Bonus!', desc: 'Alle 5 Fragen erscheint eine Spotlight-Question. Das Team mit der schnellsten richtigen Antwort bekommt 3× Wachstum. Hier holen die Wolfsrudel auf!' },
+  { id: 'shrink',    from: 270, to: 340, emoji: '🌧️', title: 'Eulen werden inaktiv...', desc: 'Wenn ein Team 2 Fragen in Folge keine Antwort gibt, schrumpft das Territorium am Rand. Verhindert dass Führende „aussteigen" und hält alle bis zum Ende dabei.' },
+  { id: 'finale',    from: 340, to: 420, emoji: '🏆', title: 'Finale — wer hat am meisten?', desc: 'Am Ende der Spielzeit wird das größte Territorium gefeiert. Die Karte ist ein lebendiges Mosaik aus dem gesamten Event.' },
+];
+
+// ── Demo-Teams (10 fuer Festival-Skalierung) ───────────────────────────────
 type DemoTeam = {
-  id: string;
-  name: string;
-  color: string;
-  // Seed-Position als Index (col, row)
-  col: number;
-  row: number;
-  // Wachstumsrate: Cells pro Tick
-  growth: number;
+  id: string; name: string; color: string;
+  col: number; row: number; growth: number;
 };
 
 const DEMO_TEAMS: DemoTeam[] = [
-  { id: 'a', name: 'Wolfsrudel', color: '#3B82F6', col: 12,  row: 14, growth: 5.2 },
-  { id: 'b', name: 'Pinguine',   color: '#10B981', col: 148, row: 14, growth: 4.6 },
-  { id: 'c', name: 'Faultiere',  color: '#F59E0B', col: 12,  row: 76, growth: 6.4 },
-  { id: 'd', name: 'Koalas',     color: '#A855F7', col: 148, row: 76, growth: 3.8 },
-  { id: 'e', name: 'Giraffen',   color: '#EC4899', col: 80,  row: 8,  growth: 5.0 },
-  { id: 'f', name: 'Waschbären', color: '#06B6D4', col: 80,  row: 82, growth: 3.2 },
-  { id: 'g', name: 'Füchse',     color: '#EF4444', col: 28,  row: 45, growth: 5.8 },
-  { id: 'h', name: 'Eulen',      color: '#FBBF24', col: 132, row: 45, growth: 2.6 },
+  { id: 'a', name: 'Wolfsrudel', color: '#3B82F6', col: 12,  row: 14, growth: 3.0 },
+  { id: 'b', name: 'Pinguine',   color: '#10B981', col: 148, row: 14, growth: 2.6 },
+  { id: 'c', name: 'Faultiere',  color: '#F59E0B', col: 12,  row: 76, growth: 3.4 },
+  { id: 'd', name: 'Koalas',     color: '#A855F7', col: 148, row: 76, growth: 2.4 },
+  { id: 'e', name: 'Giraffen',   color: '#EC4899', col: 80,  row: 8,  growth: 2.8 },
+  { id: 'f', name: 'Waschbären', color: '#06B6D4', col: 80,  row: 82, growth: 2.0 },
+  { id: 'g', name: 'Füchse',     color: '#EF4444', col: 28,  row: 45, growth: 3.2 },
+  { id: 'h', name: 'Eulen',      color: '#FBBF24', col: 132, row: 45, growth: 1.8 },
+  { id: 'i', name: 'Bienen',     color: '#65A30D', col: 56,  row: 30, growth: 2.4 },
+  { id: 'j', name: 'Otter',      color: '#FB7185', col: 104, row: 60, growth: 2.6 },
 ];
+
+const SPOTLIGHT_TEAM_IDX = 0; // Wolfsrudel kriegt Spotlight
+const SHRINK_TEAM_IDX = 7;    // Eulen schrumpfen
 
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function QQGardenPitchPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Grid: Uint8Array, value = teamIndex+1 (0 = leer)
+  const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<Uint8Array>(new Uint8Array(TOTAL_CELLS));
   const [tick, setTick] = useState(0);
   const [running, setRunning] = useState(true);
   const [teamCounts, setTeamCounts] = useState<number[]>(DEMO_TEAMS.map(() => 0));
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // ── Phase basierend auf Tick ───────────────────────────────────────────
+  const currentPhase = useMemo(() => {
+    return PHASES.find(p => tick >= p.from && tick < p.to) ?? PHASES[PHASES.length - 1];
+  }, [tick]);
+
+  const finalTick = PHASES[PHASES.length - 1].to;
 
   // ── Init: Seed-Pixel pro Team setzen ───────────────────────────────────
   const resetGrid = useCallback(() => {
@@ -75,29 +91,85 @@ export default function QQGardenPitchPage() {
 
   // ── Reset-Loop fuer Demo ────────────────────────────────────────────────
   useEffect(() => {
-    if (tick > RESET_AT_TICK) {
+    if (tick > finalTick) {
       const t = setTimeout(() => {
         resetGrid();
         setTick(0);
       }, RESET_PAUSE_MS);
       return () => clearTimeout(t);
     }
-  }, [tick, resetGrid]);
+  }, [tick, finalTick, resetGrid]);
 
-  // ── Per Tick: jedes Team waechst um N Cells ─────────────────────────────
+  // ── Sun-Zone-Position waehrend sun-Phase ───────────────────────────────
+  const sunZone = useMemo(() => {
+    if (currentPhase.id !== 'sun') return null;
+    const localTick = tick - currentPhase.from;
+    const angle = localTick * 0.05;
+    const cx = 50 + Math.cos(angle) * 24;
+    const cy = 50 + Math.sin(angle) * 18;
+    return {
+      x: cx, y: cy,
+      // Pixel-Koordinaten fuer Growth-Boost
+      pcol: Math.round((cx / 100) * COLS),
+      prow: Math.round((cy / 100) * ROWS),
+      pulse: Math.sin(tick * 0.18) * 0.3 + 0.7,
+    };
+  }, [tick, currentPhase]);
+
+  // ── Per Tick: Wachstum + Phase-Modifier ─────────────────────────────────
   useEffect(() => {
     if (tick === 0) return;
     const g = gridRef.current;
     const newCounts = [...teamCounts];
+
+    // SHRINK-Phase: Eulen verlieren Border-Pixel
+    if (currentPhase.id === 'shrink') {
+      const teamId = SHRINK_TEAM_IDX + 1;
+      const lossTargets: number[] = [];
+      for (let i = 0; i < g.length; i++) {
+        if (g[i] !== teamId) continue;
+        const r = Math.floor(i / COLS);
+        const c = i % COLS;
+        const neighs: number[] = [];
+        if (r > 0)        neighs.push((r - 1) * COLS + c);
+        if (r < ROWS - 1) neighs.push((r + 1) * COLS + c);
+        if (c > 0)        neighs.push(r * COLS + (c - 1));
+        if (c < COLS - 1) neighs.push(r * COLS + (c + 1));
+        // Border-Cell = mind. 1 leerer Nachbar ODER mind. 1 fremder Nachbar
+        const isBorder = neighs.some(n => g[n] === 0 || (g[n] !== 0 && g[n] !== teamId));
+        if (isBorder) lossTargets.push(i);
+      }
+      // 4-6 Pixel pro Tick verlieren
+      const lossCount = Math.min(5, lossTargets.length);
+      for (let k = 0; k < lossCount; k++) {
+        const idx = Math.floor(Math.random() * lossTargets.length);
+        const cellIdx = lossTargets.splice(idx, 1)[0];
+        if (g[cellIdx] === teamId) {
+          g[cellIdx] = 0;
+          newCounts[SHRINK_TEAM_IDX]--;
+        }
+      }
+    }
+
     DEMO_TEAMS.forEach((team, ti) => {
       const teamId = ti + 1;
-      // Border-Cells finden: eigene mit min. 1 leerem Nachbarn
+      // Phase-Modifier auf growth-rate
+      let growthMul = 1;
+      // Spotlight: Wolfsrudel waechst 3x
+      if (currentPhase.id === 'spotlight' && ti === SPOTLIGHT_TEAM_IDX) growthMul = 3;
+      // Saisons (Herbst): kleinere Teams +50% (catch-up)
+      if (currentPhase.id === 'seasons') {
+        const myCount = teamCounts[ti] ?? 0;
+        const maxCount = Math.max(...teamCounts, 1);
+        if (myCount < maxCount * 0.5) growthMul = 1.5;
+      }
+
+      // Border-Cells finden
       const borders: number[] = [];
       for (let i = 0; i < g.length; i++) {
         if (g[i] !== teamId) continue;
         const r = Math.floor(i / COLS);
         const c = i % COLS;
-        // 4-Nachbarschaft
         const neighs: number[] = [];
         if (r > 0)        neighs.push((r - 1) * COLS + c);
         if (r < ROWS - 1) neighs.push((r + 1) * COLS + c);
@@ -107,8 +179,7 @@ export default function QQGardenPitchPage() {
           if (g[n] === 0) borders.push(n);
         }
       }
-      // Pick N random borders (deduped) und fuellen
-      const target = Math.round(team.growth);
+      const target = Math.round(team.growth * growthMul);
       const seen = new Set<number>();
       for (let k = 0; k < target && borders.length > 0; k++) {
         const idx = Math.floor(Math.random() * borders.length);
@@ -119,6 +190,25 @@ export default function QQGardenPitchPage() {
         if (g[cellIdx] === 0) {
           g[cellIdx] = teamId;
           newCounts[ti]++;
+          // SUN-ZONE Bonus: extra Pixel wenn nahe Sonne
+          if (sunZone) {
+            const r = Math.floor(cellIdx / COLS);
+            const c = cellIdx % COLS;
+            const dx = c - sunZone.pcol;
+            const dy = r - sunZone.prow;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 14) {
+              // Doppeltes Wachstum: zusaetzlich noch 1 random border-cell
+              if (borders.length > 0) {
+                const idx2 = Math.floor(Math.random() * borders.length);
+                const cell2 = borders.splice(idx2, 1)[0];
+                if (g[cell2] === 0) {
+                  g[cell2] = teamId;
+                  newCounts[ti]++;
+                }
+              }
+            }
+          }
         }
       }
     });
@@ -132,7 +222,6 @@ export default function QQGardenPitchPage() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // Skalieren auf devicePixelRatio fuer scharfes Pixelart
     const dpr = window.devicePixelRatio || 1;
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
@@ -141,14 +230,16 @@ export default function QQGardenPitchPage() {
       canvas.height = cssH * dpr;
     }
     ctx.imageSmoothingEnabled = false;
-    // Clear
-    ctx.fillStyle = '#0A1322';
+    // Saison-Tönung des Backgrounds
+    let bg = '#0A1322';
+    if (currentPhase.id === 'seasons') bg = '#1F1810'; // Herbst-warm
+    if (currentPhase.id === 'shrink') bg = '#0E1F2A';  // Regen-blau
+    if (currentPhase.id === 'finale') bg = '#160E26'; // Festlich-violett
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Cell-Size in Pixeln
     const cellW = (cssW * dpr) / COLS;
     const cellH = (cssH * dpr) / ROWS;
     const g = gridRef.current;
-    // Render per Cell
     for (let i = 0; i < g.length; i++) {
       const v = g[i];
       if (v === 0) continue;
@@ -163,7 +254,15 @@ export default function QQGardenPitchPage() {
         Math.ceil(cellH) + 1,
       );
     }
-    // Subtle gradient overlay fuer Cozy-Look
+    // Saison-Tint-Overlay
+    if (currentPhase.id === 'seasons') {
+      ctx.fillStyle = 'rgba(251,146,60,0.10)'; // Herbst-orange-Schleier
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (currentPhase.id === 'shrink') {
+      ctx.fillStyle = 'rgba(56,189,248,0.06)'; // Kühler blauer Schleier
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    // Subtle vignette
     const grad = ctx.createRadialGradient(
       canvas.width / 2, canvas.height / 2, 0,
       canvas.width / 2, canvas.height / 2, canvas.width / 2,
@@ -172,20 +271,9 @@ export default function QQGardenPitchPage() {
     grad.addColorStop(1, 'rgba(0,0,0,0.45)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, [tick]);
+  }, [tick, currentPhase]);
 
-  // ── Sun-Zone (Bonus-Multiplier-Animation) ──────────────────────────────
-  const sunZone = useMemo(() => {
-    if (tick < 90 || tick > 240) return null;
-    const angle = (tick - 90) * 0.035;
-    return {
-      x: 50 + Math.cos(angle) * 24,
-      y: 50 + Math.sin(angle) * 20,
-      pulse: Math.sin(tick * 0.18) * 0.3 + 0.7,
-    };
-  }, [tick]);
-
-  // ── Team-Name-Overlays: Centroid pro Team ─────────────────────────────
+  // ── Team-Labels: Centroid pro Team ────────────────────────────────────
   const teamLabels = useMemo(() => {
     const g = gridRef.current;
     return DEMO_TEAMS.map((team, ti) => {
@@ -197,17 +285,37 @@ export default function QQGardenPitchPage() {
         sumR += Math.floor(i / COLS);
         count++;
       }
-      if (count < 5) return null; // zu klein, label haengt sonst irgendwo
+      if (count < 5) return null;
       const cellCount = teamCounts[ti] ?? count;
       return {
         ...team,
         x: (sumC / count / COLS) * 100,
         y: (sumR / count / ROWS) * 100,
         cells: cellCount,
+        isSpotlight: currentPhase.id === 'spotlight' && ti === SPOTLIGHT_TEAM_IDX,
+        isShrinking: currentPhase.id === 'shrink' && ti === SHRINK_TEAM_IDX,
       };
-    }).filter(Boolean) as Array<DemoTeam & { x: number; y: number; cells: number }>;
-  }, [tick, teamCounts]); // eslint-disable-line react-hooks/exhaustive-deps
+    }).filter(Boolean) as Array<DemoTeam & { x: number; y: number; cells: number; isSpotlight: boolean; isShrinking: boolean }>;
+  }, [tick, teamCounts, currentPhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Fullscreen ─────────────────────────────────────────────────────────
+  const toggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // ── Rendering ──────────────────────────────────────────────────────────
   return (
     <div style={{
       minHeight: '100vh', background: 'radial-gradient(ellipse at center, #0F1B2A 0%, #060A12 70%)',
@@ -217,18 +325,19 @@ export default function QQGardenPitchPage() {
       <style>{`
         @keyframes pitchFadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
         @keyframes pitchPulse  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        @keyframes spotlightGlow { 0%,100% { text-shadow: 0 0 12px rgba(255,255,255,0.5); } 50% { text-shadow: 0 0 24px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.7); } }
       `}</style>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
         {/* Hero */}
-        <div style={{ textAlign: 'center', marginBottom: 36, animation: 'pitchFadeIn 0.6s ease both' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28, animation: 'pitchFadeIn 0.6s ease both' }}>
           <div style={{
             display: 'inline-block', padding: '6px 18px', borderRadius: 999,
             background: 'rgba(34,197,94,0.15)', border: '1.5px solid rgba(34,197,94,0.4)',
             fontSize: 13, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase',
             color: '#86EFAC', marginBottom: 14,
           }}>
-            🌱 Pitch · Variante A · Mass-Mode
+            🌱 Pitch · Variante A · Mass-Mode mit Walkthrough
           </div>
           <h1 style={{
             fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, margin: '0 0 10px',
@@ -242,47 +351,51 @@ export default function QQGardenPitchPage() {
             fontSize: 'clamp(15px, 1.5vw, 19px)', color: '#94A3B8', margin: '0 auto', maxWidth: 760,
             lineHeight: 1.5,
           }}>
-            Mass-Quiz-Modus für 100+ Personen. Jedes Team startet mit einem Pixel und breitet
-            sich pro richtiger Antwort um den Startpunkt herum aus. Am Ende ein lebendiges
-            Mosaik — wer mehr Antworten landet, erobert mehr Territorium.
+            10 Teams, beliebige Spielerzahl. Jeder joint einem Team — pro richtiger Antwort
+            wachsen Pixel um den Spawn-Punkt. Demo zeigt alle 6 Phasen nacheinander.
           </p>
         </div>
 
-        {/* Live-Demo Canvas (Pixel-Floodfill) */}
-        <div style={{
-          position: 'relative', maxWidth: 1100, margin: '0 auto 28px',
-          aspectRatio: '16/9',
-          borderRadius: 24,
-          background: '#0A1322',
-          border: '2px solid rgba(34,197,94,0.18)',
-          boxShadow: '0 0 80px rgba(34,197,94,0.10), 0 20px 60px rgba(0,0,0,0.6)',
-          overflow: 'hidden',
-          animation: 'pitchFadeIn 0.7s ease 0.1s both',
-        }}>
+        {/* Live-Demo Canvas */}
+        <div
+          ref={containerRef}
+          style={{
+            position: 'relative', maxWidth: isFullscreen ? '100%' : 1200, margin: '0 auto 20px',
+            aspectRatio: isFullscreen ? undefined : '16/9',
+            width: isFullscreen ? '100vw' : undefined,
+            height: isFullscreen ? '100vh' : undefined,
+            borderRadius: isFullscreen ? 0 : 24,
+            background: '#0A1322',
+            border: isFullscreen ? 'none' : '2px solid rgba(34,197,94,0.18)',
+            boxShadow: isFullscreen ? 'none' : '0 0 80px rgba(34,197,94,0.10), 0 20px 60px rgba(0,0,0,0.6)',
+            overflow: 'hidden',
+            animation: 'pitchFadeIn 0.7s ease 0.1s both',
+          }}
+        >
           <canvas
             ref={canvasRef}
             style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }}
           />
 
-          {/* Sun-Zone Overlay (Bonus-Multiplier) */}
+          {/* Sun-Zone Overlay */}
           {sunZone && (
             <div style={{
               position: 'absolute',
               left: `${sunZone.x}%`, top: `${sunZone.y}%`,
-              width: 120, height: 120,
+              width: '15%', height: '26%',
               transform: 'translate(-50%, -50%)',
               borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(251,191,36,${0.35 * sunZone.pulse}) 0%, rgba(251,191,36,${0.15 * sunZone.pulse}) 40%, transparent 75%)`,
+              background: `radial-gradient(circle, rgba(251,191,36,${0.40 * sunZone.pulse}) 0%, rgba(251,191,36,${0.18 * sunZone.pulse}) 35%, transparent 70%)`,
               pointerEvents: 'none', zIndex: 3,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 38,
+              fontSize: 'clamp(36px, 5vw, 60px)',
               animation: 'pitchPulse 1.6s ease-in-out infinite',
             }}>
               ☀️
             </div>
           )}
 
-          {/* Team-Labels (Centroid-positioniert) */}
+          {/* Team-Labels */}
           {teamLabels.map(t => (
             <div key={t.id} style={{
               position: 'absolute',
@@ -290,157 +403,223 @@ export default function QQGardenPitchPage() {
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'none', zIndex: 4,
               textAlign: 'center',
-              transition: 'left 0.4s ease, top 0.4s ease',
+              transition: 'left 0.5s ease, top 0.5s ease',
+              opacity: t.isShrinking ? 0.6 : 1,
             }}>
               <div style={{
-                fontSize: 18, fontWeight: 900, color: '#fff',
-                textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 0 12px rgba(0,0,0,0.6)',
+                fontSize: t.isSpotlight ? 'clamp(20px, 2vw, 26px)' : 'clamp(15px, 1.5vw, 20px)',
+                fontWeight: 900, color: '#fff',
+                textShadow: '0 2px 8px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.7)',
                 letterSpacing: '0.02em',
-              }}>{t.name}</div>
+                animation: t.isSpotlight ? 'spotlightGlow 1.2s ease-in-out infinite' : undefined,
+              }}>
+                {t.isSpotlight && '✨ '}
+                {t.name}
+                {t.isShrinking && ' 🌧️'}
+              </div>
               <div style={{
-                fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
+                fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700,
+                color: 'rgba(255,255,255,0.92)',
                 textShadow: '0 1px 4px rgba(0,0,0,0.85)',
                 marginTop: 2,
               }}>{t.cells} Felder</div>
             </div>
           ))}
 
-          {/* HUD top-left */}
+          {/* HUD top-left: Phase */}
           <div style={{
             position: 'absolute', top: 14, left: 18, zIndex: 5,
-            padding: '6px 14px', borderRadius: 999,
-            background: 'rgba(13,10,6,0.7)', border: '1.5px solid rgba(34,197,94,0.35)',
+            padding: '8px 16px', borderRadius: 999,
+            background: 'rgba(13,10,6,0.78)', border: '1.5px solid rgba(34,197,94,0.4)',
             fontSize: 12, fontWeight: 800, color: '#86EFAC',
             letterSpacing: '0.1em', textTransform: 'uppercase',
-            backdropFilter: 'blur(6px)',
+            backdropFilter: 'blur(8px)',
           }}>
-            🌱 Garden · Runde {Math.floor(tick / 30) + 1}
+            {currentPhase.emoji} {currentPhase.title}
           </div>
 
-          {/* HUD top-right */}
+          {/* HUD top-right: Teams */}
           <div style={{
             position: 'absolute', top: 14, right: 18, zIndex: 5,
-            padding: '6px 14px', borderRadius: 999,
-            background: 'rgba(13,10,6,0.7)', border: '1.5px solid rgba(255,255,255,0.18)',
+            padding: '8px 16px', borderRadius: 999,
+            background: 'rgba(13,10,6,0.78)', border: '1.5px solid rgba(255,255,255,0.18)',
             fontSize: 12, fontWeight: 800, color: '#cbd5e1',
             letterSpacing: '0.1em', textTransform: 'uppercase',
-            backdropFilter: 'blur(6px)',
+            backdropFilter: 'blur(8px)',
           }}>
-            👥 8 Teams · 102 Spieler
+            👥 10 Teams · ∞ Spieler
           </div>
 
-          {/* Sun-Bonus-Hint */}
-          {sunZone && (
+          {/* Phase-Beschreibung Bottom */}
+          <div style={{
+            position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 5, maxWidth: '80%',
+            padding: '10px 22px', borderRadius: 16,
+            background: 'rgba(13,10,6,0.85)', border: '1.5px solid rgba(255,255,255,0.18)',
+            fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 700, color: '#cbd5e1',
+            lineHeight: 1.45, textAlign: 'center',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.4s ease',
+          }}>
+            {currentPhase.desc}
+          </div>
+
+          {/* Fullscreen-Button */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Fullscreen verlassen' : 'Fullscreen'}
+            style={{
+              position: 'absolute', bottom: 14, right: 18, zIndex: 6,
+              width: 42, height: 42, borderRadius: 12,
+              background: 'rgba(13,10,6,0.85)', border: '1.5px solid rgba(255,255,255,0.18)',
+              fontSize: 18, color: '#cbd5e1', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(34,197,94,0.22)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(13,10,6,0.85)')}
+          >
+            {isFullscreen ? '✕' : '⛶'}
+          </button>
+
+          {/* Fullscreen-spezifische Phase-Progress-Bar oben */}
+          {isFullscreen && (
             <div style={{
-              position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
-              padding: '6px 16px', borderRadius: 999,
-              background: 'rgba(251,191,36,0.18)', border: '1.5px solid rgba(251,191,36,0.5)',
-              fontSize: 12, fontWeight: 800, color: '#FDE68A',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              animation: 'pitchPulse 1.2s ease-in-out infinite',
+              position: 'absolute', top: 0, left: 0, right: 0, height: 4,
+              background: 'rgba(0,0,0,0.4)', zIndex: 5,
             }}>
-              ☀️ Sonnen-Bonus aktiv — Bereich um Sonne wächst doppelt!
+              <div style={{
+                width: `${Math.min(100, (tick / finalTick) * 100)}%`, height: '100%',
+                background: 'linear-gradient(90deg, #86EFAC, #34D399)',
+                transition: 'width 0.13s linear',
+              }} />
             </div>
           )}
         </div>
 
-        {/* Demo-Controls */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <button
-            onClick={() => { resetGrid(); setTick(0); setRunning(true); }}
-            style={{
-              padding: '10px 22px', borderRadius: 999,
-              background: 'rgba(34,197,94,0.18)',
-              border: '1.5px solid rgba(34,197,94,0.5)',
-              color: '#86EFAC', fontSize: 14, fontWeight: 800,
-              cursor: 'pointer', letterSpacing: '0.06em',
-            }}
-          >
-            ▶ Demo neu starten
-          </button>
-          <button
-            onClick={() => setRunning(r => !r)}
-            style={{
-              marginLeft: 10,
-              padding: '10px 22px', borderRadius: 999,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1.5px solid rgba(255,255,255,0.18)',
-              color: '#cbd5e1', fontSize: 14, fontWeight: 800,
-              cursor: 'pointer', letterSpacing: '0.06em',
-            }}
-          >
-            {running ? '⏸ Pause' : '▶ Weiter'}
-          </button>
-        </div>
-
-        {/* Wie es funktioniert */}
-        <Section title="🌱 Wie es funktioniert" delay="0.2s">
-          <BulletList items={[
-            '8-12 Teams (10-20 Personen pro Team) — jeder Mitspieler tippt eigenständig auf seinem Handy',
-            'Jedes Team startet mit 1 Pixel an einer Ecke der Karte',
-            'Pro richtiger Antwort eines Team-Mitglieds wächst das Territorium um 1 Pixel — Floodfill rund um den Rand',
-            'Engagement zählt: bei 10/10 richtig wachsen 10 Pixel, bei 1/10 nur 1 Pixel',
-            'Am Ende: das Team mit den meisten Pixeln hat das größte Territorium → gewonnen',
-          ]} />
-        </Section>
-
-        {/* Tension-Mechaniken */}
-        <Section title="🎭 Tension-Mechaniken (gegen Langeweile)" delay="0.3s">
-          <div style={{ display: 'grid', gap: 12 }}>
-            <Card emoji="☀️" title="Sonnen-Zonen (Bonus-Multiplier)" desc="Periodisch erscheint eine Sonnen-Zone an Random-Position. Pixel die innerhalb der Zone wachsen, geben dem Team doppelte Wachstumsrate bis zur nächsten Frage. Belohnt schnelles Reagieren und Glück." />
-            <Card emoji="🌗" title="Saisons" desc="Spiel hat 4 Phasen (Frühling → Sommer → Herbst → Winter). Jede Saison verändert Look + Gameplay-Modifier (z. B. 'Winter: nur Top-3-Teams wachsen weiter')." />
-            <Card emoji="✨" title="Spotlight-Question" desc="Alle 5 Fragen eine 'Doppelte Wachstums-Frage' mit Drama-Build-up. Macht den Sieg umkämpft bis zur letzten Sekunde." />
-            <Card emoji="🌧️" title="Schrumpfen bei Inaktivität" desc="Wenn ein Team 2 Fragen in Folge keine Antworten gibt, schrumpft das Territorium leicht (Pixel am Rand werden frei). Verhindert dass führende Teams 'aussteigen'." />
+        {/* Demo-Controls (nicht im Fullscreen, da sind Buttons in Canvas) */}
+        {!isFullscreen && (
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <button
+              onClick={() => { resetGrid(); setTick(0); setRunning(true); }}
+              style={{
+                padding: '10px 22px', borderRadius: 999,
+                background: 'rgba(34,197,94,0.18)',
+                border: '1.5px solid rgba(34,197,94,0.5)',
+                color: '#86EFAC', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', letterSpacing: '0.06em',
+              }}
+            >
+              ▶ Walkthrough neu starten
+            </button>
+            <button
+              onClick={() => setRunning(r => !r)}
+              style={{
+                marginLeft: 10,
+                padding: '10px 22px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1.5px solid rgba(255,255,255,0.18)',
+                color: '#cbd5e1', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', letterSpacing: '0.06em',
+              }}
+            >
+              {running ? '⏸ Pause' : '▶ Weiter'}
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              style={{
+                marginLeft: 10,
+                padding: '10px 22px', borderRadius: 999,
+                background: 'rgba(168,85,247,0.18)',
+                border: '1.5px solid rgba(168,85,247,0.5)',
+                color: '#C4B5FD', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', letterSpacing: '0.06em',
+              }}
+            >
+              ⛶ Fullscreen
+            </button>
           </div>
-        </Section>
+        )}
+
+        {/* Phasen-Uebersicht */}
+        {!isFullscreen && (
+          <Section title="🎬 Was du gerade siehst (Walkthrough)" delay="0.2s">
+            <div style={{ display: 'grid', gap: 8 }}>
+              {PHASES.map(p => {
+                const active = currentPhase.id === p.id;
+                return (
+                  <div key={p.id} style={{
+                    padding: '10px 16px', borderRadius: 12,
+                    background: active ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.03)',
+                    border: active ? '1.5px solid rgba(34,197,94,0.55)' : '1px solid rgba(255,255,255,0.08)',
+                    fontSize: 14, lineHeight: 1.45, color: active ? '#fff' : '#cbd5e1',
+                    transition: 'all 0.3s ease',
+                    display: 'flex', gap: 12, alignItems: 'flex-start',
+                  }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>{p.emoji}</span>
+                    <div>
+                      <div style={{ fontWeight: 900, color: active ? '#86EFAC' : '#F1F5F9', marginBottom: 2 }}>
+                        {p.title}
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.85 }}>{p.desc}</div>
+                    </div>
+                    {active && (
+                      <span style={{
+                        marginLeft: 'auto', padding: '3px 10px', borderRadius: 999,
+                        background: 'rgba(134,239,172,0.18)', border: '1px solid rgba(134,239,172,0.5)',
+                        fontSize: 10, fontWeight: 900, color: '#86EFAC',
+                        letterSpacing: '0.1em', textTransform: 'uppercase',
+                        flexShrink: 0, alignSelf: 'center',
+                      }}>läuft</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        )}
 
         {/* Pro/Con */}
-        <Section title="⚖️ Pro / Con" delay="0.4s">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-            <ProConCard tone="pro" title="Pro" items={[
-              'Skaliert bis 200+ Personen ohne Architekturänderung',
-              'Visuell wow — pixelartige Territorien fühlen sich satisfying an',
-              'Cozy-Brand: friedlich + ästhetisch statt aggressiv-kompetitiv',
-              'Jede einzelne Antwort zählt sichtbar (1 Pixel = 1 richtige Antwort)',
-              'Neuer USP — kaum andere Quiz-Apps haben sowas',
-            ]} />
-            <ProConCard tone="con" title="Con" items={[
-              'Weniger Strategie als das klassische Grid (Kein Klauen, Stapeln, Joker)',
-              'Risiko: Führendes Team baut Vorsprung aus → Schluss-Spannung leidet',
-              'Bedarf neuem Mod-Panel + Beamer-View (mittlerer Dev-Aufwand)',
-              'Balancing zwischen "Quantität (mehr Spieler)" vs "Qualität (% richtig)" muss stimmen',
-            ]} />
-          </div>
-        </Section>
-
-        {/* Verwendungs-Szenarien */}
-        <Section title="🎪 Wo CozyWolf Garden glänzt" delay="0.5s">
-          <BulletList items={[
-            'Hochzeiten / Geburtstage mit 80-150 Gästen (statt klassisches Pub-Quiz)',
-            'Firmen-Galas + Weihnachtsfeiern (200+ Personen, kein 8-Teams-Cap)',
-            'Schul-Events (Klassen-Battle, Schulfest, Abi-Ball)',
-            'Vereinsabende (Sport-Saisonabschluss, Feuerwehr, Karneval)',
-            'Festivals / Pre-Show-Entertainment (Warmup-Mode für Events)',
-          ]} />
-        </Section>
+        {!isFullscreen && (
+          <Section title="⚖️ Pro / Con" delay="0.4s">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+              <ProConCard tone="pro" title="Pro" items={[
+                'Skaliert von 30 bis 500+ Personen ohne Architekturänderung',
+                'Visuell wow — pixelartige Territorien fühlen sich satisfying an',
+                'Cozy-Brand: friedlich + ästhetisch statt aggressiv-kompetitiv',
+                'Jede einzelne Antwort zählt sichtbar (Pixel)',
+                'Festival-tauglich: 10 fixe Teams, jeder joint einem',
+              ]} />
+              <ProConCard tone="con" title="Con" items={[
+                'Weniger Strategie als das klassische Grid (Kein Klauen, Stapeln, Joker)',
+                'Risiko: Führendes Team baut Vorsprung aus → Schluss-Spannung leidet',
+                'Bedarf neuem Mod-Panel + Beamer-View (mittlerer Dev-Aufwand)',
+                'Balancing zwischen "Quantität (mehr Spieler)" vs "Qualität (% richtig)" muss stimmen',
+              ]} />
+            </div>
+          </Section>
+        )}
 
         {/* CTA */}
-        <div style={{
-          marginTop: 40, padding: '24px 32px', borderRadius: 20,
-          background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))',
-          border: '1.5px solid rgba(34,197,94,0.3)',
-          textAlign: 'center', animation: 'pitchFadeIn 0.6s ease 0.6s both',
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.16em', color: '#86EFAC', textTransform: 'uppercase', marginBottom: 8 }}>
-            Status · Pitch / Mockup
+        {!isFullscreen && (
+          <div style={{
+            marginTop: 40, padding: '24px 32px', borderRadius: 20,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))',
+            border: '1.5px solid rgba(34,197,94,0.3)',
+            textAlign: 'center', animation: 'pitchFadeIn 0.6s ease 0.6s both',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.16em', color: '#86EFAC', textTransform: 'uppercase', marginBottom: 8 }}>
+              Status · Pitch / Mockup
+            </div>
+            <div style={{ fontSize: 16, color: '#cbd5e1', lineHeight: 1.6, maxWidth: 720, margin: '0 auto' }}>
+              Diese Seite zeigt nur das KONZEPT mit Walkthrough aller Specials.
+              Geschätzter Dev-Aufwand: <b style={{ color: '#FDE68A' }}>~5-7 Tage</b> für Backend
+              (Team-Score, Floodfill, Sun-Zones, Spotlight-Logik, Schrumpfen) + Beamer-Canvas
+              + Team-Page-Anpassung.
+            </div>
           </div>
-          <div style={{ fontSize: 16, color: '#cbd5e1', lineHeight: 1.6, maxWidth: 720, margin: '0 auto' }}>
-            Diese Seite zeigt nur das KONZEPT. Die Mechanik existiert noch nicht im Code.
-            Geschätzter Dev-Aufwand: <b style={{ color: '#FDE68A' }}>~5-7 Tage</b> für Backend
-            (Team-Score-Tracking, Floodfill-Pixel-Logik, Sun-Zones), Beamer-Canvas-View,
-            Team-Page-Anpassung (gleiches UI, aber Mass-Mode).
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -456,45 +635,6 @@ function Section({ title, delay, children }: { title: string; delay: string; chi
         letterSpacing: '-0.01em',
       }}>{title}</h2>
       {children}
-    </div>
-  );
-}
-
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul style={{
-      listStyle: 'none', padding: 0, margin: 0,
-      display: 'grid', gap: 8,
-    }}>
-      {items.map((it, i) => (
-        <li key={i} style={{
-          display: 'flex', alignItems: 'flex-start', gap: 10,
-          padding: '10px 16px', borderRadius: 12,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          fontSize: 14, lineHeight: 1.5, color: '#cbd5e1',
-        }}>
-          <span style={{ color: '#86EFAC', fontWeight: 900, flexShrink: 0 }}>›</span>
-          <span>{it}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Card({ emoji, title, desc }: { emoji: string; title: string; desc: string }) {
-  return (
-    <div style={{
-      padding: '14px 18px', borderRadius: 14,
-      background: 'rgba(34,197,94,0.06)',
-      border: '1.5px solid rgba(34,197,94,0.18)',
-      display: 'flex', gap: 14, alignItems: 'flex-start',
-    }}>
-      <div style={{ fontSize: 28, flexShrink: 0 }}>{emoji}</div>
-      <div>
-        <div style={{ fontSize: 15, fontWeight: 900, color: '#86EFAC', marginBottom: 4 }}>{title}</div>
-        <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>{desc}</div>
-      </div>
     </div>
   );
 }

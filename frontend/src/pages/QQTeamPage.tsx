@@ -2891,21 +2891,15 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
           maxLength={200}
           submitted={submitted}
         />
-        <button
-          disabled={val.trim().length < 1 || submitted || writeExpired}
-          onClick={submit}
-          style={{
-            padding: '14px 18px', borderRadius: 14, border: 'none',
-            background: submitted ? 'rgba(34,197,94,0.18)'
-              : val.trim().length >= 1 ? `linear-gradient(135deg, ${catColor}, ${catColor}cc)` : 'rgba(255,255,255,0.06)',
-            color: submitted ? '#86EFAC' : (val.trim().length >= 1 ? '#fff' : '#64748b'),
-            fontSize: 16, fontWeight: 900, fontFamily: 'inherit',
-            cursor: submitted ? 'default' : (val.trim().length >= 1 ? 'pointer' : 'not-allowed'),
-            letterSpacing: '0.05em', textTransform: 'uppercase',
-          }}
-        >
-          {submitted ? (lang === 'de' ? '✓ Eingereicht — andere warten' : '✓ Submitted — waiting on others') : (lang === 'de' ? '✓ Bluff abgeben' : '✓ Submit bluff')}
-        </button>
+        <SubmitBtn
+          onSubmit={submit}
+          canSubmit={!writeExpired && val.trim().length >= 1}
+          submitted={submitted}
+          catColor={catColor}
+          label={lang === 'de' ? '✓ Bluff abgeben' : '✓ Submit bluff'}
+          submittedLabel={lang === 'de' ? 'Eingereicht — andere warten' : 'Submitted — waiting on others'}
+          lang={lang}
+        />
         {submitted && (
           <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 600, lineHeight: 1.4 }}>
             {lang === 'de' ? 'Sobald alle eingereicht haben, geht\'s zum Voting.' : 'Once everyone\'s in, voting starts.'}
@@ -3160,23 +3154,14 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             placeholder={lang === 'de' ? 'Verbindung tippen…' : 'Your guess…'}
             disabled={expired}
           />
-          <button
-            disabled={expired || val.trim().length < 1}
-            onClick={submit}
-            style={{
-              padding: '14px 18px', borderRadius: 14, border: 'none',
-              background: !expired && val.trim().length >= 1
-                ? `linear-gradient(135deg, ${catColor}, ${catColor}cc)`
-                : 'rgba(255,255,255,0.06)',
-              color: !expired && val.trim().length >= 1 ? '#0a1f0d' : '#64748b',
-              fontSize: 16, fontWeight: 900, fontFamily: 'inherit',
-              cursor: !expired && val.trim().length >= 1 ? 'pointer' : 'not-allowed',
-              boxShadow: !expired && val.trim().length >= 1 ? `0 4px 14px ${catColor}66` : 'none',
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-            }}
-          >
-            {lang === 'de' ? '✓ Tipp abgeben (1×)' : '✓ Submit guess (1×)'}
-          </button>
+          <SubmitBtn
+            onSubmit={submit}
+            canSubmit={!expired && val.trim().length >= 1}
+            submitted={false}
+            catColor={catColor}
+            label={lang === 'de' ? '✓ Tipp abgeben (1×)' : '✓ Submit guess (1×)'}
+            lang={lang}
+          />
           <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 600 }}>
             {lang === 'de' ? '⚠ Nur ein Tipp — falsch = gesperrt für diese Frage' : '⚠ One try only — wrong = locked out'}
           </div>

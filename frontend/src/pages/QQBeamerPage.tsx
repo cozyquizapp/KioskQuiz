@@ -832,20 +832,24 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Action-Card-Cascade: Card-Anzahl = Place(if free) + Steal(R2+) + Stapel(R3+)
       const ph = s.gamePhaseIndex ?? 1;
       const hasFreeCells = s.grid.some(row => row.some(c => !c.ownerId));
-      let cardCount = 0;
-      if (ph === 1) cardCount = hasFreeCells ? 1 : 0;
-      else if (ph === 2) cardCount = hasFreeCells ? 2 : 1;
-      else cardCount = hasFreeCells ? 3 : 2;
-      // v3 round 9 (User-Wunsch '1-2-3 hoeherwerdende toene'):
-      // Cascade-Toene statt gleichem actionMenuReveal pro Card. Total = cardCount
-      // damit die letzte Card immer den Top-Ton bekommt.
+      // v3 round 11 (User-Wunsch 'echte action-sounds beim vorstellen'):
+      // statt Cascade-Toenen jetzt der ECHTE Sound der Action im Grid:
+      // - Setzen → playFieldPlaced (Stamp)
+      // - Klauen → playSteal
+      // - Stapeln → playStapelStamp
+      // Liste haengt von Phase + Free-Cells ab — gleiche Logik wie Render.
+      const sounds: Array<() => void> = [];
+      if (hasFreeCells) sounds.push(() => playFieldPlaced());
+      if (ph >= 2) sounds.push(() => playSteal());
+      if (ph >= 3) sounds.push(() => playStapelStamp());
       const cardBaseMs = 800;
       const cardStaggerMs = 1500;
       const handles: number[] = [];
-      for (let i = 0; i < cardCount; i++) {
+      for (let i = 0; i < sounds.length; i++) {
         const delay = cardBaseMs + i * cardStaggerMs;
+        const fn = sounds[i];
         handles.push(window.setTimeout(() => {
-          try { playAvatarCascadeNote(i, cardCount); } catch {}
+          try { fn(); } catch {}
         }, delay));
       }
       return () => { handles.forEach(h => window.clearTimeout(h)); };
@@ -860,6 +864,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
   // 2026-04-30 v3 round 7 (Phase-Sound-Audit): Pro RULES-Slide-Wechsel ein
   // dezenter Tick-Sound, damit jede Folie hoerbar markiert ist.
+  // v3 round 11 (User-Bug 'feld-gesetzt sound bei neuer regelseite unpassend'):
+  // playFieldPlaced (Stamp) → playTick (leiserer Page-Flip-Cue, passend zum
+  // Tutorial-Slide-Wechsel statt 'Tile placed').
   const prevRulesSlideRef = useRef<number | null>(null);
   useEffect(() => {
     const prev = prevRulesSlideRef.current;
@@ -867,7 +874,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.sfxMuted) return;
     if (s.phase !== 'RULES') return;
     if (prev !== null && s.rulesSlideIndex != null && s.rulesSlideIndex !== prev) {
-      try { playFieldPlaced(); } catch {}
+      try { playTick(); } catch {}
     }
   }, [s.phase, s.rulesSlideIndex, s.sfxMuted]);
 
@@ -1002,9 +1009,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // (User-Wunsch: 'während Finale keine Musik und keine Sounds' war Bug).
   useEffect(() => {
     const inRules = s.phase === 'RULES';
-    const inFinale = s.phase === 'CONNECTIONS_4X4';
+    // v3 round 11 (User-Bug 'musik von finale laeuft nach timer noch, nur
+    // waehrend timer'): Finale-Musik nur waehrend connections.phase==='active'
+    // (= Timer laeuft). Bei intro/reveal/placement/done STOP.
+    // Analog Comeback: nur waehrend H/L-Question-Timer aktiv.
+    const inFinale = s.phase === 'CONNECTIONS_4X4' && s.connections?.phase === 'active';
     const inLobby = s.phase === 'LOBBY';
-    const inComeback = s.phase === 'COMEBACK_CHOICE';
+    const inComeback = s.phase === 'COMEBACK_CHOICE'
+      && s.comebackHL?.phase === 'question'
+      && !!s.comebackHL?.timerEndsAt
+      && Date.now() < s.comebackHL.timerEndsAt;
     const inGameOver = s.phase === 'GAME_OVER';
     const inThanks = s.phase === 'THANKS';
     const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale || inComeback || inGameOver || inThanks);
@@ -1226,8 +1240,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (key === prevPlacementKeyRef.current) return;
     prevPlacementKeyRef.current = key;
     if (s.sfxMuted) return;
+    // v3 round 11 (User-Bug 'stapeln macht feldsetzen+stapel sound'):
+    // Wenn die letzte Cell-Aktion ein STAPEL war, NICHT playFieldPlaced
+    // feuern — der separate stuck-effect (line ~1024) spielt schon
+    // playStapelStamp. Sonst Doppel-Sound.
+    const isStapel = !!s.grid[c.row]?.[c.col]?.stuck;
     if (c.wasSteal) playSteal();
-    else playFieldPlaced();
+    else if (!isStapel) playFieldPlaced();
     // Im Finale: zusaetzlich Cascade-Ton pro gesetztem Avatar.
     if (s.phase === 'CONNECTIONS_4X4' && s.connections?.phase === 'placement') {
       // Reset counter when entering finale or new round
@@ -1287,10 +1306,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         const total = s.answers.length;
         const cascadeTotal = total + 2; // +2 fuer Reveal-Highlight + WinnerCard
         if (curr.mucho >= lockStep) {
-          // Aufloesen (Loesung gruen) = Cascade-Ton N + leichterer Reveal-
-          // Highlight (statt Krönungs-Climax — der bleibt der WinnerCard
-          // vorbehalten, User-Wunsch 2026-04-30 round 4).
-          try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+          // v3 round 11 (User-Bug 'mehrere parallele sounds'): nur Reveal-
+          // Highlight statt Cascade+Highlight gleichzeitig. Saubere 1-Layer
+          // 'gruene-loesung'-Markierung. Cascade-Top kommt mit WinnerCard.
           try { playRevealHighlight(); } catch {}
         }
         else if (prev.mucho === 0) {
@@ -1329,9 +1347,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       const total = s.answers.length;
       const cascadeTotal = total + 2;
       if (curr.zvz >= 2) {
-        // Aufloesen / Final = Cascade-Ton N + Reveal-Highlight (leichter,
-        // Climax bleibt der WinnerCard vorbehalten).
-        try { playAvatarCascadeNote(total, cascadeTotal); } catch {}
+        // v3 round 11 (User-Bug 'mehrere parallele sounds bei zvz reveal'):
+        // Vorher feuerten Cascade-Ton N + Reveal-Highlight gleichzeitig.
+        // Jetzt nur Reveal-Highlight (saubere 1-Layer 'antwort kommt'). Top-
+        // Cascade-Ton ist die WinnerCard. Das gibt eine klare 3-Schritt-
+        // Klimax: Cascade pro Team → Reveal-Highlight (Lock) → Climax (Winner).
         try { playRevealHighlight(); } catch {}
       }
       else if (prev.zvz === 0) {
@@ -7823,6 +7843,26 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     return b;
   }, [showTarget, onMapPins, tLat, tLng, displayPos]);
 
+  // v3 round 11 (User-Wunsch 'cozyguessr am ende um ziel rum zoomen, genau
+  // zeigen wie knapp es zwischen teams war'): Geoguessr-Style. Wenn alle
+  // Pins revealed sind und das Ranking sichtbar ist (showRanking), zoom auf
+  // einen engen Bereich um Ziel + Top-3-naechste-Pins. Wir nutzen ein
+  // separates Bounds + ein eigenes FitBounds-Trigger.
+  const closeUpBounds = useMemo(() => {
+    const b = L.latLngBounds([] as any);
+    b.extend([tLat, tLng]);
+    // Top 3 closest valid (on-map) pins um die enge Group-View zu zeigen
+    const topClose = bestFirst.filter(p => (p.distKm ?? 0) <= FIT_MAX_KM).slice(0, 3);
+    for (const p of topClose) {
+      const dp = displayPos.get(p.teamId);
+      const lat = dp?.lat ?? p.lat;
+      const lng = dp?.lng ?? p.lng;
+      if (lat != null && lng != null) b.extend([lat, lng]);
+    }
+    if (!b.isValid()) b.extend([tLat, tLng]);
+    return b;
+  }, [bestFirst, tLat, tLng, displayPos]);
+
   // 2026-04-30 v3 round 10 (User-Wunsch 'kannst du nicht den 📍-emote
   // nutzen' + 'auflösung etwas unpraktisch, ziel sieht man gar nicht'):
   // Target nutzt jetzt das 📍-Pin-Emoji XL mit Glow. Team-Markers haben
@@ -7918,6 +7958,12 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           <QQInitialTargetZoom lat={tLat} lng={tLng} />
           <QQMapResizer trigger={showRanking} />
           <QQFitBoundsOnTrigger bounds={bounds} trigger={step} />
+          {/* v3 round 11: Wenn Ranking sichtbar ist (alle Pins revealed),
+              zoom rein auf Ziel + Top 3 closest. Geoguessr-Style 'wie knapp
+              war es'-Moment. Trigger ist showRanking-Bool als 0/1 */}
+          {showRanking && (
+            <QQFitBoundsOnTrigger bounds={closeUpBounds} trigger={1000 + step} />
+          )}
           {showTarget && (
             <Marker position={[tLat, tLng] as any} icon={targetIcon} />
           )}
@@ -8260,16 +8306,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         (cat === 'BUNTE_TUETE' && (subKind === 'top5' || subKind === 'order'));
       const handle = window.setTimeout(() => {
         try {
-          // Climax-Finish IMMER (User: 'climax sound IMMER bei WinnerCard')
+          // v3 round 11 (User-Bug 'mehrere parallele sounds'): Vorher fired
+          // immer climaxFinish + (cascade-top ODER winnerCardReveal). Jetzt
+          // nur climaxFinish — der ist schon ein 6-Layer-Akkord, weitere
+          // Layer machen es matschig statt klimaktisch.
           playClimaxFinish();
-          if (isCascadeCategory) {
-            // Top-Ton der Cascade als zusaetzlicher Pentatonik-Layer
-            playAvatarCascadeNote(7, 8);
-          } else {
-            // Cheese / Hot Potato Winner: Krönungs-Akkord obendrauf
-            playWinnerCardReveal();
-          }
         } catch {}
+        // isCascadeCategory referenziert, eslint-friendly
+        void isCascadeCategory;
       }, 640);
       return () => window.clearTimeout(handle);
     }
@@ -9004,7 +9048,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? 'clamp(10px, 1.4vh, 18px) clamp(110px, 12vw, 180px) clamp(10px, 1.4vh, 18px)'
               : 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)';
             const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2vh, 16px)' : 'clamp(16px, 2.2vh, 32px)';
-            const cardFontSize = hpCompact ? 'clamp(22px, 2.6vw, 38px)' : qFontSize;
+            // v3 round 11 (User-Wunsch 'textgroesse muss nicht zwangsweise
+            // kleiner werden'): Font-Size bleibt voll, nur Padding/Margin
+            // werden im hpCompact-Modus kleiner. Card-Shift uebernimmt das
+            // Platzproblem.
+            const cardFontSize = qFontSize;
             // 2026-04-30 v3 round 10 (User-Wunsch 'noch nicht optimal'):
             // Aggressiverer Card-Shift + im HotPotato-View groessere Chip-Tiers
             // damit der Chip-Block nach oben waechst und das Loch in der
@@ -12590,8 +12638,8 @@ function ConnectionsGrid({ state: s }: {
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: 'clamp(8px, 1vw, 14px)',
-      width: '100%', maxWidth: 1200, margin: '0 auto',
+      gap: 'clamp(10px, 1.2vw, 18px)',
+      width: '100%', maxWidth: 1500, margin: '0 auto',
       position: 'relative', zIndex: 5,
     }}>
       {displayOrder.map((item, i) => {
@@ -12599,19 +12647,23 @@ function ConnectionsGrid({ state: s }: {
         const showColored = isReveal && !!grp;
         return (
           <div key={`${item}-${i}`} style={{
-            padding: 'clamp(14px, 1.8vw, 22px) clamp(8px, 1vw, 14px)',
-            borderRadius: 14,
+            // v3 round 11 (User-Wunsch 'finale 4x4 cards koennten etwas
+            // groesser sein'): Padding und Font hochgesetzt fuer bessere
+            // Lesbarkeit aus Distanz. minHeight angehoben damit Card-Box
+            // groesser wirkt.
+            padding: 'clamp(18px, 2.2vw, 28px) clamp(10px, 1.2vw, 18px)',
+            borderRadius: 16,
             textAlign: 'center',
-            fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
+            fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
             background: showColored && grp
               ? `linear-gradient(135deg, ${grp.color}38, ${grp.color}18)`
               : 'rgba(255,255,255,0.05)',
             border: showColored && grp
-              ? `2px solid ${grp.color}`
+              ? `2.5px solid ${grp.color}`
               : '2px solid rgba(255,255,255,0.10)',
             color: showColored && grp ? '#fff' : '#e2e8f0',
-            boxShadow: showColored && grp ? `0 0 18px ${grp.color}33` : 'none',
-            minHeight: 'clamp(60px, 8vh, 100px)',
+            boxShadow: showColored && grp ? `0 0 24px ${grp.color}44` : 'none',
+            minHeight: 'clamp(80px, 10vh, 130px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.3s ease',
             animation: isReveal ? `contentReveal 0.4s ease ${i * 0.04}s both` : undefined,

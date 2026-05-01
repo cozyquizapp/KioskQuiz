@@ -283,7 +283,8 @@ export interface QQHLPair {
 }
 
 /** Moderator-wählbare Zeit pro H/L-Runde. */
-export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 10;
+// 2026-04-30 v3 round 11 (User-Wunsch '20 sec pro frage'): 10 → 20s default.
+export const QQ_COMEBACK_HL_TIMER_DEFAULT_SEC = 20;
 
 /** Default Sekunden zwischen Hint-Reveals bei 4 gewinnt / Only Connect. */
 export const QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC = 15;

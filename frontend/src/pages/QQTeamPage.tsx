@@ -3692,6 +3692,25 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (!isMyTurn) { setSelecting(false); setFreeMode(null); setSwapFirst(null); setPendingPick(null); }
   }, [isMyTurn]);
 
+  // 2026-05-02: Wolfs Bug 'nach 1. Aktion gabs kein Auswahlmenue mehr, ich war in
+  // Stapel-Modus gefangen'. Bei Multi-Slot-Joker-Bonus (placementsLeft > 0) setzt
+  // Backend pendingAction nach jeder Aktion zurueck auf 'FREE' (jokerBonusAction).
+  // Frontend musste freeMode auch zuruecksetzen damit das Auswahlmenu wieder
+  // erscheint. Tracke pendingAction-Wechsel: wenn von einem konkreten Mode
+  // (STAPEL_1/STEAL_1/PLACE_1/PLACE_2) zurueck auf 'FREE' → reset.
+  const prevPendingActionRef = useRef<string | null | undefined>(pa);
+  useEffect(() => {
+    const prev = prevPendingActionRef.current;
+    prevPendingActionRef.current = pa;
+    const wasConcreteMode = prev === 'STAPEL_1' || prev === 'STEAL_1'
+      || prev === 'PLACE_1' || prev === 'SANDUHR_1' || prev === 'SHIELD_1' || prev === 'SWAP_1';
+    if (wasConcreteMode && pa === 'FREE') {
+      setFreeMode(null);
+      setSelecting(false);
+      setPendingPick(null);
+    }
+  }, [pa]);
+
   // Pending-Pick zuruecksetzen wenn der Aktions-Kontext (pendingAction / freeMode)
   // sich aendert oder das Grid neu geladen wird (anderes Team dran etc.).
   useEffect(() => {

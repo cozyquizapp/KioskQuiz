@@ -1247,9 +1247,9 @@ export default function QQModeratorPage() {
                         {bp === 'vote' && ` · ${voteCount}/${totalActive} gevotet`}
                       </div>
                       {bp === 'write' && (
-                        <Btn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceWrite', { roomCode })}>
+                        <PrimaryBtn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceWrite', { roomCode })} hotkey="Space">
                           ⏹ Schreib-Phase beenden →
-                        </Btn>
+                        </PrimaryBtn>
                       )}
                       {bp === 'review' && (
                         <>
@@ -1292,9 +1292,9 @@ export default function QQModeratorPage() {
                         </>
                       )}
                       {bp === 'vote' && (
-                        <Btn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceVote', { roomCode })}>
+                        <PrimaryBtn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceVote', { roomCode })} hotkey="Space">
                           ⏹ Voting beenden →
-                        </Btn>
+                        </PrimaryBtn>
                       )}
                       {bp === 'reveal' && (
                         <div style={{ fontSize: 12, color: '#86EFAC' }}>✓ Reveal läuft — Space → nächste Frage</div>

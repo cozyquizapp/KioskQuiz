@@ -337,13 +337,11 @@ export default function QQModeratorPage() {
               action = () => emit('qq:revealAnswer', { roomCode });
             }
           }
-          // 2026-05-02 (Wolfs Bug 'Timer abgelaufen ohne Antwort, Autoplay haengt'):
-          // Bei Standard-Mechaniken (MUCHO/Schaetzchen/CHEESE/ZvZ/non-custom-BunteTuete)
-          // wenn Timer abgelaufen ist + nicht alle geantwortet haben, hing Autoplay
-          // ewig. Jetzt: 3s Karenz nach Timer-Ende, dann reveal (unabhaengig von
-          // allAnswered). 3s statt 2.5s damit Spieler die letzte Sekunde wirklich nicht
-          // mehr submitten koennen.
-          else if (!isCustomPipeline && s.timerEndsAt && Date.now() >= s.timerEndsAt) {
+          // 2026-05-02 v2 (Wolfs Bug 'Beamer-Autoplay haengt nach Timer-Ablauf'):
+          // Bei Standard-Mechaniken nach Timer-Ablauf 3s Karenz, dann reveal.
+          // Backend setzt timerEndsAt=null nach Ablauf, daher Pruefung jetzt
+          // auf timerExpired-Flag (broadcastet im State).
+          else if (!isCustomPipeline && (s as any).timerExpired === true) {
             delayMs = 3000;
             action = () => emit('qq:revealAnswer', { roomCode });
           }
@@ -483,6 +481,7 @@ export default function QQModeratorPage() {
     state?.connections?.phase,
     state?.muchoRevealStep, state?.zvzRevealStep, state?.cheeseRevealStep, state?.mapRevealStep,
     state?.pendingFor, state?.currentQuestion?.id, state?.answers?.length,
+    (state as any)?.timerExpired, // 2026-05-02 v2: trigger Autoplay neu wenn Timer abläuft
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleKey = useCallback((e: KeyboardEvent) => {

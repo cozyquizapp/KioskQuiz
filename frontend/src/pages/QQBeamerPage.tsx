@@ -9040,39 +9040,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {lang === 'en' ? catLabel.en : catLabel.de}
               </span>
             </div>
-            {/* Rechte Seite: Round/Question-Counter + Timer.
-                2026-05-03 v3 (Wolf-Wunsch): Counter rechts neben dem Timer, plus
-                Runde X/N kombiniert mit Frage Y/5 — Publikum sieht beide Skalen. */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 14,
-              flexShrink: 0,
-            }}>
+            {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
+                per-Turn-Timer in HotPotatoBeamerView).
+                2026-05-03: Round/Frage-Counter wieder entfernt — Wolf-Entscheidung:
+                "brauchen wir das überhaupt?" PhaseIntro vor jeder Runde sagt das
+                schon, Pub-Publikum spielt zum Spass + Counter frass Horizontal-
+                Platz mit Kollisionen in manchen Kategorien. */}
+            {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
               <div style={{
-                fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 800,
-                color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase',
-                padding: '10px 22px', borderRadius: 999,
-                background: '#0D0A06',
-                border: '2px solid rgba(148,163,184,0.5)',
-                animation: 'contentReveal 0.45s ease 0.1s both',
-                whiteSpace: 'nowrap',
+                opacity: revealed ? 0 : 1,
+                transition: 'opacity 0.3s ease',
+                pointerEvents: revealed ? 'none' : 'auto',
+                flexShrink: 0,
               }}>
-                {lang === 'en'
-                  ? `Round ${s.gamePhaseIndex}/${s.totalPhases} · Q ${(s.questionIndex % 5) + 1}/5`
-                  : `Runde ${s.gamePhaseIndex}/${s.totalPhases} · Frage ${(s.questionIndex % 5) + 1}/5`}
+                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
               </div>
-              {/* Timer — versteckt fuer HotPotato (eigener per-Turn-Timer in
-                  HotPotatoBeamerView). */}
-              {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
-                <div style={{
-                  opacity: revealed ? 0 : 1,
-                  transition: 'opacity 0.3s ease',
-                  pointerEvents: revealed ? 'none' : 'auto',
-                  flexShrink: 0,
-                }}>
-                  <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die

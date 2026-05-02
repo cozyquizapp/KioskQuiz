@@ -1028,10 +1028,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
         {/* Live-Reactions-Pad — sichtbar in passiven Beobachter-Phasen.
             Spieler tappen ein Emoji; das fliegt als Mini-Burst über den Beamer.
-            Backend rate-limit (4 pro 5s pro Team) gegen Spam. */}
+            Backend rate-limit (4 pro 5s pro Team) gegen Spam.
+            2026-05-02 (App-Designer-Audit): PHASE_INTRO + TEAMS_REVEAL raus —
+            das sind Show-Momente am Beamer, Phone-Reaktionen lenken davon ab.
+            Reactions nur in echten Wartezustaenden (Reveal/Placement/Pause/Ende). */}
         {(s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT'
-          || s.phase === 'PAUSED' || s.phase === 'GAME_OVER' || s.phase === 'THANKS'
-          || s.phase === 'PHASE_INTRO' || s.phase === 'TEAMS_REVEAL') && (
+          || s.phase === 'PAUSED' || s.phase === 'GAME_OVER' || s.phase === 'THANKS') && (
           <ReactionPad emit={emit} roomCode={roomCode} myTeamId={myTeamId} accent={phaseAccent} lang={lang} />
         )}
 

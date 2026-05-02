@@ -51,20 +51,34 @@ function Variant({ label, current, children }: { label: string; current?: boolea
   );
 }
 
-// ─── B2 — Lange Frage Schrift-Min ──────────────────────────────────────────
-function B2Preview({ minPx }: { minPx: number }) {
+// ─── B2 — Lange Frage Schrift-Max (auf 1080p Beamer) ──────────────────────
+// Vorher: ich hatte minPx variiert. Falsch — auf einem realen 1080p-Beamer
+// kappt die clamp-MAX (nicht min). Ich zeige jetzt die tatsaechlichen Render-
+// Groessen bei verschiedenen max-Werten und simuliere Pub-Distanz.
+function B2Preview({ maxPx, scale }: { maxPx: number; scale: number }) {
+  // scale = wie das im 1080p-Beamer skaliert wuerde (1.0 = volle Groesse)
+  // 0.4 = simuliert Bilduebertragung in Browser-Preview (38px wirkt wie ~15px hier)
+  const renderedPx = Math.round(maxPx * scale);
   return (
     <div style={{
       background: '#1a1410', borderRadius: 14, padding: 24,
       border: '1.5px solid rgba(251,191,36,0.25)',
-      minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center',
     }}>
       <div style={{
-        fontSize: `clamp(${minPx}px, 2.6vw, 38px)`,
+        fontSize: `${renderedPx}px`,
         fontWeight: 900, lineHeight: 1.22,
         color: TEXT, textAlign: 'center', maxWidth: '100%',
       }}>
         {LONG_QUESTION}
+      </div>
+      <div style={{
+        marginTop: 14, fontSize: 11, color: '#64748b',
+        textAlign: 'center', borderTop: '1px dashed rgba(255,255,255,0.08)',
+        paddingTop: 10,
+      }}>
+        Echtgroesse auf 1080p-Beamer: <strong style={{ color: '#94a3b8' }}>{maxPx}px</strong>
+        {' · '}aus 10m Pub-Distanz simuliert: <strong style={{ color: '#94a3b8' }}>{renderedPx}px</strong>
       </div>
     </div>
   );
@@ -265,17 +279,24 @@ export default function QQPolishTestPage() {
         </header>
 
         {/* ── B2 ── */}
-        <Section title="B2 — Lange Frage Schrift-Minimum" sev="Wichtig" aufwand="S">
-          <Variant label="Min 22px (jetzt)" current>
-            <B2Preview minPx={22} />
+        <Section title="B2 — Lange Frage Maximalgroesse auf 1080p Beamer" sev="Wichtig?" aufwand="S">
+          <div style={{
+            gridColumn: '1 / -1', padding: 14,
+            background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: 10, marginBottom: 8, fontSize: 13, color: '#fca5a5', lineHeight: 1.5,
+          }}>
+            <strong>Korrektur 2026-05-03:</strong> Mein erster Test war Bloedsinn — `clamp(22px, 2.6vw, 38px)` rendert auf einem 1080p-Beamer immer 38px (clamp kappt am MAX, nicht MIN). Der Audit-Befund "Schrift schrumpft auf 22px" stimmt fuer den realen Beamer nicht. Echte Frage: ist <strong>38px max</strong> genug aus 10m? Hier zur Hilfe Echtgroessen-Renderings + Pub-Distanz-Simulation (Faktor 0.4 = grobe Faustregel fuer "wie das in einer Browser-Preview wirkt").
+          </div>
+          <Variant label="38px (jetzt — clamp-Max bei langen Fragen)" current>
+            <B2Preview maxPx={38} scale={0.5} />
             <p style={{ fontSize: 12, color: MUTED, marginTop: 8 }}>
-              Bei sehr langen Fragen (&gt;200 Zeichen) schrumpft die Schrift bis 22px. Auf einem 1080p-Beamer aus 10m physikalisch ~3-4mm.
+              Aus 10m im Pub-Live: aufrecht lesbar wenn nuechtern. Mit Bier + Brille vergessen + dunkler Pub: grenzwertig.
             </p>
           </Variant>
-          <Variant label="Min 32px (Vorschlag)">
-            <B2Preview minPx={32} />
+          <Variant label="48px (Vorschlag — clamp-Max hochziehen)">
+            <B2Preview maxPx={48} scale={0.5} />
             <p style={{ fontSize: 12, color: MUTED, marginTop: 8 }}>
-              Schrift bleibt aus 10m lesbar. Trade-off: bei langen Fragen mehr Zeilen, Card waechst evtl. etwas in der Hoehe.
+              ~26% groesser. Trade-off: lange Fragen mehr Zeilen, Card waechst, kann bei sehr langen Fragen Card-Hoehe sprengen.
             </p>
           </Variant>
         </Section>

@@ -9016,25 +9016,41 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             gap: 16,
             zIndex: 60,
           }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '8px 22px', borderRadius: 999,
-              background: `${accent}18`, border: `2px solid ${accent}44`,
-              animation: 'contentReveal 0.35s ease both',
-              flexShrink: 0,
-            }}>
-              {(() => {
-                const slug = qqCatSlug(cat as string);
-                return slug
-                  ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                  : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
-              })()}
-              <span style={{
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-                color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+            {/* 2026-05-03 (App-Designer-Audit B3): Pill jetzt opak (solid bg)
+                statt accent-18%-tinted — accent-Text auf accent-tinted-bg verschwamm
+                aus 10m. Plus: Round-Counter "Frage 3/5" rechts daneben, damit
+                Publikum weiss wo im Spiel sie sind (vorher fehlte das komplett). */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                padding: '10px 22px', borderRadius: 999,
+                background: '#0D0A06', border: `2px solid ${accent}`,
+                boxShadow: `0 0 24px ${accent}33`,
+                animation: 'contentReveal 0.35s ease both',
               }}>
-                {lang === 'en' ? catLabel.en : catLabel.de}
-              </span>
+                {(() => {
+                  const slug = qqCatSlug(cat as string);
+                  return slug
+                    ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
+                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
+                })()}
+                <span style={{
+                  fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
+                  color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  {lang === 'en' ? catLabel.en : catLabel.de}
+                </span>
+              </div>
+              <div style={{
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
+                color: '#cbd5e1', letterSpacing: '0.04em',
+                padding: '8px 16px', borderRadius: 12,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                animation: 'contentReveal 0.45s ease 0.1s both',
+              }}>
+                {lang === 'en' ? `Q ${(s.questionIndex % 5) + 1}/5` : `Frage ${(s.questionIndex % 5) + 1}/5`}
+              </div>
             </div>
             {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
                 per-Turn-Timer in HotPotatoBeamerView). */}

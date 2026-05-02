@@ -1063,11 +1063,37 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     };
 
     // ── PLACE_1 (Phase 1): strikt nur setzen. Klauen ist in R1 nicht erlaubt.
+    // PLACE_1 wird auch bei Joker-Bonus-Slots in Phase 2+ aufgerufen.
     if (action === 'PLACE_1') {
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
         availableKinds: ['PLACE'], phase,
       });
-      if (!choice) { skipStuckDummy(); return; }
+      if (!choice) {
+        // 2026-05-02 (Wolfs Bug 'Bot stuck wenn Grid voll bei Joker-Bonus'):
+        // Bei Phase >= 2 als Fallback STEAL versuchen statt skipStuckDummy.
+        // In R1 weiterhin skipStuck (kein Klauen erlaubt).
+        if (phase >= 2) {
+          const stats = live.teamPhaseStats[teamId];
+          const stealsUsed = stats?.stealsUsed ?? 0;
+          const canSteal = phase !== 2 || stealsUsed < 2;
+          if (canSteal) {
+            const stealChoice = pickDummyAction(live.grid, live.gridSize, teamId, {
+              availableKinds: ['STEAL'], phase,
+            });
+            if (stealChoice) {
+              live.pendingAction = 'STEAL_1';
+              try {
+                qqStealCell(live, teamId, stealChoice.target!.row, stealChoice.target!.col);
+                broadcastQQ(io, roomCode);
+                if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
+                return;
+              } catch { /* fallthrough */ }
+            }
+          }
+        }
+        skipStuckDummy();
+        return;
+      }
       try {
         qqPlaceCell(live, teamId, choice.target!.row, choice.target!.col);
         broadcastQQ(io, roomCode);

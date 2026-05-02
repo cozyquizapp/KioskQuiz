@@ -3074,6 +3074,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     language:         room.language,
     timerDurationSec: room.timerDurationSec,
     timerEndsAt:      room.timerEndsAt,
+    timerExpired:     room.timerExpired,
     answers:          room.answers,
     allAnswered:      room.allAnswered,
     buzzQueue:        room.buzzQueue,

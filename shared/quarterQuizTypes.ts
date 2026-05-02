@@ -830,6 +830,7 @@ export interface QQStateUpdate {
   // Timer
   timerDurationSec: number;
   timerEndsAt: number | null;        // ms timestamp, null = not running
+  timerExpired?: boolean;            // 2026-05-02: true wenn Timer regulaer abgelaufen (nicht via Reveal/Stop)
   // Answers (all submissions this question)
   answers: QQAnswerEntry[];
   // Buzz queue (ordered by speed, for Hot Potato)

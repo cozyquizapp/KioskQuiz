@@ -200,7 +200,13 @@ export default function QQModeratorPage() {
       }
     }
     const qqDraftId = qqId;
-    const qqDraftTitle = qqDraftId ? (drafts.find(d => d.id === qqDraftId)?.title ?? undefined) : undefined;
+    // 2026-05-02 Bug-Fix (Wolfs 'Summary zeigt Unbekannt'): drafts-Liste hat
+    // IDs mit 'qq:' Prefix (Line 148), aber qqDraftId ist ohne Prefix → find
+    // matched nie → draftTitle=undefined → Backend speichert 'Unbekannt'.
+    // Fix: nutze selectedDraftId (mit Prefix) fuer find und strippe den
+    // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
+    const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
+    const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
     const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
@@ -330,6 +336,16 @@ export default function QQModeratorPage() {
               delayMs = 2500;
               action = () => emit('qq:revealAnswer', { roomCode });
             }
+          }
+          // 2026-05-02 (Wolfs Bug 'Timer abgelaufen ohne Antwort, Autoplay haengt'):
+          // Bei Standard-Mechaniken (MUCHO/Schaetzchen/CHEESE/ZvZ/non-custom-BunteTuete)
+          // wenn Timer abgelaufen ist + nicht alle geantwortet haben, hing Autoplay
+          // ewig. Jetzt: 3s Karenz nach Timer-Ende, dann reveal (unabhaengig von
+          // allAnswered). 3s statt 2.5s damit Spieler die letzte Sekunde wirklich nicht
+          // mehr submitten koennen.
+          else if (!isCustomPipeline && s.timerEndsAt && Date.now() >= s.timerEndsAt) {
+            delayMs = 3000;
+            action = () => emit('qq:revealAnswer', { roomCode });
           }
         }
         break;

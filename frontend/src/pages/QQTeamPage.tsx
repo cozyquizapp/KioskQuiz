@@ -2469,6 +2469,34 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
+  // 2026-05-02 (Wolfs Bug 'Timer abgelaufen ohne Antwort - Phone zeigt nichts'):
+  // Wenn der Timer regulaer abgelaufen ist + ich noch nicht geantwortet habe,
+  // zeige einen 'leider zu langsam'-Banner statt des offen bleibenden Inputs.
+  // timerExpired-Flag kommt vom Backend (true nach Timer-Ablauf, reset bei
+  // Reveal/Stop/neuer Frage).
+  if (!myAnswer && (s as any).timerExpired === true && s.phase === 'QUESTION_ACTIVE') {
+    return (
+      <div style={{
+        padding: '20px 22px', borderRadius: 18, textAlign: 'center',
+        background: 'linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.06))',
+        border: '2px solid rgba(239,68,68,0.45)',
+        boxShadow: '0 0 30px rgba(239,68,68,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+        animation: 'tcreveal 0.3s ease both',
+        display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 36, lineHeight: 1 }}>⏰</span>
+        <div style={{ fontSize: 18, fontWeight: 900, color: '#f87171' }}>
+          {lang === 'de' ? 'Zeit vorbei!' : 'Time\'s up!'}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fca5a5', maxWidth: 260, lineHeight: 1.4 }}>
+          {lang === 'de'
+            ? 'Diesmal wart ihr leider zu langsam. Beim nächsten Mal — wir glauben an euch.'
+            : 'You were a bit too slow this time. Next round you got this!'}
+        </div>
+      </div>
+    );
+  }
+
   if (myAnswer) {
     let displayText = myAnswer.text;
     // MUCHO: answer is option index ("0","1",...) — resolve to actual option text

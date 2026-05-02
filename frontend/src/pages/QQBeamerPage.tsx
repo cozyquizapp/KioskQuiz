@@ -9041,12 +9041,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {lang === 'en' ? catLabel.en : catLabel.de}
                 </span>
               </div>
+              {/* 2026-05-03 v2: Counter optisch an Kategorie-Pill angeglichen —
+                  gleiche Pill-Form (borderRadius 999), gleiches Padding-Verhaeltnis,
+                  gleicher Border-Stil. Nur farblich gedaempft (kein accent), damit
+                  er als sekundaeres Element erkennbar bleibt. */}
               <div style={{
-                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
-                color: '#cbd5e1', letterSpacing: '0.04em',
-                padding: '8px 16px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 800,
+                color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase',
+                padding: '10px 22px', borderRadius: 999,
+                background: '#0D0A06',
+                border: '2px solid rgba(148,163,184,0.5)',
                 animation: 'contentReveal 0.45s ease 0.1s both',
               }}>
                 {lang === 'en' ? `Q ${(s.questionIndex % 5) + 1}/5` : `Frage ${(s.questionIndex % 5) + 1}/5`}

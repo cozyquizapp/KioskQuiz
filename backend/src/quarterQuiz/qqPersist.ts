@@ -22,12 +22,25 @@ const DEBOUNCE_MS = 2000;
 const MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4h — muss zu QQ_ROOM_TTL_MS passen
 
 // Felder, die nicht serialisiert werden duerfen (Node-Handles / Closures).
+// 2026-05-02 (Persistence-Audit P-1): 5 Sub-Mechanik-Timer-Handles fehlten —
+// JSON.stringify warf auf zirkulaeren Node-Timer-Refs (_idlePrev/_idleNext) und
+// Snapshots schlugen WAEHREND aktiver Bluff/Connections/OC/Comeback-Phasen still
+// fehl (warn im Log). Render-Sleep mitten in Bluff-Write hatte dann keinen
+// aktuellen Snapshot. Alle Timer-Handles + onExpire-Closures jetzt drin.
 const SKIP_KEYS = new Set<string>([
   'timerHandle',
   '_timerOnExpire',
   '_hotPotatoTimerHandle',
   '_hotPotatoOnExpire',
   '_mapRevealTimerHandle',
+  '_bluffWriteTimerHandle',
+  '_bluffVoteTimerHandle',
+  '_bluffWriteOnExpire',
+  '_bluffVoteOnExpire',
+  '_connectionsTimerHandle',
+  '_connectionsOnExpire',
+  '_onlyConnectHintTimerHandle',
+  '_comebackHLTimerHandle',
 ]);
 
 function sanitize(room: QQRoomState): unknown {
@@ -128,7 +141,8 @@ function rehydrate(room: QQRoomState): QQRoomState {
     room.phase === 'QUESTION_ACTIVE' ||
     room.phase === 'QUESTION_REVEAL' ||
     room.phase === 'PLACEMENT' ||
-    room.phase === 'COMEBACK_CHOICE';
+    room.phase === 'COMEBACK_CHOICE' ||
+    room.phase === 'CONNECTIONS_4X4';
   if (isLiveTimerPhase && room.timerEndsAt) {
     const now = Date.now();
     const remaining = Math.max(0, room.timerEndsAt - now);
@@ -142,6 +156,16 @@ function rehydrate(room: QQRoomState): QQRoomState {
     const remaining = Math.max(0, room.hotPotatoTurnEndsAt - Date.now());
     room._hotPotatoTurnRemainingMs = remaining;
     room.hotPotatoTurnEndsAt = null;
+  }
+  // 2026-05-02 (Persistence-Audit P-4): Connections-4x4 hat eigenen `endsAt`
+  // im Sub-Phase-State `connections.endsAt` — beim Rehydrate ablaufen lassen
+  // wuerde im Frontend einen Timer ins Negative laufen lassen, ohne dass der
+  // Auto-Lockout je triggert (Handle ist tot). Wir ueberfuehren ihn synchron
+  // in die Pause-Logik.
+  if (room.connections && room.connections.endsAt) {
+    const remaining = Math.max(0, room.connections.endsAt - Date.now());
+    room._connectionsRemainingMs = remaining;
+    room.connections.endsAt = 0;
   }
   return room;
 }

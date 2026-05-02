@@ -370,6 +370,28 @@ export default function QQTeamPage() {
     }
   }, [connected]);
 
+  // 2026-05-02: Late-Join "Wieder dabei als Team X" — wenn sessionStorage
+  // weg ist (Tab geschlossen / Inkognito-Mode), aber localStorage teamId noch
+  // existiert UND das Team im Room-State drin ist (typisch nach Mid-Game-
+  // Reconnect), bieten wir explizit Resume an statt SetupFlow zu zeigen.
+  // User-Wunsch 2026-05-02: "sollte es sowas geben wie zurück als team x"
+  const existingTeamInRoom = state?.teams.find(t => t.id === teamId) ?? null;
+  async function handleResume() {
+    if (!existingTeamInRoom) return;
+    sessionStorage.setItem('qq_teamName', existingTeamInRoom.name);
+    sessionStorage.setItem('qq_avatarId', existingTeamInRoom.avatarId);
+    setTeamName(existingTeamInRoom.name);
+    setAvatarId(existingTeamInRoom.avatarId);
+    const ack = await emit('qq:joinTeam', {
+      roomCode,
+      teamId,
+      teamName: existingTeamInRoom.name,
+      avatarId: existingTeamInRoom.avatarId,
+    });
+    if (ack.ok) setJoined(true);
+    else setError(ack.error ?? 'error');
+  }
+
   // Identity-Banner nur bei frischem Join anzeigen, nicht bei Auto-Rejoin.
   const [showIdentityBanner, setShowIdentityBanner] = useState(false);
 
@@ -421,6 +443,8 @@ export default function QQTeamPage() {
       lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
       takenAvatarIds={takenAvatarIds}
       takenTeamNamesLower={takenTeamNamesLower}
+      resumeTeam={existingTeamInRoom}
+      onResume={handleResume}
     />;
   }
   if (!state) {
@@ -437,12 +461,15 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds, takenTeamNamesLower }: {
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds, takenTeamNamesLower,
+  resumeTeam, onResume }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
   takenAvatarIds: string[];
   takenTeamNamesLower: string[];
+  resumeTeam: import('../../../shared/quarterQuizTypes').QQTeam | null;
+  onResume: () => void;
 }) {
   const trimmedNameLower = teamName.trim().toLowerCase();
   const nameTaken = trimmedNameLower.length > 0 && takenTeamNamesLower.includes(trimmedNameLower);
@@ -509,6 +536,33 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             </span>
           </button>
         </div>
+        {resumeTeam && (
+          <CozyCard anim borderColor={resumeTeam.color || '#EAB308'}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '6px 0 14px',
+            }}>
+              <QQTeamAvatar avatarId={resumeTeam.avatarId} size={56} style={{
+                animation: 'tcfloat 3s ease-in-out infinite',
+                filter: `drop-shadow(0 0 12px ${resumeTeam.color}55)`,
+              }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
+                  {lang === 'de' ? 'Du warst dabei' : 'You were here'}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || '#F1F5F9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {resumeTeam.name}
+                </div>
+              </div>
+            </div>
+            <CozyBtn color={resumeTeam.color || '#EAB308'} onClick={onResume}>
+              {lang === 'de' ? `Wieder dabei als ${resumeTeam.name}` : `Resume as ${resumeTeam.name}`}
+            </CozyBtn>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: '#64748B' }}>
+              {lang === 'de' ? 'oder unten neues Team anlegen' : 'or set up a new team below'}
+            </div>
+          </CozyCard>
+        )}
         {step === 'AVATAR' && (
           <CozyCard anim borderColor="#EAB308">
             <StepLabel>{t.setup.chooseAvatar[lang]}</StepLabel>

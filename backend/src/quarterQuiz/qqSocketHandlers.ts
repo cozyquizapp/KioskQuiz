@@ -33,6 +33,7 @@ import {
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
   qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoForceEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer, qqHotPotatoMarkQualified, qqHotPotatoCheckWinner,
+  qqHotPotatoIsAllAliveDisconnected, qqHotPotatoForceFinishAllDisconnected,
   qqImposterStart, qqImposterChoose, qqImposterForceEliminate,
   qqFlushQuestionToHistory,
   qqSkipCurrentPlacement,
@@ -1652,10 +1653,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const cat = room.currentQuestion?.category;
         const isMuchoOrZvz = (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') && room.phase === 'QUESTION_ACTIVE';
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
-          // Standard-Reveal: alle Hints zeigen, eval, phase=QUESTION_REVEAL.
-          // Gate entfernt seit 2026-04-28 — onlyConnect nutzt jetzt den
-          // Standard-Flow mit Timer, deshalb ist das Mod-Space-Reveal in
-          // Ordnung wie bei Mucho/Schätzchen.
+          // 2026-05-02: Hard-Floor 25s gilt jetzt auch für Mod-Space — User-Wunsch:
+          // 'sinnvollere variante'. Vorher hatte Mod-Space das Gate umgangen, was
+          // bei doppeltem Space (z.B. nach activate) die Runde in <1s beenden
+          // konnte (User-Bug 2026-04-30 'Connect-4 endet in 1 sekunde'). Auto-Tick
+          // respektierte das Gate ohnehin via qqOnlyConnectCanAutoFinish; Mod-Space
+          // war die letzte Lücke. Silent no-op vor 25s — Mod kann's nochmal drücken.
+          const startedAt = room._onlyConnectStartedAt;
+          if (startedAt && Date.now() - startedAt < 25000) {
+            ok(ack);
+            return;
+          }
           qqOnlyConnectRevealAll(room);
           qqOnlyConnectAutoFinish(room);
           broadcast(io, payload.roomCode);
@@ -3162,6 +3170,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = getQQRoom(qqRoomCode);
         if (room) {
           qqSetTeamConnected(room, qqTeamId, false);
+          // 2026-05-02: Hot Potato all-alive-disconnected Auto-Reveal.
+          // Wenn dieser Disconnect das letzte alive-Team kappt, haengt die
+          // Runde sonst — Mod muesste manuell reveal-en. Auto-Finish triggert
+          // Reveal mit qualifizierten Teams als Winner (oder MarkWrong wenn
+          // niemand qualifiziert).
+          if (qqHotPotatoIsAllAliveDisconnected(room)) {
+            qqHotPotatoForceFinishAllDisconnected(room);
+          }
           broadcast(io, qqRoomCode);
         }
       }

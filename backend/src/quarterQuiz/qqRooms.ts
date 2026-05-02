@@ -1457,6 +1457,39 @@ function getAliveTeams(room: QQRoomState): string[] {
   );
 }
 
+/** 2026-05-02: Hot Potato all-alive-disconnected Auto-Reveal.
+ *  Wenn waehrend einer aktiven HP-Runde alle alive-Teams disconnected sind
+ *  (z.B. WLAN-Ausfall im Pub), haengt das Spiel — Mod muss manuell reveal-en.
+ *  Diese Funktion prueft den Zustand. qqHotPotatoForceFinish() tut den Reveal.
+ *  Aufgerufen vom disconnect-Handler nach qqSetTeamConnected. */
+export function qqHotPotatoIsAllAliveDisconnected(room: QQRoomState): boolean {
+  if (room.phase !== 'QUESTION_ACTIVE') return false;
+  const q = room.currentQuestion;
+  if (!q || q.category !== 'BUNTE_TUETE' || q.bunteTuete?.kind !== 'hotPotato') return false;
+  const alive = getAliveTeams(room);
+  if (alive.length > 0) return false;
+  // alle non-eliminierten Teams sind disconnected — aber es muss mind. ein
+  // Team ueberhaupt im joinOrder sein, sonst ist es Lobby-Pruefung.
+  const nonEliminated = room.joinOrder.filter(id => !room.hotPotatoEliminated.includes(id));
+  return nonEliminated.length > 0;
+}
+
+/** 2026-05-02: Force-Finish HP-Runde wenn alle alive disconnected.
+ *  Logik: bereits qualifizierte Teams (haben mind. eine akzeptierte Antwort
+ *  abgegeben) gewinnen geteilt — auch wenn sie gerade disconnected sind.
+ *  Sonst: niemand gewinnt (markWrong, Mod kann via revealAnswer korrigieren). */
+export function qqHotPotatoForceFinishAllDisconnected(room: QQRoomState): void {
+  if (!qqHotPotatoIsAllAliveDisconnected(room)) return;
+  qqClearHotPotatoTimer(room);
+  qqRevealAnswer(room);
+  if (room.hotPotatoQualified.length > 0) {
+    qqClearBuzz(room);
+    qqMarkCorrect(room, room.hotPotatoQualified.slice());
+  } else {
+    qqMarkWrong(room);
+  }
+}
+
 /** Markiere ein Team als qualifiziert (hat ≥1 akzeptierte Antwort gegeben). */
 export function qqHotPotatoMarkQualified(room: QQRoomState, teamId: string): void {
   if (!room.hotPotatoQualified.includes(teamId)) {

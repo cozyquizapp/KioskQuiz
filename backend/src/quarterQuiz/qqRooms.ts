@@ -858,6 +858,11 @@ export function qqActivateQuestion(
   room.pendingFor     = null;
   room.pendingAction  = null;
   room.answers        = [];
+  // 2026-05-02 Bug-Fix (Wolfs Hot-Potato-Insta-End): allAnswered wurde von
+  // vorheriger Frage NICHT reset → Mod-Autoplay sah allAnswered=true bei
+  // Hot Potato (das den Flag selbst nie setzt) und triggerte revealAnswer
+  // nach 2.5s, gerade wenn Wolf als nicht-Bot ins Round-Robin kam.
+  room.allAnswered    = false;
   room.buzzQueue      = [];
   room.lastPlacedCell = null;
   room.hotPotatoActiveTeamId = null;

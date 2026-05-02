@@ -5342,35 +5342,28 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const correctListDE: string[] = (btt.answers ?? []).map((s: string) => s.trim()).filter(Boolean);
         const correctListEN: string[] = (btt.answersEn ?? []).map((s: string) => s.trim()).filter(Boolean);
         const correctList = lang === 'en' && correctListEN.length ? correctListEN : correctListDE;
-        // Set of ALL accepted variants (DE+EN) lowercased for matching
-        const acceptedLower = new Set<string>([
-          ...correctListDE.map(x => x.toLowerCase()),
-          ...correctListEN.map(x => x.toLowerCase()),
-        ]);
-        // Build: per accepted answer, which teams had it
-        const matches = (p: string, c: string) =>
-          p.toLowerCase() === c.toLowerCase() || p.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(p.toLowerCase());
-        const teamAnswers = s.answers.map(a => ({
-          teamId: a.teamId,
-          parts: a.text.split('|').map(p => p.trim()).filter(Boolean),
-        }));
-        // For each correct answer: list of teams that hit it
+        // 2026-05-02: Backend-Truth via top5HitsByTeam. Backend matched DE+EN
+        // concat (correctAll = correctDE.concat(correctEN)), Indizes 0..N-1 in DE,
+        // N..2N-1 in EN. Frontend mappt zurueck auf Display-Sprache.
+        const hitsByTeam = s.top5HitsByTeam ?? {};
+        // Map: für jede DE-Antwort i, welche Teams haben Index i ODER i+correctListDE.length getroffen?
         const perAnswer = correctList.map((correct, ci) => {
-          const correctDELower = correctListDE[ci]?.toLowerCase() ?? '';
-          const correctENLower = correctListEN[ci]?.toLowerCase() ?? '';
-          const hitters = teamAnswers
-            .filter(ta => ta.parts.some(p => (correctDELower && matches(p, correctDELower)) || (correctENLower && matches(p, correctENLower))))
-            .map(ta => s.teams.find(t => t.id === ta.teamId))
+          const deIdx = ci;
+          const enIdx = ci + correctListDE.length; // EN-Indizes liegen hinter DE
+          const hitters = s.answers
+            .filter(a => {
+              const teamHits = hitsByTeam[a.teamId] ?? [];
+              return teamHits.includes(deIdx) || teamHits.includes(enIdx);
+            })
+            .map(a => s.teams.find(t => t.id === a.teamId))
             .filter((t): t is NonNullable<typeof t> => !!t);
           return { correct, hitters };
         });
         // Hit-count + ranking summary per team
-        const teamScore = teamAnswers.map(ta => {
-          const hits = ta.parts.filter(p => {
-            return [...acceptedLower].some(c => c && matches(p, c));
-          }).length;
-          return { teamId: ta.teamId, hits };
-        }).sort((a, b) => b.hits - a.hits);
+        const teamScore = s.answers.map(a => ({
+          teamId: a.teamId,
+          hits: (hitsByTeam[a.teamId] ?? []).length,
+        })).sort((a, b) => b.hits - a.hits);
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
@@ -5465,30 +5458,26 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
       })()}
 
       {/* BUNTE TÜTE order — correct sequence big, per-position stats + team summary */}
+      {/* 2026-05-02: Backend-Truth via orderHitsByTeam (per-team boolean[] per position). */}
       {q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
         const btt = q.bunteTuete as any;
         const items: string[] = btt.items ?? [];
         const correctOrder: number[] = btt.correctOrder ?? items.map((_: any, i: number) => i);
         const correctSeq = correctOrder.map((idx: number) => (items[idx] ?? '').trim());
-        const correctSeqLower = correctSeq.map(x => x.toLowerCase());
-        // Parse each team's ordering
-        const teamOrderings = s.answers.map(a => ({
-          teamId: a.teamId,
-          parts: a.text.split('|').map(p => p.trim()),
-        }));
+        const orderHits = s.orderHitsByTeam ?? {};
         // Per-position: how many teams got this right
         const perPositionHits = correctSeq.map((_, posIdx) => {
-          const hitters = teamOrderings
-            .filter(to => (to.parts[posIdx] ?? '').toLowerCase() === correctSeqLower[posIdx])
-            .map(to => s.teams.find(t => t.id === to.teamId))
+          const hitters = s.answers
+            .filter(a => (orderHits[a.teamId] ?? [])[posIdx] === true)
+            .map(a => s.teams.find(t => t.id === a.teamId))
             .filter((t): t is NonNullable<typeof t> => !!t);
-          return { hitters, total: teamOrderings.length };
+          return { hitters, total: s.answers.length };
         });
         // Per-team: how many positions correct
-        const teamScores = teamOrderings.map(to => {
-          const score = to.parts.filter((p, i) => p.toLowerCase() === correctSeqLower[i]).length;
-          return { teamId: to.teamId, score };
-        }).sort((a, b) => b.score - a.score);
+        const teamScores = s.answers.map(a => ({
+          teamId: a.teamId,
+          score: (orderHits[a.teamId] ?? []).filter(Boolean).length,
+        })).sort((a, b) => b.score - a.score);
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s ease 0.1s both' }}>
@@ -6692,68 +6681,37 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
   const correctList = lang === 'en' && correctListEN.length ? correctListEN : correctListDE;
   const n = correctList.length;
 
-  // Match-Logik:
-  // 1. Normalisieren: lowercase, Sonderzeichen raus, Whitespace-trim
-  // 2. Direkter String-Match ODER Multiword-Korrektantwort als Bag-of-Tokens
-  //    Substring-Match nur noch bei sehr kurzen Antworten (<=2 Tokens) verhindert,
-  //    dass "brot" auf "Mischbrot/Toastbrot/Vollkornbrot" matcht.
-  const norm = (x: string) =>
-    x.toLowerCase()
-      .replace(/[^a-z0-9äöüß\s-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  const matches = (p: string, c: string) => {
-    const np = norm(p);
-    const nc = norm(c);
-    if (!np || !nc) return false;
-    if (np === nc) return true;
-    // Für korrekte Antworten aus mehreren Wörtern: Spielerantwort muss alle
-    // Tokens enthalten (robust gegen Umstellung, aber nicht gegen Substrings).
-    const cTokens = nc.split(' ').filter(t => t.length >= 2);
-    if (cTokens.length >= 2) {
-      const pTokens = np.split(' ');
-      return cTokens.every(ct => pTokens.includes(ct));
-    }
-    // Kurze Antworten: Wort-Boundary-Match (nicht "brot" in "Mischbrot")
-    const re = new RegExp(`\\b${nc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
-    return re.test(np);
-  };
+  // 2026-05-02: Backend-Truth via top5HitsByTeam. Backend matched mit
+  // similarityScore>=0.8 (fuzzy). Frontend hat jetzt nur noch Anzeige-Logik,
+  // keine eigene Match-Logik mehr. Backend's correctAll = correctDE.concat(correctEN);
+  // Index ci -> DE-Slot, ci+correctDE.length -> EN-Slot.
+  const hitsByTeam = s.top5HitsByTeam ?? {};
 
   // perAnswer in Original-Reihenfolge (Platz 1 = Index 0).
   const perAnswer = useMemo(() => {
-    const teamAnswers = s.answers.map(a => ({
-      teamId: a.teamId,
-      parts: a.text.split('|').map(p => p.trim()).filter(Boolean),
-    }));
     return correctList.map((correct, ci) => {
-      const de = correctListDE[ci] ?? '';
-      const en = correctListEN[ci] ?? '';
-      const hitters = teamAnswers
-        .filter(ta => ta.parts.some(p => (de && matches(p, de)) || (en && matches(p, en))))
-        .map(ta => s.teams.find(t => t.id === ta.teamId))
+      const deIdx = ci;
+      const enIdx = ci + correctListDE.length;
+      const hitters = s.answers
+        .filter(a => {
+          const teamHits = hitsByTeam[a.teamId] ?? [];
+          return teamHits.includes(deIdx) || teamHits.includes(enIdx);
+        })
+        .map(a => s.teams.find(t => t.id === a.teamId))
         .filter((t): t is NonNullable<typeof t> => !!t);
       return { correct, hitters };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.answers, s.teams, correctList, correctListDE, correctListEN]);
+  }, [s.answers, s.teams, correctList, correctListDE.length, JSON.stringify(hitsByTeam)]);
 
-  // Treffer pro Team — für Winner-Block. Jeder korrekten Antwort darf pro Team
-  // nur EINMAL getroffen werden (sonst könnte derselbe Part auf mehrere matchen).
+  // Treffer pro Team — für Winner-Block. Aus Backend-Hits.
   const teamScore = useMemo(() => {
-    const accepted = correctListDE.map((de, i) => ({ de, en: correctListEN[i] ?? '' }));
-    return s.answers.map(a => {
-      const parts = a.text.split('|').map(p => p.trim()).filter(Boolean);
-      const hitIdx = new Set<number>();
-      parts.forEach(p => {
-        accepted.forEach((c, i) => {
-          if (hitIdx.has(i)) return;
-          if ((c.de && matches(p, c.de)) || (c.en && matches(p, c.en))) hitIdx.add(i);
-        });
-      });
-      return { teamId: a.teamId, hits: hitIdx.size };
-    }).sort((x, y) => y.hits - x.hits);
+    return s.answers.map(a => ({
+      teamId: a.teamId,
+      hits: (hitsByTeam[a.teamId] ?? []).length,
+    })).sort((x, y) => y.hits - x.hits);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.answers, correctListDE, correctListEN]);
+  }, [s.answers, JSON.stringify(hitsByTeam)]);
 
   const topHits = teamScore[0]?.hits ?? 0;
   const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);
@@ -7074,9 +7032,10 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
 
   const criteriaTxt = lang === 'en' && btt.criteriaEn ? btt.criteriaEn : btt.criteria;
 
-  // Antworten sind meistens Item-Texte ("text1|text2|..."), manchmal noch Indizes
-  // ("0|1|2"). Wir normalisieren pro Position auf den Item-Index, indem wir zuerst
-  // als Zahl probieren und dann über DE/EN-Item-Listen matchen.
+  // 2026-05-02: Backend-Truth via orderHitsByTeam (per-team boolean[] per
+  // Position, similarityScore>=0.8 fuzzy matched). Frontend nutzt das direkt;
+  // parseAnswers wird nur noch fuer den Item-Display benoetigt.
+  const orderHits = s.orderHitsByTeam ?? {};
   const parsedAnswers = useMemo(() => {
     const deLc = itemsDE.map(s => (s ?? '').trim().toLowerCase());
     const enLc = itemsEN.map(s => (s ?? '').trim().toLowerCase());
@@ -7096,27 +7055,26 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
     });
   }, [s.answers, itemsDE, itemsEN]);
 
-  // Pro Position: welche Teams haben hier den richtigen Item-Index gesetzt?
+  // Pro Position: welche Teams haben hier richtig (Backend-Truth)?
   const perPosition = useMemo(() => {
     return correctOrder.map((correctIdx, posIdx) => {
-      const hitters = parsedAnswers
-        .filter(pa => pa.order[posIdx] === correctIdx)
-        .map(pa => s.teams.find(t => t.id === pa.teamId))
+      const hitters = s.answers
+        .filter(a => (orderHits[a.teamId] ?? [])[posIdx] === true)
+        .map(a => s.teams.find(t => t.id === a.teamId))
         .filter((t): t is NonNullable<typeof t> => !!t);
       return { correctIdx, hitters };
     });
-  }, [parsedAnswers, correctOrder, s.teams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.answers, correctOrder, s.teams, JSON.stringify(orderHits)]);
 
-  // Treffer pro Team (Anzahl korrekter Positionen).
+  // Treffer pro Team (Anzahl korrekter Positionen, Backend-Truth).
   const teamScore = useMemo(() => {
-    return parsedAnswers.map(pa => {
-      let hits = 0;
-      for (let i = 0; i < n; i++) {
-        if (pa.order[i] === correctOrder[i]) hits++;
-      }
-      return { teamId: pa.teamId, hits };
-    }).sort((x, y) => y.hits - x.hits);
-  }, [parsedAnswers, correctOrder, n]);
+    return s.answers.map(a => ({
+      teamId: a.teamId,
+      hits: (orderHits[a.teamId] ?? []).filter(Boolean).length,
+    })).sort((x, y) => y.hits - x.hits);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.answers, JSON.stringify(orderHits)]);
 
   const topHits = teamScore[0]?.hits ?? 0;
   const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);

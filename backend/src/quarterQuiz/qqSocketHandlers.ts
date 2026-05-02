@@ -185,6 +185,12 @@ function applyAutoEval(room: import('./qqRooms').QQRoomState): void {
   const result = qqEvaluateAnswers(room);
   qqClearBuzz(room);
 
+  // 2026-05-02: Pro-Team-Hits fuer Top5/Order in Room schreiben - Frontend
+  // nutzt das fuer korrekte Treffer-Anzeige (sonst weicht UI vom Backend-
+  // Score ab bei Schreibfehler-Akzeptanzen).
+  if (result.top5HitsByTeam) room.top5HitsByTeam = result.top5HitsByTeam;
+  if (result.orderHitsByTeam) room.orderHitsByTeam = result.orderHitsByTeam;
+
   // Bei mehreren Gewinnern nach Antwortzeit sortieren (schnellstes Team zuerst).
   // Gilt für MUCHO (mehrere richtige Antworten) UND ZEHN_VON_ZEHN (Tiebreak bei
   // gleichem Bet-Max auf die richtige Option).

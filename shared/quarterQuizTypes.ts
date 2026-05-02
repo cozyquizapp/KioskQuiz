@@ -833,6 +833,11 @@ export interface QQStateUpdate {
   timerExpired?: boolean;            // 2026-05-02: true wenn Timer regulaer abgelaufen (nicht via Reveal/Stop)
   // Answers (all submissions this question)
   answers: QQAnswerEntry[];
+  // 2026-05-02: Pro-Team-Hits fuer Top5/Order. Backend matcht mit
+  // similarityScore>=0.8 (fuzzy); Frontend liest die Indizes/booleans
+  // statt eigene strict-Match-Logik zu fahren.
+  top5HitsByTeam?: Record<string, number[]>;       // teamId -> indices in correctAll (concat answers + answersEn)
+  orderHitsByTeam?: Record<string, boolean[]>;     // teamId -> per-position correctness
   // Buzz queue (ordered by speed, for Hot Potato)
   buzzQueue: QQBuzzEntry[];
   // Hot Potato

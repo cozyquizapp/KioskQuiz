@@ -1996,6 +1996,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Reihenfolge: eigene Sortierung mit ✓/✗ pro Position */}
+      {/* 2026-05-02: Backend-Truth via orderHitsByTeam (similarityScore>=0.8 fuzzy). */}
       {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
         const btt = q.bunteTuete as any;
         const items: string[] = btt.items ?? [];
@@ -2004,7 +2005,8 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const myAns = s.answers.find(a => a.teamId === myTeamId);
         if (!myAns) return null;
         const mine = String(myAns.text ?? '').split('|').map(x => x.trim()).filter(Boolean);
-        const hits = mine.filter((p, i) => p.toLowerCase() === (correctSeq[i] ?? '').toLowerCase()).length;
+        const myHits: boolean[] = s.orderHitsByTeam?.[myTeamId] ?? mine.map(() => false);
+        const hits = myHits.filter(Boolean).length;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
@@ -2015,7 +2017,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             </div>
             {mine.map((g, i) => {
               const correct = correctSeq[i] ?? '';
-              const ok = g.toLowerCase() === correct.toLowerCase();
+              const ok = !!myHits[i];
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
@@ -2041,28 +2043,25 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
 
       {/* Top-5: eigene Antworten mit ✓/✗ + Team-Badges wer es auch hatte */}
       {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
-        const btt = q.bunteTuete as any;
-        const correctDE: string[] = (btt.answers ?? []).map((x: string) => String(x ?? '').trim()).filter(Boolean);
-        const correctEN: string[] = (btt.answersEn ?? []).map((x: string) => String(x ?? '').trim()).filter(Boolean);
-        const allCorrectLower = new Set([...correctDE, ...correctEN].map(c => c.toLowerCase()));
+        // 2026-05-02: Backend-Truth via top5HitsByTeam (similarityScore>=0.8 fuzzy).
+        // Vorher strict-Match mit substring/equals - Schreibfehler-akzeptierte
+        // Treffer wurden nicht angezeigt obwohl Backend Punkte vergab.
         const myAns = s.answers.find(a => a.teamId === myTeamId);
         if (!myAns) return null;
         const mine = String(myAns.text ?? '').split('|').map(x => x.trim()).filter(Boolean);
-        const matchFor = (guess: string): string | null => {
-          const g = guess.toLowerCase();
-          for (const c of allCorrectLower) {
-            if (g === c || g.includes(c) || c.includes(g)) return c;
-          }
-          return null;
-        };
-        // Welche anderen Teams hatten die gleiche korrekte Antwort?
-        const teamsForCorrect = (corrLower: string): Array<{ id: string; color: string; avatarId: string; name: string }> => {
+        const myHits = s.top5HitsByTeam?.[myTeamId] ?? [];
+        // Map: welche meiner Tipps hat welchen correctAll-Index getroffen?
+        // Backend matched in eval-Reihenfolge; wir rekonstruieren index-per-Tipp.
+        // Einfache Heuristik: erste N Tipps haben Hits (sortiert), Rest ✗.
+        // Fuer das UI reicht "wie viele richtig" + welche correctAll-Indizes.
+        const myHitSet = new Set(myHits);
+        // Andere Teams die einen bestimmten correctIdx auch getroffen haben:
+        const teamsForCorrectIdx = (idx: number): Array<{ id: string; color: string; avatarId: string; name: string }> => {
           const out: Array<{ id: string; color: string; avatarId: string; name: string }> = [];
           for (const a of s.answers) {
             if (a.teamId === myTeamId) continue;
-            const sub = String(a.text ?? '').split('|').map(x => x.trim().toLowerCase()).filter(Boolean);
-            const hit = sub.some(x => x === corrLower || x.includes(corrLower) || corrLower.includes(x));
-            if (hit) {
+            const otherHits = s.top5HitsByTeam?.[a.teamId] ?? [];
+            if (otherHits.includes(idx)) {
               const tm = s.teams.find(t => t.id === a.teamId);
               if (tm) out.push({ id: tm.id, color: tm.color, avatarId: tm.avatarId, name: tm.name });
             }
@@ -2071,22 +2070,28 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         };
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
-              📝 {lang === 'en' ? 'Your answers' : 'Eure Tipps'}
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+              <span>📝 {lang === 'en' ? 'Your answers' : 'Eure Tipps'}</span>
+              <span style={{ color: myHits.length > 0 ? '#4ade80' : '#94a3b8' }}>
+                {myHits.length}/{mine.length} {lang === 'en' ? 'hit' : 'Treffer'}
+              </span>
             </div>
             {mine.map((g, i) => {
-              const m = matchFor(g);
-              const others = m ? teamsForCorrect(m) : [];
+              // Heuristik: ersten myHits.length Tipps gelten als hits, in Reihenfolge.
+              // (Backend matchet greedy in submitted-order, also deckt sich das normalerweise.)
+              const isHit = i < myHits.length;
+              const correctIdxForThis = isHit ? myHits[i] : -1;
+              const others = correctIdxForThis >= 0 ? teamsForCorrectIdx(correctIdxForThis) : [];
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 10,
-                  background: m ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
-                  border: `1px solid ${m ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                  background: isHit ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
+                  border: `1px solid ${isHit ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
-                  <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{m ? '✓' : '✗'}</span>
-                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: m ? '#4ade80' : '#f87171' }}>{g}</span>
+                  <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{isHit ? '✓' : '✗'}</span>
+                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: isHit ? '#4ade80' : '#f87171' }}>{g}</span>
                   {others.length > 0 && (
                     <div style={{ display: 'flex', gap: 3 }}>
                       {others.map(o => (

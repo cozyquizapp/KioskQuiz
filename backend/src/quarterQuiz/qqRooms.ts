@@ -86,6 +86,10 @@ export interface QQRoomState {
   // Answers
   answers: QQAnswerEntry[];
   allAnswered: boolean;  // true when every connected team has submitted
+  // 2026-05-02: Pro-Team-Hits fuer Top5/Order. Frontend nutzt das statt
+  // eigener strict-Match-Logik (Backend nutzt similarityScore>=0.8 = fuzzy).
+  top5HitsByTeam?: Record<string, number[]>;
+  orderHitsByTeam?: Record<string, boolean[]>;
   // 2026-05-01: Disconnect-Grace fuer allAnswered-Berechnung. Wenn ein Team
   // kurz disconnected (z.B. Phone-Bildschirm aus, Wifi-Glitch), zaehlt es
   // weiter als „erwartet" - sonst wuerde allAnswered schlagartig wahr und
@@ -309,6 +313,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       timerExpired: false,
       answers: [],
       allAnswered: false,
+      top5HitsByTeam: {},
+      orderHitsByTeam: {},
       buzzQueue: [],
       hotPotatoActiveTeamId: null,
       hotPotatoEliminated: [],
@@ -863,6 +869,9 @@ export function qqActivateQuestion(
   // Hot Potato (das den Flag selbst nie setzt) und triggerte revealAnswer
   // nach 2.5s, gerade wenn Wolf als nicht-Bot ins Round-Robin kam.
   room.allAnswered    = false;
+  // 2026-05-02: Top5/Order-Hits pro Frage reset (Render-Window-Cleanup).
+  room.top5HitsByTeam  = {};
+  room.orderHitsByTeam = {};
   room.buzzQueue      = [];
   room.lastPlacedCell = null;
   room.hotPotatoActiveTeamId = null;
@@ -979,6 +988,18 @@ export interface QQEvalResult {
    * For other categories: empty object (no point calculation here).
    */
   earnedPoints: Record<string, number>;
+  /**
+   * 2026-05-02: Top5 - pro Team welche correctAll-Indizes getroffen wurden.
+   * Frontend nutzt das statt eigener strict-Match-Logik (sonst werden
+   * similarity-akzeptierte Treffer nicht angezeigt).
+   */
+  top5HitsByTeam?: Record<string, number[]>;
+  /**
+   * 2026-05-02: Order - pro Team welche Positionen korrekt sind.
+   * Index = Position 0..N-1, Wert = true wenn Submission an Position
+   * korrekt (via similarity-Match).
+   */
+  orderHitsByTeam?: Record<string, boolean[]>;
 }
 
 export function qqEvaluateAnswers(room: QQRoomState): QQEvalResult {
@@ -1201,6 +1222,7 @@ function evalTop5(
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
+  const top5HitsByTeam: Record<string, number[]> = {};
 
   for (const ans of room.answers) {
     const submitted = ans.text.split('|').map(s => s.trim()).filter(Boolean);
@@ -1219,13 +1241,14 @@ function evalTop5(
       }
     }
     scores.push({ teamId: ans.teamId, score });
+    top5HitsByTeam[ans.teamId] = Array.from(matchedCorrect).sort((a, b) => a - b);
     if (score > maxScore) maxScore = score;
   }
 
-  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {}, top5HitsByTeam };
 
   const winners = scores.filter(s => s.score === maxScore).map(s => s.teamId);
-  return { winnerTeamIds: winners, earnedPoints: {} };
+  return { winnerTeamIds: winners, earnedPoints: {}, top5HitsByTeam };
 }
 
 // order (Fix It): teams submit pipe-separated items in their chosen order
@@ -1251,27 +1274,30 @@ function evalOrder(
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
+  const orderHitsByTeam: Record<string, boolean[]> = {};
 
   for (const ans of room.answers) {
     const submitted = ans.text.split('|').map(s => s.trim()).filter(Boolean);
     let score = 0;
+    const hits: boolean[] = new Array(correctOrder.length).fill(false);
     for (let i = 0; i < Math.min(submitted.length, correctOrder.length); i++) {
       const s = submitted[i];
       // Index match (old format): "0|1|2"
       const asIdx = Number(s);
-      if (Number.isFinite(asIdx) && asIdx === correctOrder[i]) { score++; continue; }
+      if (Number.isFinite(asIdx) && asIdx === correctOrder[i]) { score++; hits[i] = true; continue; }
       // Text match DE or EN — fuzzy
-      if (correctDE[i] && similarityScore(s, correctDE[i]) >= 0.8) { score++; continue; }
-      if (correctEN[i] && similarityScore(s, correctEN[i]) >= 0.8) { score++; continue; }
+      if (correctDE[i] && similarityScore(s, correctDE[i]) >= 0.8) { score++; hits[i] = true; continue; }
+      if (correctEN[i] && similarityScore(s, correctEN[i]) >= 0.8) { score++; hits[i] = true; continue; }
     }
     scores.push({ teamId: ans.teamId, score });
+    orderHitsByTeam[ans.teamId] = hits;
     if (score > maxScore) maxScore = score;
   }
 
-  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  if (maxScore === 0) return { winnerTeamIds: [], earnedPoints: {}, orderHitsByTeam };
 
   const winners = scores.filter(s => s.score === maxScore).map(s => s.teamId);
-  return { winnerTeamIds: winners, earnedPoints: {} };
+  return { winnerTeamIds: winners, earnedPoints: {}, orderHitsByTeam };
 }
 
 // map (Pin It): teams submit "lat,lng"; closest team to target wins
@@ -3099,6 +3125,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     timerEndsAt:      room.timerEndsAt,
     timerExpired:     room.timerExpired,
     answers:          room.answers,
+    top5HitsByTeam:   room.top5HitsByTeam,
+    orderHitsByTeam:  room.orderHitsByTeam,
     allAnswered:      room.allAnswered,
     buzzQueue:        room.buzzQueue,
     hotPotatoActiveTeamId: room.hotPotatoActiveTeamId,

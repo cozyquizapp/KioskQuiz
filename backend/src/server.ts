@@ -91,6 +91,7 @@ import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
 import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell } from './quarterQuiz/qqRooms';
+import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
 import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
@@ -7716,13 +7717,25 @@ listenWithFallback(PORT, 3);
 
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('⚠️ SIGTERM empfangen, fahre Server herunter...');
+// 2026-05-02 (Persistence-Audit P-5): vor dem httpServer-Close erst alle
+// pendingSaves von qqPersist synchron wegschreiben — sonst verlieren wir bis
+// zu 2s Aktionen der letzten Mod-Klicks vor Render-Sleep/Restart.
+async function gracefulShutdown(signal: string): Promise<void> {
+  console.log(`⚠️ ${signal} empfangen, fahre Server herunter...`);
+  try {
+    await flushAllPendingSaves();
+    console.log('✓ Pending QQ-Saves gefluscht');
+  } catch (err: any) {
+    console.warn('Pending-Save-Flush fehlgeschlagen:', err?.message ?? err);
+  }
   httpServer.close(() => {
     console.log('✓ HTTP Server geschlossen');
     process.exit(0);
   });
-  
+}
+
+process.on('SIGTERM', () => {
+  void gracefulShutdown('SIGTERM');
   // Force exit after 10 seconds
   setTimeout(() => {
     console.error('Erzwungenes Herunterfahren nach Timeout');
@@ -7731,11 +7744,7 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('⚠️ SIGINT empfangen, fahre Server herunter...');
-  httpServer.close(() => {
-    console.log('✓ HTTP Server geschlossen');
-    process.exit(0);
-  });
+  void gracefulShutdown('SIGINT');
 });
 
 

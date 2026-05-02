@@ -336,6 +336,67 @@ function pickDummyAnswer(q: import('./qqRooms').QQRoomState['currentQuestion'], 
 }
 
 /**
+ * 2026-05-02 (Persistence-Audit P-2): Nach Server-Restart sind alle onExpire-
+ * Closures null — qqPersist verwirft Funktionen beim Save (Replacer in
+ * SKIP_KEYS), beim Rehydrate sind sie weg. qqResume restartet Timer aber nur
+ * wenn Closure existiert. Folge: nach Restart laufen Auto-Reveals tot, Mod
+ * muss alles manuell durchklicken.
+ *
+ * Diese Helper-Funktion baut die Closures phasenabhaengig neu BEVOR qqResume
+ * aufgerufen wird. Idempotent — fuer Pre-Restart-Resumes (Closure noch da)
+ * passiert nichts. Sie spiegelt die Closures aus den jeweiligen Activate-/
+ * Begin-Pfaden.
+ */
+function reattachClosuresAfterRestart(
+  io: SocketIOServer,
+  room: ReturnType<typeof getQQRoom>,
+  roomCode: string,
+): void {
+  if (!room) return;
+  if (room.phase !== 'PAUSED') return;
+
+  // Standard-Frage-Timer (QUESTION_ACTIVE/REVEAL/PLACEMENT/COMEBACK_CHOICE/CONNECTIONS_4X4)
+  if (room._timerRemainingMs && room._timerRemainingMs > 0 && !room._timerOnExpire) {
+    room._timerOnExpire = () => broadcast(io, roomCode);
+  }
+
+  // Hot Potato Turn-Timer
+  if (room._hotPotatoTurnRemainingMs && room._hotPotatoTurnRemainingMs > 0
+      && !room._hotPotatoOnExpire
+      && room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+    room._hotPotatoOnExpire = hotPotatoTurnExpiredFor(io, roomCode);
+  }
+
+  // Bluff Write-Timer
+  if (room._bluffWriteRemainingMs && room._bluffWriteRemainingMs > 0
+      && !room._bluffWriteOnExpire
+      && room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+    room._bluffWriteOnExpire = () => bluffWriteTimeout(io, roomCode);
+  }
+
+  // Bluff Vote-Timer
+  if (room._bluffVoteRemainingMs && room._bluffVoteRemainingMs > 0
+      && !room._bluffVoteOnExpire
+      && room.currentQuestion?.bunteTuete?.kind === 'bluff') {
+    room._bluffVoteOnExpire = () => bluffVoteTimeout(io, roomCode);
+  }
+
+  // Connections-4x4 Timer (matcht Closure aus qq:connectionsBegin)
+  if (room._connectionsRemainingMs && room._connectionsRemainingMs > 0
+      && !room._connectionsOnExpire
+      && room.connections) {
+    room._connectionsOnExpire = () => {
+      const r = getQQRoom(roomCode);
+      if (r && r.connections && r.connections.phase === 'active') {
+        qqConnectionsToReveal(r);
+        stopConnectionsAiTimers(roomCode);
+        broadcast(io, roomCode);
+      }
+    };
+  }
+}
+
+/**
  * Modul-Level Turn-Expire-Handler, damit auch maybeAutoHotPotato denselben
  * Callback an qqHotPotatoNext/Eliminate weitergeben kann (sonst bleibt der
  * Flow beim nächsten echten Team ohne Timer stehen).
@@ -1519,6 +1580,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
     }
     if (restored.length > 0) {
       console.log(`[QQ-persist] ${restored.length} room(s) restored`);
+      // 2026-05-02 (Persistence-Audit P-7): expliziter Restart-Broadcast pro Room.
+      // Heute funktioniert Reconnect implizit via Socket.IO-Auto-Reconnect, aber
+      // Frontend bekommt erst beim naechsten State-Update mit dass Server neu
+      // war. Mit diesem Event kann Frontend bewusst State-Refresh erzwingen
+      // (z.B. lokale Caches invalidieren) sobald ein Client wieder connectet.
+      for (const r of restored) {
+        io.to(r.room.roomCode).emit('qq:serverRestarted', { roomCode: r.room.roomCode });
+        // Sofort frischen State pushen — Clients die schon connected sind
+        // bekommen so direkt die rehydrierte Phase (typisch PAUSED).
+        broadcast(io, r.room.roomCode);
+      }
     }
   }).catch(err => {
     console.warn('[QQ-persist] restore failed:', err?.message ?? err);
@@ -3119,7 +3191,31 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:resume', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-05-02 (Persistence-Audit P-2 + P-3): Nach Server-Restart sind alle
+        // onExpire-Closures null (wurden bei Persist verworfen, Funktionen sind
+        // nicht serialisierbar). qqResume restartet Timer nur mit existierender
+        // Closure — also wuerden Auto-Reveals nach Restart nie feuern. Wir bauen
+        // Closures hier phasenabhaengig neu, BEVOR wir qqResume aufrufen.
+        reattachClosuresAfterRestart(io, room, payload.roomCode);
         qqResume(room);
+        // P-3: Connections/OnlyConnect AI-Timer-Maps leben in Modul-Scope und
+        // ueberleben Restart nicht — Bots ticken sonst nicht weiter. Bei Resume
+        // einer Sub-Mechanik-Phase neu antriggern (idempotent).
+        if (room.currentQuestion?.bunteTuete?.kind === 'onlyConnect'
+            && room.phase === 'QUESTION_ACTIVE') {
+          maybeAutoOnlyConnect(io, payload.roomCode);
+        }
+        if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'active') {
+          maybeAutoConnections(io, payload.roomCode);
+        }
+        if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato'
+            && room.phase === 'QUESTION_ACTIVE') {
+          maybeAutoHotPotato(io, payload.roomCode);
+        }
+        if (room.currentQuestion?.bunteTuete?.kind === 'bluff'
+            && room.phase === 'QUESTION_ACTIVE') {
+          maybeAutoBluffWrite(io, payload.roomCode);
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

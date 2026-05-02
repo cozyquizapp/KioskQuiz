@@ -62,7 +62,11 @@ function fileFor(roomCode: string): string {
 }
 
 // ── Debounced autosave ─────────────────────────────────────────────────────
-const pendingSaves = new Map<string, NodeJS.Timeout>();
+// 2026-05-02 (Persistence-Audit P-5): zusaetzlich zum Timer-Handle auch die
+// Room-Referenz im Map speichern, damit flushAllPendingSaves() bei SIGTERM/
+// SIGINT synchron alle ausstehenden 2s-Debounces sofort wegschreiben kann.
+interface PendingSave { handle: NodeJS.Timeout; room: QQRoomState; }
+const pendingSaves = new Map<string, PendingSave>();
 
 export function scheduleSave(room: QQRoomState): void {
   // LOBBY ohne Spieler = nichts wert, und GAME_OVER bleibt fuer Stats, aber wir
@@ -70,7 +74,7 @@ export function scheduleSave(room: QQRoomState): void {
   if (room.phase === 'LOBBY' && Object.keys(room.teams).length === 0) return;
 
   const existing = pendingSaves.get(room.roomCode);
-  if (existing) clearTimeout(existing);
+  if (existing) clearTimeout(existing.handle);
 
   const handle = setTimeout(() => {
     pendingSaves.delete(room.roomCode);
@@ -78,7 +82,26 @@ export function scheduleSave(room: QQRoomState): void {
       console.warn('[QQ-persist] save failed for', room.roomCode, err?.message ?? err);
     });
   }, DEBOUNCE_MS);
-  pendingSaves.set(room.roomCode, handle);
+  pendingSaves.set(room.roomCode, { handle, room });
+}
+
+/**
+ * 2026-05-02 (Persistence-Audit P-5): Synchroner Flush aller debounced Saves.
+ * Wird vom SIGTERM/SIGINT-Handler aufgerufen, damit Aktionen der letzten 2s
+ * vor Sleep/Restart nicht verloren gehen. Awaitable — Server soll erst danach
+ * exit-en.
+ */
+export async function flushAllPendingSaves(): Promise<void> {
+  const entries = Array.from(pendingSaves.values());
+  pendingSaves.clear();
+  for (const { handle } of entries) clearTimeout(handle);
+  await Promise.all(
+    entries.map(({ room }) =>
+      saveRoomNow(room).catch(err =>
+        console.warn('[QQ-persist] flush-save failed for', room.roomCode, err?.message ?? err)
+      )
+    )
+  );
 }
 
 async function saveRoomNow(room: QQRoomState): Promise<void> {

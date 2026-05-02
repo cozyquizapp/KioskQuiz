@@ -358,3 +358,61 @@ export async function deleteQQFeedbackFromDB(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============= QUARTER QUIZ REGULAR TEAMS (Stamm-Teams) =============
+// 2026-05-02: Wiederkehr-Mechanik fuer Pub-Stammgaeste. Pro (pubCode, teamId)
+// wird nach jedem Spiel ein Eintrag mit wins / gamesPlayed / lastPlayedAt
+// upserted. Beim naechsten Mal kann der Spieler seinen Code eingeben und seine
+// Win-Streak wird angezeigt — Retention-Hebel laut PM-Audit.
+const QQRegularTeamSchema = new mongoose.Schema({
+  teamId:       { type: String, required: true, index: true },  // = qq_teamId aus localStorage
+  pubCode:      { type: String, required: true, index: true },  // = roomCode des Pubs
+  teamName:     { type: String, default: '' },
+  avatarId:     { type: String, default: 'fox' },
+  wins:         { type: Number, default: 0 },
+  gamesPlayed:  { type: Number, default: 0 },
+  lastPlayedAt: { type: Number, default: Date.now, index: true },
+  createdAt:    { type: Number, default: Date.now },
+}, { strict: false });
+QQRegularTeamSchema.index({ teamId: 1, pubCode: 1 }, { unique: true });
+
+export const QQRegularTeamModel = mongoose.model('QQRegularTeam', QQRegularTeamSchema);
+
+/** Liest Stamm-Team via teamId + pubCode. */
+export async function getQQRegularTeam(teamId: string, pubCode: string): Promise<any | null> {
+  try {
+    return await QQRegularTeamModel.findOne({ teamId, pubCode }).lean();
+  } catch (err) {
+    console.error('Fehler beim Laden Stamm-Team:', err);
+    return null;
+  }
+}
+
+/** Upsert nach Game-Over: pro Team gamesPlayed +1, fuer Sieger zusaetzlich wins +1. */
+export async function upsertQQRegularTeams(
+  pubCode: string,
+  teams: { id: string; name: string; avatarId: string }[],
+  winnerIds: string[],
+): Promise<void> {
+  if (!pubCode) return;
+  const winnerSet = new Set(winnerIds);
+  const now = Date.now();
+  try {
+    await Promise.all(teams.map(t =>
+      QQRegularTeamModel.updateOne(
+        { teamId: t.id, pubCode },
+        {
+          $set: { teamName: t.name, avatarId: t.avatarId, lastPlayedAt: now },
+          $setOnInsert: { createdAt: now },
+          $inc: {
+            gamesPlayed: 1,
+            wins: winnerSet.has(t.id) ? 1 : 0,
+          },
+        },
+        { upsert: true },
+      )
+    ));
+  } catch (err) {
+    console.error('Fehler beim Upsert Stamm-Teams:', err);
+  }
+}

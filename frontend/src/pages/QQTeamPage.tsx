@@ -337,14 +337,65 @@ function getOrCreateTeamId(): string {
   return id;
 }
 
+// 2026-05-02 (Stamm-Team-Code): teamId hat Format `team-abc123`. Wir
+// formatieren das als `T-ABC123` fuer die Anzeige + akzeptieren das beim
+// Eingeben (case-insensitive, mit/ohne Bindestrich). Andere Eingaben werden
+// trotzdem normalisiert versucht (User koennte z.B. "ABC123" tippen).
+function formatStammCode(teamId: string): string {
+  const suffix = teamId.replace(/^team-/i, '').toUpperCase();
+  return suffix ? `T-${suffix}` : teamId.toUpperCase();
+}
+function parseStammCodeToTeamId(input: string): string {
+  const cleaned = input.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Entferne fuehrendes "t" (T-Prefix).
+  const suffix = cleaned.replace(/^t/, '');
+  if (suffix.length < 4) return ''; // zu kurz, ignorieren
+  return `team-${suffix}`;
+}
+
 export default function QQTeamPage() {
   const roomCode = QQ_ROOM;
   const [step, setStep]         = useState<SetupStep>('AVATAR');
   const [avatarId, setAvatarId] = useState(() => sessionStorage.getItem('qq_avatarId') ?? 'fox');
   const [teamName, setTeamName] = useState(() => sessionStorage.getItem('qq_teamName') ?? '');
-  const [teamId]                = useState(getOrCreateTeamId);
+  const [teamId, setTeamId]     = useState(getOrCreateTeamId);
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
+
+  // 2026-05-02 (Stamm-Team-Code): Lookup-Status fuer "alten Code eingeben"-Feld.
+  const [stammResult, setStammResult] = useState<{
+    teamId: string; teamName: string; avatarId: string; wins: number; gamesPlayed: number;
+  } | null>(null);
+  const [stammStatus, setStammStatus] = useState<'idle' | 'searching' | 'notfound'>('idle');
+
+  async function lookupStammCode(code: string): Promise<void> {
+    const candidateTeamId = parseStammCodeToTeamId(code);
+    if (!candidateTeamId) {
+      setStammStatus('notfound');
+      return;
+    }
+    setStammStatus('searching');
+    setStammResult(null);
+    const ack: any = await emit('qq:lookupRegularTeam', { roomCode, teamId: candidateTeamId });
+    if (ack?.ok && ack.team) {
+      // Match — switch localStorage + UI state auf den Stamm-Team-Code.
+      localStorage.setItem('qq_teamId', candidateTeamId);
+      setTeamId(candidateTeamId);
+      setAvatarId(ack.team.avatarId ?? 'fox');
+      setTeamName(ack.team.teamName ?? '');
+      setStammResult({
+        teamId: candidateTeamId,
+        teamName: ack.team.teamName ?? '',
+        avatarId: ack.team.avatarId ?? 'fox',
+        wins: ack.team.wins ?? 0,
+        gamesPlayed: ack.team.gamesPlayed ?? 0,
+      });
+      setStammStatus('idle');
+    } else {
+      setStammStatus('notfound');
+      setStammResult(null);
+    }
+  }
 
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
 
@@ -445,6 +496,9 @@ export default function QQTeamPage() {
       takenTeamNamesLower={takenTeamNamesLower}
       resumeTeam={existingTeamInRoom}
       onResume={handleResume}
+      onStammLookup={lookupStammCode}
+      stammResult={stammResult}
+      stammStatus={stammStatus}
     />;
   }
   if (!state) {
@@ -462,7 +516,7 @@ export default function QQTeamPage() {
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
   teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds, takenTeamNamesLower,
-  resumeTeam, onResume }: {
+  resumeTeam, onResume, onStammLookup, stammResult, stammStatus }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
@@ -470,7 +524,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   takenTeamNamesLower: string[];
   resumeTeam: import('../../../shared/quarterQuizTypes').QQTeam | null;
   onResume: () => void;
+  onStammLookup: (code: string) => Promise<void>;
+  stammResult: { teamId: string; teamName: string; avatarId: string; wins: number; gamesPlayed: number } | null;
+  stammStatus: 'idle' | 'searching' | 'notfound';
 }) {
+  const [stammInput, setStammInput] = useState('');
+  const [stammExpanded, setStammExpanded] = useState(false);
   const trimmedNameLower = teamName.trim().toLowerCase();
   const nameTaken = trimmedNameLower.length > 0 && takenTeamNamesLower.includes(trimmedNameLower);
   // Track which avatar was just picked for the burst animation
@@ -536,6 +595,107 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             </span>
           </button>
         </div>
+        {/* 2026-05-02 (Stamm-Team-Code): Optionales "alten Code eingeben"-Feld
+            ueber dem Avatar-Picker. Pub-Stammgaeste merken sich ihren Code von
+            letzter Woche, Win-Streak akkumuliert sich. Wer keinen hat, ignoriert. */}
+        {!resumeTeam && step === 'AVATAR' && (
+          <CozyCard borderColor="#FBBF24">
+            {!stammExpanded && !stammResult && (
+              <button
+                onClick={() => setStammExpanded(true)}
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 10,
+                  border: '1px dashed rgba(251,191,36,0.45)',
+                  background: 'rgba(251,191,36,0.06)',
+                  color: '#FDE68A', fontWeight: 800, fontSize: 13,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                title={lang === 'de' ? 'Stamm-Code von letzter Woche eingeben' : 'Enter regular code'}
+              >
+                🔖 {lang === 'de' ? 'Stamm-Code von letzter Woche?' : 'Regular code from last time?'}
+              </button>
+            )}
+            {stammExpanded && !stammResult && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  🔖 {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    type="text"
+                    value={stammInput}
+                    onChange={e => setStammInput(e.target.value)}
+                    placeholder="T-ABC123"
+                    style={{
+                      flex: 1, padding: '10px 12px', borderRadius: 10,
+                      border: '1px solid rgba(251,191,36,0.4)',
+                      background: 'rgba(0,0,0,0.3)', color: '#FDE68A',
+                      fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
+                      letterSpacing: '0.04em',
+                    }}
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                  />
+                  <button
+                    onClick={() => onStammLookup(stammInput)}
+                    disabled={stammStatus === 'searching' || stammInput.trim().length < 4}
+                    style={{
+                      padding: '10px 16px', borderRadius: 10,
+                      border: 'none',
+                      background: stammStatus === 'searching' ? '#475569' : '#F59E0B',
+                      color: '#0D0A06', fontWeight: 900, fontSize: 13,
+                      cursor: stammStatus === 'searching' ? 'wait' : 'pointer',
+                      fontFamily: 'inherit',
+                      opacity: stammInput.trim().length < 4 ? 0.5 : 1,
+                    }}
+                  >
+                    {stammStatus === 'searching' ? '…' : (lang === 'de' ? 'Suchen' : 'Search')}
+                  </button>
+                </div>
+                {stammStatus === 'notfound' && (
+                  <div style={{ fontSize: 11, color: '#EF4444', fontWeight: 700 }}>
+                    {lang === 'de' ? 'Code nicht gefunden — neu spielen geht trotzdem.' : 'Code not found — you can still play normally.'}
+                  </div>
+                )}
+                <button
+                  onClick={() => { setStammExpanded(false); setStammInput(''); }}
+                  style={{
+                    background: 'none', border: 'none', color: '#64748b',
+                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit', alignSelf: 'flex-start',
+                  }}
+                >
+                  {lang === 'de' ? '← zurueck' : '← back'}
+                </button>
+              </div>
+            )}
+            {stammResult && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#22C55E', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  ✓ {lang === 'de' ? 'Stamm-Team gefunden' : 'Regular team found'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <QQTeamAvatar avatarId={stammResult.avatarId} size={48} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#FDE68A' }}>
+                      {stammResult.teamName || '—'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>
+                      {lang === 'de'
+                        ? `${stammResult.wins} Sieg${stammResult.wins === 1 ? '' : 'e'} · ${stammResult.gamesPlayed} Spiel${stammResult.gamesPlayed === 1 ? '' : 'e'}`
+                        : `${stammResult.wins} win${stammResult.wins === 1 ? '' : 's'} · ${stammResult.gamesPlayed} game${stammResult.gamesPlayed === 1 ? '' : 's'}`}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                  {lang === 'de' ? 'Avatar + Name sind eingestellt. Klick auf "Weiter".' : 'Avatar + name set. Click "Next".'}
+                </div>
+              </div>
+            )}
+          </CozyCard>
+        )}
         {resumeTeam && (
           <CozyCard anim borderColor={resumeTeam.color || '#EAB308'}>
             <div style={{
@@ -5089,6 +5249,9 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
   const myTeam  = sorted.find(t => t.id === myTeamId);
   const winner  = sorted[0];
   const iWon = myRank === 1;
+  // 2026-05-02 (Stamm-Team-Code): teamId als lesbarer Code formatiert (T-ABC123).
+  // Wird beim naechsten Pub-Besuch im Setup eingegeben → Win-Streak wird angezeigt.
+  const stammCode = formatStammCode(myTeamId);
 
   return (
     <CozyCard borderColor={iWon ? '#FBBF24' : undefined}>
@@ -5146,6 +5309,38 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
               </div>
             );
           })}
+        </div>
+
+        {/* 2026-05-02 (Stamm-Team-Code): zeige meinen Code als Wiederkommer-Anker.
+            Sichtbar in GAME_OVER und THANKS — Spieler kann ihn abfotografieren. */}
+        <div style={{
+          marginTop: 14, padding: '10px 14px', borderRadius: 12,
+          background: 'rgba(251,191,36,0.08)',
+          border: '1px solid rgba(251,191,36,0.30)',
+          textAlign: 'center',
+          animation: 'tcreveal 0.5s ease 0.4s both',
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 900, color: '#FBBF24',
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4,
+          }}>
+            {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
+          </div>
+          <div style={{
+            fontSize: 22, fontWeight: 900, color: '#FDE68A',
+            fontFamily: 'monospace', letterSpacing: '0.06em',
+            userSelect: 'all',
+          }}>
+            {stammCode}
+          </div>
+          <div style={{
+            fontSize: 11, color: '#94a3b8', fontWeight: 600,
+            marginTop: 4, lineHeight: 1.35,
+          }}>
+            {lang === 'de'
+              ? 'Beim nächsten Mal eingeben — deine Sieg-Streak zählt mit.'
+              : 'Enter it next time — your win streak carries over.'}
+          </div>
         </div>
 
         {/* Thanks message + summary link — only on THANKS phase */}

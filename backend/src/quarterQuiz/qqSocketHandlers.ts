@@ -1,7 +1,7 @@
 // ── Quarter Quiz — Socket event handlers ─────────────────────────────────────
 
 import { Server as SocketIOServer } from 'socket.io';
-import { saveQQGameResult } from '../db/schemas';
+import { saveQQGameResult, getQQRegularTeam, upsertQQRegularTeams } from '../db/schemas';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
   QQStartGamePayload, QQRevealAnswerPayload, QQShowImagePayload, QQMarkCorrectPayload,
@@ -169,6 +169,27 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     funnyAnswers: room.funnyAnswers,
   };
   saveQQGameResult(result).catch(() => {/* fire and forget */});
+
+  // 2026-05-02 (Stamm-Team-Code): pro Team gamesPlayed +1, fuer Sieger zusaetzlich
+  // wins +1. Sieger respektiert tieBreakerWinnerId — wenn Tie aufgeloest, gewinnt
+  // genau ein Team, sonst alle Top-Tied Teams (sind echt gleichauf).
+  const tieWinner = (room as any).tieBreakerWinnerId as string | null | undefined;
+  let winnerIds: string[] = [];
+  if (tieWinner) {
+    winnerIds = [tieWinner];
+  } else {
+    // Standard: alle Teams mit dem gleichen Top-(largest, total)-Score
+    const topLargest = sorted[0] ? (scores[(sorted[0] as any).id] ?? 0) : 0;
+    const topTotal = sorted[0] ? ((sorted[0] as any).totalCells ?? 0) : 0;
+    winnerIds = teamList
+      .filter((t: any) => (scores[t.id] ?? 0) === topLargest && (t.totalCells ?? 0) === topTotal)
+      .map((t: any) => t.id);
+  }
+  upsertQQRegularTeams(
+    room.roomCode,
+    teamList.map((t: any) => ({ id: t.id, name: t.name, avatarId: t.avatarId })),
+    winnerIds,
+  ).catch(() => {/* fire and forget */});
 }
 
 /**
@@ -1621,6 +1642,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
         socket.emit('qq:stateUpdate', buildQQStateUpdate(room));
         ok(ack);
       } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-02 (Stamm-Team-Code): Spieler im Setup-Flow gibt seinen alten
+    // Code ein, Backend liefert die Stamm-Team-Daten zurueck (Avatar, Name,
+    // Win-Streak). Frontend nutzt das fuer Auto-Fill + Win-Streak-Anzeige.
+    socket.on('qq:lookupRegularTeam', async (
+      payload: { roomCode: string; teamId: string },
+      ack?: (resp: { ok: true; team: any | null } | { ok: false; error: string }) => void,
+    ) => {
+      try {
+        if (!payload.teamId || !payload.roomCode) {
+          if (ack) ack({ ok: false, error: 'INVALID_INPUT' });
+          return;
+        }
+        const team = await getQQRegularTeam(payload.teamId, payload.roomCode);
+        if (ack) ack({ ok: true, team: team ?? null });
+      } catch (e: any) {
+        if (ack) ack({ ok: false, error: e?.message ?? 'LOOKUP_FAILED' });
+      }
     });
 
     socket.on('qq:joinTeam', (payload: QQJoinTeamPayload, ack?: unknown) => {

@@ -789,22 +789,29 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   // Firefly color — uses accent for vibrant glow matching beamer
   const ffColor = `${phaseAccent}66`;
 
-  // Category-specific backgrounds matching beamer CAT_BG (adapted for mobile portrait)
+  // 2026-05-02 (Wolfs Wunsch 'team view immer an die farbe anpassen die gerade
+  // auf dem beamer ist'): exakt die gleichen CAT_BG-Strings wie Beamer (siehe
+  // QQBeamerPage.tsx CAT_BG). Phone ist schmaler, radial-gradients skalieren
+  // mit %, also sieht's aehnlich aus.
   const TC_CAT_BG: Record<string, string> = {
-    SCHAETZCHEN:   `radial-gradient(ellipse at 50% 0%, rgba(234,179,8,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(133,77,14,0.12) 0%, transparent 50%), #0D0A06`,
-    MUCHO:         `radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(29,78,216,0.10) 0%, transparent 50%), #0D0A06`,
-    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.20) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(185,28,28,0.10) 0%, transparent 50%), #0D0A06`,
-    ZEHN_VON_ZEHN: `radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.18) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(6,78,59,0.12) 0%, transparent 50%), #0D0A06`,
-    CHEESE:        `radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.22) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(91,33,182,0.10) 0%, transparent 50%), #0D0A06`,
+    SCHAETZCHEN:   `radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%), #0D0A06`,
+    MUCHO:         `radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%), radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%), #0D0A06`,
+    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%), radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%), #0D0A06`,
+    ZEHN_VON_ZEHN: `repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px), radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%), #0D0A06`,
+    CHEESE:        `radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%), radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%), #0D0A06`,
   };
 
-  // Dynamic background — gold for lobby (like beamer), category-specific during questions
-  const pageBg = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && cat
-    ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}22 0%, transparent 50%), #0D0A06`)
+  // Phase-Mapping: bei jeder Phase die Beamer-BG verwenden wenn Kategorie
+  // bekannt ist. Sonst LOBBY_BG fallback (Setup/Lobby/Welcome ohne Kategorie).
+  const usesBeamerCatBg = !!cat && (
+    s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' ||
+    s.phase === 'PLACEMENT' || s.phase === 'PHASE_INTRO' ||
+    s.phase === 'COMEBACK_CHOICE' || s.phase === 'CONNECTIONS_4X4'
+  );
+  const pageBg = usesBeamerCatBg
+    ? (TC_CAT_BG[cat] ?? BEAMER_LOBBY_BG)
     : s.phase === 'GAME_OVER'
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
-    : s.phase === 'PLACEMENT' && cat
-    ? (TC_CAT_BG[cat] ?? `radial-gradient(ellipse at 50% 0%, ${catAccent}15 0%, transparent 55%), #0D0A06`)
     : BEAMER_LOBBY_BG;
 
   return (

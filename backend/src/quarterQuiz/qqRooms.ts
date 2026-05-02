@@ -534,6 +534,14 @@ export function qqStartGame(
       if (q.targetValue == null || Number.isNaN(q.targetValue)) {
         throw new QQError('INVALID_QUESTION', `${tag}: SCHAETZCHEN benötigt einen numerischen targetValue.`);
       }
+    } else if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') {
+      // 2026-05-02 (Audit P2 #1): Hot Potato braucht eine Antwortliste in
+      // q.answer. Sonst wird die Pool-Erschoepfungs-Logik in
+      // qqHotPotatoCheckWinner uebersprungen und Spiel haengt bei Solo-Spieler.
+      const ans = (q.answer ?? '').trim();
+      if (!ans || !ans.split(/[,;]/).some(t => t.trim().length > 0)) {
+        throw new QQError('INVALID_QUESTION', `${tag}: Hot Potato braucht eine Antwortliste (komma- oder semikolon-getrennt).`);
+      }
     }
     // BUNTE_TUETE / CHEESE haben eigene Payload-Formen → kein generischer Check.
   }
@@ -1673,6 +1681,13 @@ export function qqStartPlacement(room: QQRoomState): void {
 // Moderator triggers PLACEMENT separately via qq:startPlacement.
 export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]): void {
   assertPhase(room, ['QUESTION_REVEAL']);
+
+  // 2026-05-02 (Audit P2 #5): Idempotency-Guard. Wenn schon gleich correctTeamId
+  // gesetzt ist + Single-Team-Call, no-op (schuetzt vor Mod-Doppelklick und
+  // autoFinish+Mod-Race in OnlyConnect/Comeback).
+  if (!Array.isArray(teamIdOrList) && room.correctTeamId === teamIdOrList) {
+    return;
+  }
 
   if (Array.isArray(teamIdOrList)) {
     // Nach Antwortzeit sortieren (schnellstes Team zuerst), damit Placement-Queue
@@ -2892,6 +2907,22 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.imposterQueue         = [];
   room.imposterChosenIndices = [];
   room.imposterEliminated    = [];
+  // 2026-05-02 (Audit P2 #12-#15): Render-Window-Cleanup. Diese Felder wurden
+  // bisher erst in qqActivateQuestion reset - waehrend des PHASE_INTRO-Fensters
+  // dazwischen wurden sie aber gebroadcastet und Beamer/Phone zeigten kurz
+  // Reste von der alten Frage (Mucho-Step-3, alte Winners, leuchtende Cell).
+  // Jetzt synchron mit qqActivateQuestion-Reset.
+  room.allAnswered           = false;
+  room.lastPlacedCell        = null;
+  room.imageRevealed         = false;
+  room.muchoRevealStep       = 0;
+  room.zvzRevealStep         = 0;
+  room.cheeseRevealStep      = 0;
+  room.mapRevealStep         = 0;
+  room._currentQuestionWinners = [];
+  room.swapFirstCell         = null;
+  room.top5HitsByTeam        = {};
+  room.orderHitsByTeam       = {};
   delete room._placementQueue;
   room.phase           = 'PHASE_INTRO';
   // Q2+ mit NEUER Kategorie: plain-Reveal überspringen, direkt zur Explanation.
@@ -3881,6 +3912,10 @@ export function qqOnlyConnectReset(room: QQRoomState): void {
   room.onlyConnectWinnerTeamId = null;
   room.onlyConnectWinnerHintIdx = null;
   room.onlyConnectGuesses = [];
+  // 2026-05-02 (Audit P2 #6): _onlyConnectStartedAt explizit reset.
+  // Sonst koennte Min-Duration-Gate auf alten Wert wirken bei Race
+  // zwischen Reset und naechstem qqOnlyConnectStart.
+  room._onlyConnectStartedAt = undefined;
 }
 
 /** Strikes-Limit für 4 gewinnt: nach N falschen Tipps wird das Team gesperrt.
@@ -4285,6 +4320,17 @@ export function qqBluffAdvanceFromWrite(
   if (room.bluffModeratorReview) {
     room.bluffPhase = 'review';
     room.lastActivityAt = Date.now();
+    // 2026-05-02 (Audit P2 #2): Watchdog 3 Min - falls Mod waehrend Review
+    // crasht/disconnected, geht das Spiel automatisch zur Vote-Phase weiter.
+    // 3 Min ist genug fuer normales Bluff-Reviewing, deutlich kuerzer als
+    // Spiel-Inaktivitaets-Timeout.
+    if ((room as any)._bluffReviewWatchdog) clearTimeout((room as any)._bluffReviewWatchdog);
+    (room as any)._bluffReviewWatchdog = setTimeout(() => {
+      (room as any)._bluffReviewWatchdog = null;
+      if (room.bluffPhase === 'review') {
+        qqBluffEnterVote(room, onVoteTimeout);
+      }
+    }, 3 * 60 * 1000);
     return;
   }
   qqBluffEnterVote(room, onVoteTimeout);
@@ -4296,6 +4342,10 @@ export function qqBluffFinishReview(
   onVoteTimeout: () => void
 ): void {
   if (room.bluffPhase !== 'review') return;
+  if ((room as any)._bluffReviewWatchdog) {
+    clearTimeout((room as any)._bluffReviewWatchdog);
+    (room as any)._bluffReviewWatchdog = null;
+  }
   qqBluffEnterVote(room, onVoteTimeout);
 }
 

@@ -3098,6 +3098,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqPause(room);
+        // 2026-05-02 (Audit P2 #10/#11): AI-Timer-Maps stoppen waehrend Pause -
+        // sonst tippen Bots in Connections/OnlyConnect waehrend des Pause-
+        // Bildschirms weiter. Beim Resume re-triggern via maybeAuto*.
+        stopConnectionsAiTimers(payload.roomCode);
+        stopOnlyConnectAiTimers(payload.roomCode);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

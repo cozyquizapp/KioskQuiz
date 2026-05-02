@@ -800,6 +800,11 @@ export interface QQStateUpdate {
   // Alle Gewinner der aktuellen Frage in Placement-Reihenfolge (fastest zuerst).
   // Wird für "du warst richtig, aber nicht schnellstes"-Hinweise im /team genutzt.
   currentQuestionWinners?: string[];
+  // 2026-05-02: Tie-Breaker am Spielende. Wenn ≥2 Teams identische
+  // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie
+  // — Mod resolved manuell, danach steht der Sieger in `tieBreakerWinnerId`.
+  tieBreakerCandidates?: string[];
+  tieBreakerWinnerId?: string | null;
   pendingFor: string | null;         // teamId that must act (place/steal/comeback)
   pendingAction: QQPendingAction | null;
   comebackTeamId: string | null;

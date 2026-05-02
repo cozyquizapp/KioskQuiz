@@ -1570,14 +1570,65 @@ export default function QQModeratorPage() {
                 )}
 
                 {/* ── GAME OVER ── */}
-                {s.phase === 'GAME_OVER' && (
-                  <>
-                    <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}><QQEmojiIcon emoji="🏆"/> Spiel beendet</div>
-                    <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
-                      ▶ Danke-Folie & QR
-                    </PrimaryBtn>
-                  </>
-                )}
+                {s.phase === 'GAME_OVER' && (() => {
+                  const tieCands = s.tieBreakerCandidates ?? [];
+                  const tieResolved = !!s.tieBreakerWinnerId;
+                  const tieActive = tieCands.length >= 2 && !tieResolved;
+                  return (
+                    <>
+                      <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 800 }}><QQEmojiIcon emoji="🏆"/> Spiel beendet</div>
+                      {tieActive && (
+                        <div style={{
+                          display: 'flex', flexDirection: 'column', gap: 6,
+                          padding: '8px 12px', borderRadius: 10,
+                          border: '1.5px solid #F59E0B88',
+                          background: 'rgba(245,158,11,0.10)',
+                        }}>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: '#FBBF24', letterSpacing: '0.04em' }}>
+                            ⚠ STECHFRAGE — gleicher Endstand bei {tieCands.length} Teams
+                          </div>
+                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, lineHeight: 1.35 }}>
+                            Stell den Teams eine Schaetz-/Stichfrage. Sieger anklicken — er rueckt im Ranking auf Platz 1.
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {tieCands.map(id => {
+                              const t = s.teams.find(x => x.id === id);
+                              if (!t) return null;
+                              return (
+                                <button
+                                  key={id}
+                                  onClick={() => emit('qq:resolveTieBreaker', { roomCode, teamId: id })}
+                                  style={{
+                                    padding: '6px 14px', borderRadius: 10,
+                                    border: `2px solid ${t.color}`,
+                                    background: `${t.color}22`, color: t.color,
+                                    fontFamily: 'inherit', fontWeight: 900, fontSize: 13,
+                                    cursor: 'pointer',
+                                  }}
+                                  title={`${t.name} als Stechfrage-Sieger setzen`}
+                                >
+                                  🥇 {t.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {tieResolved && (
+                        <div style={{
+                          fontSize: 12, fontWeight: 800, color: '#FBBF24',
+                          padding: '4px 10px', borderRadius: 8,
+                          background: 'rgba(251,191,36,0.10)',
+                        }}>
+                          ✓ Stechfrage aufgeloest — {s.teams.find(t => t.id === s.tieBreakerWinnerId)?.name}
+                        </div>
+                      )}
+                      <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                        ▶ Danke-Folie & QR
+                      </PrimaryBtn>
+                    </>
+                  );
+                })()}
 
                 {/* ── THANKS ── */}
                 {s.phase === 'THANKS' && (

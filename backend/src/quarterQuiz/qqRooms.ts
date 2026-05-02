@@ -189,6 +189,12 @@ export interface QQRoomState {
   // BEVOR _placementQueue durch Platzierungen leergeshiftet wird). Quelle für die
   // Summary-Stats — nicht aus _placementQueue rekonstruieren.
   _currentQuestionWinners?: string[];
+  // 2026-05-02: Tie-Breaker am GAME_OVER. Wenn ≥2 Teams identische
+  // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie auf.
+  // Mod resolved manuell via qqResolveTieBreaker → tieBreakerWinnerId, Frontend
+  // sortiert dann mit dem Winner an die Spitze der Tie-Gruppe.
+  tieBreakerCandidates?: string[];
+  tieBreakerWinnerId?: string | null;
   // Grid-Snapshot vor Comeback-Steal — erlaubt Undo, auch wenn das Comeback-Team
   // schon 1 oder mehrere Felder geklaut hat. Beim Abschluss des Comebacks
   // (alle Felder geklaut ODER Skip) wird das Feld gelöscht.
@@ -2518,6 +2524,59 @@ export function qqTriggerComeback(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
+/**
+ * 2026-05-02: Tie-Breaker-Detection beim Spielende. Wenn die Top-Teams
+ * identische `largestConnected` UND `totalCells` haben, wird das Tie-Breaker-
+ * Candidate-Set gesetzt — Mod resolved manuell via qqResolveTieBreaker
+ * (typischerweise nach kurzer mündlicher Stechfrage im Pub).
+ */
+function detectTieBreakerCandidates(room: QQRoomState): void {
+  // Reset (defensiv — falls jemand das doppelt aufruft).
+  room.tieBreakerCandidates = [];
+  room.tieBreakerWinnerId = null;
+
+  const teams = Object.values(room.teams);
+  if (teams.length < 2) return;
+
+  // Top-Score finden
+  let topLargest = -1;
+  let topTotal = -1;
+  for (const t of teams) {
+    if (t.largestConnected > topLargest
+        || (t.largestConnected === topLargest && t.totalCells > topTotal)) {
+      topLargest = t.largestConnected;
+      topTotal = t.totalCells;
+    }
+  }
+
+  // Alle Teams mit identischem (largestConnected, totalCells) zum Top-Score
+  const candidates = teams
+    .filter(t => t.largestConnected === topLargest && t.totalCells === topTotal)
+    .map(t => t.id);
+
+  if (candidates.length >= 2) {
+    room.tieBreakerCandidates = candidates;
+  }
+}
+
+/**
+ * 2026-05-02: Mod resolved Tie-Breaker. Setzt den Winner-Id, der dann
+ * Frontend-seitig vorgezogen wird beim Sortieren der Teams.
+ */
+export function qqResolveTieBreaker(room: QQRoomState, teamId: string): void {
+  if (room.phase !== 'GAME_OVER') {
+    throw new QQError('WRONG_PHASE', 'Tie-Breaker nur am Spielende.');
+  }
+  if (!room.tieBreakerCandidates || room.tieBreakerCandidates.length < 2) {
+    throw new QQError('NO_TIE', 'Kein Tie zum aufloesen vorhanden.');
+  }
+  if (!room.tieBreakerCandidates.includes(teamId)) {
+    throw new QQError('INVALID_TEAM', 'Team ist nicht im Tie-Breaker-Set.');
+  }
+  room.tieBreakerWinnerId = teamId;
+  room.lastActivityAt = Date.now();
+}
+
 /** Berechnet aktuelle Leader-Teams (alle mit maximalem largestConnected,
  *  die NICHT selbst im H/L-Mini-Game sitzen).
  *  Wird beim Setup aufgerufen und nach jedem Klau neu. */
@@ -2903,6 +2962,7 @@ export function qqNextQuestion(room: QQRoomState): void {
     updateTerritories(room);
     room.connections = null;
     clearAllJokerVisuals(room);
+    detectTieBreakerCandidates(room);
     room.phase = 'GAME_OVER';
     return;
   }
@@ -2966,6 +3026,7 @@ export function qqNextQuestion(room: QQRoomState): void {
           maxFailedAttempts: room.connectionsMaxFails,
         });
       } else {
+        detectTieBreakerCandidates(room);
         room.phase = 'GAME_OVER';
       }
     } else if (next === room.totalPhases) {
@@ -3240,6 +3301,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     revealedAnswer:   room.revealedAnswer,
     correctTeamId:    room.correctTeamId,
     currentQuestionWinners: room._currentQuestionWinners ?? [],
+    tieBreakerCandidates: room.tieBreakerCandidates ?? [],
+    tieBreakerWinnerId:   room.tieBreakerWinnerId ?? null,
     pendingFor:       room.pendingFor,
     pendingAction:    room.pendingAction,
     comebackTeamId:   room.comebackTeamId,

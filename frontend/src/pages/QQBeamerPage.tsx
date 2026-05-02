@@ -12888,12 +12888,19 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
-  // Tiebreak: bei Gleichstand auf largestConnected entscheidet totalCells;
-  // ist auch das gleich, bleibt der Array-Order stabil (extrem unwahrscheinlich).
-  const sorted = [...s.teams].sort((a, b) =>
-    b.largestConnected - a.largestConnected
-    || b.totalCells - a.totalCells
-  );
+  // 2026-05-02: Tie-Breaker. Wenn `tieBreakerWinnerId` gesetzt ist, kommt
+  // dieses Team vor allen anderen Tie-Kandidaten in der Sort-Reihenfolge.
+  // Sonst: Standard-Sortierung largestConnected → totalCells; Array-Order
+  // stabil bei Voll-Gleichstand (Mod muss dann via UI resolven).
+  const tieWinnerId = s.tieBreakerWinnerId ?? null;
+  const sorted = [...s.teams].sort((a, b) => {
+    if (tieWinnerId) {
+      if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
+      if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
+    }
+    return b.largestConnected - a.largestConnected
+      || b.totalCells - a.totalCells;
+  });
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#F59E0B';
 

@@ -9018,7 +9018,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           }}>
             {/* 2026-05-03 (App-Designer-Audit B3): Pill jetzt opak (solid bg)
                 statt accent-18%-tinted — accent-Text auf accent-tinted-bg verschwamm
-                aus 10m. */}
+                aus 10m.
+                2026-05-03 v2 (Wolf-Wunsch "wäre episch"): Kategorie-Icon ist jetzt
+                ein 3D-Wuerfel der bei jeder neuen Frage einrollt. Key {q.id} sorgt
+                fuer Re-Mount + Re-Roll bei Frage-Wechsel. */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '10px 22px', borderRadius: 999,
@@ -9027,12 +9030,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               animation: 'contentReveal 0.35s ease both',
               flexShrink: 0,
             }}>
-              {(() => {
-                const slug = qqCatSlug(cat as string);
-                return slug
-                  ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                  : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
-              })()}
+              <CategoryCube key={q.id} cat={cat as string} accent={accent} catLabel={catLabel} />
               <span style={{
                 fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
                 color: accent, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -13313,6 +13311,65 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
 // ═══════════════════════════════════════════════════════════════════════════════
 // Sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// 2026-05-03 (Wolf-Wunsch "wäre episch"): 3D-Wuerfel-Kategorie-Badge.
+// Wuerfel hat 6 Faces; 5 davon zeigen das Kategorie-Icon, eine zeigt das
+// Kategorie-Emoji als Variation. Beim Mount rollt der Wuerfel rein
+// (qqCubeRollIn), danach laeuft ein subtiler Idle-Wackler in Loop.
+// Re-Mount via key={q.id} im Caller -> neuer Roll bei jeder neuen Frage.
+function CategoryCube({ cat, accent, catLabel }: {
+  cat: string;
+  accent: string;
+  catLabel: { de: string; en: string; emoji: string };
+}) {
+  const slug = qqCatSlug(cat);
+  // CSS-Cube: 6 Faces in einem 3D-Wrapper
+  // Size in px (statt clamp) — Wuerfel braucht harte translateZ-Werte.
+  // Pub-Display ist 1080p+, 36px ist gut sichtbar in der Pill (vorher clamp 22-32).
+  const size = 36;
+  const half = size / 2;
+  const renderFace = (key: string) => slug
+    ? <QQIcon slug={slug} size={`${size - 4}px`} alt={catLabel.de} />
+    : <span style={{ fontSize: size - 8 }}>{catLabel.emoji}</span>;
+  const faces: Array<{ key: string; transform: string; tint?: string }> = [
+    { key: 'front',  transform: `translateZ(${half}px)` },
+    { key: 'back',   transform: `rotateY(180deg) translateZ(${half}px)`, tint: `${accent}55` },
+    { key: 'right',  transform: `rotateY(90deg) translateZ(${half}px)`, tint: `${accent}33` },
+    { key: 'left',   transform: `rotateY(-90deg) translateZ(${half}px)`, tint: `${accent}33` },
+    { key: 'top',    transform: `rotateX(90deg) translateZ(${half}px)`, tint: `${accent}22` },
+    { key: 'bottom', transform: `rotateX(-90deg) translateZ(${half}px)`, tint: `${accent}22` },
+  ];
+  return (
+    <div style={{
+      display: 'inline-block', width: size, height: size,
+      perspective: '600px',
+      flexShrink: 0,
+    }}>
+      <div style={{
+        width: '100%', height: '100%',
+        position: 'relative',
+        transformStyle: 'preserve-3d',
+        // 2-Stage-Animation: erst Roll-In (1.1s), dann Idle-Wackler (loop alle 6s)
+        animation: 'qqCubeRollIn 1.1s cubic-bezier(0.34, 1.4, 0.64, 1) both, qqCubeIdle 6s ease-in-out 1.2s infinite',
+      }}>
+        {faces.map(f => (
+          <div key={f.key} style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: f.transform,
+            backfaceVisibility: 'hidden',
+            // Side-Faces leicht eingefaerbt damit der Wuerfel-Effekt sichtbar ist
+            // wenn er rollt — sonst sieht man nur die front-face.
+            background: f.tint ? `radial-gradient(circle at center, ${f.tint}, transparent 70%)` : undefined,
+            borderRadius: 4,
+          }}>
+            {renderFace(f.key)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));

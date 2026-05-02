@@ -1867,6 +1867,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const teamId = room.hotPotatoActiveTeamId;
         if (!teamId) throw new QQError('NO_ACTIVE_TEAM', 'Kein aktives Hot-Potato-Team.');
+        // 2026-05-02 (Mechanik-Audit P1 #1): Mod-Doppelklick-Schutz. Erster
+        // Klick: lastAnswer existiert -> qualified + next. Zweiter Klick
+        // direkt danach: lastAnswer ist null (in qqStartHotPotatoTurn reset)
+        // -> ohne Guard wuerde qqHotPotatoNext nochmal feuern und das
+        // naechste Team verliert seinen Turn.
+        if (!room.hotPotatoLastAnswer) {
+          ok(ack);
+          return;
+        }
         if (room.hotPotatoLastAnswer) {
           room.hotPotatoUsedAnswers.push(room.hotPotatoLastAnswer);
           room.hotPotatoAnswerAuthors.push(teamId);
@@ -2030,24 +2039,29 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const result = qqImposterChoose(room, payload.teamId, payload.statementIndex);
 
+        // 2026-05-02 (Mechanik-Audit P1 #13): Survivor-Filter beruecksichtigt
+        // jetzt connected-Status. Vorher konnte ein disconnected Team als
+        // Survivor markiert werden + Sieg + Placement zugewiesen kriegen
+        // ohne dass jemand spielte. Disconnected-Survivor ist quasi 'leerer
+        // Sieg'. Falls alle non-eliminated disconnected sind, faellt
+        // markWrong (niemand bekommt das Feld).
+        const surviveFilter = (id: string) =>
+          !room.imposterEliminated.includes(id) && room.teams[id]?.connected;
         if (result.allWin) {
-          // All surviving teams win → mark correct for all non-eliminated teams, reveal answer
           qqRevealAnswer(room);
-          const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
-          qqMarkCorrect(room, survivors);
+          const survivors = room.joinOrder.filter(surviveFilter);
+          if (survivors.length > 0) qqMarkCorrect(room, survivors);
+          else qqMarkWrong(room);
         } else if (result.eliminated) {
-          const survivors = room.joinOrder.filter(id => !room.imposterEliminated.includes(id));
+          const survivors = room.joinOrder.filter(surviveFilter);
           if (survivors.length <= 1) {
-            // 0 or 1 survivors — end the round
             qqRevealAnswer(room);
             if (survivors.length === 1) {
               qqMarkCorrect(room, survivors);
             } else {
-              // All eliminated — mark wrong, nobody wins
               qqMarkWrong(room);
             }
           }
-          // else: game continues with next team (auto-advanced in qqImposterChoose)
         }
 
         broadcast(io, payload.roomCode);
@@ -2601,6 +2615,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         const hl = room.comebackHL;
         if (!hl) { ok(ack); return; }
+        // 2026-05-02 (Mechanik-Audit P1 #20): Mod-Doppelklick-Schutz - Wolf
+        // springt sonst direkt von question ueber reveal in next-round, sieht
+        // Reveal-Animation gar nicht. 600ms-Debounce zwischen Steps.
+        const HL_STEP_DEBOUNCE_MS = 600;
+        const now = Date.now();
+        const lastStepAt = (room as any)._lastHLStepAt ?? 0;
+        if (now - lastStepAt < HL_STEP_DEBOUNCE_MS) {
+          ok(ack);
+          return;
+        }
+        (room as any)._lastHLStepAt = now;
         if (hl.phase === 'question') {
           // Manueller Reveal durch Moderator → Auto-Reveal-Timer clearen.
           clearHLAutoReveal(room);

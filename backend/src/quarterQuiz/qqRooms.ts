@@ -1729,6 +1729,16 @@ export function qqChooseFreeAction(
     throw new QQError('WRONG_PHASE', 'Aktion nur in Phase 2+ wählbar.');
   }
 
+  // 2026-05-02 (Mechanik-Audit P1 #17): Comeback-Steal-Phase erlaubt nur
+  // PLACE oder STEAL. Sonst koennte das Comeback-Team via FREE-Menue
+  // SANDUHR/SHIELD/STAPEL/SWAP waehlen - das war nicht intendiert,
+  // Comeback-Slot soll nur "Setzen oder Klauen" sein.
+  const isComebackContext = room.comebackHL?.phase === 'steal'
+    && room.comebackTeamId === teamId;
+  if (isComebackContext && action !== 'PLACE' && action !== 'STEAL') {
+    throw new QQError('WRONG_ACTION', 'Comeback erlaubt nur Setzen oder Klauen.');
+  }
+
   const hasFreeCell = room.grid.some(row => row.some(cell => cell.ownerId === null));
 
   if (action === 'STEAL') {
@@ -3270,6 +3280,24 @@ export function qqPause(room: QQRoomState): void {
     if (room.connections?.endsAt) {
       room._connectionsRemainingMs = Math.max(0, room.connections.endsAt - Date.now());
       room.connections.endsAt = 0;
+    }
+  }
+  // 2026-05-02 (Mechanik-Audit P1 #9): OnlyConnect-Hint-Timer cascade nicht
+  // weiterlaufen lassen waehrend Pause (sonst Hints geleakt). Beim Resume
+  // wird Backend einen neuen Tick-Timer starten via maybeAutoOnlyConnect.
+  if ((room as any)._onlyConnectHintTimerHandle) {
+    clearTimeout((room as any)._onlyConnectHintTimerHandle);
+    (room as any)._onlyConnectHintTimerHandle = null;
+  }
+  // 2026-05-02 (Mechanik-Audit P1 #16): Comeback-HL-Auto-Reveal-Timer pausieren
+  // - sonst springt question-Phase ploetzlich auf reveal waehrend Pause +
+  // Inkonsistenz beim Resume.
+  if ((room as any)._comebackHLTimerHandle) {
+    clearTimeout((room as any)._comebackHLTimerHandle);
+    (room as any)._comebackHLTimerHandle = null;
+    if (room.comebackHL?.timerEndsAt) {
+      (room as any)._comebackHLTimerRemainingMs = Math.max(0, room.comebackHL.timerEndsAt - Date.now());
+      room.comebackHL.timerEndsAt = null;
     }
   }
   room.phase = 'PAUSED';

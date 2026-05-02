@@ -1891,6 +1891,13 @@ export default function QQModeratorPage() {
           {/* ── Right column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
+            {/* 2026-05-02 (Event-Manager-Audit + App-Designer-Audit): Frage-Panel
+                fuer den Mod. Pub-Setup: Beamer steht hinter dem Mod, Mod kann
+                Frage/Antwort am Beamer nicht ablesen. Hier ist Frage + erwartete
+                Antwort + akzeptierte Schreibvarianten + sub-mechanik-spezifische
+                Infos kompakt sichtbar. */}
+            <ModQuestionPanel state={s} />
+
             {/* Settings — collapsible */}
             <div style={card}>
               <div
@@ -2207,6 +2214,171 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
             💡 Fun Fact (optional einwerfen)
           </div>
           <div>{funFact}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Mod Question Panel (Frage + Antwort fuer Mod sichtbar) ──────────────────
+// 2026-05-02 (Event-Manager-Audit + App-Designer-Audit): Im Pub steht der
+// Beamer hinter dem Mod — er kann die laufende Frage und die erwartete Antwort
+// nicht ablesen. Dieses Panel zeigt sie ihm im Mod-Tablet/Laptop an, plus
+// kategorie-spezifische Extras (Schaetzchen-Range, MC-Korrekt, BunteTuete-Subkind-Details).
+// Sichtbar in QUESTION_ACTIVE / QUESTION_REVEAL / PLACEMENT.
+function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
+  const q = s.currentQuestion;
+  if (!q) return null;
+  const phase = s.phase;
+  if (phase !== 'QUESTION_ACTIVE' && phase !== 'QUESTION_REVEAL' && phase !== 'PLACEMENT') return null;
+
+  const lang: 'de' | 'en' = s.language === 'en' ? 'en' : 'de';
+  const text = (lang === 'en' && q.textEn) ? q.textEn : q.text;
+  const answer = (lang === 'en' && q.answerEn) ? q.answerEn : q.answer;
+
+  // Kategorie-Badge-Farbe
+  const catColor: Record<string, string> = {
+    SCHAETZCHEN: '#3B82F6',
+    MUCHO: '#22C55E',
+    ZEHN_VON_ZEHN: '#A855F7',
+    CHEESE: '#FBBF24',
+    BUNTE_TUETE: '#EF4444',
+    BUZZER: '#F97316',
+    PICTURE_THIS: '#06B6D4',
+  };
+  const accent = catColor[q.category] ?? '#94A3B8';
+
+  // Kategorie-Spezifik
+  const extras: { label: string; value: string }[] = [];
+
+  if (q.category === 'SCHAETZCHEN' && q.targetValue != null) {
+    const unit = (lang === 'en' && q.unitEn) ? q.unitEn : (q.unit ?? '');
+    extras.push({ label: 'Wert', value: `${q.targetValue}${unit ? ' ' + unit : ''}` });
+    extras.push({ label: 'Akzept', value: 'Naechstes Team gewinnt (closest-wins)' });
+  }
+  if (q.category === 'MUCHO' && q.options && q.correctOptionIndex != null) {
+    const opts = (lang === 'en' && q.optionsEn) ? q.optionsEn : q.options;
+    extras.push({ label: `Option ${'ABCD'[q.correctOptionIndex] ?? q.correctOptionIndex + 1}`, value: opts[q.correctOptionIndex] ?? '?' });
+  }
+  if (q.category === 'ZEHN_VON_ZEHN' && q.options && q.correctOptionIndex != null) {
+    const opts = (lang === 'en' && q.optionsEn) ? q.optionsEn : q.options;
+    extras.push({ label: `Option ${q.correctOptionIndex + 1}`, value: opts[q.correctOptionIndex] ?? '?' });
+  }
+  if (q.category === 'CHEESE') {
+    extras.push({ label: 'Akzept', value: 'fuzzy >=0.8 (Schreibfehler-Toleranz)' });
+  }
+
+  // BunteTuete sub-kind details
+  const bt = q.bunteTuete;
+  if (bt) {
+    if (bt.kind === 'top5') {
+      const ans = (lang === 'en' && bt.answersEn) ? bt.answersEn : bt.answers;
+      extras.push({ label: 'Top5', value: ans.join(', ') });
+      extras.push({ label: 'Akzept', value: 'fuzzy >=0.8' });
+    }
+    if (bt.kind === 'order') {
+      const items = (lang === 'en' && bt.itemsEn) ? bt.itemsEn : bt.items;
+      const sorted = bt.correctOrder.map(i => items[i]).join(' → ');
+      extras.push({ label: 'Reihenfolge', value: sorted });
+      const crit = (lang === 'en' && bt.criteriaEn) ? bt.criteriaEn : bt.criteria;
+      if (crit) extras.push({ label: 'Kriterium', value: crit });
+    }
+    if (bt.kind === 'oneOfEight') {
+      const stmts = (lang === 'en' && bt.statementsEn) ? bt.statementsEn : bt.statements;
+      extras.push({ label: `Falsch (#${bt.falseIndex + 1})`, value: stmts[bt.falseIndex] ?? '?' });
+    }
+    if (bt.kind === 'hotPotato') {
+      // q.answer enthaelt Komma-getrennte gueltige Antworten
+      const valid = (q.answer || '').split(/[,;]/).map(a => a.trim()).filter(Boolean);
+      extras.push({ label: `Antworten (${valid.length})`, value: valid.join(', ') });
+      extras.push({ label: 'Akzept', value: 'fuzzy >=0.8 pro Antwort' });
+    }
+    if (bt.kind === 'onlyConnect') {
+      const hints = (lang === 'en' && bt.hintsEn) ? bt.hintsEn : bt.hints;
+      extras.push({ label: 'Hinweise', value: hints.map((h, i) => `${i + 1}. ${h}`).join(' · ') });
+      const acc = (lang === 'en' && bt.acceptedAnswersEn) ? bt.acceptedAnswersEn : bt.acceptedAnswers;
+      if (acc && acc.length > 0) {
+        extras.push({ label: 'Auch ok', value: acc.join(', ') });
+      }
+    }
+    if (bt.kind === 'bluff') {
+      const real = (lang === 'en' && bt.realAnswerEn) ? bt.realAnswerEn : bt.realAnswer;
+      extras.push({ label: 'Echte Antwort', value: real });
+    }
+  }
+
+  // Sub-Kind Badge
+  const subKind = bt?.kind ?? '';
+  const subKindLabel: Record<string, string> = {
+    top5: 'Top 5', order: 'Reihenfolge', oneOfEight: 'Imposter',
+    hotPotato: 'Hot Potato', onlyConnect: '4-Connect', bluff: 'Bluff',
+  };
+
+  return (
+    <div style={{
+      ...card,
+      borderTop: `3px solid ${accent}`,
+      padding: 14,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8,
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 900, color: accent,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          padding: '2px 8px', borderRadius: 6,
+          background: `${accent}18`, border: `1px solid ${accent}55`,
+        }}>
+          {q.category}{subKind ? ` · ${subKindLabel[subKind] ?? subKind}` : ''}
+        </span>
+        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>
+          Q {s.questionIndex + 1}
+        </span>
+      </div>
+
+      {/* Frage-Text */}
+      <div style={{
+        fontSize: 14, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.35,
+        marginBottom: 10,
+      }}>
+        {text}
+      </div>
+
+      {/* Antwort */}
+      <div style={{
+        padding: '8px 10px', borderRadius: 8,
+        background: 'rgba(34,197,94,0.10)',
+        border: '1px solid rgba(34,197,94,0.35)',
+        borderLeft: '3px solid #22C55E',
+        marginBottom: extras.length > 0 ? 8 : 0,
+      }}>
+        <div style={{
+          fontSize: 9, fontWeight: 900, color: '#22C55E',
+          letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2,
+        }}>
+          ✓ Antwort
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#dcfce7', lineHeight: 1.3 }}>
+          {answer || '—'}
+        </div>
+      </div>
+
+      {/* Kategorie-spezifische Zusatzfelder */}
+      {extras.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {extras.map((e, i) => (
+            <div key={i} style={{
+              fontSize: 11, lineHeight: 1.4, color: '#cbd5e1',
+              display: 'grid', gridTemplateColumns: '90px 1fr', gap: 8,
+            }}>
+              <span style={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.05em', alignSelf: 'start', paddingTop: 2 }}>
+                {e.label}
+              </span>
+              <span style={{ color: '#e5e7eb', fontWeight: 600 }}>
+                {e.value}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>

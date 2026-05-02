@@ -27,6 +27,7 @@ import {
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
+  qqAddCoWinner, qqRemoveWinner,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
@@ -1841,6 +1842,32 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqUndoMarkCorrect(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-02: Mod fuegt nachtraeglich ein Mit-Gewinner-Team hinzu.
+    socket.on('qq:modAddCoWinner', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        if (!payload.teamId || typeof payload.teamId !== 'string') {
+          throw new QQError('INVALID_ID', 'TeamId ungueltig.');
+        }
+        const room = ensureQQRoom(payload.roomCode);
+        qqAddCoWinner(room, payload.teamId);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-02: Mod entfernt ein Team aus der Mit-Gewinner-Liste.
+    socket.on('qq:modRemoveWinner', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        if (!payload.teamId || typeof payload.teamId !== 'string') {
+          throw new QQError('INVALID_ID', 'TeamId ungueltig.');
+        }
+        const room = ensureQQRoom(payload.roomCode);
+        qqRemoveWinner(room, payload.teamId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

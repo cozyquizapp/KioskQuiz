@@ -1760,6 +1760,79 @@ export function qqUndoMarkCorrect(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
+/**
+ * 2026-05-02: Mod fuegt nachtraeglich ein Team als Mit-Gewinner hinzu.
+ * Use case: nach Reveal sagt der Mod "die haben's auch im weiteren Sinne
+ * richtig gehabt" oder "Schreibfehler, wuerde ich gelten lassen". Statt
+ * Undo+neu-Markieren (verliert primaeren Sieger) wird das Team an die
+ * _placementQueue angehaengt — primaerer Sieger setzt zuerst, dann das
+ * Mit-Gewinner-Team. Funktioniert sowohl in QUESTION_REVEAL (vor Placement-
+ * Start) als auch waehrend laufender PLACEMENT (Mit-Gewinner kommt nach
+ * aktuellem Placer dran).
+ */
+export function qqAddCoWinner(room: QQRoomState, teamId: string): void {
+  if (room.phase !== 'QUESTION_REVEAL' && room.phase !== 'PLACEMENT') {
+    throw new QQError('WRONG_PHASE', 'Mit-Gewinner nur waehrend Reveal/Placement.');
+  }
+  assertTeam(room, teamId);
+  // Bereits Sieger? No-op.
+  const winners = new Set(room._currentQuestionWinners ?? []);
+  if (winners.has(teamId)) return;
+  if (room.correctTeamId === teamId) return;
+  // Schon in der Queue? No-op (sollte nicht vorkommen — der Snapshot deckt das ab).
+  if (!room._placementQueue) room._placementQueue = [];
+  if (room._placementQueue.includes(teamId)) return;
+  // Kein primaerer Sieger gesetzt? Dann wird das Team direkt zum primaeren
+  // Sieger (analog single-team qqMarkCorrect, aber additiv im Snapshot).
+  if (!room.correctTeamId && room.phase === 'QUESTION_REVEAL') {
+    room.correctTeamId = teamId;
+  } else {
+    room._placementQueue.push(teamId);
+  }
+  winners.add(teamId);
+  room._currentQuestionWinners = Array.from(winners);
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * 2026-05-02: Mod entfernt ein Team aus der Mit-Gewinner-Liste.
+ * Use case: "ach, doch nicht richtig" — meist nach versehentlichem Add.
+ * Entfernt aus _currentQuestionWinners + aus _placementQueue. Wenn das Team
+ * gerade als correctTeamId aktiv ist (entweder direkt im Reveal oder gerade
+ * am Setzen), wird der naechste aus _placementQueue gezogen — analog zu
+ * qqStartPlacement. Wenn das Team schon Felder gesetzt hat (PLACEMENT laeuft
+ * + placementsLeft < initial), wird KEIN Rollback der Felder gemacht — der
+ * Mod muss das via qqUndoComebackChoice / Phase-Restart manuell handhaben.
+ */
+export function qqRemoveWinner(room: QQRoomState, teamId: string): void {
+  if (room.phase !== 'QUESTION_REVEAL' && room.phase !== 'PLACEMENT') {
+    throw new QQError('WRONG_PHASE', 'Sieger entfernen nur waehrend Reveal/Placement.');
+  }
+  // Aus Queue entfernen
+  if (room._placementQueue) {
+    room._placementQueue = room._placementQueue.filter(id => id !== teamId);
+  }
+  // Aus Winners-Snapshot entfernen
+  const winners = (room._currentQuestionWinners ?? []).filter(id => id !== teamId);
+  room._currentQuestionWinners = winners;
+  // Wenn das Team gerade correctTeamId/pendingFor ist: naechsten aus Queue ziehen
+  if (room.correctTeamId === teamId) {
+    if (room.phase === 'QUESTION_REVEAL') {
+      // Nur correctTeamId leeren — Mod muss neu anfangen oder weiter mit anderem.
+      room.correctTeamId = winners.length > 0 ? winners[0] : null;
+      // Wenn neuer primaerer Sieger gesetzt: Queue ohne ihn neu aufbauen
+      if (room.correctTeamId) {
+        room._placementQueue = winners.slice(1);
+      } else {
+        delete room._placementQueue;
+      }
+    }
+    // PLACEMENT-Phase: hier muss Mod via Skip / Undo manuell weiter — wir
+    // touchen pendingFor/pendingAction nicht mid-flight, das ist zu riskant.
+  }
+  room.lastActivityAt = Date.now();
+}
+
 export function qqMarkWrong(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_REVEAL']);
   room.correctTeamId = null;

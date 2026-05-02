@@ -1428,33 +1428,96 @@ export default function QQModeratorPage() {
                             ↩ Rückgängig
                           </Btn>
                         </div>
-                        {otherTeams.length > 0 && (
-                          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginRight: 4 }}>
-                              ⇄ Gewinner ändern:
-                            </span>
-                            {otherTeams.map(t => (
-                              <button
-                                key={t.id}
-                                onClick={async () => {
-                                  if (!confirm(`Gewinner zu ${t.name} ändern?`)) return;
-                                  await emit('qq:undoMarkCorrect', { roomCode });
-                                  emit('qq:markCorrect', { roomCode, teamId: t.id });
-                                }}
-                                style={{
-                                  padding: '3px 10px', borderRadius: 8,
-                                  border: `1.5px solid ${t.color}88`,
-                                  background: `${t.color}15`, color: t.color,
-                                  fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
-                                  cursor: 'pointer',
-                                }}
-                                title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
-                              >
-                                {t.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {otherTeams.length > 0 && (() => {
+                          const winnerSet = new Set(s.currentQuestionWinners ?? []);
+                          // Bereits Mit-Gewinner = in Snapshot, aber nicht der primaere
+                          const coWinners = otherTeams.filter(t => winnerSet.has(t.id));
+                          const nonWinners = otherTeams.filter(t => !winnerSet.has(t.id));
+                          return (
+                            <>
+                              <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginRight: 4 }}>
+                                  ⇄ Gewinner ändern:
+                                </span>
+                                {nonWinners.map(t => (
+                                  <button
+                                    key={t.id}
+                                    onClick={async () => {
+                                      if (!confirm(`Gewinner zu ${t.name} ändern?`)) return;
+                                      await emit('qq:undoMarkCorrect', { roomCode });
+                                      emit('qq:markCorrect', { roomCode, teamId: t.id });
+                                    }}
+                                    style={{
+                                      padding: '3px 10px', borderRadius: 8,
+                                      border: `1.5px solid ${t.color}88`,
+                                      background: `${t.color}15`, color: t.color,
+                                      fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                                      cursor: 'pointer',
+                                    }}
+                                    title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
+                                  >
+                                    {t.name}
+                                  </button>
+                                ))}
+                              </div>
+                              {/* 2026-05-02: Mit-Gewinner hinzufuegen — Wolf-Wunsch
+                                  fuer "im weiteren Sinne richtig"-Faelle ohne den
+                                  primaeren Sieger zu verlieren. Team kommt an die
+                                  _placementQueue (setzt nach primaerem Sieger). */}
+                              {nonWinners.length > 0 && (
+                                <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginRight: 4 }}>
+                                    + Mit-Gewinner:
+                                  </span>
+                                  {nonWinners.map(t => (
+                                    <button
+                                      key={`co-${t.id}`}
+                                      onClick={() => {
+                                        emit('qq:modAddCoWinner', { roomCode, teamId: t.id });
+                                      }}
+                                      style={{
+                                        padding: '3px 10px', borderRadius: 8,
+                                        border: `1.5px dashed ${t.color}66`,
+                                        background: 'transparent', color: t.color,
+                                        fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                                        cursor: 'pointer',
+                                      }}
+                                      title={`${t.name} als Mit-Gewinner hinzufuegen — setzt nach primaerem Sieger`}
+                                    >
+                                      + {t.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {coWinners.length > 0 && (
+                                <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginRight: 4 }}>
+                                    Mit-Gewinner aktiv:
+                                  </span>
+                                  {coWinners.map(t => (
+                                    <button
+                                      key={`rm-${t.id}`}
+                                      onClick={() => {
+                                        if (!confirm(`${t.name} aus Mit-Gewinner entfernen?`)) return;
+                                        emit('qq:modRemoveWinner', { roomCode, teamId: t.id });
+                                      }}
+                                      style={{
+                                        padding: '3px 10px', borderRadius: 8,
+                                        border: `1.5px solid ${t.color}`,
+                                        background: `${t.color}25`, color: t.color,
+                                        fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                                        cursor: 'pointer',
+                                      }}
+                                      title={`${t.name} entfernen`}
+                                    >
+                                      ✓ {t.name} ✕
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     );
                   }

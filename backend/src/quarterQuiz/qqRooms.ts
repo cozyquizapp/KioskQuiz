@@ -1831,6 +1831,17 @@ export function qqPlaceCell(
   // 2026-04-28: User-Wunsch 'Joker = 1 Aktion der aktuellen Runde'. Helper
   // jokerBonusAction(room) liefert PLACE_1 / FREE / STEAL_1 je nach Phase
   // und Grid-State.
+  // 2026-05-02: Comeback-PLACE - wenn Wolf bei Comeback PLACE statt STEAL waehlt,
+  // muss nach Place die gleiche Pause/Resume-Logik wie bei Comeback-STEAL greifen
+  // (Mod-Approval pro Slot).
+  const isComebackPlace = room.comebackTeamId === teamId
+    && room.comebackHL?.phase === 'steal'
+    && stats && stats.placementsLeft > 0;
+  if (isComebackPlace) {
+    stats.placementsLeft--;
+    qqComebackStealAfterOne(room);
+    return { jokersAwarded };
+  }
   if (usesMultiSlot) {
     stats.placementsLeft--;
     // Joker während laufender Multi-Slot-Runde: SOFORT platzieren (vor verbleibenden Regulär-Steinen)
@@ -1912,7 +1923,13 @@ export function qqStealCell(
 
   // Comeback-Klau: nur Leader-Territorium erlaubt, bei ≥2 Leadern zusätzlich
   // genau 1 pro Leader (kein doppeltes Beklauen eines Teams).
-  const isComeback = action === 'COMEBACK' && room.comebackTeamId === teamId;
+  // 2026-05-02: erweitert auf STEAL_1 wenn comebackHL.phase === 'steal' aktiv
+  // ist - Wolf kann jetzt im Comeback-Mode via FREE-Wahlmenue STEAL waehlen
+  // (= pendingAction wird zu STEAL_1), Comeback-Restriktionen muessen trotzdem
+  // greifen.
+  const isComeback = (action === 'COMEBACK' || action === 'STEAL_1')
+    && room.comebackTeamId === teamId
+    && room.comebackHL?.phase === 'steal';
   if (isComeback) {
     const targets = room.comebackStealTargets ?? [];
     if (targets.length > 0 && !targets.includes(cell.ownerId)) {
@@ -2457,10 +2474,14 @@ export function qqComebackStealStartNext(room: QQRoomState): void {
   // In Klau-Phase: PLACEMENT + pendingFor = stealer
   room.phase             = 'PLACEMENT';
   room.pendingFor        = next;
-  room.pendingAction     = 'COMEBACK';
   room.comebackTeamId    = next;
   room.comebackAction    = 'STEAL_1';
   room.teamPhaseStats[next].placementsLeft = hl.currentStealerRemaining;
+  // 2026-05-02 (Wolfs Wunsch): Comeback erlaubt bei freien Feldern Wahl
+  // zwischen PLACE und STEAL. Vorher forced STEAL (pendingAction='COMEBACK').
+  // Bei vollem Grid: forced STEAL (Joker-Fallback).
+  const hasFreeForComeback = room.grid.some(r => r.some(c => c.ownerId === null));
+  room.pendingAction = hasFreeForComeback ? 'FREE' : 'COMEBACK';
   // Snapshot pro Team fuer Undo
   room._comebackGridSnapshot  = room.grid.map(r => r.map(c => ({ ...c })));
   room._comebackStatsSnapshot = { placementsLeft: hl.currentStealerRemaining };
@@ -2511,9 +2532,10 @@ export function qqComebackStealResume(room: QQRoomState): void {
     return;
   }
   // pendingFor zurueck auf den aktuellen Stealer, damit die Klau-Klicks wieder
-  // angenommen werden.
+  // angenommen werden. 2026-05-02: Wahl-Menue bei freien Feldern.
   room.pendingFor    = hl.currentStealer;
-  room.pendingAction = 'COMEBACK';
+  const hasFreeForResume = room.grid.some(r => r.some(c => c.ownerId === null));
+  room.pendingAction = hasFreeForResume ? 'FREE' : 'COMEBACK';
   room.phase         = 'PLACEMENT';
   room.lastActivityAt = Date.now();
 }

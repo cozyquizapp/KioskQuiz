@@ -1436,131 +1436,18 @@ export default function QQModeratorPage() {
                           // 2026-05-03 (App-Designer-Audit M2): Mit-Gewinner / Sieger-
                           // tausch in zwei klar getrennte Tint-Cards mit groesseren
                           // Buttons (36px hoch, Avatar-Icon, klare visuelle Trennung
-                          // blau vs gruen). Vorher 12px-Inline-Pills, bei 7-8 Teams
-                          // eine Wand kleiner Buttons mit subtiler dashed/solid-
-                          // Trennung — Mod konnte sich vergreifen.
+                          // blau vs gruen).
+                          // 2026-05-03 v2 (Wolf-Wunsch, Streamdeck-Setup): hinter Toggle
+                          // einklappen ausser wenn Mit-Gewinner schon aktiv sind. Mod
+                          // muss nicht standardmaessig durch die Sektion scrollen.
                           return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              {/* Sieger austauschen */}
-                              {nonWinners.length > 0 && (
-                                <div style={{
-                                  padding: 10, borderRadius: 10,
-                                  background: 'rgba(59,130,246,0.06)',
-                                  border: '1px solid rgba(59,130,246,0.25)',
-                                }}>
-                                  <div style={{
-                                    fontSize: 11, fontWeight: 900, color: '#60A5FA',
-                                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                                    marginBottom: 8,
-                                  }}>
-                                    ⇄ Gewinner austauschen
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                    {nonWinners.map(t => (
-                                      <button
-                                        key={t.id}
-                                        onClick={async () => {
-                                          if (!confirm(`Gewinner zu ${t.name} ändern?`)) return;
-                                          await emit('qq:undoMarkCorrect', { roomCode });
-                                          emit('qq:markCorrect', { roomCode, teamId: t.id });
-                                        }}
-                                        style={{
-                                          minHeight: 36, padding: '8px 14px', borderRadius: 10,
-                                          border: `1.5px solid ${t.color}88`,
-                                          background: `${t.color}18`, color: t.color,
-                                          fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
-                                          cursor: 'pointer',
-                                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                                        }}
-                                        title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
-                                      >
-                                        <QQTeamAvatar avatarId={t.avatarId} size={20} />
-                                        {t.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Mit-Gewinner hinzufuegen — eigene Tint-Sektion */}
-                              {nonWinners.length > 0 && (
-                                <div style={{
-                                  padding: 10, borderRadius: 10,
-                                  background: 'rgba(34,197,94,0.06)',
-                                  border: '1px solid rgba(34,197,94,0.25)',
-                                }}>
-                                  <div style={{
-                                    fontSize: 11, fontWeight: 900, color: '#4ADE80',
-                                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                                    marginBottom: 8,
-                                  }}>
-                                    + Mit-Gewinner hinzufügen
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                    {nonWinners.map(t => (
-                                      <button
-                                        key={`co-${t.id}`}
-                                        onClick={() => {
-                                          emit('qq:modAddCoWinner', { roomCode, teamId: t.id });
-                                        }}
-                                        style={{
-                                          minHeight: 36, padding: '8px 14px', borderRadius: 10,
-                                          border: `1.5px dashed ${t.color}99`,
-                                          background: 'rgba(255,255,255,0.02)', color: t.color,
-                                          fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
-                                          cursor: 'pointer',
-                                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                                        }}
-                                        title={`${t.name} als Mit-Gewinner hinzufuegen — setzt nach primaerem Sieger`}
-                                      >
-                                        <QQTeamAvatar avatarId={t.avatarId} size={20} />
-                                        + {t.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Aktive Mit-Gewinner zum Entfernen */}
-                              {coWinners.length > 0 && (
-                                <div style={{
-                                  padding: 10, borderRadius: 10,
-                                  background: 'rgba(34,197,94,0.10)',
-                                  border: '1px solid rgba(34,197,94,0.45)',
-                                }}>
-                                  <div style={{
-                                    fontSize: 11, fontWeight: 900, color: '#22C55E',
-                                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                                    marginBottom: 8,
-                                  }}>
-                                    ✓ Mit-Gewinner aktiv (klick zum Entfernen)
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                    {coWinners.map(t => (
-                                      <button
-                                        key={`rm-${t.id}`}
-                                        onClick={() => {
-                                          if (!confirm(`${t.name} aus Mit-Gewinner entfernen?`)) return;
-                                          emit('qq:modRemoveWinner', { roomCode, teamId: t.id });
-                                        }}
-                                        style={{
-                                          minHeight: 36, padding: '8px 14px', borderRadius: 10,
-                                          border: `2px solid ${t.color}`,
-                                          background: `${t.color}25`, color: t.color,
-                                          fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
-                                          cursor: 'pointer',
-                                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                                        }}
-                                        title={`${t.name} entfernen`}
-                                      >
-                                        <QQTeamAvatar avatarId={t.avatarId} size={20} />
-                                        ✓ {t.name} ✕
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                            <ModWinnerActionsToggle
+                              forceOpen={coWinners.length > 0}
+                              nonWinners={nonWinners}
+                              coWinners={coWinners}
+                              roomCode={roomCode}
+                              emit={emit}
+                            />
                           );
                         })()}
                       </div>
@@ -2274,6 +2161,169 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
 // ── Endstand-CSV-Export ──────────────────────────────────────────────────
 // 2026-05-02 (Event-Manager-Audit): Pub-Wirt braucht den Endstand fuer die
 // Wochen-Tafel im Pub. Browser-side CSV-Download, kein Backend noetig.
+// ── Mit-Gewinner / Sieger-Tausch (Toggle) ──────────────────────────────────
+// 2026-05-03 (Wolf-Wunsch, Streamdeck-Setup): Mod scrollt mit Streamdeck —
+// scrollen nervt. Mit-Gewinner-Aktionen sind Edge-Case ('im weiteren Sinne
+// richtig'-Faelle), nicht Standard-Flow. Daher hinter Toggle einklappen,
+// ausser wenn schon Mit-Gewinner aktiv sind (forceOpen=true).
+function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, emit }: {
+  forceOpen: boolean;
+  nonWinners: { id: string; name: string; color: string; avatarId: string }[];
+  coWinners: { id: string; name: string; color: string; avatarId: string }[];
+  roomCode: string;
+  emit: (event: string, payload: any) => Promise<any>;
+}) {
+  const [open, setOpen] = useState(forceOpen);
+  // Sync forceOpen — wenn Mit-Gewinner waehrend des Spiels hinzukommen, Panel automatisch oeffnen
+  useEffect(() => { if (forceOpen) setOpen(true); }, [forceOpen]);
+  if (nonWinners.length === 0 && coWinners.length === 0) return null;
+
+  const toggleLabel = open ? '▼ Sieger anpassen' : '▶ Sieger anpassen';
+  const summary = coWinners.length > 0
+    ? `${coWinners.length} Mit-Gewinner aktiv`
+    : 'Im weiteren Sinne richtig? Punkte korrigieren?';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '8px 12px', borderRadius: 10,
+          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(255,255,255,0.04)',
+          color: '#cbd5e1', fontWeight: 800, fontSize: 13,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        <span>{toggleLabel}</span>
+        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{summary}</span>
+      </button>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Sieger austauschen */}
+          {nonWinners.length > 0 && (
+            <div style={{
+              padding: 10, borderRadius: 10,
+              background: 'rgba(59,130,246,0.06)',
+              border: '1px solid rgba(59,130,246,0.25)',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: '#60A5FA',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                marginBottom: 8,
+              }}>
+                ⇄ Gewinner austauschen
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {nonWinners.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={async () => {
+                      if (!confirm(`Gewinner zu ${t.name} ändern?`)) return;
+                      await emit('qq:undoMarkCorrect', { roomCode });
+                      emit('qq:markCorrect', { roomCode, teamId: t.id });
+                    }}
+                    style={{
+                      minHeight: 36, padding: '8px 14px', borderRadius: 10,
+                      border: `1.5px solid ${t.color}88`,
+                      background: `${t.color}18`, color: t.color,
+                      fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+                      cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                    title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
+                  >
+                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mit-Gewinner hinzufuegen */}
+          {nonWinners.length > 0 && (
+            <div style={{
+              padding: 10, borderRadius: 10,
+              background: 'rgba(34,197,94,0.06)',
+              border: '1px solid rgba(34,197,94,0.25)',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: '#4ADE80',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                marginBottom: 8,
+              }}>
+                + Mit-Gewinner hinzufügen
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {nonWinners.map(t => (
+                  <button
+                    key={`co-${t.id}`}
+                    onClick={() => emit('qq:modAddCoWinner', { roomCode, teamId: t.id })}
+                    style={{
+                      minHeight: 36, padding: '8px 14px', borderRadius: 10,
+                      border: `1.5px dashed ${t.color}99`,
+                      background: 'rgba(255,255,255,0.02)', color: t.color,
+                      fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+                      cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                    title={`${t.name} als Mit-Gewinner hinzufuegen — setzt nach primaerem Sieger`}
+                  >
+                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    + {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Aktive Mit-Gewinner zum Entfernen */}
+          {coWinners.length > 0 && (
+            <div style={{
+              padding: 10, borderRadius: 10,
+              background: 'rgba(34,197,94,0.10)',
+              border: '1px solid rgba(34,197,94,0.45)',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: '#22C55E',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                marginBottom: 8,
+              }}>
+                ✓ Mit-Gewinner aktiv (klick zum Entfernen)
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {coWinners.map(t => (
+                  <button
+                    key={`rm-${t.id}`}
+                    onClick={() => {
+                      if (!confirm(`${t.name} aus Mit-Gewinner entfernen?`)) return;
+                      emit('qq:modRemoveWinner', { roomCode, teamId: t.id });
+                    }}
+                    style={{
+                      minHeight: 36, padding: '8px 14px', borderRadius: 10,
+                      border: `2px solid ${t.color}`,
+                      background: `${t.color}25`, color: t.color,
+                      fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+                      cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                    title={`${t.name} entfernen`}
+                  >
+                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    ✓ {t.name} ✕
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
   const tieWinnerId = s.tieBreakerWinnerId ?? null;
   const sorted = [...s.teams].sort((a, b) => {

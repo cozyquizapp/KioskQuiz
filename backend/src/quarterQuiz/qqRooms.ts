@@ -912,6 +912,12 @@ export function qqRevealAnswer(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   qqStopTimer(room);
   const q = room.currentQuestion;
+  // 2026-05-02 Diagnose-Log fuer Wolfs Hot-Potato-Insta-End-Bug:
+  // logge wer/wann qqRevealAnswer triggert. Stack-Trace zeigt Caller.
+  if (q?.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') {
+    const stack = new Error().stack?.split('\n').slice(2, 5).join(' <- ') ?? '?';
+    console.log(`[hp-debug] qqRevealAnswer triggered for hotPotato | qualified=${room.hotPotatoQualified.length} | eliminated=${room.hotPotatoEliminated.length} | usedAnswers=${room.hotPotatoUsedAnswers.length} | activeTeam=${room.hotPotatoActiveTeamId} | trace: ${stack}`);
+  }
   room.phase          = 'QUESTION_REVEAL';
   let revAns = room.language === 'en' && q?.answerEn ? q.answerEn : (q?.answer ?? '');
   // SCHAETZCHEN: if no answer text, fall back to formatted targetValue
@@ -1319,6 +1325,7 @@ export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): v
   room.hotPotatoAnswerAuthors = [];
   room.hotPotatoQualified = [];
   const alive = getAliveTeams(room);
+  console.log(`[hp-debug] qqHotPotatoStart | alive=${alive.length} | joinOrder=${room.joinOrder.length} | connected=${room.joinOrder.filter(id => room.teams[id]?.connected).length} | teams=${JSON.stringify(room.joinOrder.map(id => ({ id, conn: room.teams[id]?.connected, dummy: (room.teams[id] as any)?._dummy })))}`);
   if (alive.length === 0) return;
   // Random start index stored in room for round-robin tracking
   const startIdx = Math.floor(Math.random() * alive.length);

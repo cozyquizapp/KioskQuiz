@@ -872,6 +872,14 @@ export function qqActivateQuestion(
   room.hotPotatoUsedAnswers  = [];
   room.hotPotatoAnswerAuthors = [];
   room.hotPotatoQualified    = [];
+  // 2026-05-02 (State-Reset-Audit): gleicher Bug-Pattern wie allAnswered.
+  // Imposter-State leakte beim Wechsel oneOfEight -> non-oneOfEight Frage.
+  room.imposterActiveTeamId  = null;
+  room.imposterQueue         = [];
+  room.imposterChosenIndices = [];
+  room.imposterEliminated    = [];
+  // P1: swapFirstCell auch reset, sonst sieht naechstes SWAP-Team alten Highlight.
+  room.swapFirstCell = null;
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.lastActivityAt = Date.now();
   // CHEESE: image + question shown together, so imageRevealed is true immediately

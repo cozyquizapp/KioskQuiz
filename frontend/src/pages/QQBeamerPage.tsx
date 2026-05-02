@@ -5230,20 +5230,19 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
       })()}
 
       {/* CHEESE: typed answers with speed for ties — step-based reveal */}
+      {/* 2026-05-02 (Phone-Beamer-Audit): isWinner via currentQuestionWinners
+          (Backend-Truth) - sonst kriegen Schreibfehler-akzeptierte Teams kein
+          gruenes Highlight in der Step-Liste. */}
       {q.category === 'CHEESE' && (() => {
         const sorted = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (sorted[0]?.submittedAt ?? 0);
-        const winners = sorted.filter(a => a.teamId === s.correctTeamId);
-        const hasTie = winners.length > 1 || sorted.filter(a => {
-          if (!s.correctTeamId) return false;
-          const winAns = sorted.find(x => x.teamId === s.correctTeamId)?.text?.trim().toLowerCase();
-          return winAns && a.text?.trim().toLowerCase() === winAns;
-        }).length > 1;
+        const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
+        const hasTie = winnerSet.size > 1;
         return (
           <div style={{ animation: 'contentReveal 0.5s ease 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sorted.map((a, i) => {
               const team = s.teams.find(t => t.id === a.teamId);
-              const isWinner = a.teamId === s.correctTeamId;
+              const isWinner = winnerSet.has(a.teamId);
               const timeSec = t0 ? ((a.submittedAt - t0) / 1000).toFixed(1) : null;
               if (!team) return null;
               const greenOn = isWinner;
@@ -8880,17 +8879,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             )}
 
             {/* Alle richtigen Teams mit Zeit — analog zu MUCHO/ZEHN_VON_ZEHN */}
+            {/* 2026-05-02 (Phone-Beamer-Sync-Audit): strict-Match durch
+                Backend-Truth (currentQuestionWinners) ersetzt - sonst fehlten
+                Schreibfehler-akzeptierte Avatare in der Frosted-Card. */}
             {isCheeseReveal && (() => {
-              const correctDE = (q.answer ?? '').trim().toLowerCase();
-              const correctEN = (q.answerEn ?? '').trim().toLowerCase();
-              const correctSet = [correctDE, correctEN].filter(Boolean);
-              const matches = (submitted: string) => {
-                const s2 = submitted.trim().toLowerCase();
-                if (s2.length < 2) return false;
-                return correctSet.some(c => c === s2 || s2.includes(c) || (c.length > 3 && c.includes(s2) && s2.length >= 3));
-              };
+              const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
               const correctAnswers = [...s.answers]
-                .filter(a => matches(a.text))
+                .filter(a => winnerSet.has(a.teamId))
                 .sort((a, b) => a.submittedAt - b.submittedAt);
               if (correctAnswers.length === 0) {
                 return (
@@ -10199,21 +10194,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const allInTied = allInTie?.maxPointsTied ?? false;
 
             // CHEESE: Wenn mehrere Teams richtig geraten haben, ist „am schnellsten"
-            // die entscheidende Info. Match-Logik spiegelt evalCheese im Backend.
+            // die entscheidende Info. 2026-05-02 (Audit): Backend-Truth statt
+            // strict-Match - sonst zaehlte Schreibfehler-Akzeptanzen nicht.
             const cheeseCorrectCount = cat === 'CHEESE'
-              ? (() => {
-                  const correctList = [q.answer, q.answerEn]
-                    .map(x => (x ?? '').trim().toLowerCase())
-                    .filter(Boolean);
-                  if (correctList.length === 0) return 0;
-                  return s.answers.filter(a => {
-                    const sub = a.text.trim().toLowerCase();
-                    if (sub.length < 2) return false;
-                    return correctList.some(c =>
-                      sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3)
-                    );
-                  }).length;
-                })()
+              ? (s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : [])).length
               : 0;
             const cheeseSpeedWin = cat === 'CHEESE' && cheeseCorrectCount > 1;
 

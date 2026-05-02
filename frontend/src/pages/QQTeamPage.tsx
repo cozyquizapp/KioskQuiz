@@ -1783,27 +1783,17 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           // Rang ergibt sich aus submittedAt; das Backend queued die langsameren
           // richtigen Teams ueber _placementQueue.
           const myAnswer = s.answers.find(a => a.teamId === myTeamId);
-          const cheeseCorrectList = (cat === 'CHEESE')
-            ? [q.answer, q.answerEn].map(x => (x ?? '').trim().toLowerCase()).filter(Boolean)
-            : [];
-          const cheeseMatch = (txt: string) => {
-            const sub = txt.trim().toLowerCase();
-            if (sub.length < 2) return false;
-            return cheeseCorrectList.some(c => sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3));
-          };
-          const isAnswerCorrect = (ans: { text: string } | undefined): boolean => {
-            if (!ans) return false;
-            if (cat === 'MUCHO') return q.correctOptionIndex != null && ans.text === String(q.correctOptionIndex);
-            if (cat === 'CHEESE') return cheeseCorrectList.length > 0 && cheeseMatch(ans.text);
-            return false;
-          };
-          const iWasAlsoCorrect = isAnswerCorrect(myAnswer);
+          // 2026-05-02 (Phone-Beamer-Audit): Backend-Truth via currentQuestionWinners
+          // statt strict-Match. CHEESE Schreibfehler-akzeptierte Antworten waren
+          // sonst nicht als 'auch richtig' erkannt -> falscher LoseMsg-Banner.
+          const winnerIdSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
+          const iWasAlsoCorrect = winnerIdSet.has(myTeamId);
 
           // Rang unter allen richtigen Antworten (1 = schnellstes richtiges Team = Gewinner)
           let myRank = 0;
           if (iWasAlsoCorrect && myAnswer) {
             const correctSorted = s.answers
-              .filter(a => isAnswerCorrect(a))
+              .filter(a => winnerIdSet.has(a.teamId))
               .sort((a, b) => a.submittedAt - b.submittedAt);
             myRank = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
           }

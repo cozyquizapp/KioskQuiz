@@ -1626,6 +1626,12 @@ export default function QQModeratorPage() {
                       <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
                         ▶ Danke-Folie & QR
                       </PrimaryBtn>
+                      {/* 2026-05-02 (Event-Manager-Audit): Endstand exportieren.
+                          Pub-Wirt will die Wochen-Tafel updaten — heute musste
+                          er den Beamer abfotografieren. */}
+                      <Btn small color="#94A3B8" onClick={() => downloadEndstandCSV(s, roomCode)}>
+                        📄 Endstand CSV
+                      </Btn>
                     </>
                   );
                 })()}
@@ -2218,6 +2224,73 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
       )}
     </div>
   );
+}
+
+// ── Endstand-CSV-Export ──────────────────────────────────────────────────
+// 2026-05-02 (Event-Manager-Audit): Pub-Wirt braucht den Endstand fuer die
+// Wochen-Tafel im Pub. Browser-side CSV-Download, kein Backend noetig.
+function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
+  const tieWinnerId = s.tieBreakerWinnerId ?? null;
+  const sorted = [...s.teams].sort((a, b) => {
+    if (tieWinnerId) {
+      if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
+      if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
+    }
+    return b.largestConnected - a.largestConnected
+      || b.totalCells - a.totalCells;
+  });
+
+  const escape = (val: string | number): string => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const headers = [
+    'Platz', 'Team', 'Avatar', 'Groesste Insel', 'Felder gesamt', 'Joker', 'Klau-Aktionen', 'Stapel', 'Tiebreak-Sieger',
+  ];
+
+  const rows = sorted.map((t, idx) => {
+    const stats = s.teamPhaseStats[t.id];
+    const isTieWinner = tieWinnerId === t.id;
+    return [
+      idx + 1,
+      t.name,
+      t.avatarId,
+      t.largestConnected,
+      t.totalCells,
+      stats?.jokersEarned ?? 0,
+      stats?.stealsUsed ?? 0,
+      stats?.stapelsUsed ?? 0,
+      isTieWinner ? 'ja' : '',
+    ].map(escape).join(',');
+  });
+
+  const date = new Date();
+  const dateStr = date.toLocaleString('de-DE', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+
+  const csv = [
+    `# CozyQuiz Endstand — Raum ${roomCode} — ${dateStr}`,
+    headers.join(','),
+    ...rows,
+  ].join('\n');
+
+  // Browser-Download via Blob + ObjectURL
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }); // BOM fuer Excel
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = `cozyquiz-endstand-${roomCode}-${date.toISOString().slice(0, 10)}.csv`;
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ── Mod Question Panel (Frage + Antwort fuer Mod sichtbar) ──────────────────

@@ -5789,20 +5789,13 @@ function BluffBeamerView({ state: s, lang, revealed }: {
           bottom statt im Flex-Flow → garantiert sichtbar, Vote-Screen kann
           nicht mehr drueberlaufen. */}
       {phase === 'reveal' && (() => {
+        // 2026-05-02 (Audit B Anti-Pattern Fix): Backend-Truth via
+        // s.currentQuestionWinners (von qqMarkCorrect gesetzt) statt lokaler
+        // Sort/Tie-Logik. Stellt sicher, dass Beamer-Anzeige + tatsaechlich
+        // punktiertes Team nie divergieren wenn evalBluff-Logik geaendert wird.
         const points = s.bluffPoints ?? {};
-        const teamIds = Object.keys(points);
-        if (teamIds.length === 0) return null;
-        let max = 0;
-        for (const id of teamIds) max = Math.max(max, points[id]?.total ?? 0);
-        if (max === 0) return null;
-        const voteOrder = Object.keys(s.bluffVotes ?? {});
-        const winners = teamIds
-          .filter(id => (points[id]?.total ?? 0) === max)
-          .sort((a, b) => {
-            const ai = voteOrder.indexOf(a);
-            const bi = voteOrder.indexOf(b);
-            return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
-          });
+        const winners = s.currentQuestionWinners ?? [];
+        if (winners.length === 0) return null;
         const winnerTeam = s.teams.find(t => t.id === winners[0]);
         if (!winnerTeam) return null;
         const isCoTie = winners.length > 1;
@@ -6271,17 +6264,20 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
     : (hintIndicesArr.length > 0 ? Math.min(...hintIndicesArr) : 0);
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
   const accent = '#A78BFA';
-  // Multi-Winner: alle korrekten Teams sortiert nach (atHintIdx ASC, submittedAt ASC)
+  // Cascade-Avatare: ALLE korrekten Teams (auch die "zu spaet"-Sieger) sortiert
+  // nach (atHintIdx ASC, submittedAt ASC) — fuers Stagger-Rendering auf Hints.
   const correctSorted = (s.onlyConnectGuesses ?? [])
     .filter(g => g.correct)
     .slice()
     .sort((a, b) => (a.atHintIdx - b.atHintIdx) || (a.submittedAt - b.submittedAt));
-  const winnerSet = new Set(correctSorted.map(g => g.teamId));
   const winnerByTeam: Record<string, { atHintIdx: number; submittedAt: number; rank: number }> = {};
   correctSorted.forEach((g, idx) => { winnerByTeam[g.teamId] = { atHintIdx: g.atHintIdx, submittedAt: g.submittedAt, rank: idx + 1 }; });
-  // 2026-04-30 v3 (User-Korrektur): Nur Teams mit dem niedrigsten atHintIdx
-  // sind echte Sieger (kriegen Aktion). Andere richtig liegende Teams am
-  // hoeheren Hint sieht man als Avatar, kriegen aber keine Medaille.
+  // 2026-05-02 (Audit B Anti-Pattern Fix): "Echte Sieger" (= bekommen Aktion)
+  // kommen jetzt aus s.currentQuestionWinners (Backend-Truth via qqMarkCorrect
+  // + evalOnlyConnect). Vorher rechnete Frontend selbst aus raw onlyConnectGuesses
+  // — Risiko, dass Beamer-Anzeige + tatsaechlich punktiertes Team divergieren
+  // wenn evalOnlyConnect Tie-Break-Logik geaendert wird.
+  const winnerSet = new Set(s.currentQuestionWinners ?? []);
   const minWinHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : -1;
 
   // 2026-05-01 (Reveal-Cascade-Audit): Pentatonik-Cascade-Sound synchron zur

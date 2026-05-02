@@ -1624,7 +1624,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   useEffect(() => {
     if (phaseIsReveal) {
-      const t = setTimeout(() => setRevealUnlocked(true), 1800);
+      // 2026-05-02 v2: 1.8s war noch zu kurz - Beamer-Reveal-Animationen
+      // (Doppelblink + Winner-Card + Schaetzchen-Cascade) laufen 3-5s.
+      // 3.5s ist Kompromiss - reicht fuer einfache Mucho-Reveals, bei
+      // Schaetzchen-Cascade noch knapp aber besser als zu fr&uuml;h.
+      const t = setTimeout(() => setRevealUnlocked(true), 3500);
       return () => clearTimeout(t);
     } else {
       setRevealUnlocked(false);
@@ -1852,28 +1856,17 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         } else if (q.category === 'SCHAETZCHEN') {
           isCorrect = myAns.teamId === s.correctTeamId;
         } else if (q.category === 'CHEESE') {
-          // CHEESE: Text-Match statt nur Schnellster. Mehrere Teams koennen richtig sein;
-          // dann zeigt jedes sein ✓ und wird spaeter ueber _placementQueue zum Platzieren aufgerufen.
-          const correctList = [q.answer, q.answerEn]
-            .map(x => (x ?? '').trim().toLowerCase())
-            .filter(Boolean);
-          const sub = myAns.text.trim().toLowerCase();
-          if (correctList.length === 0 || sub.length < 2) {
-            isCorrect = null;
-          } else {
-            isCorrect = correctList.some(c =>
-              sub === c || sub.includes(c) || (c.length > 3 && c.includes(sub) && sub.length >= 3)
-            );
-          }
+          // CHEESE: 2026-05-02 Wolfs Bug - Frontend strict-Match war inkonsistent
+          // mit Backend similarityScore>=0.8. Bei „f statt g" Schreibfehler: Backend
+          // akzeptierte (Punkt vergeben), Frontend zeigte X. Fix: Backend ist
+          // Single Source of Truth. Wenn ich in currentQuestionWinners stehe → ich
+          // war richtig (egal ob exakter Match oder Schreibfehler-akzeptiert).
+          const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+          isCorrect = winners.includes(myTeamId);
           if (isCorrect) {
-            const isCorrCheese = (text: string) => {
-              const t = text.trim().toLowerCase();
-              return correctList.some(c =>
-                t === c || t.includes(c) || (c.length > 3 && c.includes(t) && t.length >= 3)
-              );
-            };
+            // Rang basierend auf Submit-Zeit unter ALLEN Winnern (Backend-Truth).
             const correctSorted = s.answers
-              .filter(a => isCorrCheese(a.text))
+              .filter(a => winners.includes(a.teamId))
               .sort((a, b) => a.submittedAt - b.submittedAt);
             rankAmongCorrect = correctSorted.findIndex(a => a.teamId === myTeamId) + 1;
           }

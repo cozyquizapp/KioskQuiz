@@ -2654,18 +2654,21 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
           <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.5 }}>
             {lang === 'de' ? 'Noch offen:' : 'Still open:'}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+            {/* 2026-05-03 (App-Designer-Audit P3): Avatare 20->28px, Name 10->12px,
+                maxWidth 70->96px, mehr Padding. Bei 8 Teams hat User in der
+                Wartephase eine echte Chance zu erkennen wer noch fehlt. */}
             {pendingTeams.slice(0, 10).map(t => (
               <div key={t.id} title={t.name} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '2px 8px 2px 2px', borderRadius: 999,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '3px 10px 3px 3px', borderRadius: 999,
                 background: 'rgba(0,0,0,0.4)',
-                border: `1px solid ${t.color}66`,
-                opacity: 0.85,
+                border: `1.5px solid ${t.color}77`,
+                opacity: 0.9,
                 animation: 'tcpulse 1.8s ease-in-out infinite',
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} size={20} />
-                <span style={{ fontSize: 10, fontWeight: 800, color: t.color, maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <QQTeamAvatar avatarId={t.avatarId} size={28} />
+                <span style={{ fontSize: 12, fontWeight: 800, color: t.color, maxWidth: 96, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {t.name}
                 </span>
               </div>

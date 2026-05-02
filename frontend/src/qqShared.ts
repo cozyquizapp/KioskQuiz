@@ -30,20 +30,14 @@ export const QQ_BEAMER_CSS = `
   }
   @keyframes nbSlide { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
 
-  /* 2026-05-03: Kategorie-Badge-Wuerfel rollt rein bei jeder neuen Frage.
-     Wuerfel rotiert durch alle 3 Achsen, landet vorn auf der Kategorie-Face.
-     Dauer 1.1s mit ueberschwingender Easing fuer "epischen" Roll. */
-  @keyframes qqCubeRollIn {
-    0%   { transform: rotateX(-360deg) rotateY(720deg) rotateZ(180deg) scale(0.3); opacity: 0; }
-    25%  { opacity: 1; }
-    100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); opacity: 1; }
-  }
-  /* Idle-Wackler nach dem Roll: kleines "atmen" alle paar Sekunden,
-     subtil damit's nicht ablenkt. */
+  /* 2026-05-03 (Wolf-Wunsch): Kategorie-Badge-Wuerfel bewegt sich nur leicht,
+     kein Roll-In. Konstante sanfte Drift durch alle 3 Achsen, ~6s pro Loop —
+     gibt 3D-Tiefe ohne abzulenken. */
   @keyframes qqCubeIdle {
-    0%, 92%, 100% { transform: rotateY(0deg) rotateX(0deg); }
-    95%           { transform: rotateY(8deg) rotateX(-4deg); }
-    97%           { transform: rotateY(-6deg) rotateX(2deg); }
+    0%, 100% { transform: rotateY(-5deg) rotateX(3deg); }
+    25%      { transform: rotateY(5deg)  rotateX(-2deg); }
+    50%      { transform: rotateY(-2deg) rotateX(-4deg); }
+    75%      { transform: rotateY(4deg)  rotateX(4deg); }
   }
 
   /* ── Gameshow slide transitions ──────────────────────────────────────────── */

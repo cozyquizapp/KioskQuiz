@@ -13312,11 +13312,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
 // Sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// 2026-05-03 (Wolf-Wunsch "wäre episch"): 3D-Wuerfel-Kategorie-Badge.
-// Wuerfel hat 6 Faces; 5 davon zeigen das Kategorie-Icon, eine zeigt das
-// Kategorie-Emoji als Variation. Beim Mount rollt der Wuerfel rein
-// (qqCubeRollIn), danach laeuft ein subtiler Idle-Wackler in Loop.
-// Re-Mount via key={q.id} im Caller -> neuer Roll bei jeder neuen Frage.
+// 2026-05-03 (Wolf-Wunsch): 3D-Wuerfel-Kategorie-Badge.
+// Wuerfel hat 6 Faces, alle zeigen das Kategorie-Icon. Subtile konstante
+// Idle-Bewegung (qqCubeIdle, 6s loop) — gibt 3D-Tiefe ohne abzulenken.
+// Wolf-Wunsch v2: "soll nicht reinrollen, sich nur leicht bewegen" — kein
+// dramatischer Roll-In bei Frage-Wechsel, nur sanftes Drift.
 function CategoryCube({ cat, accent, catLabel }: {
   cat: string;
   accent: string;
@@ -13349,8 +13349,9 @@ function CategoryCube({ cat, accent, catLabel }: {
         width: '100%', height: '100%',
         position: 'relative',
         transformStyle: 'preserve-3d',
-        // 2-Stage-Animation: erst Roll-In (1.1s), dann Idle-Wackler (loop alle 6s)
-        animation: 'qqCubeRollIn 1.1s cubic-bezier(0.34, 1.4, 0.64, 1) both, qqCubeIdle 6s ease-in-out 1.2s infinite',
+        // Kein Roll-In — nur subtile konstante Bewegung. Wolf-Wunsch:
+        // "soll nicht reinrollen, sich nur leicht bewegen".
+        animation: 'qqCubeIdle 6s ease-in-out infinite',
       }}>
         {faces.map(f => (
           <div key={f.key} style={{

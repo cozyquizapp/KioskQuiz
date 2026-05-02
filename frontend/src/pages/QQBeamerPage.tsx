@@ -8242,16 +8242,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // gleichzeitig + stumm rein. Jetzt 850ms-Stagger pro Avatar (CSS) + synchron
   // Pentatonik-Cascade-Toene wie Top5/Order. Spannung-Score 1/5 → 4/5.
   const cheeseCorrectCount = useMemo(() => {
-    if (cat !== 'CHEESE' || !revealed || !s.revealedAnswer) return 0;
-    const corrList: string[] = [];
-    if (s.revealedAnswer) corrList.push(s.revealedAnswer.toLowerCase().trim());
-    if (q.answerEn) corrList.push(String(q.answerEn).toLowerCase().trim());
-    return s.answers.filter(a => {
-      const t = (a.text ?? '').toLowerCase().trim();
-      if (!t) return false;
-      return corrList.some(c => c === t || (c.length > 2 && (t.includes(c) || c.includes(t))));
-    }).length;
-  }, [cat, revealed, s.revealedAnswer, q.answerEn, s.answers]);
+    if (cat !== 'CHEESE' || !revealed) return 0;
+    // 2026-05-02: Backend-Truth via currentQuestionWinners (war vorher strict-
+    // Match, hat Schreibfehler-Akzeptanzen ignoriert).
+    const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+    return winners.length;
+  }, [cat, revealed, s.currentQuestionWinners, s.correctTeamId]);
 
   useEffect(() => {
     if (cat !== 'CHEESE' || !revealed || cheeseCorrectCount === 0) return;
@@ -9525,19 +9521,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (() => {
               // CHEESE: Box immer sichtbar (Layout fix), Inhalt erst bei Step 1.
               const cheeseHideContent = q.category === 'CHEESE' && !cheeseShowGreen;
-              // Korrekte Teams: wir nehmen alle, deren Antwort mit revealedAnswer (oder answerEn)
-              // fuzzy matcht (lowercase, whitespace-trim). Bei SCHAETZCHEN gibt's nichts zu matchen →
-              // leeres Array, dort macht die Zeitstrahl-Darstellung den Job.
-              const corrList: string[] = [];
-              if (s.revealedAnswer) corrList.push(s.revealedAnswer.toLowerCase().trim());
-              if (q.answerEn) corrList.push(String(q.answerEn).toLowerCase().trim());
+              // 2026-05-02 (Wolfs Bug 'CHEESE-Cascade nicht nacheinander wie sonst'):
+              // Vorher Frontend-strict-Match - Schreibfehler-akzeptierte Antworten
+              // (Backend similarityScore>=0.8) wurden NICHT als korrekt erkannt,
+              // betroffene Avatare fehlten in der Cascade. Jetzt Backend-Truth via
+              // currentQuestionWinners. Bei SCHAETZCHEN bleibt's leer (Zeitstrahl
+              // uebernimmt). Sortierung weiterhin nach submittedAt.
               const isSchaetz = q.category === 'SCHAETZCHEN';
+              const winnerIdSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
               const correctTeams = isSchaetz ? [] : [...s.answers]
-                .filter(a => {
-                  const t = (a.text ?? '').toLowerCase().trim();
-                  if (!t) return false;
-                  return corrList.some(c => c === t || (c.length > 2 && (t.includes(c) || c.includes(t))));
-                })
+                .filter(a => winnerIdSet.has(a.teamId))
                 .sort((a, b) => a.submittedAt - b.submittedAt)
                 .map(a => {
                   const team = s.teams.find(t => t.id === a.teamId);

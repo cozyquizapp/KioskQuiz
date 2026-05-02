@@ -381,6 +381,13 @@ export default function QQModeratorPage() {
           delayMs = 13000;
           action = () => emit('qq:startPlacement', { roomCode });
         }
+        // Bluff-Reveal: Voting-Ergebnisse + Bluff-Auflockerung + Winner-Card
+        // brauchen laenger als generischer Reveal. 2026-05-02 Wolfs Bug: lief
+        // zu schnell durch in Autoplay. Erhoeht von 7s auf 12s.
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'bluff') {
+          delayMs = 12000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
         // Finaler Uebergang zu Placement (Winner-Banner ~1s spaet + Confetti + Lesen).
         else {
           delayMs = 7000;

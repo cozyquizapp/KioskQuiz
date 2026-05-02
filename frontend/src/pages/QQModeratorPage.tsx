@@ -312,25 +312,26 @@ export default function QQModeratorPage() {
         // 2026-04-30 v3 (User-Bug 'autoplay haengt nach connect-4 timer'):
         // OnlyConnect/Bluff/HotPotato/Imposter setzen `allAnswered` nicht (eigene
         // Submit-Pipelines). Nach Timer-Ablauf muessten wir trotzdem revealen,
-        // sonst haengt die Phase. Sub-Mechanik-spezifisch: wenn Timer expired
-        // ist + 2s Karenz, qq:revealAnswer feuern.
-        // v3 round 5 (User-Bug 'connect-4 endet in 1 sekunde'): OnlyConnect
-        // hat Backend-Hard-Floor 25s. Frontend-Autoplay darf das nicht
-        // bypassen — Round-Start computen und gate. Bei Timer < 25s + dummies-
-        // only haengt Round natuerlich bis Backend's AutoFinish bei 25s+ feuert.
+        // sonst haengt die Phase.
+        // 2026-05-03 (Wolf-Bug 'Connect-4 Autoplay haengt wieder'): Custom-
+        // Pipelines pruefte `s.timerEndsAt && Date.now() >= s.timerEndsAt`,
+        // aber Backend setzt `timerEndsAt = null` sobald Timer abgelaufen ist
+        // (siehe qqStartTimer onExpire). Bedingung wurde damit nie true. Wir
+        // nutzen jetzt das `timerExpired`-Flag wie bei Standard-Mechaniken.
         else {
           const subKind = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
           const isCustomPipeline = q?.category === 'BUNTE_TUETE' &&
             (subKind === 'onlyConnect' || subKind === 'bluff' ||
              subKind === 'hotPotato' || subKind === 'oneOfEight');
-          if (isCustomPipeline && s.timerEndsAt && Date.now() >= s.timerEndsAt) {
-            // OnlyConnect: zusaetzlich 25s-Hard-Floor (Backend) respektieren.
-            const roundStart = s.timerEndsAt - (s.timerDurationSec ?? 30) * 1000;
-            const elapsed = Date.now() - roundStart;
+          const expired = (s as any).timerExpired === true;
+          if (isCustomPipeline && expired) {
+            // OnlyConnect: 25s-Hard-Floor respektieren. Wenn der Question-Timer
+            // >=25s gedauert hat (Standard 30s+), ist der Floor automatisch passe.
+            // Bei <25s warten wir auf Backend's AutoFinish-Tick.
             const isOnlyConnect = subKind === 'onlyConnect';
-            if (isOnlyConnect && elapsed < 25000) {
-              // Hard-Floor noch nicht erreicht — Backend AutoFinish wartet.
-              // Wir warten auch.
+            const timerWasShortForOC = (s.timerDurationSec ?? 30) < 25;
+            if (isOnlyConnect && timerWasShortForOC) {
+              // Hard-Floor noch nicht garantiert erreicht — Backend AutoFinish wartet.
             } else {
               // Timer abgelaufen — kurze Karenz, dann reveal
               delayMs = 2500;
@@ -339,9 +340,7 @@ export default function QQModeratorPage() {
           }
           // 2026-05-02 v2 (Wolfs Bug 'Beamer-Autoplay haengt nach Timer-Ablauf'):
           // Bei Standard-Mechaniken nach Timer-Ablauf 3s Karenz, dann reveal.
-          // Backend setzt timerEndsAt=null nach Ablauf, daher Pruefung jetzt
-          // auf timerExpired-Flag (broadcastet im State).
-          else if (!isCustomPipeline && (s as any).timerExpired === true) {
+          else if (!isCustomPipeline && expired) {
             delayMs = 3000;
             action = () => emit('qq:revealAnswer', { roomCode });
           }

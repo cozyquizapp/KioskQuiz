@@ -5766,9 +5766,13 @@ function BluffBeamerView({ state: s, lang, revealed }: {
           animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
           position: 'relative', zIndex: 5,
         }}>
+          {/* 2026-05-02 (App-Designer-Audit B5): Eyebrow auf Pub-Distanz lesbar
+              machen — bei Bluff lebt der ganze Reveal-Moment davon, dass das
+              Publikum versteht "DAS ist die Wahrheit, nicht der Bluff". 11-13px
+              war aus 10m unleserlich. */}
           <div style={{
-            fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
-            color: '#86EFAC', letterSpacing: '0.18em', textTransform: 'uppercase',
+            fontSize: 'clamp(18px, 1.6vw, 26px)', fontWeight: 900,
+            color: '#86EFAC', letterSpacing: '0.16em', textTransform: 'uppercase',
           }}>
             {lang === 'de' ? 'Echte Antwort' : 'Real answer'}
           </div>
@@ -9107,7 +9111,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                 // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
                 // v3 round 9: transform-Transition fuer chip-shift smooth.
-                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.55s ease, padding 0.7s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1), transform 0.9s cubic-bezier(0.4,0,0.2,1)',
+                // 2026-05-02 (App-Designer-Audit B4): opacity-Dim mit 0.45s Delay,
+                // damit zuerst die Voter-Cascade rausschwingen kann (laeuft 0.5s)
+                // bevor die Frage-Card transparent wird. Vorher: alles 0-0.55s
+                // parallel = hektische Mehrfach-Bewegung.
+                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.4s ease 0.45s, padding 0.7s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.7s cubic-bezier(0.4,0,0.2,1), transform 0.9s cubic-bezier(0.4,0,0.2,1)',
                 opacity: revealed ? 0.55 : 1,
                 flexShrink: 0,
                 transform: chipShiftVh !== 0 ? `translateY(${chipShiftVh}vh)` : undefined,

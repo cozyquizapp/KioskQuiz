@@ -2410,8 +2410,11 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       {/* Frage-Text */}
+      {/* 2026-05-02 (App-Designer-Audit M3): Schrift hochgezogen — das ist die
+          Lebensader-Info des Panels (Pub-Live: Mod kuckt schnell hin zwischen
+          Patter). 14px war zu klein fuer Tablet-Distanz. */}
       <div style={{
-        fontSize: 14, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.35,
+        fontSize: 17, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.35,
         marginBottom: 10,
       }}>
         {text}
@@ -2419,19 +2422,19 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
 
       {/* Antwort */}
       <div style={{
-        padding: '8px 10px', borderRadius: 8,
-        background: 'rgba(34,197,94,0.10)',
-        border: '1px solid rgba(34,197,94,0.35)',
-        borderLeft: '3px solid #22C55E',
+        padding: '10px 12px', borderRadius: 8,
+        background: 'rgba(34,197,94,0.12)',
+        border: '1px solid rgba(34,197,94,0.4)',
+        borderLeft: '4px solid #22C55E',
         marginBottom: extras.length > 0 ? 8 : 0,
       }}>
         <div style={{
-          fontSize: 9, fontWeight: 900, color: '#22C55E',
-          letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2,
+          fontSize: 10, fontWeight: 900, color: '#22C55E',
+          letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4,
         }}>
           ✓ Antwort
         </div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#dcfce7', lineHeight: 1.3 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#dcfce7', lineHeight: 1.3 }}>
           {answer || '—'}
         </div>
       </div>

@@ -1847,16 +1847,30 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   useEffect(() => {
     if (phaseIsReveal) {
-      // 2026-05-02 v2: 1.8s war noch zu kurz - Beamer-Reveal-Animationen
-      // (Doppelblink + Winner-Card + Schaetzchen-Cascade) laufen 3-5s.
-      // 3.5s ist Kompromiss - reicht fuer einfache Mucho-Reveals, bei
-      // Schaetzchen-Cascade noch knapp aber besser als zu fr&uuml;h.
-      const t = setTimeout(() => setRevealUnlocked(true), 3500);
+      // 2026-05-02 v3 (App-Designer-Audit B1): Lock-Duration jetzt dynamisch nach
+      // Beamer-Cascade-Laenge. Vorher fix 3500ms — bei 8 Teams in MUCHO/ZvZ war
+      // der Beamer-Cascade ~5s lang, Phone zeigte Loesung 1-2s VOR dem Beamer.
+      // Spannungsleck. Jetzt: Basis 3500ms, plus 300ms pro Team bei Kategorien
+      // mit Avatar-Cascade (MUCHO/ZvZ/CHEESE/Top5/Order/OnlyConnect/Bluff),
+      // capped bei 8s. Bei Single-Winner-Mechaniken (Schaetzchen single,
+      // hotPotato, Imposter) bleibt's bei 3500ms.
+      const btKind = q.bunteTuete?.kind ?? '';
+      const cascadeBunteTuete = ['top5', 'order', 'onlyConnect', 'bluff'].includes(btKind);
+      const hasCascade =
+        q.category === 'MUCHO'
+        || q.category === 'ZEHN_VON_ZEHN'
+        || q.category === 'CHEESE'
+        || (q.category === 'BUNTE_TUETE' && cascadeBunteTuete);
+      const teamCount = s.teams.length;
+      const lockMs = hasCascade
+        ? Math.min(8000, 3500 + teamCount * 300)
+        : 3500;
+      const t = setTimeout(() => setRevealUnlocked(true), lockMs);
       return () => clearTimeout(t);
     } else {
       setRevealUnlocked(false);
     }
-  }, [phaseIsReveal]);
+  }, [phaseIsReveal, q.category, q.bunteTuete?.kind, s.teams.length]);
   const isRevealed = phaseIsReveal && revealUnlocked;
   const iWon = s.correctTeamId === myTeamId;
   const iSubmitted = !!s.answers.find(a => a.teamId === myTeamId);
@@ -2563,12 +2577,17 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
       onClick={onSubmit}
       disabled={!canSubmit || submitted}
       style={{
-        padding: canSubmit ? '16px' : '14px',
+        // 2026-05-02 (App-Designer-Audit P2): Padding+Schrift fix halten —
+        // sonst ruckelt der Button-Layout 4-6px hoch wenn canSubmit togglet,
+        // genau in dem Moment wo der Daumen Richtung Submit streicht. Visueller
+        // Unterschied weiterhin via opacity/glow/border, keine Layout-Bewegung.
+        padding: '16px',
         borderColor: border,
         background: bg,
         color,
         cursor: canSubmit && !submitted ? 'pointer' : 'default',
-        fontSize: canSubmit ? 18 : 16,
+        fontSize: 18,
+        opacity: canSubmit || submitted ? 1 : 0.6,
         boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}66, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
         animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
       }}
@@ -3703,9 +3722,12 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             {i + 1}
           </div>
           <div style={{ flex: 1, fontSize: 'clamp(13px,3.4vw,15px)', fontWeight: 700, color: '#F1F5F9', lineHeight: 1.25 }}>{item}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 34, height: 30, borderRadius: 7, border: `1px solid ${i > 0 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
-            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 34, height: 30, borderRadius: 7, border: `1px solid ${i < items.length-1 ? catColor+'44' : 'rgba(255,255,255,0.06)'}`, background: 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+          {/* 2026-05-02 (App-Designer-Audit P1): Touch-Targets unter 44px sind
+              fuer Daumen-Bedienung zu klein — Sortier-Pfeile auf 44x40, mit
+              klarem Gap, damit der Trefferbereich nicht ueberlappt. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i > 0 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i > 0 ? `${catColor}10` : 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 800 }}>▲</button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i < items.length-1 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i < items.length-1 ? `${catColor}10` : 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 800 }}>▼</button>
           </div>
         </div>
       ))}

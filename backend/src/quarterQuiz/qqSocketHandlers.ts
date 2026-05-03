@@ -1765,19 +1765,27 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const cat = room.currentQuestion?.category;
         const isMuchoOrZvz = (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') && room.phase === 'QUESTION_ACTIVE';
         if (room.phase === 'QUESTION_ACTIVE' && subKind === 'onlyConnect') {
-          // 2026-05-02: Hard-Floor 25s gilt jetzt auch für Mod-Space — User-Wunsch:
-          // 'sinnvollere variante'. Vorher hatte Mod-Space das Gate umgangen, was
-          // bei doppeltem Space (z.B. nach activate) die Runde in <1s beenden
-          // konnte (User-Bug 2026-04-30 'Connect-4 endet in 1 sekunde'). Auto-Tick
-          // respektierte das Gate ohnehin via qqOnlyConnectCanAutoFinish; Mod-Space
-          // war die letzte Lücke. Silent no-op vor 25s — Mod kann's nochmal drücken.
+          // 2026-05-03 Wolf-Bug 'Connect-4 Autoplay hängt' — Debug-Logs.
           const startedAt = room._onlyConnectStartedAt;
-          if (startedAt && Date.now() - startedAt < 25000) {
+          const elapsed = startedAt ? Date.now() - startedAt : 0;
+          console.log('[oc-debug] qq:revealAnswer:', JSON.stringify({
+            phase: room.phase,
+            timerExpired: room.timerExpired,
+            timerEndsAt: room.timerEndsAt,
+            elapsedSinceStart: elapsed,
+            hardFloorPassed: elapsed >= 25000,
+            hintIndices: room.onlyConnectHintIndices,
+            lockedTeams: room.onlyConnectLockedTeams,
+            guesses: (room.onlyConnectGuesses ?? []).map(g => ({ teamId: g.teamId, correct: g.correct, atHintIdx: g.atHintIdx })),
+          }));
+          if (startedAt && elapsed < 25000) {
+            console.log('[oc-debug] BLOCKED by 25s Hard-Floor');
             ok(ack);
             return;
           }
           qqOnlyConnectRevealAll(room);
           qqOnlyConnectAutoFinish(room);
+          console.log('[oc-debug] revealed via Mod-Space, phase now:', room.phase);
           broadcast(io, payload.roomCode);
           ok(ack);
           return;
@@ -1940,12 +1948,39 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:nextQuestion', (payload: QQNextQuestionPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-05-03 Wolf-Bug 'Comeback-Maria-Hang' — Debug-Logs fuer
+        // Comeback-Steal-Pause-Pfad. Der Pfad: nach 1 Klau setzt
+        // _comebackStealPaused=true, pendingFor=null. Frontend-Autoplay
+        // feuert qq:nextQuestion. Backend qqNextQuestion -> qqComebackStealResume.
+        const inComeback = !!room.comebackHL || !!room._comebackStealPaused
+          || !!room.comebackTeamId;
+        if (inComeback) {
+          console.log('[cb-debug] qq:nextQuestion BEFORE:', JSON.stringify({
+            phase: room.phase,
+            pendingFor: room.pendingFor,
+            pendingAction: room.pendingAction,
+            comebackTeamId: room.comebackTeamId,
+            comebackAction: room.comebackAction,
+            comebackStealPaused: room._comebackStealPaused,
+            hlPhase: room.comebackHL?.phase,
+            hlCurrentStealer: room.comebackHL?.currentStealer,
+            hlCurrentRemaining: room.comebackHL?.currentStealerRemaining,
+            hlStealQueueLen: room.comebackHL?.stealQueue.length,
+          }));
+        }
         qqNextQuestion(room);
+        if (inComeback) {
+          const stealerTeam = room.pendingFor ? room.teams[room.pendingFor] : null;
+          console.log('[cb-debug] qq:nextQuestion AFTER:', JSON.stringify({
+            phase: room.phase,
+            pendingFor: room.pendingFor,
+            pendingAction: room.pendingAction,
+            stealerConnected: stealerTeam?.connected,
+            stealerIsDummy: stealerTeam ? !!(stealerTeam as any)._dummy : null,
+            comebackStealPaused: room._comebackStealPaused,
+          }));
+        }
         broadcast(io, payload.roomCode);
-        // Nach Comeback-Steal-Resume kann der nächste Stealer wieder ein
-        // Dummy-Team sein. Ohne maybeAutoPlace würde Autoplay an dieser
-        // Stelle hängen — Backend wartet auf nächsten Klick, Frontend wartet
-        // auf nächste Phase-Änderung.
         if (room.phase === 'PLACEMENT' && room.pendingFor) {
           maybeAutoPlace(io, payload.roomCode);
         }
@@ -3383,6 +3418,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
       if (qqTeamId && qqRoomCode) {
         const room = getQQRoom(qqRoomCode);
         if (room) {
+          // 2026-05-03 Wolf-Bug 'Comeback haengt manchmal trotz Auto-Skip':
+          // Log wenn das disconnectende Team das aktuelle Comeback-Team ist —
+          // dann muesste der Mod-Autoplay nach 8s qq:skipCurrentTeam feuern.
+          const isCbTeam = room.comebackTeamId === qqTeamId
+            || room.pendingFor === qqTeamId;
+          if (isCbTeam) {
+            console.log('[cb-debug] disconnect of pending team:', JSON.stringify({
+              teamId: qqTeamId, phase: room.phase,
+              comebackTeamId: room.comebackTeamId,
+              pendingFor: room.pendingFor,
+              pendingAction: room.pendingAction,
+            }));
+          }
           qqSetTeamConnected(room, qqTeamId, false);
           // 2026-05-02: Hot Potato all-alive-disconnected Auto-Reveal.
           // Wenn dieser Disconnect das letzte alive-Team kappt, haengt die

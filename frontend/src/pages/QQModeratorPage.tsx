@@ -413,6 +413,18 @@ export default function QQModeratorPage() {
         if (!s.pendingFor) {
           delayMs = 3500; // Slam-Down + Placement-Flash abwarten
           action = () => emit('qq:nextQuestion', { roomCode });
+        } else {
+          // 2026-05-03 (Wolf-Bug 'Comeback haengt'): wenn pendingFor offline ist
+          // UND wir in einer Comeback-Steal-Phase sind, auto-skip nach 8s. Greift
+          // wenn das Comeback-Team Maria entweder ein Phone-Tab geschlossen hat
+          // ODER nie connected war (Solo-Test). Connected-Teams bleiben unbetroffen
+          // — die duerfen in Ruhe nachdenken.
+          const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
+          const isComeback = s.pendingAction === 'COMEBACK' || s.comebackTeamId === s.pendingFor;
+          if (pendingTeam && !pendingTeam.connected && isComeback) {
+            delayMs = 8000;
+            action = () => emit('qq:skipCurrentTeam', { roomCode });
+          }
         }
         break;
       case 'COMEBACK_CHOICE': {

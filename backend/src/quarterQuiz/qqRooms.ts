@@ -2137,7 +2137,14 @@ export function qqStealCell(
 
   if (jokersAwarded > 0) {
     room.teamPhaseStats[teamId].placementsLeft = jokersAwarded;
-    room.pendingAction = jokerBonusAction(room);
+    // 2026-05-03 (Wolf-Bug 'nach Steal noch 1 Place gemacht'): Mechanik-Regel
+    // "2 setzen ODER klauen" gilt auch fuer Joker-Bonus. Nach STEAL darf der
+    // Bonus-Slot KEIN PLACE sein. Also forced STEAL_1 (auch wenn freie Felder
+    // existieren). Nur Phase 1 (gar keine Klauen erlaubt) faellt zurueck auf
+    // jokerBonusAction. Bei vollem Grid sowieso STEAL_1.
+    room.pendingAction = room.gamePhaseIndex === 1
+      ? jokerBonusAction(room)
+      : 'STEAL_1';
     return { jokersAwarded };
   }
 
@@ -4103,17 +4110,20 @@ export const QQ_ONLY_CONNECT_MAX_STRIKES = 3;
  * Start: jedes verbundene Team beginnt bei Hint-Index 0.
  * Reset zuerst (falls vorherige Frage State hinterlassen hat).
  *
- * 4 gewinnt nutzt seit 2026-04-28 wieder den Standard-Question-Flow:
- * - Question-Timer läuft (qqStartTimer) wie bei Mucho/Schätzchen
- * - Hints werden GLOBAL synchron alle ~timerDurationSec/4 Sekunden
- *   automatisch aufgedeckt (kein Per-Team-Unlock mehr)
- * - Score: 4-atHintIdx Punkte basierend auf globalem Hint-Stand zur
- *   Submit-Zeit
+ * 2026-05-03 (Wolf-Wunsch): zurueck auf per-Team-Hint-Modell.
+ * - Jedes Team schaltet seinen naechsten Hinweis selbst frei via
+ *   qq:onlyConnectAdvanceTeamHint (Phone-Button).
+ * - Beamer zeigt MIN(hintIndices) — nur die Hints die ALLE Teams haben.
+ * - Score: 4-atHintIdx Punkte (wer auf weniger Hints richtig ist gewinnt
+ *   mehr Punkte = unterschiedliche Punkte fuer unterschiedliche Hint-
+ *   Levels, das war der Wolf-Wunsch).
+ * - Question-Timer laeuft (qqStartTimer) wie sonst auch — bei Ablauf
+ *   triggert Standard-qq:revealAnswer den Reveal-Pfad.
  *
- * onAdvanceTick wird vom Caller geliefert um nach jedem Hint-Advance
- * zu broadcasten.
+ * onAdvanceTick-Param bleibt fuer API-Kompatibilitaet, wird aber nicht
+ * mehr verwendet (kein globaler Auto-Tick mehr).
  */
-export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void): void {
+export function qqOnlyConnectStart(room: QQRoomState, _onAdvanceTick?: () => void): void {
   qqOnlyConnectReset(room);
   const now = Date.now();
   for (const teamId of room.joinOrder) {
@@ -4122,42 +4132,8 @@ export function qqOnlyConnectStart(room: QQRoomState, onAdvanceTick?: () => void
     room.onlyConnectHintRevealedAt[teamId] = now;
   }
   room.lastActivityAt = now;
-  // B2 (2026-04-29): Min-Duration-Gate gegen Insta-End mit Dummies — die
-  // Runde darf nicht in <2.5s vorbei sein, sonst sieht der Spieler nichts.
   room._onlyConnectStartedAt = now;
-
-  // Hint-Advance-Timer: nach 1/4 Question-Time → Hint 2, dann 2/4 → Hint 3,
-  // 3/4 → Hint 4. Letzter Tick erreicht Index 3 (alle 4 Hints sichtbar).
-  // Question-Timer läuft separat und triggert bei Ablauf den standard
-  // qq:revealAnswer-Pfad.
-  const totalMs = (room.timerDurationSec ?? 30) * 1000;
-  const stepMs = Math.max(2000, Math.floor(totalMs / 4)); // mind. 2s zwischen Hints
-  let nextStep = 1; // Start bei 0, erster Tick erhöht auf 1
-  const tick = (): void => {
-    const live = room; // closure
-    if (live.phase !== 'QUESTION_ACTIVE') return;
-    if (live.currentQuestion?.bunteTuete?.kind !== 'onlyConnect') return;
-    if (nextStep > 3) return;
-    qqOnlyConnectAdvanceAllTeams(live, nextStep);
-    nextStep += 1;
-    if (onAdvanceTick) try { onAdvanceTick(); } catch {}
-    // Nach Hint-Advance: falls alle Teams schon fertig (z.B. Dummies haben
-    // früher locked/correct'd), JETZT AutoFinish — vorher wurde es vom
-    // MinHint-Gate blockiert. (2026-04-28 Bug-Fix: Dummies durften nicht mehr
-    // in unter 5s die Runde beenden bevor irgendwas sichtbar wurde.)
-    if (qqOnlyConnectCanAutoFinish(live)) {
-      qqOnlyConnectAutoFinish(live);
-      live._onlyConnectHintTimerHandle = null;
-      if (onAdvanceTick) try { onAdvanceTick(); } catch {}
-      return;
-    }
-    if (nextStep <= 3) {
-      live._onlyConnectHintTimerHandle = setTimeout(tick, stepMs);
-    } else {
-      live._onlyConnectHintTimerHandle = null;
-    }
-  };
-  room._onlyConnectHintTimerHandle = setTimeout(tick, stepMs);
+  // Kein globaler Auto-Tick — Teams advancen sich selbst via Phone-Button.
 }
 
 /**

@@ -955,28 +955,27 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
 
       const curIdx = live.onlyConnectHintIndices[localTeamId] ?? 0;
       const curStrikes = live.onlyConnectStrikes[localTeamId] ?? 0;
-      // Auto-Hint-Reveal seit 2026-04-28: Hints kommen auf dem Timer
-      // automatisch — Dummies entscheiden NUR ob sie jetzt schon tippen
-      // oder weiter abwarten. Mit höherem Hint-Level steigt die Lust zu raten.
-      // 2026-04-28: bei idx=0 NIE tippen — sonst beenden Dummies in
-      // Pure-Test-Lobbys die Runde bevor irgendwas zu sehen ist. Realistisch
-      // ist auch: erster Hinweis allein gibt selten genug Sicherheit.
-      // 2026-04-30 v3 round 9 (User-Wunsch 'dummies smarter, nicht alle am
-      // hint 1 scheitern, auch weitere anschauen'):
-      // - idx=1: 0.30 → 0.12 (sehr selten tippen, fast immer warten)
-      // - idx=2: 0.70 → 0.55 (gemaessigt)
-      // - idx=3: 1.0 (immer tippen — letzter Hinweis erreicht)
-      // - 'Strike-Vorsicht': bei 2 Strikes nur noch tippen wenn idx=3
-      //   (= sicherster Hinweis, sonst Lock-Risiko zu hoch)
-      // - accProb hochgesetzt: idx=1: 0.40→0.55, idx=2: 0.65→0.78, idx=3: 0.85→0.92
-      //   damit die wenigen Tipps die fallen oefter richtig sind.
+      // 2026-05-03 (Wolf-Wunsch per-Team-Hints): Bots managen ihren eigenen
+      // Hint-Stand. Bei jedem Tick: erst entscheiden ob tippen, sonst
+      // entscheiden ob naechsten Hint freischalten. So advancen Bots nach
+      // und nach durch die Hints, manche bleiben bei Hint 1 stehen.
+      // guessProb pro Hint-Level (idx=0 nie tippen — sonst Insta-End-Risiko)
       let guessProb = curIdx === 0 ? 0 : curIdx === 1 ? 0.12 : curIdx === 2 ? 0.55 : 1.0;
-      // Strike-Vorsicht: 2 Strikes = nur bei idx=3 tippen, sonst warten.
-      if (curStrikes >= 2 && curIdx < 3) guessProb = 0;
+      if (curStrikes >= 2 && curIdx < 3) guessProb = 0; // Strike-Vorsicht
       const shouldGuess = Math.random() < guessProb;
 
       if (!shouldGuess) {
-        // Diese Runde noch nicht tippen — re-schedule für später
+        // Tippen jetzt nicht — entscheiden ob Hint freischalten oder warten.
+        // advanceProb steigt mit niedrigem Hint-Level (am Anfang oefter advancen,
+        // spaeter eher abwarten). Bei idx=3 nicht mehr (kein weiterer Hint).
+        if (curIdx < 3) {
+          const advanceProb = curIdx === 0 ? 0.65 : curIdx === 1 ? 0.40 : 0.30;
+          if (Math.random() < advanceProb) {
+            qqOnlyConnectAdvanceTeamHint(live, localTeamId);
+            broadcast(io, roomCode);
+          }
+        }
+        // Re-schedule für nächsten Tick
         maybeAutoOnlyConnect(io, roomCode);
         return;
       }
@@ -2379,6 +2378,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:placeCell', (payload: QQPlaceCellPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-05-03 (Wolf-Bug 'Connections-Finale Steal->Place'): wenn der Bug
+        // hier landet obwohl Wolf Steal gewaehlt hat, sehen wir's hier in den Logs.
+        if (room.phase === 'CONNECTIONS_4X4' || room.connections?.phase === 'placement') {
+          console.log('[conn-debug] qq:placeCell:', JSON.stringify({
+            teamId: payload.teamId, row: payload.row, col: payload.col,
+            pendingAction: room.pendingAction, placementsLeft: room.teamPhaseStats[payload.teamId]?.placementsLeft,
+          }));
+        }
         const result = qqPlaceCell(room, payload.teamId, payload.row, payload.col);
         // Connections-Placement: Cursor NUR weiterschalten wenn die ganze
         // Action fertig ist (sonst frisst PLACE_2 zwei Slots statt einen).
@@ -2419,6 +2426,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:stealCell', (payload: QQStealCellPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        if (room.phase === 'CONNECTIONS_4X4' || room.connections?.phase === 'placement') {
+          console.log('[conn-debug] qq:stealCell:', JSON.stringify({
+            teamId: payload.teamId, row: payload.row, col: payload.col,
+            pendingAction: room.pendingAction, placementsLeft: room.teamPhaseStats[payload.teamId]?.placementsLeft,
+          }));
+        }
         const result = qqStealCell(room, payload.teamId, payload.row, payload.col);
         // Connections-Placement: nach jedem Klauen Cursor weiterschalten.
         // (User-Wunsch: Finale-Aktionen = volle Round-3/4-Auswahl, also auch
@@ -2438,7 +2451,32 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:chooseFreeAction', (payload: QQChooseFreeActionPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-05-03 (Wolf-Bug 'Connections-Finale Steal->Place'): Diagnose-Logs
+        // damit wir sehen was passiert wenn Wolf Steal waehlt aber Place greift.
+        const isConn = room.phase === 'CONNECTIONS_4X4';
+        const isFinalAct = isConn && room.connections?.phase === 'placement';
+        const before = {
+          phase: room.phase,
+          connPhase: room.connections?.phase,
+          gamePhaseIndex: room.gamePhaseIndex,
+          pendingFor: room.pendingFor,
+          pendingAction: room.pendingAction,
+          actionRequested: payload.action,
+          teamId: payload.teamId,
+          placementsLeft: room.teamPhaseStats[payload.teamId]?.placementsLeft,
+          gridFreeCells: room.grid.flat().filter(c => c.ownerId === null).length,
+        };
+        if (isFinalAct || isConn) {
+          console.log('[conn-debug] qq:chooseFreeAction BEFORE:', JSON.stringify(before));
+        }
         qqChooseFreeAction(room, payload.teamId, payload.action);
+        if (isFinalAct || isConn) {
+          console.log('[conn-debug] qq:chooseFreeAction AFTER:', JSON.stringify({
+            pendingFor: room.pendingFor,
+            pendingAction: room.pendingAction,
+            placementsLeft: room.teamPhaseStats[payload.teamId]?.placementsLeft,
+          }));
+        }
         broadcast(io, payload.roomCode);
         maybeAutoPlace(io, payload.roomCode);
         ok(ack);

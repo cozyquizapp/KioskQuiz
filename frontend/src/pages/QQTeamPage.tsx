@@ -3506,23 +3506,44 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         })}
       </div>
 
-      {/* Punkte-Anzeige (Auto-Hint-Reveal seit 2026-04-28: Hints werden mit
-          dem Timer global synchron freigeschaltet — kein manueller Unlock).
-          Anzeige: aktueller Hint-Stand + Punktewert beim Tippen jetzt. */}
+      {/* 2026-05-03 (Wolf-Wunsch): per-Team-Hints. Team schaltet selbst
+          weitere Hinweise frei — je weiter, desto weniger Punkte. */}
       {!alreadyAnswered && (
-        <div style={{
-          padding: '10px 14px', borderRadius: 12,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: 12, fontWeight: 800, color: '#94A3B8',
-          letterSpacing: '0.05em', textTransform: 'uppercase',
-        }}>
-          <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
-          <span style={{ color: '#FBBF24' }}>
-            {lang === 'de' ? `Tippen jetzt: ${pointsIfWinNow} Pkt` : `Guess now: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
-          </span>
-        </div>
+        <>
+          <div style={{
+            padding: '10px 14px', borderRadius: 12,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontSize: 12, fontWeight: 800, color: '#94A3B8',
+            letterSpacing: '0.05em', textTransform: 'uppercase',
+          }}>
+            <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
+            <span style={{ color: '#FBBF24' }}>
+              {lang === 'de' ? `Tippen jetzt: ${pointsIfWinNow} Pkt` : `Guess now: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+          {hintIdx < 3 && (
+            <button
+              onClick={() => emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId })}
+              style={{
+                padding: '12px', borderRadius: 12,
+                border: '2px dashed rgba(167,139,250,0.5)',
+                background: 'rgba(167,139,250,0.08)',
+                color: '#C4B5FD', fontWeight: 900, fontSize: 14,
+                cursor: 'pointer', fontFamily: 'inherit',
+                letterSpacing: '0.04em',
+              }}
+              title={lang === 'de'
+                ? `Nächster Hinweis = ${Math.max(1, 4 - (hintIdx + 1))} Punkte statt ${pointsIfWinNow}`
+                : `Next hint = ${Math.max(1, 4 - (hintIdx + 1))} pts instead of ${pointsIfWinNow}`}
+            >
+              {lang === 'de'
+                ? `🔓 Nächsten Hinweis freischalten (${Math.max(1, 4 - (hintIdx + 1))} Pkt)`
+                : `🔓 Reveal next clue (${Math.max(1, 4 - (hintIdx + 1))} pt${Math.max(1, 4 - (hintIdx + 1)) !== 1 ? 's' : ''})`}
+            </button>
+          )}
+        </>
       )}
 
       {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}

@@ -31,7 +31,7 @@ const gouacheLinks: LinkItem[] = [
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
   // Labs
-  { path: '/testpage',            label: 'Avatar-Generator',   emoji: '🧑‍🎨', note: 'Mix & Match Team-Avatare in den 8 CozyQuiz-Farben' },
+  { path: '/testpage',            label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
   { path: '/round-lab',           label: 'Wolf-Trail Lab',     emoji: '🐺', note: 'Prototyp: Wolf wandert den Tree entlang' },
   { path: '/reveal-lab',          label: 'Reveal-Lab',         emoji: '👥', note: 'Avatar-Layouts pro Kategorie vergleichen' },
   { path: '/city-lab',            label: 'City Lab (3D)',      emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats' },

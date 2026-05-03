@@ -6717,30 +6717,28 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
   const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);
 
   // Sequentielles Reveal: Start mit -1 (noch nichts), dann 5, 4, 3, 2, 1 (Indizes: n-1 … 0).
-  // revealedMinIdx ist der kleinste Index, der bereits aufgedeckt wurde.
-  // Start: n (keiner), Ende: 0 (alle).
+  // 2026-05-03 (Wolf-Bug 'Cascade-Sound aber alle Avatare gleichzeitig'):
+  // Race-Condition fix — siehe Schaetzchen. cascadeStartedRef verhindert
+  // Re-Run bei n-Aenderung waehrend laufender Cascade.
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const cascadeStartedRef = useRef(false);
   const STEP_MS = 2400;
   const INITIAL_DELAY_MS = 600;
 
   useEffect(() => {
+    if (cascadeStartedRef.current || n === 0) return;
+    cascadeStartedRef.current = true;
+    setRevealedMinIdx(n);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    // 2026-04-30 v2 (User-Wunsch): aufsteigende Pentatonik-Tonleiter pro
-    // aufgedeckter Zeile statt playReveal/playFanfare. cascadeTotal = n+1 —
-    // Plaetze nehmen Toene 0..n-1, WinnerCard danach den Top-Ton n.
-    // v3: bei Top-Row (Platz 1, i=n-1) zusaetzlich Climax-Finish layern.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
-      const targetIdx = n - 1 - i; // Erst Platz n (höchster Index), dann runter
+      const targetIdx = n - 1 - i;
       const isTopRow = i === n - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted) {
-          // Reveal-Reihenfolge ist bottom->top, Tonleiter steigt parallel.
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
-            // Climax kommt erst mit der WinnerCard.
             try { playRevealHighlight(); } catch {}
           }
         }
@@ -6749,7 +6747,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
     }
     return () => { timers.forEach(clearTimeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
 
@@ -7079,15 +7077,17 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
   const topHits = teamScore[0]?.hits ?? 0;
   const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);
 
-  // Bottom-up reveal: Start mit n (keiner), dann n-1, ..., 0.
+  // 2026-05-03 (Wolf-Bug Cascade-Race): siehe Schaetzchen. Race-Fix.
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const cascadeStartedRef = useRef(false);
   const STEP_MS = 2000;
   const INITIAL_DELAY_MS = 500;
 
   useEffect(() => {
+    if (cascadeStartedRef.current || n === 0) return;
+    cascadeStartedRef.current = true;
+    setRevealedMinIdx(n);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    // 2026-04-30 v2: Pentatonik-Cascade analog Top5.
-    // v3: Top-Row (Platz 1, i=n-1) Climax-Finish-Layer.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
@@ -7097,8 +7097,6 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
-            // Climax kommt erst mit der WinnerCard.
             try { playRevealHighlight(); } catch {}
           }
         }
@@ -7107,7 +7105,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
     }
     return () => { timers.forEach(clearTimeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
 
@@ -7429,15 +7427,22 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   const n = top5.length;
   const winner = ranked[0] ?? null;
 
+  // 2026-05-03 (Wolf-Bug 'Schaetzchen Cascade-Sound aber alle Avatare gleichzeitig'):
+  // Initial-State auf n-fest-init brach bei Race: wenn Component mountet bevor
+  // Answers eintreffen → n=0 → revealedMinIdx=0 → alle Rows sofort sichtbar
+  // (idx>=0 immer true). Sound wurde aber im setTimeout-Closure mit neuem n
+  // korrekt cascadet → nur visuell defekt. Fix: useEffect-deps=[n] + StartedRef
+  // damit Cascade einmalig startet sobald n erstmals >0 wird.
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const cascadeStartedRef = useRef(false);
   const STEP_MS = 1600;
   const INITIAL_DELAY_MS = 500;
 
   useEffect(() => {
+    if (cascadeStartedRef.current || n === 0) return;
+    cascadeStartedRef.current = true;
+    setRevealedMinIdx(n); // alle Rows initial verstecken
     const timers: ReturnType<typeof setTimeout>[] = [];
-    // 2026-04-30 v2: Pentatonik-Cascade analog Top5/Order — Tonleiter pro
-    // sichtbarem Platz, aufsteigend von #5 (bottom) zu #1 (top).
-    // v3: Top-Row (Platz 1, i=n-1) zusaetzlich Climax-Finish-Layer.
     const cascadeTotal = n + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
@@ -7447,8 +7452,6 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            // Top-Row = Auflösungs-Highlight (leichter), der Krönungs-
-            // Climax kommt erst mit der WinnerCard.
             try { playRevealHighlight(); } catch {}
           }
         }
@@ -7457,7 +7460,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
     }
     return () => { timers.forEach(clearTimeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
 
@@ -8871,21 +8874,27 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   marginTop: 8,
                   display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                   gap: 12, flexWrap: 'wrap', width: '100%',
-                  animation: 'revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.45s both',
                 }}>
                   {correctAnswers.map((a, i) => {
                     const team = s.teams.find(t => t.id === a.teamId);
                     if (!team) return null;
                     const timeSec = Math.max(0, (a.submittedAt - t0) / 1000);
                     const isFastest = i === 0;
+                    // 2026-05-03 (Wolf-Bug 'Picture This Avatare gleichzeitig'):
+                    // Per-Avatar-Stagger 850ms passend zur Cascade-Sound-Schedule
+                    // (Z. 8218: i * 850). Vorher: alle Avatare mit dem gleichen
+                    // 'revealAnswerBam'-Effekt aus dem Parent → keine Cascade
+                    // sichtbar trotz Sound-Cascade.
+                    const popDelay = i * 850 + 200; // ms
                     return (
                       <div key={a.teamId} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        animation: `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) ${popDelay}ms both`,
                       }}>
                         <div style={{
                           position: 'relative',
                           display: 'inline-block',
-                          animation: isFastest ? 'celebShake 0.6s ease 0.9s both' : 'none',
+                          animation: isFastest ? `celebShake 0.6s ease ${popDelay + 600}ms both` : 'none',
                         }}>
                           <QQTeamAvatar
                             avatarId={team.avatarId}

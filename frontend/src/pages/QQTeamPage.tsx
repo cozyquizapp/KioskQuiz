@@ -326,6 +326,47 @@ function AnimatedDots() {
 
 type SetupStep = 'AVATAR' | 'NAME';
 
+// 2026-05-03 (Wolf-Wunsch): kleiner Copy-Button fuer den Stamm-Code.
+// Funktioniert mit navigator.clipboard, Fallback auf execCommand fuer alte
+// Browser. Visuelles Feedback per "Copied!"-State 1.5s.
+function CopyButton({ text, lang }: { text: string; lang: 'de' | 'en' }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.style.position = 'fixed'; el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* silently fail — user can long-press to copy */ }
+  }
+  return (
+    <button
+      onClick={copy}
+      style={{
+        padding: '4px 10px', borderRadius: 8,
+        border: `1.5px solid ${copied ? '#22C55E' : '#FBBF24'}66`,
+        background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.10)',
+        color: copied ? '#86efac' : '#FDE68A',
+        fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+        cursor: 'pointer',
+        letterSpacing: 0.4,
+      }}
+      title={lang === 'de' ? 'Code kopieren' : 'Copy code'}
+    >
+      {copied ? (lang === 'de' ? '✓ Kopiert' : '✓ Copied') : (lang === 'de' ? '📋 Kopieren' : '📋 Copy')}
+    </button>
+  );
+}
+
 function getOrCreateTeamId(): string {
   const key = 'qq_teamId';
   // Use localStorage so the same team ID persists across tabs
@@ -1847,24 +1888,23 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   useEffect(() => {
     if (phaseIsReveal) {
-      // 2026-05-02 v3 (App-Designer-Audit B1): Lock-Duration jetzt dynamisch nach
-      // Beamer-Cascade-Laenge. Vorher fix 3500ms — bei 8 Teams in MUCHO/ZvZ war
-      // der Beamer-Cascade ~5s lang, Phone zeigte Loesung 1-2s VOR dem Beamer.
-      // Spannungsleck. Jetzt: Basis 3500ms, plus 300ms pro Team bei Kategorien
-      // mit Avatar-Cascade (MUCHO/ZvZ/CHEESE/Top5/Order/OnlyConnect/Bluff),
-      // capped bei 8s. Bei Single-Winner-Mechaniken (Schaetzchen single,
-      // hotPotato, Imposter) bleibt's bei 3500ms.
+      // 2026-05-03 v4 (Wolf-Bug 'Reveal /team async zu /beamer'): Lock-Duration
+      // matcht jetzt tatsaechliche Beamer-Cascade-Dauer pro Kategorie. Vorher
+      // pauschal 3500+300n capped 8s — bei Top5/Order/Schaetzchen-Cascades
+      // (10-13s) zeigte Phone die Loesung 4-5s vor dem Beamer.
       const btKind = q.bunteTuete?.kind ?? '';
-      const cascadeBunteTuete = ['top5', 'order', 'onlyConnect', 'bluff'].includes(btKind);
-      const hasCascade =
-        q.category === 'MUCHO'
-        || q.category === 'ZEHN_VON_ZEHN'
-        || q.category === 'CHEESE'
-        || (q.category === 'BUNTE_TUETE' && cascadeBunteTuete);
-      const teamCount = s.teams.length;
-      const lockMs = hasCascade
-        ? Math.min(8000, 3500 + teamCount * 300)
-        : 3500;
+      const teamCount = Math.max(1, s.teams.length);
+      const lockMs = (() => {
+        if (q.category === 'MUCHO') return Math.min(11000, 1500 + teamCount * 250);
+        if (q.category === 'ZEHN_VON_ZEHN') return Math.min(12000, 2500 + teamCount * 800);
+        if (q.category === 'CHEESE') return Math.min(11000, 1500 + teamCount * 850);
+        if (q.category === 'SCHAETZCHEN') return Math.min(11000, 2000 + Math.min(5, teamCount) * 1600);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'top5') return Math.min(14000, 2500 + Math.min(5, teamCount) * 2400);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'order') return Math.min(12000, 1500 + Math.min(5, teamCount) * 2000);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'onlyConnect') return 4000;
+        if (q.category === 'BUNTE_TUETE' && btKind === 'bluff') return 4000;
+        return 3500; // single-winner default (hotPotato, oneOfEight)
+      })();
       const t = setTimeout(() => setRevealUnlocked(true), lockMs);
       return () => clearTimeout(t);
     } else {
@@ -2124,7 +2164,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           }
         } else if (isCorrect === false) {
           if (q.category === 'SCHAETZCHEN') {
-            statusText = lang === 'en' ? 'Another team was closer' : 'Ein anderes Team war näher';
+            // 2026-05-03 (Wolf-Bug 'doppelter Rueckmeldungstext'): Bei SCHAETZCHEN
+            // wird "Ein anderes Team war näher" schon in der Sieger-Card oben
+            // gezeigt (loseMsg). Hier keinen Doublet — nur die eigene Antwort
+            // recap'n ohne wiederholten Status-Text.
+            statusText = null;
           } else {
             statusText = lang === 'en' ? 'Not correct' : 'Nicht richtig';
           }
@@ -2467,10 +2511,16 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         // Falsch — B10 (2026-04-29): User-Wunsch 'Leider falsch, naechstes
         // Mal schafft ihr es'-Stil. Klare 2-zeilige Mitteilung: erst die
         // Aussage 'Leider falsch', dann ermutigende Trost-Message.
+        // 2026-05-03 (Wolf-Bug): bei SCHAETZCHEN gibt's kein objektiv 'falsch' —
+        // nur 'nicht am naehesten'. Headline entsprechend angepasst.
+        const isSchaetz = q.category === 'SCHAETZCHEN';
         const msgs = lang === 'de'
           ? ['Nächstes Mal schafft ihr es!', 'Knapp daneben — bleibt dran!', 'Fast erwischt — weiter so!', 'Nicht aufgeben — der nächste Punkt wartet!', 'Schade — aber gleich kommt eure Chance!']
           : ["You'll get it next time!", 'So close — stay in it!', 'Almost there — keep going!', "Don't give up — your point is waiting!", 'Tough one — your chance is coming!'];
         const pick = msgs[Math.abs(hashString(q.id)) % msgs.length];
+        const headline = isSchaetz
+          ? (lang === 'de' ? '🤏 Knapp daneben' : '🤏 Not quite in range')
+          : (lang === 'de' ? '😕 Leider falsch' : '😕 Sadly wrong');
         return (
           <div style={{
             marginTop: 8, padding: '12px 16px', borderRadius: 14, textAlign: 'center',
@@ -2480,7 +2530,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#fca5a5' }}>
-              {lang === 'de' ? '😕 Leider falsch' : '😕 Sadly wrong'}
+              {headline}
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#cbd5e1' }}>
               <QQEmojiIcon emoji="✨"/> {pick}
@@ -5352,11 +5402,19 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
             {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
           </div>
           <div style={{
-            fontSize: 22, fontWeight: 900, color: '#FDE68A',
-            fontFamily: 'monospace', letterSpacing: '0.06em',
-            userSelect: 'all',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            marginTop: 2, marginBottom: 4,
           }}>
-            {stammCode}
+            <div style={{
+              fontSize: 22, fontWeight: 900, color: '#FDE68A',
+              fontFamily: 'monospace', letterSpacing: '0.06em',
+              userSelect: 'all',
+            }}>
+              {stammCode}
+            </div>
+            {/* 2026-05-03: Copy-Button — Wolf-Wunsch. Code soll nicht abgeschrieben
+                werden muessen, sondern in Notes/WhatsApp pasten koennen. */}
+            <CopyButton text={stammCode} lang={lang} />
           </div>
           <div style={{
             fontSize: 11, color: '#94a3b8', fontWeight: 600,

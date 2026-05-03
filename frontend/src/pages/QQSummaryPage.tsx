@@ -175,6 +175,75 @@ function detectInitialLang(): Lang {
   return navigator.language?.toLowerCase().startsWith('de') ? 'de' : 'en';
 }
 
+// 2026-05-03 (Wolf-Wunsch): Stamm-Code mit Copy-Button auf Summary-Page.
+// teamId hat Format `team-abc123` -> Anzeige `T-ABC123`.
+function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
+  const code = `T-${(teamId.replace(/^team-/i, '') || teamId).toUpperCase()}`;
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = code;
+        el.style.position = 'fixed'; el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  }
+  return (
+    <div style={{
+      marginBottom: 18, padding: '14px 16px', borderRadius: 14,
+      background: 'rgba(251,191,36,0.08)',
+      border: '1px solid rgba(251,191,36,0.3)',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        fontSize: 11, fontWeight: 900, color: '#fbbf24',
+        letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6,
+      }}>
+        {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+        marginBottom: 6,
+      }}>
+        <div style={{
+          fontSize: 24, fontWeight: 900, color: '#FDE68A',
+          fontFamily: 'monospace', letterSpacing: 1,
+          userSelect: 'all',
+        }}>
+          {code}
+        </div>
+        <button
+          onClick={copy}
+          style={{
+            padding: '6px 12px', borderRadius: 8,
+            border: `1.5px solid ${copied ? '#22C55E' : '#FBBF24'}66`,
+            background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.10)',
+            color: copied ? '#86efac' : '#FDE68A',
+            fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          {copied ? (lang === 'de' ? '✓ Kopiert' : '✓ Copied') : (lang === 'de' ? '📋 Kopieren' : '📋 Copy')}
+        </button>
+      </div>
+      <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.4 }}>
+        {lang === 'de'
+          ? 'Beim nächsten Quiz auf /team eingeben — deine Sieg-Streak zählt mit.'
+          : 'Enter on /team next time — your win streak carries over.'}
+      </div>
+    </div>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function QQSummaryPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -323,6 +392,11 @@ export default function QQSummaryPage() {
             padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit',
           }}>{tr('pickOther', lang)}</button>
       </div>
+
+      {/* 2026-05-03 (Wolf-Wunsch): Stamm-Code auch hier auf der Summary-Seite,
+          kopierbar — Spieler kommt oft erst hier nochmal her und kann sich
+          den Code ohne Game-Over-Screen merken. */}
+      <SummaryStammCode teamId={selectedTeam.id} lang={lang} />
 
       <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>

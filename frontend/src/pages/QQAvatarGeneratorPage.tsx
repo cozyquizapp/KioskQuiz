@@ -689,8 +689,334 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+// ─── Emoji-Bibliothek (kuratiert) ─────────────────────────────────────────
+const EMOJI_CATS: { id: string; label: string; emojis: string[] }[] = [
+  { id: 'tiere', label: 'Tiere', emojis: [
+    '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵',
+    '🐔','🐧','🦅','🦉','🦇','🐺','🐗','🦄','🐝','🦋','🐢','🐍','🦎','🐙','🐠',
+    '🐬','🦈','🐳','🐊','🦒','🦓','🦛','🐪','🦘','🦔','🦦','🦥','🦃','🦚','🦜',
+  ]},
+  { id: 'gesichter', label: 'Gesichter', emojis: [
+    '😀','😎','🤓','🥸','🤩','😏','🤔','🤨','😴','🥶','🥵','🤯','🤠','🥳','🤡',
+    '🤖','👽','👾','👻','💀','😺','😈','🥺','😇','🤪','😜','😋','🤤',
+  ]},
+  { id: 'helden', label: 'Charaktere', emojis: [
+    '🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','🥷','🤴','👸','🧑‍🚀','🧑‍🎨',
+    '🧑‍🍳','🧑‍🎤','🧑‍⚕️','🧑‍🌾','🧑‍🏫','🧑‍🔬','🧑‍🎓','🧑‍🚒','🕵️','🧑‍✈️',
+  ]},
+  { id: 'essen', label: 'Essen', emojis: [
+    '🍕','🍔','🌮','🍣','🍩','🍪','🥨','🍰','🍓','🍑','🥑','🍋','🌶️','🥕','🍄',
+    '🥐','🍿','🍻','🥗','🌭','🍦','🥞','☕','🧃','🍇','🍉','🍌','🍍','🥥','🍒',
+  ]},
+  { id: 'sport', label: 'Sport & Spiel', emojis: [
+    '⚽','🏀','🎾','🏈','🎯','🏆','🥇','🎳','🎲','🎮','🕹️','♟️','🎭','🎨','🎬',
+    '🎤','🎧','🎸','🥁','🎺','🎻','🎷','🪀','🎢','🎡','🎪','🪄','🧩',
+  ]},
+  { id: 'natur', label: 'Natur', emojis: [
+    '🌲','🌳','🌴','🌵','🌾','🌹','🌻','🌷','🍀','🍄','🌙','⭐','🌟','💫','✨',
+    '🌈','⚡','🔥','💧','🌊','☀️','❄️','☃️','🌸','🌺','🍁','🍂','🌍','🌋','🏔️',
+  ]},
+  { id: 'objekte', label: 'Objekte', emojis: [
+    '🎩','👑','💎','🔮','🪐','🚀','🛸','🏰','🎁','📚','🔭','🧪','💡','🗝️','⚙️',
+    '🧲','🪙','⚓','🪁','🎏','🛼','⛵','🚂','🛞','🪩','📷','🎞️','📡','💾','🖼️',
+  ]},
+  { id: 'symbole', label: 'Symbole', emojis: [
+    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💯','♥️','♦️',
+    '♣️','♠️','☯️','♻️','✅','❌','❓','‼️','♾️','🆗','🅰️','🅱️','🅾️','🆎','🔱',
+  ]},
+];
+
+const ALL_EMOJIS = EMOJI_CATS.flatMap(c => c.emojis);
+
+// Default-Roster: die 8 QQ_AVATARS-Tier-Emojis
+const DEFAULT_ROSTER = QQ_AVATARS.map(a => a.emoji);
+
+// ─── EmojiCard (Karten-Look der Galerie, mit Emoji statt SVG) ─────────────
+function EmojiCard({
+  emoji, colorIdx, label, size = 110, onClick, active,
+}: {
+  emoji: string;
+  colorIdx: number;
+  label?: string;
+  size?: number;
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  const ring = adjustColor(PALETTE[colorIdx].ring, { sat: -0.18, light: -0.04 });
+  const cardBg = adjustColor(ring, { sat: -0.2, light: -0.42 });
+  const labelColor = adjustColor(ring, { light: +0.05 });
+  const Tag = onClick ? 'button' : 'div';
+
+  return (
+    <Tag
+      type={onClick ? ('button' as const) : undefined}
+      onClick={onClick}
+      style={{
+        position: 'relative',
+        borderRadius: 22,
+        background: `radial-gradient(ellipse 60% 55% at 50% 42%, ${ring}55 0%, ${cardBg} 70%, #0a0a0a 100%)`,
+        border: active ? `2px solid ${ring}` : '1px solid rgba(255,255,255,0.05)',
+        padding: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        aspectRatio: '3 / 4',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'border-color 0.15s, transform 0.15s',
+        overflow: 'hidden',
+        fontFamily: 'inherit',
+      }}
+    >
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        marginTop: 4,
+        fontSize: size,
+        lineHeight: 1,
+        // emoji rendering hint — let OS handle but keep crisp
+        filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))',
+      }}>
+        {emoji}
+      </div>
+      {label && (
+        <div style={{
+          marginTop: 6,
+          fontSize: 13,
+          fontWeight: 900,
+          letterSpacing: '0.12em',
+          color: labelColor,
+          textTransform: 'uppercase',
+        }}>
+          {label}
+        </div>
+      )}
+    </Tag>
+  );
+}
+
+// ─── Emoji-Picker-Modus (8-Karten-Roster + Picker pro Karte) ──────────────
+function EmojiPickerView() {
+  const [roster, setRoster] = useState<string[]>(DEFAULT_ROSTER);
+  const [pickingFor, setPickingFor] = useState<number | null>(null);
+  const [activeCat, setActiveCat] = useState<string>(EMOJI_CATS[0].id);
+
+  const setEmojiAt = (idx: number, emoji: string) => {
+    setRoster(prev => prev.map((e, i) => (i === idx ? emoji : e)));
+  };
+
+  const shuffleAll = () => {
+    setRoster(PALETTE.map(() => ALL_EMOJIS[Math.floor(Math.random() * ALL_EMOJIS.length)]));
+  };
+
+  const reset = () => setRoster(DEFAULT_ROSTER);
+
+  const cat = EMOJI_CATS.find(c => c.id === activeCat) ?? EMOJI_CATS[0];
+  const pickAccent = pickingFor != null ? PALETTE[pickingFor].ring : '#94a3b8';
+
+  return (
+    <div style={{
+      maxWidth: 1100, margin: '0 auto', padding: '24px',
+      display: 'flex', flexDirection: 'column', gap: 18,
+    }}>
+      {/* Galerie 4×2 — der „Roster" */}
+      <div style={{
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 18,
+        padding: 18,
+      }}>
+        <div style={{
+          fontSize: 11, fontWeight: 800, color: '#94a3b8',
+          textTransform: 'uppercase', letterSpacing: '0.08em',
+          marginBottom: 12,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        }}>
+          <span>Roster · 8 Teams</span>
+          <span style={{ color: '#475569', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Klick auf Karte → Emoji wählen
+          </span>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 10,
+        }}>
+          {roster.map((emoji, i) => (
+            <EmojiCard
+              key={i}
+              emoji={emoji}
+              colorIdx={i}
+              label={`TEAM ${i + 1}`}
+              active={pickingFor === i}
+              onClick={() => setPickingFor(i)}
+            />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button
+            type="button"
+            onClick={shuffleAll}
+            style={{
+              flex: 1, padding: '11px 14px', borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.16)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#f8fafc', fontWeight: 800, fontSize: 14,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            🎲 Alle würfeln
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            title="Auf Default-Roster zurücksetzen"
+            style={{
+              padding: '11px 14px', borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#cbd5e1', fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            ↺ Reset
+          </button>
+        </div>
+      </div>
+
+      {/* Picker — taucht auf wenn eine Karte ausgewählt ist */}
+      {pickingFor != null && (
+        <div style={{
+          background: 'rgba(255,255,255,0.025)',
+          border: `1px solid ${pickAccent}40`,
+          borderRadius: 18,
+          padding: 20,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 14, flexWrap: 'wrap', gap: 12,
+          }}>
+            <div style={{
+              fontSize: 14, fontWeight: 900, color: '#f8fafc',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{
+                display: 'inline-block', width: 14, height: 14, borderRadius: 4,
+                background: pickAccent,
+                boxShadow: `0 0 8px ${pickAccent}88`,
+              }} />
+              Emoji für TEAM {pickingFor + 1} wählen
+              <span style={{ color: '#64748b', fontWeight: 600, fontSize: 12 }}>
+                aktuell: {roster[pickingFor]}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPickingFor(null)}
+              style={{
+                padding: '6px 12px', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.04)',
+                color: '#cbd5e1', fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              ✕ Schließen
+            </button>
+          </div>
+
+          {/* Kategorie-Tabs */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+            {EMOJI_CATS.map(c => {
+              const active = c.id === activeCat;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setActiveCat(c.id)}
+                  style={{
+                    padding: '7px 12px', borderRadius: 999,
+                    border: `1px solid ${active ? pickAccent : 'rgba(255,255,255,0.10)'}`,
+                    background: active ? `${pickAccent}22` : 'rgba(255,255,255,0.03)',
+                    color: active ? '#f8fafc' : '#cbd5e1',
+                    fontSize: 12, fontWeight: active ? 800 : 600,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Emoji-Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))',
+            gap: 6,
+            maxHeight: 320,
+            overflowY: 'auto',
+            padding: '4px 2px',
+          }}>
+            {cat.emojis.map((e, i) => {
+              const isCurrent = roster[pickingFor] === e;
+              return (
+                <button
+                  key={`${e}-${i}`}
+                  type="button"
+                  onClick={() => {
+                    setEmojiAt(pickingFor, e);
+                    // bleibt offen, damit man weitere Teams direkt zuweisen kann
+                  }}
+                  style={{
+                    aspectRatio: '1',
+                    borderRadius: 12,
+                    border: isCurrent
+                      ? `2px solid ${pickAccent}`
+                      : '1px solid rgba(255,255,255,0.06)',
+                    background: isCurrent
+                      ? `${pickAccent}22`
+                      : 'rgba(255,255,255,0.025)',
+                    fontSize: 28, lineHeight: 1,
+                    cursor: 'pointer',
+                    transition: 'all 0.12s',
+                    fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                  onMouseEnter={ev => {
+                    (ev.currentTarget as HTMLButtonElement).style.background = `${pickAccent}18`;
+                  }}
+                  onMouseLeave={ev => {
+                    (ev.currentTarget as HTMLButtonElement).style.background = isCurrent
+                      ? `${pickAccent}22`
+                      : 'rgba(255,255,255,0.025)';
+                  }}
+                >
+                  {e}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{
+            marginTop: 10, fontSize: 11, color: '#64748b', lineHeight: 1.5,
+          }}>
+            Tipp: nach der Auswahl bleibt der Picker offen — direkt nächstes Team-Karte oben anklicken, dann nächstes Emoji wählen.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 const QQAvatarGeneratorPage = () => {
+  const [mode, setMode] = useState<'generator' | 'emoji'>('emoji');
   const [cfg, setCfg] = useState<AvatarConfig>(defaultConfig);
   const svgRef = useRef<HTMLDivElement>(null);
   const accent = PALETTE[cfg.colorIdx].ring;
@@ -750,16 +1076,54 @@ const QQAvatarGeneratorPage = () => {
           padding: '6px 12px', borderRadius: 8,
           border: '1px solid rgba(255,255,255,0.08)',
         }}>← Menü</Link>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 22, color: '#f8fafc', lineHeight: 1.1 }}>
             Avatar-Generator
           </div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
-            Soft-3D-Plastilin · 8 CozyQuiz-Team-Farben · Spielwiese
+            {mode === 'emoji'
+              ? 'Emoji-Picker · 8 Team-Karten · Roster zusammenstellen'
+              : 'Soft-3D-Plastilin · 8 CozyQuiz-Team-Farben · Spielwiese'}
           </div>
+        </div>
+
+        {/* Mode-Tabs */}
+        <div style={{
+          display: 'flex', gap: 4, padding: 4,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 12,
+        }}>
+          {([
+            { id: 'emoji',     label: '😀 Emoji-Picker' },
+            { id: 'generator', label: '🎨 SVG-Generator' },
+          ] as const).map(t => {
+            const active = t.id === mode;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setMode(t.id)}
+                style={{
+                  padding: '8px 14px', borderRadius: 9,
+                  border: 'none',
+                  background: active ? 'rgba(255,255,255,0.10)' : 'transparent',
+                  color: active ? '#f8fafc' : '#94a3b8',
+                  fontSize: 13, fontWeight: active ? 800 : 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
+      {mode === 'emoji' ? (
+        <EmojiPickerView />
+      ) : (
       <div style={{
         maxWidth: 1200, margin: '0 auto', padding: '24px',
         display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24,
@@ -938,6 +1302,7 @@ const QQAvatarGeneratorPage = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

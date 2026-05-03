@@ -1534,6 +1534,14 @@ export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | n
   // ist (jemand anderes wurde gerade eliminiert), zählt sie als Winner.
   if (alive.length === 1 && aliveHadTurn) {
     const last = alive[0];
+    // 2026-05-03 (Wolf-Bug 'letzter Spieler musste eingeben obwohl schon
+    // qualifiziert'): wenn letztes Team alive UND schon qualifiziert (= hat
+    // mind. 1 gueltige Antwort beigetragen), direkt gewinnen — keine weitere
+    // Eingabe verlangen. Vorher hatten Spieler 'not accepted try again'-
+    // Erfahrung obwohl die Runde eigentlich vorbei war.
+    if (room.hotPotatoQualified.includes(last)) return last;
+    // Nicht qualifiziert: mind. 1 Antwort noch noetig (Mindestens-eine-
+    // Runde-Schutz von 2026-04-28).
     const isActiveButHasntAnswered =
       room.hotPotatoActiveTeamId === last && !room.hotPotatoLastAnswer;
     if (!isActiveButHasntAnswered) return last;

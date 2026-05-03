@@ -1960,6 +1960,12 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       position: 'absolute', bottom: 16, left: 0, right: 0,
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
       pointerEvents: 'none',
+      // 2026-05-03 (Wolf-Bug 'Scrollleiste sichtbar wenn jemand ausscheidet'):
+      // Wenn der Eliminated-Row reinkommt, wuchs Content nach oben und konnte
+      // ueber die Parent-Grenze schiessen → kurzer Scrollbar-Flash. maxHeight
+      // begrenzt die HP-Inhalte auf 65% der Viewport-Hoehe; oben abgeschnitten
+      // wuerde nie eintreten weil Card-Shift jetzt aggressiver ist.
+      maxHeight: '65vh', overflow: 'hidden',
     }}>
       {/* Used answers list — prominent über dem Active-Team-Pill */}
       {used.length > 0 && (
@@ -6545,52 +6551,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           }}>
             {answer}
           </div>
-          {correctSorted.length > 0 && (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            }}>
-              <div style={{
-                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
-                color: '#86EFAC', letterSpacing: '0.14em', textTransform: 'uppercase',
-              }}>
-                {lang === 'de' ? `🏆 ${correctSorted.length} richtig` : `🏆 ${correctSorted.length} correct`}
-              </div>
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
-              }}>
-                {correctSorted.map((g, idx) => {
-                  const tm = s.teams.find(t => t.id === g.teamId);
-                  if (!tm) return null;
-                  const pts = Math.max(1, 4 - g.atHintIdx);
-                  const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
-                  return (
-                    <div key={g.teamId} style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '6px 14px', borderRadius: 999,
-                      background: `${tm.color}22`, border: `2px solid ${tm.color}`,
-                      animation: `phasePop 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + idx * 0.1}s both`,
-                    }}>
-                      <span style={{ fontSize: 14, lineHeight: 1 }}>{medal}</span>
-                      <QQTeamAvatar avatarId={tm.avatarId} size={32} style={{
-                        boxShadow: `0 0 0 2px ${tm.color}, 0 0 8px ${tm.color}77`,
-                      }} />
-                      <span style={{
-                        fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: tm.color,
-                      }}>{tm.name}</span>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: 999,
-                        background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.4)',
-                        fontSize: 11, fontWeight: 800, color: '#86EFAC',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {lang === 'de' ? `H${g.atHintIdx + 1} · ${pts} Pkt` : `H${g.atHintIdx + 1} · ${pts} pts`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* 2026-05-03 (Wolf-Bug 'Teilpunkte-Card doppelt'): die Punkte-
+              Erklaerung pro Team war doppelt zur Hint-Avatar-Cascade weiter
+              oben — man sieht ja schon wer auf welchem Hinweis sitzt + wer
+              schnellster auf jedem Hinweis war. Card komplett entfernt. */}
         </div>
       )}
 
@@ -7966,7 +7930,10 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             <QQFitBoundsOnTrigger bounds={closeUpBounds} trigger={1000 + step} />
           )}
           {showTarget && (
-            <Marker position={[tLat, tLng] as any} icon={targetIcon} />
+            // 2026-05-03 (Wolf-Bug 'Pin verdeckt Team-Avatare'): Leaflet
+            // sortiert Marker nach Latitude (Norden hinten). zIndexOffset
+            // negativ haelt Target-Pin hinter Team-Pins (die +1000 bekommen).
+            <Marker position={[tLat, tLng] as any} icon={targetIcon} zIndexOffset={-100} />
           )}
           {/* v3 round 10 (User-Wunsch geoguessr-style 'ziel sieht man gar nicht'):
               Distanz-Polylines vom Team-Pin zum Ziel — nur wenn target sichtbar
@@ -8002,6 +7969,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                 key={p.teamId}
                 position={[lat, lng] as any}
                 icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).image, qqGetAvatar(team.avatarId).emoji)}
+                zIndexOffset={1000}
               />
             );
           })}
@@ -9097,20 +9065,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // werden im hpCompact-Modus kleiner. Card-Shift uebernimmt das
             // Platzproblem.
             const cardFontSize = qFontSize;
-            // 2026-04-30 v3 round 10 (User-Wunsch 'noch nicht optimal'):
-            // Aggressiverer Card-Shift + im HotPotato-View groessere Chip-Tiers
-            // damit der Chip-Block nach oben waechst und das Loch in der
-            // Mitte fuellt. Tiers verdoppelt (-25vh max statt -22vh) und
-            // frueher startend (ab 9 Chips Shift).
-            // 0-8: 0vh (Card mittig, wenig Chips brauchen Platz)
-            // 9-16: -12vh
-            // 17-24: -22vh
-            // 25+: -32vh (Card landet bei ~18% von oben, dicht unter Badge)
+            // 2026-05-03 (Wolf-Bug 'Card schiebt sich nicht hoch wenn Antworten
+            // reinkommen'): kontinuierlicher Shift statt 4-Stufen-Sprung. Pro
+            // Chip ~1.3vh, capped bei -32vh. Plus: ein bisschen Shift schon
+            // bei wenigen Chips, damit Card ueber dem Antwort-Block steht.
+            // Eliminierungs-Reihe addiert weiteren Shift damit "❌ Out:"-Block
+            // unten nicht ueber Card-Boden ragt (Wolf-Bug 'Scrollleiste
+            // sichtbar wenn jemand ausscheidet').
+            const eliminatedCount = (s.hotPotatoEliminated ?? []).length;
             const chipShiftVh = isHotPotatoActive
-              ? hpUsedCount >= 25 ? -32
-              : hpUsedCount >= 17 ? -22
-              : hpUsedCount >= 9 ? -12
-              : 0
+              ? -Math.min(32, hpUsedCount * 1.3 + eliminatedCount * 2.5)
               : 0;
             return (
               <div style={{

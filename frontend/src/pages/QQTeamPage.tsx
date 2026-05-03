@@ -3829,14 +3829,15 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
       <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
         {t.pinIt.tap[lang]}
       </div>
-      {/* Karte deutlich groesser — auf grossem Beamer-Phone wird Pin-Setzen
-          sonst zu fummelig. clamp(380, 70vh, 620) fuellt fast die ganze
-          verfuegbare Hoehe (Question-Header oben + Submit-Button unten lassen
-          ~150-180px frei). border-radius/border bleibt schlank. */}
+      {/* 2026-05-03 (Wolf-Bug 'Jetzt antworten zu weit unten'): map-height
+          von 70vh auf 48vh reduziert. Auf 6"-Phones (700-850px Viewport)
+          waren 70vh + Header + Submit-Btn zu viel — Btn rutschte unter den
+          Fold und war nicht sichtbar bis User scrollt. 48vh laesst Submit-Btn
+          komfortabel oberhalb der Bildschirmunterkante. */}
       <div style={{
         borderRadius: 14, overflow: 'hidden',
         border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
-        height: 'clamp(380px, 70vh, 620px)',
+        height: 'clamp(280px, 48vh, 480px)',
         position: 'relative',
       }}>
         <MapContainer

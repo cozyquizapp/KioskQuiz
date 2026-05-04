@@ -13494,6 +13494,193 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#F59E0B';
 
+  // 2026-05-05 (Wolf-Wahl 4C): Score-Spotlight-Sequence vor der Recap-Tabelle.
+  // Letzter Platz zuerst (revealIdx 0 = sorted[last]), dann aufsteigend bis
+  // zum Sieger (revealIdx === sorted.length - 1). Nach allen Teams: Recap-
+  // Tabelle. Auto-Advance alle 3.5s, Mod kann mit Space/ArrowRight skippen
+  // und mit P pausieren.
+  const reverseSorted = [...sorted].reverse(); // index 0 = lowest team
+  const [revealIdx, setRevealIdx] = useState<number>(0);
+  const [paused, setPaused] = useState<boolean>(false);
+  const isRecap = revealIdx >= sorted.length;
+  // Auto-advance Timer
+  useEffect(() => {
+    if (paused || isRecap) return;
+    const t = window.setTimeout(() => {
+      setRevealIdx(prev => Math.min(prev + 1, sorted.length));
+    }, 3500);
+    return () => window.clearTimeout(t);
+  }, [revealIdx, paused, isRecap, sorted.length]);
+  // Mod-Keyboard: Space/ArrowRight = next, P = pause toggle
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ArrowRight') {
+        e.preventDefault();
+        setRevealIdx(prev => Math.min(prev + 1, sorted.length));
+      } else if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        setPaused(p => !p);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sorted.length]);
+
+  // ── Spotlight-Stage: 1 Team riesig, vor der Recap-Tabelle ────────────────
+  if (!isRecap) {
+    const team = reverseSorted[revealIdx];
+    const rank = sorted.length - revealIdx;
+    const isWinner = rank === 1;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+    const teamColor = team?.color ?? '#F59E0B';
+    return (
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', overflow: 'hidden',
+        padding: 'clamp(16px, 2.5vh, 36px) clamp(20px, 3vw, 48px)',
+        gap: 'clamp(14px, 2vh, 28px)',
+      }}>
+        {/* Ambient glow in Team-Farbe */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: `radial-gradient(ellipse at center, ${teamColor}33 0%, transparent 60%)`,
+          transition: 'background 0.6s ease',
+        }} />
+        <ConfettiOverlay />
+        <Fireflies color={`${teamColor}55`} />
+
+        {/* Header — Rang + Pause-Indikator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6vw, 22px)',
+          position: 'relative', zIndex: 5,
+          animation: 'phasePop 0.5s var(--qq-ease-bounce) both',
+        }}>
+          <div style={{
+            fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
+            color: '#94a3b8', letterSpacing: '0.16em', textTransform: 'uppercase',
+          }}>
+            {lang === 'en' ? 'Final Standings' : 'Spielende'}
+          </div>
+          {paused && (
+            <div style={{
+              padding: '4px 12px', borderRadius: 999,
+              background: 'rgba(251,191,36,0.18)', border: '1.5px solid rgba(251,191,36,0.55)',
+              fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#FDE68A',
+              animation: 'pulse 1.4s ease-in-out infinite',
+            }}>
+              ⏸ {lang === 'en' ? 'Paused (P to resume)' : 'Pause (P zum Fortsetzen)'}
+            </div>
+          )}
+        </div>
+
+        {/* Spotlight-Card riesig */}
+        {team && (
+          <div
+            key={`spotlight-${team.id}`}  // re-mount fuer fresh entry-anim
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 'clamp(14px, 2vh, 28px)',
+              padding: 'clamp(28px, 4vh, 56px) clamp(40px, 5vw, 90px)',
+              borderRadius: 32,
+              background: `linear-gradient(135deg, ${teamColor}28 0%, ${teamColor}10 100%)`,
+              border: `3px solid ${teamColor}aa`,
+              boxShadow: `0 0 80px ${teamColor}55, 0 16px 60px rgba(0,0,0,0.55)`,
+              animation: 'finaleWinner 0.7s cubic-bezier(0.22,1,0.36,1) both',
+              position: 'relative', zIndex: 5,
+              maxWidth: 'min(900px, 90vw)',
+            }}>
+            {/* Rang-Badge mit Medaille (Top-3) oder #N */}
+            <div style={{
+              fontSize: 'clamp(60px, 8vw, 130px)', lineHeight: 1,
+              animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.2s both',
+            }}>
+              {medal ? <QQEmojiIcon emoji={medal}/> : (
+                <span style={{
+                  fontSize: 'clamp(32px, 4vw, 60px)', fontWeight: 900,
+                  color: '#94a3b8', letterSpacing: '-0.02em',
+                }}>#{rank}</span>
+              )}
+            </div>
+
+            {/* Avatar gross */}
+            <div style={{
+              animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.35s both',
+            }}>
+              <QQTeamAvatar
+                avatarId={team.avatarId}
+                teamEmoji={team.emoji}
+                size={'clamp(140px, 18vw, 260px)'}
+                style={{
+                  boxShadow: isWinner
+                    ? `0 0 0 4px #FBBF24, 0 0 60px rgba(251,191,36,0.7), 0 12px 40px rgba(0,0,0,0.5)`
+                    : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa, 0 12px 36px rgba(0,0,0,0.5)`,
+                }}
+              />
+            </div>
+
+            {/* Team-Name riesig */}
+            <TeamNameLabel
+              name={team.name}
+              maxLines={2}
+              shrinkAfter={14}
+              color={teamColor}
+              fontWeight={900}
+              fontSize="clamp(40px, 5.5vw, 88px)"
+              style={{
+                textShadow: `0 0 40px ${teamColor}66, 0 4px 0 rgba(0,0,0,0.5)`,
+                lineHeight: 1.05,
+                animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
+                textAlign: 'center',
+              }}
+            />
+
+            {/* Score riesig */}
+            <div style={{
+              display: 'flex', alignItems: 'baseline', gap: 'clamp(10px, 1.2vw, 18px)',
+              animation: 'finaleScoreCount 0.7s var(--qq-ease-bounce) 0.7s both',
+            }}>
+              <span style={{
+                fontSize: 'clamp(80px, 11vw, 180px)', fontWeight: 900,
+                color: '#FDE68A',
+                fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                textShadow: '0 0 40px rgba(251,191,36,0.55), 0 6px 0 rgba(0,0,0,0.4)',
+              }}>{team.largestConnected}</span>
+              <span style={{
+                fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 700,
+                color: '#94a3b8',
+              }}>
+                {team.largestConnected === 1
+                  ? (lang === 'en' ? 'cell' : 'Feld')
+                  : (lang === 'en' ? 'cells' : 'Felder')}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Mod-Hint: Space = next, P = pause */}
+        <div style={{
+          position: 'absolute', bottom: 'clamp(12px, 2vh, 24px)', left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 14px)',
+          padding: 'clamp(6px, 0.8vh, 10px) clamp(14px, 1.6vw, 22px)',
+          borderRadius: 999,
+          background: 'rgba(15,23,42,0.5)', border: '1.5px solid rgba(148,163,184,0.25)',
+          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700, color: '#94a3b8',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          opacity: 0.75, zIndex: 5,
+          animation: 'contentReveal 0.5s ease 1.0s both',
+        }}>
+          <span>⌨ Space → Next</span>
+          <span>·</span>
+          <span>P → {paused ? 'Resume' : 'Pause'}</span>
+          <span>·</span>
+          <span>{revealIdx + 1} / {sorted.length}</span>
+        </div>
+      </div>
+    );
+  }
+
   // Layout: Variante B — 2-Spalten "Awards-Look".
   // Links: Grid riesig (volle Bildhoehe). Rechts: schmaler Side-Panel mit
   // Title, Hero (Trophy/Avatar/Name/Score) und alle anderen Teams in EINER

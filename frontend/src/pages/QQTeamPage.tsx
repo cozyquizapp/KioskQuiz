@@ -356,10 +356,10 @@ function CopyButton({ text, lang }: { text: string; lang: 'de' | 'en' }) {
       onClick={copy}
       style={{
         padding: '4px 10px', borderRadius: 8,
-        border: `1.5px solid ${copied ? '#22C55E' : '#FBBF24'}66`,
+        border: `1.5px solid ${copied ? '#22C55E' : '#FBBF24'}55`,
         background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.10)',
         color: copied ? '#86efac' : '#FDE68A',
-        fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+        fontFamily: 'inherit', fontWeight: 900, fontSize: 11,
         cursor: 'pointer',
         letterSpacing: 0.4,
       }}
@@ -736,10 +736,10 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               <button
                 onClick={() => setStammExpanded(true)}
                 style={{
-                  width: '100%', padding: '10px 14px', borderRadius: 10,
+                  width: '100%', padding: '10px 14px', borderRadius: 8,
                   border: '1px dashed rgba(251,191,36,0.45)',
                   background: 'rgba(251,191,36,0.06)',
-                  color: '#FDE68A', fontWeight: 800, fontSize: 13,
+                  color: '#FDE68A', fontWeight: 900, fontSize: 13,
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -750,7 +750,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             )}
             {stammExpanded && !stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#FBBF24', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#FBBF24', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   🔖 {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -760,7 +760,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     onChange={e => setStammInput(e.target.value)}
                     placeholder="T-ABC123"
                     style={{
-                      flex: 1, padding: '10px 12px', borderRadius: 10,
+                      flex: 1, padding: '10px 12px', borderRadius: 8,
                       border: '1px solid rgba(251,191,36,0.4)',
                       background: 'rgba(0,0,0,0.3)', color: '#FDE68A',
                       fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
@@ -774,7 +774,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     onClick={() => onStammLookup(stammInput)}
                     disabled={stammStatus === 'searching' || stammInput.trim().length < 4}
                     style={{
-                      padding: '10px 16px', borderRadius: 10,
+                      padding: '10px 16px', borderRadius: 8,
                       border: 'none',
                       background: stammStatus === 'searching' ? '#475569' : '#F59E0B',
                       color: '#0D0A06', fontWeight: 900, fontSize: 13,
@@ -805,7 +805,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             )}
             {stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#22C55E', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#22C55E', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   ✓ {lang === 'de' ? 'Stamm-Team gefunden' : 'Regular team found'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -839,7 +839,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 filter: `drop-shadow(0 0 12px ${resumeTeam.color}55)`,
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
                   {lang === 'de' ? 'Du warst dabei' : 'You were here'}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || '#F1F5F9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -866,7 +866,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 const avColor = a.color ?? '#EAB308';
                 return (
                   <button key={a.id} onClick={() => !taken && handleAvatarPick(a.id)} disabled={taken} style={{
-                    padding: '12px 4px', borderRadius: 14, cursor: taken ? 'not-allowed' : 'pointer',
+                    padding: '12px 4px', borderRadius: 16, cursor: taken ? 'not-allowed' : 'pointer',
                     background: taken
                       ? 'rgba(255,255,255,0.02)'
                       : sel
@@ -876,13 +876,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     opacity: taken ? 0.35 : 1,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     fontFamily: 'inherit', transition: 'all 0.18s',
-                    boxShadow: sel ? `0 0 18px ${avColor}66` : 'none',
+                    boxShadow: sel ? `0 0 18px ${avColor}55` : 'none',
                     position: 'relative', overflow: 'visible',
                   }}>
                     {/* Expanding ring on pick */}
                     {justPicked && (
                       <div style={{
-                        position: 'absolute', inset: -4, borderRadius: 18, pointerEvents: 'none',
+                        position: 'absolute', inset: -4, borderRadius: 16, pointerEvents: 'none',
                         border: `2px solid ${avColor}99`,
                         animation: 'tcAvatarRing 0.5s ease-out forwards',
                       }} />
@@ -918,7 +918,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
                       ...(justPicked ? { ['--g' as string]: avColor, filter: 'none' } : taken ? { filter: 'grayscale(1) opacity(0.5)' } : {}),
                     }} />
-                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
+                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 900,
                       textDecoration: taken ? 'line-through' : 'none' }}>
                       {taken
                         ? t.taken[lang]
@@ -975,7 +975,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       onClick={() => !taken && setChosenEmoji(em)}
                       disabled={taken}
                       style={{
-                        padding: '14px 4px', borderRadius: 14,
+                        padding: '14px 4px', borderRadius: 16,
                         cursor: taken ? 'not-allowed' : 'pointer',
                         background: taken
                           ? 'rgba(255,255,255,0.02)'
@@ -1052,7 +1052,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 }}
                 title={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
                 style={{
-                  padding: '0 14px', borderRadius: 10,
+                  padding: '0 14px', borderRadius: 8,
                   background: 'rgba(234,179,8,0.18)',
                   border: '1px solid rgba(234,179,8,0.4)',
                   color: '#FDE68A', fontSize: 18,
@@ -1246,7 +1246,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     : LOBBY_GOLD;
 
   // Firefly color — uses accent for vibrant glow matching beamer
-  const ffColor = `${phaseAccent}66`;
+  const ffColor = `${phaseAccent}55`;
 
   // 2026-05-02 (Wolfs Wunsch 'team view immer an die farbe anpassen die gerade
   // auf dem beamer ist'): exakt die gleichen CAT_BG-Strings wie Beamer (siehe
@@ -1291,7 +1291,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           style={{
             position: 'fixed', top: 14, left: '50%',
             zIndex: 1000,
-            padding: '10px 16px', borderRadius: 14,
+            padding: '10px 16px', borderRadius: 16,
             background: 'linear-gradient(135deg, rgba(239,68,68,0.95), rgba(185,28,28,0.95))',
             border: '2px solid rgba(254,202,202,0.6)',
             boxShadow: '0 8px 24px rgba(239,68,68,0.55), 0 0 32px rgba(239,68,68,0.3)',
@@ -1304,7 +1304,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         >
           <span style={{ fontSize: 22 }}><QQEmojiIcon emoji="⚡"/></span>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 800, letterSpacing: 0.4 }}>
+            <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 900, letterSpacing: 0.4 }}>
               {lang === 'de' ? 'FELD GEKLAUT' : 'FIELD STOLEN'}
             </span>
             <span>{stolenToast.by} {lang === 'de' ? 'hat dir ein Feld geklaut!' : 'stole a cell from you!'}</span>
@@ -1388,15 +1388,15 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         {/* Disconnect banner with manual reconnect */}
         {!connected && (
           <div role="alert" style={{
-            padding: '12px 16px', borderRadius: 12, marginBottom: 12, textAlign: 'center',
+            padding: '12px 16px', borderRadius: 16, marginBottom: 12, textAlign: 'center',
             background: '#7F1D1D', border: '1px solid #EF4444', color: '#FCA5A5',
-            fontWeight: 800, fontSize: 13,
+            fontWeight: 900, fontSize: 13,
           }}>
             <div style={{ marginBottom: 8, animation: 'tcpulse 2s infinite' }}>
               {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
             </div>
             <button onClick={reconnect} style={{
-              padding: '8px 20px', borderRadius: 10, fontFamily: 'inherit',
+              padding: '8px 20px', borderRadius: 8, fontFamily: 'inherit',
               fontWeight: 900, fontSize: 13, cursor: 'pointer',
               background: 'rgba(239,68,68,0.25)', border: '1px solid #EF4444',
               color: '#FCA5A5', animation: 'tcbtnpop 0.3s ease both',
@@ -1502,7 +1502,7 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
         // damit's auf 320px-iPhone-SE-Schirm nicht ueberlaeuft.
         padding: 'clamp(20px, 5vw, 32px) clamp(28px, 7vw, 44px)',
         maxWidth: 'min(360px, 90vw)',
-        borderRadius: 28,
+        borderRadius: 24,
         // Card jetzt opak: dunkler Card-Background mit dezentem Team-Color-Tint,
         // damit der Inhalt klar gegen den Hintergrund steht.
         background: `linear-gradient(180deg, rgba(28,22,16,0.96), rgba(15,12,8,0.96)), linear-gradient(180deg, ${team.color}1f, ${team.color}10)`,
@@ -1512,7 +1512,7 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
         animation: 'tcIdentityIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both',
       }}>
         <div style={{
-          fontSize: 13, fontWeight: 900, letterSpacing: '0.2em',
+          fontSize: 13, fontWeight: 900, letterSpacing: '0.1em',
           color: `${team.color}dd`, textTransform: 'uppercase',
         }}>
           {lang === 'de' ? 'Willkommen!' : 'Welcome!'}
@@ -1522,7 +1522,7 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
           animation: 'tcfloat 2.6s ease-in-out infinite',
         }} />
         <div style={{
-          fontSize: 14, fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.05em',
+          fontSize: 14, fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.04em',
         }}>
           {lang === 'de' ? 'Ihr seid' : 'You are'}
         </div>
@@ -1567,7 +1567,7 @@ function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; t
       }}>
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}><QQEmojiIcon emoji={emoji}/></div>
         <div style={{
-          fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.06em',
+          fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.04em',
           textShadow: `0 0 16px ${team.color}, 0 2px 0 rgba(0,0,0,0.5)`,
           textAlign: 'center',
         }}>
@@ -1666,7 +1666,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
               boxShadow: pulse ? '0 0 8px #22C55E' : '0 0 2px #22C55E',
               transition: 'box-shadow 0.6s ease',
             }} />
-            <span style={{ fontSize: 13, fontWeight: 900, color: '#4ade80', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: '#4ade80', letterSpacing: '0.04em' }}>
               {de ? 'BEREIT' : 'READY'}
             </span>
           </div>
@@ -1692,12 +1692,12 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
           {opponents.map(t => (
             <div key={t.id} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '8px 14px', borderRadius: 14,
+              padding: '8px 14px', borderRadius: 16,
               background: `${t.color}08`,
               border: `1px solid ${t.color}22`,
             }}>
               <QQTeamAvatar avatarId={t.avatarId} size={28} />
-              <span style={{ fontWeight: 800, fontSize: 16, color: t.color }}>{t.name}</span>
+              <span style={{ fontWeight: 900, fontSize: 16, color: t.color }}>{t.name}</span>
             </div>
           ))}
           {opponents.length === 0 && (
@@ -1777,7 +1777,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
       }}>
         {/* Top label */}
         <div style={{
-          fontSize: 12, fontWeight: 900, letterSpacing: '0.18em',
+          fontSize: 12, fontWeight: 900, letterSpacing: '0.1em',
           textTransform: 'uppercase', color: '#FEF08A',
           animation: 'tcreveal 0.4s ease both',
         }}>
@@ -1787,7 +1787,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
         {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring, daher kein Wrapper-Disc mehr */}
         <QQTeamAvatar avatarId={myTeam.avatarId} size={160} style={{
           animation: 'tcTeamPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
-          boxShadow: `0 0 32px ${color}66`,
+          boxShadow: `0 0 32px ${color}55`,
         }} />
 
         {/* Team name banner */}
@@ -1806,7 +1806,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
         <div style={{
           fontSize: 22, fontWeight: 900,
           color: '#FBBF24', textAlign: 'center',
-          letterSpacing: '0.06em',
+          letterSpacing: '0.04em',
           textShadow: '0 2px 14px rgba(251,191,36,0.4)',
           animation: 'tcreveal 0.5s ease 0.4s both',
         }}>
@@ -1955,7 +1955,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
             return (
               <>
-                <div style={{ fontSize: 13, fontWeight: 800, color, letterSpacing: '0.06em', marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '0.04em', marginBottom: 6 }}>
                   {phaseName}
                 </div>
                 <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44 }}>
@@ -2009,7 +2009,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
             if (!info) return null;
             return (
               <>
-                <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: catColor, letterSpacing: '0.04em', marginBottom: 8 }}>
                   {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                 </div>
                 <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}><QQEmojiIcon emoji={info.emoji}/></div>
@@ -2030,7 +2030,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
         ) : (
           /* Category reveal — already seen, compact */
           <>
-            <div style={{ fontSize: 13, fontWeight: 800, color: catColor, letterSpacing: '0.06em', marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: catColor, letterSpacing: '0.04em', marginBottom: 6 }}>
               {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
             </div>
             {/* Progress dots */}
@@ -2138,7 +2138,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
 
   return (
     <div style={{
-      borderRadius: 22,
+      borderRadius: 24,
       animation: isCritical && !isRevealed ? 'tcCriticalGlow 0.7s ease-in-out infinite' : undefined,
     }}>
     <CozyCard key={q.id} borderColor={cardBorder} pulse={!isRevealed}>
@@ -2147,7 +2147,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14,
         padding: '6px 16px', borderRadius: 999,
         background: `${catAccent}18`, border: `2px solid ${catAccent}44`,
-        color: catAccent, fontSize: 15, fontWeight: 900, letterSpacing: '0.06em',
+        color: catAccent, fontSize: 15, fontWeight: 900, letterSpacing: '0.04em',
         boxShadow: `0 0 16px ${catAccent}22`,
       }}>
         {(() => {
@@ -2175,7 +2175,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Answer input (active only) */}
       {!isRevealed && s.hotPotatoActiveTeamId === myTeamId && (
         <div style={{
-          padding: '12px 16px', borderRadius: 14, textAlign: 'center',
+          padding: '12px 16px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(239,68,68,0.15)', border: '2px solid rgba(239,68,68,0.4)',
           fontSize: 18, fontWeight: 900, color: '#f87171',
           animation: 'tcpulse 1.5s ease-in-out infinite',
@@ -2186,7 +2186,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       )}
       {!isRevealed && s.hotPotatoActiveTeamId && s.hotPotatoActiveTeamId !== myTeamId && (
         <div style={{
-          padding: '8px 14px', borderRadius: 12, textAlign: 'center',
+          padding: '8px 14px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           fontSize: 14, color: '#64748b', marginBottom: 8,
         }}>
@@ -2195,7 +2195,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       )}
       {!isRevealed && s.hotPotatoEliminated.includes(myTeamId) && (
         <div style={{
-          padding: '8px 14px', borderRadius: 12, textAlign: 'center',
+          padding: '8px 14px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(239,68,68,0.1)', fontSize: 14, color: '#f87171', marginBottom: 8,
         }}>
           {t.potato.out[lang]}
@@ -2208,7 +2208,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Team answer progress (shown when not yet submitted & others answering) */}
       {!isRevealed && !s.answers.find(a => a.teamId === myTeamId) && s.answers.length > 0 && s.teams.length > 1 && (
         <div style={{
-          marginTop: 6, textAlign: 'center', fontSize: 13, color: '#94a3b8', fontWeight: 600,
+          marginTop: 6, textAlign: 'center', fontSize: 13, color: '#94a3b8', fontWeight: 700,
           animation: 'tcreveal 0.3s ease both',
         }}>
           {s.answers.length}/{s.teams.length} Teams {lang === 'de' ? 'haben schon geantwortet' : 'already answered'}
@@ -2218,7 +2218,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Revealed answer */}
       {isRevealed && s.revealedAnswer && (
         <div style={{
-          marginTop: 8, padding: '12px 16px', borderRadius: 14,
+          marginTop: 8, padding: '12px 16px', borderRadius: 16,
           background: 'rgba(34,197,94,0.08)', border: '2px solid rgba(34,197,94,0.3)',
           fontSize: 20, fontWeight: 900, color: '#4ade80',
           animation: 'tcreveal 0.4s ease both',
@@ -2252,9 +2252,9 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                     : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
           return (
             <div style={{
-              marginTop: 8, padding: '10px 14px', borderRadius: 12,
+              marginTop: 8, padding: '10px 14px', borderRadius: 16,
               background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
-              fontSize: 15, fontWeight: 800, color: '#4ade80', textAlign: 'center',
+              fontSize: 15, fontWeight: 900, color: '#4ade80', textAlign: 'center',
               animation: 'tcwinBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
               boxShadow: '0 0 20px rgba(34,197,94,0.25)',
             }}>
@@ -2298,10 +2298,10 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               : (isEn ? `😔 ${winnerTeam.name} got it right.` : `😔 ${winnerTeam.name} hatte Recht.`);
           return (
             <div style={{
-              marginTop: 8, padding: '10px 14px', borderRadius: 12,
+              marginTop: 8, padding: '10px 14px', borderRadius: 16,
               background: iWasAlsoCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
               border: `1px solid ${iWasAlsoCorrect ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
-              fontSize: 14, fontWeight: 800, color: iWasAlsoCorrect ? '#4ade80' : '#64748b', textAlign: 'center',
+              fontSize: 14, fontWeight: 900, color: iWasAlsoCorrect ? '#4ade80' : '#64748b', textAlign: 'center',
               animation: 'tcreveal 0.4s ease 0.2s both',
             }}>
               {loseMsg}
@@ -2390,7 +2390,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return (
           <div style={{
             marginTop: 10,
-            padding: '10px 14px', borderRadius: 12,
+            padding: '10px 14px', borderRadius: 16,
             background: isCorrect === true ? 'rgba(34,197,94,0.10)'
               : isCorrect === false ? 'rgba(255,255,255,0.04)'
               : 'rgba(255,255,255,0.04)',
@@ -2436,7 +2436,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span>💰 {lang === 'en' ? 'Your bets' : 'Eure Punkte'}</span>
               <span style={{ color: earned > 0 ? '#4ade80' : '#94a3b8' }}>
                 {lang === 'en' ? `+${earned} pts` : `+${earned} Pkt`}
@@ -2450,7 +2450,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               return (
                 <div key={i} style={{
                   position: 'relative', overflow: 'hidden',
-                  padding: '8px 10px', borderRadius: 10,
+                  padding: '8px 10px', borderRadius: 8,
                   background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
@@ -2465,7 +2465,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                     <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>
                       {isCorrect ? '✓' : ''}
                     </span>
-                    <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: isCorrect ? '#4ade80' : '#e2e8f0' }}>
+                    <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: isCorrect ? '#4ade80' : '#e2e8f0' }}>
                       {opt}
                     </span>
                     <span style={{
@@ -2497,7 +2497,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const hits = myHits.filter(Boolean).length;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span><QQEmojiIcon emoji="📊"/> {lang === 'en' ? 'Your order' : 'Eure Reihenfolge'}</span>
               <span style={{ color: hits === correctSeq.length ? '#4ade80' : '#94a3b8' }}>
                 {hits}/{correctSeq.length} {lang === 'en' ? 'correct' : 'richtig'}
@@ -2509,16 +2509,16 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 10px', borderRadius: 10,
+                  padding: '8px 10px', borderRadius: 8,
                   background: ok ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
                   border: `1px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: '#64748b' }}>#{i+1}</span>
                   <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{ok ? '✓' : '✗'}</span>
-                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: ok ? '#4ade80' : '#f87171' }}>{g}</span>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: ok ? '#4ade80' : '#f87171' }}>{g}</span>
                   {!ok && correct && (
-                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
+                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>
                       → {correct}
                     </span>
                   )}
@@ -2558,7 +2558,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         };
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span>📝 {lang === 'en' ? 'Your answers' : 'Eure Tipps'}</span>
               <span style={{ color: myHits.length > 0 ? '#4ade80' : '#94a3b8' }}>
                 {myHits.length}/{mine.length} {lang === 'en' ? 'hit' : 'Treffer'}
@@ -2573,13 +2573,13 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 10px', borderRadius: 10,
+                  padding: '8px 10px', borderRadius: 8,
                   background: isHit ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.08)',
                   border: `1px solid ${isHit ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{isHit ? '✓' : '✗'}</span>
-                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: isHit ? '#4ade80' : '#f87171' }}>{g}</span>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: isHit ? '#4ade80' : '#f87171' }}>{g}</span>
                   {others.length > 0 && (
                     <div style={{ display: 'flex', gap: 3 }}>
                       {others.map(o => (
@@ -2611,7 +2611,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (scored.length === 0) return null;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', marginBottom: 2, letterSpacing: 0.3 }}>
               <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
             </div>
             {scored.map((a, i) => {
@@ -2622,15 +2622,15 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               return (
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 10px', borderRadius: 10,
+                  padding: '8px 10px', borderRadius: 8,
                   background: isMe ? `${team?.color ?? '#3b82f6'}22` : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${isMe ? (team?.color ?? '#3b82f6') + '88' : 'rgba(255,255,255,0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
-                  <span style={{ flex: 1, fontWeight: 800, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             })}
@@ -2643,14 +2643,14 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const eliminated = s.hotPotatoEliminated.includes(myTeamId);
         return (
           <div style={{
-            marginTop: 10, padding: '10px 14px', borderRadius: 12,
+            marginTop: 10, padding: '10px 14px', borderRadius: 16,
             background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
             border: `1px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
             <span style={{ fontSize: 20 }}>{eliminated ? <QQEmojiIcon emoji="🥔"/> : <QQEmojiIcon emoji="🏆"/>}</span>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 900, color: eliminated ? '#f87171' : '#4ade80' }}>
               {eliminated
                 ? (lang === 'de' ? 'Ausgeschieden' : 'Eliminated')
                 : (lang === 'de' ? 'Überlebt!' : 'Survived!')}
@@ -2664,14 +2664,14 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const eliminated = s.imposterEliminated.includes(myTeamId);
         return (
           <div style={{
-            marginTop: 10, padding: '10px 14px', borderRadius: 12,
+            marginTop: 10, padding: '10px 14px', borderRadius: 16,
             background: eliminated ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.10)',
             border: `1px solid ${eliminated ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.35)'}`,
             display: 'flex', alignItems: 'center', gap: 10,
             animation: 'tcreveal 0.35s ease 0.15s both',
           }}>
             <span style={{ fontSize: 20 }}>{eliminated ? <QQEmojiIcon emoji="🕵️"/> : '✓'}</span>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: eliminated ? '#f87171' : '#4ade80' }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 900, color: eliminated ? '#f87171' : '#4ade80' }}>
               {eliminated
                 ? (lang === 'de' ? 'Imposter erwischt — ausgeschieden' : 'Caught the imposter — eliminated')
                 : (lang === 'de' ? 'Wahre Aussage gewählt' : 'Picked a true statement')}
@@ -2683,9 +2683,9 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Nobody got it right */}
       {isRevealed && !s.correctTeamId && (
         <div style={{
-          marginTop: 8, padding: '10px 14px', borderRadius: 12, textAlign: 'center',
+          marginTop: 8, padding: '10px 14px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-          fontSize: 14, fontWeight: 800, color: '#f87171',
+          fontSize: 14, fontWeight: 900, color: '#f87171',
           animation: 'tcreveal 0.4s ease 0.2s both',
         }}>
           {s.answers.length === 0
@@ -2709,7 +2709,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           const positionEn = n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
           return (
             <div style={{
-              marginTop: 8, padding: '10px 14px', borderRadius: 12, textAlign: 'center',
+              marginTop: 8, padding: '10px 14px', borderRadius: 16, textAlign: 'center',
               background: 'rgba(34,197,94,0.10)',
               border: '1px solid rgba(34,197,94,0.30)',
               fontSize: 13, fontWeight: 700, color: '#86EFAC',
@@ -2737,7 +2737,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           : (lang === 'de' ? '😕 Leider falsch' : '😕 Sadly wrong');
         return (
           <div style={{
-            marginTop: 8, padding: '12px 16px', borderRadius: 14, textAlign: 'center',
+            marginTop: 8, padding: '12px 16px', borderRadius: 16, textAlign: 'center',
             background: 'rgba(148,163,184,0.10)',
             border: '1px dashed rgba(148,163,184,0.35)',
             animation: 'tcTrostIn 0.5s ease 0.45s both',
@@ -2792,7 +2792,7 @@ const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
   const borderColor = submitted
     ? '#22C55E'
     : value
-      ? `${catColor}66`
+      ? `${catColor}55`
       : urgency
         ? 'rgba(239,68,68,0.3)'
         : 'rgba(255,255,255,0.1)';
@@ -2852,7 +2852,7 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
         cursor: canSubmit && !submitted ? 'pointer' : 'default',
         fontSize: 18,
         opacity: canSubmit || submitted ? 1 : 0.6,
-        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}66, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
+        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
         animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
       }}
     >
@@ -2872,7 +2872,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
 }) {
   return (
     <div style={{
-      padding: '20px 22px', borderRadius: 18, textAlign: 'center',
+      padding: '20px 22px', borderRadius: 16, textAlign: 'center',
       background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(34,197,94,0.08))',
       border: '2px solid rgba(34,197,94,0.55)',
       boxShadow: '0 0 40px rgba(34,197,94,0.2), 0 6px 20px rgba(0,0,0,0.4)',
@@ -2893,7 +2893,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
             {lang === 'de' ? 'Angekommen!' : 'Received!'}
           </span>
           {myRank != null && totalTeams != null && totalTeams > 1 && (
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.4 }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', letterSpacing: 0.4 }}>
               #{myRank} {lang === 'de' ? 'von' : 'of'} {totalTeams}
             </span>
           )}
@@ -2901,7 +2901,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
       </div>
       {/* Answer-Preview */}
       <div style={{
-        padding: '10px 14px', borderRadius: 10,
+        padding: '10px 14px', borderRadius: 8,
         background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
         fontSize: 17, fontWeight: 900, color: '#F1F5F9', lineHeight: 1.3,
         wordBreak: 'break-word',
@@ -2912,10 +2912,10 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
       {pendingTeams && pendingTeams.length > 0 && (
         <div style={{
           display: 'flex', flexDirection: 'column', gap: 6,
-          padding: '8px 10px', borderRadius: 10,
+          padding: '8px 10px', borderRadius: 8,
           background: 'rgba(0,0,0,0.2)', border: '1px dashed rgba(255,255,255,0.12)',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', letterSpacing: 0.5 }}>
             {lang === 'de' ? 'Noch offen:' : 'Still open:'}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
@@ -2927,7 +2927,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '3px 10px 3px 3px', borderRadius: 999,
                 background: 'rgba(0,0,0,0.4)',
-                border: `1.5px solid ${t.color}77`,
+                border: `1.5px solid ${t.color}88`,
                 opacity: 0.9,
                 animation: 'tcpulse 1.8s ease-in-out infinite',
               }}>
@@ -2980,7 +2980,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (!myAnswer && (s as any).timerExpired === true && s.phase === 'QUESTION_ACTIVE') {
     return (
       <div style={{
-        padding: '20px 22px', borderRadius: 18, textAlign: 'center',
+        padding: '20px 22px', borderRadius: 16, textAlign: 'center',
         background: 'linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.06))',
         border: '2px solid rgba(239,68,68,0.45)',
         boxShadow: '0 0 30px rgba(239,68,68,0.18), 0 6px 18px rgba(0,0,0,0.4)',
@@ -3139,7 +3139,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
       {secondsLeft !== null && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          marginBottom: 8, padding: '6px 12px', borderRadius: 10,
+          marginBottom: 8, padding: '6px 12px', borderRadius: 8,
           background: urgency ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${urgency ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`,
           transition: 'all 0.3s',
@@ -3157,7 +3157,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
           weiter tippen (continuous typing seit c4d0404e). */}
       {lastAttempt && (
         <div style={{
-          marginBottom: 8, padding: '8px 12px', borderRadius: 10,
+          marginBottom: 8, padding: '8px 12px', borderRadius: 8,
           background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)',
           fontSize: 13, fontWeight: 700, color: '#fca5a5', textAlign: 'center',
           animation: 'tcpulse 0.4s ease-out',
@@ -3255,7 +3255,7 @@ function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             aria-pressed={isSelected}
             style={{
               display: 'flex', alignItems: 'center', gap: 0,
-              borderRadius: 14, overflow: 'hidden', border: 'none', cursor: 'pointer',
+              borderRadius: 16, overflow: 'hidden', border: 'none', cursor: 'pointer',
               background: isSelected ? `${color}30` : 'rgba(255,255,255,0.04)',
               boxShadow: isSelected ? `0 4px 0 ${color}55` : '0 3px 0 rgba(0,0,0,0.4)',
               transform: isSelected ? 'translateY(-2px)' : 'none',
@@ -3357,7 +3357,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
           <div key={i} style={{
             display: 'grid', gridTemplateColumns: '1fr auto auto auto',
             alignItems: 'center', gap: 8,
-            padding: '10px 14px', borderRadius: 14,
+            padding: '10px 14px', borderRadius: 16,
             background: pts > 0 ? `${color}12` : 'rgba(255,255,255,0.04)',
             border: `2px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
             transition: 'all 0.15s',
@@ -3370,7 +3370,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             </div>
             {/* − */}
             <button onClick={() => updateBet(i, -1)} disabled={pts <= 0} style={{
-              width: 48, height: 48, borderRadius: 12, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              width: 48, height: 48, borderRadius: 16, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : '#334155',
               cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}>−</button>
@@ -3380,7 +3380,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             </div>
             {/* + */}
             <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0} style={{
-              width: 48, height: 48, borderRadius: 12, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+              width: 48, height: 48, borderRadius: 16, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : '#334155',
               cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}>+</button>
@@ -3496,7 +3496,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{
-          padding: '10px 14px', borderRadius: 12,
+          padding: '10px 14px', borderRadius: 16,
           background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
           fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
         }}>
@@ -3524,7 +3524,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
           lang={lang}
         />
         {submitted && (
-          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 600, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 700, lineHeight: 1.4 }}>
             {lang === 'de' ? 'Sobald alle eingereicht haben, geht\'s zum Voting.' : 'Once everyone\'s in, voting starts.'}
           </div>
         )}
@@ -3536,7 +3536,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (phase === 'review') {
     return (
       <div style={{
-        padding: '14px 16px', borderRadius: 12,
+        padding: '14px 16px', borderRadius: 16,
         background: 'rgba(244,114,182,0.10)', border: '1px solid rgba(244,114,182,0.3)',
         textAlign: 'center', fontSize: 14, color: '#fbcfe8', fontWeight: 700,
       }}>
@@ -3553,7 +3553,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{
-          padding: '10px 14px', borderRadius: 12,
+          padding: '10px 14px', borderRadius: 16,
           background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
           fontSize: 13, color: '#fbcfe8', fontWeight: 700, lineHeight: 1.4,
         }}>
@@ -3571,7 +3571,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
               onClick={() => !disabled && vote(opt.id)}
               disabled={disabled}
               style={{
-                padding: '14px 16px', borderRadius: 12, border: 'none',
+                padding: '14px 16px', borderRadius: 16, border: 'none',
                 textAlign: 'left',
                 background: chosen ? `${catColor}30`
                   : isOwn ? 'rgba(255,255,255,0.02)'
@@ -3579,7 +3579,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
                 border_: undefined,
                 outline: chosen ? `2px solid ${catColor}` : `1px solid ${isOwn ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
                 color: isOwn ? '#475569' : '#F1F5F9',
-                fontFamily: 'inherit', fontSize: 16, fontWeight: 800,
+                fontFamily: 'inherit', fontSize: 16, fontWeight: 900,
                 cursor: disabled ? 'default' : 'pointer',
                 opacity: isOwn ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -3597,7 +3597,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
               }}>{String.fromCharCode(65 + i)}</span>
               <span style={{ flex: 1, wordBreak: 'break-word' }}>{opt.text}</span>
               {isOwn && (
-                <span style={{ fontSize: 10, color: '#475569', fontWeight: 800 }}>
+                <span style={{ fontSize: 10, color: '#475569', fontWeight: 900 }}>
                   {lang === 'de' ? 'dein Bluff' : 'your bluff'}
                 </span>
               )}
@@ -3605,7 +3605,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
           );
         })}
         {myVote && (
-          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 600 }}>
+          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 700 }}>
             {lang === 'de' ? 'Stimme abgegeben — wartet auf den Rest.' : 'Voted — waiting on others.'}
           </div>
         )}
@@ -3622,12 +3622,12 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if ((myPoints?.truthAccident ?? 0) > 0) breakdown.push(lang === 'de' ? `+${myPoints!.truthAccident} Zufall die Wahrheit getippt!` : `+${myPoints!.truthAccident} accidental truth!`);
     return (
       <div style={{
-        padding: '16px 18px', borderRadius: 14,
+        padding: '16px 18px', borderRadius: 16,
         background: total > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
         border: total > 0 ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(255,255,255,0.10)',
         display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center',
       }}>
-        <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           {lang === 'de' ? 'Eure Teilpunkte' : 'Your points'}
         </div>
         <div style={{
@@ -3704,9 +3704,9 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
           return (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px', borderRadius: 10,
+              padding: '10px 12px', borderRadius: 8,
               background: isVisible ? `${hintColor}18` : 'rgba(255,255,255,0.03)',
-              border: isVisible ? `1px solid ${hintColor}66` : '1px dashed rgba(255,255,255,0.10)',
+              border: isVisible ? `1px solid ${hintColor}55` : '1px dashed rgba(255,255,255,0.10)',
               boxShadow: isCurrent ? `0 0 12px ${hintColor}44` : 'none',
               opacity: isVisible ? 1 : 0.6,
               transition: 'all 0.4s ease',
@@ -3718,7 +3718,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
                 width: 32, textAlign: 'center',
               }}>{lang === 'de' ? `H${i+1}` : `C${i+1}`}</span>
               <span style={{
-                fontSize: 16, fontWeight: 800,
+                fontSize: 16, fontWeight: 900,
                 color: isVisible ? '#F1F5F9' : 'transparent',
               }}>{isVisible ? hintsAll[i] : '?'}</span>
             </div>
@@ -3731,12 +3731,12 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       {!alreadyAnswered && (
         <>
           <div style={{
-            padding: '10px 14px', borderRadius: 12,
+            padding: '10px 14px', borderRadius: 16,
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.08)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontSize: 12, fontWeight: 800, color: '#94A3B8',
-            letterSpacing: '0.05em', textTransform: 'uppercase',
+            fontSize: 12, fontWeight: 900, color: '#94A3B8',
+            letterSpacing: '0.04em', textTransform: 'uppercase',
           }}>
             <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
             <span style={{ color: '#FBBF24' }}>
@@ -3747,7 +3747,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             <button
               onClick={() => emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId })}
               style={{
-                padding: '12px', borderRadius: 12,
+                padding: '12px', borderRadius: 16,
                 border: '2px dashed rgba(167,139,250,0.5)',
                 background: 'rgba(167,139,250,0.08)',
                 color: '#C4B5FD', fontWeight: 900, fontSize: 14,
@@ -3769,7 +3769,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}
       {isMyWin && (
         <div style={{
-          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
+          padding: '10px 14px', borderRadius: 8, textAlign: 'center',
           background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.45)',
           fontSize: 14, fontWeight: 900, color: '#86EFAC',
         }}>
@@ -3778,9 +3778,9 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       )}
       {isLocked && (
         <div style={{
-          padding: '10px 14px', borderRadius: 10, textAlign: 'center',
+          padding: '10px 14px', borderRadius: 8, textAlign: 'center',
           background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.4)',
-          fontSize: 13, fontWeight: 800, color: '#FCA5A5',
+          fontSize: 13, fontWeight: 900, color: '#FCA5A5',
         }}>
           {lang === 'de' ? '✕ Falsch — gesperrt für diese Frage.' : '✕ Wrong — locked out for this question.'}
         </div>
@@ -3806,7 +3806,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             label={lang === 'de' ? '✓ Tipp abgeben (1×)' : '✓ Submit guess (1×)'}
             lang={lang}
           />
-          <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 600 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
             {lang === 'de' ? '⚠ Nur ein Tipp — falsch = gesperrt für diese Frage' : '⚠ One try only — wrong = locked out'}
           </div>
         </>
@@ -3863,7 +3863,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   // Not yet started
   if (!s.imposterActiveTeamId && !isEliminated) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(255,255,255,0.04)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
         {t.imposter.waiting[lang]}
       </div>
     );
@@ -3871,7 +3871,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   // Eliminated
   if (isEliminated) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 15, fontWeight: 800 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 15, fontWeight: 900 }}>
         {t.imposter.eliminated[lang]}
       </div>
     );
@@ -3879,7 +3879,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   // Waiting for other team
   if (!isMyTurn) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: 14, fontWeight: 700 }}>
         <QQEmojiIcon emoji="🕵️"/> {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing' : 'wählt gerade'}<AnimatedDots />
         <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
@@ -3888,7 +3888,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
   // Already submitted this turn
   if (submitted) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 12, textAlign: 'center', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80', fontSize: 15, fontWeight: 800 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80', fontSize: 15, fontWeight: 900 }}>
         {t.imposter.chosen[lang]}
       </div>
     );
@@ -3932,7 +3932,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
           background: 'rgba(148,45,89,0.18)',
           borderTop: '1px solid rgba(148,45,89,0.5)',
           borderBottom: '1px solid rgba(148,45,89,0.5)',
-          fontSize: 'clamp(14px,3.8vw,17px)', fontWeight: 800, color: '#ffe4f2',
+          fontSize: 'clamp(14px,3.8vw,17px)', fontWeight: 900, color: '#ffe4f2',
           lineHeight: 1.35,
           animation: 'tcwheelslide 0.22s ease both',
         }}>
@@ -3998,7 +3998,7 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
       {criteria && (
-        <div style={{ fontSize: 12, color: catColor, fontWeight: 800, textAlign: 'center', padding: '4px 10px', borderRadius: 8, background: `${catColor}12`, border: `1px solid ${catColor}33` }}>
+        <div style={{ fontSize: 12, color: catColor, fontWeight: 900, textAlign: 'center', padding: '4px 10px', borderRadius: 8, background: `${catColor}12`, border: `1px solid ${catColor}33` }}>
           🔀 {criteria}
         </div>
       )}
@@ -4008,7 +4008,7 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
       {items.map((item, i) => (
         <div key={item + i} style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          padding: '6px 10px', borderRadius: 12,
+          padding: '6px 10px', borderRadius: 16,
           background: 'rgba(26,32,53,0.9)', border: `1px solid ${catColor}22`,
           animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
         }}>
@@ -4020,8 +4020,8 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
               fuer Daumen-Bedienung zu klein — Sortier-Pfeile auf 44x40, mit
               klarem Gap, damit der Trefferbereich nicht ueberlappt. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i > 0 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i > 0 ? `${catColor}10` : 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 800 }}>▲</button>
-            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i < items.length-1 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i < items.length-1 ? `${catColor}10` : 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 800 }}>▼</button>
+            <button onClick={() => move(i, -1)} disabled={i === 0} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i > 0 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i > 0 ? `${catColor}10` : 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}>▲</button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i < items.length-1 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i < items.length-1 ? `${catColor}10` : 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}>▼</button>
           </div>
         </div>
       ))}
@@ -4076,7 +4076,7 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
           Fold und war nicht sichtbar bis User scrollt. 48vh laesst Submit-Btn
           komfortabel oberhalb der Bildschirmunterkante. */}
       <div style={{
-        borderRadius: 14, overflow: 'hidden',
+        borderRadius: 16, overflow: 'hidden',
         border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
         height: 'clamp(280px, 48vh, 480px)',
         position: 'relative',
@@ -4094,7 +4094,7 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
         </MapContainer>
       </div>
       {pin
-        ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 800 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
+        ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 900 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
         : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>{t.pinIt.noPin[lang]}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
@@ -4152,7 +4152,7 @@ function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; du
         <div style={{
           height: '100%', borderRadius: 5, background: color,
           width: `${pct}%`, transition: 'width 0.1s linear, background 0.3s',
-          boxShadow: isCritical ? `0 0 14px ${color}aa` : `0 0 8px ${color}66`,
+          boxShadow: isCritical ? `0 0 14px ${color}aa` : `0 0 8px ${color}55`,
         }} />
       </div>
     </div>
@@ -4432,8 +4432,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 margin: '0 auto 8px',
                 animation: 'tcfloat 2s ease-in-out infinite',
               }} />
-              <div style={{ fontWeight: 800, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
-              <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, fontWeight: 600 }}>
+              <div style={{ fontWeight: 900, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
+              <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, fontWeight: 700 }}>
                 {isComebackStealPause
                   ? (pendingTeam.id === myTeamId
                       ? (lang === 'de' ? '✓ Geklaut — warte auf Moderator' : '✓ Stolen — waiting for moderator')
@@ -4445,13 +4445,13 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           ) : (
             /* Placement done — show mini grid + score summary */
             <>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
                 {lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board'}
               </div>
               <div style={{
                 display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,
                 gap: 3, width: '100%', marginBottom: 6,
-                padding: 6, borderRadius: 10,
+                padding: 6, borderRadius: 8,
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}>
@@ -4488,7 +4488,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : isNew
                             ? `0 0 14px ${cellTeam!.color}aa`
                             : inStreak
-                              ? `0 0 8px ${cellTeam!.color}66, inset 0 1px 0 rgba(255,255,255,0.15)`
+                              ? `0 0 8px ${cellTeam!.color}55, inset 0 1px 0 rgba(255,255,255,0.15)`
                               : cellTeam
                                 ? `inset 0 1px 0 rgba(255,255,255,0.1)`
                                 : 'none',
@@ -4603,7 +4603,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         <div style={{
           background: 'rgba(250, 204, 21, 0.12)',
           border: '1px solid rgba(250, 204, 21, 0.35)',
-          borderRadius: 10,
+          borderRadius: 8,
           padding: '10px 12px',
           marginBottom: 12,
           fontSize: 13,
@@ -4685,7 +4685,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
           <div style={{
             display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
             gap: 4, justifyContent: 'center',
-            padding: 6, borderRadius: 10,
+            padding: 6, borderRadius: 8,
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.06)',
           }}>
@@ -4715,7 +4715,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     // niedrige Color-Tinte als BG, Border voll gesaettigt = klar
                     // erkennbarer Team-Identifier ohne Avatar-Konflikt.
                     background: isPending ? `${actionColor}88`
-                      : isSwapSelected ? `${actionColor}66`
+                      : isSwapSelected ? `${actionColor}55`
                       : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}55, ${team?.color ?? '#F59E0B'}2a)`
                       : team ? `linear-gradient(135deg, ${team.color}48, ${team.color}24)` : 'rgba(255,255,255,0.04)',
                     border: isPending ? `3px dashed ${actionColor}`
@@ -4730,7 +4730,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     // Sattigung; nur leere Cells weiterhin gedimmt.
                     opacity: team ? 1 : (clickable || isSwapSelected ? 1 : 0.3),
                     transition: 'all 0.15s',
-                    boxShadow: isPending ? `0 0 0 4px ${actionColor}66, 0 0 22px ${actionColor}aa`
+                    boxShadow: isPending ? `0 0 0 4px ${actionColor}55, 0 0 22px ${actionColor}aa`
                       : isSwapSelected ? `0 0 14px ${actionColor}88`
                       : isStuckCandidate ? '0 0 10px #F59E0B88'
                       : isFrozenCell ? '0 0 8px rgba(147,210,255,0.5)'
@@ -4834,7 +4834,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (
                       <div style={{
-                        position: 'absolute', inset: -4, borderRadius: 10,
+                        position: 'absolute', inset: -4, borderRadius: 8,
                         border: '2px solid rgba(245,158,11,0.7)',
                         animation: 'stapelDustRing 0.55s ease-out 0.1s both',
                         pointerEvents: 'none', zIndex: 4,
@@ -4860,10 +4860,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               Flow transparent. */}
           {pendingPick && (
             <div style={{
-              marginTop: 12, padding: '10px 14px', borderRadius: 12,
+              marginTop: 12, padding: '10px 14px', borderRadius: 16,
               background: `linear-gradient(135deg, ${actionColor}1a, ${actionColor}08)`,
               border: `1px solid ${actionColor}55`,
-              fontSize: 14, fontWeight: 800, color: '#e2e8f0', textAlign: 'center',
+              fontSize: 14, fontWeight: 900, color: '#e2e8f0', textAlign: 'center',
               lineHeight: 1.4,
               animation: 'tcfloat 1.6s ease-in-out infinite',
             }}>
@@ -4896,7 +4896,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         <button
           onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); emit('qq:comebackUndo', { roomCode, teamId: myTeamId }); }}
           style={{
-            marginTop: 14, width: '100%', padding: '10px 12px', borderRadius: 10,
+            marginTop: 14, width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
             color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
@@ -4912,7 +4912,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         <button
           onClick={() => { setFreeMode(null); setSwapFirst(null); setPendingPick(null); }}
           style={{
-            marginTop: 12, width: '100%', padding: '10px 12px', borderRadius: 10,
+            marginTop: 12, width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
             color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
@@ -4977,11 +4977,11 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
 
         {/* Anchor-Info */}
         <div style={{
-          padding: '12px 14px', borderRadius: 14,
+          padding: '12px 14px', borderRadius: 16,
           background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.38)',
           textAlign: 'center', marginBottom: 10,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#86efac', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#86efac', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
             {pair.anchorLabel}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#86efac', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
@@ -4994,12 +4994,12 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
 
         {/* Subject */}
         <div style={{
-          padding: '12px 14px', borderRadius: 14,
+          padding: '12px 14px', borderRadius: 16,
           background: isReveal ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.1)',
           border: isReveal ? '2px solid #FBBF24' : '1px dashed rgba(251,191,36,0.5)',
           textAlign: 'center', marginBottom: 14,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#FDE68A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
             {pair.subjectLabel}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#FBBF24', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
@@ -5032,7 +5032,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               onClick={() => submit('higher')}
               disabled={answered}
               style={{
-                padding: '16px 10px', borderRadius: 14,
+                padding: '16px 10px', borderRadius: 16,
                 background: myAnswer === 'higher' ? '#22C55E' : 'rgba(34,197,94,0.15)',
                 border: `2px solid ${myAnswer === 'higher' ? '#22C55E' : 'rgba(34,197,94,0.5)'}`,
                 color: myAnswer === 'higher' ? '#fff' : '#86efac',
@@ -5046,7 +5046,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               onClick={() => submit('lower')}
               disabled={answered}
               style={{
-                padding: '16px 10px', borderRadius: 14,
+                padding: '16px 10px', borderRadius: 16,
                 background: myAnswer === 'lower' ? '#EF4444' : 'rgba(239,68,68,0.15)',
                 border: `2px solid ${myAnswer === 'lower' ? '#EF4444' : 'rgba(239,68,68,0.5)'}`,
                 color: myAnswer === 'lower' ? '#fff' : '#fca5a5',
@@ -5060,16 +5060,16 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         )}
         {!isReveal && answered && (
           <div style={{
-            marginTop: 12, padding: '8px 12px', borderRadius: 10,
+            marginTop: 12, padding: '8px 12px', borderRadius: 8,
             background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)',
-            fontSize: 13, fontWeight: 800, color: '#FDE68A', textAlign: 'center',
+            fontSize: 13, fontWeight: 900, color: '#FDE68A', textAlign: 'center',
           }}>
             ⏳ {lang === 'en' ? 'Waiting for other teams…' : 'Warte auf andere Teams…'}
           </div>
         )}
         {isReveal && (
           <div style={{
-            padding: '12px 14px', borderRadius: 12, textAlign: 'center',
+            padding: '12px 14px', borderRadius: 16, textAlign: 'center',
             background: myCorrect ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.18)',
             border: `2px solid ${myCorrect ? '#22C55E' : '#EF4444'}`,
             fontSize: 16, fontWeight: 900,
@@ -5079,7 +5079,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               ? (lang === 'en' ? '✓ Correct! +1 cell to steal' : '✓ Richtig! +1 Feld zum Klauen')
               : (lang === 'en' ? '✕ Wrong this round' : '✕ Diese Runde daneben')}
             {(hl.winnings[myTeamId] ?? 0) > 0 && (
-              <div style={{ fontSize: 12, fontWeight: 800, marginTop: 4, opacity: 0.85 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, marginTop: 4, opacity: 0.85 }}>
                 {lang === 'en' ? 'Total so far: ' : 'Insgesamt bisher: '}
                 {hl.winnings[myTeamId]} {hl.winnings[myTeamId] === 1
                   ? (lang === 'en' ? 'cell' : 'Feld')
@@ -5140,7 +5140,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
                 margin: '0 auto',
                 animation: 'tcfloat 2s ease-in-out infinite',
               }} />
-              <div style={{ fontWeight: 800, color: comebackTeam.color, marginTop: 6 }}>{comebackTeam.name}</div>
+              <div style={{ fontWeight: 900, color: comebackTeam.color, marginTop: 6 }}>{comebackTeam.name}</div>
             </>
           )}
           <div style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
@@ -5163,7 +5163,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
     if (s.comebackAction === 'SWAP_2' && s.phase === 'COMEBACK_CHOICE') {
       return (
         <CozyCard borderColor="#8B5CF6">
-          <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
+          <div style={{ fontWeight: 900, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
             {lang === 'de' ? '🔄 Tausch wird vorbereitet…' : '🔄 Preparing swap…'}
           </div>
         </CozyCard>
@@ -5171,7 +5171,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
     }
     return (
       <CozyCard borderColor="#F59E0B">
-        <div style={{ fontWeight: 800, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
+        <div style={{ fontWeight: 900, color: '#e2e8f0', textAlign: 'center', fontSize: 17 }}>
           {s.comebackAction === 'PLACE_2' && t.comeback.activePlace[lang]}
           {s.comebackAction === 'STEAL_1' && t.comeback.activeSteal[lang]}
           {s.comebackAction === 'SWAP_2'  && t.comeback.activeSwap[lang]}
@@ -5228,7 +5228,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
                 emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action });
               }}
               style={{
-                padding: '14px 16px', borderRadius: 14,
+                padding: '14px 16px', borderRadius: 16,
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 background: COZY_CARD_BG,
                 border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : opt.color + '44'}`,
@@ -5242,7 +5242,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
                 ? <QQIcon slug={opt.iconSlug} size={32} alt={opt.label} />
                 : <span style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={opt.icon}/></span>}
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, color: disabled ? '#64748b' : opt.color, fontSize: 15 }}>{opt.label}</div>
+                <div style={{ fontWeight: 900, color: disabled ? '#64748b' : opt.color, fontSize: 15 }}>{opt.label}</div>
                 <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: disabled ? '#475569' : '#475569', marginTop: 2 }}>
                   {disabled ? `🚫 ${opt.reason}` : opt.desc}
                 </div>
@@ -5351,7 +5351,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
             </span>
           </div>
           {locked && (
-            <div style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 800, textAlign: 'center' }}>
+            <div style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 900, textAlign: 'center' }}>
               {de ? `Ausgeschieden nach ${fails} Fehlversuchen` : `Out after ${fails} fails`}
             </div>
           )}
@@ -5394,11 +5394,11 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
 
         {locked || isFinished ? (
           <div style={{
-            padding: 14, textAlign: 'center', borderRadius: 12,
+            padding: 14, textAlign: 'center', borderRadius: 16,
             background: locked ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.10)',
             border: `1px solid ${locked ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.4)'}`,
             color: locked ? '#FCA5A5' : '#86EFAC',
-            fontWeight: 800, fontSize: 14,
+            fontWeight: 900, fontSize: 14,
           }}>
             {locked
               ? (de ? `🚫 Ausgeschieden — wartet auf Auflösung.` : `🚫 Out — wait for reveal.`)
@@ -5422,7 +5422,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                     disabled={disabled}
                     onClick={() => emit('qq:connectionsSelectItem', { roomCode, teamId: myTeamId, item })}
                     style={{
-                      padding: '8px 2px', borderRadius: 10,
+                      padding: '8px 2px', borderRadius: 8,
                       background: isMyFound && myGroupColor
                         ? `linear-gradient(135deg, ${myGroupColor}38, ${myGroupColor}15)`
                         : isSelected
@@ -5435,7 +5435,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                           : '2px solid rgba(255,255,255,0.10)',
                       color: isMyFound ? '#fff' : isSelected ? '#fff' : '#e2e8f0',
                       fontSize: 'clamp(10px, 3vw, 13px)',
-                      fontWeight: 800, lineHeight: 1.1,
+                      fontWeight: 900, lineHeight: 1.1,
                       cursor: disabled ? 'default' : 'pointer',
                       minHeight: 56,
                       opacity: disabled ? 0.7 : 1,
@@ -5458,7 +5458,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
               disabled={selected.length !== 4}
               onClick={() => emit('qq:connectionsSubmit', { roomCode, teamId: myTeamId })}
               style={{
-                padding: '14px 18px', borderRadius: 14,
+                padding: '14px 18px', borderRadius: 16,
                 border: 'none',
                 background: selected.length === 4
                   ? 'linear-gradient(135deg, #22C55E, #16A34A)'
@@ -5468,7 +5468,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                 cursor: selected.length === 4 ? 'pointer' : 'not-allowed',
                 boxShadow: selected.length === 4 ? '0 4px 14px rgba(34,197,94,0.4)' : 'none',
                 fontFamily: 'inherit',
-                letterSpacing: '0.05em', textTransform: 'uppercase',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
               }}
             >
               {selected.length === 4
@@ -5521,7 +5521,7 @@ function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate;
 
         {myTeam && (
           <div style={{
-            background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 18px',
+            background: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: '14px 18px',
             border: `2px solid ${myTeam.color}44`,
           }}>
             <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700, marginBottom: 6 }}>
@@ -5540,19 +5540,19 @@ function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate;
           {sorted.map((t, i) => (
             <div key={t.id} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
-              borderRadius: 10,
+              borderRadius: 8,
               background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
             }}>
-              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: '#64748b', fontWeight: 800 }}>
+              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: '#64748b', fontWeight: 900 }}>
                 {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
-              <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: t.color }}>{t.name}</span>
+              <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{t.totalCells}</span>
             </div>
           ))}
         </div>
 
-        <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>
+        <div style={{ fontSize: 14, color: '#475569', fontWeight: 700 }}>
           {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
         </div>
       </div>
@@ -5593,7 +5593,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 display: 'inline-block', padding: '4px 14px', borderRadius: 999,
                 background: `${myTeam?.color ?? '#64748b'}18`,
                 border: `1px solid ${myTeam?.color ?? '#64748b'}44`,
-                fontSize: 14, fontWeight: 800, color: myTeam?.color ?? '#94a3b8',
+                fontSize: 14, fontWeight: 900, color: myTeam?.color ?? '#94a3b8',
               }}>
                 {lang === 'de' ? `Ihr: Platz ${myRank}` : `You: #${myRank}`}
               </div>
@@ -5607,7 +5607,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
             const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
             return (
               <div key={tm.id} style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,
                 background: tm.id === myTeamId ? `${tm.color}18` : 'rgba(255,255,255,0.03)',
                 border: tm.id === myTeamId ? `2px solid ${tm.color}44` : '1px solid rgba(255,255,255,0.06)',
                 animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
@@ -5618,7 +5618,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 <QQTeamAvatar avatarId={tm.avatarId} size={24} />
                 <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: i === 0 ? '#EAB308' : '#94a3b8' }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#94a3b8' }}>
                     {tm.largestConnected} {t.gameOver.connected[lang]}
                   </div>
                   <div style={{ fontSize: 11, color: '#475569' }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>
@@ -5631,7 +5631,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
         {/* 2026-05-02 (Stamm-Team-Code): zeige meinen Code als Wiederkommer-Anker.
             Sichtbar in GAME_OVER und THANKS — Spieler kann ihn abfotografieren. */}
         <div style={{
-          marginTop: 14, padding: '10px 14px', borderRadius: 12,
+          marginTop: 14, padding: '10px 14px', borderRadius: 16,
           background: 'rgba(251,191,36,0.08)',
           border: '1px solid rgba(251,191,36,0.30)',
           textAlign: 'center',
@@ -5639,7 +5639,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
         }}>
           <div style={{
             fontSize: 10, fontWeight: 900, color: '#FBBF24',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4,
+            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4,
           }}>
             {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
           </div>
@@ -5649,7 +5649,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
           }}>
             <div style={{
               fontSize: 22, fontWeight: 900, color: '#FDE68A',
-              fontFamily: 'monospace', letterSpacing: '0.06em',
+              fontFamily: 'monospace', letterSpacing: '0.04em',
               userSelect: 'all',
             }}>
               {stammCode}
@@ -5659,7 +5659,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
             <CopyButton text={stammCode} lang={lang} />
           </div>
           <div style={{
-            fontSize: 11, color: '#94a3b8', fontWeight: 600,
+            fontSize: 11, color: '#94a3b8', fontWeight: 700,
             marginTop: 4, lineHeight: 1.35,
           }}>
             {lang === 'de'
@@ -5675,13 +5675,13 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
             animation: 'tcreveal 0.5s ease 0.5s both',
           }}>
             <div style={{
-              fontSize: 17, fontWeight: 800, color: '#FDE68A',
+              fontSize: 17, fontWeight: 900, color: '#FDE68A',
               textAlign: 'center', marginBottom: 4, lineHeight: 1.35,
             }}>
               {lang === 'en' ? '✨ Thanks for playing! ✨' : '✨ Danke fürs Mitspielen! ✨'}
             </div>
             <div style={{
-              fontSize: 14, fontWeight: 600, color: '#94a3b8',
+              fontSize: 14, fontWeight: 700, color: '#94a3b8',
               textAlign: 'center', marginBottom: 14,
             }}>
               {lang === 'en' ? 'We hope you had fun — see you next round!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
@@ -5693,7 +5693,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 rel="noopener noreferrer"
                 style={{
                   display: 'block', padding: '14px 16px',
-                  borderRadius: 14, textAlign: 'center',
+                  borderRadius: 16, textAlign: 'center',
                   background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
                   color: '#0D0A06', fontWeight: 900, fontSize: 16,
                   textDecoration: 'none',
@@ -5734,7 +5734,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
         </div>
         {/* Skeleton card */}
         <div style={{
-          background: COZY_CARD_BG, borderRadius: 20, padding: '24px 18px',
+          background: COZY_CARD_BG, borderRadius: 24, padding: '24px 18px',
           border: '1px solid rgba(255,255,255,0.06)',
         }}>
           {[1, 2, 3].map(i => (
@@ -5777,7 +5777,7 @@ function CozyCard({ children, anim, borderColor, pulse }: { children: React.Reac
     <div style={{
       background: COZY_CARD_BG,
       border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: 20, padding: '20px 18px', marginBottom: 14,
+      borderRadius: 24, padding: '20px 18px', marginBottom: 14,
       boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)${borderColor ? `, 0 0 20px ${borderColor}18` : ''}`,
       animation: anim ? 'tcreveal 0.4s ease both' : pulse ? `tcpulse 2.5s ease-in-out infinite` : undefined,
       ['--c' as string]: borderColor ? `${borderColor}33` : undefined,
@@ -5791,7 +5791,7 @@ function CozyCard({ children, anim, borderColor, pulse }: { children: React.Reac
 function CozyBtn({ children, color, onClick, disabled }: { children: React.ReactNode; color: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      width: '100%', padding: '16px', borderRadius: 14, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+      width: '100%', padding: '16px', borderRadius: 16, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
       border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : color}`,
       background: disabled ? 'rgba(255,255,255,0.04)' : `${color}22`,
       color: disabled ? '#334155' : color,
@@ -5806,7 +5806,7 @@ function CozyBtn({ children, color, onClick, disabled }: { children: React.React
 
 function StepLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 13, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+    <div style={{ fontSize: 13, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
       {children}
     </div>
   );
@@ -5814,7 +5814,7 @@ function StepLabel({ children }: { children: React.ReactNode }) {
 
 function StatChip({ label, color }: { label: string; color: string }) {
   return (
-    <div style={{ padding: '3px 10px', borderRadius: 999, background: `${color}18`, border: `1px solid ${color}33`, fontSize: 13, fontWeight: 800, color }}>
+    <div style={{ padding: '3px 10px', borderRadius: 999, background: `${color}18`, border: `1px solid ${color}33`, fontSize: 13, fontWeight: 900, color }}>
       {label}
     </div>
   );
@@ -5852,13 +5852,13 @@ function ReactionPad({
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
       marginTop: 8, padding: '10px 12px',
-      borderRadius: 18,
+      borderRadius: 16,
       background: 'rgba(255,255,255,0.04)',
       border: `1px solid ${accent}22`,
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 800, color: '#94a3b8',
-        letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.75,
+        fontSize: 11, fontWeight: 900, color: '#94a3b8',
+        letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.75,
       }}>
         {lang === 'de' ? 'Reaktion senden' : 'Send a reaction'}
       </div>
@@ -5868,7 +5868,7 @@ function ReactionPad({
             key={e}
             onClick={() => tap(e, i)}
             style={{
-              width: 48, height: 48, borderRadius: 14,
+              width: 48, height: 48, borderRadius: 16,
               background: tappedIdx === i ? `${accent}33` : 'rgba(255,255,255,0.06)',
               border: `1px solid ${tappedIdx === i ? accent : 'rgba(255,255,255,0.10)'}`,
               fontSize: 26, lineHeight: 1, cursor: 'pointer',
@@ -5896,7 +5896,7 @@ const grainOverlay: React.CSSProperties = {
   opacity: 0.04, mixBlendMode: 'overlay',
 };
 const cozyInput: React.CSSProperties = {
-  width: '100%', padding: '14px 16px', borderRadius: 12, marginBottom: 12,
+  width: '100%', padding: '14px 16px', borderRadius: 16, marginBottom: 12,
   border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
   color: '#F1F5F9', fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
   boxSizing: 'border-box',

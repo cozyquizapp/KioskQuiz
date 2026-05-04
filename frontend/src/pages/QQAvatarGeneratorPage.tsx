@@ -137,7 +137,7 @@ function Avatar({
       border: `3px solid ${selected ? '#fff' : color.bg}`,
       boxShadow: selected
         ? `0 0 0 3px ${color.glow}, 0 0 24px ${color.glow}88`
-        : `0 0 12px ${color.bg}66, inset 0 -4px 8px rgba(0,0,0,0.3)`,
+        : `0 0 12px ${color.bg}55, inset 0 -4px 8px rgba(0,0,0,0.3)`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -184,9 +184,9 @@ function TeamCard({
         background: team.color.bg,
         color: '#fff',
         fontSize: 11,
-        fontWeight: 800,
+        fontWeight: 900,
         padding: '3px 10px',
-        borderRadius: 20,
+        borderRadius: 24,
         letterSpacing: 1,
         boxShadow: `0 2px 8px ${team.color.glow}44`,
       }}>
@@ -240,7 +240,7 @@ function TeamCard({
         style={{
           background: 'rgba(255,255,255,0.07)',
           border: `1.5px solid ${team.color.glow}55`,
-          borderRadius: 10,
+          borderRadius: 8,
           color: '#fff',
           fontSize: 16,
           fontWeight: 700,
@@ -322,7 +322,7 @@ function SetCard({
         background: `radial-gradient(ellipse at 50% 38%, ${set.tint}55 0%, ${set.tint}18 55%, #0d0d0d 100%)`,
         border: active ? `2px solid ${set.tint}` : `1px solid ${set.tint}33`,
         boxShadow: active
-          ? `0 0 0 2px ${set.tint}55, 0 0 18px ${set.tint}66`
+          ? `0 0 0 2px ${set.tint}55, 0 0 18px ${set.tint}55`
           : `0 4px 14px rgba(0,0,0,0.35)`,
         cursor: 'pointer',
         display: 'flex',
@@ -355,7 +355,7 @@ function SetCard({
       </div>
       <div style={{
         fontSize: 11,
-        fontWeight: 800,
+        fontWeight: 900,
         letterSpacing: 0.6,
         color: active ? '#fff' : '#cbd5e1',
         textTransform: 'uppercase',
@@ -378,7 +378,7 @@ function SetPicker({
         fontSize: 11,
         letterSpacing: 2,
         textTransform: 'uppercase',
-        fontWeight: 800,
+        fontWeight: 900,
         marginBottom: 8,
         padding: '0 4px',
       }}>
@@ -386,7 +386,7 @@ function SetPicker({
         <span style={{
           color: '#475569',
           marginLeft: 8,
-          fontWeight: 600,
+          fontWeight: 700,
           letterSpacing: 0.4,
           textTransform: 'none',
         }}>
@@ -497,7 +497,7 @@ function EmojiPickerModal({
           margin: '0 0 14px',
           textAlign: 'center',
           fontSize: 17,
-          fontWeight: 800,
+          fontWeight: 900,
           letterSpacing: 0.5,
         }}>
           Emoji für TEAM {forTeamIdx + 1}
@@ -521,7 +521,7 @@ function EmojiPickerModal({
               width: '100%',
               background: 'rgba(255,255,255,0.08)',
               border: `1.5px solid ${accent.glow}55`,
-              borderRadius: 12,
+              borderRadius: 16,
               color: '#fff',
               fontSize: 22,
               padding: '14px 56px 14px 18px',
@@ -549,7 +549,7 @@ function EmojiPickerModal({
                 padding: '8px 12px',
                 cursor: 'pointer',
                 fontSize: 14,
-                fontWeight: 800,
+                fontWeight: 900,
                 fontFamily: 'inherit',
                 minHeight: 36,
               }}
@@ -566,7 +566,7 @@ function EmojiPickerModal({
               letterSpacing: 1,
               marginBottom: 8,
               textTransform: 'uppercase',
-              fontWeight: 800,
+              fontWeight: 900,
             }}>
               Aus dem Set
             </div>
@@ -595,7 +595,7 @@ function EmojiPickerModal({
           letterSpacing: 1,
           marginBottom: 8,
           textTransform: 'uppercase',
-          fontWeight: 800,
+          fontWeight: 900,
         }}>
           Vorschläge
         </div>
@@ -623,7 +623,7 @@ function EmojiPickerModal({
             width: '100%',
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 10,
+            borderRadius: 8,
             color: '#cbd5e1',
             padding: '10px 14px',
             fontSize: 13,
@@ -706,7 +706,7 @@ function EmojiPickerModal({
             width: '100%',
             background: 'rgba(255,255,255,0.07)',
             border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 10,
+            borderRadius: 8,
             color: '#cbd5e1',
             padding: 14,
             cursor: 'pointer',
@@ -740,7 +740,7 @@ function EmojiBtn({
         aspectRatio: '1',
         background: baseBg,
         border: baseBorder,
-        borderRadius: 10,
+        borderRadius: 8,
         fontSize: 26,
         lineHeight: 1,
         cursor: 'pointer',
@@ -888,7 +888,7 @@ const QQAvatarGeneratorPage = () => {
         }}>
           <Link to="/alt/menu" style={{
             fontSize: 13, color: '#94a3b8', textDecoration: 'none',
-            padding: '8px 14px', borderRadius: 10,
+            padding: '8px 14px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.12)',
             background: 'rgba(255,255,255,0.04)',
             minHeight: 40, display: 'inline-flex', alignItems: 'center',
@@ -906,7 +906,7 @@ const QQAvatarGeneratorPage = () => {
             color: '#c56bff',
             textTransform: 'uppercase',
             marginBottom: 10,
-            fontWeight: 800,
+            fontWeight: 900,
           }}>
             ✦ Team Setup ✦
           </div>
@@ -965,7 +965,7 @@ const QQAvatarGeneratorPage = () => {
               maxWidth: 220,
               background: 'rgba(255,255,255,0.07)',
               border: '1.5px solid rgba(255,255,255,0.12)',
-              borderRadius: 12,
+              borderRadius: 16,
               color: teams.length <= 2 ? '#444' : '#fff',
               padding: '12px 18px',
               cursor: teams.length <= 2 ? 'not-allowed' : 'pointer',
@@ -989,12 +989,12 @@ const QQAvatarGeneratorPage = () => {
                 ? 'rgba(255,255,255,0.05)'
                 : 'linear-gradient(135deg, #8e44ad, #c56bff)',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 16,
               color: teams.length >= 8 ? '#444' : '#fff',
               padding: '12px 18px',
               cursor: teams.length >= 8 ? 'not-allowed' : 'pointer',
               fontSize: 15,
-              fontWeight: 800,
+              fontWeight: 900,
               fontFamily: 'inherit',
               boxShadow: teams.length < 8 ? '0 4px 16px #8e44ad55' : 'none',
               minHeight: 48,
@@ -1021,7 +1021,7 @@ const QQAvatarGeneratorPage = () => {
             textTransform: 'uppercase',
             marginBottom: 14,
             textAlign: 'center',
-            fontWeight: 800,
+            fontWeight: 900,
           }}>
             Vorschau — so seht ihr im Spiel aus
           </div>
@@ -1046,7 +1046,7 @@ const QQAvatarGeneratorPage = () => {
                 <span style={{
                   color: '#e2e8f0',
                   fontSize: 12,
-                  fontWeight: 800,
+                  fontWeight: 900,
                   maxWidth: 78,
                   textAlign: 'center',
                   overflow: 'hidden',

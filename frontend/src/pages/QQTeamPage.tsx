@@ -1965,8 +1965,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
   // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
   // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Letzte Quiz-Runde — danach kommt das Finale!'],
-                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Last quiz round — finale follows!'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Letzte Quiz-Runde — danach Stapel-Bonus im Finale!'],
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Last quiz round — stack-bonus finale follows!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -2065,7 +2065,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
               2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 tiles or steal', 'Per correct answer'] },
               3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
-              4: { emoji: '🏯', de: ['Letzte Quiz-Runde', 'danach kommt das Finale'], en: ['Last quiz round', 'finale follows'] },
+              4: { emoji: '🏯', de: ['Letzte Quiz-Runde', 'danach Stapel-Bonus im Finale'], en: ['Last quiz round', 'stack-bonus finale follows'] },
             };
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
             return (
@@ -5450,7 +5450,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
             fontSize: 13, color: '#cbd5e1', lineHeight: 1.4,
           }}>
             <div>🎯 {de ? '4 Begriffe wählen → abgeben' : 'Pick 4 → submit'}</div>
-            <div>🏆 {de ? '1 Gruppe = 1 Aktion' : '1 group = 1 action'}</div>
+            <div>🏯 {de ? '1 Gruppe = 1 Stapel-Bonus (+1 Pkt)' : '1 group = 1 stack-bonus (+1 pt)'}</div>
             <div>❌ {de ? `${c.maxFailedAttempts} Fehler erlaubt` : `${c.maxFailedAttempts} fails allowed`}</div>
           </div>
           <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
@@ -5474,7 +5474,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
               background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.5)',
               fontSize: 12, fontWeight: 900, color: '#86EFAC',
             }}>
-              {found} {de ? 'Gruppen' : 'groups'} {found > 0 ? `→ ×${found} ${de ? 'Aktionen' : 'actions'}` : ''}
+              {found} {de ? 'Gruppen' : 'groups'} {found > 0 ? `→ ×${found} ${de ? 'Stapel' : 'stacks'}` : ''}
             </span>
           </div>
           {locked && (

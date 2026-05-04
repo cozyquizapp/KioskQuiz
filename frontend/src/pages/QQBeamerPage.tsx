@@ -1938,14 +1938,11 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   if (revealed) return null;
 
-  // 2026-04-29 (User-Feedback): Chips skalieren mit Anzahl, sonst kollidiert
-  // der Block bei 30+ genannten Antworten mit der Frage-Card oben.
-  // v3 round 10 (User-Bug 'noch nicht optimal'): Chip-Tiers eine Stufe
-  // hoeher (frueher md/lg) damit der Chip-Block den freigewordenen Platz
-  // nach oben (Card-Shift) fuellt. Schwellen weiter, lg/md bleiben laenger
-  // gross. Plus ein neuer xl-Tier fuer ≤8 Chips.
+  // 2026-05-05 (Wolf-Bug 'Chips zu klein'): Card wird jetzt aktiv hochgeschoben
+  // bei vielen Antworten → mehr Vertikal-Raum unten → Tier-Schwellen koennen
+  // weiter nach oben rutschen (lg statt md, md statt sm). xl bleibt fuer ≤8.
   const n = used.length;
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 8 ? 'xl' : n <= 18 ? 'lg' : n <= 32 ? 'md' : 'sm';
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 8 ? 'xl' : n <= 22 ? 'lg' : n <= 40 ? 'md' : 'sm';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6vw, 38px)', padding: 'clamp(10px, 1.2vh, 16px) clamp(18px, 1.8vw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2vw, 32px)', padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
@@ -1958,12 +1955,11 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       position: 'absolute', bottom: 16, left: 0, right: 0,
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
       pointerEvents: 'none',
-      // 2026-05-03 (Wolf-Bug 'Scrollleiste sichtbar wenn jemand ausscheidet'):
-      // Wenn der Eliminated-Row reinkommt, wuchs Content nach oben und konnte
-      // ueber die Parent-Grenze schiessen → kurzer Scrollbar-Flash. maxHeight
-      // begrenzt die HP-Inhalte auf 65% der Viewport-Hoehe; oben abgeschnitten
-      // wuerde nie eintreten weil Card-Shift jetzt aggressiver ist.
-      maxHeight: '65vh', overflow: 'hidden',
+      // 2026-05-05 (Wolf-Bug 'Chips zu klein'): Card wird jetzt aktiv hoch-
+      // geschoben bei vielen Antworten, also kann der HP-Block mehr Raum
+      // beanspruchen. 65vh → 78vh — laesst grossere Tiers zu, ohne dass
+      // die Card-Untergrenze geriskt wird (Card sitzt jetzt weiter oben).
+      maxHeight: '78vh', overflow: 'hidden',
     }}>
       {/* Used answers list — prominent über dem Active-Team-Pill */}
       {used.length > 0 && (
@@ -2234,9 +2230,9 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: '#A78BFA',
       lines: [
         '16 Begriffe · 4 Gruppen finden',
-        'Pro Gruppe = 1 Aktion auf dem Spielfeld',
+        'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder',
       ],
-      extra: '🏆 Größtes Gebiet danach gewinnt',
+      extra: '🏆 Größtes Gebiet + Boni danach gewinnt',
     },
   ];
 }
@@ -2332,9 +2328,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: '#A78BFA',
       lines: [
         '16 terms · find 4 hidden groups',
-        'Each group = 1 action on the board',
+        'Each group = 1 stack-bonus (+1 pt) on your cells',
       ],
-      extra: '🏆 Largest area after wins',
+      extra: '🏆 Largest area + bonuses wins',
     },
   ];
 }
@@ -4177,10 +4173,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     4: {
       emoji: '🏯',
       de: s.connectionsEnabled !== false
-        ? ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Quiz-Runde — danach kommt das Finale!']
+        ? ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Quiz-Runde — danach kommt der Stapel-Bonus im Finale!']
         : ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
       en: s.connectionsEnabled !== false
-        ? ['Per correct answer choose one action:', 'Last quiz round — finale follows!']
+        ? ['Per correct answer choose one action:', 'Last quiz round — stack-bonus finale follows!']
         : ['Per correct answer choose one action:', 'Final round — everything stays available!'],
     },
   };
@@ -9416,15 +9412,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // mid-game-Layout (selteneres Snap-down). Transition wird in der
           // Card-Style 0.4s -> 0.7s entspannter.
           const hpCompact = isHotPotatoActive && hpUsedCount > 16;
-          // 2026-04-30 v3 (User-Korrektur): Frage-Card immer vertikal mittig —
-          // zusammen mit Antwortoptionen darunter als 1 BLOCK fuer MUCHO/ZvZ.
-          // 'center' fuer alle Kategorien (Regel 1).
-          // v3 round 9 (User-Bug 'hot potato lasst zu viel platz mitte, frage
-          // hängt im badge oben'): hpCompact override auf 'flex-start' entfernt.
-          // Chips sind position:absolute bottom:16, nehmen keinen Flex-Platz —
-          // Card kann ohne Overlap mittig sitzen. Compact-Padding bleibt aktiv.
-          const innerJustify = 'center';
+          // 2026-05-05 (Wolf-Ausnahme zur Center-Regel): bei HotPotato mit
+          // vielen Antworten Card hochschieben damit die Chips unten mehr
+          // Platz bekommen. Sonst rendern sie als sm-Tier (clamp 14-21px) +
+          // wirken aus 8m Distanz zu klein. Mit Card oben kann der Chip-
+          // Block mehr Vertikal-Raum nutzen, Tier hoeher.
+          const isHotPotatoMany = isHotPotatoActive && hpUsedCount > 8;
+          const innerJustify = isHotPotatoMany ? 'flex-start' : 'center';
           const innerGap = 0;
+          // Optionales Top-Padding fuer den Inner-Wrapper damit Card nicht
+          // direkt am Kategorie-Badge klebt. Skaliert ab: viel Padding bei
+          // wenig Chips, weniger bei vielen → Chips bekommen mehr Raum.
+          const innerPaddingTop = !isHotPotatoMany
+            ? 0
+            : hpUsedCount <= 18
+              ? 'clamp(28px, 5vh, 64px)'
+              : hpUsedCount <= 32
+                ? 'clamp(16px, 3vh, 40px)'
+                : 'clamp(6px, 1vh, 18px)';
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
@@ -9503,12 +9508,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
               Frage-Card + alle Reveal-Inhalte. Bekommt das vertikale
               Centering / space-between, die Top-Bar bleibt davon unbetroffen
-              an ihrem Platz oben. */}
+              an ihrem Platz oben.
+              2026-05-05 (Wolf): innerPaddingTop fuer HotPotato-Card-Hoch-Shift. */}
           <div style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             justifyContent: innerJustify,
             gap: innerGap,
             alignItems: 'center', width: '100%',
+            paddingTop: innerPaddingTop || undefined,
+            transition: 'padding-top 0.7s var(--qq-ease-smooth)',
           }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
@@ -13157,15 +13165,15 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.5s both',
       }}>
         {lang === 'de'
-          ? 'Findet 4 Gruppen — gewinnt Felder fürs Spielfeld.'
-          : 'Find 4 groups — earn cells on the board.'}
+          ? 'Findet 4 Gruppen — pro Gruppe stapelt ihr ein eigenes Feld für +1 Punkt.'
+          : 'Find 4 groups — each group lets you stack one of your cells for +1 point.'}
       </div>
       <div style={{
         display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100,
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.7s both',
       }}>
         <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? '4 Begriffe → abgeben' : '4 terms → submit'} />
-        <ConnectionsRulePill emoji="🏆" text={lang === 'de' ? '1 Gruppe = 1 Aktion' : '1 group = 1 action'} />
+        <ConnectionsRulePill emoji="🏯" text={lang === 'de' ? '1 Gruppe = 1 Stapel (+1 Pkt)' : '1 group = 1 stack (+1 pt)'} />
         <ConnectionsRulePill emoji="❌" text={lang === 'de' ? `${c.maxFailedAttempts} Fehler → raus` : `${c.maxFailedAttempts} fails → out`} />
         <ConnectionsRulePill emoji="⏱" text={lang === 'de' ? `${Math.floor(c.durationSec / 60)} Min` : `${Math.floor(c.durationSec / 60)} min`} />
       </div>

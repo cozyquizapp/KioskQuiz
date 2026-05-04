@@ -2081,7 +2081,7 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
   },
   CONNECTIONS_4X4: {
     title: '4×4 — Finale',
-    text: '16 Begriffe, 4 versteckte Gruppen. Teams jagen parallel und tippen 4 Items als Gruppen-Tipp. Pro gefundene Gruppe = 1 Aktion. Ranking: meiste Gruppen, schnellste zuerst bei Gleichstand. Heize an, achte auf den Timer.',
+    text: '16 Begriffe, 4 versteckte Gruppen. Teams jagen parallel und tippen 4 Items als Gruppen-Tipp. Pro gefundene Gruppe = 1 Stapel-Bonus (+1 Pkt auf ein eigenes Feld, gleiches Feld mehrfach erlaubt). Ranking: meiste Gruppen, schnellste zuerst bei Gleichstand. Heize an, achte auf den Timer.',
   },
   PAUSED: {
     title: 'Pause',

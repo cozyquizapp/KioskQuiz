@@ -1333,10 +1333,18 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 fontWeight={900}
                 style={{ flex: 1, minWidth: 0 }}
               />
-              {/* Joker slots — 2 stars for the whole game, greyed when used */}
+              {/* Joker-Slots als Stamp-Card (Wolf-Wunsch 2026-05-04: Sterne weg,
+                  Cafe-Stempelkarten-Vibe). 2 vertikale Bars: gold gefuellt =
+                  noch verfuegbar, Outline + gedimmt = verbraucht. Aufrecht
+                  stehende Pille daneben mit aria-label fuer Screen-Reader. */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
-                  style={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}
+                  style={{
+                    display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0,
+                    padding: '4px 6px', borderRadius: 8,
+                    background: 'rgba(251,191,36,0.08)',
+                    border: '1px solid rgba(251,191,36,0.18)',
+                  }}
                   title={lang === 'de' ? '2×2 Joker (gesamtes Spiel)' : '2×2 Jokers (whole game)'}
                   aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
                 >
@@ -1344,15 +1352,15 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                     const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
                     return (
                       <span key={i} style={{
-                        fontSize: 14,
-                        color: used ? '#475569' : '#FBBF24',
-                        filter: used ? 'grayscale(1)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.55))',
-                        opacity: used ? 0.5 : 1,
-                        textDecoration: used ? 'line-through' : 'none',
-                        textDecorationColor: used ? '#64748b' : undefined,
-                        lineHeight: 1,
-                        transition: 'color 0.3s ease, filter 0.3s ease, opacity 0.3s ease',
-                      }}><QQEmojiIcon emoji="⭐"/></span>
+                        display: 'inline-block',
+                        width: 4, height: 16,
+                        borderRadius: 2,
+                        background: used ? 'transparent' : '#FBBF24',
+                        border: used ? '1.5px solid rgba(251,191,36,0.32)' : '1.5px solid #FBBF24',
+                        boxShadow: used ? 'none' : '0 0 6px rgba(251,191,36,0.55)',
+                        opacity: used ? 0.55 : 1,
+                        transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease',
+                      }} />
                     );
                   })}
                 </div>

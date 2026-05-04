@@ -13942,15 +13942,20 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       ? `linear-gradient(135deg, ${team.color}ff, ${team.color}bb)`
                       : `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`,
                     border: isStuck
-                      ? '2px solid rgba(251,191,36,0.95)'
+                      ? '3px solid rgba(251,191,36,0.95)'
                       : showStar
                         ? '2px solid rgba(251,191,36,0.9)'
                         : isFrozen
                           ? 'none'
                           : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    // 2026-05-04 (Wolf): Stack-Tile bekommt 3D-Stapel-Effekt durch
+                    // gestaffelte Hard-Shadows nach unten/rechts (sieht aus als
+                    // wuerden 2 Layer drunter liegen). Plus dicker Gold-Ring +
+                    // Glow. ×2-Chip wurde entfernt — der Stack-Look + Ring
+                    // erklaert sich selbst.
                     boxShadow: isStuck
-                      ? `0 0 14px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.4)`
+                      ? `3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
                       : isAccent
                         ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                         : showStar
@@ -14040,30 +14045,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                       pointerEvents: 'none', zIndex: 3,
                     }} />
-                    {/* ×2-Chip oben rechts — dezenter Marker. Pagoda mittig
-                        war zu aufdringlich (klebte am Avatar); der Chip am
-                        Cell-Rand laesst die Avatare frei und signalisiert
-                        Wert + Schutz im Zusammenspiel mit dem 3D-Lift +
-                        Gold-Border + Glow. */}
-                    <div style={{
-                      position: 'absolute', top: -4, right: -4,
-                      minWidth: Math.max(16, cellSize * 0.32),
-                      height: Math.max(16, cellSize * 0.32),
-                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
-                      borderRadius: '999px',
-                      background: 'linear-gradient(135deg, #FBBF24, #D97706)',
-                      border: '2px solid #422006',
-                      color: '#1c1304',
-                      fontSize: Math.max(9, cellSize * 0.20),
-                      fontWeight: 900,
-                      lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(251,191,36,0.6)',
-                      zIndex: 6,
-                      fontVariantNumeric: 'tabular-nums',
-                      animation: 'stapelDrop 0.6s var(--qq-ease-bounce) both',
-                    }}>×2</div>
+                    {/* 2026-05-04 (Wolf): ×2-Chip entfernt. Stack-Look kommt
+                        jetzt aus Tile-Box-Shadow (gestaffelte Layer-Shadows
+                        + dicker Gold-Ring + Glow). Cleaner Avatar-Bereich. */}
                   </>
                 )}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.
@@ -14450,34 +14434,46 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
               )}
-              {/* B2 Joker-Badge (persistent): ⭐{n} unten rechts am Avatar.
-                  Zeigt VERFÜGBARE Joker (REMAINING), nicht earned-counter — sonst
-                  bleibt der Stern selbst nach Verbrauch sichtbar und User denkt
-                  "ich hab noch Joker". jokersEarned ist game-wide-cap (max 2),
-                  jeder earned-Joker wird sofort als Bonus-Placement konsumiert.
-                  Im Team-View werden 2 Slots gezeigt mit gray-out — auf dem Beamer
-                  reicht "wieviele sind noch verfügbar". */}
+              {/* Joker-Slots als Stamp-Card (Wolf-Wunsch 2026-05-04: Cafe-
+                  Stempelkarten-Look statt ⭐2-Pille). Beide Slots werden
+                  immer gerendert — verfuegbare gold gefuellt, verbrauchte
+                  Outline + gedimmt. Wenn beide verbraucht: kompletter
+                  Container ausblenden (kein leerer Slot). */}
               {(() => {
                 const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
-                const remaining = QQ_MAX_JOKERS_PER_GAME - earned;
-                if (remaining <= 0) return null;
+                const total = QQ_MAX_JOKERS_PER_GAME;
+                if (earned >= total) return null;
                 return (
                   <span style={{
                     position: 'absolute',
                     bottom: dense ? -4 : -6,
                     right: dense ? -6 : -8,
-                    padding: '2px 7px',
-                    borderRadius: 999,
+                    padding: dense ? '3px 6px' : '4px 7px',
+                    borderRadius: 8,
                     background: '#0d0a06',
-                    border: '2px solid #FBBF24',
-                    fontSize: dense ? 13 : 16,
-                    fontWeight: 900,
-                    color: '#FBBF24',
-                    lineHeight: 1,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 12px rgba(251,191,36,0.5)',
+                    border: '1.5px solid rgba(251,191,36,0.45)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 10px rgba(251,191,36,0.3)',
                     display: 'inline-flex', alignItems: 'center', gap: 3,
                     pointerEvents: 'none',
-                  }}><QQEmojiIcon emoji="⭐"/>{remaining}</span>
+                  }}>
+                    {Array.from({ length: total }).map((_, i) => {
+                      const used = earned > i;
+                      const barW = dense ? 3 : 4;
+                      const barH = dense ? 12 : 14;
+                      return (
+                        <span key={i} style={{
+                          display: 'inline-block',
+                          width: barW, height: barH,
+                          borderRadius: 2,
+                          background: used ? 'transparent' : '#FBBF24',
+                          border: used ? '1px solid rgba(251,191,36,0.32)' : '1px solid #FBBF24',
+                          boxShadow: used ? 'none' : '0 0 5px rgba(251,191,36,0.6)',
+                          opacity: used ? 0.55 : 1,
+                          transition: 'all 0.3s ease',
+                        }} />
+                      );
+                    })}
+                  </span>
                 );
               })()}
               {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}

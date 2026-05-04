@@ -692,18 +692,53 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     { sx: '22px', sy: '-10px' },{ sx: '-22px', sy: '-10px' },
   ];
 
+  // 2026-05-04 (Wolf): Page-BG nimmt jetzt aktuelle Slot-Farbe als sanften
+  // Tint statt fixer goldbrauner Mix. Solange Setup/Lobby — sobald Quiz laeuft
+  // (Kategorie-spezifischer BG) uebernimmt TC_CAT_BG. Glow-Lagen subtil
+  // gemischt damit Page nicht 'monochrom' wirkt.
+  const slot = QQ_AVATARS.find(a => a.id === avatarId);
+  const slotColor = slot?.color ?? '#EAB308';
+  const teamTintBg =
+    `radial-gradient(ellipse at 50% -10%, ${slotColor}28, transparent 55%), ` +
+    `radial-gradient(ellipse at 85% 110%, ${slotColor}14, transparent 55%), ` +
+    `radial-gradient(ellipse at 15% 80%, ${slotColor}10, transparent 50%), ` +
+    `#0D0A06`;
+
   return (
     <div style={{
       ...darkPage,
-      background: BEAMER_LOBBY_BG,
+      background: teamTintBg,
+      transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
-      <MobileFireflies color="#FEF08A55" />
+      <MobileFireflies color={`${slotColor}66`} />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
-          <div style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: 'rgba(234,179,8,0.55)', marginBottom: 4 }}>
-            a cozy wolf production
+          {/* 2026-05-04 (Wolf): Brand-Strip moderner — Mini-Wolf-Glyph + clean
+              wordmark statt Caveat-cursive '2003-Movie-Credits'-Look. */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '4px 12px', marginBottom: 10,
+            borderRadius: 999,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
+            <span style={{
+              fontSize: 10, fontWeight: 900,
+              color: '#cbd5e1', letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}>cozywolf</span>
+            <span style={{
+              width: 3, height: 3, borderRadius: '50%',
+              background: 'rgba(203,213,225,0.4)',
+            }} />
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              color: '#94a3b8', letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+            }}>live quiz</span>
           </div>
           <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
             {t.header[lang]}
@@ -1303,11 +1338,20 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     s.phase === 'PLACEMENT' || s.phase === 'PHASE_INTRO' ||
     s.phase === 'COMEBACK_CHOICE' || s.phase === 'CONNECTIONS_4X4'
   );
+  // 2026-05-04 (Wolf): vor Quiz-Start (Lobby/Pre-Game) BG in Team-Farbe
+  // statt fixer goldbrauner Mix. Sobald Kategorie aktiv ist, uebernimmt
+  // TC_CAT_BG. GAME_OVER bleibt im Gold-Spotlight.
+  const myTeamColor = myTeam?.color ?? '#EAB308';
+  const teamTintBg =
+    `radial-gradient(ellipse at 50% -10%, ${myTeamColor}28, transparent 55%), ` +
+    `radial-gradient(ellipse at 85% 110%, ${myTeamColor}14, transparent 55%), ` +
+    `radial-gradient(ellipse at 15% 80%, ${myTeamColor}10, transparent 50%), ` +
+    `#0D0A06`;
   const pageBg = usesBeamerCatBg
-    ? (TC_CAT_BG[cat] ?? BEAMER_LOBBY_BG)
+    ? (TC_CAT_BG[cat] ?? teamTintBg)
     : s.phase === 'GAME_OVER'
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
-    : BEAMER_LOBBY_BG;
+    : teamTintBg;
 
   return (
     <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }} className="qq-team-page">

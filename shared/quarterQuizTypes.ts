@@ -1082,15 +1082,23 @@ export function qqTeamColor(team: { avatarId?: string; color?: string }): string
 //   - Backend qq:setAvatarSet bei 'all' → 8 zufaellige Slot-Emojis
 //   - Frontend /testpage Spielwiese (statisch, kein Random-Mount mehr)
 
-/** Pub-Quiz-typische Team-Namen — quer durch alle Stile, easter eggs erlaubt. */
+/** Pub-Quiz-typische Team-Namen — quer durch alle Stile, easter eggs erlaubt.
+ *  Mix aus kurzen (passen ohne Truncate auf jede Lobby-Karte) und ein paar
+ *  laengeren (kommen dann via Wrap auf 2 Zeilen). */
 export const FUNNY_TEAM_NAMES: string[] = [
-  'Schlaubi-Schlümpfe', 'Quiz Khalifa', 'Google sei Dank',
-  'Halbwissen Gold Wert', 'Die Couch-Quizzer', 'Synapsen-Salat',
-  'Pub-Crawl-Profis', 'Schon Wieder Falsch', 'Käpt\'n Kluk',
-  'Drei Halbe Ne Ganze', 'Frag-Mich-Was-Leichtes', 'Eulen-Spiegel',
-  'Wolfsrudel', 'Anonyme Allwisser', 'Brain-Trust', 'Nicht Zuhause',
-  'Fakt oder Fiktion', 'Die Wikipedia-Bewohner', 'Zwischen Bier und Bildung',
-  'Quiz-Mafia', 'Fakten-Faktor', 'Cozy Cats', 'Couch-Wolves',
+  // Kurz (≤ 12 Z.) — passen sicher
+  'Quiz Khalifa', 'Käpt\'n Kluk', 'Eulen-Spiegel', 'Wolfsrudel',
+  'Brain-Trust', 'Nicht Zuhause', 'Quiz-Mafia', 'Cozy Cats',
+  'Couch-Wolves', 'Hirnsturm', 'Quiz-Asse', 'Trivia-Trio',
+  'Glühbirnen', 'Bierdeckel', 'Multi-Kulti', 'Wissens-Wölfe',
+  'Frag-Tiger', 'Smarty Pants', 'Käse-Kenner', 'Pubquatscher',
+  // Mittel (13-17 Z.) — Wrap moeglich
+  'Google sei Dank', 'Synapsen-Salat', 'Fakten-Faktor',
+  'Pub-Crawl-Profis', 'Anonyme Allwisser', 'Fakt oder Fiktion',
+  'Die Couch-Quizzer', 'Schlaubi-Schlümpfe',
+  // Lang (≥ 18 Z.) — auf jeden Fall Wrap
+  'Schon Wieder Falsch', 'Halbwissen Gold Wert', 'Drei Halbe Ne Ganze',
+  'Frag-Mich-Was-Leichtes', 'Zwischen Bier und Bildung',
 ];
 
 /** Emoji-Pool fuer Random-Slot-Emojis bei Set 'all' und Dummy-Avatare.

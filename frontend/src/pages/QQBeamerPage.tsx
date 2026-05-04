@@ -3501,14 +3501,22 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
-                        fontSize: compact ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(20px, 2.1vw, 30px)',
+                        // 2026-05-04: Bei langen Namen automatisch kleiner +
+                        // 2-Zeilen-Wrap statt harte 12-Zeichen-Truncation,
+                        // damit Witznamen wie "Schon Wieder Falsch" nicht
+                        // auf "Schon Wiede..." verstuemmelt werden.
+                        fontSize: t.name.length > 16
+                          ? (compact ? 'clamp(15px, 1.55vw, 21px)' : 'clamp(16px, 1.7vw, 24px)')
+                          : (compact ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(20px, 2.1vw, 30px)'),
                         color: t.color,
                         lineHeight: 1.1,
-                        whiteSpace: 'nowrap',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        wordBreak: 'break-word',
                       }} title={t.name}>
-                        {t.name.length > 12 ? t.name.slice(0, 11) + '…' : t.name}
+                        {t.name}
                       </div>
                       <div style={{
                         fontSize: compact ? 'clamp(13px, 1.2vw, 16px)' : 'clamp(13px, 1.25vw, 17px)',

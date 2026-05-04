@@ -3414,7 +3414,16 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
     avatarSetId:      room.avatarSetId ?? 'all',
-    avatarSetEmojis:  room.avatarSetEmojis,
+    // Lazy-Init fuer Bestands-Rooms: wenn Set 'all' aber noch keine Emojis
+    // gewuerfelt sind (z.B. weil Room vor 2026-05-04 erstellt), jetzt einmal
+    // wuerfeln und festhalten. Ohne diesen Schritt wuerden alle Slots auf
+    // den Cozy-Tier-Default zurueckfallen.
+    avatarSetEmojis:  (() => {
+      if ((room.avatarSetId ?? 'all') !== 'all') return room.avatarSetEmojis;
+      if (room.avatarSetEmojis && room.avatarSetEmojis.length === 8) return room.avatarSetEmojis;
+      room.avatarSetEmojis = getRandomDummyEmojis(8);
+      return room.avatarSetEmojis;
+    })(),
     enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
     teamsRevealStartedAt: room.teamsRevealStartedAt,

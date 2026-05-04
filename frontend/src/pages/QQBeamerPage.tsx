@@ -14562,43 +14562,38 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
               )}
-              {/* Joker-Slots als Stamp-Card (Wolf-Wunsch 2026-05-04: Cafe-
-                  Stempelkarten-Look statt ⭐2-Pille). Beide Slots werden
-                  immer gerendert — verfuegbare gold gefuellt, verbrauchte
-                  Outline + gedimmt. Wenn beide verbraucht: kompletter
-                  Container ausblenden (kein leerer Slot). */}
+              {/* 2026-05-04 (Wolf): Joker-Slots als 2× 🃏 (Spielkarten),
+                  vorher waren Bars die wie Pause-Symbol aussahen. Verfuegbare
+                  Karten goldglow, verbrauchte gedimmt + grayscale. Wenn beide
+                  verbraucht: kompletter Container ausblenden. */}
               {(() => {
                 const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
                 const total = QQ_MAX_JOKERS_PER_GAME;
                 if (earned >= total) return null;
+                const cardFs = dense ? 14 : 17;
                 return (
                   <span style={{
                     position: 'absolute',
                     bottom: dense ? -4 : -6,
                     right: dense ? -6 : -8,
-                    padding: dense ? '3px 6px' : '4px 7px',
+                    padding: dense ? '2px 6px' : '3px 8px',
                     borderRadius: 8,
                     background: '#0d0a06',
                     border: '1.5px solid rgba(251,191,36,0.45)',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 10px rgba(251,191,36,0.3)',
-                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                    display: 'inline-flex', alignItems: 'center', gap: 2,
                     pointerEvents: 'none',
                   }}>
                     {Array.from({ length: total }).map((_, i) => {
                       const used = earned > i;
-                      const barW = dense ? 3 : 4;
-                      const barH = dense ? 12 : 14;
                       return (
                         <span key={i} style={{
                           display: 'inline-block',
-                          width: barW, height: barH,
-                          borderRadius: 2,
-                          background: used ? 'transparent' : '#FBBF24',
-                          border: used ? '1px solid rgba(251,191,36,0.32)' : '1px solid #FBBF24',
-                          boxShadow: used ? 'none' : '0 0 5px rgba(251,191,36,0.6)',
-                          opacity: used ? 0.55 : 1,
-                          transition: 'all 0.3s ease',
-                        }} />
+                          fontSize: cardFs, lineHeight: 1,
+                          opacity: used ? 0.32 : 1,
+                          filter: used ? 'grayscale(0.85)' : 'drop-shadow(0 0 3px rgba(251,191,36,0.55))',
+                          transition: 'opacity 0.3s ease, filter 0.3s ease',
+                        }}><QQEmojiIcon emoji="🃏"/></span>
                       );
                     })}
                   </span>

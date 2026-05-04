@@ -4208,7 +4208,9 @@ function LobbyView({
             )}
 
             {/* TEMP Dev-Fill: sichtbar in Production für 8-Team-Test */}
-            {true && (
+            {true && (() => {
+              const dummyCount = teamList.filter(t => (t as any)._dummy).length;
+              return (
               <div style={{
                 marginTop: 12, padding: '10px 12px', borderRadius: 8,
                 background: 'rgba(245,158,11,0.08)',
@@ -4239,9 +4241,28 @@ function LobbyView({
                       }}
                     >+ {n} {n === 1 ? 'Dummy' : 'Dummies'}</button>
                   ))}
+                  {/* 2026-05-04 (Wolf): „Alle Bots raus" — eine Taste, kickt
+                      alle Dummy-Teams (echte Spieler bleiben). */}
+                  {dummyCount > 0 && (
+                    <button
+                      onClick={() => {
+                        if (!window.confirm(`${dummyCount} ${dummyCount === 1 ? 'Bot' : 'Bots'} aus der Lobby entfernen?`)) return;
+                        for (const t of teamList) {
+                          if ((t as any)._dummy) emit('qq:kickTeam', { roomCode, teamId: t.id });
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                        border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.15)',
+                        color: '#EF4444', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+                      }}
+                      title={`${dummyCount} Bots kicken`}
+                    >🚪 Bots raus ({dummyCount})</button>
+                  )}
                 </div>
               </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </div>

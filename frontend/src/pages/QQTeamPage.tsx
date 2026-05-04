@@ -409,6 +409,10 @@ export default function QQTeamPage() {
   const [teamId, setTeamId]     = useState(getOrCreateTeamId);
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  // 2026-05-04 (Wolf): nach Kick darf das Team NICHT auto-rejoinen — sonst
+  // ist Kicken sinnlos. Wenn wir hier auf 'kicked' setzen, wird der
+  // Auto-Rejoin-Effekt geblockt und Setup-Flow neu gezeigt.
+  const [kicked, setKicked] = useState(false);
 
   // 2026-05-02 (Stamm-Team-Code): Lookup-Status fuer "alten Code eingeben"-Feld.
   const [stammResult, setStammResult] = useState<{
@@ -458,16 +462,40 @@ export default function QQTeamPage() {
     if (!connected && joined) setJoined(false);
   }, [connected]);
 
-  // Auto-rejoin if we have a stored session
+  // Auto-rejoin if we have a stored session — aber nicht wenn wir gerade
+  // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
   useEffect(() => {
-    if (joined || !connected) return;
+    if (joined || !connected || kicked) return;
     const storedName = sessionStorage.getItem('qq_teamName');
     if (storedName) {
-      emit('qq:joinTeam', { roomCode, teamId, teamName: storedName, avatarId }).then((ack: any) => {
+      // 2026-05-04 (Wolf): Emoji bei Auto-Rejoin mitsenden — sonst zeigt
+      // Beamer das Set-Default-Emoji (z.B. Wuerfel) statt das vom Spieler
+      // gewaehlte (z.B. Giraffe).
+      const storedEmoji = sessionStorage.getItem('qq_emoji') ?? undefined;
+      emit('qq:joinTeam', { roomCode, teamId, teamName: storedName, avatarId, emoji: storedEmoji }).then((ack: any) => {
         if (ack.ok) setJoined(true);
       });
     }
-  }, [connected]);
+  }, [connected, kicked]);
+
+  // 2026-05-04 (Wolf): Kick-Detection — wenn wir 'joined' waren und im
+  // Lobby-State plötzlich nicht mehr in s.teams stehen, wurden wir gekickt.
+  // Setup-Flow soll wieder erscheinen, sessionStorage wird geleert.
+  useEffect(() => {
+    if (!joined || !state) return;
+    if (state.phase !== 'LOBBY') return;
+    const stillInRoom = !!state.teams.find(t => t.id === teamId);
+    if (!stillInRoom) {
+      // Wurden gekickt → fresh Setup mit neuen Daten.
+      setKicked(true);
+      setJoined(false);
+      sessionStorage.removeItem('qq_teamName');
+      sessionStorage.removeItem('qq_avatarId');
+      sessionStorage.removeItem('qq_emoji');
+      setTeamName('');
+      setStep('COLOR');
+    }
+  }, [state?.teams.map(t => t.id).join(','), state?.phase, joined, teamId]);
 
   // 2026-05-02: Late-Join "Wieder dabei als Team X" — wenn sessionStorage
   // weg ist (Tab geschlossen / Inkognito-Mode), aber localStorage teamId noch
@@ -486,6 +514,9 @@ export default function QQTeamPage() {
       teamId,
       teamName: existingTeamInRoom.name,
       avatarId: existingTeamInRoom.avatarId,
+      // 2026-05-04 (Wolf): emoji aus dem bestehenden Team-State uebernehmen,
+      // sonst geht der vom Spieler gewaehlte Avatar beim Resume verloren.
+      emoji: existingTeamInRoom.emoji ?? undefined,
     });
     if (ack.ok) setJoined(true);
     else setError(ack.error ?? 'error');
@@ -1402,7 +1433,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             background: COZY_CARD_BG, border: '1px solid rgba(255,255,255,0.10)',
             boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
-            <QQTeamAvatar avatarId={myTeam.avatarId} size={34} />
+            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={34} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               <TeamNameLabel
                 name={myTeam.name}
@@ -1413,19 +1444,18 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 fontWeight={900}
                 style={{ flex: 1, minWidth: 0 }}
               />
-              {/* Joker-Slots als Stamp-Card (Wolf-Wunsch 2026-05-04: Sterne weg,
-                  Cafe-Stempelkarten-Vibe). 2 vertikale Bars: gold gefuellt =
-                  noch verfuegbar, Outline + gedimmt = verbraucht. Aufrecht
-                  stehende Pille daneben mit aria-label fuer Screen-Reader. */}
+              {/* 2026-05-04 (Wolf): Joker-Slots als 2× 🃏 — vorher waren das 2
+                  vertikale Bars die wie Pause-Symbol aussahen. Jetzt klar als
+                  Spielkarten erkennbar (gleich wie auf dem Beamer-Grid). */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
                   style={{
-                    display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0,
-                    padding: '4px 6px', borderRadius: 8,
+                    display: 'flex', gap: 3, alignItems: 'center', flexShrink: 0,
+                    padding: '3px 8px', borderRadius: 8,
                     background: 'rgba(251,191,36,0.08)',
                     border: '1px solid rgba(251,191,36,0.18)',
                   }}
-                  title={lang === 'de' ? '2×2 Joker (gesamtes Spiel)' : '2×2 Jokers (whole game)'}
+                  title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
                   aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
                 >
                   {Array.from({ length: 2 }).map((_, i) => {
@@ -1433,14 +1463,11 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                     return (
                       <span key={i} style={{
                         display: 'inline-block',
-                        width: 4, height: 16,
-                        borderRadius: 2,
-                        background: used ? 'transparent' : '#FBBF24',
-                        border: used ? '1.5px solid rgba(251,191,36,0.32)' : '1.5px solid #FBBF24',
-                        boxShadow: used ? 'none' : '0 0 6px rgba(251,191,36,0.55)',
-                        opacity: used ? 0.55 : 1,
-                        transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease',
-                      }} />
+                        fontSize: 16, lineHeight: 1,
+                        opacity: used ? 0.35 : 1,
+                        filter: used ? 'grayscale(0.85)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.6))',
+                        transition: 'opacity 0.3s ease, filter 0.3s ease',
+                      }}><QQEmojiIcon emoji="🃏"/></span>
                     );
                   })}
                 </div>
@@ -1734,7 +1761,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginBottom: 8,
         }}>
-          <QQTeamAvatar avatarId={myTeam.avatarId} size={56} style={{
+          <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={56} style={{
             margin: '0 auto',
             animation: 'tcfloat 3s ease-in-out infinite',
             filter: `drop-shadow(0 0 12px ${myTeam.color}44)`,
@@ -1873,7 +1900,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
         </div>
 
         {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring, daher kein Wrapper-Disc mehr */}
-        <QQTeamAvatar avatarId={myTeam.avatarId} size={160} style={{
+        <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={160} style={{
           animation: 'tcTeamPop 0.7s var(--qq-ease-bounce) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
           boxShadow: `0 0 32px ${color}55`,
         }} />

@@ -6492,18 +6492,30 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 })}
               </div>
             )}
-            {/* Bluff-Author-Avatare (nur im Reveal, nur bei team-bluffs) */}
+            {/* Bluff-Author-Avatare (nur im Reveal, nur bei team-bluffs).
+                2026-05-04 v4 (Wolf 'Bluff von viiiiiiel zu klein, nicht
+                lesbar im Beamer'): Avatare 26 → clamp(38,3.8vw,52),
+                Trennlinie + paddingTop wie bei der Voter-Reihe oberhalb,
+                Eyebrow-Label groesser. Konsistent mit Voter-Avataren. */}
             {revealed && contributors.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginRight: 4 }}>
-                  🎭 {lang === 'de' ? 'Bluff von' : 'Bluffed by'}
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center',
+                marginTop: 6, paddingTop: 8,
+                borderTop: '1px dashed rgba(255,255,255,0.08)',
+              }}>
+                <span style={{
+                  fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                  color: '#cbd5e1', letterSpacing: '0.1em', textTransform: 'uppercase',
+                  marginRight: 4,
+                }}>
+                  <QQEmojiIcon emoji="🎭"/> {lang === 'de' ? 'Bluff von' : 'Bluffed by'}
                 </span>
                 {contributors.map(cid => {
                   const tm = s.teams.find(t => t.id === cid);
                   if (!tm) return null;
                   return (
-                    <QQTeamAvatar key={cid} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={26} style={{
-                      boxShadow: `0 0 0 1.5px ${tm.color}99`,
+                    <QQTeamAvatar key={cid} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(38px, 3.8vw, 52px)'} style={{
+                      boxShadow: `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
                     }} />
                   );
                 })}

@@ -26,6 +26,14 @@ type Props = {
    * 3-Step-Editor frei aus dem Pool gewaehlt.
    */
   teamEmoji?: string;
+  /**
+   * 2026-05-04 (Wolf): wenn true, kein Glow-Disc-Hintergrund + kein
+   * Inset-Schatten — nur das Emoji-Glyph. Fuer Render-Stellen wo der
+   * Container selbst schon die Slot-Farbe traegt (z.B. Beamer-Grid-Cells)
+   * und die Disc dahinter visuell redundant wirkt. Nur im Emoji-Mode
+   * relevant; im PNG-Mode (cozyCast) keine Wirkung.
+   */
+  flat?: boolean;
 };
 
 /**
@@ -44,7 +52,7 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji,
+  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji, flat,
 }: Props) {
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
@@ -78,6 +86,7 @@ export function QQTeamAvatar({
         className={className}
         title={labelText}
         square={square}
+        flat={flat}
       />
     );
   }
@@ -188,10 +197,10 @@ function PngAvatar({
 
 // ─── Emoji-Avatar (neuer Default-Look, alle Sets ausser cozyCast) ─────────
 function EmojiAvatar({
-  emoji, color, size, baseStyle, className, title, square,
+  emoji, color, size, baseStyle, className, title, square, flat,
 }: {
   emoji: string; color: string; size: number | string;
-  baseStyle: CSSProperties; className?: string; title: string; square?: boolean;
+  baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   // CSS-calc() bei String-Sizes (clamp/vw), Math bei Numbers — sonst skaliert
   // das Emoji nicht mit der Disc.
@@ -199,26 +208,27 @@ function EmojiAvatar({
     ? Math.max(10, Math.round(size * 0.6))
     : `calc(${size} * 0.6)`;
 
+  // Flat-Mode: kein BG / kein Glow / kein Inset — nur das Emoji-Glyph.
+  // Genutzt z.B. auf Beamer-Grid-Cells, wo die Cell selbst schon Slot-Farbe
+  // traegt und die Disc visuell redundant ist.
+  const flatStyle: CSSProperties = flat
+    ? { background: 'transparent', boxShadow: 'none' }
+    : {
+        background: `
+          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
+          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
+          ${color}
+        `,
+        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+      };
+
   return (
     <span
       className={className}
       title={title}
       style={{
         ...baseStyle,
-        // Single-Layer-Disc mit drei gestackten Backgrounds:
-        //   1. dezente dunkle Vignette in der Mitte (Kontrast fuer Emoji)
-        //   2. Highlight-Spot oben-links (3D-Hint)
-        //   3. Slot-Farbe als Basis
-        // → kein zweiter Inner-Kreis mehr, kein Sticker-Effekt.
-        background: `
-          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
-          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
-          ${color}
-        `,
-        // 2026-05-04: schwarzer Outer-Ring entfernt — auf Grid-Cells wirkte
-        // der wie ein Cutout vom Cell-BG. Glow (Slot-Farbe als Halo) +
-        // Inset-Schatten unten reichen fuer Definition auf jedem BG.
-        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+        ...flatStyle,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

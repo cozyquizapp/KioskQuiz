@@ -1102,9 +1102,13 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   const teamColor     = myTeam?.color ?? '#3B82F6';
 
   // ── Team sounds ──
+  // 2026-05-04 (Wolf): /team-Sounds standardmaessig STUMM. Beamer-Sounds sind
+  // die fuehrende Audio-Quelle im Pub; wenn jedes Phone gleichzeitig spielt,
+  // ueberlagern sie sich und stoeren das Quiz. Volume hart auf 0 — Mute am
+  // Beamer per s.sfxMuted bleibt natuerlich respektiert.
   useEffect(() => {
-    setVolume(s.sfxMuted ? 0 : (s.volume ?? 1));
-  }, [s.sfxMuted, s.volume]);
+    setVolume(0);
+  }, []);
   useEffect(() => {
     if (s.soundConfig) setSoundConfig(s.soundConfig);
   }, [s.soundConfig]);

@@ -4183,18 +4183,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               : `Round ${displayGpi} of ${s.totalPhases}`}
           </div>
 
-          {/* Shockwave burst behind title — nur beim klassischen BAM, nicht während Transition (stört sonst) */}
+          {/* Shockwave burst behind title — laeuft jetzt auch waehrend
+              Round-Transition (Wolf 2026-05-04): in Runde 1 sah man eine
+              animierte Welle unter dem Titel, in Runde 2/3/4 fehlte sie.
+              Bei aktiver Transition: spaeteres Delay damit's nicht mit dem
+              Digit-Flip kollidiert. */}
           <div style={{ position: 'relative', zIndex: 5 }}>
-            {!hasRoundTransition && (
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                width: 200, height: 200, marginLeft: -100, marginTop: -100,
-                borderRadius: '50%',
-                border: `3px solid ${displayColor}66`,
-                animation: 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
-                pointerEvents: 'none',
-              }} />
-            )}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: 200, height: 200, marginLeft: -100, marginTop: -100,
+              borderRadius: '50%',
+              border: `3px solid ${displayColor}66`,
+              animation: hasRoundTransition
+                ? 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 2.4s both'
+                : 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
+              pointerEvents: 'none',
+            }} />
             {/* Round name — Ziffer-Flip / Finale-Wort-Roll / BAM.
                 overflow:hidden nur waehrend der Transition, sonst bleibt
                 ein sichtbares Clip-Rechteck um das FINALE-Wort stehen. */}
@@ -8653,9 +8657,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           display: 'flex', flexDirection: 'column',
           justifyContent: isCheesePortrait ? 'center' : 'flex-end',
           alignItems: 'center',
+          // 2026-05-04 (Wolf): kleinere Raender auf der Schau-Mal-Seite
+          // damit das Bild mehr Bildflaeche bekommt. Vorher: 40-92px Padding.
           padding: isCheesePortrait
-            ? 'clamp(20px, 3vh, 40px) clamp(20px, 2.5vw, 40px)'
-            : (revealed ? '40px 48px 32px' : '40px 48px clamp(58px, 7vh, 92px)'),
+            ? 'clamp(12px, 2vh, 24px) clamp(12px, 1.6vw, 24px)'
+            : (revealed ? '20px 24px 16px' : '20px 24px clamp(28px, 4vh, 48px)'),
           transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1), left 0.5s ease',
           pointerEvents: 'none',
         }}>
@@ -11089,10 +11095,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   position: 'absolute',
                   fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  textShadow: '0 0 28px rgba(251,191,36,0.45)',
+                  // 2026-05-04 (Wolf): timerVignettePulse war ein
+                  // inset-box-shadow-Effekt fuer Screen-Raender (rot),
+                  // angewandt auf einen 92px-Span ergab das ein hartes
+                  // rotes Rechteck hinter dem ???. Stattdessen sanftes
+                  // text-shadow-Pulsen direkt am Glyph.
+                  textShadow: '0 0 28px rgba(251,191,36,0.45), 0 0 60px rgba(251,191,36,0.25)',
                   opacity: isReveal ? 0 : 1,
                   transition: 'opacity 0.5s ease',
-                  animation: isReveal ? undefined : 'timerVignettePulse 1.2s ease-in-out infinite',
+                  animation: isReveal ? undefined : 'hlQuestionMarkPulse 1.6s ease-in-out infinite',
                 }}>???</span>
                 <span style={{
                   position: 'absolute',
@@ -13988,7 +13999,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         boxShadow: stuckRing,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} />
+                        {/* 2026-05-04 (Wolf): flat-Avatar auf der Grid-Cell —
+                            die Cell traegt schon Slot-Farbe als BG, eine
+                            zweite Glow-Disc darunter ist redundant. */}
+                        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
                       </div>
                     );
                   })())}

@@ -4196,15 +4196,25 @@ export function qqOnlyConnectAdvanceAllTeams(room: QQRoomState, hintIdx: number)
 }
 
 /**
- * Per-Team Hint-Advance — DEPRECATED seit 2026-04-28.
- * Bleibt für Backward-Compat falls alte Clients noch das Socket triggern,
- * aber rechnet jetzt einfach den globalen Tick weiter (alle Teams synchron).
+ * Per-Team Hint-Advance — schaltet NUR fuer das angegebene Team den
+ * naechsten Hint frei. 2026-05-04 (Wolf-Bug-Report): die alte Implementierung
+ * war eine Stub die globalen Tick weiterrechnete — das hat dafuer gesorgt,
+ * dass beim Klick eines Teams ALLE Teams automatisch den naechsten Hint
+ * sahen. Jetzt: jeder Team-Index unabhaengig.
  */
-export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, _teamId: string): number | null {
-  const cur = Math.max(0, Math.min(3, ...Object.values(room.onlyConnectHintIndices ?? { _: 0 })));
+export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, teamId: string): number | null {
+  if (!room.teams[teamId]) return null;
+  // Locked oder schon richtig? Dann kein Advance.
+  if ((room.onlyConnectLockedTeams ?? []).includes(teamId)) return null;
+  const hasWon = (room.onlyConnectGuesses ?? []).some(g => g.teamId === teamId && g.correct);
+  if (hasWon) return null;
+  const cur = Math.max(0, Math.min(3, room.onlyConnectHintIndices[teamId] ?? 0));
   if (cur >= 3) return cur;
-  qqOnlyConnectAdvanceAllTeams(room, cur + 1);
-  return cur + 1;
+  const next = cur + 1;
+  room.onlyConnectHintIndices[teamId] = next;
+  room.onlyConnectHintRevealedAt[teamId] = Date.now();
+  room.lastActivityAt = Date.now();
+  return next;
 }
 
 /** Globaler min-Index across alle Teams — für Beamer-Anzeige (kein Spoiler). */

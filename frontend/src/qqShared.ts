@@ -320,6 +320,12 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { box-shadow: inset 0 0 40px rgba(239,68,68,0.2), inset 0 0 120px rgba(239,68,68,0.08); }
     50%      { box-shadow: inset 0 0 80px rgba(239,68,68,0.4), inset 0 0 220px rgba(239,68,68,0.18); }
   }
+  /* 2026-05-04 (Wolf): sanfter Text-Shadow-Puls fuer das ??? bei
+     Higher/Lower-Question — nur am Glyph, nicht als box-shadow Vignette. */
+  @keyframes hlQuestionMarkPulse {
+    0%, 100% { text-shadow: 0 0 22px rgba(251,191,36,0.40), 0 0 50px rgba(251,191,36,0.18); }
+    50%      { text-shadow: 0 0 36px rgba(251,191,36,0.65), 0 0 80px rgba(251,191,36,0.35); }
+  }
   /* C4 Map-Target-Drop. */
   @keyframes mapTargetDrop {
     0%   { opacity: 0; transform: translateY(-300px) scale(1.6) rotate(-8deg); filter: brightness(1.6); }

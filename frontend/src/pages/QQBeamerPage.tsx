@@ -6183,25 +6183,21 @@ function BluffWriteScreen({ state: s, accent, lang }: {
               position: 'relative',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               opacity: submitted ? 1 : 0.55,
-              filter: submitted ? 'none' : 'grayscale(0.4)',
+              // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow,
+              // nicht ✓-Haekchen' fuer Submit-Status): drop-shadow gruen
+              // wenn submitted, sonst grayscale.
+              filter: submitted
+                ? 'drop-shadow(0 0 18px rgba(34,197,94,0.75)) drop-shadow(0 0 6px rgba(34,197,94,0.55))'
+                : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
                 background: '#0d0a06',
                 boxShadow: submitted
-                  ? `0 0 0 2px ${accent}, 0 0 16px ${accent}88, 0 4px 10px rgba(0,0,0,0.55)`
+                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                transition: 'box-shadow 0.45s ease',
               }} />
-              {submitted && (
-                <div style={{
-                  position: 'absolute', bottom: -4, right: -4,
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: '#22C55E', border: '2px solid #0D0A06',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 900, color: '#fff',
-                  animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
-                }}>✓</div>
-              )}
             </div>
           );
         })}
@@ -6318,25 +6314,19 @@ function BluffVoteWaitingScreen({ state: s, accent, lang }: {
               position: 'relative',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               opacity: voted ? 1 : 0.55,
-              filter: voted ? 'none' : 'grayscale(0.4)',
+              // 2026-05-05 (Wolf): green-glow statt ✓-Badge fuer Submit-Status.
+              filter: voted
+                ? 'drop-shadow(0 0 18px rgba(34,197,94,0.75)) drop-shadow(0 0 6px rgba(34,197,94,0.55))'
+                : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
                 background: '#0d0a06',
                 boxShadow: voted
-                  ? `0 0 0 2px ${accent}, 0 0 16px ${accent}88, 0 4px 10px rgba(0,0,0,0.55)`
+                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                transition: 'box-shadow 0.45s ease',
               }} />
-              {voted && (
-                <div style={{
-                  position: 'absolute', bottom: -4, right: -4,
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: '#22C55E', border: '2px solid #0D0A06',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 900, color: '#fff',
-                  animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
-                }}>✓</div>
-              )}
             </div>
           );
         })}
@@ -6366,18 +6356,21 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
     votersByOption[optId].push(teamId);
   }
 
-  // 2026-05-05 (Wolf-Konzept): Reveal-Layout = vertikale TABELLE.
-  // - 1 Card pro Antwort, full-width gestapelt
+  // 2026-05-05 v2 (Wolf-Konzept): Reveal-Layout = GRID mit den neuen Card-Stilen.
+  // - 1/2/3 Spalten je nach Antwort-Anzahl
   // - Card-BG = Team-Farbe des Bluff-Authors (Real-Card = grün)
   // - Author-Avatar als halbtransparenter Watermark im BG
-  // - Eine Zeile pro Card: [Letter] [Antwort gross] [Author-Pill] [Voter-Avatare rechts]
-  // - Sieger-Card kommt im Parent UNTER diese Tabelle (siehe BluffBeamerView)
+  // - Pro Card vertikal: [Letter+Antwort+Pille] obere Reihe, [Voter-Avatare] untere Reihe
+  // - Sieger-Card kommt im Parent UNTER der Grid (siehe BluffBeamerView)
   if (revealed) {
+    const cols = opts.length >= 6 ? 3 : opts.length >= 4 ? 2 : 1;
     return (
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        gap: 'clamp(8px, 1.2vh, 14px)',
-        maxWidth: 1200, width: '100%', margin: '0 auto',
+        flex: 1, display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: 'clamp(10px, 1.4vh, 18px)',
+        maxWidth: cols === 3 ? 1500 : cols === 2 ? 1200 : 900,
+        width: '100%', margin: '0 auto',
         position: 'relative', zIndex: 5,
         animation: 'contentReveal 0.5s ease 0.15s both',
       }}>
@@ -6385,45 +6378,41 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
           const isReal = opt.source === 'real';
           const voters = votersByOption[opt.id] ?? [];
           const contribIds = opt.source === 'team' ? opt.contributors : [];
-          // Primary Author = erster Contributor (gibt Card-Farbe + Watermark);
-          // weitere Contributors werden als „+N"-Hinweis in der Author-Pille gezeigt.
           const authorTeam = !isReal && contribIds[0]
             ? s.teams.find(t => t.id === contribIds[0])
             : null;
           const extraAuthors = !isReal && contribIds.length > 1
             ? contribIds.length - 1
             : 0;
-          // Card-Farbe: Real = grün, Bluff = Author-Farbe, Anonym/keine Contributors = neutral.
           const cardColor = isReal ? '#22C55E' : (authorTeam?.color ?? '#64748b');
           return (
             <div key={opt.id} style={{
               position: 'relative',
               overflow: 'hidden',
-              padding: 'clamp(12px, 1.6vh, 22px) clamp(18px, 2.2vw, 32px)',
+              padding: 'clamp(12px, 1.6vh, 22px) clamp(16px, 2vw, 28px)',
               borderRadius: 18,
               background: isReal
-                ? `linear-gradient(90deg, ${cardColor}33 0%, ${cardColor}10 60%, transparent 100%)`
-                : `linear-gradient(90deg, ${cardColor}3a 0%, ${cardColor}14 50%, ${cardColor}06 100%)`,
+                ? `linear-gradient(135deg, ${cardColor}33 0%, ${cardColor}10 100%)`
+                : `linear-gradient(135deg, ${cardColor}3a 0%, ${cardColor}10 100%)`,
               border: `2px solid ${cardColor}${isReal ? 'cc' : '99'}`,
               boxShadow: isReal
-                ? `0 0 30px ${cardColor}33, 0 6px 18px rgba(0,0,0,0.4)`
+                ? `0 0 28px ${cardColor}33, 0 6px 16px rgba(0,0,0,0.4)`
                 : `0 0 18px ${cardColor}28, 0 6px 14px rgba(0,0,0,0.4)`,
-              display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.4vw, 22px)',
-              minHeight: 'clamp(64px, 8vh, 104px)',
+              display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vh, 14px)',
+              minHeight: 'clamp(110px, 14vh, 170px)',
               animation: `phasePop 0.55s var(--qq-ease-bounce) ${0.3 + i * 0.08}s both`,
             }}>
-              {/* Author-Avatar als BG-Watermark — sitzt rechts hinter dem Voter-Block,
-                  halbtransparent + leicht geblurrt, gibt der Card visuell ein „Owner-
-                  Stempel"-Gefuehl ohne den Avatar als hartes Element zu zeigen. */}
+              {/* Author-Avatar als BG-Watermark — gross, halbtransparent, hinter
+                  dem ganzen Card-Inhalt. Gibt das „Owner-Stempel"-Feeling. */}
               {!isReal && authorTeam && (
                 <div aria-hidden style={{
                   position: 'absolute',
-                  right: 'clamp(-10px, -1vw, -20px)',
+                  right: 'clamp(-12px, -1.5vw, -28px)',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: 'clamp(110px, 12vw, 180px)',
-                  height: 'clamp(110px, 12vw, 180px)',
-                  opacity: 0.16,
+                  width: 'clamp(120px, 14vw, 200px)',
+                  height: 'clamp(120px, 14vw, 200px)',
+                  opacity: 0.18,
                   filter: 'blur(1.5px)',
                   pointerEvents: 'none',
                   zIndex: 1,
@@ -6433,99 +6422,113 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 </div>
               )}
 
-              {/* Letter-Badge — Karten-Buchstabe in Author-Farbe. */}
-              <span style={{
-                width: 'clamp(32px, 3.4vw, 42px)', height: 'clamp(32px, 3.4vw, 42px)',
-                borderRadius: '50%',
-                background: cardColor,
-                color: '#0a1f0d',
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, position: 'relative', zIndex: 2,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-              }}>{String.fromCharCode(65 + i)}</span>
-
-              {/* Antwort-Text — gross + prominent. */}
-              <span style={{
-                flex: 1, minWidth: 0,
-                fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
-                color: isReal ? '#86efac' : '#F8FAFC',
-                wordBreak: 'break-word', lineHeight: 1.18,
-                textShadow: isReal
-                  ? '0 0 16px rgba(34,197,94,0.4)'
-                  : '0 1px 3px rgba(0,0,0,0.5)',
+              {/* Top-Row: Letter + Antwort + Pille */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 16px)',
                 position: 'relative', zIndex: 2,
-              }}>{opt.text}</span>
-
-              {/* Real-Pille oder Author-Pille. */}
-              {isReal ? (
+              }}>
                 <span style={{
-                  padding: '5px 14px', borderRadius: 999,
-                  background: 'rgba(34,197,94,0.3)', border: '1.5px solid #22C55E',
-                  fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#86EFAC',
-                  whiteSpace: 'nowrap', position: 'relative', zIndex: 2,
+                  width: 'clamp(28px, 3vw, 38px)', height: 'clamp(28px, 3vw, 38px)',
+                  borderRadius: '50%',
+                  background: cardColor,
+                  color: '#0a1f0d',
+                  fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
-                }}>
-                  ✓ {lang === 'de' ? 'echt' : 'real'}
-                </span>
-              ) : authorTeam ? (
-                <span style={{
-                  padding: '5px 14px', borderRadius: 999,
-                  background: `${authorTeam.color}28`, border: `1.5px solid ${authorTeam.color}aa`,
-                  fontSize: 'clamp(11px, 1.15vw, 15px)', fontWeight: 900, color: authorTeam.color,
-                  whiteSpace: 'nowrap', position: 'relative', zIndex: 2,
-                  flexShrink: 0,
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                  <QQEmojiIcon emoji="🎭"/>
-                  <span style={{ maxWidth: 'clamp(110px, 14vw, 220px)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {authorTeam.name}{extraAuthors > 0 ? ` +${extraAuthors}` : ''}
-                  </span>
-                </span>
-              ) : null}
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                }}>{String.fromCharCode(65 + i)}</span>
 
-              {/* Voter-Reihe rechts — wer hat diese Antwort gewaehlt? */}
-              {voters.length > 0 && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.7vw, 10px)',
-                  flexShrink: 0, position: 'relative', zIndex: 2,
-                  paddingLeft: 'clamp(10px, 1.2vw, 18px)',
-                  borderLeft: '1px dashed rgba(255,255,255,0.18)',
-                }}>
+                <span style={{
+                  flex: 1, minWidth: 0,
+                  fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900,
+                  color: isReal ? '#86efac' : '#F8FAFC',
+                  wordBreak: 'break-word', lineHeight: 1.18,
+                  textShadow: isReal
+                    ? '0 0 14px rgba(34,197,94,0.4)'
+                    : '0 1px 3px rgba(0,0,0,0.5)',
+                }}>{opt.text}</span>
+
+                {isReal ? (
                   <span style={{
-                    fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
-                    color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase',
-                    marginRight: 4,
+                    padding: '4px 12px', borderRadius: 999,
+                    background: 'rgba(34,197,94,0.3)', border: '1.5px solid #22C55E',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900, color: '#86EFAC',
+                    whiteSpace: 'nowrap', flexShrink: 0,
                   }}>
-                    {lang === 'de' ? 'Wählten' : 'Voted'}
+                    ✓ {lang === 'de' ? 'echt' : 'real'}
                   </span>
-                  {voters.map((vid, vIdx) => {
-                    const tm = s.teams.find(t => t.id === vid);
-                    if (!tm) return null;
-                    return (
-                      <div key={vid} title={tm.name} style={{
-                        position: 'relative',
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.45 + i * 0.08 + vIdx * 0.06}s both`,
-                      }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(38px, 3.8vw, 52px)'} style={{
-                          boxShadow: isReal
-                            ? `0 0 0 2.5px #22C55E, 0 0 12px rgba(34,197,94,0.5)`
-                            : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
-                        }} />
-                        {isReal && (
-                          <span aria-hidden style={{
-                            position: 'absolute', top: -6, right: -6,
-                            width: 20, height: 20, borderRadius: '50%',
-                            background: '#22C55E', border: '2px solid #0D0A06',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
-                          }}>✓</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                ) : authorTeam ? (
+                  <span style={{
+                    padding: '4px 12px', borderRadius: 999,
+                    background: `${authorTeam.color}28`, border: `1.5px solid ${authorTeam.color}aa`,
+                    fontSize: 'clamp(10px, 1.05vw, 13px)', fontWeight: 900, color: authorTeam.color,
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    maxWidth: '60%',
+                  }}>
+                    <QQEmojiIcon emoji="🎭"/>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {authorTeam.name}{extraAuthors > 0 ? ` +${extraAuthors}` : ''}
+                    </span>
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Bottom-Row: Voter-Avatare die diese Antwort gewählt haben.
+                  Reservierte Höhe damit Cards ohne Voters genauso hoch sind. */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.7vw, 10px)',
+                flexWrap: 'wrap',
+                position: 'relative', zIndex: 2,
+                paddingTop: voters.length > 0 ? 'clamp(6px, 0.8vh, 10px)' : 0,
+                borderTop: voters.length > 0 ? '1px dashed rgba(255,255,255,0.16)' : 'none',
+                minHeight: 'clamp(36px, 4vw, 48px)',
+              }}>
+                {voters.length > 0 ? (
+                  <>
+                    <span style={{
+                      fontSize: 'clamp(10px, 0.95vw, 12px)', fontWeight: 900,
+                      color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      marginRight: 4,
+                    }}>
+                      {lang === 'de' ? 'Wählten' : 'Voted'}
+                    </span>
+                    {voters.map((vid, vIdx) => {
+                      const tm = s.teams.find(t => t.id === vid);
+                      if (!tm) return null;
+                      return (
+                        <div key={vid} title={tm.name} style={{
+                          position: 'relative',
+                          animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.45 + i * 0.08 + vIdx * 0.06}s both`,
+                        }}>
+                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(34px, 3.4vw, 46px)'} style={{
+                            boxShadow: isReal
+                              ? `0 0 0 2.5px #22C55E, 0 0 12px rgba(34,197,94,0.5)`
+                              : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
+                          }} />
+                          {isReal && (
+                            <span aria-hidden style={{
+                              position: 'absolute', top: -5, right: -5,
+                              width: 18, height: 18, borderRadius: '50%',
+                              background: '#22C55E', border: '2px solid #0D0A06',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1,
+                            }}>✓</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <span style={{
+                    fontSize: 'clamp(10px, 0.95vw, 12px)', fontWeight: 700,
+                    color: 'rgba(148,163,184,0.5)', letterSpacing: '0.06em',
+                    fontStyle: 'italic',
+                  }}>
+                    {lang === 'de' ? 'keine Stimmen' : 'no votes'}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
@@ -11560,24 +11563,30 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   transition: 'opacity 0.4s ease, filter 0.4s ease',
                 }}>
                   <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7.5vw, 110px)'} style={{
-                    boxShadow: (correct || (answered && !isReveal))
-                      ? `0 0 22px ${tm.color}88`
-                      : '0 0 14px rgba(148,163,184,0.18)',
+                    // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow
+                    // fuer Submit-Status'): in Question-Phase answered=true →
+                    // gruener Ring + Glow. Reveal-Phase: Team-Color-Glow bleibt
+                    // (Ring kommt vom unten Status-Badge ✓/✕).
+                    boxShadow: !isReveal && answered
+                      ? `0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.55)`
+                      : (correct || (answered && !isReveal))
+                        ? `0 0 22px ${tm.color}88`
+                        : '0 0 14px rgba(148,163,184,0.18)',
                     transition: 'box-shadow 0.4s ease',
                   }} />
-                  {/* Status-Badge: in question = ✓ answered, in reveal = ✓/✕ */}
-                  {(isReveal ? true : answered) && (
+                  {/* Status-Badge: nur in Reveal = ✓ richtig / ✕ falsch.
+                      Question-Phase Submit-Status zeigt sich ueber den gruenen
+                      Avatar-Ring oben (konsistent mit Rest der App). */}
+                  {isReveal && (
                     <div style={{
                       position: 'absolute', bottom: -6, right: -6,
                       width: 32, height: 32, borderRadius: '50%',
-                      background: isReveal ? (correct ? '#22C55E' : '#EF4444') : '#22C55E',
+                      background: correct ? '#22C55E' : '#EF4444',
                       border: '2.5px solid #0D0A06',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 18, fontWeight: 900, color: '#fff',
-                      animation: isReveal
-                        ? 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both'
-                        : 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
-                    }}>{isReveal ? (correct ? '✓' : '✕') : '✓'}</div>
+                      animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
+                    }}>{correct ? '✓' : '✕'}</div>
                   )}
                   <TeamNameLabel
                     name={tm.name}
@@ -13388,13 +13397,19 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
           }}>
             <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
               background: '#0d0a06',
+              // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow'):
+              // hasActivity (= Team hat schon getippt) → green-Ring + Glow
+              // statt ✓-Badge unten rechts. Winner=Gold-Ring, locked=Default.
               boxShadow: isWinner
                 ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
-                : isActiveTeam
-                  ? `0 0 0 2px ${tm.color}, 0 0 16px ${tm.color}aa`
-                  : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                : !locked && hasActivity
+                  ? `0 0 0 3px #22C55E, 0 0 18px rgba(34,197,94,0.55), 0 4px 10px rgba(0,0,0,0.55)`
+                  : isActiveTeam
+                    ? `0 0 0 2px ${tm.color}, 0 0 16px ${tm.color}aa`
+                    : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+              transition: 'box-shadow 0.45s ease',
             }} />
-            {/* Status-Badge unten rechts */}
+            {/* Status-Badge unten rechts — nur Winner und Locked. */}
             {isWinner && (
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
@@ -13415,16 +13430,6 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
                 fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1,
                 animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
               }}>✕{fails}</div>
-            )}
-            {!isWinner && !locked && hasActivity && (
-              <div style={{
-                position: 'absolute', bottom: -4, right: -4,
-                width: 28, height: 28, borderRadius: '50%',
-                background: '#22C55E', border: '2px solid #0D0A06',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1,
-                animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
-              }}>✓</div>
             )}
             {/* Setz-×N-Pille während Placement */}
             {isActiveTeam && (

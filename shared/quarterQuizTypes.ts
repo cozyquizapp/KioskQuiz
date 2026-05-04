@@ -248,6 +248,12 @@ export interface QQTeam {
   name: string;
   color: string;
   avatarId: string;
+  /** 2026-05-04: Optionales Emoji-Override fuer den Avatar-Inhalt. Wenn gesetzt,
+   *  ueberschreibt es den Set-Default-Emoji aus avatarSets[setId].avatars[slot].
+   *  Wird im /team-SetupFlow vom Spieler frei aus dem Set-Pool gewaehlt
+   *  (Eindeutigkeit: jeder Emoji nur einmal pro Room). avatarId bleibt der
+   *  Color-Slot-Schluessel — Farbe folgt also immer dem Slot, der Inhalt nicht. */
+  emoji?: string;
   connected: boolean;
   totalCells: number;       // derived: how many cells owned
   largestConnected: number; // derived: largest connected territory (BFS)
@@ -984,7 +990,7 @@ export type QQPendingAction =
 // ── Socket event payloads (client → server) ───────────────────────────────────
 export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
-export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; }
+export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
 export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; }
 export interface QQRevealAnswerPayload   { roomCode: string; }

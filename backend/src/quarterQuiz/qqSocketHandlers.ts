@@ -1669,7 +1669,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (!payload.teamName || typeof payload.teamName !== 'string' || payload.teamName.length > 100) throw new QQError('INVALID_NAME', 'Teamname ungültig (max 100 Zeichen).');
         if (!payload.teamId || typeof payload.teamId !== 'string' || payload.teamId.length > 100) throw new QQError('INVALID_ID', 'TeamId ungültig.');
         const room = ensureQQRoom(payload.roomCode);
-        qqJoinTeam(room, payload.teamId, payload.teamName, payload.avatarId);
+        qqJoinTeam(room, payload.teamId, payload.teamName, payload.avatarId, payload.emoji);
         socket.join(payload.roomCode);
         socket.data.qqTeamId   = payload.teamId;
         socket.data.qqRoomCode = payload.roomCode;

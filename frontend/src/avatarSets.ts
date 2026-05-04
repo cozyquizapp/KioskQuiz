@@ -154,6 +154,9 @@ export function getAvatarDisplay(
   /** Optional Server-gewuerfelte Slot-Emojis bei Set 'all'. Wenn 8 Eintraege
    *  vorhanden, ueberschreibt der Eintrag an `slotIdx` den Set-Default. */
   serverEmojis?: string[],
+  /** Optional Team-spezifischer Emoji-Override (vom 3-Step-SetupFlow auf /team
+   *  vom Spieler frei aus dem Set-Pool gewaehlt). Hat hoechste Prioritaet. */
+  teamEmoji?: string,
 ): AvatarDisplay {
   // Slot-Index ueber QQ_AVATARS — das ist die kanonische 8-Slot-Liste mit Farben.
   const slotIdx = Math.max(0, QQ_AVATARS.findIndex(a => a.id === avatarId));
@@ -170,15 +173,23 @@ export function getAvatarDisplay(
     };
   }
 
-  // Emoji-Source. Prio: Server-Override (bei 'all') > Set-Default > Cozy-Tier-Fallback.
-  const overrideEmoji = (set.id === 'all' && serverEmojis && serverEmojis.length === 8)
-    ? serverEmojis[slotIdx]
-    : undefined;
-  const emoji = overrideEmoji ?? set.avatars[slotIdx] ?? COZY_ANIMALS_EMOJI[slotIdx] ?? slot.emoji;
+  // Emoji-Source. Prio in absteigender Reihenfolge:
+  //   1. teamEmoji (Spieler-Choice via /team 3-Step-Editor)
+  //   2. Server-Override (bei 'all' vom Backend gewuerfelt)
+  //   3. Set-Default (avatarSets[setId].avatars[slotIdx])
+  //   4. Cozy-Tier-Fallback
+  const candidates: (string | undefined)[] = [
+    teamEmoji && teamEmoji.trim() ? teamEmoji.trim() : undefined,
+    (set.id === 'all' && serverEmojis && serverEmojis.length === 8) ? serverEmojis[slotIdx] : undefined,
+    set.avatars[slotIdx],
+    COZY_ANIMALS_EMOJI[slotIdx],
+    slot.emoji,
+  ];
+  const emoji = candidates.find((e): e is string => typeof e === 'string' && e.length > 0) ?? slot.emoji;
   return {
     kind: 'emoji',
     emoji,
     color: slot.color,
-    label: slot.label,   // Tier-Label bleibt fuer Aria/Tooltip; Display zeigt Emoji
+    label: slot.label,
   };
 }

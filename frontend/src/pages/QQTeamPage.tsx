@@ -8,12 +8,13 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/di
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
-  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS,
+  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, FUNNY_TEAM_NAMES,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
+import { AVATAR_SETS, getSet } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
@@ -326,7 +327,7 @@ function AnimatedDots() {
   );
 }
 
-type SetupStep = 'AVATAR' | 'NAME';
+type SetupStep = 'COLOR' | 'AVATAR' | 'NAME';
 
 // 2026-05-03 (Wolf-Wunsch): kleiner Copy-Button fuer den Stamm-Code.
 // Funktioniert mit navigator.clipboard, Fallback auf execCommand fuer alte
@@ -398,8 +399,11 @@ function parseStammCodeToTeamId(input: string): string {
 
 export default function QQTeamPage() {
   const roomCode = QQ_ROOM;
-  const [step, setStep]         = useState<SetupStep>('AVATAR');
+  // 2026-05-04: SetupFlow auf 3 Steps. avatarId = Color-Slot, emoji =
+  // freier Pool-Pick aus aktivem Set, teamName = freier Pool-Pick oder Eingabe.
+  const [step, setStep]         = useState<SetupStep>('COLOR');
   const [avatarId, setAvatarId] = useState(() => sessionStorage.getItem('qq_avatarId') ?? 'fox');
+  const [chosenEmoji, setChosenEmoji] = useState<string | undefined>(() => sessionStorage.getItem('qq_emoji') ?? undefined);
   const [teamName, setTeamName] = useState(() => sessionStorage.getItem('qq_teamName') ?? '');
   const [teamId, setTeamId]     = useState(getOrCreateTeamId);
   const [joined, setJoined]     = useState(false);
@@ -494,7 +498,11 @@ export default function QQTeamPage() {
     setError(null);
     sessionStorage.setItem('qq_teamName', teamName.trim());
     sessionStorage.setItem('qq_avatarId', avatarId);
-    const ack = await emit('qq:joinTeam', { roomCode, teamId, teamName: teamName.trim(), avatarId });
+    if (chosenEmoji) sessionStorage.setItem('qq_emoji', chosenEmoji);
+    else sessionStorage.removeItem('qq_emoji');
+    const ack = await emit('qq:joinTeam', {
+      roomCode, teamId, teamName: teamName.trim(), avatarId, emoji: chosenEmoji,
+    });
     if (ack.ok) { setJoined(true); setShowIdentityBanner(true); }
     else setError(ack.error ?? 'error');
   }
@@ -516,7 +524,9 @@ export default function QQTeamPage() {
     }, 200);
   };
 
+  const setId = state?.avatarSetId;
   const takenAvatarIds = (state?.teams ?? []).map(t => t.avatarId);
+  const takenEmojis = (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
   // Doppelten Team-Namen blocken (case-insensitive, getrimmt). Wenn dasselbe
   // Wort in der Lobby zweimal vorkommt, kann der Mod (und am Ende beim Reveal
   // selbst) nicht mehr unterscheiden wer gemeint ist.
@@ -530,20 +540,71 @@ export default function QQTeamPage() {
     }
   }, [takenAvatarIds.join(',')]);
 
-  // 2026-05-04 — Avatar-Set-Provider wraps alle drei Return-Branches, damit
-  // QQTeamAvatar im SetupFlow + WaitingScreen + TeamGameView konsistent
-  // entweder PNG (cozyCast) oder Emoji-Disc rendert.
-  const setId = state?.avatarSetId;
+  // 2026-05-04: Beim ersten Mount mit Live-State -> random freie Color +
+  // Emoji + Name Vorschlag setzen (wenn nichts in sessionStorage steht).
+  // Nicht wenn schon eine sessionStorage-Auswahl vorliegt (Reload-Fall).
+  const didRandomInit = useRef(false);
+  useEffect(() => {
+    if (didRandomInit.current) return;
+    if (!state) return;   // warten bis State da ist
+    didRandomInit.current = true;
+    // Random Color, falls aktuelle ('fox' default) belegt ist oder nichts in storage stand
+    const hasStoredColor = !!sessionStorage.getItem('qq_avatarId');
+    if (!hasStoredColor || takenAvatarIds.includes(avatarId)) {
+      const free = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id));
+      if (free.length > 0) {
+        const pick = free[Math.floor(Math.random() * free.length)];
+        setAvatarId(pick.id);
+      }
+    }
+    // Random Name aus FUNNY_TEAM_NAMES (wenn nichts gespeichert)
+    const hasStoredName = !!sessionStorage.getItem('qq_teamName');
+    if (!hasStoredName) {
+      const freeNames = FUNNY_TEAM_NAMES.filter(n => !takenTeamNamesLower.includes(n.trim().toLowerCase()));
+      if (freeNames.length > 0) {
+        setTeamName(freeNames[Math.floor(Math.random() * freeNames.length)]);
+      }
+    }
+  }, [state, takenAvatarIds.join(','), takenTeamNamesLower.join(',')]);
+
+  // 2026-05-04: Auto-switch fuer chosen emoji wenn ein anderer Spieler ihn nimmt.
+  // Plus Random-Init: wenn noch kein Emoji gewaehlt, zieh den ersten freien
+  // aus dem Set-Pool (sobald Set + Pool da sind).
+  useEffect(() => {
+    if (joined) return;
+    if (!setId) return;
+    const set = AVATAR_SETS.find(s => s.id === setId);
+    if (!set || set.source === 'png') return;
+    const pool = (setId === 'all' && state?.avatarSetEmojis?.length === 8)
+      ? state.avatarSetEmojis
+      : (set.avatars ?? []);
+    if (pool.length === 0) return;
+    // Wenn aktueller Emoji belegt oder nicht aus dem Pool: switchen
+    const myEmojiInvalid = chosenEmoji && (takenEmojis.includes(chosenEmoji) || !pool.includes(chosenEmoji));
+    if (!chosenEmoji || myEmojiInvalid) {
+      const freeList = pool.filter(e => !takenEmojis.includes(e));
+      if (freeList.length > 0) {
+        const pick = freeList[Math.floor(Math.random() * freeList.length)];
+        setChosenEmoji(pick);
+      }
+    }
+  }, [takenEmojis.join(','), setId, state?.avatarSetEmojis?.join(','), joined]);
+
+  // setId ist oben schon deklariert; Provider-Branches nutzen ihn.
 
   if (!joined) {
     return (
       <AvatarSetProvider value={setId} emojis={state?.avatarSetEmojis}>
         <SetupFlow step={step} setStep={setStep}
-          avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
+          avatarId={avatarId} setAvatarId={setAvatarId}
+          chosenEmoji={chosenEmoji} setChosenEmoji={setChosenEmoji}
+          teamName={teamName} setTeamName={setTeamName}
           connected={connected} error={error} onJoin={joinRoom}
           lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
           takenAvatarIds={takenAvatarIds}
+          takenEmojis={takenEmojis}
           takenTeamNamesLower={takenTeamNamesLower}
+          serverEmojis={state?.avatarSetEmojis}
           resumeTeam={existingTeamInRoom}
           onResume={handleResume}
           onStammLookup={lookupStammCode}
@@ -575,13 +636,18 @@ export default function QQTeamPage() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
-  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip, takenAvatarIds, takenTeamNamesLower,
+  chosenEmoji, setChosenEmoji,
+  teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip,
+  takenAvatarIds, takenEmojis, takenTeamNamesLower, serverEmojis,
   resumeTeam, onResume, onStammLookup, stammResult, stammStatus }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
+  chosenEmoji: string | undefined; setChosenEmoji: (e: string | undefined) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
   takenAvatarIds: string[];
+  takenEmojis: string[];
   takenTeamNamesLower: string[];
+  serverEmojis?: string[];
   resumeTeam: import('../../../shared/quarterQuizTypes').QQTeam | null;
   onResume: () => void;
   onStammLookup: (code: string) => Promise<void>;
@@ -664,7 +730,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         {/* 2026-05-02 (Stamm-Team-Code): Optionales "alten Code eingeben"-Feld
             ueber dem Avatar-Picker. Pub-Stammgaeste merken sich ihren Code von
             letzter Woche, Win-Streak akkumuliert sich. Wer keinen hat, ignoriert. */}
-        {!resumeTeam && step === 'AVATAR' && (
+        {!resumeTeam && step === 'COLOR' && (
           <CozyCard borderColor="#FBBF24">
             {!stammExpanded && !stammResult && (
               <button
@@ -789,9 +855,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             </div>
           </CozyCard>
         )}
-        {step === 'AVATAR' && (
+        {step === 'COLOR' && (
           <CozyCard anim borderColor="#EAB308">
-            <StepLabel>{t.setup.chooseAvatar[lang]}</StepLabel>
+            <StepLabel>{lang === 'de' ? 'Wähle eine Farbe' : 'Pick a color'}</StepLabel>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
               {QQ_AVATARS.map((a, i) => {
                 const sel = avatarId === a.id;
@@ -864,9 +930,85 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 );
               })}
             </div>
-            <CozyBtn color="#EAB308" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
+            <CozyBtn color="#EAB308" onClick={() => setStep('AVATAR')}>{t.setup.next[lang]}</CozyBtn>
           </CozyCard>
         )}
+        {step === 'AVATAR' && (() => {
+          // 2026-05-04 (Wolf): Pool aller Set-Emojis, taken-Filter, Random-Pick
+          // wenn nichts gewaehlt. Bei 'all' nutzen wir die server-gewuerfelten
+          // Emojis (avatarSetEmojis), sonst den Set-Default-Pool.
+          const set = activeSetId === 'all' ? null : getSet(activeSetId);
+          const isPng = (set?.source ?? 'emoji') === 'png';
+          const pool: string[] = isPng
+            ? []
+            : (activeSetId === 'all' && serverEmojis?.length === 8 ? serverEmojis : (set?.avatars ?? []));
+          // Wenn PNG-Set aktiv (cozyCast): kein Emoji-Picker — direkt zu NAME
+          if (isPng) {
+            // Beim ersten Mount auto-skip
+            return (
+              <CozyCard anim borderColor="#EAB308">
+                <StepLabel>{lang === 'de' ? 'Avatar' : 'Avatar'}</StepLabel>
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <QQTeamAvatar avatarId={avatarId} size={120} />
+                  <div style={{ marginTop: 14, fontSize: 14, color: '#94A3B8', fontWeight: 700 }}>
+                    {lang === 'de' ? 'CozyCast-Avatar — fix zur Farbe' : 'CozyCast avatar — fixed to color'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                  <CozyBtn color="#EAB308" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
+                </div>
+              </CozyCard>
+            );
+          }
+          return (
+            <CozyCard anim borderColor="#EAB308">
+              <StepLabel>{lang === 'de' ? 'Wähle einen Avatar' : 'Pick an avatar'}</StepLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+                {pool.map((em, i) => {
+                  const taken = takenEmojis.includes(em);
+                  const sel = chosenEmoji === em;
+                  const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EAB308';
+                  return (
+                    <button
+                      key={`${em}-${i}`}
+                      onClick={() => !taken && setChosenEmoji(em)}
+                      disabled={taken}
+                      style={{
+                        padding: '14px 4px', borderRadius: 14,
+                        cursor: taken ? 'not-allowed' : 'pointer',
+                        background: taken
+                          ? 'rgba(255,255,255,0.02)'
+                          : sel
+                            ? `linear-gradient(135deg, ${myColor}33, ${myColor}14)`
+                            : 'rgba(255,255,255,0.04)',
+                        border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? myColor : 'rgba(255,255,255,0.10)'}`,
+                        opacity: taken ? 0.32 : 1,
+                        fontSize: 36, lineHeight: 1,
+                        fontFamily: 'inherit',
+                        transition: 'all 0.18s',
+                        boxShadow: sel ? `0 0 18px ${myColor}55` : 'none',
+                        textDecoration: taken ? 'line-through' : 'none',
+                      }}
+                    >
+                      {em}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                <CozyBtn
+                  color="#EAB308"
+                  onClick={() => setStep('NAME')}
+                  disabled={!chosenEmoji}
+                >
+                  {t.setup.next[lang]}
+                </CozyBtn>
+              </div>
+            </CozyCard>
+          );
+        })()}
         {step === 'NAME' && (
           <CozyCard anim borderColor="#EAB308">
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -877,23 +1019,50 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               }} />
             </div>
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
-            <input
-              value={teamName}
-              onChange={e => setTeamName(e.target.value)}
-              placeholder={t.setup.placeholder[lang]}
-              style={{
-                ...cozyInput,
-                border: nameTaken
-                  ? '1px solid rgba(239,68,68,0.55)'
-                  : '1px solid rgba(234,179,8,0.25)',
-                background: nameTaken
-                  ? 'rgba(239,68,68,0.06)'
-                  : 'rgba(234,179,8,0.06)',
-              }}
-              autoFocus
-              maxLength={20}
-              onKeyDown={e => e.key === 'Enter' && teamName.trim() && !nameTaken && onJoin()}
-            />
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              <input
+                value={teamName}
+                onChange={e => setTeamName(e.target.value)}
+                placeholder={t.setup.placeholder[lang]}
+                style={{
+                  ...cozyInput,
+                  flex: 1,
+                  border: nameTaken
+                    ? '1px solid rgba(239,68,68,0.55)'
+                    : '1px solid rgba(234,179,8,0.25)',
+                  background: nameTaken
+                    ? 'rgba(239,68,68,0.06)'
+                    : 'rgba(234,179,8,0.06)',
+                }}
+                autoFocus
+                maxLength={20}
+                onKeyDown={e => e.key === 'Enter' && teamName.trim() && !nameTaken && onJoin()}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  // Random witzigen Namen aus dem freien Pool ziehen
+                  const free = FUNNY_TEAM_NAMES.filter(
+                    n => !takenTeamNamesLower.includes(n.trim().toLowerCase())
+                      && n !== teamName
+                  );
+                  if (free.length > 0) {
+                    setTeamName(free[Math.floor(Math.random() * free.length)]);
+                  }
+                }}
+                title={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
+                style={{
+                  padding: '0 14px', borderRadius: 10,
+                  background: 'rgba(234,179,8,0.18)',
+                  border: '1px solid rgba(234,179,8,0.4)',
+                  color: '#FDE68A', fontSize: 18,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >🎲</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <CozyBtn color="#94A3B8" onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+            </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, marginTop: 4, fontWeight: 700 }}>
                 {lang === 'de'

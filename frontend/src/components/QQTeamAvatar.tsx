@@ -17,9 +17,15 @@ type Props = {
   /**
    * Optionales Override fuer das Avatar-Set. Wenn nicht gesetzt,
    * wird der aktive Set-Wert aus AvatarSetContext gelesen.
-   * Faellt auf 'all' (Default-Emoji-Look) zurueck wenn kein Provider da ist.
    */
   avatarSetId?: string;
+  /**
+   * Optionales Team-spezifisches Emoji-Override. Wenn gesetzt, wird genau
+   * dieser Emoji gerendert (nur im Emoji-Modus, nicht bei cozyCast/PNG).
+   * Quelle ist team.emoji aus dem Backend-State, vom Spieler im /team-
+   * 3-Step-Editor frei aus dem Pool gewaehlt.
+   */
+  teamEmoji?: string;
 };
 
 /**
@@ -38,14 +44,14 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId,
+  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji,
 }: Props) {
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
   // serverEmojis nur ehrlich verwenden wenn das Set passt — bei explizitem
   // Override (z.B. cozyCast) ignorieren wir die Server-Emojis.
   const serverEmojis = (avatarSetId == null || avatarSetId === ctx.id) ? ctx.emojis : undefined;
-  const display = getAvatarDisplay(avatarId, setId, serverEmojis);
+  const display = getAvatarDisplay(avatarId, setId, serverEmojis, teamEmoji);
 
   const labelText = title ?? display.label;
   // Sprach-Hint wird im aktuellen Code-Pfad nicht benoetigt; lang-Param bleibt

@@ -408,7 +408,10 @@ export function qqJoinTeam(
   room: QQRoomState,
   teamId: string,
   teamName: string,
-  avatarId: string
+  avatarId: string,
+  /** 2026-05-04: optionales Emoji-Override (vom 3-Step-SetupFlow auf /team).
+   *  Wenn gesetzt UND nicht schon belegt, wird's auf team.emoji geschrieben. */
+  emoji?: string,
 ): void {
   if (room.teams[teamId]) {
     // Rejoin — check avatar exclusivity (another team may have taken it in the meantime)
@@ -419,6 +422,11 @@ export function qqJoinTeam(
     // Sync color to (possibly new) avatar's signature color
     const newAvatar = QQ_AVATARS.find(a => a.id === safeAvatarId);
     if (newAvatar?.color) room.teams[teamId].color = newAvatar.color;
+    // Emoji-Override: bei Rejoin akzeptieren wenn nicht von anderem Team belegt
+    if (emoji && emoji.trim()) {
+      const emojiTakenBy = Object.values(room.teams).find(t => t.id !== teamId && t.emoji === emoji);
+      if (!emojiTakenBy) room.teams[teamId].emoji = emoji;
+    }
     room.teams[teamId].connected = true;
     return;
   }
@@ -430,10 +438,19 @@ export function qqJoinTeam(
   if (existingCount >= QQ_MAX_TEAMS) {
     throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${QQ_MAX_TEAMS}) erreicht.`);
   }
-  // Avatar exclusivity: each avatar can only be chosen by one team
+  // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team
   const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);
   if (avatarTaken) {
-    throw new QQError('AVATAR_TAKEN', 'Dieser Avatar ist bereits vergeben.');
+    throw new QQError('AVATAR_TAKEN', 'Diese Farbe ist bereits vergeben.');
+  }
+  // Emoji exclusivity: bei explizitem Override darf der Emoji nicht schon von
+  // einem anderen Team gewaehlt worden sein. Bei kein-Override wird der Default
+  // aus dem Set genommen (Set-eigene Eindeutigkeit ueber Slot-Index).
+  if (emoji && emoji.trim()) {
+    const emojiTaken = Object.values(room.teams).some(t => t.emoji === emoji);
+    if (emojiTaken) {
+      throw new QQError('EMOJI_TAKEN', 'Dieses Emoji ist bereits vergeben.');
+    }
   }
   // Name exclusivity: gleiche Namen verwirren Mod + Reveals (case-insensitive,
   // getrimmt — „Wölfe" und „wölfe " gelten als identisch).
@@ -452,6 +469,7 @@ export function qqJoinTeam(
     name: teamName,
     color,
     avatarId,
+    emoji: emoji && emoji.trim() ? emoji : undefined,
     connected: true,
     totalCells: 0,
     largestConnected: 0,

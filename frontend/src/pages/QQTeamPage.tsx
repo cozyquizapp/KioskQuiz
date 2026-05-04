@@ -12,6 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
 import {
@@ -1150,9 +1151,15 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           }}>
             <QQTeamAvatar avatarId={myTeam.avatarId} size={34} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontWeight: 900, fontSize: 20, color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', minWidth: 0 }}>
-                {myTeam.name}
-              </div>
+              <TeamNameLabel
+                name={myTeam.name}
+                maxLines={1}
+                shrinkAfter={14}
+                fontSize={20}
+                color="#e2e8f0"
+                fontWeight={900}
+                style={{ flex: 1, minWidth: 0 }}
+              />
               {/* Joker slots — 2 stars for the whole game, greyed when used */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
@@ -2748,9 +2755,15 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
                 animation: 'tcpulse 1.8s ease-in-out infinite',
               }}>
                 <QQTeamAvatar avatarId={t.avatarId} size={28} />
-                <span style={{ fontSize: 12, fontWeight: 800, color: t.color, maxWidth: 96, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {t.name}
-                </span>
+                <TeamNameLabel
+                  name={t.name}
+                  maxLines={2}
+                  shrinkAfter={12}
+                  fontSize={12}
+                  color={t.color}
+                  fontWeight={800}
+                  style={{ maxWidth: 130 }}
+                />
               </div>
             ))}
             {pendingTeams.length > 10 && (

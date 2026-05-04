@@ -10,6 +10,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS } from '../avatarSets';
 import { AvatarSetProvider } from '../avatarSetContext';
+import { TeamNameLabel } from '../components/TeamNameLabel';
 import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
@@ -2909,10 +2910,15 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
                   width: 10, height: 10, borderRadius: '50%', background: tm.color,
                   flexShrink: 0,
                 }} />
-                <span style={{
-                  fontSize: 12, fontWeight: 800, color: '#e2e8f0',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-                }}>{tm.name}</span>
+                <TeamNameLabel
+                  name={tm.name}
+                  maxLines={1}
+                  shrinkAfter={14}
+                  fontSize={12}
+                  color="#e2e8f0"
+                  fontWeight={800}
+                  style={{ flex: 1 }}
+                />
                 {isPlacing && <span style={{ fontSize: 10, fontWeight: 800, color: '#86efac' }}>SETZT</span>}
                 {locked && <span style={{ fontSize: 10, fontWeight: 800, color: '#FCA5A5' }}>RAUS</span>}
                 {finished && !locked && <span style={{ fontSize: 10, fontWeight: 800, color: '#FBBF24' }}>FERTIG</span>}
@@ -4147,11 +4153,14 @@ function LobbyView({
                     }}>
                       <QQTeamAvatar avatarId={t.avatarId} size={44} style={{ flexShrink: 0 }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{
-                          fontSize: 13, fontWeight: 900,
-                          color: t.connected ? '#e2e8f0' : '#64748b',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>{t.name}</div>
+                        <TeamNameLabel
+                          name={t.name}
+                          maxLines={1}
+                          shrinkAfter={14}
+                          fontSize={13}
+                          color={t.connected ? '#e2e8f0' : '#64748b'}
+                          fontWeight={900}
+                        />
                         <div style={{
                           fontSize: 10, fontWeight: 700,
                           color: t.connected ? '#22C55E' : '#EF4444',

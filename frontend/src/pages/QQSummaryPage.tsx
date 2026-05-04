@@ -8,6 +8,7 @@ import { teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider } from '../avatarSetContext';
 
 type Lang = 'de' | 'en';
@@ -715,10 +716,14 @@ function Superlatives({ teams, selectedId, lang }: {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <QQTeamAvatar avatarId={title.winner.avatarId} size={38} />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: 14, fontWeight: 900, color: title.winner.color,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>{title.winner.name}</span>
+                  <TeamNameLabel
+                    name={title.winner.name}
+                    maxLines={1}
+                    shrinkAfter={14}
+                    fontSize={14}
+                    color={title.winner.color}
+                    fontWeight={900}
+                  />
                   <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>
                     {lang === 'de' ? title.descDe : title.descEn}
                   </span>

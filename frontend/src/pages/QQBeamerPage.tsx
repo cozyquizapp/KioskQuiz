@@ -17,6 +17,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
+import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { AvatarSetProvider } from '../avatarSetContext';
@@ -65,7 +66,10 @@ export function getStandingAvatarSize(teamCount: number, twoCol = false): string
   return 'clamp(34px, 3.2vw, 48px)';
 }
 
-function truncName(name: string, max = 22): string {
+/** Hard-Truncation fuer Inline-Saetze (z.B. "X ist dran!") wo Multi-line-
+ *  Wrap das Layout brechen wuerde. Block-/Card-Kontexte sollten stattdessen
+ *  <TeamNameLabel/> nutzen, das wrappt 2-zeilig statt zu zerstuemmeln. */
+function truncName(name: string, max = 28): string {
   if (!name) return '';
   return name.length > max ? name.slice(0, max - 1) + '…' : name;
 }
@@ -2009,7 +2013,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
               <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
             </span>
             <span title={activeTeam.name} style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', fontWeight: 900, color: activeTeam.color }}>
-              {truncName(activeTeam.name, 18)} {lang === 'en' ? 'is up!' : 'ist dran!'}
+              {truncName(activeTeam.name, 26)} {lang === 'en' ? 'is up!' : 'ist dran!'}
             </span>
           </div>
           {remaining !== null && (
@@ -3794,19 +3798,22 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             animation: 'qqTrFlash 600ms ease-out both',
                           }} />
                         )}
-                        {/* Team name */}
-                        <div title={t.name} style={{
-                          padding: '6px 16px', borderRadius: 14,
+                        {/* Team name (Pill) — 2-zeilig erlaubt bei langen Witznamen */}
+                        <div style={{
+                          padding: '6px 14px', borderRadius: 14,
                           background: t.color,
-                          color: '#fff', fontWeight: 900,
-                          fontSize: nameFont,
                           textTransform: 'uppercase', letterSpacing: '0.04em',
                           boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
-                          whiteSpace: 'nowrap',
-                          maxWidth: multiRow ? '22vw' : '18vw',
-                          overflow: 'hidden', textOverflow: 'ellipsis',
+                          maxWidth: multiRow ? '24vw' : '20vw',
                         }}>
-                          {truncName(t.name, multiRow ? 14 : 16)}
+                          <TeamNameLabel
+                            name={t.name}
+                            maxLines={2}
+                            shrinkAfter={14}
+                            color="#fff"
+                            fontWeight={900}
+                            fontSize={nameFont}
+                          />
                         </div>
                       </div>
                     );
@@ -5904,14 +5911,19 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                 animation: 'celebShake 0.6s ease 1.1s both',
               }} />
               <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontWeight: 900, fontSize: 'clamp(28px, 4vw, 56px)',
-                  color: winnerTeam.color, lineHeight: 1.1,
-                  textShadow: `0 0 30px ${winnerTeam.color}55`,
-                  whiteSpace: 'nowrap',
-                }}>
-                  {truncName(teamDisplayName(winnerTeam.name, true), 22)}
-                </div>
+                <TeamNameLabel
+                  name={winnerTeam.name}
+                  withTeamPrefix
+                  maxLines={2}
+                  shrinkAfter={18}
+                  color={winnerTeam.color}
+                  fontWeight={900}
+                  fontSize="clamp(28px, 4vw, 56px)"
+                  style={{
+                    lineHeight: 1.1,
+                    textShadow: `0 0 30px ${winnerTeam.color}55`,
+                  }}
+                />
                 <div style={{
                   color: '#cbd5e1', fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
                   marginTop: 4,
@@ -10284,11 +10296,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           flexShrink: 0, boxShadow: `0 0 22px ${tm.color}66`,
                           animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
                         }} />
-                        <div title={tm.name} style={{
-                          fontWeight: 900, fontSize: 'clamp(20px, 2.6vw, 34px)', color: tm.color, lineHeight: 1.1,
-                          textShadow: `0 0 24px ${tm.color}44`,
-                          maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>{truncName(tm.name, 20)}</div>
+                        <TeamNameLabel
+                          name={tm.name}
+                          maxLines={2}
+                          shrinkAfter={18}
+                          color={tm.color}
+                          fontWeight={900}
+                          fontSize="clamp(20px, 2.6vw, 34px)"
+                          style={{
+                            textShadow: `0 0 24px ${tm.color}44`,
+                            maxWidth: 240,
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -10361,15 +10380,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   animation: `celebShake 0.6s ease ${avatarDelay}s both`,
                 }} />
                 <div style={{ minWidth: 0 }}>
-                  <div title={team!.name} style={{
-                    fontWeight: 900, fontSize: 'clamp(36px, 5vw, 72px)', color: team!.color, lineHeight: 1.1,
-                    textShadow: `0 0 30px ${team!.color}55`,
-                    maxWidth: '100%',
-                    padding: '0 0.3em',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {truncName(team!.name, 20)}
-                  </div>
+                  <TeamNameLabel
+                    name={team!.name}
+                    maxLines={2}
+                    shrinkAfter={18}
+                    color={team!.color}
+                    fontWeight={900}
+                    fontSize="clamp(36px, 5vw, 72px)"
+                    style={{
+                      textShadow: `0 0 30px ${team!.color}55`,
+                      padding: '0 0.3em',
+                    }}
+                  />
                   <div style={{
                     color: '#cbd5e1', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 800, marginTop: 6, lineHeight: 1.2,
                   }}>
@@ -11143,10 +11165,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                         : 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
                     }}>{isReveal ? (correct ? '✓' : '✕') : '✓'}</div>
                   )}
-                  <div style={{
-                    fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: tm.color,
-                    maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{truncName(tm.name, 18)}</div>
+                  <TeamNameLabel
+                    name={tm.name}
+                    maxLines={2}
+                    shrinkAfter={14}
+                    color={tm.color}
+                    fontWeight={900}
+                    fontSize="clamp(14px, 1.5vw, 20px)"
+                    style={{ maxWidth: 160, textAlign: 'center' }}
+                  />
                   {/* Winnings-Slot mit RESERVIERTER Höhe — gleich groß in question und
                       reveal, damit das Avatar-Grid nicht um die Pill-Höhe nach unten
                       wächst und die Anchor/Subject-Cards re-zentriert werden. */}
@@ -11297,11 +11324,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     <QQTeamAvatar avatarId={tm.avatarId} size={'clamp(120px, 12vw, 180px)'} style={{
                       boxShadow: `0 0 34px ${tm.color}77, 0 0 80px ${tm.color}33`,
                     }} />
-                    <div title={tm.name} style={{
-                      fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900, color: tm.color,
-                      textShadow: `0 0 22px ${tm.color}55`,
-                      maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{truncName(tm.name, 20)}</div>
+                    <TeamNameLabel
+                      name={tm.name}
+                      maxLines={2}
+                      shrinkAfter={18}
+                      color={tm.color}
+                      fontWeight={900}
+                      fontSize="clamp(22px, 2.4vw, 34px)"
+                      style={{ textShadow: `0 0 22px ${tm.color}55`, maxWidth: 240 }}
+                    />
                   </div>
                 ))}
               </div>
@@ -11326,12 +11357,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 animation: 'activeTeamGlow 2s ease-in-out infinite',
                 ['--team-color' as any]: `${teamColor}55`,
               }} />
-              <div title={team.name} style={{
-                fontSize: 'clamp(26px, 3.4vw, 50px)', fontWeight: 900, color: teamColor,
-                textShadow: `0 0 28px ${teamColor}55`,
-                maxWidth: '80vw',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{truncName(team.name, 20)}</div>
+              <TeamNameLabel
+                name={team.name}
+                maxLines={2}
+                shrinkAfter={18}
+                color={teamColor}
+                fontWeight={900}
+                fontSize="clamp(26px, 3.4vw, 50px)"
+                style={{ textShadow: `0 0 28px ${teamColor}55`, maxWidth: '80vw', textAlign: 'center' }}
+              />
               {step === 1 && (
                 <div style={{
                   marginTop: 4, padding: '10px 22px', borderRadius: 16,
@@ -11428,7 +11462,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     boxShadow: `0 0 16px ${lt.color}22`,
                   }}>
                     <QQTeamAvatar avatarId={lt.avatarId} size={36} />
-                    <span style={{ fontSize: 'clamp(15px, 1.7vw, 20px)', fontWeight: 900, color: lt.color }}>{truncName(lt.name, 12)}</span>
+                    <TeamNameLabel
+                      name={lt.name}
+                      maxLines={2}
+                      shrinkAfter={14}
+                      color={lt.color}
+                      fontWeight={900}
+                      fontSize="clamp(15px, 1.7vw, 20px)"
+                      style={{ maxWidth: 180 }}
+                    />
                   </div>
                 ))}
               </div>
@@ -13094,17 +13136,21 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             ))}
           </div>
 
-          <div title={winner.name} style={{
-            fontSize: 'clamp(24px, 2.6vw, 38px)', fontWeight: 900,
-            color: winnerColor,
-            animation: `finaleGlow 3s ease-in-out ${nameGlowDelay}s infinite`,
-            marginTop: 6,
-            maxWidth: '90%',
-            padding: '0 0.5em',
-            whiteSpace: 'nowrap',
-          }}>
-            {truncName(winner.name, 16)}
-          </div>
+          <TeamNameLabel
+            name={winner.name}
+            maxLines={2}
+            shrinkAfter={16}
+            color={winnerColor}
+            fontWeight={900}
+            fontSize="clamp(24px, 2.6vw, 38px)"
+            style={{
+              animation: `finaleGlow 3s ease-in-out ${nameGlowDelay}s infinite`,
+              marginTop: 6,
+              maxWidth: '90%',
+              padding: '0 0.5em',
+              textAlign: 'center',
+            }}
+          />
 
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16, flexDirection: 'column',

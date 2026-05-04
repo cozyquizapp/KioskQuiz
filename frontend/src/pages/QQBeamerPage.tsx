@@ -14230,26 +14230,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           ? 'none'
                           : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
-                    // 2026-05-04 (Wolf): Hard-Shadow nach unten/rechts gibt allen
-                    // besetzten Tiles den 'Plaettchen liegt auf Tisch'-Look
-                    // (klarer als drop-shadow filter). Stack-Tile setzt zwei
-                    // gestaffelte Layer drunter — sieht aus wie 2 Plaettchen
-                    // gestapelt. Glow-States werden kombiniert mit dem Base-3D.
-                    // Base-3D fuer alle besetzten Tiles. 2026-05-04 (Wolf):
-                    // hart-schwarzer Edge-Shadow sah auf hellen Tiles (Gelb/
-                    // Orange) wie Schmutz aus. Jetzt: kombiniert weicheres
-                    // Hard-Edge (alpha 0.32) + soft-blur-Schatten drunter.
-                    // Look bleibt 'Plaettchen liegt auf Tisch' aber sauber
-                    // auf allen Farben. Glow-States additiv.
+                    // 2026-05-05 (Wolf-Wunsch '3D-Plaettchen-Look auf alle Cells,
+                    // wie Stapel nur ohne Gold-Kreis'): Box-Shadow-Stack jetzt
+                    // mit Inset-Highlight oben (Lichtkante) + Inset-Shadow unten
+                    // (Woelbung) + staerkerer Hard-Edge-Drop (2-3px statt 1) +
+                    // groesserem Soft-Blur. Cells wirken jetzt wie echte
+                    // Spielsteine auf dem Brett. Stapel behaelt seinen
+                    // gestaffelten Gold-Doppel-Drop fuer klare Abgrenzung.
                     boxShadow: isStuck
-                      ? `3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
+                      ? `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -3px 0 rgba(0,0,0,0.22), 3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
                       : isAccent
-                        ? `1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                         : showStar
-                          ? '1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 10px rgba(251,191,36,0.5)'
+                          ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 10px rgba(251,191,36,0.5)`
                           : isHighlighted
-                              ? `1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 14px ${team.color}88`
-                              : '1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28)',
+                              ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 14px ${team.color}88`
+                              : `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)`,
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
@@ -14901,24 +14897,25 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           {(() => {
             const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
             const total = QQ_MAX_JOKERS_PER_GAME;
+            // Spalten-Breite konstant (Platzhalter falls Team keine Joker mehr) —
+            // 2026-05-05 (Wolf 'Joker-Pillen rechts schwer zu erkennen'): Box
+            // groesser + heller. dense 56→78, normal 70→96. cards 22-28→32-40.
+            const colW = dense ? 78 : 96;
             if (earned >= total) {
-              // Platzhalter mit gleicher Breite damit Felder-Werte ueber alle
-              // Zeilen rechtsbuendig bleiben, auch wenn ein Team keine Joker
-              // mehr hat — sonst wackelt die Spalte horizontal.
-              return <div style={{ width: dense ? 56 : 70, flexShrink: 0 }} />;
+              return <div style={{ width: colW, flexShrink: 0 }} />;
             }
-            const cardFs = dense ? 22 : 28;
+            const cardFs = dense ? 32 : 40;
             const used = earned;
             return (
               <div style={{
-                width: dense ? 56 : 70, flexShrink: 0,
+                width: colW, flexShrink: 0,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                gap: dense ? 4 : 6,
-                padding: dense ? '4px 6px' : '6px 8px',
-                borderRadius: 10,
-                background: 'rgba(251,191,36,0.06)',
-                border: '1.5px solid rgba(251,191,36,0.32)',
-                boxShadow: '0 0 12px rgba(251,191,36,0.12)',
+                gap: dense ? 6 : 8,
+                padding: dense ? '6px 10px' : '8px 12px',
+                borderRadius: 12,
+                background: 'rgba(251,191,36,0.18)',
+                border: '2.5px solid rgba(251,191,36,0.65)',
+                boxShadow: '0 0 18px rgba(251,191,36,0.28), inset 0 1px 0 rgba(255,255,255,0.12)',
                 animation: jokerEarners.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
               }}>
                 {Array.from({ length: total }).map((_, i) => {
@@ -14928,7 +14925,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                       display: 'inline-block',
                       fontSize: cardFs, lineHeight: 1,
                       opacity: isUsed ? 0.32 : 1,
-                      filter: isUsed ? 'grayscale(0.85)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.7))',
+                      filter: isUsed ? 'grayscale(0.85)' : 'drop-shadow(0 0 6px rgba(251,191,36,0.85))',
                       transition: 'opacity 0.3s ease, filter 0.3s ease',
                     }}><QQEmojiIcon emoji="🃏"/></span>
                   );

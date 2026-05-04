@@ -4209,7 +4209,7 @@ function LobbyView({
 
             {/* TEMP Dev-Fill: sichtbar in Production für 8-Team-Test */}
             {true && (() => {
-              const dummyCount = teamList.filter(t => (t as any)._dummy).length;
+              const dummyCount = s.teams.filter(t => (t as any)._dummy).length;
               return (
               <div style={{
                 marginTop: 12, padding: '10px 12px', borderRadius: 8,
@@ -4247,7 +4247,7 @@ function LobbyView({
                     <button
                       onClick={() => {
                         if (!window.confirm(`${dummyCount} ${dummyCount === 1 ? 'Bot' : 'Bots'} aus der Lobby entfernen?`)) return;
-                        for (const t of teamList) {
+                        for (const t of s.teams) {
                           if ((t as any)._dummy) emit('qq:kickTeam', { roomCode, teamId: t.id });
                         }
                       }}

@@ -3438,7 +3438,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           className="cq-wordmark"
           style={{
             fontFamily: fontFam,
-            fontSize: 'clamp(44px, 7vw, 96px)',
+            // 2026-05-04 v3 (Wolf-Feedback HANDOVER): Wordmark wirkt im Beamer-
+            // Lobby zu klein. clamp(44,7vw,96) → clamp(56,9vw,140) macht „CozyQuiz"
+            // auf 1080p ~130px hoch (vorher 96px) — prominent als Page-Headline.
+            fontSize: 'clamp(56px, 9vw, 140px)',
           }}
           aria-label="CozyQuiz"
         >
@@ -8451,6 +8454,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     tester.src = img.url;
   }, [isCheese, img?.url]);
 
+  // 2026-05-04 v3 (Wolf): Timer-Outro-Animation klappt nicht bei Frueh-Abbruch
+  // (alle abgegeben → Backend reveal → s.timerEndsAt wird null → Component
+  // unmountet sofort → keine Outro-Anim). Loesung: stickyTimer haelt das letzte
+  // gueltige endsAt ~1s nach Verschwinden, sodass die qqTimerOutro-Anim 0.85s
+  // sauber durchlaufen kann. expireNow=true wird gesetzt sobald das Original-
+  // Prop weg ist ODER revealed=true.
+  const [stickyTimer, setStickyTimer] = useState<{ endsAt: number; duration: number } | null>(
+    s.timerEndsAt ? { endsAt: s.timerEndsAt, duration: s.timerDurationSec } : null
+  );
+  useEffect(() => {
+    if (s.timerEndsAt) {
+      setStickyTimer({ endsAt: s.timerEndsAt, duration: s.timerDurationSec });
+    }
+  }, [s.timerEndsAt, s.timerDurationSec]);
+  useEffect(() => {
+    if (!s.timerEndsAt && stickyTimer) {
+      const t = window.setTimeout(() => setStickyTimer(null), 1000);
+      return () => window.clearTimeout(t);
+    }
+  }, [s.timerEndsAt, stickyTimer]);
+  const timerExpiring = stickyTimer !== null && (!s.timerEndsAt || revealed);
+
   // ── CHEESE Cascade-Audit (2026-05-01): vorher fielen alle Treffer-Avatare
   // gleichzeitig + stumm rein. Jetzt 850ms-Stagger pro Avatar (CSS) + synchron
   // Pentatonik-Cascade-Toene wie Top5/Order. Spannung-Score 1/5 → 4/5.
@@ -8948,7 +8973,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               v3 round 8 (User-Bug 'timer auch bei hellem hintergrund schwer
               sichtbar'): zusaetzlicher dunkler Kreis-Backdrop hinter dem
               Timer-Ring fuer Kontrast auf hellen Fotos. */}
-          {s.timerEndsAt && (
+          {stickyTimer && (
             <div style={{
               position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', right: 'clamp(28px, 4vw, 64px)', zIndex: 70,
               animation: 'contentReveal 0.5s ease 0.3s both',
@@ -8959,7 +8984,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               WebkitBackdropFilter: 'blur(8px)',
               boxShadow: `0 4px 22px rgba(0,0,0,0.45)`,
             }}>
-              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} expireNow={revealed} />
+              <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
             </div>
           )}
 
@@ -9030,99 +9055,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
-            {/* Team-Answer-Progress — Avatare haengen UNTER der Card, halb
-                ueberlappend mit der Card-Unterkante (obere Haelfte in der
-                Card, untere haengt darunter raus). Kein Strip-Bg → Avatare
-                „kleben" direkt an der Edge. Schwarzer Avatar-Bg innerhalb
-                des Kreises (wie Mucho-Voter) damit sie auch auf hellem
-                Foto-Hintergrund lesbar sind. */}
-            {!revealed && s.teams.length > 0 && (
-              <>
-                {/* Klein-Text Progress am unteren Card-Rand innen — verschwindet
-                    wenn alle dran sind (Avatare mit ✓ zeigen das eh schon). */}
-                {!s.allAnswered && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 8, left: 0, right: 0,
-                    textAlign: 'center',
-                    fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-                    color: 'rgba(226,232,240,0.85)',
-                    letterSpacing: '0.04em', textTransform: 'uppercase',
-                    pointerEvents: 'none', zIndex: 8,
-                    animation: 'contentReveal 0.45s ease 0.35s both',
-                  }}>
-                    {`${s.answers.length}/${s.teams.length} Teams`}
-                  </div>
-                )}
-                {/* Avatar-Reihe — 2026-05-04 (Wolf): bei LANDSCAPE oben mittig.
-                    Bei PORTRAIT (Bild links, Card rechts) muessen die Avatare
-                    in der RECHTEN Haelfte unter der Frage-Card sitzen, sonst
-                    schweben sie ueber dem Bild und sehen 'random halb raus'
-                    aus. */}
-                {(() => {
-                  const tc = s.teams.length;
-                  const av = isCheesePortrait
-                    ? (tc > 6 ? 40 : tc > 4 ? 46 : 52)
-                    : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
-                  const gap = isCheesePortrait
-                    ? (tc > 6 ? 6 : tc > 4 ? 8 : 10)
-                    : (tc > 6 ? 8 : tc > 4 ? 11 : 14);
-                  const portraitStyle = {
-                    position: 'fixed' as const,
-                    bottom: 'clamp(18px, 2.6vh, 36px)',
-                    left: '50%', right: 0,
-                  };
-                  const landscapeStyle = {
-                    position: 'fixed' as const,
-                    top: 'clamp(28px, 4vh, 60px)',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                  };
-                  return (
-                    <div style={{
-                      ...(isCheesePortrait ? portraitStyle : landscapeStyle),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap, flexWrap: 'wrap',
-                      pointerEvents: 'none', zIndex: 65,
-                      animation: 'contentReveal 0.45s ease 0.4s both',
-                    }}>
-                      {s.teams.map(tm => {
-                        const answered = s.answers.some(a => a.teamId === tm.id);
-                        return (
-                          <div key={tm.id} style={{
-                            position: 'relative',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0,
-                            opacity: answered ? 1 : 0.55,
-                            filter: answered
-                              ? 'drop-shadow(0 0 18px rgba(34,197,94,0.85)) drop-shadow(0 0 6px rgba(34,197,94,0.6))'
-                              : 'grayscale(0.4)',
-                            transition: 'opacity 0.4s ease, filter 0.4s ease',
-                          }}>
-                            {/* 2026-05-04 (Wolf): Glow-Ring als eigener Wrapper-
-                                Div, weil QQTeamAvatar.style.boxShadow im
-                                Emoji-Mode durch internen flatStyle.boxShadow
-                                ueberschrieben wuerde. Wrapper traegt nun den
-                                gruenen Ring sicher. */}
-                            <div style={{
-                              borderRadius: '50%',
-                              boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
-                              transition: 'box-shadow 0.45s ease',
-                              display: 'inline-flex',
-                            }}>
-                              <QQTeamAvatar
-                                avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                                size={av}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </>
-            )}
+            {/* Avatar-Reihe wurde 2026-05-04 v3 (Wolf-Feedback) RAUS aus der
+                Card verlegt — sitzt jetzt als Flex-Sibling unter der Card im
+                Overlay-Container. Damit landen die Avatare in der rechten
+                Bildschirmhaelfte direkt unter der Fragecard (Portrait) bzw.
+                unter der Card am unteren Rand (Landscape) statt halb in der
+                Card-Unterkante zu kleben. Code: siehe direkt nach diesem
+                Card-IIFE im Overlay-Container. */}
 
             {/* Category pill IN der Card entfernt — die Pill sitzt jetzt
                 konsistent oben links wie bei den anderen Kategorien. */}
@@ -9283,6 +9222,79 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
             );
           })()}
+
+          {/* Avatar-Progress-Reihe — 2026-05-04 v3 (Wolf-Feedback):
+              RAUS aus der Card als Flex-/Absolute-Sibling im Overlay-Container.
+              - PORTRAIT (Bild links, Card rechts): Flex-Flow-Sibling unter dem Card.
+                Parent ist flexCol+justify-center → Card + Avatars werden als Block
+                vertikal mittig zentriert, Avatare sitzen direkt UNTER der Card im
+                rechten Bildschirmstreifen.
+              - LANDSCAPE (Card unten am Rand): absolute oben mittig — sonst wuerden
+                Avatare unter der bottom-aligned Card aus dem Bildschirm fallen. */}
+          {!revealed && s.teams.length > 0 && (() => {
+            const tc = s.teams.length;
+            const av = isCheesePortrait
+              ? (tc > 6 ? 40 : tc > 4 ? 46 : 52)
+              : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
+            const gap = isCheesePortrait
+              ? (tc > 6 ? 6 : tc > 4 ? 8 : 10)
+              : (tc > 6 ? 8 : tc > 4 ? 11 : 14);
+            const portraitFlow = {
+              marginTop: 'clamp(10px, 1.6vh, 22px)' as const,
+            };
+            const landscapeAbs = {
+              position: 'absolute' as const,
+              top: 'clamp(28px, 4vh, 60px)' as const,
+              left: 0, right: 0,
+            };
+            return (
+              <div style={{
+                ...(isCheesePortrait ? portraitFlow : landscapeAbs),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap, flexWrap: 'wrap',
+                pointerEvents: 'none', zIndex: 65,
+                animation: 'contentReveal 0.45s ease 0.4s both',
+              }}>
+                {/* Mini-Progress-Text "X/Y TEAMS" zwischen Card-Unterkante und
+                    Avataren — nur sichtbar solange nicht alle dran sind. */}
+                {!s.allAnswered && (
+                  <div style={{
+                    width: '100%', textAlign: 'center',
+                    fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+                    color: 'rgba(226,232,240,0.85)',
+                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                    marginBottom: -2,
+                  }}>
+                    {`${s.answers.length}/${s.teams.length} Teams`}
+                  </div>
+                )}
+                {s.teams.map(tm => {
+                  const answered = s.answers.some(a => a.teamId === tm.id);
+                  return (
+                    <div key={tm.id} style={{
+                      position: 'relative',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                      opacity: answered ? 1 : 0.55,
+                      filter: answered
+                        ? 'drop-shadow(0 0 18px rgba(34,197,94,0.85)) drop-shadow(0 0 6px rgba(34,197,94,0.6))'
+                        : 'grayscale(0.4)',
+                      transition: 'opacity 0.4s ease, filter 0.4s ease',
+                    }}>
+                      <div style={{
+                        borderRadius: '50%',
+                        boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
+                        transition: 'box-shadow 0.45s ease',
+                        display: 'inline-flex',
+                      }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -9386,15 +9398,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 "brauchen wir das überhaupt?" PhaseIntro vor jeder Runde sagt das
                 schon, Pub-Publikum spielt zum Spass + Counter frass Horizontal-
                 Platz mit Kollisionen in manchen Kategorien. */}
-            {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
+            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
               <div style={{
                 pointerEvents: revealed ? 'none' : 'auto',
                 flexShrink: 0,
               }}>
-                {/* expireNow=revealed → BeamerTimer triggert seine Outro-Anim
-                    auch wenn alle frueh abgegeben haben. Outer-Wrapper kein
-                    abruptes opacity:0 mehr. */}
-                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} expireNow={revealed} />
+                {/* 2026-05-04 v3 (Wolf): stickyTimer haelt das letzte gueltige
+                    endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
+                    unmountet die Component bevor qqTimerOutro durchlaeuft.
+                    timerExpiring=true sobald Original-Prop weg ODER revealed. */}
+                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
               </div>
             )}
           </div>

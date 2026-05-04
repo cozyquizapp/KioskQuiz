@@ -315,29 +315,170 @@ CozyQuiz wirkt **reifer und ruhiger** als diese — das ist eine Stärke. Aber: 
 
 ---
 
+## Audit 5 — Animations-Konsistenz (Re-Assessment)
+
+**Auditor:** Motion-Designer (Apple MotionFX / Material), Folge-Pass 2026-05-04 spät
+**Vergleich:** Audit 2 (Pass 1)
+**Frage-Library/Drafts:** explizit ausgeklammert (in Arbeit)
+
+### Score-Vergleich
+
+| Metrik | Audit 2 | Audit 5 | Δ |
+|---|---|---|---|
+| Bouncing-Konsistenz | 8/10 | 8/10 | = |
+| Easing-Familie | 7/10 | **8,5/10** | +1,5 |
+| Stagger-Rhythmus | 5/10 | **7,5/10** | +2,5 |
+| Duration-Disziplin | 5/10 | **6/10** | +1 |
+| **Gesamt-Animation** | **6,3/10** | **7,5/10** | **+1,2** |
+
+### Was sich gebessert hat
+
+- **5 CSS-Custom-Properties** (`--qq-ease-bounce/smooth/smooth-out/pop-fast/bounce-soft`) konsolidieren ~64% der Inline-`cubic-bezier()`-Werte. main.css hat 64 migriert, QQBeamerPage 97, QQTeamPage 17.
+- **Drei klare Familien** sind lesbar: Pop-Familie (`bounce` 1.56), Drop-Familie (1.4-1.5 overshoot), Breath-Familie (`ease-in-out` 4-6s ambient).
+- **Neue Animationen** (`qqCatNameWave`, `qqSpeedSweep+Glow`, `qqTimerOutro`, `lineShimmer`, `qqBadgeIconBob`) passen sauber in die Familien.
+- **0.07s-Wave-Stagger** ist eleganter Mid-Point zwischen `tight=60` und `normal=90`.
+
+### Kritische Inkonsistenzen (zu fixen)
+
+| # | File:Line | Problem | Fix |
+|---|---|---|---|
+| 1 | Multiple (×59) | `cubic-bezier(0.22, 1, 0.36, 1)` ist **inoffizielles 6. Token** — meistgenutzte Kurve, undokumentiert | als `--qq-ease-soft-out` formalisieren |
+| 2 | `qqShared.ts:624` | `winnerNudge` ohne explizites Easing | mit `var(--qq-ease-bounce)` deklarieren |
+| 3 | `QQBeamerPage.tsx:4371` | `roundWordSweep (0.65,0,0.35,1)` extreme S-Kurve | auf `--qq-ease-smooth` |
+| 4 | `QQBeamerPage.tsx:118` | `qqSpeedSweep` läuft `infinite` (90 Min Quiz = 3857 Loops) | conditional auf `prefers-reduced-motion` ODER `animation-play-state: paused` wenn nicht im Viewport |
+| 5 | `QQBeamerPage.tsx:4257` | `qqPhaseIntroWolfFade` toter Code (showWolfMark=false) | aufräumen |
+
+### TOP-3-Empfehlungen (~3h Arbeit für +1 Punkt → 8,5/10)
+
+1. **`(0.22, 1, 0.36, 1)` formalisieren** als 6. Token — die Kurve prägt den „Premium-Reveal-Look"
+2. **DURATION-Tokens scharfmachen** — Erweiterung auf 5 Stufen `tap=150 / fast=300 / normal=500 / slow=850 / scene=3200`, dann Inline-Werte (0.45/0.5/0.55/0.6/0.65) ins Raster
+3. **STAGGER-System ergänzen** mit `wave=70` und `scene=1500` + Density-adaptive Tier-Map (50/25/12/8ms) als `STAGGER_DENSITY` exportieren
+
+---
+
+## Audit 6 — Design-Gesamtbewertung (Re-Assessment)
+
+**Gutachter:** derselbe Senior PD, Folge-Konsultation 2026-05-04 spät
+**Vergleich:** Audit 3 = 6,8/10
+**Frage-Library/Drafts:** explizit ausgeklammert (Wolf arbeitet selbst dran, +1,2 Score-Hebel parkt)
+
+### Score-Vergleich
+
+| Achse | Audit 3 | Audit 6 | Δ |
+|---|---|---|---|
+| Visual-Polish | 6,0 | **7,4** | +1,4 |
+| Brand-Identity | 7,0 | **7,9** | +0,9 |
+| Mobile-UX | 7,5 | **8,3** | +0,8 |
+| Marktreife | 6,5 | **7,3** | +0,8 |
+| **Gesamt** | **6,8** | **7,7** | **+0,9** |
+
+**Das ist über der Tag-30-Projektion (7,4) aus Audit 4.** Sprint 1 wurde dichter abgearbeitet als erwartet.
+
+### Was sich konkret verbessert hat
+
+**Brand-Identity (+0,9):**
+- 🃏-Joker durchgezogen statt 2003-Sterne — gender-neutral + thematisch (Spielkarte = Pub-Quiz). Stamp-Card-Look ersetzt Casino-Vibe.
+- Neue Team-Farben sind funktional, nicht kosmetisch — Pink+Red und Orange+Red waren echte Verwechslungsfallen aus 8m
+- Per-Letter-Wave + bobbender Cat-Badge geben Charakter, ohne in „Casino-Flacker" zu kippen
+- Wolf-Watermark in PhaseIntroView entfernt — Reduktion ist hier Qualität
+
+**Visual-Polish (+1,4 — größter Sprung):**
+- 3D-Stack-Tile (Hard-Shadow + Soft-Blur kombiniert) ist genau, was Audit 3 mit „Beamer könnte prägnanter" meinte
+- Animated Light-Sweep auf Schnellster-Marker statt Blitz-SVG: Premium-Feel pur
+- Kategorie-Farbe im Progress-Tree statt immer Gold = Information-Density steigt
+- CHEESE-Bilderrahmen (overflow:hidden + lila Frame) löst die Crop-Schwäche aus Audit 3
+- OnlyConnect Hint-Cards mit gleicher Höhe + absoluten Avatar-Footern — saubere Grid-Disziplin
+
+**Mobile-UX (+0,8):**
+- AvatarKarussellEditor ist die wichtigste UX-Verbesserung der ganzen Iteration. Hero-zentriert, Swipe-fähig, Bottom-Sheet für Emojis = 2026-Standard statt 4×2-Grid. Fühlt sich an wie native App.
+- Lobby-voll-Empty-State + disabled Beitreten-Button = Pub-Owner-Schutz vor Frust
+- Stammcode unter den Editor verschoben: dramaturgisch korrekt
+
+**Marktreife (+0,8):**
+- Reveal-Polish (Bluff-Top-Banner, Schätzchen-2-zeilige Pille, OnlyConnect-Timer sichtbar) löst exakt die „Reveal-Drama"-Lücke aus Audit 3
+- Comeback-H/L-Umbau: VS-Badge mit Glow + Pulse ist genau der Shopfenster-Moment, den Audit 4 gefordert hat
+- Continuous Shimmer auf Welcome-Linie + Regelfolien-Divider ist subtiles Polish-Signal
+
+### Was bewusst gleich blieb
+
+- 9 SFX-WAVs weiterhin Placeholder vom 14.4. (Sound-Lizenz steht aus)
+- Frage-Library explizit ausgeklammert (Wolf arbeitet selbst dran)
+- 61 verbleibende inline `cubic-bezier()` in QQBeamerPage — kein Blocker
+- Beamer-Schrift +25% global nicht durchgezogen (nur Frage-Hero)
+- Countdown-Timer-Drama in den letzten 3s nicht implementiert
+- Loading-Spinner + `prefers-reduced-motion`-Differenzierung weiterhin offen
+- Moderator-Seite Mobile/iPad-Responsive nicht angepackt
+
+### TOP-3-Empfehlungen für die nächsten 30 Tage
+
+1. **Countdown-Drama (3-2-1-Sting)** — bleibt der größte Shopfenster-Moment. 2-3 Tage. Pulsierender BG, Sound-Sting auf 0, Gold-Flash auf Reveal. **Höchster ROI im aktuellen Stand.**
+2. **Sound-Lizenz JETZT entscheiden** (Epidemic Sound €10/mo oder Pixabay-CC0). Visual ist jetzt Premium, Audio nicht — diese Asymmetrie wirkt teurer als sie ist. Placeholder-Klang ist das einzige sichtbare Profi-Defizit, das ein Pub-Owner in den ersten 5 min hört.
+3. **Beamer-Live-Test im echten Pub** mit 100"+1200p-Beamer aus 8m. 1 Tag Aufwand, liefert konkrete Schrift/Kontrast-Findings für 1-2 Tage Folge-Arbeit. Ohne diesen Test rätselst du weiter über die +25%-Schrift-Frage.
+
+### Spezifische Schwächen
+
+- `QQBeamerPage.tsx` 14.873 Zeilen — wartungstechnisch ein Monolith. Bug-Risk-Multiplier. Refactor in Phase-Komponenten überfällig sobald 2. Format kommt.
+- `frontend/public/sounds/correct.wav` & 8 weitere: Mod-Time `2026-04-14` — älter als der Rest der App. Sichtbares Signal für jeden, der's prüft. Priorität hoch.
+- `QQBeamerPage.tsx:3551` Empty-State Pfeil-Emoji `clamp(36-64px)` — auf 100"-Beamer aus 8m aus letzter Reihe noch zu klein. +30% wäre safer.
+- Mod-Page Animation-Saturation noch flach im Vergleich zur Beamer-Page (Audit 3 P2 offen).
+
+### Verdict: Pub-Premium-Pricing (€30-50/Saison)
+
+**Knapp ja, mit einer Bedingung.**
+
+Visual + Brand sind jetzt auf einem Level, wo ein 45J Pub-Owner beim ersten Aufschlag nicht mehr „Bastel-Tool" denkt. Der AvatarKarussellEditor + die 3D-Tiles + die neuen Team-Farben + 🃏-Joker-Stamp-Look haben die App optisch **über die Premium-Wahrnehmungs-Schwelle** gehoben.
+
+**Aber:** Sound bricht den Premium-Eindruck binnen 60 Sekunden. Ein Placeholder-WAV auf einem €40-Bezahl-Tool ist ein Trust-Killer — schlimmer als jeder fehlende Visual-Polish.
+
+- **Mit Sound-Lizenz + Countdown-Drama (5-7 Tage Arbeit) → ja, €30-40/Saison defensiv vertretbar.**
+- **€50/Saison erfordert zusätzlich Frage-Library** (≥80 Fragen, 4-5 Themen)
+- **Ohne Sound-Fix:** weiterhin nur €20-25 Soft-Launch-Preis vertretbar
+
+Die App ist designerisch nicht mehr der Engpass — Engpass ist jetzt Audio + Content. Die Iteration war richtig priorisiert.
+
+---
+
 ## Umgesetzte Fixes (Commits)
 
 | Commit | Beschreibung |
 |---|---|
 | `8446e858` | UI-Audit P0: Focus-Outlines, IdentityBanner responsive, Mobile-Tap-Feedback, Tokens-Datei |
 | `6ae19aad` | UI-Audit P1: Border-Radius / Alpha / Letter-Spacing / Font-Weight Tokens-Konsolidierung (~580 Stellen) |
+| `234f0873` | UI-Polish-Pass: 10 Punkte (Welcome-Shimmer, Regelfolien-Divider, Team-Pille zentriert, Hinweis-Cards Höhe, CHEESE-Rahmen, Footer-Glow, Cat-Badge-Bob, Cat-Wave, Tree-Strich-Farbe, Timer-Outro, Comeback-H/L-Cleanup, Empty-State, Tokens) |
+| `89a2e88a` | Joker-Stamp-Card + Stack-Tile-Look |
+| `0c9ad6ed` | Welcome-Akzentstrich breiter |
+| `04f413bd` | Schätzchen-Reveal Winner-Name in Pille + 2-zeilig |
+| `7d10aae7` | OnlyConnect Timer + Hint-Counter mittig + 3D-Lift für alle Tiles |
+| `053321e2` | CHEESE-Bild im Rahmen geclippt + Team-Setup als All-in-One-Card |
+| `ca0b065c` | 3D-Hard-Shadow auf alle besetzten Grid-Tiles |
+| `bdac9e65` | Round-Transition-Farb-Sync + CHEESE-Avatare Header + 3D-Avatar kleiner |
+| `eacf922b` | RoundMiniTree-Strich + Cat-Wave überall + TeamNames-Truncation + CHEESE-Glow + Stammcode-Position |
+| `4b92c732` | Team-Farben aufgefrischt + 🃏 Joker-Karte + Light-Sweep + Bluff-Card kompakt + 3D-Shadow weicher |
+| `3de81d04` | Avatar-Karussell-Editor (Swipe-Slot + Tap-Emoji + Bottom-Sheet) |
 
 ## Offen / Nächster Pass
 
-### Aus Audit 1 (P2)
+### Aus Audit 5 (Animation Re-Pass — höchste Priorität)
+- `cubic-bezier(0.22, 1, 0.36, 1)` als 6. Token formalisieren (59 Vorkommen, undokumentiert)
+- DURATION-Tokens auf 5-Stufen erweitern (`tap=150 / fast=300 / normal=500 / slow=850 / scene=3200`)
+- STAGGER-System um `wave=70` und `scene=1500` ergänzen
+- `qqSpeedSweep` `infinite` → `prefers-reduced-motion` conditional
+- 61 verbleibende inline `cubic-bezier()` in QQBeamerPage migrieren (Hygiene)
+
+### Aus Audit 6 (UI-Polish Re-Pass — Marktreife-Hebel)
+- **Countdown-Drama (3-2-1-Sting)** — größter Shopfenster-Moment, 2-3 Tage, +0,5
+- **Sound-Lizenz JETZT** — Placeholder-WAVs sind Trust-Killer für Premium-Pricing
+- **Beamer-Live-Test im Pub** (1200p, 8m) — beantwortet Schrift-+25%-Frage
+- Empty-State Pfeil +30% (auf 100"-Beamer aus 8m aktuell zu klein)
+- Mod-Page Animation-Saturation angleichen (Beamer ist gestiegen, Mod nicht)
+
+### Aus Audit 1 (P2 — weiterhin offen)
 - Loading-Screen Spinner-Animation
 - `prefers-reduced-motion` differenzierter (nicht alles auf 0.01ms)
 - Empty-States für leere Container (Winner-Chip etc.)
 
-### Aus Audit 2 (Animation)
-- 6 kritische Easing/Stagger-Inkonsistenzen (siehe Tabelle oben)
-- `EASING` + `STAGGER` Tokens in `qqDesignTokens.ts`
-- Phase-Sync auf `qrScanBreath`/`qrGlow`
-
-### Aus Audit 3 (Marktreife)
-- Beamer-Schrift +20% Audit
-- Frage-Library aufbauen
-- Sound-Lizenz organisieren
+### Aus Audit 3 (bei Wolf)
+- Frage-Library aufbauen (Wolf macht's selbst)
 - Optional: Corporate/Education-Theme (heller)
 
 ---

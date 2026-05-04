@@ -799,9 +799,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 maxLength={20}
                 onKeyDown={e => {
                   if (e.key !== 'Enter') return;
-                  const set = activeSetId === 'all' ? null : getSet(activeSetId);
+                  const set = getSet(activeSetId);
                   const isPng = (set?.source ?? 'emoji') === 'png';
-                  const needsEmoji = !isPng;
+                  const pool: string[] = isPng
+                    ? []
+                    : (activeSetId === 'all' && serverEmojis?.length === 8 ? serverEmojis : (set?.avatars ?? []));
+                  const needsEmoji = !isPng && pool.length > 0;
                   const ok = !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
                   if (ok) onJoin();
                 }}
@@ -846,11 +849,17 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}
             {(() => {
-              // Wenn Lobby voll: Editor zeigt Empty-State, Beitreten disabled.
+              // 2026-05-04 (Wolf-Bug): Caller-Logik konsistent zum
+              // AvatarKarussellEditor — needsEmoji nur wenn Pool da ist.
+              // Vorher: bei 'all'-Set ohne serverEmojis war pool=[] aber
+              // needsEmoji=true → Beitreten ewig disabled.
               const allSlotsTaken = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).length === 0;
-              const set = activeSetId === 'all' ? null : getSet(activeSetId);
+              const set = getSet(activeSetId);
               const isPng = (set?.source ?? 'emoji') === 'png';
-              const needsEmoji = !isPng;
+              const pool: string[] = isPng
+                ? []
+                : (activeSetId === 'all' && serverEmojis?.length === 8 ? serverEmojis : (set?.avatars ?? []));
+              const needsEmoji = !isPng && pool.length > 0;
               const canJoin = !allSlotsTaken && !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
               return (
                 <CozyBtn color="#22C55E" onClick={onJoin} disabled={!canJoin}>

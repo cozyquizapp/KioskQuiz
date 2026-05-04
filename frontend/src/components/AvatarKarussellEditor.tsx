@@ -44,7 +44,11 @@ export function AvatarKarussellEditor({
 
   const greetings = lang === 'de' ? ['Hi!', 'Hallo!', 'Hey!'] : ['Hi!', 'Hey!', 'Yo!'];
 
-  const set = activeSetId === 'all' ? null : getSet(activeSetId);
+  // Bei 'all': nimm serverEmojis wenn da (Backend wuerfelt 8 zufaellige), sonst
+  // den Default-Avatars-Array von 'all' (= COZY_ANIMALS_EMOJI). Vorher war
+  // set=null bei 'all' → leerer Pool wenn kein serverEmojis kam → Editor war
+  // unbenutzbar (kein Tap, Beitreten disabled).
+  const set = getSet(activeSetId);
   const isPng = (set?.source ?? 'emoji') === 'png';
   const emojiPool: string[] = isPng
     ? []

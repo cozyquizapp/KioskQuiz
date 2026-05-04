@@ -13479,7 +13479,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
   return (
     <div style={{
       flex: 1, display: 'grid',
-      gridTemplateColumns: 'minmax(0, 1fr) clamp(360px, 32vw, 520px)',
+      // 2026-05-05 (Wolf 'Tabelle rechts sehr klein'): rechte Spalte breiter
+      // 360-520 → 420-620 → mehr Platz fuer lesbare Schrift in den Rank-Cards.
+      gridTemplateColumns: 'minmax(0, 1fr) clamp(420px, 36vw, 620px)',
       alignItems: 'stretch', gap: 'clamp(16px, 2vw, 36px)',
       position: 'relative', overflow: 'hidden',
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px) clamp(20px, 2.5vh, 36px)',
@@ -13648,17 +13650,24 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           const cols = 1;
           // Avatar-Groesse via shared Helper - konsistent zu PausedView-Standings
           const avatarSize = getStandingAvatarSize(wn, false);
-          // 2026-04-30 v3 round 6 (User-Bug 'team namen in tabelle hard to read'):
-          // Font-Sizes ~30-40% raufgesetzt damit die Namen aus Distanz klar
-          // lesbar sind. cols=1 (≤6 Teams) bekommt richtigen Boost.
+          // 2026-05-05 (Wolf 'Text in Tabelle viel zu klein'): Font-Sizes nochmals
+          // ~25% rauf, padding auch. Rechte Spalte ist jetzt breiter (420-620),
+          // also ist Platz da. Bei 7-8 Teams (wn >= 7) bleibt's etwas dichter
+          // gepackt damit alle Cards sichtbar sind ohne Clipping.
           const nameFs   = cols === 1
-            ? wn <= 4 ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(15px, 1.6vw, 21px)'
+            ? wn <= 4 ? 'clamp(22px, 2.4vw, 32px)'
+            : wn <= 6 ? 'clamp(19px, 2.0vw, 26px)'
+            : 'clamp(17px, 1.8vw, 23px)'
             : 'clamp(15px, 1.55vw, 20px)';
           const scoreFs  = cols === 1
-            ? wn <= 4 ? 'clamp(16px, 1.7vw, 22px)' : 'clamp(14px, 1.5vw, 19px)'
+            ? wn <= 4 ? 'clamp(20px, 2.2vw, 28px)'
+            : wn <= 6 ? 'clamp(18px, 1.9vw, 24px)'
+            : 'clamp(16px, 1.7vw, 22px)'
             : 'clamp(14px, 1.5vw, 19px)';
           const cardPad  = cols === 1
-            ? wn <= 4 ? '10px 14px' : '7px 12px'
+            ? wn <= 4 ? '12px 16px'
+            : wn <= 6 ? '10px 14px'
+            : '8px 13px'
             : '8px 12px';
           // Reverse-Reveal: letztes (höchster Index) zuerst, niedrigster (Silver) zuletzt.
           // Pro Team-Step ~0.9s.
@@ -13721,32 +13730,15 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     }}>
                       <span style={{ fontSize: scoreFs, color: '#FDE68A' }}>{tm.largestConnected}</span>
                       <span style={{
-                        fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#94a3b8', fontWeight: 700,
+                        fontSize: 'clamp(13px, 1.3vw, 17px)', color: '#94a3b8', fontWeight: 700,
                       }}>· {tm.totalCells}</span>
                     </span>
                   </div>
                 );
               })}
-              {/* Tie-Break-Hinweis am Ende der Liste, wenn Top-Plaetze tied sind */}
-              {(() => {
-                const winnerTop = winner?.largestConnected ?? 0;
-                const tiedAtTop = sorted.filter(t => t.largestConnected === winnerTop).length;
-                if (tiedAtTop < 2) return null;
-                return (
-                  <div style={{
-                    marginTop: 'clamp(8px, 1.2vh, 16px)',
-                    padding: '8px 14px', borderRadius: 16,
-                    background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.28)',
-                    fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#FDE68A', fontWeight: 700,
-                    textAlign: 'center', lineHeight: 1.4,
-                    animation: `contentReveal 0.5s ease ${0.6 + others.length * 0.9 + 0.4}s both`,
-                  }}>
-                    {lang === 'de'
-                      ? `Gleichstand bei verbundenen Feldern (${tiedAtTop} Teams) — Sieger nach Gesamt-Feldern`
-                      : `Tied on connected fields (${tiedAtTop} teams) — winner by total fields`}
-                  </div>
-                );
-              })()}
+              {/* 2026-05-05 (Wolf): Tie-Break-Hinweis entfernt — Mod sagt das
+                  selber an statt aufs Beamer-UI zu lesen. Spart Platz unten,
+                  letzte Team-Card war abgeschnitten. */}
             </div>
           );
         })()}

@@ -7763,13 +7763,29 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   boxShadow: `0 0 22px ${winner.team.color}88`,
                   animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                 }} />
+                {/* Name als Pille (Rechteck mit Team-Color-Tint) — 2 Zeilen
+                    erlaubt, damit lange Witznamen voll ausgeschrieben werden
+                    (Wolf-Wunsch 2026-05-04: kein '...' am Namen). */}
                 <div style={{
-                  fontSize: 'clamp(20px, 2.2vw, 36px)', fontWeight: 900, color: winner.team.color,
-                  lineHeight: 1.05,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  maxWidth: 'min(40vw, 360px)',
+                  padding: 'clamp(6px, 0.9vh, 10px) clamp(14px, 1.8vw, 22px)',
+                  borderRadius: 14,
+                  background: `${winner.team.color}22`,
+                  border: `2px solid ${winner.team.color}66`,
+                  boxShadow: `0 0 18px ${winner.team.color}33`,
+                  maxWidth: 'min(50vw, 480px)',
                   textShadow: `0 0 22px ${winner.team.color}55`,
-                }}>{teamDisplayName(winner.team.name, true)}</div>
+                }}>
+                  <TeamNameLabel
+                    name={winner.team.name}
+                    withTeamPrefix
+                    maxLines={2}
+                    shrinkAfter={18}
+                    fontSize="clamp(20px, 2.2vw, 36px)"
+                    color={winner.team.color}
+                    fontWeight={900}
+                    style={{ textAlign: 'center', lineHeight: 1.1 }}
+                  />
+                </div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'baseline', gap: 6,
                   padding: '6px 16px',

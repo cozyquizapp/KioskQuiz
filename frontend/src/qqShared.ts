@@ -326,6 +326,30 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { text-shadow: 0 0 22px rgba(251,191,36,0.40), 0 0 50px rgba(251,191,36,0.18); }
     50%      { text-shadow: 0 0 36px rgba(251,191,36,0.65), 0 0 80px rgba(251,191,36,0.35); }
   }
+  /* 2026-05-04 (Wolf #1): Bildschirm-weite Urgency-Vignette.
+     Aggressives rotes Pulsen am Bildschirmrand bei den letzten 3 Sek,
+     orange leiser bei 4-5 Sek. CSS-Var --urg-color macht den Farbton
+     dynamisch (239,68,68 = red, 249,115,22 = orange). */
+  @keyframes urgencyVignettePulse {
+    0%, 100% { box-shadow: inset 0 0 60px 10px rgba(var(--urg-color, 239,68,68), 0.18), inset 0 0 200px 40px rgba(var(--urg-color, 239,68,68), 0.06); }
+    50%      { box-shadow: inset 0 0 120px 30px rgba(var(--urg-color, 239,68,68), 0.45), inset 0 0 360px 80px rgba(var(--urg-color, 239,68,68), 0.20); }
+  }
+  /* Gold-Flash bei Timer 0 — kurzer Aufflash, fade out 600ms. */
+  @keyframes urgencyFlashGold {
+    0%   { box-shadow: inset 0 0 200px 60px rgba(251,191,36,0.55), inset 0 0 480px 120px rgba(251,191,36,0.25); }
+    100% { box-shadow: inset 0 0 200px 60px rgba(251,191,36,0.0),  inset 0 0 480px 120px rgba(251,191,36,0.0); }
+  }
+  /* 2026-05-04 (Wolf #4): Falsch-Antwort-Drama. Card wackelt kurz horizontal
+     (max 6px) + bekommt rotes Pulse-Glow waehrend des Shakes. Einmalig,
+     0.5s gesamt — danach gleitet's in den ueblichen revealWrongDim ueber. */
+  @keyframes revealWrongShake {
+    0%   { transform: translateX(0);    box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    15%  { transform: translateX(-6px); box-shadow: 0 0 28px rgba(239,68,68,0.45), 0 4px 16px rgba(0,0,0,0.3); }
+    30%  { transform: translateX(5px);  box-shadow: 0 0 32px rgba(239,68,68,0.55), 0 4px 16px rgba(0,0,0,0.3); }
+    45%  { transform: translateX(-4px); box-shadow: 0 0 24px rgba(239,68,68,0.40), 0 4px 16px rgba(0,0,0,0.3); }
+    60%  { transform: translateX(3px);  box-shadow: 0 0 18px rgba(239,68,68,0.30), 0 4px 16px rgba(0,0,0,0.3); }
+    100% { transform: translateX(0);    box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  }
   /* C4 Map-Target-Drop. */
   @keyframes mapTargetDrop {
     0%   { opacity: 0; transform: translateY(-300px) scale(1.6) rotate(-8deg); filter: brightness(1.6); }

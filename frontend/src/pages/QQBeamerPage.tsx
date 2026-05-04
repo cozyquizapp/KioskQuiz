@@ -421,6 +421,15 @@ export default function QQBeamerPage() {
   return (
     <AvatarSetProvider value={state.avatarSetId} emojis={state.avatarSetEmojis}>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
+      {/* 2026-05-04 (Wolf #1): Bildschirm-weite Urgency-Vignette in den
+          letzten 5 Sek der Frage-Zeit. Ergaenzt den existierenden Timer-Pulse
+          um einen klaren visuellen Drama-Moment ohne den Inhalt zu stoeren.
+          Critical (≤3s): aggressives rotes Pulsen.
+          Warning (≤5s): orange leiser Puls.
+          Plus Gold-Flash bei timerExpired (timer geht auf 0). */}
+      {state.phase === 'QUESTION_ACTIVE' && state.timerEndsAt && (
+        <UrgencyVignette endsAt={state.timerEndsAt} />
+      )}
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
       {/* Time-Travel-Replay deaktiviert (Wolfs Wunsch) — die separate Card
           überlagerte die GameOver-Komposition und wirkte fragmentiert.
@@ -1821,7 +1830,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   '0 0 120px rgba(251,191,36,0.3), ' +
                   '0 6px 0 rgba(0,0,0,0.5), ' +
                   '0 18px 32px rgba(0,0,0,0.6)',
-                animation: `qqGetReadyCount 1s cubic-bezier(0.34,1.56,0.64,1) ${0.25 + i * 0.95}s both`,
+                animation: `qqGetReadyCount 1s cubic-bezier(0.34,1.56,0.64,1) ${0.1 + i * 0.45}s both`,
                 opacity: 0,
               }}>
                 {n}
@@ -2619,7 +2628,10 @@ function MuchoOptionsReveal({
               animation: isCorrect
                 ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
                 : isWrong
-                  ? 'revealWrongDim 0.5s ease 0.1s both'
+                  // 2026-05-04 (Wolf #4): Wrong-Drama — kurzer horizontaler
+                  // Shake (0.5s) mit rotem Pulse-Glow, danach revealWrongDim
+                  // (1.6s delay matcht Shake-End). Macht Falsch-Tipps spuerbar.
+                  ? 'revealWrongShake 0.5s cubic-bezier(0.34,1.56,0.64,1) both, revealWrongDim 0.5s ease 0.55s both'
                   : undefined,
             }}>
               {optImg?.url && (
@@ -3436,7 +3448,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             background: '#ffffff', borderRadius: 24, padding: 'clamp(14px, 2vh, 24px)',
             // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
-            animation: 'qrScanBreath 2.4s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
+            animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
             boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
@@ -4223,7 +4235,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                   color: prevColor,
                   textShadow: `0 0 120px ${prevColor}33`,
-                  animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
+                  animation: 'roundDigitFall 760ms cubic-bezier(0.3, 0, 0.5, 1) 1150ms both',
                 }}>{prevRoundFull}</span>
                 {/* FINALE rollt von oben – mit Gold-Gradient */}
                 <span style={{
@@ -4278,7 +4290,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   <span style={{
                     position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                     color: prevColor,
-                    animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
+                    animation: 'roundDigitFall 760ms cubic-bezier(0.3, 0, 0.5, 1) 1150ms both',
                   }}>{prevDigit}</span>
                   {/* Neue Ziffer rollt von oben */}
                   <span style={{
@@ -4336,7 +4348,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
                 color: `${prevColor}dd`,
-                animation: 'roundDigitFall 760ms cubic-bezier(0.4, 0, 0.6, 1) 1150ms both',
+                animation: 'roundDigitFall 760ms cubic-bezier(0.3, 0, 0.5, 1) 1150ms both',
               }}>{prevPhaseDesc}</span>
               {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer */}
               <span style={{
@@ -5827,7 +5839,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         animation: 'contentReveal 0.5s ease 0.1s both',
       }}>
         <div style={{
-          fontSize: 'clamp(28px, 3.4vw, 52px)', fontWeight: 900,
+          fontSize: 'clamp(34px, 4vw, 64px)', fontWeight: 900,
           color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : q.text}
@@ -6825,7 +6837,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           🎁 {lang === 'en' ? 'Top 5 — Reveal' : 'Top 5 — Auflösung'}
         </div>
         <div key={lang} style={{
-          fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+          fontSize: qText.length > 120 ? 'clamp(26px, 2.7vw, 40px)' : 'clamp(30px, 3.2vw, 52px)',
           fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
           animation: 'langFadeIn 0.4s ease both',
         }}>
@@ -7183,7 +7195,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
           🎁 {lang === 'en' ? 'Lucky Bag — Order' : 'Bunte Tüte — Reihenfolge'}
         </div>
         <div key={lang} style={{
-          fontSize: qText.length > 120 ? 'clamp(22px, 2.3vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+          fontSize: qText.length > 120 ? 'clamp(26px, 2.7vw, 40px)' : 'clamp(30px, 3.2vw, 52px)',
           fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
           animation: 'langFadeIn 0.4s ease both',
         }}>
@@ -7539,7 +7551,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
         </div>
         <div key={lang} style={{
-          fontSize: qText.length > 120 ? 'clamp(22px, 2.2vw, 34px)' : 'clamp(26px, 2.8vw, 44px)',
+          fontSize: qText.length > 120 ? 'clamp(26px, 2.6vw, 40px)' : 'clamp(30px, 3.2vw, 52px)',
           fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
           textAlign: 'center', minWidth: 0,
           animation: 'langFadeIn 0.4s ease both',
@@ -8483,11 +8495,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // jetzt EINE moderate Größe für ALLE Phasen (Question + Reveal). Kein
   // shrink mehr → kein zappeln. Sizing knapp aber lesbar; Reveal-Phase
   // dimmt nur opacity statt zu shrinken.
-  const qFontSize = qText.length > 200 ? 'clamp(22px, min(2.6vw, 4vh), 38px)'
-    : qText.length > 120 ? 'clamp(28px, min(3.2vw, 5vh), 48px)'
-    : qText.length > 80  ? 'clamp(32px, min(3.8vw, 5.6vh), 58px)'
-    : qText.length > 40  ? 'clamp(36px, min(4.2vw, 6vh), 66px)'
-    : 'clamp(40px, min(4.8vw, 6.5vh), 76px)';
+  // 2026-05-04 (Wolf #3): Beamer-Schrift +15-20% damit aus 8m Distanz lesbar.
+  const qFontSize = qText.length > 200 ? 'clamp(26px, min(3vw, 4.6vh), 44px)'
+    : qText.length > 120 ? 'clamp(32px, min(3.7vw, 5.8vh), 56px)'
+    : qText.length > 80  ? 'clamp(38px, min(4.4vw, 6.5vh), 68px)'
+    : qText.length > 40  ? 'clamp(42px, min(4.8vw, 7vh), 76px)'
+    : 'clamp(46px, min(5.5vw, 7.5vh), 88px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -8875,7 +8888,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div key={`cheese-${lang}`} style={{
               fontSize: isCheeseReveal
                 ? 'clamp(20px, 2.6vw, 36px)'
-                : (qText.length > 120 ? 'clamp(28px, 3.5vw, 52px)' : 'clamp(36px, 5vw, 72px)'),
+                : (qText.length > 120 ? 'clamp(32px, 4vw, 60px)' : 'clamp(42px, 5.8vw, 84px)'),
               fontWeight: 900, lineHeight: 1.22,
               color: '#F1F5F9',
               marginBottom: isCheeseReveal ? 8 : 0,
@@ -11267,7 +11280,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           color: '#FDE047',
           filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(251,191,36,0.6))`,
           ['--bolt-rot' as string]: `${b.rot}deg`,
-          animation: `comebackBoltFall 1.1s cubic-bezier(0.4,0,0.6,1) ${b.delay}s both`,
+          animation: `comebackBoltFall 1.1s cubic-bezier(0.3, 0, 0.5, 1) ${b.delay}s both`,
           pointerEvents: 'none', zIndex: 6,
         }}><QQEmojiIcon emoji="⚡"/></div>
       ))}
@@ -13435,6 +13448,56 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
 // Sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/** 2026-05-04 (Wolf #1): Bildschirm-weite Urgency-Vignette.
+ *  Kein Inhalt — nur ein fixed-position Layer mit inset box-shadow,
+ *  pointer-events: none, der bei den letzten 5 Sek der Frage rot/orange
+ *  pulsiert. Critical (<=3s) deutlich agressiver. Bei 0 sek kurzer
+ *  Gold-Flash. Renderer-Friendly: keine Layout-Anpassungen, nur Overlay. */
+function UrgencyVignette({ endsAt }: { endsAt: number }) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      setRemaining(r);
+      if (r === 0) clearInterval(iv);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [endsAt]);
+
+  const isCritical = remaining > 0 && remaining <= 3;
+  const isWarning = remaining > 3 && remaining <= 5;
+  const justExpired = remaining === 0;
+
+  if (!isCritical && !isWarning && !justExpired) return null;
+
+  if (justExpired) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 8500,
+          animation: 'urgencyFlashGold 0.6s ease-out 1 both',
+        }}
+      />
+    );
+  }
+
+  // Vignette: rot pulsierend bei <=3s (0.4s Loop = aggressiv),
+  // orange dezenter bei <=5s (0.8s Loop).
+  const color = isCritical ? '239,68,68' : '249,115,22';   // red-500 / orange-500
+  const animDuration = isCritical ? '0.4s' : '0.8s';
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 8500,
+        animation: `urgencyVignettePulse ${animDuration} ease-in-out infinite`,
+        ['--urg-color' as any]: color,
+      }}
+    />
+  );
+}
+
 export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
 
@@ -14504,9 +14567,22 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           CozyQuiz
         </div>
-        <div style={{ color: '#334155', marginBottom: 16, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
-        <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
-          {connected ? bt.loading.waiting.de : bt.loading.connecting.de}
+        <div style={{ color: '#334155', marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
+        {/* 2026-05-04 (Wolf #10): Spinner + besserer Wakeup-Hint statt nur Text. */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            border: '3px solid rgba(251,191,36,0.18)',
+            borderTopColor: '#FBBF24',
+            animation: 'spin 0.9s linear infinite',
+          }} />
+          <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#FBBF24', fontWeight: 700 }}>
+            {connected
+              ? bt.loading.waiting.de
+              : 'Server wird wach gemacht — gleich geht’s los'}
+          </div>
         </div>
       </div>
     </div>

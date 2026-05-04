@@ -536,7 +536,7 @@ export default function QQTeamPage() {
 
   if (!joined) {
     return (
-      <AvatarSetProvider value={setId}>
+      <AvatarSetProvider value={setId} emojis={state?.avatarSetEmojis}>
         <SetupFlow step={step} setStep={setStep}
           avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
           connected={connected} error={error} onJoin={joinRoom}

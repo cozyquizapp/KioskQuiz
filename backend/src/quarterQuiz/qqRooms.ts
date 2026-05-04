@@ -11,6 +11,7 @@ import {
   QQ_CONNECTIONS_FALLBACK_PAYLOAD,
   QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
   QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC, QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
+  getRandomDummyEmojis,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -214,6 +215,10 @@ export interface QQRoomState {
   // Mod-Setup: gewaehltes Avatar-Theme fuer dieses Quiz. Optional, default 'cozyAnimals'.
   // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
   avatarSetId?: string;
+  // 2026-05-04 Phase 2: bei Set 'all' wuerfelt Server 8 Slot-Emojis quer durch
+  // alle Themen, damit's nicht immer Cozy-Tiere sind. Konsistent ueber alle
+  // Clients via State. Bei anderen Sets ungenutzt (Renderer nimmt Set-eigene Emojis).
+  avatarSetEmojis?: string[];
   // 3D grid
   enable3DTransition: boolean;
   // Rules presentation
@@ -380,6 +385,10 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       setupDone: false,
       avatarSetId: 'all',
+      // bei Default-Set 'all' direkt 8 Slot-Emojis wuerfeln, damit Renderer
+      // ab dem ersten Frame zufaelligen Mix zeigt. Wird beim Set-Wechsel auf
+      // 'all' neu gewuerfelt; bei anderen Sets ungenutzt.
+      avatarSetEmojis: getRandomDummyEmojis(8),
       enable3DTransition: false,
       rulesSlideIndex: 0,
       teamsRevealStartedAt: null,
@@ -3405,6 +3414,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
     avatarSetId:      room.avatarSetId ?? 'all',
+    avatarSetEmojis:  room.avatarSetEmojis,
     enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
     teamsRevealStartedAt: room.teamsRevealStartedAt,

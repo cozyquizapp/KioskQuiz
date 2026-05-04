@@ -14,6 +14,7 @@ import {
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
   QQShieldClusterPayload, QQShieldCellPayload, QQSandLockCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
+  getRandomDummyEmojis,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
 import {
@@ -2419,7 +2420,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // White-list, damit kein bloedsinn ankommt. Default ist 'all' (Emoji,
         // freie Wahl). 'cozyCast' = klassische PNG-Avatare als opt-in.
         const allowed = ['all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy'];
-        room.avatarSetId = allowed.includes(id) ? id : 'all';
+        const newId = allowed.includes(id) ? id : 'all';
+        const wasAll = room.avatarSetId === 'all';
+        room.avatarSetId = newId;
+        // Bei Wechsel ZU 'all': neu wuerfeln (Mod will Variation).
+        // Bei Wechsel WEG von 'all': avatarSetEmojis bleibt erhalten — wenn der
+        // Mod zurueck auf 'all' switcht, kommt der gleiche Mix wieder. Das ist
+        // gewollt (Setup-Stabilitaet); sonst flackert's bei Hin-und-her-Switch.
+        if (newId === 'all' && !wasAll) {
+          room.avatarSetEmojis = getRandomDummyEmojis(8);
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

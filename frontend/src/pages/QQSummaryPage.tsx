@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -438,7 +439,7 @@ export default function QQSummaryPage() {
               }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', width: 22 }}>{i + 1}.</span>
                 <QQTeamAvatar avatarId={t.avatarId} size={28} />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{t.name}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{teamDisplayName(t.name, true)}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>
                 </span>

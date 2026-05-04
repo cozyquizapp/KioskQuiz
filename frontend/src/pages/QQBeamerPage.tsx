@@ -13,6 +13,7 @@ import {
   QQLanguage,
   QQSoundSlot,
   QQ_MAX_JOKERS_PER_GAME,
+  teamDisplayName,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -414,7 +415,7 @@ export default function QQBeamerPage() {
 
   if (!state) return <LoadingScreen roomCode={roomCode} connected={connected} />;
   return (
-    <AvatarSetProvider value={state.avatarSetId}>
+    <AvatarSetProvider value={state.avatarSetId} emojis={state.avatarSetEmojis}>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
       {/* Time-Travel-Replay deaktiviert (Wolfs Wunsch) — die separate Card
@@ -5843,7 +5844,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                   textShadow: `0 0 30px ${winnerTeam.color}55`,
                   whiteSpace: 'nowrap',
                 }}>
-                  {truncName(winnerTeam.name, 18)}
+                  {truncName(teamDisplayName(winnerTeam.name, true), 22)}
                 </div>
                 <div style={{
                   color: '#cbd5e1', fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 800,
@@ -7573,7 +7574,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   maxWidth: 'min(40vw, 360px)',
                   textShadow: `0 0 22px ${winner.team.color}55`,
-                }}>{winner.team.name}</div>
+                }}>{teamDisplayName(winner.team.name, true)}</div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'baseline', gap: 6,
                   padding: '6px 16px',
@@ -8923,7 +8924,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       color: winnerTeam.color, lineHeight: 1.1,
                       textShadow: `0 0 24px ${winnerTeam.color}55`,
                     }}>
-                      {winnerTeam.name}
+                      {teamDisplayName(winnerTeam.name, true)}
                     </div>
                     <div style={{
                       fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 800,
@@ -11795,7 +11796,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               <span style={{
                 fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{entry.name}</span>
+              }}>{teamDisplayName(entry.name, true)}</span>
               {lastPlayedLabel && (
                 <span style={{
                   fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b',

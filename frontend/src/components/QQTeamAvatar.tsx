@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { getAvatarDisplay } from '../avatarSets';
-import { useAvatarSet } from '../avatarSetContext';
+import { useAvatarSetCtx } from '../avatarSetContext';
 
 type Props = {
   avatarId: string;
@@ -40,9 +40,12 @@ type Props = {
 export function QQTeamAvatar({
   avatarId, size, style, className, title, square, lang, blink = true, avatarSetId,
 }: Props) {
-  const ctxSet = useAvatarSet();
-  const setId = avatarSetId ?? ctxSet;
-  const display = getAvatarDisplay(avatarId, setId);
+  const ctx = useAvatarSetCtx();
+  const setId = avatarSetId ?? ctx.id;
+  // serverEmojis nur ehrlich verwenden wenn das Set passt — bei explizitem
+  // Override (z.B. cozyCast) ignorieren wir die Server-Emojis.
+  const serverEmojis = (avatarSetId == null || avatarSetId === ctx.id) ? ctx.emojis : undefined;
+  const display = getAvatarDisplay(avatarId, setId, serverEmojis);
 
   const labelText = title ?? display.label;
   // Sprach-Hint wird im aktuellen Code-Pfad nicht benoetigt; lang-Param bleibt

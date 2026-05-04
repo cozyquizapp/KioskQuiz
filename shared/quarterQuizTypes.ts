@@ -942,12 +942,15 @@ export interface QQStateUpdate {
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   // Setup/Lobby-Zweiteilung: wenn false und phase === LOBBY, zeigt der Beamer den Pre-Game-Wartescreen (Leaderboard/Rekorde).
   setupDone: boolean;
-  // Mod waehlt im Setup ein Avatar-Theme fuer dieses Quiz. Default 'cozyAnimals'
-  // (entspricht den klassischen PNG-Avataren in QQ_AVATARS).
-  // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
-  // Werte: 'all' | 'cozyAnimals' | 'halloween' | 'christmas' | 'pub' |
-  //        'scifi' | 'sport' | 'tropical' | 'fantasy'
+  // Mod waehlt im Setup ein Avatar-Theme fuer dieses Quiz. Default 'all'
+  // (Emoji-Standard, freie Auswahl). 'cozyCast' = klassische PNG-Avatare.
+  // Werte: 'all' | 'cozyAnimals' | 'cozyCast' | 'halloween' | 'christmas' |
+  //        'pub' | 'scifi' | 'sport' | 'tropical' | 'fantasy'
   avatarSetId?: string;
+  // Bei Set 'all' wuerfelt der Server 8 Slot-Emojis quer durch alle Themen,
+  // damit's nicht immer Cozy-Tiere sind. Bei anderen Sets ungenutzt
+  // (Renderer nimmt Set-eigene Emojis aus avatarSets.ts).
+  avatarSetEmojis?: string[];
   // 3D grid
   enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
@@ -1071,4 +1074,88 @@ export function qqTeamColor(team: { avatarId?: string; color?: string }): string
     if (av) return av.color;
   }
   return team.color ?? QQ_AVATARS[0].color;
+}
+
+// ── 2026-05-04: Witzige Team-Namen + Default-Emoji-Pool ──────────────────
+// Genutzt von:
+//   - Backend server.ts /dev/fillTeams (Dummy-Spawner) → random Namen
+//   - Backend qq:setAvatarSet bei 'all' → 8 zufaellige Slot-Emojis
+//   - Frontend /testpage Spielwiese (statisch, kein Random-Mount mehr)
+
+/** Pub-Quiz-typische Team-Namen — quer durch alle Stile, easter eggs erlaubt. */
+export const FUNNY_TEAM_NAMES: string[] = [
+  'Schlaubi-Schlümpfe', 'Quiz Khalifa', 'Google sei Dank',
+  'Halbwissen Gold Wert', 'Die Couch-Quizzer', 'Synapsen-Salat',
+  'Pub-Crawl-Profis', 'Schon Wieder Falsch', 'Käpt\'n Kluk',
+  'Drei Halbe Ne Ganze', 'Frag-Mich-Was-Leichtes', 'Eulen-Spiegel',
+  'Wolfsrudel', 'Anonyme Allwisser', 'Brain-Trust', 'Nicht Zuhause',
+  'Fakt oder Fiktion', 'Die Wikipedia-Bewohner', 'Zwischen Bier und Bildung',
+  'Quiz-Mafia', 'Fakten-Faktor', 'Cozy Cats', 'Couch-Wolves',
+];
+
+/** Emoji-Pool fuer Random-Slot-Emojis bei Set 'all' und Dummy-Avatare.
+ *  Quer durch alle Themen — Cozy-Tiere, Halloween, Sci-Fi, Fantasy, Essen.
+ *  Bewusst verschiedene Welten gemischt, damit's bei 'all' bunt wirkt. */
+export const DUMMY_EMOJI_POOL: string[] = [
+  '🐶', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸', '🦋',
+  '🦄', '🐙', '🦖', '🐲', '🦅', '🦉', '🐺', '🦝',
+  '🦒', '🐧', '🦦', '🦔', '🐹', '🦥',
+  '🎃', '👻', '🦇', '🧙', '🧛', '💀',
+  '🚀', '👽', '🤖', '🛸', '🪐', '👾',
+  '🍕', '🍔', '🌮', '🍩', '🌶️',
+  '⚡', '🌈', '💎', '🔥', '🎯', '🎲', '🃏', '🧩', '🎮', '🏆',
+];
+
+/** Liefert n zufaellige Emojis aus dem Pool, ohne Wiederholung.
+ *  Wenn n > Pool-Groesse: faellt zurueck auf normales Random (mit Wdh.). */
+export function getRandomDummyEmojis(n: number): string[] {
+  const pool = [...DUMMY_EMOJI_POOL];
+  const out: string[] = [];
+  for (let i = 0; i < n && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  // Falls n > Pool: mit Wdh. auffuellen
+  while (out.length < n) {
+    out.push(DUMMY_EMOJI_POOL[Math.floor(Math.random() * DUMMY_EMOJI_POOL.length)]);
+  }
+  return out;
+}
+
+/** Liefert n zufaellige witzige Team-Namen, ohne Wiederholung. */
+export function getRandomFunnyNames(n: number): string[] {
+  const pool = [...FUNNY_TEAM_NAMES];
+  const out: string[] = [];
+  for (let i = 0; i < n && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  while (out.length < n) {
+    out.push(FUNNY_TEAM_NAMES[Math.floor(Math.random() * FUNNY_TEAM_NAMES.length)]);
+  }
+  return out;
+}
+
+// ── 2026-05-04: Team-Display-Name Helper ─────────────────────────────────
+/**
+ * Liefert den Anzeigenamen eines Teams. In „Listen-Kontexten" (ewige
+ * Tabelle, Game-Over-Recap, Summary-Standings) wird optional ein
+ * „Team "-Prefix vorangestellt — aber nur wenn der Name das nicht selbst
+ * schon mitbringt (Artikel-Anfang, „Team", Emoji am Anfang).
+ *
+ * Beispiele mit `withPrefix=true`:
+ *   "Sonnenblume"      -> "Team Sonnenblume"
+ *   "Die Schlümpfe"    -> "Die Schlümpfe"          (Artikel)
+ *   "Team Wolfsrudel"  -> "Team Wolfsrudel"        (schon prefix)
+ *   "🐺 Rudel"         -> "🐺 Rudel"               (Emoji-Anfang)
+ *   "Quiz Khalifa"     -> "Team Quiz Khalifa"
+ */
+export function teamDisplayName(name: string, withPrefix = false): string {
+  const trimmed = (name ?? '').trim();
+  if (!withPrefix || !trimmed) return trimmed;
+  if (/^team\s/i.test(trimmed)) return trimmed;
+  if (/^(die|der|das|den|dem|des|the)\s/i.test(trimmed)) return trimmed;
+  // Erstes Zeichen ist kein Buchstabe → schon stylisiert (Emoji, „!Quiz!", etc.)
+  if (!/^\p{Letter}/u.test(trimmed)) return trimmed;
+  return `Team ${trimmed}`;
 }

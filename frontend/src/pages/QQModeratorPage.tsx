@@ -807,7 +807,7 @@ export default function QQModeratorPage() {
   }
 
   return (
-    <AvatarSetProvider value={s?.avatarSetId}>
+    <AvatarSetProvider value={s?.avatarSetId} emojis={s?.avatarSetEmojis}>
     <div className="qq-mod-shell" style={page}>
       {/* ── Header ── */}
       <div style={header}>

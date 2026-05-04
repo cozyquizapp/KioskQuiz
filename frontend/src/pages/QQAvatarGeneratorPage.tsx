@@ -110,33 +110,19 @@ const EMOJI_CATS: { id: string; label: string; emojis: string[] }[] = [
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Team = { name: string; emoji: string; color: TeamColor };
 
-// Pool an „passenden" Default-Emojis quer durch alle Sets — Spielwiese, also
-// darf's bunt sein. Bei jedem Mount ziehen wir 4 davon zufaellig.
-const DEFAULT_DUMMY_POOL = [
-  '🐶', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸', '🦋', '🦄', '🐙', '🦖',
-  '🐲', '🦅', '🦉', '🐺', '🦝', '🦒', '🐧', '🦦', '🦔',
-  '🎃', '👻', '🦇', '🧙', '🧛', '💀',
-  '🚀', '👽', '🤖', '🛸', '🪐', '👾',
-  '🍕', '🍔', '🌮', '🍩', '🌶️',
-  '⚡', '🌈', '💎', '🔥', '🎯', '🎲', '🃏', '🧩', '🎮', '🏆',
+// 2026-05-04: /testpage ist Spielwiese — keine Random-Logik mehr
+// (Wolf nutzt sie nicht aktiv, Random gehoert in den echten Quiz, nicht hier).
+// Vier feste witzige Default-Teams mit Cozy-Tier-Emojis als Avatar-Inhalt.
+const DEFAULT_TEAMS: Team[] = [
+  { name: 'Schlaubi-Schlümpfe', emoji: '🐶', color: TEAM_COLORS[0] },
+  { name: 'Quiz Khalifa',       emoji: '🦥', color: TEAM_COLORS[1] },
+  { name: 'Die Couch-Quizzer',  emoji: '🐧', color: TEAM_COLORS[2] },
+  { name: 'Eulen-Spiegel',      emoji: '🐨', color: TEAM_COLORS[3] },
 ];
 
-const DEFAULT_TEAM_NAMES = ['Team Eins', 'Team Zwei', 'Team Drei', 'Team Vier'];
-
-function makeDefaultTeams(count = 4): Team[] {
-  const pool = [...DEFAULT_DUMMY_POOL];
-  // Fisher-Yates shuffle, aber nur bis count gezogen ist
-  const picks: string[] = [];
-  for (let i = 0; i < count && pool.length > 0; i++) {
-    const idx = Math.floor(Math.random() * pool.length);
-    picks.push(pool.splice(idx, 1)[0]);
-  }
-  return picks.map((emoji, i) => ({
-    name: DEFAULT_TEAM_NAMES[i] ?? `Team ${i + 1}`,
-    emoji,
-    color: TEAM_COLORS[i % TEAM_COLORS.length],
-  }));
-}
+// Bei + Team werden weitere Witznamen + Cozy-Emojis aus dem Pool genommen.
+const ADDITIONAL_DUMMY_NAMES = ['Wolfsrudel', 'Brain-Trust', 'Fakten-Faktor', 'Quiz-Mafia'];
+const ADDITIONAL_DUMMY_EMOJIS = ['🦒', '🦝', '🐄', '🐹'];
 
 // ─── Avatar (runder Glow-Disc mit Emoji) ──────────────────────────────────
 function Avatar({
@@ -784,9 +770,7 @@ function EmojiBtn({
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 const QQAvatarGeneratorPage = () => {
-  // Random-Avatare beim ersten Mount, damit es bei jedem Page-Reload anders
-  // aussieht (Spielwiese-Charakter).
-  const [teams, setTeams] = useState<Team[]>(() => makeDefaultTeams(4));
+  const [teams, setTeams] = useState<Team[]>(DEFAULT_TEAMS);
   const [pickerOpen, setPickerOpen] = useState<number | null>(null);
   const [activeSetId, setActiveSetId] = useState<string>(ALL_SET_ID);
 
@@ -819,19 +803,20 @@ const QQAvatarGeneratorPage = () => {
 
   const addTeam = () => {
     if (teams.length >= 8) return;
-    const color = TEAM_COLORS[teams.length % TEAM_COLORS.length];
-    const setEmoji = activeSet.avatars[teams.length % Math.max(activeSet.avatars.length, 1)];
-    // Bei „Alle"-Set ziehen wir aus dem Dummy-Pool (random), damit's bei
-    // jedem Add nicht der gleiche Tier-Default ist.
-    const used = new Set(teams.map(t => t.emoji));
-    const candidates = DEFAULT_DUMMY_POOL.filter(e => !used.has(e));
-    const randomFromPool = candidates.length > 0
-      ? candidates[Math.floor(Math.random() * candidates.length)]
-      : DEFAULT_DUMMY_POOL[Math.floor(Math.random() * DEFAULT_DUMMY_POOL.length)];
-    const fallback = QQ_AVATARS[teams.length % QQ_AVATARS.length].emoji;
+    const slotIdx = teams.length;
+    const color = TEAM_COLORS[slotIdx % TEAM_COLORS.length];
+    const setEmoji = activeSet.avatars[slotIdx % Math.max(activeSet.avatars.length, 1)];
+    // Slot 4-7: deterministisch witziger Name + Cozy-Emoji aus den Zusatz-Pools
+    const additionalIdx = slotIdx - DEFAULT_TEAMS.length;
+    const fallbackName = additionalIdx >= 0
+      ? (ADDITIONAL_DUMMY_NAMES[additionalIdx] ?? `Team ${slotIdx + 1}`)
+      : `Team ${slotIdx + 1}`;
+    const fallbackEmoji = additionalIdx >= 0
+      ? (ADDITIONAL_DUMMY_EMOJIS[additionalIdx] ?? QQ_AVATARS[slotIdx % QQ_AVATARS.length].emoji)
+      : QQ_AVATARS[slotIdx % QQ_AVATARS.length].emoji;
     setTeams(t => [...t, {
-      name: `Team ${t.length + 1}`,
-      emoji: setEmoji ?? randomFromPool ?? fallback,
+      name: fallbackName,
+      emoji: setEmoji ?? fallbackEmoji,
       color,
     }]);
   };

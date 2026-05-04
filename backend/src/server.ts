@@ -92,7 +92,7 @@ import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
 import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
-import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
+import { QQ_AVATARS, getRandomFunnyNames } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -8910,9 +8910,6 @@ app.post('/api/qq/crashReport', (req, res) => {
 // ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
 // TEMP: auf `true` gesetzt für 8-Team-Test in Production. Nach Test zurück auf `process.env.NODE_ENV !== 'production'`.
 const QQ_DEV_ENABLED = true;
-// TODO: Familien-Test-Namen (nur für heute) — zurück auf Rotkäppchen/Blaubeeren/… nach dem Test.
-// Original: ['Rotkäppchen','Blaubeeren','Grünschnabel','Goldfisch','Orangina','Lilalaune','Cyansturm','Rotziege']
-const DUMMY_NAMES = ['Harald','Anna','Maria','Johannes','Sonja','Till','Robin','Jule'];
 app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
   const { roomCode } = req.params;
@@ -8922,13 +8919,19 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   const count = Math.min(8, Math.max(1, Number(req.body?.count) || 8));
   const existing = Object.keys(room.teams).length;
   const toAdd = Math.max(0, count - existing);
+  // 2026-05-04: random witzige Pub-Quiz-Namen statt fester DUMMY_NAMES.
+  // Pool kommt aus shared/quarterQuizTypes; wir ziehen toAdd Namen ohne Wdh.
+  // Schon verwendete Namen im Raum werden uebersprungen (sehr selten Konflikt).
+  const usedNames = new Set(Object.values(room.teams).map((t: any) => (t.name ?? '').toLowerCase()));
+  const namePicks = getRandomFunnyNames(Math.max(toAdd, 8))
+    .filter(n => !usedNames.has(n.toLowerCase()));
   let added = 0;
   const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));
   for (const av of QQ_AVATARS) {
     if (added >= toAdd) break;
     if (usedAvatars.has(av.id)) continue;
     const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
-    const name = DUMMY_NAMES[added] ?? `Team ${av.label}`;
+    const name = namePicks[added] ?? `Team ${av.label}`;
     try {
       qqJoinTeam(room, teamId, name, av.id);
       // Dummies haben keinen Socket — connected-Flag explizit true lassen

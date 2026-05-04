@@ -148,7 +148,13 @@ export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
-export function getAvatarDisplay(avatarId: string, setId: string | undefined): AvatarDisplay {
+export function getAvatarDisplay(
+  avatarId: string,
+  setId: string | undefined,
+  /** Optional Server-gewuerfelte Slot-Emojis bei Set 'all'. Wenn 8 Eintraege
+   *  vorhanden, ueberschreibt der Eintrag an `slotIdx` den Set-Default. */
+  serverEmojis?: string[],
+): AvatarDisplay {
   // Slot-Index ueber QQ_AVATARS — das ist die kanonische 8-Slot-Liste mit Farben.
   const slotIdx = Math.max(0, QQ_AVATARS.findIndex(a => a.id === avatarId));
   const slot = QQ_AVATARS[slotIdx] ?? QQ_AVATARS[0];
@@ -164,8 +170,11 @@ export function getAvatarDisplay(avatarId: string, setId: string | undefined): A
     };
   }
 
-  // Emoji-Source: avatars[slotIdx], fallback Cozy-Tier-Emoji vom Slot.
-  const emoji = set.avatars[slotIdx] ?? COZY_ANIMALS_EMOJI[slotIdx] ?? slot.emoji;
+  // Emoji-Source. Prio: Server-Override (bei 'all') > Set-Default > Cozy-Tier-Fallback.
+  const overrideEmoji = (set.id === 'all' && serverEmojis && serverEmojis.length === 8)
+    ? serverEmojis[slotIdx]
+    : undefined;
+  const emoji = overrideEmoji ?? set.avatars[slotIdx] ?? COZY_ANIMALS_EMOJI[slotIdx] ?? slot.emoji;
   return {
     kind: 'emoji',
     emoji,

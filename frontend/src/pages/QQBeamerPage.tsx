@@ -14891,45 +14891,11 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               auf dem Avatar'). Pro Team 2 Slots: verfuegbare leuchten gold,
               verbrauchte sind grayscale + opacity 0.32. Komplett verbraucht
               → keine Spalte mehr (saved space). */}
-          {(() => {
-            const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
-            const total = QQ_MAX_JOKERS_PER_GAME;
-            // Spalten-Breite konstant (Platzhalter falls Team keine Joker mehr) —
-            // 2026-05-05 (Wolf 'Joker-Pillen rechts schwer zu erkennen'): Box
-            // groesser + heller. dense 56→78, normal 70→96. cards 22-28→32-40.
-            const colW = dense ? 78 : 96;
-            if (earned >= total) {
-              return <div style={{ width: colW, flexShrink: 0 }} />;
-            }
-            const cardFs = dense ? 32 : 40;
-            const used = earned;
-            return (
-              <div style={{
-                width: colW, flexShrink: 0,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                gap: dense ? 6 : 8,
-                padding: dense ? '6px 10px' : '8px 12px',
-                borderRadius: 12,
-                background: 'rgba(251,191,36,0.18)',
-                border: '2.5px solid rgba(251,191,36,0.65)',
-                boxShadow: '0 0 18px rgba(251,191,36,0.28), inset 0 1px 0 rgba(255,255,255,0.12)',
-                animation: jokerEarners.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
-              }}>
-                {Array.from({ length: total }).map((_, i) => {
-                  const isUsed = used > i;
-                  return (
-                    <span key={i} style={{
-                      display: 'inline-block',
-                      fontSize: cardFs, lineHeight: 1,
-                      opacity: isUsed ? 0.32 : 1,
-                      filter: isUsed ? 'grayscale(0.85)' : 'drop-shadow(0 0 6px rgba(251,191,36,0.85))',
-                      transition: 'opacity 0.3s ease, filter 0.3s ease',
-                    }}><QQEmojiIcon emoji="🃏"/></span>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          {/* Joker-Spalte komplett entfernt 2026-05-05 (Wolf-Wahl 2E):
+              statische Joker-Anzeige in der Tabelle wirkte aus Beamer-Distanz
+              klein/unklar. Joker werden jetzt NUR noch als Burst-Animation
+              sichtbar wenn verdient (jokerStarFly fliegt auf den Avatar) —
+              siehe weiter unten in dieser Row. Tabelle bleibt aufgeraeumt. */}
         </div>
         );
       })}

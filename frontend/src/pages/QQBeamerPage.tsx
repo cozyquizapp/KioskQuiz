@@ -105,7 +105,7 @@ function SpeedBoltMarker({ top, right }: { top: number; right: number }) {
       background: 'radial-gradient(circle at 30% 28%, #FEF3C7 0%, #FBBF24 55%, #B45309 100%)',
       boxShadow: '0 0 14px rgba(251,191,36,0.55), 0 4px 8px rgba(0,0,0,0.4)',
       border: '2px solid #FDE68A',
-      animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+      animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both',
       pointerEvents: 'none',
     }} aria-label="Schnellster">
       <svg viewBox="0 0 24 24" width="62%" height="62%" aria-hidden style={{ display: 'block' }}>
@@ -1723,7 +1723,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           key={phaseGroup}
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
-            animation: 'qqSlideIn 420ms cubic-bezier(0.34,1.2,0.64,1) both',
+            animation: 'qqSlideIn 420ms cubic-bezier(0.34,1.56,0.64,1) both',
             willChange: 'transform, opacity, filter',
           }}
         >
@@ -2617,7 +2617,7 @@ function MuchoOptionsReveal({
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect
-                ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+                ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
                 : isWrong
                   ? 'revealWrongDim 0.5s ease 0.1s both'
                   : undefined,
@@ -3050,7 +3050,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: 24,
         padding: `clamp(24px, 4vh, ${hasGrid ? 52 : 60}px) clamp(32px, 5vw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        animation: 'phasePop 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        animation: 'phasePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
         backdropFilter: 'blur(10px)',
       }}>
         {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
@@ -3546,7 +3546,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       ? 'teamJoinWave 1.2s cubic-bezier(0.34,1.56,0.64,1) both'
                       : wasSeen
                         ? undefined
-                        : `teamCardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) ${0.4 + i * 0.06}s both`,
+                        : `teamCardIn 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.06}s both`,
                     transition: 'box-shadow 0.6s ease, border-color 0.6s ease',
                     minWidth: 0,
                     position: 'relative',
@@ -4310,7 +4310,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             transformOrigin: 'center',
             animation: hasRoundTransition
               ? 'lineShimmer 3s linear 1.5s infinite'
-              : 'roundLineGlow 0.7s cubic-bezier(0.34,1.2,0.64,1) 0.5s both, lineShimmer 3s linear 1.5s infinite',
+              : 'roundLineGlow 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both, lineShimmer 3s linear 1.5s infinite',
             boxShadow: `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
             transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,
@@ -4351,7 +4351,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               fontSize: 'clamp(36px, 5vw, 68px)', fontWeight: 900,
               color: `${displayColor}dd`,
               textShadow: `0 0 30px ${displayColor}33`,
-              animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+              animation: 'subtitleSlide 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
               transition: 'color 500ms ease, text-shadow 500ms ease',
               position: 'relative', zIndex: 5,
               textAlign: 'center',
@@ -5148,7 +5148,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 background: `linear-gradient(135deg, ${winner.team.color}22, rgba(34,197,94,0.18))`,
                 border: `2px solid ${winner.team.color}55`,
                 boxShadow: `0 0 0 3px ${winner.team.color}22`,
-                animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) both',
+                animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
               }}>
                 <QQTeamAvatar avatarId={winner.team.avatarId} teamEmoji={winner.team.emoji} size={'clamp(44px, 4.5vw, 60px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${winner.team.color}55` }} />
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -5207,7 +5207,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   transform: isHunterHere ? 'scale(1.015)' : 'scale(1)',
                   transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
                   animation: isCorrectLocked
-                    ? 'revealCorrectPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both'
+                    ? 'revealCorrectPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
                     : `contentReveal 0.4s ease ${0.1 + optIdx * 0.08}s both`,
                 }}>
                   {/* Row 1: label + total */}
@@ -5411,7 +5411,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     {greenOn && (
                       <span style={{
                         fontSize: 'clamp(20px, 2.4vw, 30px)', color: '#4ade80', fontWeight: 900,
-                        animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+                        animation: 'revealCorrectPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both',
                       }}>✓</span>
                     )}
                   </div>
@@ -5904,7 +5904,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
             background: `linear-gradient(135deg, ${winnerTeam.color}26, ${winnerTeam.color}08)`,
             border: `3px solid ${winnerTeam.color}88`,
             boxShadow: `0 0 60px ${winnerTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
-            animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+            animation: 'revealWinnerIn 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -6815,7 +6815,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
         borderRadius: 24,
         padding: 'clamp(16px, 2vh, 26px) clamp(24px, 2.8vw, 42px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
         flexShrink: 0,
       }}>
         <div style={{
@@ -6926,7 +6926,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                   return (
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: itemGap, minWidth: 0,
-                      animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both' : 'none',
+                      animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both' : 'none',
                     }}>
                       <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avatarSize} style={{
                         flexShrink: 0,
@@ -7003,7 +7003,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                 fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
                 flexShrink: 0,
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.1s both' : 'none',
+                animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' : 'none',
                 boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
               }}>
                 #{rank}
@@ -7173,7 +7173,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         borderRadius: 24,
         padding: 'clamp(16px, 2vh, 26px) clamp(24px, 2.8vw, 42px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
         flexShrink: 0,
       }}>
         <div style={{
@@ -7255,7 +7255,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                   fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.1s both' : 'none',
+                  animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' : 'none',
                   boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
                 }}>
                   #{rank}
@@ -7408,7 +7408,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                       background: `linear-gradient(135deg, ${tm.color}26, ${tm.color}0a)`,
                       border: `2px solid ${tm.color}55`,
                       animation: revealedMinIdx === 0
-                        ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${0.2 + wi * 0.08}s both`
+                        ? `revealWinnerIn 0.55s cubic-bezier(0.34,1.56,0.64,1) ${0.2 + wi * 0.08}s both`
                         : 'none',
                       minWidth: 0,
                     }}>
@@ -7528,7 +7528,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         borderRadius: 24,
         padding: 'clamp(14px, 1.8vh, 22px) clamp(22px, 2.6vw, 42px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+        animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
         flexShrink: 0, overflow: 'hidden',
       }}>
@@ -7634,7 +7634,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 fontWeight: 900, color: winner.team.color, lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums',
                 textShadow: `0 0 40px ${winner.team.color}55`,
-                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.3s both' : 'none',
+                animation: revealedMinIdx === 0 ? 'revealWinnerIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both' : 'none',
               }}>
                 {fmt(winner.num)}
               </div>
@@ -7748,7 +7748,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.1s both' : 'none',
+                  animation: isVisible ? 'top5RankPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' : 'none',
                   boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
                 }}>
                   #{rank}
@@ -8662,7 +8662,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           padding: isCheesePortrait
             ? 'clamp(12px, 2vh, 24px) clamp(12px, 1.6vw, 24px)'
             : (revealed ? '20px 24px 16px' : '20px 24px clamp(28px, 4vh, 48px)'),
-          transition: 'padding 0.55s cubic-bezier(0.34,1.4,0.64,1), left 0.5s ease',
+          transition: 'padding 0.55s cubic-bezier(0.34,1.56,0.64,1), left 0.5s ease',
           pointerEvents: 'none',
         }}>
           {/* Konsistente Kategorie-Pill oben links — bleibt im Reveal sichtbar
@@ -8778,7 +8778,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
               : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.1s both'
+            animation: cheeseWithQuestion ? 'bQuestionIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both'
               : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
@@ -9001,7 +9001,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     marginTop: 8,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-                    animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.85s both',
+                    animation: 'revealWinnerIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.85s both',
                   }}>
                     <div style={{
                       fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
@@ -9188,7 +9188,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 marginBottom: cardMarginBottom,
                 width: '100%', maxWidth: 1400,
                 textAlign: 'center',
-                animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
+                animation: 'bQuestionIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
                 // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                 // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
                 // v3 round 9: transform-Transition fuer chip-shift smooth.
@@ -9627,7 +9627,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         const cascadeDelay = isCheeseCascade ? vi * 0.85 : 0.6;
                         const avatarAnim = isCheeseCascade
                           ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${cascadeDelay}s both`
-                          : `revealAnswerBam 0.5s cubic-bezier(0.34,1.4,0.64,1) ${cascadeDelay}s both`;
+                          : `revealAnswerBam 0.5s cubic-bezier(0.34,1.56,0.64,1) ${cascadeDelay}s both`;
                         return (
                           <div key={ct.team.id} style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
@@ -9975,7 +9975,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                     boxShadow: '0 0 14px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.38)',
                     border: '2px solid rgba(255,255,255,0.9)',
-                    animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+                    animation: 'pinRevealIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
                     ['--pin-x' as any]: '0px',
                     ['--pin-y' as any]: '0px',
                     zIndex: 30,
@@ -10033,8 +10033,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         ['--nudge-y' as any]: `${wrapperY}px`,
                         transform: `translate(calc(-50% + ${xNudge}px), calc(-50% + ${wrapperY}px))`,
                         animation: isWinner
-                          ? `pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.4,0.64,1) ${nudgeDelay}s 1 both`
-                          : `pinRevealIn 0.55s cubic-bezier(0.34,1.4,0.64,1) ${delay}s both`,
+                          ? `pinRevealIn 0.55s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both, winnerNudge 1.4s cubic-bezier(0.34,1.56,0.64,1) ${nudgeDelay}s 1 both`
+                          : `pinRevealIn 0.55s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
                         zIndex: isWinner ? 20 : 10,
                       }}>
                         {/* Verbindungslinie vom Avatar zur Rail (in Richtung Rail) */}
@@ -10139,7 +10139,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 display: 'flex', justifyContent: 'center', width: '100%',
-                animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.9s both',
+                animation: 'revealWinnerIn 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.9s both',
               }}>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 18,
@@ -10288,7 +10288,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
                   boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
-                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.56,0.64,1) ${bannerDelay}s both`,
                 }}>
                   {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
                   <div style={{
@@ -10341,7 +10341,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
                   border: '2px solid rgba(251,191,36,0.55)',
                   boxShadow: '0 0 60px rgba(251,191,36,0.25), 0 8px 24px rgba(0,0,0,0.4)',
-                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+                  animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.56,0.64,1) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {coWinners.map((tm, i) => (
@@ -10378,7 +10378,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: `3px solid ${team!.color}88`,
                 boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
-                animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.4,0.64,1) ${bannerDelay}s both`,
+                animation: `revealWinnerIn 0.65s cubic-bezier(0.34,1.56,0.64,1) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(64px, 8vw, 110px)'} style={{
                   flexShrink: 0,
@@ -10426,7 +10426,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               background: 'rgba(239,68,68,0.08)',
               border: '2px solid rgba(239,68,68,0.30)',
               boxShadow: '0 0 40px rgba(239,68,68,0.15)',
-              animation: 'revealWinnerIn 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.5s both',
+              animation: 'revealWinnerIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both',
             }}>
               <span style={{ fontSize: 'clamp(48px, 6vw, 80px)', lineHeight: 1 }}>
                 {s.answers.length === 0 ? '⏱' : <QQEmojiIcon emoji="❌"/>}
@@ -11172,7 +11172,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 18, fontWeight: 900, color: '#fff',
                       animation: isReveal
-                        ? 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.5s both'
+                        ? 'revealCorrectPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both'
                         : 'bAnswerCheck 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
                     }}>{isReveal ? (correct ? '✓' : '✕') : '✓'}</div>
                   )}
@@ -11198,7 +11198,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                         background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
                         fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
                         fontVariantNumeric: 'tabular-nums',
-                        animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.4,0.64,1) 0.7s both',
+                        animation: 'revealCorrectPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.7s both',
                       }}>
                         <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
                           ? (lang === 'en' ? 'cell' : 'Feld')
@@ -11281,7 +11281,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         animation: bamActive
           ? 'comebackSlam 1s cubic-bezier(0.34,1.56,0.64,1) both'
           : 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
-        transition: 'font-size 0.5s cubic-bezier(0.34,1.4,0.64,1)',
+        transition: 'font-size 0.5s cubic-bezier(0.34,1.56,0.64,1)',
         position: 'relative', zIndex: 7,
       }}>
         <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
@@ -13174,7 +13174,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16, flexDirection: 'column',
-            animation: `finaleScoreCount 0.7s cubic-bezier(0.34,1.4,0.64,1) ${scoreCountDelay}s both`,
+            animation: `finaleScoreCount 0.7s cubic-bezier(0.34,1.56,0.64,1) ${scoreCountDelay}s both`,
           }}>
             <span style={{
               fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
@@ -13256,7 +13256,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
                     border: `1.5px solid ${tm.color}55`,
                     boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
-                    animation: `finaleRank 0.55s cubic-bezier(0.34,1.2,0.64,1) ${revealDelay}s both`,
+                    animation: `finaleRank 0.55s cubic-bezier(0.34,1.56,0.64,1) ${revealDelay}s both`,
                   }}>
                     <span style={{
                       fontSize: 'clamp(11px, 1.1vw, 14px)',
@@ -13667,7 +13667,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 filter: isStuck
                   ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(251,191,36,0.45))'
                   : undefined,
-                transition: 'transform 0.4s cubic-bezier(0.34,1.4,0.64,1), filter 0.4s ease',
+                transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), filter 0.4s ease',
                 animation: isJustFormedJoker
                   ? 'jokerCellPulse 2.2s cubic-bezier(0.4,0,0.2,1) both'
                   : isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,

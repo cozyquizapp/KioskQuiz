@@ -72,11 +72,25 @@ export const ACCENT_GOLD = {
   deep:   '#D97706',
 } as const;
 
-/** Standard-Easing. */
+/** Standard-Easing — ergaenzt nach Animation-Audit 2026-05-04.
+ *  Im Live-Code sind viele Inline-cubic-bezier()-Werte hardgecoded.
+ *  Nach Audit-Pass `bounceSoft` und `pinSlam` sind als Sonderfaelle
+ *  dokumentiert; alle „weak bounces" (1.2/1.4) wurden auf bounce
+ *  vereinheitlicht. Drop-Easing fuer schnelle Falls (smoothOut). */
 export const EASING = {
-  bounce: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-  smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  inOut:  'ease-in-out',
+  bounce:     'cubic-bezier(0.34, 1.56, 0.64, 1)',  // Standard-Pop, Apple-HIG
+  bounceSoft: 'cubic-bezier(0.34, 1.4, 0.64, 1)',   // Sanfter, fuer Reveal-Pops
+  popFast:    'cubic-bezier(0.2, 0.8, 0.3, 1)',     // Game-Feel, schneller Attack
+  smooth:     'cubic-bezier(0.4, 0, 0.2, 1)',       // Material-Standard
+  smoothOut:  'cubic-bezier(0.3, 0, 0.5, 1)',       // Drop/Fall mit gravity-feel
+  inOut:      'ease-in-out',                        // Idle/Breathing/Float-Loops
+} as const;
+
+/** Stagger-Konstanten in ms — fuer Listen-Animationen. */
+export const STAGGER = {
+  tight:     60,   // Lobby-Card-In, schnelle Cascades
+  normal:    90,   // Sound-Sync-Grids (psychoakustisch optimiert)
+  leisurely: 350,  // Idle-Wobble, Personality-Loops
 } as const;
 
 /** Tap-Target Min-Size (Apple HIG, Android-Material). */

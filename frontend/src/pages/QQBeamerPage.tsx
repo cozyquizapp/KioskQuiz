@@ -11838,15 +11838,34 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
         width: 'clamp(260px, 38vw, 540px)',
         // Feste Höhe — Eyebrow + Slogan-Box ohne Atmen
         minHeight: 'clamp(96px, 11vw, 144px)',
-        display: 'flex', flexDirection: 'column', gap: 8,
+        display: 'flex', flexDirection: 'column', gap: 10,
         justifyContent: 'center',
       }}>
+        {/* 2026-05-04 (Wolf): „Cozy Quiz"-Eyebrow war random — ersetzt durch
+            Brand-Strip-Pille (gleiche Sprache wie auf /team). */}
         <div style={{
-          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-          color: '#FBBF24',
-          letterSpacing: '0.32em', textTransform: 'uppercase',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '4px 12px',
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          alignSelf: 'flex-start',
         }}>
-          Cozy Quiz
+          <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
+          <span style={{
+            fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+            color: '#cbd5e1', letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}>cozywolf</span>
+          <span style={{
+            width: 3, height: 3, borderRadius: '50%',
+            background: 'rgba(203,213,225,0.4)',
+          }} />
+          <span style={{
+            fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 700,
+            color: '#FBBF24', letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+          }}>{de ? 'präsentiert' : 'presents'}</span>
         </div>
         {/* Slogan-Box mit fester Höhe + absoluter Positionierung → Text fadet nur, Layout fix */}
         <div style={{

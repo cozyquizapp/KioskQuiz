@@ -109,6 +109,8 @@ export interface QQCell {
   sandLockTtl?: number;    // Sanduhr-Sperre: cell is neutralized for N more questions
                            //   (set to 3 on lock, decremented at each question advance,
                            //   cleared when 0 — cell becomes a normal empty cell)
+  stackBonus?: number;     // Connections-Finale Stapel-Bonus: jeder Stack +1 Pkt zur Team-Score.
+                           //   Multi-Stack erlaubt (gleiche Cell mehrfach). Implizit auch stuck=true.
 }
 
 export type QQGrid = QQCell[][];  // [row][col]
@@ -985,6 +987,7 @@ export type QQPendingAction =
   | 'SHIELD_1'   // Phase 3: shield 1 own cell (player picks target) until end of game (max 2 per team)
   | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
   | 'STAPEL_1'   // Phase 4: stapeln - pick own cell (permanently frozen, 2 pts)
+  | 'STAPEL_BONUS' // Connections-Finale: Stapel-Bonus pro erratener Gruppe; eigene Cell, multi-stack erlaubt, +1 Pkt pro Stapel.
   | 'COMEBACK';  // before final phase: comeback team acts
 
 // ── Socket event payloads (client → server) ───────────────────────────────────

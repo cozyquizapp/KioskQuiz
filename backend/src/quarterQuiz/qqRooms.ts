@@ -2409,6 +2409,39 @@ export function qqStuckCell(
   finishPlacement(room);
 }
 
+// ── Connections-Finale: Stapel-Bonus (multi-stack auf eigenen Feldern, +1 Pkt) ──
+// 2026-05-05 (Wolf-Konzept): Sieger-Teams im Finale verteilen N Stapel
+// (N = Anzahl erratener Gruppen, max 4) auf eigene Felder. Anders als
+// regulares Stapeln (qqStuckCell): Multi-Stack auf gleichem Feld erlaubt,
+// kein QQ_MAX_STAPELS_PER_GAME-Cap, kein stapelsUsed-Counter.
+export function qqStapelBonusCell(
+  room: QQRoomState,
+  teamId: string,
+  row: number,
+  col: number
+): void {
+  if (room.phase !== 'CONNECTIONS_4X4' || room.connections?.phase !== 'placement') {
+    throw new QQError('WRONG_PHASE', 'Stapel-Bonus nur in der Connections-Placement-Phase.');
+  }
+  assertPendingFor(room, teamId);
+  assertValidCoord(room, row, col);
+  if (room.pendingAction !== 'STAPEL_BONUS') {
+    throw new QQError('WRONG_ACTION', 'Stapel-Bonus-Modus nicht aktiv.');
+  }
+  const cell = room.grid[row][col];
+  if (cell.ownerId !== teamId) {
+    throw new QQError('NOT_OWN_CELL', 'Nur eigene Felder können gestapelt werden.');
+  }
+  // Multi-Stack erlaubt — kein cell.stuck-Block, kein Budget-Cap.
+  cell.stackBonus = (cell.stackBonus ?? 0) + 1;
+  cell.stuck      = true;   // optisch konsistent mit reguelaerem Stapel
+  cell.frozen     = false;
+  cell.shielded   = false;
+  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
+  updateTerritories(room);  // recomputes largestConnected inkl. stackBonus
+  room.lastActivityAt = Date.now();
+}
+
 // ── Phase 3: Bann (intern SANDUHR — frei wählbar pro Frage, kein Budget) ──
 // Ziel: gegnerisches ODER leeres Feld. Stuck/Shielded blockt. Nach 3 Fragen wird
 // die Sperre aufgehoben → Feld ist leer und kann normal besetzt werden.
@@ -3196,10 +3229,21 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
 // ── Territory update ──────────────────────────────────────────────────────────
 function updateTerritories(room: QQRoomState): void {
   const results = computeTerritories(room.grid, room.gridSize);
+  // 2026-05-05 (Wolf-Konzept Stapel-Bonus): Connections-Finale-Stacks addieren
+  // sich auf largestConnected. Wir summen pro Team alle cell.stackBonus auf.
+  const stackBonusByTeam: Record<string, number> = {};
+  for (const row of room.grid) {
+    for (const cell of row) {
+      if (cell.ownerId && cell.stackBonus) {
+        stackBonusByTeam[cell.ownerId] = (stackBonusByTeam[cell.ownerId] ?? 0) + cell.stackBonus;
+      }
+    }
+  }
   for (const id of room.joinOrder) {
     const r = results[id] ?? { total: 0, largest: 0 };
+    const bonus = stackBonusByTeam[id] ?? 0;
     room.teams[id].totalCells       = r.total;
-    room.teams[id].largestConnected = r.largest;
+    room.teams[id].largestConnected = r.largest + bonus;
   }
 }
 
@@ -3989,10 +4033,11 @@ export function qqConnectionsToReveal(room: QQRoomState): void {
 }
 
 /** Wechsel reveal → placement. Setzt pendingFor auf das Top-Team.
- *  User-Wunsch 2026-04-28: Finale-Aktionen sind volle Round-3/4-Aktionen
- *  (PLACE/STEAL/STAPEL/SANDUHR/SHIELD/SWAP je Phase). pendingAction='FREE'
- *  öffnet das Action-Menü; Helper-Funktionen erlauben jetzt CONNECTIONS_4X4
- *  + c.phase==='placement' wie reguläre PLACEMENT. */
+ *  2026-05-05 (Wolf-Konzept): Connections-Finale = Stapel-Bonus statt FREE-
+ *  Action-Menue. Jedes Sieger-Team bekommt N Stapel-Aktionen (N = Anzahl
+ *  erratener Gruppen, max 4). Stapel-Bonus = +1 Pkt pro eigenes Feld,
+ *  Multi-Stack auf gleichem Feld erlaubt (cell.stackBonus zaehlt mit). Kein
+ *  Steal/Place mehr → kein Brett-Snowball, Quiz-Lead matters. */
 export function qqConnectionsToPlacement(room: QQRoomState): void {
   const c = room.connections;
   if (!c) return;
@@ -4010,7 +4055,7 @@ export function qqConnectionsToPlacement(room: QQRoomState): void {
     const team = c.placementOrder[c.placementCursor];
     if (canConnectionsTeamDoAction(room, team)) {
       room.pendingFor = team;
-      room.pendingAction = 'FREE';
+      room.pendingAction = 'STAPEL_BONUS';
       c.placementRemaining = c.teamProgress[team].foundGroupIds.length;
       room.lastActivityAt = Date.now();
       return;
@@ -4024,30 +4069,12 @@ export function qqConnectionsToPlacement(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-/** B4 (2026-04-29): Kann das Team aktuell ueberhaupt eine Action ausfuehren?
- *  Im Finale ist 1 Action = PLACE×2 ODER STEAL×1 ODER STAPEL×1. Wenn keiner
- *  dieser drei Wege gangbar ist, MUSS der Slot uebersprungen werden — sonst
- *  haengt die UI im FREE-Menue ohne valides Target. */
+/** 2026-05-05 (Wolf-Konzept): Connections-Finale macht NUR Stapel-Bonus.
+ *  Team braucht mindestens 1 eigenes Feld (egal ob stuck — Multi-Stack
+ *  erlaubt). Kein Place/Steal-Pfad mehr im Finale; falls keine eigenen
+ *  Felder, wird das Team in qqConnectionsAfterPlacement uebersprungen. */
 function canConnectionsTeamDoAction(room: QQRoomState, teamId: string): boolean {
-  // PLACE: braucht freies Feld (nicht gebannt).
-  const hasPlaceTarget = room.grid.some(row => row.some(cell =>
-    cell.ownerId === null && !cell.sandLockTtl
-  ));
-  if (hasPlaceTarget) return true;
-  // STEAL: braucht klaubares Gegnerfeld (nicht stuck/shielded/frozen).
-  const hasStealTarget = room.grid.some(row => row.some(cell =>
-    cell.ownerId !== null && cell.ownerId !== teamId
-    && !cell.stuck && !cell.shielded && !cell.frozen
-  ));
-  if (hasStealTarget) return true;
-  // STAPEL: braucht eigenes nicht-stuck Feld + Budget.
-  const stats = room.teamPhaseStats[teamId];
-  const hasStapelBudget = (stats?.stapelsUsed ?? 0) < QQ_MAX_STAPELS_PER_GAME;
-  const hasOwnNonStuck = room.grid.some(row => row.some(cell =>
-    cell.ownerId === teamId && !cell.stuck
-  ));
-  if (hasStapelBudget && hasOwnNonStuck) return true;
-  return false;
+  return room.grid.some(row => row.some(cell => cell.ownerId === teamId));
 }
 
 /**
@@ -4065,16 +4092,14 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
   if (!c || c.phase !== 'placement') return false;
   c.placementRemaining -= 1;
   if (c.placementRemaining > 0) {
-    // selbes Team setzt nochmal — wieder mit voller Action-Auswahl
+    // selbes Team stapelt nochmal — Action bleibt STAPEL_BONUS
     const sameTeam = c.placementOrder[c.placementCursor];
-    // Falls das Team auch fuer den naechsten Slot keine Aktion mehr hat,
-    // alle restlichen Slots verwerfen (z.B. Grid voll + kein Steal-Target).
     if (!canConnectionsTeamDoAction(room, sameTeam)) {
       c.placementRemaining = 0;
       // fall-through zum naechsten Team
     } else {
       room.pendingFor = sameTeam;
-      room.pendingAction = 'FREE';
+      room.pendingAction = 'STAPEL_BONUS';
       return false;
     }
   }
@@ -4090,11 +4115,10 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
     const nextTeam = c.placementOrder[c.placementCursor];
     c.placementRemaining = c.teamProgress[nextTeam].foundGroupIds.length;
     if (!canConnectionsTeamDoAction(room, nextTeam)) {
-      // Skip dieses Team komplett — naechstes pruefen.
       continue;
     }
     room.pendingFor = nextTeam;
-    room.pendingAction = 'FREE';
+    room.pendingAction = 'STAPEL_BONUS';
     return false;
   }
 }

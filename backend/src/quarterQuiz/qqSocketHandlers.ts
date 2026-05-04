@@ -24,7 +24,7 @@ import {
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
   qqComebackHLStartRound, qqComebackHLSubmitAnswer, qqComebackHLReveal, qqComebackHLAdvance,
   qqComebackFinishAllAndGoToFinale,
-  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqSandLockCell, qqShieldCell,
+  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqStapelBonusCell, qqSandLockCell, qqShieldCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
@@ -2634,11 +2634,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Phase 4: Stapeln (eigenes Feld, permanent)
+    // Phase 4: Stapeln (eigenes Feld, permanent) ODER Connections-Finale:
+    // Stapel-Bonus (multi-stack erlaubt, +1 Pkt pro Stapel).
+    // 2026-05-05 (Wolf-Konzept): pendingAction='STAPEL_BONUS' route geht in
+    // qqStapelBonusCell, regulaeres STAPEL_1 weiter in qqStuckCell.
     socket.on('qq:stapelCell', (payload: QQStapelCellPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStuckCell(room, payload.teamId, payload.row, payload.col);
+        if (room.pendingAction === 'STAPEL_BONUS') {
+          qqStapelBonusCell(room, payload.teamId, payload.row, payload.col);
+        } else {
+          qqStuckCell(room, payload.teamId, payload.row, payload.col);
+        }
         if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
           qqConnectionsAfterPlacement(room);
         }

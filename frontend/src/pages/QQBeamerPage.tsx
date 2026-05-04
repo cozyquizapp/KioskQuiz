@@ -14456,6 +14456,29 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none',
                   }} />
                 )}
+                {/* Stack-Bonus-Badge — zeigt +N im Top-Right wenn die Cell im
+                    Connections-Finale Bonus-Stapel aufgesammelt hat.
+                    2026-05-05 (Wolf-Konzept). */}
+                {cell.stackBonus && cell.stackBonus > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: -6, right: -6,
+                    minWidth: Math.max(18, cellSize * 0.32),
+                    height: Math.max(18, cellSize * 0.32),
+                    padding: '0 6px',
+                    borderRadius: 999,
+                    background: 'linear-gradient(180deg, #FDE68A, #F59E0B)',
+                    border: '2px solid #B45309',
+                    boxShadow: '0 0 12px rgba(251,191,36,0.6), 0 2px 4px rgba(0,0,0,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 900, fontSize: Math.max(11, cellSize * 0.22),
+                    color: '#1a1209',
+                    lineHeight: 1,
+                    zIndex: 6,
+                    pointerEvents: 'none',
+                    animation: (isNew || isStolen) ? 'scorePop 0.5s var(--qq-ease-bounce) 0.2s both' : undefined,
+                  }}>+{cell.stackBonus}</div>
+                )}
                 {/* Emoji / star content */}
                 <div style={{
                   position: 'relative', zIndex: 4,

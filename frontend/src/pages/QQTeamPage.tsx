@@ -4301,7 +4301,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const hasFreeCell = s.grid.some(row => row.some(cell => cell.ownerId === null));
   const myStats = s.teamPhaseStats?.[myTeamId];
   const hasOwnCell = s.grid.some(row => row.some(cell => cell.ownerId === myTeamId));
-  const hasStapable = s.grid.some(row => row.some(cell => cell.ownerId === myTeamId && !cell.stuck));
+  // 2026-05-05 (Wolf-Konzept): bei STAPEL_BONUS (Connections-Finale) ist
+  // Multi-Stack auf gleichem Feld erlaubt → cell.stuck blockt nicht.
+  const isStapelBonusMode = s.pendingAction === 'STAPEL_BONUS';
+  const hasStapable = s.grid.some(row => row.some(cell =>
+    cell.ownerId === myTeamId && (isStapelBonusMode || !cell.stuck)
+  ));
   const hasSandTarget = s.grid.some(row => row.some(cell =>
     !(cell.sandLockTtl && cell.sandLockTtl > 0) && (
       cell.ownerId === null
@@ -4322,7 +4327,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement; // Joker bonus placement
   const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
-  const isStuck     = pa === 'STAPEL_1' || (isFree && freeMode === 'STAPEL');
+  // 2026-05-05 (Wolf-Konzept): STAPEL_BONUS = Connections-Finale-Stack-Mode.
+  // Selber Cell-Picker wie regulaeres Stapeln, Multi-Stack erlaubt (Backend
+  // entscheidet via pendingAction, Frontend nutzt einheitlichen Picker).
+  const isStuck     = pa === 'STAPEL_1' || pa === 'STAPEL_BONUS' || (isFree && freeMode === 'STAPEL');
   const isSandLock  = pa === 'SANDUHR_1' || (isFree && freeMode === 'SANDUHR');
   const isSwapComeback = s.comebackAction === 'SWAP_2' && pa === 'COMEBACK';
   const isSteal     = pa === 'STEAL_1'
@@ -4464,9 +4472,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       return;
     }
 
-    // STAPEL: any own non-stuck cell (plus-form removed)
+    // STAPEL: any own non-stuck cell. Bei STAPEL_BONUS (Connections-Finale)
+    // ist Multi-Stack erlaubt — stuck-Block entfaellt.
     if (isStuck) {
-      if (cell.ownerId !== myTeamId || cell.stuck) return;
+      if (cell.ownerId !== myTeamId) return;
+      if (cell.stuck && !isStapelBonusMode) return;
       setPendingPick({ r, c, kind: 'stapel' });
       return;
     }
@@ -4641,7 +4651,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     const cell = s.grid[r][c];
     if (isSwapComeback) return !!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || s.grid[swapFirst.r][swapFirst.c].ownerId !== cell.ownerId);
     if (isSwapOne) return swapFirst ? (!!cell.ownerId && cell.ownerId !== myTeamId && !cell.shielded) : cell.ownerId === myTeamId;
-    if (isStuck)    return cell.ownerId === myTeamId && !cell.stuck;
+    if (isStuck)    return cell.ownerId === myTeamId && (isStapelBonusMode || !cell.stuck);
     if (isShield)   return cell.ownerId === myTeamId && !cell.shielded;
     if (isSandLock) return !(cell.sandLockTtl && cell.sandLockTtl > 0)
       && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded;
@@ -4671,7 +4681,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (isSwapOne) return swapFirst
       ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
       : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
-    if (isStuck) return lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)';
+    if (isStuck) return isStapelBonusMode
+      ? (lang === 'de' ? 'Eigenes Feld tippen (Bonus-Stapel, +1 Pkt — gleiches Feld mehrfach erlaubt)' : 'Tap one of your cells (bonus stack, +1 pt — same cell allowed multiple times)')
+      : (lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)');
     if (isShield) return lang === 'de'
       ? 'Eigenes Feld tippen — wird bis Spielende geschützt'
       : 'Tap one of your cells — shielded till end of game';

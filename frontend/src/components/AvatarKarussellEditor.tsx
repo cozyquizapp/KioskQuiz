@@ -8,9 +8,9 @@
 //
 // Ersetzt den alten 4×2-Avatar-Grid + separaten Emoji-Picker.
 
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
-import { getSet } from '../avatarSets';
+import { getSet, MEGA_EMOJI_POOL } from '../avatarSets';
 import { QQTeamAvatar } from './QQTeamAvatar';
 
 type Props = {
@@ -39,20 +39,24 @@ export function AvatarKarussellEditor({
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
   const [sheetOpen, setSheetOpen] = useState(false);
+  // 2026-05-04 (Wolf): Idle-Wackler nach 15s ohne Interaktion → Aufmerksamkeits-
+  // Boost dass Avatar tappbar ist. Reset bei jeder Aenderung.
+  const [shouldWiggle, setShouldWiggle] = useState(false);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartXRef = useRef<number | null>(null);
 
   const greetings = lang === 'de' ? ['Hi!', 'Hallo!', 'Hey!'] : ['Hi!', 'Hey!', 'Yo!'];
 
-  // Bei 'all': nimm serverEmojis wenn da (Backend wuerfelt 8 zufaellige), sonst
-  // den Default-Avatars-Array von 'all' (= COZY_ANIMALS_EMOJI). Vorher war
-  // set=null bei 'all' → leerer Pool wenn kein serverEmojis kam → Editor war
-  // unbenutzbar (kein Tap, Beitreten disabled).
+  // 2026-05-04 (Wolf): bei 'all' ist der Pool jetzt der MEGA_EMOJI_POOL
+  // (~140 kuratierte Emojis, frei waehlbar). Theme-Sets (Halloween/Pub/etc.)
+  // behalten ihre fixen 8 Theme-Emojis. PNG-Sets brauchen keinen Pool.
   const set = getSet(activeSetId);
   const isPng = (set?.source ?? 'emoji') === 'png';
   const emojiPool: string[] = isPng
     ? []
-    : (activeSetId === 'all' && serverEmojis?.length === 8 ? serverEmojis : (set?.avatars ?? []));
+    : (activeSetId === 'all'
+        ? MEGA_EMOJI_POOL
+        : (set?.avatars ?? []));
   const availableSlots = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id));
   const allSlotsTaken = availableSlots.length === 0;
   const currentSlot = availableSlots.find(a => a.id === avatarId) ?? availableSlots[0];
@@ -95,6 +99,22 @@ export function AvatarKarussellEditor({
     if (dx > 0) goPrev(); else goNext();
   };
 
+  // Vibration als Tap-Feedback (Android Chrome/FF unterstuetzen es; iOS Safari
+  // ignoriert silently). 25ms = kurzer Buzz.
+  const buzz = () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(25); } catch { /* swallow */ }
+    }
+  };
+
+  // Idle-Wackler: nach 15s Inaktivitaet (ohne Slot-Wechsel oder Sheet-Open)
+  // wackelt der Avatar einmal kurz — Aufmerksamkeits-Boost dass er tappbar ist.
+  useEffect(() => {
+    setShouldWiggle(false);
+    const t = setTimeout(() => setShouldWiggle(true), 15000);
+    return () => clearTimeout(t);
+  }, [avatarId, sheetOpen, chosenEmoji]);
+
   if (allSlotsTaken) {
     return (
       <div style={{
@@ -131,6 +151,19 @@ export function AvatarKarussellEditor({
 
   return (
     <>
+      {/* 2026-05-04 (Wolf): Haptik-/Aufmerksamkeits-Animationen lokal. */}
+      <style>{`
+        @keyframes qqAvatarHalo {
+          0%   { transform: scale(1);    opacity: 0; }
+          15%  { opacity: 0.55; }
+          100% { transform: scale(1.32); opacity: 0; }
+        }
+        @keyframes qqAvatarWiggle {
+          0%, 100% { transform: scale(1)    rotate(0deg); }
+          25%      { transform: scale(1.04) rotate(-3deg); }
+          75%      { transform: scale(1.02) rotate(3deg); }
+        }
+      `}</style>
       {/* Hero-Karussell */}
       <div
         onTouchStart={handleTouchStart}
@@ -159,7 +192,12 @@ export function AvatarKarussellEditor({
 
         <button
           type="button"
-          onClick={() => { if (canTapAvatar) setSheetOpen(true); }}
+          onClick={() => {
+            if (!canTapAvatar) return;
+            buzz();
+            setSheetOpen(true);
+            setShouldWiggle(false);
+          }}
           disabled={!canTapAvatar}
           aria-label={lang === 'de' ? 'Avatar-Emoji ändern' : 'Change avatar emoji'}
           style={{
@@ -172,6 +210,18 @@ export function AvatarKarussellEditor({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
+          {/* Pulse-Halo-Ring — radial-pulse alle 4.5s in Slot-Farbe.
+              Visueller Tap-Hint, sagt 'klick mich'. Nur wenn Avatar tappbar. */}
+          {canTapAvatar && (
+            <span aria-hidden style={{
+              position: 'absolute', inset: 0,
+              borderRadius: '50%',
+              border: `2px solid ${myColor}`,
+              pointerEvents: 'none',
+              animation: 'qqAvatarHalo 4.5s ease-out infinite',
+              opacity: 0,
+            }} />
+          )}
           {pickedId === avatarId && SPARKS.map((sp, si) => (
             <div key={si} style={{
               position: 'absolute', left: '50%', top: '50%', width: 6, height: 6,
@@ -203,7 +253,11 @@ export function AvatarKarussellEditor({
             boxShadow: `0 0 0 4px ${myColor}33, 0 12px 28px ${myColor}55, 0 6px 16px rgba(0,0,0,0.45)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.45s ease, box-shadow 0.45s ease',
-            animation: 'tcfloat 3.6s ease-in-out infinite',
+            // 2026-05-04 (Wolf): Idle-Wackler nach 15s ohne Tap (qqAvatarWiggle
+            // 0.8s einmalig). Sonst regulaerer cfloat-Atemzug.
+            animation: shouldWiggle && canTapAvatar
+              ? 'qqAvatarWiggle 0.8s ease-in-out 1, tcfloat 3.6s ease-in-out 0.8s infinite'
+              : 'tcfloat 3.6s ease-in-out infinite',
             position: 'relative',
           }}>
             {needsEmoji && chosenEmoji ? (

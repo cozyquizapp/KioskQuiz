@@ -4204,6 +4204,10 @@ export function qqOnlyConnectAdvanceAllTeams(room: QQRoomState, hintIdx: number)
  */
 export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, teamId: string): number | null {
   if (!room.teams[teamId]) return null;
+  // 2026-05-04 v3 (Wolf-Bug): Timer-Ablauf muss Hint-Advance blocken — sonst
+  // schalten Dummies + Teams nach Ende immer noch Hinweise frei.
+  if (room.phase !== 'QUESTION_ACTIVE') return null;
+  if (room.timerExpired) return null;
   // Locked oder schon richtig? Dann kein Advance.
   if ((room.onlyConnectLockedTeams ?? []).includes(teamId)) return null;
   const hasWon = (room.onlyConnectGuesses ?? []).some(g => g.teamId === teamId && g.correct);
@@ -4240,6 +4244,15 @@ export function qqOnlyConnectSubmitGuess(
 ): { matched: boolean; locked: boolean; alreadyAnswered: boolean } {
   if (!room.teams[teamId]) {
     return { matched: false, locked: false, alreadyAnswered: false };
+  }
+  // 2026-05-04 v3 (Wolf-Bug): Timer-Ablauf blockt weitere Tipps — sonst kommen
+  // bei Connect 4 nach 0:00 noch Antworten an. alreadyAnswered=true damit das
+  // Frontend den Submit als „verbraucht" anzeigt statt als Fehler.
+  if (room.phase !== 'QUESTION_ACTIVE') {
+    return { matched: false, locked: false, alreadyAnswered: true };
+  }
+  if (room.timerExpired) {
+    return { matched: false, locked: false, alreadyAnswered: true };
   }
   // 1 Versuch pro Team — egal ob locked oder schon richtig
   if (room.onlyConnectLockedTeams.includes(teamId)) {

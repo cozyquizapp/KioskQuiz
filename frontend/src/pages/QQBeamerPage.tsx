@@ -4421,16 +4421,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             )}
           </div>
 
-          {/* Divider line with glow + shimmer */}
+          {/* Divider line with glow + shimmer.
+              2026-05-04 v3 (Wolf-Bug): Round-2-Intro hatte vorher nur lineShimmer
+              ohne roundLineGlow — visuell wirkte der Balken statisch, weil
+              waehrend der 2.5s Round-Transition der 1.5s-Delay ins Leere ging
+              und der erste Shimmer-Pass erst nach 4.5s sichtbar war. Jetzt:
+              gleiche Sprache wie Round-1 (drawIn + Shimmer infinite, Shimmer
+              ohne Delay damit er waehrend der Transition schon laeuft). */}
           <div style={{
             width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
             background: `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
             backgroundSize: '200% 100%',
             marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: hasRoundTransition
-              ? 'lineShimmer 3s linear 1.5s infinite'
-              : 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both, lineShimmer 3s linear 1.5s infinite',
+            animation: 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both, lineShimmer 3s linear 1.0s infinite',
             boxShadow: `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
             transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,

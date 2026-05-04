@@ -931,6 +931,9 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
   const room = getQQRoom(roomCode);
   if (!room) return;
   if (room.phase !== 'QUESTION_ACTIVE') return;
+  // 2026-05-04 v3 (Wolf-Bug): Nach Timer-Ablauf keine neuen Dummy-Ticks mehr —
+  // sonst submitten Bots noch Tipps oder schalten Hints in der Reveal-Wartezeit.
+  if (room.timerExpired) return;
   if (room.currentQuestion?.bunteTuete?.kind !== 'onlyConnect') return;
 
   const timers = getOnlyConnectAiTimerMap(roomCode);
@@ -1695,7 +1698,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqActivateQuestion(room, () => {
-          // Timer expired — just broadcast, moderator controls reveal manually
+          // Timer expired — broadcast + Kategorie-spezifische Cleanups.
+          // 2026-05-04 v3 (Wolf-Bug): Connect-4 Bot-Timer killen sobald Zeit
+          // abgelaufen — sonst koennten gerade-noch-pending setTimeouts in der
+          // Reveal-Wartezeit weiterhin Submits/Advances triggern (zwar dank
+          // timerExpired-Gate silent, aber unnoetig).
+          const r = getQQRoom(payload.roomCode);
+          if (r?.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+            stopOnlyConnectAiTimers(payload.roomCode);
+          }
           broadcast(io, payload.roomCode);
         });
         // qqActivateQuestion kann früh zurückkehren wenn nur ein PHASE_INTRO-

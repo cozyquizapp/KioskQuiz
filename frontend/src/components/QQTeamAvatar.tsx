@@ -209,8 +209,10 @@ function EmojiAvatar({
           radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
           ${color}
         `,
-        // Aussen schmaler dunkler Slot-Farb-Ring + Halo, innen subtiler Tiefen-Inset
-        boxShadow: `0 0 0 1.5px rgba(0,0,0,0.35), 0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+        // 2026-05-04: schwarzer Outer-Ring entfernt — auf Grid-Cells wirkte
+        // der wie ein Cutout vom Cell-BG. Glow (Slot-Farbe als Halo) +
+        // Inset-Schatten unten reichen fuer Definition auf jedem BG.
+        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

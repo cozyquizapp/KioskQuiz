@@ -11545,22 +11545,44 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             {isReveal && (lang === 'en' ? 'Who got it right?' : 'Wer lag richtig?')}
           </div>
+          {/* 2026-05-05 (Wolf-Wahl 1A): Avatar fliegt zur gewählten Card und
+              parkt am Card-Rand. 'higher' → nach oben rechts (Subject-Card),
+              'lower' → nach oben links (Anchor-Card). Bei mehreren auf
+              gleicher Side: kleiner horizontaler Versatz pro Stack-Index,
+              damit sie nicht 100% übereinander liegen. Reveal: korrekte
+              glühen, falsche faden + grayscale.  */}
           <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
             {hlTeams.map(tm => {
-              const answered = hl.answeredThisRound.includes(tm.id);
+              const choice = hl.answers[tm.id];  // 'higher' | 'lower' | undefined
+              const answered = !!choice || hl.answeredThisRound.includes(tm.id);
               const correct = correctIds.has(tm.id);
               const teamWin = hl.winnings[tm.id] ?? 0;
               // Im Reveal: dim if wrong; Glow if correct.
               const dim = isReveal && !correct;
+              // Stack-Index: wievielter Avatar auf dieser Side?
+              const stackIdx = choice
+                ? hlTeams.filter(t => hl.answers[t.id] === choice).findIndex(t => t.id === tm.id)
+                : 0;
+              // Flug-Vector: 'higher' → rechts, 'lower' → links, beide nach oben
+              // zur Card-Reihe. Stack-Versatz horizontal damit gleiche-Side-Avatare
+              // sich nicht voll ueberlappen.
+              const flyDir = choice === 'higher' ? 1 : choice === 'lower' ? -1 : 0;
+              const flyTransform = choice
+                ? `translate(calc(${flyDir} * clamp(110px, 13vw, 220px) + ${stackIdx * 18}px), clamp(-150px, -16vh, -100px))`
+                : 'translate(0, 0)';
               return (
                 <div key={tm.id} style={{
                   position: 'relative',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  opacity: dim ? 0.55 : (answered || isReveal ? 1 : 0.55),
+                  opacity: dim ? 0.45 : (answered || isReveal ? 1 : 0.55),
                   filter: dim
-                    ? 'grayscale(0.4)'
-                    : (answered || isReveal ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)'),
-                  transition: 'opacity 0.4s ease, filter 0.4s ease',
+                    ? 'grayscale(0.6)'
+                    : correct
+                      ? `drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))`
+                      : (answered || isReveal ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)'),
+                  transform: flyTransform,
+                  transition: 'opacity 0.4s ease, filter 0.4s ease, transform 0.65s var(--qq-ease-bounce)',
+                  zIndex: stackIdx + 1,
                 }}>
                   <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7.5vw, 110px)'} style={{
                     // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow

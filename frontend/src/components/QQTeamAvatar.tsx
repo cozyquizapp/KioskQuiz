@@ -184,10 +184,17 @@ function EmojiAvatar({
   emoji: string; color: string; size: number | string;
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean;
 }) {
-  // Emoji-Schriftgroesse ~62% des Avatars, mit Floor fuer winzige Sizes.
-  const emojiSize = typeof size === 'number'
-    ? Math.max(10, Math.round(size * 0.62))
-    : '62%';
+  // 2026-05-04 Bug-Fix: Bei String-Sizes (clamp/vw) hat font-size '62%' am
+  // Parent-Font gehangen statt an der Disc — Emoji blieb winzig in grossen
+  // Discs. Loesung: CSS calc() multipliziert mit dem Disc-Wert direkt.
+  const emojiFontSize = typeof size === 'number'
+    ? Math.max(10, Math.round(size * 0.6))
+    : `calc(${size} * 0.6)`;
+  // Innen-Kreis fuer Kontrast: nimmt 78 % der Disc, dunklerer Hintergrund
+  // damit das Emoji nicht in der Eigenfarbe versinkt.
+  const innerSize = typeof size === 'number'
+    ? Math.max(10, Math.round(size * 0.78))
+    : `calc(${size} * 0.78)`;
 
   return (
     <span
@@ -196,20 +203,39 @@ function EmojiAvatar({
       style={{
         ...baseStyle,
         // Glow-Disc: radial-gradient als 3D-Hint (oben-links heller)
-        background: `radial-gradient(circle at 35% 35%, ${color}cc 0%, ${color} 70%)`,
-        // Inset-Schatten unten als Tiefe
-        boxShadow: `0 0 0 1px ${color}55, inset 0 -6% 12% rgba(0,0,0,0.28)`,
+        background: `radial-gradient(circle at 35% 35%, ${color}ee 0%, ${color} 70%)`,
+        // Outer-Tiefe + leichter Halo der Slot-Farbe
+        boxShadow: `0 0 0 1.5px ${color}, 0 4px 12px ${color}55, inset 0 -8% 16% rgba(0,0,0,0.32)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: emojiSize,
-        lineHeight: 1,
         userSelect: 'none',
-        // bei square=true keinen Border-Radius
         borderRadius: square ? 0 : '50%',
       }}
     >
-      {emoji}
+      {/* Innerer Kreis als Kontrast-Hintergrund hinter dem Emoji.
+          rgba(0,0,0,0.18) gibt einen dezenten dunkleren „Linsen"-Effekt
+          ohne den Glow-Disc-Charakter zu zerstoeren. */}
+      <span
+        aria-hidden
+        style={{
+          width: innerSize,
+          height: innerSize,
+          borderRadius: square ? 0 : '50%',
+          background: 'rgba(0,0,0,0.22)',
+          // sanfter weisser Inner-Border-Ring fuer mehr Definition
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.18), inset 0 2px 4px rgba(0,0,0,0.25)`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: emojiFontSize,
+          lineHeight: 1,
+          // Drop-Shadow am Emoji-Glyph fuer Tiefe + Lesbarkeit
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5)) drop-shadow(0 0 1px rgba(0,0,0,0.6))',
+        }}
+      >
+        {emoji}
+      </span>
     </span>
   );
 }

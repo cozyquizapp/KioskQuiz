@@ -19,6 +19,7 @@ import { QQ3DGrid } from '../components/QQ3DGrid';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { AvatarSetProvider } from '../avatarSetContext';
+import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
@@ -7863,7 +7864,10 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     iconAnchor: [44, 105] as any, // Pin-Tip an lat/lng (5px Offset, da Emoji-Tip nicht ganz unten)
   }), []);
 
-  const makeTeamIcon = (color: string, imageUrl: string, emojiFallback: string) => L.divIcon({
+  // 2026-05-04 — Phase 2: Marker respektiert das aktive Avatar-Set.
+  // Bei mode='emoji' wird der img-Tag komplett uebersprungen, damit kein
+  // Lade-Fehler-Flash entsteht. Bei mode='png' wie bisher (PNG mit Fallback).
+  const makeTeamIcon = (color: string, mode: 'png' | 'emoji', srcOrEmoji: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
       position: relative; width: 56px; height: 78px;
@@ -7873,16 +7877,20 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       <div style="
         position: absolute; left: 4px; top: 0;
         width: 48px; height: 48px; border-radius: 50%;
-        background: #0f172a;
+        background: ${mode === 'emoji' ? color : '#0f172a'};
         border: 4px solid ${color};
         box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}66;
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
       ">
-        <img src="${imageUrl}" alt="" draggable="false"
+        ${mode === 'png' ? `
+        <img src="${srcOrEmoji}" alt="" draggable="false"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
           style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
         <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
+        ` : `
+        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.4);">${srcOrEmoji}</span>
+        `}
       </div>
       <span style="
         position: absolute; left: 50%; top: 38px;
@@ -7969,7 +7977,13 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
               <Marker
                 key={p.teamId}
                 position={[lat, lng] as any}
-                icon={makeTeamIcon(team.color, qqGetAvatar(team.avatarId).image, qqGetAvatar(team.avatarId).emoji)}
+                icon={(() => {
+                  const display = getAvatarDisplay(team.avatarId, s.avatarSetId);
+                  if (display.kind === 'png') {
+                    return makeTeamIcon(team.color, 'png', display.pngBase, qqGetAvatar(team.avatarId).emoji);
+                  }
+                  return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);
+                })()}
                 zIndexOffset={1000}
               />
             );

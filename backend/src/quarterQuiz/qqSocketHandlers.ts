@@ -164,6 +164,7 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     winner,
     phases: room.totalPhases,
     language: room.language,
+    avatarSetId: room.avatarSetId ?? 'all',   // 2026-05-04: Phase 2 - Set fuer Summary-Render
     grid: room.grid,
     questionHistory: room.questionHistory,
     funnyAnswers: room.funnyAnswers,

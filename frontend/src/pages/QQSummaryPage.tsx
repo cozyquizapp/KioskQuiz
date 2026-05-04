@@ -4,9 +4,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { qqGetAvatar } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
+import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { AvatarSetProvider } from '../avatarSetContext';
 
 type Lang = 'de' | 'en';
 
@@ -31,6 +32,8 @@ type Summary = {
   draftTitle: string;
   winner: string | null;
   phases: number;
+  /** 2026-05-04 — gewaehltes Avatar-Theme zum Zeitpunkt des Spiels (Phase 2). */
+  avatarSetId?: string;
   teams: SummaryTeam[];
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
 };
@@ -319,13 +322,12 @@ export default function QQSummaryPage() {
   // Auswahl-Screen
   if (!selectedTeam) {
     return (
+      <AvatarSetProvider value={summary.avatarSetId}>
       <Shell lang={lang} onLang={changeLang}>
         <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} />
         <Section title={tr('whichTeam', lang)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-            {ranking.map((t, i) => {
-              const av = qqGetAvatar(t.avatarId);
-              return (
+            {ranking.map((t, i) => (
                 <button key={t.id} onClick={() => setSelectedTeamId(t.id)}
                   style={{
                     padding: 14, borderRadius: 16,
@@ -333,18 +335,13 @@ export default function QQSummaryPage() {
                     cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   }}>
-                  <img src={av.image} alt={av.label} style={{
-                    width: 56, height: 56, borderRadius: '50%',
-                    objectFit: 'cover',
-                    background: '#0f172a', border: `2px solid ${t.color}`,
-                  }} />
+                  <QQTeamAvatar avatarId={t.avatarId} size={56} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
                     {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {tr('fields', lang)}
                   </div>
                 </button>
-              );
-            })}
+              ))}
           </div>
         </Section>
         <FeedbackForm roomCode={summary.roomCode} lang={lang} />
@@ -352,17 +349,18 @@ export default function QQSummaryPage() {
         <UpcomingEvents events={upcoming} lang={lang} />
         <Footer />
       </Shell>
+      </AvatarSetProvider>
     );
   }
 
   // Team-Detail-Screen
   const place = ranking.findIndex(t => t.id === selectedTeam.id) + 1;
-  const av = qqGetAvatar(selectedTeam.avatarId);
   const placeLabel = formatPlaceLabel(place, lang);
   const myFunny = summary.funnyAnswers.find(f => f.teamId === selectedTeam.id);
   const accuracy = selectedTeam.answered > 0 ? Math.round((selectedTeam.correct / selectedTeam.answered) * 100) : null;
 
   return (
+    <AvatarSetProvider value={summary.avatarSetId}>
     <Shell lang={lang} onLang={changeLang}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
@@ -371,15 +369,11 @@ export default function QQSummaryPage() {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center',
       }}>
         <div style={{
-          width: 112, height: 112, borderRadius: '50%',
-          background: '#0f172a',
-          border: `4px solid ${selectedTeam.color}`,
-          boxShadow: `0 10px 30px ${selectedTeam.color}55, 0 0 0 2px rgba(15,23,42,0.7) inset`,
-          overflow: 'hidden',
+          width: 112, height: 112,
+          boxShadow: `0 10px 30px ${selectedTeam.color}55`,
+          borderRadius: '50%',
         }}>
-          <img src={av.image} alt={av.label} style={{
-            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-          }} />
+          <QQTeamAvatar avatarId={selectedTeam.avatarId} size={112} />
         </div>
         <div style={{ fontSize: 13, fontWeight: 900, color: '#fbbf24', letterSpacing: 0.3, textTransform: 'uppercase' }}>
           {placeLabel}
@@ -434,7 +428,6 @@ export default function QQSummaryPage() {
       <Section title={tr('finalStandings', lang)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ranking.map((t, i) => {
-            const tAv = qqGetAvatar(t.avatarId);
             const isMe = t.id === selectedTeam.id;
             return (
               <div key={t.id} style={{
@@ -444,10 +437,7 @@ export default function QQSummaryPage() {
                 border: `1px solid ${isMe ? t.color : 'rgba(255,255,255,0.06)'}`,
               }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', width: 22 }}>{i + 1}.</span>
-                <img src={tAv.image} alt={tAv.label} style={{
-                  width: 28, height: 28, borderRadius: '50%', objectFit: 'cover',
-                  background: '#0f172a', border: `1.5px solid ${t.color}`,
-                }} />
+                <QQTeamAvatar avatarId={t.avatarId} size={28} />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{t.name}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>
@@ -463,6 +453,7 @@ export default function QQSummaryPage() {
       <UpcomingEvents events={upcoming} lang={lang} />
       <Footer />
     </Shell>
+    </AvatarSetProvider>
   );
 }
 
@@ -694,7 +685,6 @@ function Superlatives({ teams, selectedId, lang }: {
     <Section title={sectionTitle}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
         {titles.map((title, i) => {
-          const av = qqGetAvatar(title.winner.avatarId);
           const isMe = title.winner.id === selectedId;
           return (
             <div key={`${title.titleDe}-${i}`} style={{
@@ -722,10 +712,7 @@ function Superlatives({ teams, selectedId, lang }: {
                 }}>{lang === 'de' ? title.titleDe : title.titleEn}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <img src={av.image} alt={av.label} style={{
-                  width: 38, height: 38, borderRadius: '50%',
-                  objectFit: 'cover', background: '#0f172a', border: `2px solid ${title.winner.color}`,
-                }} />
+                <QQTeamAvatar avatarId={title.winner.avatarId} size={38} />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
                   <span style={{
                     fontSize: 14, fontWeight: 900, color: title.winner.color,

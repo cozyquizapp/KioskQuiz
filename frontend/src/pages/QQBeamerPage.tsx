@@ -11901,10 +11901,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#241a10', flexShrink: 0 }} />
             }
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{
-                fontWeight: 800, fontSize: 'clamp(20px, 2.4vw, 30px)', color: teamColor,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{teamDisplayName(entry.name, true)}</span>
+              <TeamNameLabel
+                name={entry.name}
+                withTeamPrefix
+                maxLines={2}
+                shrinkAfter={16}
+                fontSize="clamp(20px, 2.4vw, 30px)"
+                color={teamColor}
+                fontWeight={800}
+              />
               {lastPlayedLabel && (
                 <span style={{
                   fontSize: 'clamp(11px, 1.1vw, 14px)', color: '#64748b',
@@ -12394,12 +12399,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             laufen ungestört durch. */}
       {activePanel && (
         <div style={{
-          width: '100%', maxWidth: 920, position: 'relative', zIndex: 5,
+          width: '100%', maxWidth: 1120, position: 'relative', zIndex: 5,
         }}>
           <div style={{
             background: cardBg,
-            borderRadius: 26,
-            padding: 'clamp(28px, 3.5vw, 48px)',
+            borderRadius: 28,
+            padding: 'clamp(32px, 4vw, 56px)',
             border: `1px solid ${modeAccentDim}`,
             boxShadow:
               `0 14px 48px rgba(0,0,0,0.55),` +
@@ -12410,7 +12415,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             // wechselt. Vorher minHeight -> Card konnte sich vergroessern bei
             // mehr Content; jetzt height fixiert + overflow:hidden, sodass
             // Panel-Wechsel smooth wirken (kein Layout-Shift mehr).
-            height: 'clamp(380px, 50vh, 560px)',
+            // 2026-05-04 (Wolf-Wunsch): Card insgesamt groesser — bisher
+            // 380-560px Hoehe, 920px Breite. Jetzt 460-660px Hoehe, 1120px
+            // Breite. Einheitlichkeit bleibt (clamp-Werte gelten fuer alle
+            // Panels gleichermassen, kein Layout-Shift).
+            height: 'clamp(460px, 60vh, 660px)',
             animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
             position: 'relative', overflow: 'hidden',
             // Flex-Column → Inner-Content kann via flex:1 auf volle Card-Höhe

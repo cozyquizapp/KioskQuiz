@@ -5951,7 +5951,9 @@ function BluffBeamerView({ state: s, lang, revealed }: {
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteBluff;
   const phase = s.bluffPhase;
   const accent = '#F472B6'; // pink
-  const realText = formatRevealedAnswer(lang, bt.realAnswer, bt.realAnswerEn);
+  // realText 2026-05-05 entfernt — die Echte-Antwort wird in der neuen
+  // Bluff-Tabelle als gruene Real-Card mit ✓ echt-Pille gezeigt, separate
+  // Hero-Card war redundant.
 
   const submitCount = Object.keys(s.bluffSubmissions ?? {}).filter(id => s.bluffSubmissions[id]?.trim()).length;
   const totalActive = s.teams.filter(t => t.connected).length;
@@ -6022,45 +6024,14 @@ function BluffBeamerView({ state: s, lang, revealed }: {
       {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
       {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
 
-      {/* Reveal: Echte Antwort prominent + Top-Punkte */}
-      {phase === 'reveal' && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-          padding: 'clamp(14px, 1.8vh, 24px)',
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
-          border: '2px solid rgba(34,197,94,0.45)',
-          boxShadow: '0 0 40px rgba(34,197,94,0.25)',
-          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
-          position: 'relative', zIndex: 5,
-        }}>
-          {/* 2026-05-02 (App-Designer-Audit B5): Eyebrow auf Pub-Distanz lesbar
-              machen — bei Bluff lebt der ganze Reveal-Moment davon, dass das
-              Publikum versteht "DAS ist die Wahrheit, nicht der Bluff". 11-13px
-              war aus 10m unleserlich. */}
-          <div style={{
-            fontSize: 'clamp(18px, 1.6vw, 26px)', fontWeight: 900,
-            color: '#86EFAC', letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}>
-            {lang === 'de' ? 'Echte Antwort' : 'Real answer'}
-          </div>
-          <div style={{
-            fontSize: 'clamp(32px, 4.5vw, 64px)', fontWeight: 900,
-            color: '#22C55E', textShadow: '0 0 30px rgba(34,197,94,0.4)',
-            textAlign: 'center', lineHeight: 1.1,
-          }}>
-            {realText}
-          </div>
-        </div>
-      )}
+      {/* 2026-05-05 (Wolf-Konzept): Reveal stapelt jetzt vertikal:
+          Frage → Bluff-Tabelle (Real-Card grün ist Teil der Tabelle, jede Card
+          in Author-Team-Farbe + Avatar als Watermark) → Sieger-Pille unten.
+          Die separate „Echte Antwort"-Hero-Card entfaellt — sie war redundant
+          zur ersten Tabellen-Zeile (gruene Real-Card mit ✓ echt). */}
+      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
 
-      {/* WinnerCard mit Teilpunkte-Hinweis — Sieger-Pille mit Avatar + Name +
-          Total-Punkte + Mini-Breakdown.
-          2026-05-04 v4 (Wolf-Bug 'Sieger-Card überlappt Frage-Card'): vorher
-          position:fixed top-center → kollidierte mit der Frage-Card am
-          Bildschirm-Top. Jetzt im Flex-Flow direkt unter der Echten-Antwort-
-          Card, OBERHALB des Options-Grids. Layout: Frage → Real-Answer →
-          Sieger-Pille → Grid. */}
+      {/* Sieger-Pille — unten unter der Tabelle. */}
       {phase === 'reveal' && (() => {
         // 2026-05-02 (Audit B Anti-Pattern Fix): Backend-Truth via
         // s.currentQuestionWinners (von qqMarkCorrect gesetzt) statt lokaler
@@ -6143,12 +6114,6 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         );
       })()}
 
-      {/* Reveal-Options-Grid — kommt UNTER Real-Answer + Sieger-Pille, fuellt
-          den Rest. Vorher zwischen Frage und Real-Answer (siehe oben), dann
-          unter Real-Answer aber WinnerCard (fixed-top) ueber der Frage-Card.
-          2026-05-04 v4: WinnerCard ist jetzt im Flex-Flow oberhalb des Grids,
-          Reveal stapelt sauber Frage → Real-Answer → Sieger → Grid. */}
-      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
     </div>
   );
 }
@@ -6391,9 +6356,174 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
     votersByOption[optId].push(teamId);
   }
 
-  // 2026-05-04 v4 (Wolf-Bug 'Sieger-Card überlappt Frage-Card'): WinnerCard
-  // ist nicht mehr position:fixed sondern im Flex-Flow oberhalb des Grids —
-  // dadurch kein Platz-Reservieren mehr unten noetig.
+  // 2026-05-05 (Wolf-Konzept): Reveal-Layout = vertikale TABELLE.
+  // - 1 Card pro Antwort, full-width gestapelt
+  // - Card-BG = Team-Farbe des Bluff-Authors (Real-Card = grün)
+  // - Author-Avatar als halbtransparenter Watermark im BG
+  // - Eine Zeile pro Card: [Letter] [Antwort gross] [Author-Pill] [Voter-Avatare rechts]
+  // - Sieger-Card kommt im Parent UNTER diese Tabelle (siehe BluffBeamerView)
+  if (revealed) {
+    return (
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        gap: 'clamp(8px, 1.2vh, 14px)',
+        maxWidth: 1200, width: '100%', margin: '0 auto',
+        position: 'relative', zIndex: 5,
+        animation: 'contentReveal 0.5s ease 0.15s both',
+      }}>
+        {opts.map((opt, i) => {
+          const isReal = opt.source === 'real';
+          const voters = votersByOption[opt.id] ?? [];
+          const contribIds = opt.source === 'team' ? opt.contributors : [];
+          // Primary Author = erster Contributor (gibt Card-Farbe + Watermark);
+          // weitere Contributors werden als „+N"-Hinweis in der Author-Pille gezeigt.
+          const authorTeam = !isReal && contribIds[0]
+            ? s.teams.find(t => t.id === contribIds[0])
+            : null;
+          const extraAuthors = !isReal && contribIds.length > 1
+            ? contribIds.length - 1
+            : 0;
+          // Card-Farbe: Real = grün, Bluff = Author-Farbe, Anonym/keine Contributors = neutral.
+          const cardColor = isReal ? '#22C55E' : (authorTeam?.color ?? '#64748b');
+          return (
+            <div key={opt.id} style={{
+              position: 'relative',
+              overflow: 'hidden',
+              padding: 'clamp(12px, 1.6vh, 22px) clamp(18px, 2.2vw, 32px)',
+              borderRadius: 18,
+              background: isReal
+                ? `linear-gradient(90deg, ${cardColor}33 0%, ${cardColor}10 60%, transparent 100%)`
+                : `linear-gradient(90deg, ${cardColor}3a 0%, ${cardColor}14 50%, ${cardColor}06 100%)`,
+              border: `2px solid ${cardColor}${isReal ? 'cc' : '99'}`,
+              boxShadow: isReal
+                ? `0 0 30px ${cardColor}33, 0 6px 18px rgba(0,0,0,0.4)`
+                : `0 0 18px ${cardColor}28, 0 6px 14px rgba(0,0,0,0.4)`,
+              display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.4vw, 22px)',
+              minHeight: 'clamp(64px, 8vh, 104px)',
+              animation: `phasePop 0.55s var(--qq-ease-bounce) ${0.3 + i * 0.08}s both`,
+            }}>
+              {/* Author-Avatar als BG-Watermark — sitzt rechts hinter dem Voter-Block,
+                  halbtransparent + leicht geblurrt, gibt der Card visuell ein „Owner-
+                  Stempel"-Gefuehl ohne den Avatar als hartes Element zu zeigen. */}
+              {!isReal && authorTeam && (
+                <div aria-hidden style={{
+                  position: 'absolute',
+                  right: 'clamp(-10px, -1vw, -20px)',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 'clamp(110px, 12vw, 180px)',
+                  height: 'clamp(110px, 12vw, 180px)',
+                  opacity: 0.16,
+                  filter: 'blur(1.5px)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <QQTeamAvatar avatarId={authorTeam.avatarId} teamEmoji={authorTeam.emoji} size="100%" />
+                </div>
+              )}
+
+              {/* Letter-Badge — Karten-Buchstabe in Author-Farbe. */}
+              <span style={{
+                width: 'clamp(32px, 3.4vw, 42px)', height: 'clamp(32px, 3.4vw, 42px)',
+                borderRadius: '50%',
+                background: cardColor,
+                color: '#0a1f0d',
+                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, position: 'relative', zIndex: 2,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              }}>{String.fromCharCode(65 + i)}</span>
+
+              {/* Antwort-Text — gross + prominent. */}
+              <span style={{
+                flex: 1, minWidth: 0,
+                fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
+                color: isReal ? '#86efac' : '#F8FAFC',
+                wordBreak: 'break-word', lineHeight: 1.18,
+                textShadow: isReal
+                  ? '0 0 16px rgba(34,197,94,0.4)'
+                  : '0 1px 3px rgba(0,0,0,0.5)',
+                position: 'relative', zIndex: 2,
+              }}>{opt.text}</span>
+
+              {/* Real-Pille oder Author-Pille. */}
+              {isReal ? (
+                <span style={{
+                  padding: '5px 14px', borderRadius: 999,
+                  background: 'rgba(34,197,94,0.3)', border: '1.5px solid #22C55E',
+                  fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#86EFAC',
+                  whiteSpace: 'nowrap', position: 'relative', zIndex: 2,
+                  flexShrink: 0,
+                }}>
+                  ✓ {lang === 'de' ? 'echt' : 'real'}
+                </span>
+              ) : authorTeam ? (
+                <span style={{
+                  padding: '5px 14px', borderRadius: 999,
+                  background: `${authorTeam.color}28`, border: `1.5px solid ${authorTeam.color}aa`,
+                  fontSize: 'clamp(11px, 1.15vw, 15px)', fontWeight: 900, color: authorTeam.color,
+                  whiteSpace: 'nowrap', position: 'relative', zIndex: 2,
+                  flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                  <QQEmojiIcon emoji="🎭"/>
+                  <span style={{ maxWidth: 'clamp(110px, 14vw, 220px)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {authorTeam.name}{extraAuthors > 0 ? ` +${extraAuthors}` : ''}
+                  </span>
+                </span>
+              ) : null}
+
+              {/* Voter-Reihe rechts — wer hat diese Antwort gewaehlt? */}
+              {voters.length > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.7vw, 10px)',
+                  flexShrink: 0, position: 'relative', zIndex: 2,
+                  paddingLeft: 'clamp(10px, 1.2vw, 18px)',
+                  borderLeft: '1px dashed rgba(255,255,255,0.18)',
+                }}>
+                  <span style={{
+                    fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                    color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase',
+                    marginRight: 4,
+                  }}>
+                    {lang === 'de' ? 'Wählten' : 'Voted'}
+                  </span>
+                  {voters.map((vid, vIdx) => {
+                    const tm = s.teams.find(t => t.id === vid);
+                    if (!tm) return null;
+                    return (
+                      <div key={vid} title={tm.name} style={{
+                        position: 'relative',
+                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.45 + i * 0.08 + vIdx * 0.06}s both`,
+                      }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(38px, 3.8vw, 52px)'} style={{
+                          boxShadow: isReal
+                            ? `0 0 0 2.5px #22C55E, 0 0 12px rgba(34,197,94,0.5)`
+                            : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
+                        }} />
+                        {isReal && (
+                          <span aria-hidden style={{
+                            position: 'absolute', top: -6, right: -6,
+                            width: 20, height: 20, borderRadius: '50%',
+                            background: '#22C55E', border: '2px solid #0D0A06',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
+                          }}>✓</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Vote-Phase (nicht-revealed): bleibt beim alten Grid-Layout.
   const cols = opts.length >= 6 ? 3 : opts.length >= 4 ? 2 : 1;
   return (
     <div style={{
@@ -6405,124 +6535,30 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
       animation: 'contentReveal 0.5s ease 0.15s both',
     }}>
       {opts.map((opt, i) => {
-        const isReal = opt.source === 'real';
-        const showAsReal = revealed && isReal;
         const voters = votersByOption[opt.id] ?? [];
-        const contributors = opt.source === 'team' ? opt.contributors : [];
         return (
           <div key={opt.id} style={{
             padding: 'clamp(12px, 1.4vh, 18px) clamp(14px, 1.6vw, 22px)',
             borderRadius: 16,
-            background: showAsReal
-              ? 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(34,197,94,0.06))'
-              : 'rgba(255,255,255,0.04)',
-            border: showAsReal
-              ? '2px solid #22C55E'
-              : '1.5px solid rgba(255,255,255,0.10)',
-            boxShadow: showAsReal ? '0 0 26px rgba(34,197,94,0.35)' : 'none',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1.5px solid rgba(255,255,255,0.10)',
             display: 'flex', flexDirection: 'column', gap: 8,
-            transition: 'all 0.4s ease',
-            animation: revealed ? `phasePop 0.55s var(--qq-ease-bounce) ${0.3 + i * 0.1}s both` : undefined,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
                 width: 28, height: 28, borderRadius: '50%',
-                background: showAsReal ? '#22C55E' : 'rgba(255,255,255,0.08)',
-                color: showAsReal ? '#0a1f0d' : '#94a3b8',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#94a3b8',
                 fontSize: 13, fontWeight: 900,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>{String.fromCharCode(65 + i)}</span>
               <span style={{
                 flex: 1, fontSize: 'clamp(18px, 2vw, 28px)', fontWeight: 900,
-                color: showAsReal ? '#22C55E' : '#F1F5F9', wordBreak: 'break-word',
+                color: '#F1F5F9', wordBreak: 'break-word',
               }}>{opt.text}</span>
-              {showAsReal && (
-                <span style={{
-                  padding: '4px 10px', borderRadius: 999,
-                  background: 'rgba(34,197,94,0.25)', border: '1.5px solid #22C55E',
-                  fontSize: 11, fontWeight: 900, color: '#86EFAC',
-                  whiteSpace: 'nowrap',
-                }}>
-                  ✓ {lang === 'de' ? 'echt' : 'real'}
-                </span>
-              )}
             </div>
-            {/* Voter-Avatare im Reveal — bigger, prominenter, wie bei MUCHO.
-                User-Wunsch 2026-04-28: 'wer wo gesetzt hat anzeigen wie bei
-                MUCHO nur eventuell mehr antworten'. */}
-            {revealed && voters.length > 0 && (
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center',
-                marginTop: 8, paddingTop: 8,
-                borderTop: '1px dashed rgba(255,255,255,0.10)',
-              }}>
-                <span style={{
-                  fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
-                  color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-                  marginRight: 4,
-                }}>
-                  {lang === 'de' ? 'Wählten' : 'Voted'}
-                </span>
-                {voters.map((vid, vIdx) => {
-                  const tm = s.teams.find(t => t.id === vid);
-                  if (!tm) return null;
-                  return (
-                    <div key={vid} title={tm.name} style={{
-                      position: 'relative',
-                      animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.4 + i * 0.08 + vIdx * 0.06}s both`,
-                    }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(38px, 4vw, 52px)'} style={{
-                        boxShadow: showAsReal
-                          ? `0 0 0 2.5px #22C55E, 0 0 14px rgba(34,197,94,0.5)`
-                          : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
-                      }} />
-                      {showAsReal && (
-                        <span aria-hidden style={{
-                          position: 'absolute',
-                          top: -6, right: -6,
-                          width: 20, height: 20, borderRadius: '50%',
-                          background: '#22C55E', border: '2px solid #0D0A06',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
-                        }}>✓</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {/* Bluff-Author-Avatare (nur im Reveal, nur bei team-bluffs).
-                2026-05-04 v4 (Wolf 'Bluff von viiiiiiel zu klein, nicht
-                lesbar im Beamer'): Avatare 26 → clamp(38,3.8vw,52),
-                Trennlinie + paddingTop wie bei der Voter-Reihe oberhalb,
-                Eyebrow-Label groesser. Konsistent mit Voter-Avataren. */}
-            {revealed && contributors.length > 0 && (
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center',
-                marginTop: 6, paddingTop: 8,
-                borderTop: '1px dashed rgba(255,255,255,0.08)',
-              }}>
-                <span style={{
-                  fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
-                  color: '#cbd5e1', letterSpacing: '0.1em', textTransform: 'uppercase',
-                  marginRight: 4,
-                }}>
-                  <QQEmojiIcon emoji="🎭"/> {lang === 'de' ? 'Bluff von' : 'Bluffed by'}
-                </span>
-                {contributors.map(cid => {
-                  const tm = s.teams.find(t => t.id === cid);
-                  if (!tm) return null;
-                  return (
-                    <QQTeamAvatar key={cid} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(38px, 3.8vw, 52px)'} style={{
-                      boxShadow: `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
-                    }} />
-                  );
-                })}
-              </div>
-            )}
-            {/* Vote-Counter (während aktivem Vote, ohne Avatare) */}
-            {!revealed && voters.length > 0 && (
+            {voters.length > 0 && (
               <div style={{
                 fontSize: 11, fontWeight: 900, color: '#94a3b8',
                 letterSpacing: '0.04em',
@@ -14676,43 +14712,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
               )}
-              {/* 2026-05-04 (Wolf): Joker-Slots als 2× 🃏 (Spielkarten),
-                  vorher waren Bars die wie Pause-Symbol aussahen. Verfuegbare
-                  Karten goldglow, verbrauchte gedimmt + grayscale. Wenn beide
-                  verbraucht: kompletter Container ausblenden. */}
-              {(() => {
-                const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
-                const total = QQ_MAX_JOKERS_PER_GAME;
-                if (earned >= total) return null;
-                const cardFs = dense ? 14 : 17;
-                return (
-                  <span style={{
-                    position: 'absolute',
-                    bottom: dense ? -4 : -6,
-                    right: dense ? -6 : -8,
-                    padding: dense ? '2px 6px' : '3px 8px',
-                    borderRadius: 8,
-                    background: '#0d0a06',
-                    border: '1.5px solid rgba(251,191,36,0.45)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.55), 0 0 10px rgba(251,191,36,0.3)',
-                    display: 'inline-flex', alignItems: 'center', gap: 2,
-                    pointerEvents: 'none',
-                  }}>
-                    {Array.from({ length: total }).map((_, i) => {
-                      const used = earned > i;
-                      return (
-                        <span key={i} style={{
-                          display: 'inline-block',
-                          fontSize: cardFs, lineHeight: 1,
-                          opacity: used ? 0.32 : 1,
-                          filter: used ? 'grayscale(0.85)' : 'drop-shadow(0 0 3px rgba(251,191,36,0.55))',
-                          transition: 'opacity 0.3s ease, filter 0.3s ease',
-                        }}><QQEmojiIcon emoji="🃏"/></span>
-                      );
-                    })}
-                  </span>
-                );
-              })()}
+              {/* 2026-05-05 (Wolf-Bug): Joker-Slots waren als absolute Overlay
+                  am Avatar (bottom-right). Verdeckten den Avatar + waren zu klein
+                  zu erkennen. Jetzt ausgelagert in eine eigene Tabellen-Spalte
+                  rechts neben den Felder-Werten — siehe weiter unten in dieser Row. */}
               {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}
               {jokerEarners.has(t.id) && (
                 <span
@@ -14856,6 +14859,48 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               }}>+{f.diff}</div>
             ))}
           </div>
+          {/* Joker-Spalte — 2026-05-05 (Wolf 'die 2 Joker als Spalte statt
+              auf dem Avatar'). Pro Team 2 Slots: verfuegbare leuchten gold,
+              verbrauchte sind grayscale + opacity 0.32. Komplett verbraucht
+              → keine Spalte mehr (saved space). */}
+          {(() => {
+            const earned = teamPhaseStats?.[t.id]?.jokersEarned ?? 0;
+            const total = QQ_MAX_JOKERS_PER_GAME;
+            if (earned >= total) {
+              // Platzhalter mit gleicher Breite damit Felder-Werte ueber alle
+              // Zeilen rechtsbuendig bleiben, auch wenn ein Team keine Joker
+              // mehr hat — sonst wackelt die Spalte horizontal.
+              return <div style={{ width: dense ? 56 : 70, flexShrink: 0 }} />;
+            }
+            const cardFs = dense ? 22 : 28;
+            const used = earned;
+            return (
+              <div style={{
+                width: dense ? 56 : 70, flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                gap: dense ? 4 : 6,
+                padding: dense ? '4px 6px' : '6px 8px',
+                borderRadius: 10,
+                background: 'rgba(251,191,36,0.06)',
+                border: '1.5px solid rgba(251,191,36,0.32)',
+                boxShadow: '0 0 12px rgba(251,191,36,0.12)',
+                animation: jokerEarners.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
+              }}>
+                {Array.from({ length: total }).map((_, i) => {
+                  const isUsed = used > i;
+                  return (
+                    <span key={i} style={{
+                      display: 'inline-block',
+                      fontSize: cardFs, lineHeight: 1,
+                      opacity: isUsed ? 0.32 : 1,
+                      filter: isUsed ? 'grayscale(0.85)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.7))',
+                      transition: 'opacity 0.3s ease, filter 0.3s ease',
+                    }}><QQEmojiIcon emoji="🃏"/></span>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
         );
       })}

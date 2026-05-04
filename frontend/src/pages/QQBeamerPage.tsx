@@ -1952,14 +1952,14 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 16, left: 0, right: 0,
+      // 2026-05-05 v3 (Wolf-Bug 'Luecke zwischen Card und Chips'): Chips
+      // jetzt als normales Flex-Item im Inner-Wrapper-Flow statt absolute-
+      // bottom-anchored. Card + Chip-Block werden vom Parent zusammen
+      // vertikal zentriert (1 Block mit gap). Keine Luecke mehr.
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
       pointerEvents: 'none',
-      // 2026-05-05 (Wolf-Bug 'Chips zu klein'): Card wird jetzt aktiv hoch-
-      // geschoben bei vielen Antworten, also kann der HP-Block mehr Raum
-      // beanspruchen. 65vh → 78vh — laesst grossere Tiers zu, ohne dass
-      // die Card-Untergrenze geriskt wird (Card sitzt jetzt weiter oben).
-      maxHeight: '78vh', overflow: 'hidden',
+      width: '100%',
+      maxWidth: 'min(94vw, 1500px)',
     }}>
       {/* Used answers list — prominent über dem Active-Team-Pill */}
       {used.length > 0 && (
@@ -9412,24 +9412,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // mid-game-Layout (selteneres Snap-down). Transition wird in der
           // Card-Style 0.4s -> 0.7s entspannter.
           const hpCompact = isHotPotatoActive && hpUsedCount > 16;
-          // 2026-05-05 (Wolf-Ausnahme zur Center-Regel): bei HotPotato mit
-          // vielen Antworten Card hochschieben damit die Chips unten mehr
-          // Platz bekommen. Sonst rendern sie als sm-Tier (clamp 14-21px) +
-          // wirken aus 8m Distanz zu klein. Mit Card oben kann der Chip-
-          // Block mehr Vertikal-Raum nutzen, Tier hoeher.
-          const isHotPotatoMany = isHotPotatoActive && hpUsedCount > 8;
-          const innerJustify = isHotPotatoMany ? 'flex-start' : 'center';
-          const innerGap = 0;
-          // Optionales Top-Padding fuer den Inner-Wrapper damit Card nicht
-          // direkt am Kategorie-Badge klebt. Skaliert ab: viel Padding bei
-          // wenig Chips, weniger bei vielen → Chips bekommen mehr Raum.
-          const innerPaddingTop = !isHotPotatoMany
-            ? 0
-            : hpUsedCount <= 18
-              ? 'clamp(28px, 5vh, 64px)'
-              : hpUsedCount <= 32
-                ? 'clamp(16px, 3vh, 40px)'
-                : 'clamp(6px, 1vh, 18px)';
+          // 2026-05-05 v3 (Wolf-Bug 'Luecke zwischen Card und Chips'): Chips
+          // sitzen jetzt im natuerlichen Flex-Flow direkt unter der Card
+          // (HotPotatoBeamerView ohne position:absolute). Card + Chip-Block
+          // werden als 1 Block vertikal mittig zentriert, mit definiertem Gap
+          // dazwischen. Keine Luecke mehr, kein Snap, kein paddingBottom-Hack.
+          const innerJustify = 'center';
+          const innerGap = isHotPotatoActive ? 'clamp(16px, 2.5vh, 32px)' : 0;
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
@@ -9508,15 +9497,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
               Frage-Card + alle Reveal-Inhalte. Bekommt das vertikale
               Centering / space-between, die Top-Bar bleibt davon unbetroffen
-              an ihrem Platz oben.
-              2026-05-05 (Wolf): innerPaddingTop fuer HotPotato-Card-Hoch-Shift. */}
+              an ihrem Platz oben. */}
           <div style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             justifyContent: innerJustify,
             gap: innerGap,
             alignItems: 'center', width: '100%',
-            paddingTop: innerPaddingTop || undefined,
-            transition: 'padding-top 0.7s var(--qq-ease-smooth)',
           }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal

@@ -8950,15 +8950,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', right: 'clamp(28px, 4vw, 64px)', zIndex: 70,
               animation: 'contentReveal 0.5s ease 0.3s both',
               pointerEvents: revealed ? 'none' : 'auto',
-              opacity: revealed ? 0 : 1,
-              transition: 'opacity 0.35s ease',
               padding: 12, borderRadius: '50%',
               background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
               boxShadow: `0 4px 22px rgba(0,0,0,0.45)`,
             }}>
-              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+              <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} expireNow={revealed} />
             </div>
           )}
 
@@ -9387,12 +9385,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 Platz mit Kollisionen in manchen Kategorien. */}
             {s.timerEndsAt && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
               <div style={{
-                opacity: revealed ? 0 : 1,
-                transition: 'opacity 0.3s ease',
                 pointerEvents: revealed ? 'none' : 'auto',
                 flexShrink: 0,
               }}>
-                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+                {/* expireNow=revealed → BeamerTimer triggert seine Outro-Anim
+                    auch wenn alle frueh abgegeben haben. Outer-Wrapper kein
+                    abruptes opacity:0 mehr. */}
+                <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} expireNow={revealed} />
               </div>
             )}
           </div>
@@ -13771,12 +13770,11 @@ function UrgencyVignette({ endsAt }: { endsAt: number }) {
   );
 }
 
-export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
+export function BeamerTimer({ endsAt, durationSec, accent, expireNow }: { endsAt: number; durationSec: number; accent: string; expireNow?: boolean }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
-  // 2026-05-04 (Wolf): Outro-Animation wenn Timer NATUERLICH auf 0 laeuft.
-  // Kurzer Pop (scale-up + Brightness) und dann sanft schrumpfen+ausblenden,
-  // statt einfach zu verschwinden. Nur einmal triggern (expired-Latch), damit
-  // die Animation nicht bei jedem Re-Render neu startet.
+  // 2026-05-04 (Wolf): Outro-Animation wenn Timer NATUERLICH auf 0 laeuft
+  // ODER frueher beendet wird (alle Teams haben geantwortet → expireNow=true).
+  // Kurzer Pop + Schrumpfen + Fade. Einmal-Latch verhindert Re-Trigger.
   const [expired, setExpired] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000) === 0);
 
   useEffect(() => {
@@ -13790,6 +13788,13 @@ export function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; d
     }, 100);
     return () => clearInterval(iv);
   }, [endsAt]);
+
+  // Wolf-Bug 2026-05-04: 'wenn alle frueh abgeben, Timer-Outro fehlt'.
+  // Outer-Wrapper kann jetzt expireNow=true setzen (z.B. revealed=true) und
+  // der Timer triggert sofort die Outro-Animation statt abrupt opacity:0.
+  useEffect(() => {
+    if (expireNow) setExpired(true);
+  }, [expireNow]);
 
   const pct = Math.min(100, (remaining / durationSec) * 100);
   const secs = Math.ceil(remaining);

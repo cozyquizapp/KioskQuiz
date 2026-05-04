@@ -2851,7 +2851,7 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
               unaufhoerlich von links nach rechts, damit die Folie auch bei 30s Wartezeit
               nicht statisch wirkt. */}
           <div style={{
-            width: 'clamp(60px, 7vw, 110px)', height: 3, borderRadius: 999,
+            width: 'clamp(180px, 22vw, 340px)', height: 3, borderRadius: 999,
             background: 'linear-gradient(90deg, transparent, #fbbf24 50%, transparent)',
             backgroundSize: '200% 100%',
             boxShadow: '0 0 12px rgba(251,191,36,0.5)',

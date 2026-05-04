@@ -13,6 +13,7 @@ import {
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { TeamNameLabel } from '../components/TeamNameLabel';
+import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
@@ -663,6 +664,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 2026-05-04 (Wolf) — Karussell-Editor ist als eigene Komponente in
+  // ./components/AvatarKarussellEditor.tsx ausgelagert (haelt Sheet + Touch-State).
+
   // 2026-05-04 — Avatar-Set aus Context. Bestimmt welches Label unter dem
   // Avatar-Tile gerendert wird: bei PNG-/Cozy-Tier-Sets das Tier-Label
   // ("Hund"/"Dog"), bei Theme-Sets nichts (Emoji ist selbsterklaerend).
@@ -758,138 +762,29 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         )}
         {step === 'COLOR' && (
           <CozyCard anim borderColor="#EAB308">
-            <StepLabel>{lang === 'de' ? 'Avatar & Farbe' : 'Avatar & color'}</StepLabel>
-            {QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).length === 0 && (
-              <div style={{
-                padding: '20px 12px', textAlign: 'center',
-                color: '#F87171', fontWeight: 800, fontSize: 14,
-                border: '1px dashed rgba(239,68,68,0.4)', borderRadius: 12,
-                marginBottom: 14,
-              }}>
-                {lang === 'de' ? '⚠ Lobby ist voll — alle Avatare vergeben.' : '⚠ Lobby is full — all avatars taken.'}
-              </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-              {QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).map((a, i) => {
-                const sel = avatarId === a.id;
-                const taken = false;
-                const justPicked = pickedId === a.id;
-                const avColor = a.color ?? '#EAB308';
-                return (
-                  <button key={a.id} onClick={() => !taken && handleAvatarPick(a.id)} disabled={taken} style={{
-                    padding: '12px 4px', borderRadius: 16, cursor: taken ? 'not-allowed' : 'pointer',
-                    background: taken
-                      ? 'rgba(255,255,255,0.02)'
-                      : sel
-                        ? `linear-gradient(135deg, ${avColor}33, ${avColor}14)`
-                        : `linear-gradient(135deg, ${avColor}18, ${avColor}08)`,
-                    border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? avColor : `${avColor}55`}`,
-                    opacity: taken ? 0.35 : 1,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    fontFamily: 'inherit', transition: 'all 0.18s',
-                    boxShadow: sel ? `0 0 18px ${avColor}55` : 'none',
-                    position: 'relative', overflow: 'visible',
-                  }}>
-                    {/* Expanding ring on pick */}
-                    {justPicked && (
-                      <div style={{
-                        position: 'absolute', inset: -4, borderRadius: 16, pointerEvents: 'none',
-                        border: `2px solid ${avColor}99`,
-                        animation: 'tcAvatarRing 0.5s ease-out forwards',
-                      }} />
-                    )}
-                    {/* Spark burst on pick */}
-                    {justPicked && sparks.map((sp, si) => (
-                      <div key={si} style={{
-                        position: 'absolute', left: '50%', top: '40%', width: 6, height: 6,
-                        borderRadius: '50%', background: avColor, pointerEvents: 'none',
-                        boxShadow: `0 0 8px ${avColor}`,
-                        ['--sx' as string]: sp.sx, ['--sy' as string]: sp.sy,
-                        animation: 'tcAvatarSpark 0.55s ease-out forwards',
-                        animationDelay: `${si * 0.02}s`,
-                      }} />
-                    ))}
-                    {/* "Hi!" speech bubble greeting */}
-                    {justPicked && (
-                      <div style={{
-                        position: 'absolute', top: -6, right: -2,
-                        background: avColor, color: '#fff', fontWeight: 900,
-                        fontSize: 11, padding: '3px 8px',
-                        borderRadius: '12px 12px 12px 2px',
-                        boxShadow: `0 2px 8px ${avColor}88, 0 0 0 1.5px rgba(255,255,255,0.35) inset`,
-                        pointerEvents: 'none', zIndex: 5,
-                        transformOrigin: 'bottom left',
-                        animation: 'tcAvatarHi 1.4s ease-out forwards',
-                        letterSpacing: '0.5px',
-                      }}>{pickedGreeting}</div>
-                    )}
-                    <QQTeamAvatar avatarId={a.id} size={48} style={{
-                      animation: justPicked
-                        ? 'tcAvatarPick 0.7s ease-out, tcAvatarGlow 1.2s ease-out'
-                        : sel ? `tcfloat ${3.5 + i * 0.3}s ease-in-out infinite` : 'none',
-                      ...(justPicked ? { ['--g' as string]: avColor, filter: 'none' } : taken ? { filter: 'grayscale(1) opacity(0.5)' } : {}),
-                    }} />
-                    <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 900,
-                      textDecoration: taken ? 'line-through' : 'none' }}>
-                      {taken
-                        ? t.taken[lang]
-                        : showTierLabel
-                          ? (lang === 'en' ? a.labelEn : a.label)
-                          : ' ' /* nbsp damit die Hoehe nicht springt */}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            {/* 2026-05-04 (Wolf): Emoji-Picker bei Theme-Sets direkt mit in der
-                Setup-Card. Bei PNG-Sets (cozyCast / cozyAnimals) wird der Block
-                gar nicht gerendert — Avatar = direkt der gewaehlte Cozy-Wolf. */}
-            {(() => {
-              const set = activeSetId === 'all' ? null : getSet(activeSetId);
-              const isPng = (set?.source ?? 'emoji') === 'png';
-              if (isPng) return null;
-              const emojiPool: string[] = activeSetId === 'all' && serverEmojis?.length === 8
-                ? serverEmojis
-                : (set?.avatars ?? []);
-              const availableEmojis = emojiPool.filter(em => !takenEmojis.includes(em));
-              if (availableEmojis.length === 0) return null;
-              const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EAB308';
-              return (
-                <>
-                  <StepLabel>{lang === 'de' ? 'Avatar-Emoji' : 'Avatar emoji'}</StepLabel>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
-                    {availableEmojis.map((em, i) => {
-                      const sel = chosenEmoji === em;
-                      return (
-                        <button
-                          key={`${em}-${i}`}
-                          onClick={() => setChosenEmoji(em)}
-                          style={{
-                            padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
-                            background: sel
-                              ? `linear-gradient(135deg, ${myColor}33, ${myColor}14)`
-                              : 'rgba(255,255,255,0.04)',
-                            border: `2px solid ${sel ? myColor : 'rgba(255,255,255,0.10)'}`,
-                            fontSize: 28, lineHeight: 1,
-                            fontFamily: 'inherit',
-                            transition: 'all 0.18s',
-                            boxShadow: sel ? `0 0 14px ${myColor}55` : 'none',
-                          }}
-                        >
-                          {em}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              );
-            })()}
-            {/* Name-Input direkt mit in derselben Card (Wolf-Wunsch 2026-05-04). */}
+            {/* 2026-05-04 (Wolf): Karussell-Avatar-Editor — Slot via Swipe/Pfeile,
+                Emoji via Tap auf Hero (Bottom-Sheet), Lobby-voll-Empty-State. */}
+            <AvatarKarussellEditor
+              avatarId={avatarId}
+              setAvatarId={setAvatarId}
+              chosenEmoji={chosenEmoji}
+              setChosenEmoji={setChosenEmoji}
+              takenAvatarIds={takenAvatarIds}
+              takenEmojis={takenEmojis}
+              activeSetId={activeSetId}
+              serverEmojis={serverEmojis}
+              lang={lang}
+            />
+            {/* Name-Input direkt in derselben Card. Live-Strip „Team "-Prefix
+                verhindert „Team Team Regenbogen" beim spaeteren Display. */}
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <input
                 value={teamName}
-                onChange={e => setTeamName(e.target.value)}
+                onChange={e => {
+                  const stripped = e.target.value.replace(/^team\s+/i, '');
+                  setTeamName(stripped);
+                }}
                 placeholder={t.setup.placeholder[lang]}
                 style={{
                   ...cozyInput,
@@ -932,6 +827,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 }}
               >🎲</button>
             </div>
+            <div style={{
+              fontSize: 11, color: '#64748b', fontWeight: 700,
+              marginBottom: 12, letterSpacing: '0.02em',
+            }}>
+              {lang === 'de'
+                ? 'Nur den Namen — „Team " kommt automatisch davor'
+                : 'Just the name — "Team " is added automatically'}
+            </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>
                 {lang === 'de'
@@ -943,10 +846,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}
             {(() => {
+              // Wenn Lobby voll: Editor zeigt Empty-State, Beitreten disabled.
+              const allSlotsTaken = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).length === 0;
               const set = activeSetId === 'all' ? null : getSet(activeSetId);
               const isPng = (set?.source ?? 'emoji') === 'png';
               const needsEmoji = !isPng;
-              const canJoin = !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
+              const canJoin = !allSlotsTaken && !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
               return (
                 <CozyBtn color="#22C55E" onClick={onJoin} disabled={!canJoin}>
                   {t.setup.join[lang]}

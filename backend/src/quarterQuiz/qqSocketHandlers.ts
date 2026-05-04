@@ -2414,10 +2414,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:setAvatarSet', (payload: { roomCode: string; avatarSetId: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        const id = String(payload.avatarSetId ?? 'cozyAnimals');
-        // White-list, damit kein bloedsinn ankommt
-        const allowed = ['all', 'cozyAnimals', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy'];
-        room.avatarSetId = allowed.includes(id) ? id : 'cozyAnimals';
+        const id = String(payload.avatarSetId ?? 'all');
+        // White-list, damit kein bloedsinn ankommt. Default ist 'all' (Emoji,
+        // freie Wahl). 'cozyCast' = klassische PNG-Avatare als opt-in.
+        const allowed = ['all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy'];
+        room.avatarSetId = allowed.includes(id) ? id : 'all';
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

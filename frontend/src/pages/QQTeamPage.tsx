@@ -12,6 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
 import {
   resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
@@ -528,27 +529,44 @@ export default function QQTeamPage() {
     }
   }, [takenAvatarIds.join(',')]);
 
+  // 2026-05-04 — Avatar-Set-Provider wraps alle drei Return-Branches, damit
+  // QQTeamAvatar im SetupFlow + WaitingScreen + TeamGameView konsistent
+  // entweder PNG (cozyCast) oder Emoji-Disc rendert.
+  const setId = state?.avatarSetId;
+
   if (!joined) {
-    return <SetupFlow step={step} setStep={setStep}
-      avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
-      connected={connected} error={error} onJoin={joinRoom}
-      lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
-      takenAvatarIds={takenAvatarIds}
-      takenTeamNamesLower={takenTeamNamesLower}
-      resumeTeam={existingTeamInRoom}
-      onResume={handleResume}
-      onStammLookup={lookupStammCode}
-      stammResult={stammResult}
-      stammStatus={stammStatus}
-    />;
+    return (
+      <AvatarSetProvider value={setId}>
+        <SetupFlow step={step} setStep={setStep}
+          avatarId={avatarId} setAvatarId={setAvatarId} teamName={teamName} setTeamName={setTeamName}
+          connected={connected} error={error} onJoin={joinRoom}
+          lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
+          takenAvatarIds={takenAvatarIds}
+          takenTeamNamesLower={takenTeamNamesLower}
+          resumeTeam={existingTeamInRoom}
+          onResume={handleResume}
+          onStammLookup={lookupStammCode}
+          stammResult={stammResult}
+          stammStatus={stammStatus}
+        />
+      </AvatarSetProvider>
+    );
   }
   if (!state) {
-    return <WaitingScreen roomCode={roomCode} connected={connected} lang={lang} />;
+    return (
+      <AvatarSetProvider value={setId}>
+        <WaitingScreen roomCode={roomCode} connected={connected} lang={lang} />
+      </AvatarSetProvider>
+    );
   }
   const myTeam = state.teams.find(t => t.id === teamId);
-  return <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-    emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect}
-    showIdentityBanner={showIdentityBanner} dismissIdentityBanner={() => setShowIdentityBanner(false)} />;
+  return (
+    <AvatarSetProvider value={setId}>
+      <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
+        emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect}
+        showIdentityBanner={showIdentityBanner} dismissIdentityBanner={() => setShowIdentityBanner(false)} />
+    </AvatarSetProvider>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -577,6 +595,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 2026-05-04 — Avatar-Set aus Context. Bestimmt welches Label unter dem
+  // Avatar-Tile gerendert wird: bei PNG-/Cozy-Tier-Sets das Tier-Label
+  // ("Hund"/"Dog"), bei Theme-Sets nichts (Emoji ist selbsterklaerend).
+  const activeSetId = useAvatarSet();
+  const showTierLabel = activeSetId === 'cozyCast' || activeSetId === 'cozyAnimals';
 
   // 3 zufällige Begrüßungen, sprachabhängig
   const greetings = lang === 'de' ? ['Hi!', 'Hallo!', 'Hey!'] : ['Hi!', 'Hey!', 'Yo!'];
@@ -828,7 +852,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       ...(justPicked ? { ['--g' as string]: avColor, filter: 'none' } : taken ? { filter: 'grayscale(1) opacity(0.5)' } : {}),
                     }} />
                     <span style={{ fontSize: 11, color: taken ? '#334155' : sel ? avColor : `${avColor}cc`, fontWeight: 800,
-                      textDecoration: taken ? 'line-through' : 'none' }}>{taken ? t.taken[lang] : (lang === 'en' ? a.labelEn : a.label)}</span>
+                      textDecoration: taken ? 'line-through' : 'none' }}>
+                      {taken
+                        ? t.taken[lang]
+                        : showTierLabel
+                          ? (lang === 'en' ? a.labelEn : a.label)
+                          : ' ' /* nbsp damit die Hoehe nicht springt */}
+                    </span>
                   </button>
                 );
               })}

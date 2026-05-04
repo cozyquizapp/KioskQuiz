@@ -18,6 +18,7 @@ import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { AvatarSetProvider } from '../avatarSetContext';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
@@ -412,7 +413,7 @@ export default function QQBeamerPage() {
 
   if (!state) return <LoadingScreen roomCode={roomCode} connected={connected} />;
   return (
-    <>
+    <AvatarSetProvider value={state.avatarSetId}>
       <BeamerView state={state} slideTemplates={slideTemplates} roomCode={roomCode} />
       {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
       {/* Time-Travel-Replay deaktiviert (Wolfs Wunsch) — die separate Card
@@ -451,7 +452,7 @@ export default function QQBeamerPage() {
           `}</style>
         </div>
       )}
-    </>
+    </AvatarSetProvider>
   );
 }
 

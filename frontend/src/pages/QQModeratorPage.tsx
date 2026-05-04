@@ -9,6 +9,7 @@ import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS } from '../avatarSets';
+import { AvatarSetProvider } from '../avatarSetContext';
 import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
@@ -806,6 +807,7 @@ export default function QQModeratorPage() {
   }
 
   return (
+    <AvatarSetProvider value={s?.avatarSetId}>
     <div className="qq-mod-shell" style={page}>
       {/* ── Header ── */}
       <div style={header}>
@@ -2041,6 +2043,7 @@ export default function QQModeratorPage() {
         </>
       )}
     </div>
+    </AvatarSetProvider>
   );
 }
 
@@ -3670,11 +3673,12 @@ function SetupView({
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
-              const id = s.avatarSetId ?? 'cozyAnimals';
-              if (id === 'all')         return 'Spieler dürfen frei aus allen Avataren wählen';
-              if (id === 'cozyAnimals') return 'Klassische CozyCast-Avatare (PNG) — Default';
+              const id = s.avatarSetId ?? 'all';
+              if (id === 'all')         return 'Standard · Spieler wählen aus den 8 Default-Emojis (Cozy-Tiere)';
+              if (id === 'cozyCast')    return 'CozyCast · klassische PNG-Avatare (alter Look)';
+              if (id === 'cozyAnimals') return 'Cozy Animals · Tier-Emojis als Theme';
               const set = AVATAR_SETS.find(x => x.id === id);
-              return set ? `${set.label}-Set · Live-Rendering folgt im nächsten Schritt` : '';
+              return set ? `${set.label}-Set · Spieler-Picker zeigt Theme-Emojis` : '';
             })()}
           </span>
         </div>

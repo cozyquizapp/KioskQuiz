@@ -14294,11 +14294,15 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             flex: 1, minWidth: 0,
             display: 'flex', flexDirection: 'column', gap: isActive && activeActionLabel ? 4 : 0,
           }}>
-            <span style={{
-              fontSize: nameFs, fontWeight: 900, color: t.color,
-              textShadow: isActive ? `0 0 16px ${t.color}66` : 'none',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>{t.name}</span>
+            <TeamNameLabel
+              name={t.name}
+              maxLines={2}
+              shrinkAfter={14}
+              fontSize={nameFs}
+              color={t.color}
+              fontWeight={900}
+              style={{ textShadow: isActive ? `0 0 16px ${t.color}66` : 'none' }}
+            />
             {isActive && activeActionLabel && (
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,

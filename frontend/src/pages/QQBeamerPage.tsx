@@ -6508,7 +6508,8 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
     }}>
       <Fireflies color={`${accent}55`} />
 
-      {/* Header — Pill links, Status/Timer rechts (genau wie 4×4-Header) */}
+      {/* Header — Pille links, Timer rechts (Wolf 2026-05-04: Hinweis-Counter
+          umgezogen ueber die Frage, Timer war vorher gar nicht sichtbar). */}
       <div style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         gap: 16, position: 'relative', zIndex: 5,
@@ -6527,14 +6528,8 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           }}>{lang === 'de' ? '4 gewinnt' : 'Connect 4'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {!revealed && (
-            <div style={{
-              padding: '8px 16px', borderRadius: 999,
-              background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
-              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
-            }}>
-              {lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}
-            </div>
+          {!revealed && s.timerEndsAt && (
+            <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
           )}
           {revealed && (
             <div style={{
@@ -6549,11 +6544,25 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* Frage oben mittig */}
+      {/* Frage oben mittig — mit Hinweis-Counter (X/4) als Sub-Header (Wolf-
+          Wunsch 2026-05-04: Counter zentriert ueber der Frage statt rechts
+          oben). */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5,
         animation: 'contentReveal 0.5s ease 0.1s both',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.2vh, 14px)',
       }}>
+        {!revealed && (
+          <div style={{
+            display: 'inline-block',
+            padding: '6px 18px', borderRadius: 999,
+            background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
+            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
+            letterSpacing: '0.06em',
+          }}>
+            {lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}
+          </div>
+        )}
         <div style={{
           fontSize: 'clamp(26px, 3vw, 44px)', fontWeight: 900,
           color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
@@ -13899,12 +13908,16 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: Math.max(8, cellSize * 0.42),
                 zIndex: isJustFormedJoker ? 6 : (isAccent ? 5 : isStuck ? 4 : 1),
-                // 3D-Lift fuer Stapel: Cell wird um 3px gehoben + bekommt einen
-                // tiefen Drop-Shadow → wirkt physisch hoeher als die Nachbarn.
+                // 2026-05-04 (Wolf): 3D-Lift fuer ALLE besetzten Tiles (subtle
+                // Drop-Shadow, kein vertikaler Lift). Stapel-Tiles bleiben
+                // sichtbar gehoben (translateY -3px) + stacked Layer-Shadow
+                // + Goldglow. Leere Cells haben keinen 3D-Effekt.
                 transform: isStuck ? 'translateY(-3px)' : undefined,
                 filter: isStuck
                   ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(251,191,36,0.45))'
-                  : undefined,
+                  : team
+                    ? 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))'
+                    : undefined,
                 transition: 'transform 0.4s var(--qq-ease-bounce), filter 0.4s ease',
                 animation: isJustFormedJoker
                   ? 'jokerCellPulse 2.2s var(--qq-ease-smooth) both'

@@ -942,6 +942,12 @@ export interface QQStateUpdate {
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   // Setup/Lobby-Zweiteilung: wenn false und phase === LOBBY, zeigt der Beamer den Pre-Game-Wartescreen (Leaderboard/Rekorde).
   setupDone: boolean;
+  // Mod waehlt im Setup ein Avatar-Theme fuer dieses Quiz. Default 'cozyAnimals'
+  // (entspricht den klassischen PNG-Avataren in QQ_AVATARS).
+  // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
+  // Werte: 'all' | 'cozyAnimals' | 'halloween' | 'christmas' | 'pub' |
+  //        'scifi' | 'sport' | 'tropical' | 'fantasy'
+  avatarSetId?: string;
   // 3D grid
   enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)

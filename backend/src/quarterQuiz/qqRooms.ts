@@ -211,6 +211,9 @@ export interface QQRoomState {
   volume: number; // 0–1
   // Setup/Lobby split — false means moderator is still in Setup; Beamer shows pre-game wait-screen.
   setupDone: boolean;
+  // Mod-Setup: gewaehltes Avatar-Theme fuer dieses Quiz. Optional, default 'cozyAnimals'.
+  // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
+  avatarSetId?: string;
   // 3D grid
   enable3DTransition: boolean;
   // Rules presentation
@@ -376,6 +379,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       sfxMuted: false,
       volume: 0.8,
       setupDone: false,
+      avatarSetId: 'cozyAnimals',
       enable3DTransition: false,
       rulesSlideIndex: 0,
       teamsRevealStartedAt: null,
@@ -3400,6 +3404,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     volume:           room.volume,
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
+    avatarSetId:      room.avatarSetId ?? 'cozyAnimals',
     enable3DTransition: room.enable3DTransition,
     rulesSlideIndex:  room.rulesSlideIndex,
     teamsRevealStartedAt: room.teamsRevealStartedAt,

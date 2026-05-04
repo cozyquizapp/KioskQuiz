@@ -8,6 +8,7 @@ import {
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
+import { AVATAR_SETS } from '../avatarSets';
 import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
@@ -3614,6 +3615,67 @@ function SetupView({
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {s.bluffModeratorReview ? 'Moderator filtert Bluffs vor dem Voting' : 'Bluffs gehen direkt ins Voting'}
+          </span>
+        </div>
+
+        {/* 2026-05-04 — Avatar-Theme (Phase 1: nur State-Propagation) */}
+        <div style={{ ...settingRow, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <span style={{ ...settingLabel, marginTop: 6 }}>🧑‍🎨 Avatar</span>
+          <div
+            style={{
+              display: 'flex', gap: 6, flex: 1,
+              overflowX: 'auto', padding: '2px 2px 6px',
+              scrollbarWidth: 'thin',
+              scrollSnapType: 'x mandatory',
+            }}
+            className="qq-mod-set-row"
+          >
+            {AVATAR_SETS.map(set => {
+              const active = (s.avatarSetId ?? 'cozyAnimals') === set.id;
+              return (
+                <button
+                  key={set.id}
+                  type="button"
+                  onClick={() => emit('qq:setAvatarSet', { roomCode, avatarSetId: set.id })}
+                  style={{
+                    flex: '0 0 auto',
+                    scrollSnapAlign: 'start',
+                    padding: '7px 12px',
+                    borderRadius: 10,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 800,
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: active
+                      ? `linear-gradient(135deg, ${set.tint}33, ${set.tint}11)`
+                      : 'rgba(0,0,0,0.32)',
+                    color: active ? '#fff' : '#a8a395',
+                    boxShadow: active
+                      ? `0 0 0 1.5px ${set.tint}, 0 0 14px ${set.tint}55`
+                      : '0 0 0 1px rgba(255,235,200,0.06)',
+                    transition: 'all 0.15s',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                  title={set.label}
+                >
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>{set.leadEmoji}</span>
+                  <span>{set.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
+            {(() => {
+              const id = s.avatarSetId ?? 'cozyAnimals';
+              if (id === 'all')         return 'Spieler dürfen frei aus allen Avataren wählen';
+              if (id === 'cozyAnimals') return 'Klassische CozyCast-Avatare (PNG) — Default';
+              const set = AVATAR_SETS.find(x => x.id === id);
+              return set ? `${set.label}-Set · Live-Rendering folgt im nächsten Schritt` : '';
+            })()}
           </span>
         </div>
 

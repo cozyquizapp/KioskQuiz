@@ -2409,6 +2409,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // 2026-05-04 — Mod waehlt Avatar-Theme im Setup (Phase 1: nur State-Propagation,
+    // Renderer respektiert es noch nicht — siehe avatarSets.ts im Frontend).
+    socket.on('qq:setAvatarSet', (payload: { roomCode: string; avatarSetId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const id = String(payload.avatarSetId ?? 'cozyAnimals');
+        // White-list, damit kein bloedsinn ankommt
+        const allowed = ['all', 'cozyAnimals', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy'];
+        room.avatarSetId = allowed.includes(id) ? id : 'cozyAnimals';
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Placement ───────────────────────────────────────────────────────────
     socket.on('qq:placeCell', (payload: QQPlaceCellPayload, ack?: unknown) => {
       try {

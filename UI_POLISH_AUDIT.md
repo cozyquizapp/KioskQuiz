@@ -229,6 +229,92 @@ CozyQuiz wirkt **reifer und ruhiger** als diese — das ist eine Stärke. Aber: 
 
 ---
 
+## Audit 4 — Roadmap 6,8 → 10 (Follow-up)
+
+**Gutachter:** derselbe Senior PD, Folge-Konsultation 2026-05-04
+**Frage:** „Wie kommen wir vom 6,8 näher an die 10?"
+
+### 🎯 Realistisches Ziel
+
+**10/10 ist nicht erreichbar für Solo-Dev** (Jackbox/Kahoot-Niveau = 150+ Personen-Jahre). Realistisches Ziel: **8,4/10 in 90 Tagen**. Diminishing Returns ab 8,0.
+
+### 📈 Score-Projection
+
+| Tag | Visual | Brand | Mobile | Markt | Gesamt |
+|---|---|---|---|---|---|
+| Heute | 6,0 | 7,0 | 7,5 | 6,5 | **6,8** |
+| Tag 15 | 6,8 | 7,2 | 7,7 | 6,8 | **7,1** |
+| Tag 30 | 7,2 | 7,5 | 7,8 | 7,2 | **7,4** |
+| Tag 60 | 8,1 | 8,0 | 8,3 | 8,4 | **8,2** |
+| Tag 90 | 8,2 | 8,2 | 8,5 | 8,6 | **8,4** |
+
+### 🚀 Priorisierter 90-Tage-Plan
+
+**Sprint 1 (Tag 1-30) — „Foundations of Wow"**
+1. **Beamer-Schrift +25%** global (3 d, +0,6) — Pub-Owner-Dealbreaker
+2. **Falsch-Antwort-Drama** (Rot-Shake + Pulse statt Toast) (2 d, +0,3)
+3. **Countdown-Timer-Puls + Sound-Sting** letzte 3 s (2 d, +0,4)
+4. **Easing-Tokens-Harmonisierung** — die 6 offenen aus Audit 2 (3 d, +0,2)
+5. **Draft-Template-System + Seed-Datenbank** — 5 Themen (4 d, +0,5)
+6. **Sound-Library** — Placeholder-WAVs ersetzen + Lobby-Loop (3 d, +0,3)
+
+→ Sprint 1: **6,8 → 7,6**
+
+**Sprint 2 (Tag 31-60) — „Polish & Library"**
+1. ⭐ **Frage-Library aufbauen** (Outsource Fiverr €100-150) — 100-150 Fragen, 5-7 Kategorien (8 d, **+1,2** = größter Hebel)
+2. **CozyWolf-Wordmark auf Lobby + Beamer-Idle-Animation** (2 d, +0,3)
+3. **Loading-State Spinner + Empty-State Fallbacks** (2 d, +0,2)
+4. **Moderator-Seite Mobile-Responsive** (iPad-Modus) (3 d, +0,3)
+5. **Pub-Owner-Onboarding-Wizard + Setup-Checkliste** (4 d, +0,4)
+6. **Beamer-Lesbarkeit-Audit** live im Pub (1 d, +0,2)
+
+→ Sprint 2: **7,6 → 8,6**
+
+**Sprint 3 (Tag 61-90) — „Premium-Push"**
+1. **Winning-Reveal-Drama** (Gold-Glow + Konfetti dezent) (3 d, +0,2)
+2. **Host-PDF-Kit erweitert** (Setup + Troubleshooting DE/EN) (2 d, +0,2)
+3. **Landscape-Mode** Team-Phone (2 d, +0,15)
+4. **Sample-Draft-Naming + Partner-Branding** (Pub-Logo) (2 d, +0,25)
+5. **Draft-Sharing via QR** zwischen Pub-Besitzern (3 d, +0,2)
+6. **Post-Game-Umfrage + Extended Leaderboard** (2 d, +0,15)
+7. **Render-Wakeup-Messaging** (Health-Check) (1 d, +0,1)
+
+→ Sprint 3: **8,6 → 8,4-8,9** (abhängig von Execution-Qualität)
+
+### 💎 Shopfenster-Moment (das EINE Element für sofort +0,5)
+
+**Countdown-Puls-Sequenz mit Sound-Sting** in den letzten 3 Sekunden:
+```
+03 → BG blinkt rot/orange (2x/s)
+02 → schneller Puls
+01 → aggressive Rot-Pulse + 100ms Beep
+00 → Gold-Flash + Reveal-Sting (autoritär, nicht laut)
+```
+2-3 Tage Aufwand, hebt die Wahrnehmung um +0,5 Punkte sofort. Pub-Owner erkennt **„das ist qualitativ"**.
+
+### 🎲 Big Bets (riskant, aber game-changing)
+
+1. **AI-Frage-Generator** via Claude API — Pub-Owner gibt Thema, kriegt 5 Fragen (5-7 d, +0,5 Markt)
+2. **Community-Draft-Marketplace** (Open-Source-Drafts) — Network-Effect (8-10 d, +0,4 Markt)
+3. **Live-Beamer-Remote-Clicker** (Phone als Mod-Presenter) (6 d, +0,3 Visual+Markt)
+
+### ❌ Was NICHT machen (Solo-Dev-Fallen)
+
+1. **Custom-Avatar-Upload-Engine** — 8-10 Tage Aufwand, +0,2 Score. **Skip.** Emoji-Avatare reichen.
+2. **Sentry/Plausible-Analytics jetzt** — du bist live im Pub, brauchst keine Telemetrie. Später bei 50+ Instanzen.
+3. **Gouache-Stil-Migration 100%** — 15-20 Tage, +0,3 Score. **Skip.** Liegt richtig auf Eis.
+
+### 📌 Execution-Tipps
+
+- **Tag 1-5:** das Shopfenster bauen (Timer-Drama + Schrift). Tag-5-Demo für Wolf-Freunde
+- **Library ist der größte Hebel** — outsource aggressiv (Fiverr €100-150 für 100+ Fragen, Wolf editiert)
+- **Monatlich 1 Pub-Test** (Tag 30, 60, 90) — bestes Feedback + PR
+- **Plan ist Leitfaden, nicht Dogma** — wenn Pub-Owner Draft-Sharing mehr feiern als Library, Reihenfolge tauschen
+
+**TL;DR:** Sprint 1 = Wow-Momente, Sprint 2 = Library-Grundstein, Sprint 3 = Polish. Library + Sound + Schrift + Dramatik sind die schnellen Wins. **6,8 → 8,4 ist machbar** ohne Burnout.
+
+---
+
 ## Umgesetzte Fixes (Commits)
 
 | Commit | Beschreibung |

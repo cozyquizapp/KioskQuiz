@@ -4196,11 +4196,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // - treeShowsPrev: hält den Tree kurz auf Runde N-1, swappt nach 220ms auf
   //   Runde N → QQProgressTree triggert internen Hop (220ms Delay + 620ms Anim).
   // - Wolf landet ca. bei 1100ms (220 + 220 + 620 + Puffer).
-  // - colorTransitioning: kürzere Phase, endet wenn Wolf auf neuem Dot landet
-  //   (1100ms). Outer-Digit-Span faded ab dann smooth von prevColor zu color
-  //   (600ms ease) → synchron mit Avatar-Farb-Wechsel im Tree (Wolf-Wunsch
-  //   2026-05-04: 'Schrift-Farbe wechselt mit Avatar zusammen').
-  // - Digit-Fall startet 1150ms, Roll 1650ms, Wort-Sweep 1100ms — alles NACH dem Hop.
+  // - colorTransitioning: 2026-05-04 v4 (Wolf 'Runde-Farbe weird beim Wechsel,
+  //   blaue Runde + rote 3 + dann blaue 4'): jetzt synchron mit dem
+  //   New-Digit-Roll (1650ms) statt mit dem Wolf-Hop (1100ms). Word "Runde"
+  //   und neuer Digit haben jetzt IMMER dieselbe Farbe (vorher: Word
+  //   sweepte ueber Grau, Outer-Span fadete separat → kurze Mismatch-Phase
+  //   wo Word schon neue Farbe zeigte aber alter Digit noch alter Farbe).
+  //   transition 820ms = sync mit roundDigitRoll-Dauer.
+  // - Digit-Fall startet 1150ms, Roll 1650ms — alles NACH dem Hop.
   // - transitioning endet bei 2500ms.
   const [treeShowsPrev, setTreeShowsPrev] = useState(hasRoundTransition);
   const [colorTransitioning, setColorTransitioning] = useState(hasRoundTransition);
@@ -4215,7 +4218,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     setTreeShowsPrev(true);
     setColorTransitioning(true);
     const tTree  = setTimeout(() => setTreeShowsPrev(false), 220);
-    const tColor = setTimeout(() => setColorTransitioning(false), 1100);
+    // 2026-05-04 v4 (Wolf): 1100 → 1650 — Color-Flip synchron mit New-Digit-
+    // Roll-In statt mit Wolf-Hop. Verhindert Mismatch-Phase „neue Wort-Farbe
+    // + alter Digit-Farbe".
+    const tColor = setTimeout(() => setColorTransitioning(false), 1650);
     const tEnd   = setTimeout(() => setTransitioning(false), 2500);
     return () => { clearTimeout(tTree); clearTimeout(tColor); clearTimeout(tEnd); };
   }, [s.gamePhaseIndex, hasRoundTransition]);
@@ -4380,17 +4386,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 gap: '0.18em',
                 animation: 'roundBreathe 4s ease-in-out 2s infinite',
               }}>
-                {/* Wort "Runde": Farb-Sweep von Grau auf Kategorie-Farbe (parallel zur Ziffer) */}
+                {/* Wort "Runde": 2026-05-04 v4 (Wolf-Bug) — Vorher Gradient-Sweep
+                    von Grau→Color, ergab Mismatch-Phase wo Wort schon neue Farbe
+                    hatte waehrend Digit noch alte Farbe zeigte. Jetzt: gleiche
+                    Color-Logik wie Outer-Digit-Span (prevColor → color) mit 820ms
+                    transition. Wort + Neuer Digit fluten IMMER synchron. */}
                 <span style={{
                   display: 'inline-block',
-                  backgroundImage: `linear-gradient(90deg, ${color} 0%, ${color} 35%, #94a3b8 65%, #94a3b8 100%)`,
-                  backgroundSize: '300% 100%',
-                  backgroundPosition: '100% 0',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  color: 'transparent',
-                  animation: 'roundWordSweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 1100ms both',
+                  color: colorTransitioning ? prevColor : color,
+                  transition: 'color 820ms ease',
                 }}>{titleWord}</span>
                 {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms).
                     overflow:hidden nur waehrend der Transition — sonst bleibt ein
@@ -4400,13 +4404,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   overflow: transitioning ? 'hidden' : 'visible',
                   paddingBottom: '0.15em',
                   lineHeight: 1,
-                  // 2026-05-04 (Wolf): Outer-Span color folgt dem Wolf-Avatar.
-                  // Solange colorTransitioning (bis ~1100ms = Wolf-Hop-Ende),
-                  // bleibt's prevColor. Danach faded es smooth zu color (600ms),
-                  // sodass die NEUE Ziffer beim Reinrollen (1650ms) gerade in
-                  // der NEUEN Farbe ankommt — synchron mit dem Avatar.
+                  // 2026-05-04 v4 (Wolf): Outer-Span color synchron mit New-Digit-
+                  // Roll-In (1650-2470ms). colorTransitioning endet jetzt bei
+                  // 1650ms, danach 820ms transition → bei 2470ms voll in neuer
+                  // Farbe. Gleiches Timing wie Word "Runde" → kein Mismatch.
                   color: colorTransitioning ? prevColor : color,
-                  transition: 'color 600ms ease',
+                  transition: 'color 820ms ease',
                 }}>
                   {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
                   <span style={{ visibility: 'hidden' }}>{newDigit}</span>
@@ -8827,10 +8830,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               animation: 'contentReveal 0.7s ease both',
               transition: 'clip-path 0.8s var(--qq-ease-smooth), right 0.5s ease',
             }}>
+              {/* 2026-05-04 v4 (Wolf-Bug 'graue Raender im Rahmen'): vorher
+                  backgroundSize:contain → Letterbox-Bars wenn Bild-Aspect nicht
+                  zum Rahmen-Aspect passt. Die dahinter liegende Blur-Backdrop
+                  ist mit brightness(0.45) so dunkel, dass die Bars als „grau"
+                  rauskommen. Jetzt: cover + center (mod kann via offsetX/Y
+                  feintunen). Bild fuellt den Rahmen vollstaendig. */}
               <div style={{
                 position: 'absolute', inset: 0,
                 backgroundImage: `url(${img!.url})`,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundPosition: `${cheesePosX}% ${cheesePosY}%`,
                 backgroundRepeat: 'no-repeat',
                 transform: `scale(${cheeseZoom})${img!.rotation ? ` rotate(${img!.rotation}deg)` : ''}`,

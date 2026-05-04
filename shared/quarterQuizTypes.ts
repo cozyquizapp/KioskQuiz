@@ -1077,6 +1077,41 @@ export function qqAvatarLabel(avatarId: string, lang: 'de' | 'en'): string {
   return lang === 'en' ? av.labelEn : av.label;
 }
 
+/** 2026-05-05 (Wolf-Wahl 3B): 8-Slot-Brett-Palette mit maximalem Hue-Spread.
+ *  Wird auf den Spielfeld-Cells verwendet damit keine zwei Teams aehnliche
+ *  Farben am Brett haben (auch wenn ihre Avatar-Farben sich aehneln, z.B.
+ *  pink+rot oder yellow+amber). Team-Identity (Avatar-Farbe / Name-Color
+ *  in Standings, Score, Comeback etc.) bleibt unangetastet — nur das
+ *  BRETT erhaelt die gemappte Palette-Farbe. Mapping: Team-Slot via
+ *  joinOrder.indexOf(teamId) → palette[slot % 8]. */
+export const QQ_BOARD_PALETTE = [
+  '#EF4444', // red
+  '#F97316', // orange
+  '#FACC15', // yellow
+  '#22C55E', // green
+  '#06B6D4', // cyan
+  '#3B82F6', // blue
+  '#A855F7', // purple
+  '#EC4899', // pink
+] as const;
+
+/** Akzeptiert entweder ein joinOrder string[] (Backend) oder ein teams[]
+ *  array (Frontend, das einfacher zugaenglich ist). */
+export function qqGetBoardColor(
+  teamId: string,
+  source: string[] | { id: string }[] | undefined
+): string {
+  if (!source || source.length === 0) return QQ_BOARD_PALETTE[0];
+  let idx: number;
+  if (typeof source[0] === 'string') {
+    idx = (source as string[]).indexOf(teamId);
+  } else {
+    idx = (source as { id: string }[]).findIndex(t => t.id === teamId);
+  }
+  if (idx < 0) return QQ_BOARD_PALETTE[0];
+  return QQ_BOARD_PALETTE[idx % QQ_BOARD_PALETTE.length];
+}
+
 /** Live Team-Farbe aus dem Avatar ableiten — `team.color` kann stale sein,
  *  weil es beim Beitritt gespeichert wird und Palette-Updates nicht mitbekommt.
  *  Für UI immer diese Variante nutzen, nicht `team.color` direkt. */

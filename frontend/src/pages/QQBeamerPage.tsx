@@ -14,6 +14,7 @@ import {
   QQSoundSlot,
   QQ_MAX_JOKERS_PER_GAME,
   teamDisplayName,
+  qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -14233,8 +14234,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const lang = useLangFlip(s.language);
   const gap = 4;
   const cellSize = Math.floor((maxSize - (s.gridSize - 1) * gap) / s.gridSize);
+  // 2026-05-05 (Wolf-Wahl 3B): Smart-Color-Assignment fuer Brett-Cells.
+  // boardColors[teamId] mappt jeden Team-ID auf einen Slot der QQ_BOARD_PALETTE
+  // (8 maximal kontrastierende Farben). Avatar-/Standings-Anzeige nutzt
+  // weiterhin team.color (Brand bleibt konsistent), nur das BRETT erhaelt
+  // die zugewiesene Palette-Farbe damit nahe Avatar-Farben (z.B. yellow vs
+  // amber) sich auf Cells nicht mehr aehnlich anfuehlen.
+  const boardColors = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const t of s.teams) {
+      m[t.id] = qqGetBoardColor(t.id, s.teams);
+    }
+    return m;
+  }, [s.teams]);
+  const bc = (teamId: string): string => boardColors[teamId] ?? '#94a3b8';
   const activeTeam = s.teams.find(t => t.id === highlightTeam);
-  const activeColor = activeTeam?.color ?? '#fff';
+  const activeColor = activeTeam ? bc(activeTeam.id) : '#fff';
 
   // Track newly placed cells for pop animation (#5) + stolen cells + neighbor reactions + board shake
   const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
@@ -14418,7 +14433,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // brightness/saturate-Filter wurde komplett entfernt.
                   const hexA = isHighlighted || isAccent ? 'ff' : isDimmed ? 'cc' : 'ff';
                   const hexB = isHighlighted || isAccent ? 'cc' : isDimmed ? 'a6' : 'd9';
-                  const bridgeBg = `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`;
+                  // 2026-05-05 (Wolf-Wahl 3B): Brett-Farbe aus Smart-Palette,
+                  // nicht Avatar-Farbe — verhindert ähnliche-Farben-Konflikte.
+                  const tColor = bc(team.id);
+                  const bridgeBg = `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`;
                   const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
                   const bridgeOffset = cellRadius;
                   return (
@@ -14426,15 +14444,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: fusedRadius,
                     background: isStuck
-                      ? `linear-gradient(135deg, ${team.color}ff, ${team.color}bb)`
-                      : `linear-gradient(135deg, ${team.color}${hexA}, ${team.color}${hexB})`,
+                      ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
+                      : `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`,
                     border: isStuck
                       ? '3px solid rgba(251,191,36,0.95)'
                       : showStar
                         ? '2px solid rgba(251,191,36,0.9)'
                         : isFrozen
                           ? 'none'
-                          : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
+                          : `1px solid ${tColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
                     // 2026-05-05 (Wolf-Wunsch '3D-Plaettchen-Look auf alle Cells,
                     // wie Stapel nur ohne Gold-Kreis'): Box-Shadow-Stack jetzt
@@ -14446,11 +14464,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     boxShadow: isStuck
                       ? `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -3px 0 rgba(0,0,0,0.22), 3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
                       : isAccent
-                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 ${isFlash ? 28 : 24}px ${tColor}bb`
                         : showStar
                           ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 10px rgba(251,191,36,0.5)`
                           : isHighlighted
-                              ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 14px ${team.color}88`
+                              ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 14px ${tColor}88`
                               : `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)`,
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
@@ -14615,14 +14633,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       position: 'absolute',
                       width: Math.max(4, cellSize * 0.14), height: Math.max(4, cellSize * 0.14),
                       borderRadius: 2,
-                      background: team?.color ?? '#fff',
+                      background: team ? bc(team.id) : '#fff',
                       top: '50%', left: '50%',
                       marginTop: -Math.max(2, cellSize * 0.07),
                       marginLeft: -Math.max(2, cellSize * 0.07),
                       ['--shx' as string]: shx, ['--shy' as string]: shy, ['--shr' as string]: shr,
                       animation: `cellShard 0.7s ease-out ${0.05 + i * 0.02}s both`,
                       pointerEvents: 'none', zIndex: 6,
-                      boxShadow: `0 0 8px ${team?.color ?? '#fff'}`,
+                      boxShadow: `0 0 8px ${team ? bc(team.id) : '#fff'}`,
                     }} />
                   );
                 })}
@@ -14631,7 +14649,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <>
                     <div style={{
                       position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                      border: `2.5px solid ${team?.color ?? '#fff'}88`,
+                      border: `2.5px solid ${team ? bc(team.id) : '#fff'}88`,
                       animation: 'cellShockwave 0.7s ease-out both',
                       pointerEvents: 'none',
                     }} />
@@ -14747,7 +14765,10 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
           return (
             <div key={`${r}-${c}`} style={{
               width: cellSize, height: cellSize, borderRadius: 3,
-              background: team ? team.color : 'rgba(255,255,255,0.05)',
+              // 2026-05-05 (Wolf-Wahl 3B): MiniGrid verwendet die Smart-Brett-
+              // Palette analog GridDisplay, damit kleine Mini-Grids (z.B. in
+              // Rules-Slides) konsistent bleiben.
+              background: team ? qqGetBoardColor(team.id, s.teams) : 'rgba(255,255,255,0.05)',
             }} />
           );
         })

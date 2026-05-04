@@ -3340,15 +3340,73 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         animation: 'phasePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both',
         paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
-        <div style={{
-          fontFamily: fontFam,
-          fontSize: 'clamp(44px, 7vw, 96px)', fontWeight: 900, lineHeight: 1,
-          background: 'linear-gradient(135deg, #FDE68A 40%, #FBBF24)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.02em',
-          textShadow: '0 0 40px rgba(251,191,36,0.18)',
-        }}>
-          CozyQuiz
+        {/* 2026-05-04: Wordmark-Animation Layer (Wolf-Wahl: Option C).
+            - Pulse-Atem auf den Glow-Schatten alle ~5s (cqWordmarkBreath)
+            - Stagger-Eintritt der einzelnen Buchstaben beim ersten Render
+            - Akzent-Drift auf dem Q (subtiler Hue-Shift im Glow)
+            Alle Animationen rein-CSS, kein State, kein Re-Render-Loop. */}
+        <style>{`
+          @keyframes cqWordmarkBreath {
+            0%, 100% {
+              filter: drop-shadow(0 0 28px rgba(251,191,36,0.18))
+                      drop-shadow(0 0 6px rgba(251,191,36,0.10));
+            }
+            50% {
+              filter: drop-shadow(0 0 50px rgba(251,191,36,0.40))
+                      drop-shadow(0 0 12px rgba(255,123,138,0.18));
+            }
+          }
+          @keyframes cqLetterIn {
+            0%   { opacity: 0; transform: translateY(22px) rotate(-4deg); }
+            70%  { opacity: 1; transform: translateY(-3px) rotate(1deg); }
+            100% { opacity: 1; transform: translateY(0) rotate(0); }
+          }
+          @keyframes cqQGlow {
+            0%, 100% { opacity: 0.35; }
+            50%      { opacity: 0.65; }
+          }
+          .cq-wordmark {
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #FDE68A 40%, #FBBF24);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            display: inline-block;
+            animation: cqWordmarkBreath 5.2s ease-in-out infinite;
+            position: relative;
+          }
+          .cq-wordmark > span {
+            display: inline-block;
+            animation: cqLetterIn 0.65s cubic-bezier(0.34,1.56,0.64,1) both;
+            will-change: transform, opacity;
+          }
+          /* Subtiler warmer Akzent hinter dem Q — pulsiert alle 3.5s als
+             dezenter Pink-Hauch, ohne den Gold-Look zu kippen. */
+          .cq-wordmark .cq-q-accent {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 30% 60% at 60% 50%, rgba(255,123,138,0.55) 0%, transparent 70%);
+            filter: blur(14px);
+            mix-blend-mode: screen;
+            pointer-events: none;
+            animation: cqQGlow 3.5s ease-in-out infinite;
+          }
+        `}</style>
+        <div
+          className="cq-wordmark"
+          style={{
+            fontFamily: fontFam,
+            fontSize: 'clamp(44px, 7vw, 96px)',
+          }}
+          aria-label="CozyQuiz"
+        >
+          {Array.from('CozyQuiz').map((ch, i) => (
+            <span key={i} style={{ animationDelay: `${0.25 + i * 0.06}s` }}>{ch}</span>
+          ))}
+          <span aria-hidden className="cq-q-accent" />
         </div>
       </div>
 

@@ -1579,6 +1579,80 @@ export default function QQModeratorPage() {
                       <Btn small color="#94A3B8" onClick={() => downloadEndstandCSV(s, roomCode)}>
                         📄 Endstand CSV
                       </Btn>
+
+                      {/* 2026-05-05 (Wolf-Wunsch B+γ): Team-Highlights als
+                          „Spickzettel" beim Score-Durchlaufen. Pro Team Top-3
+                          Fakten aus dem Quiz, sortiert nach Rang. Mod hat damit
+                          immer was zu sagen statt sich alles selbst zu merken. */}
+                      <div style={{
+                        marginTop: 12, paddingTop: 12,
+                        borderTop: '1.5px solid rgba(255,255,255,0.08)',
+                        display: 'flex', flexDirection: 'column', gap: 10,
+                        maxHeight: '52vh', overflowY: 'auto',
+                        width: '100%',
+                      }}>
+                        <div style={{
+                          fontSize: 11, fontWeight: 900, color: '#94a3b8',
+                          letterSpacing: '0.1em', textTransform: 'uppercase',
+                          marginBottom: 2,
+                        }}>
+                          📋 Team-Highlights (Spickzettel)
+                        </div>
+                        {[...s.teams]
+                          .sort((a, b) =>
+                            b.largestConnected - a.largestConnected || b.totalCells - a.totalCells
+                          )
+                          .map((tm, idx) => {
+                            const rank = idx + 1;
+                            const highlights = computeTeamHighlights(s, tm.id);
+                            return (
+                              <div key={tm.id} style={{
+                                padding: '8px 10px', borderRadius: 10,
+                                background: `linear-gradient(135deg, ${tm.color}1a, ${tm.color}06)`,
+                                border: `1.5px solid ${tm.color}55`,
+                                display: 'flex', flexDirection: 'column', gap: 6,
+                              }}>
+                                <div style={{
+                                  display: 'flex', alignItems: 'center', gap: 8,
+                                  fontSize: 12, fontWeight: 900,
+                                }}>
+                                  <span style={{
+                                    minWidth: 22, textAlign: 'center',
+                                    color: rank === 1 ? '#FBBF24' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
+                                  }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}</span>
+                                  <span style={{
+                                    flex: 1, color: tm.color, lineHeight: 1.1,
+                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                  }}>{tm.name}</span>
+                                  <span style={{
+                                    fontSize: 11, color: '#FDE68A', fontWeight: 900,
+                                    fontVariantNumeric: 'tabular-nums',
+                                  }}>{tm.largestConnected} F</span>
+                                </div>
+                                {highlights.length === 0 ? (
+                                  <div style={{ fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
+                                    keine besonderen Highlights
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {highlights.map((h, i) => (
+                                      <div key={i} style={{
+                                        display: 'flex', alignItems: 'baseline', gap: 6,
+                                        fontSize: 11, lineHeight: 1.3,
+                                      }}>
+                                        <span style={{ flexShrink: 0, fontSize: 13 }}>{h.icon}</span>
+                                        <span style={{ flexShrink: 0, fontWeight: 900, color: '#cbd5e1' }}>
+                                          {h.label}:
+                                        </span>
+                                        <span style={{ color: '#94a3b8' }}>{h.value}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
                     </>
                   );
                 })()}
@@ -3131,6 +3205,73 @@ function PrimaryBtn({ children, color, onClick, hotkey, pulse = false }: {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Team-Highlights fuer GameOver-Story-Karten (Wolf-Wunsch B+γ).
+ *  Errechnet aus existierendem state die 3 spannendsten Fakten pro Team —
+ *  damit Wolf beim Score-Durchlaufen pro Team etwas zu erzaehlen hat statt
+ *  sich alles selbst merken zu muessen. Importance-Werte schichten die
+ *  Highlights so dass Sieger-/Stapel-Master-/Bluff-Master-Achievements
+ *  ueber den allgemeinen "hat gespielt"-Indikatoren landen. */
+type ModTeamHighlight = { icon: string; label: string; value: string; importance: number };
+function computeTeamHighlights(s: QQStateUpdate, teamId: string): ModTeamHighlight[] {
+  const highlights: ModTeamHighlight[] = [];
+  const team = s.teams.find(t => t.id === teamId);
+  if (!team) return [];
+  const stats = s.teamPhaseStats?.[teamId];
+
+  // Final Position via sort
+  const sorted = [...s.teams].sort((a, b) =>
+    b.largestConnected - a.largestConnected || b.totalCells - a.totalCells
+  );
+  const rank = sorted.findIndex(t => t.id === teamId) + 1;
+  if (rank === 1) highlights.push({ icon: '🥇', label: 'Sieger', value: 'Platz 1 — größtes Gebiet', importance: 100 });
+  else if (rank === 2) highlights.push({ icon: '🥈', label: 'Vize-Sieger', value: 'Platz 2 — knapp am Sieg vorbei', importance: 75 });
+  else if (rank === 3) highlights.push({ icon: '🥉', label: 'Bronze', value: 'Platz 3 — auf dem Treppchen', importance: 60 });
+
+  // Joker
+  const jokers = stats?.jokersEarned ?? 0;
+  if (jokers >= 2) highlights.push({ icon: '🃏', label: 'Joker-Master', value: `${jokers} Joker verdient`, importance: 70 });
+  else if (jokers === 1) highlights.push({ icon: '🃏', label: 'Joker', value: '1 Joker verdient', importance: 35 });
+
+  // Steals
+  const steals = stats?.stealsUsed ?? 0;
+  if (steals >= 4) highlights.push({ icon: '⚔️', label: 'Räuber', value: `${steals}× Felder geklaut`, importance: 65 });
+  else if (steals >= 2) highlights.push({ icon: '⚔️', label: 'Klau-Aktiv', value: `${steals}× geklaut`, importance: 40 });
+  else if (steals === 1) highlights.push({ icon: '⚔️', label: 'Klau-Erstling', value: '1× geklaut', importance: 18 });
+
+  // Stapel
+  const stapels = stats?.stapelsUsed ?? 0;
+  if (stapels >= 3) highlights.push({ icon: '🏯', label: 'Stapel-King', value: `${stapels}× gestapelt`, importance: 60 });
+  else if (stapels >= 1) highlights.push({ icon: '🏯', label: 'Stapler', value: `${stapels}× gestapelt`, importance: 28 });
+
+  // Connections-Gruppen
+  const connectGroups = (s.connections?.teamProgress as any)?.[teamId]?.foundGroupIds?.length ?? 0;
+  if (connectGroups >= 4) highlights.push({ icon: '🧩', label: 'Connections-Profi', value: 'alle 4 Gruppen gefunden', importance: 80 });
+  else if (connectGroups >= 2) highlights.push({ icon: '🧩', label: 'Connections-Stark', value: `${connectGroups} Gruppen gefunden`, importance: 50 });
+  else if (connectGroups === 1) highlights.push({ icon: '🧩', label: 'Connections', value: '1 Gruppe gefunden', importance: 22 });
+
+  // Bluff-Erfolge
+  const bluffPts = (s as any).bluffPoints?.[teamId];
+  if (bluffPts) {
+    if ((bluffPts.blufferBonus ?? 0) >= 4) highlights.push({ icon: '🎭', label: 'Bluff-Master', value: `${bluffPts.blufferBonus} Reinfälle ausgeloest`, importance: 70 });
+    else if ((bluffPts.blufferBonus ?? 0) >= 2) highlights.push({ icon: '🎭', label: 'Bluff-Erfolg', value: `${bluffPts.blufferBonus} Reinfälle`, importance: 38 });
+    if ((bluffPts.foundReal ?? 0) >= 3) highlights.push({ icon: '🔍', label: 'Wahrheits-Sucher', value: `${bluffPts.foundReal}× echte Antwort gefunden`, importance: 32 });
+  }
+
+  // Score-Stats (immer)
+  const score = team.largestConnected ?? 0;
+  if (score >= 12) highlights.push({ icon: '🏆', label: 'Mega-Gebiet', value: `${score} verbundene Felder`, importance: 55 });
+  else if (score >= 8) highlights.push({ icon: '🏆', label: 'Großes Gebiet', value: `${score} verbundene Felder`, importance: 25 });
+  else if (score === 0) highlights.push({ icon: '🌱', label: 'Mitspielen zählt', value: 'Hat tapfer durchgehalten', importance: 10 });
+
+  // Total cells (Multitasker mit vielen unverbundenen)
+  const totalCells = team.totalCells ?? 0;
+  if (totalCells >= 12 && totalCells - score >= 4) highlights.push({ icon: '📦', label: 'Vielspieler', value: `${totalCells} Felder gesamt — verstreut`, importance: 30 });
+
+  // Sort by importance desc, take top 3
+  highlights.sort((a, b) => b.importance - a.importance);
+  return highlights.slice(0, 3);
+}
 
 function actionLabel(action: string, stats: any): string {
   if (action === 'PLACE_1')   return '1 Feld setzen';

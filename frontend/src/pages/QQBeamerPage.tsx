@@ -4165,16 +4165,28 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // - treeShowsPrev: hält den Tree kurz auf Runde N-1, swappt nach 220ms auf
   //   Runde N → QQProgressTree triggert internen Hop (220ms Delay + 620ms Anim).
   // - Wolf landet ca. bei 1100ms (220 + 220 + 620 + Puffer).
+  // - colorTransitioning: kürzere Phase, endet wenn Wolf auf neuem Dot landet
+  //   (1100ms). Outer-Digit-Span faded ab dann smooth von prevColor zu color
+  //   (600ms ease) → synchron mit Avatar-Farb-Wechsel im Tree (Wolf-Wunsch
+  //   2026-05-04: 'Schrift-Farbe wechselt mit Avatar zusammen').
   // - Digit-Fall startet 1150ms, Roll 1650ms, Wort-Sweep 1100ms — alles NACH dem Hop.
   // - transitioning endet bei 2500ms.
   const [treeShowsPrev, setTreeShowsPrev] = useState(hasRoundTransition);
+  const [colorTransitioning, setColorTransitioning] = useState(hasRoundTransition);
   useEffect(() => {
-    if (!hasRoundTransition) { setTransitioning(false); setTreeShowsPrev(false); return; }
+    if (!hasRoundTransition) {
+      setTransitioning(false);
+      setTreeShowsPrev(false);
+      setColorTransitioning(false);
+      return;
+    }
     setTransitioning(true);
     setTreeShowsPrev(true);
-    const tTree = setTimeout(() => setTreeShowsPrev(false), 220);
-    const tEnd  = setTimeout(() => setTransitioning(false), 2500);
-    return () => { clearTimeout(tTree); clearTimeout(tEnd); };
+    setColorTransitioning(true);
+    const tTree  = setTimeout(() => setTreeShowsPrev(false), 220);
+    const tColor = setTimeout(() => setColorTransitioning(false), 1100);
+    const tEnd   = setTimeout(() => setTransitioning(false), 2500);
+    return () => { clearTimeout(tTree); clearTimeout(tColor); clearTimeout(tEnd); };
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
   const prevIdx = s.gamePhaseIndex - 1;
@@ -4359,7 +4371,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   overflow: transitioning ? 'hidden' : 'visible',
                   paddingBottom: '0.15em',
                   lineHeight: 1,
-                  color: color,
+                  // 2026-05-04 (Wolf): Outer-Span color folgt dem Wolf-Avatar.
+                  // Solange colorTransitioning (bis ~1100ms = Wolf-Hop-Ende),
+                  // bleibt's prevColor. Danach faded es smooth zu color (600ms),
+                  // sodass die NEUE Ziffer beim Reinrollen (1650ms) gerade in
+                  // der NEUEN Farbe ankommt — synchron mit dem Avatar.
+                  color: colorTransitioning ? prevColor : color,
                   transition: 'color 600ms ease',
                 }}>
                   {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
@@ -4428,10 +4445,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 color: `${prevColor}dd`,
                 animation: 'roundDigitFall 760ms var(--qq-ease-smooth-out) 1150ms both',
               }}>{prevPhaseDesc}</span>
-              {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer */}
+              {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer.
+                  Farbe folgt dem Wolf-Avatar (colorTransitioning), genau wie
+                  der Outer-Digit-Span. */}
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
-                color: `${color}dd`,
+                color: colorTransitioning ? `${prevColor}dd` : `${color}dd`,
+                transition: 'color 600ms ease',
                 animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
               }}>{phaseDesc}</span>
             </div>
@@ -9007,19 +9027,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {`${s.answers.length}/${s.teams.length} Teams`}
                   </div>
                 )}
-                {/* Avatar-Reihe */}
+                {/* Avatar-Reihe — 2026-05-04 (Wolf): vom unteren Card-Rand
+                    (top:100%) in den oberen Header verschoben. Vorher fielen
+                    die Avatare bei kleineren Bildschirmen unten aus dem
+                    Viewport raus. Jetzt: fixed oben mittig zwischen Cat-Pille
+                    (links) und Timer (rechts), gleicher Y-Anker. */}
                 {(() => {
                   const tc = s.teams.length;
-                  const av = tc > 6 ? 56 : tc > 4 ? 64 : 72;
-                  const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
+                  const av = tc > 6 ? 48 : tc > 4 ? 54 : 60;
+                  const gap = tc > 6 ? 8 : tc > 4 ? 11 : 14;
                   return (
                     <div style={{
-                      position: 'absolute',
-                      top: '100%', left: 0, right: 0,
-                      transform: 'translateY(-50%)',
+                      position: 'fixed',
+                      top: 'clamp(28px, 4vh, 60px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap, flexWrap: 'wrap',
-                      pointerEvents: 'none', zIndex: 9,
+                      gap, flexWrap: 'nowrap',
+                      pointerEvents: 'none', zIndex: 65,
                       animation: 'contentReveal 0.45s ease 0.4s both',
                     }}>
                       {s.teams.map(tm => {
@@ -14250,7 +14275,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <QQEmojiIcon emoji="⭐"/> : (team && (() => {
-                    const avSize = Math.max(8, cellSize * 0.86);
+                    // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
+                    // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
+                    // bleibt — verstaerkt den 3D-Plaettchen-Look.
+                    const avSize = Math.max(8, cellSize * 0.74);
                     // 2026-05-04: dunkle Hinterlegungs-Scheibe entfernt —
                     // sie war fuer PNG-Transparenzen gedacht und wirkte mit
                     // den neuen Emoji-Discs als hartes schwarzes Outline auf

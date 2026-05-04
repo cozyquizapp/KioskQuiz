@@ -2,6 +2,18 @@
 
 export const QQ_BEAMER_CSS = `
   @keyframes cfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-12px) rotate(var(--r,0deg))} }
+  /* Subtileres Bobben fuer Kategorie-Badge-Icon waehrend Question — selbe
+     Sprache wie cfloat im Cat-Intro, aber mit kleinerer Amplitude (4px) und
+     etwas langsamer, damit die Badge-Pille nicht hektisch wirkt. */
+  @keyframes qqBadgeIconBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+  /* Wave-Animation fuer Cat-Intro-Headline — pro-Buchstabe Stagger, ergibt
+     den klassischen „ocean wave"-Effekt (Wolf-Wunsch 2026-05-04: 'smoothe
+     welle auf der haupt schrift'). Amplitude moderat (8px) damit die Welle
+     im 16:9-Beamer auch aus 8m noch gut sichtbar aber nicht zappelig wirkt. */
+  @keyframes qqCatNameWave {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
   @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
   @keyframes cavspin  { from{transform:rotate(var(--r,0deg))} to{transform:rotate(calc(var(--r,0deg) + 360deg))} }
   @keyframes cavpulse { 0%,100%{transform:scale(1) rotate(var(--r,0deg))} 50%{transform:scale(1.22) rotate(var(--r,0deg))} }
@@ -152,6 +164,12 @@ export const QQ_BEAMER_CSS = `
   @keyframes lobbyPulse {
     0%, 100% { opacity: 1; }
     50%      { opacity: 0.6; }
+  }
+  /* Empty-State-Pfeil zeigt nach links auf den QR-Code, wackelt leicht hin
+     und her, damit das Auge des Veranstalters den Hinweis automatisch findet. */
+  @keyframes qqEmptyArrowNudge {
+    0%, 100% { transform: translateX(0); }
+    50%      { transform: translateX(-10px); }
   }
   @keyframes winnerSlideIn {
     from { opacity: 0; transform: translateY(24px) scale(0.92); }
@@ -493,6 +511,30 @@ export const QQ_BEAMER_CSS = `
   @keyframes comebackHLFadeIn {
     0%   { opacity: 0; }
     100% { opacity: 1; }
+  }
+  /* Timer-Outro — wenn der Countdown auf 0 trifft, kurzer Pop (scale 1.18 +
+     Brightness/Glow), dann sanftes Schrumpfen + Fade. Drama-Moment statt
+     einfach verschwinden. Nur bei natuerlichem Ablaufen — bei vorzeitigem
+     Reveal greift weiterhin der Outer-Wrapper-opacity-Fade. */
+  @keyframes qqTimerOutro {
+    0%   { transform: scale(1);     opacity: 1; filter: brightness(1); }
+    32%  { transform: scale(1.18);  opacity: 1; filter: brightness(1.45) drop-shadow(0 0 24px rgba(251,191,36,0.65)); }
+    62%  { transform: scale(1.06);  opacity: 0.95; filter: brightness(1.2); }
+    100% { transform: scale(0.72);  opacity: 0; filter: brightness(0.8); }
+  }
+  /* VS-Badge Pulse für Comeback-H/L Question-Phase — atmender Glow auf der
+     gold-Pille, signalisiert „hier passiert gleich was" ohne hektisch zu sein. */
+  @keyframes qqVsPulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 60px rgba(251,191,36,0.55), 0 0 24px rgba(251,191,36,0.4),
+                  0 8px 22px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 80px rgba(251,191,36,0.75), 0 0 32px rgba(251,191,36,0.55),
+                  0 8px 22px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.5);
+    }
   }
   /* Joker-Cell-Pulse — wenn ein Team gerade ein 2×2 oder 4×1 geformt hat,
      leuchten die beteiligten Zellen 2.2s gold auf. */

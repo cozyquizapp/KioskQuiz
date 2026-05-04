@@ -31,6 +31,13 @@
   --space-2: 10px;
   --space-3: 16px;
   --space-4: 24px;
+  /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
+     Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
+  --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --qq-ease-bounce-soft: cubic-bezier(0.34, 1.4,  0.64, 1);
+  --qq-ease-pop-fast:    cubic-bezier(0.2,  0.8,  0.3,  1);
+  --qq-ease-smooth:      cubic-bezier(0.4,  0,    0.2,  1);
+  --qq-ease-smooth-out:  cubic-bezier(0.3,  0,    0.5,  1);
   --cat-schaetzchen: #f3c367;
   --cat-mucho: #9fbfd3;
   --cat-stimmts: #72ac78;
@@ -201,7 +208,7 @@ body:not(.qq-active)::after {
 
 /* Select Styling */
 select {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 select:focus {
@@ -259,7 +266,7 @@ select:hover:not(:focus) {
   border-radius: var(--radius);
   box-shadow: var(--ui-card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 .ui-card:hover {
@@ -277,7 +284,7 @@ select:hover:not(:focus) {
   color: var(--ui-input-text);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 .ui-input:focus {
@@ -297,7 +304,7 @@ select:hover:not(:focus) {
   border: 1px solid var(--ui-chip-border);
   color: var(--ui-chip-text);
   border-radius: var(--radius-pill);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
   cursor: default;
 }
 
@@ -314,7 +321,7 @@ select:hover:not(:focus) {
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
   position: relative;
   overflow: hidden;
 }
@@ -577,7 +584,7 @@ main[class*="cozy-beamer-shell"] {
 }
 
 .success-animation {
-  animation: success-glow 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: success-glow 0.7s var(--qq-ease-bounce) both;
 }
 
 .pulse-indicator {
@@ -903,7 +910,7 @@ button {
   font-family: var(--font);
   border-radius: var(--radius);
   letter-spacing: 0.2px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
   position: relative;
 }
 
@@ -954,7 +961,7 @@ button:active:not(:disabled) {
 
 .team-choice {
   position: relative;
-  transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.1s var(--qq-ease-bounce);
   overflow: hidden;
 }
 
@@ -1113,7 +1120,7 @@ img {
 
 /* Modernized ready button and interactive elements */
 .ready-button {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 .ready-button:hover {
@@ -1402,7 +1409,7 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 13px;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 .cozyTeamStatusChip:hover {
@@ -1445,7 +1452,7 @@ img {
 /* Enhanced button styles */
 .primary-button,
 .primary-button:hover {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
 }
 
 .primary-button {
@@ -1505,8 +1512,8 @@ img {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s var(--qq-ease-bounce);
+  animation: beamerRevealItem 0.65s var(--qq-ease-bounce);
   animation-fill-mode: backwards;
 }
 
@@ -1524,7 +1531,7 @@ img {
 
 .award-medal {
   font-size: 48px;
-  animation: slideInDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideInDown 0.4s var(--qq-ease-bounce);
   animation-fill-mode: backwards;
 }
 
@@ -1564,7 +1571,7 @@ img {
 /* 3D Transform cards */
 .card-3d {
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.6s var(--qq-ease-bounce);
 }
 
 .card-3d:hover {
@@ -1642,7 +1649,7 @@ img {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: beamerRevealItem 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: beamerRevealItem 0.65s var(--qq-ease-bounce);
   animation-fill-mode: backwards;
 }
 
@@ -2281,7 +2288,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: messageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: messageSlideIn 0.4s var(--qq-ease-bounce);
 }
 
 /* ERROR STATE - Red/Danger */
@@ -2729,13 +2736,13 @@ body {
 
 /* Glow trail hover effect */
 .glow-trail {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s var(--qq-ease-smooth);
   animation: glow-trail 2s ease-in-out infinite;
 }
 
 /* Spring entrance animation */
 .spring-in {
-  animation: spring-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: spring-entrance 0.8s var(--qq-ease-bounce);
 }
 
 /* Elastic bounce */
@@ -2788,7 +2795,7 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .team-answer-stagger > * {
-  animation: fadeUpTeam 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: fadeUpTeam 0.45s var(--qq-ease-bounce) both;
 }
 .team-answer-stagger > *:nth-child(1) { animation-delay: 0.05s; }
 .team-answer-stagger > *:nth-child(2) { animation-delay: 0.13s; }
@@ -2823,7 +2830,7 @@ body {
 }
 
 .blitz-theme-pop {
-  animation: blitz-theme-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: blitz-theme-pop 0.6s var(--qq-ease-bounce) forwards;
 }
 
 /* Blitz Image Display - CRITICAL for showing rotating images */
@@ -2979,7 +2986,7 @@ body {
 
 /* Interactive hover scale with spring */
 .hover-spring {
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s var(--qq-ease-bounce);
 }
 
 .hover-spring:hover {
@@ -3186,7 +3193,7 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.2);
   backdrop-filter: blur(20px);
   z-index: 10000;
-  animation: toast-slide-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: toast-slide-in 0.5s var(--qq-ease-bounce);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -3372,8 +3379,8 @@ body {
 .page-transition-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.5s var(--qq-ease-bounce),
+              transform 0.5s var(--qq-ease-bounce);
 }
 
 .page-transition-exit {
@@ -3416,7 +3423,7 @@ body {
 .slide-right-enter-active {
   opacity: 1;
   transform: translateX(0);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.4s var(--qq-ease-bounce);
 }
 
 .slide-right-exit {
@@ -3435,7 +3442,7 @@ body {
    ======================================== */
 button,
 .tap-squish {
-  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+  transition: transform 0.12s var(--qq-ease-bounce), box-shadow 0.12s ease;
 }
 
 button:active:not(:disabled),
@@ -3619,7 +3626,7 @@ button:active:not(:disabled),
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  animation: checkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: checkPop 0.5s var(--qq-ease-bounce) forwards;
 }
 
 /* === FINALS ANIMATIONS === */
@@ -3855,7 +3862,7 @@ button:active:not(:disabled),
 }
 
 .phase-enter {
-  animation: phaseSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: phaseSlideIn 0.45s var(--qq-ease-bounce) both;
 }
 
 /* Color swatch pulse on select */
@@ -4190,7 +4197,7 @@ button:active:not(:disabled),
 }
 
 .animate-scale-in-bounce {
-  animation: scale-in-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scale-in-bounce 0.6s var(--qq-ease-bounce);
 }
 
 .animate-slide-in-right {
@@ -4229,11 +4236,11 @@ button:active:not(:disabled),
 }
 
 .cozyQuestionHero.locked {
-  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scale-in-bounce 0.5s var(--qq-ease-bounce);
 }
 
 .cozyQuestionHero.reveal-solo {
-  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scale-in-bounce 0.5s var(--qq-ease-bounce);
 }
 
 /* Team answer stagger effect */
@@ -4277,7 +4284,7 @@ button:active:not(:disabled),
 
 /* Answer reveal smooth animation */
 .answer-reveal {
-  animation: scale-in-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scale-in-bounce 0.5s var(--qq-ease-bounce);
 }
 
 /* Lock state visual feedback */

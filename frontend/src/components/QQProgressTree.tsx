@@ -179,7 +179,17 @@ export default function QQProgressTree({
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
-  const progressColor = '#FBBF24'; // Amber — markiert Fortschritt
+  // 2026-05-04 (Wolf): Progress-Strich nimmt die Farbe der aktuellen Kategorie
+  // an statt immer gold zu sein. Auf dem Finale-Dot bleibt's lila (Connections-
+  // Marker), bei Showcase-Pause ist's der initiale Wolf-Dot. Fallback: gold.
+  const wolfDotIdxForColor = Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, dotCenters.length - 1));
+  const currentScheduleEntry = schedule[wolfDotIdxForColor];
+  const progressColor = wolfOnFinale
+    ? '#A78BFA'
+    : (currentScheduleEntry ? QQ_CATEGORY_COLORS[currentScheduleEntry.category] : '#FBBF24');
+  // Etwas dunklere Variante fuer den Gradient-Endpunkt — gibt dem Strich
+  // Tiefe statt einfarbig zu sein. 80% Helligkeit als Hex.
+  const progressColorEnd = progressColor;
 
   const wrapperBg = isShowcase
     ? 'transparent'
@@ -324,18 +334,20 @@ export default function QQProgressTree({
             transform: 'translateY(-50%)',
             zIndex: 0,
           }} />
-          {/* Progress: amber, bis aktuelles Dot-Center */}
+          {/* Progress: nimmt aktuelle Kategorie-Farbe (Wolf-Wunsch 2026-05-04
+              — vorher immer gold). Color + Box-Shadow mit transition damit der
+              Wechsel beim Wolf-Hop smooth durchfaerbt. */}
           <div style={{
             position: 'absolute',
             top: '50%',
             left: trackStart,
             width: Math.max(0, progressEnd - trackStart),
             height: isMini ? 2 : 3,
-            background: `linear-gradient(90deg, ${progressColor}, #F59E0B)`,
+            background: `linear-gradient(90deg, ${progressColor}, ${progressColorEnd})`,
             borderRadius: 2,
             transform: 'translateY(-50%)',
             boxShadow: `0 0 10px ${progressColor}99`,
-            transition: 'width 600ms cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'width 600ms var(--qq-ease-smooth), background 500ms ease, box-shadow 500ms ease',
             zIndex: 1,
           }} />
 

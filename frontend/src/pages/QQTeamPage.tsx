@@ -1509,7 +1509,7 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
         backgroundBlendMode: 'normal, normal',
         border: `2.5px solid ${team.color}`,
         boxShadow: `0 18px 56px rgba(0,0,0,0.65), 0 0 80px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`,
-        animation: 'tcIdentityIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both',
+        animation: 'tcIdentityIn 0.7s var(--qq-ease-bounce) both',
       }}>
         <div style={{
           fontSize: 13, fontWeight: 900, letterSpacing: '0.1em',
@@ -1786,7 +1786,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
 
         {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring, daher kein Wrapper-Disc mehr */}
         <QQTeamAvatar avatarId={myTeam.avatarId} size={160} style={{
-          animation: 'tcTeamPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
+          animation: 'tcTeamPop 0.7s var(--qq-ease-bounce) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
           boxShadow: `0 0 32px ${color}55`,
         }} />
 
@@ -1797,7 +1797,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
           fontSize: 26, fontWeight: 900, letterSpacing: '0.04em',
           textTransform: 'uppercase',
           boxShadow: `0 6px 20px ${color}88`,
-          animation: 'tcTeamPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both',
+          animation: 'tcTeamPop 0.6s var(--qq-ease-bounce) 0.15s both',
         }}>
           {myTeam.name}
         </div>
@@ -2255,7 +2255,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               marginTop: 8, padding: '10px 14px', borderRadius: 16,
               background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)',
               fontSize: 15, fontWeight: 900, color: '#4ade80', textAlign: 'center',
-              animation: 'tcwinBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both',
+              animation: 'tcwinBounce 0.6s var(--qq-ease-bounce) both',
               boxShadow: '0 0 20px rgba(34,197,94,0.25)',
             }}>
               {winMsg}
@@ -2853,11 +2853,11 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
         fontSize: 18,
         opacity: canSubmit || submitted ? 1 : 0.6,
         boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
-        animation: submitted ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : canSubmit ? 'tcbtnpop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+        animation: submitted ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : canSubmit ? 'tcbtnpop 0.35s var(--qq-ease-bounce) both' : 'none',
       }}
     >
       {submitted
-        ? <><span style={{ animation: 'tccheckpop 0.4s cubic-bezier(0.34,1.56,0.64,1) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
+        ? <><span style={{ animation: 'tccheckpop 0.4s var(--qq-ease-bounce) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
         : label ?? defaultLabel}
     </button>
   );
@@ -3259,8 +3259,8 @@ function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
               background: isSelected ? `${color}30` : 'rgba(255,255,255,0.04)',
               boxShadow: isSelected ? `0 4px 0 ${color}55` : '0 3px 0 rgba(0,0,0,0.4)',
               transform: isSelected ? 'translateY(-2px)' : 'none',
-              transition: 'all 0.15s cubic-bezier(0.34,1.56,0.64,1)',
-              animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+              transition: 'all 0.15s var(--qq-ease-bounce)',
+              animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
               outline: isSelected ? `2px solid ${color}` : `1px solid ${color}33`,
             }}
           >
@@ -3342,7 +3342,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
         <div style={{
           padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
           background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
-          animation: remaining === 0 ? 'tcsuccess 0.45s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+          animation: remaining === 0 ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : undefined,
           transition: 'all 0.2s',
         }}>
           {remaining} {lang === 'en' ? 'left' : 'übrig'}
@@ -3362,7 +3362,7 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             border: `2px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
             transition: 'all 0.15s',
             borderLeft: `4px solid ${color}`,
-            animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+            animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
           }}>
             <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
               <span style={{ fontSize: 12, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
@@ -3423,7 +3423,7 @@ function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor: string
       {vals.map((v, i) => (
         <div key={i} style={{
           display: 'flex', gap: 8, alignItems: 'center',
-          animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+          animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
         }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: catColor, flexShrink: 0 }}>{i+1}</div>
           <div style={{ flex: 1 }}>
@@ -3584,7 +3584,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
                 opacity: isOwn ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', gap: 10,
                 transition: 'all 0.18s',
-                animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+                animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
               } as any}
             >
               <span style={{
@@ -4010,7 +4010,7 @@ function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 10px', borderRadius: 16,
           background: 'rgba(26,32,53,0.9)', border: `1px solid ${catColor}22`,
-          animation: `tcoptIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+          animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
         }}>
           <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor }}>
             {i + 1}
@@ -4492,7 +4492,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                               : cellTeam
                                 ? `inset 0 1px 0 rgba(255,255,255,0.1)`
                                 : 'none',
-                        animation: isNew ? 'tcCellClaim 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
+                        animation: isNew ? 'tcCellClaim 0.5s var(--qq-ease-bounce) both'
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
@@ -4796,7 +4796,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           pointerEvents: 'none', zIndex: 3,
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
                           // C7: Sanduhr droppt + tickt kontinuierlich.
-                          animation: 'sanduhrDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both, sanduhrTick 2.5s ease-in-out 0.65s infinite',
+                          animation: 'sanduhrDrop 0.6s var(--qq-ease-bounce) both, sanduhrTick 2.5s ease-in-out 0.65s infinite',
                           transformOrigin: 'center',
                         }}>
                           <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.6)} alt="Bann" />
@@ -4824,9 +4824,9 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       filter: isFrozenCell ? 'saturate(0.4) brightness(1.2)' : undefined,
                       display: 'inline-block',
                       animation: isStuckCell
-                        ? 'stapelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
+                        ? 'stapelDrop 0.6s var(--qq-ease-bounce) both'
                         : justStolen
-                          ? 'stealCrashIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both'
+                          ? 'stealCrashIn 0.55s var(--qq-ease-bounce) both'
                           : undefined,
                     }}>
                       {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(24, Math.floor(cellSize * 0.82))} /> : null}

@@ -1699,13 +1699,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqActivateQuestion(room, () => {
           // Timer expired — broadcast + Kategorie-spezifische Cleanups.
-          // 2026-05-04 v3 (Wolf-Bug): Connect-4 Bot-Timer killen sobald Zeit
-          // abgelaufen — sonst koennten gerade-noch-pending setTimeouts in der
-          // Reveal-Wartezeit weiterhin Submits/Advances triggern (zwar dank
-          // timerExpired-Gate silent, aber unnoetig).
+          // 2026-05-04 v4 (Wolf-Bug 'app haengt bei 4-gewinnt nach Timer'):
+          // Frueher nur Bot-Timer killen + broadcasten → App blieb in
+          // QUESTION_ACTIVE, kein Display-Wechsel. Jetzt: Connect-4 wechselt
+          // bei Timer-Ablauf automatisch zu Reveal (RevealAll + AutoFinish).
+          // Mod muss nicht mehr drueckenken, Hints sind eh durch timerExpired
+          // gesperrt → Reveal-Anzeige ist die richtige Weiterfuehrung.
           const r = getQQRoom(payload.roomCode);
-          if (r?.currentQuestion?.bunteTuete?.kind === 'onlyConnect') {
+          if (r?.currentQuestion?.bunteTuete?.kind === 'onlyConnect' && r.phase === 'QUESTION_ACTIVE') {
             stopOnlyConnectAiTimers(payload.roomCode);
+            qqOnlyConnectRevealAll(r);
+            qqOnlyConnectAutoFinish(r);
           }
           broadcast(io, payload.roomCode);
         });
@@ -1791,7 +1795,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
             lockedTeams: room.onlyConnectLockedTeams,
             guesses: (room.onlyConnectGuesses ?? []).map(g => ({ teamId: g.teamId, correct: g.correct, atHintIdx: g.atHintIdx })),
           }));
-          if (startedAt && elapsed < 25000) {
+          // 2026-05-04 v4 (Wolf-Bug): Hard-Floor nur wenn Timer noch laeuft.
+          // Wenn Timer bereits abgelaufen (timerExpired=true) → Reveal IMMER
+          // erlaubt, sonst kann Mod nach Timer-Expire die Frage nicht aufloesen
+          // weil der 25s-Insta-End-Schutz auch bei normalem Ablauf zuschlaegt.
+          if (startedAt && elapsed < 25000 && !room.timerExpired) {
             console.log('[oc-debug] BLOCKED by 25s Hard-Floor');
             ok(ack);
             return;

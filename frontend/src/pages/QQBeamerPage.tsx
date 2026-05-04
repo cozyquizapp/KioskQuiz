@@ -277,6 +277,20 @@ export default function QQBeamerPage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
 
+  // 2026-05-05 (Wolf-Bug 'Scrollbar darf NIE auf /beamer'): body + html overflow
+  // hart auf hidden — egal was Inhalts-Container-CSS macht, der Browser zeigt
+  // keine Scrollbar mehr. Restore beim Unmount.
+  useEffect(() => {
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
+    };
+  }, []);
+
   // Beamer-Fullscreen: erkennt sowohl JS-API (document.fullscreenElement) als
   // auch natives F11 (window.innerHeight === screen.height), damit die Nudge
   // verschwindet wenn der User schon per F11 im Vollbild ist und kein erneutes
@@ -9424,7 +9438,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           flex: 1, display: 'flex', flexDirection: 'column',
           padding: 'clamp(22px, 3.2vh, 50px) clamp(28px, 4vw, 64px)',
           alignItems: 'center', position: 'relative', zIndex: 5,
-          overflowX: 'hidden', overflowY: 'visible',
+          // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
+          // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen
+          // (overflowY:visible konnte vorher Body-Level-Scroll triggern wenn
+          // Card+Voters+Winner zusammen ueber 100vh wuchsen).
+          overflow: 'hidden',
         }}>
 
           {/* 2026-04-30 v3: Top-Bar position:absolute damit der Inner-Wrapper

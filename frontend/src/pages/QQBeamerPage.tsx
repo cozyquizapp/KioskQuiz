@@ -3373,48 +3373,40 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* ── Top: Title (compact, centered) — CozyWolf-Branding nur noch unter QR ── */}
+      {/* ── Top: CozyQuiz-Wordmark als prominenter Page-Titel.
+          2026-05-04 v4 (Wolf-Bug 'während Lobby fehlt immer noch Überschrift'):
+          Vorher Gradient-Text-Clip (background + -webkit-background-clip:text +
+          color:transparent) gepaart mit drop-shadow filter → in einigen Browsern/
+          Render-Pfaden wird der Text komplett unsichtbar. Jetzt: solid gold
+          (#FBBF24) + multi-layer text-shadow für den Goldglow. Bulletproof.
+          Letter-Stagger-Animation bleibt. Breath-Glow wandert raus aus dem
+          text-clip-Element auf den outer wrapper. */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both',
+        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both, cqWordmarkBreath 5.2s ease-in-out infinite',
         paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
-        {/* 2026-05-04: Wordmark-Animation Layer (Wolf-Wahl: Option C).
-            - Pulse-Atem auf den Glow-Schatten alle ~5s (cqWordmarkBreath)
-            - Stagger-Eintritt der einzelnen Buchstaben beim ersten Render
-            - Akzent-Drift auf dem Q (subtiler Hue-Shift im Glow)
-            Alle Animationen rein-CSS, kein State, kein Re-Render-Loop. */}
         <style>{`
           @keyframes cqWordmarkBreath {
-            0%, 100% {
-              filter: drop-shadow(0 0 28px rgba(251,191,36,0.18))
-                      drop-shadow(0 0 6px rgba(251,191,36,0.10));
-            }
-            50% {
-              filter: drop-shadow(0 0 50px rgba(251,191,36,0.40))
-                      drop-shadow(0 0 12px rgba(255,123,138,0.18));
-            }
+            0%, 100% { filter: drop-shadow(0 0 28px rgba(251,191,36,0.30)); }
+            50%      { filter: drop-shadow(0 0 50px rgba(251,191,36,0.55)); }
           }
           @keyframes cqLetterIn {
             0%   { opacity: 0; transform: translateY(22px) rotate(-4deg); }
             70%  { opacity: 1; transform: translateY(-3px) rotate(1deg); }
             100% { opacity: 1; transform: translateY(0) rotate(0); }
           }
-          @keyframes cqQGlow {
-            0%, 100% { opacity: 0.35; }
-            50%      { opacity: 0.65; }
-          }
           .cq-wordmark {
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #FDE68A 40%, #FBBF24);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
+            color: #FBBF24;
+            text-shadow:
+              0 0 6px rgba(255,235,180,0.45),
+              0 0 24px rgba(251,191,36,0.55),
+              0 0 56px rgba(251,191,36,0.35),
+              0 4px 24px rgba(0,0,0,0.55);
             display: inline-block;
-            animation: cqWordmarkBreath 5.2s ease-in-out infinite;
             position: relative;
           }
           .cq-wordmark > span {
@@ -3422,25 +3414,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             animation: cqLetterIn 0.65s var(--qq-ease-bounce) both;
             will-change: transform, opacity;
           }
-          /* Subtiler warmer Akzent hinter dem Q — pulsiert alle 3.5s als
-             dezenter Pink-Hauch, ohne den Gold-Look zu kippen. */
-          .cq-wordmark .cq-q-accent {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse 30% 60% at 60% 50%, rgba(255,123,138,0.55) 0%, transparent 70%);
-            filter: blur(14px);
-            mix-blend-mode: screen;
-            pointer-events: none;
-            animation: cqQGlow 3.5s ease-in-out infinite;
-          }
         `}</style>
         <div
           className="cq-wordmark"
           style={{
             fontFamily: fontFam,
-            // 2026-05-04 v3 (Wolf-Feedback HANDOVER): Wordmark wirkt im Beamer-
-            // Lobby zu klein. clamp(44,7vw,96) → clamp(56,9vw,140) macht „CozyQuiz"
-            // auf 1080p ~130px hoch (vorher 96px) — prominent als Page-Headline.
             fontSize: 'clamp(56px, 9vw, 140px)',
           }}
           aria-label="CozyQuiz"
@@ -3448,7 +3426,6 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           {Array.from('CozyQuiz').map((ch, i) => (
             <span key={i} style={{ animationDelay: `${0.25 + i * 0.06}s` }}>{ch}</span>
           ))}
-          <span aria-hidden className="cq-q-accent" />
         </div>
       </div>
 
@@ -4422,23 +4399,34 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           </div>
 
           {/* Divider line with glow + shimmer.
-              2026-05-04 v3 (Wolf-Bug): Round-2-Intro hatte vorher nur lineShimmer
-              ohne roundLineGlow — visuell wirkte der Balken statisch, weil
-              waehrend der 2.5s Round-Transition der 1.5s-Delay ins Leere ging
-              und der erste Shimmer-Pass erst nach 4.5s sichtbar war. Jetzt:
-              gleiche Sprache wie Round-1 (drawIn + Shimmer infinite, Shimmer
-              ohne Delay damit er waehrend der Transition schon laeuft). */}
+              2026-05-04 v4 (Wolf-Bug 'shimmer fehlt auch in Runde 3+4'):
+              Vorher 3s Cycle + 1.0s Delay → bei schnellem Mod-Clicken durch
+              Step-0 verpasste Wolf den Shimmer-Pass. Jetzt zwei-Layer-Ansatz:
+              - Base-Layer: farbiger Bar (immer sichtbar, kein Shimmer)
+              - Overlay-Layer (eigenes div): heller weisser Shimmer-Sweep, 1.8s
+                Cycle, no delay → mind. 1 Pass schon waehrend der 2.5s Round-
+                Transition garantiert sichtbar. */}
           <div style={{
             width: 'clamp(240px, 35vw, 500px)', height: 5, borderRadius: 3,
             background: `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
-            backgroundSize: '200% 100%',
             marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both, lineShimmer 3s linear 1.0s infinite',
+            animation: 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both',
             boxShadow: `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
             transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,
-          }} />
+            overflow: 'hidden',
+          }}>
+            {/* Heller White-Shimmer-Sweep — laeuft kontinuierlich von links
+                nach rechts, garantiert sichtbar in allen Runden. */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(90deg, transparent 0%, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%, transparent 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'lineShimmer 1.8s linear 0.6s infinite',
+              pointerEvents: 'none',
+            }} />
+          </div>
 
           {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).
               overflow:hidden nur waehrend der Transition, sonst bleibt ein
@@ -5985,11 +5973,12 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* Phase-spezifischer Inhalt */}
+      {/* Phase-spezifischer Inhalt — bei reveal stapeln wir vorher die
+          Reveal-Header-Cards (Echte Antwort + Sieger-Pille) damit sie OBEN
+          sichtbar sind und das Options-Grid den Rest fuellt. */}
       {phase === 'write' && <BluffWriteScreen state={s} accent={accent} lang={lang} />}
       {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
       {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
-      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
 
       {/* Reveal: Echte Antwort prominent + Top-Punkte */}
       {phase === 'reveal' && (
@@ -6023,12 +6012,13 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         </div>
       )}
 
-      {/* 2026-04-30 v3 (User-Bug): WinnerCard mit Teilpunkte-Hinweis fuer
-          Bluff. Sieger = Team(s) mit den meisten bluffPoints.total. Bei Tie
-          alle gewinnen, schnellster (Vote-Submit-Order) waehlt zuerst.
-          v3 round 6 (User-Bug 'WinnerCard hinter BeamerView'): position:fixed
-          bottom statt im Flex-Flow → garantiert sichtbar, Vote-Screen kann
-          nicht mehr drueberlaufen. */}
+      {/* WinnerCard mit Teilpunkte-Hinweis — Sieger-Pille mit Avatar + Name +
+          Total-Punkte + Mini-Breakdown.
+          2026-05-04 v4 (Wolf-Bug 'Sieger-Card überlappt Frage-Card'): vorher
+          position:fixed top-center → kollidierte mit der Frage-Card am
+          Bildschirm-Top. Jetzt im Flex-Flow direkt unter der Echten-Antwort-
+          Card, OBERHALB des Options-Grids. Layout: Frage → Real-Answer →
+          Sieger-Pille → Grid. */}
       {phase === 'reveal' && (() => {
         // 2026-05-02 (Audit B Anti-Pattern Fix): Backend-Truth via
         // s.currentQuestionWinners (von qqMarkCorrect gesetzt) statt lokaler
@@ -6052,11 +6042,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(251,191,36,0.22)' });
         return (
           <div style={{
-            position: 'fixed',
-            top: 'clamp(72px, 9vh, 120px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 70,
+            alignSelf: 'center',
             maxWidth: 'min(820px, 94vw)',
             display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6vw, 22px)',
             padding: 'clamp(8px, 1vh, 14px) clamp(16px, 2vw, 28px)',
@@ -6067,6 +6053,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
             animation: 'revealWinnerIn 0.55s var(--qq-ease-bounce) 0.7s both',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
+            position: 'relative', zIndex: 5,
           }}>
             <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(38px, 4.4vw, 60px)'} style={{
               boxShadow: `0 0 18px ${winnerTeam.color}88`,
@@ -6113,6 +6100,13 @@ function BluffBeamerView({ state: s, lang, revealed }: {
           </div>
         );
       })()}
+
+      {/* Reveal-Options-Grid — kommt UNTER Real-Answer + Sieger-Pille, fuellt
+          den Rest. Vorher zwischen Frage und Real-Answer (siehe oben), dann
+          unter Real-Answer aber WinnerCard (fixed-top) ueber der Frage-Card.
+          2026-05-04 v4: WinnerCard ist jetzt im Flex-Flow oberhalb des Grids,
+          Reveal stapelt sauber Frage → Real-Answer → Sieger → Grid. */}
+      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
     </div>
   );
 }
@@ -6355,10 +6349,9 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
     votersByOption[optId].push(teamId);
   }
 
-  // 2026-05-02 v2 (Wolfs Bug 'Inhalte abgeschnitten + WinnerCard ueberlappt'):
-  // Aggressivere Spalten-Logik (schon ab 4 Optionen 2 Spalten, ab 6 drei Spalten)
-  // + groesseres paddingBottom (180-280px statt 140-220px), damit die fixed-bottom
-  // WinnerCard nicht mit Voter-Avataren kollidiert.
+  // 2026-05-04 v4 (Wolf-Bug 'Sieger-Card überlappt Frage-Card'): WinnerCard
+  // ist nicht mehr position:fixed sondern im Flex-Flow oberhalb des Grids —
+  // dadurch kein Platz-Reservieren mehr unten noetig.
   const cols = opts.length >= 6 ? 3 : opts.length >= 4 ? 2 : 1;
   return (
     <div style={{
@@ -6368,8 +6361,6 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
       maxWidth: cols === 3 ? 1400 : 1100, width: '100%', margin: '0 auto',
       position: 'relative', zIndex: 5,
       animation: 'contentReveal 0.5s ease 0.15s both',
-      // Platz unten reservieren fuer fixed-bottom WinnerCard (jetzt 180-280px).
-      paddingBottom: revealed ? 'clamp(200px, 26vh, 300px)' : 0,
     }}>
       {opts.map((opt, i) => {
         const isReal = opt.source === 'real';

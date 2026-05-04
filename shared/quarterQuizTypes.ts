@@ -1045,11 +1045,10 @@ export interface QQAck {
 // /avatars/cozy-cast/avatar-{slug}.png. Die Reihenfolge: erste 4 sind die
 // kontrastreichsten Picks für kleine Team-Counts.
 // 2026-05-04 (Wolf): Farben aufgefrischt fuer maximale Unterscheidbarkeit
-// aus 8m Pub-Distanz. Pink→Rose (saturierter, weiter weg von Red), Blau
-// heller (weiter weg von Purple), Teal→Cyan (klarer kuehl), Orange→Amber
-// (mehr gold-orange, weiter weg von Red).
+// aus 8m Pub-Distanz. Slot 1 → Pink (Tailwind pink-500 #EC4899 statt rose
+// — Rose war zu nah am Red), Blau heller, Teal→Cyan, Orange→Amber.
 export const QQ_AVATARS = [
-  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#F43F5E', hoodie: '#0EA5E9' },
+  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#EC4899', hoodie: '#0EA5E9' },
   { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#84CC16', hoodie: '#7C2D12' },
   { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#3B82F6', hoodie: '#FDE047' },
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#A855F7', hoodie: '#EAB308' },

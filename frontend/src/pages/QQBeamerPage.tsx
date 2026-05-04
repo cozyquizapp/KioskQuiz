@@ -13964,27 +13964,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 }}>
                   {showStar ? <QQEmojiIcon emoji="⭐"/> : (team && (() => {
                     const avSize = Math.max(8, cellSize * 0.86);
-                    const discSize = Math.max(10, cellSize * 0.92);
-                    // Stuck → Doppel-Ring in Gold um die Avatar-Scheibe (×2 Indikator).
+                    // 2026-05-04: dunkle Hinterlegungs-Scheibe entfernt —
+                    // sie war fuer PNG-Transparenzen gedacht und wirkte mit
+                    // den neuen Emoji-Discs als hartes schwarzes Outline auf
+                    // farbigen Cells. Der Avatar bringt seinen eigenen BG mit.
+                    // Bei Stuck (x2) wickle ich den Avatar mit gold-Doppel-Ring
+                    // direkt als boxShadow am Wrapper.
                     const stuckRing = isStuck
-                      ? '0 0 0 2px rgba(251,191,36,0.95), 0 0 0 4px #0b1220, 0 0 0 6px rgba(251,191,36,0.85), inset 0 0 0 1px rgba(0,0,0,0.55)'
-                      : 'inset 0 0 0 1px rgba(0,0,0,0.55)';
+                      ? '0 0 0 2px rgba(251,191,36,0.95), 0 0 0 4px rgba(0,0,0,0.55), 0 0 0 6px rgba(251,191,36,0.85)'
+                      : undefined;
                     return (
                       <div style={{
-                        position: 'relative', width: discSize, height: discSize,
+                        width: avSize, height: avSize, borderRadius: '50%',
+                        boxShadow: stuckRing,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        {/* Dunkle Scheibe hinter dem Avatar — sorgt für Kontrast,
-                            damit transparente Bereiche im PNG nicht in die Teamfarbe
-                            verschwimmen. Square-Ecken bleiben teamfarbig. */}
-                        <div style={{
-                          position: 'absolute', inset: 0, borderRadius: '50%',
-                          background: '#0b1220',
-                          boxShadow: stuckRing,
-                        }} />
-                        <div style={{ position: 'relative', zIndex: 1 }}>
-                          <QQTeamAvatar avatarId={team.avatarId} size={avSize} />
-                        </div>
+                        <QQTeamAvatar avatarId={team.avatarId} size={avSize} />
                       </div>
                     );
                   })())}

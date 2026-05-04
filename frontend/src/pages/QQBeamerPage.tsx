@@ -14007,20 +14007,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           ? 'none'
                           : `1px solid ${team.color}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
-                    // 2026-05-04 (Wolf): Stack-Tile bekommt 3D-Stapel-Effekt durch
-                    // gestaffelte Hard-Shadows nach unten/rechts (sieht aus als
-                    // wuerden 2 Layer drunter liegen). Plus dicker Gold-Ring +
-                    // Glow. ×2-Chip wurde entfernt — der Stack-Look + Ring
-                    // erklaert sich selbst.
+                    // 2026-05-04 (Wolf): Hard-Shadow nach unten/rechts gibt allen
+                    // besetzten Tiles den 'Plaettchen liegt auf Tisch'-Look
+                    // (klarer als drop-shadow filter). Stack-Tile setzt zwei
+                    // gestaffelte Layer drunter — sieht aus wie 2 Plaettchen
+                    // gestapelt. Glow-States werden kombiniert mit dem Base-3D.
+                    // Base-3D-Hard-Shadow `2px 3px 0 rgba(0,0,0,0.5)` fuer alle
+                    // besetzten Tiles — wirkt wie 'Plaettchen liegt auf Tisch'.
+                    // Glow-States werden additiv kombiniert.
                     boxShadow: isStuck
                       ? `3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
                       : isAccent
-                        ? `0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                        ? `2px 3px 0 rgba(0,0,0,0.5), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                         : showStar
-                          ? '0 0 10px rgba(251,191,36,0.5)'
+                          ? '2px 3px 0 rgba(0,0,0,0.5), 0 0 10px rgba(251,191,36,0.5)'
                           : isHighlighted
-                              ? `0 0 14px ${team.color}88`
-                              : 'none',
+                              ? `2px 3px 0 rgba(0,0,0,0.5), 0 0 14px ${team.color}88`
+                              : '2px 3px 0 rgba(0,0,0,0.5)',
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen

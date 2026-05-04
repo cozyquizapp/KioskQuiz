@@ -857,11 +857,21 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         )}
         {step === 'COLOR' && (
           <CozyCard anim borderColor="#EAB308">
-            <StepLabel>{lang === 'de' ? 'Wähle eine Farbe' : 'Pick a color'}</StepLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
-              {QQ_AVATARS.map((a, i) => {
+            <StepLabel>{lang === 'de' ? 'Avatar & Farbe' : 'Avatar & color'}</StepLabel>
+            {QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).length === 0 && (
+              <div style={{
+                padding: '20px 12px', textAlign: 'center',
+                color: '#F87171', fontWeight: 800, fontSize: 14,
+                border: '1px dashed rgba(239,68,68,0.4)', borderRadius: 12,
+                marginBottom: 14,
+              }}>
+                {lang === 'de' ? '⚠ Lobby ist voll — alle Avatare vergeben.' : '⚠ Lobby is full — all avatars taken.'}
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+              {QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id)).map((a, i) => {
                 const sel = avatarId === a.id;
-                const taken = takenAvatarIds.includes(a.id);
+                const taken = false;
                 const justPicked = pickedId === a.id;
                 const avColor = a.color ?? '#EAB308';
                 return (
@@ -930,7 +940,118 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 );
               })}
             </div>
-            <CozyBtn color="#EAB308" onClick={() => setStep('AVATAR')}>{t.setup.next[lang]}</CozyBtn>
+            {/* 2026-05-04 (Wolf): Emoji-Picker bei Theme-Sets direkt mit in der
+                Setup-Card. Bei PNG-Sets (cozyCast / cozyAnimals) wird der Block
+                gar nicht gerendert — Avatar = direkt der gewaehlte Cozy-Wolf. */}
+            {(() => {
+              const set = activeSetId === 'all' ? null : getSet(activeSetId);
+              const isPng = (set?.source ?? 'emoji') === 'png';
+              if (isPng) return null;
+              const emojiPool: string[] = activeSetId === 'all' && serverEmojis?.length === 8
+                ? serverEmojis
+                : (set?.avatars ?? []);
+              const availableEmojis = emojiPool.filter(em => !takenEmojis.includes(em));
+              if (availableEmojis.length === 0) return null;
+              const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EAB308';
+              return (
+                <>
+                  <StepLabel>{lang === 'de' ? 'Avatar-Emoji' : 'Avatar emoji'}</StepLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
+                    {availableEmojis.map((em, i) => {
+                      const sel = chosenEmoji === em;
+                      return (
+                        <button
+                          key={`${em}-${i}`}
+                          onClick={() => setChosenEmoji(em)}
+                          style={{
+                            padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
+                            background: sel
+                              ? `linear-gradient(135deg, ${myColor}33, ${myColor}14)`
+                              : 'rgba(255,255,255,0.04)',
+                            border: `2px solid ${sel ? myColor : 'rgba(255,255,255,0.10)'}`,
+                            fontSize: 28, lineHeight: 1,
+                            fontFamily: 'inherit',
+                            transition: 'all 0.18s',
+                            boxShadow: sel ? `0 0 14px ${myColor}55` : 'none',
+                          }}
+                        >
+                          {em}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+            {/* Name-Input direkt mit in derselben Card (Wolf-Wunsch 2026-05-04). */}
+            <StepLabel>{t.setup.teamName[lang]}</StepLabel>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              <input
+                value={teamName}
+                onChange={e => setTeamName(e.target.value)}
+                placeholder={t.setup.placeholder[lang]}
+                style={{
+                  ...cozyInput,
+                  flex: 1,
+                  border: nameTaken
+                    ? '1px solid rgba(239,68,68,0.55)'
+                    : '1px solid rgba(234,179,8,0.25)',
+                  background: nameTaken
+                    ? 'rgba(239,68,68,0.06)'
+                    : 'rgba(234,179,8,0.06)',
+                }}
+                maxLength={20}
+                onKeyDown={e => {
+                  if (e.key !== 'Enter') return;
+                  const set = activeSetId === 'all' ? null : getSet(activeSetId);
+                  const isPng = (set?.source ?? 'emoji') === 'png';
+                  const needsEmoji = !isPng;
+                  const ok = !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
+                  if (ok) onJoin();
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const free = FUNNY_TEAM_NAMES.filter(
+                    n => !takenTeamNamesLower.includes(n.trim().toLowerCase())
+                      && n !== teamName
+                  );
+                  if (free.length > 0) {
+                    setTeamName(free[Math.floor(Math.random() * free.length)]);
+                  }
+                }}
+                title={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
+                style={{
+                  padding: '0 14px', borderRadius: 8,
+                  background: 'rgba(234,179,8,0.18)',
+                  border: '1px solid rgba(234,179,8,0.4)',
+                  color: '#FDE68A', fontSize: 18,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >🎲</button>
+            </div>
+            {nameTaken && (
+              <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>
+                {lang === 'de'
+                  ? '⚠ Dieser Name ist schon vergeben — bitte anderen wählen.'
+                  : '⚠ Name already taken — please choose another.'}
+              </div>
+            )}
+            {error && !nameTaken && (
+              <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
+            )}
+            {(() => {
+              const set = activeSetId === 'all' ? null : getSet(activeSetId);
+              const isPng = (set?.source ?? 'emoji') === 'png';
+              const needsEmoji = !isPng;
+              const canJoin = !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
+              return (
+                <CozyBtn color="#22C55E" onClick={onJoin} disabled={!canJoin}>
+                  {t.setup.join[lang]}
+                </CozyBtn>
+              );
+            })()}
           </CozyCard>
         )}
         {step === 'AVATAR' && (() => {

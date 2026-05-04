@@ -8698,31 +8698,60 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               animation: 'contentReveal 0.6s ease both',
             }} />
           )}
-          {/* Layer 2: sharp foreground (contain für CHEESE, cover für legacy fullscreen) */}
-          <div style={{
-            position: cheeseFullscreen ? 'fixed' : 'absolute',
-            top: 0, bottom: 0,
-            left: 0,
-            right: cheeseFullscreen && isCheesePortrait ? '50%' : 0,
-            zIndex: cheeseFullscreen ? 50 : 1,
-            backgroundImage: `url(${img!.url})`,
-            backgroundSize: cheeseFullscreen ? 'contain' : 'cover',
-            backgroundPosition: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
-            backgroundRepeat: 'no-repeat',
-            clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
-            // v3 round 5: fsExpand-Animation ersetzt durch opacity-Fade fuer
-            // weicheres Erscheinen (kein 'fliegt aus mitte'-Effekt).
-            animation: cheeseFullscreen
-              ? 'contentReveal 0.7s ease both'
-              : ((revealed && !cheeseOverlay) ? undefined : 'fsExpand 1.2s var(--qq-ease-smooth) 0.2s both'),
-            transition: 'clip-path 0.8s var(--qq-ease-smooth), background-position 0.4s ease, transform 0.4s ease, right 0.5s ease',
-            transform: cheeseFullscreen
-              ? `scale(${cheeseZoom})${img!.rotation ? ` rotate(${img!.rotation}deg)` : ''}`
-              : `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
-            transformOrigin: cheeseFullscreen ? `${cheesePosX}% ${cheesePosY}%` : 'center',
-            opacity: img!.opacity ?? 1,
-            filter: imgFilter(img!),
-          }} />
+          {/* Layer 2: sharp foreground (contain für CHEESE, cover für legacy fullscreen).
+              2026-05-04 (Wolf): bei cheeseFullscreen sitzt das Bild jetzt in
+              einem Wrapper mit overflow:hidden + borderRadius matching Rahmen,
+              damit es niemals ueber den Bilderrahmen hinausragt — auch nicht
+              bei transform: scale(zoom). */}
+          {cheeseFullscreen ? (
+            <div style={{
+              position: 'fixed',
+              top: 'clamp(10px, 1.4vh, 22px)',
+              bottom: 'clamp(10px, 1.4vh, 22px)',
+              left: 'clamp(12px, 1.6vw, 28px)',
+              right: isCheesePortrait
+                ? `calc(50% + clamp(6px, 0.8vw, 14px))`
+                : 'clamp(12px, 1.6vw, 28px)',
+              zIndex: 50,
+              borderRadius: 22,
+              overflow: 'hidden',
+              clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
+              animation: 'contentReveal 0.7s ease both',
+              transition: 'clip-path 0.8s var(--qq-ease-smooth), right 0.5s ease',
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                backgroundImage: `url(${img!.url})`,
+                backgroundSize: 'contain',
+                backgroundPosition: `${cheesePosX}% ${cheesePosY}%`,
+                backgroundRepeat: 'no-repeat',
+                transform: `scale(${cheeseZoom})${img!.rotation ? ` rotate(${img!.rotation}deg)` : ''}`,
+                transformOrigin: `${cheesePosX}% ${cheesePosY}%`,
+                opacity: img!.opacity ?? 1,
+                filter: imgFilter(img!),
+                transition: 'background-position 0.4s ease, transform 0.4s ease',
+              }} />
+            </div>
+          ) : (
+            <div style={{
+              position: 'absolute',
+              top: 0, bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1,
+              backgroundImage: `url(${img!.url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
+              animation: (revealed && !cheeseOverlay) ? undefined : 'fsExpand 1.2s var(--qq-ease-smooth) 0.2s both',
+              transition: 'clip-path 0.8s var(--qq-ease-smooth), background-position 0.4s ease, transform 0.4s ease, right 0.5s ease',
+              transform: `translate(${img!.offsetX ?? 0}%, ${img!.offsetY ?? 0}%) scale(${img!.scale ?? 1}) rotate(${img!.rotation ?? 0}deg)`,
+              transformOrigin: 'center',
+              opacity: img!.opacity ?? 1,
+              filter: imgFilter(img!),
+            }} />
+          )}
           {/* Layer 3: vignette overlay.
               2026-04-30 v3: Portrait → vignette FULL-screen (statt left-half),
               damit der rechte Streifen denselben warmen dunklen Wash bekommt

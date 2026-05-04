@@ -92,35 +92,10 @@ const CAT_GLOW: Record<string, string> = {
 };
 // (CAT_ACCENT removed — now imported from qqShared)
 
-// SpeedBoltMarker (2026-05-04 Wolf): „Schnellster"-Badge ohne Blitz-Symbol.
-// Kleiner goldener Rondell, drinnen ein Light-Sweep der einmal pro Sekunde
-// von links nach rechts schimmert — moderner als das alte Blitz-Polygon.
-// Props (top, right) bleiben fuer Backward-Compat aller Aufrufer.
-function SpeedBoltMarker({ top, right }: { top: number; right: number }) {
-  return (
-    <span style={{
-      position: 'absolute', top, right,
-      width: 'clamp(22px, 2.4vw, 32px)', height: 'clamp(22px, 2.4vw, 32px)',
-      display: 'inline-block',
-      borderRadius: '50%',
-      background: 'radial-gradient(circle at 30% 28%, #FEF3C7 0%, #FBBF24 55%, #B45309 100%)',
-      boxShadow: '0 0 18px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.5), 0 4px 8px rgba(0,0,0,0.4)',
-      border: '2px solid #FDE68A',
-      animation: 'revealCorrectPop 0.45s var(--qq-ease-bounce) both, qqSpeedGlow 1.6s ease-in-out 0.5s infinite',
-      pointerEvents: 'none',
-      overflow: 'hidden',
-      position: 'absolute',
-    }} aria-label="Schnellster">
-      <span aria-hidden style={{
-        position: 'absolute', top: 0, bottom: 0,
-        left: '-30%', width: '40%',
-        background: 'linear-gradient(105deg, transparent 25%, rgba(255,251,235,0.95) 50%, transparent 75%)',
-        animation: 'qqSpeedSweep 1.4s ease-in-out 0.5s infinite',
-        pointerEvents: 'none',
-      }} />
-    </span>
-  );
-}
+// SpeedBoltMarker entfernt 2026-05-04 v4 — Wolf-Feedback „die gelbe Sonne weiss
+// niemand was sie bedeutet". Goldener Avatar-Rand + goldene Sekunden-Pille
+// reichen als Schnellster-Indikator. Funktion + qqSpeedGlow/qqSpeedSweep
+// Keyframes entfernt.
 
 interface CutoutSpec { emoji: string; top?: string; bottom?: string; left?: string; right?: string; size: number; rot: number; alt?: boolean }
 // Positions avoid the top-right timer (at top:16px right:48px) and top-left category pill.
@@ -2722,9 +2697,6 @@ function MuchoOptionsReveal({
                             background: '#0d0a06',
                           }}
                         />
-                        {isFastest && (
-                          <SpeedBoltMarker top={-12} right={-8} />
-                        )}
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
                         {timeSec != null && isCorrect && akt3On && (
                           <span style={{
@@ -9234,9 +9206,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 : '0 4px 12px rgba(0,0,0,0.4)',
                             }}
                           />
-                          {isFastest && (
-                            <SpeedBoltMarker top={-12} right={-12} />
-                          )}
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 999,
@@ -9796,9 +9765,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 color: tm.color, fontVariantNumeric: 'tabular-nums',
                                 textShadow: '0 0 12px rgba(251,191,36,0.45), 0 1px 2px rgba(0,0,0,0.6)',
                               }}>{pts}</span>
-                              {isFastest && (
-                                <SpeedBoltMarker top={-12} right={-8} />
-                              )}
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
                                 <span style={{
@@ -9983,9 +9949,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     : '0 4px 12px rgba(0,0,0,0.4)',
                                 }}
                               />
-                              {isFastest && (
-                                <SpeedBoltMarker top={-12} right={-12} />
-                              )}
                             </div>
                             {timeSec != null && (
                               <span style={{
@@ -11361,14 +11324,22 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           {/* VS-Badge — der Hero zwischen den beiden Cards. Question: grosse
               VS-Pille mit Marken-Gold-Glow + sanftem Pulse. Reveal: Cross-Fade
               auf MEHR ↑ / WENIGER ↓. Width FIX 380px (wegen langem „WENIGER ↓"
-              + letterSpacing) — User-Bug 2026-04-30 v3 r5. */}
+              + letterSpacing) — User-Bug 2026-04-30 v3 r5.
+              2026-05-04 v4 (Wolf-Bug 'VS nicht mittig'): alignSelf:center +
+              fixierte Hoehe-Buchung damit der Container auf Card-Mitte sitzt
+              (vorher fiel er bei alignItems:stretch + explicit height auf
+              Top-aligned zurueck). minHeight matcht Card-Hoehe damit Card-
+              Hoehe + VS-Hoehe gleich sind und visuell zentriert wirken. */}
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             // FIXED width — keine flex-Expansion + breit genug fuer „WENIGER ↓".
             width: 'clamp(260px, 22vw, 380px)',
             flexShrink: 0,
-            height: 'clamp(120px, 13vw, 180px)',
+            alignSelf: 'center',
             position: 'relative',
+            // Hoehen-Reservierung fuer den 96-148px Kreis + Atemraum,
+            // damit absolutely-positioned Inner-Childs ankern koennen.
+            minHeight: 'clamp(120px, 14vw, 180px)',
           }}>
             {/* Question-State: VS im Kreis */}
             <div style={{
@@ -11635,6 +11606,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}><QQEmojiIcon emoji="⚡"/></div>
       ))}
 
+      {/* 2026-05-04 v4 (Wolf-Bug 'Comeback-Text symmetrisch'): Vorher nur 1 Blitz
+          links, jetzt beidseitig — Title-Block wirkt mittig ausbalanciert. Inline-
+          Flex statt Text-Concatenation damit Blitze als feste Grafik-Anker
+          zentriert mit dem Wort sitzen, nicht als variable Buchstaben. */}
       <div style={{
         fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(28px, 3.6vw, 50px)',
         fontWeight: 900,
@@ -11646,8 +11621,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           : 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
         transition: 'font-size 0.5s var(--qq-ease-bounce)',
         position: 'relative', zIndex: 7,
+        display: 'inline-flex', alignItems: 'center', gap: '0.4em',
+        alignSelf: 'center',
       }}>
-        <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}
+        <QQEmojiIcon emoji="⚡"/>
+        <span>{lang === 'en' ? 'COMEBACK!' : 'COMEBACK!'}</span>
+        <QQEmojiIcon emoji="⚡"/>
       </div>
       {/* B14 (2026-04-29): Sub-Header 'Die Letzten werden die Ersten' komplett
           entfernt — User-Wunsch: 'doppelt im Intro, beides Mal raus'. */}

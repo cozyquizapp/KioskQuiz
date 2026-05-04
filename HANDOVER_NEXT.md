@@ -1,10 +1,18 @@
 # 🤝 Hand-Over für die nächste Session
 
-**Stand:** 2026-05-04 spät · **Letzter Commit:** `d8fd7ca7` · **Branch:** `main`
+**Stand:** 2026-05-04 nacht · **Letzter Commit:** `e4c4f00e` · **Branch:** `main`
 
-Wolf (Jojo) übergibt diese 3 Punkte an die nächste KI. Reihenfolge ist nach
-Wolfs Priorität — Punkt 3 (Sounds) ist der größte Hebel laut Audit 6 für
-Premium-Pricing-Wahrnehmung.
+> **Update 2026-05-04 v3 (laufende Session):**
+> - ✅ **TODO 1 (Lobby-Wordmark)** erledigt — clamp(56,9vw,140) + Akzentlinie unter
+>   QuizIntroOverlay-Titel proportional auf clamp(320,42vw,640).
+> - ✅ **CHEESE-Avatare** raus aus der Card als Flex-Sibling (Wolf-Bug 2026-05-04 PM).
+> - ✅ **Timer-Outro** spielt jetzt zuverlaessig auch bei Frueh-Abbruch (stickyTimer).
+> - ✅ **Connect 4 Timer-Ablauf** blockt Hint-Advance + Submit-Guess + Bot-Ticks.
+> - ✅ **Round-2-Intro Shimmer** angeglichen an Round-1 (roundLineGlow + Shimmer 1.0s).
+> - 🟡 **TODO 3 (Sounds)** vorbereitet — Loudnorm-Skript + Slot-Doku da, Files
+>   muss Wolf/naechste KI von Pixabay tauschen.
+> - 🛌 **TODO 2 (Drafts)** auf Eis (Wolf-Anweisung 2026-05-04 PM): bleibt hier
+>   dokumentiert, aber NICHT jetzt bauen.
 
 > **Pflichtlektüre vor dem ersten Edit:**
 > 1. `MEMORY.md` (im `.claude/projects/...`-Ordner) — User-Profile + Architektur
@@ -98,6 +106,14 @@ als Drafts, sodass Wolf sie im Builder öffnen + finalisieren kann.
 ---
 
 ## TODO 3 — Sound-Lizenz + SFX-Austausch (HÖCHSTE PRIO laut Audit 6)
+
+> **2026-05-04 v3:** Loudnorm-Skript + Slot-Doku angelegt:
+> - `scripts/normalize-sounds.ps1` — ffmpeg-Wrapper, normalisiert alle Files
+>   in `/sounds/` (SFX -16 LUFS, Loops -18 LUFS).
+> - `frontend/public/sounds/SOUND_SLOTS.md` — pro Slot: Verwendung, gewuenschter
+>   Charakter, Pixabay-Suchterme, Anti-Patterns. Workflow „Slot tauschen" am Ende.
+>
+> **Was noch offen:** Files von Pixabay holen + per Skript normalisieren.
 
 **Audit 6 Verdict:** *„Sound bricht den Premium-Eindruck binnen 60 Sekunden.
 Ein Placeholder-WAV auf einem €40-Bezahl-Tool ist ein Trust-Killer."*

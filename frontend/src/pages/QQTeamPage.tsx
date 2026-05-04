@@ -692,7 +692,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     <div style={{
       ...darkPage,
       background: BEAMER_LOBBY_BG,
-    }}>
+    }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color="#FEF08A55" />
@@ -1274,7 +1274,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     : BEAMER_LOBBY_BG;
 
   return (
-    <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }}>
+    <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color={ffColor} />
@@ -1498,7 +1498,11 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
     }}>
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-        padding: '32px 44px', borderRadius: 28,
+        // 2026-05-04 (UI-Audit P0-3): responsive padding statt fix '32px 44px'
+        // damit's auf 320px-iPhone-SE-Schirm nicht ueberlaeuft.
+        padding: 'clamp(20px, 5vw, 32px) clamp(28px, 7vw, 44px)',
+        maxWidth: 'min(360px, 90vw)',
+        borderRadius: 28,
         // Card jetzt opak: dunkler Card-Background mit dezentem Team-Color-Tint,
         // damit der Inhalt klar gegen den Hintergrund steht.
         background: `linear-gradient(180deg, rgba(28,22,16,0.96), rgba(15,12,8,0.96)), linear-gradient(180deg, ${team.color}1f, ${team.color}10)`,
@@ -5895,5 +5899,8 @@ const cozyInput: React.CSSProperties = {
   width: '100%', padding: '14px 16px', borderRadius: 12, marginBottom: 12,
   border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
   color: '#F1F5F9', fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
-  boxSizing: 'border-box', outline: 'none',
+  boxSizing: 'border-box',
+  // 2026-05-04 (UI-Audit P0-2): outline:none entfernt — Browser-Default-Outline
+  // bleibt beim Focus sichtbar (Tab-Navigation lesbar). focusring im /team-CSS
+  // (qq-team-input) hat zusaetzlich einen amber-Outline mit offset 2px.
 };

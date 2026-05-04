@@ -4290,6 +4290,27 @@ button:active:not(:disabled),
    Basis-Klassen fuer wiederkehrende Inline-Pattern.
    Dynamische Farb-/State-Werte (catColor) bleiben inline.
    ======================================== */
+
+/* 2026-05-04 (UI-Audit P0-4): Mobile Tap-Feedback global fuer alle
+   Buttons im /team-Bereich. Kein iOS-Tap-Flash, dafuer subtle scale +
+   opacity beim Druecken — fuehlt sich physisch an. */
+.qq-team-page button,
+.qq-team-page [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.qq-team-page button:not(:disabled):active,
+.qq-team-page [role="button"]:not(:disabled):active {
+  transform: scale(0.95);
+  opacity: 0.85;
+  transition: transform 80ms ease, opacity 80ms ease;
+}
+.qq-team-page button:focus-visible,
+.qq-team-page [role="button"]:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline-offset: 2px;
+}
+
 .qq-team-input {
   width: 100%;
   padding: 14px 16px;
@@ -4299,13 +4320,19 @@ button:active:not(:disabled),
   font-size: 18px;
   font-weight: 700;
   color: #F1F5F9;
+  /* 2026-05-04 (UI-Audit P0-2): outline:none nur fuer Maus, fuer Keyboard
+     bleibt focus-visible-Outline aktiv (Tab-Navigation muss sichtbar sein). */
   outline: none;
   transition: all 0.2s;
   border-style: solid;
   border-width: 2px;
 }
+.qq-team-input:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline-offset: 2px;
+}
 .qq-team-input::placeholder {
-  color: #64748b;
+  color: #94a3b8;
   font-weight: 600;
 }
 

@@ -7,6 +7,7 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
+import { AVATAR_SETS, ALL_SET_ID, getSet, type AvatarSet } from '../avatarSets';
 
 // ─── Color-Helper (HSL-Roundtrip für Glow-Ableitung) ───────────────────────
 function hexToHsl(hex: string): [number, number, number] {
@@ -295,13 +296,133 @@ function TeamCard({
   );
 }
 
+// ─── Set-Picker (horizontale Karten-Reihe) ────────────────────────────────
+function SetCard({
+  set, active, onClick,
+}: { set: AvatarSet; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: '0 0 auto',
+        scrollSnapAlign: 'start',
+        width: 124,
+        // square-ish, but mit Platz fürs Label und die Begleiter
+        minHeight: 144,
+        padding: '14px 10px 12px',
+        borderRadius: 16,
+        background: `radial-gradient(ellipse at 50% 38%, ${set.tint}55 0%, ${set.tint}18 55%, #0d0d0d 100%)`,
+        border: active ? `2px solid ${set.tint}` : `1px solid ${set.tint}33`,
+        boxShadow: active
+          ? `0 0 0 2px ${set.tint}55, 0 0 18px ${set.tint}66`
+          : `0 4px 14px rgba(0,0,0,0.35)`,
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 6,
+        transition: 'all 0.18s ease',
+        transform: active ? 'scale(1.04)' : 'scale(1)',
+        fontFamily: 'inherit',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <div style={{
+        fontSize: 44,
+        lineHeight: 1,
+        filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))',
+        userSelect: 'none',
+      }}>
+        {set.leadEmoji}
+      </div>
+      <div style={{
+        display: 'flex',
+        gap: 4,
+        opacity: 0.7,
+        fontSize: 14,
+        lineHeight: 1,
+      }}>
+        {set.preview.map((e, i) => <span key={i}>{e}</span>)}
+      </div>
+      <div style={{
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 0.6,
+        color: active ? '#fff' : '#cbd5e1',
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
+      }}>
+        {set.label}
+      </div>
+    </button>
+  );
+}
+
+function SetPicker({
+  activeSetId, onPick,
+}: { activeSetId: string; onPick: (set: AvatarSet) => void }) {
+  return (
+    <div style={{ maxWidth: 880, margin: '0 auto 22px' }}>
+      <div style={{
+        color: '#94a3b8',
+        fontSize: 11,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        fontWeight: 800,
+        marginBottom: 8,
+        padding: '0 4px',
+      }}>
+        Avatar-Set
+        <span style={{
+          color: '#475569',
+          marginLeft: 8,
+          fontWeight: 600,
+          letterSpacing: 0.4,
+          textTransform: 'none',
+        }}>
+          {activeSetId === ALL_SET_ID
+            ? '· „Alle" lässt euch frei wählen'
+            : '· Set überschreibt alle 8 Avatare — einzelne lassen sich danach noch ändern'}
+        </span>
+      </div>
+      <div
+        className="qq-avatar-setrow"
+        style={{
+          display: 'flex',
+          gap: 10,
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          padding: '4px 4px 12px',
+          // smooth scroll
+          scrollBehavior: 'smooth',
+          // Scrollbar-Style ist im <style>-Block unten
+        }}
+      >
+        {AVATAR_SETS.map(s => (
+          <SetCard
+            key={s.id}
+            set={s}
+            active={s.id === activeSetId}
+            onClick={() => onPick(s)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Emoji-Picker-Modal (Bottom-Sheet auf Phone) ──────────────────────────
 function EmojiPickerModal({
-  forTeamIdx, currentEmoji, accent, onSelect, onClose,
+  forTeamIdx, currentEmoji, accent, setEmojis, onSelect, onClose,
 }: {
   forTeamIdx: number;
   currentEmoji: string;
   accent: TeamColor;
+  /** Wenn aktives Set != "all": diese 8 Emojis als oberste Reihe */
+  setEmojis?: string[];
   onSelect: (emoji: string) => void;
   onClose: () => void;
 }) {
@@ -428,6 +549,37 @@ function EmojiPickerModal({
             >✓</button>
           )}
         </div>
+
+        {/* Set-Top-Row (nur wenn ein spezifisches Set aktiv ist) */}
+        {setEmojis && setEmojis.length > 0 && (
+          <>
+            <div style={{
+              color: accent.glow,
+              fontSize: 11,
+              letterSpacing: 1,
+              marginBottom: 8,
+              textTransform: 'uppercase',
+              fontWeight: 800,
+            }}>
+              Aus dem Set
+            </div>
+            <div className="qq-avatar-emoji-grid" style={{
+              display: 'grid',
+              gap: 6,
+              marginBottom: 14,
+            }}>
+              {setEmojis.map((em, i) => (
+                <EmojiBtn
+                  key={`set-${i}`}
+                  emoji={em}
+                  accent={accent}
+                  isCurrent={currentEmoji === em}
+                  onClick={() => onSelect(em)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Quick-Picks */}
         <div style={{
@@ -613,6 +765,19 @@ function EmojiBtn({
 const QQAvatarGeneratorPage = () => {
   const [teams, setTeams] = useState<Team[]>(DEFAULT_TEAMS);
   const [pickerOpen, setPickerOpen] = useState<number | null>(null);
+  const [activeSetId, setActiveSetId] = useState<string>(ALL_SET_ID);
+
+  const activeSet = getSet(activeSetId);
+
+  const pickSet = (set: AvatarSet) => {
+    setActiveSetId(set.id);
+    if (set.id === ALL_SET_ID) return;       // „Alle" lässt Teams unverändert
+    // Set überschreibt alle aktuell vorhandenen Teams (nur Emoji, Name + Farbe bleiben).
+    setTeams(prev => prev.map((team, i) => ({
+      ...team,
+      emoji: set.avatars[i % set.avatars.length] ?? team.emoji,
+    })));
+  };
 
   const handleEmojiSelect = (emoji: string) => {
     setTeams(t => t.map((team, i) => (i === pickerOpen ? { ...team, emoji } : team)));
@@ -632,10 +797,11 @@ const QQAvatarGeneratorPage = () => {
   const addTeam = () => {
     if (teams.length >= 8) return;
     const color = TEAM_COLORS[teams.length % TEAM_COLORS.length];
-    const fallback = QQ_AVATARS[teams.length % QQ_AVATARS.length];
+    const setEmoji = activeSet.avatars[teams.length % Math.max(activeSet.avatars.length, 1)];
+    const fallback = QQ_AVATARS[teams.length % QQ_AVATARS.length].emoji;
     setTeams(t => [...t, {
       name: `Team ${t.length + 1}`,
-      emoji: fallback.emoji,
+      emoji: setEmoji ?? fallback,
       color,
     }]);
   };
@@ -682,6 +848,21 @@ const QQAvatarGeneratorPage = () => {
         }
         /* iOS-Tap-Highlight global ausschalten auf dieser Page */
         .qq-avatar-page button { -webkit-tap-highlight-color: transparent; }
+
+        /* Set-Row: dünne, dezente Scrollbar (Desktop) */
+        .qq-avatar-setrow::-webkit-scrollbar { height: 6px; }
+        .qq-avatar-setrow::-webkit-scrollbar-track { background: transparent; }
+        .qq-avatar-setrow::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.10);
+          border-radius: 6px;
+        }
+        .qq-avatar-setrow::-webkit-scrollbar-thumb:hover {
+          background: rgba(255,255,255,0.20);
+        }
+        .qq-avatar-setrow {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.15) transparent;
+        }
       `}</style>
 
       <div className="qq-avatar-page">
@@ -733,6 +914,9 @@ const QQAvatarGeneratorPage = () => {
             Tippt auf den Avatar, um ein Emoji zu wählen
           </p>
         </div>
+
+        {/* Avatar-Set-Picker */}
+        <SetPicker activeSetId={activeSetId} onPick={pickSet} />
 
         {/* Team-Grid */}
         <div style={teamGridStyle}>
@@ -869,6 +1053,7 @@ const QQAvatarGeneratorPage = () => {
           forTeamIdx={pickerOpen}
           currentEmoji={pickerEmoji}
           accent={pickerAccent}
+          setEmojis={activeSet.id === ALL_SET_ID ? undefined : activeSet.avatars}
           onSelect={handleEmojiSelect}
           onClose={() => setPickerOpen(null)}
         />

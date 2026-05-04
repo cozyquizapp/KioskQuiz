@@ -14,6 +14,20 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-10px); }
   }
+  /* SpeedBoltMarker Light-Sweep — laeuft als horizontaler Glanz-Streak
+     einmal pro 1.4s ueber den Gold-Rondell. Ersetzt das alte Blitz-SVG. */
+  @keyframes qqSpeedSweep {
+    0%   { transform: translateX(0);    opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translateX(380%); opacity: 0; }
+  }
+  /* SpeedBoltMarker Glow-Pulse — atmender Goldglow um den Rondell, parallel
+     zum Sweep. Sanfter als der harte Blitz-Look. */
+  @keyframes qqSpeedGlow {
+    0%, 100% { box-shadow: 0 0 18px rgba(251,191,36,0.7),  0 0 6px rgba(251,191,36,0.5),  0 4px 8px rgba(0,0,0,0.4); }
+    50%      { box-shadow: 0 0 28px rgba(251,191,36,0.9),  0 0 12px rgba(251,191,36,0.65), 0 4px 8px rgba(0,0,0,0.4); }
+  }
   @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }
   @keyframes cavspin  { from{transform:rotate(var(--r,0deg))} to{transform:rotate(calc(var(--r,0deg) + 360deg))} }
   @keyframes cavpulse { 0%,100%{transform:scale(1) rotate(var(--r,0deg))} 50%{transform:scale(1.22) rotate(var(--r,0deg))} }

@@ -3079,7 +3079,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
             }}>
-              {cell.jokerFormed ? <QQEmojiIcon emoji="⭐"/> : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
+              {cell.jokerFormed ? <QQEmojiIcon emoji="🃏"/> : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
             </div>
           );
         })

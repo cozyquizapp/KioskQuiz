@@ -1044,15 +1044,19 @@ export interface QQAck {
 // die neuen CozyCast-Tiere. `image` zeigt auf die PNGs unter
 // /avatars/cozy-cast/avatar-{slug}.png. Die Reihenfolge: erste 4 sind die
 // kontrastreichsten Picks für kleine Team-Counts.
+// 2026-05-04 (Wolf): Farben aufgefrischt fuer maximale Unterscheidbarkeit
+// aus 8m Pub-Distanz. Pink→Rose (saturierter, weiter weg von Red), Blau
+// heller (weiter weg von Purple), Teal→Cyan (klarer kuehl), Orange→Amber
+// (mehr gold-orange, weiter weg von Red).
 export const QQ_AVATARS = [
-  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#FA507F', hoodie: '#0EA5E9' },
-  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#9DCB2F', hoodie: '#7C2D12' },
-  { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#266FD3', hoodie: '#FDE047' },
-  { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#9A65D5', hoodie: '#EAB308' },
-  { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#FEC814', hoodie: '#5B21B6' },
-  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#68B4A5', hoodie: '#F59E0B' },
-  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#FF751F', hoodie: '#581C87' },
-  { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#F84326', hoodie: '#166534' },
+  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#F43F5E', hoodie: '#0EA5E9' },
+  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#84CC16', hoodie: '#7C2D12' },
+  { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#3B82F6', hoodie: '#FDE047' },
+  { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#A855F7', hoodie: '#EAB308' },
+  { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#FACC15', hoodie: '#5B21B6' },
+  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#14B8A6', hoodie: '#F59E0B' },
+  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#F59E0B', hoodie: '#581C87' },
+  { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#EF4444', hoodie: '#166534' },
 ] as const;
 
 export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed: string };

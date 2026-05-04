@@ -92,25 +92,32 @@ const CAT_GLOW: Record<string, string> = {
 };
 // (CAT_ACCENT removed — now imported from qqShared)
 
-// SpeedBoltMarker: goldener Blitz-Badge fuer „schnellster Voter". Inline-SVG statt
-// Unicode-⚡ — sonst rendert das Browser-Emoji-Fallback je nach OS als gelbes
-// Polygon mit eigenem Hintergrund (Apple Color Emoji etc).
+// SpeedBoltMarker (2026-05-04 Wolf): „Schnellster"-Badge ohne Blitz-Symbol.
+// Kleiner goldener Rondell, drinnen ein Light-Sweep der einmal pro Sekunde
+// von links nach rechts schimmert — moderner als das alte Blitz-Polygon.
+// Props (top, right) bleiben fuer Backward-Compat aller Aufrufer.
 function SpeedBoltMarker({ top, right }: { top: number; right: number }) {
   return (
     <span style={{
       position: 'absolute', top, right,
       width: 'clamp(22px, 2.4vw, 32px)', height: 'clamp(22px, 2.4vw, 32px)',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      display: 'inline-block',
       borderRadius: '50%',
       background: 'radial-gradient(circle at 30% 28%, #FEF3C7 0%, #FBBF24 55%, #B45309 100%)',
-      boxShadow: '0 0 14px rgba(251,191,36,0.55), 0 4px 8px rgba(0,0,0,0.4)',
+      boxShadow: '0 0 18px rgba(251,191,36,0.7), 0 0 6px rgba(251,191,36,0.5), 0 4px 8px rgba(0,0,0,0.4)',
       border: '2px solid #FDE68A',
-      animation: 'revealCorrectPop 0.45s var(--qq-ease-bounce) both',
+      animation: 'revealCorrectPop 0.45s var(--qq-ease-bounce) both, qqSpeedGlow 1.6s ease-in-out 0.5s infinite',
       pointerEvents: 'none',
+      overflow: 'hidden',
+      position: 'absolute',
     }} aria-label="Schnellster">
-      <svg viewBox="0 0 24 24" width="62%" height="62%" aria-hidden style={{ display: 'block' }}>
-        <path d="M13.5 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#7C2D12" stroke="#FFFBEB" strokeWidth="0.8" strokeLinejoin="round"/>
-      </svg>
+      <span aria-hidden style={{
+        position: 'absolute', top: 0, bottom: 0,
+        left: '-30%', width: '40%',
+        background: 'linear-gradient(105deg, transparent 25%, rgba(255,251,235,0.95) 50%, transparent 75%)',
+        animation: 'qqSpeedSweep 1.4s ease-in-out 0.5s infinite',
+        pointerEvents: 'none',
+      }} />
     </span>
   );
 }
@@ -2397,7 +2404,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               boxShadow: filled ? `0 0 12px ${isStar ? '#F59E0B44' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
               animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
             }}>
-              {isStar ? <QQEmojiIcon emoji="⭐"/> : isPin ? <QQEmojiIcon emoji="🏯"/> : ''}
+              {isStar ? <QQEmojiIcon emoji="🃏"/> : isPin ? <QQEmojiIcon emoji="🏯"/> : ''}
             </div>
           );
         }))}
@@ -6024,76 +6031,73 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         if (!winnerTeam) return null;
         const isCoTie = winners.length > 1;
         const wPts = points[winnerTeam.id];
+        // 2026-05-04 (Wolf): Winner-Card war als grosse fixed-bottom Pille
+        // ueber den Voter-Avataren — sie ueberdeckte ~50% des Reveal-Inhalts.
+        // Jetzt: kompakte horizontale Banner-Pille, fixed top-center, eine
+        // einzige Zeile mit Avatar + Name + Total-Punkte + Mini-Breakdown
+        // als Pille-Reihe rechts. Avatar-Grid darunter bleibt frei.
+        const breakdown: Array<{ icon: string; n: number; label: { de: string; en: string }; bg: string }> = [];
+        if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
+        if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
+        if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(251,191,36,0.22)' });
         return (
           <div style={{
             position: 'fixed',
-            bottom: 'clamp(20px, 3vh, 36px)',
+            top: 'clamp(72px, 9vh, 120px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 70,
-            maxWidth: 'min(900px, 92vw)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-            padding: 'clamp(16px, 2vh, 28px) clamp(24px, 3vw, 44px)',
-            borderRadius: 24,
-            background: `linear-gradient(135deg, ${winnerTeam.color}26, ${winnerTeam.color}08)`,
-            border: `3px solid ${winnerTeam.color}88`,
-            boxShadow: `0 0 60px ${winnerTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
-            animation: 'revealWinnerIn 0.65s var(--qq-ease-bounce) 0.7s both',
+            maxWidth: 'min(820px, 94vw)',
+            display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6vw, 22px)',
+            padding: 'clamp(8px, 1vh, 14px) clamp(16px, 2vw, 28px)',
+            borderRadius: 999,
+            background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
+            border: `2px solid ${winnerTeam.color}aa`,
+            boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
+            animation: 'revealWinnerIn 0.55s var(--qq-ease-bounce) 0.7s both',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
           }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(16px, 2vw, 28px)',
-            }}>
-              <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(56px, 7vw, 96px)'} style={{
-                boxShadow: `0 0 28px ${winnerTeam.color}88`,
-                animation: 'celebShake 0.6s ease 1.1s both',
-              }} />
-              <div style={{ minWidth: 0 }}>
-                <TeamNameLabel
-                  name={winnerTeam.name}
-                  withTeamPrefix
-                  maxLines={2}
-                  shrinkAfter={18}
-                  color={winnerTeam.color}
-                  fontWeight={900}
-                  fontSize="clamp(28px, 4vw, 56px)"
-                  style={{
-                    lineHeight: 1.1,
-                    textShadow: `0 0 30px ${winnerTeam.color}55`,
-                  }}
-                />
-                <div style={{
-                  color: '#cbd5e1', fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 900,
-                  marginTop: 4,
-                }}>
-                  {isCoTie
-                    ? (lang === 'de' ? `Mit ${winners.length - 1} weiteren — meiste Teilpunkte` : `Tied with ${winners.length - 1} more — most partial points`)
-                    : (lang === 'de' ? 'meiste Teilpunkte!' : 'most partial points!')}
+            <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(38px, 4.4vw, 60px)'} style={{
+              boxShadow: `0 0 18px ${winnerTeam.color}88`,
+              flexShrink: 0,
+            }} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <TeamNameLabel
+                name={winnerTeam.name}
+                maxLines={1}
+                shrinkAfter={18}
+                color={winnerTeam.color}
+                fontWeight={900}
+                fontSize="clamp(16px, 1.9vw, 26px)"
+                style={{ lineHeight: 1.1 }}
+              />
+              {isCoTie && (
+                <div style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', color: '#94a3b8', fontWeight: 700, marginTop: 1 }}>
+                  {lang === 'de' ? `+${winners.length - 1} weitere` : `+${winners.length - 1} more`}
                 </div>
-              </div>
+              )}
             </div>
-            {/* Teilpunkte-Breakdown */}
-            <div style={{
-              display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center',
-              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 700, color: '#e2e8f0',
-            }}>
-              {(wPts?.foundReal ?? 0) > 0 && (
-                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(34,197,94,0.18)' }}>
-                  ✅ {wPts!.foundReal} · {lang === 'de' ? 'echte Antwort' : 'real answer'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              {breakdown.map((b, i) => (
+                <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
+                  padding: '4px 9px', borderRadius: 999,
+                  background: b.bg,
+                  fontSize: 'clamp(12px, 1.3vw, 15px)', fontWeight: 900, color: '#f1f5f9',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {b.icon} {b.n}
                 </span>
-              )}
-              {(wPts?.blufferBonus ?? 0) > 0 && (
-                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(244,114,182,0.18)' }}>
-                  🎭 {wPts!.blufferBonus} · {lang === 'de' ? 'Reinfälle' : 'fooled'}
-                </span>
-              )}
-              {(wPts?.truthAccident ?? 0) > 0 && (
-                <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(251,191,36,0.18)' }}>
-                  ⚡ {wPts!.truthAccident} · {lang === 'de' ? 'Zufallstreffer' : 'lucky hit'}
-                </span>
-              )}
-              <span style={{ padding: '6px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.10)', fontWeight: 900 }}>
-                {wPts?.total ?? 0} {lang === 'de' ? 'gesamt' : 'total'}
+              ))}
+              <span style={{
+                padding: '5px 12px', borderRadius: 999,
+                background: `${winnerTeam.color}33`,
+                border: `1.5px solid ${winnerTeam.color}88`,
+                fontSize: 'clamp(14px, 1.5vw, 18px)', fontWeight: 900,
+                color: winnerTeam.color,
+                whiteSpace: 'nowrap',
+              }}>
+                {wPts?.total ?? 0} {lang === 'de' ? 'Pkt' : 'pts'}
               </span>
             </div>
           </div>
@@ -14069,18 +14073,21 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // (klarer als drop-shadow filter). Stack-Tile setzt zwei
                     // gestaffelte Layer drunter — sieht aus wie 2 Plaettchen
                     // gestapelt. Glow-States werden kombiniert mit dem Base-3D.
-                    // Base-3D-Hard-Shadow `2px 3px 0 rgba(0,0,0,0.5)` fuer alle
-                    // besetzten Tiles — wirkt wie 'Plaettchen liegt auf Tisch'.
-                    // Glow-States werden additiv kombiniert.
+                    // Base-3D fuer alle besetzten Tiles. 2026-05-04 (Wolf):
+                    // hart-schwarzer Edge-Shadow sah auf hellen Tiles (Gelb/
+                    // Orange) wie Schmutz aus. Jetzt: kombiniert weicheres
+                    // Hard-Edge (alpha 0.32) + soft-blur-Schatten drunter.
+                    // Look bleibt 'Plaettchen liegt auf Tisch' aber sauber
+                    // auf allen Farben. Glow-States additiv.
                     boxShadow: isStuck
                       ? `3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
                       : isAccent
-                        ? `2px 3px 0 rgba(0,0,0,0.5), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
+                        ? `1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 ${isFlash ? 28 : 24}px ${team.color}bb`
                         : showStar
-                          ? '2px 3px 0 rgba(0,0,0,0.5), 0 0 10px rgba(251,191,36,0.5)'
+                          ? '1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 10px rgba(251,191,36,0.5)'
                           : isHighlighted
-                              ? `2px 3px 0 rgba(0,0,0,0.5), 0 0 14px ${team.color}88`
-                              : '2px 3px 0 rgba(0,0,0,0.5)',
+                              ? `1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28), 0 0 14px ${team.color}88`
+                              : '1px 2px 0 rgba(0,0,0,0.32), 0 5px 10px rgba(0,0,0,0.28)',
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
@@ -14306,7 +14313,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {showStar ? <QQEmojiIcon emoji="⭐"/> : (team && (() => {
+                  {showStar ? <QQEmojiIcon emoji="🃏"/> : (team && (() => {
                     // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
                     // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
@@ -14614,7 +14621,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
                     zIndex: 10,
                   }}
-                ><QQEmojiIcon emoji="⭐"/></span>
+                ><QQEmojiIcon emoji="🃏"/></span>
               )}
               {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
               {(streaks[t.id] ?? 0) >= 3 && (

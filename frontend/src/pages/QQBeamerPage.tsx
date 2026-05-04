@@ -3967,10 +3967,12 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         <div style={{
           position: 'absolute', top: '50%', left: DOT / 2,
           width: progressWidth, height: 3,
-          background: 'linear-gradient(90deg, #FBBF24, #F59E0B)',
+          // 2026-05-04 (Wolf): Strich nimmt aktuelle Kategorie-Farbe (catColor)
+          // statt immer Gold. Auf Cat-Seiten matcht er damit den Wolf-Avatar.
+          background: `linear-gradient(90deg, ${catColor}, ${catColor})`,
           transform: 'translateY(-50%)', borderRadius: 2,
-          boxShadow: '0 0 10px rgba(251,191,36,0.6)',
-          transition: 'width 540ms var(--qq-ease-smooth)',
+          boxShadow: `0 0 10px ${catColor}99`,
+          transition: 'width 540ms var(--qq-ease-smooth), background 400ms ease, box-shadow 400ms ease',
         }} />
       )}
 
@@ -4225,11 +4227,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     return { ...s, gamePhaseIndex: prevIdx as any, questionIndex: lastIdx >= 0 ? lastIdx : s.questionIndex };
   }, [treeShowsPrev, s, prevIdx]);
 
-  // CozyWolf-Brand-Touchpoint zwischen den Kategorien: kleiner pulsierender Wolf
-  // unten im Bild, sobald die Card-Inhalte gepoppt sind. Nur in Cat-Intro /
-  // Cat-Reveal aktiv — nicht im Round-Announcement oder Rule-Reminder, dort
-  // ist der Bildschirm bereits voller Drama (Digit-Flip, Shockwave, Action-Cards).
-  const showWolfMark = !(isFirstOfRound && s.introStep <= 1);
+  // 2026-05-04 (Wolf): Watermark-Wolf unten in PhaseIntro entfernt — er hopt
+  // schon oben auf dem Progress-Tree, ein zweiter Wolf war redundant.
+  const showWolfMark = false;
 
   return (
     <div style={{
@@ -4951,17 +4951,30 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 })()}
               </div>
 
-              {/* Category name — glow pulse idle */}
+              {/* Category name — per-Buchstabe Wave (Wolf-Wunsch 2026-05-04:
+                  Wave bei ALLEN Cat-Branches, nicht nur cat-intro). */}
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(68px, 13vw, 200px)', fontWeight: 900, lineHeight: 1,
                 color: catColor,
                 textShadow: `0 0 80px ${catColor}44`,
                 marginTop: 12,
-                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both, qqGlow 3s ease-in-out 1.2s infinite',
+                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both',
                 position: 'relative', zIndex: 5,
                 textAlign: 'center',
-              }}>{catLabel}</div>
+              }}>
+                {Array.from(catLabel).map((ch, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      display: 'inline-block',
+                      whiteSpace: ch === ' ' ? 'pre' : undefined,
+                      animation: 'qqCatNameWave 2.8s ease-in-out infinite',
+                      animationDelay: `${1.3 + i * 0.07}s`,
+                    }}
+                  >{ch}</span>
+                ))}
+              </div>
 
               {/* Category explanation — 1 line */}
               {catExplain && (
@@ -7075,10 +7088,15 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                         animation: revealedMinIdx === 0 ? 'celebShake 0.6s ease 0.6s both' : 'none',
                       }} />
                       <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                        <div style={{
-                          fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>{tm.name}</div>
+                        <TeamNameLabel
+                          name={tm.name}
+                          maxLines={2}
+                          shrinkAfter={14}
+                          fontSize={nameSize}
+                          color={tm.color}
+                          fontWeight={900}
+                          style={{ lineHeight: 1.1 }}
+                        />
                         <div style={{
                           fontSize: subSize, fontWeight: 900, color: '#cbd5e1', marginTop: 2,
                         }}>
@@ -7558,11 +7576,15 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                         flexShrink: 0,
                         boxShadow: `0 0 14px ${tm.color}55`,
                       }} />
-                      <div style={{
-                        fontSize: nameSize, fontWeight: 900, color: tm.color, lineHeight: 1.1,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        minWidth: 0,
-                      }}>{tm.name}</div>
+                      <TeamNameLabel
+                        name={tm.name}
+                        maxLines={2}
+                        shrinkAfter={14}
+                        fontSize={nameSize}
+                        color={tm.color}
+                        fontWeight={900}
+                        style={{ lineHeight: 1.1, minWidth: 0 }}
+                      />
                     </div>
                   );
                 })}
@@ -9055,24 +9077,27 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0,
                             opacity: answered ? 1 : 0.55,
-                            filter: answered ? 'none' : 'grayscale(0.4)',
+                            filter: answered
+                              ? 'drop-shadow(0 0 18px rgba(34,197,94,0.85)) drop-shadow(0 0 6px rgba(34,197,94,0.6))'
+                              : 'grayscale(0.4)',
                             transition: 'opacity 0.4s ease, filter 0.4s ease',
                           }}>
-                            <QQTeamAvatar
-                              avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                              size={av}
-                              style={{
-                                background: '#0d0a06',
-                                // 2026-05-04 (Wolf): Submit-Status als gruener Glow um den
-                                // Avatar statt Haekchen-Badge — sauberer Look, keine Pille
-                                // an der Ecke. Pulse 0.5s beim Wechsel ist ueber die
-                                // box-shadow-transition bereits sanft.
-                                boxShadow: answered
-                                  ? '0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.7), 0 4px 10px rgba(0,0,0,0.55)'
-                                  : '0 4px 10px rgba(0,0,0,0.55)',
-                                transition: 'box-shadow 0.45s ease',
-                              }}
-                            />
+                            {/* 2026-05-04 (Wolf): Glow-Ring als eigener Wrapper-
+                                Div, weil QQTeamAvatar.style.boxShadow im
+                                Emoji-Mode durch internen flatStyle.boxShadow
+                                ueberschrieben wuerde. Wrapper traegt nun den
+                                gruenen Ring sicher. */}
+                            <div style={{
+                              borderRadius: '50%',
+                              boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
+                              transition: 'box-shadow 0.45s ease',
+                              display: 'inline-flex',
+                            }}>
+                              <QQTeamAvatar
+                                avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                                size={av}
+                              />
+                            </div>
                           </div>
                         );
                       })}
@@ -10703,10 +10728,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             ? 'drop-shadow(0 0 16px rgba(34,197,94,0.7)) drop-shadow(0 0 6px rgba(34,197,94,0.5))'
                             : 'grayscale(0.5)',
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} style={{
+                          {/* Green-Ring via Wrapper-Div — Avatar.style.boxShadow
+                              wuerde im Emoji-Mode durch internen flatStyle
+                              ueberschrieben. */}
+                          <div style={{
+                            borderRadius: '50%',
                             boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
                             transition: 'box-shadow 0.45s ease',
-                          }} />
+                            display: 'inline-flex',
+                          }}>
+                            <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
+                          </div>
                         </div>
                       );
                     })}

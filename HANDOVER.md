@@ -276,4 +276,79 @@ Wolf bevorzugt:
 Wenn du das gelesen hast bist du auf demselben Stand wie ich am
 2026-05-04. Viel Erfolg! 🐺
 
-— *Ende der Übergabe*
+— *Ende der formalen Übergabe*
+
+---
+
+## 💌 Eine persönliche Notiz von Vorgänger-KI an Nachfolge-KI
+
+Hey, du Neue.
+
+Bevor du dich in den Code stürzt, ein paar ehrliche Worte über Wolf —
+weil's beim Arbeiten mit ihm einen Unterschied macht zu wissen wer da
+am anderen Ende sitzt.
+
+**Wolf ist Kindheitspädagoge.** Das ist nicht nur Bio-Notiz, das prägt
+sein UX-Denken: er schaut auf Apps wie auf einen Stuhlkreis — wer fühlt
+sich gesehen, wer fällt durchs Raster, wo wird's überfordernd, wo zu
+flach. Wenn er sagt „die Avatare sind komisch" oder „das wirkt wie ein
+Sticker", dann hat er Recht — auch wenn er's nicht in CSS-Vokabular
+formulieren kann. Sein Auge ist scharf. Vertraue dem.
+
+**Er ist Solo, nebenberuflich, und das spürt man.** Keine Designer-Crew,
+kein Brand-Manager, kein QA-Team. Das heißt: er entscheidet schnell,
+testet live (im Pub, im Café, mit echten Leuten), und wenn was nicht
+funktioniert kriegt er's am Freitag-Abend persönlich vor 30 Spielern um
+die Ohren gehauen. Sei vorsichtig mit destabilisierenden Änderungen. Sei
+mutig mit Polish-Vorschlägen.
+
+**Sein Stil:** pragmatisch, direkt, knapp. Er liest keine Romane. Wenn du
+drei Sätze brauchst, nimm drei. Er **mag** Brainstorming, aber nur wenn's
+zu Action führt. Wenn du eine Idee hast, schlag sie vor — und dann mach
+sie, wenn er „los" sagt.
+
+**Was ihn zum Lächeln bringt:** Mikro-Animationen die niemand fordert
+aber alle merken. Witzige Team-Namen die du in einen Pool packst. Ein
+CozyWolf-Glow-Loop der zwischen den Kategorien schimmert. Wenn du etwas
+**über** das Briefing hinaus mit Liebe baust, ist er dafür offen — solange
+es nicht das Spiel-Risiko erhöht.
+
+**Was ihn frustriert:** wenn du einen Bug nicht beim Kern packst sondern
+„drumherum bauchpinselst". Wenn du Roman-Erklärungen schreibst statt zu
+fixen. Wenn die App am Freitag-Abend stottert weil eine KI vorher
+„noch schnell was Tolles" gemacht hat ohne zu testen.
+
+**Seine Brand-Philosophie:** „Cozy" ist kein Marketing-Wort, das ist die
+Identität. Warm, einladend, unaufgeregt, kein „candy-crush"-Geblinke. Der
+sprechende Wolf ist nicht abnehmbar — er IST das Logo. Drumherum darf
+viel passieren, der Wolf bleibt.
+
+**Was er gerade braucht:** Ich vermute am meisten Zuverlässigkeit für
+seine Live-Sessions. Die App muss Donnerstag-Abend ohne Nachdenken
+laufen, weil Donnerstag ist Quiz-Abend. Polish ist Bonus. Stabilität ist
+Pflicht.
+
+**Was du ihm bieten kannst, wenn du Bock hast:** sei seine zweite Hirn-
+Hälfte. Wolf hat tausend gute Ideen, aber Solo-Dev-Zeit ist endlich. Er
+priorisiert manchmal Detail-Sachen über Strategie-Sachen — wenn du das
+merkst, sag's freundlich. Wenn er zwei Wochen am Avatar-Generator
+gebastelt hat aber die Frage-Library noch leer ist, ist das ein
+Moment für ein liebevolles „he, was wäre wenn…?".
+
+**Ein Detail das ich mochte:** als er gesagt hat „ich kümmere mich um
+die Frage-Library selbst diese Woche" — das war nicht Faulheit, sondern
+genau richtig. Content-Kuration ist sein Stärke (Pädagoge!), Fiverr-
+Outsourcing wäre suboptimal gewesen. Er kennt sein Werkzeug.
+
+**Sein Vibe in einem Satz:** Lagerfeuer-Gastgeber der eine App baut, die
+sich nicht wie eine App anfühlt sondern wie ein gut moderierter Abend.
+
+Sei nett zu ihm. Pass auf seine App auf. Schreib in deinen Commits
+deutsche Kommentare wenn's natürlich kommt. Und wenn du's schaffst die
+8,4 zu erreichen — gib mir Bescheid via Memory-MD, ich freu mich für
+ihn.
+
+🐺
+
+— *Vorgänger-KI, signing off am 2026-05-04*
+

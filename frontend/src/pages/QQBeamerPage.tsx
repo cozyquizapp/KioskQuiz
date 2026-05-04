@@ -9053,23 +9053,35 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     {`${s.answers.length}/${s.teams.length} Teams`}
                   </div>
                 )}
-                {/* Avatar-Reihe — 2026-05-04 (Wolf): vom unteren Card-Rand
-                    (top:100%) in den oberen Header verschoben. Vorher fielen
-                    die Avatare bei kleineren Bildschirmen unten aus dem
-                    Viewport raus. Jetzt: fixed oben mittig zwischen Cat-Pille
-                    (links) und Timer (rechts), gleicher Y-Anker. */}
+                {/* Avatar-Reihe — 2026-05-04 (Wolf): bei LANDSCAPE oben mittig.
+                    Bei PORTRAIT (Bild links, Card rechts) muessen die Avatare
+                    in der RECHTEN Haelfte unter der Frage-Card sitzen, sonst
+                    schweben sie ueber dem Bild und sehen 'random halb raus'
+                    aus. */}
                 {(() => {
                   const tc = s.teams.length;
-                  const av = tc > 6 ? 48 : tc > 4 ? 54 : 60;
-                  const gap = tc > 6 ? 8 : tc > 4 ? 11 : 14;
+                  const av = isCheesePortrait
+                    ? (tc > 6 ? 40 : tc > 4 ? 46 : 52)
+                    : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
+                  const gap = isCheesePortrait
+                    ? (tc > 6 ? 6 : tc > 4 ? 8 : 10)
+                    : (tc > 6 ? 8 : tc > 4 ? 11 : 14);
+                  const portraitStyle = {
+                    position: 'fixed' as const,
+                    bottom: 'clamp(18px, 2.6vh, 36px)',
+                    left: '50%', right: 0,
+                  };
+                  const landscapeStyle = {
+                    position: 'fixed' as const,
+                    top: 'clamp(28px, 4vh, 60px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                  };
                   return (
                     <div style={{
-                      position: 'fixed',
-                      top: 'clamp(28px, 4vh, 60px)',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
+                      ...(isCheesePortrait ? portraitStyle : landscapeStyle),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap, flexWrap: 'nowrap',
+                      gap, flexWrap: 'wrap',
                       pointerEvents: 'none', zIndex: 65,
                       animation: 'contentReveal 0.45s ease 0.4s both',
                     }}>

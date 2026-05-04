@@ -2854,15 +2854,18 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
             textShadow: '0 0 40px rgba(251,191,36,0.22), 0 4px 24px rgba(0,0,0,0.5)',
           }}>{title}</div>
           {/* Akzentlinie — Marken-Gold-Highlight unter dem Titel.
+              2026-05-04: Wolf-Feedback „Streifen zu kurz" — Breite proportional zur
+              Titel-Fontgroesse (~5x), softerer Fade an den Enden statt harter Cutoff.
               Continuous shimmer (gleiche Sprache wie Round-Intro-Divider) — bewegt sich
               unaufhoerlich von links nach rechts, damit die Folie auch bei 30s Wartezeit
               nicht statisch wirkt. */}
           <div style={{
-            width: 'clamp(180px, 22vw, 340px)', height: 3, borderRadius: 999,
-            background: 'linear-gradient(90deg, transparent, #fbbf24 50%, transparent)',
+            width: 'clamp(320px, 42vw, 640px)', height: 2, borderRadius: 999,
+            background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.6) 25%, #fbbf24 50%, rgba(251,191,36,0.6) 75%, transparent 100%)',
             backgroundSize: '200% 100%',
-            boxShadow: '0 0 12px rgba(251,191,36,0.5)',
-            animation: 'qqIntroAccentIn 0.8s ease 1.0s both, qqIntroAccentShimmer 3s linear 1.8s infinite',
+            boxShadow: '0 0 14px rgba(251,191,36,0.45)',
+            opacity: 0.85,
+            animation: 'qqIntroAccentIn 0.8s ease 1.0s both, qqIntroAccentShimmer 3.5s linear 1.8s infinite',
           }} />
         </div>
         {/* Wolf + Sprechblase — Wolf bleibt das Logo-Zentrum, Sprechblase im Cozy-Card-Stil */}

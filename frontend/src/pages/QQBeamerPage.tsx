@@ -14782,14 +14782,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     }} />
                   </>
                 )}
-                {/* 2026-05-05 (Wolf-Skizze 'stapeln so stacken'): konzentrische
-                    Inner-Layer pro extra Stack ab Stack-Count 2. Jedes Layer:
-                    eigene Goldborder + leicht dunklerer Hintergrund + Inset-3D.
-                    1 Stack = nur das outer Tile (kein Inner-Layer).
-                    2 Stack = 1 Inner-Layer.
-                    3 Stack = 2 Inner-Layer. */}
-                {team && stackCount >= 2 && Array.from({ length: stackCount - 1 }).map((_, layerIdx) => {
-                  const layerNum = layerIdx + 1; // 1..N
+                {/* 2026-05-05 v2 (Wolf-Klaerung 'erstes stapeln schon mit
+                    inner layer, max 3 pro feld'): konzentrische Inner-Layer
+                    pro Stack — 1 Stack = 1 Inner, 2 Stack = 2 Inner, 3 Stack
+                    = 3 Inner. Avatar in der Mitte schrumpft entsprechend.
+                    Max-Cap 3 (Spielregel). */}
+                {team && stackCount >= 1 && Array.from({ length: Math.min(stackCount, 3) }).map((_, layerIdx) => {
+                  const layerNum = layerIdx + 1; // 1..3
                   const insetPx = Math.max(4, cellSize * (0.08 * layerNum));
                   const layerRadius = Math.max(2, cellRadius - insetPx * 0.5);
                   const tColor = bc(team.id);
@@ -14978,11 +14977,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
                     // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
                     // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
-                    // 2026-05-05 v2 (Wolf-Skizze 'avatar dynamisch kleiner in
-                    // der mitte bei stack'): Avatar schrumpft pro extra Stack
-                    // damit er im innersten Inner-Layer Platz hat.
-                    const avFactor = stackCount >= 3 ? 0.50
-                      : stackCount === 2 ? 0.66
+                    // 2026-05-05 v3 (Wolf 'erstes stapeln schon kleiner, max 3'):
+                    // Avatar schrumpft pro Stack damit er ins jeweils innerste
+                    // Inner-Layer passt. Default = 0.86, pro Stack ca. 0.14
+                    // weniger.
+                    const avFactor = stackCount >= 3 ? 0.42
+                      : stackCount === 2 ? 0.55
+                      : stackCount === 1 ? 0.70
                       : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     // 2026-05-05 v3 (Wolf-Bug 'gestapelte felder ueberladen,

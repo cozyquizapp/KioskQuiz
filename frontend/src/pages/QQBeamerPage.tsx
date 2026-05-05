@@ -11867,12 +11867,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // angrenzend an die jeweilige Pille (nicht IN die Pille).
               // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
               // Label lesbar bleibt.
-              // 2026-05-05 v4 (Wolf 'cards hoeher'): Y-translates entsprechend
-              // tiefer damit Avatar an die nun hoeher sitzenden Pillen fliegt.
+              // 2026-05-05 v5 (Wolf 'avatar verdeckt pille'): Avatar landet
+              // jetzt KLAR ausserhalb des Pillen-Stacks — 'higher' weit
+              // OBERHALB der MEHR-Pille (zwischen Frage-Card und MEHR),
+              // 'lower' KNAPP UNTER der WENIGER-Pille. So bleiben beide
+              // Pille-Labels frei lesbar, der Avatar sitzt klar an seiner
+              // Wahl-Seite (oben = MEHR, unten = WENIGER).
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-380px, -36vh, -270px)) scale(0.55)`
+                ? `translate(${xCenter}px, clamp(-680px, -48vh, -460px)) scale(0.55)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-310px, -29vh, -220px)) scale(0.55)`
+                  ? `translate(${xCenter}px, clamp(-130px, -12vh, -70px)) scale(0.55)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{
@@ -11914,15 +11918,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
                     }}>{correct ? '✓' : '✕'}</div>
                   )}
-                  <TeamNameLabel
-                    name={tm.name}
-                    maxLines={2}
-                    shrinkAfter={14}
-                    color={tm.color}
-                    fontWeight={900}
-                    fontSize="clamp(14px, 1.5vw, 20px)"
-                    style={{ maxWidth: 160, textAlign: 'center' }}
-                  />
+                  {/* 2026-05-05 (Wolf 'teamname brauchst du da nicht, nur
+                      avatar'): Team-Name-Label entfernt — Avatar reicht zur
+                      Identifikation, Wolf moderiert eh und kennt die Teams. */}
                   {/* Winnings-Slot mit RESERVIERTER Höhe — gleich groß in question und
                       reveal, damit das Avatar-Grid nicht um die Pill-Höhe nach unten
                       wächst und die Anchor/Subject-Cards re-zentriert werden. */}

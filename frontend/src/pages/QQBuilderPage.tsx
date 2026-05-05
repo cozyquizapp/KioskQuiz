@@ -1837,10 +1837,17 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
       <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#94a3b8' }}>
         📍 Teams pinnen einen Ort auf der Weltkarte. Nähster Pin gewinnt.
       </div>
-      <div>
-        <label style={labelStyle}>Ort-Name (für Auflösung)</label>
-        <input value={bt.targetLabel ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, targetLabel: e.target.value }, answer: e.target.value })}
-          style={inputStyle} placeholder="z.B. Jungfernstieg, Hamburg" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div>
+          <label style={labelStyle}>Ort-Name (DE)</label>
+          <input value={bt.targetLabel ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, targetLabel: e.target.value }, answer: e.target.value })}
+            style={inputStyle} placeholder="z.B. Jungfernstieg, Hamburg" />
+        </div>
+        <div>
+          <label style={labelStyle}>Place name (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+          <input value={q.answerEn ?? ''} onChange={e => onChange({ ...q, answerEn: e.target.value })}
+            style={inputStyle} placeholder="e.g. Jungfernstieg, Hamburg" />
+        </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>

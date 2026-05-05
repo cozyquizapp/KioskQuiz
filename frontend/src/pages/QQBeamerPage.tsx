@@ -6928,41 +6928,109 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         })}
       </div>
 
-      {/* Reveal: Antwort + Winner */}
-      {revealed && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-          padding: 'clamp(16px, 2vh, 28px)',
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
-          border: '2px solid rgba(251,191,36,0.45)',
-          boxShadow: '0 0 40px rgba(251,191,36,0.25)',
-          animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
-          position: 'relative', zIndex: 5,
-        }}>
+      {/* Reveal: 2-spaltige Auflösungs-Card — links Lösung, rechts Sieger-Team(s).
+          Wolf 2026-05-05: vorher full-width Lösung + separate Status-Reihe unten,
+          Status-Reihe zeigte aber locked/X-Teams öffentlich (verstößt gegen
+          Anti-Public-Shaming-Regel). Jetzt: Lösung + Winner kombiniert in einer
+          Card, Status-Reihe wird beim Reveal ausgeblendet. */}
+      {revealed && (() => {
+        const winnerTeams = s.teams.filter(t => winnerSet.has(t.id));
+        const winnerHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
+        return (
           <div style={{
-            fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
-            color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85,
+            display: 'grid',
+            gridTemplateColumns: winnerTeams.length > 0 ? '1fr 1fr' : '1fr',
+            gap: 'clamp(12px, 1.6vw, 22px)',
+            padding: 'clamp(16px, 2vh, 28px)',
+            borderRadius: 24,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
+            border: '2px solid rgba(251,191,36,0.45)',
+            boxShadow: '0 0 40px rgba(251,191,36,0.25)',
+            animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
+            position: 'relative', zIndex: 5,
+            alignItems: 'center',
           }}>
-            {lang === 'de' ? 'Lösung' : 'Answer'}
-          </div>
-          <div style={{
-            fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 900,
-            color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.35)',
-            textAlign: 'center', lineHeight: 1.1,
-          }}>
-            {answer}
-          </div>
-          {/* 2026-05-03 (Wolf-Bug 'Teilpunkte-Card doppelt'): die Punkte-
-              Erklaerung pro Team war doppelt zur Hint-Avatar-Cascade weiter
-              oben — man sieht ja schon wer auf welchem Hinweis sitzt + wer
-              schnellster auf jedem Hinweis war. Card komplett entfernt. */}
-        </div>
-      )}
+            {/* Linke Hälfte: Lösung */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              borderRight: winnerTeams.length > 0 ? '1px solid rgba(251,191,36,0.25)' : 'none',
+              paddingRight: winnerTeams.length > 0 ? 'clamp(8px, 1vw, 16px)' : 0,
+            }}>
+              <div style={{
+                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
+                color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85,
+              }}>
+                {lang === 'de' ? 'Lösung' : 'Answer'}
+              </div>
+              <div style={{
+                fontSize: 'clamp(28px, 3.6vw, 56px)', fontWeight: 900,
+                color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.35)',
+                textAlign: 'center', lineHeight: 1.1,
+              }}>
+                {answer}
+              </div>
+            </div>
 
-      {/* Team-Status-Reihe (analog CHEESE/4×4)
-          Zeigt zusätzlich Strike-Dots für Teams die schon falsch geraten haben
-          aber noch nicht locked sind (nach 3 Strikes locked). */}
+            {/* Rechte Hälfte: Sieger-Team(s) */}
+            {winnerTeams.length > 0 && (
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                paddingLeft: 'clamp(8px, 1vw, 16px)',
+              }}>
+                <div style={{
+                  fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
+                  color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85,
+                }}>
+                  {winnerTeams.length === 1
+                    ? (lang === 'de' ? 'Sieger' : 'Winner')
+                    : (lang === 'de' ? 'Sieger' : 'Winners')}
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 'clamp(10px, 1.4vw, 18px)', flexWrap: 'wrap',
+                }}>
+                  {winnerTeams.map((tm, idx) => (
+                    <div key={tm.id} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.5 + idx * 0.18}s both`,
+                    }}>
+                      <QQTeamAvatar
+                        avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                        size={'clamp(56px, 6vw, 88px)'}
+                        style={{
+                          boxShadow: `0 0 0 3px #FBBF24, 0 0 22px rgba(251,191,36,0.65), 0 0 8px ${tm.color}aa`,
+                        }}
+                      />
+                      <div style={{
+                        fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 900,
+                        color: tm.color, textShadow: `0 0 14px ${tm.color}55`,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {teamDisplayName(tm.name, true)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {winnerHint !== null && (
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 800,
+                    color: '#cbd5e1', letterSpacing: '0.04em',
+                  }}>
+                    {lang === 'de' ? `auf Hinweis ${winnerHint + 1}` : `on clue ${winnerHint + 1}`}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Team-Status-Reihe (analog CHEESE/4×4) — NUR im Active-Pfad zeigen.
+          Wolf 2026-05-05: beim Reveal ausgeblendet, da locked/X-Teams öffentlich
+          ausgestellt wurden (Anti-Public-Shaming). Sieger sind im Reveal-Card
+          oben rechts; auf welchem Hinweis sie es hatten siehst du an den
+          Hint-Cards mit Gold-Ring. */}
+      {!revealed && (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: 'clamp(10px, 1.6vw, 22px)', flexWrap: 'wrap',
@@ -7030,6 +7098,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS } from '../avatarSets';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
+import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
 import './qqModeratorTheme.css';
 
@@ -3184,7 +3185,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
             }}>
-              {cell.jokerFormed ? <QQEmojiIcon emoji="🃏"/> : (team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
+              {cell.jokerFormed ? <JokerIcon i={r + c} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : (team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
             </div>
           );
         })

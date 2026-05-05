@@ -17,6 +17,7 @@ import {
   qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
 import { BeamerOverlay } from '../components/BeamerOverlay';
+import { JokerIcon } from '../components/JokerIcon';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { QQ3DGrid } from '../components/QQ3DGrid';
@@ -14708,7 +14709,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {showStar ? <QQEmojiIcon emoji="🃏"/> : (team && (() => {
+                  {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} /> : (team && (() => {
                     // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
                     // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
@@ -14972,7 +14973,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     position: 'absolute',
                     top: 0, left: '50%',
                     transform: 'translate(-50%, -30px)',
-                    fontSize: dense ? 36 : 44,
                     lineHeight: 1,
                     pointerEvents: 'none',
                     filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.9)) drop-shadow(0 0 24px rgba(251,191,36,0.5))',
@@ -14981,7 +14981,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
                     zIndex: 10,
                   }}
-                ><QQEmojiIcon emoji="🃏"/></span>
+                ><JokerIcon i={i} size={dense ? 38 : 48}/></span>
               )}
               {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
               {(streaks[t.id] ?? 0) >= 3 && (

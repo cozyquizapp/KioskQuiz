@@ -15,6 +15,7 @@ import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
+import { JokerIcon } from '../components/JokerIcon';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
@@ -1445,30 +1446,36 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 fontWeight={900}
                 style={{ flex: 1, minWidth: 0 }}
               />
-              {/* 2026-05-04 (Wolf): Joker-Slots als 2× 🃏 — vorher waren das 2
-                  vertikale Bars die wie Pause-Symbol aussahen. Jetzt klar als
-                  Spielkarten erkennbar (gleich wie auf dem Beamer-Grid). */}
+              {/* 2026-05-05 (Wolf): Joker-Slots als 2 PNGs (m/w im Wechsel)
+                  statt 🃏-Emoji. Verdiente Joker = volle Saturation + Glow,
+                  unverdiente = ausgegraut + 35% opacity. Gold-Pille drumherum
+                  groesser fuer mehr Atemraum. */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
                   style={{
-                    display: 'flex', gap: 3, alignItems: 'center', flexShrink: 0,
-                    padding: '3px 8px', borderRadius: 8,
-                    background: 'rgba(251,191,36,0.08)',
-                    border: '1px solid rgba(251,191,36,0.18)',
+                    display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0,
+                    padding: '5px 10px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.06))',
+                    border: '1.5px solid rgba(251,191,36,0.32)',
+                    boxShadow: '0 1px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
                   }}
                   title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
                   aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
                 >
                   {Array.from({ length: 2 }).map((_, i) => {
-                    const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
+                    const earned = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
                     return (
-                      <span key={i} style={{
-                        display: 'inline-block',
-                        fontSize: 16, lineHeight: 1,
-                        opacity: used ? 0.35 : 1,
-                        filter: used ? 'grayscale(0.85)' : 'drop-shadow(0 0 4px rgba(251,191,36,0.6))',
-                        transition: 'opacity 0.3s ease, filter 0.3s ease',
-                      }}><QQEmojiIcon emoji="🃏"/></span>
+                      <JokerIcon
+                        key={i}
+                        i={i}
+                        size={26}
+                        alt={earned ? `Joker ${i+1} verdient` : `Joker ${i+1} offen`}
+                        style={{
+                          opacity: earned ? 1 : 0.35,
+                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.85)',
+                          transition: 'opacity 0.3s ease, filter 0.3s ease',
+                        }}
+                      />
                     );
                   })}
                 </div>

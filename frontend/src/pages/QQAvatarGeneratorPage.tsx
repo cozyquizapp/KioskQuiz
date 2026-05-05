@@ -482,7 +482,7 @@ function EmojiPickerModal({
           overflowY: 'auto',
           boxShadow: `0 -10px 40px rgba(0,0,0,0.7), 0 0 40px ${accent.bg}33`,
           // smooth slide-in
-          animation: 'qq-avatar-sheet-in 0.22s cubic-bezier(0.22,1,0.36,1)',
+          animation: 'qq-avatar-sheet-in 0.22s var(--qq-ease-out-cubic)',
         }}
       >
         {/* Drag-Handle (visuell, kein echter Drag) */}

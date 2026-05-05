@@ -29,10 +29,12 @@ Diese Patterns kommen in MEHR als 3 Pages vor — wenn man sie zentral fixt, sin
 - **Pattern:** `borderRadius: 16/24/999`, `fontWeight: 800`, `boxShadow: rgba(...,0.55)` statt `RADII.normal`, `WEIGHT.extraBold`, `ALPHA_DEPTH.d2`
 - **Hebel-Lösung:** Codemod-Script über alle frontend Files: häufigste Inline-Werte → Token-Imports. ~2-3h Arbeit, einmalig.
 
-### CC-2 · Inline-Cubic-Bezier statt CSS-Vars
-- **Verbreitung:** ~10 Pages
-- **Pattern:** `cubic-bezier(0.22,1,0.36,1)` in animation-string, statt `var(--qq-ease-smooth)`
-- **Hebel-Lösung:** Find-Replace „cubic-bezier(0.22,1,0.36,1)" → `var(--qq-ease-smooth-out)` etc. ~30min.
+### CC-2 · Inline-Cubic-Bezier statt CSS-Vars — ✅ TEIL-ERLEDIGT 2026-05-05
+- **Verbreitung:** ~10 Pages, häufigster Wert `cubic-bezier(0.22,1,0.36,1)` (34×)
+- **Fix:** Neue CSS-Var `--qq-ease-out-cubic` (= `cubic-bezier(0.22,1,0.36,1)`) in main.css + Token `EASING.outCubic`. 34 Vorkommen 1:1 migriert in QQBeamerPage (29×), QQProgressTree (4×), QQAvatarGeneratorPage (1×). Visuell identisch — kein Verhaltens-Shift.
+- **Offen (akzeptiert):** Andere Inline-Werte mit subtilen Abweichungen
+  zu bestehenden Vars (z.B. `(0.34,1.6,...)` ≈ bounce, `(0.2,0.8,0.4,1)` ≈ pop-fast)
+  bleiben für jetzt inline — Migration würde unsichtbares Animation-Drift bedeuten.
 
 ### CC-3 · Submit-Status-Inkonsistenz (BREAKING) — ✅ ERLEDIGT 2026-05-05
 - **Pages:** BluffWriteScreen, BluffVoteWaitingScreen
@@ -46,10 +48,10 @@ Diese Patterns kommen in MEHR als 3 Pages vor — wenn man sie zentral fixt, sin
 - **Bug:** `position: 'fixed', inset: 0, zIndex: 998X` — der Style-Guide sagt explizit „nie position:fixed im BeamerFrame" (L399).
 - **Fix:** `<BeamerOverlay>`-Wrapper-Komponente (`frontend/src/components/BeamerOverlay.tsx`) gebaut, beide Overlays migriert auf `position: absolute, inset: 0` mit klarem Positioning-Ancestor (QQBeamerPage-Root-Div hat `position: relative`). Verhalten visuell identisch, aber deterministisch — kein Stacking-Context-Trap mehr.
 
-### CC-5 · Phase/Kategorie-Farben inline statt zentral
+### CC-5 · Phase/Kategorie-Farben inline statt zentral — ✅ ERLEDIGT 2026-05-05
 - **Pages:** PhaseIntroView (`phaseColors`), QuestionView (`CAT_COLORS`), Mod-Page-Toast
-- **Pattern:** Magic-Hex-Arrays inline in Components statt zentralem `PHASE_COLORS`-Token in `qqDesignTokens.ts`
-- **Hebel-Lösung:** `QQ_PHASE_COLORS` als const exportieren + überall importieren. ~30 Min.
+- **Fix:** `QQ_PHASE_COLORS` Token in `qqDesignTokens.ts` (Bucket-4 Patches) + Migration der zwei Inline-Dupes in QQBeamerPage:4071+12189 + Reuse in `prevColor` bei der Round-Transition.
+- **Offen (akzeptiert):** `CAT_COLORS` in QQBeamerPage:4098 bleibt page-lokal (deeper "core" Versionen, unterscheiden sich von `QQ_CAT_ACCENT` in qqShared.ts mit gleichem Zweck). Migration auf zentrales Token wäre eine Kategorie-Farb-Konsolidierung — separater Schritt, nicht Phase-4 Scope.
 
 ---
 

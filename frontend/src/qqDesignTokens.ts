@@ -95,13 +95,15 @@ export const QQ_PHASE_COLORS = ['#3B82F6', '#F59E0B', '#EF4444'] as const;
  *  Im Live-Code sind viele Inline-cubic-bezier()-Werte hardgecoded.
  *  Nach Audit-Pass `bounceSoft` und `pinSlam` sind als Sonderfaelle
  *  dokumentiert; alle „weak bounces" (1.2/1.4) wurden auf bounce
- *  vereinheitlicht. Drop-Easing fuer schnelle Falls (smoothOut). */
+ *  vereinheitlicht. Drop-Easing fuer schnelle Falls (smoothOut).
+ *  outCubic ergaenzt 2026-05-05 (Phase-4 CC-2) — haeufigster Inline-Wert. */
 export const EASING = {
   bounce:     'cubic-bezier(0.34, 1.56, 0.64, 1)',  // Standard-Pop, Apple-HIG
   bounceSoft: 'cubic-bezier(0.34, 1.4, 0.64, 1)',   // Sanfter, fuer Reveal-Pops
   popFast:    'cubic-bezier(0.2, 0.8, 0.3, 1)',     // Game-Feel, schneller Attack
   smooth:     'cubic-bezier(0.4, 0, 0.2, 1)',       // Material-Standard
   smoothOut:  'cubic-bezier(0.3, 0, 0.5, 1)',       // Drop/Fall mit gravity-feel
+  outCubic:   'cubic-bezier(0.22, 1, 0.36, 1)',     // Card-Reveal, Slide-In, Hero-Entry
   inOut:      'ease-in-out',                        // Idle/Breathing/Float-Loops
 } as const;
 

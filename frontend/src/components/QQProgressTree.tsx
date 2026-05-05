@@ -276,7 +276,7 @@ export default function QQProgressTree({
                   flexShrink: 0,
                   textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
                   transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
-                  transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+                  transition: 'all 0.4s var(--qq-ease-out-cubic)',
                 }}
               >
                 {phaseLabels[p]}
@@ -304,7 +304,7 @@ export default function QQProgressTree({
                 flexShrink: 0,
                 textShadow: (isShowcase && isFinaleActive) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
                 transform: (isShowcase && isFinaleActive) ? 'translateY(-2px)' : 'translateY(0)',
-                transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+                transition: 'all 0.4s var(--qq-ease-out-cubic)',
               }}>
                 {lang === 'de' ? 'Finale' : 'Finale'}
               </div>
@@ -408,7 +408,7 @@ export default function QQProgressTree({
                         opacity: isCurrent ? 0 : isPast ? 0.55 : 1,
                         filter: isPast ? 'grayscale(1)' : 'none',
                         transform: isShowcasedPhase ? 'scale(1.18)' : 'scale(1)',
-                        transition: 'all 0.45s cubic-bezier(0.22,1,0.36,1)',
+                        transition: 'all 0.45s var(--qq-ease-out-cubic)',
                       }}
                     >
                       {emoji}
@@ -462,7 +462,7 @@ export default function QQProgressTree({
                     opacity: isFinalePast ? 0.55 : 1,
                     filter: isFinalePast ? 'grayscale(1)' : 'none',
                     animation: isFinaleActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
-                    transition: 'all 0.45s cubic-bezier(0.22,1,0.36,1)',
+                    transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
                 >🧩</div>
               </div>

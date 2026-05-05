@@ -38,6 +38,9 @@
   --qq-ease-pop-fast:    cubic-bezier(0.2,  0.8,  0.3,  1);
   --qq-ease-smooth:      cubic-bezier(0.4,  0,    0.2,  1);
   --qq-ease-smooth-out:  cubic-bezier(0.3,  0,    0.5,  1);
+  /* "ease-out-quint"-aehnliche Kurve, haeufigster Inline-Wert in QQBeamerPage
+     (30+ Vorkommen). Phase-4 Bucket-2 (CC-2): als Var verfuegbar zur Migration. */
+  --qq-ease-out-cubic:   cubic-bezier(0.22, 1,    0.36, 1);
   --cat-schaetzchen: #f3c367;
   --cat-mucho: #9fbfd3;
   --cat-stimmts: #72ac78;

@@ -18,6 +18,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { BeamerOverlay } from '../components/BeamerOverlay';
 import { CustomSlide } from '../components/QQCustomSlide';
+import { QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
@@ -3381,7 +3382,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
           border: `4px solid ${welcomedTeam.color}`,
           boxShadow: `0 0 80px ${welcomedTeam.color}aa, 0 18px 60px rgba(0,0,0,0.7)`,
-          animation: 'qqWelcomeBanner 3.2s cubic-bezier(0.22,1,0.36,1) both',
+          animation: 'qqWelcomeBanner 3.2s var(--qq-ease-out-cubic) both',
           pointerEvents: 'none',
           display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3vw, 44px)',
           maxWidth: '90vw',
@@ -4068,8 +4069,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
-  const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
-  const color = phaseColors[(s.gamePhaseIndex - 1) % 3];
+  const color = QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
   const phaseNamesRaw = bt.phase.names[lang];
   const phaseDescsRaw = bt.phase.descs[lang];
   // „Finale" ist seit Connections-Einführung das 4×4-Mini-Game, NICHT mehr die
@@ -4229,7 +4229,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
   const prevIdx = s.gamePhaseIndex - 1;
-  const prevColor = phaseColors[Math.max(0, prevIdx - 1) % 3];
+  const prevColor = QQ_PHASE_COLORS[Math.max(0, prevIdx - 1) % 3];
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
   const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
 
@@ -4435,7 +4435,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 color,
                 textShadow: `0 0 120px ${color}44`,
                 textAlign: 'center',
-                animation: 'roundBam 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
+                animation: 'roundBam 0.65s var(--qq-ease-out-cubic) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
               }}>
                 {phaseName}
               </div>
@@ -5084,7 +5084,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               border: '2px solid rgba(251,191,36,0.55)',
               boxShadow: '0 0 0 3px rgba(251,191,36,0.12), 0 8px 24px rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-              animation: 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both',
+              animation: 'revealAnswerBam 0.55s var(--qq-ease-out-cubic) both',
             }}>
               <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}><QQEmojiIcon emoji="🎯"/></span>
               <span style={{
@@ -5127,7 +5127,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         background: isWinner
                           ? 'linear-gradient(90deg, rgba(34,197,94,0.22), rgba(34,197,94,0.04))'
                           : `linear-gradient(90deg, ${a.team?.color ?? '#64748b'}30, transparent)`,
-                        transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)',
+                        transition: 'width 0.8s var(--qq-ease-out-cubic)',
                       }} />
                     )}
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -5428,7 +5428,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     borderRadius: 8, overflow: 'hidden',
                     background: 'rgba(0,0,0,0.35)',
                     width: `${barPct}%`,
-                    transition: 'width 0.7s cubic-bezier(0.22,1,0.36,1)',
+                    transition: 'width 0.7s var(--qq-ease-out-cubic)',
                     display: 'flex',
                   }}>
                     {contribs.map((c, ci) => {
@@ -6780,7 +6780,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
                 color: isVisible ? '#F1F5F9' : 'transparent',
                 lineHeight: 1.2,
-                animation: isCurrent ? 'revealAnswerBam 0.55s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                animation: isCurrent ? 'revealAnswerBam 0.55s var(--qq-ease-out-cubic) both' : undefined,
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {isVisible ? hintText : '?'}
@@ -6875,7 +6875,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
           border: '2px solid rgba(251,191,36,0.45)',
           boxShadow: '0 0 40px rgba(251,191,36,0.25)',
-          animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+          animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
           position: 'relative', zIndex: 5,
         }}>
           <div style={{
@@ -7248,7 +7248,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                   : '2px solid rgba(148,163,184,0.15)',
                 visibility: isVisible ? 'visible' : 'hidden',
                 animation: isVisible
-                  ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
+                  ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
                   : 'none',
                 flex: 1,
                 minHeight: 'clamp(64px, 8vh, 92px)',
@@ -7501,7 +7501,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                     : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
-                    ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
+                    ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(64px, 8vh, 92px)',
@@ -7835,7 +7835,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             background: 'radial-gradient(circle at 50% 35%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
             border: '3px solid rgba(34,197,94,0.6)',
             boxShadow: '0 0 50px rgba(34,197,94,0.25), inset 0 0 26px rgba(34,197,94,0.08)',
-            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both',
+            animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
             padding: 'clamp(14px, 1.8vh, 24px) clamp(18px, 2vw, 30px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
             position: 'relative', overflow: 'hidden',
@@ -8011,7 +8011,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                       : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
-                    ? `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) both, top5RowGlow 1.2s ease 0.3s both`
+                    ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(72px, 9vh, 110px)',
@@ -8418,7 +8418,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8vw, 38px)',
             boxShadow: '0 0 50px rgba(34,197,94,0.35), 0 8px 24px rgba(0,0,0,0.45)',
             textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+            animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) both',
             zIndex: 1000,
           }}>
             {formatRevealedAnswer(lang, q.answer, q.answerEn)}
@@ -8433,7 +8433,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           background: 'linear-gradient(180deg, rgba(15,23,42,0.96), rgba(13,10,6,0.96))',
           borderLeft: '2px solid rgba(251,191,36,0.2)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
-          animation: 'qqMapRankSlideIn 0.7s cubic-bezier(0.22,1,0.36,1) both',
+          animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto',
         }}>
           <div style={{
@@ -9141,7 +9141,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
               : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both'
-              : 'revealAnswerBam 0.5s cubic-bezier(0.22,1,0.36,1) both',
+              : 'revealAnswerBam 0.5s var(--qq-ease-out-cubic) both',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
             // 2026-04-30 v2: width/min-width/max-width Transition explizit
@@ -9186,7 +9186,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 // 2026-04-29: 4.5vw -> 3.8vw / cap 72 -> 56 — flacher.
                 fontSize: 'clamp(28px, 3.8vw, 56px)', fontWeight: 900,
                 color: '#4ADE80',
-                animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 6,
               }}>
@@ -9250,7 +9250,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     return (
                       <div key={a.teamId} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                        animation: `top5RowSlideIn 0.55s cubic-bezier(0.22,1,0.36,1) ${popDelay}ms both`,
+                        animation: `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${popDelay}ms both`,
                       }}>
                         <div style={{
                           position: 'relative',
@@ -9958,7 +9958,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   width: '100%', maxWidth: 1400,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 'clamp(10px, 1.4vh, 18px)',
-                  animation: cheeseHideContent ? undefined : 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                  animation: cheeseHideContent ? undefined : 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
                   transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
                 }}>
                   {/* Shimmer sweep */}
@@ -10071,7 +10071,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 marginBottom: 'clamp(8px, 1.2vh, 24px)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
-                animation: 'revealAnswerBam 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both',
+                animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
               }}>
                 <div style={{
                   fontSize: tierStyles.headerFs, fontWeight: 900,
@@ -10553,7 +10553,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // 2026-04-30 v2: 0.45s/0.55s → 0.85s — User-Feedback
               // 'cards verschieben sich zu oft' braucht entspanntere Pop-In-
               // Animation. cubic-bezier mit weichem Out-Curve fuer ruhiges Premium-Feel.
-              transition: 'opacity 0.85s cubic-bezier(0.22,1,0.36,1), transform 0.85s var(--qq-ease-bounce), max-height 0.85s cubic-bezier(0.22,1,0.36,1), margin-bottom 0.7s ease',
+              transition: 'opacity 0.85s var(--qq-ease-out-cubic), transform 0.85s var(--qq-ease-bounce), max-height 0.85s var(--qq-ease-out-cubic), margin-bottom 0.7s ease',
             }}>
               {showUnifiedWinner && (() => {
             const isEn = lang === 'en';
@@ -11710,7 +11710,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
           ? 'comebackSlam 1s var(--qq-ease-bounce) both'
-          : 'roundBam 0.6s cubic-bezier(0.22,1,0.36,1) both',
+          : 'roundBam 0.6s var(--qq-ease-out-cubic) both',
         transition: 'font-size 0.5s var(--qq-ease-bounce)',
         position: 'relative', zIndex: 7,
         display: 'inline-flex', alignItems: 'center', gap: '0.4em',
@@ -12139,7 +12139,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               background: 'rgba(255,235,200,0.04)',
               border: '1px solid rgba(255,235,200,0.10)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              animation: `panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) ${0.08 * i}s both`,
+              animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
             }}>
               <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
               <div style={{ minWidth: 0 }}>
@@ -12186,8 +12186,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // vollen Tree-Übersicht jetzt: Runden-Pille + Frage-Fortschritt + RoundMiniTree
   // (nur Dots der aktuellen Runde) — passt in einer Card-Zeile.
   if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
-    const phaseColors = ['#3B82F6', '#F59E0B', '#EF4444'];
-    const roundColor = phaseColors[((s.gamePhaseIndex ?? 1) - 1) % 3];
+    const roundColor = QQ_PHASE_COLORS[((s.gamePhaseIndex ?? 1) - 1) % 3];
     const questionInPhase = (s.questionIndex % 5) + 1;
     panels.push({ key: 'progress', node: (
       <div>
@@ -12819,7 +12818,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        animation: 'panelSlideIn 0.7s cubic-bezier(0.22,1,0.36,1) both',
+        animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
         {/* Eyebrow-Pill (Mode-Tag) */}
         <div style={{
@@ -12884,7 +12883,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             // Breite. Einheitlichkeit bleibt (clamp-Werte gelten fuer alle
             // Panels gleichermassen, kein Layout-Shift).
             height: 'clamp(460px, 60vh, 660px)',
-            animation: 'panelSlideIn 0.6s cubic-bezier(0.22,1,0.36,1) both',
+            animation: 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
             position: 'relative', overflow: 'hidden',
             // Flex-Column → Inner-Content kann via flex:1 auf volle Card-Höhe
             // wachsen + sich vertikal zentrieren.
@@ -12922,7 +12921,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 alignItems: 'center',
                 textAlign: 'center',
                 width: '100%',
-                animation: 'qqPanelContentFade 0.7s cubic-bezier(0.22,1,0.36,1) both',
+                animation: 'qqPanelContentFade 0.7s var(--qq-ease-out-cubic) both',
               }}
             >
               {activePanel.node}
@@ -12941,7 +12940,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                       ? `linear-gradient(90deg, ${modeAccent}, ${modeAccent}aa)`
                       : 'rgba(255,235,200,0.16)',
                     boxShadow: isActive ? `0 0 10px ${modeGlow}` : 'none',
-                    transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+                    transition: 'all 0.4s var(--qq-ease-out-cubic)',
                   }} />
                 );
               })}
@@ -13578,7 +13577,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               background: `linear-gradient(135deg, ${teamColor}28 0%, ${teamColor}10 100%)`,
               border: `3px solid ${teamColor}aa`,
               boxShadow: `0 0 80px ${teamColor}55, 0 16px 60px rgba(0,0,0,0.55)`,
-              animation: 'finaleWinner 0.7s cubic-bezier(0.22,1,0.36,1) both',
+              animation: 'finaleWinner 0.7s var(--qq-ease-out-cubic) both',
               position: 'relative', zIndex: 5,
               maxWidth: 'min(900px, 90vw)',
             }}>
@@ -13701,7 +13700,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 5,
-        animation: 'finaleWinner 0.9s cubic-bezier(0.22,1,0.36,1) 0.6s both',
+        animation: 'finaleWinner 0.9s var(--qq-ease-out-cubic) 0.6s both',
         minWidth: 0,
       }}>
         <div style={{
@@ -13757,7 +13756,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-          animation: `finaleWinner 0.8s cubic-bezier(0.22,1,0.36,1) ${winnerHeroDelay}s both`,
+          animation: `finaleWinner 0.8s var(--qq-ease-out-cubic) ${winnerHeroDelay}s both`,
         }}>
           <div style={{
             fontSize: 'clamp(28px, 3vw, 42px)',
@@ -14444,7 +14443,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                         : isFrozen
                           ? 'none'
                           : `1px solid ${tColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
-                    animation: (isNew || isStolen) ? 'cellInkFill 0.9s cubic-bezier(0.22,1,0.36,1) both' : undefined,
+                    animation: (isNew || isStolen) ? 'cellInkFill 0.9s var(--qq-ease-out-cubic) both' : undefined,
                     // 2026-05-05 (Wolf-Wunsch '3D-Plaettchen-Look auf alle Cells,
                     // wie Stapel nur ohne Gold-Kreis'): Box-Shadow-Stack jetzt
                     // mit Inset-Highlight oben (Lichtkante) + Inset-Shadow unten

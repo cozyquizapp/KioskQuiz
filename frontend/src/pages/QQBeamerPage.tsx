@@ -11523,7 +11523,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
         {/* Anchor + Subject - zwei Karten nebeneinander */}
         <div style={{
-          display: 'flex', gap: 'clamp(16px, 2.2vw, 36px)', alignItems: 'stretch',
+          // 2026-05-05 v3: alignItems center (war stretch) — sonst zwingt der
+          // groessere VS-Area minHeight die Anchor/Subject-Cards auf seine
+          // Hoehe und sie wirken aufgeblaeht.
+          display: 'flex', gap: 'clamp(16px, 2.2vw, 36px)', alignItems: 'center',
           justifyContent: 'center', flexWrap: 'wrap', maxWidth: 1400, width: '100%',
           animation: 'contentReveal 0.45s ease 0.15s both',
         }}>
@@ -11568,9 +11571,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             flexShrink: 0,
             alignSelf: 'center',
             position: 'relative',
-            // Hoehen-Reservierung fuer den 96-148px Kreis + Atemraum,
-            // damit absolutely-positioned Inner-Childs ankern koennen.
-            minHeight: 'clamp(120px, 14vw, 180px)',
+            // 2026-05-05 v3: minHeight erhoeht damit Pillen-Stack mit groesserem
+            // gap reinpasst und Avatare oberhalb/unterhalb landen koennen.
+            minHeight: 'clamp(200px, 26vh, 320px)',
           }}>
             {/* 2026-05-05 (Wolf): App-Pillen statt Goldkreise — MEHR oben (grün-
                 Akzent), WENIGER unten (rot-Akzent). Same Pille-Style wie
@@ -11581,7 +11584,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(10px, 1.2vh, 18px)',
+              // 2026-05-05 v3 (Wolf-Bug 'avatar overlappt pillen'): Pillen-Stack
+              // weiter auseinander damit Avatare zwischen/oberhalb/unterhalb
+              // der Pillen Platz haben ohne sie zu verdecken.
+              gap: 'clamp(50px, 7vh, 110px)',
               pointerEvents: 'none',
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
@@ -11724,13 +11730,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             {isReveal && (lang === 'en' ? 'Who got it right?' : 'Wer lag richtig?')}
           </div>
-          {/* 2026-05-05 v2 (Wolf-Korrektur Option A): Avatare fliegen zur
-              gewählten PILLE (MEHR oder WENIGER) — nicht mehr zur Subject/
-              Anchor-Card. 'higher' → fliegt zur oberen Pille, 'lower' → zur
-              unteren Pille. Beide vertikal nach oben, mittig im VS-Bereich.
-              Stack: kleine horizontale Fächerung damit mehrere Avatare auf
-              gleicher Pille als Pile lesbar bleiben. Reveal: korrekte Pille
-              glüht gold, korrekte Avatare grün-Glow, falsche faden. */}
+          {/* 2026-05-05 v3 (Wolf-Bug 'avatar overlappt pillen extrem'): Avatar
+              schrumpft beim Flug auf scale(0.55) (visual ~40-60px) + landet
+              IM Pillen-Gap dicht an seiner Pille — nicht darauf. 'higher'
+              parkt direkt UNTER MEHR-Pille (oberer Gap-Bereich), 'lower'
+              parkt direkt ÜBER WENIGER-Pille (unterer Gap-Bereich). Pillen
+              bleiben sichtbar + Label lesbar. Stack-Pile mit kleinem 14px-
+              Spread für mehrere Avatare auf gleicher Pille. */}
           <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
             {hlTeams.map(tm => {
               const choice = hl.answers[tm.id];  // 'higher' | 'lower' | undefined
@@ -11739,23 +11745,21 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               const teamWin = hl.winnings[tm.id] ?? 0;
               // Im Reveal: dim if wrong; Glow if correct.
               const dim = isReveal && !correct;
-              // Stack-Index + Group-Size: zentriert die Avatare um die Pille,
-              // sodass z.B. 3 Avatare auf 'higher' als horizontaler Mini-Fan
-              // direkt unter der MEHR-Pille sitzen statt rechts daneben.
               const sameChoiceTeams = choice
                 ? hlTeams.filter(t => hl.answers[t.id] === choice)
                 : [];
               const stackIdx = choice ? sameChoiceTeams.findIndex(t => t.id === tm.id) : 0;
               const groupSize = sameChoiceTeams.length;
-              const xCenter = groupSize > 0 ? (stackIdx - (groupSize - 1) / 2) * 26 : 0;
-              // Vertikaler Flug zur jeweiligen Pille. MEHR-Pille sitzt höher im
-              // VS-Bereich, WENIGER-Pille tiefer. Avatar landet jeweils direkt
-              // unter der Pille (so bleibt das Pille-Label lesbar).
+              const xCenter = groupSize > 0 ? (stackIdx - (groupSize - 1) / 2) * 14 : 0;
+              // Y-Werte zielen mit visual-center auf den Gap-Slot direkt
+              // angrenzend an die jeweilige Pille (nicht IN die Pille).
+              // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
+              // Label lesbar bleibt.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-220px, -22vh, -150px))`
+                ? `translate(${xCenter}px, clamp(-340px, -32vh, -240px)) scale(0.55)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-130px, -13vh, -85px))`
-                  : 'translate(0, 0)';
+                  ? `translate(${xCenter}px, clamp(-280px, -26vh, -190px)) scale(0.55)`
+                  : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{
                   position: 'relative',
@@ -11975,18 +11979,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   </div>
                 ))}
               </div>
-              {step === 1 && (
-                <div style={{
-                  marginTop: 8, padding: '14px 28px', borderRadius: 16,
-                  background: 'rgba(251,191,36,0.12)', border: '2px solid rgba(251,191,36,0.42)',
-                  fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 900, color: '#e2e8f0',
-                  maxWidth: 1000, textAlign: 'center',
-                }}>
-                  {lang === 'en'
-                    ? `${hlTeams.length} teams tied for last place — they all play together.`
-                    : `${hlTeams.length} Teams sind gleichauf auf dem letzten Platz — sie spielen gemeinsam.`}
-                </div>
-              )}
+              {/* Wolf 2026-05-05: 'X teams tied for last place'-Pille raus —
+                  redundant zum COMEBACK-Title + den Avataren selbst. */}
             </>
           ) : team && (
             <>
@@ -12005,19 +11999,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 fontSize="clamp(26px, 3.4vw, 50px)"
                 style={{ textShadow: `0 0 28px ${teamColor}55`, maxWidth: '80vw', textAlign: 'center' }}
               />
-              {step === 1 && (
-                <div style={{
-                  marginTop: 4, padding: '10px 22px', borderRadius: 16,
-                  background: `${teamColor}14`, border: `2px solid ${teamColor}44`,
-                  fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 700, color: '#e2e8f0',
-                  maxWidth: 900, textAlign: 'center',
-                  animation: 'contentReveal 0.45s ease 0.15s both',
-                }}>
-                  {lang === 'en'
-                    ? `${team.name} is in last place — strike back!`
-                    : `${team.name} liegt auf dem letzten Platz — schlag zurück!`}
-                </div>
-              )}
+              {/* Wolf 2026-05-05: 'liegt auf dem letzten Platz — schlag zurück!'
+                  Pille raus — redundant zum COMEBACK-Title + Lightning-Bolts. */}
             </>
           )}
         </div>
@@ -12032,41 +12015,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           gap: 'clamp(8px, 1.2vh, 14px)',
         }}>
-          {/* Round-Counter kompakt: Label + Zahl + Dots inline. */}
-          {hl && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 14px)',
-            }}>
-              <span style={{
-                fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900,
-                color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-              }}>
-                {lang === 'en' ? 'In this run' : 'Durchgang'}
-              </span>
-              <span style={{
-                fontSize: 'clamp(36px, 4.4vw, 64px)', fontWeight: 900,
-                color: '#FBBF24', lineHeight: 1,
-                textShadow: '0 0 30px rgba(251,191,36,0.5)',
-                fontVariantNumeric: 'tabular-nums',
-              }}>{hl.rounds}</span>
-              <span style={{
-                fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900, color: '#FDE68A',
-              }}>
-                {hl.rounds === 1
-                  ? (lang === 'en' ? 'Runde' : 'Runde')
-                  : (lang === 'en' ? 'Runden' : 'Runden')}
-              </span>
-              {/* Dots inline */}
-              <span style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
-                {Array.from({ length: hl.rounds }).map((_, i) => (
-                  <span key={i} style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: '#FBBF24', boxShadow: '0 0 8px rgba(251,191,36,0.5)',
-                  }} />
-                ))}
-              </span>
-            </div>
-          )}
+          {/* Wolf 2026-05-05: Round-Counter komplett raus — Wolf moderiert,
+              weiß welche Runde. Auch der "DURCHGANG"-Header + Dots war zu
+              viel auf der ohnehin vollen Intro-Seite. */}
+          {/* Action-Card mit inline Leader (Wolf 2026-05-05: war vorher
+              separater "AKTUELLER 1. PLATZ"-Header + Pille darunter — jetzt
+              direkt in einer Zeile, spart 2 Items auf der Seite). */}
           <div style={{
             padding: 'clamp(12px, 1.6vh, 18px) clamp(20px, 2.4vw, 32px)', borderRadius: 16,
             textAlign: 'center',
@@ -12078,43 +12032,46 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 900,
             color: hl ? '#fde68a' : '#fecaca',
             maxWidth: 1000,
-            lineHeight: 1.3,
+            lineHeight: 1.4,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           }}>
-            <QQEmojiIcon emoji={hl ? "🎯" : "⚡"}/> {lang === 'en' ? actionTextEn : actionTextDe}
-          </div>
-          {leaderTeams.length > 0 && (
-            <>
+            <div>
+              <QQEmojiIcon emoji={hl ? "🎯" : "⚡"}/> {lang === 'en' ? actionTextEn : actionTextDe}
+            </div>
+            {leaderTeams.length > 0 && (
               <div style={{
-                fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#94a3b8',
-                letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: -4,
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                justifyContent: 'center',
               }}>
-                {leaderTeams.length === 1
-                  ? (lang === 'en' ? 'Current leader' : 'Aktueller 1. Platz')
-                  : (lang === 'en' ? 'Current leaders' : 'Aktuelle 1. Plätze')}
-              </div>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900,
+                  color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  {leaderTeams.length === 1
+                    ? (lang === 'en' ? 'Leader:' : 'Klauen bei:')
+                    : (lang === 'en' ? 'Leaders:' : 'Klauen bei:')}
+                </span>
                 {leaderTeams.map(lt => (
                   <div key={lt.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 14px', borderRadius: 16,
-                    background: `${lt.color}18`, border: `2px solid ${lt.color}55`,
-                    boxShadow: `0 0 16px ${lt.color}22`,
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '6px 12px', borderRadius: 999,
+                    background: `${lt.color}18`, border: `1.5px solid ${lt.color}55`,
                   }}>
-                    <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={36} />
+                    <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={28} />
                     <TeamNameLabel
                       name={lt.name}
-                      maxLines={2}
+                      maxLines={1}
                       shrinkAfter={14}
                       color={lt.color}
                       fontWeight={900}
-                      fontSize="clamp(15px, 1.7vw, 20px)"
-                      style={{ maxWidth: 180 }}
+                      fontSize="clamp(14px, 1.5vw, 18px)"
+                      style={{ maxWidth: 160 }}
                     />
                   </div>
                 ))}
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>

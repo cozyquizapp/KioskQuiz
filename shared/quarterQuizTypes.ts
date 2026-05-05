@@ -1056,10 +1056,10 @@ export interface QQAck {
 export const QQ_AVATARS = [
   { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#F97316', hoodie: '#0EA5E9' },
   { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#22C55E', hoodie: '#7C2D12' },
-  { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#3B82F6', hoodie: '#FDE047' },
+  { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#14B8A6', hoodie: '#FDE047' },
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#A855F7', hoodie: '#EAB308' },
   { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#FACC15', hoodie: '#5B21B6' },
-  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#06B6D4', hoodie: '#F59E0B' },
+  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#3B82F6', hoodie: '#F59E0B' },
   { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#EC4899', hoodie: '#581C87' },
   { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#EF4444', hoodie: '#166534' },
 ] as const;
@@ -1140,7 +1140,7 @@ export const FUNNY_TEAM_NAMES: string[] = [
   'Quiz Khalifa', 'Käpt\'n Kluk', 'Eulen-Spiegel', 'Wolfsrudel',
   'Brain-Trust', 'Nicht Zuhause', 'Quiz-Mafia', 'Cozy Cats',
   'Couch-Wolves', 'Hirnsturm', 'Quiz-Asse', 'Trivia-Trio',
-  'Glühbirnen', 'Bierdeckel', 'Multi-Kulti', 'Wissens-Wölfe',
+  'Glühbirnen', 'Bierdeckel', 'Wissens-Wölfe',
   'Frag-Tiger', 'Smarty Pants', 'Käse-Kenner', 'Pubquatscher',
   // Mittel (13-17 Z.) — Wrap moeglich
   'Google sei Dank', 'Synapsen-Salat', 'Fakten-Faktor',

@@ -212,6 +212,10 @@ const bt = {
 function actionVerb(a: string | null, lang: 'de' | 'en' = 'de') {
   if (a === 'STEAL_1') return bt.action.steal[lang];
   if (a === 'COMEBACK') return bt.action.comeback[lang];
+  // 2026-05-05 (Wolf-Bug 'rechts in der tabelle steht klein setzen'):
+  // Connections-Finale nutzt STAPEL_BONUS — vorher fiel das auf 'Setzen'
+  // zurueck. Jetzt eigenes Label, alle Stapel-Pfade auch.
+  if (a === 'STAPEL_BONUS' || a === 'STAPEL_1') return lang === 'en' ? '🏯 Stack' : '🏯 Stapeln';
   return bt.action.place[lang];
 }
 function actionDesc(a: string | null, stats: any, lang: 'de' | 'en' = 'de') {
@@ -13694,25 +13698,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
         )}
 
-        {/* Mod-Hint: Space = next, P = pause */}
-        <div style={{
-          position: 'absolute', bottom: 'clamp(12px, 2vh, 24px)', left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 14px)',
-          padding: 'clamp(6px, 0.8vh, 10px) clamp(14px, 1.6vw, 22px)',
-          borderRadius: 999,
-          background: 'rgba(15,23,42,0.5)', border: '1.5px solid rgba(148,163,184,0.25)',
-          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 700, color: '#94a3b8',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          opacity: 0.75, zIndex: 5,
-          animation: 'contentReveal 0.5s ease 1.0s both',
-        }}>
-          <span>⌨ Space → Next</span>
-          <span>·</span>
-          <span>P → {paused ? 'Resume' : 'Pause'}</span>
-          <span>·</span>
-          <span>{revealIdx + 1} / {sorted.length}</span>
-        </div>
+        {/* 2026-05-05 (Wolf): Steuerungs-Hint entfernt — Mod kennt seine
+            Hotkeys, Beamer-Publikum braucht das nicht zu sehen. */}
       </div>
     );
   }

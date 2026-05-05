@@ -1472,8 +1472,11 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                         alt={earned ? `Joker ${i+1} verdient` : `Joker ${i+1} offen`}
                         style={{
                           width: 28, height: 28,
-                          opacity: earned ? 1 : 0.32,
-                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.9)',
+                          // 2026-05-05 (Wolf 'extra ausgegraut?'): vorher 32%/90%
+                          // grayscale wirkte wie 'kaputt'. Jetzt: subtiler
+                          // Placeholder-State (50%/40%) = bereit zum Verdienen.
+                          opacity: earned ? 1 : 0.5,
+                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.4)',
                           transition: 'opacity 0.3s ease, filter 0.3s ease',
                         }}
                       />
@@ -1589,10 +1592,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           </div>
         )}
 
-        {/* CozyWolf brand footer */}
+        {/* CozyWolf brand footer
+            2026-05-05 (Wolf): borderTop entfernt — wirkte wie unsichtbare
+            Linie ueber dem Copyright. Footer braucht kein Trenner, das
+            margin reicht. */}
         <div style={{
           marginTop: 24, paddingTop: 16,
-          borderTop: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           opacity: 0.4, userSelect: 'none',
         }}>
@@ -2839,26 +2844,10 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {isRevealed && !iWon && iSubmitted && (() => {
         const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
         const myWinPosition = winners.indexOf(myTeamId); // -1 = nicht in den Gewinnern
-        // Korrekt aber nicht erster
-        if (myWinPosition > 0) {
-          const n = myWinPosition + 1;
-          const positionDe = n === 2 ? '2.' : n === 3 ? '3.' : `${n}.`;
-          const positionEn = n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
-          return (
-            <div style={{
-              marginTop: 8, padding: '10px 14px', borderRadius: 16, textAlign: 'center',
-              background: 'rgba(34,197,94,0.10)',
-              border: '1px solid rgba(34,197,94,0.30)',
-              fontSize: 13, fontWeight: 700, color: '#86EFAC',
-              animation: 'tcTrostIn 0.5s ease 0.45s both',
-            }}>
-              <QQEmojiIcon emoji="✅"/>{' '}
-              {lang === 'de'
-                ? <>Auch richtig — als <b>{positionDe}</b></>
-                : <>Also correct — in <b>{positionEn}</b></>}
-            </div>
-          );
-        }
+        // 2026-05-05 (Wolf-Bug 'doppelt gemoppelt'): Auch-richtig-Box entfernt.
+        // Die Info „Richtig — N. schnellstes Team" steht bereits in der oberen
+        // Eure-Antwort-Card (statusText). Hier nur noch Falsch-Trost-Message.
+        if (myWinPosition > 0) return null;
         // Falsch — B10 (2026-04-29): User-Wunsch 'Leider falsch, naechstes
         // Mal schafft ihr es'-Stil. Klare 2-zeilige Mitteilung: erst die
         // Aussage 'Leider falsch', dann ermutigende Trost-Message.

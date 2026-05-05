@@ -15112,15 +15112,19 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
           opacity: activeTeamId && !isActive ? 0.42 : 1,
-          // Aktives Team: prominenter Box-Ring + Puls, wegen Banner-Wegfall.
-          padding: isActive ? (dense ? '6px 10px' : '8px 14px') : '0',
-          borderRadius: isActive ? 16 : 0,
+          // 2026-05-05 (Wolf-Bug 'tabelle neben grid veraendert hoehe beim
+          // setzen'): Padding/Border IMMER reservieren — vorher Padding 0 bei
+          // inaktiv, 6-14px bei aktiv → Zeile wuchs/schrumpfte → Stack mit
+          // justify-content:center verschob sich sichtbar. Jetzt: Box bleibt
+          // konstant, nur Farben/Glow flippen beim Active-Wechsel.
+          padding: dense ? '6px 10px' : '8px 14px',
+          borderRadius: 16,
           background: isActive ? `linear-gradient(135deg, ${tColor}22, ${tColor}08)` : 'transparent',
           border: isActive ? `2px solid ${tColor}` : '2px solid transparent',
           boxShadow: isActive ? `0 0 28px ${tColor}55, 0 0 60px ${tColor}22, inset 0 0 12px ${tColor}18` : 'none',
-          // transition: nur opacity/padding/background/box-shadow — die transform-
-          // transition wird im FLIP-Hook on-the-fly gesetzt.
-          transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
+          // transition: nur opacity/background/box-shadow/border-color — die
+          // transform-transition wird im FLIP-Hook on-the-fly gesetzt.
+          transition: 'opacity 0.3s ease, background 0.3s ease, box-shadow 0.4s ease, border-color 0.3s ease',
           position: 'relative', overflow: 'visible',
           willChange: 'transform',
         }}>

@@ -1431,24 +1431,42 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
-        {/* Team header */}
+        {/* Team header
+            2026-05-05 (Wolf-Wunsch 'design im /team nach teamfarbe'):
+            Header-BG bekommt subtilen Gradient in Team-Farbe (linear from
+            team.color@22% top-left → COZY_CARD_BG bottom-right). Border
+            in Team-Farbe (50% alpha). Damit ist das Team sofort an seiner
+            Farbe erkennbar — Kategorie-Cards bleiben unten in Kategorie-
+            Farben (kein Konflikt). */}
         {myTeam && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
             padding: '10px 14px', borderRadius: 16,
-            background: COZY_CARD_BG, border: '1px solid rgba(255,255,255,0.10)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            background: `linear-gradient(135deg, ${myTeam.color}33 0%, ${myTeam.color}10 50%, ${COZY_CARD_BG} 100%), ${COZY_CARD_BG}`,
+            border: `1.5px solid ${myTeam.color}55`,
+            boxShadow: `0 4px 16px rgba(0,0,0,0.4), 0 0 24px ${myTeam.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
+            position: 'relative', overflow: 'hidden',
           }}>
-            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={34} />
+            {/* Team-Avatar als Watermark im Header-BG (Wolf-Wunsch) */}
+            <div aria-hidden style={{
+              position: 'absolute',
+              right: -18, top: '50%', transform: 'translateY(-50%)',
+              width: 92, height: 92,
+              opacity: 0.08, pointerEvents: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={92} flat />
+            </div>
+            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={34} style={{ position: 'relative', zIndex: 1 }} />
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               <TeamNameLabel
                 name={myTeam.name}
                 maxLines={1}
                 shrinkAfter={14}
                 fontSize={20}
-                color="#e2e8f0"
+                color={myTeam.color}
                 fontWeight={900}
-                style={{ flex: 1, minWidth: 0 }}
+                style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
               />
               {/* 2026-05-05 (Wolf): Joker-Slots als 2 PNGs (m/w im Wechsel).
                   Wolf-Polish: kein BG/Border-Container mehr, beide Slots

@@ -10756,32 +10756,27 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           })()}
 
           {/* Correct team — winner banner (non-Schätzchen).
-              POP-Transition: max-height 0 → voll beim showUnifiedWinner,
-              statt Platz dauerhaft zu reservieren. Gilt für MUCHO / ZvZ.
-              HotPotato-Co-Winner: bei vielen Teams (6+) kann die Card 2-3 Zeilen
-              hoch werden — 360 war zu knapp. 560 clipt praktisch nie.
-              2026-05-05 (Wolf-Bug 'cheese sound aber keine gewinnercard'):
-              Bedingung erweitert auf currentQuestionWinners — bei CHEESE mit
-              mehreren Winnern ist correctTeamId oft leer, vorher wurde die
-              ganze Section ausgeblendet trotz vorhandener Sieger. */}
+              2026-05-05 v2 (Wolf 'zvz cards rutschen runter beim low-bet-out
+              und wieder hoch wenn winner-card kommt'): Slot-Hoehe wird jetzt
+              SOFORT bei revealed=true reserviert (nicht erst wenn showUnified-
+              Winner). Damit gibt es keinen Layout-Shift mehr zwischen
+              Bet-Cascade-Step 1 (low-bets out) und Step 2 (winner-card pop) —
+              der Slot ist die ganze Zeit da, nur der Inhalt fadet rein.
+              MUCHO/CHEESE/HotPotato profitieren auch. */}
           {revealed && q.category !== 'SCHAETZCHEN' && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (
             <div style={{
               width: '100%', maxWidth: 1400,
-              // 2026-04-28: User-Bug 'Mucho Sieger-Card Border-Glow oben/unten
-              // abgeschnitten'. Vorher overflow:hidden → Box-Shadow geclipped.
-              // Jetzt overflow:visible — Card kann Glow zeigen. Transition über
-              // opacity + transform:scaleY statt max-height (kein Clipping).
               overflow: 'visible',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: showUnifiedWinner ? 12 : 0,
+              // Slot-Hoehe konstant ab Reveal. Fuer HotPotato bei 6+ Teams kann
+              // die Card 2-3 Zeilen hoch werden — minHeight clamp(120, 14vh, 200)
+              // deckt Single- und Multi-Winner ab.
+              minHeight: 'clamp(120px, 14vh, 200px)',
+              marginBottom: 12,
               opacity: showUnifiedWinner ? 1 : 0,
-              transform: showUnifiedWinner ? 'scaleY(1)' : 'scaleY(0)',
+              transform: showUnifiedWinner ? 'scale(1)' : 'scale(0.96)',
               transformOrigin: 'top center',
-              maxHeight: showUnifiedWinner ? 'none' : 0,
-              // 2026-04-30 v2: 0.45s/0.55s → 0.85s — User-Feedback
-              // 'cards verschieben sich zu oft' braucht entspanntere Pop-In-
-              // Animation. cubic-bezier mit weichem Out-Curve fuer ruhiges Premium-Feel.
-              transition: 'opacity 0.85s var(--qq-ease-out-cubic), transform 0.85s var(--qq-ease-bounce), max-height 0.85s var(--qq-ease-out-cubic), margin-bottom 0.7s ease',
+              transition: 'opacity 0.7s var(--qq-ease-out-cubic), transform 0.7s var(--qq-ease-bounce)',
             }}>
               {showUnifiedWinner && (() => {
             const isEn = lang === 'en';

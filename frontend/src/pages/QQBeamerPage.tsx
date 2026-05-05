@@ -14792,24 +14792,32 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none', zIndex: 3,
                   }} />
                 )}
-                {/* 2026-05-05 v3 (Wolf 'max 2 stapeln, also 3 pkt max'):
-                    Cap auf 2 Inner-Layer. 1 Stack = 1 Inner, 2 Stack = 2 Inner.
-                    Inner-Border auf 2.5px hoch — klarer sichtbar. */}
+                {/* 2026-05-05 v4 (Wolf 'gelb sieht 3D aus, alle so machen +
+                    bei gelb mehr kontrast'): Inner-Layers nutzen jetzt einen
+                    dual-Layer-Background (tColor + semi-transparenter schwarzer
+                    Darken-Tint). Funktioniert farbunabhaengig — auch bei hellen
+                    Farben (Gelb/Pink/Tuerkis) entsteht echter Step-Down-Effekt.
+                    Plus staerkerer Inner-Inset-Schatten + zusaetzlicher Hard-
+                    Drop unten-rechts pro Layer fuer den 'wirklich 3D'-Look. */}
                 {team && stackCount >= 1 && Array.from({ length: Math.min(stackCount, 2) }).map((_, layerIdx) => {
                   const layerNum = layerIdx + 1; // 1..2
                   const insetPx = Math.max(4, cellSize * (0.10 * layerNum));
                   const layerRadius = Math.max(2, cellRadius - insetPx * 0.5);
                   const tColor = bc(team.id);
-                  // Jedes Inner-Layer leicht dunkler als das vorherige.
-                  const alphaA = ['ee', 'dd'][Math.min(layerIdx, 1)] || 'dd';
-                  const alphaB = ['bb', 'a0'][Math.min(layerIdx, 1)] || 'a0';
+                  // Darken pro Layer: ~20% / ~32% schwarzer Tint ueber tColor.
+                  const darkenAlpha = 0.20 + layerIdx * 0.12;
                   return (
                     <div key={`stack-${layerIdx}`} style={{
                       position: 'absolute',
                       inset: insetPx, borderRadius: layerRadius,
-                      background: `linear-gradient(135deg, ${tColor}${alphaA}, ${tColor}${alphaB})`,
+                      background: `linear-gradient(rgba(0,0,0,${darkenAlpha}), rgba(0,0,0,${darkenAlpha})), linear-gradient(135deg, ${tColor}ff, ${tColor}d0)`,
                       border: '2.5px solid rgba(251,191,36,0.9)',
-                      boxShadow: `inset 0 1px 0 rgba(255,255,255,${0.20 - layerIdx * 0.04}), inset 0 -2px 0 rgba(0,0,0,${0.20 - layerIdx * 0.03}), 0 1px 2px rgba(0,0,0,0.30)`,
+                      boxShadow: [
+                        `inset 0 1.5px 0 rgba(255,255,255,${0.26 - layerIdx * 0.05})`, // top highlight
+                        `inset 0 -2.5px 0 rgba(0,0,0,${0.28 - layerIdx * 0.04})`,      // bottom inner shadow
+                        `2px 2px 0 rgba(0,0,0,0.40)`,                                    // hard drop unten/rechts
+                        `0 2px 4px rgba(0,0,0,0.35)`,                                    // soft drop
+                      ].join(', '),
                       pointerEvents: 'none',
                       zIndex: 2 + layerIdx,
                       animation: 'phasePop 0.45s var(--qq-ease-bounce) both',

@@ -4210,20 +4210,40 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
     onSubmit(`${pin[0]},${pin[1]}`);
   }
 
+  // 2026-05-05 (Wolf-Wunsch 'cozyguessr auch mit bild'): wenn die Frage
+  // ein Bild hat, oben kompakt anzeigen — Map-Hoehe entsprechend reduziert.
+  const hasImage = !!q?.image?.url;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      {hasImage && (
+        <div style={{
+          borderRadius: 14, overflow: 'hidden',
+          border: '1.5px solid rgba(255,255,255,0.12)',
+          background: '#0d0a06',
+          height: 'clamp(140px, 22vh, 220px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <img
+            src={q.image.url}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            draggable={false}
+          />
+        </div>
+      )}
       <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
         {t.pinIt.tap[lang]}
       </div>
       {/* 2026-05-03 (Wolf-Bug 'Jetzt antworten zu weit unten'): map-height
           von 70vh auf 48vh reduziert. Auf 6"-Phones (700-850px Viewport)
           waren 70vh + Header + Submit-Btn zu viel — Btn rutschte unter den
-          Fold und war nicht sichtbar bis User scrollt. 48vh laesst Submit-Btn
-          komfortabel oberhalb der Bildschirmunterkante. */}
+          Fold und war nicht sichtbar bis User scrollt.
+          2026-05-05: bei Image -> Map noch kleiner damit Bild + Map + Submit
+          alle in den Viewport passen. */}
       <div style={{
         borderRadius: 16, overflow: 'hidden',
         border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
-        height: 'clamp(280px, 48vh, 480px)',
+        height: hasImage ? 'clamp(220px, 32vh, 380px)' : 'clamp(280px, 48vh, 480px)',
         position: 'relative',
       }}>
         <MapContainer

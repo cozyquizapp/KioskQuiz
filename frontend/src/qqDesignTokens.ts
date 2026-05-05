@@ -1,4 +1,6 @@
 // 2026-05-04 — CozyQuiz Design-Tokens (UI-Audit-Ergebnis)
+// 2026-05-05 — Phase-4-Erweiterung: ALPHA_DEPTH d0/d4, LETTER_SPACING.hero,
+//              DURATION.idle/spotlight, QQ_PHASE_COLORS (siehe AUDIT_FINDINGS L2-L4, L8, L10).
 //
 // Zentrale Werte fuer Spacing/Radii/Alpha/Typography/Duration/Color.
 // NEUER Code soll diese Tokens nutzen statt Inline-Hex/Magic-Numbers.
@@ -8,16 +10,21 @@
 // Begruendung pro Token:
 // - RADII: 4-Werte-System (tight/normal/rounded/pill) bricht den
 //   bisherigen Border-Radius-Salat (10/12/14/16/18/20/22/24/28).
-// - ALPHA_DEPTH: 3-Tier-Tiefen-System (33/55/88) ersetzt willkuerliche
-//   alpha-Werte wie ${color}5e oder ${color}66.
-// - LETTER_SPACING: 2 Tokens (tight=0.04em, wide=0.1em). Vorher 0.04 /
-//   0.06 / 0.08 / 0.16 / 0.2 / 0.4 wild gemischt.
+//   Strict — kein RADII.compact (6px). Inline-6er werden auf tight (8) gesnappt.
+// - ALPHA_DEPTH: 5-Tier-Tiefen-System (1A/33/55/88/B3) ersetzt willkuerliche
+//   alpha-Werte wie ${color}5e oder ${color}66. d0/d4 fangen die 0.10/0.70-Faelle ab
+//   (z.B. Reveal-Card-BG-Tint, Hot-Potato-Watermark).
+// - LETTER_SPACING: 3 Tokens (tight=0.04em, wide=0.1em, hero=0.22em).
+//   Strict — Body-Werte (0.06/0.08/0.12/0.16) snappen auf tight oder wide.
+//   Hero-Slot legalisiert die echten Hero-Spreizungen (Wordmark/Intro-Title).
 // - WEIGHT: 2-Stufen (700 + 900). 600/800 raus.
-// - DURATION: drei Stufen — sonst lief alles 0.15/0.18/0.2/0.3/0.4 mit
-//   keinem System.
+// - DURATION: 5 Stufen — fast/normal/slow fuer Interaktionen, idle fuer
+//   Breathing-Loops, spotlight fuer Auto-Advance.
 // - TEXT_COLOR: drei Stufen Hierarchie (primary/secondary/muted),
 //   plus dim fuer leise Labels. Werte sind Cozy-Dark-tested:
 //   primary=10:1, secondary=8:1, muted=7:1, dim=4.5:1 auf #0d0a06.
+// - QQ_PHASE_COLORS: 3-Element-Array fuer die 3 Game-Phasen
+//   (PhaseIntroView, RoundTransition). Vorher inline in QQBeamerPage:4080+12198.
 
 /** Border-Radius. Default fuer Cards/Buttons: NORMAL. */
 export const RADII = {
@@ -29,15 +36,20 @@ export const RADII = {
 
 /** Alpha-Suffixe fuer Hex-Farben (z.B. `${color}${ALPHA_DEPTH.d2}`). */
 export const ALPHA_DEPTH = {
+  d0: '1A',  // ~10% — Hauch, allerleichteste Outline (Reveal-Card-BG, Watermark-Subtle)
   d1: '33',  // ~20% — leichter Halo, dezente Outline
   d2: '55',  // ~33% — Standard-Glow, mittlerer Schatten
   d3: '88',  // ~53% — starker Glow, prominenter Shadow
+  d4: 'B3',  // ~70% — starker Tint, Hot-Potato-Watermark, dichte Card-Glows
 } as const;
 
-/** Letter-Spacing — nur diese zwei Werte verwenden. */
+/** Letter-Spacing — nur diese drei Werte verwenden.
+ *  hero ist ausschliesslich fuer Hero-Wordmark / Intro-Title gedacht
+ *  (extreme Spreizung als Stilmittel, nicht fuer Body). */
 export const LETTER_SPACING = {
   tight: '0.04em',  // Body-Text Tweaks
   wide:  '0.1em',   // UPPERCASE-Labels, Buttons
+  hero:  '0.22em',  // Hero-Wordmark, Intro-Title (Sondersfall)
 } as const;
 
 /** Font-Weight — nur diese zwei Werte verwenden (Regular ist body-default). */
@@ -48,9 +60,11 @@ export const WEIGHT = {
 
 /** Animation/Transition-Dauer in ms. */
 export const DURATION = {
-  fast:   150,  // Hover, Tap-Reaktion
-  normal: 300,  // Card-Switches, Subtle State
-  slow:   600,  // Hero-Animation, Scene-Wechsel
+  fast:      150,   // Hover, Tap-Reaktion
+  normal:    300,   // Card-Switches, Subtle State
+  slow:      600,   // Hero-Animation, Scene-Wechsel
+  idle:      2400,  // Idle-Loops, Breathing-Glow, Pulse-Wartezustaende
+  spotlight: 3500,  // Auto-Advance-Spotlight (GameOver-Hero, Recap-Stages)
 } as const;
 
 /** Text-Farb-Hierarchie auf dem Cozy-Dark-Background.
@@ -71,6 +85,11 @@ export const ACCENT_GOLD = {
   light:  '#FDE68A',
   deep:   '#D97706',
 } as const;
+
+/** Game-Phase-Farben fuer die 3 Spielphasen (PhaseIntroView, RoundTransition).
+ *  Index 0/1/2 = Phase 1/2/3 → Blau (Aufwaermen) / Amber (Hauptphase) / Rot (Finale).
+ *  Vorher inline an mehreren Stellen in QQBeamerPage hardcoded. */
+export const QQ_PHASE_COLORS = ['#3B82F6', '#F59E0B', '#EF4444'] as const;
 
 /** Standard-Easing — ergaenzt nach Animation-Audit 2026-05-04.
  *  Im Live-Code sind viele Inline-cubic-bezier()-Werte hardgecoded.

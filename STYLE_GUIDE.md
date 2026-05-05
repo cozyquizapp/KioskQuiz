@@ -31,26 +31,38 @@ RADII = {
 
 **Faustregel:** Cards = 16-18, Hero/Sieger-Card = 24, Pille/Status-Badge = 999.
 
+**Strict.** Kein `RADII.compact` (6px). Vorhandene Inline-6er werden auf `tight` (8) gesnappt
+— der 2px-Unterschied ist auf Beamer-Distanz nicht sichtbar.
+
 ### Alpha-Tiefe
 ```ts
 ALPHA_DEPTH = {
+  d0: '1A',  // ~10% — Hauch, allerleichteste Outline (Reveal-Card-BG, Watermark-Subtle)
   d1: '33',  // ~20% — leichter Halo, dezente Outline
   d2: '55',  // ~33% — Standard-Glow
   d3: '88',  // ~53% — starker Glow, prominent
+  d4: 'B3',  // ~70% — starker Tint, Hot-Potato-Watermark, dichte Card-Glows
 }
 ```
 
 Verwendung als Hex-Suffix: `${teamColor}${ALPHA_DEPTH.d2}` → z.B. `#FBBF2455`.
+
+**Strict.** Keine eigenen Alpha-Suffixe. Wenn ein neuer Wert „nötig" wäre, wahrscheinlich
+einen der 5 Stufen wählen — der visuelle Unterschied zwischen z.B. `0.65` und `0.70` ist
+unter Beamer-Distanz nicht wahrnehmbar.
 
 ### Letter-Spacing
 ```ts
 LETTER_SPACING = {
   tight: '0.04em',  // Body-Text Tweaks
   wide:  '0.1em',   // UPPERCASE-Labels, Buttons
+  hero:  '0.22em',  // Hero-Wordmark, Intro-Title (Sondersfall)
 }
 ```
 
-**Andere Werte (0.06/0.08/0.12/0.16/0.22) sind Legacy** — nicht für neuen Code.
+**Strict.** Body-Werte (0.06/0.08/0.12/0.16) snappen auf `tight` oder `wide` (visuell
+nicht unterscheidbar). `hero` ist ausschließlich für Hero-Wordmark / QuizIntro-Title /
+TeamsReveal-Slam — wo extreme Spreizung das gewünschte Stilmittel ist.
 
 ### Font-Weight
 ```ts
@@ -65,9 +77,11 @@ WEIGHT = {
 ### Animation-Dauer
 ```ts
 DURATION = {
-  fast:   150,  // Hover, Tap-Reaktion
-  normal: 300,  // Card-Switches, subtile State
-  slow:   600,  // Hero-Animation, Scene-Wechsel
+  fast:      150,   // Hover, Tap-Reaktion
+  normal:    300,   // Card-Switches, subtile State
+  slow:      600,   // Hero-Animation, Scene-Wechsel
+  idle:      2400,  // Idle-Loops, Breathing-Glow, Pulse-Wartezustände
+  spotlight: 3500,  // Auto-Advance-Spotlight (GameOver-Hero, Recap-Stages)
 }
 ```
 
@@ -146,6 +160,16 @@ QQ_CAT_ACCENT = {
 ```
 
 Kategorie-Pille, Frage-Card-Border, Fireflies-Tint nutzen den Akzent.
+
+### Game-Phase-Farben (3 Spielphasen)
+```ts
+QQ_PHASE_COLORS = ['#3B82F6', '#F59E0B', '#EF4444']
+//                  Phase 1     Phase 2    Phase 3
+//                  Aufwärmen   Hauptphase Finale
+```
+
+**Verwendung:** PhaseIntroView, RoundTransition-Choreografie, Phase-Pill in QuestionView-Footer.
+**Regel:** NICHT inline duplizieren. Import aus `qqDesignTokens.ts`.
 
 ### Brett-Palette (Smart-Color-Assignment, ab 2026-05-05)
 ```ts
@@ -318,6 +342,24 @@ Halbtransparent + leicht geblurrt + großzügig dimensioniert.
 
 **Datei:** `frontend/src/qqShared.ts` — alle ~95 keyframes zentral.
 
+### Easing-Migration-Regel (NEU 2026-05-05)
+
+**Neuer Code:** Easing IMMER über CSS-Variablen referenzieren, nie als Inline-`cubic-bezier()`-String:
+
+```jsx
+// ✅ Richtig
+animation: 'phasePop 0.6s var(--qq-ease-bounce) both'
+transition: 'transform 0.3s var(--qq-ease-smooth-out)'
+
+// ❌ Falsch (Legacy)
+animation: 'phasePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both'
+```
+
+CSS-Vars (in `main.css` definiert): `--qq-ease-bounce`, `--qq-ease-bounce-soft`,
+`--qq-ease-pop-fast`, `--qq-ease-smooth`, `--qq-ease-smooth-out`.
+
+**Bestehende Inline-cubic-bezier:** Werden in Bucket-2-Refactor migriert. Hand-Edits in Legacy-Pages dürfen sie schrittweise mitziehen, aber niemals neue Inline-Werte hinzufügen.
+
 ### Standard-Animationen (verwende diese, statt neue zu schreiben)
 
 | Keyframe | Use-Case | Dauer | Easing |
@@ -398,8 +440,50 @@ padding: 8px 22px  (oder clamp(6,1vh,10) clamp(14,1.6vw,22))
 ### Position-Fixed-Trap
 **Regel:** Niemals `position: fixed` innerhalb BeamerFrame — wird durch Transform-Stacking-Context von `beamerFade` zu `position: absolute`-relativ-zur-Card. Stattdessen `position: absolute` mit klarem Positioning-Ancestor verwenden. Memory: `MEMORY.md` Critical-Section.
 
+### Overlays im BeamerPage — `<BeamerOverlay>`-Wrapper
+**Regel:** Alle Vollflächen-Overlays (QuizIntro, RulesIntro, Action-Cards, Comeback-Splash) werden über die zentrale `<BeamerOverlay>`-Komponente in `frontend/src/components/BeamerOverlay.tsx` gerendert.
+
+```tsx
+<BeamerOverlay zIndex={50} background="rgba(13,10,6,0.92)">
+  {/* Overlay-Inhalt */}
+</BeamerOverlay>
+```
+
+Die Komponente kapselt das korrekte `position: absolute, inset: 0`-Pattern und vermeidet den Position-Fixed-Trap. **Keine eigenen `position: fixed` Inline-Styles** — wenn ein Spezialfall auftaucht: erst überprüfen, ob ein neuer `<BeamerOverlay>`-Variant Sinn macht.
+
 ### Gouache-Pages = nur Stil-Tausch
 **Regel:** Gouache-Pages clonen das Layout 1:1 vom produktiven Pendant — nur Components/Tokens austauschen, keine eigene Layout-Architektur. Memory: `feedback_gouache_layout_principle.md`.
+
+---
+
+## 📱 Mobile Interaction Feedback (Team-Page)
+
+Die Team-Page läuft auf Phone/Tablet — andere Regeln als Beamer.
+
+### Tap-Targets
+- **Min:** `TAP_TARGET.min` (44px) — alle Buttons, Choices, Toggles
+- **Cozy:** `TAP_TARGET.cozy` (48px) — Inputs, Primary-Buttons (bequemer)
+- **Sub-44 verboten** — Ausnahmen brauchen begründeten Eintrag im Style-Guide
+
+### Tap-Feedback (Visual)
+- **Active-State:** `transform: scale(0.96)` + `transition: 0.15s var(--qq-ease-pop-fast)` — fühlt sich „angetippt" an
+- **Submit-Bestätigung:** Green-Ring (siehe Status-Indikator-Pattern) + optional Haptik (`navigator.vibrate(40)`)
+- **Disabled:** `opacity: 0.55` + `pointer-events: none` — keine Active-Animation
+
+### Haptik-Patterns
+| Event | Vibration |
+|---|---|
+| Tap auswählen | 25ms (subtle) |
+| Submit erfolgreich | 40ms (deutlich) |
+| Falsch / Locked-Out | 60-80ms (erkennbar negativ) |
+| Joker / Comeback-Win | 2× 60ms mit 80ms-Pause (Burst) |
+
+`navigator.vibrate(...)` Capability-Check immer machen — auf iOS oft no-op.
+
+### Phone-Skalierung
+- Padding/Font in clamp mit kleinen min-Werten (`clamp(12px, 3vw, 18px)`) — kompakte Phones brauchen Atmung
+- `font-size: 16px+` auf Inputs (sonst zoomt iOS Safari beim Fokus)
+- Avatar/Cell-Sizes: prozentual zum Viewport, nicht fix
 
 ---
 
@@ -407,16 +491,20 @@ padding: 8px 22px  (oder clamp(6,1vh,10) clamp(14,1.6vw,22))
 
 Wenn du eine neue Page baust oder eine bestehende refactorst, geh diese Liste durch:
 
-- [ ] Verwendet `qqDesignTokens.ts` (RADII / WEIGHT / DURATION / TEXT_COLOR)?
+- [ ] Verwendet `qqDesignTokens.ts` (RADII / ALPHA_DEPTH / LETTER_SPACING / WEIGHT / DURATION / TEXT_COLOR / QQ_PHASE_COLORS)?
+- [ ] Easing über `var(--qq-ease-*)` — kein Inline-`cubic-bezier()`?
 - [ ] Status-Indikator = grüner Ring (Submit) oder ✓/✕ (Reveal) — nicht mixed?
 - [ ] Cards: 3-Schicht-Shadow oder 2-Schicht (siehe Card-System)?
 - [ ] Animations aus dem Vocabulary (qqShared.ts) — keine neue ad-hoc?
 - [ ] Typography in Hierarchie-Stufe (siehe Typography)?
+- [ ] LetterSpacing nur `tight` / `wide` / `hero` — keine Magic-Werte?
 - [ ] Cell-Background nutzt `qqGetBoardColor`, nicht `team.color`?
 - [ ] Beamer hat keine Scrollbar (overflow: hidden auf root)?
+- [ ] Overlays nutzen `<BeamerOverlay>`-Wrapper — kein Inline-`position: fixed`?
 - [ ] Card-Center: Frage+Options als 1 Block vertikal mittig?
 - [ ] Q↔R-Transition ≥0.45s?
 - [ ] Mod-Hint („Space → Next" etc.) bei spezial-Phasen vorhanden?
+- [ ] (Team-Page) Tap-Targets ≥44px? Active-Feedback (scale 0.96 + Haptik) vorhanden?
 
 ---
 
@@ -424,4 +512,13 @@ Wenn du eine neue Page baust oder eine bestehende refactorst, geh diese Liste du
 
 - **2026-05-05** — Initial-Style-Guide aus Code-Audit. Phase 1 von Vereinheitlichungs-Pass.
   Page-by-Page-Audits folgen in Phase 2.
+- **2026-05-05** — Phase 4 Bucket-4 (Lücken-Patches) erledigt:
+  - `ALPHA_DEPTH.d0` (1A/~10%) und `d4` (B3/~70%) ergänzt — fängt 0.18/0.65-Inline-Werte ab.
+  - `LETTER_SPACING.hero` (0.22em) ergänzt — strict, nur für Hero-Wordmark/Intro-Title.
+  - `DURATION.idle` (2400ms) und `spotlight` (3500ms) ergänzt — Idle-Loops + Auto-Advance.
+  - `QQ_PHASE_COLORS` als zentrales Token (statt inline in QQBeamerPage).
+  - Easing-Migration-Regel: neuer Code MUSS CSS-Vars nutzen, kein Inline-cubic-bezier.
+  - `<BeamerOverlay>`-Wrapper-Pattern dokumentiert (Position-Fixed-Trap-Schutz).
+  - Mobile-Interaction-Section: Tap-Targets, Haptik-Patterns, Phone-Skalierung.
+  - Strict-Entscheidungen: kein `RADII.compact` (6→8 snappen), LetterSpacing nur 3 Slots.
 

@@ -189,8 +189,12 @@ let lobbyAudioEl: HTMLAudioElement | null = null;
 
 function applyDuckToLoop() {
   if (loopAudioEl) loopAudioEl.volume = masterVolume * musicDuckFactor;
-  // Lobby-Loop wird nicht geduckt — sie IST die Pausen-/Lobby-Musik.
-  if (lobbyAudioEl) lobbyAudioEl.volume = masterVolume;
+  // 2026-05-05 (Phase-6 Bucket-1 BC-2): lobbyAudioEl wird AUCH gedreht.
+  // Vorher: nur loopAudioEl. Lücke: Finale/Comeback/GameOver teilen sich
+  // lobbyAudioEl mit der Lobby-Musik, also war Ducking dort nicht aktiv —
+  // Fanfare/Reveal/ClimaxFinish konnten von voller Musik überlagert werden.
+  // Jetzt: Ducking betrifft alle Music-Loops konsistent.
+  if (lobbyAudioEl) lobbyAudioEl.volume = masterVolume * musicDuckFactor;
 }
 
 /** Ziel-Duck setzen (500ms smooth fade). true = auf 0.2 dämpfen, false = auf 1 zurück. */
@@ -766,12 +770,26 @@ export function playSynthPreset(slot: QQSoundSlot, presetKey: string) {
 export function playCorrect()      { playSlotOneShot('correct'); }
 export function playWrong()        { playSlotOneShot('wrong'); }
 export function playTimesUp()      { playSlotOneShot('timesUp'); }
-export function playFanfare()      { playSlotOneShot('fanfare'); }
-export function playReveal()       { playSlotOneShot('reveal'); }
+// 2026-05-05 (Phase-6 BC-2): Fanfare/Reveal sind grosse SFX, ducken die
+// Music-Loops kurz weg damit die Phase-Cues nicht von Lobby/Finale-Musik
+// uebertoent werden. 500ms Fade down → SFX → 500ms Fade up nach durMs.
+export function playFanfare()      { playWithDuck('fanfare', 2000); }
+export function playReveal()       { playWithDuck('reveal',  1500); }
 export function playFieldPlaced()  { playSlotOneShot('fieldPlaced'); }
 export function playTeamReveal()   { playSlotOneShot('teamReveal'); }
 export function playSteal()        { playSlotOneShot('steal'); }
 export function playLobbyWelcome() { playSlotOneShot('lobbyWelcome'); }
+
+/** Spielt einen One-Shot-SFX und ducked Music-Loops für die geschätzte
+ *  Sound-Dauer + 500ms Fade-In/Out (siehe setMusicDucked).
+ *  Phase-6 Bucket-1 BC-2: vorher lief Music auf voller Lautstaerke ueber
+ *  grossen SFX-Momenten (Fanfare/Reveal/GridReveal/ClimaxFinish/GameOver) —
+ *  fuehrte zu Kakophonie. Ducking dimmt Music auf 20% waehrend des SFX. */
+function playWithDuck(slot: QQSoundSlot, durationMs: number) {
+  setMusicDucked(true);
+  playSlotOneShot(slot);
+  window.setTimeout(() => setMusicDucked(false), durationMs);
+}
 
 // Kategorie-aware Wrapper: wenn ein kategorie-spezifischer Slot eine URL hat,
 // wird er gespielt — sonst Fallback auf generic. Das erlaubt pro Kategorie
@@ -1002,7 +1020,8 @@ export function startComebackLoop() {
 
 export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }
-export function playGameOver()      { playSlotOneShot('gameOver'); }
+// BC-2: Music-Ducking fuer Game-Over-Cue (laut + dramatisch).
+export function playGameOver()      { playWithDuck('gameOver', 2500); }
 
 // ── Aktions-Sounds (Trinity: Place/Steal/Stapel) ──────────────────────────
 // Alle mit Synth-Fallback, damit sie ohne Custom-Upload funktionieren.
@@ -1081,6 +1100,9 @@ export function playWinnerCardReveal() {
  *  'gruen-faerben'-Sound (correct/reveal). */
 export function playGridReveal() {
   if (!isSlotEnabled('gridReveal')) return;
+  // BC-2: Music-Ducking fuer den 9-Grid-Slam.
+  setMusicDucked(true);
+  window.setTimeout(() => setMusicDucked(false), 1500);
   const url = resolveSlotUrl('gridReveal');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
@@ -1101,6 +1123,9 @@ export function playGridReveal() {
  *  obenauf. Klingt nach 'Wettkampf-Beginn / Spotlight an'. */
 export function playGoodLuckFanfare() {
   if (!isSlotEnabled('goodLuckFanfare')) return;
+  // BC-2: Music-Ducking fuer Wettkampf-Beginn-Fanfare.
+  setMusicDucked(true);
+  window.setTimeout(() => setMusicDucked(false), 2500);
   const url = resolveSlotUrl('goodLuckFanfare');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
@@ -1151,6 +1176,9 @@ export function playRevealHighlight() {
  *  eigenen leichteren Slot 'revealHighlight'). */
 export function playClimaxFinish() {
   if (!isSlotEnabled('climaxFinish')) return;
+  // BC-2: Music-Ducking fuer den Kroenungs-Akkord (~2.5s sustain).
+  setMusicDucked(true);
+  window.setTimeout(() => setMusicDucked(false), 3000);
   const url = resolveSlotUrl('climaxFinish');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();

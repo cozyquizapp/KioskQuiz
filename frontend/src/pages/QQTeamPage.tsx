@@ -655,7 +655,12 @@ export default function QQTeamPage() {
   }
   const myTeam = state.teams.find(t => t.id === teamId);
   return (
-    <AvatarSetProvider value={setId}>
+    // 2026-05-05 (Wolf-Bug 'gelb: grid joker, tabelle geist, /team giraffe'):
+    // emojis-prop war hier vergessen → AvatarSetContext.serverEmojis war
+    // undefined → Fallback auf hardcoded Default-Set-Emoji statt vom Server
+    // konfigurierte Mod-Custom-Emoji-Set. Beamer hatte das schon korrekt,
+    // /team hat jetzt die gleiche Datenbasis.
+    <AvatarSetProvider value={setId} emojis={state.avatarSetEmojis}>
       <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
         emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect}
         showIdentityBanner={showIdentityBanner} dismissIdentityBanner={() => setShowIdentityBanner(false)} />
@@ -2248,6 +2253,11 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (q.category === 'BUNTE_TUETE' && btKind === 'order') return Math.min(13500, 3000 + Math.min(5, teamCount) * 2000);
         if (q.category === 'BUNTE_TUETE' && btKind === 'onlyConnect') return 5500;
         if (q.category === 'BUNTE_TUETE' && btKind === 'bluff') return 5500;
+        // 2026-05-05 (Wolf-Bug 'cozyguessr reveal table /team viel frueher'):
+        // Map-Reveal hat lange Cascade — Target-Pin-Drop (0.75s) + Team-Pin-
+        // Drops gestaffelt + Polylines-Tweening + mapRevealStep schrittweise.
+        // Plus Mod kann zoomen/schwenken. Auf jeden Fall lange Lock.
+        if (q.category === 'BUNTE_TUETE' && btKind === 'map') return Math.min(16000, 5500 + teamCount * 1200);
         return 5000; // single-winner default (hotPotato, oneOfEight)
       })();
       const t = setTimeout(() => setRevealUnlocked(true), lockMs);
@@ -5754,18 +5764,21 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((tm, i) => {
             const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+            // 2026-05-05 (Wolf-Bug 'gelb in tabelle, blau auf grid'): Brett-Palette
+            // statt Avatar-Color → konsistent zu den Grid-Cells.
+            const tmColor = qqGetBoardColor(tm.id, s.teams);
             return (
               <div key={tm.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,
-                background: tm.id === myTeamId ? `${tm.color}18` : 'rgba(255,255,255,0.03)',
-                border: tm.id === myTeamId ? `2px solid ${tm.color}44` : '1px solid rgba(255,255,255,0.06)',
+                background: tm.id === myTeamId ? `${tmColor}18` : 'rgba(255,255,255,0.03)',
+                border: tm.id === myTeamId ? `2px solid ${tmColor}44` : '1px solid rgba(255,255,255,0.06)',
                 animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
               }}>
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
                   color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
                 }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
-                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
-                <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
+                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} bgColor={tmColor} />
+                <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#94a3b8' }}>
                     {tm.largestConnected} {t.gameOver.connected[lang]}

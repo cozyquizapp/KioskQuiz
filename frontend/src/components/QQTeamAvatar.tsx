@@ -34,6 +34,14 @@ type Props = {
    * relevant; im PNG-Mode (cozyCast) keine Wirkung.
    */
   flat?: boolean;
+  /**
+   * 2026-05-05 (Wolf-Bug 'gelb in tabelle, blau auf grid'): optional Override
+   * fuer den Disc-Hintergrund im Emoji-Mode. Standard ist display.color
+   * (Avatar-Slot-Farbe, z.B. gelb fuer Slot 4). Mit bgColor uebersteuern
+   * Standings/Tabelle den Disc-BG auf qqGetBoardColor → konsistent zur
+   * Brett-Palette der Grid-Cells. Nur Emoji-Mode (cozyCast PNG ignoriert).
+   */
+  bgColor?: string;
 };
 
 /**
@@ -52,7 +60,7 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji, flat,
+  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji, flat, bgColor,
 }: Props) {
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
@@ -80,7 +88,7 @@ export function QQTeamAvatar({
     return (
       <EmojiAvatar
         emoji={display.emoji}
-        color={display.color}
+        color={bgColor ?? display.color}
         size={size}
         baseStyle={base}
         className={className}

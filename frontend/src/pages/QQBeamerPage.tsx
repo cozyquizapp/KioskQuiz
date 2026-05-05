@@ -14926,6 +14926,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
         const medal = medalFor(i, t.largestConnected);
+        // 2026-05-05 (Wolf-Bug 'gelb in tabelle, blau auf grid'): tColor =
+        // Brett-Palette-Farbe (gleiche Quelle wie Cells) statt Avatar-Color.
+        // Standings sind jetzt visuell konsistent zum Grid.
+        const tColor = qqGetBoardColor(t.id, teams);
         return (
         <div
           key={t.id}
@@ -14937,9 +14941,9 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           // Aktives Team: prominenter Box-Ring + Puls, wegen Banner-Wegfall.
           padding: isActive ? (dense ? '6px 10px' : '8px 14px') : '0',
           borderRadius: isActive ? 16 : 0,
-          background: isActive ? `linear-gradient(135deg, ${t.color}22, ${t.color}08)` : 'transparent',
-          border: isActive ? `2px solid ${t.color}` : '2px solid transparent',
-          boxShadow: isActive ? `0 0 28px ${t.color}55, 0 0 60px ${t.color}22, inset 0 0 12px ${t.color}18` : 'none',
+          background: isActive ? `linear-gradient(135deg, ${tColor}22, ${tColor}08)` : 'transparent',
+          border: isActive ? `2px solid ${tColor}` : '2px solid transparent',
+          boxShadow: isActive ? `0 0 28px ${tColor}55, 0 0 60px ${tColor}22, inset 0 0 12px ${tColor}18` : 'none',
           // transition: nur opacity/padding/background/box-shadow — die transform-
           // transition wird im FLIP-Hook on-the-fly gesetzt.
           transition: 'opacity 0.3s ease, padding 0.3s ease, background 0.3s ease, box-shadow 0.4s ease',
@@ -14959,7 +14963,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 : undefined,
               borderRadius: '50%',
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} bgColor={tColor} />
               {isLeader && (
                 <span style={{
                   position: 'absolute',
@@ -15038,9 +15042,9 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               maxLines={2}
               shrinkAfter={14}
               fontSize={nameFs}
-              color={t.color}
+              color={tColor}
               fontWeight={900}
-              style={{ textShadow: isActive ? `0 0 16px ${t.color}55` : 'none' }}
+              style={{ textShadow: isActive ? `0 0 16px ${tColor}55` : 'none' }}
             />
             {isActive && activeActionLabel && (
               <div style={{
@@ -15048,11 +15052,11 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 alignSelf: 'flex-start',
                 padding: '3px 10px', borderRadius: 999,
                 background: 'rgba(0,0,0,0.45)',
-                border: `1.5px solid ${t.color}88`,
+                border: `1.5px solid ${tColor}88`,
                 fontSize: dense ? 14 : 16, fontWeight: 900,
                 color: '#fde68a',
                 animation: 'tcpulse 1.6s ease-in-out infinite',
-                ['--c' as string]: `${t.color}55`,
+                ['--c' as string]: `${tColor}55`,
               }}>
                 <span>{activeActionLabel}</span>
                 {activeActionDesc && (
@@ -15110,10 +15114,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             {floaters.filter(f => f.teamId === t.id).map(f => (
               <div key={f.id} style={{
                 position: 'absolute', right: 0, top: -28,
-                fontWeight: 900, fontSize: dense ? 22 : 28, color: t.color,
+                fontWeight: 900, fontSize: dense ? 22 : 28, color: tColor,
                 animation: 'scoreFloat 1.0s ease-out both',
                 pointerEvents: 'none',
-                textShadow: `0 0 10px ${t.color}88`,
+                textShadow: `0 0 10px ${tColor}88`,
               }}>+{f.diff}</div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
+import { QQ_PHASE_COLORS } from '../qqDesignTokens';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -191,6 +192,12 @@ export default function QQProgressTree({
   // Tiefe statt einfarbig zu sein. 80% Helligkeit als Hex.
   const progressColorEnd = progressColor;
 
+  // 2026-05-05 (Wolf 'progress tree mit rundenfarbe + glow'): inline + hero
+  // Varianten bekommen Border + Glow in der aktuellen Runden-Farbe (gleicher
+  // Token wie das 'Runde N'-Label oben), 3-Cycle damit Runde 4 = Runde 1-Farbe.
+  const roundColor = QQ_PHASE_COLORS[((state.gamePhaseIndex ?? 1) - 1) % 3];
+  const useRoundAccent = variant === 'inline' || variant === 'hero';
+
   const wrapperBg = isShowcase
     ? 'transparent'
     : isMini
@@ -202,9 +209,16 @@ export default function QQProgressTree({
     ? 'none'
     : isMini
       ? '1px solid rgba(148,163,184,0.18)'
-      : variant === 'inline'
-        ? '1px solid rgba(148,163,184,0.3)'
+      : useRoundAccent
+        ? `2px solid ${roundColor}aa`
         : '2px solid #e2e8f0';
+  const wrapperBoxShadow = isShowcase
+    ? 'none'
+    : isMini
+      ? '0 4px 12px rgba(0,0,0,0.35)'
+      : useRoundAccent
+        ? `0 0 36px ${roundColor}55, 0 0 14px ${roundColor}33, 0 10px 32px rgba(15,23,42,0.18)`
+        : '0 10px 32px rgba(15,23,42,0.18)';
   const wrapperColor = (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : '#0f172a';
 
   return (
@@ -224,8 +238,10 @@ export default function QQProgressTree({
         borderRadius: isMini ? 999 : 20,
         background: wrapperBg,
         color: wrapperColor,
-        boxShadow: isShowcase ? 'none' : isMini ? '0 4px 12px rgba(0,0,0,0.35)' : '0 10px 32px rgba(15,23,42,0.18)',
+        boxShadow: wrapperBoxShadow,
         border: wrapperBorder,
+        // Soft transition damit Runden-Farb-Wechsel (Phase 1→2→3→4) smooth durchfaerbt.
+        transition: 'border-color 0.6s ease, box-shadow 0.6s ease',
         // Showcase: volle Container-Breite (Pan-Camera fliegt smooth durch).
         width: isShowcase ? '100%' : undefined,
         maxWidth: isShowcase ? '100%' : variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,

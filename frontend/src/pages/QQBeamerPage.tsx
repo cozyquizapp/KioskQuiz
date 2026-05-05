@@ -6094,9 +6094,13 @@ function BluffBeamerView({ state: s, lang, revealed }: {
               background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
               fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
             }}>
-              {phase === 'write' && (lang === 'de' ? `📝 Bluffs schreiben (${submitCount}/${totalActive})` : `📝 Writing (${submitCount}/${totalActive})`)}
-              {phase === 'review' && (lang === 'de' ? `👮 Moderator-Check` : `👮 Moderator check`)}
-              {phase === 'vote' && (lang === 'de' ? `🗳 Abstimmen (${voteCount}/${totalActive})` : `🗳 Voting (${voteCount}/${totalActive})`)}
+              {/* 2026-05-05 (Wolf 'emojis vom style nicht passend, schwarz-weiss'):
+                  📝 → ✍️ (bunte writing hand), 🗳 → 🎯 (bullseye, „triff
+                  die echte"), 👮 → 🕵️ (Detective, passt thematisch zum
+                  Bluff-Detection besser als Polizei-Emoji). */}
+              {phase === 'write' && (lang === 'de' ? `✍️ Bluffs schreiben (${submitCount}/${totalActive})` : `✍️ Writing (${submitCount}/${totalActive})`)}
+              {phase === 'review' && (lang === 'de' ? `🕵️ Moderator-Check` : `🕵️ Moderator check`)}
+              {phase === 'vote' && (lang === 'de' ? `🎯 Abstimmen (${voteCount}/${totalActive})` : `🎯 Voting (${voteCount}/${totalActive})`)}
               {phase === 'reveal' && (lang === 'de' ? `🎉 Auflösung` : `🎉 Reveal`)}
             </div>
           )}
@@ -6253,7 +6257,7 @@ function BluffWriteScreen({ state: s, accent, lang }: {
       <div style={{
         fontSize: 'clamp(60px, 8vw, 110px)',
         animation: 'cfloat 4s ease-in-out infinite',
-      }}>📝</div>
+      }}>✍️</div>
       <div style={{
         fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
         color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
@@ -6314,8 +6318,8 @@ function BluffReviewScreen({ state: s, accent, lang }: {
         color: '#94a3b8', textAlign: 'center',
       }}>
         {lang === 'de'
-          ? '👮 Moderator prüft die Bluffs… Bluffs werden für die Spieler nicht angezeigt.'
-          : '👮 Moderator reviewing bluffs… not visible to players.'}
+          ? '🕵️ Moderator prüft die Bluffs… Bluffs werden für die Spieler nicht angezeigt.'
+          : '🕵️ Moderator reviewing bluffs… not visible to players.'}
       </div>
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -6377,7 +6381,7 @@ function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       <div style={{
         fontSize: 'clamp(60px, 8vw, 110px)',
         animation: 'cfloat 4s ease-in-out infinite',
-      }}>🗳</div>
+      }}>🎯</div>
       <div style={{
         fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
         color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,

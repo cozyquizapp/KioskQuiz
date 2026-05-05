@@ -320,9 +320,30 @@ const PrecisionEditor = ({ payload, onUpdate }: { payload: BunteTuetePrecisionPa
 const MapEditor = ({ payload, onUpdate }: { payload: BunteTueteMapPayload; onUpdate: (p: BunteTueteMapPayload) => void }) => {
   const lat = payload.target?.lat ?? '';
   const lng = payload.target?.lng ?? '';
+  const [plusCode, setPlusCode] = useState('');
+  const [plusCodeStatus, setPlusCodeStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const updateCoord = (field: 'lat' | 'lng', val: string) => {
     const num = parseFloat(val);
     if (!isNaN(num)) onUpdate({ ...payload, target: { ...payload.target, [field]: num } });
+  };
+  const applyPlusCode = async () => {
+    if (!plusCode.trim()) return;
+    setPlusCodeStatus('loading');
+    try {
+      const { plusCodeToLatLng } = await import('../utils/plusCode');
+      const coords = await plusCodeToLatLng(plusCode);
+      if (!coords) {
+        setPlusCodeStatus('error');
+        return;
+      }
+      onUpdate({
+        ...payload,
+        target: { ...payload.target, lat: parseFloat(coords.lat.toFixed(5)), lng: parseFloat(coords.lng.toFixed(5)) },
+      });
+      setPlusCodeStatus('idle');
+    } catch {
+      setPlusCodeStatus('error');
+    }
   };
   return (
     <div style={formSectionStyle}>
@@ -334,6 +355,42 @@ const MapEditor = ({ payload, onUpdate }: { payload: BunteTueteMapPayload; onUpd
         rows={2}
         placeholder="z.B. Wo befindet sich der Taj Mahal?"
       />
+      {/* 2026-05-05 (Wolf-Wunsch): Plus Code Input — entweder FULL Code
+          (z.B. '8FVC9G8F+5W') ODER SHORT Code mit Referenz (z.B. '4H7F+RX
+          Boks, Albanien'). SHORT-Codes werden via Nominatim geocoded. */}
+      <div style={{ marginTop: 12 }}>
+        <small style={{ opacity: 0.6, fontSize: 11 }}>📍 Plus Code (Google Maps) — optional, befüllt Koordinaten unten</small>
+        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+          <input
+            type="text"
+            value={plusCode}
+            onChange={(e) => { setPlusCode(e.target.value); setPlusCodeStatus('idle'); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyPlusCode(); } }}
+            style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+            placeholder="z.B. 4H7F+RX Boks, Albanien"
+          />
+          <button
+            type="button"
+            onClick={applyPlusCode}
+            disabled={!plusCode.trim() || plusCodeStatus === 'loading'}
+            style={{
+              padding: '6px 14px', borderRadius: 6, fontFamily: 'inherit', fontWeight: 700,
+              fontSize: 12, cursor: plusCode.trim() ? 'pointer' : 'not-allowed',
+              background: plusCodeStatus === 'error' ? 'rgba(239,68,68,0.18)' : 'rgba(6,182,212,0.18)',
+              border: plusCodeStatus === 'error' ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(6,182,212,0.5)',
+              color: plusCodeStatus === 'error' ? '#FCA5A5' : '#67e8f9',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {plusCodeStatus === 'loading' ? '⏳' : plusCodeStatus === 'error' ? '✗ Fehler' : '📍 Übernehmen'}
+          </button>
+        </div>
+        {plusCodeStatus === 'error' && (
+          <small style={{ color: '#FCA5A5', fontSize: 10, marginTop: 4, display: 'block' }}>
+            Konnte Plus Code nicht auflösen. FULL-Code wie „8FVC9G8F+5W" oder SHORT mit Referenz „4H7F+RX Boks, Albanien".
+          </small>
+        )}
+      </div>
       <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <small style={{ opacity: 0.6, fontSize: 11 }}>Breitengrad (Latitude)</small>

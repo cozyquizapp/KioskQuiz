@@ -30,6 +30,7 @@ import {
   QQBunteTuetePayload, QQOptionImage,
   QQThemePreset, QQ_THEME_PRESETS,
 } from '../../../shared/quarterQuizTypes';
+import { compressImageIfNeeded } from '../utils/imageCompress';
 import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
@@ -332,6 +333,13 @@ export default function QQBuilderPage() {
   }
   async function translateAllToEnglish() {
     if (!activeDraft || translating) return;
+    // 2026-05-05 (Wolf-Bug 'felder werden nicht automatisch uebersetzt die
+    // ich gerade mit deutschem text gefuellt habe'): vorher skipped der
+    // Translator alle Felder die schon textEn hatten — auch wenn DE
+    // inzwischen geaendert wurde. Jetzt: Confirm + komplett neu uebersetzen,
+    // sodass DE-Aenderungen immer ankommen. Manuelle EN-Eingaben gehen
+    // verloren, das ist der bewusste Trade-off.
+    if (!confirm('Alle EN-Felder neu übersetzen?\nVorhandene EN-Texte werden überschrieben.')) return;
     setTranslating(true);
     try {
       async function tr(text: string): Promise<string> {
@@ -349,44 +357,31 @@ export default function QQBuilderPage() {
 
       const translatedQuestions = await Promise.all(activeDraft.questions.map(async (q) => {
         const updated = { ...q };
-        // Core fields
-        if (!q.textEn)   updated.textEn   = await tr(q.text);
-        if (!q.answerEn) updated.answerEn = await tr(q.answer);
-        if (q.funFact && !q.funFactEn) updated.funFactEn = await tr(q.funFact);
+        // Core fields — IMMER neu uebersetzen wenn DE-Text vorhanden
+        if (q.text)      updated.textEn   = await tr(q.text);
+        if (q.answer)    updated.answerEn = await tr(q.answer);
+        if (q.funFact)   updated.funFactEn = await tr(q.funFact);
         // SCHAETZCHEN unit
-        if (q.unit && !q.unitEn) updated.unitEn = await tr(q.unit);
+        if (q.unit)      updated.unitEn = await tr(q.unit);
         // Multiple choice options
         if (q.options?.length && (q.category === 'MUCHO' || q.category === 'ZEHN_VON_ZEHN')) {
-          const optionsEn = [...(q.optionsEn ?? [])];
-          await Promise.all(q.options.map(async (opt, i) => {
-            if (!optionsEn[i] && opt) optionsEn[i] = await tr(opt);
-          }));
-          updated.optionsEn = optionsEn;
+          updated.optionsEn = await Promise.all(q.options.map(opt => opt ? tr(opt) : Promise.resolve('')));
         }
         // BUNTE_TUETE sub-fields
         if (q.bunteTuete) {
           const bt = { ...q.bunteTuete } as any;
           if (bt.kind === 'oneOfEight' && bt.statements?.length) {
-            const stEn = [...(bt.statementsEn ?? [])];
-            await Promise.all(bt.statements.map(async (s: string, i: number) => {
-              if (!stEn[i] && s) stEn[i] = await tr(s);
-            }));
-            bt.statementsEn = stEn;
+            bt.statementsEn = await Promise.all(bt.statements.map((s: string) => s ? tr(s) : Promise.resolve('')));
           }
           if (bt.kind === 'top5' && bt.answers?.length) {
-            const ansEn = [...(bt.answersEn ?? [])];
-            await Promise.all(bt.answers.map(async (a: string, i: number) => {
-              if (!ansEn[i] && a) ansEn[i] = await tr(a);
-            }));
-            bt.answersEn = ansEn;
+            bt.answersEn = await Promise.all(bt.answers.map((a: string) => a ? tr(a) : Promise.resolve('')));
           }
           if (bt.kind === 'order' && bt.items?.length) {
-            const itemsEn = [...(bt.itemsEn ?? [])];
-            await Promise.all(bt.items.map(async (item: string, i: number) => {
-              if (!itemsEn[i] && item) itemsEn[i] = await tr(item);
-            }));
-            bt.itemsEn = itemsEn;
-            if (bt.criteria && !bt.criteriaEn) bt.criteriaEn = await tr(bt.criteria);
+            bt.itemsEn = await Promise.all(bt.items.map((item: string) => item ? tr(item) : Promise.resolve('')));
+            if (bt.criteria) bt.criteriaEn = await tr(bt.criteria);
+          }
+          if (bt.kind === 'onlyConnect' && bt.hints?.length) {
+            bt.hintsEn = await Promise.all(bt.hints.map((h: string) => h ? tr(h) : Promise.resolve('')));
           }
           updated.bunteTuete = bt;
         }
@@ -409,10 +404,22 @@ export default function QQBuilderPage() {
   }
 
   async function uploadImage(questionId: string) {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file || !activeDraft) return;
-    if (file.size > 2 * 1024 * 1024) { alert('Datei zu groß (max. 2 MB)'); if (fileInputRef.current) fileInputRef.current.value = ''; return; }
+    const rawFile = fileInputRef.current?.files?.[0];
+    if (!rawFile || !activeDraft) return;
     setUploadingFor(questionId);
+    // 2026-05-05 (Wolf 'bilddatei zu gross, automatisch komprimieren'):
+    // statt hard-fail bei >2MB: clientside Canvas-Komprimierung (max
+    // 1920px, JPEG 0.85→0.5 quality steps). Originals bleiben unter 2MB
+    // unangetastet.
+    let file: File;
+    try {
+      file = await compressImageIfNeeded(rawFile);
+    } catch (e) {
+      alert('Bild konnte nicht verarbeitet werden');
+      setUploadingFor(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     try {
       const fd = new FormData(); fd.append('file', file);
       const res = await fetch('/api/upload/question-image', { method: 'POST', body: fd });
@@ -438,9 +445,16 @@ export default function QQBuilderPage() {
     finally { setRemovingBgFor(null); }
   }
   async function uploadOptionImage() {
-    const file = optionFileInputRef.current?.files?.[0];
-    if (!file || !activeDraft || !optionUploadTarget) return;
-    if (file.size > 2 * 1024 * 1024) { alert('Datei zu groß (max. 2 MB)'); if (optionFileInputRef.current) optionFileInputRef.current.value = ''; return; }
+    const rawFile = optionFileInputRef.current?.files?.[0];
+    if (!rawFile || !activeDraft || !optionUploadTarget) return;
+    let file: File;
+    try {
+      file = await compressImageIfNeeded(rawFile);
+    } catch {
+      alert('Bild konnte nicht verarbeitet werden');
+      if (optionFileInputRef.current) optionFileInputRef.current.value = '';
+      return;
+    }
     const { questionId, optionIndex } = optionUploadTarget;
     try {
       const fd = new FormData(); fd.append('file', file);

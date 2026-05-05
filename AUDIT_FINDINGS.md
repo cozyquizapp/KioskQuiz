@@ -34,17 +34,17 @@ Diese Patterns kommen in MEHR als 3 Pages vor — wenn man sie zentral fixt, sin
 - **Pattern:** `cubic-bezier(0.22,1,0.36,1)` in animation-string, statt `var(--qq-ease-smooth)`
 - **Hebel-Lösung:** Find-Replace „cubic-bezier(0.22,1,0.36,1)" → `var(--qq-ease-smooth-out)` etc. ~30min.
 
-### CC-3 · Submit-Status-Inkonsistenz (BREAKING)
+### CC-3 · Submit-Status-Inkonsistenz (BREAKING) — ✅ ERLEDIGT 2026-05-05
 - **Pages:** BluffWriteScreen, BluffVoteWaitingScreen
-- **Bug:** nutzen NUR `filter: drop-shadow(green)` OHNE den Green-Ring (`boxShadow: 0 0 0 3px #22C55E`). CHEESE/MUCHO/Comeback haben BEIDES.
-- **Impact:** App-weite Konsistenz-Regel aus Style-Guide verletzt. **Fix-Pflicht.**
-- **Aufwand:** 2 Stellen × 10 Min = 20 Min.
+- **Bug:** nutzten NUR `filter: drop-shadow(green)` OHNE den Green-Ring (`boxShadow: 0 0 0 3px #22C55E`). CHEESE/MUCHO/Comeback haben BEIDES.
+- **Status:** Bereits in einem Pre-Phase-4-Commit gefixt — beide Stellen
+  haben jetzt `boxShadow: 0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
+  (siehe QQBeamerPage:6188 + 6317). Verifiziert in Bucket-1.
 
-### CC-4 · Position-Fixed-Trap-Verstöße
+### CC-4 · Position-Fixed-Trap-Verstöße — ✅ ERLEDIGT 2026-05-05
 - **Pages:** QuizIntroOverlay (line 2770), RulesIntroOverlay (line 3028)
 - **Bug:** `position: 'fixed', inset: 0, zIndex: 998X` — der Style-Guide sagt explizit „nie position:fixed im BeamerFrame" (L399).
-- **Impact:** Aktuell funktioniert's vermutlich, aber Stacking-Context-Probleme können bei späteren Refactor-Schritten plötzlich auftreten.
-- **Hebel-Lösung:** `<BeamerOverlay>`-Wrapper-Component bauen, der `position: absolute` mit korrektem Ancestor managt. ~1h.
+- **Fix:** `<BeamerOverlay>`-Wrapper-Komponente (`frontend/src/components/BeamerOverlay.tsx`) gebaut, beide Overlays migriert auf `position: absolute, inset: 0` mit klarem Positioning-Ancestor (QQBeamerPage-Root-Div hat `position: relative`). Verhalten visuell identisch, aber deterministisch — kein Stacking-Context-Trap mehr.
 
 ### CC-5 · Phase/Kategorie-Farben inline statt zentral
 - **Pages:** PhaseIntroView (`phaseColors`), QuestionView (`CAT_COLORS`), Mod-Page-Toast

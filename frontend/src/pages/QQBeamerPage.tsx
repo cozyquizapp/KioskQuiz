@@ -16,6 +16,7 @@ import {
   teamDisplayName,
   qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
+import { BeamerOverlay } from '../components/BeamerOverlay';
 import { CustomSlide } from '../components/QQCustomSlide';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
@@ -2766,18 +2767,13 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
     size: 2.5 + (i % 3) * 1.4,
   }));
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9990,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    <BeamerOverlay
+      visible={visible}
+      zIndex={9990}
+      hiddenScale={1.04}
       // Slate-Hintergrund wie Rest des Quiz (kein warmer Goldgradient mehr)
-      background: 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)',
-      overflow: 'hidden',
-      fontFamily: "'Nunito', system-ui, sans-serif",
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'scale(1)' : 'scale(1.04)',
-      transition: 'opacity 0.55s ease, transform 0.65s var(--qq-ease-smooth)',
-      pointerEvents: visible ? 'auto' : 'none',
-    }}>
+      background="radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)"
+    >
       {/* Ambient Glow — nur lokal um den Wolf-Bereich, dezent statt überdominant */}
       <div style={{
         position: 'absolute', left: '50%', top: '62%',
@@ -3010,7 +3006,7 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
           50%      { transform: translateY(-6px); }
         }
       `}</style>
-    </div>
+    </BeamerOverlay>
   );
 }
 
@@ -3024,17 +3020,12 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
   const headline = lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln';
   const sub = lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!';
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9988,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'radial-gradient(ellipse at center, #102033 0%, #0a1424 55%, #050912 100%)',
-      overflow: 'hidden',
-      fontFamily: "'Nunito', system-ui, sans-serif",
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'scale(1)' : 'scale(0.98)',
-      transition: 'opacity 0.55s ease, transform 0.65s var(--qq-ease-smooth)',
-      pointerEvents: visible ? 'auto' : 'none',
-    }}>
+    <BeamerOverlay
+      visible={visible}
+      zIndex={9988}
+      hiddenScale={0.98}
+      background="radial-gradient(ellipse at center, #102033 0%, #0a1424 55%, #050912 100%)"
+    >
       {/* Hintergrund-Glow — kühles blau/violett */}
       <div style={{
         position: 'absolute', left: '50%', top: '50%',
@@ -3094,7 +3085,7 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
           100% { opacity: 1; transform: translateY(0); letter-spacing: 0.08em; }
         }
       `}</style>
-    </div>
+    </BeamerOverlay>
   );
 }
 

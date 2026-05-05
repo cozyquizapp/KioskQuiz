@@ -11530,11 +11530,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         minHeight: 0,
       }}>
         <Fireflies color="#FBBF2455" />
-        {/* Header: nur Game-Name als Standard-Kategorie-Pille (Round-of-N raus —
-            Wolf moderiert, weiss in welcher Runde er ist). Bei Reveal flippt
-            die Pille auf gruen mit „Aufloesung". */}
+        {/* Header: Auflösung-/Mehr-oder-Weniger-Pille — 2026-05-05 (Wolf):
+            POSITION ABSOLUTE damit der Header NICHT in die Vertikal-Zentrierung
+            der restlichen Composition einfliesst. Wolf wollte 'alles etwas
+            zentrierter, auflösung nicht mitzaehlen'. */}
         <div style={{
+          position: 'absolute', top: 'clamp(20px, 3vh, 40px)', left: 0, right: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 6,
           animation: 'contentReveal 0.35s ease both',
         }}>
           <div style={{
@@ -11590,15 +11593,18 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           justifyContent: 'center', flexWrap: 'wrap', maxWidth: 1400, width: '100%',
           animation: 'contentReveal 0.45s ease 0.15s both',
         }}>
-          {/* Anchor-Card: bekannter Wert */}
+          {/* Anchor-Card: bekannter Wert.
+              2026-05-05 (Wolf 'cards hoeher, unten ist viel platz'):
+              padding-vertical 22-36px → 44-72px, minHeight gesetzt. */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            padding: 'clamp(44px, 5.5vh, 72px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            minHeight: 'clamp(220px, 28vh, 320px)',
             background: 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(34,197,94,0.04))',
             border: '2px solid rgba(34,197,94,0.42)',
             boxShadow: '0 0 40px rgba(34,197,94,0.18), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
-            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+            display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
@@ -11633,7 +11639,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative',
             // 2026-05-05 v3: minHeight erhoeht damit Pillen-Stack mit groesserem
             // gap reinpasst und Avatare oberhalb/unterhalb landen koennen.
-            minHeight: 'clamp(200px, 26vh, 320px)',
+            // v4 (Wolf 'cards hoeher'): minHeight matched auf neue Card-Hoehe.
+            minHeight: 'clamp(220px, 28vh, 320px)',
           }}>
             {/* 2026-05-05 (Wolf): App-Pillen statt Goldkreise — MEHR oben (grün-
                 Akzent), WENIGER unten (rot-Akzent). Same Pille-Style wie
@@ -11703,14 +11710,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               ??? → Zahl-Stelle innen wechselt via Cross-Fade. User-Wunsch
               2026-04-28: 'Cards sollen sich nicht verändern, richte gleich
               so aus dass es passt'. */}
+          {/* Subject-Card — siehe Anchor-Card oben (gleicher Wolf-Wunsch). */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            padding: 'clamp(44px, 5.5vh, 72px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            minHeight: 'clamp(220px, 28vh, 320px)',
             background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
             border: '3px solid rgba(251,191,36,0.7)',
             boxShadow: '0 0 44px rgba(251,191,36,0.28), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
-            display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center',
+            display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
@@ -11815,10 +11824,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // angrenzend an die jeweilige Pille (nicht IN die Pille).
               // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
               // Label lesbar bleibt.
+              // 2026-05-05 v4 (Wolf 'cards hoeher'): Y-translates entsprechend
+              // tiefer damit Avatar an die nun hoeher sitzenden Pillen fliegt.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-340px, -32vh, -240px)) scale(0.55)`
+                ? `translate(${xCenter}px, clamp(-380px, -36vh, -270px)) scale(0.55)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-280px, -26vh, -190px)) scale(0.55)`
+                  ? `translate(${xCenter}px, clamp(-310px, -29vh, -220px)) scale(0.55)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{

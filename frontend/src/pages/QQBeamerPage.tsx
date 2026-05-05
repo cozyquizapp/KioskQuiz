@@ -6899,7 +6899,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                   display: 'flex', flexWrap: 'wrap', gap: 6,
                   justifyContent: 'center',
                   paddingTop: 8,
-                  borderTop: `1px dashed ${hintColor}55`,
+                  // 2026-05-05 (Wolf): gestrichelte Trennlinie raus.
                 }}>
                   {/* Richtig — Sieger-Hint (== minWinHint): alle Teams gold + 🥇.
                       Korrekt aber spaeter (höherer Hint): team-color, kein Medal. */}
@@ -6969,13 +6969,13 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
       </div>
 
       {/* Reveal: 2-spaltige Auflösungs-Card — links Lösung, rechts Sieger-Team(s).
-          Wolf 2026-05-05: vorher full-width Lösung + separate Status-Reihe unten,
-          Status-Reihe zeigte aber locked/X-Teams öffentlich (verstößt gegen
-          Anti-Public-Shaming-Regel). Jetzt: Lösung + Winner kombiniert in einer
-          Card, Status-Reihe wird beim Reveal ausgeblendet. */}
-      {revealed && (() => {
-        const winnerTeams = s.teams.filter(t => winnerSet.has(t.id));
-        const winnerHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
+          Wolf 2026-05-05: Card wird IMMER gerendert (auch in Question-Phase
+          mit visibility:hidden), damit der Layout-Space schon im Question-
+          Mode reserviert ist und beim Reveal kein 'Sprung' nach unten
+          entsteht — Hint-Cards bleiben gleich groß zwischen Question/Reveal. */}
+      {(() => {
+        const winnerTeams = revealed ? s.teams.filter(t => winnerSet.has(t.id)) : [];
+        const winnerHint = revealed && correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
         return (
           <div style={{
             display: 'grid',
@@ -6983,17 +6983,22 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
             gap: 'clamp(12px, 1.6vw, 22px)',
             padding: 'clamp(16px, 2vh, 28px)',
             borderRadius: 24,
+            minHeight: 'clamp(140px, 18vh, 220px)',
             background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
             border: '2px solid rgba(251,191,36,0.45)',
             boxShadow: '0 0 40px rgba(251,191,36,0.25)',
-            animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
+            animation: revealed ? 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both' : undefined,
             position: 'relative', zIndex: 5,
             alignItems: 'center',
+            visibility: revealed ? 'visible' : 'hidden',
+            opacity: revealed ? 1 : 0,
+            transition: 'opacity 0.5s ease 0.15s',
           }}>
             {/* Linke Hälfte: Lösung */}
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              borderRight: winnerTeams.length > 0 ? '1px solid rgba(251,191,36,0.25)' : 'none',
+              // 2026-05-05 (Wolf): Trennlinie zwischen Loesung und Sieger raus.
+              borderRight: 'none',
               paddingRight: winnerTeams.length > 0 ? 'clamp(8px, 1vw, 16px)' : 0,
             }}>
               <div style={{

@@ -14783,25 +14783,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none', zIndex: 3,
                   }} />
                 )}
-                {/* 2026-05-05 v2 (Wolf-Klaerung 'erstes stapeln schon mit
-                    inner layer, max 3 pro feld'): konzentrische Inner-Layer
-                    pro Stack — 1 Stack = 1 Inner, 2 Stack = 2 Inner, 3 Stack
-                    = 3 Inner. Avatar in der Mitte schrumpft entsprechend.
-                    Max-Cap 3 (Spielregel). */}
-                {team && stackCount >= 1 && Array.from({ length: Math.min(stackCount, 3) }).map((_, layerIdx) => {
-                  const layerNum = layerIdx + 1; // 1..3
-                  const insetPx = Math.max(4, cellSize * (0.08 * layerNum));
+                {/* 2026-05-05 v3 (Wolf 'max 2 stapeln, also 3 pkt max'):
+                    Cap auf 2 Inner-Layer. 1 Stack = 1 Inner, 2 Stack = 2 Inner.
+                    Inner-Border auf 2.5px hoch — klarer sichtbar. */}
+                {team && stackCount >= 1 && Array.from({ length: Math.min(stackCount, 2) }).map((_, layerIdx) => {
+                  const layerNum = layerIdx + 1; // 1..2
+                  const insetPx = Math.max(4, cellSize * (0.10 * layerNum));
                   const layerRadius = Math.max(2, cellRadius - insetPx * 0.5);
                   const tColor = bc(team.id);
                   // Jedes Inner-Layer leicht dunkler als das vorherige.
-                  const alphaA = ['ee', 'dd', 'cc'][Math.min(layerIdx, 2)] || 'cc';
-                  const alphaB = ['bb', 'a0', '88'][Math.min(layerIdx, 2)] || '88';
+                  const alphaA = ['ee', 'dd'][Math.min(layerIdx, 1)] || 'dd';
+                  const alphaB = ['bb', 'a0'][Math.min(layerIdx, 1)] || 'a0';
                   return (
                     <div key={`stack-${layerIdx}`} style={{
                       position: 'absolute',
                       inset: insetPx, borderRadius: layerRadius,
                       background: `linear-gradient(135deg, ${tColor}${alphaA}, ${tColor}${alphaB})`,
-                      border: '1.5px solid rgba(251,191,36,0.85)',
+                      border: '2.5px solid rgba(251,191,36,0.9)',
                       boxShadow: `inset 0 1px 0 rgba(255,255,255,${0.20 - layerIdx * 0.04}), inset 0 -2px 0 rgba(0,0,0,${0.20 - layerIdx * 0.03}), 0 1px 2px rgba(0,0,0,0.30)`,
                       pointerEvents: 'none',
                       zIndex: 2 + layerIdx,
@@ -14940,29 +14938,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none',
                   }} />
                 )}
-                {/* Stack-Bonus-Badge — zeigt +N im Top-Right wenn die Cell im
-                    Connections-Finale Bonus-Stapel aufgesammelt hat.
-                    2026-05-05 (Wolf-Konzept). */}
-                {cell.stackBonus && cell.stackBonus > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: -6, right: -6,
-                    minWidth: Math.max(18, cellSize * 0.32),
-                    height: Math.max(18, cellSize * 0.32),
-                    padding: '0 6px',
-                    borderRadius: 999,
-                    background: 'linear-gradient(180deg, #FDE68A, #F59E0B)',
-                    border: '2px solid #B45309',
-                    boxShadow: '0 0 12px rgba(251,191,36,0.6), 0 2px 4px rgba(0,0,0,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 900, fontSize: Math.max(11, cellSize * 0.22),
-                    color: '#1a1209',
-                    lineHeight: 1,
-                    zIndex: 6,
-                    pointerEvents: 'none',
-                    animation: (isNew || isStolen) ? 'scorePop 0.5s var(--qq-ease-bounce) 0.2s both' : undefined,
-                  }}>+{cell.stackBonus}</div>
-                )}
+                {/* 2026-05-05 v4 (Wolf 'zahlen koennen weg an den tiles'):
+                    Stack-Bonus-+N-Badge entfernt — die konzentrischen Inner-
+                    Layer zeigen die Stack-Anzahl visuell, Zahl daneben war
+                    redundant und visuell ueberladen. */}
                 {/* Emoji / star content */}
                 {/* 2026-05-05 (Wolf-Skizze Stack): zIndex 8 damit Avatar ueber
                     allen Inner-Stack-Layern (zIndex 2..N) liegt. */}
@@ -14978,13 +14957,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
                     // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
                     // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
-                    // 2026-05-05 v3 (Wolf 'erstes stapeln schon kleiner, max 3'):
-                    // Avatar schrumpft pro Stack damit er ins jeweils innerste
-                    // Inner-Layer passt. Default = 0.86, pro Stack ca. 0.14
-                    // weniger.
-                    const avFactor = stackCount >= 3 ? 0.42
-                      : stackCount === 2 ? 0.55
-                      : stackCount === 1 ? 0.70
+                    // 2026-05-05 v4 (Wolf 'max 2 stapeln'): Avatar-Faktor
+                    // jetzt nur noch 3 Stufen — 0/1/2-Stack. Inset pro Layer
+                    // auf 10% erhoeht (war 8%) damit Inner-Tiles deutlicher
+                    // wirken; Avatar-Faktor entsprechend tighter.
+                    const avFactor = stackCount >= 2 ? 0.50
+                      : stackCount === 1 ? 0.66
                       : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     // 2026-05-05 v3 (Wolf-Bug 'gestapelte felder ueberladen,

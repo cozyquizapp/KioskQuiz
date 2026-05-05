@@ -1451,18 +1451,14 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 fontWeight={900}
                 style={{ flex: 1, minWidth: 0 }}
               />
-              {/* 2026-05-05 (Wolf): Joker-Slots als 2 PNGs (m/w im Wechsel)
-                  statt 🃏-Emoji. Verdiente Joker = volle Saturation + Glow,
-                  unverdiente = ausgegraut + 35% opacity. Gold-Pille drumherum
-                  groesser fuer mehr Atemraum. */}
+              {/* 2026-05-05 (Wolf): Joker-Slots als 2 PNGs (m/w im Wechsel).
+                  Wolf-Polish: kein BG/Border-Container mehr, beide Slots
+                  exakt gleich gross (height/width fixed via JokerIcon size).
+                  Earned = full glow, unearned = grayscale + 0.35 opacity. */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
                   style={{
-                    display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0,
-                    padding: '5px 10px', borderRadius: 10,
-                    background: 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.06))',
-                    border: '1.5px solid rgba(251,191,36,0.32)',
-                    boxShadow: '0 1px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+                    display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0,
                   }}
                   title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
                   aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
@@ -1473,11 +1469,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                       <JokerIcon
                         key={i}
                         i={i}
-                        size={26}
+                        size={28}
                         alt={earned ? `Joker ${i+1} verdient` : `Joker ${i+1} offen`}
                         style={{
-                          opacity: earned ? 1 : 0.35,
-                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.85)',
+                          width: 28, height: 28,
+                          opacity: earned ? 1 : 0.32,
+                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.9)',
                           transition: 'opacity 0.3s ease, filter 0.3s ease',
                         }}
                       />
@@ -5764,9 +5761,9 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((tm, i) => {
             const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
-            // 2026-05-05 (Wolf-Bug 'gelb in tabelle, blau auf grid'): Brett-Palette
-            // statt Avatar-Color → konsistent zu den Grid-Cells.
-            const tmColor = qqGetBoardColor(tm.id, s.teams);
+            // 2026-05-05 (Wolf 'team color = team id'): tm.color ist seit
+            // Backend-Fix automatisch die Brett-Palette-Farbe.
+            const tmColor = tm.color;
             return (
               <div key={tm.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,

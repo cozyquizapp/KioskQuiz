@@ -13169,16 +13169,28 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
   const m = Math.floor(remaining / 60);
   const sec = Math.floor(remaining % 60);
   const urgent = remaining <= 30;
+  // 2026-05-05 (Wolf-Bug 'finale timer anders, hier wird mit symbolen
+  // gearbeitet'): Symbol-Emoji ⏱ entfernt, Pill-Stil dem Standard-Question-
+  // Timer angepasst (höher, fett, mit subtilem Pulse bei urgent — kein
+  // generic 'pulse'-Animation mehr, sondern qqTimerOutro-Style).
   return (
     <div style={{
-      padding: '10px 18px', borderRadius: 16,
-      background: urgent ? 'rgba(239,68,68,0.22)' : 'rgba(251,191,36,0.15)',
-      border: `2px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.45)'}`,
-      fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
-      color: urgent ? '#FCA5A5' : '#FDE68A', fontVariantNumeric: 'tabular-nums',
-      animation: urgent ? 'pulse 0.8s ease-in-out infinite alternate' : undefined,
+      padding: 'clamp(8px, 1.2vh, 14px) clamp(16px, 2vw, 28px)',
+      borderRadius: 16,
+      background: urgent
+        ? 'linear-gradient(135deg, rgba(239,68,68,0.28), rgba(239,68,68,0.12))'
+        : 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
+      border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.55)'}`,
+      boxShadow: urgent
+        ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
+        : '0 0 16px rgba(251,191,36,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+      fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+      color: urgent ? '#FCA5A5' : '#FDE68A',
+      fontVariantNumeric: 'tabular-nums',
+      letterSpacing: '0.04em',
+      animation: urgent ? 'bTimerPulse 0.8s ease-in-out infinite' : undefined,
     }}>
-      ⏱ {String(m).padStart(2, '0')}:{String(sec).padStart(2, '0')}
+      {String(m).padStart(2, '0')}:{String(sec).padStart(2, '0')}
     </div>
   );
 }
@@ -14949,10 +14961,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
         const medal = medalFor(i, t.largestConnected);
-        // 2026-05-05 (Wolf-Bug 'gelb in tabelle, blau auf grid'): tColor =
-        // Brett-Palette-Farbe (gleiche Quelle wie Cells) statt Avatar-Color.
-        // Standings sind jetzt visuell konsistent zum Grid.
-        const tColor = qqGetBoardColor(t.id, teams);
+        // 2026-05-05 (Wolf 'team color = team id'): t.color ist seit dem
+        // Backend-Fix automatisch die Brett-Palette-Farbe → identisch zu
+        // qqGetBoardColor. tColor-Local-Var bleibt fuer Klarheit.
+        const tColor = t.color;
         return (
         <div
           key={t.id}

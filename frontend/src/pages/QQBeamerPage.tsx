@@ -3205,7 +3205,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             fontSize: 'clamp(44px,7vw,88px)', fontWeight: 900, lineHeight: 1.05,
             color: slide.color,
-            textShadow: `0 0 60px ${slide.color}44, 0 3px 0 rgba(0,0,0,0.3)`,
+            textShadow: `0 0 60px ${slide.color}44`,
           }}>
             {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
                 Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
@@ -3476,7 +3476,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               whiteSpace: 'nowrap',
               overflow: 'hidden', textOverflow: 'ellipsis',
               maxWidth: '70vw',
-              textShadow: `0 0 36px ${welcomedTeam.color}88, 0 4px 0 rgba(0,0,0,0.5)`,
+              textShadow: `0 0 36px ${welcomedTeam.color}88`,
             }}>
               {welcomedTeam.name}!
             </div>
@@ -4812,7 +4812,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                               fontSize: 'clamp(36px, 4.2vw, 64px)',
                               color: c.accent,
                               fontVariantNumeric: 'tabular-nums',
-                              textShadow: `0 0 22px ${c.accent}88, 0 2px 0 rgba(0,0,0,0.3)`,
+                              textShadow: `0 0 22px ${c.accent}88`,
                             }}>{c.count}x</span>
                             <span style={{
                               fontSize: 'clamp(28px, 3.2vw, 48px)',
@@ -11984,7 +11984,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(28px, 3.6vw, 50px)',
         fontWeight: 900,
         color: '#F59E0B', textAlign: 'center',
-        textShadow: '0 0 50px rgba(234,179,8,0.55), 0 6px 0 rgba(180,83,9,0.35)',
+        textShadow: '0 0 50px rgba(234,179,8,0.55)',
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
           ? 'comebackSlam 1s var(--qq-ease-bounce) both'
@@ -12261,7 +12261,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
               color: '#FFEFC9',
               lineHeight: 1.1,
               letterSpacing: '-0.005em',
-              textShadow: '0 2px 0 rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.2)',
+              textShadow: '0 0 24px rgba(251,191,36,0.2)',
               animation: 'qqSloganFade 0.7s ease-in-out both',
               willChange: 'opacity',
             }}
@@ -13862,7 +13862,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               fontWeight={900}
               fontSize="clamp(40px, 5.5vw, 88px)"
               style={{
-                textShadow: `0 0 40px ${teamColor}66, 0 4px 0 rgba(0,0,0,0.5)`,
+                textShadow: `0 0 40px ${teamColor}66`,
                 lineHeight: 1.05,
                 animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
                 textAlign: 'center',
@@ -13878,7 +13878,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 fontSize: 'clamp(80px, 11vw, 180px)', fontWeight: 900,
                 color: '#FDE68A',
                 fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                textShadow: '0 0 40px rgba(251,191,36,0.55), 0 6px 0 rgba(0,0,0,0.4)',
+                textShadow: '0 0 40px rgba(251,191,36,0.55)',
               }}>{team.largestConnected}</span>
               <span style={{
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 700,

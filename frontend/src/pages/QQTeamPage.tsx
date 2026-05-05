@@ -1722,7 +1722,7 @@ function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; t
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}><QQEmojiIcon emoji={emoji}/></div>
         <div style={{
           fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.04em',
-          textShadow: `0 0 16px ${team.color}, 0 2px 0 rgba(0,0,0,0.5)`,
+          textShadow: `0 0 16px ${team.color}`,
           textAlign: 'center',
         }}>
           {title}

@@ -9550,11 +9550,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 Avatare unter der bottom-aligned Card aus dem Bildschirm fallen. */}
           {!revealed && s.teams.length > 0 && (() => {
             const tc = s.teams.length;
+            // 2026-05-05 (Wolf 'Cheese-Portrait Avatare zu klein, fast unter
+            // ganze Frage-Card passen lassen'): Portrait-Sizes fast verdoppelt
+            // (40/46/52 → 60/72/84) damit sie aus Beamer-Distanz erkennbar
+            // sind und die rechte Halbflaeche unter der Frage-Card sinnvoll
+            // ausnutzen. Gap entsprechend vergroessert.
             const av = isCheesePortrait
-              ? (tc > 6 ? 40 : tc > 4 ? 46 : 52)
+              ? (tc > 6 ? 60 : tc > 4 ? 72 : 84)
               : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
             const gap = isCheesePortrait
-              ? (tc > 6 ? 6 : tc > 4 ? 8 : 10)
+              ? (tc > 6 ? 10 : tc > 4 ? 14 : 18)
               : (tc > 6 ? 8 : tc > 4 ? 11 : 14);
             const portraitFlow = {
               marginTop: 'clamp(10px, 1.6vh, 22px)' as const,

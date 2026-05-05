@@ -11,6 +11,7 @@ import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS } from '../avatarSets';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
+import { playHotkeyFeedback } from '../utils/sounds';
 import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
@@ -504,7 +505,7 @@ export default function QQModeratorPage() {
 
     // ? / Shift+/ — Hotkey-Cheatsheet toggle (auch waehrend Pause/Start erlaubt)
     if (e.key === '?' || (e.shiftKey && e.code === 'Slash')) {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       setCheatsheetOpen(v => !v);
       return;
     }
@@ -547,7 +548,7 @@ export default function QQModeratorPage() {
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 4 Folien: Ziel / So läuft's / Neue Fähigkeiten / Comeback
         // (entspricht buildRulesSlidesDe/En in QQBeamerPage.tsx)
@@ -615,14 +616,14 @@ export default function QQModeratorPage() {
 
     // R — Reveal answer (mirrors CozyQuiz R)
     if (e.code === 'KeyR') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
       return;
     }
 
     // N — Next question (only from PLACEMENT, not QUESTION_REVEAL)
     if (e.code === 'KeyN') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
@@ -630,7 +631,7 @@ export default function QQModeratorPage() {
 
     // ArrowRight — Next question (extra StreamDeck option)
     if (e.code === 'ArrowRight') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
@@ -638,8 +639,10 @@ export default function QQModeratorPage() {
 
     // Escape / Backspace — Niemand korrekt (mirrors CozyQuiz step-back feel)
     if (e.code === 'Escape' || e.code === 'Backspace') {
-      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
+        playHotkeyFeedback();
         emitRef.current('qq:markWrong', { roomCode });
+      }
       return;
     }
 
@@ -648,14 +651,17 @@ export default function QQModeratorPage() {
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
         const idx = parseInt(e.code.replace('Digit', '')) - 1;
         const team = s.teams[idx];
-        if (team) emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
+        if (team) {
+          playHotkeyFeedback();
+          emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
+        }
       }
       return;
     }
 
     // F13 — Nächste Aktion (= Space)
     if (e.code === 'F13') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
         const totalSlides = 8;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
@@ -700,7 +706,7 @@ export default function QQModeratorPage() {
 
     // F14 — Team 1 korrekt (schnellster Buzz-Winner bestätigen)
     if (e.code === 'F14') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.teams[0])
         emitRef.current('qq:markCorrect', { roomCode, teamId: s.teams[0].id });
       return;
@@ -708,14 +714,14 @@ export default function QQModeratorPage() {
 
     // F15 — Antwort aufdecken (= R)
     if (e.code === 'F15') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
       return;
     }
 
     // F16 — Niemand korrekt (= Esc)
     if (e.code === 'F16') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId)
         emitRef.current('qq:markWrong', { roomCode });
       return;
@@ -723,7 +729,7 @@ export default function QQModeratorPage() {
 
     // F17 — Nächste Frage (= N) — only from PLACEMENT
     if (e.code === 'F17') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
       return;
@@ -731,14 +737,14 @@ export default function QQModeratorPage() {
 
     // M — Toggle mute all (music + sfx)
     if (e.code === 'KeyM') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       emitRef.current('qq:setMuted', { roomCode, muted: !(stateRef.current?.globalMuted ?? false) });
       return;
     }
 
     // P — Toggle pause
     if (e.code === 'KeyP') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
       else if (!['LOBBY', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
         emitRef.current('qq:pause', { roomCode });
@@ -747,14 +753,14 @@ export default function QQModeratorPage() {
 
     // F — Flyover (cinematic orbit on 3D beamer grid)
     if (e.code === 'KeyF') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       emitRef.current('qq:flyover', { roomCode });
       return;
     }
 
     // V — 2D/3D Toggle auf dem Beamer
     if (e.code === 'KeyV') {
-      e.preventDefault();
+      e.preventDefault(); playHotkeyFeedback();
       emitRef.current('qq:toggleView', { roomCode });
       return;
     }

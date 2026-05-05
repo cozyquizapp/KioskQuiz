@@ -826,6 +826,20 @@ export function playTick() {
   tone(880, 'square', t, 0.055, 0.09, 0.004, 0.04, ac);
 }
 
+/** 2026-05-05 (Phase-7 Bucket-1 BC-1): Audio-Feedback für Mod-Hotkey-Press.
+ *  Wolf moderiert mit Streamdeck und schaut nicht zwingend auf den Screen —
+ *  er braucht eine sofortige Audio-Bestaetigung dass der Tastatur-Event
+ *  registriert wurde. Klar erkennbar von Timer-Tick (880Hz Square) durch
+ *  tieferen Pitch (440Hz Triangle, weicher) und kuerzere Dauer.
+ *  Nicht-blockend, nicht laut — soll sich nicht in Live-Show drücken. */
+export function playHotkeyFeedback() {
+  if (_sfxMuted) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(440, 'triangle', t, 0.04, 0.05, 0.002, 0.025, ac);
+}
+
 export function playUrgentTick() {
   if (_sfxMuted) return;
   const ac = getCtx();

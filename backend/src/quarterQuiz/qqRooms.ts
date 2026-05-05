@@ -62,6 +62,9 @@ export interface QQRoomState {
   comebackHLTimerSec: number;
   /** 4×4 Connections — null wenn nicht aktiv. */
   connections: QQConnectionsState | null;
+  /** 2026-05-05 (Wolf-Builder): Custom-Connections-Payload aus Draft.
+   *  Wenn null → Backend nutzt QQ_CONNECTIONS_FALLBACK_PAYLOAD. */
+  connectionsPayload: import('../../../shared/quarterQuizTypes').QQConnectionsPayload | null;
   /** Default-Timer für Connections (im Setup anpassbar). */
   connectionsTimerSec: number;
   /** Default-Fehlversuche bei Connections (im Setup anpassbar). */
@@ -314,6 +317,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       comebackHL: null,
       comebackHLTimerSec: QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
       connections: null,
+      connectionsPayload: null,
       connectionsTimerSec: QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
       connectionsMaxFails: QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
       _connectionsTimerHandle: null,
@@ -544,6 +548,9 @@ export function qqStartGame(
   draftTitle?: string,
   slideTemplates?: import('../../../shared/quarterQuizTypes').QQSlideTemplates,
   soundConfig?: import('../../../shared/quarterQuizTypes').QQSoundConfig,
+  connectionsPayload?: import('../../../shared/quarterQuizTypes').QQConnectionsPayload,
+  connectionsDurationSec?: number,
+  connectionsMaxFails?: number,
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -668,6 +675,10 @@ export function qqStartGame(
   room.draftTitle      = draftTitle;
   room.slideTemplates  = slideTemplates;
   room.soundConfig     = soundConfig;
+  // 2026-05-05 (Wolf-Builder): Connections-Custom-Set aus Draft uebernehmen
+  room.connectionsPayload = connectionsPayload ?? null;
+  if (connectionsDurationSec && connectionsDurationSec > 0) room.connectionsTimerSec = connectionsDurationSec;
+  if (connectionsMaxFails && connectionsMaxFails > 0) room.connectionsMaxFails = connectionsMaxFails;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {
@@ -3106,7 +3117,9 @@ export function qqNextQuestion(room: QQRoomState): void {
       // der letzte Zug ueber Comeback/Connections ging).
       clearAllJokerVisuals(room);
       if (room.connectionsEnabled) {
-        qqConnectionsStart(room, QQ_CONNECTIONS_FALLBACK_PAYLOAD, {
+        // 2026-05-05 (Wolf-Builder): wenn Draft custom Connections hat, nutzen.
+        const payload = room.connectionsPayload ?? QQ_CONNECTIONS_FALLBACK_PAYLOAD;
+        qqConnectionsStart(room, payload, {
           durationSec: room.connectionsTimerSec,
           maxFailedAttempts: room.connectionsMaxFails,
         });

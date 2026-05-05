@@ -1728,7 +1728,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Default 4 statt 3 — die Standard-Drafts (qq-vol-*) sind 4-Runden-Sets,
         // und ein silent-3 wenn frontend den Wert nicht sendet hat schon einmal
         // zu 'nur 3 Runden im Tree' geführt.
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

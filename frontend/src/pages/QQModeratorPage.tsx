@@ -195,6 +195,10 @@ export default function QQModeratorPage() {
     theme = draft.theme;
     slideTemplates = draft.slideTemplates;
     soundConfig = draft.soundConfig;
+    // 2026-05-05 (Wolf-Builder): Connections-Custom-Set aus Draft mitgeben
+    const draftConnections = draft.connections;
+    const draftConnectionsDuration = draft.connectionsDurationSec;
+    const draftConnectionsMaxFails = draft.connectionsMaxFails;
     if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     // Truncate auf die gewählte Rundenzahl: nur Fragen aus phaseIndex 1..phases.
     if (questions.length > needed) {
@@ -212,7 +216,7 @@ export default function QQModeratorPage() {
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
     const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }

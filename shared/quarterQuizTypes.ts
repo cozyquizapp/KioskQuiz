@@ -785,6 +785,13 @@ export interface QQDraft {
   phases: 3 | 4;
   language: QQLanguage;
   questions: QQQuestion[];
+  /** 2026-05-05 (Wolf-Wunsch): Connections-Finale-Set pro Draft.
+   *  Wenn nicht gesetzt → Backend nutzt Default/Hardcoded. Wenn gesetzt
+   *  → Mod startet Connections mit diesem Set. */
+  connections?: QQConnectionsPayload;
+  /** Connections-Konfig: Spielzeit + max Fehler pro Team. */
+  connectionsDurationSec?: number;   // default 180
+  connectionsMaxFails?: number;       // default 4
   theme?: QQTheme;
   slideTemplates?: QQSlideTemplates;
   soundConfig?: QQSoundConfig;
@@ -995,7 +1002,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

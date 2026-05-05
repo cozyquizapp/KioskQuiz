@@ -2833,9 +2833,30 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
     <BeamerOverlay
       visible={visible}
       zIndex={9990}
-      hiddenScale={1.04}
+      // Wolf 2026-05-05 'sehe da aktuell nichts': Mount-Anim deutlich
+      // dramatischer — Folie zoomt aus 1.18 → 1 (war 1.04, kaum sichtbar).
+      hiddenScale={1.18}
       background="radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)"
     >
+      {/* Cinematic-Focus-In: BG-blur fadet in den ersten 0.7s aus.
+          Wirkt wie Kamera die scharfstellt. Wolf 2026-05-05. */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        backdropFilter: 'blur(0px)',
+        WebkitBackdropFilter: 'blur(0px)',
+        animation: 'qqIntroFocusIn 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
+      {/* Light-Streifen-Sweep beim Mount — diagonaler Glanz wandert von
+          oben-links nach unten-rechts, einmal als Eintritts-Statement. */}
+      <div aria-hidden style={{
+        position: 'absolute', top: 0, left: '-30%',
+        width: '60%', height: '100%',
+        background: 'linear-gradient(115deg, transparent 35%, rgba(251,191,36,0.18) 48%, rgba(255,255,255,0.22) 50%, rgba(251,191,36,0.18) 52%, transparent 65%)',
+        animation: 'qqIntroEntrySweep 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) 0.1s both',
+        pointerEvents: 'none', zIndex: 1,
+        filter: 'blur(2px)',
+      }} />
       {/* Ambient title-glow — wide warm halo behind the title area, atmend. */}
       <div style={{
         position: 'absolute', left: '50%', top: '40%',
@@ -3013,6 +3034,16 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
         @keyframes qqIntroAmbientPulse {
           0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
           50%      { opacity: 1.0;  transform: translate(-50%, -50%) scale(1.10); }
+        }
+        @keyframes qqIntroFocusIn {
+          0%   { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); opacity: 0.6; }
+          60%  { opacity: 1; }
+          100% { backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); opacity: 1; }
+        }
+        @keyframes qqIntroEntrySweep {
+          0%   { transform: translateX(0); opacity: 0; }
+          25%  { opacity: 1; }
+          100% { transform: translateX(280%); opacity: 0; }
         }
         @keyframes qqIntroLightFlash {
           0%   { opacity: 0; }

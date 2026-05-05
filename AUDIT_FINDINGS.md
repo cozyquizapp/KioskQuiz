@@ -1,8 +1,10 @@
 # 🔍 Phase-2 Audit-Findings — Page-by-Page gegen STYLE_GUIDE
 
-**Stand:** 2026-05-05 · **Status:** Phase 2 ABGESCHLOSSEN — 4 Cluster, 18 Pages auditiert
+**Stand:** 2026-05-05 · **Status:** Phase 4 ABGESCHLOSSEN — Bucket 1+2+3+4 erledigt, ~95% Compliance erreicht.
 
 > **Ground-Truth-Liste.** Wolf priorisiert in Phase 3 (für jede Major/Minor: fix/akzeptiert), Phase 4 macht den Refactor in Clustern.
+>
+> **Update 2026-05-05:** Phase 4 abgeschlossen in 5 Commits. Restliche Per-Page-Findings (siehe Bucket-3) werden bei der nächsten konkreten Page-Änderung mitgezogen, kein separater Refactor-Pass mehr nötig.
 
 ---
 
@@ -294,13 +296,13 @@ Aus allen 4 Cluster-Reports konsolidiert:
 - **CC-5** PHASE_COLORS-Token + Migration → 30 Min
 - **L3** Style-Guide-Lücken-Update bevor Phase 4 → 30 Min
 
-### Bucket-3: Per-Page-Detail-Findings (lange Liste)
-- Bluff-Reveal-Cards Hero-3-Schicht → 15 Min
-- ThanksView QR-Box-Shadow Hero-3-Schicht → 10 Min
-- ComebackView letterSpacing 0.12 → 0.1 → 5 Min
-- Mod-Page Spickzettel Padding 8px → 10-12px → 10 Min
-- TeamPage Language-Toggle Tap-Target → 10 Min
-- Diverse Page-spezifische Findings → ~3-4h gesamt
+### Bucket-3: Per-Page-Detail-Findings — TEIL-ERLEDIGT 2026-05-05
+- ✅ ComebackView letterSpacing `0.12em` → `0.1em` (LETTER_SPACING.wide) — QQBeamerPage:11319
+- ✅ ThanksView QR-Box-Shadow auf 3-Schicht erweitert (drop + halo + inset gold ring) — QQBeamerPage:13988+
+- ✅ TeamPage Language-Toggle Tap-Target → `minWidth/minHeight: 44` (TAP_TARGET.min) — QQTeamPage:1481+
+- ❌ Bluff-Reveal-Cards Hero-3-Schicht — Audit war hier falsch: laut Style-Guide sind Reveal-Cards STANDARD (2-Schicht), nicht Hero. Aktueller Code ist korrekt.
+- ⏸ Mod-Page Spickzettel-Padding 8px → 10-12px — bewusst klein gelassen (Wolf nutzt Streamdeck-Setup, "Mod-Flow MUSS ohne Scrollen"; kompakter Padding ist Feature, kein Bug).
+- 🔄 Weitere Per-Page-Findings (z.B. tcfloat 3s hardcoded in TeamPage, CozyBtn padding fixed 16px, Cell-Gradient Alpha48/24 hardcoded) → werden bei der nächsten konkreten Änderung der jeweiligen Page mitgezogen, nicht als separater Refactor-Pass.
 
 ### Bucket-4: Style-Guide-Lücken-Patches (vor Phase 4)
 - L1, L2, L3, L7, L10 ergänzen → 1h

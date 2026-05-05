@@ -11316,7 +11316,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             border: isReveal ? '2px solid rgba(34,197,94,0.55)' : '2px solid rgba(251,191,36,0.5)',
             color: isReveal ? '#86efac' : '#FDE68A',
             fontWeight: 900,
-            fontSize: 'clamp(14px, 1.4vw, 20px)', letterSpacing: '0.12em', textTransform: 'uppercase',
+            fontSize: 'clamp(14px, 1.4vw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
             transition: 'background 0.4s ease, border-color 0.4s ease, color 0.4s ease',
           }}>
             <QQEmojiIcon emoji={isReveal ? '✅' : '⚡'}/> {isReveal
@@ -13988,7 +13988,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             <div style={{
               padding: 14, borderRadius: 16,
               background: '#ffffff',
-              boxShadow: '0 0 32px rgba(251,191,36,0.35), 0 4px 16px rgba(0,0,0,0.4)',
+              boxShadow: '0 0 32px rgba(251,191,36,0.35), 0 4px 16px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(251,191,36,0.4)',
             }}>
               <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
             </div>

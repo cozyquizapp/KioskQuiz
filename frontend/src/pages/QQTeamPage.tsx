@@ -1473,7 +1473,10 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 </div>
               )}
             </div>
-            {/* Language selector — flag only */}
+            {/* Language selector — flag only.
+                2026-05-05 (Phase-4 Bucket-3): minHeight/minWidth 44 fuer
+                TAP_TARGET-Compliance. Flag-Emoji bleibt klein, aber Tap-Area
+                ist jetzt korrekt fingerfreundlich. */}
             <button
               onClick={onFlagClick}
               style={{
@@ -1482,6 +1485,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 outline: 'none',
                 fontSize: 16, fontFamily: 'inherit',
                 borderRadius: 999,
+                minWidth: 44, minHeight: 44,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s',
                 flexShrink: 0,

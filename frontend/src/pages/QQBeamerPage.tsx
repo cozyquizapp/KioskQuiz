@@ -14565,6 +14565,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const sandTtl = cell.sandLockTtl ?? 0;
             const isSandLocked = sandTtl > 0;
             const cellRadius = Math.max(4, cellSize * 0.16);
+            // 2026-05-05 (Wolf-Skizze 'stapeln so stacken — 1 stack und 2 stack'):
+            // Stack-Count = Standard-Stuck (1) + Connections-Finale-StackBonus (N).
+            // Pro Layer ueber 1 wird ein konzentrisches Inner-Tile gerendert,
+            // Avatar schrumpft entsprechend in die Mitte.
+            const stackCount = (cell.stuck ? 1 : 0) + (cell.stackBonus ?? 0);
             return (
               <div key={`${r}-${c}`} style={{
                 position: 'relative', overflow: 'visible',
@@ -14760,8 +14765,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     </div>
                   </>
                 )}
-                {/* Stuck overlay — golden shimmer + ×2 chip top-right.
-                    Chip droppt mit Bounce + Dust-Ring beim ersten Mount. */}
+                {/* Stuck overlay — golden shimmer + dust ring beim Setzen. */}
                 {isStuck && (
                   <>
                     <div style={{
@@ -14776,11 +14780,35 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                       pointerEvents: 'none', zIndex: 3,
                     }} />
-                    {/* 2026-05-04 (Wolf): ×2-Chip entfernt. Stack-Look kommt
-                        jetzt aus Tile-Box-Shadow (gestaffelte Layer-Shadows
-                        + dicker Gold-Ring + Glow). Cleaner Avatar-Bereich. */}
                   </>
                 )}
+                {/* 2026-05-05 (Wolf-Skizze 'stapeln so stacken'): konzentrische
+                    Inner-Layer pro extra Stack ab Stack-Count 2. Jedes Layer:
+                    eigene Goldborder + leicht dunklerer Hintergrund + Inset-3D.
+                    1 Stack = nur das outer Tile (kein Inner-Layer).
+                    2 Stack = 1 Inner-Layer.
+                    3 Stack = 2 Inner-Layer. */}
+                {team && stackCount >= 2 && Array.from({ length: stackCount - 1 }).map((_, layerIdx) => {
+                  const layerNum = layerIdx + 1; // 1..N
+                  const insetPx = Math.max(4, cellSize * (0.08 * layerNum));
+                  const layerRadius = Math.max(2, cellRadius - insetPx * 0.5);
+                  const tColor = bc(team.id);
+                  // Jedes Inner-Layer leicht dunkler als das vorherige.
+                  const alphaA = ['ee', 'dd', 'cc'][Math.min(layerIdx, 2)] || 'cc';
+                  const alphaB = ['bb', 'a0', '88'][Math.min(layerIdx, 2)] || '88';
+                  return (
+                    <div key={`stack-${layerIdx}`} style={{
+                      position: 'absolute',
+                      inset: insetPx, borderRadius: layerRadius,
+                      background: `linear-gradient(135deg, ${tColor}${alphaA}, ${tColor}${alphaB})`,
+                      border: '1.5px solid rgba(251,191,36,0.85)',
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,${0.20 - layerIdx * 0.04}), inset 0 -2px 0 rgba(0,0,0,${0.20 - layerIdx * 0.03}), 0 1px 2px rgba(0,0,0,0.30)`,
+                      pointerEvents: 'none',
+                      zIndex: 2 + layerIdx,
+                      animation: 'phasePop 0.45s var(--qq-ease-bounce) both',
+                    }} />
+                  );
+                })}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.
                     C7: Sanduhr droppt rein + tickt kontinuierlich. */}
                 {isSandLocked && (
@@ -14936,8 +14964,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   }}>+{cell.stackBonus}</div>
                 )}
                 {/* Emoji / star content */}
+                {/* 2026-05-05 (Wolf-Skizze Stack): zIndex 8 damit Avatar ueber
+                    allen Inner-Stack-Layern (zIndex 2..N) liegt. */}
                 <div style={{
-                  position: 'relative', zIndex: 4,
+                  position: 'relative', zIndex: 8,
                   animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s var(--qq-ease-bounce) 0.3s both' : undefined,
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
@@ -14948,7 +14978,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
                     // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
                     // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
-                    const avSize = Math.max(8, cellSize * 0.86);
+                    // 2026-05-05 v2 (Wolf-Skizze 'avatar dynamisch kleiner in
+                    // der mitte bei stack'): Avatar schrumpft pro extra Stack
+                    // damit er im innersten Inner-Layer Platz hat.
+                    const avFactor = stackCount >= 3 ? 0.50
+                      : stackCount === 2 ? 0.66
+                      : 0.86;
+                    const avSize = Math.max(8, cellSize * avFactor);
                     // 2026-05-05 v3 (Wolf-Bug 'gestapelte felder ueberladen,
                     // 3D aussen + kreis innen'): Inner-Avatar-Goldring auf
                     // Stapel-Tiles entfernt. Die Cell selbst traegt schon

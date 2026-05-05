@@ -11451,9 +11451,6 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     const pair = hl.currentPair;
     const isReveal = hl.phase === 'reveal';
     const correctChoice = pair.subjectValue > pair.anchorValue ? 'higher' : 'lower';
-    const correctText = correctChoice === 'higher'
-      ? (lang === 'en' ? 'HIGHER ↑' : 'MEHR ↑')
-      : (lang === 'en' ? 'LOWER ↓' : 'WENIGER ↓');
     const correctIds = new Set(hl.correctThisRound);
     // Frage-Text: bei Format-B customQuestion direkt, bei Format-A auto-generieren
     // („Hat München mehr oder weniger Einwohner als Berlin?"). Macht den Quiz-Show-
@@ -11575,50 +11572,63 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             // damit absolutely-positioned Inner-Childs ankern koennen.
             minHeight: 'clamp(120px, 14vw, 180px)',
           }}>
-            {/* 2026-05-05 (Wolf-Wunsch '2 pfeile statt vs in der mitte'):
-                Statt VS-Kreis zwei Pfeile uebereinander — ↑ (mehr/höher) oben,
-                ↓ (weniger/tiefer) unten. Visualisiert die Higher/Lower-Wahl
-                klarer, Avatar-Sprung passt zur Pfeil-Richtung. */}
+            {/* 2026-05-05 (Wolf): App-Pillen statt Goldkreise — MEHR oben (grün-
+                Akzent), WENIGER unten (rot-Akzent). Same Pille-Style wie
+                Kategorie-Badges. Bei Reveal: korrekte Pille pulst gold + scaled
+                up, falsche fadet — Avatare landen direkt an der gewählten Pille
+                und feiern dort. Direction-Big-Text-Indikator entfaellt
+                (Pille-Label zeigt's schon). */}
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(12px, 1.4vh, 20px)',
-              opacity: isReveal ? 0 : 1,
-              transition: 'opacity 0.4s ease',
+              gap: 'clamp(10px, 1.2vh, 18px)',
               pointerEvents: 'none',
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
                 const isHigher = dir === 'higher';
+                const accentCol = isHigher ? '#22C55E' : '#EF4444';
+                const isCorrect = isReveal && correctChoice === dir;
+                const isWrong = isReveal && correctChoice !== dir;
                 return (
                   <div key={dir} style={{
-                    width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle at 35% 30%, rgba(253,230,138,0.85), rgba(251,191,36,0.65) 55%, rgba(217,119,6,0.5) 100%)',
-                    border: '3px solid rgba(253,230,138,0.7)',
-                    boxShadow: '0 0 32px rgba(251,191,36,0.4), 0 6px 16px rgba(0,0,0,0.45), inset 0 2px 0 rgba(255,255,255,0.35)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900,
-                    color: '#1a1209',
-                    animation: `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`,
-                  }}>{isHigher ? '↑' : '↓'}</div>
+                    display: 'inline-flex', alignItems: 'center', gap: 12,
+                    padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
+                    borderRadius: 999,
+                    background: isCorrect
+                      ? 'rgba(251,191,36,0.22)'
+                      : `${accentCol}14`,
+                    border: `2.5px solid ${isCorrect ? '#FBBF24' : `${accentCol}66`}`,
+                    boxShadow: isCorrect
+                      ? '0 0 44px rgba(251,191,36,0.55), 0 0 14px rgba(251,191,36,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
+                      : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
+                    opacity: isWrong ? 0.4 : 1,
+                    transition: 'transform 0.5s var(--qq-ease-bounce), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
+                    animation: !isReveal
+                      ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
+                      : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),
+                    whiteSpace: 'nowrap',
+                  }}>
+                    <span style={{
+                      fontSize: 'clamp(24px, 2.8vw, 38px)', lineHeight: 1, fontWeight: 900,
+                      color: isCorrect ? '#FBBF24' : accentCol,
+                      transition: 'color 0.4s ease',
+                    }}>{isHigher ? '↑' : '↓'}</span>
+                    <span style={{
+                      fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
+                      color: isCorrect ? '#FDE68A' : accentCol,
+                      letterSpacing: '0.12em', textTransform: 'uppercase',
+                      transition: 'color 0.4s ease',
+                    }}>
+                      {isHigher
+                        ? (lang === 'en' ? 'Higher' : 'Mehr')
+                        : (lang === 'en' ? 'Lower' : 'Weniger')}
+                    </span>
+                  </div>
                 );
               })}
-            </div>
-            {/* Reveal-State: Direction-Indikator */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: isReveal ? 1 : 0,
-              transition: 'opacity 0.5s ease 0.25s',
-              fontWeight: 900,
-              color: '#FBBF24',
-              textShadow: '0 0 28px rgba(251,191,36,0.6), 0 2px 0 rgba(0,0,0,0.4)',
-              letterSpacing: '0.1em',
-              fontSize: 'clamp(34px, 4.4vw, 64px)',
-              whiteSpace: 'nowrap',
-              animation: isReveal ? 'comebackHLFadeIn 0.5s ease 0.25s both' : undefined,
-            }}>
-              {correctText}
             </div>
           </div>
 
@@ -11714,12 +11724,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             {isReveal && (lang === 'en' ? 'Who got it right?' : 'Wer lag richtig?')}
           </div>
-          {/* 2026-05-05 (Wolf-Wahl 1A): Avatar fliegt zur gewählten Card und
-              parkt am Card-Rand. 'higher' → nach oben rechts (Subject-Card),
-              'lower' → nach oben links (Anchor-Card). Bei mehreren auf
-              gleicher Side: kleiner horizontaler Versatz pro Stack-Index,
-              damit sie nicht 100% übereinander liegen. Reveal: korrekte
-              glühen, falsche faden + grayscale.  */}
+          {/* 2026-05-05 v2 (Wolf-Korrektur Option A): Avatare fliegen zur
+              gewählten PILLE (MEHR oder WENIGER) — nicht mehr zur Subject/
+              Anchor-Card. 'higher' → fliegt zur oberen Pille, 'lower' → zur
+              unteren Pille. Beide vertikal nach oben, mittig im VS-Bereich.
+              Stack: kleine horizontale Fächerung damit mehrere Avatare auf
+              gleicher Pille als Pile lesbar bleiben. Reveal: korrekte Pille
+              glüht gold, korrekte Avatare grün-Glow, falsche faden. */}
           <div style={{ display: 'flex', gap: 'clamp(14px, 1.8vw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
             {hlTeams.map(tm => {
               const choice = hl.answers[tm.id];  // 'higher' | 'lower' | undefined
@@ -11728,17 +11739,23 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               const teamWin = hl.winnings[tm.id] ?? 0;
               // Im Reveal: dim if wrong; Glow if correct.
               const dim = isReveal && !correct;
-              // Stack-Index: wievielter Avatar auf dieser Side?
-              const stackIdx = choice
-                ? hlTeams.filter(t => hl.answers[t.id] === choice).findIndex(t => t.id === tm.id)
-                : 0;
-              // Flug-Vector: 'higher' → rechts, 'lower' → links, beide nach oben
-              // zur Card-Reihe. Stack-Versatz horizontal damit gleiche-Side-Avatare
-              // sich nicht voll ueberlappen.
-              const flyDir = choice === 'higher' ? 1 : choice === 'lower' ? -1 : 0;
-              const flyTransform = choice
-                ? `translate(calc(${flyDir} * clamp(110px, 13vw, 220px) + ${stackIdx * 18}px), clamp(-150px, -16vh, -100px))`
-                : 'translate(0, 0)';
+              // Stack-Index + Group-Size: zentriert die Avatare um die Pille,
+              // sodass z.B. 3 Avatare auf 'higher' als horizontaler Mini-Fan
+              // direkt unter der MEHR-Pille sitzen statt rechts daneben.
+              const sameChoiceTeams = choice
+                ? hlTeams.filter(t => hl.answers[t.id] === choice)
+                : [];
+              const stackIdx = choice ? sameChoiceTeams.findIndex(t => t.id === tm.id) : 0;
+              const groupSize = sameChoiceTeams.length;
+              const xCenter = groupSize > 0 ? (stackIdx - (groupSize - 1) / 2) * 26 : 0;
+              // Vertikaler Flug zur jeweiligen Pille. MEHR-Pille sitzt höher im
+              // VS-Bereich, WENIGER-Pille tiefer. Avatar landet jeweils direkt
+              // unter der Pille (so bleibt das Pille-Label lesbar).
+              const flyTransform = choice === 'higher'
+                ? `translate(${xCenter}px, clamp(-220px, -22vh, -150px))`
+                : choice === 'lower'
+                  ? `translate(${xCenter}px, clamp(-130px, -13vh, -85px))`
+                  : 'translate(0, 0)';
               return (
                 <div key={tm.id} style={{
                   position: 'relative',

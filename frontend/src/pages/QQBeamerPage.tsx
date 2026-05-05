@@ -2808,16 +2808,20 @@ function MuchoOptionsReveal({
 function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
   const lang = useLangFlip(language);
   const title = 'CozyQuiz';
-  const welcome = lang === 'en' ? 'Welcome to' : 'Willkommen beim';
+  const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
   const greeting = lang === 'en'
     ? 'Get comfy — here we go!'
     : 'Macht\'s euch bequem – gleich geht\'s los!';
-  // Keine Auto-Dismiss: Moderator steuert das Weiterschalten per "Weiter"-Button.
-  // Elemente animieren einmalig ein und behalten dann sanfte Loop-Animationen,
-  // damit die Folie nicht einfriert wenn der Moderator 30s wartet.
-  // Fireflies deterministisch via index (kein Math.random → kein Re-Render-Springen).
-  // 2026-05-04 v4 (Wolf 'nicht episch genug'): 6 → 14 Fireflies in zwei
-  // Groessen-Schichten + zwei Lichtstroeme als Hintergrund-Atmosphaere.
+  // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
+  //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
+  //             letter-spacing zoomt auf normal, gold-glow.
+  //   0.9–1.4s  Goldlinie zieht sich von Mitte nach beiden Seiten aus.
+  //   1.4–1.6s  Light-Flash ueber den ganzen Screen (gold-warmer Pulse).
+  //   1.6–2.4s  „CozyQuiz" letter-by-letter scaleIn von 0.4→1.05→1 mit elastic
+  //             bounce, je 0.06s Stagger. Goldglow um Schriftzug pulsiert 1×.
+  //   2.4–3.4s  Shimmer-Lichtreflex wandert links→rechts ueber den Title.
+  //   3.4–4.4s  Wolf-Avatar swoosht von unten links rein, Sprechblase pop.
+  // Background-Atmosphaere (Sterne, Glow) bleibt ueber alles hinweg ruhig + atmend.
   const fireflies = Array.from({ length: 14 }, (_, i) => ({
     left: 6 + ((i * 37) % 88),
     top: 8 + ((i * 53) % 84),
@@ -2830,39 +2834,28 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
       visible={visible}
       zIndex={9990}
       hiddenScale={1.04}
-      // Slate-Hintergrund wie Rest des Quiz (kein warmer Goldgradient mehr)
       background="radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)"
     >
-      {/* Ambient Glow — nur lokal um den Wolf-Bereich, dezent statt überdominant */}
+      {/* Ambient title-glow — wide warm halo behind the title area, atmend. */}
       <div style={{
-        position: 'absolute', left: '50%', top: '62%',
-        width: '70vmin', height: '70vmin',
+        position: 'absolute', left: '50%', top: '40%',
+        width: '95vmin', height: '55vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, rgba(249,115,22,0.08) 38%, transparent 65%)',
-        filter: 'blur(18px)',
-        animation: 'qqIntroGlowPulse 6s ease-in-out infinite',
+        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+        filter: 'blur(34px)',
+        animation: 'qqIntroAmbientPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
-      {/* 2026-05-04 v4 (Wolf 'nicht episch genug'): Zweiter Title-Glow oben.
-          Atmender warm-Gold-Strahl hinter dem Titel-Bereich, gibt der Folie
-          deutlich mehr Energie ohne das Cozy-Feel zu kippen. */}
+      {/* Light-Flash — ein einziger warm-goldener Puls genau im CozyQuiz-Pop-
+          Moment (1.4s). Spielt einmal, fadet sofort. */}
       <div style={{
-        position: 'absolute', left: '50%', top: '32%',
-        width: '90vmin', height: '50vmin',
-        transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.22) 0%, rgba(249,115,22,0.10) 38%, transparent 65%)',
-        filter: 'blur(28px)',
-        animation: 'qqIntroTitleGlow 4.8s ease-in-out 0.3s infinite',
-        pointerEvents: 'none',
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.55) 0%, rgba(249,115,22,0.28) 30%, transparent 60%)',
+        opacity: 0,
+        animation: 'qqIntroLightFlash 0.9s cubic-bezier(0.2,0.7,0.3,1) 1.4s both',
+        pointerEvents: 'none', mixBlendMode: 'screen',
       }} />
-      {/* Entry-Sweep — einmal diagonal, dezenter */}
-      <div style={{
-        position: 'absolute', left: '-20%', top: 0, width: '40%', height: '100%',
-        background: 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.10) 50%, transparent 60%)',
-        animation: 'qqIntroSweep 2.6s ease-out 0.2s both',
-        pointerEvents: 'none',
-      }} />
-      {/* Fireflies — wenige, dezent, weiterhin warm-golden als Marken-Akzent */}
+      {/* Fireflies */}
       {fireflies.map((f, i) => (
         <div key={i} style={{
           position: 'absolute',
@@ -2879,92 +2872,108 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(8px, 1.2vh, 18px)',
+        gap: 'clamp(14px, 2vh, 28px)',
         textAlign: 'center',
         padding: '0 6vw',
       }}>
-        {/* Branded Eyebrow „cozywolf · präsentiert" — Movie-Intro-style.
-            2026-05-04 v4 (Wolf 'nicht episch genug'): kleiner Brand-Marker
-            ueber dem Welcome-Label, signalisiert Auftritt. Letter-Spacing-In
-            Anim wie 'qqIntroWelcome' aber dezenter. */}
+        {/* Subtitle — Letter-Cascade. Jeder Buchstabe erscheint mit eigenem
+            stagger 0.04s, fade-in + letter-spacing-zoom (von weit zu normal). */}
         <div style={{
-          fontSize: 'clamp(10px, 0.95vw, 14px)', fontWeight: 900,
-          letterSpacing: '0.55em', textTransform: 'uppercase',
-          color: 'rgba(251,191,36,0.55)',
-          marginBottom: 'clamp(2px, 0.4vh, 6px)',
-          paddingLeft: '0.55em',
-          animation: 'qqIntroPresentedIn 1.0s cubic-bezier(0.2,0.8,0.4,1) 0s both',
-        }}>cozywolf · präsentiert</div>
-        {/* Welcome label — kleiner, dezenter Akzent in Marken-Gold */}
-        <div style={{
-          fontSize: 'clamp(13px, 1.3vw, 20px)', fontWeight: 900,
+          display: 'inline-flex',
+          fontSize: 'clamp(15px, 1.6vw, 24px)', fontWeight: 900,
           letterSpacing: '0.32em', textTransform: 'uppercase',
           color: '#fbbf24',
-          opacity: 0.88,
-          animation: 'qqIntroWelcome 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.4s both',
-        }}>{welcome}</div>
-        {/* Title — Nunito weiss statt Goldgradient-Logo, mit feiner Akzentlinie drunter */}
+          opacity: 0.92,
+          textShadow: '0 0 28px rgba(251,191,36,0.55), 0 0 8px rgba(251,191,36,0.35)',
+        }} aria-label={welcome}>
+          {Array.from(welcome).map((ch, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              opacity: 0,
+              animation: `qqIntroSubLetter 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) ${i * 0.04}s both`,
+              whiteSpace: 'pre',
+            }}>{ch === ' ' ? ' ' : ch}</span>
+          ))}
+        </div>
+
+        {/* Title-Block: Goldlinie oben + Letter-Cascade Title + Goldlinie unten */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'clamp(8px, 1vh, 14px)',
+          gap: 'clamp(10px, 1.4vh, 22px)',
           position: 'relative',
-          animation: 'qqIntroTitleIn 1.4s cubic-bezier(0.16, 1, 0.3, 1.1) 0.7s both',
         }}>
-          {/* Shockwave Ring hinter dem Titel — single-shot expanding ring,
-              Wolf 2026-05-04 v4: gibt dem Title-Drop akustisches Gewicht. */}
+          {/* Goldlinie OBEN — zieht sich von Mitte nach außen aus (0.9s delay). */}
           <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            width: 80, height: 80, marginLeft: -40, marginTop: -40,
-            borderRadius: '50%',
-            border: '3px solid rgba(251,191,36,0.7)',
-            animation: 'qqIntroShockwave 1.7s cubic-bezier(0.16,1,0.3,1) 0.9s both',
-            pointerEvents: 'none',
-            zIndex: -1,
-          }} />
-          {/* Zweiter Shockwave-Layer mit Versatz fuer doppel-Echo-Gefuehl. */}
-          <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            width: 120, height: 120, marginLeft: -60, marginTop: -60,
-            borderRadius: '50%',
-            border: '2px solid rgba(255,123,138,0.45)',
-            animation: 'qqIntroShockwave 2.0s cubic-bezier(0.16,1,0.3,1) 1.15s both',
-            pointerEvents: 'none',
-            zIndex: -1,
-          }} />
-          <div style={{
-            fontSize: 'clamp(64px, 9.5vw, 160px)', fontWeight: 900,
-            letterSpacing: '0.01em',
-            lineHeight: 0.96,
-            color: '#f8fafc',
-            textShadow: [
-              '0 0 24px rgba(251,191,36,0.55)',
-              '0 0 56px rgba(251,191,36,0.30)',
-              '0 0 120px rgba(251,191,36,0.18)',
-              '0 4px 24px rgba(0,0,0,0.6)',
-            ].join(', '),
-            position: 'relative', zIndex: 1,
-          }}>{title}</div>
-          {/* Akzentlinie — Marken-Gold-Highlight unter dem Titel.
-              2026-05-04: Wolf-Feedback „Streifen zu kurz" — Breite proportional zur
-              Titel-Fontgroesse (~5x), softerer Fade an den Enden statt harter Cutoff.
-              Continuous shimmer (gleiche Sprache wie Round-Intro-Divider) — bewegt sich
-              unaufhoerlich von links nach rechts, damit die Folie auch bei 30s Wartezeit
-              nicht statisch wirkt. */}
-          <div style={{
-            width: 'clamp(320px, 42vw, 640px)', height: 2, borderRadius: 999,
+            width: 'clamp(380px, 50vw, 760px)', height: 2, borderRadius: 999,
             background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.6) 25%, #fbbf24 50%, rgba(251,191,36,0.6) 75%, transparent 100%)',
             backgroundSize: '200% 100%',
-            boxShadow: '0 0 14px rgba(251,191,36,0.45)',
-            opacity: 0.85,
-            animation: 'qqIntroAccentIn 0.8s ease 1.6s both, qqIntroAccentShimmer 3.5s linear 2.4s infinite',
+            boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+            transformOrigin: 'center',
+            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
+            opacity: 0,
+          }} />
+
+          {/* Title — Letter-Cascade mit elastic ScaleIn pro Buchstabe.
+              Stagger 0.06s, scale 0.4 → 1.08 → 1. Whole-screen white text mit
+              dichtem Goldglow. */}
+          <div
+            aria-label={title}
+            style={{
+              display: 'inline-flex',
+              fontSize: 'clamp(80px, 12vw, 200px)', fontWeight: 900,
+              letterSpacing: '0.01em',
+              lineHeight: 0.96,
+              color: '#f8fafc',
+              textShadow: [
+                '0 0 26px rgba(251,191,36,0.65)',
+                '0 0 60px rgba(251,191,36,0.32)',
+                '0 0 130px rgba(251,191,36,0.18)',
+              ].join(', '),
+              position: 'relative', zIndex: 1,
+              animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
+              filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',
+            }}
+          >
+            {/* Shimmer-Sweep ueber den Title nach Settle */}
+            <span aria-hidden style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.65) 50%, transparent 62%)',
+              backgroundSize: '220% 100%',
+              backgroundPosition: '-120% 0',
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+              animation: 'qqIntroTitleShimmer 1.4s cubic-bezier(0.5, 0, 0.5, 1) 2.6s both',
+              clipPath: 'inset(0)', // limit to title-bounds
+            }} />
+            {Array.from(title).map((ch, i) => (
+              <span key={i} style={{
+                display: 'inline-block',
+                opacity: 0,
+                animation: `qqIntroTitleLetter 0.85s cubic-bezier(0.16, 1.2, 0.3, 1) ${1.6 + i * 0.06}s both`,
+                whiteSpace: 'pre',
+              }}>{ch}</span>
+            ))}
+          </div>
+
+          {/* Goldlinie UNTEN — symmetrisch zur oberen, gleiches expand */}
+          <div style={{
+            width: 'clamp(380px, 50vw, 760px)', height: 2, borderRadius: 999,
+            background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.6) 25%, #fbbf24 50%, rgba(251,191,36,0.6) 75%, transparent 100%)',
+            backgroundSize: '200% 100%',
+            boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+            transformOrigin: 'center',
+            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
+            opacity: 0,
           }} />
         </div>
-        {/* Wolf + Sprechblase — Wolf bleibt das Logo-Zentrum, Sprechblase im Cozy-Card-Stil */}
+
+        {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein. */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 'clamp(12px, 1.8vw, 28px)',
-          marginTop: 'clamp(12px, 1.6vh, 24px)',
-          animation: 'qqIntroStackIn 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 1.9s both',
+          gap: 'clamp(14px, 1.8vw, 28px)',
+          marginTop: 'clamp(20px, 2.6vh, 36px)',
+          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 3.4s both',
+          opacity: 0,
         }}>
           <AnimatedCozyWolf widthCss="clamp(130px, 15vw, 220px)" speaking={visible} />
 
@@ -2972,7 +2981,6 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
             position: 'relative',
             padding: 'clamp(14px, 1.8vh, 24px) clamp(22px, 2.6vw, 38px)',
             borderRadius: 24,
-            // Glassmorph-Card statt cremiger Comic-Bubble
             background: 'linear-gradient(180deg, rgba(15,23,42,0.78) 0%, rgba(11,16,28,0.78) 100%)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
@@ -2982,23 +2990,19 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
             fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
             maxWidth: '60vw',
             lineHeight: 1.28,
-            animation: 'qqIntroBubbleBob 5s ease-in-out infinite',
+            animation: 'qqIntroBubbleBob 5s ease-in-out 4s infinite',
           }}>
-            {/* Tail — zeigt nach links auf den Wolf, in Card-Farben */}
+            {/* Tail */}
             <div style={{
               position: 'absolute', left: -13, top: '50%',
-              width: 0, height: 0,
-              transform: 'translateY(-50%)',
-              borderTop: '11px solid transparent',
-              borderBottom: '11px solid transparent',
+              width: 0, height: 0, transform: 'translateY(-50%)',
+              borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
               borderRight: '14px solid rgba(251,191,36,0.55)',
             }} />
             <div style={{
               position: 'absolute', left: -10, top: '50%',
-              width: 0, height: 0,
-              transform: 'translateY(-50%)',
-              borderTop: '9px solid transparent',
-              borderBottom: '9px solid transparent',
+              width: 0, height: 0, transform: 'translateY(-50%)',
+              borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
               borderRight: '12px solid rgba(15,23,42,0.85)',
             }} />
             {greeting}
@@ -3006,23 +3010,14 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
         </div>
       </div>
       <style>{`
-        @keyframes qqIntroGlowPulse {
-          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-          50%      { opacity: 1.0; transform: translate(-50%, -50%) scale(1.12); }
-        }
-        @keyframes qqIntroTitleGlow {
-          0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.95); }
+        @keyframes qqIntroAmbientPulse {
+          0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
           50%      { opacity: 1.0;  transform: translate(-50%, -50%) scale(1.10); }
         }
-        @keyframes qqIntroSweep {
-          0%   { transform: translateX(0); opacity: 0; }
-          30%  { opacity: 1; }
-          100% { transform: translateX(360%); opacity: 0; }
-        }
-        @keyframes qqIntroShockwave {
-          0%   { opacity: 0.95; transform: scale(0.2); border-width: 4px; }
-          60%  { opacity: 0.55; }
-          100% { opacity: 0;    transform: scale(8.5); border-width: 1px; }
+        @keyframes qqIntroLightFlash {
+          0%   { opacity: 0; }
+          25%  { opacity: 1; }
+          100% { opacity: 0; }
         }
         @keyframes qqIntroFireflyDrift {
           0%, 100% { opacity: 0.35; transform: translate(0, 0) scale(0.9); }
@@ -3030,35 +3025,38 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
           50%      { opacity: 0.6;  transform: translate(-6px, -18px) scale(1); }
           75%      { opacity: 0.9;  transform: translate(10px, -8px) scale(1.05); }
         }
-        @keyframes qqIntroPresentedIn {
-          0%   { opacity: 0; letter-spacing: 1em; }
-          100% { opacity: 1; letter-spacing: 0.55em; }
+        @keyframes qqIntroSubLetter {
+          0%   { opacity: 0; transform: translateY(-12px); letter-spacing: 0.8em; filter: blur(8px); }
+          100% { opacity: 0.92; transform: translateY(0); letter-spacing: 0; filter: blur(0); }
         }
-        @keyframes qqIntroWelcome {
-          0%   { opacity: 0; transform: translateY(10px); letter-spacing: 0.5em; }
-          100% { opacity: 1; transform: translateY(0);    letter-spacing: 0.32em; }
-        }
-        @keyframes qqIntroTitleIn {
-          0%   { opacity: 0; transform: translateY(50px) scale(0.4);  filter: blur(20px); }
-          50%  { opacity: 1; transform: translateY(-6px) scale(1.08); filter: blur(0); }
-          75%  { transform: translateY(2px) scale(0.98); }
-          100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
-        }
-        @keyframes qqIntroAccentIn {
-          0%   { opacity: 0; transform: scaleX(0.2); }
-          100% { opacity: 1; transform: scaleX(1); }
+        @keyframes qqIntroLineExpand {
+          0%   { opacity: 0; transform: scaleX(0); }
+          100% { opacity: 0.85; transform: scaleX(1); }
         }
         @keyframes qqIntroAccentShimmer {
           0%   { background-position: -200% 0; }
           100% { background-position:  200% 0; }
         }
-        @keyframes qqIntroStackIn {
-          0%   { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
+        @keyframes qqIntroTitleLetter {
+          0%   { opacity: 0; transform: translateY(40px) scale(0.4); filter: blur(14px); }
+          55%  { opacity: 1; transform: translateY(-6px) scale(1.08); filter: blur(0); }
+          80%  { transform: translateY(2px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
-        @keyframes qqIntroWolfBreathe {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          50%      { transform: scale(1.03) rotate(-1deg); }
+        @keyframes qqIntroTitleSettle {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.015); }
+        }
+        @keyframes qqIntroTitleShimmer {
+          0%   { background-position: -120% 0; opacity: 0; }
+          15%  { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { background-position:  120% 0; opacity: 0; }
+        }
+        @keyframes qqIntroWolfStack {
+          0%   { opacity: 0; transform: translateY(36px); filter: blur(8px); }
+          60%  { opacity: 1; filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
         @keyframes qqIntroBubbleBob {
           0%, 100% { transform: translateY(0); }

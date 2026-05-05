@@ -4971,7 +4971,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           ? 'stealCrashIn 0.55s var(--qq-ease-bounce) both'
                           : undefined,
                     }}>
-                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.82))} /> : null}
+                      {/* 2026-05-05 (Wolf-Bug 'runde felder'): flat-Prop —
+                          Avatar-Disc-BG raus, nur Emoji-Glyph. Cell selbst
+                          traegt schon die Team-Farbe als BG. Plus Emoji
+                          groesser (0.82 → 0.95) wie auf /beamer. */}
+                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat /> : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (

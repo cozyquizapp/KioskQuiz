@@ -6456,20 +6456,23 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
               {/* Author-Avatar als BG-Watermark — gross, halbtransparent, hinter
                   dem ganzen Card-Inhalt. Gibt das „Owner-Stempel"-Feeling. */}
               {!isReal && authorTeam && (
+                // 2026-05-05 (Wolf-Polish 'emoji groesse + transparenz anpassen'):
+                // 14vw → 17vw (groesser), opacity 0.18 → 0.14 (dezenter), blur
+                // 1.5 → 0.5 (klarer aber durch opacity weiter im BG).
                 <div aria-hidden style={{
                   position: 'absolute',
-                  right: 'clamp(-12px, -1.5vw, -28px)',
+                  right: 'clamp(-16px, -2vw, -36px)',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: 'clamp(120px, 14vw, 200px)',
-                  height: 'clamp(120px, 14vw, 200px)',
-                  opacity: 0.18,
-                  filter: 'blur(1.5px)',
+                  width: 'clamp(150px, 17vw, 240px)',
+                  height: 'clamp(150px, 17vw, 240px)',
+                  opacity: 0.14,
+                  filter: 'blur(0.5px)',
                   pointerEvents: 'none',
                   zIndex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <QQTeamAvatar avatarId={authorTeam.avatarId} teamEmoji={authorTeam.emoji} size="100%" />
+                  <QQTeamAvatar avatarId={authorTeam.avatarId} teamEmoji={authorTeam.emoji} size="100%" flat />
                 </div>
               )}
 
@@ -11495,27 +11498,34 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             // damit absolutely-positioned Inner-Childs ankern koennen.
             minHeight: 'clamp(120px, 14vw, 180px)',
           }}>
-            {/* Question-State: VS im Kreis */}
+            {/* 2026-05-05 (Wolf-Wunsch '2 pfeile statt vs in der mitte'):
+                Statt VS-Kreis zwei Pfeile uebereinander — ↑ (mehr/höher) oben,
+                ↓ (weniger/tiefer) unten. Visualisiert die Higher/Lower-Wahl
+                klarer, Avatar-Sprung passt zur Pfeil-Richtung. */}
             <div style={{
               position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(12px, 1.4vh, 20px)',
               opacity: isReveal ? 0 : 1,
               transition: 'opacity 0.4s ease',
               pointerEvents: 'none',
             }}>
-              <div style={{
-                width: 'clamp(96px, 11vw, 148px)', height: 'clamp(96px, 11vw, 148px)',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle at 35% 30%, rgba(253,230,138,0.95), rgba(251,191,36,0.8) 55%, rgba(217,119,6,0.65) 100%)',
-                border: '3px solid rgba(253,230,138,0.85)',
-                boxShadow: '0 0 60px rgba(251,191,36,0.55), 0 0 24px rgba(251,191,36,0.4), 0 8px 22px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 'clamp(40px, 5vw, 70px)', fontWeight: 900,
-                color: '#1a1209',
-                letterSpacing: '0.05em',
-                textShadow: '0 1px 0 rgba(255,255,255,0.4)',
-                animation: 'qqVsPulse 2.4s ease-in-out infinite',
-              }}>VS</div>
+              {(['higher', 'lower'] as const).map((dir, idx) => {
+                const isHigher = dir === 'higher';
+                return (
+                  <div key={dir} style={{
+                    width: 'clamp(72px, 8vw, 110px)', height: 'clamp(72px, 8vw, 110px)',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle at 35% 30%, rgba(253,230,138,0.85), rgba(251,191,36,0.65) 55%, rgba(217,119,6,0.5) 100%)',
+                    border: '3px solid rgba(253,230,138,0.7)',
+                    boxShadow: '0 0 32px rgba(251,191,36,0.4), 0 6px 16px rgba(0,0,0,0.45), inset 0 2px 0 rgba(255,255,255,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900,
+                    color: '#1a1209',
+                    animation: `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`,
+                  }}>{isHigher ? '↑' : '↓'}</div>
+                );
+              })}
             </div>
             {/* Reveal-State: Direction-Indikator */}
             <div style={{
@@ -13849,7 +13859,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           }}><QQEmojiIcon emoji="🏆"/></div>
 
           <div style={{ position: 'relative', display: 'inline-block', marginTop: 2 }}>
-            <QQTeamAvatar avatarId={winner.avatarId} size={'clamp(80px, 8vw, 120px)'} style={{
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(80px, 8vw, 120px)'} style={{
               boxShadow: `0 0 60px ${winnerColor}55, 0 0 120px ${winnerColor}33`,
               animation: `celebShake 0.6s ease ${avatarShakeDelay}s both, finaleAvatarBreathe 4s ease-in-out ${avatarBreatheDelay}s infinite`,
             }} />
@@ -14792,7 +14802,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
                     // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
-                    const avSize = Math.max(8, cellSize * 0.74);
+                    // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
+                    // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
+                    const avSize = Math.max(8, cellSize * 0.86);
                     // 2026-05-04: dunkle Hinterlegungs-Scheibe entfernt —
                     // sie war fuer PNG-Transparenzen gedacht und wirkte mit
                     // den neuen Emoji-Discs als hartes schwarzes Outline auf

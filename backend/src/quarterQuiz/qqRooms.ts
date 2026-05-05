@@ -4251,11 +4251,25 @@ export function qqOnlyConnectAdvanceTeamHint(room: QQRoomState, teamId: string):
   return next;
 }
 
-/** Globaler min-Index across alle Teams — für Beamer-Anzeige (kein Spoiler). */
+/** Globaler min-Index across alle AKTIVEN Teams — für Beamer-Anzeige.
+ *  2026-05-05 (Wolf-Wunsch): Teams die schon erraten haben oder gesperrt
+ *  sind zaehlen NICHT mehr fuer die min-Logik. Dadurch kann der Beamer
+ *  Hint 2 zeigen sobald ein Team bei Hint 1 geloest hat (oder ausgeschieden
+ *  ist) und die uebrigen sich auf Hint 2+ befinden.
+ *  Edge-Case: wenn alle Teams gewonnen/locked sind, fallback auf MAX(alle)
+ *  statt 0 — sonst zeigt der Beamer wieder den ersten Hint. */
 export function qqOnlyConnectGlobalMinHint(room: QQRoomState): number {
-  const values = Object.values(room.onlyConnectHintIndices);
-  if (values.length === 0) return 0;
-  return Math.min(...values);
+  const lockedSet = new Set(room.onlyConnectLockedTeams ?? []);
+  const wonSet = new Set((room.onlyConnectGuesses ?? []).filter(g => g.correct).map(g => g.teamId));
+  const activeTeamIds = Object.keys(room.onlyConnectHintIndices)
+    .filter(id => room.teams[id] && !lockedSet.has(id) && !wonSet.has(id));
+  if (activeTeamIds.length === 0) {
+    // Alle gewonnen/locked → behalte MAX (sonst springt's auf 0 zurueck).
+    const allValues = Object.values(room.onlyConnectHintIndices);
+    return allValues.length > 0 ? Math.max(...allValues) : 0;
+  }
+  const activeValues = activeTeamIds.map(id => room.onlyConnectHintIndices[id] ?? 0);
+  return Math.min(...activeValues);
 }
 
 /**

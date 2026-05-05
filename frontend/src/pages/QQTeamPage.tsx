@@ -3800,11 +3800,8 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
-  // Auto-Hint-Reveal seit 2026-04-28: alle Teams sehen synchron den gleichen
-  // Hint-Index, der vom Backend-Timer global advanced wird. /team kann nicht
-  // mehr selbst freischalten.
+  // Per-Team-Hint-Level. Team kann durch Tap auf den naechsten Slot freischalten.
   const hintIdx = Math.max(0, (s.onlyConnectHintIndices ?? {})[myTeamId] ?? 0);
-  const pointsIfWinNow = Math.max(1, 4 - hintIdx);
   const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
   // Multi-Winner: hat MEIN Team schon richtig gelegen?
   const isMyWin = (s.onlyConnectGuesses ?? []).some(g => g.teamId === myTeamId && g.correct);
@@ -3814,6 +3811,14 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (!alreadyAnswered) ref.current?.focus(); }, [alreadyAnswered]);
+
+  // 2026-05-05 (Wolf-Wunsch '/team uebersichtlicher'): durch Tap auf den
+  // naechsten Hint-Slot freischalten — kein extra Button mehr.
+  const advanceHint = () => {
+    if (alreadyAnswered) return;
+    if (hintIdx >= 3) return;
+    emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId });
+  };
 
   // B7: Auto-Submit bei Timer-End (falls Text vorhanden + nicht schon locked).
   const expired = useExpiry(s.timerEndsAt ?? null);
@@ -3840,76 +3845,80 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* 4 Hint-Slots vertikal — wie auf Beamer aber kompakter */}
+      {/* Regel-Hint oben — kompakt, klar, ohne Punkte-Logik (Wolf-Wunsch:
+          Punktlogik ist intern, Spieler interessiert nur die Mechanik). */}
+      {!alreadyAnswered && (
+        <div style={{
+          fontSize: 12, color: '#94A3B8', textAlign: 'center', fontWeight: 700,
+          lineHeight: 1.4, padding: '0 4px',
+        }}>
+          {lang === 'de'
+            ? 'Wer mit den wenigsten Hinweisen löst, gewinnt.'
+            : 'Solve with fewest hints to win.'}
+        </div>
+      )}
+
+      {/* 4 Hint-Slots vertikal — verdeckte Slots klickbar zum Freischalten
+          (Wolf-Wunsch '/team uebersichtlicher: durch klicken freischalten'). */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {[0, 1, 2, 3].map(i => {
           const isVisible = i <= hintIdx;
           const isCurrent = i === hintIdx && !alreadyAnswered;
+          const isNextLockable = i === hintIdx + 1 && !alreadyAnswered;
           const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+          const clickable = isNextLockable;
           return (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px', borderRadius: 8,
-              background: isVisible ? `${hintColor}18` : 'rgba(255,255,255,0.03)',
-              border: isVisible ? `1px solid ${hintColor}55` : '1px dashed rgba(255,255,255,0.10)',
-              boxShadow: isCurrent ? `0 0 12px ${hintColor}44` : 'none',
-              opacity: isVisible ? 1 : 0.6,
-              transition: 'all 0.4s ease',
-            }}>
+            <button
+              key={i}
+              type="button"
+              onClick={clickable ? advanceHint : undefined}
+              disabled={!clickable}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 14px', borderRadius: 10,
+                background: isVisible
+                  ? `${hintColor}18`
+                  : clickable
+                    ? `${hintColor}10`
+                    : 'rgba(255,255,255,0.03)',
+                border: isVisible
+                  ? `1px solid ${hintColor}55`
+                  : clickable
+                    ? `1.5px dashed ${hintColor}88`
+                    : '1px dashed rgba(255,255,255,0.10)',
+                boxShadow: isCurrent
+                  ? `0 0 12px ${hintColor}44`
+                  : clickable
+                    ? `0 0 14px ${hintColor}33`
+                    : 'none',
+                opacity: isVisible ? 1 : (clickable ? 0.95 : 0.4),
+                cursor: clickable ? 'pointer' : 'default',
+                transition: 'all 0.3s ease',
+                fontFamily: 'inherit', textAlign: 'left',
+                width: '100%', minHeight: 44,
+              }}
+            >
               <span style={{
-                fontSize: 10, fontWeight: 900,
-                color: isVisible ? hintColor : '#475569',
+                fontSize: 11, fontWeight: 900,
+                color: isVisible ? hintColor : (clickable ? hintColor : '#475569'),
                 letterSpacing: '0.1em', textTransform: 'uppercase',
-                width: 32, textAlign: 'center',
+                width: 32, textAlign: 'center', flexShrink: 0,
               }}>{lang === 'de' ? `H${i+1}` : `C${i+1}`}</span>
               <span style={{
                 fontSize: 16, fontWeight: 900,
-                color: isVisible ? '#F1F5F9' : 'transparent',
-              }}>{isVisible ? hintsAll[i] : '?'}</span>
-            </div>
+                color: isVisible ? '#F1F5F9' : (clickable ? `${hintColor}cc` : 'transparent'),
+                flex: 1,
+              }}>
+                {isVisible
+                  ? hintsAll[i]
+                  : clickable
+                    ? (lang === 'de' ? '🔓 Tippen zum Freischalten' : '🔓 Tap to reveal')
+                    : '?'}
+              </span>
+            </button>
           );
         })}
       </div>
-
-      {/* 2026-05-03 (Wolf-Wunsch): per-Team-Hints. Team schaltet selbst
-          weitere Hinweise frei — je weiter, desto weniger Punkte. */}
-      {!alreadyAnswered && (
-        <>
-          <div style={{
-            padding: '10px 14px', borderRadius: 16,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontSize: 12, fontWeight: 900, color: '#94A3B8',
-            letterSpacing: '0.04em', textTransform: 'uppercase',
-          }}>
-            <span>{lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}</span>
-            <span style={{ color: '#FBBF24' }}>
-              {lang === 'de' ? `Tippen jetzt: ${pointsIfWinNow} Pkt` : `Guess now: ${pointsIfWinNow} pt${pointsIfWinNow !== 1 ? 's' : ''}`}
-            </span>
-          </div>
-          {hintIdx < 3 && (
-            <button
-              onClick={() => emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId })}
-              style={{
-                padding: '12px', borderRadius: 16,
-                border: '2px dashed rgba(167,139,250,0.5)',
-                background: 'rgba(167,139,250,0.08)',
-                color: '#C4B5FD', fontWeight: 900, fontSize: 14,
-                cursor: 'pointer', fontFamily: 'inherit',
-                letterSpacing: '0.04em',
-              }}
-              title={lang === 'de'
-                ? `Nächster Hinweis = ${Math.max(1, 4 - (hintIdx + 1))} Punkte statt ${pointsIfWinNow}`
-                : `Next hint = ${Math.max(1, 4 - (hintIdx + 1))} pts instead of ${pointsIfWinNow}`}
-            >
-              {lang === 'de'
-                ? `🔓 Nächsten Hinweis freischalten (${Math.max(1, 4 - (hintIdx + 1))} Pkt)`
-                : `🔓 Reveal next clue (${Math.max(1, 4 - (hintIdx + 1))} pt${Math.max(1, 4 - (hintIdx + 1)) !== 1 ? 's' : ''})`}
-            </button>
-          )}
-        </>
-      )}
 
       {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}
       {isMyWin && (

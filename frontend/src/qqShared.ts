@@ -14,6 +14,14 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-10px); }
   }
+  /* Wolf 2026-05-05: Entry-Letter-Cascade fuer Rules-Slide-Titles. Gleiche
+     Sprache wie qqIntroTitleLetter im Welcome — scaleIn 0.4 → 1.05 → 1 mit
+     blur-clear. Wird mit qqCatNameWave kombiniert (Entry erst, Wave danach). */
+  @keyframes qqRulesTitleLetter {
+    0%   { opacity: 0; transform: translateY(20px) scale(0.5); filter: blur(10px); }
+    60%  { opacity: 1; transform: translateY(-4px) scale(1.05); filter: blur(0); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
   /* SpeedBoltMarker entfernt 2026-05-04 v4 — qqSpeedSweep + qqSpeedGlow Keyframes
      mitentfernt (waren nur fuer den deaktivierten goldenen „Sonnen"-Marker). */
   @keyframes cfloata { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(10px)  rotate(var(--r,0deg))} }

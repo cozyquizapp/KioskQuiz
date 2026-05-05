@@ -3211,7 +3211,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             {slide.title.split('').map((char, i) => (
               <span key={`${idx}-${i}`} style={{
                 display: 'inline-block',
-                animation: `qqCatNameWave 2.4s ease-in-out ${i * 0.08}s infinite`,
+                opacity: 0,
+                // 2026-05-05 v2 (Wolf 'jetzt kommen die regeln auch wave?'):
+                // Entry-Letter-Cascade (scaleIn + blur-clear, stagger 0.05s —
+                // gleiche Sprache wie Welcome-Title), DANN continuous
+                // qqCatNameWave als sanftes Wiegen.
+                animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
                 whiteSpace: 'pre',
               }}>{char === ' ' ? ' ' : char}</span>
             ))}

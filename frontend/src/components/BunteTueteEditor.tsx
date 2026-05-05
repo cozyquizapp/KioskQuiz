@@ -381,6 +381,15 @@ const MapEditor = ({ payload, onUpdate }: { payload: BunteTueteMapPayload; onUpd
       <div style={{ marginTop: 8, fontSize: 11, opacity: 0.55, lineHeight: 1.4 }}>
         💡 Koordinaten über Google Maps ermitteln: Rechtsklick auf Ort → "Was ist hier?"
       </div>
+      <div style={{
+        marginTop: 10, padding: '8px 10px', borderRadius: 8,
+        background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+        fontSize: 11, color: '#93c5fd', lineHeight: 1.4,
+      }}>
+        🖼 <strong>Optional:</strong> Bild zur Frage hinzufügen (z.B. Foto vom gesuchten Ort).
+        Scroll runter zum „Bild"-Block in der Sidebar — Spielende sehen es auf /team
+        zusammen mit der Karte, Zuschauer auf /beamer.
+      </div>
     </div>
   );
 };

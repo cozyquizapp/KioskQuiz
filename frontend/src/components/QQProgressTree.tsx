@@ -492,7 +492,7 @@ export default function QQProgressTree({
                 boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
                 transform: 'translate(-50%, -50%)',
                 transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
-                animation: hopping ? 'roundMiniHop 620ms cubic-bezier(0.4,0,0.2,1) both' : undefined,
+                animation: hopping ? 'roundMiniHop 620ms var(--qq-ease-smooth) both' : undefined,
                 zIndex: 3,
                 pointerEvents: 'none',
               }} />

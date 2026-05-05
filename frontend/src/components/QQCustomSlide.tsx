@@ -419,7 +419,7 @@ function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
                 height: '100%', borderRadius: 4,
                 background: `linear-gradient(90deg, ${t.color}cc, ${t.color})`,
                 width: `${Math.min(100, (t.largestConnected / maxCells) * 100)}%`,
-                transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+                transition: 'width 0.5s var(--qq-ease-smooth)',
                 boxShadow: i === 0 ? `0 0 8px ${t.color}66` : 'none',
               }} />
             </div>
@@ -933,7 +933,7 @@ function CustomSlideElement({
                 border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}44`,
                 boxShadow: isCorrect ? '0 0 30px rgba(34,197,94,0.3)' : 'none',
                 display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6,
-                animation: isCorrect ? 'revealCorrectPop 0.55s cubic-bezier(0.34,1.4,0.64,1) 0.25s both'
+                animation: isCorrect ? 'revealCorrectPop 0.55s var(--qq-ease-bounce-soft) 0.25s both'
                   : isWrong ? 'revealWrongDim 0.4s ease 0.15s both' : undefined,
               }}>
                 {optImg?.url && (
@@ -1084,8 +1084,8 @@ function CustomSlideElement({
               backgroundImage: `url(${img.url})`,
               backgroundSize: 'cover', backgroundPosition: 'center',
               clipPath: isRevealed ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
-              animation: isRevealed ? undefined : 'fsExpand 1.2s cubic-bezier(0.4,0,0.2,1) 2.4s both',
-              transition: 'clip-path 0.8s cubic-bezier(0.4,0,0.2,1)',
+              animation: isRevealed ? undefined : 'fsExpand 1.2s var(--qq-ease-smooth) 2.4s both',
+              transition: 'clip-path 0.8s var(--qq-ease-smooth)',
               transform: imgTransform, opacity: img.opacity ?? 1, filter: imgFilterStr,
             }} />
             <div style={{

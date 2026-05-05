@@ -256,20 +256,23 @@ QQBeamerPage:1996 - contentReveal 0.4s → sollte DURATION.slow (600ms)
    - Grid-Cells, Intro-Elements
    - Dauer: 1h
 
-### **Bucket-2: Struktur-Hebel — 4-6h**
+### **Bucket-2: Struktur-Hebel** — ✅ ABGESCHLOSSEN 2026-05-05
 
-1. **B2-1 Easing-Migration (Remaining Cubic-Bezier)**
-   - 8 "Nahe-genug" an Tokens → Vars migrieren
-   - 15 Single-Use → Entscheidung (behalten Inline?)
-   - Dauer: 2h
+1. **B2-1 Easing-Migration (Exakte 1:1-Matches)** — ✅ ERLEDIGT
+   - `cubic-bezier(0.4,0,0.2,1)` (4×) → `var(--qq-ease-smooth)`
+   - `cubic-bezier(0.34,1.4,0.64,1)` (1×) → `var(--qq-ease-bounce-soft)`
+   - Files: QQCustomSlide.tsx, QQProgressTree.tsx
+   - "Nahe-genug"-Werte (z.B. 0.34,1.5,0.64,1 vs bounce-soft 0.34,1.4,0.64,1) bleiben inline — Migration wäre subtiler Visual-Drift ohne Live-Test.
 
-2. **B2-2 DURATION-Token-Integration (Future-Ready)**
-   - Dokumentation + Refactor-Guide
-   - Dauer: 1h
+2. **B2-2 DURATION-Token-Integration** — ⏸ AKZEPTIERT (Drift-Risiko)
+   - Hardcoded `tcfloat 3s` (3000ms) ≠ DURATION.idle (2400ms) — Migration würde 600ms schneller machen.
+   - `qqTrPulse 2.2s` (2200ms) ≠ DURATION.idle — Migration würde 200ms langsamer machen.
+   - Beide sind echt-kalibrierte Werte. Inline-Werte bleiben, DURATION-Tokens sind für NEUEN Code verfügbar.
 
-3. **B2-3 gridIdle Performance-Check**
-   - Überprüfen, ob 100+ parallele Animationen nötig sind
-   - Dauer: 1h + Profiling
+3. **B2-3 gridIdle Performance-Check** — ✅ ENTWARNUNG
+   - `gridIdle` wird nur EINMAL verwendet (QQBeamerPage:14344, auf das Parent-Grid-Element). Audit hatte das mit `cellIdlePulse` verwechselt.
+   - `cellIdlePulse` wird auf `idleCells`-Set angewendet (begrenzte Anzahl, nicht alle Cells). Animiert `background` — könnte bei sehr vielen Idle-Cells Paint-Thrashing verursachen, ist aber ohne Profiling-Beleg nicht akut.
+   - **Akzeptiert.** Zukünftige Optimierung wenn reale Performance-Probleme auftreten.
 
 ### **Bucket-3: Per-Page Detail-Findings — 3-5h (Später)**
 

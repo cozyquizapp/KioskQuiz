@@ -811,7 +811,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '6px 0 14px',
             }}>
-              <QQTeamAvatar avatarId={resumeTeam.avatarId} size={56} style={{
+              <QQTeamAvatar avatarId={resumeTeam.avatarId} teamEmoji={resumeTeam.emoji} size={56} style={{
                 animation: 'tcfloat 3s ease-in-out infinite',
                 filter: `drop-shadow(0 0 12px ${resumeTeam.color}55)`,
               }} />
@@ -1120,7 +1120,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         {step === 'NAME' && (
           <CozyCard anim borderColor="#EAB308">
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <QQTeamAvatar avatarId={avatarId} size={64} style={{
+              <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={64} style={{
                 margin: '0 auto',
                 animation: 'tcfloat 3s ease-in-out infinite',
                 filter: 'drop-shadow(0 0 12px rgba(234,179,8,0.3))',
@@ -1824,7 +1824,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
               background: `${t.color}08`,
               border: `1px solid ${t.color}22`,
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} size={28} />
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
               <span style={{ fontWeight: 900, fontSize: 16, color: t.color }}>{t.name}</span>
             </div>
           ))}
@@ -2756,7 +2756,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
-                  {team && <QQTeamAvatar avatarId={team.avatarId} size={18} />}
+                  {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
                   <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? '#e2e8f0' }}>{team?.name ?? a.teamId}</span>
                   <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? '#4ade80' : '#94a3b8', fontFamily: "'Caveat', cursive" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
@@ -2995,7 +2995,7 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
 function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingTeams, myRank }: {
   text: string; lang?: 'de' | 'en';
   answeredCount?: number; totalTeams?: number;
-  pendingTeams?: Array<{ id: string; name: string; color: string; avatarId: string }>;
+  pendingTeams?: Array<{ id: string; name: string; color: string; avatarId: string; emoji?: string }>;
   myRank?: number; // 1-based Reihenfolge des Abschickens
 }) {
   return (
@@ -3059,7 +3059,7 @@ function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingT
                 opacity: 0.9,
                 animation: 'tcpulse 1.8s ease-in-out infinite',
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} size={28} />
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
                 <TeamNameLabel
                   name={t.name}
                   maxLines={2}
@@ -4567,7 +4567,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           {pendingTeam ? (
             <>
-              <QQTeamAvatar avatarId={pendingTeam.avatarId} size={40} style={{
+              <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={40} style={{
                 margin: '0 auto 8px',
                 animation: 'tcfloat 2s ease-in-out infinite',
               }} />
@@ -4638,7 +4638,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                         {isStuckCell
                           ? <QQEmojiIcon emoji="🏯"/>
                           : cellTeam
-                            ? <QQTeamAvatar avatarId={cellTeam.avatarId} size={Math.max(18, Math.floor(miniCellSize * 0.85))} />
+                            ? <QQTeamAvatar avatarId={cellTeam.avatarId} teamEmoji={cellTeam.emoji} size={Math.max(18, Math.floor(miniCellSize * 0.85))} />
                             : null}
                       </div>
                     );
@@ -4970,7 +4970,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           ? 'stealCrashIn 0.55s var(--qq-ease-bounce) both'
                           : undefined,
                     }}>
-                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} size={Math.max(24, Math.floor(cellSize * 0.82))} /> : null}
+                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.82))} /> : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (
@@ -5277,7 +5277,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           {comebackTeam && (
             <>
-              <QQTeamAvatar avatarId={comebackTeam.avatarId} size={40} style={{
+              <QQTeamAvatar avatarId={comebackTeam.avatarId} teamEmoji={comebackTeam.emoji} size={40} style={{
                 margin: '0 auto',
                 animation: 'tcfloat 2s ease-in-out infinite',
               }} />
@@ -5719,7 +5719,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
           {iWon ? (
             <div style={{ fontSize: 52, marginBottom: 4 }}><QQEmojiIcon emoji="🏆"/></div>
           ) : (
-            <QQTeamAvatar avatarId={winner.avatarId} size={52} style={{ margin: '0 auto 4px' }} />
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={52} style={{ margin: '0 auto 4px' }} />
           )}
           {iWon ? (
             <div style={{ fontSize: 26, fontWeight: 900, color: myTeam?.color, marginBottom: 4 }}>
@@ -5756,7 +5756,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
                   color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
                 }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
-                <QQTeamAvatar avatarId={tm.avatarId} size={24} />
+                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
                 <span style={{ fontWeight: 900, color: tm.color, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#94a3b8' }}>

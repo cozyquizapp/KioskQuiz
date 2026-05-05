@@ -9,6 +9,7 @@ import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, FUNNY_TEAM_NAMES,
+  qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -4841,38 +4842,43 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isMine = cell.ownerId === myTeamId;
                 const sandTtl = cell.sandLockTtl ?? 0;
                 const isSandLocked = sandTtl > 0;
+                // 2026-05-05 (Wolf-Bug 'Grid auf /team anders als /beamer'):
+                // Brett-Farbe via qqGetBoardColor (Smart-Palette, vermeidet
+                // Avatar-Konflikte) + 3D-Plaettchen-Box-Shadow analog Beamer
+                // (Inset-Highlight oben + Inset-Shadow unten + Hard-Edge-Drop
+                // + Soft-Drop). Vorher: gedimmte team.color + 1-Schicht-Shadow.
+                const tColor = team ? qqGetBoardColor(team.id, s.teams) : null;
+                const platticHi = 'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)';
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
                     aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     width: cellSize, height: cellSize, borderRadius: 6,
-                    // Polish 2026-05-01: Cell-Background gedimmt (vorher voll
-                    // gesaettigte Team-Color hat Avatare verschluckt). Jetzt
-                    // niedrige Color-Tinte als BG, Border voll gesaettigt = klar
-                    // erkennbarer Team-Identifier ohne Avatar-Konflikt.
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
-                      : isStuckCell ? `linear-gradient(135deg, ${team?.color ?? '#F59E0B'}55, ${team?.color ?? '#F59E0B'}2a)`
-                      : team ? `linear-gradient(135deg, ${team.color}48, ${team.color}24)` : 'rgba(255,255,255,0.04)',
+                      : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
+                      : tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}d9)` : 'rgba(255,255,255,0.04)',
                     border: isPending ? `3px dashed ${actionColor}`
                       : isSwapSelected ? `3px solid ${actionColor}`
+                      : isStuckCell ? `3px solid rgba(251,191,36,0.95)`
                       : isStuckCandidate ? `2px solid #F59E0B`
-                      : clickable ? `2px solid ${actionColor}` : team ? `2px solid ${team.color}` : '1px solid rgba(255,255,255,0.06)',
+                      : clickable ? `2px solid ${actionColor}`
+                      : tColor ? `1px solid ${tColor}55`
+                      : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
-                    // B12 (2026-04-29): non-clickable Team-Cells blieben auf opacity:0.85
-                    // sitzen — sah aus wie ein Filter ueber den Farben. Jetzt volle
-                    // Sattigung; nur leere Cells weiterhin gedimmt.
                     opacity: team ? 1 : (clickable || isSwapSelected ? 1 : 0.3),
-                    transition: 'all 0.15s',
-                    boxShadow: isPending ? `0 0 0 4px ${actionColor}55, 0 0 22px ${actionColor}aa`
-                      : isSwapSelected ? `0 0 14px ${actionColor}88`
-                      : isStuckCandidate ? '0 0 10px #F59E0B88'
-                      : isFrozenCell ? '0 0 8px rgba(147,210,255,0.5)'
-                      : isMine && team ? `0 0 6px ${team.color}55, inset 0 1px 0 rgba(255,255,255,0.12)`
-                      : team ? `inset 0 1px 0 rgba(255,255,255,0.08)`
-                      : clickable ? `0 0 8px ${actionColor}44` : 'none',
+                    transition: 'all 0.15s, box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
+                    boxShadow: isPending ? `0 0 0 4px ${actionColor}55, 0 0 22px ${actionColor}aa, ${platticHi}`
+                      : isSwapSelected ? `0 0 14px ${actionColor}88, ${platticHi}`
+                      : isStuckCandidate ? `0 0 10px #F59E0B88, ${platticHi}`
+                      : isStuckCell
+                        ? `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -3px 0 rgba(0,0,0,0.22), 3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6)`
+                        : isFrozenCell ? `0 0 8px rgba(147,210,255,0.5), ${platticHi}`
+                        : isMine && tColor ? `0 0 14px ${tColor}88, ${platticHi}`
+                        : team ? platticHi
+                        : clickable ? `0 0 8px ${actionColor}44` : 'none',
                     animation: isPending ? 'tccellPendingPulse 1.2s ease-in-out infinite'
                       : justStolen ? 'stealFlash 0.8s ease-out both'
                       : tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,

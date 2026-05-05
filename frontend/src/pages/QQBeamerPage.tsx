@@ -882,10 +882,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // - Klauen → playSteal
       // - Stapeln → playStapelStamp
       // Liste haengt von Phase + Free-Cells ab — gleiche Logik wie Render.
+      // 2026-05-05 (Wolf-Bug 'bei 4 gewinn intro kommt stabelsound'):
+      // Stapel-Sound aus Phase-Intro-Cascade entfernt — er kam in
+      // Phase 3 als Action-Card-Sound, war aber bei 4-Gewinnt-Fragen
+      // verwirrend (4-Gewinnt hat keine Stapel-Aktion in der Frage).
+      // Stapel-Sound bleibt beim echten Stapeln in PLACEMENT (line 1164).
       const sounds: Array<() => void> = [];
       if (hasFreeCells) sounds.push(() => playFieldPlaced());
       if (ph >= 2) sounds.push(() => playSteal());
-      if (ph >= 3) sounds.push(() => playStapelStamp());
+      void ph; // keep variable referenced for ESLint
       const cardBaseMs = 800;
       const cardStaggerMs = 1500;
       const handles: number[] = [];
@@ -1161,7 +1166,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const teamIdsKey = s.teams.map(t => t.id).sort().join(',');
     const prev = prevFlagsRef.current;
     const grew = (a: string, b: string) => b.split(',').filter(Boolean).length > a.split(',').filter(Boolean).length;
-    if (prev.stuck   && grew(prev.stuck,   stuckKey))   playStapelStamp();
+    // Stapel-Stamp nur bei echtem Stapeln in PLACEMENT — sonst triggert
+    // er beim Phase-Wechsel falsch (Wolf-Bug 'bei 4 gewinn intro kommt
+    // stabelsound' kam u.a. von hier wenn alte stuck-cells aus voriger
+    // Runde im neuen Phase-Render auftauchen).
+    if (s.phase === 'PLACEMENT' && prev.stuck && grew(prev.stuck, stuckKey)) playStapelStamp();
     if (prev.teamIds && grew(prev.teamIds, teamIdsKey) && s.phase === 'LOBBY') playTeamJoin();
     prevFlagsRef.current = { stuck: stuckKey, teamIds: teamIdsKey };
   }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1443,6 +1452,43 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       playFieldPlaced();
     }
   }, [s.muchoRevealStep, s.zvzRevealStep, s.cheeseRevealStep, s.mapRevealStep, s.phase, s.sfxMuted, s.currentQuestion?.id, s.answers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── CONNECTIONS_4X4 (Finale) Phase-Wechsel-Sounds ──────────────────────────
+  // 2026-05-05 (Wolf-Bug 'keine toene beim reveal von finale 4x4'):
+  // Connections-Reveal hatte keine Audio-Markierung — Wolf hoerte Stille
+  // waehrend Teams enthuellt wurden. Jetzt:
+  // - intro → active: Fanfare (Spiel beginnt)
+  // - active → reveal: Cascade pro Team (worst→best, ~600ms Stagger)
+  // - reveal → placement: Field-Placed-Sound (Markierung dass Setzen anfaengt)
+  // - placement → done: ClimaxFinish (Finale ist fertig)
+  const prevConnectionsPhaseRef = useRef<string | null>(null);
+  useEffect(() => {
+    const cur = s.connections?.phase ?? null;
+    const prev = prevConnectionsPhaseRef.current;
+    prevConnectionsPhaseRef.current = cur;
+    if (s.sfxMuted) return;
+    if (s.phase !== 'CONNECTIONS_4X4') return;
+    if (cur === prev) return;
+    if (prev === 'active' && cur === 'reveal') {
+      // Cascade pro Team in Reveal-Reihenfolge (worst→best). Animation in
+      // ConnectionsRevealView nutzt phasePop mit teamRevealDelay-Stagger.
+      const teamCount = s.teams.length;
+      const cascadeTotal = teamCount + 1;
+      for (let i = 0; i < teamCount; i++) {
+        window.setTimeout(() => {
+          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+        }, 200 + i * 600);
+      }
+      // Final-Fanfare nach allen Team-Reveals.
+      window.setTimeout(() => {
+        try { playFanfare(); } catch {}
+      }, 200 + teamCount * 600 + 400);
+    } else if (prev === 'reveal' && cur === 'placement') {
+      try { playFieldPlaced(); } catch {}
+    } else if (cur === 'done') {
+      try { playClimaxFinish(); } catch {}
+    }
+  }, [s.connections?.phase, s.phase, s.teams.length, s.sfxMuted]);
 
   // ── Bunte-Tüte-Sub-Mechanik-Sounds: HotPotato / OnlyConnect / Bluff ────────
   // Diese Mechaniken hatten bisher kein Audio — Beamer war stumm während die
@@ -8672,7 +8718,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         setZvzRevealed(prev => {
           const next = new Set(prev); next.add(optIdx); return next;
         });
-        if (!s.sfxMuted) { try { playTick(); } catch {} }
+        // 2026-05-05 (Wolf-Bug 'mehrere sounds gleichzeitig'): playTick
+        // entfernt — Avatar-Cascade-Note (line 1435) liefert schon den
+        // hoerbaren Cascade-Effekt, Tick legte sich oben drauf und matschte.
       }, 200 + i * 550));
     });
     return () => timers.forEach(t => window.clearTimeout(t));
@@ -8724,10 +8772,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     prevShowWinnerRef.current = showUnifiedWinner;
     // 2026-05-05 (Wolf-Bug 'cheese reveal sound passt nicht, gewinnercard fehlt'):
     // Bei CHEESE mit mehreren Winnern ist correctTeamId oft null/leer — nur
-    // currentQuestionWinners ist gefuellt. Vorher: hasWinner = !!correctTeamId
-    // → Trigger sprang nie an, Climax-Sound + Winner-Card-Pop kamen nicht.
-    const hasWinner = !!s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0;
-    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && hasWinner) {
+    // currentQuestionWinners ist gefuellt.
+    // 2026-05-05 v2 (Wolf-Bug 'cheese sound fuer winnercard, aber keine card'):
+    // hasWinner muss zusaetzlich pruefen ob die Winner-IDs auch wirklich in
+    // s.teams existieren — sonst spielt der Sound aber Render fellt auf das
+    // 'team not found → return null'-Branch und Card erscheint nicht.
+    const winnerIds = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+    const hasRenderableWinner = !!s.teams.find(t => t.id === s.correctTeamId)
+      || winnerIds.some(id => s.teams.find(t => t.id === id));
+    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && hasRenderableWinner) {
       const cat = s.currentQuestion?.category;
       const subKind = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
       const isCascadeCategory =

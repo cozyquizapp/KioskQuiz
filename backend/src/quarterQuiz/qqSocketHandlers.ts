@@ -787,17 +787,31 @@ export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void
       // Branch und platzierten regulaere Cells statt zu stapeln.
       // Fix: STAPEL_BONUS explizit auf STAPEL-Action mappen.
       if (live.pendingAction === 'STAPEL_BONUS') {
-        const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-          availableKinds: ['STAPEL'], phase: live.gamePhaseIndex,
-        });
-        if (!choice || choice.kind !== 'STAPEL') {
+        // 2026-05-05 v2 (Wolf-Bug 'bots stapeln immer noch nicht im finale'):
+        // qqStuckCell wirft bei CONNECTIONS_4X4 + STAPEL_BONUS einen Phase/
+        // Action-Mismatch-Error (assertPhase['PLACEMENT'] + pendingAction !==
+        // 'STAPEL_1'). Richtige Funktion ist qqStapelBonusCell, die genau
+        // fuer diese Phase + Action gebaut ist (Multi-Stack erlaubt, kein
+        // stapelsUsed-Counter).
+        // Wahl: bevorzugt eigenes Feld mit hoechster largestConnected-Marge.
+        // pickDummyAction kann das nicht (sucht freie/feindliche cells), also
+        // hier eigene Logik: einfach das erste eigene Feld.
+        const ownCells: { row: number; col: number }[] = [];
+        for (let r = 0; r < live.grid.length; r++) {
+          for (let c = 0; c < live.grid[r].length; c++) {
+            if (live.grid[r][c].ownerId === teamId) ownCells.push({ row: r, col: c });
+          }
+        }
+        if (ownCells.length === 0) {
           qqSkipCurrentPlacement(live);
           broadcast(io, roomCode);
           if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
           return;
         }
+        // Random pick fuer leichte Variation (Bot-Verhalten wirkt menschlicher).
+        const pick = ownCells[Math.floor(Math.random() * ownCells.length)];
         try {
-          qqStuckCell(live, teamId, choice.target!.row, choice.target!.col);
+          qqStapelBonusCell(live, teamId, pick.row, pick.col);
           if (live.connections?.phase === 'placement') qqConnectionsAfterPlacement(live);
           broadcast(io, roomCode);
           if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);

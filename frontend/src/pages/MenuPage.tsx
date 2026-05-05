@@ -7,13 +7,13 @@ type LinkItem = { path: string; label: string; emoji: string; note?: string };
 // CozyQuiz — Live-Spiel-Elemente (alles was an einem Quiz-Abend gebraucht wird)
 // ─────────────────────────────────────────────────────────────────────────
 const cozyQuizLinks: LinkItem[] = [
-  { path: '/moderator',   label: 'Moderator',        emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
-  { path: '/beamer',      label: 'Beamer',           emoji: '📽️', note: 'Grid live anzeigen' },
-  { path: '/team',        label: 'Team',             emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
-  { path: '/builder',     label: 'QQ Builder',       emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
-  { path: '/library',     label: 'Fragenbibliothek', emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
-  { path: '/host-sheets', label: 'Host-Sheets',      emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
-  { path: '/slides',      label: 'Slide-Editor',     emoji: '🎨', note: 'Custom Slides pro Frage gestalten' },
+  { path: '/moderator',   label: 'Moderator',          emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
+  { path: '/beamer',      label: 'Beamer',             emoji: '📽️', note: 'Grid live anzeigen' },
+  { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
+  { path: '/builder',     label: 'QQ Builder',         emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
+  { path: '/library',     label: 'Fragenbibliothek',   emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
+  { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
+  { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -39,8 +39,9 @@ const extrasLinks: LinkItem[] = [
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
+  // Folien-Custom-Layouts (selten gebraucht — kein echter Slide-Editor mehr)
+  { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
   // Admin & Stats
-  { path: '/feedback',            label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
   { path: '/alt/stats',           label: 'Stats & Leaderboard', emoji: '📊', note: 'Letzte Runs & Frage-Verteilungen' },
   // Cozy60 (alte App, nicht mehr aktiv weiterentwickelt)

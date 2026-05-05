@@ -758,7 +758,9 @@ export default function QQBuilderPage() {
           >🏆 4×4 Finale {activeDraft.connections ? '✓' : ''}</button>
           <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
           <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
-          <button onClick={async () => { await saveDraftRaw(activeDraft); navigate(`/slides?draft=${activeDraft.id}`); }} style={btnStyle('#6366F1')}>🎬 Folien-Editor</button>
+          {/* 2026-05-05 (Wolf 'editor useless geworden'): Folien-Editor-Button
+              aus Builder entfernt. Slide-Editor jetzt nur noch im Menü unter
+              Extras erreichbar fuer bestehende Drafts. */}
           <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
           {(() => {
             const v = validateDraft(activeDraft);

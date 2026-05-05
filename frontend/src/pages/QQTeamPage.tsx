@@ -1645,7 +1645,7 @@ function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en' }) {
         }}>
           {lang === 'de' ? 'Willkommen!' : 'Welcome!'}
         </div>
-        <QQTeamAvatar avatarId={team.avatarId} size={96} style={{
+        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={96} style={{
           filter: `drop-shadow(0 0 24px ${team.color}aa)`,
           animation: 'tcfloat 2.6s ease-in-out infinite',
         }} />

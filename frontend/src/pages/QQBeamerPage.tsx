@@ -14,7 +14,6 @@ import {
   QQSoundSlot,
   QQ_MAX_JOKERS_PER_GAME,
   teamDisplayName,
-  qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
 import { BeamerOverlay } from '../components/BeamerOverlay';
 import { JokerIcon } from '../components/JokerIcon';
@@ -14276,14 +14275,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   // weiterhin team.color (Brand bleibt konsistent), nur das BRETT erhaelt
   // die zugewiesene Palette-Farbe damit nahe Avatar-Farben (z.B. yellow vs
   // amber) sich auf Cells nicht mehr aehnlich anfuehlen.
-  const boardColors = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const t of s.teams) {
-      m[t.id] = qqGetBoardColor(t.id, s.teams);
-    }
-    return m;
-  }, [s.teams]);
-  const bc = (teamId: string): string => boardColors[teamId] ?? '#94a3b8';
+  // Wolf 2026-05-05 (Klaerung): team.color (= Avatar-Slot-Farbe) wird ueberall
+  // genutzt, auch auf Cells. Keine separate Brett-Palette mehr.
+  const bc = (teamId: string): string => s.teams.find(t => t.id === teamId)?.color ?? '#94a3b8';
   const activeTeam = s.teams.find(t => t.id === highlightTeam);
   const activeColor = activeTeam ? bc(activeTeam.id) : '#fff';
 
@@ -14801,10 +14795,9 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
           return (
             <div key={`${r}-${c}`} style={{
               width: cellSize, height: cellSize, borderRadius: 3,
-              // 2026-05-05 (Wolf-Wahl 3B): MiniGrid verwendet die Smart-Brett-
-              // Palette analog GridDisplay, damit kleine Mini-Grids (z.B. in
-              // Rules-Slides) konsistent bleiben.
-              background: team ? qqGetBoardColor(team.id, s.teams) : 'rgba(255,255,255,0.05)',
+              // Wolf 2026-05-05 (Klaerung): team.color ist die EINE Team-Farbe
+              // ueberall (Avatar-Slot-Farbe).
+              background: team?.color ?? 'rgba(255,255,255,0.05)',
             }} />
           );
         })
@@ -14998,7 +14991,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 : undefined,
               borderRadius: '50%',
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} bgColor={tColor} />
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
               {isLeader && (
                 <span style={{
                   position: 'absolute',

@@ -3,7 +3,7 @@
 import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
-  QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqGetBoardColor,
+  QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
@@ -419,11 +419,13 @@ export function qqJoinTeam(
     const safeAvatarId = takenBy ? room.teams[teamId].avatarId : avatarId; // keep old if taken
     room.teams[teamId].name      = teamName;
     room.teams[teamId].avatarId  = safeAvatarId;
-    // 2026-05-05 (Wolf 'team color = team id, also Brett-Palette nach
-    // join-Reihenfolge'): bei Rejoin behaelt das Team seine join-Position
-    // → seine Brett-Palette-Farbe bleibt gleich. NICHT mehr Avatar-
-    // Signatur-Farbe — sondern join-order-basierte Brett-Farbe.
-    room.teams[teamId].color = qqGetBoardColor(teamId, room.joinOrder);
+    // Sync color to (possibly new) avatar's signature color.
+    // Wolf 2026-05-05 (Klaerung): team.color = Avatar-Slot-Farbe, nicht
+    // Brett-Palette. Diese eine Farbe wird ueberall genutzt — Grid, Tabelle,
+    // Hero, Standings. Hue-Konflikte sind seltener als visuelle Verwirrung
+    // durch zwei unterschiedliche Farben pro Team.
+    const newAvatar = QQ_AVATARS.find(a => a.id === safeAvatarId);
+    if (newAvatar?.color) room.teams[teamId].color = newAvatar.color;
     // Emoji-Override: bei Rejoin akzeptieren wenn nicht von anderem Team belegt
     if (emoji && emoji.trim()) {
       const emojiTakenBy = Object.values(room.teams).find(t => t.id !== teamId && t.emoji === emoji);
@@ -463,14 +465,11 @@ export function qqJoinTeam(
       throw new QQError('NAME_TAKEN', 'Dieser Team-Name ist bereits vergeben.');
     }
   }
-  // 2026-05-05 (Wolf 'team color = team id'): Brett-Palette nach
-  // join-Reihenfolge — KEINE Avatar-Signatur-Farbe mehr. So ist team.color
-  // automatisch identisch zu qqGetBoardColor(team.id, room.joinOrder),
-  // ueberall in der App konsistent ohne separate Migration.
-  // Wir muessen die Position vorab berechnen weil joinOrder erst unten
-  // gepusht wird.
-  const futureJoinOrder = [...room.joinOrder, teamId];
-  const color = qqGetBoardColor(teamId, futureJoinOrder);
+  // Color is derived from the chosen avatar (each avatar has a fixed signature color).
+  // Wolf 2026-05-05 (Klaerung): team.color = Avatar-Slot-Farbe wird ueberall
+  // genutzt — Grid, Tabelle, Hero. Keine separate Brett-Palette mehr.
+  const avatar = QQ_AVATARS.find(a => a.id === avatarId);
+  const color = avatar?.color ?? QQ_TEAM_PALETTE[existingCount % QQ_TEAM_PALETTE.length];
   room.teams[teamId] = {
     id: teamId,
     name: teamName,

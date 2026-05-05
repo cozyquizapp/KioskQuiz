@@ -9,7 +9,6 @@ import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, FUNNY_TEAM_NAMES,
-  qqGetBoardColor,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -4856,12 +4855,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 const isMine = cell.ownerId === myTeamId;
                 const sandTtl = cell.sandLockTtl ?? 0;
                 const isSandLocked = sandTtl > 0;
-                // 2026-05-05 (Wolf-Bug 'Grid auf /team anders als /beamer'):
-                // Brett-Farbe via qqGetBoardColor (Smart-Palette, vermeidet
-                // Avatar-Konflikte) + 3D-Plaettchen-Box-Shadow analog Beamer
-                // (Inset-Highlight oben + Inset-Shadow unten + Hard-Edge-Drop
-                // + Soft-Drop). Vorher: gedimmte team.color + 1-Schicht-Shadow.
-                const tColor = team ? qqGetBoardColor(team.id, s.teams) : null;
+                // Wolf 2026-05-05 (Klaerung): team.color ist die EINE Farbe
+                // pro Team, ueberall in der App identisch. 3D-Plaettchen-Look
+                // bleibt (Inset-Highlight + Inset-Shadow + Hard-Edge-Drop + Soft-Drop).
+                const tColor = team?.color ?? null;
                 const platticHi = 'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)';
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
@@ -5774,7 +5771,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
                   color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
                 }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
-                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} bgColor={tmColor} />
+                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
                 <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#94a3b8' }}>

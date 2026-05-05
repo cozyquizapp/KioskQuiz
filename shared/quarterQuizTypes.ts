@@ -1047,17 +1047,20 @@ export interface QQAck {
 // die neuen CozyCast-Tiere. `image` zeigt auf die PNGs unter
 // /avatars/cozy-cast/avatar-{slug}.png. Die Reihenfolge: erste 4 sind die
 // kontrastreichsten Picks für kleine Team-Counts.
-// 2026-05-04 (Wolf): Farben aufgefrischt fuer maximale Unterscheidbarkeit
-// aus 8m Pub-Distanz. Slot 1 → Pink (Tailwind pink-500 #EC4899 statt rose
-// — Rose war zu nah am Red), Blau heller, Teal→Cyan, Orange→Amber.
+// 2026-05-05 (Wolf-Klaerung 'eine farbe pro team ueberall'): Avatar-Slot-
+// Farben entsprechen jetzt der 8-Farben-Brett-Palette mit 45°-Hue-Spread.
+// Vorher: cow (#F59E0B amber) vs unicorn (#FACC15 yellow) → warm-gelb-Konflikt;
+// cat (#EF4444 red) vs fox (#EC4899 pink) → rot-pink-Konflikt. Jetzt:
+// alle 8 Slots klar unterscheidbar UND team.color = Cell-Farbe = Standings-
+// Farbe (eine Quelle, nicht zwei Paletten parallel).
 export const QQ_AVATARS = [
-  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#EC4899', hoodie: '#0EA5E9' },
-  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#84CC16', hoodie: '#7C2D12' },
+  { id: 'fox',     slug: 'shiba',     emoji: '🐕', label: 'Hund',      labelEn: 'Dog',      color: '#F97316', hoodie: '#0EA5E9' },
+  { id: 'frog',    slug: 'faultier',  emoji: '🦥', label: 'Faultier',  labelEn: 'Sloth',    color: '#22C55E', hoodie: '#7C2D12' },
   { id: 'panda',   slug: 'pinguin',   emoji: '🐧', label: 'Pinguin',   labelEn: 'Penguin',  color: '#3B82F6', hoodie: '#FDE047' },
   { id: 'rabbit',  slug: 'koala',     emoji: '🐨', label: 'Koala',     labelEn: 'Koala',    color: '#A855F7', hoodie: '#EAB308' },
   { id: 'unicorn', slug: 'giraffe',   emoji: '🦒', label: 'Giraffe',   labelEn: 'Giraffe',  color: '#FACC15', hoodie: '#5B21B6' },
-  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#14B8A6', hoodie: '#F59E0B' },
-  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#F59E0B', hoodie: '#581C87' },
+  { id: 'raccoon', slug: 'waschbaer', emoji: '🦝', label: 'Waschbär',  labelEn: 'Raccoon',  color: '#06B6D4', hoodie: '#F59E0B' },
+  { id: 'cow',     slug: 'kuh',       emoji: '🐄', label: 'Kuh',       labelEn: 'Cow',      color: '#EC4899', hoodie: '#581C87' },
   { id: 'cat',     slug: 'capybara',  emoji: '🐹', label: 'Capybara',  labelEn: 'Capybara', color: '#EF4444', hoodie: '#166534' },
 ] as const;
 

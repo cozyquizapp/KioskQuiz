@@ -798,6 +798,15 @@ export const QQ_BEAMER_CSS = `
     100% { transform: translateX(0);    opacity: 1; }
   }
 
+  /* tcpulse — Box-Shadow-Pulse für Active-Team-Pille (Hot Potato),
+     Round-Indicator etc. Vorher nur in QQTeamPage definiert,
+     wurde aber auch in QQBeamerPage:2012/2031/15044 verwendet — Bug
+     gefixt in Phase-5 Bucket-1 (zentrale Definition). */
+  @keyframes tcpulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--c, rgba(255,255,255,0.2)); }
+    50%      { box-shadow: 0 0 0 6px transparent; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;

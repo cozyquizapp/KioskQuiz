@@ -1993,7 +1993,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
               boxShadow: `0 4px 14px rgba(34,197,94,${chipStyles.shadowAlpha})`,
               color: '#86efac', fontSize: chipStyles.fontSize, fontWeight: 900,
               letterSpacing: 0.2,
-              animation: 'contentReveal 0.4s ease both',
+              animation: 'contentReveal 0.5s ease both',
             }}>
               {a}
             </div>
@@ -4313,7 +4313,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900,
             color: `${displayColor}cc`, letterSpacing: '0.1em',
             marginBottom: 28,
-            animation: hasRoundTransition ? undefined : 'contentReveal 0.4s ease 0.1s both',
+            animation: hasRoundTransition ? undefined : 'contentReveal 0.5s ease 0.1s both',
             transition: 'background 500ms ease, border-color 500ms ease, color 500ms ease',
             position: 'relative', zIndex: 5,
           }}>
@@ -4540,7 +4540,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
             color: `${color}aa`, letterSpacing: '0.04em',
             marginBottom: 24,
-            animation: 'contentReveal 0.4s ease 0.1s both',
+            animation: 'contentReveal 0.5s ease 0.1s both',
             position: 'relative', zIndex: 5,
           }}>
             {phaseName}
@@ -4853,7 +4853,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 background: `${catColor}15`, border: `1.5px solid ${catColor}33`,
                 color: `${catColor}aa`, letterSpacing: '0.04em',
                 marginBottom: 16,
-                animation: 'contentReveal 0.4s ease 0.1s both',
+                animation: 'contentReveal 0.5s ease 0.1s both',
                 position: 'relative', zIndex: 5,
               }}>
                 <div style={{

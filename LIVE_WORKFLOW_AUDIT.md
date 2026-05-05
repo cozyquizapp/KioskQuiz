@@ -1,6 +1,6 @@
 ﻿# 🎬 Live-Workflow-Audit (Phase 7)
 
-**Stand:** 2026-05-05 · **Scope:** Streamdeck-Mod-Workflow · **User:** Wolf (Solo-Moderator) · **Kontext:** Phasen 1-6 abgeschlossen (Style-Guide, Findings, Refactor, Animation, Sound)
+**Stand:** 2026-05-05 · **Scope:** Streamdeck-Mod-Workflow · **User:** Wolf (Solo-Moderator) · **Status:** Phase 7 ABGESCHLOSSEN — Bucket-1+2+3 fixiert (Audio-Feedback Hotkeys, Auto-Skip Standard-Placement-Offline, Music-Muted-Badge). Bucket-4 Mobile geht in Phase 8, Bucket-5 Pre-Game-Checkliste optional.
 
 ---
 
@@ -38,7 +38,18 @@ if (e.code === 'Space') {
 
 ---
 
-### BC-2: Kein Skip-Aktion wenn pendingFor-Team offline (PLACEMENT-Stuck)
+### BC-2: Skip-Placement bei pendingFor-Offline — ✅ ERLEDIGT 2026-05-05
+
+**Erkenntnis nach Code-Inspektion:** Manueller Skip-Button existierte bereits in `PlacementControls` (line 2854). Lücken waren:
+1. Auto-Skip nur für Comeback-Phase (8s), nicht für Standard-Placement.
+2. Skip-Button bei Offline-Team gleichfarbig wie sonst — nicht hervorgehoben.
+3. confirm()-Dialog auch bei offline-Team — unnötiger Stress-Klick.
+
+**Fix:**
+- Auto-Skip in QQModeratorPage:421-435 erweitert: bei pendingTeam offline UND nicht-Comeback → 12s Timeout (länger als 8s Comeback weil Wolf ggf. manuell eingreifen will).
+- Skip-Button in PlacementControls: rot statt grau wenn offline, ohne confirm-Dialog (offline = kein Spieler-Beleidigungs-Risiko).
+
+**Original-Vorschlag:**
 
 **Severity:** MAJOR — Wenn Team während PLACEMENT disconnected und ist der pendingFor-Team, steckt Spiel fest. Space drücken geht nicht.
 
@@ -52,7 +63,11 @@ if (e.code === 'Space') {
 
 ---
 
-### BC-3: Music-Muted-Status nicht persistent sichtbar
+### BC-3: Music-Muted-Status — ✅ ERLEDIGT 2026-05-05
+
+**Fix:** Persistenter „🔇 Stumm"-Badge im Header (rot pill) wenn `state.globalMuted === true`. Vorher zeigte M-Hotkey nur einen Toast — danach keine Indicator. Wolf weiss jetzt jederzeit ob Mute aktiv ist.
+
+**Original:**
 
 **Severity:** MINOR — Nach M-Press zeigt nur Toast. Danach keine Indicator ob muted oder nicht.
 

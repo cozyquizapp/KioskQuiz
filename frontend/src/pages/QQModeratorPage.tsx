@@ -423,10 +423,14 @@ export default function QQModeratorPage() {
           // wenn das Comeback-Team Maria entweder ein Phone-Tab geschlossen hat
           // ODER nie connected war (Solo-Test). Connected-Teams bleiben unbetroffen
           // — die duerfen in Ruhe nachdenken.
+          // 2026-05-05 (Phase-7 Bucket-2 BC-2): Auto-Skip auch fuer Standard-
+          // Placement (nicht-Comeback) wenn pendingTeam offline. 12s Timeout
+          // (laenger als Comeback weil Wolf vielleicht kurz manuell eingreifen
+          // will). Verhindert Game-Stuck wenn Team waehrend Placement disconnects.
           const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
           const isComeback = s.pendingAction === 'COMEBACK' || s.comebackTeamId === s.pendingFor;
-          if (pendingTeam && !pendingTeam.connected && isComeback) {
-            delayMs = 8000;
+          if (pendingTeam && !pendingTeam.connected) {
+            delayMs = isComeback ? 8000 : 12000;
             action = () => emit('qq:skipCurrentTeam', { roomCode });
           }
         }
@@ -865,6 +869,21 @@ export default function QQModeratorPage() {
             <span className="qm-kbd qm-kbd-sm">?</span>
             Hotkeys
           </button>
+          {/* 2026-05-05 (Phase-7 Bucket-3 BC-3): Persistenter Mute-Badge im
+              Header. Vorher zeigte M-Hotkey nur einen Toast — danach keine
+              Indicator. Wolf weiss jetzt jederzeit ob Mute aktiv ist. */}
+          {state?.globalMuted && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 10px', borderRadius: 999,
+              background: 'rgba(239,68,68,0.18)',
+              border: '1.5px solid rgba(239,68,68,0.6)',
+              color: '#FCA5A5', fontWeight: 900, fontSize: 12,
+              letterSpacing: '0.04em',
+            }} title="Globaler Mute aktiv (M zum Aufheben)">
+              🔇 Stumm
+            </span>
+          )}
           <span className={connected ? 'qm-conn-online' : 'qm-conn-offline'} style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span className="qm-dot" />
             {connected ? 'Verbunden' : 'Getrennt'}
@@ -2841,17 +2860,23 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
           ↩ Comeback zurück
         </Btn>
       )}
-      <span title="Wenn Team nichts setzen/klauen kann oder will">
+      {/* 2026-05-05 (Phase-7 Bucket-2 BC-2): Skip-Button visuell hervorgehoben
+          wenn Team offline (rot statt grau) UND ohne confirm-Dialog. Offline =
+          kein „Spieler-Beleidigungs"-Risiko + Wolf braucht schnellen Skip ohne
+          Live-Stress-Klick. Online-Teams behalten confirm als Sicherheitsnetz. */}
+      <span title={offline ? 'Team offline — direkter Skip' : 'Wenn Team nichts setzen/klauen kann oder will'}>
         <Btn
           small
-          color="#64748b"
+          color={offline ? '#EF4444' : '#64748b'}
           onClick={() => {
-            if (confirm(`${team.name} überspringen? Der Zug wird verworfen.`)) {
+            if (offline) {
+              emit('qq:skipCurrentTeam', { roomCode });
+            } else if (confirm(`${team.name} überspringen? Der Zug wird verworfen.`)) {
               emit('qq:skipCurrentTeam', { roomCode });
             }
           }}
         >
-          ⏭ Skip
+          ⏭ {offline ? 'Skip (offline)' : 'Skip'}
         </Btn>
       </span>
     </div>

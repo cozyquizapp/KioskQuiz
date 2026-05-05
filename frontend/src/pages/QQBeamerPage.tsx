@@ -14630,6 +14630,46 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   const bridgeBg = `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`;
                   const bridgeSpan = Math.max(6, cellSize - cellRadius * 2);
                   const bridgeOffset = cellRadius;
+                  // 2026-05-05 v3 (Wolf-Wunsch 'connected regions als block'):
+                  // Borders + Inset-3D-Effects nur an AUSSEN-Kanten der Region —
+                  // an inneren Kanten zum gleichen Team verschmelzen die Tiles
+                  // visuell zu einem Block. Macht das Spielziel (groesstes
+                  // Gebiet) auf einen Blick lesbar.
+                  // Zusaetzlich: Stapel-3D-Stack vereinfacht (vorher Doppel-
+                  // Goldlayer + dicker Glow, jetzt single-Layer + dezenter
+                  // Glow) — Wolf-Bug 'gestapelte felder ueberladen'.
+                  const borderColor = `${tColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`;
+                  const stdBorderTop    = (isFrozen || nTop)    ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderRight  = (isFrozen || nRight)  ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderBottom = (isFrozen || nBottom) ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderLeft   = (isFrozen || nLeft)   ? 'none' : `1px solid ${borderColor}`;
+                  // Inset-Effects: Top-Highlight nur an Region-Top-Kante, Bottom-
+                  // Shadow nur an Region-Bottom-Kante, sonst durchlaufen die
+                  // Light-/Dark-Streifen die Region und brechen den Block auf.
+                  const insetTop    = nTop    ? '' : 'inset 0 1px 0 rgba(255,255,255,0.22)';
+                  const insetBottom = nBottom ? '' : 'inset 0 -3px 0 rgba(0,0,0,0.20)';
+                  // Hard-Drop nur an Region-Aussen-Edges (rechts + unten = Lichtquelle).
+                  const hardDropX = nRight  ? 0 : 2;
+                  const hardDropY = nBottom ? 0 : 3;
+                  const hardDrop = (hardDropX || hardDropY)
+                    ? `${hardDropX}px ${hardDropY}px 0 rgba(0,0,0,0.45)`
+                    : '';
+                  const softDrop = '0 5px 9px rgba(0,0,0,0.30)';
+                  // Stapel-Glow: vereinfacht von Doppel-Hard-Drop + 18+8px Glow
+                  // auf single-Hard-Drop + dezenter 12px Glow.
+                  const stuckBoxShadow = [
+                    insetTop, insetBottom,
+                    '3px 4px 0 rgba(217,119,6,0.85)',
+                    '0 6px 10px rgba(0,0,0,0.30)',
+                    '0 0 12px rgba(251,191,36,0.5)',
+                  ].filter(Boolean).join(', ');
+                  const stdBoxShadow = [
+                    insetTop, insetBottom,
+                    hardDrop, softDrop,
+                    isAccent      ? `0 0 ${isFlash ? 28 : 24}px ${tColor}bb` : '',
+                    showStar      ? '0 0 10px rgba(251,191,36,0.5)' : '',
+                    (!isAccent && !showStar && isHighlighted) ? `0 0 14px ${tColor}88` : '',
+                  ].filter(Boolean).join(', ');
                   return (
                   <>
                   <div style={{
@@ -14637,30 +14677,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     background: isStuck
                       ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
                       : `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`,
-                    border: isStuck
-                      ? '3px solid rgba(251,191,36,0.95)'
+                    // Stuck/showStar/Frozen: volle Border um die Spezial-Tile
+                    // (sie sollen sich abheben). Standard-Tile: per-edge Border
+                    // damit Region-Innen-Kanten verschwinden.
+                    ...(isStuck
+                      ? { border: '2.5px solid rgba(251,191,36,0.95)' }
                       : showStar
-                        ? '2px solid rgba(251,191,36,0.9)'
+                        ? { border: '2px solid rgba(251,191,36,0.9)' }
                         : isFrozen
-                          ? 'none'
-                          : `1px solid ${tColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`,
+                          ? { border: 'none' }
+                          : {
+                              borderTop: stdBorderTop,
+                              borderRight: stdBorderRight,
+                              borderBottom: stdBorderBottom,
+                              borderLeft: stdBorderLeft,
+                            }),
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s var(--qq-ease-out-cubic) both' : undefined,
-                    // 2026-05-05 (Wolf-Wunsch '3D-Plaettchen-Look auf alle Cells,
-                    // wie Stapel nur ohne Gold-Kreis'): Box-Shadow-Stack jetzt
-                    // mit Inset-Highlight oben (Lichtkante) + Inset-Shadow unten
-                    // (Woelbung) + staerkerer Hard-Edge-Drop (2-3px statt 1) +
-                    // groesserem Soft-Blur. Cells wirken jetzt wie echte
-                    // Spielsteine auf dem Brett. Stapel behaelt seinen
-                    // gestaffelten Gold-Doppel-Drop fuer klare Abgrenzung.
-                    boxShadow: isStuck
-                      ? `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -3px 0 rgba(0,0,0,0.22), 3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(251,191,36,0.6), 0 0 8px rgba(251,191,36,0.45)`
-                      : isAccent
-                        ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 ${isFlash ? 28 : 24}px ${tColor}bb`
-                        : showStar
-                          ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 10px rgba(251,191,36,0.5)`
-                          : isHighlighted
-                              ? `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35), 0 0 14px ${tColor}88`
-                              : `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)`,
+                    boxShadow: isStuck ? stuckBoxShadow : stdBoxShadow,
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
@@ -14916,19 +14949,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
                     // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
                     const avSize = Math.max(8, cellSize * 0.86);
-                    // 2026-05-04: dunkle Hinterlegungs-Scheibe entfernt —
-                    // sie war fuer PNG-Transparenzen gedacht und wirkte mit
-                    // den neuen Emoji-Discs als hartes schwarzes Outline auf
-                    // farbigen Cells. Der Avatar bringt seinen eigenen BG mit.
-                    // Bei Stuck (x2) wickle ich den Avatar mit gold-Doppel-Ring
-                    // direkt als boxShadow am Wrapper.
-                    const stuckRing = isStuck
-                      ? '0 0 0 2px rgba(251,191,36,0.95), 0 0 0 4px rgba(0,0,0,0.55), 0 0 0 6px rgba(251,191,36,0.85)'
-                      : undefined;
+                    // 2026-05-05 v3 (Wolf-Bug 'gestapelte felder ueberladen,
+                    // 3D aussen + kreis innen'): Inner-Avatar-Goldring auf
+                    // Stapel-Tiles entfernt. Die Cell selbst traegt schon
+                    // Goldborder + Goldglow + Hard-Drop — der zusaetzliche
+                    // 3-Layer-Ring um den Avatar war redundant.
                     return (
                       <div style={{
                         width: avSize, height: avSize, borderRadius: '50%',
-                        boxShadow: stuckRing,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         {/* 2026-05-04 (Wolf): flat-Avatar auf der Grid-Cell —

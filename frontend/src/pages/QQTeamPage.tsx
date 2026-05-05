@@ -774,13 +774,19 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
             {t.header[lang]}
           </div>
-          {/* Always show language flag in setup/lobby */}
+          {/* Always show language flag in setup/lobby.
+              2026-05-05 (Phase-8 Bucket-1 B-1): minWidth/minHeight 44 fuer
+              TAP_TARGET-Compliance. Vorher ~24x24px Tap-Area, zu klein fuer
+              Phone. Flag-Emoji bleibt klein (24px), aber Tap-Ziel ist jetzt
+              fingerfreundlich. Konsistent mit Game-Phase-Flag (Phase-4 Bucket-3). */}
           <button
             onClick={onFlagClick}
             style={{
               border: 'none', background: 'none', cursor: 'pointer', padding: 0,
               marginLeft: 8, marginRight: 0, outline: 'none',
-              fontSize: 24, display: 'inline-block',
+              fontSize: 24,
+              minWidth: 44, minHeight: 44,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               perspective: '400px',
               position: 'absolute', right: 0, top: 0,
             }}
@@ -1514,9 +1520,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
             <div style={{ marginBottom: 8, animation: 'tcpulse 2s infinite' }}>
               {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
             </div>
+            {/* 2026-05-05 (Phase-8 Bucket-1 B-2): minHeight 44 fuer TAP_TARGET.
+                Vorher padding: '8px 20px' + 13px Font ergab ~32px Hoehe — zu
+                klein fuer Phone, gerade im Disconnect-Stress. */}
             <button onClick={reconnect} style={{
-              padding: '8px 20px', borderRadius: 8, fontFamily: 'inherit',
-              fontWeight: 900, fontSize: 13, cursor: 'pointer',
+              padding: '12px 22px', minHeight: 44, borderRadius: 8, fontFamily: 'inherit',
+              fontWeight: 900, fontSize: 14, cursor: 'pointer',
               background: 'rgba(239,68,68,0.25)', border: '1px solid #EF4444',
               color: '#FCA5A5', animation: 'tcbtnpop 0.3s ease both',
             }}>

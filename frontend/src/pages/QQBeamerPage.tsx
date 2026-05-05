@@ -8228,44 +8228,51 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     iconAnchor: [44, 105] as any, // Pin-Tip an lat/lng (5px Offset, da Emoji-Tip nicht ganz unten)
   }), []);
 
-  // 2026-05-04 — Phase 2: Marker respektiert das aktive Avatar-Set.
-  // Bei mode='emoji' wird der img-Tag komplett uebersprungen, damit kein
-  // Lade-Fehler-Flash entsteht. Bei mode='png' wie bisher (PNG mit Fallback).
+  // 2026-05-05 (Wolf-Skizze): Pin-Kopf = runder Team-Color-Disc mit Avatar
+  // drauf (Emoji-Mode: Emoji-Glyph; PNG-Mode: cozyCast-PNG). Schaft = sauberer
+  // schwarzer CSS-Cone (kein 📍-Emoji mehr — sah „basteln" aus, war Wolfs
+  // Beschwerde 'pin köpfe sollen die avatare mit rundem bg sein').
   const makeTeamIcon = (color: string, mode: 'png' | 'emoji', srcOrEmoji: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
-      position: relative; width: 56px; height: 78px;
+      position: relative; width: 56px; height: 84px;
       animation: qqTeamPinDrop 0.55s var(--qq-ease-bounce) both;
       transform-origin: 50% 100%;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55));
     ">
+      <!-- Schaft (schwarzer CSS-Cone unter Avatar-Disc) -->
+      <div style="
+        position: absolute; left: 50%; top: 38px;
+        transform: translateX(-50%);
+        width: 0; height: 0;
+        border-left: 9px solid transparent;
+        border-right: 9px solid transparent;
+        border-top: 44px solid #1A1A1A;
+        z-index: 1;
+      "></div>
+      <!-- Avatar-Disc Kopf (Team-Color BG, Avatar/Emoji drauf) -->
       <div style="
         position: absolute; left: 4px; top: 0;
         width: 48px; height: 48px; border-radius: 50%;
-        background: ${mode === 'emoji' ? color : '#0f172a'};
-        border: 4px solid ${color};
-        box-shadow: 0 0 0 2px rgba(15,23,42,0.9), 0 6px 20px rgba(0,0,0,0.6), 0 0 22px ${color}55;
+        background: ${color};
+        border: 2.5px solid #1A1A1A;
+        box-shadow: 0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(255,255,255,0.22);
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
+        z-index: 2;
       ">
         ${mode === 'png' ? `
         <img src="${srcOrEmoji}" alt="" draggable="false"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
           style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
-        <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;line-height:1;">${emojiFallback}</span>
+        <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;line-height:1;">${emojiFallback}</span>
         ` : `
-        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.4);">${srcOrEmoji}</span>
+        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">${srcOrEmoji}</span>
         `}
       </div>
-      <span style="
-        position: absolute; left: 50%; top: 38px;
-        transform: translateX(-50%);
-        font-size: 36px; line-height: 1;
-        color: ${color};
-        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.6));
-      ">📍</span>
     </div>`,
-    iconSize: [56, 78] as any,
-    iconAnchor: [28, 76] as any, // Pin-Tip an lat/lng
+    iconSize: [56, 84] as any,
+    iconAnchor: [28, 82] as any, // Pin-Spitze (Cone-Tip) an lat/lng
   });
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
@@ -8342,9 +8349,12 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                 key={p.teamId}
                 position={[lat, lng] as any}
                 icon={(() => {
-                  const display = getAvatarDisplay(team.avatarId, s.avatarSetId);
+                  // 2026-05-05 (Wolf-Bug 'pin emoji nicht das gewaehlte'):
+                  // serverEmojis + team.emoji werden jetzt durchgereicht,
+                  // sodass der Map-Pin das vom Spieler gewaehlte Emoji zeigt.
+                  const display = getAvatarDisplay(team.avatarId, s.avatarSetId, s.avatarSetEmojis, team.emoji);
                   if (display.kind === 'png') {
-                    return makeTeamIcon(team.color, 'png', display.pngBase, qqGetAvatar(team.avatarId).emoji);
+                    return makeTeamIcon(team.color, 'png', display.pngBase, team.emoji ?? qqGetAvatar(team.avatarId).emoji);
                   }
                   return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);
                 })()}

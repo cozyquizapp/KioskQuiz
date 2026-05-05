@@ -1,6 +1,6 @@
 ﻿# 🎬 Animation-Audit (Phase 5)
 
-**Stand:** 2026-05-05 · **Scope:** Medium · **Status:** Complete Inventory + Priority-Buckets
+**Stand:** 2026-05-05 · **Scope:** Medium · **Status:** Phase 5 ABGESCHLOSSEN — 3 Buckets durch, 1 echter Bug gefixt (tcpulse-zentralisiert), 5× exakte Easing-1:1-Migrationen, 4× Q→R-Standalones auf 0.5s, restliche Audit-Items als akzeptabel dokumentiert.
 
 > **Kontext:** Phase 4 hat den Style-Guide und zentrale Refactors abgeschlossen (Tokens, Easing-CSS-Vars, BeamerOverlay-Wrapper). Phase 5 inventarisiert die gesamte Animation-Landschaft systematisch: Keyframes, Durations, Easing-Migration, Compliance gegen Hierarchie-Standards.
 
@@ -274,20 +274,21 @@ QQBeamerPage:1996 - contentReveal 0.4s → sollte DURATION.slow (600ms)
    - `cellIdlePulse` wird auf `idleCells`-Set angewendet (begrenzte Anzahl, nicht alle Cells). Animiert `background` — könnte bei sehr vielen Idle-Cells Paint-Thrashing verursachen, ist aber ohne Profiling-Beleg nicht akut.
    - **Akzeptiert.** Zukünftige Optimierung wenn reale Performance-Probleme auftreten.
 
-### **Bucket-3: Per-Page Detail-Findings — 3-5h (Später)**
+### **Bucket-3: Per-Page Detail-Findings** — ✅ ABGESCHLOSSEN 2026-05-05
 
-1. **Inline-Keyframes nach qqShared** (qqIntro*, qqRules*)
-   - Dauer: 1-2h
+Alle Audit-Items als akzeptabel oder bereits-erledigt befunden:
 
-2. **Stagger-Pattern Standardisierung**
-   - STAGGER.tight/normal/leisurely nutzen
-   - Dauer: 1-2h
+1. **Inline-Keyframes nach qqShared (qqIntro*, qqRules*, cqWordmarkBreath)** — ⏸ AKZEPTIERT
+   Page-lokale Keyframes für Page-spezifische Animationen (QuizIntroOverlay, RulesIntroOverlay, Lobby-Wordmark) sind ein gültiges Pattern. Migration nach qqShared würde nur Lärm hinzufügen ohne Reuse-Mehrwert.
 
-3. **cqWordmarkBreath Consolidation**
-   - Dauer: 30 Min
+2. **Stagger-Pattern Standardisierung** — ⏸ AKZEPTIERT
+   Hardcoded Delays wie `0.1 + i * 0.08` sind echt-kalibriert für die jeweilige Sequenz. Migration auf STAGGER-Tokens wäre kosmetisch ohne Verhaltens-Vorteil — wie bei DURATION-Tokens (B2-2).
 
-4. **tcpulse/tcfloat Consolidation** (abhängig von BC-2)
-   - Dauer: 30 Min - 1h
+3. **cqWordmarkBreath Consolidation** — ⏸ AKZEPTIERT
+   Wird nur 1× in QQBeamerPage:3428 genutzt, page-lokal definiert. Klassisches Page-spezifisches Pattern.
+
+4. **tcpulse/tcfloat Consolidation** — ✅ ERLEDIGT in Bucket-1 (BC-2)
+   tcpulse zentral in qqShared.ts. tcfloat bleibt page-lokal (bewusste Phone-Variante).
 
 ---
 

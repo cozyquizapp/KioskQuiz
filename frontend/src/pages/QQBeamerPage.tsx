@@ -8599,12 +8599,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
 
+  // 2026-05-05 (Wolf): CozyGuessr-Active mit Bild = Cheese-Landscape-Layout.
+  // Bild fullscreen + Frosted Card unten + Timer + Avatar-Progress.
+  // Reveal greift frueher (isMapReveal -> CozyGuessrReveal), daher nur Active-Phase.
+  const isMapKind = cat === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map';
+  const useMapPicture = isMapKind && !!hasImg && !revealed;
+
   // 2026-04-30 v3 (User-Wunsch): Cheese Portrait → 2-Spalten-Layout.
   // Image links voll Top-to-Bottom, Question-Card rechts vertikal mittig.
   // Detection via natural-dimensions preload — kein Backend-Feld noetig.
+  // 2026-05-05: gilt auch fuer CozyGuessr-Active mit Bild.
   const [isCheesePortrait, setIsCheesePortrait] = useState(false);
   useEffect(() => {
-    if (!isCheese || !img?.url) {
+    if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
       return;
     }
@@ -8614,7 +8621,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     };
     tester.onerror = () => setIsCheesePortrait(false);
     tester.src = img.url;
-  }, [isCheese, img?.url]);
+  }, [isCheese, useMapPicture, img?.url]);
 
   // 2026-05-04 v3 (Wolf): Timer-Outro-Animation klappt nicht bei Frueh-Abbruch
   // (alle abgegeben → Backend reveal → s.timerEndsAt wird null → Component
@@ -8849,17 +8856,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     return <SchaetzchenReveal state={s} lang={lang} />;
   }
 
-  // ── CHEESE "Overlay" layout ─────────────────────────────────────────────
+  // ── CHEESE / Picture-Active "Overlay" layout ────────────────────────────
   // Image stays fullscreen. Frosted card overlays with question/answer.
   // No separate "image only" phase — question + image appear together.
-  // Active: fullscreen image + frosted question card + timer
-  // Reveal: fullscreen image + frosted answer card + winner
+  // Active: fullscreen image + frosted question card + timer + avatar-progress
+  // Reveal (CHEESE only): fullscreen image + frosted answer card + winner.
+  //   CozyGuessr-Reveal hat seinen eigenen Pfad (CozyGuessrReveal — siehe oben).
   // Hinweis: CHEESE-Overlay-UI (Antwort-Card, Team-Avatare, Reveal) MUSS auch ohne Bild
   // rendern — sonst ist die Frage unspielbar. Nur der fullscreen-Image-Layer wird ausgeblendet.
-  const cheeseOverlay = isCheese;
+  const cheeseOverlay = isCheese || useMapPicture;
   const cheeseWithQuestion = cheeseOverlay && !revealed;
-  const isCheeseReveal = cheeseOverlay && revealed;
-  const cheeseFullscreen = isCheese && hasImg;
+  const isCheeseReveal = isCheese && revealed; // map-reveal laeuft via CozyGuessrReveal
+  const cheeseFullscreen = cheeseOverlay && !!hasImg;
 
   // Auto-size: shorter fontSize for long questions (no size change on reveal — prevents reflow)
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
@@ -8906,8 +8914,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         </div>
       )}
-      {/* Fullscreen background image: non-CHEESE fullscreen layout OR CHEESE overlay (all phases) */}
-      {((hasImg && img.layout === 'fullscreen' && !isCheese) || cheeseFullscreen) && (() => {
+      {/* Fullscreen background image: non-overlay fullscreen layout OR CHEESE/Map-Picture overlay */}
+      {((hasImg && img.layout === 'fullscreen' && !cheeseOverlay) || cheeseFullscreen) && (() => {
         // CHEESE: 3-Schicht-Aufbau gegen Aspect-Ratio-Crop.
         // 1) Blurred cover backdrop — füllt 16:9-Beamer, kein schwarzer Rand
         // 2) Sharp CONTAIN foreground — komplettes Bild sichtbar (Mona Lisas Kopf bleibt drin)

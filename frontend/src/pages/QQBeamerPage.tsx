@@ -2830,7 +2830,7 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
             ueber dem Welcome-Label, signalisiert Auftritt. Letter-Spacing-In
             Anim wie 'qqIntroWelcome' aber dezenter. */}
         <div style={{
-          fontSize: 'clamp(10px, 0.95vw, 14px)', fontWeight: 800,
+          fontSize: 'clamp(10px, 0.95vw, 14px)', fontWeight: 900,
           letterSpacing: '0.55em', textTransform: 'uppercase',
           color: 'rgba(251,191,36,0.55)',
           marginBottom: 'clamp(2px, 0.4vh, 6px)',
@@ -3568,7 +3568,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 2vw, 26px)',
               padding: 'clamp(28px, 4vh, 56px) clamp(20px, 3vw, 40px)',
-              border: '2px dashed rgba(251,191,36,0.4)', borderRadius: 20,
+              border: '2px dashed rgba(251,191,36,0.4)', borderRadius: 16,
               background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(245,158,11,0.04))',
               boxShadow: '0 0 40px rgba(251,191,36,0.12)',
             }}>
@@ -7919,7 +7919,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                     (Wolf-Wunsch 2026-05-04: kein '...' am Namen). */}
                 <div style={{
                   padding: 'clamp(6px, 0.9vh, 10px) clamp(14px, 1.8vw, 22px)',
-                  borderRadius: 14,
+                  borderRadius: 16,
                   background: `${winner.team.color}22`,
                   border: `2px solid ${winner.team.color}66`,
                   boxShadow: `0 0 18px ${winner.team.color}33`,

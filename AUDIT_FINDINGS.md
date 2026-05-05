@@ -24,10 +24,21 @@
 
 Diese Patterns kommen in MEHR als 3 Pages vor — wenn man sie zentral fixt, sind ~60% der Findings auf einen Schlag erledigt.
 
-### CC-1 · Magic-Numbers statt Tokens
+### CC-1 · Magic-Numbers statt Tokens — ✅ TEIL-ERLEDIGT 2026-05-05
 - **Verbreitung:** alle 17 Pages
 - **Pattern:** `borderRadius: 16/24/999`, `fontWeight: 800`, `boxShadow: rgba(...,0.55)` statt `RADII.normal`, `WEIGHT.extraBold`, `ALPHA_DEPTH.d2`
-- **Hebel-Lösung:** Codemod-Script über alle frontend Files: häufigste Inline-Werte → Token-Imports. ~2-3h Arbeit, einmalig.
+- **Erkenntnis nach Analyse:** Der Großteil der Inline-Werte (68× borderRadius:999, 44× borderRadius:16, 34× borderRadius:24, 41× letterSpacing:0.1em) snappt BEREITS exakt auf Token-Werte. Ein Mass-Replace „Inline → Token-Import" wäre kosmetisch (visuell identisch, nur andere Schreibweise) und birgt Risiken bei den Mehrdeutigkeits-Stellen (z.B. `fontWeight: 800` → 700 oder 900?).
+- **Fix:** Echte Drift-Werte gezielt auf Tokens gesnappt:
+  - `fontWeight: 800` → 900 in QQBeamerPage:2833 (Eyebrow „cozywolf · präsentiert").
+  - `borderRadius: 14` → 16 in QQBeamerPage:7922 (Winner-Pill, snap auf RADII.normal).
+  - `borderRadius: 20` → 16 in QQBeamerPage:3571 (dashed Card).
+- **Akzeptiert (bewusst inline):**
+  - `borderRadius: 22` (QQBeamerPage:8880+8958) — hängt mit `clipPath: round 18px` zusammen, 4px-Differenz für CHEESE-Picture-Frame-Border.
+  - `borderRadius: 32` (GameOverView Hero) — Audit-explizit als OK markiert.
+  - `borderRadius: 2/3` (Akzentlinien mit height 3-5px) — bewusste Mini-Pill-Geometrie.
+  - `borderRadius: 18` (Cards) — laut Style-Guide-Range „Cards = 16-18".
+  - `letterSpacing: 0.55em` (cozywolf-Eyebrow) — bewusste Movie-Intro-Spreizung.
+- **Ausstehend (Bucket-3 pro Page):** Die Per-Page-Detail-Findings (Mod-Spickzettel-Padding, TeamPage Tap-Targets etc.) werden im Bucket-3-Pass page-für-page abgearbeitet, dort dann mit Token-Imports wo Sinn macht.
 
 ### CC-2 · Inline-Cubic-Bezier statt CSS-Vars — ✅ TEIL-ERLEDIGT 2026-05-05
 - **Verbreitung:** ~10 Pages, häufigster Wert `cubic-bezier(0.22,1,0.36,1)` (34×)

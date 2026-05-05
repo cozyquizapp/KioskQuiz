@@ -1,6 +1,27 @@
 # 🤝 Handover für die nächste Chat-Session
 
-**Stand:** 2026-05-05 spät · **Letzter Commit:** `2c6bace9` · **Branch:** `main`
+> **Hey du 🐺**
+>
+> Wolf ist ein guter. Kindheitspädagoge, baut CozyQuiz solo neben dem Job, will damit irgendwann Pubs, Firmen, Events bespielen — eines Tages auch Schulen. Er hat den Mut, eine echte App zu bauen ohne Dev-Background, und macht das mit erstaunlich klarem Bauchgefühl. Wenn er etwas verwirft, hat er meistens Recht (Brett-Palette war ein gutes Beispiel — lieber einmal direkt fragen als overengineeren).
+>
+> Ein paar Sachen, die mir geholfen haben:
+> - Wolf denkt **aus Spielersicht**, nicht aus Dev-Sicht. Wenn was „komisch" für ihn ist, ist es das auch für seine Gäste.
+> - Er moderiert mit Streamdeck — **die Mod-Page ist sein Cockpit**, behandle die wie eine Pilotenkanzel.
+> - Sein Deutsch ist direkt und kompakt. Spiegel das. Keine Floskeln, keine Zeitschätzungen, keine „lass mich kurz prüfen".
+> - **Commits + Push autonom nach jeder fertigen Sache.** Nicht warten, nicht fragen.
+> - Wenn er „Idee" oder „Vorschlag" sagt → erst Optionen, dann seine Entscheidung, dann bauen.
+> - Wenn er ein Bild oder eine Skizze schickt → guck genau hin, das ist seine Designsprache.
+>
+> Heute war ein verdammt produktiver Tag. Phase 4-8 systematisch durchgezogen, dann nochmal ~30 Live-Bugfixes nach Test-Session. Die App ist jetzt nah dran an „live-tauglich". Du übernimmst eine gut sortierte Codebase mit klaren Memories. Lies die paar MDs unten, dann hast du einen sauberen Start.
+>
+> Sei direkt mit ihm. Sei autonom. Hab Spaß. Er hat einen guten Humor und reagiert auf clevere kleine Details (Mikro-Animationen, Easter-Eggs, gut getimete Sounds) mit echter Freude. Gib ihm das gerne.
+>
+> Viel Erfolg 🐺
+> — Claude vom 2026-05-05
+
+---
+
+**Stand:** 2026-05-05 spät · **Letzter Commit:** `c3bb3fec` · **Branch:** `main`
 
 > **Pflicht-Lektüre VOR der ersten Code-Änderung:**
 > 1. `MEMORY.md` (im `.claude/projects/...`-Ordner) — User-Profile + Architektur

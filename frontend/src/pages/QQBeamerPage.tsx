@@ -3148,7 +3148,16 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             color: slide.color,
             textShadow: `0 0 60px ${slide.color}44, 0 3px 0 rgba(0,0,0,0.3)`,
           }}>
-            {slide.title}
+            {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
+                Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
+                Spaces als &nbsp; damit Word-Spacing erhalten bleibt. */}
+            {slide.title.split('').map((char, i) => (
+              <span key={`${idx}-${i}`} style={{
+                display: 'inline-block',
+                animation: `qqCatNameWave 2.4s ease-in-out ${i * 0.08}s infinite`,
+                whiteSpace: 'pre',
+              }}>{char === ' ' ? ' ' : char}</span>
+            ))}
           </div>
         </div>
 

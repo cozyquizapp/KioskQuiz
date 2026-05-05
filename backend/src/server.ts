@@ -8923,7 +8923,10 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   // Pool kommt aus shared/quarterQuizTypes; wir ziehen toAdd Namen ohne Wdh.
   // Schon verwendete Namen im Raum werden uebersprungen (sehr selten Konflikt).
   const usedNames = new Set(Object.values(room.teams).map((t: any) => (t.name ?? '').toLowerCase()));
-  const namePicks = getRandomFunnyNames(Math.max(toAdd, 8))
+  // 2026-05-05 (Wolf 'gibts namen auch auf en?'): Sprache aus room.language
+  // ableiten — 'both' und 'de' fallen auf DE-Pool, 'en' auf EN-Pool.
+  const botLang: 'de' | 'en' = room.language === 'en' ? 'en' : 'de';
+  const namePicks = getRandomFunnyNames(Math.max(toAdd, 8), botLang)
     .filter(n => !usedNames.has(n.toLowerCase()));
   let added = 0;
   const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));

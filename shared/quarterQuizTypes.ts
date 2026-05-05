@@ -1151,6 +1151,28 @@ export const FUNNY_TEAM_NAMES: string[] = [
   'Frag-Mich-Was-Leichtes', 'Zwischen Bier und Bildung',
 ];
 
+/** Englische Pub-Quiz-Team-Namen — Wortspiele, Easter Eggs, leicht britisch.
+ *  Mix kurz/mittel/lang wie die deutsche Liste. */
+export const FUNNY_TEAM_NAMES_EN: string[] = [
+  // Kurz (≤ 12 Z.)
+  'Quiz Khalifa', 'The Smartinis', 'Cozy Cats', 'Couch Wolves',
+  'Brain Trust', 'Quiz Mafia', 'Trivia Trio', 'Smarty Pants',
+  'Cheese Heads', 'Pub Wizards', 'The Knowists', 'Beer Goggles',
+  'Wolfpack', 'Brainstormers', 'Lightbulbs',
+  // Mittel (13-17 Z.)
+  'Google Says So', 'Synapse Salad', 'Fact Hunters',
+  'The Pub Profs', 'Anonymous Aces', 'Fact or Fiction',
+  'The Couch Quizzers', 'Half-Smart Heroes',
+  // Lang (≥ 18 Z.)
+  'Wrong Again, Sorry', 'Worth Your Half-Knowledge', 'Three Halves Make One',
+  'Just Ask Us Easy Ones', 'Between Beers and Brains',
+];
+
+/** Liefert die passende Witz-Namen-Liste je nach Sprache. */
+export function getFunnyTeamNames(lang: 'de' | 'en'): string[] {
+  return lang === 'en' ? FUNNY_TEAM_NAMES_EN : FUNNY_TEAM_NAMES;
+}
+
 /** Emoji-Pool fuer Random-Slot-Emojis bei Set 'all' und Dummy-Avatare.
  *  Quer durch alle Themen — Cozy-Tiere, Halloween, Sci-Fi, Fantasy, Essen.
  *  Bewusst verschiedene Welten gemischt, damit's bei 'all' bunt wirkt. */
@@ -1180,16 +1202,19 @@ export function getRandomDummyEmojis(n: number): string[] {
   return out;
 }
 
-/** Liefert n zufaellige witzige Team-Namen, ohne Wiederholung. */
-export function getRandomFunnyNames(n: number): string[] {
-  const pool = [...FUNNY_TEAM_NAMES];
+/** Liefert n zufaellige witzige Team-Namen, ohne Wiederholung.
+ *  2026-05-05 (Wolf 'gibts namen auch auf en?'): lang-Param ergaenzt,
+ *  defaults DE fuer Backward-Kompatibilitaet. */
+export function getRandomFunnyNames(n: number, lang: 'de' | 'en' = 'de'): string[] {
+  const source = getFunnyTeamNames(lang);
+  const pool = [...source];
   const out: string[] = [];
   for (let i = 0; i < n && pool.length > 0; i++) {
     const idx = Math.floor(Math.random() * pool.length);
     out.push(pool.splice(idx, 1)[0]);
   }
   while (out.length < n) {
-    out.push(FUNNY_TEAM_NAMES[Math.floor(Math.random() * FUNNY_TEAM_NAMES.length)]);
+    out.push(source[Math.floor(Math.random() * source.length)]);
   }
   return out;
 }

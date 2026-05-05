@@ -8,7 +8,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/di
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
-  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, FUNNY_TEAM_NAMES,
+  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -591,7 +591,7 @@ export default function QQTeamPage() {
     // Random Name aus FUNNY_TEAM_NAMES (wenn nichts gespeichert)
     const hasStoredName = !!localStorage.getItem('qq_teamName');
     if (!hasStoredName) {
-      const freeNames = FUNNY_TEAM_NAMES.filter(n => !takenTeamNamesLower.includes(n.trim().toLowerCase()));
+      const freeNames = getFunnyTeamNames(lang).filter(n => !takenTeamNamesLower.includes(n.trim().toLowerCase()));
       if (freeNames.length > 0) {
         setTeamName(freeNames[Math.floor(Math.random() * freeNames.length)]);
       }
@@ -888,7 +888,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               <button
                 type="button"
                 onClick={() => {
-                  const free = FUNNY_TEAM_NAMES.filter(
+                  const free = getFunnyTeamNames(lang).filter(
                     n => !takenTeamNamesLower.includes(n.trim().toLowerCase())
                       && n !== teamName
                   );
@@ -1154,7 +1154,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 type="button"
                 onClick={() => {
                   // Random witzigen Namen aus dem freien Pool ziehen
-                  const free = FUNNY_TEAM_NAMES.filter(
+                  const free = getFunnyTeamNames(lang).filter(
                     n => !takenTeamNamesLower.includes(n.trim().toLowerCase())
                       && n !== teamName
                   );

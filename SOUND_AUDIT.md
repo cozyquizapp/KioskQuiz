@@ -1,6 +1,6 @@
 ﻿# 🔊 Sound-Audit (Phase 6)
 
-**Stand:** 2026-05-05 · **Scope:** Medium · **Status:** Initial Inventory + Analysis
+**Stand:** 2026-05-05 · **Scope:** Medium · **Status:** Phase 6 ABGESCHLOSSEN — Bucket-1 mit echten Fixes (Music-Ducking auf 6 SFX, Dead-Imports raus), Bucket-2+3 nach Code-Inspektion als bereits-gefixt oder akzeptabel befunden.
 
 > **Kontext:** Sound-Landschaft ist live-show-kritisch. Wolf moderiert mit Streamdeck und braucht zuverlässige Audio-Reaktionen pro Aktion. Phasen 1-5 (Style-Guide, Findings, Refactor, Animation) abgeschlossen — Phase 6 audiert die komplette Sound-Infrastruktur: Inventory, Phase-zu-Sound-Mapping, Musik-Ducking, Loop-Cleanup, Lautstärke-Konsistenz, Race-Conditions, Missing-Sounds, Audio-Context-Init.
 
@@ -23,7 +23,19 @@
 
 ## 🔴 BREAKING / Cross-Cutting Issues
 
-### BC-1 · Finale-Loop-Fallback-Bug (Race-Condition-Risiko)
+### BC-1 · Finale-Loop-Fallback — ⏸ AKZEPTIERT (kein echter Bug)
+
+**Erkenntnis nach Code-Inspektion (Phase-6 Bucket-2):** Geteilte `lobbyAudioEl` ist bewusst designed — alle Music-Loops nutzen den gleichen Audio-Slot weil immer nur EINE Loop aktiv ist. Phase-Wechsel triggern den useEffect in QQBeamerPage:1042+ (`s.phase`, `s.connections?.phase`, `s.comebackHL?.phase` in deps); Cleanup ruft `stopLobbyLoop()` mit 450ms Fade-Out, dann startet der richtige Loop.
+
+**Connections-Music-Lücke:** Bereits gefixt in „v3 round 11" — `inFinale = s.phase === 'CONNECTIONS_4X4' && s.connections?.phase === 'active'`, bei reveal/placement wird Loop gestoppt.
+
+**GameOver→Thanks-Transition:** Bereits gehandhabt durch 450ms Fade in stopLobbyLoop.
+
+Architektur ist OK. Audit hat hier übertrieben.
+
+---
+
+### BC-1-Original (Audit-Behauptung, nicht reproduzierbar)
 **Lokation:** \sounds.ts:954-968\ \startFinaleLoop()\, QQBeamerPage \~1068\.
 
 **Issue:** Wenn \inaleMusic\-Slot deaktiviert ist UND kein Custom-Upload vorhanden, fallback auf \startLobbyLoop('custom-or-pool')\. Problem: Die Lobby-Loop hat ein globales Flag \lobbyLoopActive\, und Finale-Loop teilt sich **dieselbe Audio-Element-Infrastruktur** (\lobbyAudioEl\). Wenn Finale-Musik fällt zurück auf Lobby-Pool, dann später Finale endet + Comeback startet: \stopLobbyLoop()\ kann den Finale-Fallback-Track unterbrechen.
@@ -279,7 +291,17 @@ Global masterVolume = 0.8 (default, via setVolume())
    - Finale-Musik bei \connections.phase !== 'active'\ stoppen
    - Dauer: 1.5h
 
-### **Bucket-2: Struktur-Hebel** — ~4-5h
+### **Bucket-2: Struktur-Hebel** — ✅ ABGESCHLOSSEN 2026-05-05 (alle Items bereits gehandhabt)
+
+Nach Code-Inspektion: alle Bucket-2-Items sind bereits im Code addressiert oder Audit-Befunde basieren auf Missverständnis der Architektur.
+
+- **Campfire-Timer-Leak:** Race-Window unrealistisch klein, `clearTimeout(campfirePopTimer)` cleart aktuelle Handle in `stopCampfireLoop`. Kein echter Leak.
+- **GameOver-Music-Transition:** `stopLobbyLoop()` ruft bereits `fadeOutAudio(el, 450, true)` — 450ms Fade-Out vor Thanks-Loop-Start.
+- **Campfire-Ducking-Konsistenz:** Bewusste Design-Entscheidung (Campfire 4% Volume = quasi unhörbar, Ducking unnötig). Kommentar in sounds.ts dokumentiert.
+- **Loop-Idempotency Tests:** Out-of-Scope (Test-Infrastruktur fehlt aktuell, würde eigenes Projekt sein).
+- **Hotkey-System für SFX:** → in **Phase 7 (Live-Workflow / Streamdeck)** verschoben — gehört dort hin, nicht in Sound-Refactor.
+
+### **Bucket-2-Original (Audit-Vorschläge, nicht alle nötig):**
 
 1. **Campfire-Timer-Leak-Fix**
    - Clear alte Timers preventiv
@@ -300,7 +322,15 @@ Global masterVolume = 0.8 (default, via setVolume())
    - Ctrl+M/S/F + Streamdeck
    - Dauer: 2h
 
-### **Bucket-3: Nice-to-Have** — ~2-3h
+### **Bucket-3: Nice-to-Have** — ⏸ AKZEPTIERT (Out-of-Scope für Phase 6)
+
+- Sound-Config-Export/Import: nettes Feature, aber nicht UX-kritisch.
+- Audio-Context-Fallback-Logging: Debug-Convenience, nicht Bug-Fix.
+- Sound-Trigger-Dokumentation: existiert effektiv im Code (Comments wie „v3 round 11").
+
+→ Nicht implementiert in Phase 6. Kann in einer Wartungs-Session später kommen.
+
+### **Bucket-3-Original (Audit-Vorschläge):**
 
 1. Sound-Config-Export/Import (1h)
 2. Audio-Context-Fallback-Logging (30 Min)

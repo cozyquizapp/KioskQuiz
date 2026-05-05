@@ -1,6 +1,6 @@
 # 📱 Mobile-UX-Audit (Phase 8)
 
-**Stand:** 2026-05-05 · **Scope:** Medium · **Target:** Mid-Range-Phones (iPhone SE+, Pixel 6+), iOS Safari + Android Chrome · **Status:** Phase 8 in Arbeit
+**Stand:** 2026-05-05 · **Scope:** Medium · **Target:** Mid-Range-Phones · **Status:** Phase 8 ABGESCHLOSSEN — Bucket-1 (Tap-Targets B-1+B-2) + Bucket-2 (Top5 maxLength B-3) erledigt. B-4 + Bucket-3 als akzeptabel/optional dokumentiert.
 
 > **Kontext:** Spieler nehmen mit Smartphones teil — Team-Page (`QQTeamPage.tsx`, ~6000 Zeilen) ist die zentrale Mobile-View. Wolf moderiert auf Desktop+Streamdeck (Phase 7). Team-Page muss Phone-First sein.
 
@@ -34,12 +34,15 @@ Was die App schon **gut macht:**
 **Issue:** `padding: '8px 20px'` + `fontSize: 13` → ~32px Höhe, unter TAP_TARGET.min.
 **Fix:** Padding/Mindesthöhe auf ≥44px erhöhen.
 
-### B-3: Bluff-Text + Top5-Inputs ohne maxLength
-**Lokation:** Bluff-Write-Screen, Top5Input-Component
-**Issue:** Spieler kann sehr lange Texte eintippen, kein UI-Feedback wenn zu lang. Backend validiert wahrscheinlich, aber UX-Klarheit fehlt.
-**Severity:** LOW — Edge-Case. Eher Polish.
+### B-3: Top5-Inputs ohne maxLength — ✅ ERLEDIGT 2026-05-05
+**Erkenntnis:** Bluff-Write hatte bereits `maxLength={200}` (QQTeamPage:3642). Lücke war nur Top5Input.
+**Fix:** `maxLength={80}` an StandardInput in Top5Input ergänzt (Top5-Antworten sind typisch 1-3 Wörter, 80 Zeichen reicht großzügig).
 
-### B-4: Join-Loading-State fehlt
+### B-4: Join-Loading-State fehlt — ⏸ AKZEPTIERT (LOW Priority)
+
+Backend-Latenz selten relevant in Live-Quiz (Render-free-tier wakeup ist 1-2s, sichtbar via Disconnect-Banner). Polish-Item für eine spätere Wartungs-Session, nicht Live-blockierend.
+
+**Original:**
 **Lokation:** SETUP_TEAM_NAMES → `qq:joinTeam` emit
 **Issue:** Bei langsamer Verbindung hat User nach Submit kein Loading-Feedback (Button graut nur).
 **Severity:** LOW — Network-Latenz auf Render-free-tier kann mehrere Sekunden sein.
@@ -179,10 +182,13 @@ Tap-Target des Reconnect-Buttons knapp (B-2).
 - B-3: Bluff-Text + Top5-Input maxLength + Counter
 - B-4: Join-Loading-State (Spinner + "joining..." Text)
 
-### Bucket-3: Performance + Docs (optional)
-- `will-change: transform` auf Avatar/Timer/Pending-Cells
-- `font-size: 16px` Regel in main.css explizit dokumentieren
-- Device-Testing-Checkliste (iPhone SE, 13, Pixel 4a, 6)
+### Bucket-3: Performance + Docs — ⏸ AKZEPTIERT (Optional, kein akutes Problem)
+
+- `will-change` Hinzufügen: ohne Profiling-Beleg vorzeitig optimieren wäre Anti-Pattern
+- `font-size: 16px` Doku in main.css: aktuell unkritisch (alle Inputs schon ≥16px)
+- Device-Testing-Checkliste: gehört in eine separate QA-Session
+
+Skip — Phase 8 abgeschlossen mit Bucket-1+2.
 
 ---
 

@@ -3561,6 +3561,7 @@ function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor: string
               catColor={catColor}
               placeholder={lang === 'en' ? `Answer ${i+1}…` : `Antwort ${i+1}…`}
               disabled={expired}
+              maxLength={80}
             />
           </div>
         </div>

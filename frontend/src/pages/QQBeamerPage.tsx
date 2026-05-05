@@ -14671,14 +14671,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     ? `${hardDropX}px ${hardDropY}px 0 rgba(0,0,0,0.45)`
                     : '';
                   const softDrop = '0 5px 9px rgba(0,0,0,0.30)';
-                  // Stapel-Glow: vereinfacht von Doppel-Hard-Drop + 18+8px Glow
-                  // auf single-Hard-Drop + dezenter 12px Glow.
-                  const stuckBoxShadow = [
-                    insetTop, insetBottom,
-                    '3px 4px 0 rgba(217,119,6,0.85)',
-                    '0 6px 10px rgba(0,0,0,0.30)',
-                    '0 0 12px rgba(251,191,36,0.5)',
-                  ].filter(Boolean).join(', ');
+                  // 2026-05-05 v4 (Wolf 'braucht es die aeussere linie und das
+                  // 3d aussen dann ueberhaupt noch? ich wuerde dann nur innen
+                  // stacken'): stuckBoxShadow geloescht — Stuck-Tiles nutzen
+                  // jetzt stdBoxShadow wie normale Tiles. Stack-Look kommt
+                  // ausschliesslich aus den Inner-Layers.
                   const stdBoxShadow = [
                     insetTop, insetBottom,
                     hardDrop, softDrop,
@@ -14690,26 +14687,25 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <>
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: fusedRadius,
-                    background: isStuck
-                      ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
-                      : `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`,
-                    // Stuck/showStar/Frozen: volle Border um die Spezial-Tile
-                    // (sie sollen sich abheben). Standard-Tile: per-edge Border
-                    // damit Region-Innen-Kanten verschwinden.
-                    ...(isStuck
-                      ? { border: '2.5px solid rgba(251,191,36,0.95)' }
-                      : showStar
-                        ? { border: '2px solid rgba(251,191,36,0.9)' }
-                        : isFrozen
-                          ? { border: 'none' }
-                          : {
-                              borderTop: stdBorderTop,
-                              borderRight: stdBorderRight,
-                              borderBottom: stdBorderBottom,
-                              borderLeft: stdBorderLeft,
-                            }),
+                    // Standard-Background fuer alle Tiles. Stuck-Tile bekommt
+                    // visuell ihren Stack-Look ausschliesslich aus den Inner-
+                    // Layern — kein eigener Outer-Tint mehr noetig.
+                    background: `linear-gradient(135deg, ${tColor}${hexA}, ${tColor}${hexB})`,
+                    // Border: showStar (Joker) hat eigene 2px Goldborder,
+                    // Frozen keine. Stuck nutzt jetzt die per-edge Region-
+                    // Fusion wie Standard — outer Goldborder weg.
+                    ...(showStar
+                      ? { border: '2px solid rgba(251,191,36,0.9)' }
+                      : isFrozen
+                        ? { border: 'none' }
+                        : {
+                            borderTop: stdBorderTop,
+                            borderRight: stdBorderRight,
+                            borderBottom: stdBorderBottom,
+                            borderLeft: stdBorderLeft,
+                          }),
                     animation: (isNew || isStolen) ? 'cellInkFill 0.9s var(--qq-ease-out-cubic) both' : undefined,
-                    boxShadow: isStuck ? stuckBoxShadow : stdBoxShadow,
+                    boxShadow: stdBoxShadow,
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
@@ -14776,22 +14772,16 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     </div>
                   </>
                 )}
-                {/* Stuck overlay — golden shimmer + dust ring beim Setzen. */}
+                {/* Stuck overlay — 2026-05-05 v4 (Wolf 'nur innen stacken'):
+                    Outer-Goldtint geloescht, nur noch der einmalige Dust-Ring
+                    beim Setzen als feedback. */}
                 {isStuck && (
-                  <>
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
-                      pointerEvents: 'none', zIndex: 1,
-                    }} />
-                    {/* Dust-Ring expandiert einmalig beim Setzen. */}
-                    <div style={{
-                      position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                      border: '2.5px solid rgba(245,158,11,0.8)',
-                      animation: 'stapelDustRing 0.6s ease-out 0.1s both',
-                      pointerEvents: 'none', zIndex: 3,
-                    }} />
-                  </>
+                  <div style={{
+                    position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
+                    border: '2.5px solid rgba(245,158,11,0.8)',
+                    animation: 'stapelDustRing 0.6s ease-out 0.1s both',
+                    pointerEvents: 'none', zIndex: 3,
+                  }} />
                 )}
                 {/* 2026-05-05 v2 (Wolf-Klaerung 'erstes stapeln schon mit
                     inner layer, max 3 pro feld'): konzentrische Inner-Layer

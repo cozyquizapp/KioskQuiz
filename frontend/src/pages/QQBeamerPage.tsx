@@ -887,10 +887,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Stapel-Sound aus Phase-Intro-Cascade entfernt — er kam in
       // Phase 3 als Action-Card-Sound, war aber bei 4-Gewinnt-Fragen
       // verwirrend (4-Gewinnt hat keine Stapel-Aktion in der Frage).
-      // Stapel-Sound bleibt beim echten Stapeln in PLACEMENT (line 1164).
+      // 2026-05-05 v2 (Wolf-Bug 'cozyguessr intro: steal sound, runde 2
+      // intro: anderer sound'): Steal-Sound auch raus — selbe Begruendung,
+      // er kam in Phase 2+ als Action-Card-Sound aber bei Fragen ohne
+      // Steal-Aktion (CozyGuessr/Cheese/Top5/...) wirkte er fremdartig.
+      // Action-Sounds bleiben beim ECHTEN Triggern in PLACEMENT.
       const sounds: Array<() => void> = [];
       if (hasFreeCells) sounds.push(() => playFieldPlaced());
-      if (ph >= 2) sounds.push(() => playSteal());
       void ph; // keep variable referenced for ESLint
       const cardBaseMs = 800;
       const cardStaggerMs = 1500;
@@ -8604,7 +8607,9 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         )}
       </div>
 
-      {/* Ranking-Panel rechts (slide-in) — Sizing so dass min. 8 Teams reinpassen */}
+      {/* Ranking-Panel rechts (slide-in) — Sizing so dass min. 8 Teams reinpassen.
+          2026-05-05 (Wolf): justifyContent center damit die Liste vertikal mittig
+          sitzt statt top-aligned. Bei mehr Teams als reinpassen kicked overflow:auto. */}
       {showRanking && (
         <div style={{
           flex: '0 0 38%', padding: '34px 22px 22px',
@@ -8612,7 +8617,8 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           borderLeft: '2px solid rgba(251,191,36,0.2)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
-          display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          gap: 8, overflowY: 'auto',
         }}>
           <div style={{
             fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)',
@@ -8715,17 +8721,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Image links voll Top-to-Bottom, Question-Card rechts vertikal mittig.
   // Detection via natural-dimensions preload — kein Backend-Feld noetig.
   // 2026-05-05: gilt auch fuer CozyGuessr-Active mit Bild.
+  // 2026-05-05 v2 (Wolf-Bug 'bei cheese sieht man kurz etwas bevor die seite
+  // angeordnet erscheint, wirkt unruhig'): imgReady hält das Cheese-Layout
+  // unsichtbar bis Portrait-Detection durch ist — sonst rendert der Container
+  // mit isCheesePortrait=false (Default) und shifted dann sichtbar wenn ein
+  // Portrait erkannt wurde.
   const [isCheesePortrait, setIsCheesePortrait] = useState(false);
+  const [imgReady, setImgReady] = useState(false);
   useEffect(() => {
     if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
+      setImgReady(true); // kein Bild → kein Detection-Bedarf
       return;
     }
+    setImgReady(false);
     const tester = new globalThis.Image();
     tester.onload = () => {
       setIsCheesePortrait(tester.naturalHeight > tester.naturalWidth * 1.05); // 5% Toleranz
+      setImgReady(true);
     };
-    tester.onerror = () => setIsCheesePortrait(false);
+    tester.onerror = () => { setIsCheesePortrait(false); setImgReady(true); };
     tester.src = img.url;
   }, [isCheese, useMapPicture, img?.url]);
 
@@ -9020,8 +9035,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
         </div>
       )}
-      {/* Fullscreen background image: non-overlay fullscreen layout OR CHEESE/Map-Picture overlay */}
-      {((hasImg && img.layout === 'fullscreen' && !cheeseOverlay) || cheeseFullscreen) && (() => {
+      {/* Fullscreen background image: non-overlay fullscreen layout OR CHEESE/Map-Picture overlay.
+          2026-05-05 v2 (Wolf-Bug 'kurz etwas vor anordnung sichtbar'): cheeseFullscreen
+          wartet auf imgReady (Portrait-Detection durch) damit kein Layout-Shift sichtbar ist. */}
+      {((hasImg && img.layout === 'fullscreen' && !cheeseOverlay) || (cheeseFullscreen && imgReady)) && (() => {
         // CHEESE: 3-Schicht-Aufbau gegen Aspect-Ratio-Crop.
         // 1) Blurred cover backdrop — füllt 16:9-Beamer, kein schwarzer Rand
         // 2) Sharp CONTAIN foreground — komplettes Bild sichtbar (Mona Lisas Kopf bleibt drin)
@@ -9201,7 +9218,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       <Fireflies color={`${accent}99`} />
 
       {/* ── CHEESE overlay cards (Phase 2 + Reveal) ── */}
-      {(cheeseWithQuestion || isCheeseReveal) && (
+      {/* 2026-05-05 v2 (Wolf-Bug): Cards warten auf imgReady damit Portrait-Layout
+          nicht erst landscape-aligned reinpoppt und dann nach rechts springt. */}
+      {(cheeseWithQuestion || isCheeseReveal) && imgReady && (
         <div style={{
           // 2026-04-30 v3: Bei Portrait-Foto wandert der Card-Container in den
           // rechten Bildschirm-Streifen (50% breit) und Card sitzt dort vertikal
@@ -11243,9 +11262,11 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   const show3D = viewMode === '3d' || viewMode === 'transitioning';
   // 2-spaltiges Layout: Grid links darf nicht zu groß werden, sonst bleibt rechts
   // kein Platz für die Team-Liste bei 8 Teams.
+  // 2026-05-05 (Wolf 'grid und tabelle koennten groesser sein, viel rand'):
+  // Cap 720→1100, vh 0.72→0.86, vw 0.48→0.55 — Beamer-Whitespace minimiert.
   const gridMaxSize = typeof window !== 'undefined'
-    ? Math.min(720, window.innerHeight * 0.72, window.innerWidth * 0.48)
-    : 600;
+    ? Math.min(1100, window.innerHeight * 0.86, window.innerWidth * 0.55)
+    : 800;
 
   // Manual flyover hotkey (F): trigger a cinematic orbit over the grid
   const [flyoverSignal, setFlyoverSignal] = useState(0);
@@ -11294,10 +11315,11 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
 
       {/* Center: 2-spaltig — Grid links, ScoreBar rechts (Platz für 8 Teams ohne Scroll).
           Beide Spalten bekommen height = gridMaxSize (fix quadratisches Grid) damit
-          die Team-Liste exakt so hoch ist wie das Grid — nicht länger. */}
+          die Team-Liste exakt so hoch ist wie das Grid — nicht länger.
+          2026-05-05 (Wolf): padding + gap reduziert um Whitespace zu minimieren. */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        padding: '12px 36px', position: 'relative', zIndex: 5, gap: 32,
+        padding: '6px 16px', position: 'relative', zIndex: 5, gap: 20,
         minHeight: 0,
       }}>
         <div style={{
@@ -11321,7 +11343,8 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           // Fixe Breite statt flex:1 + maxWidth — sonst verschiebt sich der Grid-
           // Container, sobald ein Team-Name die intrinsische Spaltenbreite ändert.
           // Höhe = gridMaxSize sorgt dafür dass die Liste exakt Grid-Höhe hat.
-          width: 540, height: gridMaxSize, flexShrink: 0,
+          // 2026-05-05 (Wolf): Breite 540→620 damit Liste mehr Atemraum hat.
+          width: 620, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
           <ScoreBar
@@ -15087,7 +15110,9 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       display: 'flex', flexDirection: 'column',
       justifyContent: many ? 'space-between' : 'center',
       gap: many ? 0 : rowGap,
-      width: '100%', maxWidth: 560, height: '100%',
+      // 2026-05-05 (Wolf): maxWidth 560→640 — ScoreBar darf jetzt den
+      // groesseren Container ausfuellen (Wrapper ist 620px).
+      width: '100%', maxWidth: 640, height: '100%',
       paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
     }}>
       {sorted.map((t, i) => {

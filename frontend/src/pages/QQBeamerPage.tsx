@@ -8710,7 +8710,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   useEffect(() => {
     const prev = prevShowWinnerRef.current;
     prevShowWinnerRef.current = showUnifiedWinner;
-    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && s.correctTeamId) {
+    // 2026-05-05 (Wolf-Bug 'cheese reveal sound passt nicht, gewinnercard fehlt'):
+    // Bei CHEESE mit mehreren Winnern ist correctTeamId oft null/leer — nur
+    // currentQuestionWinners ist gefuellt. Vorher: hasWinner = !!correctTeamId
+    // → Trigger sprang nie an, Climax-Sound + Winner-Card-Pop kamen nicht.
+    const hasWinner = !!s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0;
+    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && hasWinner) {
       const cat = s.currentQuestion?.category;
       const subKind = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
       const isCascadeCategory =
@@ -8730,7 +8735,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       }, 640);
       return () => window.clearTimeout(handle);
     }
-  }, [showUnifiedWinner, revealed, s.correctTeamId, s.sfxMuted, s.currentQuestion?.category, s.currentQuestion?.bunteTuete]);
+  }, [showUnifiedWinner, revealed, s.correctTeamId, s.currentQuestionWinners, s.sfxMuted, s.currentQuestion?.category, s.currentQuestion?.bunteTuete]);
 
   // ── CozyGuessr (map) full-screen reveal ─────────────────────────────────
   const isMapReveal = revealed
@@ -10546,8 +10551,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               POP-Transition: max-height 0 → voll beim showUnifiedWinner,
               statt Platz dauerhaft zu reservieren. Gilt für MUCHO / ZvZ.
               HotPotato-Co-Winner: bei vielen Teams (6+) kann die Card 2-3 Zeilen
-              hoch werden — 360 war zu knapp. 560 clipt praktisch nie. */}
-          {revealed && s.correctTeamId && q.category !== 'SCHAETZCHEN' && (
+              hoch werden — 360 war zu knapp. 560 clipt praktisch nie.
+              2026-05-05 (Wolf-Bug 'cheese sound aber keine gewinnercard'):
+              Bedingung erweitert auf currentQuestionWinners — bei CHEESE mit
+              mehreren Winnern ist correctTeamId oft leer, vorher wurde die
+              ganze Section ausgeblendet trotz vorhandener Sieger. */}
+          {revealed && q.category !== 'SCHAETZCHEN' && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (
             <div style={{
               width: '100%', maxWidth: 1400,
               // 2026-04-28: User-Bug 'Mucho Sieger-Card Border-Glow oben/unten
@@ -10606,7 +10615,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : null;
 
             // Single-team Banner (Default-Fall)
-            const team = s.teams.find(t => t.id === s.correctTeamId);
+            // 2026-05-05 (Wolf-Bug 'cheese keine gewinnercard'): Fallback auf
+            // ersten Winner aus currentQuestionWinners — bei CHEESE ohne fastest
+            // ist correctTeamId leer, aber wir haben trotzdem Sieger.
+            const winnerIds = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+            const team = s.teams.find(t => t.id === s.correctTeamId)
+              ?? s.teams.find(t => t.id === winnerIds[0]);
             if (!coWinners && !team) return null;
 
             const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null

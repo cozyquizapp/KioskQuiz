@@ -403,9 +403,9 @@ export default function QQTeamPage() {
   // 2026-05-04: SetupFlow auf 3 Steps. avatarId = Color-Slot, emoji =
   // freier Pool-Pick aus aktivem Set, teamName = freier Pool-Pick oder Eingabe.
   const [step, setStep]         = useState<SetupStep>('COLOR');
-  const [avatarId, setAvatarId] = useState(() => sessionStorage.getItem('qq_avatarId') ?? 'fox');
-  const [chosenEmoji, setChosenEmoji] = useState<string | undefined>(() => sessionStorage.getItem('qq_emoji') ?? undefined);
-  const [teamName, setTeamName] = useState(() => sessionStorage.getItem('qq_teamName') ?? '');
+  const [avatarId, setAvatarId] = useState(() => localStorage.getItem('qq_avatarId') ?? 'fox');
+  const [chosenEmoji, setChosenEmoji] = useState<string | undefined>(() => localStorage.getItem('qq_emoji') ?? undefined);
+  const [teamName, setTeamName] = useState(() => localStorage.getItem('qq_teamName') ?? '');
   const [teamId, setTeamId]     = useState(getOrCreateTeamId);
   const [joined, setJoined]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
@@ -466,12 +466,12 @@ export default function QQTeamPage() {
   // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
   useEffect(() => {
     if (joined || !connected || kicked) return;
-    const storedName = sessionStorage.getItem('qq_teamName');
+    const storedName = localStorage.getItem('qq_teamName');
     if (storedName) {
       // 2026-05-04 (Wolf): Emoji bei Auto-Rejoin mitsenden — sonst zeigt
       // Beamer das Set-Default-Emoji (z.B. Wuerfel) statt das vom Spieler
       // gewaehlte (z.B. Giraffe).
-      const storedEmoji = sessionStorage.getItem('qq_emoji') ?? undefined;
+      const storedEmoji = localStorage.getItem('qq_emoji') ?? undefined;
       emit('qq:joinTeam', { roomCode, teamId, teamName: storedName, avatarId, emoji: storedEmoji }).then((ack: any) => {
         if (ack.ok) setJoined(true);
       });
@@ -489,9 +489,9 @@ export default function QQTeamPage() {
       // Wurden gekickt → fresh Setup mit neuen Daten.
       setKicked(true);
       setJoined(false);
-      sessionStorage.removeItem('qq_teamName');
-      sessionStorage.removeItem('qq_avatarId');
-      sessionStorage.removeItem('qq_emoji');
+      localStorage.removeItem('qq_teamName');
+      localStorage.removeItem('qq_avatarId');
+      localStorage.removeItem('qq_emoji');
       setTeamName('');
       setStep('COLOR');
     }
@@ -505,8 +505,8 @@ export default function QQTeamPage() {
   const existingTeamInRoom = state?.teams.find(t => t.id === teamId) ?? null;
   async function handleResume() {
     if (!existingTeamInRoom) return;
-    sessionStorage.setItem('qq_teamName', existingTeamInRoom.name);
-    sessionStorage.setItem('qq_avatarId', existingTeamInRoom.avatarId);
+    localStorage.setItem('qq_teamName', existingTeamInRoom.name);
+    localStorage.setItem('qq_avatarId', existingTeamInRoom.avatarId);
     setTeamName(existingTeamInRoom.name);
     setAvatarId(existingTeamInRoom.avatarId);
     const ack = await emit('qq:joinTeam', {
@@ -528,10 +528,10 @@ export default function QQTeamPage() {
   async function joinRoom() {
     if (!teamName.trim()) return;
     setError(null);
-    sessionStorage.setItem('qq_teamName', teamName.trim());
-    sessionStorage.setItem('qq_avatarId', avatarId);
-    if (chosenEmoji) sessionStorage.setItem('qq_emoji', chosenEmoji);
-    else sessionStorage.removeItem('qq_emoji');
+    localStorage.setItem('qq_teamName', teamName.trim());
+    localStorage.setItem('qq_avatarId', avatarId);
+    if (chosenEmoji) localStorage.setItem('qq_emoji', chosenEmoji);
+    else localStorage.removeItem('qq_emoji');
     const ack = await emit('qq:joinTeam', {
       roomCode, teamId, teamName: teamName.trim(), avatarId, emoji: chosenEmoji,
     });
@@ -540,9 +540,9 @@ export default function QQTeamPage() {
   }
 
   // Always allow local language override, even in lobby/setup
-  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (sessionStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
+  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (localStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
   const lang: 'de' | 'en' = localLang;
-  const setLang = (l: 'de' | 'en') => { setLocalLang(l); sessionStorage.setItem('qq_lang', l); };
+  const setLang = (l: 'de' | 'en') => { setLocalLang(l); localStorage.setItem('qq_lang', l); };
   const [flagFlip, setFlagFlip] = useState(false); // true = mid-flip (hidden at 90°)
   const flipLockRef = useRef(false);
   const handleFlagClick = () => {
@@ -581,7 +581,7 @@ export default function QQTeamPage() {
     if (!state) return;   // warten bis State da ist
     didRandomInit.current = true;
     // Random Color, falls aktuelle ('fox' default) belegt ist oder nichts in storage stand
-    const hasStoredColor = !!sessionStorage.getItem('qq_avatarId');
+    const hasStoredColor = !!localStorage.getItem('qq_avatarId');
     if (!hasStoredColor || takenAvatarIds.includes(avatarId)) {
       const free = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id));
       if (free.length > 0) {
@@ -590,7 +590,7 @@ export default function QQTeamPage() {
       }
     }
     // Random Name aus FUNNY_TEAM_NAMES (wenn nichts gespeichert)
-    const hasStoredName = !!sessionStorage.getItem('qq_teamName');
+    const hasStoredName = !!localStorage.getItem('qq_teamName');
     if (!hasStoredName) {
       const freeNames = FUNNY_TEAM_NAMES.filter(n => !takenTeamNamesLower.includes(n.trim().toLowerCase()));
       if (freeNames.length > 0) {

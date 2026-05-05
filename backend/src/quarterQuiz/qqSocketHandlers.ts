@@ -780,7 +780,33 @@ export function maybeAutoConnections(io: SocketIOServer, roomCode: string): void
       if (live.connections?.phase !== 'placement') return;
       if (live.pendingFor !== teamId) return;
 
-      // Falls pendingAction noch FREE: volle Auswahl wie in Round 3/4.
+      // 2026-05-05 (Wolf-Bug 'bots wollen placen, stapeln nicht im finale'):
+      // Connections-Finale verwendet seit dem Wolf-Konzept STAPEL_BONUS als
+      // pendingAction (siehe qqRooms.ts:4065). Bots-Logic erkannte aber nur
+      // FREE/PLACE_1/STEAL_1/STAPEL_1 (Legacy) → fielen in default-PLACE-
+      // Branch und platzierten regulaere Cells statt zu stapeln.
+      // Fix: STAPEL_BONUS explizit auf STAPEL-Action mappen.
+      if (live.pendingAction === 'STAPEL_BONUS') {
+        const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['STAPEL'], phase: live.gamePhaseIndex,
+        });
+        if (!choice || choice.kind !== 'STAPEL') {
+          qqSkipCurrentPlacement(live);
+          broadcast(io, roomCode);
+          if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
+          return;
+        }
+        try {
+          qqStuckCell(live, teamId, choice.target!.row, choice.target!.col);
+          if (live.connections?.phase === 'placement') qqConnectionsAfterPlacement(live);
+          broadcast(io, roomCode);
+          if (live.connections?.phase === 'placement' && live.pendingFor) maybeAutoConnections(io, roomCode);
+        } catch { /* skip */ }
+        return;
+      }
+
+      // Falls pendingAction noch FREE (Legacy-Pfad, sollte im Finale eigentlich
+      // nicht mehr passieren — Wolf-Konzept hat FREE durch STAPEL_BONUS ersetzt):
       if (live.pendingAction === 'FREE') {
         const kinds: DummyActionKind[] = [];
         const hasFreeCellNow = live.grid.some(r => r.some(c => c.ownerId === null));

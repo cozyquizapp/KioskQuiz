@@ -52,6 +52,7 @@ export const COZY_CARD_BG = 'linear-gradient(180deg, #1f1610, #150e08)';
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
 import { loadUsedFonts } from '../utils/fonts';
+import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 
 export const BEAMER_CSS = QQ_BEAMER_CSS;
 export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
@@ -2205,39 +2206,42 @@ type RulesSlide = {
   abilities?: AbilityBadge[];
 };
 
+// Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
+// Override). Defaults bleiben hier als Fallback im Code stehen.
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
+  const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
   const abilityLines = totalPhases === 3
     ? [
-        'Runde 2: Klauen freigeschaltet',
-        'Runde 3: Stapeln — sichert euer Feld dauerhaft + 1 Bonus-Punkt',
+        t('rules.slide5.r2', 'Runde 2: Klauen freigeschaltet'),
+        t('rules.slide5.r3short', 'Runde 3: Stapeln — sichert euer Feld dauerhaft + 1 Bonus-Punkt'),
       ]
     : [
-        'Runde 2: Klauen freigeschaltet',
-        'Runde 3: Stapeln — Feld dauerhaft sichern + 1 Bonus-Punkt',
-        'Runde 4: alles bleibt — letzte Quiz-Runde',
+        t('rules.slide5.r2', 'Runde 2: Klauen freigeschaltet'),
+        t('rules.slide5.r3', 'Runde 3: Stapeln — Feld dauerhaft sichern + 1 Bonus-Punkt'),
+        t('rules.slide5.r4', 'Runde 4: alles bleibt — letzte Quiz-Runde'),
       ];
   return [
     {
       icon: '🏆',
-      title: 'Das Ziel',
+      title: t('rules.slide1.title', 'Das Ziel'),
       color: '#3B82F6',
       lines: [
-        'Größtes zusammenhängendes Gebiet gewinnt',
+        t('rules.slide1.line1', 'Größtes zusammenhängendes Gebiet gewinnt'),
       ],
     },
     {
       icon: '⚡',
-      title: 'So läuft\'s',
+      title: t('rules.slide2.title', 'So läuft\'s'),
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} Runden · 5 Kategorien`,
-        'Richtige Antwort → Feld setzen',
-        'Tempo entscheidet bei Gleichstand',
+        t('rules.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
+        t('rules.slide2.line2', 'Richtige Antwort → Feld setzen'),
+        t('rules.slide2.line3', 'Tempo entscheidet bei Gleichstand'),
       ],
     },
     {
       icon: '🗺',
-      title: 'Dein Weg durchs Quiz',
+      title: t('rules.slide3.title', 'Dein Weg durchs Quiz'),
       color: '#FBBF24',
       lines: [],
       treeShowcase: true,
@@ -2245,11 +2249,11 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       // Joker explizit eigene Folie mit Mini-Grid-Beispiel.
       icon: '⭐',
-      title: 'Joker-Bonus',
+      title: t('rules.slide4.title', 'Joker-Bonus'),
       color: '#FBBF24',
       lines: [
-        '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld',
-        'Max. 2 Joker pro Team',
+        t('rules.slide4.line1', '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld'),
+        t('rules.slide4.line2', 'Max. 2 Joker pro Team'),
       ],
       grid: {
         cells: [
@@ -2259,95 +2263,96 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
           [null, null, null, 'A'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
-        label: 'Beide Muster zählen',
+        label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
       },
     },
     {
       icon: '🔓',
-      title: 'Neue Fähigkeiten',
+      title: t('rules.slide5.title', 'Neue Fähigkeiten'),
       color: '#F59E0B',
       lines: abilityLines,
       abilities: [
-        { emoji: '⚡', label: 'Klauen',  accent: '#EF4444' },
-        { emoji: '🏯', label: 'Stapeln', accent: '#06B6D4' },
+        { emoji: '⚡', label: t('rules.slide5.abil1', 'Klauen'),  accent: '#EF4444' },
+        { emoji: '🏯', label: t('rules.slide5.abil2', 'Stapeln'), accent: '#06B6D4' },
       ],
     },
     {
       icon: '🎁',
-      title: 'Bunte Tüte',
+      title: t('rules.slide6.title', 'Bunte Tüte'),
       color: '#EF4444',
       lines: [
-        'Eine Kategorie pro Runde ist eine Überraschung',
-        '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr',
+        t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
+        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
       ],
-      extra: 'Regeln werden vor jeder Frage kurz erklärt',
+      extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
     {
       icon: '🔄',
-      title: 'Comeback',
+      title: t('rules.slide7.title', 'Comeback'),
       color: '#10B981',
       lines: [
-        'Letztes Team holt vor dem Finale auf',
-        '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz',
+        t('rules.slide7.line1', 'Letztes Team holt vor dem Finale auf'),
+        t('rules.slide7.line2', '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz'),
       ],
     },
     {
       icon: '🧩',
-      title: 'Großes Finale',
+      title: t('rules.slide8.title', 'Großes Finale'),
       color: '#A78BFA',
       lines: [
-        '16 Begriffe · 4 Gruppen finden',
-        'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder',
+        t('rules.slide8.line1', '16 Begriffe · 4 Gruppen finden'),
+        t('rules.slide8.line2', 'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder'),
       ],
-      extra: '🏆 Größtes Gebiet + Boni danach gewinnt',
+      extra: t('rules.slide8.extra', '🏆 Größtes Gebiet + Boni danach gewinnt'),
     },
   ];
 }
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
+  const t = (k: string, fb: string) => getRuleText(k, 'en', fb);
   const abilityLines = totalPhases === 3
     ? [
-        'Round 2: Steal unlocked',
-        'Round 3: Stack — lock your tile + 1 bonus pt',
+        t('rules.slide5.r2', 'Round 2: Steal unlocked'),
+        t('rules.slide5.r3short', 'Round 3: Stack — lock your tile + 1 bonus pt'),
       ]
     : [
-        'Round 2: Steal unlocked',
-        'Round 3: Stack — lock your tile + 1 bonus pt',
-        'Round 4: everything stays — last quiz round',
+        t('rules.slide5.r2', 'Round 2: Steal unlocked'),
+        t('rules.slide5.r3', 'Round 3: Stack — lock your tile + 1 bonus pt'),
+        t('rules.slide5.r4', 'Round 4: everything stays — last quiz round'),
       ];
   return [
     {
       icon: '🏆',
-      title: 'The Goal',
+      title: t('rules.slide1.title', 'The Goal'),
       color: '#3B82F6',
       lines: [
-        'Largest connected area wins',
+        t('rules.slide1.line1', 'Largest connected area wins'),
       ],
     },
     {
       icon: '⚡',
-      title: 'How It Works',
+      title: t('rules.slide2.title', 'How It Works'),
       color: '#8B5CF6',
       lines: [
-        `${totalPhases} rounds · 5 categories`,
-        'Right answer → place a cell',
-        'Speed decides ties',
+        t('rules.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
+        t('rules.slide2.line2', 'Right answer → place a cell'),
+        t('rules.slide2.line3', 'Speed decides ties'),
       ],
     },
     {
       icon: '🗺',
-      title: 'Your Quiz Roadmap',
+      title: t('rules.slide3.title', 'Your Quiz Roadmap'),
       color: '#FBBF24',
       lines: [],
       treeShowcase: true,
     },
     {
       icon: '⭐',
-      title: 'Joker Bonus',
+      title: t('rules.slide4.title', 'Joker Bonus'),
       color: '#FBBF24',
       lines: [
-        '2×2 block or 4 in a row = 1 bonus tile',
-        'Max 2 jokers per team',
+        t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus tile'),
+        t('rules.slide4.line2', 'Max 2 jokers per team'),
       ],
       grid: {
         cells: [
@@ -2357,47 +2362,47 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
           [null, null, null, 'A'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
-        label: 'Both patterns count',
+        label: t('rules.slide4.gridLabel', 'Both patterns count'),
       },
     },
     {
       icon: '🔓',
-      title: 'New Abilities',
+      title: t('rules.slide5.title', 'New Abilities'),
       color: '#F59E0B',
       lines: abilityLines,
       abilities: [
-        { emoji: '⚡', label: 'Steal', accent: '#EF4444' },
-        { emoji: '🏯', label: 'Stack', accent: '#06B6D4' },
+        { emoji: '⚡', label: t('rules.slide5.abil1', 'Steal'), accent: '#EF4444' },
+        { emoji: '🏯', label: t('rules.slide5.abil2', 'Stack'), accent: '#06B6D4' },
       ],
     },
     {
       icon: '🎁',
-      title: 'Lucky Bag',
+      title: t('rules.slide6.title', 'Lucky Bag'),
       color: '#EF4444',
       lines: [
-        'One category per round is a surprise',
-        'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr',
+        t('rules.slide6.line1', 'One category per round is a surprise'),
+        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
       ],
-      extra: 'Rules explained before each question',
+      extra: t('rules.slide6.extra', 'Rules explained before each question'),
     },
     {
       icon: '🔄',
-      title: 'Comeback',
+      title: t('rules.slide7.title', 'Comeback'),
       color: '#10B981',
       lines: [
-        'Last-place team catches up before the finale',
-        '"Higher or Lower?" — each hit steals from the leader',
+        t('rules.slide7.line1', 'Last-place team catches up before the finale'),
+        t('rules.slide7.line2', '"Higher or Lower?" — each hit steals from the leader'),
       ],
     },
     {
       icon: '🧩',
-      title: 'Grand Finale',
+      title: t('rules.slide8.title', 'Grand Finale'),
       color: '#A78BFA',
       lines: [
-        '16 terms · find 4 hidden groups',
-        'Each group = 1 stack-bonus (+1 pt) on your cells',
+        t('rules.slide8.line1', '16 terms · find 4 hidden groups'),
+        t('rules.slide8.line2', 'Each group = 1 stack-bonus (+1 pt) on your cells'),
       ],
-      extra: '🏆 Largest area + bonuses wins',
+      extra: t('rules.slide8.extra', '🏆 Largest area + bonuses wins'),
     },
   ];
 }
@@ -3142,6 +3147,8 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
 
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
+  // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
+  useRuleOverridesVersion();
   const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
   const slides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
   const totalSlides = slides.length;
@@ -3190,7 +3197,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 900, letterSpacing: '0.1em',
             textTransform: 'uppercase', color: `${slide.color}88`,
           }}>
-            {lang === 'de' ? `Spielregeln` : `Game Rules`}
+            {getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
           </div>
           <div style={{
             fontSize: 'clamp(44px,7vw,88px)', fontWeight: 900, lineHeight: 1.05,
@@ -3255,9 +3262,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   background: '#FBBF24', boxShadow: '0 0 12px rgba(251,191,36,0.65)',
                   animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
                 }} />
-                {lang === 'de'
+                {getRuleText('rules.slide3.hint', lang, lang === 'de'
                   ? '5 Kategorien pro Runde — jede mit eigenem Twist'
-                  : '5 categories per round — each with its own twist'}
+                  : '5 categories per round — each with its own twist')}
               </div>
               <style>{`
                 @keyframes qqShowcaseHintPulse {
@@ -3341,7 +3348,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             animation: 'contentReveal 0.5s ease 0.6s both',
             textShadow: `0 0 24px ${slide.color}33`,
           }}>
-            {lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!'}
+            {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}
           </div>
         )}
       </div>
@@ -4126,6 +4133,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
+  useRuleOverridesVersion();
   const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const color = QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
@@ -4151,54 +4159,72 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   };
   const catColor = (cat && CAT_COLORS[cat]) || color;
 
-  // Category explanations — 1 line to clarify for audience
+  // Wolf 2026-05-05: Texte sind editierbar im /rules-editor.
+  // Defaults bleiben hier als Fallback erhalten.
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
-    SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
-    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
-    BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
-    ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
-    CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
+    SCHAETZCHEN:   { de: getRuleText('cat.SCHAETZCHEN.explain', 'de', 'Wer schätzt am nächsten dran?'),
+                     en: getRuleText('cat.SCHAETZCHEN.explain', 'en', 'Who can guess the closest?') },
+    MUCHO:         { de: getRuleText('cat.MUCHO.explain', 'de', 'Wählt die richtige Antwort'),
+                     en: getRuleText('cat.MUCHO.explain', 'en', 'Pick the right answer') },
+    BUNTE_TUETE:   { de: getRuleText('cat.BUNTE_TUETE.explain', 'de', 'Überraschungs-Mechanik — seid bereit!'),
+                     en: getRuleText('cat.BUNTE_TUETE.explain', 'en', 'Surprise mechanic — be ready!') },
+    ZEHN_VON_ZEHN: { de: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'de', '3 Antworten, 10 Punkte vergeben'),
+                     en: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'en', '3 answers, distribute 10 points') },
+    CHEESE:        { de: getRuleText('cat.CHEESE.explain', 'de', 'Was ist das?'),
+                     en: getRuleText('cat.CHEESE.explain', 'en', 'What is this?') },
   };
 
   // BUNTE_TUETE: pro Sub-Mechanik eigene Vorstellung (Name, Emoji, 1-Zeiler).
-  // Sonst sähe „4 gewinnt" und „Bluff" und „Hot Potato" alle gleich aus
-  // („Bunte Tüte · Überraschungs-Mechanik") — dem Publikum entgeht der Reiz
-  // der jeweiligen Mechanik komplett.
+  // Texte editierbar via /rules-editor — Defaults hier als Fallback.
   const BUNTE_SUB_INTRO: Record<string, { de: { name: string; explain: string }; en: { name: string; explain: string }; emoji: string }> = {
     onlyConnect: {
       emoji: '🧩',
-      de: { name: '4 gewinnt',     explain: '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.' },
-      en: { name: 'Only Connect',  explain: '4 clues, one answer — solve with fewest clues to win an action.' },
+      de: { name:    getRuleText('bunte.onlyConnect.name',    'de', '4 gewinnt'),
+            explain: getRuleText('bunte.onlyConnect.explain', 'de', '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.') },
+      en: { name:    getRuleText('bunte.onlyConnect.name',    'en', 'Only Connect'),
+            explain: getRuleText('bunte.onlyConnect.explain', 'en', '4 clues, one answer — solve with fewest clues to win an action.') },
     },
     bluff: {
       emoji: '🎭',
-      de: { name: 'Bluff',         explain: 'Erfindet plausible Falsch-Antworten und ratet die echte.' },
-      en: { name: 'Bluff',         explain: 'Make up plausible fake answers and find the real one.' },
+      de: { name:    getRuleText('bunte.bluff.name',    'de', 'Bluff'),
+            explain: getRuleText('bunte.bluff.explain', 'de', 'Erfindet plausible Falsch-Antworten und ratet die echte.') },
+      en: { name:    getRuleText('bunte.bluff.name',    'en', 'Bluff'),
+            explain: getRuleText('bunte.bluff.explain', 'en', 'Make up plausible fake answers and find the real one.') },
     },
     hotPotato: {
       emoji: '🔥',
-      de: { name: 'Heiße Kartoffel', explain: 'Reihum antworten — keine Antwort vor Zeitende = raus.' },
-      en: { name: 'Hot Potato',    explain: 'Take turns — no answer before time runs out = out.' },
+      de: { name:    getRuleText('bunte.hotPotato.name',    'de', 'Heiße Kartoffel'),
+            explain: getRuleText('bunte.hotPotato.explain', 'de', 'Reihum antworten — keine Antwort vor Zeitende = raus.') },
+      en: { name:    getRuleText('bunte.hotPotato.name',    'en', 'Hot Potato'),
+            explain: getRuleText('bunte.hotPotato.explain', 'en', 'Take turns — no answer before time runs out = out.') },
     },
     top5: {
       emoji: '🏆',
-      de: { name: 'Top 5',         explain: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.' },
-      en: { name: 'Top 5',         explain: 'Guess the most common answers — higher rank, more points.' },
+      de: { name:    getRuleText('bunte.top5.name',    'de', 'Top 5'),
+            explain: getRuleText('bunte.top5.explain', 'de', 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.') },
+      en: { name:    getRuleText('bunte.top5.name',    'en', 'Top 5'),
+            explain: getRuleText('bunte.top5.explain', 'en', 'Guess the most common answers — higher rank, more points.') },
     },
     oneOfEight: {
       emoji: '🕵️',
-      de: { name: 'Imposter',      explain: 'Findet die EINE falsche Aussage zwischen 7 wahren.' },
-      en: { name: 'Imposter',      explain: 'Spot the ONE false statement among 7 true ones.' },
+      de: { name:    getRuleText('bunte.oneOfEight.name',    'de', 'Imposter'),
+            explain: getRuleText('bunte.oneOfEight.explain', 'de', 'Findet die EINE falsche Aussage zwischen 7 wahren.') },
+      en: { name:    getRuleText('bunte.oneOfEight.name',    'en', 'Imposter'),
+            explain: getRuleText('bunte.oneOfEight.explain', 'en', 'Spot the ONE false statement among 7 true ones.') },
     },
     order: {
       emoji: '📋',
-      de: { name: 'Reihenfolge',   explain: 'Sortiert in der richtigen Reihenfolge.' },
-      en: { name: 'Order',         explain: 'Sort in the correct order.' },
+      de: { name:    getRuleText('bunte.order.name',    'de', 'Reihenfolge'),
+            explain: getRuleText('bunte.order.explain', 'de', 'Sortiert in der richtigen Reihenfolge.') },
+      en: { name:    getRuleText('bunte.order.name',    'en', 'Order'),
+            explain: getRuleText('bunte.order.explain', 'en', 'Sort in the correct order.') },
     },
     map: {
       emoji: '🗺️',
-      de: { name: 'CozyGuessr',    explain: 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.' },
-      en: { name: 'CozyGuessr',    explain: 'Guess the location on the map — closer means more points.' },
+      de: { name:    getRuleText('bunte.map.name',    'de', 'CozyGuessr'),
+            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.') },
+      en: { name:    getRuleText('bunte.map.name',    'en', 'CozyGuessr'),
+            explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map — closer means more points.') },
     },
   };
   const bunteKind = cat === 'BUNTE_TUETE'
@@ -4219,30 +4245,41 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // ── Rule reminders per round ──
   // Subtitle ueber den Action-Cards. Beschreibt knapp wie die Wahl funktioniert,
   // die exakte Anzahl pro Aktion steht direkt auf den Cards (× N).
+  // Wolf 2026-05-05: Texte editierbar via /rules-editor — Defaults als Fallback.
   const ROUND_RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
     1: {
       emoji: '🏁',
-      de: ['Eure Aktion diese Runde:', 'Sichert euch eure ersten Felder!'],
-      en: ['Your action this round:', 'Claim your first cells!'],
+      de: [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
+           getRuleText('round.1.line2', 'de', 'Sichert euch eure ersten Felder!')],
+      en: [getRuleText('round.1.line1', 'en', 'Your action this round:'),
+           getRuleText('round.1.line2', 'en', 'Claim your first cells!')],
     },
     2: {
       emoji: '⚔️',
-      de: ['Pro richtige Antwort wählt eine Aktion:', 'Klauen jetzt möglich!'],
-      en: ['Per correct answer choose one action:', 'Stealing now possible!'],
+      de: [getRuleText('round.2.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
+           getRuleText('round.2.line2', 'de', 'Klauen jetzt möglich!')],
+      en: [getRuleText('round.2.line1', 'en', 'Per correct answer choose one action:'),
+           getRuleText('round.2.line2', 'en', 'Stealing now possible!')],
     },
     3: {
       emoji: '🏯',
-      de: ['Pro richtige Antwort wählt eine Aktion:', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!'],
-      en: ['Per correct answer choose one action:', 'Stack unlocked — lock your tile + 1 extra point!'],
+      de: [getRuleText('round.3.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
+           getRuleText('round.3.line2', 'de', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!')],
+      en: [getRuleText('round.3.line1', 'en', 'Per correct answer choose one action:'),
+           getRuleText('round.3.line2', 'en', 'Stack unlocked — lock your tile + 1 extra point!')],
     },
     4: {
       emoji: '🏯',
       de: s.connectionsEnabled !== false
-        ? ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Quiz-Runde — danach kommt der Stapel-Bonus im Finale!']
-        : ['Pro richtige Antwort wählt eine Aktion:', 'Letzte Runde — alles bleibt verfügbar!'],
+        ? [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
+           getRuleText('round.4.line2_finale', 'de', 'Letzte Quiz-Runde — danach kommt der Stapel-Bonus im Finale!')]
+        : [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
+           getRuleText('round.4.line2_nofin', 'de', 'Letzte Runde — alles bleibt verfügbar!')],
       en: s.connectionsEnabled !== false
-        ? ['Per correct answer choose one action:', 'Last quiz round — stack-bonus finale follows!']
-        : ['Per correct answer choose one action:', 'Final round — everything stays available!'],
+        ? [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
+           getRuleText('round.4.line2_finale', 'en', 'Last quiz round — stack-bonus finale follows!')]
+        : [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
+           getRuleText('round.4.line2_nofin', 'en', 'Final round — everything stays available!')],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];

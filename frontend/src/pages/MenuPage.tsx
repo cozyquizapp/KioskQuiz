@@ -41,6 +41,7 @@ const extrasLinks: LinkItem[] = [
   { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
   // Folien-Custom-Layouts (selten gebraucht — kein echter Slide-Editor mehr)
   { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
+  { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
   // Admin & Stats
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
   { path: '/alt/stats',           label: 'Stats & Leaderboard', emoji: '📊', note: 'Letzte Runs & Frage-Verteilungen' },

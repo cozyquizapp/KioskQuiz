@@ -4216,12 +4216,16 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       {hasImage && (
+        // 2026-05-05 (Wolf 'einrahmen wie cheese panorama, rahmen in
+        // kategorie-farbe'): cat-Color Border + Glow, 18px radius,
+        // object-fit: cover schneidet Raender bündig ab.
         <div style={{
-          borderRadius: 14, overflow: 'hidden',
-          border: '1.5px solid rgba(255,255,255,0.12)',
+          borderRadius: 18, overflow: 'hidden',
+          border: `2.5px solid ${catColor}`,
           background: '#0d0a06',
           height: 'clamp(140px, 22vh, 220px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 22px ${catColor}55, 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)`,
         }}>
           <img
             src={q.image.url}

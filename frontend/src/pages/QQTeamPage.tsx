@@ -18,9 +18,7 @@ import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
 import {
-  resumeAudio, playCorrect, playWrong, playFanfare, playScoreUp,
-  playQuestionStart, playRoundStart,
-  setVolume, setSoundConfig,
+  resumeAudio, setVolume, setSoundConfig, setSfxMuted,
 } from '../utils/sounds';
 import { haptic } from '../utils/haptics';
 
@@ -1221,45 +1219,41 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     if (s.soundConfig) setSoundConfig(s.soundConfig);
   }, [s.soundConfig]);
 
+  // 2026-05-05 (Wolf-Bug 'sounds auf /team aus, nur /beamer'): Team-Page
+  // ist STUMM — Sounds gehoeren ausschliesslich auf den Beamer (zentrale
+  // Live-Show). Phone darf vibrieren (haptic) als individuelles Feedback,
+  // aber keine Audio-Cues. setSfxMuted ist Modul-global (pro Browser-Tab) —
+  // /beamer und /moderator laufen in eigenen Tabs/Sessions, nicht betroffen.
+  useEffect(() => {
+    setSfxMuted(true);
+  }, []);
+
   const prevPhaseRef = useRef(s.phase);
   const prevQuestionIdRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = s.phase;
-    if (s.sfxMuted) return;
-    resumeAudio();
     if (s.phase === 'PHASE_INTRO' && prev !== 'PHASE_INTRO') {
-      playRoundStart();
-      playFanfare();
       haptic('turn');
     }
-    // Einheitlicher Soundcue beim Start einer neuen Frage (jede neue Question-ID).
     if (s.phase === 'QUESTION_ACTIVE' && s.currentQuestion && s.currentQuestion.id !== prevQuestionIdRef.current) {
       prevQuestionIdRef.current = s.currentQuestion.id;
-      playQuestionStart();
       haptic('tap');
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
-      // Fastest = correctTeamId, "richtig dabei" = currentQuestionWinners ohne fastest.
       const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
       if (s.correctTeamId === myTeamId) {
-        playCorrect();
         haptic('fastest');
       } else if (winners.includes(myTeamId)) {
-        playCorrect();
         haptic('correct');
       } else {
-        playWrong();
         haptic('wrong');
       }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) {
-      playScoreUp();
       haptic('turn');
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
-      playFanfare();
-      // Win-Haptic NUR fürs Sieger-Team (Memory: keine Bloßstellung der Verlierer).
       const sorted = [...s.teams].sort((a, b) =>
         b.largestConnected - a.largestConnected || b.totalCells - a.totalCells);
       if (sorted[0]?.id === myTeamId) {
@@ -2231,21 +2225,22 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   useEffect(() => {
     if (phaseIsReveal) {
       // 2026-05-03 v4 (Wolf-Bug 'Reveal /team async zu /beamer'): Lock-Duration
-      // matcht jetzt tatsaechliche Beamer-Cascade-Dauer pro Kategorie. Vorher
-      // pauschal 3500+300n capped 8s — bei Top5/Order/Schaetzchen-Cascades
-      // (10-13s) zeigte Phone die Loesung 4-5s vor dem Beamer.
+      // matcht jetzt tatsaechliche Beamer-Cascade-Dauer pro Kategorie.
+      // 2026-05-05 (Wolf-Test 'reveal /team immernoch deutlich frueher'):
+      // Base-Werte um +1500ms erhoeht (default 3500→5000) damit Beamer-
+      // Cascade garantiert vor Phone-Reveal abgelaufen ist. Caps angepasst.
       const btKind = q.bunteTuete?.kind ?? '';
       const teamCount = Math.max(1, s.teams.length);
       const lockMs = (() => {
-        if (q.category === 'MUCHO') return Math.min(11000, 1500 + teamCount * 250);
-        if (q.category === 'ZEHN_VON_ZEHN') return Math.min(12000, 2500 + teamCount * 800);
-        if (q.category === 'CHEESE') return Math.min(11000, 1500 + teamCount * 850);
-        if (q.category === 'SCHAETZCHEN') return Math.min(11000, 2000 + Math.min(5, teamCount) * 1600);
-        if (q.category === 'BUNTE_TUETE' && btKind === 'top5') return Math.min(14000, 2500 + Math.min(5, teamCount) * 2400);
-        if (q.category === 'BUNTE_TUETE' && btKind === 'order') return Math.min(12000, 1500 + Math.min(5, teamCount) * 2000);
-        if (q.category === 'BUNTE_TUETE' && btKind === 'onlyConnect') return 4000;
-        if (q.category === 'BUNTE_TUETE' && btKind === 'bluff') return 4000;
-        return 3500; // single-winner default (hotPotato, oneOfEight)
+        if (q.category === 'MUCHO') return Math.min(12500, 3000 + teamCount * 250);
+        if (q.category === 'ZEHN_VON_ZEHN') return Math.min(13500, 4000 + teamCount * 800);
+        if (q.category === 'CHEESE') return Math.min(12500, 3000 + teamCount * 850);
+        if (q.category === 'SCHAETZCHEN') return Math.min(12500, 3500 + Math.min(5, teamCount) * 1600);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'top5') return Math.min(15500, 4000 + Math.min(5, teamCount) * 2400);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'order') return Math.min(13500, 3000 + Math.min(5, teamCount) * 2000);
+        if (q.category === 'BUNTE_TUETE' && btKind === 'onlyConnect') return 5500;
+        if (q.category === 'BUNTE_TUETE' && btKind === 'bluff') return 5500;
+        return 5000; // single-winner default (hotPotato, oneOfEight)
       })();
       const t = setTimeout(() => setRevealUnlocked(true), lockMs);
       return () => clearTimeout(t);

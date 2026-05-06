@@ -1431,99 +1431,88 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
 
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
 
-        {/* Team header
-            2026-05-05 (Wolf-Wunsch 'design im /team nach teamfarbe'):
-            Header-BG bekommt subtilen Gradient in Team-Farbe (linear from
-            team.color@22% top-left → COZY_CARD_BG bottom-right). Border
-            in Team-Farbe (50% alpha). Damit ist das Team sofort an seiner
-            Farbe erkennbar — Kategorie-Cards bleiben unten in Kategorie-
-            Farben (kein Konflikt). */}
+        {/* Team header — 2026-05-05 (Wolf-Polish 'sieht aus wie App aus 2003,
+            Avatar hinter Flagge stoert, Joker im Rechteck'):
+            - Watermark-Avatar im BG ENTFERNT (war hinter Flag/Jokern sichtbar
+              und wirkte wie Background-Box — passt nicht zu cleanem Look).
+            - 3-Stop-Gradient durch flachen 2-Stop ersetzt (subtiler Team-Tint).
+            - Border 1.5px → 1px in 30% Alpha (dezenter).
+            - Joker-Container ohne Background → freigestellt direkt im Header.
+            - Flag-Button: Background nur on hover/active, sonst transparent
+              (kein Default-Box-Look mehr).
+            - Padding hoch (10/14 → 12/16) damit's mehr Atemraum hat. */}
         {myTeam && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
-            padding: '10px 14px', borderRadius: 16,
-            background: `linear-gradient(135deg, ${myTeam.color}33 0%, ${myTeam.color}10 50%, ${COZY_CARD_BG} 100%), ${COZY_CARD_BG}`,
-            border: `1.5px solid ${myTeam.color}55`,
-            boxShadow: `0 4px 16px rgba(0,0,0,0.4), 0 0 24px ${myTeam.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
-            position: 'relative', overflow: 'hidden',
+            display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
+            padding: '12px 16px', borderRadius: 18,
+            background: `linear-gradient(135deg, ${myTeam.color}1f 0%, rgba(15,12,9,0.9) 70%)`,
+            border: `1px solid ${myTeam.color}33`,
+            boxShadow: `0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)`,
+            position: 'relative',
           }}>
-            {/* Team-Avatar als Watermark im Header-BG (Wolf-Wunsch) */}
-            <div aria-hidden style={{
-              position: 'absolute',
-              right: -18, top: '50%', transform: 'translateY(-50%)',
-              width: 92, height: 92,
-              opacity: 0.08, pointerEvents: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={92} flat />
-            </div>
-            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={34} style={{ position: 'relative', zIndex: 1 }} />
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TeamNameLabel
-                name={myTeam.name}
-                maxLines={1}
-                shrinkAfter={14}
-                fontSize={20}
-                color={myTeam.color}
-                fontWeight={900}
-                style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
-              />
-              {/* 2026-05-05 v2 (Wolf 'joker von anfang an glow, wenn benutzt
-                  ausgrauen — andersrum als jetzt'): Logik invertiert. Slots
-                  zeigen verfuegbare Joker (Lebenspunkte-Pattern): von Anfang
-                  an 2 Slots glowen gold = beide verfuegbar; pro verdientem/
-                  eingeloestem Joker wird ein Slot ausgegraut = verbraucht. */}
-              {s.teamPhaseStats[myTeamId] && (
-                <div
-                  style={{
-                    display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0,
-                  }}
-                  title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
-                  aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
-                >
-                  {Array.from({ length: 2 }).map((_, i) => {
-                    const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
-                    return (
-                      <JokerIcon
-                        key={i}
-                        i={i}
-                        size={28}
-                        alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
-                        style={{
-                          width: 28, height: 28,
-                          opacity: used ? 0.45 : 1,
-                          filter: used
-                            ? 'grayscale(1) brightness(0.85)'
-                            : 'drop-shadow(0 0 8px rgba(251,191,36,0.8))',
-                          transition: 'opacity 0.3s ease, filter 0.3s ease',
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            {/* Language selector — flag only.
-                2026-05-05 (Phase-4 Bucket-3): minHeight/minWidth 44 fuer
-                TAP_TARGET-Compliance. Flag-Emoji bleibt klein, aber Tap-Area
-                ist jetzt korrekt fingerfreundlich. */}
+            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={36} style={{ flexShrink: 0 }} />
+            <TeamNameLabel
+              name={myTeam.name}
+              maxLines={1}
+              shrinkAfter={14}
+              fontSize={20}
+              color={myTeam.color}
+              fontWeight={900}
+              style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
+            />
+            {/* Joker-Slots — kein BG/Border-Container, freigestellt im Header.
+                Verfuegbare Slots glowen gold, verbrauchte ausgegraut. */}
+            {s.teamPhaseStats[myTeamId] && (
+              <div
+                style={{
+                  display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0,
+                }}
+                title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
+                aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
+              >
+                {Array.from({ length: 2 }).map((_, i) => {
+                  const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
+                  return (
+                    <JokerIcon
+                      key={i}
+                      i={i}
+                      size={26}
+                      alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
+                      style={{
+                        width: 26, height: 26,
+                        opacity: used ? 0.4 : 1,
+                        filter: used
+                          ? 'grayscale(1) brightness(0.8)'
+                          : 'drop-shadow(0 0 6px rgba(251,191,36,0.7))',
+                        transition: 'opacity 0.3s ease, filter 0.3s ease',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+            {/* Language flag — transparent default, subtiler hover. */}
             <button
               onClick={onFlagClick}
               style={{
-                border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
-                cursor: 'pointer', padding: '4px 8px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
                 outline: 'none',
-                fontSize: 16, fontFamily: 'inherit',
+                fontSize: 18, fontFamily: 'inherit',
                 borderRadius: 999,
                 minWidth: 44, minHeight: 44,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.15s',
+                transition: 'background 0.15s, transform 0.15s',
                 flexShrink: 0,
+                opacity: 0.75,
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.75'; }}
               aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
             >
               <span style={{
-                display: 'inline-block', fontSize: 16, lineHeight: 1,
+                display: 'inline-block', fontSize: 18, lineHeight: 1,
                 transition: 'transform 0.2s ease-in-out, opacity 0.2s',
                 transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
                 opacity: flagFlip ? 0 : 1,

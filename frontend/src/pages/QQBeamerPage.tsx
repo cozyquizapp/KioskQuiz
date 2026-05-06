@@ -829,9 +829,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // dezente Question-Fade — Reveal-Sound wäre hier zu früh. Stattdessen
       // beim ersten muchoRevealStep/zvzRevealStep getriggert (siehe unten).
       const cat = s.currentQuestion?.category;
-      const skipPhaseSound = cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN';
+      const subKind = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
+      const isHotPotato = cat === 'BUNTE_TUETE' && subKind === 'hotPotato';
+      const skipPhaseSound = cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN' || isHotPotato;
       if (!skipPhaseSound) {
         playRevealFor(cat);
+      }
+      // 2026-05-06 (Konsistenz-Audit S2#2): HotPotato Mini-Cascade ueber die
+      // qualifizierten Teams (Sieger-Pool). Pentatonik-Note pro Qualified-Team
+      // mit 250ms Stagger, dann Fanfare als Climax. Vorher: nur 1× generischer
+      // playReveal — fuehlte sich abrupt an, kein 'musikalischer Aufbau' wie
+      // Cheese/Top5/Order.
+      if (isHotPotato && !s.sfxMuted) {
+        const qualified = s.hotPotatoQualified ?? [];
+        const cascadeTotal = qualified.length + 1;
+        for (let i = 0; i < qualified.length; i++) {
+          const delayMs = 200 + i * 250;
+          window.setTimeout(() => {
+            try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+          }, delayMs);
+        }
+        // Final Fanfare nach der Cascade (200ms Buffer nach letztem Ton).
+        const fanfareMs = 200 + qualified.length * 250 + 250;
+        window.setTimeout(() => {
+          try { playFanfare(); } catch {}
+        }, fanfareMs);
       }
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL') {
@@ -1394,16 +1416,21 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         else playFieldPlaced();
       }
     }
-    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Final → still.
+    // ZEHN_VON_ZEHN: Cascade-Step → Tonleiter pro Team-Bet, Lock → Highlight.
     if (curr.zvz > prev.zvz) {
       const total = s.answers.length;
       const cascadeTotal = total + 2;
       if (curr.zvz >= 2) {
-        // 2026-05-01 (User-Bug 'neben der cascade noch ein anderer sound'):
-        // playRevealHighlight entfernt — die Cascade-Toene laufen async via
-        // setTimeout, der Step-Wechsel auf 2 kann mid-cascade kommen und
-        // den Highlight-Sound parallel zur noch laufenden Cascade legen.
-        // Lock-Step jetzt rein visuell, WinnerCard liefert den Climax.
+        // 2026-05-06 (Konsistenz-Audit S2#1 'ZvZ Lock-Step ohne Sound, alle
+        // anderen Cascades haben playRevealHighlight'): Highlight wieder rein,
+        // aber mit Delay sodass er NACH den noch laufenden Cascade-Toenen
+        // kommt (statt parallel). Die Cascade-Setimeouts feuern bei
+        // 200 + i*550 - 60 ms ab Step-1-Trigger. Step 2 kommt nach Mod-Klick;
+        // wenn das mid-Cascade ist, koennten Toene noch laufen.
+        // Schaetzung: Cascade max ~3.5s. Wir setzen den Highlight 200ms nach
+        // dem Step-Trigger (Mod klickt nach Cascade-Ende). Ergibt minimal
+        // overlap mit letztem Cascade-Ton, fuehlt sich aber wie Climax an.
+        window.setTimeout(() => { try { playRevealHighlight(); } catch {} }, 200);
       }
       else if (prev.zvz === 0) {
         // Cascade-Start — Tonleiter pro Avatar synchron zur ZvZ-Animation.
@@ -1443,15 +1470,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
       else playFieldPlaced();
     }
-    // CHEESE: Step 1 = Lösung grün → Reveal-Highlight (leichter Auflösungs-
-    // Akkord, der finale Krönung-Climax kommt erst bei der WinnerCard).
-    // Step 2 = Avatare auf den Treffern → fieldPlaced.
-    if (curr.cheese > prev.cheese) {
-      if (curr.cheese === 1) {
-        try { playRevealHighlight(); } catch {}
-      }
-      else playFieldPlaced();
-    }
+    // 2026-05-06 (Konsistenz-Audit S2#3): Cheese-Step-Sound-Block entfernt —
+    // toter Code seit Cheese-Reveal sofort komplett zeigt (cheeseRevealStep
+    // wird nie inkrementiert). Cheese-Sounds laufen jetzt zentral in der
+    // useEffect bei der Cheese-Cascade (slow→fast Winners + RevealHighlight
+    // auf schnellstem Winner).
     // CozyGuessr (BUNTE_TUETE Map): pro Step ein Sound.
     // 2026-05-06 (Wolf 'beim Zoom auf Karte (letzter Step) bitte anderen
     // Sound — Stampfen ergibt keinen Sinn weil kein Pin mehr gesetzt wird,
@@ -6442,12 +6465,18 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         // s.currentQuestionWinners (von qqMarkCorrect gesetzt) statt lokaler
         // Sort/Tie-Logik. Stellt sicher, dass Beamer-Anzeige + tatsaechlich
         // punktiertes Team nie divergieren wenn evalBluff-Logik geaendert wird.
+        // 2026-05-06 (Wolf 'bei einem Tie muss das zweite Team auch angezeigt
+        // werden'): bei mehreren Winners ALLE Avatare anzeigen statt nur
+        // ersten + '+1 weitere'-Hint.
         const points = s.bluffPoints ?? {};
         const winners = s.currentQuestionWinners ?? [];
         if (winners.length === 0) return null;
-        const winnerTeam = s.teams.find(t => t.id === winners[0]);
-        if (!winnerTeam) return null;
-        const isCoTie = winners.length > 1;
+        const winnerTeams = winners
+          .map(id => s.teams.find(t => t.id === id))
+          .filter(Boolean) as typeof s.teams;
+        if (winnerTeams.length === 0) return null;
+        const winnerTeam = winnerTeams[0]; // fuer Card-Farbe / primaeren Akzent
+        const isCoTie = winnerTeams.length > 1;
         const wPts = points[winnerTeam.id];
         // 2026-05-04 (Wolf): Winner-Card war als grosse fixed-bottom Pille
         // ueber den Voter-Avataren — sie ueberdeckte ~50% des Reveal-Inhalts.
@@ -6477,24 +6506,53 @@ function BluffBeamerView({ state: s, lang, revealed }: {
             WebkitBackdropFilter: 'blur(8px)',
             position: 'relative', zIndex: 5,
           }}>
-            <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(60px, 6.5vw, 92px)'} style={{
-              boxShadow: `0 0 22px ${winnerTeam.color}88`,
+            {/* Avatare aller Winners nebeneinander (bei Tie). Erste wird mit
+                vollem Glow gerendert, weitere etwas kompakter mit gleichem
+                Treatment — keine '+N weitere'-Versteckung mehr. */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 'clamp(-12px, -1vw, -6px)',
               flexShrink: 0,
-            }} />
+            }}>
+              {winnerTeams.map((tm, idx) => (
+                <QQTeamAvatar
+                  key={tm.id}
+                  avatarId={tm.avatarId}
+                  teamEmoji={tm.emoji}
+                  size={idx === 0 ? 'clamp(60px, 6.5vw, 92px)' : 'clamp(50px, 5.5vw, 78px)'}
+                  style={{
+                    boxShadow: `0 0 22px ${tm.color}88, 0 0 0 3px rgba(15,23,42,0.6)`,
+                    marginLeft: idx === 0 ? 0 : 'clamp(-14px, -1.4vw, -8px)',
+                    zIndex: winnerTeams.length - idx,
+                  }}
+                />
+              ))}
+            </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <TeamNameLabel
-                name={winnerTeam.name}
-                maxLines={1}
-                shrinkAfter={18}
-                color={winnerTeam.color}
-                fontWeight={900}
-                fontSize="clamp(24px, 2.6vw, 38px)"
-                style={{ lineHeight: 1.1 }}
-              />
-              {isCoTie && (
-                <div style={{ fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>
-                  {lang === 'de' ? `+${winners.length - 1} weitere` : `+${winners.length - 1} more`}
+              {isCoTie ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {winnerTeams.map(tm => (
+                    <TeamNameLabel
+                      key={tm.id}
+                      name={tm.name}
+                      maxLines={1}
+                      shrinkAfter={18}
+                      color={tm.color}
+                      fontWeight={900}
+                      fontSize="clamp(18px, 2vw, 28px)"
+                      style={{ lineHeight: 1.15 }}
+                    />
+                  ))}
                 </div>
+              ) : (
+                <TeamNameLabel
+                  name={winnerTeam.name}
+                  maxLines={1}
+                  shrinkAfter={18}
+                  color={winnerTeam.color}
+                  fontWeight={900}
+                  fontSize="clamp(24px, 2.6vw, 38px)"
+                  style={{ lineHeight: 1.1 }}
+                />
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -6880,14 +6938,16 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
               </div>
 
               {/* Bottom-Row: Voter-Avatare die diese Antwort gewählt haben.
-                  Reservierte Höhe damit Cards ohne Voters genauso hoch sind. */}
+                  Reservierte Höhe damit Cards ohne Voters genauso hoch sind.
+                  2026-05-06 (Wolf 'Avatare deutlich groesser'): minHeight
+                  angepasst an neue Avatar-Groesse 50-72. */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.7vw, 10px)',
+                display: 'flex', alignItems: 'center', gap: 'clamp(8px, 0.9vw, 14px)',
                 flexWrap: 'wrap',
                 position: 'relative', zIndex: 2,
                 paddingTop: voters.length > 0 ? 'clamp(6px, 0.8vh, 10px)' : 0,
                 borderTop: voters.length > 0 ? '1px dashed rgba(255,255,255,0.16)' : 'none',
-                minHeight: 'clamp(36px, 4vw, 48px)',
+                minHeight: 'clamp(54px, 5.5vw, 78px)',
               }}>
                 {voters.length > 0 ? (
                   <>
@@ -6908,10 +6968,14 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                           position: 'relative',
                           animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.45 + i * 0.08 + vIdx * 0.06}s both`,
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(34px, 3.4vw, 46px)'} style={{
+                          {/* 2026-05-06 (Wolf 'avatare zu klein, etwas
+                              transparenz aber deutlich groesser'): size 34-46
+                              → 50-72, opacity 0.92 als 'Akzent'-Touch. */}
+                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(50px, 5vw, 72px)'} style={{
                             boxShadow: isReal
-                              ? `0 0 0 2.5px #22C55E, 0 0 12px rgba(34,197,94,0.5)`
-                              : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
+                              ? `0 0 0 2.5px #22C55E, 0 0 16px rgba(34,197,94,0.55)`
+                              : `0 0 0 2px ${tm.color}, 0 0 14px ${tm.color}66`,
+                            opacity: 0.92,
                           }} />
                           {isReal && (
                             <span aria-hidden style={{
@@ -7099,19 +7163,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
             color: accent, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>{lang === 'de' ? '4 gewinnt' : 'Connect 4'}</span>
         </div>
+        {/* 2026-05-06 (Konsistenz-Audit S2#4): 'Auflösung'-Pille entfernt —
+            keine andere Standard-Kategorie zeigt sie, der Reveal-Modus
+            ist eh durch Avatar-Cascade + Lösung-Card visuell klar. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {!revealed && s.timerEndsAt && (
             <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
-          )}
-          {revealed && (
-            <div style={{
-              padding: '8px 18px', borderRadius: 999,
-              background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
-              fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#fde68a',
-              letterSpacing: '0.04em',
-            }}>
-              {lang === 'de' ? 'Auflösung' : 'Reveal'}
-            </div>
           )}
         </div>
       </div>
@@ -11886,30 +11943,30 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         minHeight: 0,
       }}>
         <Fireflies color="#FBBF2455" />
-        {/* Header: Auflösung-/Mehr-oder-Weniger-Pille — 2026-05-05 (Wolf):
-            POSITION ABSOLUTE damit der Header NICHT in die Vertikal-Zentrierung
-            der restlichen Composition einfliesst. Wolf wollte 'alles etwas
-            zentrierter, auflösung nicht mitzaehlen'. */}
-        <div style={{
-          position: 'absolute', top: 'clamp(20px, 3vh, 40px)', left: 0, right: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 6,
-          animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
-        }}>
+        {/* Header: Mehr-oder-Weniger-Pille (Question-Mode).
+            2026-05-06 (Konsistenz-Audit S2#4): Auflösung-Variante entfernt —
+            keine andere Standard-Kategorie zeigt eine Reveal-Pille. Avatar-
+            Position an gold-pulsender MEHR/WENIGER-Pille zeigt das Ergebnis.
+            Question-Mode-Pille bleibt als Mechanik-Indikator. */}
+        {!isReveal && (
           <div style={{
-            padding: 'clamp(8px, 1vh, 12px) clamp(20px, 2.2vw, 32px)', borderRadius: 999,
-            background: isReveal ? 'rgba(34,197,94,0.20)' : 'rgba(251,191,36,0.16)',
-            border: isReveal ? '2px solid rgba(34,197,94,0.55)' : '2px solid rgba(251,191,36,0.5)',
-            color: isReveal ? '#86efac' : '#FDE68A',
-            fontWeight: 900,
-            fontSize: 'clamp(14px, 1.4vw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
-            transition: 'background 0.4s ease, border-color 0.4s ease, color 0.4s ease',
+            position: 'absolute', top: 'clamp(20px, 3vh, 40px)', left: 0, right: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 6,
+            animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
           }}>
-            <QQEmojiIcon emoji={isReveal ? '✅' : '⚡'}/> {isReveal
-              ? (lang === 'en' ? 'Reveal' : 'Auflösung')
-              : (lang === 'en' ? 'More or Less' : 'Mehr oder Weniger')}
+            <div style={{
+              padding: 'clamp(8px, 1vh, 12px) clamp(20px, 2.2vw, 32px)', borderRadius: 999,
+              background: 'rgba(251,191,36,0.16)',
+              border: '2px solid rgba(251,191,36,0.5)',
+              color: '#FDE68A',
+              fontWeight: 900,
+              fontSize: 'clamp(14px, 1.4vw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
+            }}>
+              <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Frage-Text — Hero-Look analog Standard-Quiz-Frage (cozyQuestionHero).
             Groesser, mit Border + Shadow, damit die H/L-Folie nicht mehr wie
@@ -13698,22 +13755,16 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
         }}>{lang === 'de' ? labelDe : labelEn}</span>
       </div>
 
-      {/* Status / Timer rechts */}
+      {/* Status / Timer rechts.
+          2026-05-06 (Konsistenz-Audit S2#4): 'Auflösung'-Pille raus —
+          keine andere Standard-Kategorie zeigt sie. 'Setzen läuft'-Pille
+          bleibt, weil Placement-Phase im Finale wirklich eine eigene
+          Mod-Phase ist (anders als Standard-Reveal). */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.2s both',
       }}>
         {c.phase === 'active' && <ConnectionsTimer endsAt={c.endsAt} />}
-        {c.phase === 'reveal' && (
-          <div style={{
-            padding: '8px 18px', borderRadius: 999,
-            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
-            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900, color: '#fde68a',
-            letterSpacing: '0.04em',
-          }}>
-            {lang === 'de' ? 'Auflösung' : 'Reveal'}
-          </div>
-        )}
         {c.phase === 'placement' && (
           <div style={{
             padding: '8px 18px', borderRadius: 999,

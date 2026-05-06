@@ -4674,37 +4674,37 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     const isMine = cell.ownerId === myTeamId;
                     const inStreak = cellTeam ? hasAdjacentStreak(r, c, cell.ownerId) : false;
                     const isNew = newCells.has(`${r}-${c}`);
-                    // B6 (2026-04-29): Stuck-Cells (Stapeln) auch im Mini-Grid sichtbar.
                     const isStuckCell = !!cell.stuck;
                     return (
                       <div key={`${r}-${c}`} style={{
-                        aspectRatio: '1 / 1', borderRadius: 6,
-                        // Polish 2026-05-01: gedimmt (siehe grosses Grid). Avatar
-                        // braucht freien Kontrast, Team-Identitaet uebernimmt der
-                        // Border.
+                        // 2026-05-05 (Wolf 'sieht alt aus mit Kreisen'): borderRadius
+                        // 6 → 4 (eckiger), volle Team-Farbe statt 2-Layer-Gradient,
+                        // Beamer-Tile-Look mit Inset-Highlight + Bottom-Shadow.
+                        aspectRatio: '1 / 1', borderRadius: 4,
                         background: cellTeam
                           ? (isStuckCell
-                              ? `linear-gradient(135deg, ${cellTeam.color}55, ${cellTeam.color}2a)`
-                              : `linear-gradient(135deg, ${cellTeam.color}48, ${cellTeam.color}24)`)
+                              ? `linear-gradient(135deg, ${cellTeam.color}ff, ${cellTeam.color}c0)`
+                              : `linear-gradient(135deg, ${cellTeam.color}ff, ${cellTeam.color}d0)`)
                           : 'rgba(255,255,255,0.04)',
                         border: cellTeam
                           ? (isStuckCell
-                              ? `2px solid #F59E0B`
-                              : `2px solid ${cellTeam.color}`)
+                              ? `1.5px solid rgba(251,191,36,0.9)`
+                              : `1px solid ${cellTeam.color}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
                         ['--cell-color' as string]: cellTeam?.color ?? 'transparent',
                         position: 'relative' as const,
-                        boxShadow: isStuckCell
-                          ? `0 0 6px rgba(245,158,11,0.55), inset 0 1px 0 rgba(255,255,255,0.15)`
-                          : isNew
-                            ? `0 0 14px ${cellTeam!.color}aa`
-                            : inStreak
-                              ? `0 0 8px ${cellTeam!.color}55, inset 0 1px 0 rgba(255,255,255,0.15)`
-                              : cellTeam
-                                ? `inset 0 1px 0 rgba(255,255,255,0.1)`
-                                : 'none',
+                        boxShadow: cellTeam
+                          ? [
+                              'inset 0 1px 0 rgba(255,255,255,0.22)',
+                              'inset 0 -1.5px 0 rgba(0,0,0,0.20)',
+                              '1px 1.5px 0 rgba(0,0,0,0.35)',
+                              isStuckCell ? '0 0 6px rgba(251,191,36,0.5)' :
+                              isNew ? `0 0 10px ${cellTeam.color}aa` :
+                              inStreak ? `0 0 6px ${cellTeam.color}55` : '',
+                            ].filter(Boolean).join(', ')
+                          : 'none',
                         animation: isNew ? 'tcCellClaim 0.5s var(--qq-ease-bounce) both'
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',

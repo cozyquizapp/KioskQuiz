@@ -14,7 +14,7 @@
 //
 // Siehe: STYLE_GUIDE.md → "Overlays im BeamerPage" + "Position-Fixed-Trap".
 
-import type { ReactNode, CSSProperties } from 'react';
+import { useEffect, useState, type ReactNode, type CSSProperties } from 'react';
 
 export type BeamerOverlayProps = {
   /** Steuert opacity + Transform-Crossfade. */
@@ -39,6 +39,26 @@ export function BeamerOverlay({
   children,
   style,
 }: BeamerOverlayProps) {
+  // Wolf 2026-05-05: Children werden bei jedem visible→true Wechsel via
+  // mountKey re-mountet — CSS-Animationen mit `both` fill-mode spielen damit
+  // FRISCH ab statt im End-Zustand zu haengen. Vorher: Welcome erschien als
+  // Standbild weil die Animationen schon beim ersten Mount (in Lobby-Phase,
+  // unsichtbar) durchgelaufen waren.
+  // Bei visible→false bleiben Children noch ~700ms gemountet damit der
+  // Crossfade-Out die Inhalte mitfaden kann (statt auf leerem Container).
+  const [mountKey, setMountKey] = useState(0);
+  const [shouldRender, setShouldRender] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setShouldRender(true);
+      setMountKey(k => k + 1);
+    } else {
+      const t = window.setTimeout(() => setShouldRender(false), 700);
+      return () => window.clearTimeout(t);
+    }
+  }, [visible]);
+
   return (
     <div
       style={{
@@ -58,7 +78,7 @@ export function BeamerOverlay({
         ...style,
       }}
     >
-      {children}
+      {shouldRender ? <div key={mountKey}>{children}</div> : null}
     </div>
   );
 }

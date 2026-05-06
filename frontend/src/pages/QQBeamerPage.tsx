@@ -2765,13 +2765,13 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // Alle relevanten PNGs einer Mode werden ueberlagert vorgeladen, opacity-Switch
 // haelt das Flackern aus.
 // ─────────────────────────────────────────────────────────────────────────────
-type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht';
+type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen';
 
-function AnimatedCozyWolf({ widthCss, speaking, mode }: {
-  widthCss: string; speaking?: boolean; mode?: WolfMode;
+function AnimatedCozyWolf({ widthCss, speaking, mode, wink }: {
+  widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean;
 }) {
   // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop
-  // (Ausnahme: winken-Mode liest speaking als externes Mund-Flap-Gate).
+  // (Ausnahme: winken/jubel/daumen-Modes lesen speaking als externes Mund-Flap-Gate).
   const effectiveMode: WolfMode = mode ?? 'speaking';
 
   // 2026-05-06 v4 (Wolf 'kannst du den Mund so bewegen, als wuerde er das
@@ -2782,6 +2782,11 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
   // verlieren wir die Blink-Schedule).
   const speakingRef = useRef<boolean | undefined>(speaking);
   useEffect(() => { speakingRef.current = speaking; }, [speaking]);
+
+  // 2026-05-07 (Wolf 'zwinkern wenn ein team reinkommt'): wink-Gate fuer
+  // daumen-Mode. Wenn true, augen sind augenzwinkern statt augenauf.
+  const winkRef = useRef<boolean | undefined>(wink);
+  useEffect(() => { winkRef.current = wink; }, [wink]);
 
   // Aktuell sichtbares PNG (Filename ohne .png). State pro Mode.
   const [currentFile, setCurrentFile] = useState<string>('augenauf.mundzu');
@@ -3054,6 +3059,64 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
         timer = window.setTimeout(tick, 250);
       };
       tick();
+    } else if (effectiveMode === 'daumen') {
+      // 2026-05-07 (Wolf 'daumen Posen fuer QR-Code-Seite, zwinkern wenn ein
+      // team reinkommt'): Daumen-hoch-Mode analog winken — Mund-Flap synchron
+      // zur Sprechblase via speakingRef, regulaere Idle-Blinks. Wenn winkRef
+      // true ist, wechselt der Wolf auf augenzwinker-Variante (1 Auge zu) →
+      // 'Hallo!'-Reaktion auf Team-Joins. Idle-Blink wird waehrend wink-Phase
+      // ausgesetzt (zwinker IST schon ein Halb-Blink).
+      let mouthOpenLocal = false;
+      let phase: 'speak' | 'pause' = 'speak';
+      let phaseUntil = Date.now() + 2200 + Math.random() * 1200;
+      let nextBlinkAt = Date.now() + 3500 + Math.random() * 2000;
+      let blinkUntil = 0;
+      const tick = () => {
+        if (!alive) return;
+        const now = Date.now();
+        const winking = winkRef.current === true;
+        const eyePrefix = winking ? 'augenzwinker' : 'augenauf';
+        // Idle-Blink hat Vorrang — aber nur wenn NICHT zwinkern (sonst doppel)
+        if (!winking && now < blinkUntil) {
+          setCurrentFile('augenzu.mundzu.daumen');
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
+        }
+        if (!winking && now >= nextBlinkAt) {
+          blinkUntil = now + 130;
+          nextBlinkAt = now + 130 + 3500 + Math.random() * 2000;
+          setCurrentFile('augenzu.mundzu.daumen');
+          timer = window.setTimeout(tick, 130);
+          return;
+        }
+        // External speaking-Gate (Parent-controlled) hat Vorrang vor interner
+        // Speak-Pause-Phase, falls speakingRef definiert.
+        const externalSpeak = speakingRef.current;
+        const isSpeaking = externalSpeak !== undefined
+          ? externalSpeak
+          : (() => {
+              if (now >= phaseUntil) {
+                if (phase === 'speak') {
+                  phase = 'pause';
+                  phaseUntil = now + 1200 + Math.random() * 900;
+                } else {
+                  phase = 'speak';
+                  phaseUntil = now + 2000 + Math.random() * 1500;
+                }
+              }
+              return phase === 'speak';
+            })();
+        if (isSpeaking) {
+          mouthOpenLocal = !mouthOpenLocal;
+          setCurrentFile(`${eyePrefix}.${mouthOpenLocal ? 'mundauf' : 'mundzu'}.daumen`);
+          timer = window.setTimeout(tick, 220 + Math.random() * 100);
+        } else {
+          mouthOpenLocal = false;
+          setCurrentFile(`${eyePrefix}.mundzu.daumen`);
+          timer = window.setTimeout(tick, 250);
+        }
+      };
+      tick();
     }
 
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
@@ -3078,6 +3141,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
     'augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z',
     'augenauf.mundueberrascht', 'augenzu.mundueberrascht',
     'augenauf.haendeueberrascht', 'augenzu.haendeueberrascht',
+    'augenauf.mundauf.daumen', 'augenauf.mundzu.daumen',
+    'augenzu.mundauf.daumen', 'augenzu.mundzu.daumen',
+    'augenzwinker.mundauf.daumen', 'augenzwinker.mundzu.daumen',
   ];
 
   // Pro Mode nur die relevanten Posen rendern (sparen 60-70% Memory)
@@ -3091,7 +3157,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
           ? allPoses.filter(p => p.includes('trinken'))
           : effectiveMode === 'schlafen'
             ? allPoses.filter(p => p.includes('schlafen'))
-            : allPoses.filter(p => p.includes('ueberrascht'));
+            : effectiveMode === 'daumen'
+              ? allPoses.filter(p => p.includes('daumen'))
+              : allPoses.filter(p => p.includes('ueberrascht'));
 
   return (
     <div style={{
@@ -4115,16 +4183,17 @@ function WolfLobbyGreeter({ lang, welcomedTeamName }: {
         exitMs={exitMs}
         tailSide="left"
       />
-      {/* 2026-05-07 v2 (Wolf 'mach den wolf groesser und spiegel ihn'):
-          scaleX(-1) → Wolf schaut nach links, also zur Lobby-Mitte hin
-          (QR + Teams). Groesse 90-140 → 140-200. Tail wechselt von right
-          auf left, weil das Maul nach Mirror auf der Wolf-LINKEN Seite
-          liegt. */}
+      {/* 2026-05-07 v3 (Wolf '6 daumen-Posen, zwinkern wenn ein Team
+          reinkommt'): mode 'winken' → 'daumen' (Daumen-hoch-Wolf statt
+          winkender). wink-Prop true bei Welcome → Wolf zwinkert + Daumen
+          hoch + 'Hallo {Team}!'. scaleX(-1) bleibt — Wolf schaut zur
+          Lobby-Mitte. */}
       <div style={{ transform: 'scaleX(-1)' }}>
         <AnimatedCozyWolf
           widthCss="clamp(140px, 13vw, 200px)"
-          mode="winken"
+          mode="daumen"
           speaking={speakingNow}
+          wink={isWelcoming}
         />
       </div>
     </div>

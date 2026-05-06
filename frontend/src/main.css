@@ -4370,3 +4370,19 @@ button:active:not(:disabled),
   font-weight: 700;
   line-height: 1.4;
 }
+/* 2026-05-05 (Animation-Audit #6): Ambient-Loop-Pause waehrend Cinematic-Reveals.
+   Wenn body[data-cinematic="true"] (gesetzt via React-Hook im Welcome-Overlay
+   und GameOver-Spotlight), pausieren idle/ambient/breathing-Loops damit der
+   Hauptmoment ohne Hintergrundrauschen atmet. Konkret betroffen sind die
+   Animationen die auf der jeweiligen Page weiterlaufen und mit dem Cinematic
+   konkurrieren wuerden — Cat-Intro-Wave, Cell-Idle-Pulse, Grid-Idle, Cutout-
+   Cfloat. CSS-Match per attribute-selector auf inline-style.animation. */
+body[data-cinematic="true"] *[style*="qqCatNameWave"],
+body[data-cinematic="true"] *[style*="qqBadgeIconBob"],
+body[data-cinematic="true"] *[style*="cellIdlePulse"],
+body[data-cinematic="true"] *[style*="gridIdle"],
+body[data-cinematic="true"] *[style*="cfloata"],
+body[data-cinematic="true"] *[style*="cfloat "],
+body[data-cinematic="true"] *[style*="cfloat,"] {
+  animation-play-state: paused !important;
+}

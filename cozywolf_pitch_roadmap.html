@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>CozyWolf Pitch-Roadmap — Stand 29.04.2026</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.45;
+    background: #fff;
+  }
+  body { padding: 0 4mm; max-width: 210mm; margin: 0 auto; }
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 4pt 0;
+    color: #0d0a06;
+    border-bottom: 3px solid #FBBF24;
+    padding-bottom: 6pt;
+  }
+  .subtitle {
+    color: #555;
+    font-size: 10pt;
+    margin-bottom: 18pt;
+    letter-spacing: 0.04em;
+  }
+  h2 {
+    font-size: 13pt;
+    margin: 16pt 0 6pt 0;
+    color: #0d0a06;
+    border-left: 4px solid #FBBF24;
+    padding-left: 8pt;
+    page-break-after: avoid;
+  }
+  h2 .week {
+    color: #888;
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .item {
+    margin: 10pt 0;
+    padding: 6pt 10pt 6pt 14pt;
+    border-left: 2px solid #ddd;
+    page-break-inside: avoid;
+  }
+  .item-title {
+    font-weight: 700;
+    font-size: 11pt;
+    margin-bottom: 3pt;
+  }
+  .item-cost {
+    font-size: 9pt;
+    color: #666;
+    font-weight: 600;
+    margin-left: 8pt;
+  }
+  .item ul {
+    margin: 4pt 0 0 0;
+    padding-left: 18pt;
+    font-size: 10pt;
+  }
+  .item li { margin: 2pt 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8pt 0;
+    font-size: 10pt;
+  }
+  table th, table td {
+    border: 1px solid #ddd;
+    padding: 4pt 6pt;
+    text-align: left;
+  }
+  table th {
+    background: #f5f5f5;
+    font-weight: 700;
+  }
+  .highlight {
+    background: #fef3c7;
+    border-left: 3px solid #FBBF24;
+    padding: 8pt 12pt;
+    margin: 12pt 0;
+    border-radius: 4pt;
+    font-size: 10.5pt;
+    page-break-inside: avoid;
+  }
+  .highlight h3 {
+    margin: 0 0 4pt 0;
+    color: #92400e;
+    font-size: 11pt;
+  }
+  .footer {
+    margin-top: 24pt;
+    padding-top: 8pt;
+    border-top: 1px solid #ccc;
+    font-size: 9pt;
+    color: #888;
+    text-align: center;
+  }
+  code {
+    font-family: 'Consolas', monospace;
+    background: #f0f0f0;
+    padding: 1pt 3pt;
+    border-radius: 2pt;
+    font-size: 9pt;
+  }
+  .check {
+    color: #16a34a;
+    font-weight: 700;
+  }
+  .cross {
+    color: #dc2626;
+    font-weight: 700;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6pt;
+    margin: 8pt 0 14pt 0;
+    font-size: 10pt;
+  }
+  .meta-grid div {
+    padding: 4pt 8pt;
+    background: #f7f7f7;
+    border-radius: 3pt;
+  }
+</style>
+</head>
+<body>
+
+<h1>🐺 CozyWolf — Pitch-Roadmap</h1>
+<div class="subtitle">Konkrete TODOs für Marken-Launch · Stand: 29.04.2026</div>
+
+<div class="meta-grid">
+  <div>📋 <strong>Marke:</strong> <span class="check">✓ angemeldet</span></div>
+  <div>🏢 <strong>Gewerbe:</strong> <span class="cross">✗ noch nicht</span></div>
+  <div>📄 <strong>Impressum:</strong> <span class="cross">✗ fehlt</span></div>
+  <div>🔒 <strong>Datenschutz:</strong> <span class="cross">✗ fehlt</span></div>
+</div>
+
+<!-- Woche 1 -->
+<h2>Woche 1 <span class="week">· 29.04 – 05.05 · Rechtsbasis legen</span></h2>
+
+<div class="item">
+  <div class="item-title">1. Gewerbeanmeldung <span class="item-cost">~€30 · 1 Tag</span></div>
+  <ul>
+    <li>Online beim Gewerbeamt deiner Stadt — meist same-day</li>
+    <li>Tätigkeit: „Veranstaltung von Quiz-Events / Eventmoderation / Software-Dienstleistungen"</li>
+    <li>Kleinunternehmer-Regelung (§19 UStG) wählen wenn &lt;€22k/Jahr → keine USt., weniger Buchhaltung</li>
+    <li>Folgt automatisch: Fragebogen vom Finanzamt (4–6 Wo.) → Steuernummer</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">2. Impressum + Datenschutzerklärung <span class="item-cost">3h · gratis</span></div>
+  <ul>
+    <li>Generator: <code>e-recht24.de</code> (Impressum), <code>datenschutz-generator.de</code> (Dr. Schwenke, kostenlos für kleine Sites)</li>
+    <li>Beides auf <strong>cozywolf.de</strong> UND <strong>play.cozyquiz.app</strong> verlinken</li>
+    <li>Inhalt: Anschrift (privat OK als Kleinunternehmer), Verantwortlicher i.S.d. §55 RStV; Datenschutz: Render/Vercel/MongoDB/Cloudinary erwähnen, Cookies, Logs</li>
+    <li>cozyquiz.app erfasst Team-Namen + IDs → DSGVO Art. 13 Info-Pflicht</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">3. Geschäftskonto eröffnen <span class="item-cost">€0–9/Mo · 1–2 Wo. Lieferzeit</span></div>
+  <ul>
+    <li>Als Kleinunternehmer technisch nicht zwingend, aber Buchhaltung wird ohne zur Hölle</li>
+    <li>Günstig: <strong>Holvi</strong> (~€9/Mo, mit Buchhaltung), <strong>Kontist</strong> (~€9/Mo), <strong>N26 Business</strong> (€0)</li>
+    <li>Alternative: separates Tagesgeld bei der Hausbank — gratis, aber kein Branding</li>
+  </ul>
+</div>
+
+<!-- Woche 2 -->
+<h2>Woche 2 <span class="week">· 06.05 – 12.05 · Tech &amp; Schutz</span></h2>
+
+<div class="item">
+  <div class="item-title">4. Berufshaftpflicht abschließen <span class="item-cost">€100–250/Jahr</span></div>
+  <ul>
+    <li>Pflicht bei Venue-Events. Deckt: Sachschaden am Venue, Beamer fällt um, Personenschaden</li>
+    <li><strong>Hiscox</strong>, <strong>Exali</strong> (für IT/Event), <strong>Hannoversche</strong></li>
+    <li>Tätigkeit: „Eventmoderation + IT-Dienstleistung"</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">5. Mobile-Router bestellen <span class="item-cost">~€100 + €8/Mo SIM</span></div>
+  <ul>
+    <li><strong>TP-Link Archer MR400</strong> (~€90, Steckdose) oder <strong>GL.iNet Mudi GL-E750V2</strong> (~€180, Akku, 30+ Devices)</li>
+    <li>SIM: <strong>Aldi Talk Daten-Flat 25 GB</strong> (~€8/Mo) — reicht für 250 Events/Monat</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">6. Render auf Starter-Plan <span class="item-cost">$7/Mo</span></div>
+  <ul>
+    <li>Ein-Klick-Upgrade auf render.com, kein Code-Change</li>
+    <li>Behebt das „Free-Tier schläft nach 15min ein"-Problem</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">7. cozywolf.de Landing aufsetzen <span class="item-cost">4–6h · gratis</span></div>
+  <ul>
+    <li>Statisch (Vercel / Cloudflare Pages) — 1-Page mit Hero + 3 Bullet-Points + Cal.com-Embed + Impressum + Datenschutz</li>
+    <li>Foto + Logo + 1–2 Beamer-Screenshots</li>
+    <li>Cal.com Free-Plan, Slot „Quiz-Abend buchen" 90 Min Erstgespräch</li>
+  </ul>
+</div>
+
+<!-- Woche 3 -->
+<h2>Woche 3 <span class="week">· 13.05 – 19.05 · Sales-Vorbereitung</span></h2>
+
+<div class="item">
+  <div class="item-title">8. Pitch-One-Pager als PDF <span class="item-cost">3h</span></div>
+  <ul>
+    <li>A4: was, für wen, Preise, Setup-Anforderungen, 2–3 Refs (anfangs „Probelauf in eigener Bar mit X Spielern" reicht)</li>
+    <li>cozywolf.de gebrandet, als PDF zum Mailen</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">9. Venue-Liste erstellen <span class="item-cost">2h</span></div>
+  <ul>
+    <li>10–15 Locations: Cocktailbars, Cafés, Burgerläden, kleine Brauereien</li>
+    <li>Pro Eintrag: Name, Wochentag-Idee (Mi/Do gut für Pub-Quiz), Zielgruppe, Insta, Email</li>
+    <li>Lieber 10 in 30 km Radius als 30 weit weg — Anfahrt frisst Marge</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">10. Probe-Event mit Freunden <span class="item-cost">1 Abend</span></div>
+  <ul>
+    <li>Bei dir zu Hause oder befreundeter Venue</li>
+    <li>Komplettes Setup-Test: Mobile-Router + Beamer + 4–6 Spieler + aktueller App-Stand</li>
+    <li>1–2 Foto-/Video-Snippets fürs Marketing-Material</li>
+  </ul>
+</div>
+
+<!-- Woche 4 -->
+<h2>Woche 4 <span class="week">· 20.05 – 26.05 · Erstkontakt</span></h2>
+
+<div class="item">
+  <div class="item-title">11. Erste 3–5 Venues kontaktieren</div>
+  <ul>
+    <li>Email + One-Pager + Cal.com-Link für Erstgespräch</li>
+    <li>Ansatz: „Kostenlos Probe-Quiz bei euch + falls's funktioniert, regelmäßig zu €280/Abend"</li>
+    <li>Anschreiben kurz: 4–5 Sätze, Foto, Link</li>
+  </ul>
+</div>
+
+<div class="item">
+  <div class="item-title">12. AGB / Mustervertrag <span class="item-cost">2h</span></div>
+  <ul>
+    <li>Für wiederkehrende Buchungen (Stornierung, Bezahlung, Haftung)</li>
+    <li>Vorlage: <strong>IT-Recht-Kanzlei</strong>, <strong>Smartlaw</strong>, oder vom Steuerberater</li>
+  </ul>
+</div>
+
+<!-- Pricing & Bonus -->
+<h2>💰 Preisrahmen für Venue-Events</h2>
+
+<table>
+<thead>
+  <tr><th>Modell</th><th>Range 8 Teams · 24 Spieler</th></tr>
+</thead>
+<tbody>
+  <tr><td>Flat Fee Premium-Event (one-off)</td><td>€350–500</td></tr>
+  <tr><td>Flat Fee Standard / Recurring</td><td><strong>€220–320</strong></td></tr>
+  <tr><td>Pro Team</td><td>€30–45 = €240–360</td></tr>
+  <tr><td>Pro Kopf</td><td>€10–15 = €240–360</td></tr>
+  <tr><td>Erst-Event / Probe</td><td>€150–220 (+ ggf. Revenue-Share)</td></tr>
+</tbody>
+</table>
+
+<div class="highlight">
+  <h3>📌 Mein Bauchgefühl</h3>
+  <strong>€280–350 flat</strong> für einen Donnerstag-Abend.<br>
+  Erstkontakt: „Üblicherweise €350 — als Probe für euch €250, danach regelmäßig €300."<br>
+  Mindesthonorar wo Nein gesagt werden sollte: <strong>unter €200 für 8 Teams</strong>.
+</div>
+
+<!-- Sofort-TODO -->
+<h2>🎯 Was DU diese Woche machen solltest</h2>
+
+<div class="item" style="border-left-color: #16a34a; background: #f0fdf4;">
+  <div class="item-title">Prio 1 (29.04 – 05.05)</div>
+  <ul>
+    <li><strong>Heute / morgen:</strong> Gewerbe online anmelden (30 Min) + Geschäftskonto-Antrag stellen (60 Min, läuft im Hintergrund)</li>
+    <li><strong>Diese Woche:</strong> Impressum + Datenschutz schreiben + auf beide Sites packen (3h)</li>
+    <li><strong>Wochenende:</strong> cozywolf.de-Landing in einem Rutsch (½ Tag)</li>
+  </ul>
+  <div style="margin-top: 6pt; font-size: 10pt; color: #166534;">
+    Damit bist du nach Woche 1 <strong>rechtlich sauber</strong> und kannst guten Gewissens pitchen.
+  </div>
+</div>
+
+<!-- Spätere Punkte -->
+<h2>🔮 Bonus für später (NICHT jetzt)</h2>
+<div class="item">
+  <ul>
+    <li>Logo-Refinement / Visitenkarten — erst nach 2–3 erfolgreichen Events</li>
+    <li>Buchhaltungstool (Lexoffice ~€10/Mo) — erst wenn erste Rechnung geschrieben wird</li>
+    <li>Newsletter / Insta-Strategie — erst nach 2–3 Events mit Foto-Material</li>
+    <li>AGB-Optimierung durch Anwalt — erst wenn &gt;5 Buchungen/Monat</li>
+  </ul>
+</div>
+
+<div class="footer">
+  CozyWolf · cozywolf.de · play.cozyquiz.app · Stand 29.04.2026
+</div>
+
+</body>
+</html>

@@ -107,11 +107,18 @@ export const EASING = {
   inOut:      'ease-in-out',                        // Idle/Breathing/Float-Loops
 } as const;
 
-/** Stagger-Konstanten in ms — fuer Listen-Animationen. */
+/** Stagger-Konstanten in ms — fuer Listen-Animationen.
+ *  2026-05-05 (Animation-Audit): semantische Namen fuer Cascade-Rhythmus —
+ *  Letter/Avatar/Option ersetzen die fuenf willkuerlichen Inline-Werte
+ *  (40/50/60/85/250) ueber Welcome, Rules, Top5, MUCHO, OnlyConnect, ZvZ. */
 export const STAGGER = {
   tight:     60,   // Lobby-Card-In, schnelle Cascades
   normal:    90,   // Sound-Sync-Grids (psychoakustisch optimiert)
   leisurely: 350,  // Idle-Wobble, Personality-Loops
+  // Semantic per content-type:
+  letter:    50,   // Letter-by-Letter Cascades (Welcome-Title, Rules-Title)
+  avatar:    90,   // Avatar-Reihen (Top5/CHEESE/OnlyConnect Reveal-Cascade)
+  option:    180,  // Option-Card-Reveals (MUCHO/ZvZ Step-by-Step)
 } as const;
 
 /** Tap-Target Min-Size (Apple HIG, Android-Material). */

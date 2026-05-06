@@ -744,6 +744,17 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // F18 — Skip aktuelles Team (Wolf 2026-05-05, Live-Mod-Audit #9):
+    // direkter Skip-Pfad fuer Streamdeck. Nur in PLACEMENT mit pendingFor —
+    // umgeht den confirm()-Dialog des Skip-Buttons; Wolf bestaetigt via
+    // bewusstem Hotkey-Druck.
+    if (e.code === 'F18') {
+      e.preventDefault(); playHotkeyFeedback();
+      if (s.phase === 'PLACEMENT' && s.pendingFor)
+        emitRef.current('qq:skipCurrentTeam', { roomCode });
+      return;
+    }
+
     // M — Toggle mute all (music + sfx)
     if (e.code === 'KeyM') {
       e.preventDefault(); playHotkeyFeedback();
@@ -4553,6 +4564,7 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
       ['Space / F13', 'Nächster Schritt (Kontext-sensitiv)'],
       ['R / F15', 'Antwort aufdecken'],
       ['N / F17 / →', 'Nächste Frage (nur in PLACEMENT)'],
+      ['F18', 'Skip aktuelles Team (PLACEMENT, ohne Confirm)'],
       ['P', 'Pause / Resume'],
     ],
   },

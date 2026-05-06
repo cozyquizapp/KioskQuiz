@@ -32,14 +32,10 @@ export default defineConfig({
       },
       workbox: {
         // Cache app shell (JS/CSS/HTML/fonts/images).
-        // 2026-05-06 (Cleanup): cozywolf-PNGs sind 3.7-5.4 MB pro Bild und
-        // werden nur in der Beamer-Page benoetigt — Phones-PWA-Precache
-        // braucht die nicht. Vom SW-Cache excluded → laden zur Laufzeit
-        // normal vom Server. Spart ~80 MB Initial-Download pro Phone.
-        // Mittelfristig via sharp-Pipeline auf <500 KB schrumpfen, dann
-        // kann das Exclude wieder weg.
+        // 2026-05-07: cozywolf-PNGs via sharp komprimiert (3000x3000 + 4-5 MB
+        // → 1024x1024 indexed-PNG + ~200-250 KB pro Pose, -94 %). Jetzt klein
+        // genug fuer Standard-Precache, kein Exclude mehr noetig.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['**/avatars/cozywolf/**'],
         // 3 MB Limit fuer joker-PNGs (2.3 MB) und category-Logos (1.7 MB).
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes

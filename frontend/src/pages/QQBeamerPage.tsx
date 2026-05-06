@@ -2765,7 +2765,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // Alle relevanten PNGs einer Mode werden ueberlagert vorgeladen, opacity-Switch
 // haelt das Flackern aus.
 // ─────────────────────────────────────────────────────────────────────────────
-type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen';
+type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht';
 
 function AnimatedCozyWolf({ widthCss, speaking, mode }: {
   widthCss: string; speaking?: boolean; mode?: WolfMode;
@@ -2892,19 +2892,51 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
       };
       tick();
     } else if (effectiveMode === 'jubel') {
-      // Cycle: mund auf jubel → mund zu jubel → eyes zu jubel → repeat
-      // 2026-05-06: Cycle-Times entspannt (war 350/250/200ms — zu hektisch
-      // mit Crossfade), jetzt 500/400/350ms fuer atembarere Bewegung.
-      const seq = ['augenauf.mundauf.jubel', 'augenauf.mundzu.jubel', 'augenzu.mundzu.jubel'];
-      const durations = [500, 400, 350];
-      let idx = 0;
+      // 2026-05-06 v3 (Wolf neue 4. Pose augenzu.mundauf.jubel geliefert):
+      // Jetzt 4 Jubel-Posen → Mund-Flap-Loop wie im Winken-Mode mit Speak-
+      // Pause-Phasen + Idle-Blink. Wolf jubelt mit Howl, schliesst gelegent-
+      // lich die Augen (joyful squint), atmet kurz durch.
+      let mouthOpenLocal = false;
+      let phase: 'speak' | 'pause' = 'speak';
+      let phaseUntil = Date.now() + 1800 + Math.random() * 1000;
+      let nextBlinkAt = Date.now() + 2500 + Math.random() * 1500;
+      let blinkUntil = 0;
       const tick = () => {
         if (!alive) return;
-        setCurrentFile(seq[idx]);
-        timer = window.setTimeout(() => {
-          idx = (idx + 1) % seq.length;
-          tick();
-        }, durations[idx]);
+        const now = Date.now();
+        if (now < blinkUntil) {
+          // Joyful squint: kann mit offenem Mund (Howl) sein
+          setCurrentFile(mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel');
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
+        }
+        if (now >= nextBlinkAt) {
+          blinkUntil = now + 200;
+          nextBlinkAt = now + 200 + 2500 + Math.random() * 1500;
+          setCurrentFile(mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel');
+          timer = window.setTimeout(tick, 200);
+          return;
+        }
+        if (now >= phaseUntil) {
+          if (phase === 'speak') {
+            phase = 'pause';
+            phaseUntil = now + 700 + Math.random() * 600;
+            mouthOpenLocal = false;
+            setCurrentFile('augenauf.mundzu.jubel');
+            timer = window.setTimeout(tick, phaseUntil - now);
+            return;
+          } else {
+            phase = 'speak';
+            phaseUntil = now + 1800 + Math.random() * 1000;
+          }
+        }
+        if (phase === 'speak') {
+          mouthOpenLocal = !mouthOpenLocal;
+          setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.jubel' : 'augenauf.mundzu.jubel');
+          timer = window.setTimeout(tick, 200 + Math.random() * 80);
+        } else {
+          timer = window.setTimeout(tick, 250);
+        }
       };
       tick();
     } else if (effectiveMode === 'trinken') {
@@ -2934,6 +2966,21 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
         }, 900);
       };
       tick();
+    } else if (effectiveMode === 'ueberrascht') {
+      // 'Oh!' — Hauptsaechlich augen-auf-ueberrascht (mit Atemzug-haftem
+      // Wechsel auf augen-zu = blink), wirkt wie 'verbluefft schauend'.
+      let idx = 0;
+      const tick = () => {
+        if (!alive) return;
+        if (idx === 0) {
+          setCurrentFile('augenauf.mundueberrascht');
+          timer = window.setTimeout(() => { idx = 1; tick(); }, 1800 + Math.random() * 1200);
+        } else {
+          setCurrentFile('augenzu.mundueberrascht');
+          timer = window.setTimeout(() => { idx = 0; tick(); }, 200 + Math.random() * 130);
+        }
+      };
+      tick();
     }
 
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
@@ -2943,14 +2990,19 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
   const speakingFile = `augen${eyesOpen ? 'auf' : 'zu'}.mund${mouthOpen ? 'auf' : 'zu'}`;
   const visibleFile = effectiveMode === 'speaking' ? speakingFile : currentFile;
 
-  // Alle moeglichen Posen (alle PNGs vorgeladen, opacity-toggle)
+  // Alle moeglichen Posen (alle PNGs vorgeladen, opacity-toggle).
+  // 2026-05-06 v2: augenauf.mundzu.winken (war NICHT in der Liste → Wolf
+  // verschwand bei Mund-Flap-Animation), augenzu.mundauf.jubel,
+  // augen[auf|zu].mundueberrascht ergaenzt.
   const allPoses: string[] = [
     'augenauf.mundauf', 'augenauf.mundzu',
     'augenzu.mundauf', 'augenzu.mundzu',
-    'augenauf.mundauf.winken', 'augenzu.mundzu.winken',
-    'augenauf.mundauf.jubel', 'augenauf.mundzu.jubel', 'augenzu.mundzu.jubel',
+    'augenauf.mundauf.winken', 'augenauf.mundzu.winken', 'augenzu.mundzu.winken',
+    'augenauf.mundauf.jubel', 'augenauf.mundzu.jubel',
+    'augenzu.mundauf.jubel', 'augenzu.mundzu.jubel',
     'augenauf.mundzu.trinken', 'augenzu.mundzu.trinken',
     'augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z',
+    'augenauf.mundueberrascht', 'augenzu.mundueberrascht',
   ];
 
   // Pro Mode nur die relevanten Posen rendern (sparen 60-70% Memory)
@@ -2962,7 +3014,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
         ? allPoses.filter(p => p.includes('jubel'))
         : effectiveMode === 'trinken'
           ? allPoses.filter(p => p.includes('trinken'))
-          : allPoses.filter(p => p.includes('schlafen'));
+          : effectiveMode === 'schlafen'
+            ? allPoses.filter(p => p.includes('schlafen'))
+            : allPoses.filter(p => p.includes('ueberrascht'));
 
   return (
     <div style={{

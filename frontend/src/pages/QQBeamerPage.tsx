@@ -1452,9 +1452,24 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       }
       else playFieldPlaced();
     }
-    // CozyGuessr (BUNTE_TUETE Map): jeder neue Pin = Plopp.
+    // CozyGuessr (BUNTE_TUETE Map): pro Step ein Sound.
+    // 2026-05-06 (Wolf 'beim Zoom auf Karte (letzter Step) bitte anderen
+    // Sound — Stampfen ergibt keinen Sinn weil kein Pin mehr gesetzt wird,
+    // nimm den Lösung-Aufdeck-Sound aus den anderen Kategorien'):
+    // - Step 1                    = Ziel-Marker erscheint     → Plopp
+    // - Step 2..1+validCount      = Pins droppen worst→best   → Plopp
+    // - Step 1+validCount+1       = Closeup-Zoom auf Ziel     → playRevealHighlight
     if (curr.map > prev.map) {
-      playFieldPlaced();
+      const validCount = s.answers.filter(a => {
+        const parts = String(a.text ?? '').split(',');
+        return Number.isFinite(Number(parts[0])) && Number.isFinite(Number(parts[1]));
+      }).length;
+      const closeUpStep = 1 + validCount + 1;
+      if (curr.map >= closeUpStep) {
+        try { playRevealHighlight(); } catch {}
+      } else {
+        playFieldPlaced();
+      }
     }
   }, [s.muchoRevealStep, s.zvzRevealStep, s.cheeseRevealStep, s.mapRevealStep, s.phase, s.sfxMuted, s.currentQuestion?.id, s.answers]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -5877,6 +5892,15 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (sorted[0]?.submittedAt ?? 0);
         const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
         const hasTie = winnerSet.size > 1;
+        // 2026-05-06 (Wolf 'reveal slow→fast Winner, Sync mit Sound-Cascade'):
+        // Winner-Avatare droppen mit 850ms Stagger in der Reihenfolge slowest→
+        // fastest (= submittedAt DESC). Schnellster Winner zuletzt = Climax-
+        // Moment, synchron zum playRevealHighlight-Sound. Non-Winner-Avatare
+        // droppen sofort am Anfang (nicht Teil der Cascade).
+        const winnerSlowToFast = [...s.answers]
+          .filter(a => winnerSet.has(a.teamId))
+          .sort((a, b) => b.submittedAt - a.submittedAt)
+          .map(a => a.teamId);
         return (
           <div style={{ animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sorted.map((a, i) => {
@@ -5886,7 +5910,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               if (!team) return null;
               const greenOn = isWinner;
               const avatarsOn = true;
-              const avatarDelay = avatarsOn ? i * 0.16 : 0;
+              const winnerCascadeIdx = isWinner ? winnerSlowToFast.indexOf(a.teamId) : -1;
+              // 850ms Stagger fuer Winner (sync zur Sound-Cascade), 0s fuer
+              // Non-Winner (sind sofort sichtbar). 0.85 statt 0.16 frueher.
+              const avatarDelay = avatarsOn
+                ? (isWinner ? winnerCascadeIdx * 0.85 : 0)
+                : 0;
               return (
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
@@ -9061,12 +9090,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   useEffect(() => {
     if (cat !== 'CHEESE' || !revealed || cheeseCorrectCount === 0) return;
     if (s.sfxMuted) return;
-    const cascadeTotal = cheeseCorrectCount + 1; // +1 fuer WinnerCard-Top-Ton
+    // 2026-05-06 (Wolf 'letzter Sound der Cascade passiert ohne Animation auf
+    // dem Screen, reveal-Reihenfolge tauschen von langsamster zu schnellster
+    // Winner und besonderen Sound auf den schnellsten'):
+    // Reihenfolge slow→fast Winner. Letzter (= schnellster Winner = Climax)
+    // bekommt playRevealHighlight statt Pentatonik-Note (= 'Lösung aufgedeckt'-
+    // Sound aus MUCHO/ZvZ). Avatar-Stagger im JSX matched (850ms statt 160ms),
+    // damit jedes Sound-Event eine sichtbare Avatar-Drop-Animation hat.
+    const cascadeTotal = cheeseCorrectCount + 1;
     const handles: number[] = [];
     for (let i = 0; i < cheeseCorrectCount; i++) {
       const delay = i * 850 - 60; // 60ms Vorlauf fuer psychoakustische Sync
+      const isLast = i === cheeseCorrectCount - 1;
       handles.push(window.setTimeout(() => {
-        try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
+        try {
+          if (isLast) playRevealHighlight();
+          else playAvatarCascadeNote(i, cascadeTotal);
+        } catch {}
       }, Math.max(0, delay)));
     }
     return () => handles.forEach(h => window.clearTimeout(h));

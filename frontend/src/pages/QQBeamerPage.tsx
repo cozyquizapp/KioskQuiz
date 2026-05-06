@@ -3142,15 +3142,32 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
           animation: visible ? 'qqRulesIntroIcon 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.2s both' : 'none',
           filter: 'drop-shadow(0 6px 24px rgba(139,92,246,0.55))',
         }}>📖</div>
-        <div style={{
-          fontSize: 'clamp(56px, 7.5vw, 120px)', fontWeight: 900,
-          lineHeight: 1.05, letterSpacing: '-0.01em',
-          background: 'linear-gradient(180deg, #fff 0%, #c7d2fe 45%, #a5b4fc 75%, #818cf8 100%)',
-          WebkitBackgroundClip: 'text', backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 0 60px rgba(139,92,246,0.35)',
-          animation: visible ? 'qqRulesIntroHeadline 0.9s cubic-bezier(0.2,0.9,0.3,1.1) 0.5s both' : 'none',
-        }}>{headline}</div>
+        {/* 2026-05-05 (Wolf 'jetzt-kommen-die-regeln Text soll Wave wie nächste
+            Regelseiten'): Letter-by-Letter-Cascade (qqRulesTitleLetter) + danach
+            continuous qqCatNameWave als Wiegen — gleiche Sprache wie die Rules-
+            Slide-Titles direkt darunter. Gradient-Text-Clip durch Solid-Farbe
+            ersetzt damit Letter-Cascade pro Buchstabe sauber animieren kann. */}
+        <div
+          aria-label={headline}
+          style={{
+            display: 'inline-flex',
+            fontSize: 'clamp(56px, 7.5vw, 120px)', fontWeight: 900,
+            lineHeight: 1.05, letterSpacing: '-0.01em',
+            color: '#c7d2fe',
+            textShadow: '0 0 36px rgba(139,92,246,0.55), 0 0 12px rgba(199,210,254,0.45)',
+          }}
+        >
+          {Array.from(headline).map((char, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              opacity: 0,
+              animation: visible
+                ? `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.3 + i * 0.05}s both, qqCatNameWave 2.4s ease-in-out ${1.4 + i * 0.08}s infinite`
+                : 'none',
+              whiteSpace: 'pre',
+            }}>{char === ' ' ? ' ' : char}</span>
+          ))}
+        </div>
         <div style={{
           fontSize: 'clamp(28px, 3.2vw, 52px)', fontWeight: 700,
           letterSpacing: '0.1em',

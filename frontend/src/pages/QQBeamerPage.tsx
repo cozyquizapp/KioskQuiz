@@ -9928,64 +9928,79 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     );
                   })}
                 </div>
-                {/* Winner-Card fuer Cheese — das Main-Content-Winner-Banner
-                    ist bei cheeseOverlay display:none. Darum hier explizit
-                    als eigenstaendige Card analog zu MUCHO/ZvZ.
-                    2026-05-06 v2 (Wolf 'kommt Climax-Sound aber keine Card'):
-                    Timing an Cascade-Ende gekoppelt — Card pop't NACH dem
-                    letzten Avatar-Drop (= schnellstes Team) synchron zum
-                    Climax-Sound (cheeseCorrectCount * 850 + 200 + 640 ms).
-                    Card-Style: border + glow + Avatar (analog Standard-
-                    WinnerCard) statt nur Text. */}
-                {winnerTeam && (() => {
-                  // Card-Pop-Delay = cascadeDone (correctCount × 850 + 200ms)
-                  // + 100ms Buffer. Mit 0.6s Animation-Duration ist die Card
-                  // bei +640ms voll sichtbar — passt zum Climax-Sound (640ms
-                  // nach showCheeseWinner=true).
-                  const cardDelaySec = (correctAnswers.length * 850 + 300) / 1000;
-                  return (
-                    <div style={{
-                      marginTop: 14,
-                      display: 'inline-flex', alignItems: 'center',
-                      alignSelf: 'center',
-                      gap: 'clamp(12px, 1.6vw, 20px)',
-                      padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
-                      borderRadius: 999,
-                      background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
-                      border: `2.5px solid ${winnerTeam.color}aa`,
-                      boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
-                      animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
-                    }}>
-                      <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>
-                        <QQEmojiIcon emoji="🏆"/>
-                      </span>
-                      <QQTeamAvatar
-                        avatarId={winnerTeam.avatarId}
-                        teamEmoji={winnerTeam.emoji}
-                        size={'clamp(36px, 3.6vw, 50px)'}
-                        style={{ flexShrink: 0, boxShadow: `0 0 18px ${winnerTeam.color}88` }}
-                      />
-                      <div style={{
-                        fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
-                        color: winnerTeam.color, lineHeight: 1.1,
-                        textShadow: `0 0 18px ${winnerTeam.color}55`,
-                      }}>
-                        {teamDisplayName(winnerTeam.name, true)}
-                      </div>
-                      <div style={{
-                        fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800,
-                        color: '#cbd5e1', lineHeight: 1.2,
-                      }}>
-                        {winMsg}
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* 2026-05-06 v3 (Wolf 'gewinnercard ausserhalb der avatar
+                    card unten drunter'): Cheese-WinnerCard wurde aus der
+                    frosted-card heraus genommen und als Sibling unter dem
+                    cheese-overlay-Container plaziert (siehe weiter unten,
+                    nach dem Frosted-Card-IIFE). */}
                 </>
               );
             })()}
 
           </div>
+            );
+          })()}
+
+          {/* Cheese WinnerCard — Sibling UNTER der Frosted-Card.
+              2026-05-06 v3 (Wolf 'gewinnercard ausserhalb der avatar card
+              unten drunter, sound an die card anpassen ton kommt zu spaet
+              bzw card zu frueh').
+              Timing-Sync: Climax-Sound feuert bei N×850 + 840ms. Card-Anim
+              ist 0.6s; Anim-Peak (max scale/glow ~70%) ist bei card-start
+              + 420ms. Damit Card-Peak und Sound zusammenfallen:
+                card-start = sound-time − 420 = N×850 + 420ms.
+              Card faded leicht ein, knallt im Peak mit dem Climax-Sound. */}
+          {isCheeseReveal && (() => {
+            const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
+            const correctAnswers = [...s.answers]
+              .filter(a => winnerSet.has(a.teamId))
+              .sort((a, b) => a.submittedAt - b.submittedAt);
+            if (correctAnswers.length === 0) return null;
+            const winnerTeam = s.teams.find(t => t.id === correctAnswers[0].teamId);
+            if (!winnerTeam) return null;
+            const multiCorrect = correctAnswers.length > 1;
+            const winMsg = multiCorrect
+              ? (lang === 'en' ? 'recognized it fastest!' : 'hat es am schnellsten erkannt!')
+              : (lang === 'en' ? 'got it right!' : 'hat es erkannt!');
+            const cardDelaySec = (correctAnswers.length * 850 + 420) / 1000;
+            return (
+              <div style={{
+                pointerEvents: 'auto',
+                marginTop: 'clamp(10px, 1.4vh, 18px)',
+                display: 'inline-flex', alignItems: 'center',
+                gap: 'clamp(12px, 1.6vw, 20px)',
+                padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
+                borderRadius: 999,
+                background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
+                border: `2.5px solid ${winnerTeam.color}aa`,
+                boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
+              }}>
+                <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>
+                  <QQEmojiIcon emoji="🏆"/>
+                </span>
+                <QQTeamAvatar
+                  avatarId={winnerTeam.avatarId}
+                  teamEmoji={winnerTeam.emoji}
+                  size={'clamp(40px, 4vw, 56px)'}
+                  style={{ flexShrink: 0, boxShadow: `0 0 18px ${winnerTeam.color}88` }}
+                />
+                <div style={{
+                  fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
+                  color: winnerTeam.color, lineHeight: 1.1,
+                  textShadow: `0 0 18px ${winnerTeam.color}55`,
+                }}>
+                  {teamDisplayName(winnerTeam.name, true)}
+                </div>
+                <div style={{
+                  fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800,
+                  color: '#cbd5e1', lineHeight: 1.2,
+                }}>
+                  {winMsg}
+                </div>
+              </div>
             );
           })()}
 

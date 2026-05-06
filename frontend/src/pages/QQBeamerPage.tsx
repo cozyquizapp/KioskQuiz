@@ -9908,30 +9908,59 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     );
                   })}
                 </div>
-                {/* Winner-Banner fuer Cheese — das Main-Content-Winner-Banner
-                    ist bei cheeseOverlay display:none. Darum hier explizit:
-                    „X hat es erkannt!" / „X hat es am schnellsten erkannt!" */}
-                {winnerTeam && (
-                  <div style={{
-                    marginTop: 8,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-                    animation: 'revealWinnerIn 0.6s var(--qq-ease-bounce) 0.85s both',
-                  }}>
+                {/* Winner-Card fuer Cheese — das Main-Content-Winner-Banner
+                    ist bei cheeseOverlay display:none. Darum hier explizit
+                    als eigenstaendige Card analog zu MUCHO/ZvZ.
+                    2026-05-06 v2 (Wolf 'kommt Climax-Sound aber keine Card'):
+                    Timing an Cascade-Ende gekoppelt — Card pop't NACH dem
+                    letzten Avatar-Drop (= schnellstes Team) synchron zum
+                    Climax-Sound (cheeseCorrectCount * 850 + 200 + 640 ms).
+                    Card-Style: border + glow + Avatar (analog Standard-
+                    WinnerCard) statt nur Text. */}
+                {winnerTeam && (() => {
+                  // Card-Pop-Delay = cascadeDone (correctCount × 850 + 200ms)
+                  // + 100ms Buffer. Mit 0.6s Animation-Duration ist die Card
+                  // bei +640ms voll sichtbar — passt zum Climax-Sound (640ms
+                  // nach showCheeseWinner=true).
+                  const cardDelaySec = (correctAnswers.length * 850 + 300) / 1000;
+                  return (
                     <div style={{
-                      fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
-                      color: winnerTeam.color, lineHeight: 1.1,
-                      textShadow: `0 0 24px ${winnerTeam.color}55`,
+                      marginTop: 14,
+                      display: 'inline-flex', alignItems: 'center',
+                      alignSelf: 'center',
+                      gap: 'clamp(12px, 1.6vw, 20px)',
+                      padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
+                      borderRadius: 999,
+                      background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
+                      border: `2.5px solid ${winnerTeam.color}aa`,
+                      boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
+                      animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
                     }}>
-                      {teamDisplayName(winnerTeam.name, true)}
+                      <span style={{ fontSize: 'clamp(26px, 2.8vw, 36px)', lineHeight: 1 }}>
+                        <QQEmojiIcon emoji="🏆"/>
+                      </span>
+                      <QQTeamAvatar
+                        avatarId={winnerTeam.avatarId}
+                        teamEmoji={winnerTeam.emoji}
+                        size={'clamp(36px, 3.6vw, 50px)'}
+                        style={{ flexShrink: 0, boxShadow: `0 0 18px ${winnerTeam.color}88` }}
+                      />
+                      <div style={{
+                        fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
+                        color: winnerTeam.color, lineHeight: 1.1,
+                        textShadow: `0 0 18px ${winnerTeam.color}55`,
+                      }}>
+                        {teamDisplayName(winnerTeam.name, true)}
+                      </div>
+                      <div style={{
+                        fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 800,
+                        color: '#cbd5e1', lineHeight: 1.2,
+                      }}>
+                        {winMsg}
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900,
-                      color: '#94a3b8', lineHeight: 1.2,
-                    }}>
-                      {winMsg}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
                 </>
               );
             })()}

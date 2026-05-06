@@ -2953,11 +2953,10 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
               letterSpacing: '0.01em',
               lineHeight: 0.96,
               color: '#f8fafc',
-              textShadow: [
-                '0 0 26px rgba(251,191,36,0.65)',
-                '0 0 60px rgba(251,191,36,0.32)',
-                '0 0 130px rgba(251,191,36,0.18)',
-              ].join(', '),
+              // 2026-05-05 (Shadow-Audit #1): 3 Layer → 2 Layer.
+              // Tight glow + wide ambient halo reicht — der dritte 130px-Layer
+              // war redundant (vom Backdrop-Halo eh abgedeckt).
+              textShadow: '0 0 28px rgba(251,191,36,0.65), 0 0 72px rgba(251,191,36,0.28)',
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
               filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',

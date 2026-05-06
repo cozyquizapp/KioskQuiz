@@ -126,3 +126,43 @@ export const TAP_TARGET = {
   min:  44,   // Buttons, Touch-Targets
   cozy: 48,   // Inputs, Primary-Buttons
 } as const;
+
+/** Shadow-Tokens (UI-Audit 2026-05-05).
+ *  Max-2-Layer-Pattern: 1 hard (kein Blur) + 1 soft (mit Blur) ersetzt
+ *  willkuerliche 3-6-Layer-Stacks. 3D-Plaettchen-Look (Tile/Card) bleibt
+ *  durch inset-Highlight + inset-Bottom-Shadow erhalten — die zaehlen als
+ *  „shape-defining" und nicht als „shadow-layer" im Audit-Sinn.
+ *
+ *  Glow-Pattern: nur EIN zusaetzlicher Glow gleichzeitig (priorisiert via
+ *  Helper `pickGlow()`), nicht akkumuliert. Verhindert 5-7-Layer-Stacks. */
+export const SHADOW = {
+  // Standard-Card (Header-Pille, Reveal-Card, Action-Card)
+  card:    '0 4px 0 rgba(0,0,0,0.25), 0 8px 16px rgba(0,0,0,0.30)',
+  // Hero-Card (riesig, GameOver, Comeback-Intro)
+  hero:    '0 8px 0 rgba(0,0,0,0.30), 0 16px 36px rgba(0,0,0,0.40)',
+  // Tile (Brett-Cells, Stack-Inner-Layers) — kompakter Drop, keine Boom
+  tile:    '2px 3px 0 rgba(0,0,0,0.40), 0 5px 9px rgba(0,0,0,0.30)',
+  // Lift (Modals, Floating-Bubbles, Spotlight-Cards)
+  lift:    '0 12px 24px rgba(0,0,0,0.45)',
+} as const;
+
+/** Helper: pickt EINEN Glow je State-Priorität — vermeidet Stack-Akkumulation
+ *  wenn z.B. Cell gleichzeitig accent + highlighted + star ist. */
+export function pickGlow(opts: {
+  accent?: { color: string; px?: number };
+  highlight?: { color: string; px?: number };
+  starGold?: boolean;
+}): string {
+  if (opts.accent) {
+    const px = opts.accent.px ?? 24;
+    return `0 0 ${px}px ${opts.accent.color}bb`;
+  }
+  if (opts.starGold) {
+    return '0 0 10px rgba(251,191,36,0.50)';
+  }
+  if (opts.highlight) {
+    const px = opts.highlight.px ?? 14;
+    return `0 0 ${px}px ${opts.highlight.color}88`;
+  }
+  return '';
+}

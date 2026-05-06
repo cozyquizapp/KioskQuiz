@@ -2176,24 +2176,36 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         })}
       </div>
 
-      {landed && chosen && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '12px 28px', borderRadius: 999,
-          background: `linear-gradient(135deg, ${chosen.color}44, ${chosen.color}1a)`,
-          border: `2.5px solid ${chosen.color}`,
-          boxShadow: `0 0 48px ${chosen.color}88`,
-          animation: 'hpSlotWinnerIn 0.55s var(--qq-ease-bounce) both',
-        }}>
-          <QQTeamAvatar avatarId={chosen.avatarId} teamEmoji={chosen.emoji} size={48} />
-          <span style={{
-            fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 900,
-            color: chosen.color,
+      {/* 2026-05-06 (Wolf 'card unter slot-machine verschiebt die card darüber,
+          baue es so um dass die card beim erscheinen nicht verschoben wird'):
+          Slot reserviert seinen Platz IMMER (auch beim Rolling). Card-Inhalt
+          fadet via opacity ein, kein Layout-Shift mehr. */}
+      <div style={{
+        minHeight: 'clamp(64px, 7vh, 92px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {chosen && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            padding: '12px 28px', borderRadius: 999,
+            background: `linear-gradient(135deg, ${chosen.color}44, ${chosen.color}1a)`,
+            border: `2.5px solid ${chosen.color}`,
+            boxShadow: landed ? `0 0 48px ${chosen.color}88` : 'none',
+            opacity: landed ? 1 : 0,
+            transform: landed ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.85)',
+            transition: 'opacity 0.55s var(--qq-ease-bounce), transform 0.55s var(--qq-ease-bounce), box-shadow 0.55s ease',
+            animation: landed ? 'hpSlotWinnerIn 0.55s var(--qq-ease-bounce) both' : undefined,
           }}>
-            {truncName(chosen.name, 22)} {lang === 'en' ? 'starts!' : 'fängt an!'}
-          </span>
-        </div>
-      )}
+            <QQTeamAvatar avatarId={chosen.avatarId} teamEmoji={chosen.emoji} size={48} />
+            <span style={{
+              fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 900,
+              color: chosen.color,
+            }}>
+              {truncName(chosen.name, 22)} {lang === 'en' ? 'starts!' : 'fängt an!'}
+            </span>
+          </div>
+        )}
+      </div>
 
       <style>{`
         @keyframes hpSlotWinnerIn {
@@ -2274,17 +2286,29 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   return (
     <div style={{
-      // 2026-05-05 v3 (Wolf-Bug 'Luecke zwischen Card und Chips'): Chips
-      // jetzt als normales Flex-Item im Inner-Wrapper-Flow statt absolute-
-      // bottom-anchored. Card + Chip-Block werden vom Parent zusammen
-      // vertikal zentriert (1 Block mit gap). Keine Luecke mehr.
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+      // 2026-05-06 (Wolf 'Active-Team-Card und Eliminated-Teams sollen am
+      // Footer fix bleiben, nicht dynamisch mit hochrutschen wenn viele
+      // Antworten kommen'):
+      // - Chips-Block: flex:1, alignItems:flex-end (wachsen von unten nach oben)
+      // - Active-Pill + Eliminated-Reihe: flex:0 0 auto am Footer
+      // - Container nutzt full-height des Parent-Slots
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
       pointerEvents: 'none',
-      width: '100%',
+      width: '100%', height: '100%',
       maxWidth: 'min(94vw, 1500px)',
+      gap: 14,
     }}>
-      {/* Used answers list — prominent über dem Active-Team-Pill */}
-      {used.length > 0 && (
+      {/* Used answers list — Chips wachsen nach OBEN (alignItems:flex-end im
+          umgebenden flex-col), bleiben aber im wachsenden Bereich begrenzt */}
+      <div style={{
+        flex: '1 1 auto',
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+        alignItems: 'center',
+        width: '100%',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}>
+        {used.length > 0 && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: chipStyles.gap,
           maxWidth: 'min(94vw, 1500px)',
@@ -2304,11 +2328,13 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
             </div>
           ))}
         </div>
-      )}
+        )}
+      </div>
 
-      {/* Active team pill + turn timer */}
+      {/* Active team pill + turn timer (Footer — bleibt unten fix) */}
       {activeTeam ? (
         <div style={{
+          flex: '0 0 auto',
           display: 'flex', alignItems: 'center', gap: 16,
           padding: '10px 22px', borderRadius: 999,
           background: `linear-gradient(135deg, ${activeTeam.color}33, ${activeTeam.color}11)`,
@@ -2341,6 +2367,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         </div>
       ) : (
         <div style={{
+          flex: '0 0 auto',
           padding: '8px 18px', borderRadius: 999,
           background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
           color: '#94a3b8', fontSize: 15, fontWeight: 700,
@@ -2353,7 +2380,8 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           C1 Shake-Red + Kartoffel-Drop 🥔 + fade-to-grey. */}
       {s.hotPotatoEliminated && s.hotPotatoEliminated.length > 0 && (
         <div style={{
-          display: 'flex', alignItems: 'center', flexWrap: 'wrap',
+          flex: '0 0 auto',
+          display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
           gap: 'clamp(10px, 1.4vw, 18px)',
           fontSize: 'clamp(18px, 2vw, 28px)', color: '#94a3b8', fontWeight: 900,
         }}>

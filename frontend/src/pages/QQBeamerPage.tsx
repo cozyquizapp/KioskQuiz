@@ -4113,13 +4113,20 @@ function WolfLobbyGreeter({ lang, welcomedTeamName }: {
         enterMs={enterMs}
         speakMs={speakMs}
         exitMs={exitMs}
-        tailSide="right"
+        tailSide="left"
       />
-      <AnimatedCozyWolf
-        widthCss="clamp(90px, 9vw, 140px)"
-        mode="winken"
-        speaking={speakingNow}
-      />
+      {/* 2026-05-07 v2 (Wolf 'mach den wolf groesser und spiegel ihn'):
+          scaleX(-1) → Wolf schaut nach links, also zur Lobby-Mitte hin
+          (QR + Teams). Groesse 90-140 → 140-200. Tail wechselt von right
+          auf left, weil das Maul nach Mirror auf der Wolf-LINKEN Seite
+          liegt. */}
+      <div style={{ transform: 'scaleX(-1)' }}>
+        <AnimatedCozyWolf
+          widthCss="clamp(140px, 13vw, 200px)"
+          mode="winken"
+          speaking={speakingNow}
+        />
+      </div>
     </div>
   );
 }

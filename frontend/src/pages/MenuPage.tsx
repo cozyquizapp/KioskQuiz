@@ -17,43 +17,21 @@ const cozyQuizLinks: LinkItem[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
-// Gouache — Aquarell-Stil-Migration (pausiert; bleibt als Spielwiese)
-// ─────────────────────────────────────────────────────────────────────────
-const gouacheLinks: LinkItem[] = [
-  { path: '/gouache',         label: 'Gouache Lab',      emoji: '🎨', note: 'Aquarell-/Bilderbuch-Stilstudie + Live-Avatar-Status' },
-  { path: '/lobby-gouache',   label: 'Lobby (Gouache)',  emoji: '🎈', note: 'Welcome-Lobby im Aquarell-Look — selber Socket-Room wie /beamer' },
-  { path: '/team-gouache',    label: 'Team (Gouache)',   emoji: '📱', note: 'Phone-Variante im Aquarell-Look' },
-  { path: '/beamer-gouache',  label: 'Beamer (Gouache)', emoji: '📽️', note: 'Beamer-Show im Aquarell-Look — alle Phasen + Game-Over' },
-];
-
-// ─────────────────────────────────────────────────────────────────────────
-// Extras — Labs, Tools, Admin, Stats + alle Cozy60-Pages
+// Extras — Tools, Admin, Stats (verbliebene Editoren)
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
-  // Labs
   { path: '/testpage',            label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
-  { path: '/round-lab',           label: 'Wolf-Trail Lab',     emoji: '🐺', note: 'Prototyp: Wolf wandert den Tree entlang' },
-  { path: '/reveal-lab',          label: 'Reveal-Lab',         emoji: '👥', note: 'Avatar-Layouts pro Kategorie vergleichen' },
-  { path: '/city-lab',            label: 'City Lab (3D)',      emoji: '🏙️', note: '3D-Grid-Konzepte: Häuser · Pagoden · Habitats' },
-  { path: '/garden-pitch',        label: 'Garden Pitch',       emoji: '🌱', note: 'Mass-Quiz-Modus für 100+ Personen — Konzept-Demo' },
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
-  // Folien-Custom-Layouts (selten gebraucht — kein echter Slide-Editor mehr)
   { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
   { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
-  // Admin & Stats
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
   { path: '/alt/stats',           label: 'Stats & Leaderboard', emoji: '📊', note: 'Letzte Runs & Frage-Verteilungen' },
-  // Cozy60 (alte App, nicht mehr aktiv weiterentwickelt)
-  { path: '/alt/moderator',       label: 'Cozy60 · Moderator', emoji: '🎛️', note: 'Cozy60 Mod-Panel (alte App)' },
-  { path: '/alt/beamer',          label: 'Cozy60 · Beamer',    emoji: '📽️', note: 'Cozy60 Präsentation (alte App)' },
-  { path: '/alt/team',            label: 'Cozy60 · Team',      emoji: '📱', note: 'Cozy60 Team-View (alte App)' },
-  { path: '/alt/builder',         label: 'Cozy60 · Builder',   emoji: '🗂️', note: 'Cozy60 Kanban-Builder (alte App)' },
-  { path: '/alt/katalog',         label: 'Cozy60 · Katalog',   emoji: '📚', note: 'Cozy60 Fragenkatalog (alte App)' },
-  { path: '/alt/baukasten',       label: 'Cozy60 · Creator',   emoji: '🖼️', note: 'Cozy60 Creator-Canvas (alte App)' },
-  { path: '/alt/intro',           label: 'Cozy60 · Intro',     emoji: '📖', note: 'Cozy60 Pre-Show Slides (alte App)' },
-  { path: '/alt/qrcode',          label: 'Cozy60 · QR',        emoji: '🔳', note: 'Cozy60 Beitritts-QR (alte App)' },
+  { path: '/alt/katalog',         label: 'Fragenkatalog',      emoji: '📚', note: 'Frage-Datenbank durchsuchen & verwalten' },
+  { path: '/alt/intro',           label: 'Intro-Slides',       emoji: '📖', note: 'Pre-Show Slides editieren' },
+  { path: '/alt/fragen',          label: 'Fragen-Editor',      emoji: '✏️', note: 'Einzelne Fragen bearbeiten' },
+  { path: '/alt/qrcode',          label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -212,17 +190,9 @@ const MenuPage = () => {
         />
 
         <AppPanel
-          label="Gouache"
-          emoji="🎨"
-          tagline="Aquarell-/Bilderbuch-Stil — Lab + parallele Pages (pausiert)"
-          accent="#E07A5F"
-          links={gouacheLinks}
-        />
-
-        <AppPanel
           label="Extras"
           emoji="🧰"
-          tagline="Labs, Tools, Admin, Stats und Cozy60-Legacy"
+          tagline="Tools, Editoren, Admin, Stats"
           accent="#6B7280"
           links={extrasLinks}
         />

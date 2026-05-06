@@ -126,7 +126,6 @@ const FORMATS: Format[] = [
       'Steal als Kernmechanik',
       'Endgame bei 92% Fülle',
     ],
-    link: '/garden-pitch',
     accent: '#10B981',
   },
   {

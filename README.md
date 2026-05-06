@@ -80,6 +80,39 @@ Skript ist idempotent — bei neuen Posen einfach erneut laufen lassen.
   `IntroSlides`, `MenuPage`, `QrCode` — keine Cozy 60-Spielmodi, sondern
   weiterhin nuetzlich
 
+#### Smoke-Test nach Cleanup (vor naechstem Live-Quiz)
+
+Build ist sauber durchgelaufen + keine TS-Errors, aber **Laufzeit-Flows
+nicht live verifiziert**. 3-Minuten-Smoke-Test bevor echte Quiz-Daten:
+
+1. `/` → Landing laedt
+2. `/team` → Lobby + Setup + Dummy-Antwort kommt durch
+3. `/beamer` → Lobby zeigt Wolf, Sprechblase wechselt mit Slogans
+4. `/moderator` → Phasen-Weiterklicken funktioniert
+5. Eine Frage durchspielen (Schaetzchen + Cheese reichen) → Reveal sauber
+6. `/menu` → alle Links klickbar (404-Probe)
+
+#### Rest-Risiko-Bereiche
+- **CSS in `main.css`**: viele `.beamer-*`, `.cozy-beamer-shell` Rules
+  sind jetzt orphan (referenzieren geloeschte Components). Sollten
+  nicht-matchen = harmlos, aber theoretisch koennte eine globale Rule
+  wider Erwarten ins QQ-Layout pfuschen.
+- **PWA-Cache**: User mit aktiver PWA-Installation haben evtl. noch alten
+  Service Worker, der geloeschte Assets sucht. Wird bei naechster App-
+  Oeffnung auto-updated (skipWaiting=true), aber kurz Glitch moeglich.
+- **`QQBuiltinSlide` / `QQCustomSlide`**: Slide-Editor (`/slides`) wurde
+  nicht live verifiziert — TS-Errors sind bekannt (`makePreviewState`
+  outdated `QQStateUpdate` Shape).
+
+#### Rollback wenn was bricht
+```bash
+git revert c270f5da bee29dfe 1ad5c514 0b575c9a
+git push
+```
+Stellt Stand vor Cleanup wieder her (4 Commits zurueckgenommen).
+Wolf-Compression-Commit `8ed06e11` bleibt bestehen — ist nicht-destruktiv
+fuer Funktionalitaet (nur PNGs kleiner).
+
 ### 🆕 Drei neue Spielmechaniken (seit 2026-04-28)
 
 Großer Schub: 4×4-Finalrunde + 2 neue Bunte-Tüete-Sub-Mechaniken sind komplett

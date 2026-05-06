@@ -2838,14 +2838,17 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
     let timer: number | undefined;
 
     if (effectiveMode === 'winken') {
-      // 2026-05-06 v2 (Wolf 'die posen davor waren besser, ist es jetzt nur
-      // winken und mund auf?' + neue augenauf.mundzu.winken Pose geliefert):
-      // Mit jetzt 3 Winken-Posen koennen wir analog zum Speaking-Mode
-      // einen Mund-Flap + Idle-Blink simulieren — fuehlt sich deutlich
-      // lebendiger an als der vorherige 2-Frame-Toggle.
-      // Sequenz: mund-auf (200ms) ↔ mund-zu (200ms) als 'spricht'-Loop,
-      // alle ~3-5s ein kurzer 130ms Blink (augen-zu).
+      // 2026-05-06 v3 (Wolf 'jetzt gerade blinkt der Wolf'): konstanter
+      // 200ms-Mund-Flap mit Snap-Cut sah aus als wuerde der ganze Wolf
+      // flackern. Jetzt analog zur Speaking-Logic: Speak-Phase mit Mund-
+      // Flap (2-3s), dann Pause-Phase mit Mund zu (1-2s). Der Wolf wirkt
+      // dadurch ruhiger — winkt + 'sagt' was, dann Atempause.
+      // Idle-Blink scheduled deterministisch alle 3.5-5.5s, NICHT random
+      // pro tick (sonst Doppel-Trigger).
       let mouthOpenLocal = false;
+      let phase: 'speak' | 'pause' = 'speak';
+      let phaseUntil = Date.now() + 2200 + Math.random() * 1200;
+      let nextBlinkAt = Date.now() + 3500 + Math.random() * 2000;
       let blinkUntil = 0;
       const tick = () => {
         if (!alive) return;
@@ -2856,20 +2859,36 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
           timer = window.setTimeout(tick, blinkUntil - now);
           return;
         }
-        // Naechsten Blink random schedulen wenn keiner geplant
-        if (blinkUntil === 0 || now >= blinkUntil) {
-          // Mit ~6% Wahrscheinlichkeit pro Tick einen Blink starten
-          if (Math.random() < 0.06) {
-            blinkUntil = now + 130;
-            setCurrentFile('augenzu.mundzu.winken');
-            timer = window.setTimeout(tick, 130);
+        // Blink-Trigger faellig?
+        if (now >= nextBlinkAt) {
+          blinkUntil = now + 130;
+          nextBlinkAt = now + 130 + 3500 + Math.random() * 2000;
+          setCurrentFile('augenzu.mundzu.winken');
+          timer = window.setTimeout(tick, 130);
+          return;
+        }
+        // Phase-Wechsel?
+        if (now >= phaseUntil) {
+          if (phase === 'speak') {
+            phase = 'pause';
+            phaseUntil = now + 1200 + Math.random() * 900;
+            mouthOpenLocal = false;
+            setCurrentFile('augenauf.mundzu.winken');
+            timer = window.setTimeout(tick, phaseUntil - now);
             return;
+          } else {
+            phase = 'speak';
+            phaseUntil = now + 2000 + Math.random() * 1500;
           }
         }
-        // Mund-Flap
-        mouthOpenLocal = !mouthOpenLocal;
-        setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.winken' : 'augenauf.mundzu.winken');
-        timer = window.setTimeout(tick, 200 + Math.random() * 80);
+        if (phase === 'speak') {
+          mouthOpenLocal = !mouthOpenLocal;
+          setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.winken' : 'augenauf.mundzu.winken');
+          timer = window.setTimeout(tick, 220 + Math.random() * 100);
+        } else {
+          // pause: mund bleibt zu, Tick alle 250ms damit Blink-Trigger gepruft wird
+          timer = window.setTimeout(tick, 250);
+        }
       };
       tick();
     } else if (effectiveMode === 'jubel') {

@@ -879,9 +879,12 @@ export interface QQStateUpdate {
   // 'rolling' = Slot dreht (visualisiert das schon-bekannte Random-Team auf
   //             dem Beamer als Slot-Roll); Timer steht still, /team noch
   //             ohne Antwortfeld.
+  // 'landed'  = Slot-Animation visuell abgeschlossen, Sieger steht, aber
+  //             Turn-Timer laeuft NOCH NICHT — Mod kann muendlich announcen,
+  //             dann mit Space den Timer starten (3-Phasen-Flow).
   // 'finished'= Slot ist gelandet, Turn-Timer laeuft, Eingabe freigegeben.
   // null/undef = noch keine Hot-Potato-Frage aktiv.
-  hotPotatoSlotState?: 'rolling' | 'finished' | null;
+  hotPotatoSlotState?: 'rolling' | 'landed' | 'finished' | null;
   // Imposter (oneOfEight round-robin)
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)

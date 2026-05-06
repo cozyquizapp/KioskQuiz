@@ -315,9 +315,17 @@ export default function QQModeratorPage() {
       case 'QUESTION_ACTIVE': {
         // 2026-05-06 (Slot-Machine): Bei HP im rolling-State im Autoplay
         // erst Slot stoppen (~3.4s = Slot-Animation + 400ms Atempause).
+        // 2026-05-07 (Wolf '3-Phasen-Flow'): Autoplay fired finishSlot
+        // jetzt zweimal — rolling→landed nach 3.4s, landed→finished nach
+        // weiteren 1.8s (Mod-Announce-Pause).
         const sk = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
         if (sk === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
           delayMs = 3400;
+          action = () => emit('qq:hotPotatoFinishSlot', { roomCode });
+          break;
+        }
+        if (sk === 'hotPotato' && (s as any).hotPotatoSlotState === 'landed') {
+          delayMs = 1800;
           action = () => emit('qq:hotPotatoFinishSlot', { roomCode });
           break;
         }
@@ -590,8 +598,14 @@ export default function QQModeratorPage() {
         // Bei Hot Potato im 'rolling'-State stoppt der zweite Space erst die
         // Slot-Machine (= startet Turn-Timer + gibt /team-Eingabe frei),
         // statt direkt zur Reveal-Phase zu springen.
+        // 2026-05-07 (Wolf '3-Phasen-Flow'): jetzt zwei Spaces statt einem —
+        // rolling→landed (Sieger steht, kein Timer) und landed→finished
+        // (Timer startet). Beide triggern qq:hotPotatoFinishSlot, Backend
+        // entscheidet anhand State.
         const subKindActive = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
-        if (subKindActive === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+        const slotPending = (s as any).hotPotatoSlotState === 'rolling'
+          || (s as any).hotPotatoSlotState === 'landed';
+        if (subKindActive === 'hotPotato' && slotPending) {
           emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
@@ -648,7 +662,9 @@ export default function QQModeratorPage() {
         // Slot-Machine respektieren — sonst wuerde R die HP-Frage abrupt
         // skippen, ohne dass jemand antworten konnte.
         const subKindR = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
-        if (subKindR === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+        const slotPendingR = (s as any).hotPotatoSlotState === 'rolling'
+          || (s as any).hotPotatoSlotState === 'landed';
+        if (subKindR === 'hotPotato' && slotPendingR) {
           emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
@@ -715,8 +731,14 @@ export default function QQModeratorPage() {
         // Bei Hot Potato im 'rolling'-State stoppt der zweite Space erst die
         // Slot-Machine (= startet Turn-Timer + gibt /team-Eingabe frei),
         // statt direkt zur Reveal-Phase zu springen.
+        // 2026-05-07 (Wolf '3-Phasen-Flow'): jetzt zwei Spaces statt einem —
+        // rolling→landed (Sieger steht, kein Timer) und landed→finished
+        // (Timer startet). Beide triggern qq:hotPotatoFinishSlot, Backend
+        // entscheidet anhand State.
         const subKindActive = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
-        if (subKindActive === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+        const slotPending = (s as any).hotPotatoSlotState === 'rolling'
+          || (s as any).hotPotatoSlotState === 'landed';
+        if (subKindActive === 'hotPotato' && slotPending) {
           emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
@@ -1227,10 +1249,24 @@ export default function QQModeratorPage() {
                       </Btn>
                     ) : (s as any).hotPotatoSlotState === 'rolling' ? (
                       // 2026-05-06: Slot-Machine dreht — Mod kann via Space (oder
-                      // Button) den Roll stoppen → Turn-Timer startet, /team frei.
+                      // Button) den Roll stoppen → State 'landed' (kein Timer noch).
                       <>
                         <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 700 }}>
-                          🎰 Slot dreht — Space druecken zum Starten
+                          🎰 Slot dreht — Space stoppt
+                        </div>
+                        <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
+                          <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
+                        </div>
+                        <Btn color="#F59E0B" onClick={() => emit('qq:hotPotatoFinishSlot', { roomCode })}>
+                          🎯 Sieger anzeigen (Space)
+                        </Btn>
+                      </>
+                    ) : (s as any).hotPotatoSlotState === 'landed' ? (
+                      // 2026-05-07 (Wolf '3-Phasen-Flow'): Sieger steht, Mod
+                      // announciert muendlich, naechstes Space startet Timer.
+                      <>
+                        <div style={{ fontSize: 12, color: '#fde68a', textAlign: 'center', fontWeight: 700 }}>
+                          🎯 Sieger steht — Space startet Timer
                         </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}

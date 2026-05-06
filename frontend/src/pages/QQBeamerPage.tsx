@@ -2262,7 +2262,10 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // 2026-05-06: Slot-Machine-Intro (rolling) blendet die normale HP-View
   // komplett aus — sobald Backend auf 'finished' kippt, kommt die Standard-
   // Ansicht zurueck (gleiche Komponente, nur anderer Branch).
-  if (s.hotPotatoSlotState === 'rolling' && s.hotPotatoActiveTeamId) {
+  // 2026-05-07 (Wolf '3-Phasen-Flow'): SlotMachine bleibt auch bei 'landed'
+  // sichtbar (zwischen Slot-Stopp und Timer-Start). Erst bei 'finished' wird
+  // die normale HP-View gemountet.
+  if ((s.hotPotatoSlotState === 'rolling' || s.hotPotatoSlotState === 'landed') && s.hotPotatoActiveTeamId) {
     return (
       <HotPotatoSlotMachine
         teams={s.teams}
@@ -2298,11 +2301,14 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       maxWidth: 'min(94vw, 1500px)',
       gap: 14,
     }}>
-      {/* Used answers list — Chips wachsen nach OBEN (alignItems:flex-end im
-          umgebenden flex-col), bleiben aber im wachsenden Bereich begrenzt */}
+      {/* Used answers list — Chips zentriert auf der Seite spawnen.
+          2026-05-07 (Wolf 'genannte Antworten landen direkt ueber dem Footer,
+          duerfen aber mittig spawnen'): justify-content flex-end → center.
+          Active-Pill + Eliminated-Reihe bleiben unten dank flex:0 0 auto am
+          Footer-Block, Chips fuellen den Mittel-Bereich. */}
       <div style={{
         flex: '1 1 auto',
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
         minHeight: 0,

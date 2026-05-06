@@ -114,7 +114,7 @@ export interface QQRoomState {
    *  'rolling'  → Slot dreht auf dem Beamer (Timer pausiert, Eingabe gesperrt)
    *  'finished' → Slot gelandet, Timer laeuft, Eingabe frei
    *  null       → keine HP-Frage aktiv. */
-  hotPotatoSlotState?: 'rolling' | 'finished' | null;
+  hotPotatoSlotState?: 'rolling' | 'landed' | 'finished' | null;
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   /** Timer-Handle fuer den H/L-Mini-Game-Auto-Reveal bei Timeout. Not persisted. */
   _comebackHLTimerHandle: ReturnType<typeof setTimeout> | null;
@@ -1468,16 +1468,31 @@ export function qqHotPotatoStart(room: QQRoomState, _onTurnExpire: () => void): 
   // Timer wird erst in qqHotPotatoFinishSlot gestartet.
 }
 
-/** 2026-05-06: Schliesst die Slot-Machine-Intro ab — kippt den State auf
- *  'finished', startet den Turn-Timer, gibt /team frei. Idempotent: wenn
- *  schon 'finished', no-op (verhindert Doppel-Trigger durch Mod-Doppelklick). */
+/** 2026-05-06: Slot-Machine 3-Phasen-Flow.
+ *   rolling  → landed   (1. Space nach Slot-Animation: Sieger steht, KEIN Timer)
+ *   landed   → finished (2. Space: Turn-Timer startet, /team freigegeben)
+ *   finished → no-op    (Idempotent, schuetzt vor Doppel-Trigger)
+ *
+ *  2026-05-07 (Wolf 'springt sofort nach Auswahl des Siegers auf los, zu
+ *  schnell — Space zwischen Slotende und Fragestart'): vorher kippte ein
+ *  einziger Mod-Klick beide Schritte gleichzeitig (rolling→finished + Timer).
+ *  Jetzt Pause dazwischen, damit Mod muendlich 'und es startet TEAM XYZ!'
+ *  announcen kann bevor der Timer laeuft. */
 export function qqHotPotatoFinishSlot(room: QQRoomState, onTurnExpire: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
-  if (room.hotPotatoSlotState !== 'rolling') return;
   if (!room.hotPotatoActiveTeamId) return;
-  room.hotPotatoSlotState = 'finished';
-  room.lastActivityAt = Date.now();
-  qqStartHotPotatoTurn(room, onTurnExpire);
+  if (room.hotPotatoSlotState === 'rolling') {
+    room.hotPotatoSlotState = 'landed';
+    room.lastActivityAt = Date.now();
+    return;
+  }
+  if (room.hotPotatoSlotState === 'landed') {
+    room.hotPotatoSlotState = 'finished';
+    room.lastActivityAt = Date.now();
+    qqStartHotPotatoTurn(room, onTurnExpire);
+    return;
+  }
+  // 'finished' or null — no-op
 }
 
 /** Eliminate the active team (wrong/too slow), advance to next in round-robin order. */

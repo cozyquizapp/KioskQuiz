@@ -260,6 +260,12 @@ export interface QQTeam {
   connected: boolean;
   totalCells: number;       // derived: how many cells owned
   largestConnected: number; // derived: largest connected territory (BFS)
+  /** 2026-05-06 (Wolf 'in der Lobby anzeigen wenn Team mit Stammcode
+   *  eingeloggt — willkommen zurueck, X. Mal dabei'): vom Backend beim
+   *  qq:joinTeam async aus QQRegularTeamModel populiert. Optional, da
+   *  neue Teams ohne Historie kein Eintrag haben. */
+  gamesPlayed?: number;
+  wins?: number;
 }
 
 // ── Comeback action ───────────────────────────────────────────────────────────

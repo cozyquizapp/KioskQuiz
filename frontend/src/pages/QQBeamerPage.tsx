@@ -4055,6 +4055,32 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       }}>
                         {t.connected ? '● bereit' : '○ offline'}
                       </div>
+                      {/* 2026-05-06 (Wolf 'in der Lobby anzeigen wenn Team mit
+                          Code eingeloggt ist zum X. Mal dabei, willkommen
+                          zurueck'): Stamm-Code-Returner-Hint. gamesPlayed wird
+                          von Backend async via getQQRegularTeam populiert
+                          nach qq:joinTeam. */}
+                      {(t.gamesPlayed ?? 0) > 0 && (
+                        <div style={{
+                          marginTop: 4,
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '3px 10px', borderRadius: 999,
+                          background: `${t.color}1c`,
+                          border: `1px solid ${t.color}55`,
+                          fontSize: compact ? 'clamp(11px, 1vw, 14px)' : 'clamp(12px, 1.1vw, 16px)',
+                          fontWeight: 800,
+                          color: t.color,
+                          maxWidth: '100%',
+                          animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
+                        }} title={de
+                          ? `${t.gamesPlayed} Spiele · ${t.wins ?? 0} Siege`
+                          : `${t.gamesPlayed} games · ${t.wins ?? 0} wins`}>
+                          <span aria-hidden>👋</span>
+                          {de
+                            ? `Willkommen zurück — ${t.gamesPlayed}. Mal dabei`
+                            : `Welcome back — visit #${t.gamesPlayed}`}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -12831,19 +12857,23 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <BrandLoopPanel slogans={brandSlogans} de={de} />
     )});
 
-    // Wie funktioniert's — 4 Mini-Cards
+    // Wie funktioniert's — 4 Mini-Cards.
+    // 2026-05-06 (Wolf 'die Page ist noch alt, da sind Regeln drin die nicht
+    // mehr aktuell sind'): Texte auf aktuellen Stand gebracht — Joker-Pattern
+    // (2x2 oder 4-in-a-row), Cap (max 2 pro Team, 1 pro Runde), Faehigkeiten
+    // pro Runde (Klauen R2, Stapeln R3), Bunte Tuete als Surprise-Slot.
     const howItems = de
       ? [
           { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone.' },
-          { icon: '🎯', title: '4 Runden + Finale', desc: 'Verschiedene Spielmodi auf dem Brett — wer am Ende führt, gewinnt.' },
-          { icon: '🃏', title: 'Joker sammeln', desc: 'Volle Reihe? Joker freigespielt — einsetzen für Mut oder Schutz.' },
-          { icon: '🦊', title: 'Brett erobern', desc: 'Felder gehören dem Team, das die Frage gewinnt.' },
+          { icon: '🎯', title: 'Brett erobern', desc: 'Frage richtig = ein Feld setzen. Größtes zusammenhängendes Gebiet gewinnt.' },
+          { icon: '🃏', title: 'Joker', desc: '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld. Max. 2 pro Team, 1 pro Runde.' },
+          { icon: '🎲', title: 'Pro Runde mehr', desc: 'Ab R2 Klauen, ab R3 Stapeln. Bunte Tüte sorgt jede Runde für eine Überraschung.' },
         ]
       : [
           { icon: '📱', title: 'On your phone', desc: 'Each team plays on their own smartphone.' },
-          { icon: '🎯', title: '4 rounds + finale', desc: 'Different modes on the grid — leader at the end wins.' },
-          { icon: '🃏', title: 'Earn jokers', desc: 'Full row? Joker unlocked — bet bold or shield up.' },
-          { icon: '🦊', title: 'Conquer the grid', desc: 'Cells belong to the team that wins the question.' },
+          { icon: '🎯', title: 'Conquer the grid', desc: 'Right answer = place a tile. Largest connected area wins.' },
+          { icon: '🃏', title: 'Joker', desc: '2×2 block or 4 in a row = 1 bonus tile. Max 2 per team, 1 per round.' },
+          { icon: '🎲', title: 'Each round adds', desc: 'Steal from R2, Stack from R3. Lucky Bag delivers a surprise every round.' },
         ];
 
     panels.push({ key: 'howItWorks', node: (
@@ -13140,6 +13170,42 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
+  // 2026-05-06 (Wolf 'Avatare neben Teamnamen, auch aus der ewigen Tabelle'):
+  // Lookup-Helper sucht erst in Session-Teams, dann in Leaderboard-Cache.
+  // Damit zeigen sich Avatare auch fuer historische Teams die gerade nicht
+  // in der aktuellen Session sind.
+  const findTeamMeta = (name: string): { avatarId?: string | null; color?: string } => {
+    const session = s.teams.find(t => t.name === name);
+    if (session) return { avatarId: session.avatarId, color: session.color };
+    const leader = leaderboard.find(e => e.name === name);
+    if (leader?.avatarId) return { avatarId: leader.avatarId };
+    return {};
+  };
+  const teamLine = (name: string, color?: string, avatarId?: string | null) => {
+    const meta = findTeamMeta(name);
+    const c = color ?? meta.color ?? '#FBBF24';
+    const av = avatarId ?? meta.avatarId;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+        {av && <QQTeamAvatar avatarId={av} size={'clamp(46px, 5vw, 68px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${c}55` }} />}
+        <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 42px)', color: c, textShadow: `0 0 18px ${c}44` }}>{name}</span>
+      </div>
+    );
+  };
+  // Inline-Variante fuer kompakte Records (Avatar + Name in einer Zeile mit Stat).
+  const teamInline = (name: string, accentFallback = '#F59E0B') => {
+    const meta = findTeamMeta(name);
+    const c = meta.color ?? accentFallback;
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, verticalAlign: 'middle' }}>
+        {meta.avatarId && (
+          <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8vw, 36px)'} style={{ flexShrink: 0, boxShadow: `0 0 10px ${c}55` }} />
+        )}
+        <strong style={{ color: c }}>{name}</strong>
+      </span>
+    );
+  };
+
   // Records — nur Einträge mit echten Werten zeigen (0-Records sind irreführend)
   if (funStats) {
     const records: React.ReactNode[] = [];
@@ -13149,8 +13215,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.highestScore.teamName}</strong> — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {teamInline(funStats.highestScore.teamName)} — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
         </div>
@@ -13162,8 +13228,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚔️</span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
-              {funStats.closestGame.teams[0]} vs {funStats.closestGame.teams[1]} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
         </div>
@@ -13175,8 +13241,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.winStreak.teamName}</strong> — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {teamInline(funStats.winStreak.teamName)} — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
         </div>
@@ -13189,8 +13255,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8' }}>
-              <strong style={{ color: '#F59E0B' }}>{funStats.fastestAnswer.teamName}</strong> — {secs}s {de ? 'Vorsprung' : 'ahead'}
+            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {teamInline(funStats.fastestAnswer.teamName)} — {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
         </div>
@@ -13238,17 +13304,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   );
 
   // Big-Team-Line: Avatar + Name (farblich akzentuiert)
-  const teamLine = (name: string, color?: string, avatarId?: string | null) => {
-    const team = s.teams.find(t => t.name === name);
-    const c = color ?? team?.color ?? '#FBBF24';
-    const av = avatarId ?? team?.avatarId;
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
-        {av && <QQTeamAvatar avatarId={av} size={'clamp(46px, 5vw, 68px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${c}55` }} />}
-        <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 42px)', color: c, textShadow: `0 0 18px ${c}44` }}>{name}</span>
-      </div>
-    );
-  };
+  // (helpers moved up — see findTeamMeta / teamLine / teamInline above)
 
   // #01 Hot-Streak live — aktueller Session-Leader + Abstand
   if (sortedTeams.length >= 2 && mode === 'pause') {
@@ -13541,40 +13597,64 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         zIndex: 1,
       }} />
 
-      {/* Hero — Eyebrow + Big Title + Subtitle */}
+      {/* Hero — Big Title nur (Wave-Cascade per Buchstabe).
+          2026-05-06 (Wolf 'starting soon mit wave effekt statt zoom, "bereit
+          zum start" oben wegnehmen'):
+          - Eyebrow-Pille ('Bereit zum Start' / 'Atempause') komplett entfernt
+            fuer preGame-Modus (keine Doppelung mit dem Title).
+          - Title-Breathe-Animation (qqPauseTitleBreathe = Zoom) ersetzt durch
+            qqCatNameWave per Buchstabe (analog CozyQuiz-Lobby-Wordmark) plus
+            initiale Letter-Cascade. */}
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
-        {/* Eyebrow-Pill (Mode-Tag) */}
-        <div style={{
-          fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-          color: modeAccent,
-          letterSpacing: '0.32em', textTransform: 'uppercase',
-          padding: '5px 16px', borderRadius: 999,
-          background: `linear-gradient(180deg, ${modeAccent}22, ${modeAccent}0c)`,
-          border: `1px solid ${modeAccentDim}`,
-          boxShadow: `0 0 18px ${modeGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
-          animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
-        }}>
-          {mode === 'preGame'
-            ? (de ? '✨ Bereit zum Start' : '✨ Ready to start')
-            : (de ? '⏸ Atempause' : '⏸ Breather')}
-        </div>
+        {/* Eyebrow-Pille nur fuer Pause-Mode (preGame zeigt nur den Title) */}
+        {mode !== 'preGame' && (
+          <div style={{
+            fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+            color: modeAccent,
+            letterSpacing: '0.32em', textTransform: 'uppercase',
+            padding: '5px 16px', borderRadius: 999,
+            background: `linear-gradient(180deg, ${modeAccent}22, ${modeAccent}0c)`,
+            border: `1px solid ${modeAccentDim}`,
+            boxShadow: `0 0 18px ${modeGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
+            animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
+          }}>
+            {de ? '⏸ Atempause' : '⏸ Breather'}
+          </div>
+        )}
 
-        {/* Big Title — größer, mit breathe-Glow */}
-        <div style={{
-          fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
-          color: modeAccent,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.05,
-          textShadow: `0 0 32px ${modeGlow}, 0 0 72px ${modeGlow}`,
-          animation: 'qqPauseTitleBreathe 4.5s ease-in-out infinite',
-          whiteSpace: 'nowrap',
-        }}>
-          {mode === 'preGame'
+        {/* Big Title — preGame mit per-Buchstaben-Wave (analog Lobby-Wordmark),
+            Pause behaelt den klassischen Breathe-Glow. */}
+        <div
+          aria-label={mode === 'preGame'
             ? (de ? "Gleich geht's los" : 'Starting soon')
+            : (de ? 'Kurze Pause' : 'Short Break')}
+          style={{
+            fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
+            color: modeAccent,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.05,
+            textShadow: `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
+            animation: mode === 'preGame'
+              ? undefined
+              : 'qqPauseTitleBreathe 4.5s ease-in-out infinite',
+            whiteSpace: 'nowrap',
+            display: 'inline-block',
+          }}>
+          {mode === 'preGame'
+            ? Array.from(de ? "Gleich geht's los" : 'Starting soon').map((ch, i) => (
+                <span
+                  key={i}
+                  style={{
+                    display: 'inline-block',
+                    whiteSpace: ch === ' ' ? 'pre' : 'normal',
+                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
+                  }}
+                >{ch}</span>
+              ))
             : (de ? 'Kurze Pause' : 'Short Break')}
         </div>
       </div>

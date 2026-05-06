@@ -1725,6 +1725,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
         socket.data.qqRoomCode = payload.roomCode;
         broadcast(io, payload.roomCode);
         ok(ack);
+        // 2026-05-06 (Wolf 'in der Lobby auch anzeigen, Team X mit Code
+        // eingeloggt ist zum X. Mal dabei, willkommen zurueck'): Async-
+        // Lookup im Stamm-Team-Cache. Wenn das Team schon mal gespielt
+        // hat, populiere gamesPlayed/wins und broadcaste erneut.
+        // Fire-and-forget, damit qqJoinTeam-Response nicht warten muss.
+        (async () => {
+          try {
+            const stamm = await getQQRegularTeam(payload.teamId, payload.roomCode);
+            if (!stamm) return;
+            const live = getQQRoom(payload.roomCode);
+            if (!live || !live.teams[payload.teamId]) return;
+            const games = stamm.gamesPlayed ?? 0;
+            const wins  = stamm.wins ?? 0;
+            if (games <= 0) return; // nichts zu zeigen
+            live.teams[payload.teamId].gamesPlayed = games;
+            live.teams[payload.teamId].wins = wins;
+            broadcast(io, payload.roomCode);
+          } catch { /* silent — Stamm-Lookup ist optional */ }
+        })();
       } catch (e) { fail(ack, e); }
     });
 

@@ -2471,8 +2471,15 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         return null;
       })()}
 
-      {/* Eigene Antwort (Schätzchen / Mucho / Cheese) — "Was hatten wir nochmal?" */}
-      {isRevealed && (q.category === 'SCHAETZCHEN' || q.category === 'MUCHO' || q.category === 'CHEESE') && (() => {
+      {/* Eigene Antwort (Schätzchen / Mucho / Cheese) — "Was hatten wir nochmal?".
+          2026-05-05 (Wolf 'Mucho-Aufloesung auf /team zu frueh, vor Beamer'):
+          Bei MUCHO erst zeigen wenn Beamer-Step >= 2 (= Doppelblink + Gruen
+          gespielt). Vorher rendert /team den korrekt/falsch-Status sofort beim
+          Phase-Wechsel zu REVEAL, waehrend Beamer noch im Avatar-Cascade-Step
+          ist — fuehrte zu Spoiler auf den Phones. */}
+      {isRevealed
+        && (q.category !== 'MUCHO' || (s.muchoRevealStep ?? 0) >= 2)
+        && (q.category === 'SCHAETZCHEN' || q.category === 'MUCHO' || q.category === 'CHEESE') && (() => {
         const myAns = s.answers.find(a => a.teamId === myTeamId);
         if (!myAns) return null;
         let displayText = myAns.text;

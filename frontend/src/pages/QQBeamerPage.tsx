@@ -13806,6 +13806,27 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     }, 3500);
     return () => window.clearTimeout(t);
   }, [revealIdx, paused, isRecap, sorted.length]);
+
+  // 2026-05-05 (Wolf 'Sound pro Team in Tabelle, Extra-Sound Platz 1'):
+  // Pro Recap-Stage einen Cascade-Note (psychoakustisch aufsteigend).
+  // Beim Platz-1-Reveal: zusaetzlich Climax-Finish-Akkord + Wolf-Howl.
+  const lastRevealedSoundRef = useRef<number>(-1);
+  useEffect(() => {
+    if (isRecap || paused) return;
+    if (revealIdx === lastRevealedSoundRef.current) return;
+    lastRevealedSoundRef.current = revealIdx;
+    if (s.sfxMuted) return;
+    // index 0 = lowest rank, sorted.length - 1 = winner (Platz 1)
+    const total = Math.max(2, sorted.length);
+    const isWinner = revealIdx === sorted.length - 1;
+    try {
+      playAvatarCascadeNote(revealIdx, total);
+      if (isWinner) {
+        window.setTimeout(() => { try { playClimaxFinish(); } catch {} }, 280);
+        window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 900);
+      }
+    } catch {}
+  }, [revealIdx, isRecap, paused, sorted.length, s.sfxMuted]);
   // Mod-Keyboard: Space/ArrowRight = next, P = pause toggle
   // 2026-05-05 (Live-Mod-Audit #7): nur reagieren wenn Beamer-Tab tatsaechlich
   // im Vordergrund + fokussiert ist. Vorher konnte ein Doppel-Tab-Setup

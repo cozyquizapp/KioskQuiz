@@ -183,6 +183,21 @@ Vol 4 / Vol 5 sind die schnellsten Test-Pfade (4 gewinnt direkt in Phase 1).
 
 Migration: bestehende qq-vol-* Drafts in File + DB werden beim nächsten
 Backend-Start automatisch refresht (Detection: hasNewSubMechanics).
+Pro Source-Aenderung an einer qq-vol-* Frage muss eine **eigene targeted
+Migration** geschrieben werden (Sub-Mechanics-Migration ist one-shot und
+greift nach dem ersten Run nicht mehr — siehe traps_and_patterns Sec 21).
+Migrations gibt's in DOPPELTER Ausfuehrung — File (Server-Init) **und**
+DB (in `/api/qq/drafts`-Route), weil Library aus MongoDB serviert wird.
+
+#### Hot Potato 3-Phasen-Slot-Flow (seit 2026-05-07)
+Mod-Flow hat **3 Spaces** (vorher 2):
+1. **Space 1** (Phase-Intro→QUESTION_ACTIVE): Frage activated, Slot dreht
+2. **Space 2** (rolling→landed): Slot stoppt visuell, Sieger gehighlighted, **kein Timer**. Mod-Pause zum verbalen Announce „und es startet TEAM XYZ!"
+3. **Space 3** (landed→finished): Turn-Timer startet, /team-Eingabe frei
+
+Backend-State: `'rolling' | 'landed' | 'finished' | null`. `qqHotPotatoFinishSlot` 2-stufig idempotent. Autoplay: 3.4s rolling→landed, 1.8s landed→finished.
+
+Used-Answers-Chips spawnen mittig statt am Footer (Active-Pill bleibt unten).
 
 #### Gefixte Bugs (relativ neu)
 - Auto-Flow am Ende von Runde 4 → 4×4 starten (`b1c65e8a` `ecc053d0`)
@@ -190,6 +205,7 @@ Backend-Start automatisch refresht (Detection: hasNewSubMechanics).
 - Spoiler-Leak bei 4×4 (Beamer färbte Tiles während Active) (`6feca3db`)
 - Truth-Accident-Handling (Bluff = real → ausgefiltert + Sonderbonus)
 - Connection-Avatare-Race-Layout (mehrere Iterationen, finaler Stand: Status-Reihe wie CHEESE) (`daa39fb4`)
+- Vol-3 hotPotato-Frage 'Weltliteratur' → 'Land mit Flagge ohne Rot' (`3db4c61d`) — Migration-Doppelte File+DB
 
 ---
 

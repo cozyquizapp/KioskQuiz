@@ -12783,6 +12783,66 @@ type FunStats = {
   } | null;
 };
 
+// PreGameWolfBubble — kleine Sprechblase ueber dem Wolf-Co-Moderator.
+// Zykelt durch Pre-Game-Sprueche, jede ~7-9s sichtbar, dann naechste.
+// Sprueche bewusst lockerer Pub-Ton — kein Coaching, einfach 'da'.
+function PreGameWolfBubble({ lang }: { lang: 'de' | 'en' }) {
+  const slogans = lang === 'de'
+    ? [
+        'Bereit?',
+        'Macht\'s euch bequem',
+        'Snacks bereit?',
+        'Gleich gibt\'s was zu rätseln',
+        'Sind alle da?',
+        'Spitzt die Ohren!',
+      ]
+    : [
+        'Ready?',
+        'Get comfy',
+        'Snacks ready?',
+        'Quiz time soon!',
+        'Everyone here?',
+        'Ears up!',
+      ];
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setIdx(p => (p + 1) % slogans.length), 7500);
+    return () => clearInterval(id);
+  }, [slogans.length]);
+  return (
+    <div
+      key={idx}
+      style={{
+        background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
+        border: '2px solid rgba(251,191,36,0.55)',
+        borderRadius: 18,
+        padding: '8px 16px',
+        fontSize: 'clamp(14px, 1.4vw, 19px)', fontWeight: 800,
+        color: '#FDE68A',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.4), 0 0 14px rgba(251,191,36,0.25)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        whiteSpace: 'nowrap',
+        animation: 'qqPreGameWolfBubble 6.5s ease-in-out both',
+        position: 'relative',
+        marginRight: 12,
+      }}
+    >
+      {slogans[idx]}
+      {/* Tail nach unten-rechts in Richtung Wolf */}
+      <span aria-hidden style={{
+        position: 'absolute',
+        right: -8, bottom: -6,
+        width: 14, height: 14,
+        borderBottom: '2px solid rgba(251,191,36,0.55)',
+        borderRight: '2px solid rgba(251,191,36,0.55)',
+        background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
+        transform: 'rotate(-45deg)',
+      }} />
+    </div>
+  );
+}
+
 // Brand-Loop für PreGame: AnimatedCozyWolf + zyklischer Slogan
 // Wichtig (User-Wunsch): Wolf-Position, Card-Größe und Text-Position bleiben STABIL
 // beim Wechsel — nur der Text-Inhalt fadet weich aus/ein. Reservierte Höhe + absolute
@@ -13671,6 +13731,103 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         pointerEvents: 'none',
         zIndex: 1,
       }} />
+
+      {/* 2026-05-06 (Wolf 'mehr WOW auf gleich-gehts-los'): WOW-Layer nur fuer
+          preGame-Mode. Bestehende Pause-View bleibt unveraendert.
+          (1) Spotlight-Sweep wandert diagonal alle 9s — wie Buehnenscheinwerfer.
+          (4) Fall-Particles: warme Funken fallen langsam von oben.
+          (5) Atmender Background-Glow ueber dem ganzen Hintergrund.
+          + Animierter CozyWolf rechts unten als Co-Moderator. */}
+      {mode === 'preGame' && (
+        <>
+          {/* (5) Atmender Hintergrund-Glow — sehr subtil, langsam pulsierend.
+              Liegt UNTER dem Ring-Light, wirkt wie 'Buehne laedt Energie'. */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            background: `radial-gradient(ellipse at 50% 60%, ${modeAccent}10 0%, transparent 70%)`,
+            opacity: 0,
+            animation: 'qqPreGameBgBreath 9s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+
+          {/* (1) Spotlight-Sweep — diagonaler warm-goldener Lichtkegel wandert
+              alle 9s einmal von oben-links nach unten-rechts. */}
+          <div aria-hidden style={{
+            position: 'absolute', top: '-30%', left: '-20%',
+            width: '50%', height: '160%',
+            background: `linear-gradient(110deg, transparent 30%, ${modeAccent}1c 48%, rgba(255,255,255,0.10) 50%, ${modeAccent}1c 52%, transparent 70%)`,
+            filter: 'blur(20px)',
+            opacity: 0.7,
+            transformOrigin: 'top left',
+            animation: 'qqPreGameSpotlight 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite',
+            pointerEvents: 'none', zIndex: 2, mixBlendMode: 'screen',
+          }} />
+
+          {/* (4) Fall-Particles — 8 warme Funken die langsam von oben fallen,
+              gestaffelte Delays, varying Sizes/Speeds. */}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const left = 6 + (i * 13.7) % 88;
+            const dur = 11 + (i % 4) * 2.5;
+            const delay = (i * 1.4) % 9;
+            const size = 3 + (i % 3) * 1.5;
+            return (
+              <span key={`fall-${i}`} aria-hidden style={{
+                position: 'absolute',
+                top: '-5%', left: `${left}%`,
+                width: size, height: size, borderRadius: '50%',
+                background: i % 2 ? '#FBBF24' : '#FDE68A',
+                boxShadow: '0 0 12px rgba(251,191,36,0.7), 0 0 4px rgba(255,255,255,0.5)',
+                opacity: 0,
+                animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
+                pointerEvents: 'none', zIndex: 3,
+              }} />
+            );
+          })}
+
+          {/* Wolf-Co-Moderator unten rechts — winkt + blinzelt + hat ab und zu
+              eine Sprechblase mit Pre-Game-Sprueche. */}
+          <div style={{
+            position: 'absolute',
+            right: 'clamp(20px, 3vw, 60px)',
+            bottom: 'clamp(20px, 3vh, 50px)',
+            zIndex: 6,
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+            gap: 8,
+            pointerEvents: 'none',
+            animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
+          }}>
+            <PreGameWolfBubble lang={de ? 'de' : 'en'} />
+            <AnimatedCozyWolf widthCss="clamp(120px, 13vw, 200px)" speaking={true} />
+          </div>
+
+          <style>{`
+            @keyframes qqPreGameBgBreath {
+              0%, 100% { opacity: 0.0; transform: scale(0.9); }
+              50%      { opacity: 0.55; transform: scale(1.08); }
+            }
+            @keyframes qqPreGameSpotlight {
+              0%   { transform: rotate(8deg) translate(-30%, -30%); opacity: 0; }
+              15%  { opacity: 0.7; }
+              60%  { transform: rotate(8deg) translate(180%, 60%); opacity: 0.7; }
+              80%  { opacity: 0; }
+              100% { transform: rotate(8deg) translate(220%, 80%); opacity: 0; }
+            }
+            @keyframes qqPreGameFallParticle {
+              0%   { transform: translateY(0) translateX(0); opacity: 0; }
+              10%  { opacity: 0.85; }
+              50%  { transform: translateY(50vh) translateX(8px); opacity: 0.85; }
+              90%  { opacity: 0.4; }
+              100% { transform: translateY(110vh) translateX(-6px); opacity: 0; }
+            }
+            @keyframes qqPreGameWolfBubble {
+              0%   { opacity: 0; transform: translateY(8px) scale(0.85); }
+              10%  { opacity: 1; transform: translateY(0) scale(1); }
+              80%  { opacity: 1; transform: translateY(0) scale(1); }
+              100% { opacity: 0; transform: translateY(-4px) scale(0.95); }
+            }
+          `}</style>
+        </>
+      )}
 
       {/* Hero — Big Title nur (Wave-Cascade per Buchstabe).
           2026-05-06 (Wolf 'starting soon mit wave effekt statt zoom, "bereit

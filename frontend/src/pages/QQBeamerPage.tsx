@@ -3200,31 +3200,46 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
         pointerEvents: 'none',
         zIndex: 0,
       }} />
-      {posesForMode.map(p => (
+      {/* Pre-Cache: alle Posen mit opacity:0 + width/height 1px gerendert,
+          damit Browser sie laedt + decodiert. Verhindert 1-Frame-Flicker
+          beim ersten Anzeigen einer noch ungecacheten Pose. Nur einmal
+          beim Mount. */}
+      {posesForMode.filter(p => p !== visibleFile).map(p => (
         <img
           key={p}
           src={`/avatars/cozywolf/${p}.png`}
           alt=""
+          aria-hidden
+          loading="eager"
+          decoding="sync"
           style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'contain',
-            display: 'block',
-            opacity: p === visibleFile ? 1 : 0,
-            zIndex: 1,
-            // 2026-05-06 v3 (Wolf 'Animation stuckt immernoch zwischen zwei
-            // Bildern — Hintergrund schimmert durch'): Crossfade komplett
-            // entfernt fuer Frame-Posen-Modes. Beide Bilder semi-transparent
-            // = doppeltes Alpha = BG durch beide sichtbar. Stattdessen
-            // Stop-Motion-Snap: aktives Bild instant 1, alte instant 0.
-            // Speaking-Mode behaelt 90ms-Fade fuer fliessenden Mund-Flap.
-            transition: effectiveMode === 'speaking'
-              ? 'opacity 90ms linear'
-              : 'none',
-            pointerEvents: 'none',
+            position: 'absolute', width: 1, height: 1,
+            opacity: 0, pointerEvents: 'none',
           }}
         />
       ))}
+      {/* Sichtbarer Wolf — nur EIN img-Element, src wechselt mit visibleFile.
+          2026-05-07 v5 (Wolf 'Wolf flackert immernoch — wirkt als kommen
+          neue Bilder nicht schnell genug'): vorher 6 gestackte imgs mit
+          opacity-Toggle — Browser hatte bei Compositing-Swap gelegentlich
+          1-Frame-Luecke wo alle imgs als opacity:0 dargestellt wurden.
+          Single-img + src-swap: Browser zeigt das alte Bild bis das neue
+          im Cache geladen ist (ist es, weil alle Posen vor-gecached sind),
+          dann sofortiger Atomic-Replace ohne Transparent-Frame. */}
+      <img
+        src={`/avatars/cozywolf/${visibleFile}.png`}
+        alt=""
+        loading="eager"
+        decoding="sync"
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 }

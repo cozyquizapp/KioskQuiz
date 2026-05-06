@@ -1468,10 +1468,11 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                 fontWeight={900}
                 style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
               />
-              {/* 2026-05-05 (Wolf): Joker-Slots als 2 PNGs (m/w im Wechsel).
-                  Wolf-Polish: kein BG/Border-Container mehr, beide Slots
-                  exakt gleich gross (height/width fixed via JokerIcon size).
-                  Earned = full glow, unearned = grayscale + 0.35 opacity. */}
+              {/* 2026-05-05 v2 (Wolf 'joker von anfang an glow, wenn benutzt
+                  ausgrauen — andersrum als jetzt'): Logik invertiert. Slots
+                  zeigen verfuegbare Joker (Lebenspunkte-Pattern): von Anfang
+                  an 2 Slots glowen gold = beide verfuegbar; pro verdientem/
+                  eingeloestem Joker wird ein Slot ausgegraut = verbraucht. */}
               {s.teamPhaseStats[myTeamId] && (
                 <div
                   style={{
@@ -1481,20 +1482,19 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                   aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
                 >
                   {Array.from({ length: 2 }).map((_, i) => {
-                    const earned = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
+                    const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
                     return (
                       <JokerIcon
                         key={i}
                         i={i}
                         size={28}
-                        alt={earned ? `Joker ${i+1} verdient` : `Joker ${i+1} offen`}
+                        alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
                         style={{
                           width: 28, height: 28,
-                          // 2026-05-05 (Wolf 'extra ausgegraut?'): vorher 32%/90%
-                          // grayscale wirkte wie 'kaputt'. Jetzt: subtiler
-                          // Placeholder-State (50%/40%) = bereit zum Verdienen.
-                          opacity: earned ? 1 : 0.5,
-                          filter: earned ? 'drop-shadow(0 0 6px rgba(251,191,36,0.7))' : 'grayscale(0.4)',
+                          opacity: used ? 0.45 : 1,
+                          filter: used
+                            ? 'grayscale(1) brightness(0.85)'
+                            : 'drop-shadow(0 0 8px rgba(251,191,36,0.8))',
                           transition: 'opacity 0.3s ease, filter 0.3s ease',
                         }}
                       />

@@ -6216,12 +6216,16 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
         if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
         if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(251,191,36,0.22)' });
+        // 2026-05-05 (Wolf 'Sieger-Card groesser, lesbarer'): alle Sizes
+        // hochgezogen — Avatar 38-60 → 60-92, Name 16-26 → 24-38,
+        // Pts-Pille 14-18 → 20-28, Mini-Pillen 12-15 → 16-20. Padding
+        // entsprechend.
         return (
           <div style={{
             alignSelf: 'center',
-            maxWidth: 'min(820px, 94vw)',
-            display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6vw, 22px)',
-            padding: 'clamp(8px, 1vh, 14px) clamp(16px, 2vw, 28px)',
+            maxWidth: 'min(960px, 94vw)',
+            display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
+            padding: 'clamp(14px, 1.6vh, 20px) clamp(22px, 2.6vw, 36px)',
             borderRadius: 999,
             background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
             border: `2px solid ${winnerTeam.color}aa`,
@@ -6231,8 +6235,8 @@ function BluffBeamerView({ state: s, lang, revealed }: {
             WebkitBackdropFilter: 'blur(8px)',
             position: 'relative', zIndex: 5,
           }}>
-            <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(38px, 4.4vw, 60px)'} style={{
-              boxShadow: `0 0 18px ${winnerTeam.color}88`,
+            <QQTeamAvatar avatarId={winnerTeam.avatarId} teamEmoji={winnerTeam.emoji} size={'clamp(60px, 6.5vw, 92px)'} style={{
+              boxShadow: `0 0 22px ${winnerTeam.color}88`,
               flexShrink: 0,
             }} />
             <div style={{ minWidth: 0, flex: 1 }}>
@@ -6242,31 +6246,31 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                 shrinkAfter={18}
                 color={winnerTeam.color}
                 fontWeight={900}
-                fontSize="clamp(16px, 1.9vw, 26px)"
+                fontSize="clamp(24px, 2.6vw, 38px)"
                 style={{ lineHeight: 1.1 }}
               />
               {isCoTie && (
-                <div style={{ fontSize: 'clamp(11px, 1.2vw, 14px)', color: '#94a3b8', fontWeight: 700, marginTop: 1 }}>
+                <div style={{ fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>
                   {lang === 'de' ? `+${winners.length - 1} weitere` : `+${winners.length - 1} more`}
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {breakdown.map((b, i) => (
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
-                  padding: '4px 9px', borderRadius: 999,
+                  padding: '6px 12px', borderRadius: 999,
                   background: b.bg,
-                  fontSize: 'clamp(12px, 1.3vw, 15px)', fontWeight: 900, color: '#f1f5f9',
+                  fontSize: 'clamp(16px, 1.7vw, 20px)', fontWeight: 900, color: '#f1f5f9',
                   whiteSpace: 'nowrap',
                 }}>
                   {b.icon} {b.n}
                 </span>
               ))}
               <span style={{
-                padding: '5px 12px', borderRadius: 999,
+                padding: '8px 16px', borderRadius: 999,
                 background: `${winnerTeam.color}33`,
                 border: `1.5px solid ${winnerTeam.color}88`,
-                fontSize: 'clamp(14px, 1.5vw, 18px)', fontWeight: 900,
+                fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900,
                 color: winnerTeam.color,
                 whiteSpace: 'nowrap',
               }}>
@@ -6551,8 +6555,11 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
               boxShadow: isReal
                 ? `0 0 28px ${cardColor}33, 0 6px 16px rgba(0,0,0,0.4)`
                 : `0 0 18px ${cardColor}28, 0 6px 14px rgba(0,0,0,0.4)`,
-              display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vh, 14px)',
-              minHeight: 'clamp(110px, 14vh, 170px)',
+              display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 0.8vh, 10px)',
+              // 2026-05-05 (Wolf): minHeight reduziert (110-170 → 90-130) damit
+              // leere Cards nicht so viel toten Platz unten haben — gewonnener
+              // Raum geht an die Sieger-Card unten.
+              minHeight: 'clamp(90px, 11vh, 130px)',
               animation: `phasePop 0.55s var(--qq-ease-bounce) ${0.3 + i * 0.08}s both`,
             }}>
               {/* Author-Avatar als BG-Watermark — gross, halbtransparent, hinter
@@ -6643,9 +6650,11 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 {voters.length > 0 ? (
                   <>
                     <span style={{
-                      fontSize: 'clamp(10px, 0.95vw, 12px)', fontWeight: 900,
+                      // 2026-05-05 (Wolf 'Wählten/keine Stimmen etwas groesser'):
+                      // 10-12px → 14-19px. Aus Pub-Distanz lesbar.
+                      fontSize: 'clamp(14px, 1.4vw, 19px)', fontWeight: 900,
                       color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase',
-                      marginRight: 4,
+                      marginRight: 6,
                     }}>
                       {lang === 'de' ? 'Wählten' : 'Voted'}
                     </span>
@@ -6677,8 +6686,9 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                   </>
                 ) : (
                   <span style={{
-                    fontSize: 'clamp(10px, 0.95vw, 12px)', fontWeight: 700,
-                    color: 'rgba(148,163,184,0.5)', letterSpacing: '0.06em',
+                    // 2026-05-05 (Wolf): 10-12px → 14-18px.
+                    fontSize: 'clamp(14px, 1.3vw, 18px)', fontWeight: 700,
+                    color: 'rgba(148,163,184,0.55)', letterSpacing: '0.06em',
                     fontStyle: 'italic',
                   }}>
                     {lang === 'de' ? 'keine Stimmen' : 'no votes'}

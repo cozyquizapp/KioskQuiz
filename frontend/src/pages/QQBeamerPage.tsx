@@ -7056,21 +7056,16 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
             opacity: revealed ? 1 : 0,
             transition: 'opacity 0.5s ease 0.15s',
           }}>
-            {/* Linke Hälfte: Lösung */}
+            {/* Linke Hälfte: Lösung — 2026-05-05 (Wolf 'aus weniger Metern
+                nicht erkennbar, kuerzen'): Mini-Label 'Lösung' raus (gold-
+                Text spricht fuer sich), Schriftgroesse hoch (28-56 → 36-72px). */}
             <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              // 2026-05-05 (Wolf): Trennlinie zwischen Loesung und Sieger raus.
-              borderRight: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center',
               paddingRight: winnerTeams.length > 0 ? 'clamp(8px, 1vw, 16px)' : 0,
             }}>
               <div style={{
-                fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
-                color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85,
-              }}>
-                {lang === 'de' ? 'Lösung' : 'Answer'}
-              </div>
-              <div style={{
-                fontSize: 'clamp(28px, 3.6vw, 56px)', fontWeight: 900,
+                fontSize: 'clamp(36px, 4.4vw, 72px)', fontWeight: 900,
                 color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.35)',
                 textAlign: 'center', lineHeight: 1.1,
               }}>
@@ -7078,54 +7073,50 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               </div>
             </div>
 
-            {/* Rechte Hälfte: Sieger-Team(s) */}
+            {/* Rechte Hälfte: Sieger — 2026-05-05 (Wolf 'avatar groß, daneben
+                den text'): horizontales Layout, Avatar links riesig, rechts
+                Name + 'auf Hinweis N'. Mini-Label 'Sieger' raus. */}
             {winnerTeams.length > 0 && (
               <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 'clamp(14px, 1.8vw, 28px)', flexWrap: 'wrap',
                 paddingLeft: 'clamp(8px, 1vw, 16px)',
               }}>
-                <div style={{
-                  fontSize: 'clamp(11px, 1vw, 13px)', fontWeight: 900,
-                  color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85,
-                }}>
-                  {winnerTeams.length === 1
-                    ? (lang === 'de' ? 'Sieger' : 'Winner')
-                    : (lang === 'de' ? 'Sieger' : 'Winners')}
-                </div>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: 'clamp(10px, 1.4vw, 18px)', flexWrap: 'wrap',
-                }}>
-                  {winnerTeams.map((tm, idx) => (
-                    <div key={tm.id} style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                      animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.5 + idx * 0.18}s both`,
+                {winnerTeams.map((tm, idx) => (
+                  <div key={tm.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.4vw, 22px)',
+                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.5 + idx * 0.18}s both`,
+                  }}>
+                    <QQTeamAvatar
+                      avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                      size={'clamp(80px, 9vw, 130px)'}
+                      style={{
+                        boxShadow: `0 0 0 3px #FBBF24, 0 0 26px rgba(251,191,36,0.65), 0 0 10px ${tm.color}aa`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
+                      minWidth: 0,
                     }}>
-                      <QQTeamAvatar
-                        avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                        size={'clamp(56px, 6vw, 88px)'}
-                        style={{
-                          boxShadow: `0 0 0 3px #FBBF24, 0 0 22px rgba(251,191,36,0.65), 0 0 8px ${tm.color}aa`,
-                        }}
-                      />
                       <div style={{
-                        fontSize: 'clamp(15px, 1.7vw, 22px)', fontWeight: 900,
-                        color: tm.color, textShadow: `0 0 14px ${tm.color}55`,
-                        whiteSpace: 'nowrap',
+                        fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
+                        color: tm.color, textShadow: `0 0 16px ${tm.color}55`,
+                        lineHeight: 1.1,
                       }}>
                         {teamDisplayName(tm.name, true)}
                       </div>
+                      {winnerHint !== null && (
+                        <div style={{
+                          fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
+                          color: '#cbd5e1',
+                        }}>
+                          {lang === 'de' ? `auf Hinweis ${winnerHint + 1}` : `on clue ${winnerHint + 1}`}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-                {winnerHint !== null && (
-                  <div style={{
-                    fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 800,
-                    color: '#cbd5e1', letterSpacing: '0.04em',
-                  }}>
-                    {lang === 'de' ? `auf Hinweis ${winnerHint + 1}` : `on clue ${winnerHint + 1}`}
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>

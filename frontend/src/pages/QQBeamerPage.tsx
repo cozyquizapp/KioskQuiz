@@ -6555,6 +6555,12 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                 />
               )}
             </div>
+            {/* 2026-05-06 (Wolf 'die 2 Punkte muessen den Spielenden nicht
+                angezeigt werden, sind nur intern relevant — gewinnen tut das
+                Team wie immer 1 Aktion'): Total-Pkt-Pille entfernt. Breakdown-
+                Pillen (Reinfaelle/Glueck/Echt) bleiben als 'wie viele Teams
+                sind auf den Bluff reingefallen'-Info — die ist erzaehlerisch
+                relevant, nicht system-intern. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {breakdown.map((b, i) => (
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
@@ -6566,16 +6572,6 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                   {b.icon} {b.n}
                 </span>
               ))}
-              <span style={{
-                padding: '8px 16px', borderRadius: 999,
-                background: `${winnerTeam.color}33`,
-                border: `1.5px solid ${winnerTeam.color}88`,
-                fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900,
-                color: winnerTeam.color,
-                whiteSpace: 'nowrap',
-              }}>
-                {wPts?.total ?? 0} {lang === 'de' ? 'Pkt' : 'pts'}
-              </span>
             </div>
           </div>
         );

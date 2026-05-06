@@ -10109,12 +10109,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // die Card ist beim Reveal eh schon sichtbar (war im Question-
             // Mode bereits da), nur Inhalt aendert sich. Kein Pop-Effekt
             // nötig, Border-Color-Transition reicht als Reveal-Marker.
+            // 2026-05-06 v6 (Wolf 'Cheese-Reveal: Card wiggelt heftig beim
+            // Reveal-Start'): min-height + transform Transitions auf
+            // ease-bounce sprangen ueber — die min-height-Aenderung
+            // (~+120px beim Reveal) mit Bounce hat die Card sichtbar
+            // wackeln lassen. Beide auf ease-smooth.
             animation: cheeseWithQuestion ? 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both' : 'none',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
-            // 2026-04-30 v2: width/min-width/max-width Transition explizit
-            // ergaenzt + alle Durations 0.4-0.5 → 0.7-0.85s, smooth-Regel.
-            transition: 'padding 0.7s var(--qq-ease-smooth), border-color 0.55s ease, min-height 0.85s var(--qq-ease-bounce), transform 0.7s var(--qq-ease-bounce), width 0.7s var(--qq-ease-smooth), min-width 0.7s var(--qq-ease-smooth), max-width 0.7s var(--qq-ease-smooth)',
+            transition: 'padding 0.7s var(--qq-ease-smooth), border-color 0.55s ease, min-height 0.7s var(--qq-ease-smooth), transform 0.7s var(--qq-ease-smooth), width 0.7s var(--qq-ease-smooth), min-width 0.7s var(--qq-ease-smooth), max-width 0.7s var(--qq-ease-smooth)',
             pointerEvents: 'auto',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -10147,14 +10150,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {lang === 'en' && q.textEn ? q.textEn : q.text}
             </div>
 
-            {/* Revealed answer */}
+            {/* Revealed answer.
+                2026-05-06 v6 (Wolf 'Cheese-Reveal: Buchstaben wiggeln stark
+                beim Reveal-Start, sieht unprofessionell aus'): revealAnswerBam
+                (scale 0.8→1.04→0.98→1, bouncy) durch langFadeIn ersetzt — nur
+                opacity + 8px translateY, kein Wiggle. Konsistent zum Question-
+                Text drueber, der bereits langFadeIn nutzt. */}
             {isCheeseReveal && s.revealedAnswer && (
               <div style={{
                 position: 'relative', overflow: 'hidden',
-                // 2026-04-29: 4.5vw -> 3.8vw / cap 72 -> 56 — flacher.
                 fontSize: 'clamp(28px, 3.8vw, 56px)', fontWeight: 900,
                 color: '#4ADE80',
-                animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
+                animation: 'langFadeIn 0.5s var(--qq-ease-out-cubic) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 6,
               }}>

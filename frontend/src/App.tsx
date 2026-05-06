@@ -162,13 +162,13 @@ function App() {
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
           <Route path="/testpage"   element={<PinGate><QQAvatarGeneratorPage /></PinGate>} />
 
-          {/* ── Altes CozyQuiz (Archiv) — Editoren/Tools ohne Cozy 60-Spielmodus ── */}
-          <Route path="/alt/fragen"       element={<QuestionEditorPage />} />
-          <Route path="/alt/katalog"      element={<QuestionCatalogPage />} />
-          <Route path="/alt/stats"        element={<StatsPage />} />
-          <Route path="/alt/intro"        element={<IntroSlidesPage />} />
-          <Route path="/alt/menu"         element={<PinGate><MenuPage /></PinGate>} />
-          <Route path="/alt/qrcode"       element={<QrCodePage />} />
+          {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
+          <Route path="/fragen"       element={<QuestionEditorPage />} />
+          <Route path="/katalog"      element={<QuestionCatalogPage />} />
+          <Route path="/stats"        element={<StatsPage />} />
+          <Route path="/intro"        element={<IntroSlidesPage />} />
+          <Route path="/menu"         element={<PinGate><MenuPage /></PinGate>} />
+          <Route path="/qrcode"       element={<QrCodePage />} />
 
           {/* ── Legacy-Redirects (alte QQ-URLs) ──────────────────── */}
           <Route path="/quarterquiz-moderator" element={<Navigate to="/moderator" replace />} />
@@ -178,13 +178,15 @@ function App() {
           <Route path="/qq-library"            element={<Navigate to="/library" replace />} />
           <Route path="/qq-slides"             element={<Navigate to="/slides" replace />} />
 
-          {/* ── Legacy-Redirects (alte CozyQuiz-URLs) ────────────── */}
-          <Route path="/question-editor"       element={<Navigate to="/alt/fragen" replace />} />
-          <Route path="/question-catalog"      element={<Navigate to="/alt/katalog" replace />} />
-          <Route path="/stats"                 element={<Navigate to="/alt/stats" replace />} />
-          <Route path="/intro"                 element={<Navigate to="/alt/intro" replace />} />
-          <Route path="/menu"                  element={<Navigate to="/alt/menu" replace />} />
-          <Route path="/qrcode"                element={<Navigate to="/alt/qrcode" replace />} />
+          {/* ── Legacy-Redirects (alte URLs) ────────────────────── */}
+          <Route path="/question-editor"       element={<Navigate to="/fragen" replace />} />
+          <Route path="/question-catalog"      element={<Navigate to="/katalog" replace />} />
+          <Route path="/alt/fragen"            element={<Navigate to="/fragen" replace />} />
+          <Route path="/alt/katalog"           element={<Navigate to="/katalog" replace />} />
+          <Route path="/alt/stats"             element={<Navigate to="/stats" replace />} />
+          <Route path="/alt/intro"             element={<Navigate to="/intro" replace />} />
+          <Route path="/alt/menu"              element={<Navigate to="/menu" replace />} />
+          <Route path="/alt/qrcode"            element={<Navigate to="/qrcode" replace />} />
 
           <Route path="*" element={<Navigate to="/team" replace />} />
         </Routes>

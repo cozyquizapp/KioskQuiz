@@ -886,7 +886,7 @@ const QQAvatarGeneratorPage = () => {
           maxWidth: 880, margin: '0 auto 8px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <Link to="/alt/menu" style={{
+          <Link to="/menu" style={{
             fontSize: 13, color: '#94a3b8', textDecoration: 'none',
             padding: '8px 14px', borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.12)',

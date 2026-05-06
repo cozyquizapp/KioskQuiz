@@ -13125,7 +13125,12 @@ function WolfCoModerator({ lang, variant, widthCss }: {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-      gap: 6,
+      // 2026-05-06 v5 (Wolf-Bug 'blitzt im BG vom Wolf'): Gap 6→14 — der
+      // Wolf hat drop-shadow(0 10px 30px) mit ~30px Blur-Radius, der bis
+      // 24px in den Bubble-Bereich reichte. Backdrop-Filter der Bubble
+      // hat die feinen Halo-Veraenderungen vom Frame-Wechsel zu sichtbarem
+      // Flicker magnifiziert. Mehr Abstand → Halo erreicht Bubble nicht.
+      gap: 14,
       pointerEvents: 'none',
     }}>
       <SpeechBubble
@@ -13181,12 +13186,14 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
         color: '#FDE68A',
         textAlign: 'center',
         // Soft inner highlight + ambient glow
+        // 2026-05-06 v5: backdrop-filter raus — beim Bounce-In skaliert die
+        // Bubble (1.02), der Blur muss pro Frame neu rechnen, und magnifiziert
+        // jede minimale Aenderung im BG (z.B. Wolf-Halo) zu sichtbarem Flicker.
+        // Bubble hat genug visuelle Tiefe ueber Gradient+Border+Shadow ohne Blur.
         boxShadow:
           '0 8px 22px rgba(0,0,0,0.45), ' +
           '0 0 18px rgba(251,191,36,0.18), ' +
           'inset 0 1px 0 rgba(255,231,170,0.10)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
         // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
         // sind relativ zu totalLifeMs (CSS percentage).
         animation: `qqWolfBubbleLife ${totalLifeMs}ms cubic-bezier(0.34,1.56,0.64,1) both`,
@@ -13214,7 +13221,7 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
       >
         <path
           d="M 0 0 L 11 13 L 22 0"
-          fill="rgba(33,24,12,0.94)"
+          fill="rgb(33,24,12)"
           stroke="rgba(251,191,36,0.6)"
           strokeWidth={2}
           strokeLinejoin="round"

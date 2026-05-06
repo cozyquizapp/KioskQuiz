@@ -8465,6 +8465,42 @@ app.get('/api/qq/drafts', async (_req, res) => {
     if (dbVolRefreshed > 0) {
       console.log(`[migration] Refreshed ${dbVolRefreshed} qq-vol-* drafts in DB with 4 gewinnt + Bluff`);
     }
+    // 2026-05-07 (Wolf 'Weltliteratur-Frage sollte laengst durch Flagge-ohne-
+    // Rot ersetzt sein'): hotPotato-Fragen pro qq-vol-* Draft auf Source-Stand
+    // bringen. Idempotent — nur bei Drift wird ueberschrieben + persistiert.
+    let dbHpRefreshed = 0;
+    for (let i = 0; i < cleanDbDrafts.length; i++) {
+      const d: any = cleanDbDrafts[i];
+      if (!isQQVolDraft(d.id)) continue;
+      const fd = freshById.get(d.id);
+      if (!fd || !Array.isArray((fd as any).questions)) continue;
+      const freshQs = (fd as any).questions as any[];
+      const liveQs = d.questions as any[] | undefined;
+      if (!Array.isArray(liveQs)) continue;
+      let dirty = false;
+      for (let j = 0; j < liveQs.length; j++) {
+        const lq = liveQs[j];
+        if (lq?.bunteTuete?.kind !== 'hotPotato') continue;
+        const fq = freshQs.find(fx => fx?.id === lq?.id);
+        if (!fq || fq?.bunteTuete?.kind !== 'hotPotato') continue;
+        const drift = lq.text !== fq.text
+          || lq.textEn !== fq.textEn
+          || lq.answer !== fq.answer
+          || lq.answerEn !== fq.answerEn;
+        if (drift) {
+          liveQs[j] = { ...lq, text: fq.text, textEn: fq.textEn, answer: fq.answer, answerEn: fq.answerEn };
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        d.updatedAt = Date.now();
+        try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+        dbHpRefreshed++;
+      }
+    }
+    if (dbHpRefreshed > 0) {
+      console.log(`[migration] Refreshed hotPotato questions in ${dbHpRefreshed} DB drafts (Vol-3 Weltliteratur etc.)`);
+    }
     // CHEESE-Image-Enrichment in DB (idempotent — pro Frage erst wenn image fehlt)
     let dbCheeseEnriched = 0;
     for (let i = 0; i < cleanDbDrafts.length; i++) {

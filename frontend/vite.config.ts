@@ -98,9 +98,16 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('socket.io-client')) return 'vendor-socket';
             if (id.includes('html2canvas')) return 'vendor-canvas';
-            // Three.js + react-three-* — nur Beamer braucht das
-            if (id.includes('three') || id.includes('@react-three')) return 'vendor-three';
-            // Leaflet + react-leaflet — nur CozyGuessr-Map braucht das
+            // 2026-05-06 v2 (Wolf-Bug 'Cannot read properties of undefined
+            // (reading createContext) in vendor-leaflet'): react-leaflet und
+            // @react-three importieren React.createContext — wenn wir die
+            // in vendor-leaflet/vendor-three separieren, koennen sie VOR
+            // vendor-react laden und React ist noch undefined. Wrapper-Libs
+            // bleiben deshalb im Default-Chunk (laden mit der Page die sie
+            // braucht), nur PURE three/leaflet werden ausgelagert.
+            if (id.includes('@react-three')) return undefined; // bleibt bei der Page
+            if (id.includes('react-leaflet')) return undefined; // bleibt bei der Page
+            if (id.includes('three')) return 'vendor-three';
             if (id.includes('leaflet')) return 'vendor-leaflet';
             if (id.includes('qrcode')) return 'vendor-qrcode';
             if (id.includes('react-router')) return 'vendor-router';

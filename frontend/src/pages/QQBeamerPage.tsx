@@ -6972,15 +6972,15 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
 
               {/* Bottom-Row: Voter-Avatare die diese Antwort gewählt haben.
                   Reservierte Höhe damit Cards ohne Voters genauso hoch sind.
-                  2026-05-06 (Wolf 'Avatare deutlich groesser'): minHeight
-                  angepasst an neue Avatar-Groesse 50-72. */}
+                  2026-05-06 v3 (Wolf 'avatare immernoch mini'): minHeight an
+                  70-110px Avatar-Groesse angepasst. */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 'clamp(8px, 0.9vw, 14px)',
+                display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.1vw, 18px)',
                 flexWrap: 'wrap',
                 position: 'relative', zIndex: 2,
                 paddingTop: voters.length > 0 ? 'clamp(6px, 0.8vh, 10px)' : 0,
                 borderTop: voters.length > 0 ? '1px dashed rgba(255,255,255,0.16)' : 'none',
-                minHeight: 'clamp(54px, 5.5vw, 78px)',
+                minHeight: 'clamp(76px, 7.5vw, 116px)',
               }}>
                 {voters.length > 0 ? (
                   <>
@@ -7001,14 +7001,15 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                           position: 'relative',
                           animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.45 + i * 0.08 + vIdx * 0.06}s both`,
                         }}>
-                          {/* 2026-05-06 (Wolf 'avatare zu klein, etwas
-                              transparenz aber deutlich groesser'): size 34-46
-                              → 50-72, opacity 0.92 als 'Akzent'-Touch. */}
-                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(50px, 5vw, 72px)'} style={{
+                          {/* 2026-05-06 v3 (Wolf 'avatare auf den cards sind
+                              immernoch mini auch nach 3 Bugfixes'): nochmal
+                              deutlich groesser auf 70-110px. flex-wrap im
+                              Parent erlaubt 2-Reihen-Layout bei vielen Voters. */}
+                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7vw, 110px)'} style={{
                             boxShadow: isReal
-                              ? `0 0 0 2.5px #22C55E, 0 0 16px rgba(34,197,94,0.55)`
-                              : `0 0 0 2px ${tm.color}, 0 0 14px ${tm.color}66`,
-                            opacity: 0.92,
+                              ? `0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.6)`
+                              : `0 0 0 2.5px ${tm.color}, 0 0 18px ${tm.color}77`,
+                            opacity: 0.95,
                           }} />
                           {isReal && (
                             <span aria-hidden style={{
@@ -9911,12 +9912,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     if (!team) return null;
                     const timeSec = Math.max(0, (a.submittedAt - t0) / 1000);
                     const isFastest = i === 0;
-                    // 2026-05-03 (Wolf-Bug 'Picture This Avatare gleichzeitig'):
-                    // Per-Avatar-Stagger 850ms passend zur Cascade-Sound-Schedule
-                    // (Z. 8218: i * 850). Vorher: alle Avatare mit dem gleichen
-                    // 'revealAnswerBam'-Effekt aus dem Parent → keine Cascade
-                    // sichtbar trotz Sound-Cascade.
-                    const popDelay = i * 850 + 200; // ms
+                    // 2026-05-06 (Wolf 'schnellstes Team als letztes — habe das
+                    // schon 2x als Aufgabe geschrieben'): Cheese-Overlay-IIFE
+                    // hatte popDelay = i*850+200 (fastest first). Umgedreht:
+                    // (N-1-i)*850+200 → slowest dropt zuerst, fastest zuletzt.
+                    // Synchron zur Sound-Cascade (letzte Note = playRevealHighlight
+                    // auf fastest team) und zur WinnerCard-Slam-Animation.
+                    const popDelay = (correctAnswers.length - 1 - i) * 850 + 200;
                     return (
                       <div key={a.teamId} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,

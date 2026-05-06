@@ -2944,13 +2944,15 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
             objectFit: 'contain',
             display: 'block',
             opacity: p === visibleFile ? 1 : 0,
-            // 2026-05-06 v2 (Wolf 'Animation haengt zwischen zwei Bildern'):
-            // 220ms Crossfade hat dazu gefuehrt dass beide Bilder zu lange
-            // gleichzeitig sichtbar waren — wirkte wie 'haengt'. Auf 110ms
-            // verkuerzt; speaking bleibt 90ms.
+            // 2026-05-06 v3 (Wolf 'Animation stuckt immernoch zwischen zwei
+            // Bildern — Hintergrund schimmert durch'): Crossfade komplett
+            // entfernt fuer Frame-Posen-Modes. Beide Bilder semi-transparent
+            // = doppeltes Alpha = BG durch beide sichtbar. Stattdessen
+            // Stop-Motion-Snap: aktives Bild instant 1, alte instant 0.
+            // Speaking-Mode behaelt 90ms-Fade fuer fliessenden Mund-Flap.
             transition: effectiveMode === 'speaking'
               ? 'opacity 90ms linear'
-              : 'opacity 110ms ease-out',
+              : 'none',
             pointerEvents: 'none',
           }}
         />

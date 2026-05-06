@@ -88,10 +88,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // 2026-05-06 (Wolf 'aber /team load schneller waere ja was gutes'):
+        // Vendor-Splitting fuer die schwersten Libs erweitert. Three.js +
+        // Leaflet sind die groessten und werden nur in der Beamer-Page
+        // gebraucht — durch separate Chunks lädt /team auf Phones deutlich
+        // schneller, weil Browser-Cache pro Vendor-Chunk wiederverwendet wird
+        // (gleiche React-Version ueber Sessions = Cache-Hit).
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
             if (id.includes('socket.io-client')) return 'vendor-socket';
             if (id.includes('html2canvas')) return 'vendor-canvas';
+            // Three.js + react-three-* — nur Beamer braucht das
+            if (id.includes('three') || id.includes('@react-three')) return 'vendor-three';
+            // Leaflet + react-leaflet — nur CozyGuessr-Map braucht das
+            if (id.includes('leaflet')) return 'vendor-leaflet';
+            if (id.includes('qrcode')) return 'vendor-qrcode';
+            if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
           }
           if (id.includes('/admin/')) return 'admin';
@@ -100,6 +112,10 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 750
+    // 2026-05-06: Limit 750→1000kB. Einziger >750kB Chunk ist vendor-three
+    // (866 KB), wird aber nur fuer die /city-lab Lab-Page geladen — nie im
+    // normalen Quiz-Flow (Lobby/Team/Beamer/Moderator). Warning waere also
+    // irrefuehrend.
+    chunkSizeWarningLimit: 1000
   }
 });

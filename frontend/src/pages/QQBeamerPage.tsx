@@ -2767,8 +2767,8 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // ─────────────────────────────────────────────────────────────────────────────
 type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen';
 
-function AnimatedCozyWolf({ widthCss, speaking, mode, wink }: {
-  widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean;
+function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
+  widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean; mirror?: boolean;
 }) {
   // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop
   // (Ausnahme: winken/jubel/daumen-Modes lesen speaking als externes Mund-Flap-Gate).
@@ -3168,6 +3168,11 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink }: {
       aspectRatio: '1 / 1',
       filter: 'drop-shadow(0 10px 30px rgba(251,191,36,0.45))',
       transformOrigin: 'bottom center',
+      // 2026-05-07 v3 (Wolf 'Wolf flackert immernoch'): mirror jetzt
+      // direkt am Haupt-Wrapper statt extra-Wrapper drumherum — vorher
+      // gestapelte transforms (parent scaleX(-1) + drop-shadow auf
+      // child) verursachten Re-Rasterization-Glitches beim Mund-Flap.
+      transform: mirror ? 'scaleX(-1)' : undefined,
       animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
     }}>
       {posesForMode.map(p => (
@@ -4186,16 +4191,16 @@ function WolfLobbyGreeter({ lang, welcomedTeamName }: {
       {/* 2026-05-07 v3 (Wolf '6 daumen-Posen, zwinkern wenn ein Team
           reinkommt'): mode 'winken' → 'daumen' (Daumen-hoch-Wolf statt
           winkender). wink-Prop true bei Welcome → Wolf zwinkert + Daumen
-          hoch + 'Hallo {Team}!'. scaleX(-1) bleibt — Wolf schaut zur
-          Lobby-Mitte. */}
-      <div style={{ transform: 'scaleX(-1)' }}>
-        <AnimatedCozyWolf
-          widthCss="clamp(140px, 13vw, 200px)"
-          mode="daumen"
-          speaking={speakingNow}
-          wink={isWelcoming}
-        />
-      </div>
+          hoch + 'Hallo {Team}!'. mirror=true — Wolf schaut zur Lobby-
+          Mitte (transform direkt am Haupt-Wrapper, nicht als zusaetzliche
+          Schicht — verhindert Flicker beim Mund-Flap). */}
+      <AnimatedCozyWolf
+        widthCss="clamp(140px, 13vw, 200px)"
+        mode="daumen"
+        speaking={speakingNow}
+        wink={isWelcoming}
+        mirror
+      />
     </div>
   );
 }

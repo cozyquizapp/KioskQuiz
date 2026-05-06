@@ -11416,25 +11416,16 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           width: 620, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
+          {/* 2026-05-05 (Wolf): activeActionLabel/Desc NICHT mehr gesetzt —
+              das Action-Verb ('Setzen/Klauen/Stapeln') war aus 8m Beamer-
+              Distanz unlesbar. Der Active-Team-Glow + Border in der ScoreBar
+              sagt schon „dieses Team ist dran"; das exakte Verb sieht das
+              Team auf seinem /team-Phone. */}
           <ScoreBar
             teams={s.teams}
             activeTeamId={activeTeamId}
             teamPhaseStats={s.teamPhaseStats}
             correctTeamId={s.correctTeamId}
-            activeActionLabel={(() => {
-              if (!team) return undefined;
-              // Comeback-Klau-Phase: nur knappes Label „Klauen" — keine
-              // „Weiter mit Space"-/„Mehr-oder-Weniger"-Inline-Texte mehr,
-              // die hatten den Beamer-Header zu voll gemacht.
-              if (s.comebackHL && s.comebackHL.phase === 'steal' && s.comebackHL.currentStealer === team.id) {
-                return lang === 'en' ? '⚡ Steal' : '⚡ Klauen';
-              }
-              return actionVerb(s.pendingAction, lang);
-            })()}
-            activeActionDesc={undefined /* User-Feedback: lange Beschreibung
-              ('Wähle 2 freie Felder') war in der Team-Liste neben dem Grid zu
-              klein zum Lesen. Verb-Label oben („📍 Setzen") reicht — die exakte
-              Aktion sieht das Team auf seinem /team-Device. */}
           />
         </div>
       </div>
@@ -15363,11 +15354,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               )}
             </span>
           </div>
-          {/* Name + (nur beim aktiven Team) Aktions-Pill darunter — ersetzt den
-              weggefallenen Placement-Banner. */}
+          {/* Name. 2026-05-05 (Wolf): Action-Pill ('Setzen/Klauen/Stapeln')
+              entfernt — aus 8m Beamer-Distanz unlesbar. Active-Team-Glow +
+              Border in der Container-Box reicht als Indikator. */}
           <div style={{
             flex: 1, minWidth: 0,
-            display: 'flex', flexDirection: 'column', gap: isActive && activeActionLabel ? 4 : 0,
+            display: 'flex', flexDirection: 'column', gap: 0,
           }}>
             <TeamNameLabel
               name={t.name}
@@ -15378,26 +15370,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               fontWeight={900}
               style={{ textShadow: isActive ? `0 0 16px ${tColor}55` : 'none' }}
             />
-            {isActive && activeActionLabel && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                alignSelf: 'flex-start',
-                padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(0,0,0,0.45)',
-                border: `1.5px solid ${tColor}88`,
-                fontSize: dense ? 14 : 16, fontWeight: 900,
-                color: '#fde68a',
-                animation: 'tcpulse 1.6s ease-in-out infinite',
-                ['--c' as string]: `${tColor}55`,
-              }}>
-                <span>{activeActionLabel}</span>
-                {activeActionDesc && (
-                  <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: dense ? 12 : 13 }}>
-                    {activeActionDesc}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
           {/* Wert — prominent rechts mit Medaille für Top 3 */}
           <div style={{

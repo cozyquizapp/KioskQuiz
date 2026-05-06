@@ -11873,12 +11873,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
   const showTeam = step >= 1;
-  // 2026-05-06 (Wolf 'mehr oder weniger Text weg, nur Team von dem geklaut
-  // wird, separate Erklaerseite analog Rest des Quiz'):
-  // - Step 1: Team-Hero + 'Klauen bei: [Leader]' (kein H/L-Mechanik-Text mehr)
-  // - Step 2: Eigene Erklaer-Card fuer H/L-Mechanik
+  // 2026-05-06 v2 (Wolf 'so funktionierts unter COMEBACK schreiben, dann
+  // nur noch Teams+Leader-Seite — separate H/L-Erklaer-Seite weg'):
+  // - Step 0: COMEBACK-Title + H/L-Erklaerung direkt darunter
+  // - Step 1: Team-Hero + 'Klauen bei: [Leader]'
+  // (kein Step 2 mehr — Backend maxStep 1)
   const showAction = step >= 1;
-  const showHLExplainer = hl && step >= 2;
 
   // Action-Text nur noch fuer Legacy-Comeback (kein H/L). H/L-Spiele zeigen
   // im Step 1 keinen Text in der Action-Card — nur 'Klauen bei [Leader]'.
@@ -12358,30 +12358,94 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {/* B14 (2026-04-29): Sub-Header 'Die Letzten werden die Ersten' komplett
           entfernt — User-Wunsch: 'doppelt im Intro, beides Mal raus'. */}
 
-      {/* Step 0: Was ist Comeback */}
-      {step === 0 && (
-        <>
-          <div key="intro0" style={{
-            maxWidth: 1100, textAlign: 'center',
-            padding: '36px 48px', borderRadius: 24,
-            background: 'rgba(251,191,36,0.08)',
-            border: '2px solid rgba(251,191,36,0.35)',
-            boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
-            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
-            position: 'relative', zIndex: 5,
+      {/* Step 0: COMEBACK + 'So funktioniert's' direkt darunter.
+          2026-05-06 v2 (Wolf 'so funktionierts unter COMEBACK schreiben,
+          dann nur noch Teams+Leader-Seite — separate H/L-Erklaer-Seite weg'):
+          H/L-Mechanik-Card unter den Lightning-Title gezogen, alte 'Letzter
+          Platz bekommt Boost'-Card entfernt. Step 2 (separate Erklaerseite)
+          entfaellt. */}
+      {step === 0 && hl && (
+        <div key="intro0-hl" style={{
+          width: '100%', maxWidth: 1100,
+          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
+          position: 'relative', zIndex: 5,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(10px, 1.4vh, 18px)',
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            padding: '6px 18px', borderRadius: 999,
+            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
+            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+            color: '#fde68a', letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
-            <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 900, marginBottom: 18 }}>
-              {lang === 'en'
-                ? 'Last place gets a Comeback-Boost.'
-                : 'Letzter Platz bekommt einen Comeback-Boost.'}
+            <QQEmojiIcon emoji="📖"/> {lang === 'en' ? 'How it works' : 'So funktioniert’s'}
+          </div>
+          <div style={{
+            padding: 'clamp(20px, 2.6vh, 32px) clamp(28px, 3.2vw, 44px)', borderRadius: 20,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
+            border: '2px solid rgba(251,191,36,0.4)',
+            boxShadow: '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            maxWidth: 900,
+            display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.4vh, 16px)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(20px, 2.4vw, 36px)',
+              fontSize: 'clamp(28px, 3.6vw, 52px)', fontWeight: 900,
+            }}>
+              <span style={{ color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span>↑</span><span>{lang === 'en' ? 'HIGHER' : 'MEHR'}</span>
+              </span>
+              <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.6em' }}>
+                {lang === 'en' ? 'or' : 'oder'}
+              </span>
+              <span style={{ color: '#EF4444', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span>↓</span><span>{lang === 'en' ? 'LOWER' : 'WENIGER'}</span>
+              </span>
             </div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
+            <div style={{
+              fontSize: 'clamp(18px, 2.1vw, 28px)', fontWeight: 800,
+              color: '#fef3c7', lineHeight: 1.5,
+            }}>
               {lang === 'en'
-                ? 'Steal cells from the leader.'
-                : 'Klauen beim Führenden.'}
+                ? 'Tip: Does the unknown number lie above or below the shown one?'
+                : 'Tippt: Liegt die unbekannte Zahl über oder unter der gezeigten?'}
+            </div>
+            <div style={{
+              fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
+              color: '#cbd5e1', opacity: 0.85, lineHeight: 1.5,
+            }}>
+              {lang === 'en'
+                ? 'Up to 3 rounds — each correct answer steals 1 cell from the leader.'
+                : 'Bis zu 3 Runden — jede richtige Antwort klaut 1 Feld vom Führenden.'}
             </div>
           </div>
-        </>
+        </div>
+      )}
+      {/* Legacy-Comeback (kein H/L) faellt zurueck auf alte Boost-Card */}
+      {step === 0 && !hl && (
+        <div key="intro0-legacy" style={{
+          maxWidth: 1100, textAlign: 'center',
+          padding: '36px 48px', borderRadius: 24,
+          background: 'rgba(251,191,36,0.08)',
+          border: '2px solid rgba(251,191,36,0.35)',
+          boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
+          position: 'relative', zIndex: 5,
+        }}>
+          <div style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', lineHeight: 1.45, color: '#fde68a', fontWeight: 900, marginBottom: 18 }}>
+            {lang === 'en'
+              ? 'Last place gets a Comeback-Boost.'
+              : 'Letzter Platz bekommt einen Comeback-Boost.'}
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 2vw, 26px)', color: '#fef3c7', opacity: 0.85, lineHeight: 1.5 }}>
+            {lang === 'en'
+              ? 'Steal cells from the leader.'
+              : 'Klauen beim Führenden.'}
+          </div>
+        </div>
       )}
 
       {/* Step 1+: Team hero — bei H/L mit Tied-Last mehrere Teams zeigen,
@@ -12516,72 +12580,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* Step 2: H/L-Mechanik Erklaer-Card.
-          2026-05-06 (Wolf 'aus Konsistenzgruenden Erklaerseite wie im Rest
-          des Quiz'): eigene Folie nach Team+Leader-Ankuendigung erklaert
-          die 'Mehr oder Weniger'-Mechanik analog zur Kategorie-Erklaerung
-          in PHASE_INTRO. */}
-      {showHLExplainer && (
-        <div style={{
-          width: '100%', maxWidth: 1100,
-          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
-          position: 'relative', zIndex: 5,
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'clamp(10px, 1.4vh, 18px)',
-          marginTop: 'clamp(8px, 1.2vh, 16px)',
-        }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            padding: '6px 18px', borderRadius: 999,
-            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
-            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
-            color: '#fde68a', letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}>
-            <QQEmojiIcon emoji="📖"/> {lang === 'en' ? 'How it works' : 'So funktioniert’s'}
-          </div>
-          <div style={{
-            padding: 'clamp(20px, 2.6vh, 32px) clamp(28px, 3.2vw, 44px)', borderRadius: 20,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
-            border: '2px solid rgba(251,191,36,0.4)',
-            boxShadow: '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
-            textAlign: 'center',
-            maxWidth: 900,
-            display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.4vh, 16px)',
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(20px, 2.4vw, 36px)',
-              fontSize: 'clamp(28px, 3.6vw, 52px)', fontWeight: 900,
-            }}>
-              <span style={{ color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span>↑</span><span>{lang === 'en' ? 'HIGHER' : 'MEHR'}</span>
-              </span>
-              <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.6em' }}>
-                {lang === 'en' ? 'or' : 'oder'}
-              </span>
-              <span style={{ color: '#EF4444', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span>↓</span><span>{lang === 'en' ? 'LOWER' : 'WENIGER'}</span>
-              </span>
-            </div>
-            <div style={{
-              fontSize: 'clamp(18px, 2.1vw, 28px)', fontWeight: 800,
-              color: '#fef3c7', lineHeight: 1.5,
-            }}>
-              {lang === 'en'
-                ? 'Tip: Does the unknown number lie above or below the shown one?'
-                : 'Tippt: Liegt die unbekannte Zahl über oder unter der gezeigten?'}
-            </div>
-            <div style={{
-              fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
-              color: '#cbd5e1', opacity: 0.85, lineHeight: 1.5,
-            }}>
-              {lang === 'en'
-                ? 'Up to 3 rounds — each correct answer steals 1 cell from the leader.'
-                : 'Bis zu 3 Runden — jede richtige Antwort klaut 1 Feld vom Führenden.'}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2026-05-06 v2: Separate Step-2-Erklaerseite entfernt — die H/L-
+          Erklaerung steht jetzt zusammen mit dem COMEBACK-Title auf Step 0. */}
     </div>
   );
 }

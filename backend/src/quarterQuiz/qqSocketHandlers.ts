@@ -2898,15 +2898,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     // ── Comeback Intro Step (moderator steuert Erklärung Schritt für Schritt) ─
-    // Steps: 0 = Was ist Comeback, 1 = Team + Klau-Ziel (Leader),
-    //        2 = H/L-Mechanik-Erklaerung (analog Kategorie-Erklaerung).
-    // Space-Druck bei Step 2 startet das H/L-Mini-Game (phase='question').
-    // 2026-05-06 (Wolf 'aus Konsistenzgruenden Erklaerseite wie im Rest').
+    // Steps: 0 = COMEBACK + So-funktioniert's-Card (H/L-Mechanik unter dem Title),
+    //        1 = Teams + Leader-Target (welche Teams klauen wem).
+    // Space-Druck bei Step 1 startet das H/L-Mini-Game (phase='question').
+    // 2026-05-06 v2 (Wolf 'so funktionierts unter COMEBACK-Title schreiben,
+    // dann nur noch Teams+Leader-Seite, die separate H/L-Erklaer-Seite kann weg').
     socket.on('qq:comebackIntroStep', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
         if (room.phase !== 'COMEBACK_CHOICE') { ok(ack); return; }
-        const maxStep = 2;
+        const maxStep = 1;
         if (room.comebackIntroStep < maxStep) {
           room.comebackIntroStep += 1;
           broadcast(io, payload.roomCode);

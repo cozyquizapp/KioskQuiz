@@ -4416,6 +4416,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             display: inline-block;
             will-change: transform, opacity;
           }
+          /* 2026-05-07 (Wolf 'art blitz der am ende ueber cozy quiz zieht
+             sieht nicht gut aus'): qqRulesTitleLetter hatte filter:blur(10px)
+             im Cascade — durch Stagger sah das wie Schaerfen-Wischer ueber
+             die Buchstaben aus. Eigene Entry-Anim ohne Blur, nur sanfter
+             Slide-Up + Fade. */
+          @keyframes qqLobbyWordmarkEntry {
+            0%   { opacity: 0; transform: translateY(16px) scale(0.92); }
+            60%  { opacity: 1; transform: translateY(0) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
         `}</style>
         <div
           className="cq-wordmark"
@@ -4429,7 +4439,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <span
               key={i}
               style={{
-                animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.25 + i * 0.06}s both, qqCatNameWave 2.6s ease-in-out ${0.95 + i * 0.08}s infinite`,
+                animation: `qqLobbyWordmarkEntry 0.55s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.18 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
               }}
             >{ch}</span>
           ))}

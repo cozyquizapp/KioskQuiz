@@ -1290,6 +1290,13 @@ export default function QQModeratorPage() {
                       </>
                     ) : (
                       <>
+                        {/* 2026-05-07 (Wolf 'zwischen slot-ende und reveal
+                            fehlt eine Zwischenbeschreibung wie Frage gestartet'):
+                            Status-Header zeigt jetzt klar an dass die Frage
+                            laeuft + Space-Hint zum Reveal. */}
+                        <div style={{ fontSize: 12, color: '#86efac', textAlign: 'center', fontWeight: 700 }}>
+                          ▶ Frage laeuft — Space deckt Antwort auf
+                        </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>

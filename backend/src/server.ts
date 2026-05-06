@@ -7929,12 +7929,99 @@ function persistQQDrafts() {
 // Erstellt aus inspirations_now_i_know_v1.md (siehe Repo-Root).
 // Imposter-Variante (BUNTE_TUETE / oneOfEight) wurde komplett vermieden —
 // im Code drin aber im Quiz abgestellt.
-function createSampleQQDrafts(): typeof qqDrafts {
+function createSampleQQDrafts(): any[] {
   const now = Date.now();
 
   function q(id: string, phase: number, qi: number, cat: string, data: Record<string, any>) {
     return { id, category: cat, phaseIndex: phase, questionIndexInPhase: qi, text: '', answer: '', ...data };
   }
+
+  // ─── 4×4-CONNECTIONS-FINALE-SETS ────────────────────────────────────────
+  // 2026-05-06 (Wolf 'gerade in allen Allgemeinwissen-Drafts gleich'):
+  // Eines pro Draft, statt überall denselben Default-FALLBACK. Jedes Set hat:
+  //   einfach (1) - mittel (2) - schwer (3) - fies (4)
+  // Die fies-Gruppen nutzen das Wortzusammensetzungs-Pattern (Bier-/Zimmer-/
+  // Stern-) oder Mehrfach-Bedeutungen (Tier+Sternzeichen).
+  const CONNECTIONS_PUB_KLASSIKER = {
+    groups: [
+      { id: 'g1', name: 'Bier-Marken', nameEn: 'Beer brands',
+        items: ['Beck\'s', 'Astra', 'Krombacher', 'Jever'],
+        itemsEn: ['Beck\'s', 'Astra', 'Krombacher', 'Jever'],
+        difficulty: 1 as const },
+      { id: 'g2', name: 'Currywurst-Beilagen', nameEn: 'Currywurst sides',
+        items: ['Pommes', 'Brötchen', 'Senf', 'Mayo'],
+        itemsEn: ['Fries', 'Bun', 'Mustard', 'Mayo'],
+        difficulty: 2 as const },
+      { id: 'g3', name: 'Asterix-Figuren', nameEn: 'Asterix characters',
+        items: ['Obelix', 'Miraculix', 'Majestix', 'Idefix'],
+        itemsEn: ['Obelix', 'Getafix', 'Vitalstatistix', 'Dogmatix'],
+        difficulty: 3 as const },
+      { id: 'g4', name: 'Vor BIER ergibt ein Wort', nameEn: '_ before BEER = word',
+        items: ['Garten', 'Krug', 'Deckel', 'Fass'],
+        itemsEn: ['Garden', 'Mug', 'Mat', 'Barrel'],
+        difficulty: 4 as const },
+    ],
+  };
+  const CONNECTIONS_NEUNZIGER = {
+    groups: [
+      { id: 'g1', name: 'Spice Girls', nameEn: 'Spice Girls',
+        items: ['Sporty', 'Scary', 'Baby', 'Posh'],
+        itemsEn: ['Sporty', 'Scary', 'Baby', 'Posh'],
+        difficulty: 1 as const },
+      { id: 'g2', name: 'Disney-Filme der 90er', nameEn: 'Disney 90s',
+        items: ['Aladdin', 'Mulan', 'Tarzan', 'Hercules'],
+        itemsEn: ['Aladdin', 'Mulan', 'Tarzan', 'Hercules'],
+        difficulty: 2 as const },
+      { id: 'g3', name: 'Boygroups der 90er', nameEn: '90s boy bands',
+        items: ['Backstreet Boys', 'Take That', '*NSYNC', 'Boyzone'],
+        itemsEn: ['Backstreet Boys', 'Take That', '*NSYNC', 'Boyzone'],
+        difficulty: 3 as const },
+      { id: 'g4', name: 'Auch Tier UND Sternzeichen', nameEn: 'Animal AND zodiac',
+        items: ['Stier', 'Krebs', 'Widder', 'Skorpion'],
+        itemsEn: ['Bull', 'Cancer', 'Ram', 'Scorpio'],
+        difficulty: 4 as const },
+    ],
+  };
+  const CONNECTIONS_GROSSES_KARO = {
+    groups: [
+      { id: 'g1', name: 'Schach-Figuren', nameEn: 'Chess pieces',
+        items: ['Turm', 'Bauer', 'Läufer', 'Springer'],
+        itemsEn: ['Rook', 'Pawn', 'Bishop', 'Knight'],
+        difficulty: 1 as const },
+      { id: 'g2', name: 'Beatles-Alben', nameEn: 'Beatles albums',
+        items: ['Help!', 'Revolver', 'Abbey Road', 'Let It Be'],
+        itemsEn: ['Help!', 'Revolver', 'Abbey Road', 'Let It Be'],
+        difficulty: 2 as const },
+      { id: 'g3', name: 'Berühmte Friedrichs', nameEn: 'Famous Friedrichs',
+        items: ['Schiller', 'Nietzsche', 'Hölderlin', 'Engels'],
+        itemsEn: ['Schiller', 'Nietzsche', 'Hölderlin', 'Engels'],
+        difficulty: 3 as const },
+      { id: 'g4', name: 'Vor ZIMMER ergibt einen Raum', nameEn: '_ before ROOM',
+        items: ['Schlaf', 'Wohn', 'Bade', 'Kinder'],
+        itemsEn: ['Bed', 'Living', 'Bath', 'Kid'],
+        difficulty: 4 as const },
+    ],
+  };
+  const CONNECTIONS_SUESS_SAUER = {
+    groups: [
+      { id: 'g1', name: 'Schokoriegel', nameEn: 'Chocolate bars',
+        items: ['Snickers', 'Mars', 'Twix', 'Bounty'],
+        itemsEn: ['Snickers', 'Mars', 'Twix', 'Bounty'],
+        difficulty: 1 as const },
+      { id: 'g2', name: 'Märchen der Brüder Grimm', nameEn: 'Grimm fairy tales',
+        items: ['Rotkäppchen', 'Aschenputtel', 'Rapunzel', 'Hänsel und Gretel'],
+        itemsEn: ['Little Red Riding Hood', 'Cinderella', 'Rapunzel', 'Hansel & Gretel'],
+        difficulty: 2 as const },
+      { id: 'g3', name: 'Kleine EU-Hauptstädte', nameEn: 'Small EU capitals',
+        items: ['Riga', 'Tallinn', 'Bratislava', 'Vilnius'],
+        itemsEn: ['Riga', 'Tallinn', 'Bratislava', 'Vilnius'],
+        difficulty: 3 as const },
+      { id: 'g4', name: 'Vor STERN ergibt ein Wort', nameEn: '_ before STAR = word',
+        items: ['See', 'Schweif', 'Mauer', 'Fix'],
+        itemsEn: ['Sea', 'Tail', 'Wall', 'Fix'],
+        difficulty: 4 as const },
+    ],
+  };
 
   // ─── VOL. 1 ─────────────────────────────────────────────────────────────
   const v1 = 'qq-vol-1';
@@ -8082,10 +8169,14 @@ function createSampleQQDrafts(): typeof qqDrafts {
   ];
 
   return [
-    { id: v1, title: '🧠 Allgemeinwissen Vol. 1', phases: 4 as const, language: 'both', questions: v1qs, createdAt: now - 5000, updatedAt: now - 5000 },
-    { id: v2, title: '🧠 Allgemeinwissen Vol. 2', phases: 4 as const, language: 'both', questions: v2qs, createdAt: now - 4000, updatedAt: now - 4000 },
-    { id: v3, title: '🧠 Allgemeinwissen Vol. 3', phases: 4 as const, language: 'both', questions: v3qs, createdAt: now - 3000, updatedAt: now - 3000 },
-    { id: v4, title: '🧠 Allgemeinwissen Vol. 4', phases: 4 as const, language: 'both', questions: v4qs, createdAt: now - 2000, updatedAt: now - 2000 },
+    // 2026-05-06 (Wolf 'gerade in allen Allgemeinwissen-Drafts gleich'):
+    // Pro Draft eigenes 4×4-Connections-Set damit das Finale unterschiedlich
+    // ist. Default-FALLBACK (Kaffee/Programmiersprachen/Edelsteine/Apple)
+    // bleibt aber als 5tes Set in Vol. 5 erhalten — passt thematisch.
+    { id: v1, title: '🧠 Allgemeinwissen Vol. 1', phases: 4 as const, language: 'both', questions: v1qs, connections: CONNECTIONS_PUB_KLASSIKER, createdAt: now - 5000, updatedAt: now - 5000 },
+    { id: v2, title: '🧠 Allgemeinwissen Vol. 2', phases: 4 as const, language: 'both', questions: v2qs, connections: CONNECTIONS_NEUNZIGER, createdAt: now - 4000, updatedAt: now - 4000 },
+    { id: v3, title: '🧠 Allgemeinwissen Vol. 3', phases: 4 as const, language: 'both', questions: v3qs, connections: CONNECTIONS_GROSSES_KARO, createdAt: now - 3000, updatedAt: now - 3000 },
+    { id: v4, title: '🧠 Allgemeinwissen Vol. 4', phases: 4 as const, language: 'both', questions: v4qs, connections: CONNECTIONS_SUESS_SAUER, createdAt: now - 2000, updatedAt: now - 2000 },
     { id: v5, title: '🧠 Allgemeinwissen Vol. 5', phases: 4 as const, language: 'both', questions: v5qs, createdAt: now - 1000, updatedAt: now - 1000 },
   ];
 }
@@ -8185,6 +8276,31 @@ function isQQVolDraft(id: string | undefined | null): boolean {
   if (changed) {
     persistQQDrafts();
     console.log('[migration] Refreshed qq-vol-* drafts in file storage with 4 gewinnt + Bluff');
+  }
+}
+
+// ── Migration 2026-05-06: pro qq-vol-* Draft eigenes 4×4-Connections-Set ──
+// Vorher hatten alle Drafts den Default-Fallback (Kaffee/Programmiersprachen/
+// Edelsteine/Apple). Jetzt liefert createSampleQQDrafts pro Draft ein eigenes
+// Set. Diese Migration mergt das `connections`-Feld in vorhandene Drafts die
+// es noch nicht haben. Idempotent.
+{
+  const fresh = createSampleQQDrafts();
+  const freshById = new Map(fresh.map(d => [d.id, d]));
+  let changed = false;
+  for (const d of qqDrafts) {
+    if (!isQQVolDraft(d.id)) continue;
+    if ((d as any).connections) continue;
+    const fd = freshById.get(d.id);
+    const newConn = (fd as any)?.connections;
+    if (!newConn) continue;
+    (d as any).connections = newConn;
+    d.updatedAt = Date.now();
+    changed = true;
+  }
+  if (changed) {
+    persistQQDrafts();
+    console.log('[migration] Connections-Set pro qq-vol-* Draft hinzugefuegt');
   }
 }
 

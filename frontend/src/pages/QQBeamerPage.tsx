@@ -2917,24 +2917,50 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
       // 2026-05-06 v6 (Wolf 'wenn er den Mund bewegt, soll er was sagen'):
       // Externes speaking-Gate analog winken — Mund-Flap synchron zur
       // Sprechblase im GameOver.
+      // 2026-05-06 v7 (Wolf neue Posen 'troete im mund' + 'augenzwinkern'):
+      //  - Troete-Burst: alle ~6-10s 400ms 'augenauf.troete.jubel' = Party-
+      //    Horn-Tooot-Moment, ueberschreibt allen anderen State.
+      //  - Zwinker statt Blink (35% Chance, nur wenn Mund offen): zeigt
+      //    'augenzwinker.mundauf.jubel' statt regulaerem augenzu-Blink.
       let mouthOpenLocal = false;
       let phase: 'speak' | 'pause' = 'speak';
       let phaseUntil = Date.now() + 1800 + Math.random() * 1000;
       let nextBlinkAt = Date.now() + 2500 + Math.random() * 1500;
       let blinkUntil = 0;
+      let blinkIsZwinker = false;
+      let nextTroeteAt = Date.now() + 4000 + Math.random() * 4000;
+      let troeteUntil = 0;
       const tick = () => {
         if (!alive) return;
         const now = Date.now();
+        // Troete hat absoluten Vorrang
+        if (now < troeteUntil) {
+          setCurrentFile('augenauf.troete.jubel');
+          timer = window.setTimeout(tick, troeteUntil - now);
+          return;
+        }
+        if (now >= nextTroeteAt) {
+          troeteUntil = now + 400;
+          nextTroeteAt = now + 400 + 6000 + Math.random() * 4000;
+          setCurrentFile('augenauf.troete.jubel');
+          timer = window.setTimeout(tick, 400);
+          return;
+        }
         if (now < blinkUntil) {
-          // Joyful squint: kann mit offenem Mund (Howl) sein
-          setCurrentFile(mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel');
+          setCurrentFile(blinkIsZwinker
+            ? 'augenzwinker.mundauf.jubel'
+            : (mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel'));
           timer = window.setTimeout(tick, blinkUntil - now);
           return;
         }
         if (now >= nextBlinkAt) {
           blinkUntil = now + 200;
+          // Zwinker nur wenn Mund offen (Pose ist mundauf)
+          blinkIsZwinker = mouthOpenLocal && Math.random() < 0.35;
           nextBlinkAt = now + 200 + 2500 + Math.random() * 1500;
-          setCurrentFile(mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel');
+          setCurrentFile(blinkIsZwinker
+            ? 'augenzwinker.mundauf.jubel'
+            : (mouthOpenLocal ? 'augenzu.mundauf.jubel' : 'augenzu.mundzu.jubel'));
           timer = window.setTimeout(tick, 200);
           return;
         }
@@ -3025,6 +3051,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
     'augenauf.mundauf.winken', 'augenauf.mundzu.winken', 'augenzu.mundzu.winken',
     'augenauf.mundauf.jubel', 'augenauf.mundzu.jubel',
     'augenzu.mundauf.jubel', 'augenzu.mundzu.jubel',
+    'augenauf.troete.jubel', 'augenzwinker.mundauf.jubel',
     'augenauf.mundzu.trinken', 'augenzu.mundzu.trinken',
     'augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z',
     'augenauf.mundueberrascht', 'augenzu.mundueberrascht',

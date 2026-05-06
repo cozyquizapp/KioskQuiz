@@ -2068,7 +2068,7 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
           fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
           color: '#fde68a', letterSpacing: 0.4, textTransform: 'uppercase',
         }}>
-          {lang === 'en' ? 'Who starts?' : 'Wer faengt an?'}
+          {lang === 'en' ? 'Who starts?' : 'Wer fängt an?'}
         </span>
       </div>
 
@@ -2141,7 +2141,7 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
             fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 900,
             color: chosen.color,
           }}>
-            {truncName(chosen.name, 22)} {lang === 'en' ? 'starts!' : 'faengt an!'}
+            {truncName(chosen.name, 22)} {lang === 'en' ? 'starts!' : 'fängt an!'}
           </span>
         </div>
       )}

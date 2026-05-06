@@ -5182,13 +5182,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
-              {/* Category explanation — 1 line */}
+              {/* Category explanation — 1 line.
+                  2026-05-05 (Wolf 'Schriftart komisch, an restl. App anpassen'):
+                  Caveat-Cursive raus → inherit (Nunito) für Konsistenz mit
+                  Rest der App. Size/Weight angepasst auf Standard-Sub-Headline. */}
               {catExplain && (
                 <div style={{
-                  fontFamily: "'Caveat', cursive",
-                  fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 700,
-                  color: `${catColor}88`,
-                  marginTop: 16,
+                  fontSize: 'clamp(22px, 2.6vw, 36px)', fontWeight: 700,
+                  color: `${catColor}cc`,
+                  letterSpacing: '0.02em',
+                  marginTop: 14,
                   animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.65s both',
                   position: 'relative', zIndex: 5,
                   textAlign: 'center',
@@ -10750,12 +10753,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 transform: off.side === 'right' || off.side === 'left'
                                   ? 'translate(0, 0)'
                                   : 'translate(-50%, 0)',
-                                padding: isWinner ? '9px 22px' : '7px 18px',
+                                // 2026-05-05 (Wolf 'low-bets zu klein, groesser'):
+                                // Loser-Bet 24-34 → 30-44, Winner-Bet 32-46 → 38-56.
+                                // Padding entsprechend hoch.
+                                padding: isWinner ? '11px 26px' : '9px 22px',
                                 borderRadius: 16,
                                 background: 'rgba(0,0,0,0.88)',
                                 border: `2px solid ${tColor}`,
                                 color: '#fff', fontWeight: 900,
-                                fontSize: isWinner ? 'clamp(32px, 3.4vw, 46px)' : 'clamp(24px, 2.6vw, 34px)',
+                                fontSize: isWinner ? 'clamp(38px, 4vw, 56px)' : 'clamp(30px, 3.2vw, 44px)',
                                 whiteSpace: 'nowrap',
                                 boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
                                 zIndex: 1,
@@ -11655,12 +11661,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.15s both',
         }}>
           {/* Anchor-Card: bekannter Wert.
-              2026-05-05 (Wolf 'cards hoeher, unten ist viel platz'):
-              padding-vertical 22-36px → 44-72px, minHeight gesetzt. */}
+              2026-05-05 v2 (Wolf 'avatar verdeckt pille immer noch — cards
+              hoeher, mehr/weniger tiefer'): padding-vertical 44-72 → 60-100,
+              minHeight 220-320 → 280-400. */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(44px, 5.5vh, 72px) clamp(22px, 3vw, 40px)', borderRadius: 24,
-            minHeight: 'clamp(220px, 28vh, 320px)',
+            padding: 'clamp(60px, 7vh, 100px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            minHeight: 'clamp(280px, 34vh, 400px)',
             background: 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(34,197,94,0.04))',
             border: '2px solid rgba(34,197,94,0.42)',
             boxShadow: '0 0 40px rgba(34,197,94,0.18), 0 8px 28px rgba(0,0,0,0.4)',
@@ -11700,8 +11707,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             position: 'relative',
             // 2026-05-05 v3: minHeight erhoeht damit Pillen-Stack mit groesserem
             // gap reinpasst und Avatare oberhalb/unterhalb landen koennen.
-            // v4 (Wolf 'cards hoeher'): minHeight matched auf neue Card-Hoehe.
-            minHeight: 'clamp(220px, 28vh, 320px)',
+            // v5 (Wolf 'cards hoeher, avatar Platz'): minHeight matched auf
+            // neue Card-Hoehe (280-400 statt 220-320).
+            minHeight: 'clamp(280px, 34vh, 400px)',
           }}>
             {/* 2026-05-05 (Wolf): App-Pillen statt Goldkreise — MEHR oben (grün-
                 Akzent), WENIGER unten (rot-Akzent). Same Pille-Style wie
@@ -11711,11 +11719,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 (Pille-Label zeigt's schon). */}
             <div style={{
               position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              // 2026-05-05 v3 (Wolf-Bug 'avatar overlappt pillen'): Pillen-Stack
-              // weiter auseinander damit Avatare zwischen/oberhalb/unterhalb
-              // der Pillen Platz haben ohne sie zu verdecken.
-              gap: 'clamp(50px, 7vh, 110px)',
+              // 2026-05-05 v6 (Wolf 'mehr und weniger etwas runter, mehr Platz
+              // fuer den Avatar oben'): Pillen-Stack vertikal nach UNTEN
+              // geschoben (justify-content end + paddingBottom). Avatar 'higher'
+              // hat damit oberhalb von MEHR mehr Headroom — keine Verdeckung.
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'flex-end',
+              paddingBottom: 'clamp(20px, 3vh, 50px)',
+              gap: 'clamp(40px, 5.5vh, 80px)',
               pointerEvents: 'none',
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
@@ -11774,8 +11785,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           {/* Subject-Card — siehe Anchor-Card oben (gleicher Wolf-Wunsch). */}
           <div style={{
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
-            padding: 'clamp(44px, 5.5vh, 72px) clamp(22px, 3vw, 40px)', borderRadius: 24,
-            minHeight: 'clamp(220px, 28vh, 320px)',
+            padding: 'clamp(60px, 7vh, 100px) clamp(22px, 3vw, 40px)', borderRadius: 24,
+            minHeight: 'clamp(280px, 34vh, 400px)',
             background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
             border: '3px solid rgba(251,191,36,0.7)',
             boxShadow: '0 0 44px rgba(251,191,36,0.28), 0 8px 28px rgba(0,0,0,0.4)',
@@ -11885,16 +11896,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // angrenzend an die jeweilige Pille (nicht IN die Pille).
               // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
               // Label lesbar bleibt.
-              // 2026-05-05 v5 (Wolf 'avatar verdeckt pille'): Avatar landet
-              // jetzt KLAR ausserhalb des Pillen-Stacks — 'higher' weit
-              // OBERHALB der MEHR-Pille (zwischen Frage-Card und MEHR),
-              // 'lower' KNAPP UNTER der WENIGER-Pille. So bleiben beide
-              // Pille-Labels frei lesbar, der Avatar sitzt klar an seiner
-              // Wahl-Seite (oben = MEHR, unten = WENIGER).
+              // 2026-05-05 v6 (Wolf 'cards höher, MEHR/WENIGER tiefer fuer
+              // Avatar-Platz'): Pillen-Stack ist nun unten ausgerichtet im
+              // VS-Bereich (justify-content:flex-end), MEHR sitzt im mittleren
+              // Drittel statt oben. Y-Translates entsprechend angepasst —
+              // Avatar 'higher' fliegt weniger hoch (MEHR ist tiefer), Avatar
+              // 'lower' fliegt kaum hoch (WENIGER ist nahe der Avatar-Row).
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-680px, -48vh, -460px)) scale(0.55)`
+                ? `translate(${xCenter}px, clamp(-440px, -32vh, -290px)) scale(0.55)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-130px, -12vh, -70px)) scale(0.55)`
+                  ? `translate(${xCenter}px, clamp(-60px, -6vh, -25px)) scale(0.55)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{
@@ -13919,21 +13930,30 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               />
             </div>
 
-            {/* Team-Name riesig */}
-            <TeamNameLabel
-              name={team.name}
-              maxLines={2}
-              shrinkAfter={14}
-              color={teamColor}
-              fontWeight={900}
-              fontSize="clamp(40px, 5.5vw, 88px)"
-              style={{
-                textShadow: `0 0 40px ${teamColor}66`,
-                lineHeight: 1.05,
-                animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
-                textAlign: 'center',
-              }}
-            />
+            {/* Team-Name riesig.
+                2026-05-05 (Wolf 'farbiges Rechteck hinter Schrift'): textShadow
+                40px-Glow erzeugte einen rechteck-foermigen Glow-Halo der wie
+                eine Box hinterm Namen wirkte. Stattdessen filter:drop-shadow
+                auf dem Wrapper — folgt der Text-Silhouette und wirkt nicht
+                mehr rechteckig. */}
+            <div style={{
+              filter: `drop-shadow(0 0 18px ${teamColor}55)`,
+              animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
+              textAlign: 'center',
+            }}>
+              <TeamNameLabel
+                name={team.name}
+                maxLines={2}
+                shrinkAfter={14}
+                color={teamColor}
+                fontWeight={900}
+                fontSize="clamp(40px, 5.5vw, 88px)"
+                style={{
+                  lineHeight: 1.05,
+                  textAlign: 'center',
+                }}
+              />
+            </div>
 
             {/* Score riesig */}
             <div style={{

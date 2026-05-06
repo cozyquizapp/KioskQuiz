@@ -869,6 +869,13 @@ export interface QQStateUpdate {
   hotPotatoUsedAnswers: string[];       // accepted answers shown on beamer
   hotPotatoAnswerAuthors?: string[];    // teamId per index in hotPotatoUsedAnswers (parallel array)
   hotPotatoQualified?: string[];        // teams that have given >=1 accepted answer; only they can win the round
+  // 2026-05-06: Slot-Machine Intro vor dem ersten Hot-Potato-Zug.
+  // 'rolling' = Slot dreht (visualisiert das schon-bekannte Random-Team auf
+  //             dem Beamer als Slot-Roll); Timer steht still, /team noch
+  //             ohne Antwortfeld.
+  // 'finished'= Slot ist gelandet, Turn-Timer laeuft, Eingabe freigegeben.
+  // null/undef = noch keine Hot-Potato-Frage aktiv.
+  hotPotatoSlotState?: 'rolling' | 'finished' | null;
   // Imposter (oneOfEight round-robin)
   imposterActiveTeamId: string | null;
   imposterChosenIndices: number[];      // statement indices already chosen (correct ones removed)

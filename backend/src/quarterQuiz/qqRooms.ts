@@ -110,6 +110,11 @@ export interface QQRoomState {
   hotPotatoUsedAnswers: string[];
   hotPotatoAnswerAuthors: string[];     // parallel array of teamIds
   hotPotatoQualified: string[];         // teams that have given >=1 accepted answer; only they can win
+  /** 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'):
+   *  'rolling'  → Slot dreht auf dem Beamer (Timer pausiert, Eingabe gesperrt)
+   *  'finished' → Slot gelandet, Timer laeuft, Eingabe frei
+   *  null       → keine HP-Frage aktiv. */
+  hotPotatoSlotState?: 'rolling' | 'finished' | null;
   _hotPotatoTimerHandle: ReturnType<typeof setTimeout> | null;
   /** Timer-Handle fuer den H/L-Mini-Game-Auto-Reveal bei Timeout. Not persisted. */
   _comebackHLTimerHandle: ReturnType<typeof setTimeout> | null;
@@ -341,6 +346,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       hotPotatoUsedAnswers: [],
       hotPotatoAnswerAuthors: [],
       hotPotatoQualified: [],
+      hotPotatoSlotState: null,
       _hotPotatoTimerHandle: null,
       _comebackHLTimerHandle: null,
       imposterActiveTeamId: null,
@@ -943,6 +949,7 @@ export function qqActivateQuestion(
   room.hotPotatoUsedAnswers  = [];
   room.hotPotatoAnswerAuthors = [];
   room.hotPotatoQualified    = [];
+  room.hotPotatoSlotState    = null;
   // 2026-05-02 (State-Reset-Audit): gleicher Bug-Pattern wie allAnswered.
   // Imposter-State leakte beim Wechsel oneOfEight -> non-oneOfEight Frage.
   room.imposterActiveTeamId  = null;
@@ -1417,8 +1424,15 @@ function qqStartHotPotatoTurn(room: QQRoomState, onExpire: () => void): void {
   room._hotPotatoTimerHandle = setTimeout(onExpire, HOT_POTATO_TURN_SEC * 1000);
 }
 
-/** Start Hot Potato: random first team, then round-robin. */
-export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): void {
+/** Start Hot Potato: random first team, then round-robin.
+ *
+ *  2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'): Wir bestimmen
+ *  das Start-Team direkt (Random), starten den Turn-Timer aber NICHT.
+ *  Stattdessen geht der Room in `hotPotatoSlotState='rolling'` — der Beamer
+ *  zeigt die Slot-Machine-Animation, /team haelt die Eingabe gesperrt.
+ *  Erst `qqHotPotatoFinishSlot` (vom Mod via 2. Space) startet den Timer
+ *  und gibt die Antwort frei. */
+export function qqHotPotatoStart(room: QQRoomState, _onTurnExpire: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   room.hotPotatoEliminated = [];
   room.hotPotatoLastAnswer = null;
@@ -1432,6 +1446,20 @@ export function qqHotPotatoStart(room: QQRoomState, onTurnExpire: () => void): v
   const startIdx = Math.floor(Math.random() * alive.length);
   room._hotPotatoRoundRobinIdx = startIdx;
   room.hotPotatoActiveTeamId = alive[startIdx];
+  room.hotPotatoSlotState = 'rolling';
+  room.hotPotatoTurnEndsAt = null;
+  room.lastActivityAt = Date.now();
+  // Timer wird erst in qqHotPotatoFinishSlot gestartet.
+}
+
+/** 2026-05-06: Schliesst die Slot-Machine-Intro ab — kippt den State auf
+ *  'finished', startet den Turn-Timer, gibt /team frei. Idempotent: wenn
+ *  schon 'finished', no-op (verhindert Doppel-Trigger durch Mod-Doppelklick). */
+export function qqHotPotatoFinishSlot(room: QQRoomState, onTurnExpire: () => void): void {
+  assertPhase(room, ['QUESTION_ACTIVE']);
+  if (room.hotPotatoSlotState !== 'rolling') return;
+  if (!room.hotPotatoActiveTeamId) return;
+  room.hotPotatoSlotState = 'finished';
   room.lastActivityAt = Date.now();
   qqStartHotPotatoTurn(room, onTurnExpire);
 }
@@ -3179,6 +3207,7 @@ export function qqNextQuestion(room: QQRoomState): void {
   room.hotPotatoEliminated   = [];
   room.hotPotatoLastAnswer   = null;
   room.hotPotatoTurnEndsAt   = null;
+  room.hotPotatoSlotState    = null;
   if (room._hotPotatoTimerHandle) { clearTimeout(room._hotPotatoTimerHandle); room._hotPotatoTimerHandle = null; }
   room.imposterActiveTeamId  = null;
   room.imposterQueue         = [];
@@ -3462,6 +3491,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoUsedAnswers:  room.hotPotatoUsedAnswers,
     hotPotatoAnswerAuthors: room.hotPotatoAnswerAuthors,
     hotPotatoQualified:    room.hotPotatoQualified,
+    hotPotatoSlotState:    room.hotPotatoSlotState ?? null,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,
@@ -3764,6 +3794,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.hotPotatoEliminated   = [];
   room.hotPotatoUsedAnswers  = [];
   room.hotPotatoAnswerAuthors = [];
+  room.hotPotatoSlotState    = null;
   room.imposterActiveTeamId  = null;
   room.imposterQueue         = [];
   room.imposterChosenIndices = [];

@@ -1973,6 +1973,184 @@ function resolveTemplateType(s: QQStateUpdate): import('../../../shared/quarterQ
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// HOT POTATO SLOT-MACHINE — Intro vor dem ersten Zug.
+//
+// 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug, smooth ~3s'):
+// Backend bestimmt das Start-Team random + setzt hotPotatoSlotState='rolling'.
+// Diese Komponente zeigt eine horizontale Avatar-Reihe aller Teams; ein
+// Highlight-Cursor "rollt" mit abnehmender Geschwindigkeit durch die Liste
+// und landet smooth auf hotPotatoActiveTeamId. Tick-Sound pro Cursor-Schritt,
+// Stapel-Stamp + Wolf-Howl beim Land.
+//
+// Mod druckt 2. Space → qq:hotPotatoFinishSlot → Backend kippt auf 'finished',
+// startet den Turn-Timer. Diese View wird unmounted, normaler HP-View kommt.
+// ═══════════════════════════════════════════════════════════════════════════════
+function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
+  teams: any[]; chosenTeamId: string; lang: 'de' | 'en';
+}) {
+  const targetIdx = useMemo(
+    () => Math.max(0, teams.findIndex(t => t.id === chosenTeamId)),
+    [teams, chosenTeamId]
+  );
+  const [cursor, setCursor] = useState(0);
+  const [landed, setLanded] = useState(false);
+  const n = teams.length;
+
+  useEffect(() => {
+    if (n === 0) return;
+    setLanded(false);
+    // ~14-18 Schritte gesamt, last step = targetIdx; Delays mit ease-in
+    // (langsam langsamer): 55ms → ~435ms. Total ~3.0s.
+    const totalSteps = Math.max(14, n * 2 + 4);
+    const delays: number[] = [];
+    for (let i = 0; i < totalSteps; i++) {
+      const t = i / Math.max(1, totalSteps - 1);
+      const eased = Math.pow(t, 2.4);
+      delays.push(55 + eased * 380);
+    }
+    const indices: number[] = [];
+    for (let i = 0; i < totalSteps; i++) {
+      const stepsRemaining = totalSteps - 1 - i;
+      const idx = ((targetIdx - stepsRemaining) % n + n) % n;
+      indices.push(idx);
+    }
+    let acc = 0;
+    const handles: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < totalSteps; i++) {
+      acc += delays[i];
+      const isLast = i === totalSteps - 1;
+      const idx = indices[i];
+      handles.push(setTimeout(() => {
+        setCursor(idx);
+        if (isLast) {
+          setLanded(true);
+          try { playStapelStamp(); } catch {}
+          try { playWolfHowl(); } catch {}
+        } else {
+          try { playTick(); } catch {}
+        }
+      }, acc));
+    }
+    return () => { handles.forEach(clearTimeout); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chosenTeamId, n]);
+
+  if (n === 0) return null;
+  const chosen = teams[targetIdx];
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 'clamp(20px, 3vh, 36px)',
+      width: '100%',
+      maxWidth: 'min(96vw, 1700px)',
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 18,
+        padding: '10px 28px', borderRadius: 999,
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.10))',
+        border: '2px solid rgba(245,158,11,0.55)',
+        boxShadow: '0 0 36px rgba(245,158,11,0.35)',
+        animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+      }}>
+        <span style={{ fontSize: 'clamp(28px, 3vw, 44px)' }}>
+          <QQEmojiIcon emoji="🥔"/>
+        </span>
+        <span style={{
+          fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
+          color: '#fde68a', letterSpacing: 0.4, textTransform: 'uppercase',
+        }}>
+          {lang === 'en' ? 'Who starts?' : 'Wer faengt an?'}
+        </span>
+      </div>
+
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+        gap: 'clamp(14px, 1.6vw, 26px)',
+        padding: 'clamp(20px, 2.5vh, 32px) clamp(24px, 2.5vw, 40px)',
+        borderRadius: 28,
+        background: 'linear-gradient(180deg, rgba(15,23,42,0.55), rgba(15,23,42,0.30))',
+        border: '2px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+      }}>
+        {teams.map((t, i) => {
+          const active = i === cursor;
+          const isWinner = landed && i === targetIdx;
+          const dim = landed && i !== targetIdx;
+          return (
+            <div key={t.id} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              padding: 'clamp(8px, 1vh, 14px) clamp(10px, 1.1vw, 18px)',
+              borderRadius: 20,
+              background: active
+                ? `linear-gradient(135deg, ${t.color}55, ${t.color}22)`
+                : 'transparent',
+              border: active
+                ? `2.5px solid ${t.color}`
+                : '2.5px solid transparent',
+              boxShadow: isWinner
+                ? `0 0 50px ${t.color}cc, 0 0 18px ${t.color}, inset 0 0 0 2px ${t.color}`
+                : active
+                  ? `0 0 28px ${t.color}88`
+                  : 'none',
+              transform: isWinner
+                ? 'scale(1.18)'
+                : active ? 'scale(1.08)' : 'scale(1)',
+              opacity: dim ? 0.32 : 1,
+              filter: dim ? 'grayscale(0.4)' : 'none',
+              transition: 'transform 0.18s var(--qq-ease-pop-fast), opacity 0.45s ease, filter 0.45s ease, box-shadow 0.25s ease',
+            }}>
+              <QQTeamAvatar
+                avatarId={t.avatarId}
+                teamEmoji={t.emoji}
+                size={'clamp(56px, 6.5vw, 92px)'}
+              />
+              <span title={t.name} style={{
+                fontSize: 'clamp(13px, 1.3vw, 18px)',
+                fontWeight: 800,
+                color: active || isWinner ? t.color : '#cbd5e1',
+                maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {truncName(t.name, 14)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {landed && chosen && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '12px 28px', borderRadius: 999,
+          background: `linear-gradient(135deg, ${chosen.color}44, ${chosen.color}1a)`,
+          border: `2.5px solid ${chosen.color}`,
+          boxShadow: `0 0 48px ${chosen.color}88`,
+          animation: 'hpSlotWinnerIn 0.55s var(--qq-ease-bounce) both',
+        }}>
+          <QQTeamAvatar avatarId={chosen.avatarId} teamEmoji={chosen.emoji} size={48} />
+          <span style={{
+            fontSize: 'clamp(22px, 2.5vw, 34px)', fontWeight: 900,
+            color: chosen.color,
+          }}>
+            {truncName(chosen.name, 22)} {lang === 'en' ? 'starts!' : 'faengt an!'}
+          </span>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes hpSlotWinnerIn {
+          0%   { transform: translateY(14px) scale(0.85); opacity: 0; }
+          60%  { transform: translateY(-3px) scale(1.06); opacity: 1; }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // HOT POTATO BEAMER VIEW — active team, per-turn timer, used answers
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2012,6 +2190,19 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
   const used: string[] = s.hotPotatoUsedAnswers ?? [];
 
   if (revealed) return null;
+
+  // 2026-05-06: Slot-Machine-Intro (rolling) blendet die normale HP-View
+  // komplett aus — sobald Backend auf 'finished' kippt, kommt die Standard-
+  // Ansicht zurueck (gleiche Komponente, nur anderer Branch).
+  if (s.hotPotatoSlotState === 'rolling' && s.hotPotatoActiveTeamId) {
+    return (
+      <HotPotatoSlotMachine
+        teams={s.teams}
+        chosenTeamId={s.hotPotatoActiveTeamId}
+        lang={lang}
+      />
+    );
+  }
 
   // 2026-05-05 (Wolf-Bug 'Chips zu klein'): Card wird jetzt aktiv hochgeschoben
   // bei vielen Antworten → mehr Vertikal-Raum unten → Tier-Schwellen koennen

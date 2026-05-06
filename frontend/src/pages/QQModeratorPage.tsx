@@ -313,6 +313,14 @@ export default function QQModeratorPage() {
         break;
       }
       case 'QUESTION_ACTIVE': {
+        // 2026-05-06 (Slot-Machine): Bei HP im rolling-State im Autoplay
+        // erst Slot stoppen (~3.4s = Slot-Animation + 400ms Atempause).
+        const sk = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+        if (sk === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+          delayMs = 3400;
+          action = () => emit('qq:hotPotatoFinishSlot', { roomCode });
+          break;
+        }
         // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.
         if (s.allAnswered) {
           delayMs = 2500; // kurzer „Timesup"-Puls abwarten
@@ -577,8 +585,18 @@ export default function QQModeratorPage() {
       }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE')
-        emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE') {
+        // 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'):
+        // Bei Hot Potato im 'rolling'-State stoppt der zweite Space erst die
+        // Slot-Machine (= startet Turn-Timer + gibt /team-Eingabe frei),
+        // statt direkt zur Reveal-Phase zu springen.
+        const subKindActive = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+        if (subKindActive === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+        } else {
+          emitRef.current('qq:revealAnswer', { roomCode });
+        }
+      }
       // QUESTION_REVEAL: bei CozyGuessr/MUCHO progressiv aufdecken, sonst direkt zum Grid
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
@@ -626,7 +644,16 @@ export default function QQModeratorPage() {
     // R — Reveal answer (mirrors CozyQuiz R)
     if (e.code === 'KeyR') {
       e.preventDefault(); playHotkeyFeedback();
-      if (s.phase === 'QUESTION_ACTIVE') emitRef.current('qq:revealAnswer', { roomCode });
+      if (s.phase === 'QUESTION_ACTIVE') {
+        // Slot-Machine respektieren — sonst wuerde R die HP-Frage abrupt
+        // skippen, ohne dass jemand antworten konnte.
+        const subKindR = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+        if (subKindR === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+        } else {
+          emitRef.current('qq:revealAnswer', { roomCode });
+        }
+      }
       return;
     }
 
@@ -683,8 +710,18 @@ export default function QQModeratorPage() {
       }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
       else if (s.phase === 'PHASE_INTRO') emitRef.current('qq:activateQuestion', { roomCode });
-      else if (s.phase === 'QUESTION_ACTIVE')
-        emitRef.current('qq:revealAnswer', { roomCode });
+      else if (s.phase === 'QUESTION_ACTIVE') {
+        // 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'):
+        // Bei Hot Potato im 'rolling'-State stoppt der zweite Space erst die
+        // Slot-Machine (= startet Turn-Timer + gibt /team-Eingabe frei),
+        // statt direkt zur Reveal-Phase zu springen.
+        const subKindActive = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+        if (subKindActive === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
+          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+        } else {
+          emitRef.current('qq:revealAnswer', { roomCode });
+        }
+      }
       else if (s.phase === 'QUESTION_REVEAL') {
         if (mapRevealInProgress) emitRef.current('qq:mapRevealStep', { roomCode });
         else if (muchoRevealInProgress) emitRef.current('qq:muchoRevealStep', { roomCode });
@@ -1188,6 +1225,20 @@ export default function QQModeratorPage() {
                       <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoStart', { roomCode })}>
                         🎁 Hot Potato starten
                       </Btn>
+                    ) : (s as any).hotPotatoSlotState === 'rolling' ? (
+                      // 2026-05-06: Slot-Machine dreht — Mod kann via Space (oder
+                      // Button) den Roll stoppen → Turn-Timer startet, /team frei.
+                      <>
+                        <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 700 }}>
+                          🎰 Slot dreht — Space druecken zum Starten
+                        </div>
+                        <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
+                          <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
+                        </div>
+                        <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoFinishSlot', { roomCode })}>
+                          ▶ Los geht's (Space)
+                        </Btn>
+                      </>
                     ) : (
                       <>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>

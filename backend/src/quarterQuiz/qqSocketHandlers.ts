@@ -33,7 +33,8 @@ import {
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
   qqAutoEvaluateEstimate, qqEvaluateAnswers,
-  qqHotPotatoStart, qqHotPotatoEliminate, qqHotPotatoForceEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
+  qqHotPotatoStart, qqHotPotatoFinishSlot,
+  qqHotPotatoEliminate, qqHotPotatoForceEliminate, qqHotPotatoNext, qqHotPotatoSubmitAnswer,
   qqClearHotPotatoTimer, qqHotPotatoMarkQualified, qqHotPotatoCheckWinner,
   qqHotPotatoIsAllAliveDisconnected, qqHotPotatoForceFinishAllDisconnected,
   qqImposterStart, qqImposterChoose, qqImposterForceEliminate,
@@ -1798,7 +1799,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // Dummies automatisch antworten lassen
           maybeAutoSimulateAnswers(io, payload.roomCode);
           // Hot Potato / Imposter: falls aktives Team ein Dummy ist, Kette starten.
-          if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato') {
+          // 2026-05-06: Bei HotPotato dreht jetzt zuerst die Slot-Machine —
+          // Bot-Kette startet erst nach qq:hotPotatoFinishSlot, damit der
+          // Bot nicht waehrend der Animation antwortet.
+          if (room.currentQuestion?.bunteTuete?.kind === 'hotPotato'
+              && room.hotPotatoSlotState === 'finished') {
             maybeAutoHotPotato(io, payload.roomCode);
           }
           if (room.currentQuestion?.bunteTuete?.kind === 'oneOfEight') {
@@ -2089,6 +2094,21 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqHotPotatoStart(room, hotPotatoTurnExpired(payload.roomCode));
+        broadcast(io, payload.roomCode);
+        // 2026-05-06: Slot dreht jetzt — maybeAutoHotPotato darf erst NACH
+        // qqHotPotatoFinishSlot ausgeloest werden, sonst tippt der Bot waehrend
+        // der Slot-Animation. (Wird in qq:hotPotatoFinishSlot getriggert.)
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'):
+    // Mod druckt zweites Mal Space → Slot stoppt, Turn-Timer startet,
+    // /team-Eingabe wird freigegeben. Dummy-Bot-Kette beginnt erst hier.
+    socket.on('qq:hotPotatoFinishSlot', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqHotPotatoFinishSlot(room, hotPotatoTurnExpired(payload.roomCode));
         broadcast(io, payload.roomCode);
         maybeAutoHotPotato(io, payload.roomCode);
         ok(ack);

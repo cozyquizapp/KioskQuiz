@@ -1317,6 +1317,12 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   const prevImposterActiveRef  = useRef<string | null>(null);
   const [yourTurnAlert, setYourTurnAlert] = useState<null | { kind: 'hotPotato' | 'imposter' }>(null);
   useEffect(() => {
+    // 2026-05-06: Waehrend die Slot-Machine dreht, KEIN Your-Turn-Alert —
+    // der feuert sonst sofort wenn der Random-Pick passiert. Wir aktualisieren
+    // das prevRef WAEHREND rolling NICHT, sonst landet er auf myTeamId und
+    // der spaetere 'finished'-Tick wuerde den Alert nie ausloesen.
+    const slotState = (s as any).hotPotatoSlotState;
+    if (slotState === 'rolling') return;
     const prevHP = prevHotPotatoActiveRef.current;
     prevHotPotatoActiveRef.current = s.hotPotatoActiveTeamId;
     if (s.hotPotatoActiveTeamId === myTeamId && prevHP !== myTeamId) {
@@ -1324,7 +1330,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
       setTimeout(() => setYourTurnAlert(null), 1500);
     }
-  }, [s.hotPotatoActiveTeamId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.hotPotatoActiveTeamId, (s as any).hotPotatoSlotState]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const prevIM = prevImposterActiveRef.current;
     prevImposterActiveRef.current = s.imposterActiveTeamId;
@@ -3280,6 +3286,24 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
 
   if (eliminated) return null; // eliminated teams see the status badge above, not the input
   if (!isMyTurn) return null;  // not your turn — status shown in the main view above
+
+  // 2026-05-06 (Wolf-Wunsch 'Slot-Machine vor erstem HP-Zug'): Solange der
+  // Slot dreht, ist zwar isMyTurn=true, aber Antwortfeld wird ausgeblendet —
+  // sonst koennte man tippen waehrend die Animation laeuft (und der Timer
+  // ist eh noch nicht gestartet). Wir zeigen ein Wartefeld mit Slot-Hinweis.
+  if ((s as any).hotPotatoSlotState === 'rolling') {
+    return (
+      <div style={{
+        marginTop: 4, padding: '14px 16px', borderRadius: 12,
+        background: 'rgba(245,158,11,0.10)',
+        border: `1.5px dashed ${catColor}`,
+        textAlign: 'center', color: '#fde68a', fontSize: 14, fontWeight: 800,
+        animation: 'tcpulse 1.5s ease-in-out infinite',
+      }}>
+        🎰 {lang === 'de' ? 'Slot dreht — gleich geht es los!' : 'Slot is spinning — get ready!'}
+      </div>
+    );
+  }
 
   async function submit() {
     if (!val.trim() || expired) return;

@@ -1150,8 +1150,24 @@ function evalAllIn(room: QQRoomState, q: QQQuestion): QQEvalResult {
 // ── SCHAETZCHEN (closest numeric estimate + Cozy-Range-Bonus) ────────────────
 // Adaptive %-Range nach Wertgröße — vermeidet, dass 5% bei 24 Stück (=±1.2)
 // zu eng oder bei 1 Mio Einwohnern (=±50k) zu großzügig wird.
-function schaetzchenRangeAbs(targetValue: number): number {
+//
+// 2026-05-06 (Wolf-Bug 'Loesung 1914, Team 1949 hat Punkt bekommen wegen
+// in-range — das darf nicht passieren'): Jahre brauchen ABSOLUTE enge
+// Tolerance, nicht prozentual. 1914 × 7% = ±134 Jahre = unsinnig grosszuegig.
+// Wir erkennen Jahres-Fragen an:
+//   (a) explizitem unit „Jahr"/„year"/„Jahre"/„years"
+//   (b) ganzzahligem targetValue 1500-2100 ohne unit (defensiv: kein
+//       Brueckenkurs/Stueckzahl-Konflikt, weil Quiz-Jahre fast immer in
+//       diesem Range liegen).
+// Dann ±3 Jahre Tolerance.
+function schaetzchenRangeAbs(targetValue: number, unit?: string): number {
   const abs = Math.abs(targetValue);
+  const unitTrim = (unit ?? '').trim();
+  const unitLooksLikeYear = !!unitTrim && /\b(jahr|jahre|year|years)\b/i.test(unitTrim);
+  const valueLooksLikeYear = Number.isInteger(targetValue) && abs >= 1500 && abs <= 2100;
+  if (unitLooksLikeYear || (valueLooksLikeYear && unitTrim === '')) {
+    return 3;
+  }
   if (abs < 100)        return abs * 0.20;
   if (abs < 1000)       return abs * 0.10;
   if (abs < 10000)      return abs * 0.07;
@@ -1186,7 +1202,7 @@ function evalSchaetzchen(room: QQRoomState, q: QQQuestion): QQEvalResult {
   // Secondary-Winner ('Cozy-Range'): das naechst-naechste Team (also nach den
   // Closest-Tied-Teams), wenn es innerhalb der adaptiven Range liegt. Nur 1
   // Team — vermeidet Grid-Inflation. Closest-Trophy bleibt beim Closest.
-  const rangeAbs = schaetzchenRangeAbs(q.targetValue);
+  const rangeAbs = schaetzchenRangeAbs(q.targetValue, q.unit);
   let secondaryWinner: string | null = null;
   for (const d of distMap) {
     if (closestWinners.includes(d.teamId)) continue;

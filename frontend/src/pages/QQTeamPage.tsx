@@ -1294,14 +1294,26 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   // Joker-Earned-Tracker: wenn jokersEarned für mein Team hochzählt, vibriert
   // das Phone fühlbar — der Joker ist eine eigene Belohnung jenseits der
   // normalen Punktzahl.
+  // 2026-05-06 (Wolf 'auf /team nicht angezeigt wenn man einen Joker hat,
+  // bitte wie auf /beamer anzeigen und dann wieder ausblenden'):
+  // jokerFlashIdx triggert eine Star-Fly-In-Animation auf dem entsprechenden
+  // Slot im Header (analog Beamer-jokerStarFly). Slot kippt danach in den
+  // 'used'-Look (jokersEarned += 1 = earn UND consume gleichzeitig).
   const prevJokerCountRef = useRef<number>(s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0);
+  const [jokerFlashIdx, setJokerFlashIdx] = useState<number | null>(null);
   useEffect(() => {
     const now = s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0;
     if (now > prevJokerCountRef.current) {
       haptic('jokerEarned');
+      setJokerFlashIdx(now - 1); // Slot der gerade verbraucht/verdient wurde
     }
     prevJokerCountRef.current = now;
   }, [s.teamPhaseStats, myTeamId]);
+  useEffect(() => {
+    if (jokerFlashIdx == null) return;
+    const t = window.setTimeout(() => setJokerFlashIdx(null), 1100);
+    return () => window.clearTimeout(t);
+  }, [jokerFlashIdx]);
 
   // E3 Klau-Toast: wenn ein eigenes Feld gerade geklaut wird.
   const [stolenToast, setStolenToast] = useState<{ id: number; by: string } | null>(null);
@@ -1490,32 +1502,60 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
               style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
             />
             {/* Joker-Slots — kein BG/Border-Container, freigestellt im Header.
-                Verfuegbare Slots glowen gold, verbrauchte ausgegraut. */}
+                Verfuegbare Slots glowen gold, verbrauchte ausgegraut.
+                2026-05-06 (Wolf 'wie auf /beamer anzeigen wenn Joker verdient
+                + dann wieder ausblenden'): Bei Joker-Earn fliegt ein Star als
+                Overlay auf den betroffenen Slot (qqJokerFlyIn-Keyframe), 1.1s
+                Animation, dann verschwunden. Underlying Slot kippt parallel
+                in 'used'-State (Wolfs Logik 'jokersEarned > i = verbraucht'). */}
             {s.teamPhaseStats[myTeamId] && (
               <div
                 style={{
                   display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0,
+                  position: 'relative',
                 }}
                 title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
                 aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
               >
+                <style>{`
+                  @keyframes qqJokerFlyIn {
+                    0%   { transform: translate(-50%, -38px) scale(0.5) rotate(-12deg); opacity: 0; }
+                    35%  { opacity: 1; }
+                    65%  { transform: translate(-50%, 4px) scale(1.25) rotate(6deg); opacity: 1; }
+                    100% { transform: translate(-50%, 0) scale(1) rotate(0); opacity: 0; }
+                  }
+                `}</style>
                 {Array.from({ length: 2 }).map((_, i) => {
                   const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
+                  const flashing = jokerFlashIdx === i;
                   return (
-                    <JokerIcon
-                      key={i}
-                      i={i}
-                      size={26}
-                      alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
-                      style={{
-                        width: 26, height: 26,
-                        opacity: used ? 0.4 : 1,
-                        filter: used
-                          ? 'grayscale(1) brightness(0.8)'
-                          : 'drop-shadow(0 0 6px rgba(251,191,36,0.7))',
-                        transition: 'opacity 0.3s ease, filter 0.3s ease',
-                      }}
-                    />
+                    <span key={i} style={{ position: 'relative', display: 'inline-block', width: 26, height: 26 }}>
+                      <JokerIcon
+                        i={i}
+                        size={26}
+                        alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
+                        style={{
+                          width: 26, height: 26,
+                          opacity: used ? 0.4 : 1,
+                          filter: used
+                            ? 'grayscale(1) brightness(0.8)'
+                            : 'drop-shadow(0 0 6px rgba(251,191,36,0.7))',
+                          transition: 'opacity 0.3s ease, filter 0.3s ease',
+                        }}
+                      />
+                      {flashing && (
+                        <span aria-hidden style={{
+                          position: 'absolute', top: 0, left: '50%',
+                          width: 26, height: 26,
+                          pointerEvents: 'none',
+                          filter: 'drop-shadow(0 0 14px rgba(251,191,36,0.95)) drop-shadow(0 0 28px rgba(251,191,36,0.55))',
+                          animation: 'qqJokerFlyIn 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
+                          zIndex: 10,
+                        }}>
+                          <JokerIcon i={i} size={26} alt="" style={{ width: 26, height: 26 }} />
+                        </span>
+                      )}
+                    </span>
                   );
                 })}
               </div>
@@ -2304,6 +2344,28 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
     }
   }, [phaseIsReveal, q.category, q.bunteTuete?.kind, s.teams.length]);
   const isRevealed = phaseIsReveal && revealUnlocked;
+  // 2026-05-06 (Wolf 'in mucho kommt loesung auf /team teilweise immernoch
+  // vor reveal auf beamer, das darf nirgendwo passieren — Spoiler kaputt
+  // die Spannung'): solutionVisible gated alle Loesung-zeigenden Bloecke
+  // (revealedAnswer, Winner/Loser-Banner, eigene-Antwort-Korrektheit) auf
+  // den TATSAECHLICHEN Beamer-Reveal-Step, nicht nur den Phone-Timer.
+  // Phone-Timer (revealUnlocked) ist Fallback fuer Kategorien ohne Multi-
+  // Step-Reveal; bei MUCHO/ZvZ/Map zaehlt der Backend-Step.
+  const solutionVisible = (() => {
+    if (!isRevealed) return false;
+    if (q.category === 'MUCHO') return (s.muchoRevealStep ?? 0) >= 2;
+    if (q.category === 'ZEHN_VON_ZEHN') return (s.zvzRevealStep ?? 0) >= 2;
+    if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
+      // Map-Reveal: erst nach Closeup-Zoom (= step 1+validCount+1) ist
+      // der Beamer-Reveal komplett. Vorher waeren Pins noch nicht gesetzt.
+      const validCount = s.answers.filter(a => {
+        const parts = String(a.text ?? '').split(',');
+        return Number.isFinite(Number(parts[0])) && Number.isFinite(Number(parts[1]));
+      }).length;
+      return (s.mapRevealStep ?? 0) >= 1 + validCount + 1;
+    }
+    return true;
+  })();
   const iWon = s.correctTeamId === myTeamId;
   const iSubmitted = !!s.answers.find(a => a.teamId === myTeamId);
   const isCheese = q.category === 'CHEESE';
@@ -2394,7 +2456,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       )}
 
       {/* Revealed answer */}
-      {isRevealed && s.revealedAnswer && (
+      {solutionVisible && s.revealedAnswer && (
         <div style={{
           marginTop: 8, padding: '12px 16px', borderRadius: 16,
           background: 'rgba(34,197,94,0.08)', border: '2px solid rgba(34,197,94,0.3)',
@@ -2410,7 +2472,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         </div>
       )}
 
-      {isRevealed && s.correctTeamId && !!(s.pendingFor || s.pendingAction) && (() => {
+      {solutionVisible && s.correctTeamId && !!(s.pendingFor || s.pendingAction) && (() => {
         const winnerTeam = s.teams.find(t => t.id === s.correctTeamId);
         const cat = q.category;
         const isEn = lang === 'en';
@@ -2490,13 +2552,10 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Eigene Antwort (Schätzchen / Mucho / Cheese) — "Was hatten wir nochmal?".
-          2026-05-05 (Wolf 'Mucho-Aufloesung auf /team zu frueh, vor Beamer'):
-          Bei MUCHO erst zeigen wenn Beamer-Step >= 2 (= Doppelblink + Gruen
-          gespielt). Vorher rendert /team den korrekt/falsch-Status sofort beim
-          Phase-Wechsel zu REVEAL, waehrend Beamer noch im Avatar-Cascade-Step
-          ist — fuehrte zu Spoiler auf den Phones. */}
-      {isRevealed
-        && (q.category !== 'MUCHO' || (s.muchoRevealStep ?? 0) >= 2)
+          2026-05-06 (Wolf-Spoiler-Audit): Gate auf zentralen `solutionVisible`
+          gezogen — vorher nur MUCHO mit muchoRevealStep>=2 explizit gegated,
+          jetzt automatisch fuer alle Multi-Step-Kategorien (MUCHO/ZvZ/Map). */}
+      {solutionVisible
         && (q.category === 'SCHAETZCHEN' || q.category === 'MUCHO' || q.category === 'CHEESE') && (() => {
         const myAns = s.answers.find(a => a.teamId === myTeamId);
         if (!myAns) return null;
@@ -2610,7 +2669,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* All-In: Punkteverteilung der eigenen Tipps */}
-      {isRevealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
+      {solutionVisible && q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
         const myAns = s.answers.find(a => a.teamId === myTeamId);
         if (!myAns) return null;
         const parts = String(myAns.text ?? '').split(',').map(x => parseInt(x.trim(), 10));
@@ -2670,7 +2729,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
 
       {/* Reihenfolge: eigene Sortierung mit ✓/✗ pro Position */}
       {/* 2026-05-02: Backend-Truth via orderHitsByTeam (similarityScore>=0.8 fuzzy). */}
-      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
+      {solutionVisible && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order' && (() => {
         const btt = q.bunteTuete as any;
         const items: string[] = btt.items ?? [];
         const correctOrder: number[] = btt.correctOrder ?? items.map((_: any, i: number) => i);
@@ -2715,7 +2774,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Top-5: eigene Antworten mit ✓/✗ + Team-Badges wer es auch hatte */}
-      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
+      {solutionVisible && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'top5' && (() => {
         // 2026-05-02: Backend-Truth via top5HitsByTeam (similarityScore>=0.8 fuzzy).
         // Vorher strict-Match mit substring/equals - Schreibfehler-akzeptierte
         // Treffer wurden nicht angezeigt obwohl Backend Punkte vergab.
@@ -2780,7 +2839,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* CozyGuessr: Distanz-Ranking */}
-      {isRevealed && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map' && (() => {
+      {solutionVisible && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map' && (() => {
         const btt = q.bunteTuete as any;
         const tLat: number = btt.lat; const tLng: number = btt.lng;
         const scored = [...s.answers].map(a => {
@@ -2824,7 +2883,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Hot Potato: Eure-Runde-Zusammenfassung beim Reveal */}
-      {isRevealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
+      {solutionVisible && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (() => {
         const eliminated = s.hotPotatoEliminated.includes(myTeamId);
         return (
           <div style={{
@@ -2845,7 +2904,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Imposter: Eure-Runde-Zusammenfassung beim Reveal */}
-      {isRevealed && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'oneOfEight' && (() => {
+      {solutionVisible && q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'oneOfEight' && (() => {
         const eliminated = s.imposterEliminated.includes(myTeamId);
         return (
           <div style={{
@@ -2866,7 +2925,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       })()}
 
       {/* Nobody got it right */}
-      {isRevealed && !s.correctTeamId && (
+      {solutionVisible && !s.correctTeamId && (
         <div style={{
           marginTop: 8, padding: '10px 14px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
@@ -2884,7 +2943,7 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           - falsch: zufällige Trost-Message (kein Shaming, nur Ermutigung)
           Nicht zeigen wenn man die Runde komplett gewonnen hat (eigener Erfolg
           wird woanders gefeiert). */}
-      {isRevealed && !iWon && iSubmitted && (() => {
+      {solutionVisible && !iWon && iSubmitted && (() => {
         const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
         const myWinPosition = winners.indexOf(myTeamId); // -1 = nicht in den Gewinnern
         // 2026-05-05 (Wolf-Bug 'doppelt gemoppelt'): Auch-richtig-Box entfernt.
@@ -3164,7 +3223,14 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   // Reveal/Stop/neuer Frage).
   // 2026-05-05: zusaetzlich stickyExpired (oben) damit Banner nicht
   // wegflickert wenn Backend kurz reset.
-  if (!myAnswer && (stickyExpired || (s as any).timerExpired === true) && s.phase === 'QUESTION_ACTIVE') {
+  // 2026-05-06 (Wolf-Bug 'bei Cheese zu spaet, danach kommt Eingabefeld nochmal'):
+  // Phase-Gate erweitert auf QUESTION_REVEAL. Vorher: Phase wechselt zu REVEAL
+  // bevor parent's revealUnlocked-Timer (3-12s) ablaeuft → Banner-Gate
+  // (ACTIVE-only) failt → falls through zum Input-Render fuer ein paar
+  // Sekunden bis AnswerInput unmounted. Jetzt: Banner bleibt bis Parent
+  // den Reveal sichtbar macht.
+  if (!myAnswer && (stickyExpired || (s as any).timerExpired === true)
+      && (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')) {
     return (
       <div style={{
         padding: '20px 22px', borderRadius: 16, textAlign: 'center',

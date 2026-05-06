@@ -162,7 +162,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // Slide 4: Joker
       { key: 'rules.slide4.title',  label: '4 · Joker — Titel', defaultDe: 'Joker-Bonus', defaultEn: 'Joker Bonus' },
       { key: 'rules.slide4.line1',  label: '4 · Joker — Zeile 1', defaultDe: '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld', defaultEn: '2×2 block or 4 in a row = 1 bonus tile' },
-      { key: 'rules.slide4.line2',  label: '4 · Joker — Zeile 2', defaultDe: 'Max. 2 Joker pro Team', defaultEn: 'Max 2 jokers per team' },
+      { key: 'rules.slide4.line2',  label: '4 · Joker — Zeile 2', defaultDe: 'Max. 2 Joker pro Team · 1 pro Runde', defaultEn: 'Max 2 jokers per team · 1 per round' },
       { key: 'rules.slide4.gridLabel', label: '4 · Joker — Grid-Label', defaultDe: 'Beide Muster zählen', defaultEn: 'Both patterns count' },
 
       // Slide 5: Fähigkeiten (lines hängen von totalPhases ab — wir editieren pro Runde)

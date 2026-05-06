@@ -1474,19 +1474,23 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     if (s.phase !== 'CONNECTIONS_4X4') return;
     if (cur === prev) return;
     if (prev === 'active' && cur === 'reveal') {
-      // Cascade pro Team in Reveal-Reihenfolge (worst→best). Animation in
-      // ConnectionsRevealView nutzt phasePop mit teamRevealDelay-Stagger.
+      // 2026-05-05 (Wolf 'Sound stimmt nicht mit Visual ueberein'): Cascade-
+      // Timing mit Visual-Stagger gesynced — visual nutzt baseDelay 0.6s +
+      // teamStepMs 1.0s pro Team (siehe ConnectionsRevealView teamRevealDelay).
+      // Vorher: Sound 200ms+600ms-Stagger → 400ms zu frueh + zu schnell.
       const teamCount = s.teams.length;
       const cascadeTotal = teamCount + 1;
+      const baseMs = 600;
+      const stepMs = 1000;
       for (let i = 0; i < teamCount; i++) {
         window.setTimeout(() => {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
-        }, 200 + i * 600);
+        }, baseMs + i * stepMs);
       }
-      // Final-Fanfare nach allen Team-Reveals.
+      // Final-Fanfare nach allen Team-Reveals (matched ans Visual-Tempo).
       window.setTimeout(() => {
         try { playFanfare(); } catch {}
-      }, 200 + teamCount * 600 + 400);
+      }, baseMs + teamCount * stepMs + 400);
     } else if (prev === 'reveal' && cur === 'placement') {
       try { playFieldPlaced(); } catch {}
     } else if (cur === 'done') {

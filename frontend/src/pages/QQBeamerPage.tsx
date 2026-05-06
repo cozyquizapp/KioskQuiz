@@ -1952,8 +1952,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         </div>
       )}
 
-      {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides */}
-      {flashKey > 0 && (
+      {/* Soft-Zoom transition overlay — sanfter Blur/Scale-Puls zwischen Slides.
+          2026-05-07 (Wolf 'art blitz der ueber cozy quiz zieht sieht nicht
+          gut aus'): in LOBBY-Phase ueberspringen — Lobby ist statische
+          Welcome-Seite, kein Action-Moment. Flash wirkt da uebertrieben. */}
+      {flashKey > 0 && s.phase !== 'LOBBY' && (
         <div
           key={flashKey}
           style={{

@@ -8279,6 +8279,48 @@ function isQQVolDraft(id: string | undefined | null): boolean {
   }
 }
 
+// ── Migration 2026-05-07: hotPotato-Fragen in qq-vol-* Drafts refreshen ──
+// Wolfs Frage-Aktualisierungen am Source (z.B. Vol-3 p1-2 'Buch der
+// Weltliteratur' → 'Land mit Flagge ohne Rot') landen sonst nie in der
+// File/DB-Persistierung, weil die Sub-Mechanics-Migration nach erstem Run
+// alle qq-vol-* mit onlyConnect/bluff als „aktuell" markiert und ueberspringt.
+//
+// Diese Migration vergleicht hotPotato-Fragen pro qq-vol-* Draft mit dem
+// aktuellen Source-Inhalt; bei Abweichung wird ueberschrieben. Idempotent —
+// laeuft jedes Mal, aendert aber nichts wenn Text/Answer schon matchen.
+{
+  const fresh = createSampleQQDrafts();
+  const freshById = new Map(fresh.map(d => [d.id, d]));
+  let changed = false;
+  for (const d of qqDrafts) {
+    if (!isQQVolDraft(d.id)) continue;
+    const fd = freshById.get(d.id);
+    if (!fd || !Array.isArray((fd as any).questions)) continue;
+    const freshQs = (fd as any).questions as any[];
+    const liveQs = (d as any).questions as any[] | undefined;
+    if (!Array.isArray(liveQs)) continue;
+    for (let i = 0; i < liveQs.length; i++) {
+      const lq = liveQs[i];
+      if (lq?.bunteTuete?.kind !== 'hotPotato') continue;
+      const fq = freshQs.find(fx => fx?.id === lq?.id);
+      if (!fq || fq?.bunteTuete?.kind !== 'hotPotato') continue;
+      const drift = lq.text !== fq.text
+        || lq.textEn !== fq.textEn
+        || lq.answer !== fq.answer
+        || lq.answerEn !== fq.answerEn;
+      if (drift) {
+        liveQs[i] = { ...lq, text: fq.text, textEn: fq.textEn, answer: fq.answer, answerEn: fq.answerEn };
+        d.updatedAt = Date.now();
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    persistQQDrafts();
+    console.log('[migration] hotPotato-Fragen in qq-vol-* Drafts auf Source-Stand gebracht');
+  }
+}
+
 // ── Migration 2026-05-06: pro qq-vol-* Draft eigenes 4×4-Connections-Set ──
 // Vorher hatten alle Drafts den Default-Fallback (Kaffee/Programmiersprachen/
 // Edelsteine/Apple). Jetzt liefert createSampleQQDrafts pro Draft ein eigenes

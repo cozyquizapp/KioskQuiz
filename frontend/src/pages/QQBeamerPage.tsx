@@ -7025,25 +7025,48 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const winnerSet = new Set(s.currentQuestionWinners ?? []);
   const minWinHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : -1;
 
-  // 2026-05-01 (Reveal-Cascade-Audit): Pentatonik-Cascade-Sound synchron zur
-  // CSS-Animation. Reihenfolge: Hint 0..3, pro Hint die korrekten Teams nach
-  // submittedAt. Stagger-Timings entsprechen den Animation-Delays unten
-  // (0.5s Init + 0.6s pro Hint + 0.25s pro Avatar im Hint).
+  // 2026-05-06 (Wolf '4 gewinnt Reveal ist nicht wirklich mit Cascade
+  // weder in der Animation noch im Sound, faellt aus dem Quiz-Raster'):
+  // Cascade-Timings vereinheitlicht. Reihenfolge:
+  //   Hint 0 popt bei 0.00s + tick
+  //   Hint 1 popt bei 0.65s + tick
+  //   Hint 2 popt bei 1.30s + tick
+  //   Hint 3 popt bei 1.95s + tick
+  //   Avatare pro Hint poppen kurz nach ihrem Hint, gestaffelt
+  //   Loesung-Card slamt bei 2.85s + RevealHighlight
+  // Keyframe-Delays unten verwenden dieselben Werte. Tick-Sound pro Hint
+  // (auch wenn keine Avatare drauf) gibt rhythmische Cascade-Akzentuierung.
+  const HINT_BASE_DELAY = 0.00;
+  const HINT_STEP = 0.65;
+  const AVATAR_OFFSET = 0.30; // Avatar popt 300ms nach seinem Hint
+  const AVATAR_STEP = 0.20;   // pro zusaetzlichem Avatar im Hint
+  const SOLUTION_DELAY = HINT_BASE_DELAY + HINT_STEP * 4 + 0.25; // 2.85s
   useEffect(() => {
     if (!revealed || s.sfxMuted) return;
     const handles: number[] = [];
+    const cascadeTotal = correctSorted.length + 4 + 1; // 4 Hint-Ticks + Avatar-Cascade + Solution-Top
     let cascadeIdx = 0;
-    const cascadeTotal = correctSorted.length + 1; // +1 fuer WinnerCard-Top-Ton
+    // Pro Hint: leichter Tick beim Pop (Pentatonik-Note rank=hintI*ratio)
     for (let hintI = 0; hintI < 4; hintI++) {
+      const tickIdx = cascadeIdx++;
+      const tickDelayMs = (HINT_BASE_DELAY + hintI * HINT_STEP) * 1000 - 60;
+      handles.push(window.setTimeout(() => {
+        try { playAvatarCascadeNote(tickIdx, cascadeTotal); } catch {}
+      }, Math.max(0, tickDelayMs)));
+      // Avatare auf diesem Hint
       const teamsOnHint = correctSorted.filter(g => g.atHintIdx === hintI);
       teamsOnHint.forEach((_g, gIdx) => {
-        const myIdx = cascadeIdx++;
-        const delayMs = (0.5 + hintI * 0.6 + gIdx * 0.25) * 1000 - 60;
+        const avatarIdx = cascadeIdx++;
+        const delayMs = (HINT_BASE_DELAY + hintI * HINT_STEP + AVATAR_OFFSET + gIdx * AVATAR_STEP) * 1000 - 60;
         handles.push(window.setTimeout(() => {
-          try { playAvatarCascadeNote(myIdx, cascadeTotal); } catch {}
+          try { playAvatarCascadeNote(avatarIdx, cascadeTotal); } catch {}
         }, Math.max(0, delayMs)));
       });
     }
+    // Loesung-Card: 'gruenes Feld'-Sound passend zum Card-Slam
+    handles.push(window.setTimeout(() => {
+      try { playRevealHighlight(); } catch {}
+    }, Math.max(0, SOLUTION_DELAY * 1000 - 60)));
     return () => handles.forEach(h => window.clearTimeout(h));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed, correctSorted.length, s.sfxMuted]);
@@ -7159,6 +7182,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           // Text-Bereich exakt gleich gross bleibt. Card-padding-bottom haelt
           // den Avatare-Platz frei.
           const hasAvatarRow = revealed && (teamsAtThisHint.length > 0 || lockedAtThisHint.length > 0);
+          // 2026-05-06 (Wolf '4-Gewinnt Reveal Cascade'): pro Hint ein
+          // staggered phasePop in Reveal-Phase (0.65s Stagger). Question-
+          // Phase: nur das Glow auf isCurrent.
+          const revealAnim = revealed
+            ? `phasePop 0.55s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP}s both`
+            : (isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined);
           return (
             <div key={i} style={{
               position: 'relative',
@@ -7176,7 +7205,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 : isVisible ? `0 0 14px ${hintColor}33` : 'none',
               opacity: isVisible ? 1 : 0.55,
               transition: 'all 0.5s ease',
-              animation: isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined,
+              animation: revealAnim,
               minHeight: 'clamp(200px, 30vh, 300px)',
               justifyContent: 'flex-start', textAlign: 'center',
               gap: 8,
@@ -7224,7 +7253,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                     return (
                       <div key={`c-${g.teamId}`} style={{
                         position: 'relative',
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.5 + i * 0.6 + gIdx * 0.25}s both`,
+                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP + AVATAR_OFFSET + gIdx * AVATAR_STEP}s both`,
                       }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}
@@ -7254,7 +7283,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                       <div key={`l-${g.teamId}`} style={{
                         position: 'relative',
                         opacity: 0.6,
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.6 + i * 0.6 + gIdx * 0.15}s both`,
+                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP + AVATAR_OFFSET + 0.1 + gIdx * AVATAR_STEP}s both`,
                       }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}
@@ -7301,7 +7330,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
             background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
             border: '2px solid rgba(251,191,36,0.45)',
             boxShadow: '0 0 40px rgba(251,191,36,0.25)',
-            animation: revealed ? 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both' : undefined,
+            animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY}s both` : undefined,
             position: 'relative', zIndex: 5,
             alignItems: 'center',
             visibility: revealed ? 'visible' : 'hidden',
@@ -11791,16 +11820,22 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
   const showTeam = step >= 1;
-  // Step 1+2 zusammengelegt: bei step >= 1 zeigen wir Team UND Action zusammen.
+  // 2026-05-06 (Wolf 'mehr oder weniger Text weg, nur Team von dem geklaut
+  // wird, separate Erklaerseite analog Rest des Quiz'):
+  // - Step 1: Team-Hero + 'Klauen bei: [Leader]' (kein H/L-Mechanik-Text mehr)
+  // - Step 2: Eigene Erklaer-Card fuer H/L-Mechanik
   const showAction = step >= 1;
+  const showHLExplainer = hl && step >= 2;
 
+  // Action-Text nur noch fuer Legacy-Comeback (kein H/L). H/L-Spiele zeigen
+  // im Step 1 keinen Text in der Action-Card — nur 'Klauen bei [Leader]'.
   const actionTextDe = hl
-    ? `„Mehr oder Weniger" — pro richtige Antwort klaut ihr 1 Feld vom aktuellen 1. Platz.`
+    ? null
     : (leaderTeams.length === 1
         ? `Klaut 2 Felder von ${leaderTeams[0]?.name ?? 'dem Führenden'}.`
         : `Klaut je 1 Feld von jedem der ${leaderTeams.length} Führenden.`);
   const actionTextEn = hl
-    ? `"More or Less" — each correct answer steals 1 cell from the current leader.`
+    ? null
     : (leaderTeams.length === 1
         ? `Steals 2 cells from ${leaderTeams[0]?.name ?? 'the leader'}.`
         : `Steals 1 cell from each of the ${leaderTeams.length} leaders.`);
@@ -12138,18 +12173,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // angrenzend an die jeweilige Pille (nicht IN die Pille).
               // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
               // Label lesbar bleibt.
-              // 2026-05-06 (Wolf 'avatar leicht versetzt dran, bei higher
-              // ueber dem higher text leicht ueberlappend in die card, bei
-              // lower unter den lower text leicht ueberlappend'):
-              // Pillen-Stack jetzt mittig im VS-Container. Avatar 'higher'
-              // landet so dass seine untere Haelfte die HIGHER-Pille von
-              // oben ueberlappt; 'lower' landet so dass seine obere Haelfte
-              // die LOWER-Pille von unten ueberlappt. Scale 0.7 (vorher 0.55)
-              // damit der Avatar als Akzent nicht zu mickrig wirkt.
+              // 2026-05-06 v2 (Wolf-Screenshot 'Avatar verdeckt WENIGER-Text'):
+              // Y-Translates groesser — Avatar muss DEUTLICH ueber/unter der
+              // Pille sitzen, nur leichter Overlap an der Pillen-AUSSENKANTE
+              // (nicht auf dem Text). Higher: noch hoeher; Lower: noch tiefer
+              // (weniger negativ = naeher am Avatar-Start unter dem VS-Container).
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-460px, -34vh, -310px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-510px, -38vh, -360px)) scale(0.7)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-200px, -15vh, -120px)) scale(0.7)`
+                  ? `translate(${xCenter}px, clamp(-110px, -8vh, -60px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{
@@ -12387,9 +12419,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             lineHeight: 1.4,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           }}>
-            <div>
-              <QQEmojiIcon emoji={hl ? "🎯" : "⚡"}/> {lang === 'en' ? actionTextEn : actionTextDe}
-            </div>
+            {/* 2026-05-06: H/L-Mechanik-Text raus, nur Klau-Ziel anzeigen.
+                Erklaerung der Mechanik kommt in Step 2 als eigene Card. */}
+            {!hl && (
+              <div>
+                <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? actionTextEn : actionTextDe}
+              </div>
+            )}
             {leaderTeams.length > 0 && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
@@ -12423,6 +12459,73 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: H/L-Mechanik Erklaer-Card.
+          2026-05-06 (Wolf 'aus Konsistenzgruenden Erklaerseite wie im Rest
+          des Quiz'): eigene Folie nach Team+Leader-Ankuendigung erklaert
+          die 'Mehr oder Weniger'-Mechanik analog zur Kategorie-Erklaerung
+          in PHASE_INTRO. */}
+      {showHLExplainer && (
+        <div style={{
+          width: '100%', maxWidth: 1100,
+          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+          position: 'relative', zIndex: 5,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(10px, 1.4vh, 18px)',
+          marginTop: 'clamp(8px, 1.2vh, 16px)',
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            padding: '6px 18px', borderRadius: 999,
+            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
+            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+            color: '#fde68a', letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            <QQEmojiIcon emoji="📖"/> {lang === 'en' ? 'How it works' : 'So funktioniert’s'}
+          </div>
+          <div style={{
+            padding: 'clamp(20px, 2.6vh, 32px) clamp(28px, 3.2vw, 44px)', borderRadius: 20,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
+            border: '2px solid rgba(251,191,36,0.4)',
+            boxShadow: '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+            textAlign: 'center',
+            maxWidth: 900,
+            display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.4vh, 16px)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(20px, 2.4vw, 36px)',
+              fontSize: 'clamp(28px, 3.6vw, 52px)', fontWeight: 900,
+            }}>
+              <span style={{ color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span>↑</span><span>{lang === 'en' ? 'HIGHER' : 'MEHR'}</span>
+              </span>
+              <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.6em' }}>
+                {lang === 'en' ? 'or' : 'oder'}
+              </span>
+              <span style={{ color: '#EF4444', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span>↓</span><span>{lang === 'en' ? 'LOWER' : 'WENIGER'}</span>
+              </span>
+            </div>
+            <div style={{
+              fontSize: 'clamp(18px, 2.1vw, 28px)', fontWeight: 800,
+              color: '#fef3c7', lineHeight: 1.5,
+            }}>
+              {lang === 'en'
+                ? 'Tip: Does the unknown number lie above or below the shown one?'
+                : 'Tippt: Liegt die unbekannte Zahl über oder unter der gezeigten?'}
+            </div>
+            <div style={{
+              fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
+              color: '#cbd5e1', opacity: 0.85, lineHeight: 1.5,
+            }}>
+              {lang === 'en'
+                ? 'Up to 3 rounds — each correct answer steals 1 cell from the leader.'
+                : 'Bis zu 3 Runden — jede richtige Antwort klaut 1 Feld vom Führenden.'}
+            </div>
           </div>
         </div>
       )}

@@ -1808,11 +1808,21 @@ export function qqStartPlacement(room: QQRoomState): void {
   const teamId = room.correctTeamId;
   room.pendingFor = teamId;
   room.phase = 'PLACEMENT';
-  const action = pendingActionForPhase(room, teamId);
-  room.pendingAction = action;
+  let action = pendingActionForPhase(room, teamId);
+  // 2026-05-06 (Wolf-Bug 'PLACE_2 mit nur 1 freiem Feld stuckt das Game ohne
+  // Mod-Hilfe'): Wenn nur 1 freies Feld uebrig + PLACE_2 vergeben wuerde,
+  // automatisch auf PLACE_1 degraden. Sonst sitzt das Team nach dem ersten
+  // Setzen mit placementsLeft=1 fest, kein 2. Feld zum Klicken da.
   if (action === 'PLACE_2') {
-    room.teamPhaseStats[teamId].placementsLeft = 2;
+    const freeCellCount = room.grid.reduce((sum, row) => sum + row.filter(c => c.ownerId === null).length, 0);
+    if (freeCellCount <= 1) {
+      action = 'PLACE_1';
+      room.teamPhaseStats[teamId].placementsLeft = 0;
+    } else {
+      room.teamPhaseStats[teamId].placementsLeft = 2;
+    }
   }
+  room.pendingAction = action;
   room.lastActivityAt = Date.now();
 }
 
@@ -2027,8 +2037,16 @@ export function qqChooseFreeAction(
       room.pendingAction = 'PLACE_1';
       // placementsLeft bleibt = jokersAwarded (typischerweise 1)
     } else {
-      room.pendingAction = 'PLACE_2';
-      tStats.placementsLeft = 2;
+      // 2026-05-06 (Wolf-Bug 'PLACE_2 mit nur 1 freiem Feld stuckt das Game'):
+      // Auto-Degrade auf PLACE_1 wenn nur 1 freies Feld uebrig.
+      const freeCellCount = room.grid.reduce((sum, row) => sum + row.filter(c => c.ownerId === null).length, 0);
+      if (freeCellCount <= 1) {
+        room.pendingAction = 'PLACE_1';
+        tStats.placementsLeft = 0;
+      } else {
+        room.pendingAction = 'PLACE_2';
+        tStats.placementsLeft = 2;
+      }
     }
 
   } else if (action === 'FREEZE') {

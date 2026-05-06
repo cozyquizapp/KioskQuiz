@@ -14212,42 +14212,29 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
-        {/* Eyebrow-Pille nur fuer Pause-Mode (preGame zeigt nur den Title) */}
-        {mode !== 'preGame' && (
-          <div style={{
-            fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-            color: modeAccent,
-            letterSpacing: '0.32em', textTransform: 'uppercase',
-            padding: '5px 16px', borderRadius: 999,
-            background: `linear-gradient(180deg, ${modeAccent}22, ${modeAccent}0c)`,
-            border: `1px solid ${modeAccentDim}`,
-            boxShadow: `0 0 18px ${modeGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
-            animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
-          }}>
-            {de ? '⏸ Atempause' : '⏸ Breather'}
-          </div>
-        )}
+        {/* 2026-05-06 v5 (Wolf 'pause konsistent zu intro: kein Eyebrow,
+            gleiche Wave-Animation'): Eyebrow-Pille jetzt fuer beide Modes
+            aus, Title in beiden Modes mit per-Buchstaben Wave. */}
 
-        {/* Big Title — preGame mit per-Buchstaben-Wave (analog Lobby-Wordmark),
-            Pause behaelt den klassischen Breathe-Glow. */}
-        <div
-          aria-label={mode === 'preGame'
+        {/* Big Title — beide Modes mit per-Buchstaben-Wave + Letter-Cascade
+            (analog Lobby-Wordmark). */}
+        {(() => {
+          const titleText = mode === 'preGame'
             ? (de ? "Gleich geht's los" : 'Starting soon')
-            : (de ? 'Kurze Pause' : 'Short Break')}
-          style={{
-            fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
-            color: modeAccent,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.05,
-            textShadow: `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
-            animation: mode === 'preGame'
-              ? undefined
-              : 'qqPauseTitleBreathe 4.5s ease-in-out infinite',
-            whiteSpace: 'nowrap',
-            display: 'inline-block',
-          }}>
-          {mode === 'preGame'
-            ? Array.from(de ? "Gleich geht's los" : 'Starting soon').map((ch, i) => (
+            : (de ? 'Kurze Pause' : 'Short Break');
+          return (
+            <div
+              aria-label={titleText}
+              style={{
+                fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
+                color: modeAccent,
+                letterSpacing: '-0.01em',
+                lineHeight: 1.05,
+                textShadow: `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
+              }}>
+              {Array.from(titleText).map((ch, i) => (
                 <span
                   key={i}
                   style={{
@@ -14256,9 +14243,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
                   }}
                 >{ch}</span>
-              ))
-            : (de ? 'Kurze Pause' : 'Short Break')}
-        </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Records panel — Card bleibt STABIL, nur der Inhalt wechselt mit

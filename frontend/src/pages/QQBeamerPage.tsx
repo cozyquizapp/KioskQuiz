@@ -2770,8 +2770,18 @@ type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'uebe
 function AnimatedCozyWolf({ widthCss, speaking, mode }: {
   widthCss: string; speaking?: boolean; mode?: WolfMode;
 }) {
-  // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop.
+  // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop
+  // (Ausnahme: winken-Mode liest speaking als externes Mund-Flap-Gate).
   const effectiveMode: WolfMode = mode ?? 'speaking';
+
+  // 2026-05-06 v4 (Wolf 'kannst du den Mund so bewegen, als wuerde er das
+  // wirklich sagen — gutes Timing'): speaking als externer Gate fuer winken.
+  // Wenn der Parent `speaking` setzt, lippen-flap nur waehrend speaking=true,
+  // synchron zur Sprechblase. Ref-Pattern, damit der einmal gestartete Tick-
+  // Loop nicht bei jedem speaking-Toggle neu aufgesetzt werden muss (sonst
+  // verlieren wir die Blink-Schedule).
+  const speakingRef = useRef<boolean | undefined>(speaking);
+  useEffect(() => { speakingRef.current = speaking; }, [speaking]);
 
   // Aktuell sichtbares PNG (Filename ohne .png). State pro Mode.
   const [currentFile, setCurrentFile] = useState<string>('augenauf.mundzu');
@@ -2845,6 +2855,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
       // dadurch ruhiger — winkt + 'sagt' was, dann Atempause.
       // Idle-Blink scheduled deterministisch alle 3.5-5.5s, NICHT random
       // pro tick (sonst Doppel-Trigger).
+      // 2026-05-06 v4 (Wolf 'gutes Timing'): Wenn parent `speaking` als
+      // Prop steckt, ueberschreibt das die interne Speak-Pause-Phase —
+      // Mund-Flap synchron zur Sprechblase, Pause sobald Sprechblase fadet.
       let mouthOpenLocal = false;
       let phase: 'speak' | 'pause' = 'speak';
       let phaseUntil = Date.now() + 2200 + Math.random() * 1200;
@@ -2867,26 +2880,31 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
           timer = window.setTimeout(tick, 130);
           return;
         }
-        // Phase-Wechsel?
-        if (now >= phaseUntil) {
-          if (phase === 'speak') {
-            phase = 'pause';
-            phaseUntil = now + 1200 + Math.random() * 900;
-            mouthOpenLocal = false;
-            setCurrentFile('augenauf.mundzu.winken');
-            timer = window.setTimeout(tick, phaseUntil - now);
-            return;
-          } else {
-            phase = 'speak';
-            phaseUntil = now + 2000 + Math.random() * 1500;
-          }
-        }
-        if (phase === 'speak') {
+        // External speaking-Gate (Parent-controlled) hat Vorrang vor interner
+        // Speak-Pause-Phase, falls speakingRef definiert.
+        const externalSpeak = speakingRef.current;
+        const isSpeaking = externalSpeak !== undefined
+          ? externalSpeak
+          : (() => {
+              if (now >= phaseUntil) {
+                if (phase === 'speak') {
+                  phase = 'pause';
+                  phaseUntil = now + 1200 + Math.random() * 900;
+                } else {
+                  phase = 'speak';
+                  phaseUntil = now + 2000 + Math.random() * 1500;
+                }
+              }
+              return phase === 'speak';
+            })();
+        if (isSpeaking) {
           mouthOpenLocal = !mouthOpenLocal;
           setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.winken' : 'augenauf.mundzu.winken');
           timer = window.setTimeout(tick, 220 + Math.random() * 100);
         } else {
-          // pause: mund bleibt zu, Tick alle 250ms damit Blink-Trigger gepruft wird
+          // pause: mund bleibt zu
+          mouthOpenLocal = false;
+          setCurrentFile('augenauf.mundzu.winken');
           timer = window.setTimeout(tick, 250);
         }
       };
@@ -12993,65 +13011,194 @@ type FunStats = {
   } | null;
 };
 
-// PreGameWolfBubble — kleine Sprechblase ueber dem Wolf-Co-Moderator.
-// Zykelt durch Pre-Game-Sprueche, jede ~7-9s sichtbar, dann naechste.
-// Sprueche bewusst lockerer Pub-Ton — kein Coaching, einfach 'da'.
-function PreGameWolfBubble({ lang }: { lang: 'de' | 'en' }) {
-  const slogans = lang === 'de'
-    ? [
-        'Bereit?',
-        'Macht\'s euch bequem',
-        'Snacks bereit?',
-        'Gleich gibt\'s was zu rätseln',
-        'Sind alle da?',
-        'Spitzt die Ohren!',
-      ]
-    : [
-        'Ready?',
-        'Get comfy',
-        'Snacks ready?',
-        'Quiz time soon!',
-        'Everyone here?',
-        'Ears up!',
-      ];
+// WolfCoModerator — Sprechblase + animierter Wolf als Co-Moderator-Paar.
+// Zykelt durch Sprueche, Wolf-Mund-Flap synchron zur aktiven Sprechblase
+// (winken-Variant). Sprueche-Set haengt vom variant ab.
+//
+// 2026-05-06 v4 (Wolf 'sprechblase ist nicht zu, vlt mehrere groessen je
+// nach textlaenge, schoener machen, mund passend zum text bewegen'):
+//  - Sprechblase mit SVG-Tail (V offen oben → bubble border-bottom IST die
+//    obere Kante des Tails, dadurch keine Naht).
+//  - Tail-Position dynamisch: ueber dem Wolf-Maul (bei winken+links-Layout
+//    rechts-orientiert ~30% von links).
+//  - Bubble-Width adaptiv: min/max + natural wrap statt nowrap, kurze
+//    Sprueche bleiben kompakt.
+//  - speakDuration aus Slogan-Laenge berechnet (~80ms pro Zeichen, min 1.6s,
+//    max 4.5s) → wird als externes speaking-Gate an AnimatedCozyWolf
+//    durchgereicht.
+type CoModeratorVariant = 'preGame' | 'pause';
+
+function WolfCoModerator({ lang, variant, widthCss }: {
+  lang: 'de' | 'en';
+  variant: CoModeratorVariant;
+  widthCss: string;
+}) {
+  const slogans = variant === 'pause'
+    ? (lang === 'de'
+        ? [
+            'Habt ihr noch Getränke?',
+            'Muss noch jemand?',
+            'Strecken erlaubt!',
+            'Schon ein Snack besorgt?',
+            'Kurz die Beine vertreten?',
+            'Wer hat den nächsten Sieg im Kopf?',
+          ]
+        : [
+            'Anyone need a drink?',
+            'Bathroom break time?',
+            'Stretch a bit!',
+            'Snacks topped up?',
+            'Quick walk?',
+            'Who\'s plotting the next win?',
+          ])
+    : (lang === 'de'
+        ? [
+            'Bereit?',
+            'Macht\'s euch bequem',
+            'Snacks bereit?',
+            'Gleich gibt\'s was zu rätseln',
+            'Sind alle da?',
+            'Spitzt die Ohren!',
+          ]
+        : [
+            'Ready?',
+            'Get comfy',
+            'Snacks ready?',
+            'Quiz time soon!',
+            'Everyone here?',
+            'Ears up!',
+          ]);
+
   const [idx, setIdx] = useState(0);
+  const slogan = slogans[idx];
+
+  // Sprechblase-Lebenszyklus: enter (250ms) → speak (speakMs) → exit (450ms)
+  // → gap (550ms) → next. Total ~ speakMs + 1250ms.
+  const speakMs = Math.min(4500, Math.max(1600, slogan.length * 80));
+  const enterMs = 250;
+  const exitMs = 450;
+  const gapMs = 550;
+  const totalMs = enterMs + speakMs + exitMs + gapMs;
+
   useEffect(() => {
-    const id = setInterval(() => setIdx(p => (p + 1) % slogans.length), 7500);
-    return () => clearInterval(id);
-  }, [slogans.length]);
+    const id = window.setTimeout(() => {
+      setIdx(p => (p + 1) % slogans.length);
+    }, totalMs);
+    return () => window.clearTimeout(id);
+  }, [idx, totalMs, slogans.length]);
+
+  // External speaking-Gate fuer den Wolf-Mund-Flap. true nur waehrend
+  // Speak-Window (nach enter, vor exit). Der Wolf-Mund klappt dann nur,
+  // solange die Sprechblase wirklich da ist und 'spricht'.
+  const [speakingNow, setSpeakingNow] = useState(false);
+  useEffect(() => {
+    setSpeakingNow(false);
+    const t1 = window.setTimeout(() => setSpeakingNow(true), enterMs);
+    const t2 = window.setTimeout(() => setSpeakingNow(false), enterMs + speakMs);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [idx, enterMs, speakMs]);
+
+  const wolfMode: WolfMode = variant === 'pause' ? 'trinken' : 'winken';
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+      gap: 6,
+      pointerEvents: 'none',
+    }}>
+      <SpeechBubble
+        text={slogan}
+        bubbleKey={idx}
+        enterMs={enterMs}
+        speakMs={speakMs}
+        exitMs={exitMs}
+      />
+      <AnimatedCozyWolf
+        widthCss={widthCss}
+        mode={wolfMode}
+        speaking={variant === 'preGame' ? speakingNow : undefined}
+      />
+    </div>
+  );
+}
+
+// SpeechBubble — geschlossene Sprechblase mit SVG-V-Tail, der nahtlos
+// unter der Bubble-Bottom-Border haengt. Adaptive Breite (min/max +
+// natural wrap), warmes Cozy-Theme, sanfte Enter/Exit-Animation.
+//
+// Tail-Trick: Open SVG-Path "M 0 0 L 11 12 L 22 0" — Fill schliesst implizit
+// (Dreieck), Stroke folgt aber nur dem V (nicht der oberen Linie).
+// Dadurch ueberlappt sich die obere Kante der Tail-Fuellung mit der
+// Bubble-Bottom-Border, und die V-Stroke-Farbe matcht die Bubble-Border.
+function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
+  text: string;
+  bubbleKey: number;
+  enterMs: number;
+  speakMs: number;
+  exitMs: number;
+}) {
+  const totalLifeMs = enterMs + speakMs + exitMs;
   return (
     <div
-      key={idx}
+      key={bubbleKey}
       style={{
-        background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
-        border: '2px solid rgba(251,191,36,0.55)',
-        borderRadius: 18,
-        padding: '8px 16px',
-        fontSize: 'clamp(14px, 1.4vw, 19px)', fontWeight: 800,
+        position: 'relative',
+        marginLeft: 14,
+        // Adaptive Breite: 1-Wort-Slogan kompakt, langer Slogan wraped
+        // automatisch auf 2 Zeilen.
+        minWidth: 80,
+        maxWidth: 320,
+        background: 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
+        border: '2px solid rgba(251,191,36,0.6)',
+        borderRadius: 20,
+        padding: '10px 18px',
+        fontSize: 'clamp(14px, 1.45vw, 20px)',
+        fontWeight: 800,
+        lineHeight: 1.25,
+        letterSpacing: '0.005em',
         color: '#FDE68A',
-        boxShadow: '0 6px 18px rgba(0,0,0,0.4), 0 0 14px rgba(251,191,36,0.25)',
+        textAlign: 'center',
+        // Soft inner highlight + ambient glow
+        boxShadow:
+          '0 8px 22px rgba(0,0,0,0.45), ' +
+          '0 0 18px rgba(251,191,36,0.18), ' +
+          'inset 0 1px 0 rgba(255,231,170,0.10)',
         backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(6px)',
-        whiteSpace: 'nowrap',
-        animation: 'qqPreGameWolfBubble 6.5s ease-in-out both',
-        position: 'relative',
-        marginLeft: 12,
+        // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
+        // sind relativ zu totalLifeMs (CSS percentage).
+        animation: `qqWolfBubbleLife ${totalLifeMs}ms cubic-bezier(0.34,1.56,0.64,1) both`,
       }}
     >
-      {slogans[idx]}
-      {/* 2026-05-06 v2 (Wolf 'Sprechblase muss auf die andere Seite, sonst
-          kommt sie nicht aus dem Mund'): Tail von links unten auf rechts
-          unten gespiegelt — der Wolf-Mund liegt im Bild auf der rechten
-          Haelfte. */}
-      <span aria-hidden style={{
-        position: 'absolute',
-        right: -8, bottom: -6,
-        width: 14, height: 14,
-        borderBottom: '2px solid rgba(251,191,36,0.55)',
-        borderRight: '2px solid rgba(251,191,36,0.55)',
-        background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
-        transform: 'rotate(-45deg)',
-      }} />
+      {text}
+      {/* SVG-Tail: V-Form unter der Bubble. Top-Linie offen → Bubble-
+          Border-Bottom IST der oberer Rand des Tails. Stroke nur auf den
+          V-Beinen. */}
+      <svg
+        aria-hidden
+        width={22}
+        height={13}
+        viewBox="0 0 22 13"
+        style={{
+          position: 'absolute',
+          // Tail leicht links der Bubble-Mitte → liegt ueber dem Wolf-
+          // Maul (Wolf sitzt bei alignItems:flex-start unten links).
+          left: 32,
+          top: '100%',
+          marginTop: -1,
+          overflow: 'visible',
+          pointerEvents: 'none',
+        }}
+      >
+        <path
+          d="M 0 0 L 11 13 L 22 0"
+          fill="rgba(33,24,12,0.94)"
+          stroke="rgba(251,191,36,0.6)"
+          strokeWidth={2}
+          strokeLinejoin="round"
+          strokeLinecap="butt"
+        />
+      </svg>
     </div>
   );
 }
@@ -13243,33 +13390,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // ── Pause-Wolf-Sprüche — witzige Pause-Begleiter (User-Wunsch 2026-04-28) ──
-  // CozyWolf checkt regelmäßig ein während die Spieler ne Pause machen. Kein
-  // Spruch ist aufdringlich — alles freundlich-fürsorglich-spielerisch.
-  if (mode === 'pause') {
-    const pauseSlogans = de
-      ? [
-          'Habt ihr noch Getränke?',
-          'Muss noch jemand aufs Klo?',
-          'Strecken erlaubt — gleich geht\'s weiter!',
-          'Schon ein Snack besorgt?',
-          'Kurz die Beine vertreten?',
-          'Wer hat den nächsten Sieg im Kopf?',
-          'Schaut mal kurz nach den anderen.',
-        ]
-      : [
-          'Anyone need a drink?',
-          'Bathroom break time?',
-          'Stretch a bit — back soon!',
-          'Snacks topped up?',
-          'Quick walk before round 2?',
-          'Who\'s plotting the next win?',
-          'Check on the others while we\'re paused.',
-        ];
-    panels.push({ key: 'pauseWolf', node: (
-      <BrandLoopPanel slogans={pauseSlogans} de={de} />
-    )});
-  }
+  // 2026-05-06 (Wolf 'in der pause den trinkenden'): Pause-BrandLoopPanel mit
+  // Wolf aus der Card-Rotation entfernt — der trinkende Wolf sitzt jetzt
+  // unten links als Co-Moderator (analog preGame). Slogans laufen ueber
+  // seine Sprechblase. Card-Rotation bleibt fuer Records/Leaderboard etc.
 
   // Aktuelle Runde — kompakt (User-Feedback 2026-04-28: 'die ganze progress
   // bar ist zu lang, zeige am besten nur die aktuelle Runde'). Statt der
@@ -13984,22 +14108,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
           {/* Wolf-Co-Moderator unten LINKS — winkt + blinzelt + hat ab und zu
               eine Sprechblase mit Pre-Game-Sprueche.
-              2026-05-06 (Wolf 'mach ihn gerne nach links und noch ein klein-
-              wenig groesser'): Position right→left geflipped, Sprechblase-
-              Tail entsprechend von rechts nach links umgedreht. Size 120-200
-              → 150-240. */}
+              2026-05-06 v4 (Wolf 'sprechblase nicht zu, mund-timing'):
+              Sprechblase + Wolf jetzt in einer Coordinator-Component mit
+              shared State, damit Mund-Flap synchron zur Sprechblase laeuft. */}
           <div style={{
             position: 'absolute',
             left: 'clamp(20px, 3vw, 60px)',
             bottom: 'clamp(20px, 3vh, 50px)',
             zIndex: 6,
-            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-            gap: 8,
             pointerEvents: 'none',
             animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
           }}>
-            <PreGameWolfBubble lang={de ? 'de' : 'en'} />
-            <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="winken" />
+            <WolfCoModerator
+              lang={de ? 'de' : 'en'}
+              variant="preGame"
+              widthCss="clamp(150px, 16vw, 240px)"
+            />
           </div>
 
           <style>{`
@@ -14021,14 +14145,29 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               90%  { opacity: 0.4; }
               100% { transform: translateY(110vh) translateX(-6px); opacity: 0; }
             }
-            @keyframes qqPreGameWolfBubble {
-              0%   { opacity: 0; transform: translateY(8px) scale(0.85); }
-              10%  { opacity: 1; transform: translateY(0) scale(1); }
-              80%  { opacity: 1; transform: translateY(0) scale(1); }
-              100% { opacity: 0; transform: translateY(-4px) scale(0.95); }
-            }
           `}</style>
         </>
+      )}
+
+      {/* 2026-05-06 v4 (Wolf 'in der pause den trinkenden Wolf'): Pause-
+          Co-Moderator unten links, analog zu preGame. Wolf-Mode 'trinken'
+          (kein Mund-Flap), Sprechblase mit Pause-Sprueche, Lavender-
+          Akzent statt Gold. */}
+      {mode === 'pause' && (
+        <div style={{
+          position: 'absolute',
+          left: 'clamp(20px, 3vw, 60px)',
+          bottom: 'clamp(20px, 3vh, 50px)',
+          zIndex: 6,
+          pointerEvents: 'none',
+          animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 0.6s both',
+        }}>
+          <WolfCoModerator
+            lang={de ? 'de' : 'en'}
+            variant="pause"
+            widthCss="clamp(140px, 14vw, 220px)"
+          />
+        </div>
       )}
 
       {/* Hero — Big Title nur (Wave-Cascade per Buchstabe).
@@ -14239,6 +14378,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           0%   { opacity: 0; }
           25%  { opacity: 0; }
           100% { opacity: 1; }
+        }
+        /* Sprechblase-Lebenszyklus — wird sowohl in preGame als auch pause
+           verwendet, deshalb hier global statt im preGame-Block. */
+        @keyframes qqWolfBubbleLife {
+          0%   { opacity: 0; transform: translateY(10px) scale(0.82); }
+          12%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
+          20%  { opacity: 1; transform: translateY(0) scale(1); }
+          78%  { opacity: 1; transform: translateY(0) scale(1); }
+          92%  { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(-6px) scale(0.96); }
         }
       `}</style>
     </div>
@@ -15247,6 +15396,20 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       padding: '48px 64px', position: 'relative',
     }}>
       <Fireflies color="rgba(234,179,8,0.35)" />
+
+      {/* 2026-05-06 (Wolf 'sleepy wolf auf die allerletzte Page'): Wolf macht
+          Feierabend unten links. Schlafen-Mode mit Z-Cycle. Gleiche Position
+          wie der Lobby-Wolf — Brand-Konsistenz. */}
+      <div style={{
+        position: 'absolute',
+        left: 'clamp(20px, 3vw, 60px)',
+        bottom: 'clamp(20px, 3vh, 50px)',
+        zIndex: 6,
+        pointerEvents: 'none',
+        animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 0.6s both',
+      }}>
+        <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="schlafen" />
+      </div>
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
         padding: '56px 72px', borderRadius: 24,

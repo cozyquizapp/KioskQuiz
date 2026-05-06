@@ -12979,6 +12979,23 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
       {/* 2026-05-06 v2: Separate Step-2-Erklaerseite entfernt — die H/L-
           Erklaerung steht jetzt zusammen mit dem COMEBACK-Title auf Step 0. */}
+
+      {/* 2026-05-06 v4 (Wolf 'bei Comeback ueberrascht ist gut'): Wolf
+          mit Oh!-Pose unten links waehrend BAM-Step 0. Verstaerkt den
+          Drama-Moment 'Wer kommt zurueck?'. Step 1 (Team-Hero) ist eh
+          fokussiert auf das Comeback-Team — Wolf koennte da ablenken. */}
+      {step === 0 && (
+        <div style={{
+          position: 'absolute',
+          left: 'clamp(20px, 2.5vw, 48px)',
+          bottom: 'clamp(20px, 2.5vh, 40px)',
+          zIndex: 8,
+          pointerEvents: 'none',
+          animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.85s both',
+        }}>
+          <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="ueberrascht" />
+        </div>
+      )}
     </div>
   );
 }
@@ -13027,54 +13044,59 @@ type FunStats = {
 //    max 4.5s) → wird als externes speaking-Gate an AnimatedCozyWolf
 //    durchgereicht.
 type CoModeratorVariant = 'preGame' | 'pause';
+// Slogan + erwartete offene Mundbewegungen (Wolf-getunte Werte 2026-05-06).
+// Pace: speakMs = mouths × 440ms. Internal Wolf-Toggle 220ms → eine offene
+// Mundbewegung (open-close-Cycle) pro Silbe.
+type Slogan = { text: string; mouths: number };
 
 function WolfCoModerator({ lang, variant, widthCss }: {
   lang: 'de' | 'en';
   variant: CoModeratorVariant;
   widthCss: string;
 }) {
-  const slogans = variant === 'pause'
+  const slogans: Slogan[] = variant === 'pause'
     ? (lang === 'de'
         ? [
-            'Habt ihr noch Getränke?',
-            'Muss noch jemand?',
-            'Strecken erlaubt!',
-            'Schon ein Snack besorgt?',
-            'Kurz die Beine vertreten?',
-            'Wer hat den nächsten Sieg im Kopf?',
+            { text: 'Habt ihr noch Getränke?', mouths: 4 },
+            { text: 'Muss noch jemand?', mouths: 3 },
+            { text: 'Dehnen erlaubt!', mouths: 2 },
+            { text: 'Schon einen Snack besorgt?', mouths: 4 },
+            { text: 'Kurz die Beine vertreten?', mouths: 4 },
+            { text: 'Wer hat den nächsten Sieg im Kopf?', mouths: 6 },
           ]
         : [
-            'Anyone need a drink?',
-            'Bathroom break time?',
-            'Stretch a bit!',
-            'Snacks topped up?',
-            'Quick walk?',
-            'Who\'s plotting the next win?',
+            { text: 'Anyone need a drink?', mouths: 3 },
+            { text: 'Bathroom break time?', mouths: 3 },
+            { text: 'Stretch a bit!', mouths: 2 },
+            { text: 'Snacks topped up?', mouths: 2 },
+            { text: 'Quick walk?', mouths: 2 },
+            { text: 'Who\'s plotting the next win?', mouths: 4 },
           ])
     : (lang === 'de'
         ? [
-            'Bereit?',
-            'Macht\'s euch bequem',
-            'Snacks bereit?',
-            'Gleich gibt\'s was zu rätseln',
-            'Sind alle da?',
-            'Spitzt die Ohren!',
+            { text: 'Bereit?', mouths: 2 },
+            { text: 'Macht\'s euch bequem', mouths: 4 },
+            { text: 'Snacks bereit?', mouths: 3 },
+            { text: 'Gleich gibt\'s was zu rätseln', mouths: 5 },
+            { text: 'Sind alle da?', mouths: 3 },
+            { text: 'Spitzt die Ohren!', mouths: 3 },
           ]
         : [
-            'Ready?',
-            'Get comfy',
-            'Snacks ready?',
-            'Quiz time soon!',
-            'Everyone here?',
-            'Ears up!',
+            { text: 'Ready?', mouths: 2 },
+            { text: 'Get comfy', mouths: 3 },
+            { text: 'Snacks ready?', mouths: 3 },
+            { text: 'Quiz time soon!', mouths: 3 },
+            { text: 'Everyone here?', mouths: 3 },
+            { text: 'Ears up!', mouths: 2 },
           ]);
 
   const [idx, setIdx] = useState(0);
   const slogan = slogans[idx];
 
   // Sprechblase-Lebenszyklus: enter (250ms) → speak (speakMs) → exit (450ms)
-  // → gap (550ms) → next. Total ~ speakMs + 1250ms.
-  const speakMs = Math.min(4500, Math.max(1600, slogan.length * 80));
+  // → gap (550ms) → next. SpeakMs aus mouths × 440 (passt zu internem
+  // 220ms-Wolf-Toggle: 1 offene Mundbewegung pro Silbe).
+  const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));
   const enterMs = 250;
   const exitMs = 450;
   const gapMs = 550;
@@ -13107,7 +13129,7 @@ function WolfCoModerator({ lang, variant, widthCss }: {
       pointerEvents: 'none',
     }}>
       <SpeechBubble
-        text={slogan}
+        text={slogan.text}
         bubbleKey={idx}
         enterMs={enterMs}
         speakMs={speakMs}
@@ -15380,6 +15402,22 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             </div>
           );
         })()}
+      </div>
+
+      {/* 2026-05-06 v4 (Wolf 'GameOver-Wolf jubelt mit'): jubelnder Wolf
+          unten links — schliesst den Brand-Bogen (preGame winken → ingame
+          still → game-over jubel → thanks schlafen). Nur in der Recap-
+          Tabelle sichtbar, NICHT bei den Spotlight-Reveal-Stages (waere bei
+          Last-Place jubelnder Wolf unpassend). */}
+      <div style={{
+        position: 'absolute',
+        left: 'clamp(20px, 2.5vw, 48px)',
+        bottom: 'clamp(20px, 2.5vh, 40px)',
+        zIndex: 7,
+        pointerEvents: 'none',
+        animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.4s both',
+      }}>
+        <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="jubel" />
       </div>
     </div>
   );

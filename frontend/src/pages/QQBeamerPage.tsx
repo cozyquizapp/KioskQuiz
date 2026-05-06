@@ -4035,6 +4035,95 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 // LOBBY
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// WolfLobbyGreeter — kleiner Wolf top-right in der Lobby, winkt hereinkommende
+// Teams herein. Idle: 'QR-Code scannen!' / 'Genau den da!' / etc. Wenn Parent
+// `welcomedTeamName` setzt (kommt von welcomeTeamId in LobbyView, ~3.2s aktiv
+// nach Team-Join), uebernimmt 'Hallo {teamName}!' bis zum Timeout, dann zurueck
+// zur Idle-Rotation.
+function WolfLobbyGreeter({ lang, welcomedTeamName }: {
+  lang: 'de' | 'en';
+  welcomedTeamName: string | null;
+}) {
+  const idleSlogans: Slogan[] = lang === 'de'
+    ? [
+        { text: 'QR-Code scannen!', mouths: 4 },
+        { text: 'Genau den da!', mouths: 3 },
+        { text: 'Bereit zu joinen?', mouths: 4 },
+        { text: 'Mit dem Handy joinen', mouths: 4 },
+        { text: 'Jeder kann mitspielen', mouths: 5 },
+      ]
+    : [
+        { text: 'Scan the QR!', mouths: 3 },
+        { text: 'That one over there!', mouths: 4 },
+        { text: 'Ready to join?', mouths: 3 },
+        { text: 'Phone out, scan, go!', mouths: 4 },
+        { text: 'Anyone can play', mouths: 4 },
+      ];
+
+  const [idleIdx, setIdleIdx] = useState(0);
+
+  // Welcome-Slogan ueberschreibt idle wenn ein neues Team joint
+  const welcomeSlogan: Slogan | null = welcomedTeamName
+    ? {
+        text: lang === 'de' ? `Hallo ${welcomedTeamName}!` : `Hello ${welcomedTeamName}!`,
+        mouths: Math.min(7, Math.max(3, Math.ceil(welcomedTeamName.length / 3) + 1)),
+      }
+    : null;
+
+  const isWelcoming = welcomeSlogan !== null;
+  const slogan = welcomeSlogan ?? idleSlogans[idleIdx];
+
+  const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));
+  const enterMs = 200;
+  const exitMs = 400;
+  const gapMs = 600;
+  const totalMs = enterMs + speakMs + exitMs + gapMs;
+
+  // Idle-Cycle nur wenn nicht im Welcome-Modus (Welcome bleibt bis Parent
+  // welcomedTeamName auf null setzt — ~3.2s nach Join)
+  useEffect(() => {
+    if (isWelcoming) return;
+    const id = window.setTimeout(() => {
+      setIdleIdx(p => (p + 1) % idleSlogans.length);
+    }, totalMs);
+    return () => window.clearTimeout(id);
+  }, [idleIdx, totalMs, idleSlogans.length, isWelcoming]);
+
+  // Bubble-Key fuer Re-Mount + Mund-Sync. Bei Welcome team-name-basiert,
+  // sonst idx-basiert.
+  const bubbleKey = isWelcoming ? `welcome-${welcomedTeamName}` : `idle-${idleIdx}`;
+
+  // Speaking-Gate fuer Wolf-Mund-Flap
+  const [speakingNow, setSpeakingNow] = useState(false);
+  useEffect(() => {
+    setSpeakingNow(false);
+    const t1 = window.setTimeout(() => setSpeakingNow(true), enterMs);
+    const t2 = window.setTimeout(() => setSpeakingNow(false), enterMs + speakMs);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [bubbleKey, enterMs, speakMs]);
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+      gap: 14, pointerEvents: 'none',
+    }}>
+      <SpeechBubble
+        text={slogan.text}
+        bubbleKey={bubbleKey}
+        enterMs={enterMs}
+        speakMs={speakMs}
+        exitMs={exitMs}
+        tailSide="right"
+      />
+      <AnimatedCozyWolf
+        widthCss="clamp(90px, 9vw, 140px)"
+        mode="winken"
+        speaking={speakingNow}
+      />
+    </div>
+  );
+}
+
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
@@ -4109,6 +4198,24 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         '#0D0A06',
     }}>
       <Fireflies />
+
+      {/* Wolf-Lobby-Greeter top-right — winkt + reagiert auf Team-Joins
+          mit 'Hallo {teamName}!'. Idle: 'QR-Code scannen!' / etc.
+          2026-05-07 (Wolf 'Wolf mit dem daumen hoch oben rechts, wenn ein
+          team sich einloggt sowas wie oh hallo team x'). */}
+      <div style={{
+        position: 'absolute',
+        right: 'clamp(20px, 2.5vw, 48px)',
+        top: 'clamp(16px, 2.5vh, 32px)',
+        zIndex: 7,
+        pointerEvents: 'none',
+        animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',
+      }}>
+        <WolfLobbyGreeter
+          lang={de ? 'de' : 'en'}
+          welcomedTeamName={welcomedTeam?.name ?? null}
+        />
+      </div>
 
       {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint.
           B8 (2026-04-29): User-Wunsch 'noch groesser, mittig'. top:50%,
@@ -13276,7 +13383,7 @@ function WolfCoModerator({ lang, variant, widthCss }: {
 // Bubble-Bottom-Border, und die V-Stroke-Farbe matcht die Bubble-Border.
 function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left' }: {
   text: string;
-  bubbleKey: number;
+  bubbleKey: number | string;
   enterMs: number;
   speakMs: number;
   exitMs: number;

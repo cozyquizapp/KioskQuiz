@@ -7364,68 +7364,77 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         })}
       </div>
 
-      {/* Reveal: 2-spaltige Auflösungs-Card — links Lösung, rechts Sieger-Team(s).
-          Wolf 2026-05-05: Card wird IMMER gerendert (auch in Question-Phase
-          mit visibility:hidden), damit der Layout-Space schon im Question-
-          Mode reserviert ist und beim Reveal kein 'Sprung' nach unten
-          entsteht — Hint-Cards bleiben gleich groß zwischen Question/Reveal. */}
+      {/* Reveal: ZWEI getrennte Cards nebeneinander.
+          2026-05-06 (Wolf 'lösungscard und gewinnercard trennen — lösungscard
+          grün umrandet wie sonst auch, gewinnercard in der Farbe des Gewinners
+          → vollständig konsistent mit Rest der App'):
+          Vorher 1× zusammengelegte Gold-Card (Lösung+Sieger). Jetzt:
+          - Lösungs-Card: grün umrandet + grüner Glow (analog MUCHO/ZvZ-
+            Lock-Step-Highlight wo die korrekte Option grün wird).
+          - Sieger-Card: in der Farbe des Gewinner-Teams.
+          Beide Cards bleiben im Question-Mode mit visibility:hidden gerendert,
+          damit der Layout-Space reserviert ist (kein Sprung beim Reveal). */}
       {(() => {
         const winnerTeams = revealed ? s.teams.filter(t => winnerSet.has(t.id)) : [];
         const winnerHint = revealed && correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
+        const primaryWinner = winnerTeams[0] ?? null;
+        const winnerColor = primaryWinner?.color ?? '#FBBF24';
         return (
           <div style={{
             display: 'grid',
             gridTemplateColumns: winnerTeams.length > 0 ? '1fr 1fr' : '1fr',
             gap: 'clamp(12px, 1.6vw, 22px)',
-            padding: 'clamp(16px, 2vh, 28px)',
-            borderRadius: 24,
-            minHeight: 'clamp(140px, 18vh, 220px)',
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
-            border: '2px solid rgba(251,191,36,0.45)',
-            boxShadow: '0 0 40px rgba(251,191,36,0.25)',
-            animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY}s both` : undefined,
             position: 'relative', zIndex: 5,
-            alignItems: 'center',
+            alignItems: 'stretch',
             visibility: revealed ? 'visible' : 'hidden',
             opacity: revealed ? 1 : 0,
             transition: 'opacity 0.5s ease 0.15s',
           }}>
-            {/* Linke Hälfte: Lösung — 2026-05-05 (Wolf 'aus weniger Metern
-                nicht erkennbar, kuerzen'): Mini-Label 'Lösung' raus (gold-
-                Text spricht fuer sich), Schriftgroesse hoch (28-56 → 36-72px). */}
+            {/* Lösungs-Card — grün umrandet (analog Lock-Step-Highlight in
+                MUCHO/ZvZ wo die korrekte Option grün wird). */}
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center',
-              paddingRight: winnerTeams.length > 0 ? 'clamp(8px, 1vw, 16px)' : 0,
+              padding: 'clamp(16px, 2vh, 28px)',
+              borderRadius: 24,
+              minHeight: 'clamp(140px, 18vh, 220px)',
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
+              border: '2.5px solid rgba(34,197,94,0.55)',
+              boxShadow: '0 0 40px rgba(34,197,94,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+              animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY}s both` : undefined,
             }}>
               <div style={{
                 fontSize: 'clamp(36px, 4.4vw, 72px)', fontWeight: 900,
-                color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.35)',
+                color: '#86efac', textShadow: '0 0 30px rgba(34,197,94,0.45)',
                 textAlign: 'center', lineHeight: 1.1,
               }}>
                 {answer}
               </div>
             </div>
 
-            {/* Rechte Hälfte: Sieger — 2026-05-05 (Wolf 'avatar groß, daneben
-                den text'): horizontales Layout, Avatar links riesig, rechts
-                Name + 'auf Hinweis N'. Mini-Label 'Sieger' raus. */}
+            {/* Sieger-Card — in der Farbe des Gewinner-Teams. */}
             {winnerTeams.length > 0 && (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap: 'clamp(14px, 1.8vw, 28px)', flexWrap: 'wrap',
-                paddingLeft: 'clamp(8px, 1vw, 16px)',
+                padding: 'clamp(16px, 2vh, 28px)',
+                borderRadius: 24,
+                minHeight: 'clamp(140px, 18vh, 220px)',
+                background: `linear-gradient(135deg, ${winnerColor}26, ${winnerColor}08)`,
+                border: `2.5px solid ${winnerColor}aa`,
+                boxShadow: `0 0 40px ${winnerColor}55, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY + 0.15}s both` : undefined,
               }}>
                 {winnerTeams.map((tm, idx) => (
                   <div key={tm.id} style={{
                     display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.4vw, 22px)',
-                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${0.5 + idx * 0.18}s both`,
+                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${SOLUTION_DELAY + 0.4 + idx * 0.18}s both`,
                   }}>
                     <QQTeamAvatar
                       avatarId={tm.avatarId} teamEmoji={tm.emoji}
                       size={'clamp(80px, 9vw, 130px)'}
                       style={{
-                        boxShadow: `0 0 0 3px #FBBF24, 0 0 26px rgba(251,191,36,0.65), 0 0 10px ${tm.color}aa`,
+                        boxShadow: `0 0 0 3px ${tm.color}, 0 0 26px ${tm.color}cc, 0 0 12px ${tm.color}88`,
                         flexShrink: 0,
                       }}
                     />

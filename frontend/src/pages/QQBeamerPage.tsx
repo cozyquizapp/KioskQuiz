@@ -3154,16 +3154,39 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
         animation: 'qqIntroAmbientPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
       }} />
-      {/* Light-Flash — ein einziger warm-goldener Puls genau im CozyQuiz-Pop-
-          Moment (1.4s). Spielt einmal, fadet sofort. */}
+      {/* 2026-05-06 (Wolf 'reinfliegen ist nice, blitz am ende nicht so —
+          cozier machen, sonnenaufgang + lichter-schwarm'):
+          (c) Sanfter Sonnenaufgang — radial-gradient pulsiert von Center nach
+          aussen, langsamer und weicher als der vorherige Lichtblitz. Wirkt
+          wie ein Vorhang der sich hebt, statt Donner.
+          Vorher: qqIntroLightFlash 0.9s, 25% peak opacity 1.0 → grell.
+          Jetzt: qqIntroSunrise 1.6s, 40% peak opacity 0.7 → warm und ruhig. */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.55) 0%, rgba(249,115,22,0.28) 30%, transparent 60%)',
+        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(251,191,36,0.06) 65%, transparent 80%)',
         opacity: 0,
-        animation: 'qqIntroLightFlash 0.9s cubic-bezier(0.2,0.7,0.3,1) 1.4s both',
+        transformOrigin: 'center',
+        animation: 'qqIntroSunrise 1.6s cubic-bezier(0.16, 0.84, 0.44, 1) 1.4s both',
         pointerEvents: 'none', mixBlendMode: 'screen',
       }} />
-      {/* Fireflies */}
+      {/* (d) Lichter-Schwarm-Burst — alle Fireflies blitzen einmal synchron
+          hell auf (kurz nach dem Title-Pop), dann beruhigen sie sich auf den
+          normalen Drift-Loop. Wir layern dafuer eine zweite Element-Reihe an
+          den gleichen Positionen, die einmal aufflammt und dann verschwindet. */}
+      {fireflies.map((f, i) => (
+        <div key={`burst-${i}`} aria-hidden style={{
+          position: 'absolute',
+          left: `${f.left}%`, top: `${f.top}%`,
+          width: f.size * 1.8, height: f.size * 1.8, borderRadius: '50%',
+          background: i % 3 === 0 ? '#fde68a' : i % 3 === 1 ? '#fbbf24' : '#fed7aa',
+          boxShadow: '0 0 24px rgba(251,191,36,0.85), 0 0 6px rgba(255,255,255,0.7)',
+          opacity: 0,
+          animation: `qqIntroFireflyBurst 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) ${1.5 + (i % 6) * 0.04}s both`,
+          pointerEvents: 'none',
+          transform: 'translate(-50%, -50%)',
+        }} />
+      ))}
+      {/* Fireflies (continuous drift) */}
       {fireflies.map((f, i) => (
         <div key={i} style={{
           position: 'absolute',
@@ -3335,6 +3358,19 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
           0%   { opacity: 0; }
           25%  { opacity: 1; }
           100% { opacity: 0; }
+        }
+        /* 2026-05-06: cozier Sonnenaufgang statt Lichtblitz. Langsamer, weicher,
+           radial-pulse von Center. */
+        @keyframes qqIntroSunrise {
+          0%   { opacity: 0;   transform: scale(0.85); }
+          40%  { opacity: 0.7; transform: scale(1.05); }
+          100% { opacity: 0;   transform: scale(1.25); }
+        }
+        /* Lichter-Schwarm-Burst — einmal hell aufblitzen, dann fade-out. */
+        @keyframes qqIntroFireflyBurst {
+          0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.6); }
+          30%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.6); }
+          100% { opacity: 0;   transform: translate(-50%, -50%) scale(2.2); }
         }
         @keyframes qqIntroFireflyDrift {
           0%, 100% { opacity: 0.35; transform: translate(0, 0) scale(0.9); }
@@ -7301,11 +7337,13 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           // Text-Bereich exakt gleich gross bleibt. Card-padding-bottom haelt
           // den Avatare-Platz frei.
           const hasAvatarRow = revealed && (teamsAtThisHint.length > 0 || lockedAtThisHint.length > 0);
-          // 2026-05-06 (Wolf '4-Gewinnt Reveal Cascade'): pro Hint ein
-          // staggered phasePop in Reveal-Phase (0.65s Stagger). Question-
-          // Phase: nur das Glow auf isCurrent.
+          // 2026-05-06 v2 (Wolf '4-Gewinnt Cards: viele Hoehen-Wechsel und
+          // Position-Sprünge zwischen Question und Reveal, sanftes Hochgleiten
+          // wäre passender'): phasePop (bouncy scale) durch contentReveal
+          // (sanftes Slide-up + Fade-in) ersetzt. Question-Phase: nur
+          // Glow auf isCurrent — kein Bounce mehr beim Hint-Pop.
           const revealAnim = revealed
-            ? `phasePop 0.55s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP}s both`
+            ? `contentReveal 0.55s var(--qq-ease-out-cubic) ${HINT_BASE_DELAY + i * HINT_STEP}s both`
             : (isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined);
           return (
             <div key={i} style={{
@@ -7344,7 +7382,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
                 color: isVisible ? '#F1F5F9' : 'transparent',
                 lineHeight: 1.2,
-                animation: isCurrent ? 'revealAnswerBam 0.55s var(--qq-ease-out-cubic) both' : undefined,
+                // 2026-05-06 v2: revealAnswerBam (scale-bounce) ersetzt durch
+                // contentReveal (sanftes slide-up) — quizweit konsistente
+                // Hint-Reveal-Sprache.
+                animation: isCurrent ? 'contentReveal 0.45s var(--qq-ease-out-cubic) both' : undefined,
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {isVisible ? hintText : '?'}
@@ -11295,14 +11336,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Bet-Cascade-Step 1 (low-bets out) und Step 2 (winner-card pop) —
               der Slot ist die ganze Zeit da, nur der Inhalt fadet rein.
               MUCHO/CHEESE/HotPotato profitieren auch. */}
-          {revealed && q.category !== 'SCHAETZCHEN' && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (
+          {revealed && q.category !== 'SCHAETZCHEN' && (
             <div style={{
               width: '100%', maxWidth: 1400,
               overflow: 'visible',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              // Slot-Hoehe konstant ab Reveal. Fuer HotPotato bei 6+ Teams kann
-              // die Card 2-3 Zeilen hoch werden — minHeight clamp(120, 14vh, 200)
-              // deckt Single- und Multi-Winner ab.
+              // 2026-05-06 v2 (Wolf 'obere Cards springen leicht hoch wenn
+              // Winner-Card kommt' fuer MUCHO + ZvZ): Slot wird jetzt SOFORT
+              // beim Eintritt in QUESTION_REVEAL reserviert (nicht erst wenn
+              // correctTeamId arrives). Damit kein Layout-Shift mehr zwischen
+              // 'reveal-phase aber noch keine winner-id' und 'winner-id da'.
+              // Inner content gated auf showUnifiedWinner + (correctTeamId
+              // ODER winners.length>0) damit keine leere Card pop't.
               minHeight: 'clamp(120px, 14vh, 200px)',
               marginBottom: 12,
               opacity: showUnifiedWinner ? 1 : 0,
@@ -11310,7 +11355,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               transformOrigin: 'top center',
               transition: 'opacity 0.7s var(--qq-ease-out-cubic), transform 0.7s var(--qq-ease-bounce)',
             }}>
-              {showUnifiedWinner && (() => {
+              {showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (() => {
             const isEn = lang === 'en';
             const bannerDelay = 0.7;
             const avatarDelay = 1.1;

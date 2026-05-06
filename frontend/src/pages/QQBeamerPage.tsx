@@ -2838,17 +2838,38 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
     let timer: number | undefined;
 
     if (effectiveMode === 'winken') {
-      // Cycle: open-mouth-winken (0.7s) → eyes-zu-winken (0.4s) → repeat
-      const seq = ['augenauf.mundauf.winken', 'augenzu.mundzu.winken'];
-      const durations = [700, 400];
-      let idx = 0;
+      // 2026-05-06 v2 (Wolf 'die posen davor waren besser, ist es jetzt nur
+      // winken und mund auf?' + neue augenauf.mundzu.winken Pose geliefert):
+      // Mit jetzt 3 Winken-Posen koennen wir analog zum Speaking-Mode
+      // einen Mund-Flap + Idle-Blink simulieren — fuehlt sich deutlich
+      // lebendiger an als der vorherige 2-Frame-Toggle.
+      // Sequenz: mund-auf (200ms) ↔ mund-zu (200ms) als 'spricht'-Loop,
+      // alle ~3-5s ein kurzer 130ms Blink (augen-zu).
+      let mouthOpenLocal = false;
+      let blinkUntil = 0;
       const tick = () => {
         if (!alive) return;
-        setCurrentFile(seq[idx]);
-        timer = window.setTimeout(() => {
-          idx = (idx + 1) % seq.length;
-          tick();
-        }, durations[idx]);
+        const now = Date.now();
+        // Blink hat Vorrang
+        if (now < blinkUntil) {
+          setCurrentFile('augenzu.mundzu.winken');
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
+        }
+        // Naechsten Blink random schedulen wenn keiner geplant
+        if (blinkUntil === 0 || now >= blinkUntil) {
+          // Mit ~6% Wahrscheinlichkeit pro Tick einen Blink starten
+          if (Math.random() < 0.06) {
+            blinkUntil = now + 130;
+            setCurrentFile('augenzu.mundzu.winken');
+            timer = window.setTimeout(tick, 130);
+            return;
+          }
+        }
+        // Mund-Flap
+        mouthOpenLocal = !mouthOpenLocal;
+        setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.winken' : 'augenauf.mundzu.winken');
+        timer = window.setTimeout(tick, 200 + Math.random() * 80);
       };
       tick();
     } else if (effectiveMode === 'jubel') {

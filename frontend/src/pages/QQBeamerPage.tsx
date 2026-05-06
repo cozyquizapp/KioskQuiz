@@ -3141,9 +3141,17 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: 'clamp(18px, 3vh, 36px)', textAlign: 'center', padding: '0 6vw',
       }}>
+        {/* 2026-05-05 v2 (Wolf 'Buch bouncen, sync zum Title-Wave'):
+            Entry-Animation + continuous qqCatNameWave. Delay 1.3s matched
+            zur Mitte der Title-Cascade (Title-Wave startet bei 1.0s + Mitte-
+            Stagger ~0.3s) → Emoji peakn synchron mit mittlerem Buchstaben.
+            Cycle 2.4s identisch zur Title-Wave. */}
         <div style={{
           fontSize: 'clamp(72px, 9vw, 140px)', lineHeight: 1,
-          animation: visible ? 'qqRulesIntroIcon 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.2s both' : 'none',
+          display: 'inline-block',
+          animation: visible
+            ? 'qqRulesIntroIcon 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.2s both, qqCatNameWave 2.4s ease-in-out 1.3s infinite'
+            : 'none',
           filter: 'drop-shadow(0 6px 24px rgba(139,92,246,0.55))',
         }}>📖</div>
         {/* 2026-05-05 (Wolf 'jetzt-kommen-die-regeln Text soll Wave wie nächste
@@ -3249,9 +3257,15 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           gap: 'clamp(8px, 1vh, 14px)', marginBottom: 'clamp(16px, 2.5vh, 28px)',
           textAlign: 'center',
         }}>
+          {/* 2026-05-05 (Wolf 'alle Emojis in Regeln bouncen, sync zum Wave'):
+              continuous qqCatNameWave wie Title-Buchstaben. Delay 1.3s = Title-
+              Wave-Init (1.0s) + halbe Cascade (~0.3s) → Emoji peakt synchron
+              mit mittlerem Buchstaben statt asynchron dagegen zu wirken. */}
           <span style={{
+            display: 'inline-block',
             fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
             filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+            animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
           }}><QQEmojiIcon emoji={slide.icon}/></span>
           <div style={{
             fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 900, letterSpacing: '0.1em',
@@ -5042,7 +5056,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* Big emoji/icon — bevorzugt PNG, sonst Emoji-Fallback */}
               <div style={{
                 fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 1,
-                animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, cfloat 4s ease-in-out 1s infinite',
+                animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
                 position: 'relative', zIndex: 5,
               }}>
                 {(() => {
@@ -5148,9 +5162,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             <>
               {/* Emoji/Icon — float idle. Bei BUNTE_TUETE: Sub-Mechanik-Icon
                   (sonst sähen 4 gewinnt, Bluff, Hot Potato … alle gleich aus). */}
+              {/* 2026-05-05 (Wolf 'Bounce sync zum Wave'): cfloat 4s → qqCatNameWave
+                  2.8s mit Delay 1.4s = Mitte der Title-Wave-Cascade. */}
               <div style={{
                 fontSize: 'clamp(80px, 14vw, 180px)', lineHeight: 1,
-                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, cfloat 4s ease-in-out 1s infinite',
+                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
                 position: 'relative', zIndex: 5,
               }}>
                 {(() => {

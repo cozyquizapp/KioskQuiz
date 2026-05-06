@@ -39,7 +39,11 @@ export default defineConfig({
         // dann kann das Exclude wieder weg (siehe GOUACHE_PLAN.md Phase 5).
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         globIgnores: ['**/avatars/gouache/**'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // 2026-05-06: Limit 5→6 MB. Neue Wolf-Pose 'troete.jubel.png' ist
+        // 5.37 MB. Andere Wolf-PNGs sind 3.7-4.6 MB. Sollte mittelfristig
+        // alle via sharp-Pipeline auf <500 KB schrumpfen, dann kann das
+        // Limit zurueck auf 2 MB.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],

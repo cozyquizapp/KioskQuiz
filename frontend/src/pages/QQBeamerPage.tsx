@@ -3018,18 +3018,40 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
       };
       tick();
     } else if (effectiveMode === 'ueberrascht') {
-      // 'Oh!' — Hauptsaechlich augen-auf-ueberrascht (mit Atemzug-haftem
-      // Wechsel auf augen-zu = blink), wirkt wie 'verbluefft schauend'.
-      let idx = 0;
+      // 'Oh!' — alterniert zwischen zwei Gestik-Phasen mit gelegentlichen
+      // Blinks. Phase 'mund' = klassisches mundueberrascht (offener Schock-
+      // Mund). Phase 'haende' = haendeueberrascht (Haende vor der Brust
+      // verschraenkt, leicht gespannt-laechelnd). 2026-05-06 v8 (Wolf neue
+      // Posen 'haende ueberrascht' geliefert): Dadurch kein statisches
+      // 'Mund offen'-Frieren mehr, der Wolf 'reagiert' lebendiger.
+      let phase: 'mund' | 'haende' = 'mund';
+      let phaseUntil = Date.now() + 2200 + Math.random() * 1000;
+      let nextBlinkAt = Date.now() + 2800 + Math.random() * 1500;
+      let blinkUntil = 0;
       const tick = () => {
         if (!alive) return;
-        if (idx === 0) {
-          setCurrentFile('augenauf.mundueberrascht');
-          timer = window.setTimeout(() => { idx = 1; tick(); }, 1800 + Math.random() * 1200);
-        } else {
-          setCurrentFile('augenzu.mundueberrascht');
-          timer = window.setTimeout(() => { idx = 0; tick(); }, 200 + Math.random() * 130);
+        const now = Date.now();
+        const fileFor = (eyes: 'auf' | 'zu') => phase === 'mund'
+          ? `augen${eyes}.mundueberrascht`
+          : `augen${eyes}.haendeueberrascht`;
+        if (now < blinkUntil) {
+          setCurrentFile(fileFor('zu'));
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
         }
+        if (now >= nextBlinkAt) {
+          blinkUntil = now + 200;
+          nextBlinkAt = now + 200 + 2800 + Math.random() * 1500;
+          setCurrentFile(fileFor('zu'));
+          timer = window.setTimeout(tick, 200);
+          return;
+        }
+        if (now >= phaseUntil) {
+          phase = phase === 'mund' ? 'haende' : 'mund';
+          phaseUntil = now + 2200 + Math.random() * 1000;
+        }
+        setCurrentFile(fileFor('auf'));
+        timer = window.setTimeout(tick, 250);
       };
       tick();
     }
@@ -3055,6 +3077,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
     'augenauf.mundzu.trinken', 'augenzu.mundzu.trinken',
     'augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z',
     'augenauf.mundueberrascht', 'augenzu.mundueberrascht',
+    'augenauf.haendeueberrascht', 'augenzu.haendeueberrascht',
   ];
 
   // Pro Mode nur die relevanten Posen rendern (sparen 60-70% Memory)

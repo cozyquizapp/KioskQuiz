@@ -3752,44 +3752,31 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       )}
 
       {/* ── Top: CozyQuiz-Wordmark als prominenter Page-Titel.
-          2026-05-04 v4 (Wolf-Bug 'während Lobby fehlt immer noch Überschrift'):
-          Vorher Gradient-Text-Clip (background + -webkit-background-clip:text +
-          color:transparent) gepaart mit drop-shadow filter → in einigen Browsern/
-          Render-Pfaden wird der Text komplett unsichtbar. Jetzt: solid gold
-          (#FBBF24) + multi-layer text-shadow für den Goldglow. Bulletproof.
-          Letter-Stagger-Animation bleibt. Breath-Glow wandert raus aus dem
-          text-clip-Element auf den outer wrapper. */}
+          2026-05-06 (Wolf 'bisschen glow weg, wave-effekt rein, sah nicht
+          aus wie sonst texte in der app'): Multi-Layer-Goldglow (4 Schichten
+          + Breath-Drop-Shadow auf outer wrapper) reduziert auf eine subtile
+          Layer + Depth-Shadow — Sprache jetzt analog Rules-/Cat-Title.
+          Continuous qqCatNameWave (-10px translateY) per Buchstabe mit
+          Stagger 80ms, startet nach der Entry-Cascade (delay 0.95s + i*0.08). */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both, cqWordmarkBreath 5.2s ease-in-out infinite',
+        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both',
         paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
         <style>{`
-          @keyframes cqWordmarkBreath {
-            0%, 100% { filter: drop-shadow(0 0 28px rgba(251,191,36,0.30)); }
-            50%      { filter: drop-shadow(0 0 50px rgba(251,191,36,0.55)); }
-          }
-          @keyframes cqLetterIn {
-            0%   { opacity: 0; transform: translateY(22px) rotate(-4deg); }
-            70%  { opacity: 1; transform: translateY(-3px) rotate(1deg); }
-            100% { opacity: 1; transform: translateY(0) rotate(0); }
-          }
           .cq-wordmark {
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.02em;
             color: #FBBF24;
             text-shadow:
-              0 0 6px rgba(255,235,180,0.45),
-              0 0 24px rgba(251,191,36,0.55),
-              0 0 56px rgba(251,191,36,0.35),
-              0 4px 24px rgba(0,0,0,0.55);
+              0 0 18px rgba(251,191,36,0.30),
+              0 4px 18px rgba(0,0,0,0.55);
             display: inline-block;
             position: relative;
           }
           .cq-wordmark > span {
             display: inline-block;
-            animation: cqLetterIn 0.65s var(--qq-ease-bounce) both;
             will-change: transform, opacity;
           }
         `}</style>
@@ -3802,7 +3789,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           aria-label="CozyQuiz"
         >
           {Array.from('CozyQuiz').map((ch, i) => (
-            <span key={i} style={{ animationDelay: `${0.25 + i * 0.06}s` }}>{ch}</span>
+            <span
+              key={i}
+              style={{
+                animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.25 + i * 0.06}s both, qqCatNameWave 2.6s ease-in-out ${0.95 + i * 0.08}s infinite`,
+              }}
+            >{ch}</span>
           ))}
         </div>
       </div>
@@ -11934,14 +11926,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 (Pille-Label zeigt's schon). */}
             <div style={{
               position: 'absolute', inset: 0,
-              // 2026-05-05 v6 (Wolf 'mehr und weniger etwas runter, mehr Platz
-              // fuer den Avatar oben'): Pillen-Stack vertikal nach UNTEN
-              // geschoben (justify-content end + paddingBottom). Avatar 'higher'
-              // hat damit oberhalb von MEHR mehr Headroom — keine Verdeckung.
+              // 2026-05-06 (Wolf 'higher und lower wieder zentriert mit Cards
+              // horizontal angeordnet'): Pillen-Stack vertikal MITTIG (was
+              // flex-end). Avatare landen oben/unten an der Pille leicht
+              // ueberlappend — siehe flyTransform unten.
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'flex-end',
-              paddingBottom: 'clamp(20px, 3vh, 50px)',
-              gap: 'clamp(40px, 5.5vh, 80px)',
+              justifyContent: 'center',
+              gap: 'clamp(50px, 6.5vh, 90px)',
               pointerEvents: 'none',
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
@@ -12072,20 +12063,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.25s both',
         }}>
-          {/* Header-Label: bei Reveal sichtbar („Wer lag richtig?"), waehrend
-              der Question-Phase ausgeblendet — die Avatare unten + die Pille
-              oben + der Timer rechts erklaeren das Geschehen schon. Reservierte
-              Hoehe bleibt damit das Avatare-Grid nicht hochrutscht beim Wechsel. */}
-          <div style={{
-            minHeight: 'clamp(20px, 2.4vw, 30px)',
-            fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 900,
-            color: '#cbd5e1',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            opacity: isReveal ? 1 : 0,
-            transition: 'opacity 0.4s ease',
-          }}>
-            {isReveal && (lang === 'en' ? 'Who got it right?' : 'Wer lag richtig?')}
-          </div>
+          {/* 2026-05-06 (Wolf 'who got it right weg, in den meisten Faellen
+              spielt nur 1 Team'): Header-Label entfernt. Avatar-Position +
+              Pillen-Glow zeigen das Ergebnis schon — der Text war redundant. */}
           {/* 2026-05-05 v3 (Wolf-Bug 'avatar overlappt pillen extrem'): Avatar
               schrumpft beim Flug auf scale(0.55) (visual ~40-60px) + landet
               IM Pillen-Gap dicht an seiner Pille — nicht darauf. 'higher'
@@ -12111,16 +12091,18 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // angrenzend an die jeweilige Pille (nicht IN die Pille).
               // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
               // Label lesbar bleibt.
-              // 2026-05-05 v6 (Wolf 'cards höher, MEHR/WENIGER tiefer fuer
-              // Avatar-Platz'): Pillen-Stack ist nun unten ausgerichtet im
-              // VS-Bereich (justify-content:flex-end), MEHR sitzt im mittleren
-              // Drittel statt oben. Y-Translates entsprechend angepasst —
-              // Avatar 'higher' fliegt weniger hoch (MEHR ist tiefer), Avatar
-              // 'lower' fliegt kaum hoch (WENIGER ist nahe der Avatar-Row).
+              // 2026-05-06 (Wolf 'avatar leicht versetzt dran, bei higher
+              // ueber dem higher text leicht ueberlappend in die card, bei
+              // lower unter den lower text leicht ueberlappend'):
+              // Pillen-Stack jetzt mittig im VS-Container. Avatar 'higher'
+              // landet so dass seine untere Haelfte die HIGHER-Pille von
+              // oben ueberlappt; 'lower' landet so dass seine obere Haelfte
+              // die LOWER-Pille von unten ueberlappt. Scale 0.7 (vorher 0.55)
+              // damit der Avatar als Akzent nicht zu mickrig wirkt.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-440px, -32vh, -290px)) scale(0.55)`
+                ? `translate(${xCenter}px, clamp(-460px, -34vh, -310px)) scale(0.7)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-60px, -6vh, -25px)) scale(0.55)`
+                  ? `translate(${xCenter}px, clamp(-200px, -15vh, -120px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{
@@ -12148,44 +12130,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                         : '0 0 14px rgba(148,163,184,0.18)',
                     transition: 'box-shadow 0.4s ease',
                   }} />
-                  {/* Status-Badge: nur in Reveal = ✓ richtig / ✕ falsch.
-                      Question-Phase Submit-Status zeigt sich ueber den gruenen
-                      Avatar-Ring oben (konsistent mit Rest der App). */}
-                  {isReveal && (
-                    <div style={{
-                      position: 'absolute', bottom: -6, right: -6,
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: correct ? '#22C55E' : '#EF4444',
-                      border: '2.5px solid #0D0A06',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18, fontWeight: 900, color: '#fff',
-                      animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
-                    }}>{correct ? '✓' : '✕'}</div>
-                  )}
-                  {/* 2026-05-05 (Wolf 'teamname brauchst du da nicht, nur
-                      avatar'): Team-Name-Label entfernt — Avatar reicht zur
-                      Identifikation, Wolf moderiert eh und kennt die Teams. */}
-                  {/* Winnings-Slot mit RESERVIERTER Höhe — gleich groß in question und
-                      reveal, damit das Avatar-Grid nicht um die Pill-Höhe nach unten
-                      wächst und die Anchor/Subject-Cards re-zentriert werden. */}
-                  <div style={{
-                    minHeight: 'clamp(22px, 2.6vw, 30px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {isReveal && teamWin > 0 && (
-                      <div style={{
-                        padding: '3px 10px', borderRadius: 999,
-                        background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.55)',
-                        fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#FDE68A',
-                        fontVariantNumeric: 'tabular-nums',
-                        animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.7s both',
-                      }}>
-                        <QQEmojiIcon emoji="⚡"/> {teamWin} {teamWin === 1
-                          ? (lang === 'en' ? 'cell' : 'Feld')
-                          : (lang === 'en' ? 'cells' : 'Felder')}
-                      </div>
-                    )}
-                  </div>
+                  {/* 2026-05-06 (Wolf 'rotes X weg weil aufgeloest wird, +1 cell
+                      weg, who got it right weg'): ✓/✕ Status-Badge UND
+                      Winnings-Pille entfernt. Avatar-Position (an gold-pulsender
+                      MEHR/WENIGER-Pille) zeigt das Ergebnis bereits visuell —
+                      die zusaetzlichen Labels waren redundant. */}
                 </div>
               );
             })}
@@ -14311,11 +14260,19 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             animation: `finaleStarBurst 0.5s ease ${trophyDelay}s both, finaleTrophyFloat 3.4s ease-in-out ${trophyDelay + 0.6}s infinite`,
           }}><QQEmojiIcon emoji="🏆"/></div>
 
-          <div style={{ position: 'relative', display: 'inline-block', marginTop: 2 }}>
-            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(80px, 8vw, 120px)'} style={{
-              boxShadow: `0 0 60px ${winnerColor}55, 0 0 120px ${winnerColor}33`,
-              animation: `celebShake 0.6s ease ${avatarShakeDelay}s both, finaleAvatarBreathe 4s ease-in-out ${avatarBreatheDelay}s infinite`,
-            }} />
+          {/* 2026-05-06 (Wolf 'hinter Gewinnerteam ist immernoch das Rechteck
+              zu sehen'): boxShadow vom Avatar-style-prop wird intern von
+              EmojiAvatar's flatStyle ueberschrieben (= Glow ging verloren,
+              uebrig blieb der kleine asymmetrische Inset-Shadow der als
+              Rechteck wirkte). Glow jetzt auf einem zirkulaeren Wrapper-Div
+              das den Avatar enthaelt — Glow ist sichtbar UND clean rund. */}
+          <div style={{
+            position: 'relative', display: 'inline-block', marginTop: 2,
+            borderRadius: '50%',
+            boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}40`,
+            animation: `celebShake 0.6s ease ${avatarShakeDelay}s both, finaleAvatarBreathe 4s ease-in-out ${avatarBreatheDelay}s infinite`,
+          }}>
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(80px, 8vw, 120px)'} />
             {([
               { top: '-8%',  left: '12%', delay: 0.0, dur: 2.8, size: 'clamp(14px, 1.5vw, 22px)' },
               { top: '18%',  left: '-10%', delay: 0.6, dur: 3.2, size: 'clamp(12px, 1.3vw, 18px)' },
@@ -14341,17 +14298,22 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             ))}
           </div>
 
+          {/* 2026-05-06 (Wolf 'teamname des gewinnerteams sollte nicht so
+              komisch 2 zeilig gemacht werden'): maxLines 2→1, shrinkAfter
+              16→10, fontSizeLong klein genug fuer ~16 chars Names. Bricht
+              jetzt nicht mehr mitten im Wort. */}
           <TeamNameLabel
             name={winner.name}
-            maxLines={2}
-            shrinkAfter={16}
+            maxLines={1}
+            shrinkAfter={10}
             color={winnerColor}
             fontWeight={900}
             fontSize="clamp(24px, 2.6vw, 38px)"
+            fontSizeLong="clamp(16px, 1.8vw, 26px)"
             style={{
               animation: `finaleGlow 3s ease-in-out ${nameGlowDelay}s infinite`,
               marginTop: 6,
-              maxWidth: '90%',
+              maxWidth: 'min(95%, 480px)',
               padding: '0 0.5em',
               textAlign: 'center',
             }}

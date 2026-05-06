@@ -1447,9 +1447,17 @@ function qqStartHotPotatoTurn(room: QQRoomState, onExpire: () => void): void {
  *  Stattdessen geht der Room in `hotPotatoSlotState='rolling'` — der Beamer
  *  zeigt die Slot-Machine-Animation, /team haelt die Eingabe gesperrt.
  *  Erst `qqHotPotatoFinishSlot` (vom Mod via 2. Space) startet den Timer
- *  und gibt die Antwort frei. */
+ *  und gibt die Antwort frei.
+ *
+ *  2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Idempotenz-Check —
+ *  wenn fuer DIESE HP-Frage bereits ein Active-Team + SlotState gesetzt sind,
+ *  no-op. Sonst wuerde mehrfaches qq:activateQuestion (Substep-Reentry,
+ *  Reconnect, etc.) das Random-Team neu wuerfeln und den Slot resetten,
+ *  was am Beamer als wiederholte Slot-Animation sichtbar wird. */
 export function qqHotPotatoStart(room: QQRoomState, _onTurnExpire: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
+  // Bereits gestartet fuer diese Frage? Dann nicht nochmal wuerfeln.
+  if (room.hotPotatoActiveTeamId && room.hotPotatoSlotState) return;
   room.hotPotatoEliminated = [];
   room.hotPotatoLastAnswer = null;
   room.hotPotatoUsedAnswers = [];

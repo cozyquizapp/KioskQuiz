@@ -2944,14 +2944,13 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
             objectFit: 'contain',
             display: 'block',
             opacity: p === visibleFile ? 1 : 0,
-            // 2026-05-06 (Wolf 'Animationen wirken abrupter weil weniger
-            // Zwischenschritte'): Crossfade zwischen Posen statt instant-
-            // Snap. Speaking-Mode nutzt schnelleren Mund-Flap (90ms) um
-            // ueberreaktiv zu wirken; andere Modes 200ms fuer ruhige
-            // Lebendigkeit.
+            // 2026-05-06 v2 (Wolf 'Animation haengt zwischen zwei Bildern'):
+            // 220ms Crossfade hat dazu gefuehrt dass beide Bilder zu lange
+            // gleichzeitig sichtbar waren — wirkte wie 'haengt'. Auf 110ms
+            // verkuerzt; speaking bleibt 90ms.
             transition: effectiveMode === 'speaking'
               ? 'opacity 90ms linear'
-              : 'opacity 220ms ease-out',
+              : 'opacity 110ms ease-out',
             pointerEvents: 'none',
           }}
         />
@@ -12944,15 +12943,18 @@ function PreGameWolfBubble({ lang }: { lang: 'de' | 'en' }) {
       }}
     >
       {slogans[idx]}
-      {/* Tail nach unten-LINKS in Richtung Wolf (Wolf jetzt links unten). */}
+      {/* 2026-05-06 v2 (Wolf 'Sprechblase muss auf die andere Seite, sonst
+          kommt sie nicht aus dem Mund'): Tail von links unten auf rechts
+          unten gespiegelt — der Wolf-Mund liegt im Bild auf der rechten
+          Haelfte. */}
       <span aria-hidden style={{
         position: 'absolute',
-        left: -8, bottom: -6,
+        right: -8, bottom: -6,
         width: 14, height: 14,
         borderBottom: '2px solid rgba(251,191,36,0.55)',
-        borderLeft: '2px solid rgba(251,191,36,0.55)',
+        borderRight: '2px solid rgba(251,191,36,0.55)',
         background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
-        transform: 'rotate(45deg)',
+        transform: 'rotate(-45deg)',
       }} />
     </div>
   );

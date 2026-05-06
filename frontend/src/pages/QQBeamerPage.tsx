@@ -2914,6 +2914,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
       // Jetzt 4 Jubel-Posen → Mund-Flap-Loop wie im Winken-Mode mit Speak-
       // Pause-Phasen + Idle-Blink. Wolf jubelt mit Howl, schliesst gelegent-
       // lich die Augen (joyful squint), atmet kurz durch.
+      // 2026-05-06 v6 (Wolf 'wenn er den Mund bewegt, soll er was sagen'):
+      // Externes speaking-Gate analog winken — Mund-Flap synchron zur
+      // Sprechblase im GameOver.
       let mouthOpenLocal = false;
       let phase: 'speak' | 'pause' = 'speak';
       let phaseUntil = Date.now() + 1800 + Math.random() * 1000;
@@ -2935,24 +2938,28 @@ function AnimatedCozyWolf({ widthCss, speaking, mode }: {
           timer = window.setTimeout(tick, 200);
           return;
         }
-        if (now >= phaseUntil) {
-          if (phase === 'speak') {
-            phase = 'pause';
-            phaseUntil = now + 700 + Math.random() * 600;
-            mouthOpenLocal = false;
-            setCurrentFile('augenauf.mundzu.jubel');
-            timer = window.setTimeout(tick, phaseUntil - now);
-            return;
-          } else {
-            phase = 'speak';
-            phaseUntil = now + 1800 + Math.random() * 1000;
-          }
-        }
-        if (phase === 'speak') {
+        const externalSpeak = speakingRef.current;
+        const isSpeaking = externalSpeak !== undefined
+          ? externalSpeak
+          : (() => {
+              if (now >= phaseUntil) {
+                if (phase === 'speak') {
+                  phase = 'pause';
+                  phaseUntil = now + 700 + Math.random() * 600;
+                } else {
+                  phase = 'speak';
+                  phaseUntil = now + 1800 + Math.random() * 1000;
+                }
+              }
+              return phase === 'speak';
+            })();
+        if (isSpeaking) {
           mouthOpenLocal = !mouthOpenLocal;
           setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.jubel' : 'augenauf.mundzu.jubel');
           timer = window.setTimeout(tick, 200 + Math.random() * 80);
         } else {
+          mouthOpenLocal = false;
+          setCurrentFile('augenauf.mundzu.jubel');
           timer = window.setTimeout(tick, 250);
         }
       };
@@ -12990,7 +12997,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {/* 2026-05-06 v4 (Wolf 'bei Comeback ueberrascht ist gut'): Wolf
           mit Oh!-Pose unten links waehrend BAM-Step 0. Verstaerkt den
           Drama-Moment 'Wer kommt zurueck?'. Step 1 (Team-Hero) ist eh
-          fokussiert auf das Comeback-Team — Wolf koennte da ablenken. */}
+          fokussiert auf das Comeback-Team — Wolf koennte da ablenken.
+          2026-05-06 v6 (Wolf 'wenn er den Mund offen hat, soll er was
+          sagen — auch auf Comeback'): Sprechblase mit Surprise-Slogans. */}
       {step === 0 && (
         <div style={{
           position: 'absolute',
@@ -13000,9 +13009,60 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           pointerEvents: 'none',
           animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.85s both',
         }}>
-          <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="ueberrascht" />
+          <WolfUeberraschtWithBubble lang={lang === 'de' ? 'de' : 'en'} />
         </div>
       )}
+    </div>
+  );
+}
+
+// Ueberrascht-Wolf mit Sprechblase fuer ComebackView Step 0. Bubble-Tail
+// links unten (Wolf links unten), Surprise-Slogans. Mund bleibt im
+// ueberrascht-Mode konstant offen (kein Flap), deshalb keine
+// speaking-Gate — die Bubble ist rein 'Beifall-Reaktion' auf den
+// Comeback-Drama-Moment.
+function WolfUeberraschtWithBubble({ lang }: { lang: 'de' | 'en' }) {
+  const slogans: Slogan[] = lang === 'de'
+    ? [
+        { text: 'Was?!', mouths: 1 },
+        { text: 'Krass!', mouths: 1 },
+        { text: 'Ohhh!', mouths: 1 },
+        { text: 'Echt jetzt?', mouths: 3 },
+        { text: 'Holla!', mouths: 2 },
+      ]
+    : [
+        { text: 'What?!', mouths: 1 },
+        { text: 'Whoa!', mouths: 1 },
+        { text: 'No way!', mouths: 2 },
+        { text: 'Really?', mouths: 2 },
+        { text: 'Wild!', mouths: 1 },
+      ];
+  const [idx, setIdx] = useState(0);
+  const slogan = slogans[idx];
+  const speakMs = Math.min(3000, Math.max(1100, slogan.mouths * 500));
+  const enterMs = 200;
+  const exitMs = 400;
+  const gapMs = 500;
+  const totalMs = enterMs + speakMs + exitMs + gapMs;
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setIdx(p => (p + 1) % slogans.length);
+    }, totalMs);
+    return () => window.clearTimeout(id);
+  }, [idx, totalMs, slogans.length]);
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+      gap: 14, pointerEvents: 'none',
+    }}>
+      <SpeechBubble
+        text={slogan.text}
+        bubbleKey={idx}
+        enterMs={enterMs}
+        speakMs={speakMs}
+        exitMs={exitMs}
+      />
+      <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="ueberrascht" />
     </div>
   );
 }
@@ -13164,12 +13224,13 @@ function WolfCoModerator({ lang, variant, widthCss }: {
 // (Dreieck), Stroke folgt aber nur dem V (nicht der oberen Linie).
 // Dadurch ueberlappt sich die obere Kante der Tail-Fuellung mit der
 // Bubble-Bottom-Border, und die V-Stroke-Farbe matcht die Bubble-Border.
-function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
+function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left' }: {
   text: string;
   bubbleKey: number;
   enterMs: number;
   speakMs: number;
   exitMs: number;
+  tailSide?: 'left' | 'right';
 }) {
   const totalLifeMs = enterMs + speakMs + exitMs;
   return (
@@ -13177,7 +13238,9 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
       key={bubbleKey}
       style={{
         position: 'relative',
-        marginLeft: 14,
+        // Bei tail rechts kein left-Margin (Bubble ist rechts-aligned)
+        marginLeft: tailSide === 'left' ? 14 : 0,
+        marginRight: tailSide === 'right' ? 14 : 0,
         // Adaptive Breite: 1-Wort-Slogan kompakt, langer Slogan wraped
         // automatisch auf 2 Zeilen.
         minWidth: 80,
@@ -13217,9 +13280,10 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs }: {
         viewBox="0 0 22 13"
         style={{
           position: 'absolute',
-          // Tail leicht links der Bubble-Mitte → liegt ueber dem Wolf-
-          // Maul (Wolf sitzt bei alignItems:flex-start unten links).
-          left: 32,
+          // Tail-Position abhaengig von tailSide. Bei left: 32px von links
+          // (ueber Wolf links unten). Bei right: 32px von rechts (ueber
+          // Wolf rechts unten).
+          ...(tailSide === 'left' ? { left: 32 } : { right: 32 }),
           top: '100%',
           marginTop: -1,
           overflow: 'visible',
@@ -15407,20 +15471,81 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       </div>
 
       {/* 2026-05-06 v4 (Wolf 'GameOver-Wolf jubelt mit'): jubelnder Wolf
-          unten links — schliesst den Brand-Bogen (preGame winken → ingame
-          still → game-over jubel → thanks schlafen). Nur in der Recap-
-          Tabelle sichtbar, NICHT bei den Spotlight-Reveal-Stages (waere bei
-          Last-Place jubelnder Wolf unpassend). */}
+          neben dem Sieger-Team. Nur in der Recap-Tabelle sichtbar.
+          2026-05-06 v6 (Wolf 'rechts oben kleiner neben dem Siegerteam'):
+          Position bottom-left → top-right; Groesse 120-180 → 90-140;
+          Sprechblase mit Jubel-Slogans (Mund-Sync). */}
       <div style={{
         position: 'absolute',
-        left: 'clamp(20px, 2.5vw, 48px)',
-        bottom: 'clamp(20px, 2.5vh, 40px)',
+        right: 'clamp(20px, 2vw, 40px)',
+        top: 'clamp(8px, 1.2vh, 18px)',
         zIndex: 7,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.4s both',
       }}>
-        <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="jubel" />
+        <WolfJubelWithBubble lang={lang === 'de' ? 'de' : 'en'} />
       </div>
+    </div>
+  );
+}
+
+// Jubel-Wolf mit Sprechblase fuer GameOverView. Bubble-Tail an den Wolf-
+// Mund (rechts unten ueber dem Wolf-Maul). Slogans + Mund-Sync analog
+// zu WolfCoModerator.
+function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
+  const slogans: Slogan[] = lang === 'de'
+    ? [
+        { text: 'Glückwunsch!', mouths: 3 },
+        { text: 'Was für ein Quiz!', mouths: 4 },
+        { text: 'Ihr seid wild!', mouths: 3 },
+        { text: 'Sauber!', mouths: 2 },
+        { text: 'Geile Runde!', mouths: 3 },
+      ]
+    : [
+        { text: 'Congrats!', mouths: 2 },
+        { text: 'What a quiz!', mouths: 3 },
+        { text: 'You\'re wild!', mouths: 2 },
+        { text: 'Nice one!', mouths: 2 },
+        { text: 'Great round!', mouths: 2 },
+      ];
+  const [idx, setIdx] = useState(0);
+  const slogan = slogans[idx];
+  const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));
+  const enterMs = 250;
+  const exitMs = 450;
+  const gapMs = 600;
+  const totalMs = enterMs + speakMs + exitMs + gapMs;
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setIdx(p => (p + 1) % slogans.length);
+    }, totalMs);
+    return () => window.clearTimeout(id);
+  }, [idx, totalMs, slogans.length]);
+  const [speakingNow, setSpeakingNow] = useState(false);
+  useEffect(() => {
+    setSpeakingNow(false);
+    const t1 = window.setTimeout(() => setSpeakingNow(true), enterMs);
+    const t2 = window.setTimeout(() => setSpeakingNow(false), enterMs + speakMs);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [idx, enterMs, speakMs]);
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+      gap: 14, pointerEvents: 'none',
+    }}>
+      <SpeechBubble
+        text={slogan.text}
+        bubbleKey={idx}
+        enterMs={enterMs}
+        speakMs={speakMs}
+        exitMs={exitMs}
+        tailSide="right"
+      />
+      <AnimatedCozyWolf
+        widthCss="clamp(90px, 9vw, 140px)"
+        mode="jubel"
+        speaking={speakingNow}
+      />
     </div>
   );
 }

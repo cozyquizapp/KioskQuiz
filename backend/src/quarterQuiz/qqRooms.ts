@@ -1937,6 +1937,16 @@ export function qqChooseFreeAction(
   if (room.pendingAction !== 'FREE' && room.gamePhaseIndex !== 2) {
     throw new QQError('WRONG_PHASE', 'Aktion nur in Phase 2+ wählbar.');
   }
+  // 2026-05-05 (Wolf '1 Aktion pro Frage — wenn Klauen gewaehlt, kein Place
+  // mehr'): Action-Wahl ist bindend. Sobald das Team explizit eine Aktion
+  // gewaehlt hat (= pendingAction != Default-fuer-Phase), kein Wechsel
+  // mehr zugelassen. Default in Phase 2 ist PLACE_2, in Phase 3+ FREE.
+  const isPhase2DefaultPlace = room.gamePhaseIndex === 2 && room.pendingAction === 'PLACE_2';
+  const isPhase3PlusDefault = room.gamePhaseIndex >= 3 && room.pendingAction === 'FREE';
+  const isInitialChoice = isPhase2DefaultPlace || isPhase3PlusDefault;
+  if (!isInitialChoice) {
+    throw new QQError('ACTION_LOCKED', 'Aktion bereits gewählt — pro Frage nur 1 Aktion.');
+  }
 
   // 2026-05-02 (Mechanik-Audit P1 #17): Comeback-Steal-Phase erlaubt nur
   // PLACE oder STEAL. Sonst koennte das Comeback-Team via FREE-Menue
@@ -3019,7 +3029,9 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   // Schilde halten bis Spielende (max 2 pro Team) — kein Reset am Phasenende mehr.
   // Bann-TTL läuft pro Frage runter, nicht pro Phase — kein Reset hier.
 
-  // Reset per-phase stats — aber jokersEarned (game-wide) und shieldsUsed (game-wide) erhalten
+  // Reset per-phase stats — jokersEarned (game-wide) + shieldsUsed/stapelsUsed
+  // (game-wide) erhalten. jokersThisPhase wird IMPLIZIT durch emptyPhaseStats
+  // auf undefined → 0 gesetzt (Wolf 2026-05-05: 'pro Runde max 1 Joker').
   for (const id of room.joinOrder) {
     const prev = room.teamPhaseStats[id];
     room.teamPhaseStats[id] = {
@@ -3214,11 +3226,13 @@ export function qqNextQuestion(room: QQRoomState): void {
 // Beide Patterns geben 1 Bonus-Cell pro Pattern. Cap: QQ_MAX_JOKERS_PER_GAME (=2).
 function handleJokerDetection(room: QQRoomState, teamId: string): number {
   const stats = room.teamPhaseStats[teamId];
-  // 2026-04-28-Bug-Fix: User-Feedback 'Sterne auf großen Grids ohne dass Joker
-  // da war'. Sobald das Team-Cap erreicht ist, keine neuen Joker mehr
-  // detektieren UND auch keine Cells mehr markieren — sonst füllt sich das
-  // Grid Ende-Game mit „⭐"-Markierungen ohne Belohnung.
   if (stats.jokersEarned >= QQ_MAX_JOKERS_PER_GAME) {
+    return 0;
+  }
+  // 2026-05-05 (Wolf 'pro Runde max 1 Joker einloesbar'): per-phase Cap
+  // (game-Cap bleibt 2). Verhindert dass ein Team in einer einzigen Runde
+  // beide Joker abraeumt — gibt der Mechanik mehr Tempo-Variation.
+  if ((stats.jokersThisPhase ?? 0) >= 1) {
     return 0;
   }
 
@@ -3228,20 +3242,23 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
   const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
   let toAward = Math.min(newBlocks.length, remaining);
 
+  // 2026-05-05: Per-Phase-Cap auch hier — auch wenn ein Block 2 Joker geben
+  // wuerde, max 1 pro Phase.
+  toAward = Math.min(toAward, 1 - (stats.jokersThisPhase ?? 0));
+
   // Comeback-Place-Cap: max 3 Felder Gesamtgewinn (2 Place + max 1 Joker-Bonus).
-  // Ohne diesen Cap könnte ein Team mit 2x2-Joker während Comeback 4 Felder
-  // bekommen und vom Letzten direkt auf Platz 1 springen — zu krasser Swing.
   if (room.pendingAction === 'COMEBACK' && room.comebackAction === 'PLACE_2') {
     toAward = Math.min(toAward, 1);
   }
 
-  // Markiere NUR die ersten `toAward` Blocks — Cells über dem Cap sind nicht
-  // belohnt und sollen visuell auch nicht als Joker erscheinen.
+  if (toAward <= 0) return 0;
+
   for (let i = 0; i < toAward; i++) {
     markJokerCells(room.grid, newBlocks[i].cells);
   }
 
   stats.jokersEarned += toAward;
+  stats.jokersThisPhase = (stats.jokersThisPhase ?? 0) + toAward;
   return toAward;
 }
 
@@ -3799,8 +3816,13 @@ function assertPhase(room: QQRoomState, allowed: QQPhase[]): void {
  *  PLACE_1, Phase 2+ FREE wenn Grid frei sonst STEAL_1. */
 function jokerBonusAction(room: QQRoomState): NonNullable<QQRoomState['pendingAction']> {
   if (room.gamePhaseIndex === 1) return 'PLACE_1';
+  // 2026-05-05 (Wolf 'wenn ich klauen waehle, darf ich danach nicht placen,
+  // 1 Aktion pro Frage'): Joker-Bonus nach Place ist jetzt PLACE_1-only
+  // (nicht 'FREE' = Place oder Steal). Symmetrisch zur Steal-Joker-Logik
+  // in qqStealCell die schon STEAL_1-only forced. Bei vollem Grid Fallback
+  // auf STEAL_1.
   const hasFreeCellNow = room.grid.some(r => r.some(c => c.ownerId === null));
-  return hasFreeCellNow ? 'FREE' : 'STEAL_1';
+  return hasFreeCellNow ? 'PLACE_1' : 'STEAL_1';
 }
 
 function assertTeam(room: QQRoomState, teamId: string): void {

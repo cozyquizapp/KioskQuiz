@@ -237,6 +237,7 @@ export interface QQQuestion {
 export interface QQTeamPhaseStats {
   stealsUsed: number;       // Phase 2: max QQ_MAX_STEALS_PER_PHASE
   jokersEarned: number;     // max QQ_MAX_JOKERS_PER_GAME over the whole game (not reset per phase)
+  jokersThisPhase?: number; // 2026-05-05 (Wolf 'pro Runde max 1 Joker'): per-phase counter, reset bei Phase-Wechsel
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
   pendingJokerBonus?: number; // legacy: joker bonus postponed until PLACE_2 finishes (no longer used, kept for state compatibility)
   pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first

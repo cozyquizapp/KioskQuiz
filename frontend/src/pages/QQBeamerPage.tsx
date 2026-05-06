@@ -9448,8 +9448,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
               : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            animation: cheeseWithQuestion ? 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both'
-              : 'revealAnswerBam 0.5s var(--qq-ease-out-cubic) both',
+            // 2026-05-05 (Wolf 'Cheese-Reveal-Card wiggelt beim Auftauchen,
+            // wirkt chaotisch'): revealAnswerBam (scale+wiggle) entfernt —
+            // die Card ist beim Reveal eh schon sichtbar (war im Question-
+            // Mode bereits da), nur Inhalt aendert sich. Kein Pop-Effekt
+            // nötig, Border-Color-Transition reicht als Reveal-Marker.
+            animation: cheeseWithQuestion ? 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both' : 'none',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
             // 2026-04-30 v2: width/min-width/max-width Transition explizit

@@ -4206,9 +4206,14 @@ function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => voi
 
 function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null }) {
   const bt = q?.bunteTuete;
-  const centerLat = bt?.lat ?? 51.1657;
-  const centerLng = bt?.lng ?? 10.4515;
-  const zoom = bt?.zoom ?? 5;
+  // 2026-05-05 (Wolf 'Map zeigt aktuell das Zielgebiet vorgezoomt = Hinweis,
+  // bitte neutrale Ansicht'): Default-Center jetzt mittig auf der Welt (0,0)
+  // statt auf bt.lat/lng (= Lösungs-Position!). Zoom 2 = Welt-Übersicht.
+  // Falls die Frage explizit `bt.zoom` setzt, wird das honoriert (z.B. wenn
+  // Mod absichtlich auf eine Region beschränken will).
+  const centerLat = 20;       // grob Mittel-Welt-Latitude
+  const centerLng = 0;        // Greenwich
+  const zoom = bt?.zoom ?? 2; // Welt-Level
   const [pin, setPin] = useState<[number, number] | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -4233,44 +4238,20 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
     onSubmit(`${pin[0]},${pin[1]}`);
   }
 
-  // 2026-05-05 (Wolf-Wunsch 'cozyguessr auch mit bild'): wenn die Frage
-  // ein Bild hat, oben kompakt anzeigen — Map-Hoehe entsprechend reduziert.
-  const hasImage = !!q?.image?.url;
+  // 2026-05-05 v2 (Wolf 'Bild auf /team muss nicht angezeigt werden, nimmt
+  // den Platz für die Karte'): Bild-Block entfernt — Bild sieht der Spieler
+  // auf dem Beamer eh in voller Pracht. Auf /team brauchen wir die Karte
+  // groß damit der Pin präzise gesetzt werden kann. Map nutzt jetzt wieder
+  // volle 48vh-Höhe.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-      {hasImage && (
-        // 2026-05-05 (Wolf 'einrahmen wie cheese panorama, rahmen in
-        // kategorie-farbe'): cat-Color Border + Glow, 18px radius,
-        // object-fit: cover schneidet Raender bündig ab.
-        <div style={{
-          borderRadius: 18, overflow: 'hidden',
-          border: `2.5px solid ${catColor}`,
-          background: '#0d0a06',
-          height: 'clamp(140px, 22vh, 220px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 22px ${catColor}55, 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)`,
-        }}>
-          <img
-            src={q.image.url}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            draggable={false}
-          />
-        </div>
-      )}
       <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
         {t.pinIt.tap[lang]}
       </div>
-      {/* 2026-05-03 (Wolf-Bug 'Jetzt antworten zu weit unten'): map-height
-          von 70vh auf 48vh reduziert. Auf 6"-Phones (700-850px Viewport)
-          waren 70vh + Header + Submit-Btn zu viel — Btn rutschte unter den
-          Fold und war nicht sichtbar bis User scrollt.
-          2026-05-05: bei Image -> Map noch kleiner damit Bild + Map + Submit
-          alle in den Viewport passen. */}
       <div style={{
         borderRadius: 16, overflow: 'hidden',
         border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
-        height: hasImage ? 'clamp(220px, 32vh, 380px)' : 'clamp(280px, 48vh, 480px)',
+        height: 'clamp(280px, 48vh, 480px)',
         position: 'relative',
       }}>
         <MapContainer

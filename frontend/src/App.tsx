@@ -5,20 +5,15 @@ import QQErrorBoundary, { installGlobalCrashHandlers } from './components/QQErro
 
 // Eager load: Fast paths
 import LandingPage from './pages/LandingPage';
-import TeamPage from './pages/TeamPage';
-import BeamerPage from './pages/BeamerPage';
 
 // Lazy load: Heavy pages
 const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const MenuPage = React.lazy(() => import('./pages/MenuPage'));
 const QuestionEditorPage = React.lazy(() => import('./pages/QuestionEditorPage'));
-const ModeratorPage = React.lazy(() => import('./pages/ModeratorPage'));
 const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
-const CreatorCanvasPage = React.lazy(() => import('./pages/CreatorCanvasPage'));
 const QrCodePage = React.lazy(() => import('./pages/QrCodePage'));
-const ImprovedCozy60BuilderPage = React.lazy(() => import('./pages/ImprovedCozy60BuilderPage'));
 const QQModeratorPage = React.lazy(() => import('./pages/QQModeratorPage'));
 const QQBeamerPage    = React.lazy(() => import('./pages/QQBeamerPage'));
 const QQTeamPage      = React.lazy(() => import('./pages/QQTeamPage'));
@@ -29,18 +24,8 @@ const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage')
 const QQRulesEditorPage   = React.lazy(() => import('./pages/QQRulesEditorPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
-const QQCityLabPage       = React.lazy(() => import('./pages/QQCityLabPage'));
-const QQGardenPitchPage   = React.lazy(() => import('./pages/QQGardenPitchPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
-const QQGouachePage       = React.lazy(() => import('./pages/QQGouachePage'));
-const QQLobbyGouachePage  = React.lazy(() => import('./pages/QQLobbyGouachePage'));
-const QQTeamGouachePage   = React.lazy(() => import('./pages/QQTeamGouachePage'));
-const QQBeamerGouachePage = React.lazy(() => import('./pages/QQBeamerGouachePage'));
-const QQRoundLabPage      = React.lazy(() => import('./pages/QQRoundLabPage'));
-const QQRevealLabPage     = React.lazy(() => import('./pages/QQRevealLabPage'));
-const QQCozyLabPage       = React.lazy(() => import('./pages/QQCozyLabPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
-const QQPolishTestPage    = React.lazy(() => import('./pages/QQPolishTestPage'));
 const QQAvatarGeneratorPage = React.lazy(() => import('./pages/QQAvatarGeneratorPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -173,27 +158,11 @@ function App() {
           <Route path="/rules-editor" element={<PinGate><QQRulesEditorPage /></PinGate>} />
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
-          <Route path="/city-lab"   element={<PinGate><QQCityLabPage /></PinGate>} />
-          <Route path="/garden-pitch" element={<PinGate><QQGardenPitchPage /></PinGate>} />
           <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
-          <Route path="/gouache"    element={<PinGate><QQGouachePage /></PinGate>} />
-          <Route path="/lobby-gouache" element={<QQErrorBoundary source="lobby-gouache"><QQLobbyGouachePage /></QQErrorBoundary>} />
-          <Route path="/team-gouache"   element={<QQErrorBoundary source="team-gouache"><QQTeamGouachePage /></QQErrorBoundary>} />
-          <Route path="/beamer-gouache" element={<QQErrorBoundary source="beamer-gouache"><QQBeamerGouachePage /></QQErrorBoundary>} />
-          <Route path="/round-lab"  element={<PinGate><QQRoundLabPage /></PinGate>} />
-          <Route path="/reveal-lab" element={<PinGate><QQRevealLabPage /></PinGate>} />
-          <Route path="/cozy-lab"   element={<PinGate><QQCozyLabPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
-          <Route path="/test"       element={<PinGate><QQPolishTestPage /></PinGate>} />
           <Route path="/testpage"   element={<PinGate><QQAvatarGeneratorPage /></PinGate>} />
 
-          {/* ── Altes CozyQuiz (Archiv) ───────────────────────────── */}
-          <Route path="/alt/team"         element={<TeamPage />} />
-          <Route path="/alt/beamer"       element={<BeamerPage />} />
-          <Route path="/alt/beamer/:roomCode" element={<BeamerPage />} />
-          <Route path="/alt/moderator"    element={<PinGate><ModeratorPage /></PinGate>} />
-          <Route path="/alt/baukasten"    element={<CreatorCanvasPage />} />
-          <Route path="/alt/builder"      element={<ImprovedCozy60BuilderPage />} />
+          {/* ── Altes CozyQuiz (Archiv) — Editoren/Tools ohne Cozy 60-Spielmodus ── */}
           <Route path="/alt/fragen"       element={<QuestionEditorPage />} />
           <Route path="/alt/katalog"      element={<QuestionCatalogPage />} />
           <Route path="/alt/stats"        element={<StatsPage />} />
@@ -210,21 +179,11 @@ function App() {
           <Route path="/qq-slides"             element={<Navigate to="/slides" replace />} />
 
           {/* ── Legacy-Redirects (alte CozyQuiz-URLs) ────────────── */}
-          <Route path="/welcome"               element={<Navigate to="/alt/team" replace />} />
-          <Route path="/baukasten_neu"         element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/baukasten"             element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/creator"               element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/creator-v2"            element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/creator-wizard"        element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/creator-canvas"        element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/creator-app"           element={<Navigate to="/alt/baukasten" replace />} />
-          <Route path="/kanban-builder"        element={<Navigate to="/alt/builder" replace />} />
           <Route path="/question-editor"       element={<Navigate to="/alt/fragen" replace />} />
           <Route path="/question-catalog"      element={<Navigate to="/alt/katalog" replace />} />
           <Route path="/stats"                 element={<Navigate to="/alt/stats" replace />} />
           <Route path="/intro"                 element={<Navigate to="/alt/intro" replace />} />
           <Route path="/menu"                  element={<Navigate to="/alt/menu" replace />} />
-          <Route path="/presentation-creator"  element={<Navigate to="/alt/baukasten" replace />} />
           <Route path="/qrcode"                element={<Navigate to="/alt/qrcode" replace />} />
 
           <Route path="*" element={<Navigate to="/team" replace />} />

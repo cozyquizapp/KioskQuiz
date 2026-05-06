@@ -32,18 +32,16 @@ export default defineConfig({
       },
       workbox: {
         // Cache app shell (JS/CSS/HTML/fonts/images).
-        // Aquarell-Avatare in /avatars/gouache/* werden NICHT gecacht — die
-        // sind aktuell unkomprimiert (9-13 MB pro Bild) und sprengen das
-        // Workbox-Limit. Sie werden zur Laufzeit normal vom Server geladen.
-        // Vor Production-Deploy → durch sharp-Pipeline auf <500 KB schrumpfen,
-        // dann kann das Exclude wieder weg (siehe GOUACHE_PLAN.md Phase 5).
+        // 2026-05-06 (Cleanup): cozywolf-PNGs sind 3.7-5.4 MB pro Bild und
+        // werden nur in der Beamer-Page benoetigt — Phones-PWA-Precache
+        // braucht die nicht. Vom SW-Cache excluded → laden zur Laufzeit
+        // normal vom Server. Spart ~80 MB Initial-Download pro Phone.
+        // Mittelfristig via sharp-Pipeline auf <500 KB schrumpfen, dann
+        // kann das Exclude wieder weg.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['**/avatars/gouache/**'],
-        // 2026-05-06: Limit 5→6 MB. Neue Wolf-Pose 'troete.jubel.png' ist
-        // 5.37 MB. Andere Wolf-PNGs sind 3.7-4.6 MB. Sollte mittelfristig
-        // alle via sharp-Pipeline auf <500 KB schrumpfen, dann kann das
-        // Limit zurueck auf 2 MB.
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        globIgnores: ['**/avatars/cozywolf/**'],
+        // 3 MB Limit fuer joker-PNGs (2.3 MB) und category-Logos (1.7 MB).
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/socket\.io/],
@@ -92,41 +90,24 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // 2026-05-06 (Wolf 'aber /team load schneller waere ja was gutes'):
-        // Vendor-Splitting fuer die schwersten Libs erweitert. Three.js +
-        // Leaflet sind die groessten und werden nur in der Beamer-Page
-        // gebraucht — durch separate Chunks lädt /team auf Phones deutlich
-        // schneller, weil Browser-Cache pro Vendor-Chunk wiederverwendet wird
-        // (gleiche React-Version ueber Sessions = Cache-Hit).
+        // Vendor-Splitting fuer die schwersten Libs — durch separate Chunks
+        // laedt /team auf Phones deutlich schneller, weil Browser-Cache pro
+        // Vendor-Chunk wiederverwendet wird.
+        // 2026-05-06 (Cleanup): three/leaflet/react-leaflet/@react-three
+        // raus — wurden nur von QQCityLabPage gebraucht, die ist geloescht.
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
             if (id.includes('socket.io-client')) return 'vendor-socket';
             if (id.includes('html2canvas')) return 'vendor-canvas';
-            // 2026-05-06 v2 (Wolf-Bug 'Cannot read properties of undefined
-            // (reading createContext) in vendor-leaflet'): react-leaflet und
-            // @react-three importieren React.createContext — wenn wir die
-            // in vendor-leaflet/vendor-three separieren, koennen sie VOR
-            // vendor-react laden und React ist noch undefined. Wrapper-Libs
-            // bleiben deshalb im Default-Chunk (laden mit der Page die sie
-            // braucht), nur PURE three/leaflet werden ausgelagert.
-            if (id.includes('@react-three')) return undefined; // bleibt bei der Page
-            if (id.includes('react-leaflet')) return undefined; // bleibt bei der Page
-            if (id.includes('three')) return 'vendor-three';
-            if (id.includes('leaflet')) return 'vendor-leaflet';
             if (id.includes('qrcode')) return 'vendor-qrcode';
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
           }
           if (id.includes('/admin/')) return 'admin';
-          if (id.includes('/components/') && (id.includes('Editor') || id.includes('Editor'))) return 'editors';
+          if (id.includes('/components/') && id.includes('Editor')) return 'editors';
           return undefined;
         }
       }
-    },
-    // 2026-05-06: Limit 750→1000kB. Einziger >750kB Chunk ist vendor-three
-    // (866 KB), wird aber nur fuer die /city-lab Lab-Page geladen — nie im
-    // normalen Quiz-Flow (Lobby/Team/Beamer/Moderator). Warning waere also
-    // irrefuehrend.
-    chunkSizeWarningLimit: 1000
+    }
   }
 });

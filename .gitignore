@@ -13,6 +13,3 @@ node_modules/
 # QQ state autosave (Recovery nach Crash/Sleep)
 .qq-rooms/
 backend/.qq-rooms/
-
-# Originale der Aquarell-Avatare (Source-Backup, nicht im Build/Repo)
-frontend/avatars-source-gouache/

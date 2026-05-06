@@ -2,7 +2,7 @@
 
 > Pub-Quiz-App mit Territorium-Grid-Mechanik. 2-10 Teams, Beamer-Show + Phone-Eingabe.
 > Solo-Projekt von Wolf (cozywolf-Marke).
-> **Letztes Update**: 2026-04-28 · Branch: `main`
+> **Letztes Update**: 2026-05-07 · Branch: `main`
 
 ---
 
@@ -13,11 +13,72 @@
 3. **Memory-Files lesen** in `~/.claude/projects/c--Users-hornu-Desktop-kioskquiz/memory/` —
    da steht User-Profil, Feedback-Regeln, QQ-Architektur-Hinweise, etc.
 4. **Beim Code-Editieren**: nur `frontend/src/pages/QQ*.tsx` und `backend/src/quarterQuiz/` anfassen.
-   Cozy60 (alte App, `BeamerView.tsx` / `TeamView.tsx` / `ModeratorPage.tsx`) **nicht mehr anfassen**.
+   Cozy 60 + Gouache + Lab-Pages wurden 2026-05-07 komplett geloescht (siehe „Cleanup" unten).
 
 ---
 
 ## Aktiver Block
+
+### 🧹 Cleanup-Aktion (2026-05-07)
+
+Massive Aufraeumaktion in der End-Phase — App ist jetzt deutlich schlanker
+fuer den Soft-Launch.
+
+#### Geloeschte Pages/Folders
+- **Cozy 60** (alter Spielmodus): `BeamerView.tsx`, `TeamView.tsx`,
+  `BeamerPage.tsx`, `TeamPage.tsx`, `ModeratorPage.tsx`,
+  `CreatorCanvasPage.tsx`, `CreatorWizardPage.tsx`,
+  `ImprovedCozy60BuilderPage.tsx`, `frontend/src/components/beamer/*` +
+  `beamerTheme.css`
+- **Gouache** (Aquarell-Migration pausiert seit 2026-04-26):
+  `QQBeamerGouachePage.tsx`, `QQTeamGouachePage.tsx`, `QQGouachePage.tsx`,
+  `QQGardenPitchPage.tsx`, `QQLobbyGouachePage.tsx`,
+  `frontend/src/gouache/` (Helpers/Tokens/Hooks),
+  `public/avatars/gouache/`, `avatars-source-gouache/`, `GOUACHE_PLAN.md`
+- **Lab-Spielwiesen**: `QQCityLabPage.tsx` (Three.js-Heissluftballons),
+  `QQCozyLabPage.tsx`, `QQRoundLabPage.tsx`, `QQRevealLabPage.tsx`,
+  `QQPolishTestPage.tsx`
+
+#### Routen-Cleanup
+- `/alt`-Prefix komplett raus — Editor-Tools jetzt direkt unter `/`:
+  `/fragen`, `/katalog`, `/stats`, `/intro`, `/menu`, `/qrcode`
+- Alte `/alt/*`-URLs leiten via `Navigate` auf neue Pfade um (Bookmarks
+  bleiben funktional)
+- Routen weg: `/city-lab`, `/cozy-lab`, `/round-lab`, `/reveal-lab`,
+  `/test`, `/gouache`, `/lobby-gouache`, `/team-gouache`,
+  `/beamer-gouache`, `/garden-pitch`, `/alt/team`, `/alt/beamer`,
+  `/alt/moderator`, `/alt/baukasten`, `/alt/builder`
+- `vite.config.ts` `manualChunks`: `three`, `leaflet`, `react-leaflet`,
+  `@react-three` raus (nur QQCityLabPage hat sie gebraucht)
+
+#### Wolf-PNG-Komprimierung (`scripts/compress-cozywolf.js`)
+22 cozywolf-Posen mit `sharp` komprimiert:
+- Resize 3000x3000 → 1536x1536 (Display-Max 240 CSS-px, auf 4K-Beamer
+  mit DPR=2 = 480 px → 3.2x Oversampling, crisp auch bei extremem Zoom)
+- PNG mit Palette/Indexed-Color (max 256 Farben, compressionLevel 9)
+- **Gesamt: 71.9 MB → 7.5 MB (-90 %)**
+- Groesste Pose: `troete.jubel` 5.2 MB → 424 KB
+- Display-Groessen (`widthCss`) NICHT angefasst — visuell identisch
+
+Skript ist idempotent — bei neuen Posen einfach erneut laufen lassen.
+
+#### Bilanz
+| Metrik | Vorher | Nachher | Δ |
+|---|---|---|---|
+| index.js (Production) | 329 KB | 15 KB | -95 % |
+| index.css | 154 KB | 75 KB | -50 % |
+| vendor-three Chunk | 783 KB | weg | -100 % |
+| vendor-leaflet Chunk | 150 KB | weg | -100 % |
+| PWA-Precache total | 153 MB | 86 MB | -44 % |
+| cozywolf-PNGs | 71.9 MB | 7.5 MB | -90 % |
+| Pages im `frontend/src/pages/` | ~50 | ~25 | -50 % |
+
+#### Behalten (sind aktiv)
+- `QQBuiltinSlide.tsx` + `QQCustomSlide.tsx` — Slide-Editor + Beamer
+  brauchen sie aktiv (TS-Errors waren Maintenance, nicht „tot")
+- Editor-Tools unter `/`: `QuestionEditor`, `QuestionCatalog`, `Stats`,
+  `IntroSlides`, `MenuPage`, `QrCode` — keine Cozy 60-Spielmodi, sondern
+  weiterhin nuetzlich
 
 ### 🆕 Drei neue Spielmechaniken (seit 2026-04-28)
 
@@ -97,12 +158,6 @@ Backend-Start automatisch refresht (Detection: hasNewSubMechanics).
 - Truth-Accident-Handling (Bluff = real → ausgefiltert + Sonderbonus)
 - Connection-Avatare-Race-Layout (mehrere Iterationen, finaler Stand: Status-Reihe wie CHEESE) (`daa39fb4`)
 
-### 🎨 Gouache-Stil als Parallel-Theme (pausiert seit 2026-04-26)
-
-Aquarell-Variante liegt auf Eis — Fokus auf Cozy-Quiz-Optimierung. Bestehende
-`/lobby-gouache` und `/team-gouache` Pages bleiben als Spielwiese.
-Komplette Doku: [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)
-
 ---
 
 ## Was funktioniert (Live)
@@ -173,8 +228,9 @@ Komplette Doku: [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md)
 - [x] Handoff-Memo komprimiert
 - [x] Longterm-TODO-File gepflegt
 
-### Block G — Gouache-Stil 🎨 (aktiv)
-Siehe [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md) für Details + 7-Phasen-Plan.
+### Block G — Gouache-Stil 🎨 (geloescht 2026-05-07)
+Aquarell-Variante komplett aus dem Code entfernt — Fokus auf Cozy-Quiz-
+Polish. War seit 2026-04-26 pausiert, wurde im Cleanup mitabgeraeumt.
 
 ---
 
@@ -227,24 +283,24 @@ backend/src/quarterQuiz/qqRooms.ts          — Game-State-Machine (Grid, Phasen
 backend/src/quarterQuiz/qqSocketHandlers.ts — Socket-Events
 backend/src/db/mongo.ts                     — MongoDB-Verbindung
 
-frontend/src/pages/QQBeamerPage.tsx         — Beamer (10000+ Zeilen, in Chunks lesen!)
+frontend/src/pages/QQBeamerPage.tsx         — Beamer (16000+ Zeilen, in Chunks lesen!)
 frontend/src/pages/QQTeamPage.tsx           — Team-Phone-View
 frontend/src/pages/QQModeratorPage.tsx      — Moderator-Steuerung
 frontend/src/pages/QQBuilderPage.tsx        — Quiz-Builder
-frontend/src/pages/MenuPage.tsx             — Dev-Menü mit allen Lab-Pages
+frontend/src/pages/MenuPage.tsx             — Dev-Menue (CozyQuiz-Live + Editor-Tools)
 frontend/src/qqShared.ts                    — Geteilte CSS-Keyframes für QQ
 frontend/src/utils/adminSession.ts          — Shared Admin-Session Helper
 frontend/src/components/PinGate.tsx         — Server-seitiges PIN-Gate
 
-frontend/src/gouache/                       — Aquarell-Library (Tokens + Components)
 frontend/public/avatars/cozy-cast/          — Klassische Avatare (8× open + closed)
-frontend/public/avatars/gouache/            — Aquarell-Avatare (8× open + closed)
+frontend/public/avatars/cozywolf/           — Wolf-Co-Moderator (22 Posen, 1536×1536, ~7.5 MB)
 
 shared/quarterQuizTypes.ts                  — Alle geteilten QQ-Types + QQ_AVATARS
 
 frontend/vite.config.ts                     — Build + PWA-Config
 frontend/vercel.json                        — Vercel Rewrites + Cache-Headers
 backend/.env.example                        — Alle Env-Vars als Template
+scripts/compress-cozywolf.js                — Wolf-PNG-Komprimierung (sharp, idempotent)
 ```
 
 ---
@@ -265,7 +321,7 @@ backend/.env.example                        — Alle Env-Vars als Template
 | Niedrig | `server.ts` ist 8000-Zeilen-Monolith — aufteilen in Module | 1-2 Tage |
 | Niedrig | Admin-Sessions in-memory — gehen bei Restart verloren (Workaround: PIN erneut eingeben) | 2-3 h + Redis-Addon |
 | Mittel | Render Free Tier schläft nach Inaktivität → MongoDB-Reconnect bis 15 s | Bezahltes Render-Plan |
-| Mittel | Gouache-Avatare unkomprimiert (180 MB im Repo) — sharp-Pipeline für Production nötig | siehe GOUACHE_PLAN Phase 5 |
+| Niedrig | `QQBuiltinSlide.tsx` + `QQCustomSlide.tsx` `makePreviewState` returnt outdated `QQStateUpdate` shape (TS-Errors) | 1-2 h beim Slide-Editor-Polish |
 
 ---
 
@@ -277,24 +333,11 @@ backend/.env.example                        — Alle Env-Vars als Template
   → Ticket: Auto-Image-Insert oder Frontend-Fallback bei fehlendem Bild.
 - MongoDB Films-Frage hat falsches `bunteTuete`-Feld (enthält Football oneOfEight statt Films)
   — direkt in DB fixen
-- `CreatorCanvasPage.tsx` hat TypeScript-Errors — pre-existing, Cozy60, ignorieren
 
 ---
 
 ## Verwandte Docs
 
 - [`WOW_FEATURES.md`](./WOW_FEATURES.md) — fünf Charakter-Features (Haptik, Spotlight, Soundscape, Live-Reactions, Time-Travel-Replay)
-- [`GOUACHE_PLAN.md`](./GOUACHE_PLAN.md) — Aquarell-Stil-Migration (pausiert)
 - `~/.claude/projects/.../memory/` — Agent-Memory (User-Profil, Feedback-Regeln, etc.)
-- `frontend/public/avatars/gouache/README.md` — Hoodie-Specs + Master-Prompt für Avatar-Generierung
 - `docs/QQ_ROUND_PLAN_TODO.md` — alte Round-Plan-Diskussion (historisch)
-
----
-
-## Cozy60 (alte App) — wird nicht mehr angefasst
-
-Die ursprüngliche CozyQuiz-Variante (`/moderator`, `/beamer`, `/team`-Pfade ohne `/quarterquiz-*`)
-liegt noch im Repo (`BeamerView.tsx`, `TeamView.tsx`, `ModeratorPage.tsx`,
-`CreatorCanvasPage.tsx`, `beamerTheme.css`) — wird aber nicht mehr weiterentwickelt.
-TS-Errors dort sind pre-existing und werden ignoriert. **Nicht anfassen** außer expliziter
-User-Anfrage.

@@ -477,8 +477,14 @@ export function maybeAutoHotPotato(io: SocketIOServer, roomCode: string): void {
     !usedNorm.some(u => similarityScore(u, v) >= 0.8),
   );
 
-  // Dummy "weiß" zu 60% eine echte Antwort
-  const beCorrect = Math.random() < 0.6 && unused.length > 0;
+  // 2026-05-06 (Wolf 'die Bots sind zu gut bei Hot Potato, sie guessen alle
+  // Ergebnisse!'): Quote 60% war zu hoch — mit 6 Dummies wurden alle
+  // gültigen Antworten gedraint, kein Spannungsbogen. Jetzt mit Decay:
+  //   Base 0.40 minus 0.04 pro schon verbrauchter Antwort, Floor 0.08.
+  // Simuliert 'erste Teams kennen Naheliegendes, spätere müssen kämpfen'.
+  const usedCount = room.hotPotatoUsedAnswers.length;
+  const correctChance = Math.max(0.08, 0.40 - usedCount * 0.04);
+  const beCorrect = Math.random() < correctChance && unused.length > 0;
   const answer = beCorrect
     ? unused[Math.floor(Math.random() * unused.length)]
     : `Dummy-${Math.random().toString(36).slice(2, 6)}`;

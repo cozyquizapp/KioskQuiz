@@ -2110,8 +2110,19 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         </span>
       </div>
 
+      {/* 2026-05-06 (Wolf 'reihen dynamisch anpassen, bei 8 Teams 2x4 statt
+          7x1'): CSS-Grid mit dynamischer Spalten-Anzahl statt flex-wrap.
+          Pro Anzahl Teams die optimale Aufteilung:
+          ≤4 → 1 Reihe, 5-6 → 1 Reihe, 7-8 → 2x4, sonst 2 Reihen. */}
       <div style={{
-        display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+        display: 'grid',
+        gridTemplateColumns: `repeat(${
+          teams.length <= 4 ? teams.length
+          : teams.length <= 6 ? teams.length
+          : teams.length <= 8 ? 4
+          : Math.ceil(teams.length / 2)
+        }, minmax(0, 1fr))`,
+        justifyItems: 'center',
         gap: 'clamp(14px, 1.6vw, 26px)',
         padding: 'clamp(20px, 2.5vh, 32px) clamp(24px, 2.5vw, 40px)',
         borderRadius: 28,
@@ -10726,11 +10737,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               : N <= 25 ? 'md'
               : N <= 50 ? 'sm'
               : 'xs';
+            // 2026-05-06 (Wolf 'keine Cascade-Animation bei Hot Potato, aber
+            // Cascade-Sound schon — Animation anpassen'): Stagger deutlich
+            // langsamer (war 50/25/12/8ms), jetzt sichtbar als Cascade-Effekt.
+            // Sync zur Sound-Cascade (Pentatonik-Notes pro qualified Team).
             const tierStyles = {
-              lg: { fontSize: 'clamp(16px, 1.8vw, 24px)', pad: '8px 18px', padAvatar: '4px 16px 4px 4px', avatarSize: 'clamp(30px, 3vw, 40px)', gap: 10, headerFs: 'clamp(20px, 2.4vw, 32px)', containerPad: '18px 22px', stagger: 0.05 },
-              md: { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px', padAvatar: '3px 12px 3px 3px', avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6, headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.025 },
-              sm: { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px', padAvatar: '2px 9px 2px 2px', avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4, headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.012 },
-              xs: { fontSize: 'clamp(10px, 1vw, 13px)', pad: '2px 7px', padAvatar: '2px 7px 2px 2px', avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3, headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px', stagger: 0.008 },
+              lg: { fontSize: 'clamp(16px, 1.8vw, 24px)', pad: '8px 18px', padAvatar: '4px 16px 4px 4px', avatarSize: 'clamp(30px, 3vw, 40px)', gap: 10, headerFs: 'clamp(20px, 2.4vw, 32px)', containerPad: '18px 22px', stagger: 0.18 },
+              md: { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px', padAvatar: '3px 12px 3px 3px', avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6, headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.09 },
+              sm: { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px', padAvatar: '2px 9px 2px 2px', avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4, headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.045 },
+              xs: { fontSize: 'clamp(10px, 1vw, 13px)', pad: '2px 7px', padAvatar: '2px 7px 2px 2px', avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3, headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px', stagger: 0.025 },
             }[tier];
             return (
               <div style={{

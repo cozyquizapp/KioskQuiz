@@ -12825,19 +12825,19 @@ function PreGameWolfBubble({ lang }: { lang: 'de' | 'en' }) {
         whiteSpace: 'nowrap',
         animation: 'qqPreGameWolfBubble 6.5s ease-in-out both',
         position: 'relative',
-        marginRight: 12,
+        marginLeft: 12,
       }}
     >
       {slogans[idx]}
-      {/* Tail nach unten-rechts in Richtung Wolf */}
+      {/* Tail nach unten-LINKS in Richtung Wolf (Wolf jetzt links unten). */}
       <span aria-hidden style={{
         position: 'absolute',
-        right: -8, bottom: -6,
+        left: -8, bottom: -6,
         width: 14, height: 14,
         borderBottom: '2px solid rgba(251,191,36,0.55)',
-        borderRight: '2px solid rgba(251,191,36,0.55)',
+        borderLeft: '2px solid rgba(251,191,36,0.55)',
         background: 'linear-gradient(135deg, rgba(13,10,6,0.92), rgba(28,20,10,0.92))',
-        transform: 'rotate(-45deg)',
+        transform: 'rotate(45deg)',
       }} />
     </div>
   );
@@ -12969,28 +12969,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
 
-  // ── Brand-Loop & How-To — nur in PreGame (füllen leeren Vor-Spiel-State) ──
+  // ── How-To — nur in PreGame (füllen leeren Vor-Spiel-State) ──
+  // 2026-05-06 (Wolf 'doppelter Wolf — Card-Wolf raus seit Bottom-Right-Wolf
+  // als Co-Moderator da ist'): BrandLoopPanel war vorher hier mit eigenem
+  // Wolf + Slogans. Jetzt aus der Card-Rotation entfernt — die Wolf-Sprueche
+  // laufen über die Sprechblase am bottom-right Co-Moderator. Card-Rotation
+  // beschraenkt sich auf How-it-works + Records + Leaderboard.
   if (mode === 'preGame') {
-    // Rotierende Sprüche im Brand-Panel (Index zyklisch in der Komponente unten)
-    const brandSlogans = de
-      ? [
-          'Heute Abend: Quiz.',
-          'Snacks bereit?',
-          'Lehn dich zurück.',
-          'Augen auf — gleich geht’s los.',
-          'Kein Druck. Nur Spaß.',
-        ]
-      : [
-          'Tonight: Quiz.',
-          'Snacks ready?',
-          'Settle in.',
-          'Eyes up — starting soon.',
-          'No pressure. Just fun.',
-        ];
-
-    panels.push({ key: 'brandLoop', node: (
-      <BrandLoopPanel slogans={brandSlogans} de={de} />
-    )});
 
     // Wie funktioniert's — 4 Mini-Cards.
     // 2026-05-06 (Wolf 'die Page ist noch alt, da sind Regeln drin die nicht
@@ -13784,20 +13769,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             );
           })}
 
-          {/* Wolf-Co-Moderator unten rechts — winkt + blinzelt + hat ab und zu
-              eine Sprechblase mit Pre-Game-Sprueche. */}
+          {/* Wolf-Co-Moderator unten LINKS — winkt + blinzelt + hat ab und zu
+              eine Sprechblase mit Pre-Game-Sprueche.
+              2026-05-06 (Wolf 'mach ihn gerne nach links und noch ein klein-
+              wenig groesser'): Position right→left geflipped, Sprechblase-
+              Tail entsprechend von rechts nach links umgedreht. Size 120-200
+              → 150-240. */}
           <div style={{
             position: 'absolute',
-            right: 'clamp(20px, 3vw, 60px)',
+            left: 'clamp(20px, 3vw, 60px)',
             bottom: 'clamp(20px, 3vh, 50px)',
             zIndex: 6,
-            display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
             gap: 8,
             pointerEvents: 'none',
             animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
           }}>
             <PreGameWolfBubble lang={de ? 'de' : 'en'} />
-            <AnimatedCozyWolf widthCss="clamp(120px, 13vw, 200px)" speaking={true} />
+            <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" speaking={true} />
           </div>
 
           <style>{`

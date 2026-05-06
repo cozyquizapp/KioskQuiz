@@ -3110,6 +3110,22 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   const q = s.currentQuestion;
   const myAnswer = s.answers.find(a => a.teamId === myTeamId);
 
+  // 2026-05-05 (Wolf-Bug 'CHEESE Timer-Ablauf, dann kommt Eingabefeld wieder
+  // kurz'): sticky-Flag im Frontend. Sobald `timerExpired===true` einmal
+  // gesehen wurde und ich noch nicht geantwortet hatte, bleibt der „Zeit
+  // vorbei"-Banner sichtbar bis zur naechsten Frage. Damit Race-Conditions
+  // (Backend reset timerExpired vor Phase-Wechsel) keinen Input-Flicker mehr
+  // erzeugen.
+  const [stickyExpired, setStickyExpired] = useState(false);
+  useEffect(() => {
+    if ((s as any).timerExpired === true && !myAnswer && s.phase === 'QUESTION_ACTIVE') {
+      setStickyExpired(true);
+    }
+  }, [(s as any).timerExpired, !!myAnswer, s.phase]);
+  useEffect(() => {
+    setStickyExpired(false);
+  }, [q?.text]); // reset bei neuer Frage
+
   async function submitText(text: string) {
     if (!text.trim()) return;
     if (navigator.vibrate) navigator.vibrate(40);
@@ -3121,7 +3137,9 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   // zeige einen 'leider zu langsam'-Banner statt des offen bleibenden Inputs.
   // timerExpired-Flag kommt vom Backend (true nach Timer-Ablauf, reset bei
   // Reveal/Stop/neuer Frage).
-  if (!myAnswer && (s as any).timerExpired === true && s.phase === 'QUESTION_ACTIVE') {
+  // 2026-05-05: zusaetzlich stickyExpired (oben) damit Banner nicht
+  // wegflickert wenn Backend kurz reset.
+  if (!myAnswer && (stickyExpired || (s as any).timerExpired === true) && s.phase === 'QUESTION_ACTIVE') {
     return (
       <div style={{
         padding: '20px 22px', borderRadius: 16, textAlign: 'center',
@@ -4684,11 +4702,33 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {isStuckCell
-                          ? <QQEmojiIcon emoji="🏯"/>
-                          : cellTeam
-                            ? <QQTeamAvatar avatarId={cellTeam.avatarId} teamEmoji={cellTeam.emoji} size={Math.max(18, Math.floor(miniCellSize * 0.85))} />
-                            : null}
+                        {/* 2026-05-05 (Wolf 'gruen und blau sehen gestapelt
+                            fast gleich aus'): statt Pagoden-Emoji jetzt Avatar
+                            mit Goldring drumherum — Team-Identitaet bleibt
+                            erhalten + Stack klar als zusaetzlicher Ring. */}
+                        {cellTeam ? (
+                          <div style={{
+                            position: 'relative',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '100%', height: '100%',
+                          }}>
+                            {isStuckCell && (
+                              <div aria-hidden style={{
+                                position: 'absolute',
+                                inset: '12%',
+                                borderRadius: '50%',
+                                border: '2px solid rgba(251,191,36,0.95)',
+                                boxShadow: '0 0 6px rgba(251,191,36,0.55)',
+                                pointerEvents: 'none',
+                              }} />
+                            )}
+                            <QQTeamAvatar
+                              avatarId={cellTeam.avatarId}
+                              teamEmoji={cellTeam.emoji}
+                              size={Math.max(16, Math.floor(miniCellSize * (isStuckCell ? 0.65 : 0.85)))}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })

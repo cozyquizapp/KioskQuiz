@@ -8321,6 +8321,53 @@ function isQQVolDraft(id: string | undefined | null): boolean {
   }
 }
 
+// ── Migration 2026-05-07: MC-Optionen in qq-vol-* Drafts refreshen ──
+// Wolf-Bug: ZehnVonZehn-Optionen in DB waren korrupted ('Picasso-Geschwurbel'
+// statt sauberer Antwort, Vincent van Gogh fehlte). Pro Frage mit
+// `options`-Array das Source-Array vergleichen, bei Drift komplett
+// ueberschreiben. Wirkt zusaetzlich zur DB-Migration in /api/qq/drafts.
+{
+  const fresh = createSampleQQDrafts();
+  const freshById = new Map(fresh.map(d => [d.id, d]));
+  let changed = false;
+  for (const d of qqDrafts) {
+    if (!isQQVolDraft(d.id)) continue;
+    const fd = freshById.get(d.id);
+    if (!fd || !Array.isArray((fd as any).questions)) continue;
+    const freshQs = (fd as any).questions as any[];
+    const liveQs = (d as any).questions as any[] | undefined;
+    if (!Array.isArray(liveQs)) continue;
+    for (let i = 0; i < liveQs.length; i++) {
+      const lq = liveQs[i];
+      if (!Array.isArray(lq?.options)) continue;
+      const fq = freshQs.find(fx => fx?.id === lq?.id);
+      if (!fq || !Array.isArray(fq.options)) continue;
+      const optsDrift = JSON.stringify(lq.options) !== JSON.stringify(fq.options)
+        || JSON.stringify(lq.optionsEn ?? null) !== JSON.stringify(fq.optionsEn ?? null)
+        || (lq.correctOptionIndex ?? null) !== (fq.correctOptionIndex ?? null)
+        || lq.text !== fq.text
+        || lq.textEn !== fq.textEn
+        || lq.answer !== fq.answer
+        || lq.answerEn !== fq.answerEn;
+      if (optsDrift) {
+        liveQs[i] = {
+          ...lq,
+          text: fq.text, textEn: fq.textEn,
+          answer: fq.answer, answerEn: fq.answerEn,
+          options: fq.options, optionsEn: fq.optionsEn,
+          correctOptionIndex: fq.correctOptionIndex,
+        };
+        d.updatedAt = Date.now();
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    persistQQDrafts();
+    console.log('[migration] MC-Optionen in qq-vol-* Drafts auf Source-Stand gebracht');
+  }
+}
+
 // ── Migration 2026-05-06: pro qq-vol-* Draft eigenes 4×4-Connections-Set ──
 // Vorher hatten alle Drafts den Default-Fallback (Kaffee/Programmiersprachen/
 // Edelsteine/Apple). Jetzt liefert createSampleQQDrafts pro Draft ein eigenes
@@ -8500,6 +8547,53 @@ app.get('/api/qq/drafts', async (_req, res) => {
     }
     if (dbHpRefreshed > 0) {
       console.log(`[migration] Refreshed hotPotato questions in ${dbHpRefreshed} DB drafts (Vol-3 Weltliteratur etc.)`);
+    }
+    // 2026-05-07 (Wolf-Bug 'Picasso-Geschwurbel als Option, Vincent van Gogh
+    // fehlt'): MC-Optionen (ZEHN_VON_ZEHN, MUCHO, etc.) wurden in der DB
+    // durch alte AI-Translate-Runs korrupted. Migration: pro qq-vol-* Frage
+    // mit `options`-Array das Source-Array vergleichen, bei Drift komplett
+    // ueberschreiben (options, optionsEn, correctOptionIndex). Idempotent.
+    let dbOptsRefreshed = 0;
+    for (let i = 0; i < cleanDbDrafts.length; i++) {
+      const d: any = cleanDbDrafts[i];
+      if (!isQQVolDraft(d.id)) continue;
+      const fd = freshById.get(d.id);
+      if (!fd || !Array.isArray((fd as any).questions)) continue;
+      const freshQs = (fd as any).questions as any[];
+      const liveQs = d.questions as any[] | undefined;
+      if (!Array.isArray(liveQs)) continue;
+      let dirty = false;
+      for (let j = 0; j < liveQs.length; j++) {
+        const lq = liveQs[j];
+        if (!Array.isArray(lq?.options)) continue;
+        const fq = freshQs.find(fx => fx?.id === lq?.id);
+        if (!fq || !Array.isArray(fq.options)) continue;
+        const optsDrift = JSON.stringify(lq.options) !== JSON.stringify(fq.options)
+          || JSON.stringify(lq.optionsEn ?? null) !== JSON.stringify(fq.optionsEn ?? null)
+          || (lq.correctOptionIndex ?? null) !== (fq.correctOptionIndex ?? null)
+          || lq.text !== fq.text
+          || lq.textEn !== fq.textEn
+          || lq.answer !== fq.answer
+          || lq.answerEn !== fq.answerEn;
+        if (optsDrift) {
+          liveQs[j] = {
+            ...lq,
+            text: fq.text, textEn: fq.textEn,
+            answer: fq.answer, answerEn: fq.answerEn,
+            options: fq.options, optionsEn: fq.optionsEn,
+            correctOptionIndex: fq.correctOptionIndex,
+          };
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        d.updatedAt = Date.now();
+        try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+        dbOptsRefreshed++;
+      }
+    }
+    if (dbOptsRefreshed > 0) {
+      console.log(`[migration] Refreshed MC-options in ${dbOptsRefreshed} DB drafts (Vol-3 Picasso-Geschwurbel etc.)`);
     }
     // CHEESE-Image-Enrichment in DB (idempotent — pro Frage erst wenn image fehlt)
     let dbCheeseEnriched = 0;

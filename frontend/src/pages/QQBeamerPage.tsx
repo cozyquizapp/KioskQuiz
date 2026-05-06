@@ -3172,15 +3172,34 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
       position: 'relative',
       width: widthCss,
       aspectRatio: '1 / 1',
-      filter: 'drop-shadow(0 10px 30px rgba(251,191,36,0.45))',
       transformOrigin: 'bottom center',
-      // 2026-05-07 v3 (Wolf 'Wolf flackert immernoch'): mirror jetzt
-      // direkt am Haupt-Wrapper statt extra-Wrapper drumherum — vorher
-      // gestapelte transforms (parent scaleX(-1) + drop-shadow auf
-      // child) verursachten Re-Rasterization-Glitches beim Mund-Flap.
+      // 2026-05-07 v3 (Wolf 'Wolf flackert immernoch'): mirror direkt am
+      // Haupt-Wrapper statt extra-Wrapper drumherum — verhindert Stack-
+      // Filter-Glitches beim Mund-Flap.
       transform: mirror ? 'scaleX(-1)' : undefined,
       animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
+      // 2026-05-07 v4 (Wolf 'Hintergrund loest Flackern aus wenn Bilder
+      // sich abwechseln'): Drop-Shadow-Filter (war yellow halo) hat bei
+      // jedem Mund-Flap die Silhouette neu gerechnet → BG-Composite hat
+      // dadurch repaintet → sichtbares Flicker durch BG-Animation
+      // (Fireflies, Spotlight). Filter raus, Halo wird unten ueber ein
+      // ::before-aehnliches absolutes Glow-Element gemacht (statisch,
+      // unabhaengig von Bilder-Swap).
+      // isolation: isolate erzwingt eigenen Stacking Context → BG hinter
+      // dem Wrapper kann nicht mehr durch Image-Swap-Repaint stoeren.
+      isolation: 'isolate',
     }}>
+      {/* Statischer Halo-Glow hinter dem Wolf — ersetzt das ehemalige
+          drop-shadow filter. Aendert sich NICHT mit Frame-Wechsel,
+          deshalb kein Flicker mehr. */}
+      <div aria-hidden style={{
+        position: 'absolute',
+        inset: '8% 8% -2% 8%',
+        background: 'radial-gradient(ellipse at center 60%, rgba(251,191,36,0.35) 0%, rgba(251,191,36,0.15) 40%, transparent 70%)',
+        filter: 'blur(18px)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
       {posesForMode.map(p => (
         <img
           key={p}
@@ -3192,6 +3211,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
             objectFit: 'contain',
             display: 'block',
             opacity: p === visibleFile ? 1 : 0,
+            zIndex: 1,
             // 2026-05-06 v3 (Wolf 'Animation stuckt immernoch zwischen zwei
             // Bildern — Hintergrund schimmert durch'): Crossfade komplett
             // entfernt fuer Frame-Posen-Modes. Beide Bilder semi-transparent

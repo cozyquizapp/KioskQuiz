@@ -2745,16 +2745,43 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AnimatedCozyWolf — 4-Posen-Sequenz (Augen auf/zu × Mund auf/zu).
-// Idle-Blink + Mund-Flap waehrend gesprochen wird. Alle 4 PNGs werden auf
-// Mount geladen und per opacity-Toggle umgeschaltet → kein Image-Reload-Flackern.
+// AnimatedCozyWolf — Multi-Mode-Wolf-Animation.
+//
+// Modi:
+//   speaking — Original-Verhalten: Idle-Blink + Mund-Flap waehrend speaking=true.
+//              4 Base-Posen (augen[auf|zu].mund[auf|zu]).
+//   winken   — Idle Pre-Game-Mode: alterniert zwischen wachem Winken (augenauf+
+//              mundauf+winken) und kurzem Augen-zu-Moment (augenzu+mundzu+
+//              winken). ~700ms-Cycle, gelegentlich pausiert.
+//   jubel    — Jubelnder Wolf: cycelt durch 3 Jubel-Posen (mund-zu, mund-auf-jubel,
+//              eyes-zu+jubel). Wirkt wie 'YEAH!'.
+//   trinken  — Pause-Mode-Wolf: ueberwiegend trinken-pose (augenauf+mundzu+
+//              trinken), gelegentlicher Sip-Blink (augenzu+mundzu+trinken).
+//   schlafen — Pause-Mode-Wolf-Variante: cycelt durch 3 Z-Stufen (1z→2z→3z),
+//              ~900ms pro Stufe. Wirkt wie 'leise schnarchen'.
+//
+// 2026-05-06 (Wolf 'noch mehr Wolf-Varianten + erstmal nur fuer pause und
+// lobby'): mode prop hinzugefuegt mit Default 'speaking' fuer Backwards-Compat.
+// Alle relevanten PNGs einer Mode werden ueberlagert vorgeladen, opacity-Switch
+// haelt das Flackern aus.
 // ─────────────────────────────────────────────────────────────────────────────
-function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: boolean }) {
+type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen';
+
+function AnimatedCozyWolf({ widthCss, speaking, mode }: {
+  widthCss: string; speaking?: boolean; mode?: WolfMode;
+}) {
+  // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop.
+  const effectiveMode: WolfMode = mode ?? 'speaking';
+
+  // Aktuell sichtbares PNG (Filename ohne .png). State pro Mode.
+  const [currentFile, setCurrentFile] = useState<string>('augenauf.mundzu');
+
+  // ── speaking-Mode ──────────────────────────────────────────────────────
   const [eyesOpen, setEyesOpen] = useState(true);
   const [mouthOpen, setMouthOpen] = useState(false);
 
-  // Idle-Blink: alle 3-5s einmal kurz die Augen zu (~130ms)
   useEffect(() => {
+    if (effectiveMode !== 'speaking') return;
     let alive = true;
     let timer: number | undefined;
     const scheduleBlink = () => {
@@ -2770,12 +2797,10 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
     };
     scheduleBlink();
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
-  }, []);
+  }, [effectiveMode]);
 
-  // Mund-Flap: nur waehrend speaking. Sprechpausen alle ~2.5s fuer ~1.5s,
-  // damit es nicht wie ein Maschinengewehr aussieht.
   useEffect(() => {
-    if (!speaking) { setMouthOpen(false); return; }
+    if (effectiveMode !== 'speaking' || !speaking) { setMouthOpen(false); return; }
     let alive = true;
     let timer: number | undefined;
     let phase: 'speak' | 'pause' = 'speak';
@@ -2804,14 +2829,100 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
     };
     tick();
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
-  }, [speaking]);
+  }, [effectiveMode, speaking]);
 
-  const poses: Array<{ eyes: 'auf' | 'zu'; mouth: 'auf' | 'zu' }> = [
-    { eyes: 'auf', mouth: 'zu' },
-    { eyes: 'auf', mouth: 'auf' },
-    { eyes: 'zu',  mouth: 'zu' },
-    { eyes: 'zu',  mouth: 'auf' },
+  // ── Mode-spezifischer Cycle (winken/jubel/trinken/schlafen) ────────────
+  useEffect(() => {
+    if (effectiveMode === 'speaking') return;
+    let alive = true;
+    let timer: number | undefined;
+
+    if (effectiveMode === 'winken') {
+      // Cycle: open-mouth-winken (0.7s) → eyes-zu-winken (0.4s) → repeat
+      const seq = ['augenauf.mundauf.winken', 'augenzu.mundzu.winken'];
+      const durations = [700, 400];
+      let idx = 0;
+      const tick = () => {
+        if (!alive) return;
+        setCurrentFile(seq[idx]);
+        timer = window.setTimeout(() => {
+          idx = (idx + 1) % seq.length;
+          tick();
+        }, durations[idx]);
+      };
+      tick();
+    } else if (effectiveMode === 'jubel') {
+      // Cycle: mund auf jubel → mund zu jubel → eyes zu jubel → repeat
+      // 2026-05-06: Cycle-Times entspannt (war 350/250/200ms — zu hektisch
+      // mit Crossfade), jetzt 500/400/350ms fuer atembarere Bewegung.
+      const seq = ['augenauf.mundauf.jubel', 'augenauf.mundzu.jubel', 'augenzu.mundzu.jubel'];
+      const durations = [500, 400, 350];
+      let idx = 0;
+      const tick = () => {
+        if (!alive) return;
+        setCurrentFile(seq[idx]);
+        timer = window.setTimeout(() => {
+          idx = (idx + 1) % seq.length;
+          tick();
+        }, durations[idx]);
+      };
+      tick();
+    } else if (effectiveMode === 'trinken') {
+      // Mostly open-eye trinken, gelegentlicher Sip-Blink (eyes-zu)
+      let idx = 0; // 0 = open, 1 = closed
+      const tick = () => {
+        if (!alive) return;
+        if (idx === 0) {
+          setCurrentFile('augenauf.mundzu.trinken');
+          timer = window.setTimeout(() => { idx = 1; tick(); }, 2200 + Math.random() * 1500);
+        } else {
+          setCurrentFile('augenzu.mundzu.trinken');
+          timer = window.setTimeout(() => { idx = 0; tick(); }, 280 + Math.random() * 220);
+        }
+      };
+      tick();
+    } else if (effectiveMode === 'schlafen') {
+      // Z-Cycle: 1z → 2z → 3z → 1z (wie Z-Animation)
+      const seq = ['augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z'];
+      let idx = 0;
+      const tick = () => {
+        if (!alive) return;
+        setCurrentFile(seq[idx]);
+        timer = window.setTimeout(() => {
+          idx = (idx + 1) % seq.length;
+          tick();
+        }, 900);
+      };
+      tick();
+    }
+
+    return () => { alive = false; if (timer) window.clearTimeout(timer); };
+  }, [effectiveMode]);
+
+  // Welche Datei ist im speaking-Mode sichtbar
+  const speakingFile = `augen${eyesOpen ? 'auf' : 'zu'}.mund${mouthOpen ? 'auf' : 'zu'}`;
+  const visibleFile = effectiveMode === 'speaking' ? speakingFile : currentFile;
+
+  // Alle moeglichen Posen (alle PNGs vorgeladen, opacity-toggle)
+  const allPoses: string[] = [
+    'augenauf.mundauf', 'augenauf.mundzu',
+    'augenzu.mundauf', 'augenzu.mundzu',
+    'augenauf.mundauf.winken', 'augenzu.mundzu.winken',
+    'augenauf.mundauf.jubel', 'augenauf.mundzu.jubel', 'augenzu.mundzu.jubel',
+    'augenauf.mundzu.trinken', 'augenzu.mundzu.trinken',
+    'augenzu.mundzu.schlafen1z', 'augenzu.mundzu.schlafen2z', 'augenzu.mundzu.schlafen3z',
   ];
+
+  // Pro Mode nur die relevanten Posen rendern (sparen 60-70% Memory)
+  const posesForMode = effectiveMode === 'speaking'
+    ? allPoses.slice(0, 4)
+    : effectiveMode === 'winken'
+      ? allPoses.filter(p => p.includes('winken'))
+      : effectiveMode === 'jubel'
+        ? allPoses.filter(p => p.includes('jubel'))
+        : effectiveMode === 'trinken'
+          ? allPoses.filter(p => p.includes('trinken'))
+          : allPoses.filter(p => p.includes('schlafen'));
 
   return (
     <div style={{
@@ -2822,25 +2933,29 @@ function AnimatedCozyWolf({ widthCss, speaking }: { widthCss: string; speaking: 
       transformOrigin: 'bottom center',
       animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
     }}>
-      {poses.map(p => {
-        const visible = (p.eyes === 'auf') === eyesOpen && (p.mouth === 'auf') === mouthOpen;
-        const file = `augen${p.eyes}.mund${p.mouth}.png`;
-        return (
-          <img
-            key={file}
-            src={`/avatars/cozywolf/${file}`}
-            alt=""
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'contain',
-              display: 'block',
-              opacity: visible ? 1 : 0,
-              pointerEvents: 'none',
-            }}
-          />
-        );
-      })}
+      {posesForMode.map(p => (
+        <img
+          key={p}
+          src={`/avatars/cozywolf/${p}.png`}
+          alt=""
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+            opacity: p === visibleFile ? 1 : 0,
+            // 2026-05-06 (Wolf 'Animationen wirken abrupter weil weniger
+            // Zwischenschritte'): Crossfade zwischen Posen statt instant-
+            // Snap. Speaking-Mode nutzt schnelleren Mund-Flap (90ms) um
+            // ueberreaktiv zu wirken; andere Modes 200ms fuer ruhige
+            // Lebendigkeit.
+            transition: effectiveMode === 'speaking'
+              ? 'opacity 90ms linear'
+              : 'opacity 220ms ease-out',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -13786,7 +13901,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
           }}>
             <PreGameWolfBubble lang={de ? 'de' : 'en'} />
-            <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" speaking={true} />
+            <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="winken" />
           </div>
 
           <style>{`

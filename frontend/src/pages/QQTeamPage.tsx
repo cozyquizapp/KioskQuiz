@@ -624,6 +624,29 @@ export default function QQTeamPage() {
   // setId ist oben schon deklariert; Provider-Branches nutzen ihn.
 
   if (!joined) {
+    // 2026-05-06 (Wolf 'kannst du waehrend ein quiz laeuft die lobby in
+    // team mit avatar editor und namensgebung ausstellen, sowas wie das
+    // quiz laeuft schon — nur fuer reconnect die option mit wieder
+    // einsteigen'): Bei laufendem Quiz (phase != LOBBY) wird der volle
+    // SetupFlow ausgeblendet — Avatar-Editor + Namensgebung waeren eh
+    // sinnlos, weil neue Teams erst zur naechsten Lobby zugelassen sind.
+    // Stattdessen MidGameRejoinView: zeigt 'Quiz laeuft schon' + ggf.
+    // Reconnect-Button wenn das Team noch im Room steckt.
+    if (state && state.phase !== 'LOBBY') {
+      return (
+        <AvatarSetProvider value={setId} emojis={state.avatarSetEmojis}>
+          <MidGameRejoinView
+            roomCode={roomCode}
+            connected={connected}
+            lang={lang}
+            existingTeam={existingTeamInRoom}
+            onResume={handleResume}
+            onFlagClick={handleFlagClick}
+            flagFlip={flagFlip}
+          />
+        </AvatarSetProvider>
+      );
+    }
     return (
       <AvatarSetProvider value={setId} emojis={state?.avatarSetEmojis}>
         <SetupFlow step={step} setStep={setStep}
@@ -5953,7 +5976,160 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
 }
 
 // ─── Waiting screen ────────────────────────────────────────────────────────────
+// 2026-05-06 (Wolf 'das quiz laeuft schon — option mit wieder einsteigen'):
+// Mid-Game-Reconnect-Page. Wird angezeigt wenn /team waehrend laufendem Quiz
+// geladen wird (phase != LOBBY) und der Spieler noch nicht joined ist.
+//   - Team noch im Room → Avatar + Name + Big-Button "Wieder einsteigen"
+//   - Team NICHT im Room → Hinweis "Du bist nicht angemeldet, warte auf
+//     naechstes Quiz / Pause"
+// Verhindert dass Spieler nach Browser-Wechsel den vollen SetupFlow mit
+// Avatar-Editor sehen — der waere sinnlos, weil das Quiz schon laeuft.
+function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onResume, onFlagClick, flagFlip }: {
+  roomCode: string;
+  connected: boolean;
+  lang: 'de' | 'en';
+  existingTeam: import('../../../shared/quarterQuizTypes').QQTeam | null;
+  onResume: () => void;
+  onFlagClick: () => void;
+  flagFlip: boolean;
+}) {
+  return (
+    <div style={darkPage}>
+      <style>{TEAM_CSS}</style>
+      <div style={grainOverlay} />
+      <MobileFireflies color="#FEF08A44" />
+      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+        {/* Sprache-Flag oben rechts */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <button
+            onClick={onFlagClick}
+            style={{
+              border: 'none', background: 'transparent', cursor: 'pointer',
+              fontSize: 28, padding: 6, borderRadius: 999,
+              transition: 'transform 0.2s ease',
+              transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0)',
+            }}
+            aria-label="language"
+            title={lang === 'de' ? 'Sprache wechseln' : 'Switch language'}
+          >
+            {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+          </button>
+        </div>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 52, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
+          <div style={{
+            fontSize: 28, fontWeight: 900, color: '#F1F5F9',
+            marginBottom: 4,
+          }}>
+            {lang === 'de' ? 'Quiz laeuft schon!' : 'Quiz already running!'}
+          </div>
+          <div style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: '#94a3b8' }}>
+            {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}
+          </div>
+        </div>
+
+        {/* Verbindungs-Status (kompakt) */}
+        <div style={{
+          textAlign: 'center', marginBottom: 18,
+          fontSize: 12, fontWeight: 700,
+          color: connected ? '#22C55E' : '#EF4444',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: connected ? '#22C55E' : '#EF4444',
+            boxShadow: connected ? '0 0 6px #22C55E' : '0 0 6px #EF4444',
+            animation: 'tcpulse 1.5s infinite',
+          }} />
+          {connected
+            ? (lang === 'de' ? 'Verbunden' : 'Connected')
+            : (lang === 'de' ? 'Verbinde…' : 'Connecting…')}
+        </div>
+
+        {existingTeam ? (
+          // ── Team noch im Room: Reconnect-CTA ────────────────────────────
+          <div style={{
+            background: COZY_CARD_BG, borderRadius: 24, padding: '24px 20px',
+            border: `2px solid ${existingTeam.color}55`,
+            boxShadow: `0 0 32px ${existingTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          }}>
+            <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              {lang === 'de' ? 'Du warst dabei als' : 'You were playing as'}
+            </div>
+            <QQTeamAvatar
+              avatarId={existingTeam.avatarId}
+              teamEmoji={existingTeam.emoji}
+              size={120}
+              style={{ boxShadow: `0 0 32px ${existingTeam.color}66` }}
+            />
+            <div style={{
+              fontSize: 22, fontWeight: 900, color: existingTeam.color,
+              textAlign: 'center', maxWidth: '100%',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {existingTeam.name}
+            </div>
+            <button
+              onClick={onResume}
+              disabled={!connected}
+              style={{
+                width: '100%', padding: '16px 18px', borderRadius: 14,
+                border: 'none',
+                background: connected
+                  ? `linear-gradient(135deg, ${existingTeam.color}, ${existingTeam.color}dd)`
+                  : 'rgba(100,116,139,0.4)',
+                color: '#fff', fontSize: 17, fontWeight: 900,
+                letterSpacing: '0.05em',
+                cursor: connected ? 'pointer' : 'not-allowed',
+                boxShadow: connected ? `0 4px 14px ${existingTeam.color}66` : 'none',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+            >
+              {lang === 'de' ? '→ Wieder einsteigen' : '→ Rejoin'}
+            </button>
+          </div>
+        ) : (
+          // ── Team NICHT im Room: nicht teilnahmeberechtigt ───────────────
+          <div style={{
+            background: COZY_CARD_BG, borderRadius: 24, padding: '28px 20px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{ fontSize: 36 }}>⏳</div>
+            <div style={{
+              fontSize: 18, fontWeight: 800, color: '#F1F5F9', textAlign: 'center',
+            }}>
+              {lang === 'de'
+                ? 'Du bist nicht angemeldet'
+                : 'You are not registered'}
+            </div>
+            <div style={{
+              fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5,
+            }}>
+              {lang === 'de'
+                ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die naechste Lobby — dann kannst du als neues Team einsteigen.'
+                : 'The quiz has already started. Wait for a break or the next lobby — then you can join as a new team.'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string; connected: boolean; lang?: 'de' | 'en' }) {
+  // 2026-05-06 (Wolf 'kein autoconnect, leerer Screen'): nach 8s ohne State
+  // bieten wir einen manuellen Reload-Button + Hinweis. Backend (Render free)
+  // wacht aus dem Schlaf manchmal in 30s+ auf — damit der Spieler sieht
+  // 'es passiert was', nicht nur Skelett.
+  const [showStuckHint, setShowStuckHint] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setShowStuckHint(true), 8000);
+    return () => window.clearTimeout(t);
+  }, []);
   return (
     <div style={darkPage}>
       <style>{TEAM_CSS}{`
@@ -6004,6 +6180,33 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
           }} />
           {connected ? t.waiting.loading[lang] : t.waiting.connecting[lang]}
         </div>
+        {/* Stuck-Hint nach 8s — manueller Reload + Mitspieler-Hinweis */}
+        {showStuckHint && (
+          <div style={{
+            marginTop: 20, padding: '14px 16px', borderRadius: 14,
+            background: 'rgba(245,158,11,0.08)',
+            border: '1.5px dashed rgba(245,158,11,0.4)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#fde68a', fontWeight: 700, marginBottom: 8 }}>
+              {lang === 'de'
+                ? 'Dauert lange? Server schlaeft eventuell — bitte warten oder neu laden.'
+                : 'Taking long? Server may be waking up — wait or reload.'}
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '8px 18px', borderRadius: 10,
+                border: '1px solid rgba(245,158,11,0.5)',
+                background: 'rgba(245,158,11,0.15)',
+                color: '#fde68a', fontSize: 13, fontWeight: 800,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {lang === 'de' ? '↻ Neu laden' : '↻ Reload'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -909,12 +909,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     } else if (s.introStep === 2 && prev !== 2) {
       // Category-Reveal-Substep — kategorie-spez. Question-Start-Sound
       try { playQuestionStartFor(s.currentQuestion?.category); } catch {}
-    } else if (s.introStep === 3 && prev !== 3) {
-      // Category-Explanation-Substep — User-Wunsch 2026-05-01:
-      // statt 'Feld-Setzen'-Stamp jetzt der Neue-Runde-Sound (passender
-      // zur Phase-Intro-Erklaerung als ein Tile-Plopp).
-      try { playRoundStart(); } catch {}
     }
+    // 2026-05-06 (Wolf 'Runde 3 Frage 1 hat anderen Sound im Intro als
+    // die anderen Question-Intros'): introStep===3 spielte zusaetzlich
+    // playRoundStart() — das ist aber bereits beim PHASE_INTRO-Entry
+    // (Zeile ~818) gefeuert worden. Doppel-Sound entfernt; Step 3
+    // (Category-Explanation) ist visuell genug markiert. Konsistent fuer
+    // alle Question-Intros, unabhaengig ob Kategorie neu oder bekannt.
   }, [s.phase, s.introStep, s.sfxMuted, s.currentQuestion?.category, s.gamePhaseIndex, s.grid]);
 
   // RULES-Slide-Wechsel: bewusst KEIN Sound (User-Wunsch 2026-05-01).
@@ -1494,7 +1495,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     } else if (prev === 'reveal' && cur === 'placement') {
       try { playFieldPlaced(); } catch {}
     } else if (cur === 'done') {
-      try { playClimaxFinish(); } catch {}
+      // 2026-05-06 (Wolf 'stacking sound nach finale auf grid unterschiedlich
+      // beim allerletzten Team'): playClimaxFinish feuerte synchron mit dem
+      // letzten lastPlacedCell-Tick (= playFieldPlaced + Avatar-Cascade-Ton)
+      // → drei Sounds uebereinander, klang fuer das letzte Team 'anders'.
+      // Jetzt 700ms Delay: place+cascade landen sauber, dann erst der Climax-
+      // Stinger als eigener Moment.
+      window.setTimeout(() => { try { playClimaxFinish(); } catch {} }, 700);
     }
   }, [s.connections?.phase, s.phase, s.teams.length, s.sfxMuted]);
 

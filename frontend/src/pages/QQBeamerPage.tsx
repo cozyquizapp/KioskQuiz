@@ -4633,42 +4633,36 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
   }, [bubbleKey, enterMs, speakMs]);
 
   return (
+    // 2026-05-07 v20 (Wolf 'pack ihn wieder rechts hoch ... achte darauf
+    // dass der wolf nicht springt wenn er was neues sagt'): top-right
+    // anchor (Aufrufer). Anti-Jumping via fixe min-Hoehe am Bubble-
+    // Container + alignItems:flex-end — Bubble pinned an die Unterkante
+    // des 130px-Slots, Hoehe variabel innerhalb des Slots. Wolf darunter
+    // sitzt damit auf konstanter Hoehe egal wie lang der Slogan ist.
+    // Sehr lange Slogans (>130px) wuerden den Slot ueberschreiten und
+    // Wolf einmalig schieben — kommt aber bei den aktuellen Idle/Welcome-
+    // Slogans nicht vor (max ~110px gemessen).
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-      // 2026-05-07 v19 (Wolf 'mach den wolf nach rechts unten ... achte
-      // darauf dass der wolf nicht springt wenn er was neues sagt'):
-      // Wrapper ist jetzt 'bottom'-anchored (siehe Aufrufer in LobbyView)
-      // → Wolf am unteren Rand fix, Bubble waechst nach oben statt Wolf
-      // nach unten zu druecken. Gap 14 -> 22 fuer mehr Luft zwischen Bubble
-      // und Wolf-Kopf, Bubble sitzt damit ein bisschen weiter weg vom
-      // Team-Grid.
-      gap: 22, pointerEvents: 'none',
+      gap: 14, pointerEvents: 'none',
     }}>
-      <SpeechBubble
-        text={slogan.text}
-        bubbleKey={bubbleKey}
-        enterMs={enterMs}
-        speakMs={speakMs}
-        exitMs={exitMs}
-        tailSide="left"
-        eurovisionMode={eurovisionMode}
-        size="lg"
-      />
-      {/* 2026-05-07 v3 (Wolf '6 daumen-Posen, zwinkern wenn ein Team
-          reinkommt'): mode 'winken' → 'daumen' (Daumen-hoch-Wolf statt
-          winkender). wink-Prop true bei Welcome → Wolf zwinkert + Daumen
-          hoch + 'Hallo {Team}!'. mirror=true — Wolf schaut zur Lobby-
-          Mitte (transform direkt am Haupt-Wrapper, nicht als zusaetzliche
-          Schicht — verhindert Flicker beim Mund-Flap). */}
-      {/* 2026-05-07 v18 (Wolf 'wolf und sprechbubble in lobby rechts oben
-          darf groesser sein, sonst kann man das ueberhaupt nicht lesen'):
-          Wolf-Wrapper 140-200 → 190-280, Bubble-Size 'lg'.
-          2026-05-07 v20 (Wolf 'jetzt verdeckt der wolf komplett'): Wolf
-          wieder zurueck auf Original-clamp(140-200). Bei 8 Teams + bottom-
-          right verdeckte 280px-Wolf die untere rechte Team-Card. Die
-          Lesbarkeit kam ohnehin von der Bubble (size='lg', font 20-30) —
-          die bleibt. Wolf-Body-Skalierung war Kollateralwunsch, nicht
-          Lesbarkeitsbedarf. */}
+      <div style={{
+        minHeight: 130,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'flex-end',
+      }}>
+        <SpeechBubble
+          text={slogan.text}
+          bubbleKey={bubbleKey}
+          enterMs={enterMs}
+          speakMs={speakMs}
+          exitMs={exitMs}
+          tailSide="left"
+          eurovisionMode={eurovisionMode}
+          size="lg"
+        />
+      </div>
       <AnimatedCozyWolf
         widthCss="clamp(140px, 13vw, 200px)"
         mode={eurovisionMode ? 'flagge' : 'daumen'}
@@ -4781,24 +4775,20 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       <Fireflies />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
-      {/* Wolf-Lobby-Greeter bottom-right — winkt + reagiert auf Team-Joins
+      {/* Wolf-Lobby-Greeter top-right — winkt + reagiert auf Team-Joins
           mit 'Hallo {teamName}!'. Idle: 'QR-Code scannen!' / etc.
           2026-05-07 (Wolf 'Wolf mit dem daumen hoch oben rechts, wenn ein
           team sich einloggt sowas wie oh hallo team x').
-          2026-05-07 v19 (Wolf 'mach den wolf nach rechts unten und leg seine
-          bubble unter die joine teams, achte darauf dass der wolf nicht
-          springt wenn er was neues sagt'): top -> bottom. Bottom-Anker fixiert
-          den Wolf am unteren Rand; die Bubble (im flex-column ueber ihm)
-          waechst dadurch nach oben statt den Wolf nach unten zu druecken
-          → keine Sprung-Verschiebung mehr bei Sloganwechsel. Bubble landet
-          natuerlich im Bereich unter dem Team-Grid. */}
+          2026-05-07 v20 (Wolf 'pack ihn wieder rechts hoch, mach cozyquiz
+          auf lobby kleiner und verschieb cozyquiz x und eurovision mehr in
+          die mitte'): zurueck zu top-right. Anti-Jumping geloest via
+          absolute-positionierter Bubble innerhalb des Greeters (siehe
+          WolfLobbyGreeter return) — Bubble waechst nach oben weg vom Wolf
+          ohne den Wolf zu verschieben. */}
       <div style={{
         position: 'absolute',
         right: 'clamp(20px, 2.5vw, 48px)',
-        // 'falls zu eng, zieh sie leicht hoch' — bottom 16-32 -> 20-44 gibt
-        // bei 8 Teams + grossem Wolf Reserve damit die Bubble nicht in das
-        // Team-Grid reinragt.
-        bottom: 'clamp(20px, 3vh, 44px)',
+        top: 'clamp(16px, 2.5vh, 32px)',
         zIndex: 7,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',
@@ -4945,13 +4935,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 gap: 'clamp(18px, 2.2vw, 40px)',
               }}>
                 {/* CozyQuiz-Wordmark im Stinger-Fit-Font, hover-floatend.
-                    2026-05-07 v19 (Wolf 'cozyquiz noch groesser oder, da
-                    ueberlappt sich einiges oben rechts'): Stinger 8.5vw/130
-                    -> 7vw/108 — gibt mehr Reserve fuer Wolf-Greeter top-right
-                    und macht X proportional dominanter im Stinger. */}
+                    2026-05-07 v20 (Wolf 'mach cozyquiz auf lobby kleiner und
+                    verschieb cozyquiz x und eurovision mehr in die mitte'):
+                    7vw/108 -> 5.2vw/82 (-24 %). Schmalerer Stinger sitzt
+                    entspannt im viewport-Center ohne dem Top-Right-Wolf in
+                    die Quere zu kommen — und wirkt visuell mittiger. */}
                 <span style={{
                   fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
-                  fontSize: 'clamp(48px, 7vw, 108px)',
+                  fontSize: 'clamp(38px, 5.2vw, 82px)',
                   fontWeight: 400,
                   letterSpacing: '0.04em',
                   color: '#FF2D7B',
@@ -4965,11 +4956,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     mittig'): top:-0.08em von v18 wieder raus, stattdessen
                     COZYQUIZ + Logo geshrinkt (siehe oben) — dadurch wirkt X
                     proportional dominanter + natuerlicher mittig. */}
+                {/* 2026-05-07 v20: matched zu COZYQUIZ-Shrink (-24 %). */}
                 <span aria-hidden style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
-                  fontSize: 'clamp(36px, 5.2vw, 80px)',
+                  fontSize: 'clamp(28px, 4vw, 62px)',
                   lineHeight: 1,
                   height: '1em',
                   color: '#fde6f0',
@@ -4988,10 +4980,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     alt="Eurovision Song Contest"
                     draggable={false}
                     style={{
-                      // 2026-05-07 v19 (Wolf 'da ueberlappt sich einiges oben
-                      // rechts'): 13vh/200 -> 11vh/166 proportional zu COZYQUIZ-
-                      // Shrink, gibt Wolf-Greeter top-right Reserve.
-                      height: 'clamp(80px, 11vh, 166px)',
+                      // 2026-05-07 v20: matched zu COZYQUIZ-Shrink (-24 %),
+                      // 11vh/166 -> 8.5vh/126.
+                      height: 'clamp(60px, 8.5vh, 126px)',
                       width: 'auto',
                       filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))',
                     }}

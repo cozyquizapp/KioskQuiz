@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, forwardRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -140,6 +140,12 @@ const TEAM_CSS = `
     18%  { opacity: 1; }
     55%  { opacity: 0.85; }
     100% { opacity: 0; }
+  }
+  @keyframes qqTeamPinDrop {
+    0%   { transform: translateY(-40px) scale(0.6); opacity: 0; }
+    60%  { transform: translateY(4px) scale(1.08); opacity: 1; }
+    80%  { transform: translateY(-2px) scale(0.96); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
   }
   @keyframes tcbtnpop  { 0%{transform:scale(0.96)} 60%{transform:scale(1.04)} 100%{transform:scale(1)} }
   @keyframes tcsuccess { 0%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.98)} 100%{transform:scale(1)} }
@@ -3358,7 +3364,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
-    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
+    if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} myTeam={s.teams.find(tm => tm.id === myTeamId) ?? null} />;
     if (kind === 'onlyConnect') return <OnlyConnectInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
     if (kind === 'bluff') return <BluffInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />;
   }
@@ -4368,7 +4374,7 @@ function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => voi
   return null;
 }
 
-function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null }) {
+function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt, myTeam }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null; myTeam?: QQTeam | null }) {
   const bt = q?.bunteTuete;
   // 2026-05-05 (Wolf 'Map zeigt aktuell das Zielgebiet vorgezoomt = Hinweis,
   // bitte neutrale Ansicht'): Default-Center jetzt mittig auf der Welt (0,0)
@@ -4380,6 +4386,45 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
   const zoom = bt?.zoom ?? 2; // Welt-Level
   const [pin, setPin] = useState<[number, number] | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // 2026-05-07 (Wolf 'map+pin etwas haesslich'): Custom-Pin im Beamer-Stil —
+  // Avatar in Team-Farbe + dunkler Schaft, statt Default-Leaflet-Marker
+  // (blau-roter PNG der bei jedem zweiten Quiz auffaellt). Voyager-Tiles
+  // statt Default-OSM (warmer + cleaner Cozy-Look).
+  const teamColor = myTeam?.color ?? catColor;
+  const teamEmoji = (myTeam as any)?.emoji ?? '📍';
+  const customPinIcon = useMemo(() => L.divIcon({
+    className: 'qq-team-pin-mobile',
+    html: `<div style="
+      position: relative; width: 48px; height: 64px;
+      animation: qqTeamPinDrop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 5px 7px rgba(0,0,0,0.55));
+    ">
+      <div style="
+        position: absolute; left: 50%; top: 32px;
+        transform: translateX(-50%);
+        width: 0; height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-top: 32px solid #1A1A1A;
+        z-index: 1;
+      "></div>
+      <div style="
+        position: absolute; left: 4px; top: 0;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: ${teamColor};
+        border: 2px solid #1A1A1A;
+        box-shadow: 0 0 18px ${teamColor}66, inset 0 -3px 5px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.22);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 2;
+        font-size: 24px; line-height: 1;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      ">${teamEmoji}</div>
+    </div>`,
+    iconSize: [48, 64] as any,
+    iconAnchor: [24, 60] as any,
+  }), [teamColor, teamEmoji]);
 
   // B7: Auto-Submit on Timer-End wenn Pin gesetzt; sonst nur Lock.
   const expired = useExpiry(timerEndsAt ?? null);
@@ -4413,10 +4458,15 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
         {t.pinIt.tap[lang]}
       </div>
       <div style={{
-        borderRadius: 16, overflow: 'hidden',
-        border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: 18, overflow: 'hidden',
+        border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.12)'}`,
         height: 'clamp(280px, 48vh, 480px)',
         position: 'relative',
+        // 2026-05-07: leichter Inset-Shadow + Aussen-Drop fuer Tiefe.
+        boxShadow: pin
+          ? `0 0 22px ${catColor}33, inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 18px rgba(0,0,0,0.4)`
+          : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 18px rgba(0,0,0,0.4)',
+        transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
       }}>
         <MapContainer
           center={[centerLat, centerLng]}
@@ -4425,9 +4475,12 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt 
           zoomControl={true}
           attributionControl={false}
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {/* 2026-05-07 (Wolf): CartoDB Voyager statt Default-OSM. Warmer,
+              kuratierter Look — passt zum Cozy-Branding und ist clean genug
+              dass die Pin-Position lesbar bleibt. */}
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png" />
           <MapClickHandler onPick={(lat, lng) => { if (!expired) setPin([lat, lng]); }} />
-          {pin && <Marker position={pin} />}
+          {pin && <Marker position={pin} icon={customPinIcon} />}
         </MapContainer>
       </div>
       {pin

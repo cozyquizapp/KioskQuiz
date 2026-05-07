@@ -4850,8 +4850,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         const many = n > 5;
         const multiRow = rowSizes.length > 1;
         // Bei mehreren Reihen kleiner skalieren, damit beides in die Bühne passt
+        // 2026-05-07 (Layout-Audit): multiRow-Cap 180 → 220. Bei 5-8 Teams in
+        // 2 Reihen wirkten 180er-Avatare gegen den 92vw-Container schmal.
+        // 4×220 + Gaps fitten auf 1920er-Bühne mit Reserve.
         const discSize = multiRow
-          ? 'clamp(110px, 11vw, 180px)'
+          ? 'clamp(110px, 11vw, 220px)'
           : many ? 'clamp(130px, 13vw, 210px)' : 'clamp(160px, 17vw, 260px)';
         const discFont = multiRow
           ? 'clamp(52px, 6.2vw, 100px)'
@@ -5735,7 +5738,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         <div style={{
                           flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
                           minWidth: cardCount === 1 ? 280 : 200,
-                          maxWidth: cardCount === 1 ? 480 : 360,
+                          // 2026-05-07 (Layout-Audit): Multi-Card max 360 → 480.
+                          // Bei 2-3 Action-Cards wirkten 360 Cards schmal gegen
+                          // den Container (1700) — alle Cards bekamen großen
+                          // Spacing zueinander, Inhalt war underfilled.
+                          maxWidth: cardCount === 1 ? 480 : 480,
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
                           justifyContent: 'center',
                           gap: 'clamp(8px, 1.2vh, 16px)',
@@ -10888,9 +10895,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               (hpCompact) wird die Card flacher + Text kleiner, damit unten
               Platz fuer den Chip-Block bleibt. */}
           {(() => {
+            // 2026-05-07 (Layout-Audit): horizontal-padding clamp(110-180) →
+            // clamp(60-120). Vorher: Card 1400 breit aber bis 360 Innen-Padding
+            // → nur 1040px Textbreite, Frage wirkte klein. Jetzt 240px max
+            // Innen-Padding → ~1160px Text bei voller Breite.
             const cardPadding = hpCompact
-              ? 'clamp(10px, 1.4vh, 18px) clamp(110px, 12vw, 180px) clamp(10px, 1.4vh, 18px)'
-              : 'clamp(18px, 2.6vh, 32px) clamp(110px, 12vw, 180px) clamp(18px, 2.6vh, 32px)';
+              ? 'clamp(10px, 1.4vh, 18px) clamp(60px, 8vw, 120px) clamp(10px, 1.4vh, 18px)'
+              : 'clamp(18px, 2.6vh, 32px) clamp(60px, 8vw, 120px) clamp(18px, 2.6vh, 32px)';
             const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2vh, 16px)' : 'clamp(16px, 2.2vh, 32px)';
             // v3 round 11 (User-Wunsch 'textgroesse muss nicht zwangsweise
             // kleiner werden'): Font-Size bleibt voll, nur Padding/Margin
@@ -13159,7 +13170,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             border: '2px solid rgba(251,191,36,0.4)',
             boxShadow: '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
             textAlign: 'center',
-            maxWidth: 900,
+            // 2026-05-07 (Layout-Audit): 900 → 1100, sonst sitzt die Mechanik-Card
+            // schmaler als der COMEBACK-Title darüber → wirkt zentriert-zu-eng.
+            maxWidth: 1100,
             display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.4vh, 16px)',
           }}>
             <div style={{
@@ -15038,7 +15051,11 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
       </div>
       <div style={{
         fontSize: 'clamp(22px, 2.7vw, 38px)', fontWeight: 900,
-        color: '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1100,
+        // 2026-05-07 (Layout-Audit): Subtitle + Rule-Pills 1100 → 1400. Der
+        // „Großes Finale"-Title oben skaliert bis 160px Schrift, daneben die
+        // 1100-Pills wirkten zentriert-eng. Die Connections-Cards unten leben
+        // bei 1500 — Subtitle/Pills jetzt im selben Visual-Frame.
+        color: '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1400,
         textShadow: '0 0 22px rgba(251,191,36,0.3)',
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.5s both',
       }}>
@@ -15047,7 +15064,7 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
           : 'Find 4 groups — each group lets you stack one of your cells for +1 point.'}
       </div>
       <div style={{
-        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1100,
+        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1400,
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.7s both',
       }}>
         <ConnectionsRulePill emoji="🎯" text={lang === 'de' ? '4 Begriffe → abgeben' : '4 terms → submit'} />
@@ -15605,9 +15622,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       </div>
 
       {/* ── RECHTE SPALTE: Title + Hero + Rankings vertikal ────────────── */}
+      {/* 2026-05-07 (Layout-Audit): justifyContent flex-start → center.
+           Bei 2-3 Teams hatte die Spalte unten viel Lücke unter den Rankings,
+           während Title+Hero oben standen. center balanciert beide Enden. */}
       <div style={{
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'flex-start',
+        alignItems: 'center', justifyContent: 'center',
         gap: 'clamp(8px, 1.2vh, 16px)',
         position: 'relative', zIndex: 5,
         minWidth: 0, paddingTop: 'clamp(8px, 1.5vh, 20px)',

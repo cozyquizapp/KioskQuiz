@@ -8618,6 +8618,48 @@ app.get('/api/qq/drafts', async (_req, res) => {
       try { await saveQQDraftToDB(fd); } catch { /* ignore */ }
     }
     const merged = [...cleanDbDrafts, ...fileDrafts].sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+    // 2026-05-07 (Wolf 'kurz war eurovision design da, jetzt wieder weg'):
+    // Cache-Bug — die LIST-Antwort wurde gecacht ohne Auto-Heal, dadurch hat
+    // der Builder bei activeDraft = drafts.find(...) immer den stale Theme
+    // bekommen + beim naechsten saveDraftRaw-PUT die DB-Heilung wieder
+    // ueberschrieben. Jetzt Heal-Pass auch hier inline (gleiche Logik wie der
+    // Single-GET-Heal): ESC-Drafts kriegen das EUROVISION_THEME gemerged,
+    // Non-ESC-Drafts mit ESC-lobbyWelcome-URL wird der Slot geleert.
+    const escUrlsInList = new Set<string>();
+    for (const d of merged as any[]) {
+      if (!isEurovisionDraftTitle(d?.title)) continue;
+      const u = d?.soundConfig?.lobbyWelcome;
+      if (typeof u === 'string' && u.length > 0) escUrlsInList.add(u);
+    }
+    let healedCount = 0;
+    for (let i = 0; i < merged.length; i++) {
+      const d: any = merged[i];
+      // 1) ESC-Theme-Heal
+      if (isEurovisionDraftTitle(d?.title)) {
+        const existing = (d.theme ?? {}) as Record<string, any>;
+        let needs = false;
+        for (const [k, v] of Object.entries(EUROVISION_THEME)) {
+          if (JSON.stringify(existing[k]) !== JSON.stringify(v)) { needs = true; break; }
+        }
+        if (needs) {
+          d.theme = { ...existing, ...EUROVISION_THEME };
+          try { await saveQQDraftToDB(d); healedCount++; } catch { /* ignore */ }
+        }
+      }
+      // 2) Non-ESC mit kontaminierter lobbyWelcome
+      else {
+        const u = d?.soundConfig?.lobbyWelcome;
+        if (typeof u === 'string' && u.length > 0 && escUrlsInList.has(u)) {
+          const cfg = { ...(d.soundConfig ?? {}) };
+          delete cfg.lobbyWelcome;
+          d.soundConfig = cfg;
+          try { await saveQQDraftToDB(d); healedCount++; } catch { /* ignore */ }
+        }
+      }
+    }
+    if (healedCount > 0) {
+      console.log(`[esc-heal-list] ${healedCount} Drafts geheilt (ESC-Theme oder Sound-Contamination).`);
+    }
     cache.set('qqDrafts', merged, 120);
     return res.json(merged);
   }

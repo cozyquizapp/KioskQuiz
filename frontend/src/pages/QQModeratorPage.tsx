@@ -874,20 +874,6 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // F — Flyover (cinematic orbit on 3D beamer grid)
-    if (e.code === 'KeyF') {
-      e.preventDefault(); playHotkeyFeedback();
-      emitRef.current('qq:flyover', { roomCode });
-      return;
-    }
-
-    // V — 2D/3D Toggle auf dem Beamer
-    if (e.code === 'KeyV') {
-      e.preventDefault(); playHotkeyFeedback();
-      emitRef.current('qq:toggleView', { roomCode });
-      return;
-    }
-
     // F18 — Reset (Notfall)
     // F20 — reserviert
   }, [roomCode]);
@@ -2185,27 +2171,6 @@ export default function QQModeratorPage() {
                     }}
                     aria-label="Beide Sprachen (Flip)"
                   >🌐</button>
-                </div>
-              </div>
-
-              {/* 3D Grid */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🏙️ 3D Grid</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    onClick={() => emit('qq:setEnable3D', { roomCode, enabled: !s.enable3DTransition })}
-                    style={{
-                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                      fontWeight: 900, fontSize: 13,
-                      border: `1px solid ${s.enable3DTransition ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
-                      background: s.enable3DTransition ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
-                      color: s.enable3DTransition ? '#22C55E' : '#64748b',
-                    }}>
-                    {s.enable3DTransition ? '✓ 3D Transition aktiv' : '○ 3D Transition aus'}
-                  </button>
-                  <span style={{ fontSize: 11, color: '#475569' }}>
-                    {s.enable3DTransition ? '2D→3D Fahrt beim Placement' : 'Nur 2D Grid'}
-                  </span>
                 </div>
               </div>
 
@@ -3914,18 +3879,6 @@ function SetupView({
           </div>
         </div>
 
-        {/* 3D-Grid-Transition */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🏙 Grid</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:setEnable3D', { roomCode, enabled: false })} style={segPill(!s.enable3DTransition)}>2D</button>
-            <button onClick={() => emit('qq:setEnable3D', { roomCode, enabled: true })} style={segPill(!!s.enable3DTransition, '#A78BFA')}>2D → 3D</button>
-          </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {s.enable3DTransition ? 'Cinematic Fahrt beim Placement' : 'Flat 2D, schneller'}
-          </span>
-        </div>
-
         {/* Finalrunde 4×4 Connections */}
         <div style={settingRow}>
           <span style={settingLabel}>🔗 Finale</span>
@@ -3963,55 +3916,49 @@ function SetupView({
         </div>
 
         {/* 2026-05-04 — Avatar-Theme (Phase 1: nur State-Propagation) */}
+        {/* 2026-05-07 — Pill-Row → Dropdown (Wolf-Wunsch: kompakter, weniger visueller Lärm). */}
         <div style={{ ...settingRow, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <span style={{ ...settingLabel, marginTop: 6 }}>🧑‍🎨 Avatar</span>
-          <div
-            style={{
-              display: 'flex', gap: 6, flex: 1,
-              overflowX: 'auto', padding: '2px 2px 6px',
-              scrollbarWidth: 'thin',
-              scrollSnapType: 'x mandatory',
-            }}
-            className="qq-mod-set-row"
-          >
-            {AVATAR_SETS.map(set => {
-              const active = (s.avatarSetId ?? 'cozyAnimals') === set.id;
-              return (
-                <button
-                  key={set.id}
-                  type="button"
-                  onClick={() => emit('qq:setAvatarSet', { roomCode, avatarSetId: set.id })}
-                  style={{
-                    flex: '0 0 auto',
-                    scrollSnapAlign: 'start',
-                    padding: '7px 12px',
-                    borderRadius: 8,
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: 900,
-                    fontSize: 12,
-                    fontFamily: 'inherit',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: active
-                      ? `linear-gradient(135deg, ${set.tint}33, ${set.tint}11)`
-                      : 'rgba(0,0,0,0.32)',
-                    color: active ? '#fff' : '#a8a395',
-                    boxShadow: active
-                      ? `0 0 0 1.5px ${set.tint}, 0 0 14px ${set.tint}55`
-                      : '0 0 0 1px rgba(255,235,200,0.06)',
-                    transition: 'all 0.15s',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                  title={set.label}
-                >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{set.leadEmoji}</span>
-                  <span>{set.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {(() => {
+            const activeId = s.avatarSetId ?? 'cozyAnimals';
+            const activeSet = AVATAR_SETS.find(x => x.id === activeId) ?? AVATAR_SETS[0];
+            return (
+              <select
+                value={activeId}
+                onChange={e => emit('qq:setAvatarSet', { roomCode, avatarSetId: e.target.value })}
+                style={{
+                  flex: 1,
+                  padding: '7px 30px 7px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                  background:
+                    `linear-gradient(135deg, ${activeSet.tint}26, ${activeSet.tint}0d) ` +
+                    `no-repeat, rgba(0,0,0,0.32)`,
+                  color: '#fff',
+                  boxShadow: `0 0 0 1.5px ${activeSet.tint}, 0 0 14px ${activeSet.tint}40`,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  backgroundImage:
+                    `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23fff' d='M0 0l5 6 5-6z'/></svg>")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 10px center',
+                  backgroundSize: '10px 6px',
+                }}
+                title={activeSet.label}
+              >
+                {AVATAR_SETS.map(set => (
+                  <option key={set.id} value={set.id} style={{ background: '#1f1610', color: '#fff' }}>
+                    {set.leadEmoji}  {set.label}
+                  </option>
+                ))}
+              </select>
+            );
+          })()}
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
               const id = s.avatarSetId ?? 'all';
@@ -4726,8 +4673,6 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
     title: 'Beamer & Ton',
     rows: [
       ['M', 'Ton an/aus (Musik + SFX)'],
-      ['V', '2D / 3D Grid-Toggle'],
-      ['F', 'Flyover (3D-Grid Kamerafahrt)'],
     ],
   },
   {

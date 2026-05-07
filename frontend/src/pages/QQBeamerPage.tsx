@@ -13749,31 +13749,33 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ];
 
     panels.push({ key: 'howItWorks', node: (
-      <div style={{ width: 'min(100%, 760px)' }}>
-        <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+      // 2026-05-07 (Wolf 'Schrift groesser'): Title 36→52, Mini-Card-
+      // Title 24→32, Desc 19→24, Icon 40→52, Card-Padding +2.
+      <div style={{ width: 'min(100%, 920px)' }}>
+        <div style={{ fontSize: 'clamp(32px, 3.6vw, 52px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
         </div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 14,
+          gap: 16,
           textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
           {howItems.map((it, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-              padding: '14px 16px',
+              display: 'flex', alignItems: 'flex-start', gap: 16,
+              padding: '18px 20px',
               borderRadius: 16,
               background: 'rgba(255,235,200,0.04)',
               border: '1px solid rgba(255,235,200,0.10)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
               animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
             }}>
-              <span style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
+              <span style={{ fontSize: 'clamp(36px, 3.8vw, 52px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(17px, 1.9vw, 24px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
-                <div style={{ fontSize: 'clamp(14px, 1.5vw, 19px)', color: '#cbd5e1', lineHeight: 1.4 }}>{it.desc}</div>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#FBBF24', marginBottom: 6 }}>{it.title}</div>
+                <div style={{ fontSize: 'clamp(17px, 1.85vw, 24px)', color: '#cbd5e1', lineHeight: 1.4 }}>{it.desc}</div>
               </div>
             </div>
           ))}
@@ -14035,9 +14037,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const c = color ?? meta.color ?? '#FBBF24';
     const av = avatarId ?? meta.avatarId;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
-        {av && <QQTeamAvatar avatarId={av} size={'clamp(46px, 5vw, 68px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${c}55` }} />}
-        <span style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 42px)', color: c, textShadow: `0 0 18px ${c}44` }}>{name}</span>
+      // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
+        {av && <QQTeamAvatar avatarId={av} size={'clamp(64px, 7vw, 100px)'} style={{ flexShrink: 0, boxShadow: `0 0 28px ${c}55` }} />}
+        <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2vw, 64px)', color: c, textShadow: `0 0 22px ${c}44` }}>{name}</span>
       </div>
     );
   };
@@ -14063,8 +14066,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 40px)', color: '#e2e8f0' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.highestScore.teamName)} — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
@@ -14076,8 +14079,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}>⚔️</span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 40px)', color: '#e2e8f0' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
@@ -14089,8 +14092,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 40px)', color: '#e2e8f0' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.winStreak.teamName)} — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
@@ -14103,8 +14106,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6vw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 28px)', color: '#e2e8f0' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
-            <div style={{ fontSize: 'clamp(18px, 2vw, 24px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3vw, 40px)', color: '#e2e8f0' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.fastestAnswer.teamName)} — {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
@@ -14114,7 +14117,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
-          <div style={{ fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 'clamp(32px, 3.6vw, 52px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 18 }}>
             <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🏅</span> {de ? 'Rekorde' : 'Records'}
           </div>
           {records}
@@ -14124,12 +14127,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   }
 
   // ── Style-Helpers für die neuen Stat-Panels ──────────────────────────────
-  // Stat-Title in gleichem Look wie die bestehenden Panels
+  // 2026-05-07 (Wolf 'mach die Schrift in den Lobby-Slides gerne teilweise
+  // groesser, die Textfelder wirken etwas verloren in dem riesen Kasten'):
+  // Title 36→52, Pill-Wert 30→44, Pill-Label 17→22.
   const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => (
     <div style={{
-      fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 900,
+      fontSize: 'clamp(32px, 3.6vw, 52px)', fontWeight: 900,
       color: accentColor ?? '#e2e8f0',
-      marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+      marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
     }}>
       <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
       {de ? titleDe : titleEn}
@@ -14139,16 +14144,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Dark-Pill im Cozy-Header-Style (warmer card-bg + Akzent-Border)
   const statPill = (value: string | number, label: string, accent = '#FBBF24') => (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 10,
-      padding: '8px 18px', borderRadius: 999,
+      display: 'inline-flex', alignItems: 'center', gap: 12,
+      padding: '12px 24px', borderRadius: 999,
       background: 'linear-gradient(180deg, #241a10, #1a120a)',
       border: `1.5px solid ${accent}55`,
       color: '#fff',
-      fontSize: 'clamp(18px, 2vw, 26px)', fontWeight: 900,
+      fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
       boxShadow: `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
-      <span style={{ color: accent, fontSize: 'clamp(22px, 2.4vw, 30px)', lineHeight: 1 }}>{value}</span>
-      <span style={{ color: '#cbd5e1', fontSize: 'clamp(13px, 1.3vw, 17px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      <span style={{ color: accent, fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1 }}>{value}</span>
+      <span style={{ color: '#cbd5e1', fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
     </span>
   );
 
@@ -14514,7 +14519,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <WolfCoModerator
               lang={de ? 'de' : 'en'}
               variant="preGame"
-              widthCss="clamp(150px, 16vw, 240px)"
+              widthCss="clamp(190px, 19vw, 300px)"
             />
           </div>
 

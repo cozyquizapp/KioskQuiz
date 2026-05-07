@@ -4415,6 +4415,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         />
       )}
       <Fireflies />
+      {s.theme?.eurovisionMode && <EurovisionHearts />}
 
       {/* Wolf-Lobby-Greeter top-right — winkt + reagiert auf Team-Joins
           mit 'Hallo {teamName}!'. Idle: 'QR-Code scannen!' / etc.
@@ -5463,6 +5464,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         />
       )}
       <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${displayColor}88` : `${catColor ?? color}88`} />
+      {s.theme?.eurovisionMode && <EurovisionHearts />}
 
       {showWolfMark && (
         <div style={{
@@ -14705,6 +14707,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         />
       )}
       <Fireflies />
+      {s.theme?.eurovisionMode && <EurovisionHearts />}
 
       {/* Ambient ring-light hinter dem Hero — pulsiert in Mode-Farbe */}
       <div style={{
@@ -17460,6 +17463,63 @@ export const Fireflies = memo(function Fireflies({ color }: { color?: string } =
           animation: `ffmove var(--dur,6s) ease-in-out var(--del,0s) infinite`,
           willChange: 'transform, opacity',
         }} />
+      ))}
+    </>
+  );
+});
+
+// 2026-05-07 (Wolf-ESC): Schwebende Eurovision-Herzen — dezenter Watchparty-
+// Vibe ueber Lobby/Pause/PhaseIntro. Asset: eurovision-heart-opt.png (Sharp-
+// optimiert, 800x800). Nur aktiv wenn theme.eurovisionMode true ist; Render-
+// Stelle muss daher selbst gegated werden. zIndex 1 = zwischen BG (0) und
+// Fireflies (2), damit Fireflies optisch davor blinken.
+const ESC_HEART_NODES = [
+  { x: 6,  y: 14, size: 60, dur: 11, del: 0,   dx:  14, dy: -22, pulseDur: 2.6, pulseDel: 0   },
+  { x: 88, y: 20, size: 44, dur: 13, del: 1.5, dx: -16, dy: -28, pulseDur: 2.9, pulseDel: 0.4 },
+  { x: 14, y: 76, size: 64, dur: 12, del: 0.8, dx:  18, dy: -20, pulseDur: 3.1, pulseDel: 0.8 },
+  { x: 92, y: 70, size: 48, dur: 10, del: 2.2, dx: -12, dy: -24, pulseDur: 2.5, pulseDel: 0.2 },
+  { x: 50, y: 88, size: 38, dur: 14, del: 3.0, dx:  10, dy: -30, pulseDur: 3.0, pulseDel: 1.1 },
+  { x: 28, y: 40, size: 34, dur: 16, del: 1.2, dx:  14, dy: -18, pulseDur: 3.4, pulseDel: 0.6 },
+  { x: 76, y: 46, size: 38, dur: 15, del: 2.6, dx: -14, dy: -22, pulseDur: 2.8, pulseDel: 1.4 },
+] as const;
+
+export const EurovisionHearts = memo(function EurovisionHearts() {
+  return (
+    <>
+      <style>{`
+        @keyframes qqEscHeartFloat {
+          0%,100% { transform: translate(0,0) rotate(-3deg); }
+          50%     { transform: translate(var(--escHdx,12px), var(--escHdy,-22px)) rotate(3deg); }
+        }
+        @keyframes qqEscHeartPulse {
+          0%,100% { opacity: 0.20; }
+          50%     { opacity: 0.42; }
+        }
+      `}</style>
+      {ESC_HEART_NODES.map((h, i) => (
+        <div key={i} aria-hidden style={{
+          position: 'absolute',
+          left: `${h.x}%`, top: `${h.y}%`,
+          width: h.size, height: h.size,
+          pointerEvents: 'none', zIndex: 1,
+          ['--escHdx' as string]: `${h.dx}px`,
+          ['--escHdy' as string]: `${h.dy}px`,
+          animation: `qqEscHeartFloat ${h.dur}s ease-in-out ${h.del}s infinite`,
+          willChange: 'transform',
+        }}>
+          <img
+            src="/themes/eurovision-heart-opt.png"
+            alt=""
+            draggable={false}
+            className="qq-fluent-skip"
+            style={{
+              width: '100%', height: '100%', display: 'block',
+              filter: 'drop-shadow(0 0 12px rgba(255,45,123,0.55)) drop-shadow(0 0 4px rgba(255,255,255,0.25))',
+              animation: `qqEscHeartPulse ${h.pulseDur}s ease-in-out ${h.pulseDel}s infinite`,
+              willChange: 'opacity',
+            }}
+          />
+        </div>
       ))}
     </>
   );

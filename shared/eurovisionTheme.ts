@@ -12,19 +12,18 @@ export const EUROVISION_THEME: QQTheme = {
   textColor: '#fde6f0',
   cardBg: '#2d1644',
   eurovisionMode: true,
-  // 2026-05-07 v7 (Wolf-Klarstellung 'nur herz ist okay, das links, nur nicht
-  // das mit der 7 und dem herz'): bg-1.png (heart-only) wieder ok, 4.png
-  // (heart-mit-7-Smear) bleibt draussen. Routing nach Title-Contrast:
-  //   Lobby     = 5.png   (sanfter Pink-Gradient — CozyQuiz-Wordmark weiss,
-  //                        kontrastiert gut auf Pink/Magenta)
-  //   Pause     = 3.png   (Pink/Blau-Swirl mit dunklen Bereichen, kontrastiert
-  //                        zur Pink-Title 'Kurze Pause' / 'Gleich gehts los')
-  //   PhaseIntro = bg-1.png (Herz auf dunklem BG → maximaler Contrast fuer den
-  //                        riesigen Pink-Title 'Halbfinale 1/2/Finale')
-  // 4.png aktuell ungenutzt (Smear, von Wolf nicht gewuenscht).
+  // 2026-05-07 v8 (Wolf-Klarstellung mit Screenshot 'nur herz ist okay, nicht
+  // das mit der 7 und dem herz'): bg-1.png hat das 70-Jubilaeums-Logo
+  // eingebrannt — das war Wolfs '7'! Korrektur: bg-1 raus, 4.png (heart-only,
+  // KEIN 7) ist OK. 4 ist Wolfs 'das links nur herz'.
+  //   Lobby     = 5.png   (sanfter Pink-Gradient, weisser CozyQuiz-Wordmark)
+  //   Pause     = 3.png   (Pink/Blau-Swirl, Pink-Title hat Contrast)
+  //   PhaseIntro = 4.png  (heart-only, Wolf-approved fuer den Halbfinale-Title)
+  // bg-1.png + bg-2.jpg bleiben im /themes-Ordner aber ungenutzt (beide
+  // haben '70'/'Vienna 2026'-Text).
   lobbyBackgroundUrl: '/themes/5.png',
   pauseBackgroundUrl: '/themes/3.png',
-  phaseIntroBackgroundUrl: '/themes/eurovision-bg-1.png',
+  phaseIntroBackgroundUrl: '/themes/4.png',
   // 2026-05-07 v4 (Wolf 'wie geil waere ein 10sec intro video — video ist drin'):
   // Welcome-Video laeuft hinter dem CozyQuiz-Wordmark in der QuizIntroOverlay.
   // Browser-autoplay-policy: muted by default. Filename hat ein Leerzeichen,

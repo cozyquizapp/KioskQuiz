@@ -4662,11 +4662,15 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
           Schicht — verhindert Flicker beim Mund-Flap). */}
       {/* 2026-05-07 v18 (Wolf 'wolf und sprechbubble in lobby rechts oben
           darf groesser sein, sonst kann man das ueberhaupt nicht lesen'):
-          Wolf-Wrapper 140-200 → 190-280, Bubble-Size 'lg'. Container ist
-          absolute top-right der Lobby — Stinger-Header ist im Center und
-          hat rechte Reserve via clamp-gap, kein Overlap erwartbar. */}
+          Wolf-Wrapper 140-200 → 190-280, Bubble-Size 'lg'.
+          2026-05-07 v20 (Wolf 'jetzt verdeckt der wolf komplett'): Wolf
+          wieder zurueck auf Original-clamp(140-200). Bei 8 Teams + bottom-
+          right verdeckte 280px-Wolf die untere rechte Team-Card. Die
+          Lesbarkeit kam ohnehin von der Bubble (size='lg', font 20-30) —
+          die bleibt. Wolf-Body-Skalierung war Kollateralwunsch, nicht
+          Lesbarkeitsbedarf. */}
       <AnimatedCozyWolf
-        widthCss="clamp(190px, 17vw, 280px)"
+        widthCss="clamp(140px, 13vw, 200px)"
         mode={eurovisionMode ? 'flagge' : 'daumen'}
         speaking={speakingNow}
         wink={!eurovisionMode && isWelcoming}

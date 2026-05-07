@@ -4496,7 +4496,14 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
     : null;
 
   const isWelcoming = welcomeSlogan !== null;
-  const slogan = welcomeSlogan ?? idleSlogans[idleIdx];
+  // 2026-05-07 v14 (Bug-Fix Mod-Page-Crash 'Cannot read mouths'): Wenn der
+  // Slogan-Pool zwischen ESC (8) und Cozy (5) wechselt, kann idleIdx fuer
+  // den neuen Pool out-of-bounds sein → undefined → .mouths-Crash. Safe-Index
+  // mit Modulo + Fallback auf Index 0.
+  const slogan = welcomeSlogan
+    ?? idleSlogans[idleIdx % Math.max(1, idleSlogans.length)]
+    ?? idleSlogans[0]
+    ?? { text: '', mouths: 2 };
 
   const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));
   const enterMs = 200;
@@ -13897,7 +13904,8 @@ function WolfUeberraschtWithBubble({ lang, eurovisionMode }: { lang: 'de' | 'en'
             { text: 'Wild!', mouths: 1 },
           ]);
   const [idx, setIdx] = useState(0);
-  const slogan = slogans[idx];
+  // 2026-05-07 v14 (Bug-Fix): safe index — siehe WolfLobbyGreeter.
+  const slogan = slogans[idx % Math.max(1, slogans.length)] ?? slogans[0] ?? { text: '', mouths: 2 };
   const speakMs = Math.min(3000, Math.max(1100, slogan.mouths * 500));
   const enterMs = 200;
   const exitMs = 400;
@@ -14058,7 +14066,8 @@ function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
               ]));
 
   const [idx, setIdx] = useState(0);
-  const slogan = slogans[idx];
+  // 2026-05-07 v14 (Bug-Fix): safe index — siehe WolfLobbyGreeter.
+  const slogan = slogans[idx % Math.max(1, slogans.length)] ?? slogans[0] ?? { text: '', mouths: 2 };
 
   // Sprechblase-Lebenszyklus: enter (250ms) → speak (speakMs) → exit (450ms)
   // → gap (550ms) → next. SpeakMs aus mouths × 440 (passt zu internem
@@ -16564,7 +16573,8 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
             { text: 'Great round!', mouths: 2 },
           ]);
   const [idx, setIdx] = useState(0);
-  const slogan = slogans[idx];
+  // 2026-05-07 v14 (Bug-Fix): safe index — siehe WolfLobbyGreeter.
+  const slogan = slogans[idx % Math.max(1, slogans.length)] ?? slogans[0] ?? { text: '', mouths: 2 };
   const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));
   const enterMs = 250;
   const exitMs = 450;

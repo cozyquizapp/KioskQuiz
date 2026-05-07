@@ -1,4 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap');
+
+/* 2026-05-07 (Wolf-ESC-Bug 'Flaggen werden als Buchstaben angezeigt'):
+   Country-Flag-Emoji Polyfill — Windows hat keinen Country-Flag-Font in
+   Segoe UI Emoji, deshalb rendern Flag-Codepoints als Regional-Indicator-
+   Letters (DE, AZ, ...). Twemoji Country Flags als Webfont mit
+   unicode-range nur fuer die Flag-Codepoints (U+1F1E6-1F1FF) sowie die
+   subdivision-Tags (England/Schottland/Wales). Andere Emojis bleiben
+   beim System-Font, keine Performance-/Layout-Aenderung. */
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0061-E007F;
+  src: url('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2') format('woff2');
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,7 +62,10 @@
   --cat-cheese: #e2a9f1;
   --cat-gemischte: #d85f58;
   --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-game: 'Nunito', 'Geist', system-ui, sans-serif;
+  /* 2026-05-07: 'Twemoji Country Flags' an erster Stelle — durch unicode-range
+     greift der Font NUR fuer Flag-Codepoints, alle anderen Glyphen kommen aus
+     'Nunito'/'Geist'/system-ui. Ergibt Windows einheitliche Flagen-Darstellung. */
+  --font-game: 'Twemoji Country Flags', 'Nunito', 'Geist', system-ui, sans-serif;
   --glass: rgba(11, 22, 42, 0.55);
   --glass-strong: rgba(14, 33, 63, 0.8);
   --ui-panel-bg: rgba(10, 24, 46, 0.85);

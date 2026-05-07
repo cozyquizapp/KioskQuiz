@@ -3346,9 +3346,12 @@ function MuchoOptionsReveal({
           ? timerEndsAt - timerDurationSec * 1000
           : voters[0]?.submittedAt;
         return (
-          // Wrapper: Card oben, Avatar-Reihe absolut darunter (sitzt auf der unteren Card-Linie)
-          <div key={i} style={{ position: 'relative' }}>
+          // 2026-05-07 (Audit P1): MUCHO-Cards gleich-hoch via flex:1+height:100%,
+          // analog zu ZvZ. Wrapper bekommt display:flex + height:100%, Inner-Card
+          // flex:1 — bei laengeren Optionen (zweizeilig) wachsen alle Cards mit.
+          <div key={i} style={{ position: 'relative', display: 'flex', height: '100%' }}>
             <div style={{
+              flex: 1,
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '24px 28px',
               background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
@@ -10920,12 +10923,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 flexShrink: 0,
                 transform: chipShiftVh !== 0 ? `translateY(${chipShiftVh}vh)` : undefined,
               }}>
-                <div key={lang} style={{
+                {/* 2026-05-07 (Audit P0): font-size-transition liess Buchstaben
+                    bei qFontSize/hpCompact-Wechsel sichtbar wandern. Key-Remount
+                    macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
+                <div key={`${lang}-${cardFontSize}`} style={{
                   fontSize: cardFontSize,
                   fontWeight: 900, lineHeight: 1.22,
                   color: '#F1F5F9',
                   animation: 'langFadeIn 0.4s ease both',
-                  transition: 'font-size 0.7s var(--qq-ease-smooth)',
                 }}>
                   {qText}
                 </div>
@@ -11437,8 +11442,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   padding: tierStyles.containerPad, borderRadius: 24,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
-                  // Höhe begrenzen damit Beamer-Layout nicht überläuft
-                  maxHeight: 'clamp(220px, 32vh, 380px)', overflow: 'hidden',
+                  // 2026-05-07 (Audit Layout #1, Wolf-Screenshot): cap 220-380
+                  // → 380-760. Vorher clipte der Container bei vielen Antworten
+                  // → Card schwebte mittig + ~25 % Vertikal-Luecke unten.
+                  maxHeight: 'clamp(380px, 60vh, 760px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);
@@ -14649,8 +14656,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             aber nur das innere Element. Card-Hülle, Border, Shimmer, Glow
             laufen ungestört durch. */}
       {activePanel && (
+        // 2026-05-07 (Audit Layout #2): maxWidth 1120 → 1500. Vorher schmale
+        // Insel mit ~360px Side-Whitespace je Seite auf 1080p-Beamer.
         <div style={{
-          width: '100%', maxWidth: 1120, position: 'relative', zIndex: 5,
+          width: '100%', maxWidth: 'min(94vw, 1500px)', position: 'relative', zIndex: 5,
         }}>
           <div style={{
             background: cardBg,
@@ -15895,13 +15904,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       }}>
         <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="schlafen" />
       </div>
+      {/* 2026-05-07 (Audit Layout #3): Letzte Folie war mit maxWidth 900 zu
+          eng — auf 1080p-Beamer ~510px Side-Whitespace je Seite. Card jetzt
+          1300, padding skaliert mit clamp. Wirkt wie ein echtes Grand-Finale. */}
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
-        padding: '56px 72px', borderRadius: 24,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32,
+        padding: 'clamp(40px, 5vh, 72px) clamp(48px, 5vw, 96px)', borderRadius: 24,
         background: 'linear-gradient(135deg, rgba(20,16,10,0.92), rgba(13,10,6,0.96))',
         border: '2px solid rgba(251,191,36,0.4)',
         boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(234,179,8,0.2), inset 0 1px 0 rgba(251,191,36,0.15)',
-        maxWidth: 900,
+        maxWidth: 'min(94vw, 1300px)',
         animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
       }}>
         <div style={{

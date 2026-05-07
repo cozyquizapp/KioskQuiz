@@ -14106,33 +14106,35 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ];
 
     panels.push({ key: 'howItWorks', node: (
-      // 2026-05-07 (Wolf 'Schrift groesser'): Title 36→52, Mini-Card-
-      // Title 24→32, Desc 19→24, Icon 40→52, Card-Padding +2.
+      // 2026-05-07 v2 (Wolf 'unten beruehren sich Card und Inner-Card fast'):
+      // Title-marginBottom 28→18, Icon 36-52→30-44, Desc 17-24→15-21, Card-
+      // Padding 18/20→13/16, Grid-Gap 16→12 — Panel ~18 % kompakter, untere
+      // Inner-Cards beruehren die Outer-Card-Boden-Border nicht mehr.
       <div style={{ width: 'min(100%, 920px)' }}>
-        <div style={{ fontSize: 'clamp(32px, 3.6vw, 52px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+        <div style={{ fontSize: 'clamp(28px, 3.2vw, 46px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
         </div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 16,
+          gap: 12,
           textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
           {howItems.map((it, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 16,
-              padding: '18px 20px',
+              display: 'flex', alignItems: 'flex-start', gap: 14,
+              padding: '13px 16px',
               borderRadius: 16,
               background: 'rgba(255,235,200,0.04)',
               border: '1px solid rgba(255,235,200,0.10)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
               animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
             }}>
-              <span style={{ fontSize: 'clamp(36px, 3.8vw, 52px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
+              <span style={{ fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)', color: '#FBBF24', marginBottom: 6 }}>{it.title}</div>
-                <div style={{ fontSize: 'clamp(17px, 1.85vw, 24px)', color: '#cbd5e1', lineHeight: 1.4 }}>{it.desc}</div>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 28px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
+                <div style={{ fontSize: 'clamp(15px, 1.7vw, 21px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
               </div>
             </div>
           ))}

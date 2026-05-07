@@ -4658,11 +4658,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const joinUrl = `${window.location.origin}/team`;
-  const [de, setDe] = useState(true);
-  useEffect(() => {
-    const id = setInterval(() => setDe(p => !p), 8000);
-    return () => clearInterval(id);
-  }, []);
+  // 2026-05-07 (Wolf-Bug 'trotz only GB englisch im moderator werden einige
+  // texte in der lobby nicht uebersetzt'): vorher lokaler de-State mit 8s-
+  // Auto-Toggle der s.language komplett ignoriert hat. Jetzt useLangFlip
+  // wie ueberall sonst — sticky bei DE/EN, flippt nur in 'both' (12s).
+  const lang = useLangFlip(s.language);
+  const de = lang === 'de';
 
   // F1 Team-Join-Wave: tracke frisch dazugekommene Teams, Card bekommt
   // zusaetzlich zur Entry-Animation einen Wink-Shake + Glow-Burst.
@@ -4889,13 +4890,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 
           // 2026-05-07 v17 (Wolf 'das gleiche hier oben hin wie auf der setup
           // page, schoen das genau gleiche hier in die lobby COZYQUIZ x
-          // Eurovision'): Im ESC-Mode mit Logo + ohne customWelcome rendert
-          // die Lobby den gleichen Stinger wie Welcome/PreGame —
+          // Eurovision'): Im ESC-Mode mit Logo IMMER den Stinger rendern —
           // [COZYQUIZ Stinger Fit] × [Eurovision-Logo] mit X-Shine + Hover-
-          // Float. customWelcome (z.B. 'Bonsoir Europe') hat Vorrang und
-          // faellt auf den per-Letter-Wave-Wordmark zurueck.
+          // Float, identisch zu Welcome/PreGame.
+          // 2026-05-07 v18 (Wolf-Bug 'sprachwechsel laesst die Seite huepfen,
+          // französisch etc'): customWelcome-Guard entfernt. Vorher hat das
+          // Theme-welcomeText ('Bonsoir Europe' DE / 'Good evening Europe' EN)
+          // die Stinger-Renderung blockiert und das Wordmark zwischen
+          // unterschiedlich langen Texten (14 vs 19 Zeichen) flippen lassen —
+          // bei jedem Lang-Flip ein vertikaler Layout-Hop weil fontSize-Tier
+          // wechselt. Stinger hat fixe Width unabhaengig von Sprache.
           // Standard-CozyQuiz-Mode bleibt komplett unangetastet.
-          if (s.theme?.eurovisionMode && s.theme?.logoUrl && customWelcome.length === 0) {
+          if (s.theme?.eurovisionMode && s.theme?.logoUrl) {
             return (
               <div style={{
                 display: 'inline-flex',
@@ -5180,7 +5186,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
                         marginTop: 4,
                       }}>
-                        {t.connected ? '● bereit' : '○ offline'}
+                        {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}
                       </div>
                       {/* 2026-05-06 (Wolf 'in der Lobby anzeigen wenn Team mit
                           Code eingeloggt ist zum X. Mal dabei, willkommen

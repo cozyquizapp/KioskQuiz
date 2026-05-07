@@ -1886,7 +1886,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
       {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
           Übergang zum Regel-Intro. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
       {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
@@ -3586,7 +3586,7 @@ function MuchoOptionsReveal({
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean; logoUrl?: string }) {
+function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
   const lang = useLangFlip(language);
   const title = 'CozyQuiz';
   const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
@@ -3627,6 +3627,42 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { lang
       hiddenScale={1.18}
       background="radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)"
     >
+      {/* 2026-05-07 (Wolf-ESC 'wie geil waere ein 10sec intro video — video
+          ist drin'): Welcome-Video laeuft als BG-Layer hinter allen anderen
+          Elementen. autoPlay+muted+playsInline → cross-browser autoplay-
+          policy-konform (kein User-Gesture noetig). object-fit: cover damit
+          das Video den ganzen Overlay fuellt. Sichtbar nur im eurovisionMode
+          + wenn welcomeVideoUrl gesetzt. Hearts/Wordmark/Logo overlay wie
+          gewohnt drueber, leichter dunkler Schleier um die Lesbarkeit der
+          Letter-Cascade nicht zu verlieren. */}
+      {eurovisionMode && welcomeVideoUrl && visible && (
+        <>
+          <video
+            key={welcomeVideoUrl}
+            src={welcomeVideoUrl}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              opacity: 0.55,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+          {/* Soft-Vignette ueber dem Video damit der Wordmark in der Mitte
+              gut sitzt — radialer Dunkel-Halo aus den Ecken, Mitte bleibt
+              transparent fuer maximale Video-Sichtbarkeit. */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at center, transparent 35%, rgba(5,8,16,0.55) 100%)',
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+        </>
+      )}
       {/* Cinematic-Focus-In: BG-blur fadet in den ersten 0.7s aus.
           Wirkt wie Kamera die scharfstellt. Wolf 2026-05-05. */}
       <div aria-hidden style={{

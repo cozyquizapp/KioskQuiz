@@ -13,14 +13,19 @@ export const EUROVISION_THEME: QQTheme = {
   cardBg: '#2d1644',
   eurovisionMode: true,
   lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
-  // 2026-05-07 (Wolf-Audit 'check ob nochmal BG mit Text unleserlich ist'):
-  // bg-2.jpg hat 'EUROVISION SONG CONTEST VIENNA 2026' eingebrannt — kollidiert
-  // mit den Beamer-Titeln (Halbfinale, Kurze Pause, Gleich geht's los). Alle
-  // 3 Views (Lobby, Pause, PhaseIntro) nutzen jetzt das Herz-only bg-1.png.
-  // Konsistent + garantiert lesbar. Wenn Wolf mehr Visual-Variety will, kann
-  // ein zweites text-freies Asset spaeter ergaenzt werden.
-  pauseBackgroundUrl: '/themes/eurovision-bg-1.png',
-  phaseIntroBackgroundUrl: '/themes/eurovision-bg-1.png',
+  // 2026-05-07 v3 (Wolf 'hier sind 3.png/4.png/5.png als text-freie BG-
+  // Varianten'): jetzt visuelle Variety zurueck — alle drei text-frei, jeder
+  // View bekommt eine eigene Stimmung:
+  //   Lobby     = bg-1.png (Herz-only, dezent statisch)
+  //   Pause     = 3.png    (Pink/Blau-Swirl, dynamisch)
+  //   PhaseIntro = 4.png   (Vienna-Herz ohne Text — perfekt zur Halbfinale-Reveal)
+  pauseBackgroundUrl: '/themes/3.png',
+  phaseIntroBackgroundUrl: '/themes/4.png',
+  // 2026-05-07 v4 (Wolf 'wie geil waere ein 10sec intro video — video ist drin'):
+  // Welcome-Video laeuft hinter dem CozyQuiz-Wordmark in der QuizIntroOverlay.
+  // Browser-autoplay-policy: muted by default. Filename hat ein Leerzeichen,
+  // muss URL-encoded werden ('%20').
+  welcomeVideoUrl: '/themes/intro%20vid.mp4',
   logoUrl: '/themes/eurovision-logo.jpg',
   welcomeText: {
     de: 'Bonsoir Europe',

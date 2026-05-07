@@ -542,6 +542,11 @@ export interface QQTheme {
    *  Mod-SetupView wechselt beim Draft-Auswahl automatisch auf dieses Set,
    *  Wolf kann's manuell ueberschreiben. */
   preferredAvatarSetId?: string;
+  /** 2026-05-07 (Wolf-ESC 'wie geil waere ein 10sec intro video'): optionales
+   *  Welcome-Video das hinter dem CozyQuiz-Wordmark in der QuizIntroOverlay
+   *  laeuft. Browser-autoplay-policy: muted by default (kein User-Gesture
+   *  noetig). Datei kommt in public/themes/. Default undefined = kein Video. */
+  welcomeVideoUrl?: string;
 }
 
 export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme> = {

@@ -28,6 +28,7 @@ const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPa
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
 const QQAvatarGeneratorPage = React.lazy(() => import('./pages/QQAvatarGeneratorPage'));
 const DesignLabPage = React.lazy(() => import('./pages/DesignLabPage'));
+const AnimationsLabPage = React.lazy(() => import('./pages/AnimationsLabPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -163,6 +164,7 @@ function App() {
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
           <Route path="/testpage"   element={<PinGate><QQAvatarGeneratorPage /></PinGate>} />
           <Route path="/gekocht"    element={<DesignLabPage />} />
+          <Route path="/animations" element={<AnimationsLabPage />} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/fragen"       element={<QuestionEditorPage />} />

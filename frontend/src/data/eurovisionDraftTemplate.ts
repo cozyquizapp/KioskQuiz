@@ -4,6 +4,7 @@
 // Wolf setzt musicMode + musicUrl pro Frage manuell — der Skeleton liefert die
 // Frage-Struktur, nicht das Material.
 import type { QQDraft, QQQuestion } from '../../../shared/quarterQuizTypes';
+import { EUROVISION_THEME } from '../../../shared/eurovisionTheme';
 
 export function makeEurovisionDraft(): QQDraft {
   const draftId = `qq-draft-esc-${Date.now().toString(36)}`;
@@ -250,30 +251,10 @@ export function makeEurovisionDraft(): QQDraft {
     questions,
     // 2026-05-07 (Wolf-ESC-Sidequest): Theme-Overrides die nur dieser Draft
     // nutzt. Andere Drafts ohne diese Felder sehen Standard-UI.
-    theme: {
-      preset: 'custom',
-      // 2026-05-07 (Wolf): Farben aus dem Vienna-2026-BG abgeleitet — tiefes
-      // Lila als BG, Pink-Magenta als Akzent (matched dem Heart-Logo),
-      // weiches Pinkrose statt Gold als Text fuer Konsistenz.
-      bgColor: '#1f0f3d',
-      accentColor: '#FF2D7B',
-      textColor: '#fde6f0',
-      cardBg: '#2d1644',
-      eurovisionMode: true,
-      lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
-      pauseBackgroundUrl: '/themes/eurovision-bg-2.jpg',
-      phaseIntroBackgroundUrl: '/themes/eurovision-bg-2.jpg',
-      logoUrl: '/themes/eurovision-logo.jpg',
-      welcomeText: {
-        de: 'Bonsoir Europe',
-        en: 'Good evening Europe',
-      },
-      phaseNames: {
-        de: ['Halbfinale 1', 'Halbfinale 2', 'Finale'],
-        en: ['Semi-Final 1', 'Semi-Final 2', 'Grand Final'],
-      },
-      preferredAvatarSetId: 'esc',
-    },
+    // 2026-05-07: Theme-Block aus shared/eurovisionTheme.ts. Kanonische
+    // Quelle — Backend mergt diesen Block beim DB-Read auch in stale
+    // Drafts ein, damit Wolf nie manuell reparieren muss.
+    theme: { ...EUROVISION_THEME },
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

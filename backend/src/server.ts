@@ -86,6 +86,7 @@ import {
 import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
+import { EUROVISION_THEME, isEurovisionDraftTitle, hasEurovisionTheme } from '../../shared/eurovisionTheme';
 import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
@@ -8644,6 +8645,29 @@ app.post('/api/qq/drafts', async (req, res) => {
   res.json(draft);
 });
 
+// 2026-05-07 (Wolf-Bug 'Beamer ist nicht im Eurovision-Design'): Auto-Heal
+// fuer ESC-Drafts, die frueh in der Session erstellt wurden bevor das Theme-
+// Template `eurovisionMode` + alle Bilder/Welcome-Texte hatte. Wenn der Title
+// 'Eurovision' enthaelt aber `theme.eurovisionMode` fehlt, mergt der Server
+// das kanonische Theme aus shared/eurovisionTheme.ts ein und persistiert.
+// Damit muss Wolf nie manuell repairen.
+async function autoHealEurovisionDraft(draft: any): Promise<any> {
+  if (!draft) return draft;
+  if (!isEurovisionDraftTitle(draft.title)) return draft;
+  if (hasEurovisionTheme(draft.theme)) return draft;
+  const healed = { ...draft, theme: { ...(draft.theme ?? {}), ...EUROVISION_THEME } };
+  if (await ensureDraftDbConnection()) {
+    try {
+      await saveQQDraftToDB(healed);
+      cache.del('qqDrafts');
+      console.log(`[esc-heal] Eurovision-Theme auf Draft "${draft.title}" (${draft.id}) angewendet.`);
+    } catch (err) {
+      console.error('[esc-heal] persist failed:', err);
+    }
+  }
+  return healed;
+}
+
 app.get('/api/qq/drafts/:id', async (req, res) => {
   // Legacy qq-sample-* Drafts wurden 2026-04-27 ersetzt — direkt 404.
   if (isLegacySampleDraft(req.params.id)) {
@@ -8651,11 +8675,11 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
   }
   if (await ensureDraftDbConnection()) {
     const draft = await getQQDraftFromDB(req.params.id);
-    if (draft) return res.json(draft);
+    if (draft) return res.json(await autoHealEurovisionDraft(draft));
   }
   const draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
-  res.json(draft);
+  res.json(await autoHealEurovisionDraft(draft));
 });
 
 app.put('/api/qq/drafts/:id', async (req, res) => {

@@ -3804,11 +3804,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { lang
               alt="Eurovision Song Contest"
               draggable={false}
                 style={{
-                marginTop: 'clamp(12px, 1.8vh, 26px)',
-                height: 'clamp(60px, 9vh, 130px)',
+                // 2026-05-07 (Wolf 'logo hier groesser'): Welcome-Page-Logo unter
+                // dem CozyQuiz-Wordmark deutlich prominenter. 60-130 -> 130-260.
+                marginTop: 'clamp(18px, 2.4vh, 36px)',
+                height: 'clamp(130px, 18vh, 260px)',
                 width: 'auto',
-                borderRadius: 16,
-                boxShadow: '0 0 30px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.4)',
+                borderRadius: 24,
+                boxShadow: '0 0 44px rgba(236,72,153,0.55), 0 6px 22px rgba(0,0,0,0.5)',
                 animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
                 opacity: 0,
               }}

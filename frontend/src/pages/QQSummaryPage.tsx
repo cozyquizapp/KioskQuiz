@@ -70,7 +70,12 @@ const T = {
   pickOther:     { de: '\u21A9 anderes Team w\u00E4hlen', en: '\u21A9 pick another team' },
 
   yourNumbers:   { de: 'Eure Zahlen', en: 'Your numbers' },
-  largestArea:   { de: 'Gr\u00F6\u00DFtes Gebiet', en: 'Largest area' },
+  // 2026-05-07 (Wolf-Bug 'GROESSTES GEBIET 17, FELDER 14 \u2014 kommt doof vor
+  // Teilnehmenden'): largestConnected enthaelt Stack-Boni on top des
+  // BFS-Maximums (siehe qqRooms.ts updateTerritories). Bei 14 Feldern + 3
+  // Stack-Bonus = 17 Score \u2014 als 'Gr\u00F6\u00DFtes Gebiet' missverstaendlich.
+  // Label auf 'Punktestand' / 'Score' geaendert \u2014 semantisch ehrlich.
+  largestArea:   { de: 'Punktestand', en: 'Score' },
   fieldsTotal:   { de: 'Felder gesamt', en: 'Fields total' },
   correct:       { de: 'Richtig', en: 'Correct' },
   accuracy:      { de: 'Trefferquote', en: 'Accuracy' },
@@ -344,7 +349,7 @@ export default function QQSummaryPage() {
                   <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
-                    {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {tr('fields', lang)}
+                    {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {lang === 'de' ? 'Pkt' : 'pts'}
                   </div>
                 </button>
               ))}
@@ -400,7 +405,7 @@ export default function QQSummaryPage() {
 
       <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          <Stat label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={tr('fieldsUnit', lang)} accent={selectedTeam.color} />
+          <Stat label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
           <Stat label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
           <Stat label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
           <Stat label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
@@ -446,7 +451,7 @@ export default function QQSummaryPage() {
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{teamDisplayName(t.name, true)}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                  {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>
+                  {t.largestConnected} <span style={{ fontSize: 10 }}>{lang === 'de' ? 'Pkt' : 'pts'}</span>
                 </span>
               </div>
             );
@@ -679,7 +684,7 @@ function Superlatives({ teams, selectedId, lang }: {
       titleDe: 'Territorium-König', titleEn: 'Territory King',
       descDe: 'größtes Cluster', descEn: 'biggest cluster',
       winner: largestSorted[0],
-      metric: `${largestSorted[0].largestConnected} ${lang === 'de' ? 'Felder' : 'fields'}`,
+      metric: `${largestSorted[0].largestConnected} ${lang === 'de' ? 'Punkte' : 'points'}`,
       accent: '#3B82F6',
     });
   }

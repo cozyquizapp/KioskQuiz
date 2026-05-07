@@ -8706,7 +8706,13 @@ app.get('/api/qq/results', async (_req, res) => {
 // QQ Leaderboard — aggregated wins + recent games
 app.get('/api/qq/leaderboard', async (_req, res) => {
   try {
-    const results = await getQQGameResults(200);
+    const allResults = await getQQGameResults(200);
+    // 2026-05-07 (Wolf 'ESC-Teams sollen nicht in den All-Tabellen erscheinen'):
+    // Eurovision-Edition-Spiele werden weiterhin in der DB persistiert
+    // (Summary funktioniert per roomCode-Lookup), aber aus den aggregierten
+    // Leaderboard-/Recent-Tabellen rausgefiltert. So bleibt die Pub-Quiz-
+    // Stats-Liste sauber, ohne dass Wolf manuell resetten muss.
+    const results = allResults.filter((r: any) => !r?.eurovisionMode);
     const wins: Record<string, number> = {};
     const gamesPlayed: Record<string, number> = {};
     // 2026-04-28: pro Name auch avatarId + lastPlayedAt mitspeichern, damit

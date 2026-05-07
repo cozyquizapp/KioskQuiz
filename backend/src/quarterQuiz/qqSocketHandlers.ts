@@ -147,12 +147,17 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     }
   }
 
+  // 2026-05-07 (Wolf 'ESC-Teams sollen nicht in den All-Tabellen erscheinen'):
+  // eurovisionMode-Flag aus dem Theme persistieren — Leaderboard-Endpoint
+  // filtert es spaeter raus, Summary nutzt es nicht (per-roomCode-Lookup).
+  const eurovisionMode = !!(room.theme as any)?.eurovisionMode;
   const result = {
     id: `qqr-${room.roomCode}-${Date.now().toString(36)}`,
     draftId: room.draftId ?? null,
     draftTitle: room.draftTitle ?? 'Unbekannt',
     roomCode: room.roomCode,
     playedAt: Date.now(),
+    eurovisionMode,
     teams: teamList.map((t: any) => ({
       id: t.id,
       name: t.name,

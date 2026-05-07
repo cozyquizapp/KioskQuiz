@@ -2456,14 +2456,19 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CONFETTI_COLORS = ['#F59E0B', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', '#F472B6', '#FCD34D', '#34D399'];
+// 2026-05-07 (Wolf 'mehr Pink+Blau, Set E'): ESC-Confetti-Palette — nur Pink,
+// Blau, Lila + helle Akzente. Trifft GameOver-Recap und Winner-Layout, der
+// Climax-Moment im Eurovision-Quiz wirkt dadurch geschlossen ESC-coloriert.
+const CONFETTI_COLORS_ESC = ['#FF2D7B', '#3B82F6', '#A78BFA', '#EC4899', '#60A5FA', '#C084FC', '#F472B6', '#fde6f0'];
 const CONFETTI_COUNT = 50;
 
-function ConfettiOverlay() {
+function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) {
+  const palette = eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS;
   const [particles] = useState(() =>
     Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      color: palette[i % palette.length],
       delay: Math.random() * 0.8,
       duration: 1.8 + Math.random() * 1.4,
       size: 6 + Math.random() * 6,
@@ -4375,6 +4380,7 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
         speakMs={speakMs}
         exitMs={exitMs}
         tailSide="left"
+        eurovisionMode={eurovisionMode}
       />
       {/* 2026-05-07 v3 (Wolf '6 daumen-Posen, zwinkern wenn ein Team
           reinkommt'): mode 'winken' → 'daumen' (Daumen-hoch-Wolf statt
@@ -5275,7 +5281,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
   const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
-  const color = QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
+  // 2026-05-07 (Wolf 'mehr Pink+Blau im ESC, Set B+F'): im eurovisionMode
+  // alle PhaseIntro-Akzente (Title-Glow, Round-Pille, Phasen-Linie, Wolf-
+  // Drop-Shadow, Fireflies) auf ESC-Pink ziehen statt der Phase-Standardfarbe
+  // (gold/lila/grün rotierend). Dadurch wirkt 'Halbfinale 1/2/Finale'
+  // konsistent in der ESC-Identitaet.
+  const isEsc = !!s.theme?.eurovisionMode;
+  const color = isEsc ? '#FF2D7B' : QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -5475,7 +5487,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   }, [s.gamePhaseIndex, hasRoundTransition]);
 
   const prevIdx = s.gamePhaseIndex - 1;
-  const prevColor = QQ_PHASE_COLORS[Math.max(0, prevIdx - 1) % 3];
+  // 2026-05-07: prevColor auch ESC-Pink, damit waehrend Round-Transition
+  // kein Farbwechsel stattfindet (Phase-Color cycelt nicht im ESC-Mode).
+  const prevColor = isEsc ? '#FF2D7B' : QQ_PHASE_COLORS[Math.max(0, prevIdx - 1) % 3];
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
   const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
 
@@ -5579,16 +5593,25 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
         <>
-          {/* Round progress pill — Farbe + Text transitionen von prev auf new */}
+          {/* Round progress pill — Farbe + Text transitionen von prev auf new.
+              2026-05-07 (Wolf 'mehr Pink+Blau, Set F'): im ESC-Mode Pille mit
+              Pink→Blau-Gradient-BG + zweifarbiger Border statt monochrom. */}
           <div style={{
             padding: '8px 24px', borderRadius: 999,
-            background: `${displayColor}18`, border: `2px solid ${displayColor}44`,
+            background: isEsc
+              ? 'linear-gradient(135deg, rgba(255,45,123,0.20) 0%, rgba(59,130,246,0.20) 100%)'
+              : `${displayColor}18`,
+            border: isEsc
+              ? '2px solid rgba(255,45,123,0.55)'
+              : `2px solid ${displayColor}44`,
             fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900,
-            color: `${displayColor}cc`, letterSpacing: '0.1em',
+            color: isEsc ? '#fde6f0' : `${displayColor}cc`,
+            letterSpacing: '0.1em',
             marginBottom: 28,
             animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
             transition: 'background 500ms ease, border-color 500ms ease, color 500ms ease',
             position: 'relative', zIndex: 5,
+            boxShadow: isEsc ? '0 0 18px rgba(255,45,123,0.25)' : 'none',
           }}>
             {lang === 'de'
               ? `Runde ${displayGpi} von ${s.totalPhases}`
@@ -12453,7 +12476,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {/* Confetti overlay on correct answer (delayed to sync with winner) */}
           {revealed && s.correctTeamId && showUnifiedWinner && (
             <div style={{ animation: 'contentReveal 0.01s var(--qq-ease-pop-fast) 0.8s both' }}>
-              <ConfettiOverlay />
+              <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
             </div>
           )}
 
@@ -13429,9 +13452,18 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
           <div style={{
             padding: 'clamp(20px, 2.6vh, 32px) clamp(28px, 3.2vw, 44px)', borderRadius: 20,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
-            border: '2px solid rgba(251,191,36,0.4)',
-            boxShadow: '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+            // 2026-05-07 (Wolf 'Comeback-Step-0 translucent in ESC'): Pink-
+            // Gradient mit ~68 % Opacity damit das ESC-Heart-BG durchscheint.
+            // Normaler Mode behaelt den warmen Gold-Glass-Look.
+            background: s.theme?.eurovisionMode
+              ? 'linear-gradient(135deg, rgba(45,22,68,0.72), rgba(31,15,61,0.62))'
+              : 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
+            border: s.theme?.eurovisionMode
+              ? '2px solid rgba(255,45,123,0.55)'
+              : '2px solid rgba(251,191,36,0.4)',
+            boxShadow: s.theme?.eurovisionMode
+              ? '0 0 32px rgba(255,45,123,0.22), 0 6px 18px rgba(0,0,0,0.4)'
+              : '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
             textAlign: 'center',
             // 2026-05-07 (Layout-Audit): 900 → 1100, sonst sitzt die Mechanik-Card
             // schmaler als der COMEBACK-Title darüber → wirkt zentriert-zu-eng.
@@ -13651,7 +13683,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           pointerEvents: 'none',
           animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.85s both',
         }}>
-          <WolfUeberraschtWithBubble lang={lang === 'de' ? 'de' : 'en'} />
+          <WolfUeberraschtWithBubble lang={lang === 'de' ? 'de' : 'en'} eurovisionMode={s.theme?.eurovisionMode} />
         </div>
       )}
     </div>
@@ -13663,7 +13695,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // ueberrascht-Mode konstant offen (kein Flap), deshalb keine
 // speaking-Gate — die Bubble ist rein 'Beifall-Reaktion' auf den
 // Comeback-Drama-Moment.
-function WolfUeberraschtWithBubble({ lang }: { lang: 'de' | 'en' }) {
+function WolfUeberraschtWithBubble({ lang, eurovisionMode }: { lang: 'de' | 'en'; eurovisionMode?: boolean }) {
   const slogans: Slogan[] = lang === 'de'
     ? [
         { text: 'Was?!', mouths: 1 },
@@ -13703,6 +13735,7 @@ function WolfUeberraschtWithBubble({ lang }: { lang: 'de' | 'en' }) {
         enterMs={enterMs}
         speakMs={speakMs}
         exitMs={exitMs}
+        eurovisionMode={eurovisionMode}
       />
       <AnimatedCozyWolf widthCss="clamp(120px, 12vw, 180px)" mode="ueberrascht" />
     </div>
@@ -13855,6 +13888,7 @@ function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
         enterMs={enterMs}
         speakMs={speakMs}
         exitMs={exitMs}
+        eurovisionMode={eurovisionMode}
       />
       <AnimatedCozyWolf
         widthCss={widthCss}
@@ -13873,13 +13907,16 @@ function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
 // (Dreieck), Stroke folgt aber nur dem V (nicht der oberen Linie).
 // Dadurch ueberlappt sich die obere Kante der Tail-Fuellung mit der
 // Bubble-Bottom-Border, und die V-Stroke-Farbe matcht die Bubble-Border.
-function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left' }: {
+function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left', eurovisionMode }: {
   text: string;
   bubbleKey: number | string;
   enterMs: number;
   speakMs: number;
   exitMs: number;
   tailSide?: 'left' | 'right';
+  /** 2026-05-07 (Wolf 'mehr Pink+Blau, Set D'): wenn true, Bubble in ESC-
+   *  Palette — Pink-Lila-BG, Pink-zu-Blau-Border, helles Rosa-Text. */
+  eurovisionMode?: boolean;
 }) {
   const totalLifeMs = enterMs + speakMs + exitMs;
   return (
@@ -13894,25 +13931,28 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
         // automatisch auf 2 Zeilen.
         minWidth: 80,
         maxWidth: 320,
-        background: 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
-        border: '2px solid rgba(251,191,36,0.6)',
+        background: eurovisionMode
+          ? 'linear-gradient(140deg, rgba(45,22,68,0.94) 0%, rgba(31,15,61,0.94) 100%)'
+          : 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
+        border: eurovisionMode
+          ? '2px solid rgba(255,45,123,0.7)'
+          : '2px solid rgba(251,191,36,0.6)',
         borderRadius: 20,
         padding: '10px 18px',
         fontSize: 'clamp(14px, 1.45vw, 20px)',
         fontWeight: 800,
         lineHeight: 1.25,
         letterSpacing: '0.005em',
-        color: '#FDE68A',
+        color: eurovisionMode ? '#fde6f0' : '#FDE68A',
         textAlign: 'center',
         // Soft inner highlight + ambient glow
         // 2026-05-06 v5: backdrop-filter raus — beim Bounce-In skaliert die
         // Bubble (1.02), der Blur muss pro Frame neu rechnen, und magnifiziert
         // jede minimale Aenderung im BG (z.B. Wolf-Halo) zu sichtbarem Flicker.
         // Bubble hat genug visuelle Tiefe ueber Gradient+Border+Shadow ohne Blur.
-        boxShadow:
-          '0 8px 22px rgba(0,0,0,0.45), ' +
-          '0 0 18px rgba(251,191,36,0.18), ' +
-          'inset 0 1px 0 rgba(255,231,170,0.10)',
+        boxShadow: eurovisionMode
+          ? '0 8px 22px rgba(0,0,0,0.45), 0 0 22px rgba(255,45,123,0.30), inset 0 1px 0 rgba(255,180,210,0.12)'
+          : '0 8px 22px rgba(0,0,0,0.45), 0 0 18px rgba(251,191,36,0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
         // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
         // sind relativ zu totalLifeMs (CSS percentage).
         animation: `qqWolfBubbleLife ${totalLifeMs}ms cubic-bezier(0.34,1.56,0.64,1) both`,
@@ -13941,8 +13981,8 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
       >
         <path
           d="M 0 0 L 11 13 L 22 0"
-          fill="rgb(33,24,12)"
-          stroke="rgba(251,191,36,0.6)"
+          fill={eurovisionMode ? 'rgb(38,18,57)' : 'rgb(33,24,12)'}
+          stroke={eurovisionMode ? 'rgba(255,45,123,0.7)' : 'rgba(251,191,36,0.6)'}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="butt"
@@ -14058,10 +14098,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const cardBg = s.theme?.eurovisionMode
     ? 'linear-gradient(180deg, rgba(45,22,68,0.72) 0%, rgba(31,15,61,0.62) 100%)'
     : COZY_CARD_BG;
-  // Mode-spezifische Akzentfarbe — preGame: Lagerfeuer-Gold, Pause: Cozy-Lavender
-  const modeAccent = mode === 'preGame' ? '#FBBF24' : '#A78BFA';
-  const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)';
-  const modeGlow = mode === 'preGame' ? 'rgba(251,191,36,0.28)' : 'rgba(167,139,250,0.28)';
+  // Mode-spezifische Akzentfarbe — preGame: Lagerfeuer-Gold, Pause: Cozy-Lavender.
+  // 2026-05-07 (Wolf 'mehr Pink + Blau im ESC-Draft, Set A'): im eurovisionMode
+  // beide Modi auf ESC-Pink (#FF2D7B) — trifft Card-Border, Shimmer, Inner-Glow,
+  // Round-Pille, Pause-Dot etc. Hoechster Hebel mit einer Variable.
+  const isEsc = !!s.theme?.eurovisionMode;
+  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? '#FBBF24' : '#A78BFA');
+  const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)');
+  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(251,191,36,0.28)' : 'rgba(167,139,250,0.28)');
   // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
   // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
   // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
@@ -15789,7 +15833,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           background: `radial-gradient(ellipse at center, ${teamColor}33 0%, transparent 60%)`,
           transition: 'background 0.6s ease',
         }} />
-        <ConfettiOverlay />
+        <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
         <Fireflies color={`${teamColor}55`} />
         {s.theme?.eurovisionMode && <EurovisionHearts />}
 
@@ -15937,7 +15981,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       }} />
 
       {/* Confetti */}
-      <ConfettiOverlay />
+      <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
       <Fireflies color={`${winnerColor}55`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
@@ -16287,6 +16331,7 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
         speakMs={speakMs}
         exitMs={exitMs}
         tailSide="right"
+        eurovisionMode={troeteBoost}
       />
       {/* 2026-05-07 (Wolf): mirror=true → Wolf schaut nach links zur Buehnen-
           Mitte statt aus dem Bild raus. Groesse ~30% reduziert (90-140 → 60-100)

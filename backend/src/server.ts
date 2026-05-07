@@ -9109,6 +9109,10 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
       phases: hit.phases,
       teams: hit.teams ?? [],
       funnyAnswers: hit.funnyAnswers ?? [],
+      // 2026-05-07: avatarSetId + avatarSetEmojis durchreichen damit /summary
+      // die korrekten Spieler-Emojis rendert (Wolf-Bug 'summary emojis fehlen').
+      avatarSetId: hit.avatarSetId ?? 'all',
+      avatarSetEmojis: hit.avatarSetEmojis ?? null,
     });
   } catch (err) {
     console.error('QQ summary error:', err);

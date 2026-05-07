@@ -5832,11 +5832,51 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
               {de ? `Ausgeschieden nach ${fails} Fehlversuchen` : `Out after ${fails} fails`}
             </div>
           )}
-          <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
-            {c.phase === 'placement'
-              ? (de ? 'Schaut auf den Beamer — Setzen läuft.' : 'Watch the beamer — placement in progress.')
-              : (de ? 'Auflösung läuft…' : 'Reveal in progress…')}
-          </div>
+          {/* 2026-05-07 (Wolf-Bug): waehrend Connections-Placement (Stapel-
+              Phase nach Finale) zeigt /team jetzt das aktive Team statt nur
+              "Setzen laeuft" — analog zur normalen PlacementCard-Wartesicht. */}
+          {c.phase === 'placement' && (() => {
+            const placingTeam = s.teams.find(t => t.id === s.pendingFor);
+            if (!placingTeam) {
+              return (
+                <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+                  {de ? 'Schaut auf den Beamer — Setzen läuft.' : 'Watch the beamer — placement in progress.'}
+                </div>
+              );
+            }
+            const isMine = placingTeam.id === myTeamId;
+            return (
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                padding: '8px 12px', borderRadius: 12,
+                background: `${placingTeam.color}14`,
+                border: `1px solid ${placingTeam.color}55`,
+              }}>
+                <QQTeamAvatar avatarId={placingTeam.avatarId} teamEmoji={placingTeam.emoji} size={36} style={{
+                  animation: 'tcfloat 2s ease-in-out infinite',
+                }} />
+                <div style={{ fontSize: 14, fontWeight: 900, color: placingTeam.color }}>
+                  {isMine ? (de ? 'Du bist dran!' : 'Your turn!') : placingTeam.name}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
+                  {isMine
+                    ? (de ? 'Stapel-Feld waehlen' : 'Pick a stack cell')
+                    : (de ? 'stapelt gerade' : 'is stacking')}
+                  <AnimatedDots />
+                </div>
+              </div>
+            );
+          })()}
+          {c.phase === 'reveal' && (
+            <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+              {de ? 'Auflösung läuft…' : 'Reveal in progress…'}
+            </div>
+          )}
+          {c.phase === 'done' && (
+            <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+              {de ? 'Finale beendet — Punkte werden vergeben' : 'Finale done — scoring'}
+            </div>
+          )}
         </div>
       </CozyCard>
     );

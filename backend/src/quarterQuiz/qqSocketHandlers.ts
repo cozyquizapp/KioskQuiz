@@ -158,6 +158,10 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
       name: t.name,
       color: t.color,
       avatarId: t.avatarId,
+      // 2026-05-07 (Wolf-Bug 'summary emojis kommen nicht aus dem spiel an'):
+      // emoji-Feld war nie im Save-Snapshot — Summary-Avatare zeigten nur den
+      // Default-Slot-Emoji statt der Spieler-Wahl (z.B. 🐙 statt 🐭).
+      emoji: t.emoji,
       score: scores[t.id] ?? 0,
       totalCells: t.totalCells ?? 0,
       largestConnected: t.largestConnected ?? 0,
@@ -167,6 +171,9 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     phases: room.totalPhases,
     language: room.language,
     avatarSetId: room.avatarSetId ?? 'all',   // 2026-05-04: Phase 2 - Set fuer Summary-Render
+    // 2026-05-07: Server-gewuerfelte Slot-Emojis fuer 'all'-Set (sonst zeigt
+    // die Summary die falschen Slot-Defaults bei reload).
+    avatarSetEmojis: (room as any).avatarSetEmojis ?? null,
     grid: room.grid,
     questionHistory: room.questionHistory,
     funnyAnswers: room.funnyAnswers,

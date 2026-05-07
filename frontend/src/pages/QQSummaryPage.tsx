@@ -18,6 +18,8 @@ type SummaryTeam = {
   name: string;
   color: string;
   avatarId: string;
+  // 2026-05-07: Spieler-gewaehltes Emoji (z.B. 🐙 statt Default-Slot-Emoji).
+  emoji?: string;
   score: number;
   totalCells: number;
   largestConnected: number;
@@ -36,6 +38,8 @@ type Summary = {
   phases: number;
   /** 2026-05-04 — gewaehltes Avatar-Theme zum Zeitpunkt des Spiels (Phase 2). */
   avatarSetId?: string;
+  /** 2026-05-07 — Server-gewuerfelte Slot-Emojis bei 'all'-Set (8 Eintraege). */
+  avatarSetEmojis?: string[] | null;
   teams: SummaryTeam[];
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
 };
@@ -324,7 +328,7 @@ export default function QQSummaryPage() {
   // Auswahl-Screen
   if (!selectedTeam) {
     return (
-      <AvatarSetProvider value={summary.avatarSetId}>
+      <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
       <Shell lang={lang} onLang={changeLang}>
         <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} />
         <Section title={tr('whichTeam', lang)}>
@@ -337,7 +341,7 @@ export default function QQSummaryPage() {
                     cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   }}>
-                  <QQTeamAvatar avatarId={t.avatarId} size={56} />
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
                   <div style={{ fontSize: 11, color: '#cbd5e1' }}>
                     {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {tr('fields', lang)}
@@ -362,7 +366,7 @@ export default function QQSummaryPage() {
   const accuracy = selectedTeam.answered > 0 ? Math.round((selectedTeam.correct / selectedTeam.answered) * 100) : null;
 
   return (
-    <AvatarSetProvider value={summary.avatarSetId}>
+    <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
     <Shell lang={lang} onLang={changeLang}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
@@ -375,7 +379,7 @@ export default function QQSummaryPage() {
           boxShadow: `0 10px 30px ${selectedTeam.color}55`,
           borderRadius: '50%',
         }}>
-          <QQTeamAvatar avatarId={selectedTeam.avatarId} size={112} />
+          <QQTeamAvatar avatarId={selectedTeam.avatarId} teamEmoji={selectedTeam.emoji} size={112} />
         </div>
         <div style={{ fontSize: 13, fontWeight: 900, color: '#fbbf24', letterSpacing: 0.3, textTransform: 'uppercase' }}>
           {placeLabel}
@@ -439,7 +443,7 @@ export default function QQSummaryPage() {
                 border: `1px solid ${isMe ? t.color : 'rgba(255,255,255,0.06)'}`,
               }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', width: 22 }}>{i + 1}.</span>
-                <QQTeamAvatar avatarId={t.avatarId} size={28} />
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : '#e2e8f0' }}>{teamDisplayName(t.name, true)}</span>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{tr('fields', lang)}</span>
@@ -714,7 +718,7 @@ function Superlatives({ teams, selectedId, lang }: {
                 }}>{lang === 'de' ? title.titleDe : title.titleEn}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <QQTeamAvatar avatarId={title.winner.avatarId} size={38} />
+                <QQTeamAvatar avatarId={title.winner.avatarId} teamEmoji={(title.winner as any).emoji} size={38} />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
                   <TeamNameLabel
                     name={title.winner.name}

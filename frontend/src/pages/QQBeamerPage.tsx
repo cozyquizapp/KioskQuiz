@@ -2949,6 +2949,10 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
       let blinkIsZwinker = false;
       let nextTroeteAt = Date.now() + 4000 + Math.random() * 4000;
       let troeteUntil = 0;
+      // 2026-05-07 (Wolf): Tröte-Pose deutlich länger sichtbar — vorher 400ms,
+      // wirkte wie ein Frame. Jetzt 1200ms damit man das Toot wirklich
+      // wahrnimmt. Cycle-Period 6-10s bleibt damit's nicht zu oft kommt.
+      const TROETE_DUR_MS = 1200;
       const tick = () => {
         if (!alive) return;
         const now = Date.now();
@@ -2959,10 +2963,10 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
           return;
         }
         if (now >= nextTroeteAt) {
-          troeteUntil = now + 400;
-          nextTroeteAt = now + 400 + 6000 + Math.random() * 4000;
+          troeteUntil = now + TROETE_DUR_MS;
+          nextTroeteAt = now + TROETE_DUR_MS + 6000 + Math.random() * 4000;
           setCurrentFile('augenauf.troete.jubel');
-          timer = window.setTimeout(tick, 400);
+          timer = window.setTimeout(tick, TROETE_DUR_MS);
           return;
         }
         if (now < blinkUntil) {
@@ -15894,11 +15898,16 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           neben dem Sieger-Team. Nur in der Recap-Tabelle sichtbar.
           2026-05-06 v6 (Wolf 'rechts oben kleiner neben dem Siegerteam'):
           Position bottom-left → top-right; Groesse 120-180 → 90-140;
-          Sprechblase mit Jubel-Slogans (Mund-Sync). */}
+          Sprechblase mit Jubel-Slogans (Mund-Sync).
+          2026-05-07 (Wolf): Wolf war fast gleich gross wie Sieger-Team und
+          versetzt zu hoch oben — kommt nicht ins Spiel rein. Jetzt etwas
+          weiter unten (top:18%-22%) und ~30% kleiner (60-100 statt 90-140),
+          plus mirror=true sodass Wolf nach links zur Mitte schaut statt aus
+          dem Bild raus. Zwischen Sieger-Hero und Rankings positioniert. */}
       <div style={{
         position: 'absolute',
         right: 'clamp(20px, 2vw, 40px)',
-        top: 'clamp(8px, 1.2vh, 18px)',
+        top: 'clamp(140px, 22vh, 220px)',
         zIndex: 7,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.4s both',
@@ -15913,9 +15922,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 // Mund (rechts unten ueber dem Wolf-Maul). Slogans + Mund-Sync analog
 // zu WolfCoModerator.
 function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
+  // 2026-05-07 (Wolf): Tröööt-Slogan ergaenzt — passt zur Tröte-Pose und
+  // gibt ihr einen Sound-Text. Klingt cozy-cartoonig.
   const slogans: Slogan[] = lang === 'de'
     ? [
         { text: 'Glückwunsch!', mouths: 3 },
+        { text: '🎺 Trööööt!', mouths: 5 },
         { text: 'Was für ein Quiz!', mouths: 4 },
         { text: 'Ihr seid wild!', mouths: 3 },
         { text: 'Sauber!', mouths: 2 },
@@ -15923,6 +15935,7 @@ function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
       ]
     : [
         { text: 'Congrats!', mouths: 2 },
+        { text: '🎺 Toooot!', mouths: 4 },
         { text: 'What a quiz!', mouths: 3 },
         { text: 'You\'re wild!', mouths: 2 },
         { text: 'Nice one!', mouths: 2 },
@@ -15961,10 +15974,14 @@ function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
         exitMs={exitMs}
         tailSide="right"
       />
+      {/* 2026-05-07 (Wolf): mirror=true → Wolf schaut nach links zur Buehnen-
+          Mitte statt aus dem Bild raus. Groesse ~30% reduziert (90-140 → 60-100)
+          damit er kleiner ist als der Sieger-Hero und nicht mit ihm konkurriert. */}
       <AnimatedCozyWolf
-        widthCss="clamp(90px, 9vw, 140px)"
+        widthCss="clamp(60px, 6.5vw, 100px)"
         mode="jubel"
         speaking={speakingNow}
+        mirror={true}
       />
     </div>
   );

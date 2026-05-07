@@ -547,6 +547,10 @@ export interface QQTheme {
    *  laeuft. Browser-autoplay-policy: muted by default (kein User-Gesture
    *  noetig). Datei kommt in public/themes/. Default undefined = kein Video. */
   welcomeVideoUrl?: string;
+  /** 2026-05-07 (Wolf 'ich kann dir spezielle bgs fuer smartphones geben'):
+   *  Phone-spezifisches BG (portrait 9:19). Wenn nicht gesetzt, faellt /team
+   *  auf lobbyBackgroundUrl zurueck (mit object-fit cover). */
+  mobileBackgroundUrl?: string;
 }
 
 export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme> = {

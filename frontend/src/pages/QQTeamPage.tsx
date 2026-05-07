@@ -1457,9 +1457,40 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
     : teamTintBg;
 
+  // 2026-05-07 (Wolf 'wenn /team eurovision-spezifisch geht, gerne mit hearts +
+  // bg + pink/blau'): Theme-Toggle wie auf dem Beamer — strikt gated ueber
+  // s.theme?.eurovisionMode, normales /team bleibt cozy.
+  const isEsc = !!s.theme?.eurovisionMode;
+  const escBgUrl = isEsc
+    ? (s.theme?.mobileBackgroundUrl ?? s.theme?.lobbyBackgroundUrl)
+    : null;
+  const escPageBg = isEsc
+    ? 'radial-gradient(ellipse at 50% -10%, rgba(255,45,123,0.18), transparent 55%), '
+      + 'radial-gradient(ellipse at 85% 110%, rgba(59,130,246,0.10), transparent 55%), '
+      + 'radial-gradient(ellipse at 15% 80%, rgba(168,85,247,0.10), transparent 50%), '
+      + '#1f0f3d'
+    : pageBg;
+  const finalPageBg = isEsc ? escPageBg : pageBg;
+
   return (
-    <div style={{ ...darkPage, background: pageBg, transition: 'background 0.8s ease' }} className="qq-team-page">
+    <div style={{ ...darkPage, background: finalPageBg, transition: 'background 0.8s ease' }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
+      {/* 2026-05-07 (Wolf-ESC): Optional BG-Bild als zusaetzliche Atmosphaere-
+          Layer hinter dem Gradient. object-fit cover macht 16:9-Asset auf
+          portrait Phone zoomen — daher mobileBackgroundUrl-Override-Field. */}
+      {isEsc && escBgUrl && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0,
+          backgroundImage: `url(${escBgUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.35,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+      )}
+      {isEsc && <MobileEurovisionHearts />}
       <div style={grainOverlay} />
       <MobileFireflies color={ffColor} />
 
@@ -6582,6 +6613,60 @@ function ReactionPad({
         ))}
       </div>
     </div>
+  );
+}
+
+// ── MobileEurovisionHearts ────────────────────────────────────────────────
+// 2026-05-07 (Wolf 'hearts auf /team waeren geil im eurovision'): mobile-tuned
+// Variante der Beamer-Hearts. Weniger Hearts (5 statt 7), kleinere Sizes
+// passend zu 9:19-Phone-Viewport. Position: fixed mit zIndex 0 hinter Content,
+// damit Hearts nicht ueber Tap-Targets liegen. Float + Pulse wie auf Beamer.
+const MOBILE_ESC_HEARTS = [
+  { x: 8,  y: 14, size: 36, dur: 11, del: 0,   dx:  10, dy: -18, pulseDur: 2.6, pulseDel: 0   },
+  { x: 86, y: 22, size: 30, dur: 13, del: 1.5, dx: -12, dy: -22, pulseDur: 2.9, pulseDel: 0.4 },
+  { x: 12, y: 70, size: 40, dur: 12, del: 0.8, dx:  14, dy: -16, pulseDur: 3.1, pulseDel: 0.8 },
+  { x: 88, y: 60, size: 32, dur: 10, del: 2.2, dx:  -8, dy: -20, pulseDur: 2.5, pulseDel: 0.2 },
+  { x: 50, y: 90, size: 26, dur: 14, del: 3.0, dx:   8, dy: -24, pulseDur: 3.0, pulseDel: 1.1 },
+] as const;
+
+function MobileEurovisionHearts() {
+  return (
+    <>
+      <style>{`
+        @keyframes qqEscPhoneHeartFloat {
+          0%,100% { transform: translate(0,0) rotate(-3deg); }
+          50%     { transform: translate(var(--escPhoneHdx,10px), var(--escPhoneHdy,-18px)) rotate(3deg); }
+        }
+        @keyframes qqEscPhoneHeartPulse {
+          0%,100% { opacity: 0.18; }
+          50%     { opacity: 0.38; }
+        }
+      `}</style>
+      {MOBILE_ESC_HEARTS.map((h, i) => (
+        <div key={i} aria-hidden style={{
+          position: 'fixed',
+          left: `${h.x}%`, top: `${h.y}%`,
+          width: h.size, height: h.size,
+          pointerEvents: 'none', zIndex: 0,
+          ['--escPhoneHdx' as any]: `${h.dx}px`,
+          ['--escPhoneHdy' as any]: `${h.dy}px`,
+          animation: `qqEscPhoneHeartFloat ${h.dur}s ease-in-out ${h.del}s infinite`,
+          willChange: 'transform',
+        }}>
+          <img
+            src="/themes/eurovision-heart-opt.png"
+            alt=""
+            draggable={false}
+            style={{
+              width: '100%', height: '100%', display: 'block',
+              filter: 'drop-shadow(0 0 8px rgba(255,45,123,0.55)) drop-shadow(0 0 3px rgba(255,255,255,0.2))',
+              animation: `qqEscPhoneHeartPulse ${h.pulseDur}s ease-in-out ${h.pulseDel}s infinite`,
+              willChange: 'opacity',
+            }}
+          />
+        </div>
+      ))}
+    </>
   );
 }
 

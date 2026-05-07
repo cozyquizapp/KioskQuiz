@@ -3,10 +3,11 @@
 // einen Replay-Button, kurze Beschreibung, und zeigt das Pattern visuell.
 // Self-contained, keine externen Libraries (alles CSS-Keyframes + vanilla JS).
 import React, { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 // ─── Demo-Card-Wrapper ──────────────────────────────────────────────────────
 function DemoCard({
-  num, title, blurb, children, replay, onReplay,
+  num, title, blurb, children, replay, onReplay, keepAlive = false,
 }: {
   num: number | string;
   title: string;
@@ -14,7 +15,13 @@ function DemoCard({
   children: React.ReactNode;
   replay: number;
   onReplay: () => void;
+  /** 2026-05-07: Wenn true, kein key={replay} auf dem inner-Wrapper —
+   *  Demo behaelt seinen State (z. B. View-Transitions-Demo braucht
+   *  round-state ueber Replays hinweg). Default: false (remount-on-replay
+   *  damit CSS-keyframes neu feuern). */
+  keepAlive?: boolean;
 }) {
+  const innerKey = keepAlive ? undefined : replay;
   return (
     <div style={{
       background: 'linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.45))',
@@ -49,7 +56,7 @@ function DemoCard({
         >▶ Replay</button>
       </div>
       <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.4 }}>{blurb}</div>
-      <div key={replay} style={{
+      <div key={innerKey} style={{
         marginTop: 'auto',
         flex: 1,
         background: 'rgba(0,0,0,0.35)',
@@ -201,14 +208,20 @@ function SlotMachineDemo({ replay }: { replay: number }) {
 function ViewTransitionsDemo({ replay }: { replay: number }) {
   const [round, setRound] = useState(1);
   const supports = typeof document !== 'undefined' && 'startViewTransition' in document;
-  // Replay triggert toggle
+  // Replay triggert toggle. Component wird via DemoCard.keepAlive=true
+  // NICHT remountet, deshalb behaelt round seinen State ueber replays.
   const lastReplayRef = useRef(replay);
   useEffect(() => {
     if (replay === lastReplayRef.current) return;
     lastReplayRef.current = replay;
     const next = round === 1 ? 2 : 1;
     if (supports) {
-      (document as any).startViewTransition(() => setRound(next));
+      // flushSync: React 18+ batcht setState normalerweise async — VT-API
+      // braucht aber synchronen DOM-Update zwischen den beiden Snapshots,
+      // sonst verpasst sie den new-state.
+      (document as any).startViewTransition(() => {
+        flushSync(() => setRound(next));
+      });
     } else {
       setRound(next);
     }
@@ -216,22 +229,34 @@ function ViewTransitionsDemo({ replay }: { replay: number }) {
   return (
     <div style={{
       width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-      ['viewTransitionName' as any]: 'demo-round',
     }}>
-      <div style={{
-        padding: '12px 22px', borderRadius: 10,
-        background: round === 1
-          ? 'linear-gradient(180deg, rgba(59,130,246,0.30), rgba(37,99,235,0.18))'
-          : 'linear-gradient(180deg, rgba(245,158,11,0.30), rgba(217,119,6,0.18))',
-        border: round === 1 ? '2px solid #3B82F6' : '2px solid #F59E0B',
-        fontSize: 24, fontWeight: 900, color: '#fff',
-        letterSpacing: '0.05em',
-      }}>Runde {round}</div>
+      {/* viewTransitionName aufs eigentlich wechselnde Element, nicht den
+          Wrapper — sonst captured VT-API einen Container der sich nicht
+          aendert und animiert nichts visuell. */}
+      <div
+        key={round}
+        style={{
+          padding: '12px 22px', borderRadius: 10,
+          background: round === 1
+            ? 'linear-gradient(180deg, rgba(59,130,246,0.30), rgba(37,99,235,0.18))'
+            : 'linear-gradient(180deg, rgba(245,158,11,0.30), rgba(217,119,6,0.18))',
+          border: round === 1 ? '2px solid #3B82F6' : '2px solid #F59E0B',
+          fontSize: 24, fontWeight: 900, color: '#fff',
+          letterSpacing: '0.05em',
+          ['viewTransitionName' as any]: 'demo-round-pill',
+        }}
+      >Runde {round}</div>
       <div style={{
         fontSize: 11, color: supports ? '#22C55E' : '#EF4444',
         textAlign: 'center', fontWeight: 700,
       }}>
         {supports ? '✓ Browser unterstützt View Transitions API' : '✗ Browser unterstützt kein View Transitions (Fallback aktiv)'}
+      </div>
+      <div style={{
+        fontSize: 10, color: '#64748b',
+        textAlign: 'center', maxWidth: 240,
+      }}>
+        Klick mehrfach auf Replay → Pill wechselt mit Cross-Fade + Scale via nativer Browser-API
       </div>
     </div>
   );
@@ -309,13 +334,14 @@ export default function AnimationsLabPage() {
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
-    { title: 'Slide-Off + Push', blurb: 'Outgoing slidet links raus, Incoming kommt rechts rein mit Spring-Settle. 0.15 s Overlap → nie leerer Bildschirm.', render: (r: number) => <SlideOffPushDemo replay={r} /> },
-    { title: 'Line-Mask Reveal', blurb: 'Quiz-Frage erscheint zeilenweise von unten in overflow:hidden-Maske, stagger 0.08 s. Drama ohne Cringe.', render: (r: number) => <LineMaskRevealDemo /> },
-    { title: 'Spring Pop-Scale', blurb: 'scale 0.85 → 1.02 → 1, opacity 0 → 1. Spring-Easing 260/22. Default-Mount für ALLE Cards.', render: (r: number) => <SpringPopScaleDemo /> },
-    { title: 'Slot-Machine Score', blurb: 'Alte Zahl rollt 3D-vertikal raus, neue rollt rein. Feiert Punkte statt nur Update zu zeigen.', render: (r: number) => <SlotMachineDemo replay={r} /> },
-    { title: 'View Transitions API', blurb: 'Native Browser-API für sanfte Cross-Fade zwischen Views. Baseline seit Oktober 2025 (Chrome/FF/Safari).', render: (r: number) => <ViewTransitionsDemo replay={r} /> },
-    { title: 'Word Stagger Fade-Up', blurb: 'Wörter erscheinen einzeln, stagger 0.05 s. Lesefluss bleibt, Optionen kommen sequenziell.', render: (r: number) => <WordStaggerDemo /> },
-    { title: '🎴 Bonus: 3D Card-Flip', blurb: 'Hearthstone-Style: Y-Rotate 180°, Vorder- und Rückseite. Sparsam — 1× pro Game = magisch, 5× = Cringe.', render: (r: number) => <CardFlipDemo replay={r} /> },
+    { title: 'Slide-Off + Push', blurb: 'Outgoing slidet links raus, Incoming kommt rechts rein mit Spring-Settle. 0.15 s Overlap → nie leerer Bildschirm.', keepAlive: false, render: (r: number) => <SlideOffPushDemo replay={r} /> },
+    { title: 'Line-Mask Reveal', blurb: 'Quiz-Frage erscheint zeilenweise von unten in overflow:hidden-Maske, stagger 0.08 s. Drama ohne Cringe.', keepAlive: false, render: (_r: number) => <LineMaskRevealDemo /> },
+    { title: 'Spring Pop-Scale', blurb: 'scale 0.85 → 1.02 → 1, opacity 0 → 1. Spring-Easing 260/22. Default-Mount für ALLE Cards.', keepAlive: false, render: (_r: number) => <SpringPopScaleDemo /> },
+    { title: 'Slot-Machine Score', blurb: 'Alte Zahl rollt 3D-vertikal raus, neue rollt rein. Feiert Punkte statt nur Update zu zeigen.', keepAlive: false, render: (r: number) => <SlotMachineDemo replay={r} /> },
+    // VT-Demo MUSS keepAlive=true — sonst remountet DemoCard die Component und round-state geht verloren.
+    { title: 'View Transitions API', blurb: 'Native Browser-API für sanfte Cross-Fade zwischen Views. Baseline seit Oktober 2025 (Chrome/FF/Safari).', keepAlive: true,  render: (r: number) => <ViewTransitionsDemo replay={r} /> },
+    { title: 'Word Stagger Fade-Up', blurb: 'Wörter erscheinen einzeln, stagger 0.05 s. Lesefluss bleibt, Optionen kommen sequenziell.', keepAlive: false, render: (_r: number) => <WordStaggerDemo /> },
+    { title: '🎴 Bonus: 3D Card-Flip', blurb: 'Hearthstone-Style: Y-Rotate 180°, Vorder- und Rückseite. Sparsam — 1× pro Game = magisch, 5× = Cringe.', keepAlive: false, render: (r: number) => <CardFlipDemo replay={r} /> },
   ];
 
   return (
@@ -377,8 +403,8 @@ export default function AnimationsLabPage() {
           50%  { transform: rotateY(90deg);  filter: brightness(1.6); }
           100% { transform: rotateY(0deg);   filter: brightness(1); }
         }
-        ::view-transition-old(demo-round) { animation: vtOut 0.35s ease-out both; }
-        ::view-transition-new(demo-round) { animation: vtIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        ::view-transition-old(demo-round-pill) { animation: vtOut 0.35s ease-out both; }
+        ::view-transition-new(demo-round-pill) { animation: vtIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes vtOut { to { opacity: 0; transform: scale(0.9); } }
         @keyframes vtIn  { from { opacity: 0; transform: scale(1.05); } }
       `}</style>
@@ -412,6 +438,7 @@ export default function AnimationsLabPage() {
             blurb={d.blurb}
             replay={replays[i]}
             onReplay={() => replay(i)}
+            keepAlive={d.keepAlive}
           >
             {d.render(replays[i])}
           </DemoCard>

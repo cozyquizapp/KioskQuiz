@@ -11313,21 +11313,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // werden im hpCompact-Modus kleiner. Card-Shift uebernimmt das
             // Platzproblem.
             const cardFontSize = qFontSize;
-            // 2026-05-03 (Wolf-Bug 'Card schiebt sich nicht hoch wenn Antworten
-            // reinkommen'): kontinuierlicher Shift statt 4-Stufen-Sprung. Pro
-            // Chip ~1.3vh, plus Eliminierungs-Reihe-Shift fuer den "❌ Out:"-Block.
-            // 2026-05-07 (Wolf-Bug 'Frage-Card oben abgeschnitten bei vielen
-            // Chips'): Cap deutlich runter (32 → 14vh). Vorheriger Cap konnte
-            // die Card so weit hochschieben dass die obere Frage-Zeile am
-            // Viewport-Rand abgeschnitten wurde. 14vh reicht fuer Trennung
-            // zwischen Card und Chips, ohne Card aus dem sichtbaren Bereich
-            // zu pushen — Card-Stability-Audit hatte den shift-Konflikt mit
-            // bQuestionIn behoben, aber den Overflow-Cap nicht gegen die
-            // tatsaechliche Card-Hoehe abgesichert.
-            const eliminatedCount = (s.hotPotatoEliminated ?? []).length;
-            const chipShiftVh = isHotPotatoActive
-              ? -Math.min(14, hpUsedCount * 0.8 + eliminatedCount * 1.5)
-              : 0;
+            // 2026-05-07 v2 (Wolf-Bug 'Frage-Card faellt bei HotPotato BunteTüte
+            // immernoch nach oben raus, hatte den auftrag schon mal'):
+            // chipShiftVh war Legacy-Code aus 2026-04-29 als die Chips noch
+            // position:absolute waren. Seit 2026-05-05 v3 sitzen Card + Chips
+            // im gleichen Flex-Column-Container (innerJustify=center, gap
+            // dazwischen) — Card+Chips werden als ein Block zentriert. Der
+            // shift bewegt aber NUR die Card-Wrapper-translateY, NICHT die
+            // Chips → Card knallt aus dem Viewport waehrend Chips stabil
+            // bleiben. Loesung: Shift komplett deaktivieren. Centering
+            // erledigt das jetzt natuerlich.
+            const chipShiftVh = 0;
             return (
               // 2026-05-07 (Audit P0): bQuestionIn × transform-shift Konflikt.
               // Vorher: Card hatte parallel `animation: bQuestionIn` + inline

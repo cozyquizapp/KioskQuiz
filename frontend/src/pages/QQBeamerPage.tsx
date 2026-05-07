@@ -3917,19 +3917,23 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  // 2026-05-07 v17: line-height + height fest, damit X
+                  // perfekt vertikal mittig sitzt zwischen CozyQuiz-Letters
+                  // und Logo. lineHeight 1, height 1em fixiert die Box.
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
-                  fontSize: '0.7em',
+                  fontSize: '0.85em',
                   lineHeight: 1,
+                  height: '1em',
                   color: '#fde6f0',
                   opacity: 0,
-                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both, qqStingerXShimmer 2.6s ease-in-out 3.0s infinite',
+                  // qqStingerXShine: Tilt + Multi-Layer-Glow-Pulse, 3.5s cycle.
+                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both, qqStingerXShine 3.5s ease-in-out 3.0s infinite',
                   textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                 }}>×</span>
                 {logoUrl && (
                   /* Wrapper-Span traegt die Hover-Float-Animation; das img selbst
-                     den Pop-In + Drop-Shadow. Zwei separate Elemente damit beide
-                     Animations parallel laufen (sonst overrided animation einander). */
+                     den Pop-In + Drop-Shadow. */
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -3940,7 +3944,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                       alt="Eurovision Song Contest"
                       draggable={false}
                       style={{
-                        height: '1.15em',
+                        // 2026-05-07 v17 (Wolf 'beide schriftarten etwa
+                        // aehnlich gross'): Logo-Bild enthaelt Text +
+                        // Padding/Hintergrund — visible-Letter-Height ist
+                        // ~50 % der Bild-Hoehe. 1.15em -> 1.7em damit die
+                        // 'Eurovision Song Contest'-Buchstaben optisch
+                        // gleich gross sind wie 'COZYQUIZ'.
+                        height: '1.7em',
                         width: 'auto',
                         filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
                         animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
@@ -4083,11 +4093,42 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           70%  { opacity: 1; transform: translateY(-2px) scale(1.06); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        /* 2026-05-07 v15 (Wolf 'X mittig + animieren dass es schimmert'):
-           Pulse-Animation fuer das Stinger-X — Scale + Glow-Pulse. */
+        /* 2026-05-07 v17 (Wolf 'nicer als nur blinken — schau dir mal das gif
+           auf dem desktop an'): mehrstufige Animation mit Tilt + Multi-Layer-
+           Glow-Pulse + leichter Color-Shift Rosa→Weiss. Cycle 3.5s. */
+        @keyframes qqStingerXShine {
+          0%, 100% {
+            transform: scale(1) rotate(0deg);
+            color: #fde6f0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+          }
+          25% {
+            transform: scale(1.10) rotate(8deg);
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5),
+                         0 0 14px rgba(255,255,255,0.85),
+                         0 0 28px rgba(255,45,123,0.55);
+          }
+          50% {
+            transform: scale(1.22) rotate(0deg);
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5),
+                         0 0 28px rgba(255,255,255,0.95),
+                         0 0 56px rgba(255,45,123,0.75),
+                         0 0 96px rgba(168,85,247,0.45);
+          }
+          75% {
+            transform: scale(1.10) rotate(-8deg);
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5),
+                         0 0 14px rgba(255,255,255,0.85),
+                         0 0 28px rgba(255,45,123,0.55);
+          }
+        }
+        /* Backwards-compat alias falls noch wo verwendet. */
         @keyframes qqStingerXShimmer {
-          0%, 100% { transform: scale(1);    text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 6px rgba(255,255,255,0.0); }
-          50%      { transform: scale(1.18); text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.85), 0 0 8px rgba(255,45,123,0.5); }
+          0%, 100% { transform: scale(1);    text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+          50%      { transform: scale(1.18); text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.85); }
         }
         /* Subtle vertical hover-float fuer Stinger-Logos. */
         @keyframes qqStingerHover {
@@ -4805,7 +4846,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           transform: 'translate(-50%, -50%)',
           width: 'clamp(420px, 60vw, 900px)',
           height: 'clamp(180px, 26vh, 320px)',
-          background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.06) 45%, transparent 70%)',
+          // 2026-05-07 v17 (Wolf 'das gleiche hier in die lobby cozyquiz x
+          // eurovision'): Backdrop-Tint folgt dem Theme — Pink in ESC-Mode,
+          // Gold sonst. Standard-CozyQuiz-Mode unveraendert.
+          background: s.theme?.eurovisionMode
+            ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.18) 0%, rgba(255,45,123,0.06) 45%, transparent 70%)'
+            : 'radial-gradient(ellipse at center, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.06) 45%, transparent 70%)',
           filter: 'blur(20px)',
           pointerEvents: 'none',
           zIndex: -1,
@@ -4840,6 +4886,68 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           const customWelcome = de
             ? (s.theme?.welcomeText?.de ?? '')
             : (s.theme?.welcomeText?.en ?? '');
+
+          // 2026-05-07 v17 (Wolf 'das gleiche hier oben hin wie auf der setup
+          // page, schoen das genau gleiche hier in die lobby COZYQUIZ x
+          // Eurovision'): Im ESC-Mode mit Logo + ohne customWelcome rendert
+          // die Lobby den gleichen Stinger wie Welcome/PreGame —
+          // [COZYQUIZ Stinger Fit] × [Eurovision-Logo] mit X-Shine + Hover-
+          // Float. customWelcome (z.B. 'Bonsoir Europe') hat Vorrang und
+          // faellt auf den per-Letter-Wave-Wordmark zurueck.
+          // Standard-CozyQuiz-Mode bleibt komplett unangetastet.
+          if (s.theme?.eurovisionMode && s.theme?.logoUrl && customWelcome.length === 0) {
+            return (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'clamp(18px, 2.2vw, 40px)',
+              }}>
+                {/* CozyQuiz-Wordmark im Stinger-Fit-Font, hover-floatend. */}
+                <span style={{
+                  fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
+                  fontSize: 'clamp(56px, 8.5vw, 130px)',
+                  fontWeight: 400,
+                  letterSpacing: '0.04em',
+                  color: '#FF2D7B',
+                  textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(255,45,123,0.55)',
+                  lineHeight: 0.96,
+                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+                }}>COZYQUIZ</span>
+                {/* X mit qqStingerXShine (Tilt + Multi-Layer-Glow). height:1em
+                    fixiert die vertikale Mittellage. */}
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Nunito', system-ui, sans-serif",
+                  fontWeight: 900,
+                  fontSize: 'clamp(40px, 6vw, 92px)',
+                  lineHeight: 1,
+                  height: '1em',
+                  color: '#fde6f0',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                  animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
+                }}>×</span>
+                {/* Eurovision-Logo — Hoehe so dimensioniert dass die sichtbaren
+                    'Eurovision Song Contest'-Letters optisch ungefaehr gleich
+                    gross sind wie das CozyQuiz-Wordmark. */}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+                }}>
+                  <img
+                    src={s.theme.logoUrl}
+                    alt="Eurovision Song Contest"
+                    draggable={false}
+                    style={{
+                      height: 'clamp(95px, 13vh, 200px)',
+                      width: 'auto',
+                      filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))',
+                    }}
+                  />
+                </span>
+              </div>
+            );
+          }
+
           const wordmark = customWelcome.length > 0 ? customWelcome : 'CozyQuiz';
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
@@ -15338,25 +15446,29 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
             }}>COZYQUIZ</span>
-            {/* X-Shimmer */}
+            {/* 2026-05-07 v17 (Wolf 'X mittig, nicer animiert, eurovision
+                groesser'): height: 1em fixiert vertikale Mittellage; neue
+                qqStingerXShine animation (Tilt + Multi-Layer-Glow). */}
             <span aria-hidden style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'Nunito', system-ui, sans-serif",
               fontWeight: 900,
-              fontSize: 'clamp(28px, 4vw, 60px)',
+              fontSize: 'clamp(36px, 5vw, 76px)',
               lineHeight: 1,
+              height: '1em',
               color: '#fde6f0',
               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-              animation: 'qqStingerXShimmer 2.6s ease-in-out 0.6s infinite',
+              animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
             }}>×</span>
-            {/* Eurovision-Logo */}
+            {/* Eurovision-Logo — Hoehe gebumpt damit 'Eurovision Song Contest'-
+                Letters optisch gleich gross sind wie das CozyQuiz-Wordmark. */}
             <span style={{ display: 'inline-flex', alignItems: 'center', animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite' }}>
               <img
                 src={s.theme.logoUrl}
                 alt="Eurovision Song Contest"
                 draggable={false}
                 style={{
-                  height: 'clamp(60px, 8vh, 120px)',
+                  height: 'clamp(80px, 11vh, 170px)',
                   width: 'auto',
                   filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
                 }}

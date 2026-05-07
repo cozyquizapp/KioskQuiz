@@ -3623,7 +3623,12 @@ function SetupView({
       .then(d => {
         if (cancelled || !d) return;
         setDraftSoundConfig(d.soundConfig ?? {});
-        const preferredSet = d.theme?.preferredAvatarSetId;
+        // 2026-05-07: Auto-Avatar-Set per Draft-Praeferenz. Fallback: bei
+        // theme.eurovisionMode auch ohne explizites preferredAvatarSetId
+        // auf 'esc' wechseln — deckt alte Demo-Drafts ab die VOR meinem
+        // Template-Update via Button erstellt wurden.
+        const preferredSet = d.theme?.preferredAvatarSetId
+          || (d.theme?.eurovisionMode ? 'esc' : undefined);
         if (preferredSet && preferredSet !== s.avatarSetId) {
           emit('qq:setAvatarSet', { roomCode, avatarSetId: preferredSet });
         }

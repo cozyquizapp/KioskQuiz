@@ -75,7 +75,7 @@
   --cat-stimmts: #72ac78;
   --cat-cheese: #e2a9f1;
   --cat-gemischte: #d85f58;
-  --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font: 'Twemoji Country Flags', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   /* 2026-05-07: 'Twemoji Country Flags' an erster Stelle — durch unicode-range
      greift der Font NUR fuer Flag-Codepoints, alle anderen Glyphen kommen aus
      'Nunito'/'Geist'/system-ui. Ergibt Windows einheitliche Flagen-Darstellung. */

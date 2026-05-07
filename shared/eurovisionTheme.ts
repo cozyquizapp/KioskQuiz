@@ -12,6 +12,13 @@ export const EUROVISION_THEME: QQTheme = {
   textColor: '#fde6f0',
   cardBg: '#2d1644',
   eurovisionMode: true,
+  // 2026-05-07 v19 (Wolf 'pack mal testweise stinger fit als main font in
+  // die eurovision edition, als test'): Brand-Font global propagieren via
+  // theme.fontFamily — wird von 5 fontFam-Stellen im Beamer auf root-divs
+  // gesetzt, vererbt sich auf alle nicht-explizit-gesetzten Children.
+  // Stinger Fit hat NUR weight 400 — fontWeight 800/900 in der UI fallen
+  // auf synthetic bold. Bei zu schlechter Lesbarkeit zurueckdrehen.
+  fontFamily: 'Stinger Fit',
   // 2026-05-07 v8 (Wolf-Klarstellung mit Screenshot 'nur herz ist okay, nicht
   // das mit der 7 und dem herz'): bg-1.png hat das 70-Jubilaeums-Logo
   // eingebrannt — das war Wolfs '7'! Korrektur: bg-1 raus, 4.png (heart-only,

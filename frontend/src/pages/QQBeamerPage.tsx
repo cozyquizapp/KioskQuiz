@@ -3610,6 +3610,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
     return () => window.clearTimeout(t);
   }, [hasIntroVideo, welcomeVideoUrl]);
   const cascadeReady = !hasIntroVideo || videoEnded;
+  // 2026-05-07 v9 (Wolf 'in der lobby hast du gelb fuer den text? wieso?'):
+  // Der Welcome-Cascade hat sein eigenes Farb-Schema in Gold (Subtitle,
+  // Goldlinien, Ambient-Glow, Sunrise, Fireflies). Mein Pink-Pass hatte das
+  // uebersehen — jetzt im eurovisionMode auf ESC-Pink/Lila gemappt.
+  const accentHex     = eurovisionMode ? '#FF2D7B' : '#fbbf24';
+  const accentRgb     = eurovisionMode ? '255,45,123' : '251,191,36';
+  const accentSoftHex = eurovisionMode ? '#fde6f0' : '#fde68a';
+  const accentWarmHex = eurovisionMode ? '#C084FC' : '#fed7aa'; // accent-2 fuer Fireflies-Variation
   // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
   //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
   //             letter-spacing zoomt auf normal, gold-glow.
@@ -3706,7 +3714,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
       <div aria-hidden style={{
         position: 'absolute', top: 0, left: '-30%',
         width: '60%', height: '100%',
-        background: 'linear-gradient(115deg, transparent 35%, rgba(251,191,36,0.18) 48%, rgba(255,255,255,0.22) 50%, rgba(251,191,36,0.18) 52%, transparent 65%)',
+        background: `linear-gradient(115deg, transparent 35%, rgba(${accentRgb},0.18) 48%, rgba(255,255,255,0.22) 50%, rgba(${accentRgb},0.18) 52%, transparent 65%)`,
         animation: 'qqIntroEntrySweep 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) 0.1s both',
         pointerEvents: 'none', zIndex: 1,
         filter: 'blur(2px)',
@@ -3716,7 +3724,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         position: 'absolute', left: '50%', top: '40%',
         width: '95vmin', height: '55vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+        background: eurovisionMode
+          ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.20) 0%, rgba(168,85,247,0.10) 38%, transparent 68%)'
+          : 'radial-gradient(ellipse at center, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
         filter: 'blur(34px)',
         animation: 'qqIntroAmbientPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
@@ -3730,7 +3740,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           Jetzt: qqIntroSunrise 1.6s, 40% peak opacity 0.7 → warm und ruhig. */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(251,191,36,0.06) 65%, transparent 80%)',
+        background: eurovisionMode
+          ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.42) 0%, rgba(168,85,247,0.18) 38%, rgba(59,130,246,0.06) 65%, transparent 80%)'
+          : 'radial-gradient(ellipse at center, rgba(251,191,36,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(251,191,36,0.06) 65%, transparent 80%)',
         opacity: 0,
         transformOrigin: 'center',
         animation: 'qqIntroSunrise 1.6s cubic-bezier(0.16, 0.84, 0.44, 1) 1.4s both',
@@ -3745,8 +3757,8 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           position: 'absolute',
           left: `${f.left}%`, top: `${f.top}%`,
           width: f.size * 1.8, height: f.size * 1.8, borderRadius: '50%',
-          background: i % 3 === 0 ? '#fde68a' : i % 3 === 1 ? '#fbbf24' : '#fed7aa',
-          boxShadow: '0 0 24px rgba(251,191,36,0.85), 0 0 6px rgba(255,255,255,0.7)',
+          background: i % 3 === 0 ? accentSoftHex : i % 3 === 1 ? accentHex : accentWarmHex,
+          boxShadow: `0 0 24px rgba(${accentRgb},0.85), 0 0 6px rgba(255,255,255,0.7)`,
           opacity: 0,
           animation: `qqIntroFireflyBurst 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) ${1.5 + (i % 6) * 0.04}s both`,
           pointerEvents: 'none',
@@ -3759,8 +3771,8 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           position: 'absolute',
           left: `${f.left}%`, top: `${f.top}%`,
           width: f.size, height: f.size, borderRadius: '50%',
-          background: i % 2 ? '#fbbf24' : '#fde68a',
-          boxShadow: '0 0 10px rgba(251,191,36,0.55), 0 0 2px rgba(255,255,255,0.4)',
+          background: i % 2 ? accentHex : accentSoftHex,
+          boxShadow: `0 0 10px rgba(${accentRgb},0.55), 0 0 2px rgba(255,255,255,0.4)`,
           opacity: 0.65,
           animation: `qqIntroFireflyDrift ${f.dur}s ease-in-out ${f.delay}s infinite`,
           pointerEvents: 'none',
@@ -3781,9 +3793,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           display: 'inline-flex',
           fontSize: 'clamp(15px, 1.6vw, 24px)', fontWeight: 900,
           letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: '#fbbf24',
+          color: accentHex,
           opacity: 0.92,
-          textShadow: '0 0 28px rgba(251,191,36,0.55), 0 0 8px rgba(251,191,36,0.35)',
+          textShadow: `0 0 28px rgba(${accentRgb},0.55), 0 0 8px rgba(${accentRgb},0.35)`,
         }} aria-label={welcome}>
           {Array.from(welcome).map((ch, i) => (
             <span key={i} style={{
@@ -3804,9 +3816,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           {/* Goldlinie OBEN — zieht sich von Mitte nach außen aus (0.9s delay). */}
           <div style={{
             width: 'clamp(380px, 50vw, 760px)', height: 2, borderRadius: 999,
-            background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.6) 25%, #fbbf24 50%, rgba(251,191,36,0.6) 75%, transparent 100%)',
+            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
             backgroundSize: '200% 100%',
-            boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+            boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
             transformOrigin: 'center',
             animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
             opacity: 0,
@@ -3826,7 +3838,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               // 2026-05-05 (Shadow-Audit #1): 3 Layer → 2 Layer.
               // Tight glow + wide ambient halo reicht — der dritte 130px-Layer
               // war redundant (vom Backdrop-Halo eh abgedeckt).
-              textShadow: '0 0 28px rgba(251,191,36,0.65), 0 0 72px rgba(251,191,36,0.28)',
+              textShadow: `0 0 28px rgba(${accentRgb},0.65), 0 0 72px rgba(${accentRgb},0.28)`,
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
               filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',
@@ -3856,9 +3868,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           {/* Goldlinie UNTEN — symmetrisch zur oberen, gleiches expand */}
           <div style={{
             width: 'clamp(380px, 50vw, 760px)', height: 2, borderRadius: 999,
-            background: 'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.6) 25%, #fbbf24 50%, rgba(251,191,36,0.6) 75%, transparent 100%)',
+            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
             backgroundSize: '200% 100%',
-            boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+            boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
             transformOrigin: 'center',
             animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
             opacity: 0,
@@ -3924,8 +3936,8 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             background: 'linear-gradient(180deg, rgba(15,23,42,0.78) 0%, rgba(11,16,28,0.78) 100%)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: '2px solid rgba(251,191,36,0.55)',
-            boxShadow: '0 10px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(251,191,36,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+            border: `2px solid rgba(${accentRgb},0.55)`,
+            boxShadow: `0 10px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(255,255,255,0.06)`,
             color: '#f1f5f9',
             fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
             maxWidth: '60vw',
@@ -3937,7 +3949,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               position: 'absolute', left: -13, top: '50%',
               width: 0, height: 0, transform: 'translateY(-50%)',
               borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
-              borderRight: '14px solid rgba(251,191,36,0.55)',
+              borderRight: `14px solid rgba(${accentRgb},0.55)`,
             }} />
             <div style={{
               position: 'absolute', left: -10, top: '50%',

@@ -17011,32 +17011,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Stapel-Tiles entfernt. Die Cell selbst traegt schon
                     // Goldborder + Goldglow + Hard-Drop — der zusaetzliche
                     // 3-Layer-Ring um den Avatar war redundant.
-                    // 2026-05-07 (Wolf-ESC-Wunsch): bei eurovisionMode + Country-
-                    // Flag-Team die ganze Cell als Flagge fuellen statt Avatar-Disc
-                    // in der Mitte. Macht aus dem Spielfeld ein Country-Battle-Brett.
-                    const flagUrl = s.theme?.eurovisionMode && team.emoji && isCountryFlag(team.emoji)
-                      ? getTwemojiFlagUrl(team.emoji)
-                      : null;
-                    if (flagUrl) {
-                      return (
-                        <img
-                          src={flagUrl}
-                          alt={team.emoji}
-                          draggable={false}
-                          className="qq-fluent-skip"
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: cellRadius,
-                            pointerEvents: 'none',
-                            zIndex: 3,
-                          }}
-                        />
-                      );
-                    }
+                    // 2026-05-07: Cell-Flag-Fill (eurovisionMode) wieder raus —
+                    // Wolf will den countryflags.com-3D-Look, der ist mit
+                    // generischem cover-fill nicht zu erreichen. Ehrliche
+                    // Einschaetzung: flat-Cell mit Avatar-Disc in der Mitte
+                    // ist konsistenter zum Rest der App.
                     return (
                       <div style={{
                         width: avSize, height: avSize, borderRadius: '50%',

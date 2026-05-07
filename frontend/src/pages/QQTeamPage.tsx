@@ -5300,36 +5300,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           2026-05-07 (Live-Test-Bug): Joker-Cells (cell.jokerFormed)
                           zeigten auf /team nichts, /beamer aber schon. Vorrang:
                           Stack > Joker > Avatar (Stack-Bonus auf Joker-Cell
-                          ueberschreibt visuell, weil 🏯 die staerkere Aussage ist).
-                          2026-05-07 (Wolf-ESC): bei eurovisionMode + Country-Flag
-                          die ganze Cell als Flagge fuellen — Country-Battle-Look. */}
-                      {(() => {
-                        const flagUrl = s.theme?.eurovisionMode && team?.emoji && isCountryFlag(team.emoji)
-                          ? getTwemojiFlagUrl(team.emoji)
-                          : null;
-                        if (isStuckCell) return <QQEmojiIcon emoji="🏯"/>;
-                        if (cell.jokerFormed) return <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" />;
-                        if (flagUrl) {
-                          return (
-                            <img
-                              src={flagUrl}
-                              alt={team!.emoji!}
-                              draggable={false}
-                              className="qq-fluent-skip"
-                              style={{
-                                position: 'absolute',
-                                inset: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                borderRadius: 6,
-                              }}
-                            />
-                          );
-                        }
-                        if (team) return <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat />;
-                        return null;
-                      })()}
+                          ueberschreibt visuell, weil 🏯 die staerkere Aussage ist). */}
+                      {isStuckCell
+                        ? <QQEmojiIcon emoji="🏯"/>
+                        : cell.jokerFormed
+                          ? <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" />
+                          : team
+                            ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat />
+                            : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (

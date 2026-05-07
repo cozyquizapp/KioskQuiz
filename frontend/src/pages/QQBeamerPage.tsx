@@ -11037,14 +11037,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const cardFontSize = qFontSize;
             // 2026-05-03 (Wolf-Bug 'Card schiebt sich nicht hoch wenn Antworten
             // reinkommen'): kontinuierlicher Shift statt 4-Stufen-Sprung. Pro
-            // Chip ~1.3vh, capped bei -32vh. Plus: ein bisschen Shift schon
-            // bei wenigen Chips, damit Card ueber dem Antwort-Block steht.
-            // Eliminierungs-Reihe addiert weiteren Shift damit "❌ Out:"-Block
-            // unten nicht ueber Card-Boden ragt (Wolf-Bug 'Scrollleiste
-            // sichtbar wenn jemand ausscheidet').
+            // Chip ~1.3vh, plus Eliminierungs-Reihe-Shift fuer den "❌ Out:"-Block.
+            // 2026-05-07 (Wolf-Bug 'Frage-Card oben abgeschnitten bei vielen
+            // Chips'): Cap deutlich runter (32 → 14vh). Vorheriger Cap konnte
+            // die Card so weit hochschieben dass die obere Frage-Zeile am
+            // Viewport-Rand abgeschnitten wurde. 14vh reicht fuer Trennung
+            // zwischen Card und Chips, ohne Card aus dem sichtbaren Bereich
+            // zu pushen — Card-Stability-Audit hatte den shift-Konflikt mit
+            // bQuestionIn behoben, aber den Overflow-Cap nicht gegen die
+            // tatsaechliche Card-Hoehe abgesichert.
             const eliminatedCount = (s.hotPotatoEliminated ?? []).length;
             const chipShiftVh = isHotPotatoActive
-              ? -Math.min(32, hpUsedCount * 1.3 + eliminatedCount * 2.5)
+              ? -Math.min(14, hpUsedCount * 0.8 + eliminatedCount * 1.5)
               : 0;
             return (
               // 2026-05-07 (Audit P0): bQuestionIn × transform-shift Konflikt.

@@ -3831,52 +3831,89 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
 
           {/* Title — Letter-Cascade mit elastic ScaleIn pro Buchstabe.
               Stagger 0.06s, scale 0.4 → 1.08 → 1. Whole-screen white text mit
-              dichtem Goldglow. */}
+              dichtem Goldglow.
+              2026-05-07 v13 (Wolf 'cozyquiz x eurovision songcontest stinger
+              eingebaut?'): im ESC-Mode ist der Title jetzt eine horizontale
+              Stinger-Row [COZYQUIZ × EUROVISION-LOGO] — alle drei Elemente
+              inline-flex children, Letters cascaden weiter, X poppt nach
+              Letters, Logo poppt nach X. Gemeinsame baseline ueber
+              alignItems:center. */}
           <div
-            aria-label={title}
+            aria-label={eurovisionMode ? `${title} × Eurovision Song Contest` : title}
             style={{
               display: 'inline-flex',
-              // 2026-05-07 v11 (Wolf 'meine brand-font heisst Stinger Fit,
-              // hab sie in /fonts gepackt'): self-hosted Stinger Fit Regular
-              // — kondensiert mit rundlichen Glyphen, exakt der Brand-Look
-              // aus Wolfs CozyWolf-Logo. Letter-Cascade-Animation bleibt
-              // erhalten, nur Glyph-Look wechselt.
+              alignItems: 'center',
+              gap: eurovisionMode ? 'clamp(20px, 2vw, 40px)' : 0,
               fontFamily: eurovisionMode
                 ? "'Stinger Fit', 'Nunito', system-ui, sans-serif"
                 : undefined,
-              fontSize: 'clamp(80px, 12vw, 200px)',
-              fontWeight: eurovisionMode ? 400 : 900, // Stinger Fit hat nur 1 Weight
+              // ESC-Stinger: kompakter font-size (60-140) damit Logo daneben
+              // passt. Non-ESC: unveraendert (80-200) als Solo-Hero.
+              fontSize: eurovisionMode ? 'clamp(60px, 8vw, 140px)' : 'clamp(80px, 12vw, 200px)',
+              fontWeight: eurovisionMode ? 400 : 900,
               letterSpacing: eurovisionMode ? '0.04em' : '0.01em',
               lineHeight: 0.96,
               color: eurovisionMode ? accentHex : '#f8fafc',
-              // 2026-05-05 (Shadow-Audit #1): 3 Layer → 2 Layer.
-              // Tight glow + wide ambient halo reicht — der dritte 130px-Layer
-              // war redundant (vom Backdrop-Halo eh abgedeckt).
               textShadow: `0 0 28px rgba(${accentRgb},0.65), 0 0 72px rgba(${accentRgb},0.28)`,
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
               filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',
             }}
           >
-            {/* Shimmer-Sweep ueber den Title nach Settle */}
-            <span aria-hidden style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.65) 50%, transparent 62%)',
-              backgroundSize: '220% 100%',
-              backgroundPosition: '-120% 0',
-              mixBlendMode: 'screen',
-              pointerEvents: 'none',
-              animation: 'qqIntroTitleShimmer 1.4s cubic-bezier(0.5, 0, 0.5, 1) 2.6s both',
-              clipPath: 'inset(0)', // limit to title-bounds
-            }} />
-            {Array.from(eurovisionMode ? title.toUpperCase() : title).map((ch, i) => (
-              <span key={i} style={{
-                display: 'inline-block',
-                opacity: 0,
-                animation: `qqIntroTitleLetter 0.85s cubic-bezier(0.16, 1.2, 0.3, 1) ${1.6 + i * 0.06}s both`,
-                whiteSpace: 'pre',
-              }}>{ch}</span>
-            ))}
+            {/* CozyQuiz-Wordmark als Letter-Cascade-Container */}
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              {/* Shimmer-Sweep ueber den Wordmark nach Settle */}
+              <span aria-hidden style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.65) 50%, transparent 62%)',
+                backgroundSize: '220% 100%',
+                backgroundPosition: '-120% 0',
+                mixBlendMode: 'screen',
+                pointerEvents: 'none',
+                animation: 'qqIntroTitleShimmer 1.4s cubic-bezier(0.5, 0, 0.5, 1) 2.6s both',
+                clipPath: 'inset(0)',
+              }} />
+              {Array.from(eurovisionMode ? title.toUpperCase() : title).map((ch, i) => (
+                <span key={i} style={{
+                  display: 'inline-block',
+                  opacity: 0,
+                  animation: `qqIntroTitleLetter 0.85s cubic-bezier(0.16, 1.2, 0.3, 1) ${1.6 + i * 0.06}s both`,
+                  whiteSpace: 'pre',
+                }}>{ch}</span>
+              ))}
+            </span>
+            {/* ESC-Stinger: × in Standard-Nunito-Font (Wolf-Wunsch 'X in
+                standard font mit aktueller standard farbe') + Eurovision-
+                Logo-Image. Beide popen NACH dem CozyQuiz-Cascade rein. */}
+            {eurovisionMode && (
+              <>
+                <span aria-hidden style={{
+                  fontFamily: "'Nunito', system-ui, sans-serif",
+                  fontWeight: 900,
+                  fontSize: '0.55em',
+                  color: '#fde6f0',
+                  opacity: 0,
+                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                }}>×</span>
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    alt="Eurovision Song Contest"
+                    draggable={false}
+                    style={{
+                      // Logo-Hoehe relativ zur Title-Font: 1em wuerde 1:1 mit
+                      // Letterhohe matchen, 1.15em macht Logo etwas dominanter.
+                      height: '1.15em',
+                      width: 'auto',
+                      filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
+                      animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+                      opacity: 0,
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
 
           {/* Goldlinie UNTEN — symmetrisch zur oberen, gleiches expand */}
@@ -3890,28 +3927,11 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             opacity: 0,
           }} />
 
-          {/* 2026-05-07 (Wolf-Sidequest): 'EUROVISION EDITION'-Subtitle wenn
-              eurovisionMode aktiv. Pop't nach dem Title-Cascade rein, gleicher
-              Cozy-Spirit aber pink-lila statt gold. Bei vorhandenem logoUrl
-              → Logo-Bild statt Text+Emoji-Pille (brand-stronger). */}
-          {eurovisionMode && (logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="Eurovision Song Contest"
-              draggable={false}
-                style={{
-                // 2026-05-07 v4 (Wolf 'logo deutlich groesser'): clamp(180-340)
-                // -> clamp(260-480). Outline-Wordmark wirkt jetzt dominant
-                // unter dem CozyQuiz-Title.
-                marginTop: 'clamp(18px, 2.4vh, 36px)',
-                height: 'clamp(260px, 32vh, 480px)',
-                width: 'auto',
-                filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
-                animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
-                opacity: 0,
-              }}
-            />
-          ) : (
+          {/* 2026-05-07 v13: Eurovision-Logo-Block unter dem Title entfernt —
+              ist jetzt INSIDE des Title als Teil des CozyQuiz × Eurovision
+              Stingers (siehe oben). Fallback fuer den Fall, dass logoUrl
+              fehlt: kompakte Text-Pille auch im Stinger-Stil rendern. */}
+          {eurovisionMode && !logoUrl && (
             <div style={{
               marginTop: 'clamp(8px, 1.4vh, 20px)',
               padding: '8px 28px', borderRadius: 999,
@@ -3925,7 +3945,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             }}>
               🎤 Eurovision Edition
             </div>
-          ))}
+          )}
         </div>
 
         {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein. */}
@@ -14363,7 +14383,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // Title-marginBottom 28→18, Icon 36-52→30-44, Desc 17-24→15-21, Card-
       // Padding 18/20→13/16, Grid-Gap 16→12 — Panel ~18 % kompakter, untere
       // Inner-Cards beruehren die Outer-Card-Boden-Border nicht mehr.
-      <div style={{ width: 'min(100%, 920px)' }}>
+      // 2026-05-07 v13 (Wolf 'mach das 2x2 grid mittig zentriert + die ueber-
+      // schrift einfach drueber, plus eigene Joker-Grafik'): Panel auf 720
+      // verschmaelert + margin 0 auto. JokerIcon (Spiel-Asset) statt 🃏 Emoji.
+      <div style={{ width: 'min(100%, 720px)', margin: '0 auto' }}>
         <div style={{ fontSize: 'clamp(28px, 3.2vw, 46px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
@@ -14374,23 +14397,33 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           gap: 12,
           textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
-          {howItems.map((it, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-              padding: '13px 16px',
-              borderRadius: 16,
-              background: 'rgba(255,235,200,0.04)',
-              border: '1px solid rgba(255,235,200,0.10)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
-            }}>
-              <span style={{ fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 28px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
-                <div style={{ fontSize: 'clamp(15px, 1.7vw, 21px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
+          {howItems.map((it, i) => {
+            // 2026-05-07: Joker-Mini-Card nutzt JokerIcon-Asset statt 🃏 Emoji.
+            const isJoker = it.title === 'Joker';
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 14,
+                padding: '13px 16px',
+                borderRadius: 16,
+                background: 'rgba(255,235,200,0.04)',
+                border: '1px solid rgba(255,235,200,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
+              }}>
+                {isJoker ? (
+                  <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <JokerIcon i={i} size={42} />
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 28px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
+                  <div style={{ fontSize: 'clamp(15px, 1.7vw, 21px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     )});

@@ -8626,6 +8626,11 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           const rank = idx + 1;
           const isVisible = idx >= revealedMinIdx;
           const hasHits = hitters.length > 0;
+          // 2026-05-07 (Audit P1): Pro Reihe Stagger-Delay, damit bei schnellem
+          // Mod-Klick (mehrere Reihen flippen synchron isVisible=true) die
+          // Reihen kaskadieren statt synchron zu poppen. Bottom-up Reveal:
+          // hoechster Index (rank 5) zuerst, niedrigster Index (rank 1) zuletzt.
+          const rowDelay = (perAnswer.length - 1 - idx) * 0.18;
           const rankGradient = rank === 1
             ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
             : rank === 2
@@ -8651,7 +8656,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                   : '2px solid rgba(148,163,184,0.15)',
                 visibility: isVisible ? 'visible' : 'hidden',
                 animation: isVisible
-                  ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
+                  ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${rowDelay}s both, top5RowGlow 1.2s ease ${0.3 + rowDelay}s both`
                   : 'none',
                 flex: 1,
                 minHeight: 'clamp(64px, 8vh, 92px)',
@@ -8666,7 +8671,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                 fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
                 flexShrink: 0,
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                animation: isVisible ? 'top5RankPop 0.55s var(--qq-ease-bounce) 0.1s both' : 'none',
+                animation: isVisible ? `top5RankPop 0.55s var(--qq-ease-bounce) ${0.1 + rowDelay}s both` : 'none',
                 boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
               }}>
                 #{rank}
@@ -8697,7 +8702,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                       style={{
                         boxShadow: `0 0 16px ${tm.color}55`,
                         animation: isVisible
-                          ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
+                          ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09 + rowDelay}s both`
                           : 'none',
                       }}
                     />
@@ -8711,7 +8716,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, color: '#94a3b8',
                     animation: isVisible
-                      ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both`
+                      ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + rowDelay}s both`
                       : 'none',
                   }}>
                     ✕
@@ -8878,6 +8883,9 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             const rank = idx + 1;
             const isVisible = idx >= revealedMinIdx;
             const hasHits = hitters.length > 0;
+            // 2026-05-07 (Audit P1): siehe Top5 — pro Reihe Stagger-Delay,
+            // damit synchron-flippende Reihen kaskadieren statt synchron poppen.
+            const rowDelay = (perPosition.length - 1 - idx) * 0.18;
             const rankGradient = rank === 1
               ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
               : rank === 2
@@ -8904,7 +8912,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                     : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
-                    ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
+                    ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${rowDelay}s both, top5RowGlow 1.2s ease ${0.3 + rowDelay}s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(64px, 8vh, 92px)',
@@ -8918,7 +8926,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                   fontSize: 'clamp(24px, 2.8vw, 40px)', fontWeight: 900, color: '#fff',
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  animation: isVisible ? 'top5RankPop 0.55s var(--qq-ease-bounce) 0.1s both' : 'none',
+                  animation: isVisible ? `top5RankPop 0.55s var(--qq-ease-bounce) ${0.1 + rowDelay}s both` : 'none',
                   boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
                 }}>
                   #{rank}
@@ -8967,7 +8975,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                         style={{
                           boxShadow: `0 0 14px ${tm.color}55`,
                           animation: isVisible
-                            ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09}s both`
+                            ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09 + rowDelay}s both`
                             : 'none',
                         }}
                       />
@@ -8981,7 +8989,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 900, color: '#94a3b8',
                       animation: isVisible
-                        ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.35s both`
+                        ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + rowDelay}s both`
                         : 'none',
                     }}>
                       ✕

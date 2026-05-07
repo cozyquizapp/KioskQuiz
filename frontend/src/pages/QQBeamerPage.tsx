@@ -4395,26 +4395,38 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           Layer + Depth-Shadow — Sprache jetzt analog Rules-/Cat-Title.
           Continuous qqCatNameWave (-10px translateY) per Buchstabe mit
           Stagger 80ms, startet nach der Entry-Cascade (delay 0.95s + i*0.08). */}
-      {/* 2026-05-07 v2 (Wolf 'der Hintergrund leuchtet auf wie ein Showlight,
-          erst ueber cozy dann ueber quiz'): per-Buchstaben-Cascade hat die
-          Glows (text-shadow halo) der Reihe nach aufgepoppt — wirkte wie
-          wanderndes Showlight. Jetzt: Whole-Word-Entry (alle Buchstaben
-          gleichzeitig fade-in), Wave bleibt aber per-Buchstaben (Wolf
-          mochte die Wellen). */}
+      {/* 2026-05-07 v3 (Wolf 'der Effekt ist rechteckig, sieht abgehakt aus'):
+          Wrapper hatte 2 parallel laufende Animationen (phasePop + Entry),
+          beide haben das rechteckige Wordmark-Bbox skaliert → der text-shadow-
+          Halo skalierte mit, was als rechteckiger 'Showlight' wahrnehmbar war.
+          phasePop raus, nur qqLobbyWordmarkEntry mit reinem Fade. Plus
+          radialer Glow-BG hinter dem Wort fuer Atmosphaere ohne rechteckige
+          Form-Sichtbarkeit. */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both, qqLobbyWordmarkEntry 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) 0.2s both',
+        animation: 'qqLobbyWordmarkEntry 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both',
         paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
+        {/* Radialer Glow-Backdrop hinter dem Wordmark — runde Form, kein
+            rechteckiges Halo. Atmend-langsam pulsierend. */}
+        <div aria-hidden style={{
+          position: 'absolute',
+          left: '50%', top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'clamp(420px, 60vw, 900px)',
+          height: 'clamp(180px, 26vh, 320px)',
+          background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.06) 45%, transparent 70%)',
+          filter: 'blur(20px)',
+          pointerEvents: 'none',
+          zIndex: -1,
+          animation: 'qqLobbyTitleGlow 6s ease-in-out infinite',
+        }} />
         <style>{`
           .cq-wordmark {
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.02em;
             color: #FBBF24;
-            text-shadow:
-              0 0 18px rgba(251,191,36,0.30),
-              0 4px 18px rgba(0,0,0,0.55);
             display: inline-block;
             position: relative;
           }
@@ -4423,8 +4435,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             will-change: transform, opacity;
           }
           @keyframes qqLobbyWordmarkEntry {
-            0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0%   { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes qqLobbyTitleGlow {
+            0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.96); }
+            50%      { opacity: 0.85; transform: translate(-50%, -50%) scale(1.04); }
           }
         `}</style>
         <div
@@ -10434,8 +10450,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
             {/* Question text — vor Reveal voll, beim Reveal kleiner + gedimmt
                 (2026-04-29: damit Reveal-Card flacher wird und das Bild
-                oberhalb sichtbar bleibt). */}
-            <div key={`cheese-${lang}`} style={{
+                oberhalb sichtbar bleibt).
+                2026-05-07 v2 (Wolf 'Buchstaben wiggeln sichtbar zwischen
+                Question und Reveal'): font-size + margin-bottom in der
+                Transition liessen den Text waehrend des Uebergangs neu
+                fliessen → jeder Frame andere Letter-Positionen = Wiggle.
+                Fix: key enthaelt jetzt isCheeseReveal → Re-Mount bei
+                Reveal-Start, neuer Element mit neuer font-size sofort,
+                kein animiertes Resize mehr. Transition raus, nur
+                langFadeIn als Entry-Animation. */}
+            <div key={`cheese-${lang}-${isCheeseReveal ? 'rev' : 'q'}`} style={{
               fontSize: isCheeseReveal
                 ? 'clamp(20px, 2.6vw, 36px)'
                 : (qText.length > 120 ? 'clamp(32px, 4vw, 60px)' : 'clamp(42px, 5.8vw, 84px)'),
@@ -10443,7 +10467,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               color: '#F1F5F9',
               marginBottom: isCheeseReveal ? 8 : 0,
               animation: 'langFadeIn 0.4s ease both',
-              transition: 'opacity 0.4s ease, margin-bottom 0.3s ease, font-size 0.4s ease',
               opacity: isCheeseReveal ? 0.55 : 1,
             }}>
               {lang === 'en' && q.textEn ? q.textEn : q.text}

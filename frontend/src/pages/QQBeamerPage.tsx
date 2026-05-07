@@ -8011,8 +8011,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           </div>
         )}
         <div style={{
+          // 2026-05-07 (Layout-Audit): 1100 -> 1400, weil Hint-Grid darunter
+          // 1280 breit ist und die Frage darueber schmaler wirkte als das Grid.
           fontSize: 'clamp(26px, 3vw, 44px)', fontWeight: 900,
-          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : (q.text || (lang === 'de' ? 'Was verbindet diese Hinweise?' : 'What connects these clues?'))}
         </div>
@@ -13297,7 +13299,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           Flex statt Text-Concatenation damit Blitze als feste Grafik-Anker
           zentriert mit dem Wort sitzen, nicht als variable Buchstaben. */}
       <div style={{
-        fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(28px, 3.6vw, 50px)',
+        // 2026-05-07 (Wolf 'comeback ansicht ist zu klein, viel platz aussen
+        // rum'): post-bam Title von clamp(28-50) auf clamp(56-104) bumpen —
+        // aus 8m Beamer-Distanz gut lesbar, statt mickrig in der Mitte.
+        fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(56px, 6.5vw, 104px)',
         fontWeight: 900,
         color: '#F59E0B', textAlign: 'center',
         textShadow: '0 0 50px rgba(234,179,8,0.55)',
@@ -13413,21 +13418,20 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           sonst Fallback auf Einzel-Team (Legacy-Comeback). */}
       {showTeam && (hl ? hlTeams.length > 0 : !!team) && (
         <div key="team" style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
           position: 'relative', zIndex: 5,
         }}>
           {hl && hlTeams.length > 1 ? (
             <>
-              <div style={{ display: 'flex', gap: 'clamp(18px, 2.4vw, 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: 'clamp(24px, 3vw, 44px)', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {hlTeams.map(tm => (
                   <div key={tm.id} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
                   }}>
-                    {/* Avatar direkt mit Glow — kein Halo-Wrapper, der einen
-                        zweiten Ring um den ohnehin gerimten Avatar erzeugt. */}
-                    <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(120px, 12vw, 180px)'} style={{
-                      boxShadow: `0 0 34px ${tm.color}88, 0 0 80px ${tm.color}33`,
+                    {/* 2026-05-07 (Wolf): Multi-Team Avatare clamp(120-180) -> clamp(170-260). */}
+                    <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(170px, 16vw, 260px)'} style={{
+                      boxShadow: `0 0 44px ${tm.color}88, 0 0 100px ${tm.color}33`,
                     }} />
                     <TeamNameLabel
                       name={tm.name}
@@ -13435,8 +13439,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       shrinkAfter={18}
                       color={tm.color}
                       fontWeight={900}
-                      fontSize="clamp(22px, 2.4vw, 34px)"
-                      style={{ textShadow: `0 0 22px ${tm.color}55`, maxWidth: 240 }}
+                      fontSize="clamp(30px, 3.2vw, 48px)"
+                      style={{ textShadow: `0 0 26px ${tm.color}55`, maxWidth: 320 }}
                     />
                   </div>
                 ))}
@@ -13446,9 +13450,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </>
           ) : team && (
             <>
-              {/* Avatar direkt mit Pulse-Glow — kein Halo-Wrapper. */}
-              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(110px, 11vw, 170px)'} style={{
-                boxShadow: `0 0 42px ${teamColor}88, 0 0 100px ${teamColor}33`,
+              {/* 2026-05-07 (Wolf 'ansicht zu klein, viel platz aussenrum'):
+                  Single-Team Avatar clamp(110-170) -> clamp(180-280). Aus
+                  Zuschauer-Distanz dominant lesbar statt klein in der Mitte. */}
+              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(180px, 17vw, 280px)'} style={{
+                boxShadow: `0 0 56px ${teamColor}88, 0 0 130px ${teamColor}33`,
                 animation: 'activeTeamGlow 2s ease-in-out infinite',
                 ['--team-color' as any]: `${teamColor}55`,
               }} />
@@ -13458,8 +13464,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 shrinkAfter={18}
                 color={teamColor}
                 fontWeight={900}
-                fontSize="clamp(26px, 3.4vw, 50px)"
-                style={{ textShadow: `0 0 28px ${teamColor}55`, maxWidth: '80vw', textAlign: 'center' }}
+                fontSize="clamp(40px, 4.8vw, 76px)"
+                style={{ textShadow: `0 0 36px ${teamColor}55`, maxWidth: '80vw', textAlign: 'center' }}
               />
               {/* Wolf 2026-05-05: 'liegt auf dem letzten Platz — schlag zurück!'
                   Pille raus — redundant zum COMEBACK-Title + Lightning-Bolts. */}
@@ -13484,18 +13490,22 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               separater "AKTUELLER 1. PLATZ"-Header + Pille darunter — jetzt
               direkt in einer Zeile, spart 2 Items auf der Seite). */}
           <div style={{
-            padding: 'clamp(12px, 1.6vh, 18px) clamp(20px, 2.4vw, 32px)', borderRadius: 16,
+            // 2026-05-07 (Wolf 'comeback ansicht zu klein'): Action-Card-Padding
+            // + Font + Pille-Groesse signifikant gebumpt. Pille mit kleinem
+            // Avatar (28px) und Mini-Label (12-16px) war aus Beamer-Distanz
+            // unleserlich.
+            padding: 'clamp(18px, 2.2vh, 28px) clamp(28px, 3.2vw, 48px)', borderRadius: 22,
             textAlign: 'center',
             background: cardBg,
-            border: hl ? '2px solid rgba(251,191,36,0.55)' : `2px solid #EF444455`,
+            border: hl ? '2.5px solid rgba(251,191,36,0.55)' : `2.5px solid #EF444455`,
             boxShadow: hl
-              ? '0 0 32px rgba(251,191,36,0.22), 0 6px 18px rgba(0,0,0,0.4)'
-              : `0 0 32px rgba(239,68,68,0.2), 0 6px 18px rgba(0,0,0,0.4)`,
-            fontSize: 'clamp(16px, 2vw, 26px)', fontWeight: 900,
+              ? '0 0 44px rgba(251,191,36,0.25), 0 8px 22px rgba(0,0,0,0.4)'
+              : `0 0 44px rgba(239,68,68,0.22), 0 8px 22px rgba(0,0,0,0.4)`,
+            fontSize: 'clamp(22px, 2.6vw, 36px)', fontWeight: 900,
             color: hl ? '#fde68a' : '#fecaca',
             maxWidth: 1000,
             lineHeight: 1.4,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
           }}>
             {/* 2026-05-06: H/L-Mechanik-Text raus, nur Klau-Ziel anzeigen.
                 Erklaerung der Mechanik kommt in Step 2 als eigene Card. */}
@@ -13506,11 +13516,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             )}
             {leaderTeams.length > 0 && (
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
                 justifyContent: 'center',
               }}>
                 <span style={{
-                  fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900,
+                  fontSize: 'clamp(18px, 1.9vw, 26px)', fontWeight: 900,
                   color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>
                   {leaderTeams.length === 1
@@ -13519,19 +13529,19 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 </span>
                 {leaderTeams.map(lt => (
                   <div key={lt.id} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '6px 12px', borderRadius: 999,
-                    background: `${lt.color}18`, border: `1.5px solid ${lt.color}55`,
+                    display: 'inline-flex', alignItems: 'center', gap: 12,
+                    padding: '10px 20px', borderRadius: 999,
+                    background: `${lt.color}18`, border: `2px solid ${lt.color}55`,
                   }}>
-                    <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={28} />
+                    <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={48} />
                     <TeamNameLabel
                       name={lt.name}
                       maxLines={1}
                       shrinkAfter={14}
                       color={lt.color}
                       fontWeight={900}
-                      fontSize="clamp(14px, 1.5vw, 18px)"
-                      style={{ maxWidth: 160 }}
+                      fontSize="clamp(20px, 2.2vw, 30px)"
+                      style={{ maxWidth: 220 }}
                     />
                   </div>
                 ))}

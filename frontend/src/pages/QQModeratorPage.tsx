@@ -8,7 +8,7 @@ import {
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
-import { AVATAR_SETS } from '../avatarSets';
+import { AVATAR_SETS, MEGA_EMOJI_POOL } from '../avatarSets';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
@@ -1866,6 +1866,7 @@ export default function QQModeratorPage() {
                   }}
                   roomCode={roomCode}
                   phase={s.phase}
+                  avatarSetId={s.avatarSetId}
                 />
 
               </div>
@@ -3473,9 +3474,10 @@ function badgeStyle(color: string): React.CSSProperties {
 
 // ── Danger-Menu (Reset-Aktionen) ──────────────────────────────────────────────
 
-function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
+function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: {
   onRestart: () => void; onBackToSetup: () => void;
   roomCode: string; phase: string;
+  avatarSetId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -3494,9 +3496,18 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase }: {
   async function devFillTeams() {
     setBusy('fill');
     try {
+      // 2026-05-07 (Wolf-Bug 'dummys benutzen nicht das gewaehlte Set'):
+      // Bot-Avatar-Pool aus aktivem Avatar-Set ableiten — bei 'all' aus dem
+      // bunten MEGA_POOL, sonst aus den Set-spezifischen Avataren (z.B. ESC-
+      // Flaggen). Backend nutzt diese Pool fuer team.emoji-Override.
+      const setId = avatarSetId ?? 'all';
+      const set = AVATAR_SETS.find(s => s.id === setId);
+      const setAvatars: string[] = setId === 'all'
+        ? MEGA_EMOJI_POOL
+        : (set?.avatars ?? []);
       const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 8 }),
+        body: JSON.stringify({ count: 8, setAvatars }),
       });
       const data = await r.json();
       if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
@@ -4507,9 +4518,15 @@ function LobbyView({
                     <button
                       key={n}
                       onClick={async () => {
+                        // 2026-05-07 (Wolf): Bot-Avatare ans aktive Set anpassen.
+                        const setId = s.avatarSetId ?? 'all';
+                        const set = AVATAR_SETS.find(x => x.id === setId);
+                        const setAvatars: string[] = setId === 'all'
+                          ? MEGA_EMOJI_POOL
+                          : (set?.avatars ?? []);
                         const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
                           method: 'POST', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ count: n }),
+                          body: JSON.stringify({ count: n, setAvatars }),
                         });
                         if (!r.ok) {
                           const d = await r.json().catch(() => ({}));

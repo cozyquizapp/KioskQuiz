@@ -1078,11 +1078,15 @@ export function playAvatarCascadeNote(rank: number, total: number): void {
     261.63, 293.66, 329.63, 392.00, 440.00,           // C4 D4 E4 G4 A4
     523.25, 587.33, 659.25,                            // C5 D5 E5
   ];
-  const safeTotal = Math.max(1, Math.min(total, scale.length));
-  const safeRank = Math.max(0, Math.min(rank, safeTotal - 1));
-  // Bei wenig Teams die Skala spreizen (Rank scaled) statt nur die ersten N Toene.
-  const idx = Math.round((safeRank / Math.max(safeTotal - 1, 1)) * (scale.length - 1));
-  const freq = scale[Math.min(idx, scale.length - 1)];
+  // 2026-05-07 (Wolf 'cascade klingt rhythmisch off, cleane tonleiter?'):
+  // Vorher wurde die Skala auf die Team-Anzahl SKALIERT — bei 3 Teams sprang
+  // sie C4 → A4 → E5 (riesige unmusikalische Spruenge). Jetzt linear: rank 0
+  // = C4, rank 1 = D4, ... bis 8. Bei <8 Teams kuerzer aber clean aufsteigend.
+  // total-Param wird nicht mehr fuer die Skala-Spreizung genutzt, bleibt fuer
+  // API-Kompatibilitaet als Hinweis fuer kuenftige Variationen.
+  void total;
+  const safeRank = Math.max(0, Math.min(rank, scale.length - 1));
+  const freq = scale[safeRank];
   const t = ac.currentTime;
   // Warmer Sine-Tone mit kurzer Bell-Note-Form.
   tone(freq, 'sine',     t,         0.18, 0.18, 0.005, 0.06, ac);

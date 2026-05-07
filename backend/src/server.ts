@@ -9220,6 +9220,18 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   const botLang: 'de' | 'en' = room.language === 'en' ? 'en' : 'de';
   const namePicks = getRandomFunnyNames(Math.max(toAdd, 8), botLang)
     .filter(n => !usedNames.has(n.toLowerCase()));
+  // 2026-05-07 (Wolf-Bug 'dummys benutzen nicht das gewaehlte Set'): Bot-Avatar-
+  // Pool kommt vom Frontend (aktives Set: ESC-Flaggen / MEGA_POOL bei 'all' /
+  // Set-Defaults sonst). Bots ziehen ohne Wiederholung; wenn Pool zu klein,
+  // Wiederholung erlaubt. Schon belegte Emojis (echte Spieler) werden gefiltert.
+  const setAvatarsRaw = Array.isArray(req.body?.setAvatars) ? (req.body.setAvatars as string[]) : [];
+  const usedEmojis = new Set(Object.values(room.teams).map((t: any) => t.emoji).filter(Boolean));
+  const emojiPool = setAvatarsRaw.filter(e => typeof e === 'string' && e.length > 0 && !usedEmojis.has(e));
+  // Shuffle pool damit Bots zufällig wirken (sonst immer dieselbe Reihenfolge)
+  for (let i = emojiPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [emojiPool[i], emojiPool[j]] = [emojiPool[j], emojiPool[i]];
+  }
   let added = 0;
   const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));
   for (const av of QQ_AVATARS) {
@@ -9227,8 +9239,10 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
     if (usedAvatars.has(av.id)) continue;
     const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
     const name = namePicks[added] ?? `Team ${av.label}`;
+    // Bot-Emoji aus Pool oder undefined-Fallback (= Set-Slot-Default).
+    const botEmoji = emojiPool[added] ?? undefined;
     try {
-      qqJoinTeam(room, teamId, name, av.id);
+      qqJoinTeam(room, teamId, name, av.id, botEmoji);
       // Dummies haben keinen Socket — connected-Flag explizit true lassen
       // (markiert sie auch nach eventuellen Reconnect-Checks als „anwesend")
       if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;

@@ -4635,7 +4635,14 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-      gap: 14, pointerEvents: 'none',
+      // 2026-05-07 v19 (Wolf 'mach den wolf nach rechts unten ... achte
+      // darauf dass der wolf nicht springt wenn er was neues sagt'):
+      // Wrapper ist jetzt 'bottom'-anchored (siehe Aufrufer in LobbyView)
+      // → Wolf am unteren Rand fix, Bubble waechst nach oben statt Wolf
+      // nach unten zu druecken. Gap 14 -> 22 fuer mehr Luft zwischen Bubble
+      // und Wolf-Kopf, Bubble sitzt damit ein bisschen weiter weg vom
+      // Team-Grid.
+      gap: 22, pointerEvents: 'none',
     }}>
       <SpeechBubble
         text={slogan.text}
@@ -4770,14 +4777,24 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       <Fireflies />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
-      {/* Wolf-Lobby-Greeter top-right — winkt + reagiert auf Team-Joins
+      {/* Wolf-Lobby-Greeter bottom-right — winkt + reagiert auf Team-Joins
           mit 'Hallo {teamName}!'. Idle: 'QR-Code scannen!' / etc.
           2026-05-07 (Wolf 'Wolf mit dem daumen hoch oben rechts, wenn ein
-          team sich einloggt sowas wie oh hallo team x'). */}
+          team sich einloggt sowas wie oh hallo team x').
+          2026-05-07 v19 (Wolf 'mach den wolf nach rechts unten und leg seine
+          bubble unter die joine teams, achte darauf dass der wolf nicht
+          springt wenn er was neues sagt'): top -> bottom. Bottom-Anker fixiert
+          den Wolf am unteren Rand; die Bubble (im flex-column ueber ihm)
+          waechst dadurch nach oben statt den Wolf nach unten zu druecken
+          → keine Sprung-Verschiebung mehr bei Sloganwechsel. Bubble landet
+          natuerlich im Bereich unter dem Team-Grid. */}
       <div style={{
         position: 'absolute',
         right: 'clamp(20px, 2.5vw, 48px)',
-        top: 'clamp(16px, 2.5vh, 32px)',
+        // 'falls zu eng, zieh sie leicht hoch' — bottom 16-32 -> 20-44 gibt
+        // bei 8 Teams + grossem Wolf Reserve damit die Bubble nicht in das
+        // Team-Grid reinragt.
+        bottom: 'clamp(20px, 3vh, 44px)',
         zIndex: 7,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',

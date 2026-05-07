@@ -10899,40 +10899,52 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? -Math.min(32, hpUsedCount * 1.3 + eliminatedCount * 2.5)
               : 0;
             return (
+              // 2026-05-07 (Audit P0): bQuestionIn × transform-shift Konflikt.
+              // Vorher: Card hatte parallel `animation: bQuestionIn` + inline
+              // `transform: translateY(...)` + `transition: transform 0.9s`.
+              // CSS-`animation` overrided transform → bei Reveal-Klick (akut
+              // bei HotPotato wenn chipShiftVh kippt) Mikro-Sprung.
+              // Fix: Outer-Wrapper traegt den translateY-Shift (mit transform-
+              // Transition), Inner-Card traegt die bQuestionIn-Mount-Animation.
+              // Beide kollidieren nicht mehr.
               <div style={{
-                background: cardBg,
-                border: `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
-                borderRadius: 24,
-                boxShadow: revealed
-                  ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
-                  : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
-                padding: cardPadding,
-                marginBottom: cardMarginBottom,
                 width: '100%', maxWidth: 1400,
-                textAlign: 'center',
-                animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
-                // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
-                // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
-                // v3 round 9: transform-Transition fuer chip-shift smooth.
-                // 2026-05-02 (App-Designer-Audit B4): opacity-Dim mit 0.45s Delay,
-                // damit zuerst die Voter-Cascade rausschwingen kann (laeuft 0.5s)
-                // bevor die Frage-Card transparent wird. Vorher: alles 0-0.55s
-                // parallel = hektische Mehrfach-Bewegung.
-                transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.4s ease 0.45s, padding 0.7s var(--qq-ease-smooth), margin-bottom 0.7s var(--qq-ease-smooth), transform 0.9s var(--qq-ease-smooth)',
-                opacity: revealed ? 0.55 : 1,
                 flexShrink: 0,
                 transform: chipShiftVh !== 0 ? `translateY(${chipShiftVh}vh)` : undefined,
+                transition: 'transform 0.9s var(--qq-ease-smooth)',
+                willChange: 'transform',
               }}>
-                {/* 2026-05-07 (Audit P0): font-size-transition liess Buchstaben
-                    bei qFontSize/hpCompact-Wechsel sichtbar wandern. Key-Remount
-                    macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
-                <div key={`${lang}-${cardFontSize}`} style={{
-                  fontSize: cardFontSize,
-                  fontWeight: 900, lineHeight: 1.22,
-                  color: '#F1F5F9',
-                  animation: 'langFadeIn 0.4s ease both',
+                <div style={{
+                  background: cardBg,
+                  border: `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
+                  borderRadius: 24,
+                  boxShadow: revealed
+                    ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
+                    : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  padding: cardPadding,
+                  marginBottom: cardMarginBottom,
+                  width: '100%',
+                  textAlign: 'center',
+                  animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
+                  // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
+                  // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
+                  // 2026-05-02 (App-Designer-Audit B4): opacity-Dim mit 0.45s Delay,
+                  // damit zuerst die Voter-Cascade rausschwingen kann (laeuft 0.5s)
+                  // bevor die Frage-Card transparent wird.
+                  transition: 'box-shadow 0.55s ease, border-color 0.55s ease, opacity 0.4s ease 0.45s, padding 0.7s var(--qq-ease-smooth), margin-bottom 0.7s var(--qq-ease-smooth)',
+                  opacity: revealed ? 0.55 : 1,
                 }}>
-                  {qText}
+                  {/* 2026-05-07 (Audit P0): font-size-transition liess Buchstaben
+                      bei qFontSize/hpCompact-Wechsel sichtbar wandern. Key-Remount
+                      macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
+                  <div key={`${lang}-${cardFontSize}`} style={{
+                    fontSize: cardFontSize,
+                    fontWeight: 900, lineHeight: 1.22,
+                    color: '#F1F5F9',
+                    animation: 'langFadeIn 0.4s ease both',
+                  }}>
+                    {qText}
+                  </div>
                 </div>
               </div>
             );
@@ -15069,11 +15081,13 @@ function ConnectionsGrid({ state: s }: {
         const grp = itemToGroup.get(item);
         const showColored = isReveal && !!grp;
         return (
-          <div key={`${item}-${i}`} style={{
-            // v3 round 11 (User-Wunsch 'finale 4x4 cards koennten etwas
-            // groesser sein'): Padding und Font hochgesetzt fuer bessere
-            // Lesbarkeit aus Distanz. minHeight angehoben damit Card-Box
-            // groesser wirkt.
+          // 2026-05-07 (Audit-Fix): key={item} statt key={item-i}.
+          // Bei active→reveal kippt displayOrder (Sortierung nach Gruppen);
+          // mit Index-Suffix unmountet React alle 16 Tiles → Cascade-Sprung.
+          // item-Text ist innerhalb 4×4 garantiert unique → stabile Identity.
+          // Transition nur auf Style-Properties — `all` würde Grid-Position
+          // mit-animieren wollen und ist ohnehin teuer.
+          <div key={item} style={{
             padding: 'clamp(18px, 2.2vw, 28px) clamp(10px, 1.2vw, 18px)',
             borderRadius: 16,
             textAlign: 'center',
@@ -15088,7 +15102,7 @@ function ConnectionsGrid({ state: s }: {
             boxShadow: showColored && grp ? `0 0 24px ${grp.color}44` : 'none',
             minHeight: 'clamp(80px, 10vh, 130px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.3s ease',
+            transition: 'background 0.5s ease, border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease',
             animation: isReveal ? `contentReveal 0.4s var(--qq-ease-pop-fast) ${i * 0.04}s both` : undefined,
           }}>
             {item}

@@ -1386,10 +1386,12 @@ export function playAvatarJingle(avatarId: string): void {
       tone(330, 'sine', t + 0.20, 0.40, 0.10, 0.05, 0.15, ac);
       break;
     case 'panda': // Pinguin — niedlich, hoch trillernd
-      tone(1320, 'square', t,        0.06, 0.06, 0.001, 0.04, ac);
-      tone(1568, 'square', t + 0.06, 0.06, 0.06, 0.001, 0.04, ac);
-      tone(1760, 'square', t + 0.12, 0.06, 0.06, 0.001, 0.04, ac);
-      tone(1976, 'square', t + 0.18, 0.10, 0.08, 0.001, 0.05, ac);
+      // 2026-05-07 (Wolf 'mach cozy'): square → triangle. Hohe Pitches bleiben
+      // (Pinguin-Charakter), aber Obertoene weicher statt 8-bit-grell.
+      tone(1320, 'triangle', t,        0.06, 0.07, 0.002, 0.04, ac);
+      tone(1568, 'triangle', t + 0.06, 0.06, 0.07, 0.002, 0.04, ac);
+      tone(1760, 'triangle', t + 0.12, 0.06, 0.07, 0.002, 0.04, ac);
+      tone(1976, 'triangle', t + 0.18, 0.12, 0.09, 0.002, 0.06, ac);
       break;
     case 'rabbit': // Koala — sanft, holzig, mid-range
       tone(523, 'triangle', t,        0.20, 0.10, 0.008, 0.08, ac);
@@ -1403,10 +1405,12 @@ export function playAvatarJingle(avatarId: string): void {
       tone(880, 'sine', t + 0.30, 0.30, 0.12, 0.01, 0.10, ac);
       break;
     case 'raccoon': // Waschbär — neugierig, 4 schnelle Klicks
-      tone(880, 'square', t,        0.05, 0.08, 0.001, 0.03, ac);
-      tone(988, 'square', t + 0.07, 0.05, 0.08, 0.001, 0.03, ac);
-      tone(1175, 'square', t + 0.14, 0.05, 0.08, 0.001, 0.03, ac);
-      tone(1320, 'square', t + 0.22, 0.10, 0.10, 0.001, 0.05, ac);
+      // 2026-05-07: square → triangle. Tempo + Cluster bleibt ('neugierig'),
+      // aber sanfter im warmen Filter-Bus.
+      tone(880, 'triangle', t,        0.05, 0.09, 0.002, 0.04, ac);
+      tone(988, 'triangle', t + 0.07, 0.05, 0.09, 0.002, 0.04, ac);
+      tone(1175, 'triangle', t + 0.14, 0.05, 0.09, 0.002, 0.04, ac);
+      tone(1320, 'triangle', t + 0.22, 0.12, 0.11, 0.002, 0.06, ac);
       break;
     case 'cow': // Kuh — warm, breit, brummiges Mid-Range
       tone(165, 'sawtooth', t,        0.40, 0.08, 0.04, 0.15, ac);

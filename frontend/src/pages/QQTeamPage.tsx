@@ -5051,9 +5051,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       : isSwapSelected ? `${actionColor}55`
                       : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
                       : tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}d9)` : 'rgba(255,255,255,0.04)',
+                    // 2026-05-07 (Live-Test-Bug): cell.jokerFormed-Border ergaenzt,
+                    // damit Joker-Felder auch auf /team visuell hervorstechen.
                     border: isPending ? `3px dashed ${actionColor}`
                       : isSwapSelected ? `3px solid ${actionColor}`
                       : isStuckCell ? `3px solid rgba(251,191,36,0.95)`
+                      : cell.jokerFormed ? `2.5px solid #FBBF24`
                       : isStuckCandidate ? `2px solid #F59E0B`
                       : clickable ? `2px solid ${actionColor}`
                       : tColor ? `1px solid ${tColor}55`
@@ -5167,8 +5170,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       {/* 2026-05-05 (Wolf-Bug 'runde felder'): flat-Prop —
                           Avatar-Disc-BG raus, nur Emoji-Glyph. Cell selbst
                           traegt schon die Team-Farbe als BG. Plus Emoji
-                          groesser (0.82 → 0.95) wie auf /beamer. */}
-                      {isStuckCell ? <QQEmojiIcon emoji="🏯"/> : team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat /> : null}
+                          groesser (0.82 → 0.95) wie auf /beamer.
+                          2026-05-07 (Live-Test-Bug): Joker-Cells (cell.jokerFormed)
+                          zeigten auf /team nichts, /beamer aber schon. Vorrang:
+                          Stack > Joker > Avatar (Stack-Bonus auf Joker-Cell
+                          ueberschreibt visuell, weil 🏯 die staerkere Aussage ist). */}
+                      {isStuckCell
+                        ? <QQEmojiIcon emoji="🏯"/>
+                        : cell.jokerFormed
+                          ? <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" />
+                          : team
+                            ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat />
+                            : null}
                     </span>
                     {/* Stapel-Dust-Ring: expandiert einmalig beim Stuck-Mount. */}
                     {isStuckCell && (

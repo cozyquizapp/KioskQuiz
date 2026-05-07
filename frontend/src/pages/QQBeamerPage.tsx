@@ -4391,21 +4391,43 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
   /** 2026-05-07 (Wolf-ESC): wenn true, Wolf haelt EU-Flagge statt Daumen hoch. */
   eurovisionMode?: boolean;
 }) {
-  const idleSlogans: Slogan[] = lang === 'de'
-    ? [
-        { text: 'QR-Code scannen!', mouths: 4 },
-        { text: 'Genau den da!', mouths: 3 },
-        { text: 'Bereit zu joinen?', mouths: 4 },
-        { text: 'Mit dem Handy joinen', mouths: 4 },
-        { text: 'Jeder kann mitspielen', mouths: 5 },
-      ]
-    : [
-        { text: 'Scan the QR!', mouths: 3 },
-        { text: 'That one over there!', mouths: 4 },
-        { text: 'Ready to join?', mouths: 3 },
-        { text: 'Phone out, scan, go!', mouths: 4 },
-        { text: 'Anyone can play', mouths: 4 },
-      ];
+  // 2026-05-07 v8 (Wolf 'gib dem wolf ein paar eurovision sprueche'): im
+  // ESC-Mode Slogan-Pool gegen Eurovision-Phrasen tauschen — Bonsoir-Vibe,
+  // ESC-Insider, "12 points"-Witz. Mund-Counts ungefaehr nach Silben gesetzt
+  // damit der Mund-Flap-Loop synchron mit dem Speak-Timing laeuft.
+  const idleSlogans: Slogan[] = eurovisionMode
+    ? (lang === 'de'
+        ? [
+            { text: 'Bonsoir Europe!', mouths: 4 },
+            { text: 'Mit dem Handy joinen', mouths: 4 },
+            { text: 'Welches Land seid ihr?', mouths: 5 },
+            { text: 'Habt ihr Tipps abgegeben?', mouths: 6 },
+            { text: 'Wer holt heute 12 Punkte?', mouths: 6 },
+            { text: 'Lasst die Show beginnen!', mouths: 5 },
+          ]
+        : [
+            { text: 'Good evening Europe!', mouths: 5 },
+            { text: 'Phone out, scan, join!', mouths: 4 },
+            { text: 'Which country are you?', mouths: 5 },
+            { text: 'Placed your bets?', mouths: 4 },
+            { text: 'Who scores douze points?', mouths: 5 },
+            { text: 'Let the show begin!', mouths: 4 },
+          ])
+    : (lang === 'de'
+        ? [
+            { text: 'QR-Code scannen!', mouths: 4 },
+            { text: 'Genau den da!', mouths: 3 },
+            { text: 'Bereit zu joinen?', mouths: 4 },
+            { text: 'Mit dem Handy joinen', mouths: 4 },
+            { text: 'Jeder kann mitspielen', mouths: 5 },
+          ]
+        : [
+            { text: 'Scan the QR!', mouths: 3 },
+            { text: 'That one over there!', mouths: 4 },
+            { text: 'Ready to join?', mouths: 3 },
+            { text: 'Phone out, scan, go!', mouths: 4 },
+            { text: 'Anyone can play', mouths: 4 },
+          ]);
 
   const [idleIdx, setIdleIdx] = useState(0);
 
@@ -13777,21 +13799,40 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 // speaking-Gate — die Bubble ist rein 'Beifall-Reaktion' auf den
 // Comeback-Drama-Moment.
 function WolfUeberraschtWithBubble({ lang, eurovisionMode }: { lang: 'de' | 'en'; eurovisionMode?: boolean }) {
-  const slogans: Slogan[] = lang === 'de'
-    ? [
-        { text: 'Was?!', mouths: 1 },
-        { text: 'Krass!', mouths: 1 },
-        { text: 'Ohhh!', mouths: 1 },
-        { text: 'Echt jetzt?', mouths: 3 },
-        { text: 'Holla!', mouths: 2 },
-      ]
-    : [
-        { text: 'What?!', mouths: 1 },
-        { text: 'Whoa!', mouths: 1 },
-        { text: 'No way!', mouths: 2 },
-        { text: 'Really?', mouths: 2 },
-        { text: 'Wild!', mouths: 1 },
-      ];
+  // 2026-05-07 v8 (Wolf 'gib dem wolf eurovision sprueche'): ESC-Drama-Pool
+  // mit Französisch/Englisch-Mix wie auf der ESC-Buehne. 'Quel choc!' /
+  // 'Mon dieu!' bringen den Watchparty-Vibe, beim Comeback-Surprise-Moment.
+  const slogans: Slogan[] = eurovisionMode
+    ? (lang === 'de'
+        ? [
+            { text: 'Quel choc!', mouths: 2 },
+            { text: 'Mon dieu!', mouths: 2 },
+            { text: 'Sensationell!', mouths: 3 },
+            { text: 'Ein Comeback!', mouths: 3 },
+            { text: 'Magnifique!', mouths: 3 },
+          ]
+        : [
+            { text: 'Quel choc!', mouths: 2 },
+            { text: 'Mon dieu!', mouths: 2 },
+            { text: 'Sensational!', mouths: 3 },
+            { text: 'A comeback!', mouths: 3 },
+            { text: 'Magnifique!', mouths: 3 },
+          ])
+    : (lang === 'de'
+        ? [
+            { text: 'Was?!', mouths: 1 },
+            { text: 'Krass!', mouths: 1 },
+            { text: 'Ohhh!', mouths: 1 },
+            { text: 'Echt jetzt?', mouths: 3 },
+            { text: 'Holla!', mouths: 2 },
+          ]
+        : [
+            { text: 'What?!', mouths: 1 },
+            { text: 'Whoa!', mouths: 1 },
+            { text: 'No way!', mouths: 2 },
+            { text: 'Really?', mouths: 2 },
+            { text: 'Wild!', mouths: 1 },
+          ]);
   const [idx, setIdx] = useState(0);
   const slogan = slogans[idx];
   const speakMs = Math.min(3000, Math.max(1100, slogan.mouths * 500));
@@ -13879,41 +13920,79 @@ function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
   /** 2026-05-07 (Wolf-ESC): bei true → Wolf haelt EU-Flagge (statt trinken/winken). */
   eurovisionMode?: boolean;
 }) {
-  const slogans: Slogan[] = variant === 'pause'
-    ? (lang === 'de'
-        ? [
-            { text: 'Habt ihr noch Getränke?', mouths: 4 },
-            { text: 'Muss noch jemand?', mouths: 3 },
-            { text: 'Dehnen erlaubt!', mouths: 2 },
-            { text: 'Schon einen Snack besorgt?', mouths: 4 },
-            { text: 'Kurz die Beine vertreten?', mouths: 4 },
-            { text: 'Wer hat den nächsten Sieg im Kopf?', mouths: 6 },
-          ]
-        : [
-            { text: 'Anyone need a drink?', mouths: 3 },
-            { text: 'Bathroom break time?', mouths: 3 },
-            { text: 'Stretch a bit!', mouths: 2 },
-            { text: 'Snacks topped up?', mouths: 2 },
-            { text: 'Quick walk?', mouths: 2 },
-            { text: 'Who\'s plotting the next win?', mouths: 4 },
-          ])
-    : (lang === 'de'
-        ? [
-            { text: 'Bereit?', mouths: 2 },
-            { text: 'Macht\'s euch bequem', mouths: 4 },
-            { text: 'Snacks bereit?', mouths: 3 },
-            { text: 'Gleich gibt\'s was zu rätseln', mouths: 5 },
-            { text: 'Sind alle da?', mouths: 3 },
-            { text: 'Spitzt die Ohren!', mouths: 3 },
-          ]
-        : [
-            { text: 'Ready?', mouths: 2 },
-            { text: 'Get comfy', mouths: 3 },
-            { text: 'Snacks ready?', mouths: 3 },
-            { text: 'Quiz time soon!', mouths: 3 },
-            { text: 'Everyone here?', mouths: 3 },
-            { text: 'Ears up!', mouths: 2 },
-          ]);
+  // 2026-05-07 v8 (Wolf 'gib dem wolf eurovision sprueche'): ESC-Slogan-Pool
+  // pro variant. Pause = Watchparty-Pause-Witze, preGame = Show-Anmoderation.
+  const slogans: Slogan[] = eurovisionMode
+    ? (variant === 'pause'
+        ? (lang === 'de'
+            ? [
+                { text: 'Pinkelpause vor dem Finale!', mouths: 5 },
+                { text: 'Schnell Sekt nachfüllen!', mouths: 4 },
+                { text: 'Wer ist euer Favorit?', mouths: 4 },
+                { text: 'Outfit-Check beim Nachbarn!', mouths: 5 },
+                { text: 'Gleich geht das Voting weiter!', mouths: 6 },
+                { text: 'Stay tuned, Europe!', mouths: 4 },
+              ]
+            : [
+                { text: 'Bathroom break before the final!', mouths: 6 },
+                { text: 'Top up the bubbly!', mouths: 4 },
+                { text: 'Who\'s your favourite?', mouths: 4 },
+                { text: 'Check those outfits!', mouths: 4 },
+                { text: 'Voting resumes shortly!', mouths: 5 },
+                { text: 'Stay tuned, Europe!', mouths: 4 },
+              ])
+        : (lang === 'de'
+            ? [
+                { text: 'Bonsoir mes amis!', mouths: 4 },
+                { text: 'Bereit für die Show?', mouths: 4 },
+                { text: 'Jury und Publikum bereit?', mouths: 5 },
+                { text: 'Lasst die Show beginnen!', mouths: 5 },
+                { text: 'Wer holt heute 12 Punkte?', mouths: 6 },
+                { text: 'Gleich gibt es Drama!', mouths: 4 },
+              ]
+            : [
+                { text: 'Bonsoir mes amis!', mouths: 4 },
+                { text: 'Ready for the show?', mouths: 4 },
+                { text: 'Jury and audience ready?', mouths: 5 },
+                { text: 'Let the show begin!', mouths: 4 },
+                { text: 'Who scores douze points?', mouths: 5 },
+                { text: 'Drama is coming!', mouths: 4 },
+              ]))
+    : (variant === 'pause'
+        ? (lang === 'de'
+            ? [
+                { text: 'Habt ihr noch Getränke?', mouths: 4 },
+                { text: 'Muss noch jemand?', mouths: 3 },
+                { text: 'Dehnen erlaubt!', mouths: 2 },
+                { text: 'Schon einen Snack besorgt?', mouths: 4 },
+                { text: 'Kurz die Beine vertreten?', mouths: 4 },
+                { text: 'Wer hat den nächsten Sieg im Kopf?', mouths: 6 },
+              ]
+            : [
+                { text: 'Anyone need a drink?', mouths: 3 },
+                { text: 'Bathroom break time?', mouths: 3 },
+                { text: 'Stretch a bit!', mouths: 2 },
+                { text: 'Snacks topped up?', mouths: 2 },
+                { text: 'Quick walk?', mouths: 2 },
+                { text: 'Who\'s plotting the next win?', mouths: 4 },
+              ])
+        : (lang === 'de'
+            ? [
+                { text: 'Bereit?', mouths: 2 },
+                { text: 'Macht\'s euch bequem', mouths: 4 },
+                { text: 'Snacks bereit?', mouths: 3 },
+                { text: 'Gleich gibt\'s was zu rätseln', mouths: 5 },
+                { text: 'Sind alle da?', mouths: 3 },
+                { text: 'Spitzt die Ohren!', mouths: 3 },
+              ]
+            : [
+                { text: 'Ready?', mouths: 2 },
+                { text: 'Get comfy', mouths: 3 },
+                { text: 'Snacks ready?', mouths: 3 },
+                { text: 'Quiz time soon!', mouths: 3 },
+                { text: 'Everyone here?', mouths: 3 },
+                { text: 'Ears up!', mouths: 2 },
+              ]));
 
   const [idx, setIdx] = useState(0);
   const slogan = slogans[idx];
@@ -16365,23 +16444,44 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteBoost?: boolean }) {
   // 2026-05-07 (Wolf): Tröööt-Slogan ergaenzt — passt zur Tröte-Pose und
   // gibt ihr einen Sound-Text. Klingt cozy-cartoonig.
-  const slogans: Slogan[] = lang === 'de'
-    ? [
-        { text: 'Glückwunsch!', mouths: 3 },
-        { text: '🎺 Trööööt!', mouths: 5 },
-        { text: 'Was für ein Quiz!', mouths: 4 },
-        { text: 'Ihr seid wild!', mouths: 3 },
-        { text: 'Sauber!', mouths: 2 },
-        { text: 'Geile Runde!', mouths: 3 },
-      ]
-    : [
-        { text: 'Congrats!', mouths: 2 },
-        { text: '🎺 Toooot!', mouths: 4 },
-        { text: 'What a quiz!', mouths: 3 },
-        { text: 'You\'re wild!', mouths: 2 },
-        { text: 'Nice one!', mouths: 2 },
-        { text: 'Great round!', mouths: 2 },
-      ];
+  // 2026-05-07 v8 (Wolf 'gib dem wolf eurovision sprueche'): im ESC-Mode
+  // (=troeteBoost) eigener Slogan-Pool mit Douze-Points / Allez-Allez und
+  // klassischen ESC-Phrasen plus weiterhin der Tröötet als Audio-Marker.
+  const slogans: Slogan[] = troeteBoost
+    ? (lang === 'de'
+        ? [
+            { text: 'Douze points!', mouths: 3 },
+            { text: '🎺 Trööööt!', mouths: 5 },
+            { text: 'And the winner is…', mouths: 5 },
+            { text: 'Allez, allez!', mouths: 3 },
+            { text: 'Glückwunsch Europa!', mouths: 5 },
+            { text: 'Was für eine Show!', mouths: 4 },
+          ]
+        : [
+            { text: 'Douze points!', mouths: 3 },
+            { text: '🎺 Toooot!', mouths: 4 },
+            { text: 'And the winner is…', mouths: 5 },
+            { text: 'Allez, allez!', mouths: 3 },
+            { text: 'Congratulations Europe!', mouths: 5 },
+            { text: 'What a show!', mouths: 3 },
+          ])
+    : (lang === 'de'
+        ? [
+            { text: 'Glückwunsch!', mouths: 3 },
+            { text: '🎺 Trööööt!', mouths: 5 },
+            { text: 'Was für ein Quiz!', mouths: 4 },
+            { text: 'Ihr seid wild!', mouths: 3 },
+            { text: 'Sauber!', mouths: 2 },
+            { text: 'Geile Runde!', mouths: 3 },
+          ]
+        : [
+            { text: 'Congrats!', mouths: 2 },
+            { text: '🎺 Toooot!', mouths: 4 },
+            { text: 'What a quiz!', mouths: 3 },
+            { text: 'You\'re wild!', mouths: 2 },
+            { text: 'Nice one!', mouths: 2 },
+            { text: 'Great round!', mouths: 2 },
+          ]);
   const [idx, setIdx] = useState(0);
   const slogan = slogans[idx];
   const speakMs = Math.min(4500, Math.max(1300, slogan.mouths * 440));

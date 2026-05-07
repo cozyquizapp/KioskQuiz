@@ -14050,8 +14050,14 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
 };
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
-  // Cozy-warmer Card-Hintergrund (passend zu In-Game-Cards)
-  const cardBg = COZY_CARD_BG;
+  // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,
+  // gerne auch bei pause wenn es passt'): im ESC-Mode translucent Card-BG aus
+  // dem theme.cardBg (#2d1644 lila) mit ~68 % Opacity, damit das Herz-BG-1
+  // dahinter durchscheint. Sonst: opake Cozy-Cards wie immer. Greift fuer
+  // Lobby/PreGame UND Pause weil PausedView beide Modes bedient.
+  const cardBg = s.theme?.eurovisionMode
+    ? 'linear-gradient(180deg, rgba(45,22,68,0.72) 0%, rgba(31,15,61,0.62) 100%)'
+    : COZY_CARD_BG;
   // Mode-spezifische Akzentfarbe — preGame: Lagerfeuer-Gold, Pause: Cozy-Lavender
   const modeAccent = mode === 'preGame' ? '#FBBF24' : '#A78BFA';
   const modeAccentDim = mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)';

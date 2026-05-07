@@ -317,6 +317,39 @@ const DESIGNS: DesignConfig[] = [
   },
 ];
 
+// ─── Modern-Web Design-Patterns: Animations + Hover-Effects ──────────────────
+// 2025/2026-Findings aus Stripe / Vercel / Raycast Live-Recherche.
+const MODERN_KEYFRAMES = `
+  /* Stripe-Style Mesh-Gradient Animation: slow drift + breathing.
+     Rotiert die ganze BG-Layer um Pivot center, 60s Cycle.
+     Plus opacity-breathing fuer subtle 'Atem'. */
+  @keyframes auroraDrift {
+    0%   { transform: scale(1.05) rotate(0deg);   opacity: 0.95; }
+    50%  { transform: scale(1.12) rotate(180deg); opacity: 1.00; }
+    100% { transform: scale(1.05) rotate(360deg); opacity: 0.95; }
+  }
+  /* Cinematic Noir: animated grain via opacity-flicker auf 3 Noise-Layers
+     (3 Frames @24fps Cycle, je Frame leicht andere Position). */
+  @keyframes grainFlicker {
+    0%   { opacity: 0.18; transform: translate(0px, 0px); }
+    33%  { opacity: 0.20; transform: translate(-3px, 2px); }
+    66%  { opacity: 0.16; transform: translate(2px, -3px); }
+    100% { opacity: 0.18; transform: translate(0px, 0px); }
+  }
+  /* View-Switch-Cascade: Cards faden hochgleitend rein, gestaffelt. */
+  @keyframes cardCascade {
+    0%   { opacity: 0; transform: translateY(14px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes wordmarkSlide {
+    0%   { opacity: 0; transform: translateY(-12px); letter-spacing: 0.1em; }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  /* Vercel/Linear-Style Hover-Lift: subtle Y-Shift + Shadow-Elevation.
+     Nicht via @keyframes (wir wollen Hover-driven), sondern via
+     transition (siehe inline CSS) — hier nur dokumentiert. */
+`;
+
 // ─── Mini-Fireflies ──────────────────────────────────────────────────────────
 // Vereinfachte Version, nicht die echte aus QQBeamerPage (keine Side-Effects).
 function MiniFireflies({ color, count = 20 }: { color: string; count?: number }) {
@@ -358,15 +391,24 @@ function MiniFireflies({ color, count = 20 }: { color: string; count?: number })
   );
 }
 
-// ─── Mock-View: LOBBY ────────────────────────────────────────────────────────
-function MockLobby({ d }: { d: DesignConfig }) {
+// ─── Modern-Web BG-Layers (animated mesh / grain) ────────────────────────────
+function ModernBgLayers({ d }: { d: DesignConfig }) {
+  const isAurora = d.id === 'aurora';
+  const isNoir = d.id === 'noir';
   return (
-    <div style={{
-      width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
-      background: d.bgBase, color: d.textPrimary,
-      fontFamily: d.fonts.body,
-    }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: d.bgLayers, pointerEvents: 'none' }} />
+    <>
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        background: d.bgLayers,
+        pointerEvents: 'none',
+        // Aurora: Stripe-Style slow rotation + breathing, 60s loop. Animation
+        // ist nur auf dem BG-Layer-Wrapper, Children bleiben unberuehrt weil
+        // sie in eigenen Layern darueber sind.
+        ...(isAurora ? {
+          animation: 'auroraDrift 60s ease-in-out infinite',
+          transformOrigin: '50% 50%',
+        } : {}),
+      }} />
       {d.bgPatternSvg && (
         <div aria-hidden style={{
           position: 'absolute', inset: 0,
@@ -375,6 +417,36 @@ function MockLobby({ d }: { d: DesignConfig }) {
           pointerEvents: 'none',
         }} />
       )}
+      {isNoir && (
+        // Animierter Film-Grain (Recherche-Tipp 'MUSS animiert sein, sonst
+        // wirkt's wie Bug auf modernen LED-Beamern'). 3-Frame-Flicker via
+        // grainFlicker keyframe — Position+Opacity wandern minimal.
+        <div aria-hidden style={{
+          position: 'absolute', inset: '-10%',
+          backgroundImage:
+            `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>` +
+            `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter>` +
+            `<rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>")`,
+          backgroundRepeat: 'repeat',
+          mixBlendMode: 'overlay',
+          opacity: 0.18,
+          pointerEvents: 'none',
+          animation: 'grainFlicker 0.42s steps(3) infinite',
+        }} />
+      )}
+    </>
+  );
+}
+
+// ─── Mock-View: LOBBY ────────────────────────────────────────────────────────
+function MockLobby({ d }: { d: DesignConfig }) {
+  return (
+    <div style={{
+      width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
+      background: d.bgBase, color: d.textPrimary,
+      fontFamily: d.fonts.body,
+    }}>
+      <ModernBgLayers d={d} />
       <MiniFireflies color={d.fireflyColor} count={18} />
 
       <div style={{
@@ -384,7 +456,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
         display: 'flex', flexDirection: 'column', gap: 20,
       }}>
         {/* Wordmark Header */}
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+        <div className="lab-cascade-wm" style={{ textAlign: 'center', flexShrink: 0 }}>
           <div style={{
             fontFamily: d.fonts.display,
             fontSize: 'clamp(40px, 5vw, 80px)',
@@ -402,7 +474,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
           gap: 40, alignItems: 'center', minHeight: 0,
         }}>
           {/* Left: QR placeholder + branding */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div className="lab-cascade-1" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
             <div style={{
               width: 280, height: 280,
               background: '#fff',
@@ -434,7 +506,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
           </div>
 
           {/* Right: Teams */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+          <div className="lab-cascade-2" style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
             <div style={{
               fontSize: 13, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
               color: d.textSecondary, textAlign: 'center',
@@ -443,7 +515,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {MOCK_TEAMS.map(t => (
-                <div key={t.id} style={{
+                <div key={t.id} className="lab-hover" style={{
                   background: d.cardBg,
                   border: `2px solid ${t.color}55`,
                   borderRadius: d.cardRadius,
@@ -497,15 +569,7 @@ function MockQuestion({ d }: { d: DesignConfig }) {
       background: d.bgBase, color: d.textPrimary,
       fontFamily: d.fonts.body,
     }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: d.bgLayers, pointerEvents: 'none' }} />
-      {d.bgPatternSvg && (
-        <div aria-hidden style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: d.bgPatternSvg,
-          backgroundRepeat: 'repeat',
-          pointerEvents: 'none',
-        }} />
-      )}
+      <ModernBgLayers d={d} />
       <MiniFireflies color={d.fireflyColor} count={14} />
 
       <div style={{
@@ -515,7 +579,7 @@ function MockQuestion({ d }: { d: DesignConfig }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
       }}>
         {/* Round Pill + Category Badge */}
-        <div style={{
+        <div className="lab-cascade-1" style={{
           display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
         }}>
           <div style={{
@@ -540,7 +604,7 @@ function MockQuestion({ d }: { d: DesignConfig }) {
         </div>
 
         {/* Question Card */}
-        <div style={{
+        <div className="lab-cascade-2" style={{
           width: '100%', maxWidth: 1100,
           background: d.cardBg,
           border: d.cardBorder,
@@ -585,9 +649,9 @@ function MockQuestion({ d }: { d: DesignConfig }) {
         </div>
 
         {/* Team-Status-Strip */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="lab-cascade-3" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {MOCK_TEAMS.slice(0, 8).map(t => (
-            <div key={t.id} style={{
+            <div key={t.id} className="lab-hover" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '4px 10px', borderRadius: 999,
               background: `${t.color}20`,
@@ -612,15 +676,7 @@ function MockPause({ d }: { d: DesignConfig }) {
       background: d.bgBase, color: d.textPrimary,
       fontFamily: d.fonts.body,
     }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: d.bgLayers, pointerEvents: 'none' }} />
-      {d.bgPatternSvg && (
-        <div aria-hidden style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: d.bgPatternSvg,
-          backgroundRepeat: 'repeat',
-          pointerEvents: 'none',
-        }} />
-      )}
+      <ModernBgLayers d={d} />
       <MiniFireflies color={d.fireflyColor} count={14} />
 
       <div style={{
@@ -629,7 +685,7 @@ function MockPause({ d }: { d: DesignConfig }) {
         height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
       }}>
-        <div style={{
+        <div className="lab-cascade-wm" style={{
           fontFamily: d.fonts.display,
           fontSize: 'clamp(48px, 6vw, 96px)',
           fontWeight: 800,
@@ -640,7 +696,7 @@ function MockPause({ d }: { d: DesignConfig }) {
           Kurze Pause
         </div>
 
-        <div style={{
+        <div className="lab-cascade-2" style={{
           width: '100%', maxWidth: 900,
           background: d.cardBg,
           border: d.cardBorder,
@@ -661,9 +717,9 @@ function MockPause({ d }: { d: DesignConfig }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 36, rowGap: 4 }}>
             {sortedTeams.map((t, i) => (
-              <div key={t.id} style={{
+              <div key={t.id} className="lab-hover" style={{
                 display: 'flex', alignItems: 'center', gap: 14,
-                padding: '12px 0',
+                padding: '12px 8px', borderRadius: 8,
                 borderBottom: i < sortedTeams.length - 2 ? `1px solid ${d.textSecondary}22` : 'none',
               }}>
                 <div style={{
@@ -802,6 +858,28 @@ export default function DesignLabPage() {
       gridTemplateRows: '54px 1fr 54px',
       gap: 0,
     }}>
+      {/* Modern Web Patterns: Animationen + Hover-Klassen */}
+      <style>{MODERN_KEYFRAMES + `
+        /* Vercel/Linear-Style Hover-Lift fuer alle .lab-hover Cards.
+           transform-origin center, smooth cubic-bezier easing, 220ms. */
+        .lab-hover {
+          transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                      box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                      filter 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+          will-change: transform;
+        }
+        .lab-hover:hover {
+          transform: translateY(-3px);
+          filter: brightness(1.04);
+        }
+        /* View-Switch-Cascade: gestaffeltes Hereinfaden der Cards beim
+           View-Wechsel. .lab-cascade-1 ... -4 = staggered delays. */
+        .lab-cascade { animation: cardCascade 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+        .lab-cascade-1 { animation: cardCascade 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both; }
+        .lab-cascade-2 { animation: cardCascade 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both; }
+        .lab-cascade-3 { animation: cardCascade 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.20s both; }
+        .lab-cascade-wm { animation: wordmarkSlide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      `}</style>
       {/* ── Top Header ── */}
       <div style={{
         gridColumn: '1 / -1',

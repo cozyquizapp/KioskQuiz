@@ -7503,7 +7503,12 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
               // leere Cards nicht so viel toten Platz unten haben — gewonnener
               // Raum geht an die Sieger-Card unten.
               minHeight: 'clamp(90px, 11vh, 130px)',
-              animation: `phasePop 0.55s var(--qq-ease-bounce) ${0.3 + i * 0.08}s both`,
+              // 2026-05-07 (Audit P2): phasePop (scale-bounce) skalierte den
+              // Watermark-Avatar mit, der schon halbtransparent ist und den
+              // doppelten Bounce sichtbar machte. contentReveal (sanftes Slide+
+              // Fade) ist jetzt quizweit konsistent (siehe OnlyConnect-Hints,
+              // Wolf-Entscheidung 2026-05-06).
+              animation: `contentReveal 0.55s var(--qq-ease-out-cubic) ${0.3 + i * 0.08}s both`,
             }}>
               {/* Author-Avatar als BG-Watermark — gross, halbtransparent, hinter
                   dem ganzen Card-Inhalt. Gibt das „Owner-Stempel"-Feeling. */}
@@ -11452,7 +11457,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 marginBottom: 'clamp(8px, 1.2vh, 24px)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
-                animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
+                // 2026-05-07 (Audit P2): revealAnswerBam (scale-bounce) auf dem
+                // Container sprang mit den Chip-Cascades durch — alle Chips
+                // huepften synchron mit dem Container-Scale, plus jeder Chip
+                // hat seine eigene contentReveal. langFadeIn als ruhige
+                // Container-Entry, die Chip-Cascade traegt allein die Energie.
+                animation: 'langFadeIn 0.5s ease 0.15s both',
               }}>
                 <div style={{
                   fontSize: tierStyles.headerFs, fontWeight: 900,
@@ -12849,7 +12859,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     WebkitBackdropFilter: 'blur(10px)',
                     transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
                     opacity: isWrong ? 0.4 : 1,
-                    transition: 'transform 0.5s var(--qq-ease-bounce), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
+                    // 2026-05-07 (Audit P2): scale 1→1.08 mit ease-bounce hatte
+                    // leichten Overshoot. Lock-Step braucht keinen Bounce — der
+                    // celebShake auf isCorrect ist die Feier-Anim, die scale soll
+                    // ruhig settle. ease-out-cubic glatt + dezent.
+                    transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
                     animation: !isReveal
                       ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
                       : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),

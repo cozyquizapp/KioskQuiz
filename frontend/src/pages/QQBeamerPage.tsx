@@ -3685,11 +3685,25 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               zIndex: 0,
             }}
           />
-          {/* Soft-Vignette ueber dem Video — schwacher Dunkel-Halo aus den
-              Ecken (Mitte bleibt klar). Sichtbar erst nach Video-Ende. */}
+          {/* 2026-05-07 v16 (Wolf 'nimm 3.png als BG nach dem Video — fast
+              exakt der gleiche Pink/Blau-Look wie im Video, krasser Continuity-
+              Effekt'): nach Video-Ende fadet 3.png ein als BG. Plus Dim-Overlay
+              fuer Lesbarkeit der Cascade-Texte. */}
           <div aria-hidden style={{
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at center, transparent 35%, rgba(5,8,16,0.55) 100%)',
+            backgroundImage: 'url(/themes/3.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: videoEnded ? 0.7 : 0,
+            transition: 'opacity 0.6s ease 0.1s',
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+          {/* Dim-Overlay ueber dem 3.png-BG — duenkelt das Bild leicht ab
+              damit Pink-Cascade-Texte gut lesbar bleiben. */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(5,8,16,0.35) 0%, rgba(5,8,16,0.65) 100%)',
             opacity: videoEnded ? 1 : 0,
             transition: 'opacity 0.5s ease',
             pointerEvents: 'none', zIndex: 0,

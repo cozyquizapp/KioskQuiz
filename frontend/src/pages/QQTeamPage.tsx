@@ -12,7 +12,6 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
-import { isCountryFlag, getTwemojiFlagUrl } from '../utils/fluentEmoji';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
 import { JokerIcon } from '../components/JokerIcon';

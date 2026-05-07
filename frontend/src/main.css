@@ -14,20 +14,6 @@
   font-display: swap;
 }
 
-/* 2026-05-07 (Wolf-Wunsch 'alle Emojis Microsoft Fluent'): Inline-Replacement
-   <img>-Tags vom fluentEmoji.ts Helper. Skaliert auf 1em-Hoehe damit es im
-   Text natuerlich neben dem Glyph stehen wuerde wenn Replace nicht greift.
-   aspect-ratio 1/1 verhindert verzerrte CDN-Loads. */
-.qq-fluent-emoji {
-  display: inline-block;
-  height: 1em;
-  width: 1em;
-  vertical-align: -0.18em;
-  margin: 0 0.04em;
-  pointer-events: none;
-  user-select: none;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

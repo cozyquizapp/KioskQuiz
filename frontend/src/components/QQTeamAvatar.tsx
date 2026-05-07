@@ -289,7 +289,6 @@ function EmojiAvatar({
             src={getCountryFlagUrl(emoji)}
             alt={emoji}
             draggable={false}
-            className="qq-fluent-skip"
             style={{
               width: flat ? '1.5em' : '1em',
               height: flat ? '1.125em' : '0.75em',

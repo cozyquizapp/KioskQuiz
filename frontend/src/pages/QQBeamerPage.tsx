@@ -23,7 +23,6 @@ import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
-import { isCountryFlag, getTwemojiFlagUrl } from '../utils/fluentEmoji';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
@@ -3738,8 +3737,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { lang
               src={logoUrl}
               alt="Eurovision Song Contest"
               draggable={false}
-              className="qq-fluent-skip"
-              style={{
+                style={{
                 marginTop: 'clamp(12px, 1.8vh, 26px)',
                 height: 'clamp(60px, 9vh, 130px)',
                 width: 'auto',
@@ -14881,7 +14879,6 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             src={s.theme.logoUrl}
             alt="Eurovision Song Contest"
             draggable={false}
-            className="qq-fluent-skip"
             style={{
               height: 'clamp(50px, 7vh, 100px)',
               width: 'auto',
@@ -17533,7 +17530,6 @@ export const EurovisionHearts = memo(function EurovisionHearts() {
             src="/themes/eurovision-heart-opt.png"
             alt=""
             draggable={false}
-            className="qq-fluent-skip"
             style={{
               width: '100%', height: '100%', display: 'block',
               filter: 'drop-shadow(0 0 12px rgba(255,45,123,0.55)) drop-shadow(0 0 4px rgba(255,255,255,0.25))',

@@ -4399,17 +4399,23 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
     ? (lang === 'de'
         ? [
             { text: 'Bonsoir Europe!', mouths: 4 },
+            // 2026-05-07 v9 (Wolf 'griechen, polen, russen sind dabei'):
+            // multilinguale Begruessungen als Easter-Egg im Idle-Pool.
+            { text: 'Γεια σας!', mouths: 3 },        // EL: 'Hallo zusammen'
+            { text: 'Witajcie!', mouths: 3 },        // PL: 'Willkommen'
+            { text: 'Добро пожаловать!', mouths: 5 }, // RU: 'Willkommen'
             { text: 'Mit dem Handy joinen', mouths: 4 },
             { text: 'Welches Land seid ihr?', mouths: 5 },
-            { text: 'Habt ihr Tipps abgegeben?', mouths: 6 },
             { text: 'Wer holt heute 12 Punkte?', mouths: 6 },
             { text: 'Lasst die Show beginnen!', mouths: 5 },
           ]
         : [
             { text: 'Good evening Europe!', mouths: 5 },
+            { text: 'Γεια σας!', mouths: 3 },        // EL
+            { text: 'Witajcie!', mouths: 3 },        // PL
+            { text: 'Добро пожаловать!', mouths: 5 }, // RU
             { text: 'Phone out, scan, join!', mouths: 4 },
             { text: 'Which country are you?', mouths: 5 },
-            { text: 'Placed your bets?', mouths: 4 },
             { text: 'Who scores douze points?', mouths: 5 },
             { text: 'Let the show begin!', mouths: 4 },
           ])
@@ -4431,10 +4437,28 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
 
   const [idleIdx, setIdleIdx] = useState(0);
 
+  // 2026-05-07 v9 (Wolf 'wir haben griechen polen russen, wolf soll auf den
+  // sprachen begruessen'): im ESC-Mode rotiert das Team-Join-Welcome
+  // zufaellig durch DE/EN/EL/PL/RU. useMemo auf welcomedTeamName, damit
+  // dasselbe Team beim selben Join nicht zwischen Sprachen flippt.
+  const ESC_GREETINGS = useMemo<Array<(name: string) => string>>(() => [
+    (n) => `Hallo ${n}!`,        // DE
+    (n) => `Hello ${n}!`,        // EN
+    (n) => `Γεια ${n}!`,         // EL — Griechisch
+    (n) => `Cześć ${n}!`,        // PL — Polnisch
+    (n) => `Привет ${n}!`,       // RU — Russisch
+  ], []);
+  const escWelcomeText = useMemo(() => {
+    if (!welcomedTeamName || !eurovisionMode) return null;
+    const fn = ESC_GREETINGS[Math.floor(Math.random() * ESC_GREETINGS.length)];
+    return fn(welcomedTeamName);
+  }, [welcomedTeamName, eurovisionMode, ESC_GREETINGS]);
+
   // Welcome-Slogan ueberschreibt idle wenn ein neues Team joint
   const welcomeSlogan: Slogan | null = welcomedTeamName
     ? {
-        text: lang === 'de' ? `Hallo ${welcomedTeamName}!` : `Hello ${welcomedTeamName}!`,
+        text: escWelcomeText
+          ?? (lang === 'de' ? `Hallo ${welcomedTeamName}!` : `Hello ${welcomedTeamName}!`),
         mouths: Math.min(7, Math.max(3, Math.ceil(welcomedTeamName.length / 3) + 1)),
       }
     : null;

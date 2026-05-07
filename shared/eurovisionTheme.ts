@@ -14,7 +14,10 @@ export const EUROVISION_THEME: QQTheme = {
   eurovisionMode: true,
   lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
   pauseBackgroundUrl: '/themes/eurovision-bg-2.jpg',
-  phaseIntroBackgroundUrl: '/themes/eurovision-bg-2.jpg',
+  // 2026-05-07 (Wolf 'PhaseIntro: BG ohne Text nehmen, sonst Halbfinale-Title
+  // unlesbar weil "EUROVISION SONG CONTEST"-Schrift durchbleedet'): Wechsel
+  // von bg-2.jpg (mit eingebranntem Vienna-2026-Text) auf bg-1.png (nur Herz).
+  phaseIntroBackgroundUrl: '/themes/eurovision-bg-1.png',
   logoUrl: '/themes/eurovision-logo.jpg',
   welcomeText: {
     de: 'Bonsoir Europe',

@@ -36,9 +36,6 @@
     <path d="M0 760 Q 480 640 960 760 T 1920 760"/>
     <path d="M0 800 Q 480 680 960 800 T 1920 800"/>
   </g>
-  <g opacity="0.55">
-    <text x="960" y="120" text-anchor="middle" font-family="'Nunito', system-ui, sans-serif" font-size="28" font-weight="900" fill="#fde68a" letter-spacing="0.24em" opacity="0.55">★ EUROVISION SONG CONTEST ★</text>
-  </g>
   <g opacity="0.7">
     <circle cx="320"  cy="200" r="3" fill="#fff"/>
     <circle cx="1620" cy="280" r="2.5" fill="#fde68a"/>

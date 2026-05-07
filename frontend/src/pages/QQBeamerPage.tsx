@@ -14603,6 +14603,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
   const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
 
+  // 2026-05-07 (Wolf-ESC-Sidequest): Pro-Draft Lobby-BG auch hier in PreGame
+  // (Welcome-Page) anwenden — sonst sieht man den ESC-BG erst in der echten
+  // Lobby, nicht im 'Gleich gehts los'-Welcome.
+  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -14618,6 +14623,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
         '#0D0A06',
     }}>
+      {lobbyBgUrl && mode === 'preGame' && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${lobbyBgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.45,
+            mixBlendMode: 'screen',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+      )}
       <Fireflies />
 
       {/* Ambient ring-light hinter dem Hero — pulsiert in Mode-Farbe */}
@@ -14765,6 +14786,23 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
+        {/* 2026-05-07 (Wolf-ESC): Edition-Eyebrow nur wenn Eurovision-Mode aktiv
+            UND PreGame. Klein ueber dem Big Title. */}
+        {mode === 'preGame' && s.theme?.eurovisionMode && (
+          <div style={{
+            padding: '6px 22px', borderRadius: 999,
+            background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
+            border: '2px solid rgba(236,72,153,0.55)',
+            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+            color: '#fde68a', letterSpacing: '0.18em', textTransform: 'uppercase',
+            boxShadow: '0 0 24px rgba(236,72,153,0.35)',
+            marginBottom: 6,
+            animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+          }}>
+            🎤 Eurovision Edition
+          </div>
+        )}
+
         {/* 2026-05-06 v5 (Wolf 'pause konsistent zu intro: kein Eyebrow,
             gleiche Wave-Animation'): Eyebrow-Pille jetzt fuer beide Modes
             aus, Title in beiden Modes mit per-Buchstaben Wave. */}

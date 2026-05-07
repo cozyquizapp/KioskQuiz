@@ -1203,7 +1203,15 @@ export default function QQModeratorPage() {
                 })()}
 
                 {/* ── QUESTION ACTIVE ── */}
-                {s.phase === 'QUESTION_ACTIVE' && (
+                {/* 2026-05-07 (Wolf-Bug 'Antwort-aufdecken sichtbar waehrend
+                    Slot rollt — Klick ueberspringt Slot komplett'): bei
+                    HotPotato im rolling/landed-State diesen Button NICHT
+                    zeigen — sonst kommt's zu Confusion mit den HP-eigenen
+                    Slot-Stop/Timer-Start-Buttons. */}
+                {s.phase === 'QUESTION_ACTIVE'
+                  && !(s.currentQuestion?.bunteTuete?.kind === 'hotPotato'
+                       && ((s as any).hotPotatoSlotState === 'rolling'
+                           || (s as any).hotPotatoSlotState === 'landed')) && (
                   <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="R">
                     👁 Antwort aufdecken
                   </PrimaryBtn>

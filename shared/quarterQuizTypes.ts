@@ -531,6 +531,11 @@ export interface QQTheme {
    *  Sticker bei richtiger Antwort, Mikrofon-Trophy statt 🏆, etc.).
    *  Andere Drafts ohne Flag = unveraendertes Verhalten. */
   eurovisionMode?: boolean;
+  /** 2026-05-07: Pro-Draft Wunsch-Avatar-Set (z.B. 'esc' fuer Eurovision-
+   *  Watchparty → Bots ziehen Flaggen statt zufaelliger MEGA-Pool-Emojis).
+   *  Mod-SetupView wechselt beim Draft-Auswahl automatisch auf dieses Set,
+   *  Wolf kann's manuell ueberschreiben. */
+  preferredAvatarSetId?: string;
 }
 
 export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme> = {

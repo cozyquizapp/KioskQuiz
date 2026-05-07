@@ -3608,14 +3608,26 @@ function SetupView({
   const [customSoundsOpen, setCustomSoundsOpen] = useState(false);
 
   // Reload the draft's soundConfig whenever the selected draft changes.
+  // 2026-05-07 (Wolf): Plus pro-Draft Avatar-Set-Praeferenz auto-anwenden
+  // (z.B. Eurovision-Quiz wechselt automatisch auf 'esc'-Set, sodass Bots
+  // ESC-Flaggen ziehen statt zufaelliger MEGA-Pool-Emojis). Wolf kann
+  // danach immer noch manuell das Set ueberschreiben.
   useEffect(() => {
     if (!qqDraftId) { setDraftSoundConfig({}); return; }
     let cancelled = false;
     fetch(`/api/qq/drafts/${encodeURIComponent(qqDraftId)}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (!cancelled && d) setDraftSoundConfig(d.soundConfig ?? {}); })
+      .then(d => {
+        if (cancelled || !d) return;
+        setDraftSoundConfig(d.soundConfig ?? {});
+        const preferredSet = d.theme?.preferredAvatarSetId;
+        if (preferredSet && preferredSet !== s.avatarSetId) {
+          emit('qq:setAvatarSet', { roomCode, avatarSetId: preferredSet });
+        }
+      })
       .catch(() => {});
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qqDraftId]);
 
   // Save soundConfig back into the draft (PUT).

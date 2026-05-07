@@ -266,6 +266,7 @@ export function makeEurovisionDraft(): QQDraft {
         de: ['Halbfinale 1', 'Halbfinale 2', 'Finale'],
         en: ['Semi-Final 1', 'Semi-Final 2', 'Grand Final'],
       },
+      preferredAvatarSetId: 'esc',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),

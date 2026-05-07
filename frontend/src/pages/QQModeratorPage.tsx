@@ -3684,6 +3684,38 @@ function SetupView({
     } finally { setSavingSound(false); }
   }
 
+  // 2026-05-07 (Wolf-Bug 'Eurovision-Lobby-Sound versehentlich auf alle Drafts
+  // gepusht'): Strippt nur das lobbyWelcome-Feld aus allen Drafts. Andere
+  // SoundConfig-Felder (timerLoop, fanfare, ...) bleiben erhalten. Beim
+  // Lobby-Loop greift dann automatisch der Pool-Fallback (lobby-welcome-1..4
+  // rotierend), weil startLobbyLoop bei leerem Custom-Url auf den Pool zurueck-
+  // faellt.
+  async function clearLobbySoundFromAllDrafts() {
+    if (!window.confirm(`Den 'Lobby/Pause-Musik'-Slot aus allen ${drafts.length} Fragensätzen entfernen? Andere Sounds bleiben unangetastet.\n\nDanach laeuft im Lobby-Modus wieder der Standard-4-Track-Pool (lobby-welcome-1..4 geshuffelt).`)) return;
+    setSavingSound(true);
+    let touched = 0;
+    try {
+      for (const d of drafts) {
+        const id = d.id.startsWith('qq:') ? d.id.slice(3) : d.id;
+        const res = await fetch(`/api/qq/drafts/${encodeURIComponent(id)}`);
+        if (!res.ok) continue;
+        const draft = await res.json();
+        const cfg = (draft.soundConfig ?? {}) as Record<string, any>;
+        const had = typeof cfg.lobbyWelcome === 'string' && cfg.lobbyWelcome.length > 0;
+        if (!had) continue; // nichts zu tun
+        const { lobbyWelcome: _drop, ...rest } = cfg;
+        draft.soundConfig = rest;
+        await fetch(`/api/qq/drafts/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(draft),
+        });
+        touched++;
+      }
+      alert(`Lobby-Sound aus ${touched} von ${drafts.length} Fragensaetzen entfernt. Pool-Fallback ist wieder aktiv.`);
+    } finally { setSavingSound(false); }
+  }
+
   const selectedDraft = drafts.find(d => d.id === selectedDraftId);
 
   // ── Farb-Tokens für Setup (wärmer als der Live-Modus) ─────────────────────
@@ -4129,17 +4161,29 @@ function SetupView({
                 </div>
               )}
               {qqDraftId && (
-                <button
-                  onClick={applySoundsToAllDrafts}
-                  disabled={savingSound}
-                  style={{
-                    marginTop: 8,
-                    padding: '7px 14px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
-                    border: `1px solid ${GOLD_BORDER}`, background: GOLD_SOFT,
-                    color: GOLD, fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
-                  }}
-                  title="Diese Sounds auf alle Fragensätze übernehmen"
-                >📋 Sounds auf alle Fragensätze übernehmen</button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  <button
+                    onClick={applySoundsToAllDrafts}
+                    disabled={savingSound}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
+                      border: `1px solid ${GOLD_BORDER}`, background: GOLD_SOFT,
+                      color: GOLD, fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                    }}
+                    title="Diese Sounds auf alle Fragensätze übernehmen"
+                  >📋 Sounds auf alle Fragensätze übernehmen</button>
+                  <button
+                    onClick={clearLobbySoundFromAllDrafts}
+                    disabled={savingSound}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
+                      border: '1px solid rgba(248,113,113,0.45)',
+                      background: 'rgba(248,113,113,0.10)',
+                      color: '#fca5a5', fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                    }}
+                    title="Lobby/Pause-Musik aus allen Fragensätzen entfernen — Standard-Pool springt wieder ein"
+                  >🔄 Lobby-Sound aus allen Sätzen entfernen</button>
+                </div>
               )}
             </div>
 

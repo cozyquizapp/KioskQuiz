@@ -280,14 +280,19 @@ function EmojiAvatar({
           // Disc (NICHT round-fill — handpolished countryflags.com-3D-Look
           // ist mit Twemoji-SVG + CSS-Overlay nicht reproduzierbar, lieber
           // ehrlicher flat-Look in der Disc).
+          // 2026-05-07 v2 (Wolf 'flaggen auf dem grid groesser'): im flat-Mode
+          // (Grid-Cells, Card-BG) hat die Disc keinen sichtbaren Rand, also
+          // darf die Flagge mehr Platz einnehmen. 1.5em / 1.125em fuellt etwa
+          // 90 % × 67 % der Cell-Disc, in der gedraengten Disc bleibts bei
+          // 1em / 0.75em damit der Goldring darum sichtbar bleibt.
           <img
             src={getCountryFlagUrl(emoji)}
             alt={emoji}
             draggable={false}
             className="qq-fluent-skip"
             style={{
-              width: '1em',
-              height: '0.75em',
+              width: flat ? '1.5em' : '1em',
+              height: flat ? '1.125em' : '0.75em',
               objectFit: 'contain',
             }}
           />

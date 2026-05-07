@@ -1726,15 +1726,26 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   }, [s.comebackHL, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Music: play question musicUrl ──
+  // 2026-05-07 (Wolf-Konzept): musicMode pro Frage waehlbar
+  //   'auto'           = active + reveal (default, altes Verhalten)
+  //   'duringActive'   = nur waehrend Frage, stoppt beim Reveal
+  //   'revealOnly'     = erst beim Reveal (Climax-Variante, z.B. ESC-Sieger-Song)
+  //   'audioQuestion'  = wie duringActive (visueller Hint kommt separat)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     const url = s.currentQuestion?.musicUrl;
+    const mode = s.currentQuestion?.musicMode ?? 'auto';
     if (!url) {
       if (audioRef.current) { fadeOutAudio(audioRef.current, 600); audioRef.current = null; }
       return;
     }
-    // Während PAUSE nicht stoppen — nur runterducken (Musik bleibt im Hintergrund).
-    if (s.phase !== 'QUESTION_ACTIVE' && s.phase !== 'QUESTION_REVEAL' && s.phase !== 'PAUSED') {
+    // Welche Phasen sollen Sound abspielen?
+    const allowActive = mode === 'auto' || mode === 'duringActive' || mode === 'audioQuestion';
+    const allowReveal = mode === 'auto' || mode === 'revealOnly';
+    const inActive = s.phase === 'QUESTION_ACTIVE' && allowActive;
+    const inReveal = s.phase === 'QUESTION_REVEAL' && allowReveal;
+    const inPaused = s.phase === 'PAUSED'; // Pause friert immer ein, nur Duck
+    if (!inActive && !inReveal && !inPaused) {
       if (audioRef.current) { fadeOutAudio(audioRef.current, 600); audioRef.current = null; }
       return;
     }
@@ -1750,7 +1761,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     a.play().catch(() => {});
     audioRef.current = a;
     return () => { fadeOutAudio(a, 500); };
-  }, [s.currentQuestion?.musicUrl, s.phase, s.musicMuted, s.volume, duckFactor]);
+  }, [s.currentQuestion?.musicUrl, s.currentQuestion?.musicMode, s.phase, s.musicMuted, s.volume, duckFactor]);
 
   // (Vollbild-Button wird zentral vom QQBeamerPage-Parent gerendert (FullscreenNudge),
   //  hier kein zweiter Button mehr — vermeidet Stacking-/Klick-Konflikte oben rechts.)

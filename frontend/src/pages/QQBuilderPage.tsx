@@ -1394,9 +1394,33 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
           🎵 Hintergrundmusik <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional, MP3)</span>
         </div>
         {q.musicUrl ? (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <audio src={q.musicUrl} controls style={{ height: 32, flex: 1 }} />
-            <button onClick={() => onChange({ ...q, musicUrl: undefined })} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #EF4444', color: '#EF4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 11 }}>✕</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <audio src={q.musicUrl} controls style={{ height: 32, flex: 1 }} />
+              <button onClick={() => onChange({ ...q, musicUrl: undefined, musicMode: undefined })} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #EF4444', color: '#EF4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 11 }}>✕</button>
+            </div>
+            {/* 2026-05-07 (Wolf-Konzept): Musik-Modus pro Frage. Default 'auto'
+                = altes Verhalten (active+reveal). 'revealOnly' fuer Climax-
+                Songs (z.B. ESC-Sieger-Song erst bei Aufloesung). */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={labelStyle}>Wann spielen?</label>
+              <select
+                value={q.musicMode ?? 'auto'}
+                onChange={e => onChange({ ...q, musicMode: e.target.value as QQQuestion['musicMode'] })}
+                style={{
+                  padding: '6px 10px', borderRadius: 6,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#e2e8f0', fontSize: 12, fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="auto" style={{ background: '#0f172a' }}>🅰️ Auto — laeuft Frage + Reveal (Standard)</option>
+                <option value="duringActive" style={{ background: '#0f172a' }}>⏱ Nur waehrend der Frage (stoppt beim Reveal)</option>
+                <option value="revealOnly" style={{ background: '#0f172a' }}>🎉 Nur beim Reveal (Climax-Song)</option>
+                <option value="audioQuestion" style={{ background: '#0f172a' }}>🎧 Audio-Frage (Song = Frage, hoere genau hin)</option>
+              </select>
+            </div>
           </div>
         ) : (
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', cursor: 'pointer', fontSize: 12, color: '#64748b' }}>

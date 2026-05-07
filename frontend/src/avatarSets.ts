@@ -60,6 +60,16 @@ export const MEGA_EMOJI_POOL: string[] = [
   '⭐','🌟','💫','✨','🔥','❄️','💧','💎','💍','🏆','🥇','🥈','🥉','👑','🎖️',
   '🎁','🎈','🎀','🌈','☀️','🌙','⛄','🌸','🌹','🌻','🌷','🌵','🌴','🍀','🪴',
   '🪐','⚡','🌊','🌪️','☄️','🔮','🎃','🍄','🪐','🛡️','⚔️',
+  // 2026-05-07 (Wolf): ESC-/Eurovision-Flaggen — alle Laender die je
+  // teilgenommen haben (~47 inkl. historischer Teilnehmer wie Russland/
+  // Belarus/Marokko). Damit Wolfs Watchparty-Setup mit 'all'-Set Spielern
+  // direkt ESC-Flaggen zur Auswahl gibt, ohne separates Pool-UI bauen zu
+  // muessen.
+  '🇦🇱','🇦🇩','🇦🇲','🇦🇺','🇦🇿','🇧🇪','🇧🇾','🇧🇦','🇧🇬','🇭🇷',
+  '🇨🇾','🇨🇿','🇩🇰','🇪🇪','🇫🇮','🇫🇷','🇬🇪','🇩🇪','🇬🇷','🇭🇺',
+  '🇮🇸','🇮🇪','🇮🇱','🇮🇹','🇱🇻','🇱🇹','🇱🇺','🇲🇹','🇲🇩','🇲🇨',
+  '🇲🇪','🇲🇦','🇳🇱','🇲🇰','🇳🇴','🇵🇱','🇵🇹','🇷🇴','🇷🇺','🇸🇲',
+  '🇷🇸','🇸🇰','🇸🇮','🇪🇸','🇸🇪','🇨🇭','🇹🇷','🇺🇦','🇬🇧',
 ];
 
 export const AVATAR_SETS: AvatarSet[] = [
@@ -152,6 +162,18 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🐉', '🧚', '🔮'],
     source: 'emoji',
     avatars: ['🦄', '🐉', '🧙', '🧚', '🧜', '⚔️', '🔮', '🏰'],
+  },
+  // 2026-05-07 (Wolf): Eurovision-Set fuer ESC-Watchparty. 8 prominente
+  // Sieger-Laender als Default-Slots — Wolfs Spieler koennen via 'all'-Set
+  // alle ~47 ESC-Teilnehmer-Flaggen aus dem MEGA_EMOJI_POOL waehlen.
+  {
+    id: 'esc',
+    label: 'Eurovision',
+    tint: '#ec4899',
+    leadEmoji: '🎤',
+    preview: ['🇸🇪', '🇮🇪', '🇮🇱'],
+    source: 'emoji',
+    avatars: ['🇸🇪', '🇮🇪', '🇮🇱', '🇮🇸', '🇳🇴', '🇩🇪', '🇮🇹', '🇦🇹'],
   },
 ];
 

@@ -229,6 +229,14 @@ export interface QQQuestion {
   emojis?: string[];
   // Per-question background music (uploaded MP3)
   musicUrl?: string;
+  /** 2026-05-07: pro Frage waehlbarer Musik-Modus.
+   *  - 'auto' (default): laeuft waehrend QUESTION_ACTIVE + QUESTION_REVEAL
+   *  - 'duringActive': nur waehrend Frage, stoppt beim Reveal
+   *  - 'revealOnly': erst beim Reveal — Climax-Variante (z.B. ESC-Sieger-Song
+   *     spielt erst wenn das Sieger-Jahr aufgedeckt wird)
+   *  - 'audioQuestion': wie duringActive, plus visueller '🎧 Hoere genau hin'-Hinweis
+   */
+  musicMode?: 'auto' | 'duringActive' | 'revealOnly' | 'audioQuestion';
   // Moderator host note — shown in /moderator during this question (private, not on beamer)
   hostNote?: string;
   // Fun/interesting fact about the topic — optional, moderator can drop it to lighten the mood.

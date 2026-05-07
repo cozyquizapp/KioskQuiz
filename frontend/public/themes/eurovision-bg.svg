@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="esc-glow-1" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#EC4899" stop-opacity="0.32"/>
+      <stop offset="45%" stop-color="#A855F7" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0a0612" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="esc-glow-2" cx="80%" cy="80%" r="50%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0a0612" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="esc-glow-3" cx="15%" cy="80%" r="45%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#0a0612" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="esc-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a0d24"/>
+      <stop offset="100%" stop-color="#0a0612"/>
+    </linearGradient>
+    <pattern id="esc-stars" width="180" height="180" patternUnits="userSpaceOnUse">
+      <circle cx="40"  cy="30"  r="1.4" fill="#fde68a" opacity="0.65"/>
+      <circle cx="120" cy="70"  r="1.0" fill="#fff" opacity="0.55"/>
+      <circle cx="60"  cy="120" r="1.6" fill="#FBBF24" opacity="0.55"/>
+      <circle cx="150" cy="150" r="1.0" fill="#fde68a" opacity="0.45"/>
+      <circle cx="20"  cy="160" r="1.2" fill="#fff" opacity="0.40"/>
+      <circle cx="100" cy="20"  r="0.8" fill="#fff" opacity="0.35"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#esc-base)"/>
+  <rect width="1920" height="1080" fill="url(#esc-stars)" opacity="0.7"/>
+  <rect width="1920" height="1080" fill="url(#esc-glow-1)"/>
+  <rect width="1920" height="1080" fill="url(#esc-glow-2)"/>
+  <rect width="1920" height="1080" fill="url(#esc-glow-3)"/>
+  <g opacity="0.16" stroke="#FBBF24" stroke-width="1.2" fill="none">
+    <path d="M0 720 Q 480 600 960 720 T 1920 720"/>
+    <path d="M0 760 Q 480 640 960 760 T 1920 760"/>
+    <path d="M0 800 Q 480 680 960 800 T 1920 800"/>
+  </g>
+  <g opacity="0.55">
+    <text x="960" y="120" text-anchor="middle" font-family="'Nunito', system-ui, sans-serif" font-size="28" font-weight="900" fill="#fde68a" letter-spacing="0.24em" opacity="0.55">★ EUROVISION SONG CONTEST ★</text>
+  </g>
+  <g opacity="0.7">
+    <circle cx="320"  cy="200" r="3" fill="#fff"/>
+    <circle cx="1620" cy="280" r="2.5" fill="#fde68a"/>
+    <circle cx="1500" cy="580" r="2" fill="#fff"/>
+    <circle cx="240"  cy="640" r="2.5" fill="#fff"/>
+    <circle cx="1280" cy="160" r="2" fill="#fde68a"/>
+    <circle cx="640"  cy="380" r="2" fill="#fff"/>
+  </g>
+</svg>

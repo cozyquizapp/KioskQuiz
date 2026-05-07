@@ -248,7 +248,31 @@ export function makeEurovisionDraft(): QQDraft {
     phases: 3,
     language: 'both',
     questions,
+    // 2026-05-07 (Wolf-ESC-Sidequest): Theme-Overrides die nur dieser Draft
+    // nutzt. Andere Drafts ohne diese Felder sehen Standard-UI.
+    theme: {
+      preset: 'custom',
+      bgColor: '#1a0d24',
+      accentColor: '#EC4899',
+      textColor: '#fde68a',
+      cardBg: '#2d1b3d',
+      eurovisionMode: true,
+      lobbyBackgroundUrl: '/themes/eurovision-bg.svg',
+      welcomeText: {
+        de: 'Bonsoir Europe',
+        en: 'Good evening Europe',
+      },
+      phaseNames: {
+        de: ['Halbfinale 1', 'Halbfinale 2', 'Finale'],
+        en: ['Semi-Final 1', 'Semi-Final 2', 'Grand Final'],
+      },
+    },
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
 }
+
+// 2026-05-07 (Wolf-Hinweis): Fuer die Watchparty-Atmosphaere lade die Europa-
+// Hymne (Beethovens 'Ode an die Freude' — gemeinfrei, Versionen z.B. auf
+// imslp.org / archive.org) im Mod-Sound-Panel als 'lobbyWelcome'-Slot hoch.
+// Dann laeuft sie automatisch in Lobby + Pause statt der Standard-Cozy-Loop.

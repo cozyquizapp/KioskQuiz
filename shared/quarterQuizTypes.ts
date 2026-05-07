@@ -518,6 +518,19 @@ export interface QQTheme {
   textColor?: string;     // primary text
   cardBg?: string;        // card background
   fontFamily?: string;    // e.g. 'Inter' | 'Space Grotesk'
+  /** 2026-05-07 (Wolf-ESC-Sidequest): Pro-Draft optionales Lobby-BG-Bild.
+   *  URL zu einem Bild oder SVG, wird in der LOBBY ueber den Standard-BG
+   *  gelegt. Default undefined = Standard-BG bleibt. */
+  lobbyBackgroundUrl?: string;
+  /** Pro-Draft Phasen-Namen Override (z.B. 'Halbfinale 1' statt 'Runde 1').
+   *  Array-Index 0 = Phase 1, ... Default = Standard-Namen aus bt.phase.names. */
+  phaseNames?: { de?: string[]; en?: string[] };
+  /** Pro-Draft Welcome-Greeting in der LOBBY. Default = Standard-Welcome. */
+  welcomeText?: { de?: string; en?: string };
+  /** Master-Flag fuer Eurovision-spezifische UX-Akzente (Twelve-Points-
+   *  Sticker bei richtiger Antwort, Mikrofon-Trophy statt 🏆, etc.).
+   *  Andere Drafts ohne Flag = unveraendertes Verhalten. */
+  eurovisionMode?: boolean;
 }
 
 export const QQ_THEME_PRESETS: Record<Exclude<QQThemePreset, 'custom'>, QQTheme> = {

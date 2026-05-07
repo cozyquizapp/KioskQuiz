@@ -1878,6 +1878,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         </div>
       )}
 
+      {/* 2026-05-07 (Wolf-ESC-Sidequest): '12 Punkte!'-Sticker ueberlagert
+          das Reveal wenn Eurovision-Mode aktiv UND ein Team richtig lag.
+          Nur eine Frage lang, dann auto-dismiss. */}
+      {s.theme?.eurovisionMode && s.phase === 'QUESTION_REVEAL' && (
+        <TwelvePointsSticker
+          key={`12-${s.currentQuestion?.id}`}
+          hasWinner={!!s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0}
+          lang={(useLangFlip(s.language) === 'en') ? 'en' : 'de'}
+        />
+      )}
+
       {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
           Übergang zum Regel-Intro. */}
       <QuizIntroOverlay language={s.language} visible={welcomeActive} />
@@ -4330,6 +4341,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // QR size responsive to viewport height (avoid clipping on laptops)
   const qrSize = 'min(44vh, 420px)';
 
+  // 2026-05-07 (Wolf-Sidequest): pro-Draft optionales Lobby-BG-Bild — wird
+  // hinter den Standard-Glow-Layer gelegt, damit das Bild dezent durchscheint
+  // ohne dass die UI darunter unlesbar wird. Kein BG-URL = Standard bleibt.
+  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -4345,6 +4361,22 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
         '#0D0A06',
     }}>
+      {lobbyBgUrl && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${lobbyBgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.55,
+            mixBlendMode: 'screen',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+      )}
       <Fireflies />
 
       {/* Wolf-Lobby-Greeter top-right — winkt + reagiert auf Team-Joins
@@ -4466,23 +4498,38 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             50%      { opacity: 0.85; transform: translate(-50%, -50%) scale(1.04); }
           }
         `}</style>
-        <div
-          className="cq-wordmark"
-          style={{
-            fontFamily: fontFam,
-            fontSize: 'clamp(56px, 9vw, 140px)',
-          }}
-          aria-label="CozyQuiz"
-        >
-          {Array.from('CozyQuiz').map((ch, i) => (
-            <span
-              key={i}
+        {/* 2026-05-07 (Wolf-Sidequest): Pro-Draft Welcome-Text-Override.
+            Wenn theme.welcomeText gesetzt ist, ersetzt es 'CozyQuiz' im Wordmark.
+            ESC-Quiz nutzt das fuer 'Bonsoir Europe' o.ae. */}
+        {(() => {
+          const customWelcome = de
+            ? (s.theme?.welcomeText?.de ?? '')
+            : (s.theme?.welcomeText?.en ?? '');
+          const wordmark = customWelcome.length > 0 ? customWelcome : 'CozyQuiz';
+          // Stagger reduziert sich proportional bei langen Texten damit Wave
+          // nicht ueber 4s laeuft.
+          const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));
+          return (
+            <div
+              className="cq-wordmark"
               style={{
-                animation: `qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
+                fontFamily: fontFam,
+                fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5vw, 100px)' : 'clamp(56px, 9vw, 140px)',
               }}
-            >{ch}</span>
-          ))}
-        </div>
+              aria-label={wordmark}
+            >
+              {Array.from(wordmark).map((ch, i) => (
+                <span
+                  key={i}
+                  style={{
+                    animation: `qqCatNameWave 2.6s ease-in-out ${0.85 + i * stagger}s infinite`,
+                    whiteSpace: ch === ' ' ? 'pre' : undefined,
+                  }}
+                >{ch}</span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Center: 2-column layout — QR left, Teams right.
@@ -5114,7 +5161,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
   const color = QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
-  const phaseNamesRaw = bt.phase.names[lang];
+  // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
+  // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
+  // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
+  // Override-Array startet bei index 1 (Phase 1 = Index 1, Phase 0 ist
+  // ungenutzt im bt.phase.names — ['', 'Runde 1', 'Runde 2', ...]).
+  const phaseNamesDefault = bt.phase.names[lang];
+  const phaseNamesOverride = lang === 'en'
+    ? s.theme?.phaseNames?.en
+    : s.theme?.phaseNames?.de;
+  const phaseNamesRaw: string[] = phaseNamesOverride && phaseNamesOverride.length > 0
+    ? ['', ...phaseNamesOverride, ...phaseNamesDefault.slice(phaseNamesOverride.length + 1)]
+    : phaseNamesDefault;
   const phaseDescsRaw = bt.phase.descs[lang];
   // „Finale" ist seit Connections-Einführung das 4×4-Mini-Game, NICHT mehr die
   // letzte Quiz-Runde. Quiz-Runden werden immer als „Runde N" angezeigt — auch
@@ -15994,6 +16052,83 @@ function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
         speaking={speakingNow}
         mirror={true}
       />
+    </div>
+  );
+}
+
+/**
+ * 2026-05-07 (Wolf-ESC-Sidequest): Eurovision-Style 'Twelve Points'-Sticker.
+ * Pop't ueber dem Beamer-Reveal wenn das aktive Team richtig lag — typische
+ * ESC-Punktevergabe-Geste mit DOUZE-POINTS / DOUZE / 12 PUNKTE-Wording.
+ * Nur sichtbar wenn theme.eurovisionMode + revealed + Winner existiert.
+ * Auto-dismiss nach 1.6s (entry + hold + exit).
+ */
+function TwelvePointsSticker({ hasWinner, lang }: { hasWinner: boolean; lang: 'de' | 'en' }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!hasWinner) { setVisible(false); return; }
+    setVisible(true);
+    const t = window.setTimeout(() => setVisible(false), 1600);
+    return () => window.clearTimeout(t);
+  }, [hasWinner]);
+  if (!visible) return null;
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'fixed',
+        top: '14%', left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 90,
+        pointerEvents: 'none',
+        animation: 'qqTwelvePointsPop 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+      }}
+    >
+      <style>{`
+        @keyframes qqTwelvePointsPop {
+          0%   { opacity: 0; transform: translate(-50%, -8px) scale(0.6) rotate(-8deg); }
+          18%  { opacity: 1; transform: translate(-50%, 0) scale(1.08) rotate(2deg); }
+          32%  { transform: translate(-50%, 0) scale(0.96) rotate(-1deg); }
+          45%  { transform: translate(-50%, 0) scale(1.02) rotate(0deg); opacity: 1; }
+          78%  { transform: translate(-50%, 0) scale(1) rotate(0deg); opacity: 1; }
+          100% { opacity: 0; transform: translate(-50%, -12px) scale(0.92) rotate(-3deg); }
+        }
+      `}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        padding: '20px 36px',
+        borderRadius: 24,
+        background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 50%, #F59E0B 100%)',
+        boxShadow:
+          '0 0 0 4px rgba(255,255,255,0.25), ' +
+          '0 0 60px rgba(236,72,153,0.55), ' +
+          '0 0 120px rgba(168,85,247,0.35), ' +
+          '0 12px 32px rgba(0,0,0,0.5)',
+        border: '3px solid #FBBF24',
+      }}>
+        <div style={{
+          fontSize: 'clamp(64px, 9vw, 132px)',
+          fontWeight: 900,
+          color: '#FBBF24',
+          textShadow: '0 4px 0 rgba(0,0,0,0.5), 0 0 24px rgba(251,191,36,0.6)',
+          fontFamily: "'Nunito', system-ui, sans-serif",
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+        }}>
+          12
+        </div>
+        <div style={{
+          fontSize: 'clamp(16px, 2vw, 26px)',
+          fontWeight: 900,
+          color: '#fff',
+          textShadow: '0 2px 0 rgba(0,0,0,0.45)',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          fontFamily: "'Nunito', system-ui, sans-serif",
+        }}>
+          {lang === 'de' ? 'Punkte' : 'Points'} · Douze Points
+        </div>
+      </div>
     </div>
   );
 }

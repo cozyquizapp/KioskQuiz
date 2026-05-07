@@ -204,6 +204,26 @@ function PngAvatar({
 }
 
 // ─── Emoji-Avatar (neuer Default-Look, alle Sets ausser cozyCast) ─────────
+// 2026-05-07 (Wolf-Bug 'Edge zeigt HR/CH/MC statt Flaggen'): Country-Flag-
+// Codepoints werden auf Windows-Browsern nativ als Regional-Indicator-Letters
+// gerendert. Twemoji-CountryFlags-Webfont + DOM-Replace-Helper greifen nicht
+// 100% zuverlaessig. Direkt-Render hier als <img> ist robust.
+function isCountryFlagGlyph(glyph: string): boolean {
+  const cp = glyph.codePointAt(0);
+  return cp != null && cp >= 0x1f1e6 && cp <= 0x1f1ff;
+}
+function getCountryFlagUrl(glyph: string): string {
+  const codepoints: number[] = [];
+  for (const ch of glyph) {
+    const cp = ch.codePointAt(0);
+    if (cp == null) continue;
+    if (cp === 0xfe0f) continue;
+    codepoints.push(cp);
+  }
+  const key = codepoints.map(cp => cp.toString(16)).join('-');
+  return `https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/${key}.svg`;
+}
+
 function EmojiAvatar({
   emoji, color, size, baseStyle, className, title, square, flat,
 }: {
@@ -250,8 +270,23 @@ function EmojiAvatar({
         // Drop-Shadow nur am Emoji-Glyph, fuer Tiefe + Lesbarkeit auf farbigem Grund
         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 1px rgba(0,0,0,0.5))',
         lineHeight: 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
-        {emoji}
+        {isCountryFlagGlyph(emoji) ? (
+          <img
+            src={getCountryFlagUrl(emoji)}
+            alt={emoji}
+            draggable={false}
+            className="qq-fluent-skip"
+            style={{
+              width: '1em',
+              height: '0.75em',  // Flaggen haben 4:3-Aspect, nicht 1:1
+              objectFit: 'contain',
+            }}
+          />
+        ) : emoji}
       </span>
     </span>
   );

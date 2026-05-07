@@ -33,9 +33,23 @@ function isFlagCodepoint(cp: number): boolean {
 }
 
 /**
- * Twemoji-CDN-URL für ein Country-Flag-Glyph.
+ * Prüft ob ein Glyph ein Country-Flag ist (zwei Regional Indicators).
+ * Export für Direkt-Nutzung in Components die Country-Flags spezifisch
+ * behandeln wollen (z.B. EmojiAvatar — bypasst den DOM-Replacer).
+ */
+export function isCountryFlag(glyph: string): boolean {
+  const cp = glyph.codePointAt(0);
+  return cp != null && cp >= 0x1f1e6 && cp <= 0x1f1ff;
+}
+
+/**
+ * Twemoji-CDN-URL für ein Country-Flag-Glyph (exportiert für Direkt-Nutzung).
  * Twemoji-Filename = lowercase hex, '-' separated, ohne Variation Selector.
  */
+export function getTwemojiFlagUrl(glyph: string): string | null {
+  return twemojiFlagUrl(glyph);
+}
+
 function twemojiFlagUrl(glyph: string): string | null {
   const codepoints: number[] = [];
   for (const ch of glyph) {

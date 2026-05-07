@@ -3860,8 +3860,16 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',
             }}
           >
-            {/* CozyQuiz-Wordmark als Letter-Cascade-Container */}
-            <span style={{ position: 'relative', display: 'inline-flex' }}>
+            {/* CozyQuiz-Wordmark als Letter-Cascade-Container.
+                2026-05-07 v15 (Wolf 'beide logos leicht hovern lassen'): im
+                ESC-Mode kriegt der CozyQuiz-Wordmark ebenfalls die Hover-
+                Animation analog zum Eurovision-Logo. Startet nach dem
+                Letter-Cascade @ 3.4s. */}
+            <span style={{
+              position: 'relative',
+              display: 'inline-flex',
+              ...(eurovisionMode ? { animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite' } : {}),
+            }}>
               {/* Shimmer-Sweep ueber den Wordmark nach Settle */}
               <span aria-hidden style={{
                 position: 'absolute', inset: 0,
@@ -3887,30 +3895,45 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                 Logo-Image. Beide popen NACH dem CozyQuiz-Cascade rein. */}
             {eurovisionMode && (
               <>
+                {/* 2026-05-07 v15 (Wolf 'X bitte mittig + animieren dass es
+                    schimmert'): inline-flex Container fuer perfekt zentriertes
+                    X. Doppel-Animation: pop-in @ 2.4s, dann Shimmer-Loop ab
+                    3.0s (alle 2.5s pulsiert). */}
                 <span aria-hidden style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
-                  fontSize: '0.55em',
+                  fontSize: '0.7em',
+                  lineHeight: 1,
                   color: '#fde6f0',
                   opacity: 0,
-                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both',
+                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both, qqStingerXShimmer 2.6s ease-in-out 3.0s infinite',
                   textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                 }}>×</span>
                 {logoUrl && (
-                  <img
-                    src={logoUrl}
-                    alt="Eurovision Song Contest"
-                    draggable={false}
-                    style={{
-                      // Logo-Hoehe relativ zur Title-Font: 1em wuerde 1:1 mit
-                      // Letterhohe matchen, 1.15em macht Logo etwas dominanter.
-                      height: '1.15em',
-                      width: 'auto',
-                      filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
-                      animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
-                      opacity: 0,
-                    }}
-                  />
+                  /* Wrapper-Span traegt die Hover-Float-Animation; das img selbst
+                     den Pop-In + Drop-Shadow. Zwei separate Elemente damit beide
+                     Animations parallel laufen (sonst overrided animation einander). */
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite',
+                  }}>
+                    <img
+                      src={logoUrl}
+                      alt="Eurovision Song Contest"
+                      draggable={false}
+                      style={{
+                        height: '1.15em',
+                        width: 'auto',
+                        filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
+                        animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+                        opacity: 0,
+                      }}
+                    />
+                  </span>
                 )}
               </>
             )}
@@ -4045,6 +4068,17 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           0%   { opacity: 0; transform: translateY(8px) scale(0.85); }
           70%  { opacity: 1; transform: translateY(-2px) scale(1.06); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* 2026-05-07 v15 (Wolf 'X mittig + animieren dass es schimmert'):
+           Pulse-Animation fuer das Stinger-X — Scale + Glow-Pulse. */
+        @keyframes qqStingerXShimmer {
+          0%, 100% { transform: scale(1);    text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 6px rgba(255,255,255,0.0); }
+          50%      { transform: scale(1.18); text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.85), 0 0 8px rgba(255,45,123,0.5); }
+        }
+        /* Subtle vertical hover-float fuer Stinger-Logos. */
+        @keyframes qqStingerHover {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-6px); }
         }
         @keyframes qqIntroAccentShimmer {
           0%   { background-position: -200% 0; }
@@ -15265,22 +15299,55 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       }}>
         {/* 2026-05-07 (Wolf-ESC): Edition-Eyebrow nur wenn Eurovision-Mode aktiv
             UND PreGame. Bei vorhandenem logoUrl → Logo-Bild, sonst Text-Pille. */}
+        {/* 2026-05-07 v15 (Wolf 'in der lobby bitte auch das mit cozyquiz x
+            eurovision'): PreGame-Eyebrow ist jetzt der gleiche Stinger wie
+            auf der Welcome-Page — [CozyQuiz Stinger Fit] × [Eurovision-Logo]
+            mit X-Shimmer + Logo-Hover. Kompakter als der Welcome-Hero damit
+            das 'Gleich gehts los'-Title darunter dominiert. */}
         {mode === 'preGame' && s.theme?.eurovisionMode && (s.theme.logoUrl ? (
-          <img
-            src={s.theme.logoUrl}
-            alt="Eurovision Song Contest"
-            draggable={false}
-            style={{
-              // 2026-05-07 v3 (Wolf 'logo ohne bg, gerne groesser'):
-              // transparente Outline-Variante — kein Pill-Frame mehr, dafuer
-              // Drop-Shadow + groesser. 50-100 -> 90-180.
-              height: 'clamp(90px, 13vh, 180px)',
-              width: 'auto',
-              filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
-              marginBottom: 12,
-              animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
-            }}
-          />
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'clamp(14px, 1.6vw, 28px)',
+            marginBottom: 12,
+            animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+          }}>
+            {/* CozyQuiz-Wordmark */}
+            <span style={{
+              fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
+              fontSize: 'clamp(48px, 6.5vw, 96px)',
+              fontWeight: 400,
+              letterSpacing: '0.04em',
+              color: '#FF2D7B',
+              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(255,45,123,0.55)',
+              lineHeight: 0.96,
+              animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+            }}>COZYQUIZ</span>
+            {/* X-Shimmer */}
+            <span aria-hidden style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Nunito', system-ui, sans-serif",
+              fontWeight: 900,
+              fontSize: 'clamp(28px, 4vw, 60px)',
+              lineHeight: 1,
+              color: '#fde6f0',
+              textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+              animation: 'qqStingerXShimmer 2.6s ease-in-out 0.6s infinite',
+            }}>×</span>
+            {/* Eurovision-Logo */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite' }}>
+              <img
+                src={s.theme.logoUrl}
+                alt="Eurovision Song Contest"
+                draggable={false}
+                style={{
+                  height: 'clamp(60px, 8vh, 120px)',
+                  width: 'auto',
+                  filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+                }}
+              />
+            </span>
+          </div>
         ) : (
           <div style={{
             padding: '6px 22px', borderRadius: 999,

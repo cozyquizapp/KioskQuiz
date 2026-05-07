@@ -168,9 +168,11 @@ export const AVATAR_SETS: AvatarSet[] = [
     source: 'emoji',
     avatars: ['🦄', '🐉', '🧙', '🧚', '🧜', '⚔️', '🔮', '🏰'],
   },
-  // 2026-05-07 (Wolf): Eurovision-Set fuer ESC-Watchparty. 8 prominente
-  // Sieger-Laender als Default-Slots — Wolfs Spieler koennen via 'all'-Set
-  // alle ~47 ESC-Teilnehmer-Flaggen aus dem MEGA_EMOJI_POOL waehlen.
+  // 2026-05-07 (Wolf): Eurovision-Set fuer ESC-Watchparty.
+  // 2026-05-07 v2 (Wolf-Bug 'in /team werden nur 8 flaggen angezeigt wenn
+  // eurovision-set gewaehlt'): avatars-Liste war nur 8 Default-Slots, daher
+  // Carousel hat nur 8 angezeigt. Jetzt alle ~47 ESC-Teilnehmer-Flaggen aus
+  // dem ESC_FLAG_POOL — Spieler koennen ihr Heimatland frei waehlen.
   {
     id: 'esc',
     label: 'Eurovision',
@@ -178,7 +180,7 @@ export const AVATAR_SETS: AvatarSet[] = [
     leadEmoji: '🎤',
     preview: ['🇸🇪', '🇮🇪', '🇮🇱'],
     source: 'emoji',
-    avatars: ['🇸🇪', '🇮🇪', '🇮🇱', '🇮🇸', '🇳🇴', '🇩🇪', '🇮🇹', '🇦🇹'],
+    avatars: ESC_FLAG_POOL,
   },
 ];
 

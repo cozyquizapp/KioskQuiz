@@ -13052,6 +13052,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             activeTeamId={activeTeamId}
             teamPhaseStats={s.teamPhaseStats}
             correctTeamId={s.correctTeamId}
+            eurovisionMode={!!s.theme?.eurovisionMode}
           />
         </div>
       </div>
@@ -14469,7 +14470,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               }}>
                 {isJoker ? (
                   <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <JokerIcon i={i} size={42} />
+                    <JokerIcon i={i} size={42} eurovisionMode={!!s.theme?.eurovisionMode} />
                   </span>
                 ) : (
                   <span style={{ fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
@@ -17520,7 +17521,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} /> : (team && (() => {
+                  {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
                     // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
                     // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
                     // bleibt — verstaerkt den 3D-Plaettchen-Look.
@@ -17587,13 +17588,15 @@ function MiniGrid({ state: s, size }: { state: QQStateUpdate; size: number }) {
   );
 }
 
-export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc }: {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode }: {
   teams: QQStateUpdate['teams'];
   activeTeamId?: string | null;
   teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
   correctTeamId?: string | null;
   activeActionLabel?: string;
   activeActionDesc?: string;
+  /** 2026-05-07 (Wolf-ESC): wenn true, Joker-Pile nutzt EU-Star-Variante. */
+  eurovisionMode?: boolean;
 }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
@@ -17810,7 +17813,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
                     zIndex: 10,
                   }}
-                ><JokerIcon i={i} size={dense ? 38 : 48}/></span>
+                ><JokerIcon i={i} size={dense ? 38 : 48} eurovisionMode={eurovisionMode}/></span>
               )}
               {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
               {(streaks[t.id] ?? 0) >= 3 && (

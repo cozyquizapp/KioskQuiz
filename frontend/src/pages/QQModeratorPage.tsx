@@ -3319,7 +3319,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
             }}>
-              {cell.jokerFormed ? <JokerIcon i={r + c} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : (team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
+              {cell.jokerFormed ? <JokerIcon i={r + c} size={Math.max(18, Math.floor(cellSize * 0.88))} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(18, Math.floor(cellSize * 0.88))} /> : '')}
             </div>
           );
         })

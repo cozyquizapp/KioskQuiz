@@ -1641,6 +1641,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                       <JokerIcon
                         i={i}
                         size={26}
+                        eurovisionMode={!!s.theme?.eurovisionMode}
                         alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
                         style={{
                           width: 26, height: 26,
@@ -1660,7 +1661,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                           animation: 'qqJokerFlyIn 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
                           zIndex: 10,
                         }}>
-                          <JokerIcon i={i} size={26} alt="" style={{ width: 26, height: 26 }} />
+                          <JokerIcon i={i} size={26} eurovisionMode={!!s.theme?.eurovisionMode} alt="" style={{ width: 26, height: 26 }} />
                         </span>
                       )}
                     </span>
@@ -5366,7 +5367,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                       {isStuckCell
                         ? <QQEmojiIcon emoji="🏯"/>
                         : cell.jokerFormed
-                          ? <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" />
+                          ? <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" eurovisionMode={!!s.theme?.eurovisionMode} square />
                           : team
                             ? <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={Math.max(24, Math.floor(cellSize * 0.95))} flat />
                             : null}

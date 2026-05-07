@@ -208,49 +208,30 @@ function processElement(root: Element | Document): void {
   for (const tn of textNodes) replaceInTextNode(tn);
 }
 
-let observer: MutationObserver | null = null;
-let initialized = false;
-
 /**
- * Initialisiert globalen DOM-Replace + MutationObserver.
- * Idempotent — mehrfacher Aufruf ist safe.
+ * 2026-05-07 (Wolf-Bug 'Moderator-Ansicht abgestuerzt: insertBefore on Node'):
+ * Der globale DOM-Replace mit MutationObserver ist fundamental inkompatibel
+ * mit Reacts Reconciler. Wenn der Observer einen Text-Node durch
+ * <img>+Text-Fragment ersetzt, verliert React die Referenz zu seinem
+ * erwarteten Kind — beim naechsten insertBefore (z.B. Lang-Flip auf Mod)
+ * crasht das gesamte Tree. Cozy-Wolfs Regel: Experimente duerfen das normale
+ * CozyQuiz nicht kaputt machen.
+ *
+ * Deshalb: Globaler Replacer ist deaktiviert. Country-Flags werden weiterhin
+ * Cross-Platform-konsistent gerendert, aber direkt in `QQTeamAvatar` als
+ * `<img>` (siehe `isCountryFlag`/`getTwemojiFlagUrl`-Exports oben). Andere
+ * Emojis fallen auf das native Plattform-Rendering zurueck — minimale visuelle
+ * Differenz iOS/Android/Mac/Windows ist akzeptabel, ein React-DOM-Crash nicht.
+ *
+ * Helper-Funktionen (replaceInTextNode, processElement, fluentMap) bleiben
+ * erhalten — wenn wir spaeter eine sichere, opt-IN-basierte React-Komponente
+ * `<FluentEmoji glyph="..." />` bauen wollen, kann sie auf urlFor/glyphToKey
+ * aufsetzen.
  */
 export function initFluentEmojis(): void {
-  if (initialized) return;
-  initialized = true;
-
-  // Initial-Replace auf den ganzen Body
-  processElement(document.body);
-
-  // MutationObserver: bei React-Re-Renders / dynamic Content nachziehen
-  observer = new MutationObserver(mutations => {
-    for (const m of mutations) {
-      if (m.type === 'childList') {
-        for (const node of m.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            processElement(node as Element);
-          } else if (node.nodeType === Node.TEXT_NODE) {
-            replaceInTextNode(node as Text);
-          }
-        }
-      } else if (m.type === 'characterData') {
-        if (m.target.nodeType === Node.TEXT_NODE) {
-          replaceInTextNode(m.target as Text);
-        }
-      }
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    characterData: true,
-    subtree: true,
-  });
+  // No-op. Siehe Kommentar oben.
 }
 
-/** Optional: Cleanup (z.B. fuer Tests). */
 export function disposeFluentEmojis(): void {
-  observer?.disconnect();
-  observer = null;
-  initialized = false;
+  // No-op.
 }

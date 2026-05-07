@@ -522,6 +522,12 @@ export interface QQTheme {
    *  URL zu einem Bild oder SVG, wird in der LOBBY ueber den Standard-BG
    *  gelegt. Default undefined = Standard-BG bleibt. */
   lobbyBackgroundUrl?: string;
+  /** Optional separates BG-Bild fuer Pause-Phase. Default = lobbyBackgroundUrl. */
+  pauseBackgroundUrl?: string;
+  /** Optional BG-Bild fuer PhaseIntro (Halbfinale 1, etc.). Default = lobbyBackgroundUrl. */
+  phaseIntroBackgroundUrl?: string;
+  /** Optional Logo-Bild fuer Branding-Pillen (z.B. Eurovision-Logo statt 🎤-Emoji). */
+  logoUrl?: string;
   /** Pro-Draft Phasen-Namen Override (z.B. 'Halbfinale 1' statt 'Runde 1').
    *  Array-Index 0 = Phase 1, ... Default = Standard-Namen aus bt.phase.names. */
   phaseNames?: { de?: string[]; en?: string[] };

@@ -266,28 +266,35 @@ function EmojiAvatar({
         borderRadius: square ? 0 : '50%',
       }}
     >
-      <span style={{
-        // Drop-Shadow nur am Emoji-Glyph, fuer Tiefe + Lesbarkeit auf farbigem Grund
-        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 1px rgba(0,0,0,0.5))',
-        lineHeight: 1,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {isCountryFlagGlyph(emoji) ? (
-          <img
-            src={getCountryFlagUrl(emoji)}
-            alt={emoji}
-            draggable={false}
-            className="qq-fluent-skip"
-            style={{
-              width: '1em',
-              height: '0.75em',  // Flaggen haben 4:3-Aspect, nicht 1:1
-              objectFit: 'contain',
-            }}
-          />
-        ) : emoji}
-      </span>
+      {isCountryFlagGlyph(emoji) ? (
+        // 2026-05-07 (Wolf 'Flaggen rund reinpacken'): Flagge fuellt die ganze
+        // Disc (object-fit: cover + position:absolute), oben/unten beschnitten
+        // wie auf countryflags.com 'Knopf Runde'. Border + Glow der Disc-Outer
+        // bleiben dadurch sichtbar als Frame-Effekt. Drop-Shadow weg — Flagge
+        // ist eh hochauflösend genug, Shadow stoert das Flag-Detail.
+        <img
+          src={getCountryFlagUrl(emoji)}
+          alt={emoji}
+          draggable={false}
+          className="qq-fluent-skip"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: square ? 0 : '50%',
+          }}
+        />
+      ) : (
+        <span style={{
+          // Drop-Shadow nur am Emoji-Glyph, fuer Tiefe + Lesbarkeit auf farbigem Grund
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 1px rgba(0,0,0,0.5))',
+          lineHeight: 1,
+        }}>
+          {emoji}
+        </span>
+      )}
     </span>
   );
 }

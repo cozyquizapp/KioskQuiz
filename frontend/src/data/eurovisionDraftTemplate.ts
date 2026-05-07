@@ -252,12 +252,18 @@ export function makeEurovisionDraft(): QQDraft {
     // nutzt. Andere Drafts ohne diese Felder sehen Standard-UI.
     theme: {
       preset: 'custom',
-      bgColor: '#1a0d24',
-      accentColor: '#EC4899',
-      textColor: '#fde68a',
-      cardBg: '#2d1b3d',
+      // 2026-05-07 (Wolf): Farben aus dem Vienna-2026-BG abgeleitet — tiefes
+      // Lila als BG, Pink-Magenta als Akzent (matched dem Heart-Logo),
+      // weiches Pinkrose statt Gold als Text fuer Konsistenz.
+      bgColor: '#1f0f3d',
+      accentColor: '#FF2D7B',
+      textColor: '#fde6f0',
+      cardBg: '#2d1644',
       eurovisionMode: true,
-      lobbyBackgroundUrl: '/themes/eurovision-bg.svg',
+      lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
+      pauseBackgroundUrl: '/themes/eurovision-bg-2.jpg',
+      phaseIntroBackgroundUrl: '/themes/eurovision-bg-2.jpg',
+      logoUrl: '/themes/eurovision-logo.jpg',
       welcomeText: {
         de: 'Bonsoir Europe',
         en: 'Good evening Europe',

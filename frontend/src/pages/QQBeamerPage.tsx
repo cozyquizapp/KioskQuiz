@@ -23,6 +23,7 @@ import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { isCountryFlag, getTwemojiFlagUrl } from '../utils/fluentEmoji';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
@@ -1878,20 +1879,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         </div>
       )}
 
-      {/* 2026-05-07 (Wolf-ESC-Sidequest): '12 Punkte!'-Sticker ueberlagert
-          das Reveal wenn Eurovision-Mode aktiv UND ein Team richtig lag.
-          Nur eine Frage lang, dann auto-dismiss. */}
-      {s.theme?.eurovisionMode && s.phase === 'QUESTION_REVEAL' && (
-        <TwelvePointsSticker
-          key={`12-${s.currentQuestion?.id}`}
-          hasWinner={!!s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0}
-          lang={(useLangFlip(s.language) === 'en') ? 'en' : 'de'}
-        />
-      )}
+      {/* 2026-05-07: TwelvePoints-Sticker entfernt (Wolf-Feedback 'wirkt
+          random eingesetzt, raus'). Plus dieser Aufruf hatte useLangFlip()
+          inline als Prop in einem conditional-Branch, was React-Hook-Order
+          zerlegte (error #310, jede Sekunde) wenn eurovisionMode zwischen
+          Renders wechselt. */}
 
       {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
           Übergang zum Regel-Intro. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} />
       {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
@@ -3520,7 +3516,7 @@ function MuchoOptionsReveal({
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, visible, eurovisionMode }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean }) {
+function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean; logoUrl?: string }) {
   const lang = useLangFlip(language);
   const title = 'CozyQuiz';
   const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
@@ -3734,8 +3730,25 @@ function QuizIntroOverlay({ language, visible, eurovisionMode }: { language: QQL
 
           {/* 2026-05-07 (Wolf-Sidequest): 'EUROVISION EDITION'-Subtitle wenn
               eurovisionMode aktiv. Pop't nach dem Title-Cascade rein, gleicher
-              Cozy-Spirit aber pink-lila statt gold. */}
-          {eurovisionMode && (
+              Cozy-Spirit aber pink-lila statt gold. Bei vorhandenem logoUrl
+              → Logo-Bild statt Text+Emoji-Pille (brand-stronger). */}
+          {eurovisionMode && (logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="Eurovision Song Contest"
+              draggable={false}
+              className="qq-fluent-skip"
+              style={{
+                marginTop: 'clamp(12px, 1.8vh, 26px)',
+                height: 'clamp(60px, 9vh, 130px)',
+                width: 'auto',
+                borderRadius: 16,
+                boxShadow: '0 0 30px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.4)',
+                animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+                opacity: 0,
+              }}
+            />
+          ) : (
             <div style={{
               marginTop: 'clamp(8px, 1.4vh, 20px)',
               padding: '8px 28px', borderRadius: 999,
@@ -3749,7 +3762,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode }: { language: QQL
             }}>
               🎤 Eurovision Edition
             </div>
-          )}
+          ))}
         </div>
 
         {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein. */}
@@ -5423,12 +5436,32 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // schon oben auf dem Progress-Tree, ein zweiter Wolf war redundant.
   const showWolfMark = false;
 
+  // 2026-05-07 (Wolf-ESC): Pro-Draft PhaseIntro-BG-Bild (z.B. Eurovision-
+  // Logo-BG hinter 'Halbfinale 1'). Fallback: lobbyBackgroundUrl.
+  const phaseIntroBgUrl = s.theme?.phaseIntroBackgroundUrl ?? s.theme?.lobbyBackgroundUrl;
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
+      {phaseIntroBgUrl && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${phaseIntroBgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.32,
+            mixBlendMode: 'screen',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+      )}
       <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${displayColor}88` : `${catColor ?? color}88`} />
 
       {showWolfMark && (
@@ -14634,7 +14667,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // 2026-05-07 (Wolf-ESC-Sidequest): Pro-Draft Lobby-BG auch hier in PreGame
   // (Welcome-Page) anwenden — sonst sieht man den ESC-BG erst in der echten
   // Lobby, nicht im 'Gleich gehts los'-Welcome.
-  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
+  // 2026-05-07: Pro-Mode-BG-Override — pause kann eigenes BG haben (Eurovision
+  // bg-2 vs lobby bg-1). Fallback: lobbyBackgroundUrl.
+  const bgUrl = mode === 'pause'
+    ? (s.theme?.pauseBackgroundUrl ?? s.theme?.lobbyBackgroundUrl)
+    : s.theme?.lobbyBackgroundUrl;
 
   return (
     <div style={{
@@ -14651,12 +14688,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
         '#0D0A06',
     }}>
-      {lobbyBgUrl && mode === 'preGame' && (
+      {bgUrl && (
         <div
           aria-hidden
           style={{
             position: 'absolute', inset: 0,
-            backgroundImage: `url(${lobbyBgUrl})`,
+            backgroundImage: `url(${bgUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -14815,8 +14852,23 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
         {/* 2026-05-07 (Wolf-ESC): Edition-Eyebrow nur wenn Eurovision-Mode aktiv
-            UND PreGame. Klein ueber dem Big Title. */}
-        {mode === 'preGame' && s.theme?.eurovisionMode && (
+            UND PreGame. Bei vorhandenem logoUrl → Logo-Bild, sonst Text-Pille. */}
+        {mode === 'preGame' && s.theme?.eurovisionMode && (s.theme.logoUrl ? (
+          <img
+            src={s.theme.logoUrl}
+            alt="Eurovision Song Contest"
+            draggable={false}
+            className="qq-fluent-skip"
+            style={{
+              height: 'clamp(50px, 7vh, 100px)',
+              width: 'auto',
+              borderRadius: 12,
+              boxShadow: '0 0 24px rgba(236,72,153,0.4), 0 4px 12px rgba(0,0,0,0.4)',
+              marginBottom: 8,
+              animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+            }}
+          />
+        ) : (
           <div style={{
             padding: '6px 22px', borderRadius: 999,
             background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
@@ -14829,7 +14881,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           }}>
             🎤 Eurovision Edition
           </div>
-        )}
+        ))}
 
         {/* 2026-05-06 v5 (Wolf 'pause konsistent zu intro: kein Eyebrow,
             gleiche Wave-Animation'): Eyebrow-Pille jetzt fuer beide Modes
@@ -16122,82 +16174,11 @@ function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
   );
 }
 
-/**
- * 2026-05-07 (Wolf-ESC-Sidequest): Eurovision-Style 'Twelve Points'-Sticker.
- * Pop't ueber dem Beamer-Reveal wenn das aktive Team richtig lag — typische
- * ESC-Punktevergabe-Geste mit DOUZE-POINTS / DOUZE / 12 PUNKTE-Wording.
- * Nur sichtbar wenn theme.eurovisionMode + revealed + Winner existiert.
- * Auto-dismiss nach 1.6s (entry + hold + exit).
- */
-function TwelvePointsSticker({ hasWinner, lang }: { hasWinner: boolean; lang: 'de' | 'en' }) {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (!hasWinner) { setVisible(false); return; }
-    setVisible(true);
-    const t = window.setTimeout(() => setVisible(false), 1600);
-    return () => window.clearTimeout(t);
-  }, [hasWinner]);
-  if (!visible) return null;
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: 'fixed',
-        top: '14%', left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 90,
-        pointerEvents: 'none',
-        animation: 'qqTwelvePointsPop 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-      }}
-    >
-      <style>{`
-        @keyframes qqTwelvePointsPop {
-          0%   { opacity: 0; transform: translate(-50%, -8px) scale(0.6) rotate(-8deg); }
-          18%  { opacity: 1; transform: translate(-50%, 0) scale(1.08) rotate(2deg); }
-          32%  { transform: translate(-50%, 0) scale(0.96) rotate(-1deg); }
-          45%  { transform: translate(-50%, 0) scale(1.02) rotate(0deg); opacity: 1; }
-          78%  { transform: translate(-50%, 0) scale(1) rotate(0deg); opacity: 1; }
-          100% { opacity: 0; transform: translate(-50%, -12px) scale(0.92) rotate(-3deg); }
-        }
-      `}</style>
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-        padding: '20px 36px',
-        borderRadius: 24,
-        background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 50%, #F59E0B 100%)',
-        boxShadow:
-          '0 0 0 4px rgba(255,255,255,0.25), ' +
-          '0 0 60px rgba(236,72,153,0.55), ' +
-          '0 0 120px rgba(168,85,247,0.35), ' +
-          '0 12px 32px rgba(0,0,0,0.5)',
-        border: '3px solid #FBBF24',
-      }}>
-        <div style={{
-          fontSize: 'clamp(64px, 9vw, 132px)',
-          fontWeight: 900,
-          color: '#FBBF24',
-          textShadow: '0 4px 0 rgba(0,0,0,0.5), 0 0 24px rgba(251,191,36,0.6)',
-          fontFamily: "'Nunito', system-ui, sans-serif",
-          letterSpacing: '-0.02em',
-          lineHeight: 1,
-        }}>
-          12
-        </div>
-        <div style={{
-          fontSize: 'clamp(16px, 2vw, 26px)',
-          fontWeight: 900,
-          color: '#fff',
-          textShadow: '0 2px 0 rgba(0,0,0,0.45)',
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          fontFamily: "'Nunito', system-ui, sans-serif",
-        }}>
-          {lang === 'de' ? 'Punkte' : 'Points'} · Douze Points
-        </div>
-      </div>
-    </div>
-  );
-}
+// 2026-05-07: TwelvePointsSticker-Component entfernt (Wolf-Feedback 'wirkt
+// random eingesetzt'). Plus der inline-Aufruf hatte useLangFlip() in einem
+// conditional-Branch, das verursachte React-error #310 (hook order kaputt
+// wenn eurovisionMode-Flag zwischen Renders kippt). Wenn ESC-Punkte-Geste
+// spaeter zurueck soll, separate Component mit Hooks im stabilen scope.
 
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -17030,6 +17011,32 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Stapel-Tiles entfernt. Die Cell selbst traegt schon
                     // Goldborder + Goldglow + Hard-Drop — der zusaetzliche
                     // 3-Layer-Ring um den Avatar war redundant.
+                    // 2026-05-07 (Wolf-ESC-Wunsch): bei eurovisionMode + Country-
+                    // Flag-Team die ganze Cell als Flagge fuellen statt Avatar-Disc
+                    // in der Mitte. Macht aus dem Spielfeld ein Country-Battle-Brett.
+                    const flagUrl = s.theme?.eurovisionMode && team.emoji && isCountryFlag(team.emoji)
+                      ? getTwemojiFlagUrl(team.emoji)
+                      : null;
+                    if (flagUrl) {
+                      return (
+                        <img
+                          src={flagUrl}
+                          alt={team.emoji}
+                          draggable={false}
+                          className="qq-fluent-skip"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: cellRadius,
+                            pointerEvents: 'none',
+                            zIndex: 3,
+                          }}
+                        />
+                      );
+                    }
                     return (
                       <div style={{
                         width: avSize, height: avSize, borderRadius: '50%',

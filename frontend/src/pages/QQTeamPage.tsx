@@ -4470,6 +4470,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   // auf grossem Grid (8x8). Greift fuer alle Single-Cell-Aktionen.
   type PendingKind = 'place' | 'steal' | 'ban' | 'shield' | 'stapel';
   const [pendingPick, setPendingPick] = useState<{ r: number; c: number; kind: PendingKind } | null>(null);
+  // 2026-05-07 (Wolf-Live-Test): Nach Place-Confirm springt /team sofort
+  // auf "Team X waehlt"-Wartesicht — Spieler sieht das eigene Feld nicht
+  // gesetzt (auf /beamer schon mit Animation). myRecentPlace haelt fuer
+  // ~900ms statt der Wartesicht das Mini-Grid mit Cell-Glow + Banner.
+  const [myRecentPlace, setMyRecentPlace] = useState<{ r: number; c: number; kind: PendingKind } | null>(null);
+  useEffect(() => {
+    if (!myRecentPlace) return;
+    const t = window.setTimeout(() => setMyRecentPlace(null), 900);
+    return () => window.clearTimeout(t);
+  }, [myRecentPlace]);
   // Comeback-Steal-Pause: pendingFor=null, comebackTeamId zeigt aber das aktive Team.
   // Damit andere Teams nicht „Spielfeld" sehen (so als waere die Klau-Phase fertig),
   // sondern weiterhin das klauende Team mit „wartet auf Moderator".
@@ -4703,6 +4713,10 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
     }
+    // 2026-05-07 (Wolf-Live-Test): Eigene Setz-Geste sichtbar halten — der
+    // Backend-State-Update kippt isMyTurn auf false, /team wuerde sofort auf
+    // Wartesicht springen. myRecentPlace ueberschreibt das fuer 900ms.
+    setMyRecentPlace({ r, c, kind });
     setPendingPick(null);
     setSelecting(false);
   }
@@ -4730,11 +4744,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     // füllt die Card-Breite per 1fr + aspect-ratio.
     const miniCellSize = Math.min(48, Math.floor(320 / s.gridSize));
     const myTeam = s.teams.find(tm => tm.id === myTeamId);
+    // 2026-05-07 (Wolf-Live-Test): Wenn ich gerade gesetzt habe, zeige fuer
+    // ~900ms Mini-Grid mit Cell-Highlight statt Avatar+"waehlt" — sonst sieht
+    // der Spieler die eigene Setzung gar nicht.
+    const showRecentPlaceFlash = myRecentPlace !== null;
+    const showPendingTeamView = pendingTeam && !showRecentPlaceFlash;
 
     return (
       <CozyCard borderColor={myTeam?.color}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
-          {pendingTeam ? (
+          {showPendingTeamView ? (
             <>
               <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={40} style={{
                 margin: '0 auto 8px',
@@ -4751,10 +4770,21 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
               </div>
             </>
           ) : (
-            /* Placement done — show mini grid + score summary */
+            /* Placement done — show mini grid + score summary.
+               2026-05-07: Banner kippt auf "✓ Gesetzt!" wenn ich gerade
+               selbst gesetzt habe (myRecentPlace) — gibt der eigenen
+               Setzung 900ms sichtbares Eigen-Feedback bevor die normale
+               Wartesicht uebernimmt. */
             <>
-              <div style={{ fontSize: 14, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-                {lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board'}
+              <div style={{
+                fontSize: 14, fontWeight: 900,
+                color: showRecentPlaceFlash ? (myTeam?.color ?? '#22C55E') : '#94a3b8',
+                textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+                animation: showRecentPlaceFlash ? 'tcCellClaim 0.5s var(--qq-ease-bounce) both' : undefined,
+              }}>
+                {showRecentPlaceFlash
+                  ? (lang === 'de' ? '✓ Gesetzt!' : '✓ Placed!')
+                  : (lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board')}
               </div>
               <div style={{
                 display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,

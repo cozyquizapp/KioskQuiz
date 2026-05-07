@@ -3920,6 +3920,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                   // 2026-05-07 v17: line-height + height fest, damit X
                   // perfekt vertikal mittig sitzt zwischen CozyQuiz-Letters
                   // und Logo. lineHeight 1, height 1em fixiert die Box.
+                  // 2026-05-07 v18 (Wolf 'das x soll mittiger zwischen cozyquiz
+                  // und eurovision logo'): Stinger-Fit-Font hat caps die ~7-9 %
+                  // ueber dem line-box-Zentrum sitzen — alignItems:center
+                  // zentriert die Box, nicht den Glyph. Daher position:relative
+                  // top:-0.08em, schiebt X visuell hoch ohne mit der Shine-
+                  // transform-Animation zu kollidieren.
+                  position: 'relative',
+                  top: '-0.08em',
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: '0.85em',
@@ -4636,6 +4644,7 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
         exitMs={exitMs}
         tailSide="left"
         eurovisionMode={eurovisionMode}
+        size="lg"
       />
       {/* 2026-05-07 v3 (Wolf '6 daumen-Posen, zwinkern wenn ein Team
           reinkommt'): mode 'winken' → 'daumen' (Daumen-hoch-Wolf statt
@@ -4643,8 +4652,13 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
           hoch + 'Hallo {Team}!'. mirror=true — Wolf schaut zur Lobby-
           Mitte (transform direkt am Haupt-Wrapper, nicht als zusaetzliche
           Schicht — verhindert Flicker beim Mund-Flap). */}
+      {/* 2026-05-07 v18 (Wolf 'wolf und sprechbubble in lobby rechts oben
+          darf groesser sein, sonst kann man das ueberhaupt nicht lesen'):
+          Wolf-Wrapper 140-200 → 190-280, Bubble-Size 'lg'. Container ist
+          absolute top-right der Lobby — Stinger-Header ist im Center und
+          hat rechte Reserve via clamp-gap, kein Overlap erwartbar. */}
       <AnimatedCozyWolf
-        widthCss="clamp(140px, 13vw, 200px)"
+        widthCss="clamp(190px, 17vw, 280px)"
         mode={eurovisionMode ? 'flagge' : 'daumen'}
         speaking={speakingNow}
         wink={!eurovisionMode && isWelcoming}
@@ -4920,9 +4934,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
                 }}>COZYQUIZ</span>
                 {/* X mit qqStingerXShine (Tilt + Multi-Layer-Glow). height:1em
-                    fixiert die vertikale Mittellage. */}
+                    fixiert die vertikale Mittellage.
+                    2026-05-07 v18 (Wolf 'das x soll mittiger'): Stinger-Fit-
+                    Caps sitzen ~8 % ueberm Box-Zentrum → position:relative
+                    top:-0.08em hebt X auf den visuellen Mittelpunkt der
+                    COZYQUIZ-Letters. Kompatibel mit qqStingerXShine-transform. */}
                 <span aria-hidden style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative',
+                  top: '-0.08em',
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: 'clamp(40px, 6vw, 92px)',
@@ -5301,14 +5321,45 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor, teams.length, s.sfxMuted]);
 
+  // 2026-05-07 v18 (Wolf 'die seite wo die teams vorgestellt werden, darf
+  // auch mehr nach eurovision aussehen, also bg von eurovision und vlt text
+  // in eurovision farben'): ESC-Adaption — BG-Image (5.png Vienna-Stripe-Pink
+  // wie Lobby) statt Slate, Title + Good-Luck in Pink, EurovisionHearts statt
+  // Fireflies, optionaler ESC-Logo-Anker oben (kleiner als Lobby-Stinger,
+  // damit Big-Title dominiert). Standard-CozyQuiz-Mode unangetastet.
+  const isEsc = !!s.theme?.eurovisionMode;
+  const escBgUrl = isEsc ? s.theme?.lobbyBackgroundUrl : null;
+  const escLogoUrl = isEsc ? s.theme?.logoUrl : null;
+  const titleColor = isEsc ? '#FF2D7B' : '#f8fafc';
+  const titleShadow = isEsc
+    ? '0 3px 18px rgba(0,0,0,0.6), 0 0 28px rgba(255,45,123,0.45)'
+    : '0 4px 20px rgba(251,191,36,0.25)';
+  const goodLuckColor = isEsc ? '#FF2D7B' : '#fbbf24';
+  const goodLuckShadow = isEsc
+    ? '0 3px 18px rgba(0,0,0,0.6), 0 0 24px rgba(255,45,123,0.55)'
+    : '0 4px 24px rgba(251,191,36,0.5)';
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative',
-      background: 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 55%, #020617 100%)',
+      background: isEsc
+        ? 'radial-gradient(ellipse at center, #2d1644 0%, #1f0f3d 55%, #0d0820 100%)'
+        : 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 55%, #020617 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: fontFam, overflow: 'hidden',
     }}>
-      <Fireflies />
+      {escBgUrl && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${escBgUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.55,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+      )}
+      {isEsc ? <EurovisionHearts /> : <Fireflies />}
       <style>{`
         @keyframes qqTrTitle {
           0%   { opacity: 0; transform: translateY(-30px) scale(0.8); letter-spacing: 0.5em; }
@@ -5334,21 +5385,51 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           0%,100% { transform: scale(1); }
           50%     { transform: scale(1.04); }
         }
+        @keyframes qqTrEscLogo {
+          0%   { opacity: 0; transform: translateY(-12px) scale(0.92); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
       `}</style>
 
-      {/* Backdrop spotlight */}
+      {/* Backdrop spotlight — Pink in ESC, Gold sonst */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(circle at 50% 40%, rgba(251,191,36,0.12) 0%, transparent 55%)',
+        background: isEsc
+          ? 'radial-gradient(circle at 50% 40%, rgba(255,45,123,0.16) 0%, transparent 55%)'
+          : 'radial-gradient(circle at 50% 40%, rgba(251,191,36,0.12) 0%, transparent 55%)',
         pointerEvents: 'none',
+        zIndex: 1,
       }} />
+
+      {/* ESC-Logo-Anker oben — nur Logo (ohne COZYQUIZ-Wordmark) damit der
+          Big-Title 'Heute spielen…' dominiert. Brueckenbau zu Lobby/Welcome. */}
+      {escLogoUrl && (
+        <div style={{
+          position: 'relative', zIndex: 2,
+          marginBottom: 'clamp(14px, 1.6vw, 24px)',
+          animation: 'qqTrEscLogo 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both',
+        }}>
+          <img
+            src={escLogoUrl}
+            alt="Eurovision Song Contest"
+            draggable={false}
+            style={{
+              height: 'clamp(48px, 6vh, 92px)',
+              width: 'auto',
+              filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+              animation: 'qqStingerHover 4.2s ease-in-out 1.2s infinite',
+            }}
+          />
+        </div>
+      )}
 
       {/* Title */}
       <div style={{
-        fontSize: 'clamp(36px, 5.2vw, 82px)', fontWeight: 900, color: '#f8fafc',
+        position: 'relative', zIndex: 2,
+        fontSize: 'clamp(36px, 5.2vw, 82px)', fontWeight: 900, color: titleColor,
         textTransform: 'uppercase', letterSpacing: '0.1em',
         animation: `qqTrTitle ${titleDur}ms cubic-bezier(.2,.8,.2,1) ${titleDelay}ms both`,
-        textShadow: '0 4px 20px rgba(251,191,36,0.25)',
+        textShadow: titleShadow,
         marginBottom: 'clamp(24px, 3vw, 48px)',
       }}>
         🎬 {lang === 'en' ? 'Tonight\u2019s teams\u2026' : 'Heute spielen\u2026'}
@@ -5468,9 +5549,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <div style={{
           fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 900,
-          color: '#fbbf24',
+          color: goodLuckColor,
           textTransform: 'uppercase', letterSpacing: '0.15em',
-          textShadow: '0 4px 24px rgba(251,191,36,0.5)',
+          textShadow: goodLuckShadow,
           opacity: showGoodLuck ? 1 : 0,
           transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
           animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
@@ -14302,7 +14383,7 @@ function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
 // (Dreieck), Stroke folgt aber nur dem V (nicht der oberen Linie).
 // Dadurch ueberlappt sich die obere Kante der Tail-Fuellung mit der
 // Bubble-Bottom-Border, und die V-Stroke-Farbe matcht die Bubble-Border.
-function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left', eurovisionMode }: {
+function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'left', eurovisionMode, size = 'md' }: {
   text: string;
   bubbleKey: number | string;
   enterMs: number;
@@ -14312,8 +14393,13 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
   /** 2026-05-07 (Wolf 'mehr Pink+Blau, Set D'): wenn true, Bubble in ESC-
    *  Palette — Pink-Lila-BG, Pink-zu-Blau-Border, helles Rosa-Text. */
   eurovisionMode?: boolean;
+  /** 2026-05-07 v18 (Wolf 'wolf und sprechbubble in lobby rechts oben darf
+   *  groesser sein, sonst kann man das ueberhaupt nicht lesen'): 'lg' fuer
+   *  die Lobby (Beamer-Distanz lesbar), 'md' fuer Wolf-Co-Mod (Pause/PreGame). */
+  size?: 'md' | 'lg';
 }) {
   const totalLifeMs = enterMs + speakMs + exitMs;
+  const isLg = size === 'lg';
   return (
     <div
       key={bubbleKey}
@@ -14324,17 +14410,17 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
         marginRight: tailSide === 'right' ? 14 : 0,
         // Adaptive Breite: 1-Wort-Slogan kompakt, langer Slogan wraped
         // automatisch auf 2 Zeilen.
-        minWidth: 80,
-        maxWidth: 320,
+        minWidth: isLg ? 120 : 80,
+        maxWidth: isLg ? 460 : 320,
         background: eurovisionMode
           ? 'linear-gradient(140deg, rgba(45,22,68,0.94) 0%, rgba(31,15,61,0.94) 100%)'
           : 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
         border: eurovisionMode
           ? '2px solid rgba(255,45,123,0.7)'
           : '2px solid rgba(251,191,36,0.6)',
-        borderRadius: 20,
-        padding: '10px 18px',
-        fontSize: 'clamp(14px, 1.45vw, 20px)',
+        borderRadius: isLg ? 24 : 20,
+        padding: isLg ? '14px 24px' : '10px 18px',
+        fontSize: isLg ? 'clamp(20px, 2.1vw, 30px)' : 'clamp(14px, 1.45vw, 20px)',
         fontWeight: 800,
         lineHeight: 1.25,
         letterSpacing: '0.005em',
@@ -15489,9 +15575,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             }}>COZYQUIZ</span>
             {/* 2026-05-07 v17 (Wolf 'X mittig, nicer animiert, eurovision
                 groesser'): height: 1em fixiert vertikale Mittellage; neue
-                qqStingerXShine animation (Tilt + Multi-Layer-Glow). */}
+                qqStingerXShine animation (Tilt + Multi-Layer-Glow).
+                2026-05-07 v18 (Wolf 'das x soll mittiger'): Stinger-Fit-
+                Caps sitzen ueber Box-Mitte → position:relative top:-0.08em. */}
             <span aria-hidden style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+              top: '-0.08em',
               fontFamily: "'Nunito', system-ui, sans-serif",
               fontWeight: 900,
               fontSize: 'clamp(36px, 5vw, 76px)',

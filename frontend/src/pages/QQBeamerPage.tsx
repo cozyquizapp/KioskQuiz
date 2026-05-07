@@ -3861,9 +3861,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               fontFamily: eurovisionMode
                 ? "'Stinger Fit', 'Nunito', system-ui, sans-serif"
                 : undefined,
-              // ESC-Stinger: kompakter font-size (60-140) damit Logo daneben
-              // passt. Non-ESC: unveraendert (80-200) als Solo-Hero.
-              fontSize: eurovisionMode ? 'clamp(60px, 8vw, 140px)' : 'clamp(80px, 12vw, 200px)',
+              // ESC-Stinger: kompakter font-size damit Logo daneben passt.
+              // Non-ESC: unveraendert (80-200) als Solo-Hero.
+              // 2026-05-07 v19 (Wolf 'cozyquiz noch groesser oder, da
+              // ueberlappt sich einiges'): ESC 60-140 -> 52-118 fuer
+              // proportional kleineren Stinger (Welcome aber breiter als
+              // Lobby weil keinen Wolf top-right hat — moderater Shrink).
+              fontSize: eurovisionMode ? 'clamp(52px, 7vw, 118px)' : 'clamp(80px, 12vw, 200px)',
               fontWeight: eurovisionMode ? 400 : 900,
               letterSpacing: eurovisionMode ? '0.04em' : '0.01em',
               lineHeight: 0.96,
@@ -3920,14 +3924,11 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                   // 2026-05-07 v17: line-height + height fest, damit X
                   // perfekt vertikal mittig sitzt zwischen CozyQuiz-Letters
                   // und Logo. lineHeight 1, height 1em fixiert die Box.
-                  // 2026-05-07 v18 (Wolf 'das x soll mittiger zwischen cozyquiz
-                  // und eurovision logo'): Stinger-Fit-Font hat caps die ~7-9 %
-                  // ueber dem line-box-Zentrum sitzen — alignItems:center
-                  // zentriert die Box, nicht den Glyph. Daher position:relative
-                  // top:-0.08em, schiebt X visuell hoch ohne mit der Shine-
-                  // transform-Animation zu kollidieren.
-                  position: 'relative',
-                  top: '-0.08em',
+                  // 2026-05-07 v19 (Wolf 'jetzt ist das x doch noch weniger
+                  // mittig'): top:-0.08em von v18 wieder raus — wirkte falsch
+                  // herum/uebertrieben. Stattdessen: COZYQUIZ + Logo geshrinkt
+                  // damit × proportional dominanter wirkt und natuerlicher
+                  // mittig erscheint (Wolfs eigener Vorschlag).
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: '0.85em',
@@ -4922,10 +4923,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 alignItems: 'center',
                 gap: 'clamp(18px, 2.2vw, 40px)',
               }}>
-                {/* CozyQuiz-Wordmark im Stinger-Fit-Font, hover-floatend. */}
+                {/* CozyQuiz-Wordmark im Stinger-Fit-Font, hover-floatend.
+                    2026-05-07 v19 (Wolf 'cozyquiz noch groesser oder, da
+                    ueberlappt sich einiges oben rechts'): Stinger 8.5vw/130
+                    -> 7vw/108 — gibt mehr Reserve fuer Wolf-Greeter top-right
+                    und macht X proportional dominanter im Stinger. */}
                 <span style={{
                   fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
-                  fontSize: 'clamp(56px, 8.5vw, 130px)',
+                  fontSize: 'clamp(48px, 7vw, 108px)',
                   fontWeight: 400,
                   letterSpacing: '0.04em',
                   color: '#FF2D7B',
@@ -4935,17 +4940,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 }}>COZYQUIZ</span>
                 {/* X mit qqStingerXShine (Tilt + Multi-Layer-Glow). height:1em
                     fixiert die vertikale Mittellage.
-                    2026-05-07 v18 (Wolf 'das x soll mittiger'): Stinger-Fit-
-                    Caps sitzen ~8 % ueberm Box-Zentrum → position:relative
-                    top:-0.08em hebt X auf den visuellen Mittelpunkt der
-                    COZYQUIZ-Letters. Kompatibel mit qqStingerXShine-transform. */}
+                    2026-05-07 v19 (Wolf 'jetzt ist das x doch noch weniger
+                    mittig'): top:-0.08em von v18 wieder raus, stattdessen
+                    COZYQUIZ + Logo geshrinkt (siehe oben) — dadurch wirkt X
+                    proportional dominanter + natuerlicher mittig. */}
                 <span aria-hidden style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  position: 'relative',
-                  top: '-0.08em',
                   fontFamily: "'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
-                  fontSize: 'clamp(40px, 6vw, 92px)',
+                  fontSize: 'clamp(36px, 5.2vw, 80px)',
                   lineHeight: 1,
                   height: '1em',
                   color: '#fde6f0',
@@ -4964,7 +4967,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     alt="Eurovision Song Contest"
                     draggable={false}
                     style={{
-                      height: 'clamp(95px, 13vh, 200px)',
+                      // 2026-05-07 v19 (Wolf 'da ueberlappt sich einiges oben
+                      // rechts'): 13vh/200 -> 11vh/166 proportional zu COZYQUIZ-
+                      // Shrink, gibt Wolf-Greeter top-right Reserve.
+                      height: 'clamp(80px, 11vh, 166px)',
                       width: 'auto',
                       filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))',
                     }}
@@ -14410,8 +14416,12 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
         marginRight: tailSide === 'right' ? 14 : 0,
         // Adaptive Breite: 1-Wort-Slogan kompakt, langer Slogan wraped
         // automatisch auf 2 Zeilen.
-        minWidth: isLg ? 120 : 80,
-        maxWidth: isLg ? 460 : 320,
+        minWidth: isLg ? 100 : 80,
+        // 2026-05-07 v19 (Wolf 'da ueberlappt sich einiges oben rechts'):
+        // 'lg' maxWidth 460 -> 360 damit die Bubble nicht in den Stinger
+        // reicht. Bubble extends von Wolf nach links — bei 8 Teams + 280px
+        // Wolf war 460px Reserve in den Title.
+        maxWidth: isLg ? 360 : 320,
         background: eurovisionMode
           ? 'linear-gradient(140deg, rgba(45,22,68,0.94) 0%, rgba(31,15,61,0.94) 100%)'
           : 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
@@ -15562,10 +15572,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             marginBottom: 12,
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
-            {/* CozyQuiz-Wordmark */}
+            {/* CozyQuiz-Wordmark — 2026-05-07 v19 proportional geshrinkt zu Lobby. */}
             <span style={{
               fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
-              fontSize: 'clamp(48px, 6.5vw, 96px)',
+              fontSize: 'clamp(42px, 5.5vw, 82px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: '#FF2D7B',
@@ -15576,15 +15586,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             {/* 2026-05-07 v17 (Wolf 'X mittig, nicer animiert, eurovision
                 groesser'): height: 1em fixiert vertikale Mittellage; neue
                 qqStingerXShine animation (Tilt + Multi-Layer-Glow).
-                2026-05-07 v18 (Wolf 'das x soll mittiger'): Stinger-Fit-
-                Caps sitzen ueber Box-Mitte → position:relative top:-0.08em. */}
+                2026-05-07 v19 (Wolf 'jetzt ist das x doch noch weniger
+                mittig'): top:-0.08em wieder raus, stattdessen COZYQUIZ +
+                Logo geshrinkt damit X proportional groesser wirkt. */}
             <span aria-hidden style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative',
-              top: '-0.08em',
               fontFamily: "'Nunito', system-ui, sans-serif",
               fontWeight: 900,
-              fontSize: 'clamp(36px, 5vw, 76px)',
+              fontSize: 'clamp(34px, 4.6vw, 70px)',
               lineHeight: 1,
               height: '1em',
               color: '#fde6f0',
@@ -15599,7 +15608,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 alt="Eurovision Song Contest"
                 draggable={false}
                 style={{
-                  height: 'clamp(80px, 11vh, 170px)',
+                  // 2026-05-07 v19: Logo proportional zu COZYQUIZ-Shrink.
+                  height: 'clamp(68px, 9.5vh, 142px)',
                   width: 'auto',
                   filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
                 }}

@@ -29,6 +29,15 @@ export const EUROVISION_THEME: QQTheme = {
   // Browser-autoplay-policy: muted by default. Filename hat ein Leerzeichen,
   // muss URL-encoded werden ('%20').
   welcomeVideoUrl: '/themes/intro%20vid.mp4',
+  // 2026-05-07 v9 (Wolf 'hab dir in mobile ein paar bgs reingepackt'): 6
+  // portrait-PNGs in /themes/mobile/. mobile/5 = soft Pink/Lila-Gradient,
+  // ruhig genug fuer 3h Quiz ohne abzulenken. Alternativen:
+  //   mobile/1 = Pink/Blau-Swirl (matches Beamer-3.png)
+  //   mobile/2 = Pink/Magenta-Wellen (sehr soft)
+  //   mobile/3 = Heart-Portrait
+  //   mobile/4 = Pink/Blau dynamisch
+  //   mobile/6 = transparenter Outline-Logo (nicht als BG, evtl. Overlay)
+  mobileBackgroundUrl: '/themes/mobile/5.png',
   // 2026-05-07 v5 (Wolf 'pack gerne das logo ohne bg in die folien, gerne
   // groesser'): logo-ohne ist die transparente Outline-Variante (weiss auf
   // transparent), wirkt premium auf dunklem BG. Render-Stellen verzichten

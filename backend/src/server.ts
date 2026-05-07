@@ -86,7 +86,7 @@ import {
 import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
 import { CATEGORY_CONFIG } from '../../shared/categoryConfig';
 import { mixedMechanicMap } from '../../shared/mixedMechanics';
-import { EUROVISION_THEME, isEurovisionDraftTitle, hasEurovisionTheme } from '../../shared/eurovisionTheme';
+import { EUROVISION_THEME, isEurovisionDraftTitle } from '../../shared/eurovisionTheme';
 import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
@@ -8654,15 +8654,80 @@ app.post('/api/qq/drafts', async (req, res) => {
 async function autoHealEurovisionDraft(draft: any): Promise<any> {
   if (!draft) return draft;
   if (!isEurovisionDraftTitle(draft.title)) return draft;
-  if (hasEurovisionTheme(draft.theme)) return draft;
-  const healed = { ...draft, theme: { ...(draft.theme ?? {}), ...EUROVISION_THEME } };
+  // 2026-05-07 v2 (Wolf 'ich sehe immernoch nicht das eurovision design'):
+  // Vorher wurde nur eurovisionMode geprueft. Jetzt: pruefe ob ALLE Felder
+  // aus EUROVISION_THEME bereits gesetzt sind. Wenn ein einziges fehlt
+  // (typisch bei stale Drafts wo Theme nur teilweise migriert wurde) →
+  // mergen + persistieren. Idempotent, schreibt nur bei tatsaechlicher
+  // Aenderung.
+  const existingTheme = (draft.theme ?? {}) as Record<string, any>;
+  let needsHeal = false;
+  for (const [key, val] of Object.entries(EUROVISION_THEME)) {
+    if (JSON.stringify(existingTheme[key]) !== JSON.stringify(val)) {
+      needsHeal = true;
+      break;
+    }
+  }
+  if (!needsHeal) return draft;
+  const healed = { ...draft, theme: { ...existingTheme, ...EUROVISION_THEME } };
   if (await ensureDraftDbConnection()) {
     try {
       await saveQQDraftToDB(healed);
       cache.del('qqDrafts');
-      console.log(`[esc-heal] Eurovision-Theme auf Draft "${draft.title}" (${draft.id}) angewendet.`);
+      console.log(`[esc-heal] Eurovision-Theme auf Draft "${draft.title}" (${draft.id}) gemerged.`);
     } catch (err) {
       console.error('[esc-heal] persist failed:', err);
+    }
+  }
+  return healed;
+}
+
+// 2026-05-07 (Wolf-Bug 'waehrend regeln laeuft Europa-Hymne in einigen
+// quizzen'): wenn Wolf via 'Sounds auf alle Fragensaetze uebernehmen' die
+// ESC-lobbyWelcome-URL in alle Drafts gepusht hat, spielen jetzt Non-ESC-
+// Quizze die EU-Hymne in Lobby/Rules/Pause. Cross-Contamination-Detektion:
+// Wenn ein Non-ESC-Draft die GLEICHE lobbyWelcome-URL hat wie ein ESC-Draft,
+// ist das ein Apply-All-Artefakt — wir loeschen den Slot auf dem Non-ESC-
+// Draft, damit der 4-Track-Pool-Fallback wieder greift. ESC-Drafts behalten
+// ihren Sound. Heuristik nur Title-basiert ('Eurovision' im Title), kein
+// separater Marker noetig.
+let escLobbyUrlsCache: Set<string> | null = null;
+let escLobbyUrlsCachedAt = 0;
+async function getEurovisionLobbyUrls(): Promise<Set<string>> {
+  const now = Date.now();
+  if (escLobbyUrlsCache && (now - escLobbyUrlsCachedAt) < 30_000) return escLobbyUrlsCache;
+  const urls = new Set<string>();
+  if (await ensureDraftDbConnection()) {
+    try {
+      const all = await getAllQQDraftsFromDB();
+      for (const d of all as any[]) {
+        if (!isEurovisionDraftTitle(d?.title)) continue;
+        const u = d?.soundConfig?.lobbyWelcome;
+        if (typeof u === 'string' && u.length > 0) urls.add(u);
+      }
+    } catch { /* fall through */ }
+  }
+  escLobbyUrlsCache = urls;
+  escLobbyUrlsCachedAt = now;
+  return urls;
+}
+async function autoHealLobbySoundContamination(draft: any): Promise<any> {
+  if (!draft) return draft;
+  if (isEurovisionDraftTitle(draft.title)) return draft; // ESC-Drafts behalten ihren Sound
+  const u = draft?.soundConfig?.lobbyWelcome;
+  if (typeof u !== 'string' || u.length === 0) return draft;
+  const escUrls = await getEurovisionLobbyUrls();
+  if (!escUrls.has(u)) return draft;
+  const cfg = { ...(draft.soundConfig ?? {}) };
+  delete (cfg as any).lobbyWelcome;
+  const healed = { ...draft, soundConfig: cfg };
+  if (await ensureDraftDbConnection()) {
+    try {
+      await saveQQDraftToDB(healed);
+      cache.del('qqDrafts');
+      console.log(`[sound-heal] ESC-lobbyWelcome aus Non-ESC-Draft "${draft.title}" (${draft.id}) entfernt.`);
+    } catch (err) {
+      console.error('[sound-heal] persist failed:', err);
     }
   }
   return healed;
@@ -8674,12 +8739,18 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
     return res.status(404).json({ error: 'Draft nicht gefunden (veraltet — bitte aus aktueller Liste wählen)' });
   }
   if (await ensureDraftDbConnection()) {
-    const draft = await getQQDraftFromDB(req.params.id);
-    if (draft) return res.json(await autoHealEurovisionDraft(draft));
+    let draft = await getQQDraftFromDB(req.params.id);
+    if (draft) {
+      draft = await autoHealEurovisionDraft(draft);
+      draft = await autoHealLobbySoundContamination(draft);
+      return res.json(draft);
+    }
   }
-  const draft = qqDrafts.find(d => d.id === req.params.id);
+  let draft = qqDrafts.find(d => d.id === req.params.id);
   if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
-  res.json(await autoHealEurovisionDraft(draft));
+  draft = await autoHealEurovisionDraft(draft);
+  draft = await autoHealLobbySoundContamination(draft);
+  res.json(draft);
 });
 
 app.put('/api/qq/drafts/:id', async (req, res) => {

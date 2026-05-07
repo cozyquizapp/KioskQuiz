@@ -60,11 +60,16 @@ export const MEGA_EMOJI_POOL: string[] = [
   '⭐','🌟','💫','✨','🔥','❄️','💧','💎','💍','🏆','🥇','🥈','🥉','👑','🎖️',
   '🎁','🎈','🎀','🌈','☀️','🌙','⛄','🌸','🌹','🌻','🌷','🌵','🌴','🍀','🪴',
   '🪐','⚡','🌊','🌪️','☄️','🔮','🎃','🍄','🪐','🛡️','⚔️',
-  // 2026-05-07 (Wolf): ESC-/Eurovision-Flaggen — alle Laender die je
-  // teilgenommen haben (~47 inkl. historischer Teilnehmer wie Russland/
-  // Belarus/Marokko). Damit Wolfs Watchparty-Setup mit 'all'-Set Spielern
-  // direkt ESC-Flaggen zur Auswahl gibt, ohne separates Pool-UI bauen zu
-  // muessen.
+];
+
+/**
+ * 2026-05-07 (Wolf-Bug 'Flaggen tauchen in Allgemeinwissen-Quizzen auf'):
+ * Eurovision-/ESC-Flaggen-Pool fuer das 'esc'-Set-Bot-Filling. Wird NICHT
+ * im MEGA_EMOJI_POOL gemischt — sonst zogen Bots in Standard-Quizzen
+ * zufaellig Flaggen. Mod-Page-fillTeams-Logic schickt diesen Pool an
+ * Backend wenn Wolfs aktuelles Set === 'esc' ist.
+ */
+export const ESC_FLAG_POOL: string[] = [
   '🇦🇱','🇦🇩','🇦🇲','🇦🇺','🇦🇿','🇧🇪','🇧🇾','🇧🇦','🇧🇬','🇭🇷',
   '🇨🇾','🇨🇿','🇩🇰','🇪🇪','🇫🇮','🇫🇷','🇬🇪','🇩🇪','🇬🇷','🇭🇺',
   '🇮🇸','🇮🇪','🇮🇱','🇮🇹','🇱🇻','🇱🇹','🇱🇺','🇲🇹','🇲🇩','🇲🇨',

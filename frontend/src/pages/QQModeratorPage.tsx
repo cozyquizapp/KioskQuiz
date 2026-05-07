@@ -8,7 +8,7 @@ import {
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
-import { AVATAR_SETS, MEGA_EMOJI_POOL } from '../avatarSets';
+import { AVATAR_SETS, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
@@ -3497,14 +3497,17 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
     setBusy('fill');
     try {
       // 2026-05-07 (Wolf-Bug 'dummys benutzen nicht das gewaehlte Set'):
-      // Bot-Avatar-Pool aus aktivem Avatar-Set ableiten — bei 'all' aus dem
-      // bunten MEGA_POOL, sonst aus den Set-spezifischen Avataren (z.B. ESC-
-      // Flaggen). Backend nutzt diese Pool fuer team.emoji-Override.
+      // Bot-Avatar-Pool aus aktivem Avatar-Set ableiten.
+      // - 'all'    → MEGA_EMOJI_POOL (bunter Mix, ohne Flaggen)
+      // - 'esc'    → ESC_FLAG_POOL (~47 ESC-Teilnehmer-Flaggen, voller Pool)
+      // - sonst    → set.avatars[] (8 Default-Slots des Sets)
       const setId = avatarSetId ?? 'all';
       const set = AVATAR_SETS.find(s => s.id === setId);
       const setAvatars: string[] = setId === 'all'
         ? MEGA_EMOJI_POOL
-        : (set?.avatars ?? []);
+        : setId === 'esc'
+          ? ESC_FLAG_POOL
+          : (set?.avatars ?? []);
       const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count: 8, setAvatars }),
@@ -4535,7 +4538,9 @@ function LobbyView({
                         const set = AVATAR_SETS.find(x => x.id === setId);
                         const setAvatars: string[] = setId === 'all'
                           ? MEGA_EMOJI_POOL
-                          : (set?.avatars ?? []);
+                          : setId === 'esc'
+                            ? ESC_FLAG_POOL
+                            : (set?.avatars ?? []);
                         const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
                           method: 'POST', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ count: n, setAvatars }),

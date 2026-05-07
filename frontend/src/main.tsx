@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './main.css';
+import { initFluentEmojis } from './utils/fluentEmoji';
 
 import * as Sentry from '@sentry/react';
 
@@ -103,6 +104,17 @@ if (rootEl) {
       <RouterProvider router={router} />
     </React.StrictMode>
   );
+  // 2026-05-07 (Wolf-Wunsch 'alle Emojis als Microsoft Fluent'): nach React-
+  // Mount globales DOM-Replace + MutationObserver fuer alle weiteren Re-Renders.
+  // Idempotent — interner Lock verhindert doppelten Setup.
+  // requestIdleCallback gibt React Zeit den Initial-Render zu commiten, dann
+  // macht der Walker einen Pass + den Observer.
+  const startFluent = () => initFluentEmojis();
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(startFluent, { timeout: 1000 });
+  } else {
+    (window as Window).setTimeout(startFluent, 200);
+  }
 } else {
   // eslint-disable-next-line no-console
   console.error('[Cozy] root element missing');

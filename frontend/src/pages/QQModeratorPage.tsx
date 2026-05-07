@@ -518,7 +518,7 @@ export default function QQModeratorPage() {
     // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Guard via
     // ref. Wenn dieselbe action+state-Kombi schon emittet wurde und State
     // sich nicht relevant geaendert hat, NICHT erneut feuern.
-    const fireKey = `${s.phase}:${(s as any).hotPotatoSlotState ?? '-'}:${q?.id ?? '-'}:${s.introStep ?? '-'}:${s.connections?.phase ?? '-'}`;
+    const fireKey = `${s.phase}:${(s as any).hotPotatoSlotState ?? '-'}:${q?.id ?? '-'}:${s.introStep ?? '-'}:${s.connections?.phase ?? '-'}:${s.rulesSlideIndex ?? '-'}:${s.questionIndex}`;
     if (autoplayLastFireKeyRef.current === fireKey) return;
     const handle = window.setTimeout(() => {
       autoplayLastFireKeyRef.current = fireKey;
@@ -1870,7 +1870,7 @@ export default function QQModeratorPage() {
                         border: `2px solid ${i === 0 ? team.color : 'rgba(255,255,255,0.1)'}`,
                       }}>
                         <span style={{ fontSize: 11, color: '#64748b', fontWeight: 900 }}>#{i + 1}</span>
-                        <QQTeamAvatar avatarId={team.avatarId} size={30} />
+                        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={30} />
                         <span style={{ fontWeight: 900, color: team.color, fontSize: 14 }}>{team.name}</span>
                       </div>
                     );
@@ -1959,7 +1959,7 @@ export default function QQModeratorPage() {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 11, color: '#475569', fontWeight: 900, width: 16 }}>{i + 1}</span>
-                        <QQTeamAvatar avatarId={t.avatarId} size={30} />
+                        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 900, color: t.color, textDecoration: isOffline ? 'line-through' : 'none' }}>{t.name}</span>
@@ -2263,7 +2263,7 @@ export default function QQModeratorPage() {
               {[...teamList].sort((a, b) => b.largestConnected - a.largestConnected).map((t, i) => (
                 <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
-                  <QQTeamAvatar avatarId={t.avatarId} size={30} />
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
                   <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 13 }}>{t.name}</span>
                   <span style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>{t.largestConnected}</span>
                 </div>
@@ -2480,7 +2480,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                     }}
                     title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
                     {t.name}
                   </button>
                 ))}
@@ -2517,7 +2517,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                     }}
                     title={`${t.name} als Mit-Gewinner hinzufuegen — setzt nach primaerem Sieger`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
                     + {t.name}
                   </button>
                 ))}
@@ -2557,7 +2557,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                     }}
                     title={`${t.name} entfernen`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
                     ✓ {t.name} ✕
                   </button>
                 ))}
@@ -2889,7 +2889,7 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
                 <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#F59E0B' : '#475569', width: 18 }}>
                   {i === 0 ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
                 </span>
-                <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} size={26} />
+                <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} teamEmoji={r.team?.emoji} size={26} />
                 <div style={{ flex: 1 }}>
                   <span style={{ fontWeight: 900, color: r.team?.color ?? '#94a3b8' }}>{r.team?.name ?? r.teamId}</span>
                   <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: '#e2e8f0' }}>
@@ -2939,7 +2939,7 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       border: offline ? '2px solid #EF4444' : `1px solid ${team.color}44`,
       boxShadow: offline ? '0 0 0 3px rgba(239,68,68,0.35)' : undefined,
     }}>
-      <QQTeamAvatar avatarId={team.avatarId} size={26} />
+      <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={26} />
       <span style={{ fontWeight: 900, color: offline ? '#FCA5A5' : team.color }}>
         {team.name}
       </span>
@@ -3033,7 +3033,7 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
   ];
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-      <QQTeamAvatar avatarId={team.avatarId} size={26} />
+      <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={26} />
       <span style={{ fontWeight: 900, color: team.color }}>{team.name}</span>
       <span style={{ fontSize: 13, fontWeight: 900, color: '#8B5CF6' }}>
         📖 Schritt {Math.min(step + 1, 2)}/2
@@ -4455,7 +4455,7 @@ function LobbyView({
                       border: `1px solid ${t.connected ? `${t.color}55` : 'rgba(255,255,255,0.08)'}`,
                       opacity: t.connected ? 1 : 0.55,
                     }}>
-                      <QQTeamAvatar avatarId={t.avatarId} size={44} style={{ flexShrink: 0 }} />
+                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={44} style={{ flexShrink: 0 }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <TeamNameLabel
                           name={t.name}

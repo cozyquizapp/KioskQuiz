@@ -4395,9 +4395,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           Layer + Depth-Shadow — Sprache jetzt analog Rules-/Cat-Title.
           Continuous qqCatNameWave (-10px translateY) per Buchstabe mit
           Stagger 80ms, startet nach der Entry-Cascade (delay 0.95s + i*0.08). */}
+      {/* 2026-05-07 v2 (Wolf 'der Hintergrund leuchtet auf wie ein Showlight,
+          erst ueber cozy dann ueber quiz'): per-Buchstaben-Cascade hat die
+          Glows (text-shadow halo) der Reihe nach aufgepoppt — wirkte wie
+          wanderndes Showlight. Jetzt: Whole-Word-Entry (alle Buchstaben
+          gleichzeitig fade-in), Wave bleibt aber per-Buchstaben (Wolf
+          mochte die Wellen). */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both',
+        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.1s both, qqLobbyWordmarkEntry 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) 0.2s both',
         paddingTop: 'clamp(6px, 1vh, 14px)',
       }}>
         <style>{`
@@ -4416,14 +4422,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             display: inline-block;
             will-change: transform, opacity;
           }
-          /* 2026-05-07 (Wolf 'art blitz der am ende ueber cozy quiz zieht
-             sieht nicht gut aus'): qqRulesTitleLetter hatte filter:blur(10px)
-             im Cascade — durch Stagger sah das wie Schaerfen-Wischer ueber
-             die Buchstaben aus. Eigene Entry-Anim ohne Blur, nur sanfter
-             Slide-Up + Fade. */
           @keyframes qqLobbyWordmarkEntry {
-            0%   { opacity: 0; transform: translateY(16px) scale(0.92); }
-            60%  { opacity: 1; transform: translateY(0) scale(1.02); }
+            0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
           }
         `}</style>
@@ -4439,7 +4439,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <span
               key={i}
               style={{
-                animation: `qqLobbyWordmarkEntry 0.55s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.18 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
+                animation: `qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
               }}
             >{ch}</span>
           ))}

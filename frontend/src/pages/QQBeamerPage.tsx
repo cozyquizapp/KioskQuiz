@@ -3631,6 +3631,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { lang
           pointerEvents: 'none',
         }} />
       ))}
+      {eurovisionMode && <EurovisionHearts />}
       {/* Content-Stack */}
       <div style={{
         position: 'relative', zIndex: 5,
@@ -12656,6 +12657,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Fireflies color={`${teamColor}88`} />
+      {s.theme?.eurovisionMode && <EurovisionHearts />}
 
       {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry. */}
       <div key={`sweep-${s.questionIndex}`} aria-hidden style={{
@@ -15680,6 +15682,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         }} />
         <ConfettiOverlay />
         <Fireflies color={`${teamColor}55`} />
+        {s.theme?.eurovisionMode && <EurovisionHearts />}
 
         {/* Header — Rang + Pause-Indikator */}
         <div style={{
@@ -15827,6 +15830,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       {/* Confetti */}
       <ConfettiOverlay />
       <Fireflies color={`${winnerColor}55`} />
+      {s.theme?.eurovisionMode && <EurovisionHearts />}
 
       {/* ── LINKE SPALTE: Grid riesig, full-height ─────────────────────── */}
       <div style={{

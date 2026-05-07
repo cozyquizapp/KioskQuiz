@@ -1252,6 +1252,36 @@ export function getFunnyTeamNames(lang: 'de' | 'en'): string[] {
   return lang === 'en' ? FUNNY_TEAM_NAMES_EN : FUNNY_TEAM_NAMES;
 }
 
+/** 2026-05-07 (Wolf 'gib den dummys passende eurovision songcontest namen'):
+ *  Eurovision-themed Bot-Namen. Nutzt der Backend-fillTeams-Endpoint wenn
+ *  room.theme.eurovisionMode aktiv ist. Mix aus ESC-Phrasen, klassischen
+ *  Sieger-Country-Klischees und Watchparty-Insider-Witzen. */
+export const ESC_TEAM_NAMES_DE: string[] = [
+  'Douze-Pointer', 'Twelve-Punkte-Gang', 'Couch-Wolves',
+  'Schlager-Mafia', 'Wiener Würstchen', 'Halbfinal-Helden',
+  'Glitter-Squad', 'Pyro-Pioniere', 'Ohrwurm-Gang',
+  'Bühnen-Bandits', 'Diva-Detektive', 'Lichtshow-Liga',
+  'Vinyl-Verschwörer', 'Klangkommando', 'Bonsoir-Brigade',
+  'Allez-Allez-Allstars', 'Halbplayback-Heroes', 'Confetti-Crew',
+  'Rampensau-Republik', 'Eurodance-Elite', 'Songbird-Society',
+  'Trommelwirbel-Truppe', 'Nul-Points-Phobiker',
+];
+
+export const ESC_TEAM_NAMES_EN: string[] = [
+  'Douze-Pointers', 'Twelve-Point-Gang', 'Couch-Wolves',
+  'Schlager-Squad', 'Vienna-Voters', 'Semi-Final-Heroes',
+  'Glitter-Squad', 'Pyro-Pioneers', 'Earworm-Gang',
+  'Stage-Bandits', 'Diva-Detectives', 'Lightshow-League',
+  'Vinyl-Conspirators', 'Sound-Squad', 'Bonsoir-Brigade',
+  'Allez-Allez-Allstars', 'Half-Playback-Heroes', 'Confetti-Crew',
+  'Limelight-Republic', 'Eurodance-Elite', 'Songbird-Society',
+  'Drumroll-Troupe', 'Nul-Points-Phobics',
+];
+
+export function getEscTeamNames(lang: 'de' | 'en'): string[] {
+  return lang === 'en' ? ESC_TEAM_NAMES_EN : ESC_TEAM_NAMES_DE;
+}
+
 /** Emoji-Pool fuer Random-Slot-Emojis bei Set 'all' und Dummy-Avatare.
  *  Quer durch alle Themen — Cozy-Tiere, Halloween, Sci-Fi, Fantasy, Essen.
  *  Bewusst verschiedene Welten gemischt, damit's bei 'all' bunt wirkt. */
@@ -1284,8 +1314,8 @@ export function getRandomDummyEmojis(n: number): string[] {
 /** Liefert n zufaellige witzige Team-Namen, ohne Wiederholung.
  *  2026-05-05 (Wolf 'gibts namen auch auf en?'): lang-Param ergaenzt,
  *  defaults DE fuer Backward-Kompatibilitaet. */
-export function getRandomFunnyNames(n: number, lang: 'de' | 'en' = 'de'): string[] {
-  const source = getFunnyTeamNames(lang);
+export function getRandomFunnyNames(n: number, lang: 'de' | 'en' = 'de', eurovisionMode = false): string[] {
+  const source = eurovisionMode ? getEscTeamNames(lang) : getFunnyTeamNames(lang);
   const pool = [...source];
   const out: string[] = [];
   for (let i = 0; i < n && pool.length > 0; i++) {

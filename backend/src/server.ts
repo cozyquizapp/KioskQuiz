@@ -9361,7 +9361,11 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   // 2026-05-05 (Wolf 'gibts namen auch auf en?'): Sprache aus room.language
   // ableiten — 'both' und 'de' fallen auf DE-Pool, 'en' auf EN-Pool.
   const botLang: 'de' | 'en' = room.language === 'en' ? 'en' : 'de';
-  const namePicks = getRandomFunnyNames(Math.max(toAdd, 8), botLang)
+  // 2026-05-07 (Wolf 'gib den dummys passende eurovision songcontest namen'):
+  // wenn room.theme.eurovisionMode → ESC-Bot-Name-Pool (Douze-Pointer,
+  // Couch-Wolves, etc.) statt Standard-Funny-Pool.
+  const escBotNames = !!(room.theme as any)?.eurovisionMode;
+  const namePicks = getRandomFunnyNames(Math.max(toAdd, 8), botLang, escBotNames)
     .filter(n => !usedNames.has(n.toLowerCase()));
   // 2026-05-07 (Wolf-Bug 'dummys benutzen nicht das gewaehlte Set'): Bot-Avatar-
   // Pool kommt vom Frontend (aktives Set: ESC-Flaggen / MEGA_POOL bei 'all' /

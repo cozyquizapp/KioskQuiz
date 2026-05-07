@@ -301,10 +301,12 @@ export function stopTimerLoop() {
     loopScheduleTimeout = null;
   }
   if (loopAudioEl) {
-    // Smoother Abgang: ~450ms fade statt hartem pause().
+    // 2026-05-07 (Sound-Audit P1.2): 450ms → 600ms — vereinheitlicht mit
+    // questionMusicUrl-fadeOut (auch 600ms) und glaettet die Stille beim
+    // Phase-Wechsel QUESTION_ACTIVE → QUESTION_REVEAL psychoakustisch.
     const el = loopAudioEl;
     loopAudioEl = null;
-    fadeOutAudio(el, 450, true);
+    fadeOutAudio(el, 600, true);
   }
 }
 
@@ -819,11 +821,19 @@ export function playQuestionStartFor(category?: string | null) { playSlotForCate
 
 export function playTick() {
   if (_sfxMuted) return;
-  // Ticks never have custom overrides — they're too frequent
+  // 2026-05-07 (Sound-Audit P2.1): timerTick als customizable Slot. Wenn
+  // Mod eine Datei hochgeladen oder den Slot deaktiviert hat → respektieren.
+  // Default: Synth-Fallback wie bisher (880 Hz Square).
+  if (!isSlotEnabled('timerTick')) return;
+  const url = resolveSlotUrl('timerTick');
+  if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(880, 'square', t, 0.055, 0.09, 0.004, 0.04, ac);
+  // 2026-05-07 (Sound-Audit P2.2): gainPeak 0.09 → 0.12. Tick wird nicht
+  // geduckt waehrend Music laeuft — leichter Boost (+33%) hebt ihn psycho-
+  // akustisch ueber die ungeduckte Hintergrundmusik. Solo bleibt's dezent.
+  tone(880, 'square', t, 0.055, 0.12, 0.004, 0.04, ac);
 }
 
 /** 2026-05-05 (Phase-7 Bucket-1 BC-1): Audio-Feedback für Mod-Hotkey-Press.
@@ -842,11 +852,17 @@ export function playHotkeyFeedback() {
 
 export function playUrgentTick() {
   if (_sfxMuted) return;
+  // 2026-05-07 (Sound-Audit P2.1): timerUrgent als customizable Slot.
+  if (!isSlotEnabled('timerUrgent')) return;
+  const url = resolveSlotUrl('timerUrgent');
+  if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(1100, 'square', t, 0.06, 0.13, 0.003, 0.04, ac);
-  tone(1100, 'square', t + 0.1, 0.06, 0.13, 0.003, 0.04, ac);
+  // P2.2: gainPeak 0.13 → 0.17 — UrgentTick muss noch deutlicher ueber der
+  // Hintergrundmusik liegen als der normale Tick (Endspurt-Drama).
+  tone(1100, 'square', t, 0.06, 0.17, 0.003, 0.04, ac);
+  tone(1100, 'square', t + 0.1, 0.06, 0.17, 0.003, 0.04, ac);
 }
 
 export function playScoreUp() {
@@ -973,64 +989,46 @@ export function stopLobbyLoop() {
   if (!lobbyLoopActive && !lobbyAudioEl) return;
   lobbyLoopActive = false;
   if (lobbyAudioEl) {
+    // 2026-05-07 (Sound-Audit P1.2): 450ms → 600ms (siehe stopTimerLoop).
     const el = lobbyAudioEl;
     lobbyAudioEl = null;
-    fadeOutAudio(el, 450, true);
+    fadeOutAudio(el, 600, true);
   }
 }
 
-/** 2026-04-30 v3 round 6 (User-Wunsch eigener Slot fuer Finale-Musik):
- *  Startet einen Loop aus dem 'finaleMusic'-Slot (Mod-Panel-konfigurierbar).
- *  Fallback bei keinem Custom-Upload: lobbyWelcome (custom-or-pool), damit
- *  Finale nie still ist. Reuse der lobby-Loop-Infrastruktur. */
-export function startFinaleLoop() {
+/** 2026-05-07 (Sound-Audit P1.3): Einheitliches Loop-Fallback-Pattern.
+ *  Vorher: Finale/Comeback fielen auf Lobby-Pool zurueck, GameOver auf
+ *  hardcoded `/sounds/game-over.wav`, Slot-deaktiviert-Verhalten unter-
+ *  schiedlich. Jetzt: alle drei Loops folgen derselben Hierarchie:
+ *    1. Slot enabled? Wenn nein → Lobby-Pool-Fallback (statt Stille)
+ *    2. resolveSlotUrl liefert custom-URL → fallback Default-URL → null
+ *    3. URL vorhanden → abspielen, sonst Lobby-Pool-Fallback
+ *  GameOver hat seine `/sounds/game-over.wav` als Default-URL via
+ *  QQ_SOUND_DEFAULT_URLS — wenn die fehlt oder Slot leer ist, kommt
+ *  Lobby-Musik statt Stille. */
+function startContextLoop(slot: QQSoundSlot) {
   if (lobbyLoopActive) return;
-  if (!isSlotEnabled('finaleMusic')) {
-    // Slot deaktiviert → trotzdem fallback, damit Finale nicht still ist.
+  if (!isSlotEnabled(slot)) {
     startLobbyLoop('custom-or-pool');
     return;
   }
-  const customUrl = soundConfig.finaleMusic;
-  if (typeof customUrl === 'string' && customUrl.length > 0) {
-    startLobbyTrackFromUrl(customUrl);
-    return;
-  }
-  // Kein Custom-Upload → fallback auf lobbyWelcome.
-  startLobbyLoop('custom-or-pool');
-}
-
-/** 2026-04-30 v3 round 9 (User-Wunsch 'auf game over seite darf musik kommen
- *  nach dem mp3 das dafuer vorgesehen ist'): GAME_OVER nutzt jetzt den
- *  bestehenden 'gameOver'-Slot als Loop (vorher war's nur one-shot beim
- *  Phase-Wechsel). Default-File ist /sounds/game-over.wav. */
-export function startGameOverLoop() {
-  if (lobbyLoopActive) return;
-  if (!isSlotEnabled('gameOver')) return;
-  const customUrl = soundConfig.gameOver;
-  if (typeof customUrl === 'string' && customUrl.length > 0) {
-    startLobbyTrackFromUrl(customUrl);
-    return;
-  }
-  // Fallback Default-URL
-  const defaultUrl = '/sounds/game-over.wav';
-  startLobbyTrackFromUrl(defaultUrl);
-}
-
-/** 2026-04-30 v3 round 6 (User-Wunsch BG-Musik fuers Comeback): analog
- *  Finale-Loop, eigener Slot 'comebackMusic'. Fallback lobbyWelcome. */
-export function startComebackLoop() {
-  if (lobbyLoopActive) return;
-  if (!isSlotEnabled('comebackMusic')) {
-    startLobbyLoop('custom-or-pool');
-    return;
-  }
-  const customUrl = soundConfig.comebackMusic;
-  if (typeof customUrl === 'string' && customUrl.length > 0) {
-    startLobbyTrackFromUrl(customUrl);
+  const url = resolveSlotUrl(slot);
+  if (url) {
+    startLobbyTrackFromUrl(url);
     return;
   }
   startLobbyLoop('custom-or-pool');
 }
+
+/** Finale-Loop: 'finaleMusic'-Slot oder Lobby-Fallback. */
+export function startFinaleLoop() { startContextLoop('finaleMusic'); }
+
+/** GAME_OVER-Loop: 'gameOver'-Slot (Default-URL `/sounds/game-over.wav`)
+ *  oder Lobby-Fallback. */
+export function startGameOverLoop() { startContextLoop('gameOver'); }
+
+/** Comeback-Loop: 'comebackMusic'-Slot oder Lobby-Fallback. */
+export function startComebackLoop() { startContextLoop('comebackMusic'); }
 
 export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }

@@ -636,6 +636,9 @@ export type QQSoundSlot =
   // Einblendung in PLACEMENT-Phase (gridReveal) und Action-Card-Einblendung
   // ('eure aktion diese runde…' — actionMenuReveal).
   | 'winnerCardReveal' | 'gridReveal' | 'actionMenuReveal' | 'climaxFinish' | 'revealHighlight' | 'goodLuckFanfare' | 'finaleMusic' | 'comebackMusic'
+  // 2026-05-07 (Sound-Audit P2.1): Timer-Ticks customizable. Vorher Synth-only,
+  // nicht im Mod-Panel sichtbar. Default leer = Synth-Fallback wie bisher.
+  | 'timerTick' | 'timerUrgent'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -673,6 +676,9 @@ export interface QQSoundConfig {
   climaxFinish?: string;
   revealHighlight?: string;
   goodLuckFanfare?: string;
+  // 2026-05-07: Timer-Tick + Urgent-Tick customizable
+  timerTick?: string;
+  timerUrgent?: string;
   finaleMusic?: string;
   comebackMusic?: string;
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
@@ -719,6 +725,8 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   goodLuckFanfare:     '🍀 Viel-Glück-Fanfare (Teams-Reveal Outro)',
   finaleMusic:         '🏁 Finale-Musik (4×4 Großes Finale Loop)',
   comebackMusic:       '🔥 Comeback-Musik (H/L-Mini-Game Loop)',
+  timerTick:           '⏱ Timer-Tick (jede Sekunde unter 10s)',
+  timerUrgent:         '⏰ Timer-Urgent-Tick (unter 5s)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -778,6 +786,8 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   goodLuckFanfare:     '',
   finaleMusic:         '',
   comebackMusic:       '',
+  timerTick:           '',
+  timerUrgent:         '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

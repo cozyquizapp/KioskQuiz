@@ -849,8 +849,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           }, delayMs);
         }
-        // Final Fanfare nach der Cascade (200ms Buffer nach letztem Ton).
-        const fanfareMs = 200 + qualified.length * 250 + 250;
+        // 2026-05-07 (Sound-Audit P1.1): Fanfare-Timing zu spaet — vorher
+        // qualified.length * 250 + 250 Buffer = bei 4 Teams 1450ms, bei 6 Teams
+        // 1950ms. Visual-Cascade ist ~800ms — Fanfare wirkte wie 'Nachschlag'
+        // statt 'Climax'. Jetzt: Last-Cascade-Note bei (length-1)*250+200,
+        // Fanfare 100ms drauf — psychoakustisch direkt am Cascade-Top.
+        const lastNoteMs = 200 + Math.max(0, qualified.length - 1) * 250;
+        const fanfareMs = lastNoteMs + 100;
         window.setTimeout(() => {
           try { playFanfare(); } catch {}
         }, fanfareMs);
@@ -7146,20 +7151,40 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         // Pts-Pille 14-18 → 20-28, Mini-Pillen 12-15 → 16-20. Padding
         // entsprechend.
         return (
+          // 2026-05-07 (Wolf-Bug 'Gewinnercard fehlt bei Bluff'): Pille zur
+          // Hero-Card aufgewertet — mit '🎉 SIEGER!'-Badge oben, größerem
+          // Padding, breiterem Glow + 2-spaltigem Card-Layout. Vorher war
+          // sie eine schmale horizontale Banner-Pille → wirkte gegen die
+          // grossen MUCHO/ZvZ/Cheese-Cards wie 'fehlt da nicht was?'.
           <div style={{
             alignSelf: 'center',
-            maxWidth: 'min(960px, 94vw)',
-            display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
-            padding: 'clamp(14px, 1.6vh, 20px) clamp(22px, 2.6vw, 36px)',
-            borderRadius: 999,
-            background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
-            border: `2px solid ${winnerTeam.color}aa`,
-            boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
-            animation: 'revealWinnerIn 0.55s var(--qq-ease-bounce) 0.7s both',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            maxWidth: 'min(1100px, 96vw)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 'clamp(10px, 1.4vh, 16px)',
+            padding: 'clamp(20px, 2.4vh, 32px) clamp(28px, 3.2vw, 48px)',
+            borderRadius: 28,
+            background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}0d)`,
+            border: `3px solid ${winnerTeam.color}cc`,
+            boxShadow: `0 0 60px ${winnerTeam.color}66, 0 0 22px ${winnerTeam.color}88, 0 8px 28px rgba(0,0,0,0.55)`,
+            animation: 'revealWinnerIn 0.6s var(--qq-ease-bounce) 0.7s both',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             position: 'relative', zIndex: 5,
           }}>
+            <div style={{
+              padding: '5px 16px', borderRadius: 999,
+              background: `linear-gradient(135deg, ${winnerTeam.color}, ${winnerTeam.color}dd)`,
+              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+              color: '#0a1f0d', letterSpacing: '0.12em', textTransform: 'uppercase',
+              boxShadow: `0 4px 12px ${winnerTeam.color}55`,
+              animation: 'phasePop 0.45s var(--qq-ease-bounce) 1.0s both',
+            }}>
+              🎉 {lang === 'de' ? 'Sieger' : 'Winner'}
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
+              width: '100%', justifyContent: 'center',
+            }}>
             {/* Avatare aller Winners nebeneinander (bei Tie). Erste wird mit
                 vollem Glow gerendert, weitere etwas kompakter mit gleichem
                 Treatment — keine '+N weitere'-Versteckung mehr. */}
@@ -7226,6 +7251,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
                   {b.icon} {b.n}
                 </span>
               ))}
+            </div>
             </div>
           </div>
         );

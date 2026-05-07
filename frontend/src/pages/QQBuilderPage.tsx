@@ -322,6 +322,20 @@ export default function QQBuilderPage() {
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
+  // 2026-05-07 (Wolf-Bug 'beamer ist nicht im eurovision design'): wenn ein
+  // ESC-Draft bereits frueh in der Session gespeichert wurde (vor allen
+  // Theme-Erweiterungen — eurovisionMode, lobbyBackgroundUrl, logoUrl etc.),
+  // dann fehlen diese Felder. Repair-Funktion: nur das `theme`-Feld des
+  // aktiven Drafts mit dem aktuellen Eurovision-Template ueberschreiben —
+  // Fragen, Custom-Bilder, Sound-Config bleiben erhalten.
+  async function applyEurovisionTheme() {
+    if (!activeDraft) { alert('Erst einen Draft auswaehlen.'); return; }
+    if (!window.confirm(`Eurovision-Theme auf "${activeDraft.title}" anwenden?\n\nDas ueberschreibt nur den Theme-Block (BG-Bilder, Logo, eurovisionMode, Phasen-Namen, welcomeText). Fragen und Sound-Config bleiben unangetastet.`)) return;
+    const fresh = makeEurovisionDraft();
+    const updated = { ...activeDraft, theme: fresh.theme };
+    await saveDraftRaw(updated);
+    alert('Eurovision-Theme angewendet. Beamer neu starten oder Quiz neu auswaehlen, damit der Theme-Block in den Room kommt.');
+  }
   async function saveDraftRaw(draft: QQDraft) {
     setSaving(true);
     try {
@@ -768,6 +782,14 @@ export default function QQBuilderPage() {
           >🏆 4×4 Finale {activeDraft.connections ? '✓' : ''}</button>
           <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
           <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+          {/* 2026-05-07 (Wolf-Bug 'beamer ist nicht im eurovision design'):
+              Theme-Repair-Button — ueberschreibt nur den Theme-Block des
+              aktiven Drafts mit dem aktuellen Eurovision-Template. Sichtbar
+              wenn der Title 'Eurovision' enthaelt — andere Drafts brauchen
+              das nicht. */}
+          {/eurovision/i.test(activeDraft.title) && (
+            <button onClick={applyEurovisionTheme} style={btnStyle('#EC4899')} disabled={saving} title="Eurovision-Theme (BG-Bilder, Logo, eurovisionMode-Flag) auf diesen Draft anwenden — Fragen bleiben unangetastet">🇪🇺 Theme repair</button>
+          )}
           {/* 2026-05-05 (Wolf 'editor useless geworden'): Folien-Editor-Button
               aus Builder entfernt. Slide-Editor jetzt nur noch im Menü unter
               Extras erreichbar fuer bestehende Drafts. */}

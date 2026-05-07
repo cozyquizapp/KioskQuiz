@@ -1433,16 +1433,39 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
       <div>
         <label style={labelStyle}>Zielwert (Zahl)</label>
         <input type="number" value={q.targetValue ?? ''} onChange={e => onChange({ ...q, targetValue: e.target.value === '' ? undefined : Number(e.target.value) })}
-          style={{ ...inputStyle, borderColor: 'rgba(245,158,11,0.4)' }} placeholder="z.B. 1989 oder 2500000" />
+          style={{ ...inputStyle, borderColor: 'rgba(245,158,11,0.4)' }} placeholder={q.isYearAnswer ? 'z.B. 1989' : 'z.B. 1989 oder 2500000'} />
       </div>
+      {/* 2026-05-07 (Wolf): Jahreszahl-Toggle. Bei true → kein Tausender-Punkt
+          im Antwort-Display, /team-Input rendert ohne Komma-Group, Range-Hint
+          ~1000-2200. Default false (freie Zahl mit Tausender-Format). */}
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '8px 12px', borderRadius: 8,
+        background: q.isYearAnswer ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${q.isYearAnswer ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.08)'}`,
+        cursor: 'pointer', userSelect: 'none', fontSize: 12, fontWeight: 700,
+        color: q.isYearAnswer ? '#FBBF24' : '#94a3b8',
+        transition: 'all 0.15s',
+      }}>
+        <input
+          type="checkbox"
+          checked={!!q.isYearAnswer}
+          onChange={e => onChange({ ...q, isYearAnswer: e.target.checked || undefined })}
+          style={{ width: 16, height: 16, accentColor: '#F59E0B', cursor: 'pointer' }}
+        />
+        <span>📅 Jahreszahl als Lösung</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b', fontWeight: 600 }}>
+          {q.isYearAnswer ? 'kein Tausender-Punkt · Range ~1000-2200' : 'freie Zahl, mit Tausender-Format'}
+        </span>
+      </label>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={labelStyle}>Einheit (DE) <span style={{ color: '#334155' }}>opt.</span></label>
-          <input value={q.unit ?? ''} onChange={e => onChange({ ...q, unit: e.target.value })} style={inputStyle} placeholder="z.B. Meter" />
+          <input value={q.unit ?? ''} onChange={e => onChange({ ...q, unit: e.target.value })} style={inputStyle} placeholder={q.isYearAnswer ? '(meist leer)' : 'z.B. Meter'} />
         </div>
         <div>
           <label style={labelStyle}>Unit (EN) <span style={{ color: '#334155' }}>opt.</span></label>
-          <input value={q.unitEn ?? ''} onChange={e => onChange({ ...q, unitEn: e.target.value })} style={inputStyle} placeholder="e.g. metres" />
+          <input value={q.unitEn ?? ''} onChange={e => onChange({ ...q, unitEn: e.target.value })} style={inputStyle} placeholder={q.isYearAnswer ? '(usually empty)' : 'e.g. metres'} />
         </div>
       </div>
       <div>

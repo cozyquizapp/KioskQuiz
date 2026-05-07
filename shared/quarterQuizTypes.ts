@@ -214,6 +214,10 @@ export interface QQQuestion {
   targetValue?: number;
   unit?: string;
   unitEn?: string;
+  /** 2026-05-07: SCHAETZCHEN-Format-Hint. true = Jahreszahl (kein Tausender-
+   *  Punkt, sinnvoller Range ~1000-2200). false/undefined = freie Zahl mit
+   *  default Tausender-Formatierung. Beeinflusst Display + /team-Input. */
+  isYearAnswer?: boolean;
   // ZEHN_VON_ZEHN (All In) — 3 options labeled 1/2/3
   options?: string[];
   optionsEn?: string[];

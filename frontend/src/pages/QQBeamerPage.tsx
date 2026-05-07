@@ -6138,7 +6138,10 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         // Auto-Detection: int zwischen 1000-2100 sieht aus wie eine Jahreszahl.
         // (User-Bug 2026-04-28: '1.914' erschien weil unit nicht 'Jahr' war.)
         const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
-        const isYearUnit = /jahr|year/i.test(unitStr) || (q.targetValue != null && looksLikeYear(q.targetValue));
+        // 2026-05-07 (Wolf): explizites isYearAnswer-Flag aus Builder hat
+        // Vorrang vor unit-String-Heuristik. Auto-Detection bleibt als
+        // Fallback fuer aeltere Drafts ohne Flag.
+        const isYearUnit = !!q.isYearAnswer || /jahr|year/i.test(unitStr) || (q.targetValue != null && looksLikeYear(q.targetValue));
         const targetStr = q.targetValue != null
           ? (isYearUnit ? String(Math.round(q.targetValue)) : q.targetValue.toLocaleString('de-DE'))
           : '—';
@@ -8979,7 +8982,8 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   // da, was wie 1.5 aussieht und falsch ist.
   const unitStr = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
   const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
-  const isYearUnit = /jahr|year/i.test(unitStr) || (target != null && looksLikeYear(target));
+  // 2026-05-07: explizites isYearAnswer-Flag mit Vorrang.
+  const isYearUnit = !!q.isYearAnswer || /jahr|year/i.test(unitStr) || (target != null && looksLikeYear(target));
 
   const fmt = (n: number) => {
     const abs = Math.abs(n);
@@ -11717,7 +11721,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const targetPct = pctOf(target);
             const unitStrInline = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
             const looksLikeYearI = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
-            const isYearUnitInline = /jahr|year/i.test(unitStrInline) || (target != null && looksLikeYearI(target));
+            const isYearUnitInline = !!q.isYearAnswer || /jahr|year/i.test(unitStrInline) || (target != null && looksLikeYearI(target));
             const fmt = (n: number) => {
               const abs = Math.abs(n);
               if (isYearUnitInline) return String(Math.round(n));

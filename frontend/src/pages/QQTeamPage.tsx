@@ -3353,7 +3353,10 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (q.category === 'ZEHN_VON_ZEHN') return <AllInInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
   if (q.category === 'SCHAETZCHEN') {
     const unit = lang === 'en' && q.unitEn ? q.unitEn : q.unit;
-    const placeholder = unit
+    // 2026-05-07 (Wolf): Jahreszahl-Mode → eigener Placeholder, kein Unit.
+    const placeholder = q.isYearAnswer
+      ? (lang === 'de' ? 'Jahr (z.B. 1989)' : 'Year (e.g. 1989)')
+      : unit
       ? (lang === 'de' ? `Deine Schätzung (${unit})` : `Your estimate (${unit})`)
       : (lang === 'de' ? 'Deine Schätzung' : 'Your estimate');
     return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={placeholder} lang={lang} timerEndsAt={tEnd} />;

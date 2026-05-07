@@ -36,6 +36,7 @@ import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
 import { QQMiniPreview } from './QQMiniPreview';
+import { makeEurovisionDraft } from '../data/eurovisionDraftTemplate';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const CATEGORIES: QQCategory[] = ['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'];
@@ -312,6 +313,15 @@ export default function QQBuilderPage() {
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
+  // 2026-05-07 (Wolf-Wunsch direkter ESC-Quiz statt CSV-Zwischenschritt):
+  // gleicher Pattern wie createSampleDraft — Demo-Pack via POST anlegen,
+  // Builder switcht direkt drauf. Wolf ergaenzt Bilder/musicMode pro Frage
+  // im Editor.
+  async function createEurovisionDraft() {
+    const draft = makeEurovisionDraft();
+    const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
+    if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
+  }
   async function saveDraftRaw(draft: QQDraft) {
     setSaving(true);
     try {
@@ -474,7 +484,7 @@ export default function QQBuilderPage() {
   }
   const activeQ = activeDraft && activeQId ? activeDraft.questions.find(q => q.id === activeQId) ?? null : null;
 
-  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onDelete={deleteDraft} />;
+  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onDelete={deleteDraft} />;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
@@ -1918,17 +1928,20 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
 }
 
 // ── Draft list screen ─────────────────────────────────────────────────────────
-function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onCreateSample: () => void; onDelete: (id: string) => void }) {
+function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onDelete: (id: string) => void }) {
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", padding: 40, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>CozyQuiz</div>
         <div style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>Fragensätze</div>
-        <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Erstelle einen neuen leeren Fragensatz oder lade den Hamburg Probekatalog als Beispiel.</div>
+        <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Erstelle einen neuen leeren Fragensatz oder lade einen Demo-Pack als Startpunkt.</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={() => onCreate(3)} style={btnStyle('#22C55E')}>+ Leer (3 Runden)</button>
           <button onClick={() => onCreate(4)} style={btnStyle('#3B82F6')}>+ Leer (4 Runden)</button>
           <button onClick={onCreateSample} style={{ ...btnStyle('#F59E0B'), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog laden</button>
+          {/* 2026-05-07 (Wolf): Eurovision-Demo direkt — fertige 15 Fragen,
+              Wolf ergaenzt nur Bilder + musicMode pro Frage. */}
+          <button onClick={onCreateEurovision} style={{ ...btnStyle('#EC4899'), display: 'flex', alignItems: 'center', gap: 6 }}>🎤 Eurovision Quiz laden</button>
         </div>
       </div>
       {drafts.length === 0 ? (

@@ -16,17 +16,37 @@
 import map from '../data/fluentEmojiMap.json';
 
 const FLUENT_CDN = 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets';
+// 2026-05-07 (Wolf-Bug 'Beamer auf Windows zeigt Buchstaben'): Country-Flags
+// kommen NICHT aus Microsoft Fluent (dort gibt's keine), sondern aus dem
+// Twemoji-Repo via jsdelivr. Der frühere Webfont-Polyfill war auf manchen
+// Browsern unzuverlässig — direktes <img> ist robuster.
+const TWEMOJI_CDN = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg';
 
 type Entry = { n: string; f: string };
 const fluentMap: Record<string, Entry> = map as Record<string, Entry>;
 
 /**
  * Country-Flag-Codepoints (Regional Indicator Symbol Letters U+1F1E6..U+1F1FF).
- * Diese ueberspringen wir — der Twemoji-Country-Flags-Webfont in main.css
- * rendert sie schon konsistent, und Microsoft Fluent hat keine Country-Flags.
  */
 function isFlagCodepoint(cp: number): boolean {
   return cp >= 0x1f1e6 && cp <= 0x1f1ff;
+}
+
+/**
+ * Twemoji-CDN-URL für ein Country-Flag-Glyph.
+ * Twemoji-Filename = lowercase hex, '-' separated, ohne Variation Selector.
+ */
+function twemojiFlagUrl(glyph: string): string | null {
+  const codepoints: number[] = [];
+  for (const ch of glyph) {
+    const cp = ch.codePointAt(0);
+    if (cp == null) return null;
+    if (cp === 0xfe0f) continue; // VS strippen
+    codepoints.push(cp);
+  }
+  if (codepoints.length === 0) return null;
+  const key = codepoints.map(cp => cp.toString(16)).join('-');
+  return `${TWEMOJI_CDN}/${key}.svg`;
 }
 
 /**
@@ -55,12 +75,13 @@ function glyphToKey(glyph: string): string | null {
 }
 
 /**
- * Emoji-Detection-Regex. Matcht ein einzelnes Emoji-Cluster (inkl. ZWJ-
- * Sequences, Skin-Tone-Modifier, Variation Selectors). Nicht 100% perfekt
- * (echte emoji-regex Lib waere genauer), aber deckt 99% der App-Faelle.
+ * Emoji-Detection-Regex. Matcht:
+ *  - Country-Flag (zwei Regional Indicators)
+ *  - oder Emoji-Cluster (Extended_Pictographic + ZWJ-Sequences + Modifiers)
+ * Nicht 100% perfekt — echte emoji-regex Lib waere genauer — deckt aber 99%.
  */
 const EMOJI_REGEX =
-  /(?:\p{Extended_Pictographic}(?:‍\p{Extended_Pictographic})*(?:️)?(?:\p{Emoji_Modifier})?)+/gu;
+  /(?:\p{Regional_Indicator}\p{Regional_Indicator}|\p{Extended_Pictographic}(?:‍\p{Extended_Pictographic})*(?:️)?(?:\p{Emoji_Modifier})?)+/gu;
 
 /**
  * Baut die CDN-URL fuer ein gemapptes Emoji.
@@ -90,14 +111,18 @@ function replaceInTextNode(textNode: Text): void {
     const glyph = match[0];
     const start = match.index ?? 0;
 
-    // Ersten Codepoint pruefen — wenn Country-Flag, ueberspringen
+    // URL bestimmen: Country-Flag → Twemoji, sonst → Fluent (wenn gemappt).
+    let url: string | null = null;
+    let alt = glyph;
     const firstCp = glyph.codePointAt(0);
-    if (firstCp != null && isFlagCodepoint(firstCp)) continue;
-
-    const key = glyphToKey(glyph);
-    if (!key) continue;
-    const entry = fluentMap[key];
-    if (!entry) continue;
+    if (firstCp != null && isFlagCodepoint(firstCp)) {
+      url = twemojiFlagUrl(glyph);
+    } else {
+      const key = glyphToKey(glyph);
+      const entry = key ? fluentMap[key] : null;
+      if (entry) url = urlFor(entry);
+    }
+    if (!url) continue;
 
     // Text vor dem Match anhaengen
     if (start > lastIndex) {
@@ -106,10 +131,10 @@ function replaceInTextNode(textNode: Text): void {
 
     // <img> fuer das Emoji
     const img = document.createElement('img');
-    img.src = urlFor(entry);
-    img.alt = glyph;
+    img.src = url;
+    img.alt = alt;
     img.className = 'qq-fluent-emoji';
-    img.setAttribute('aria-label', glyph);
+    img.setAttribute('aria-label', alt);
     img.draggable = false;
     fragment.appendChild(img);
 

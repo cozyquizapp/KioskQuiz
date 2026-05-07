@@ -1891,7 +1891,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
       {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
           Übergang zum Regel-Intro. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} />
       {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
           Willkommen und erster Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
@@ -3520,7 +3520,7 @@ function MuchoOptionsReveal({
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
+function QuizIntroOverlay({ language, visible, eurovisionMode }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean }) {
   const lang = useLangFlip(language);
   const title = 'CozyQuiz';
   const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
@@ -3731,6 +3731,25 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
             animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
             opacity: 0,
           }} />
+
+          {/* 2026-05-07 (Wolf-Sidequest): 'EUROVISION EDITION'-Subtitle wenn
+              eurovisionMode aktiv. Pop't nach dem Title-Cascade rein, gleicher
+              Cozy-Spirit aber pink-lila statt gold. */}
+          {eurovisionMode && (
+            <div style={{
+              marginTop: 'clamp(8px, 1.4vh, 20px)',
+              padding: '8px 28px', borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.32), rgba(168,85,247,0.24))',
+              border: '2px solid rgba(236,72,153,0.65)',
+              fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 900,
+              color: '#fde68a', letterSpacing: '0.22em', textTransform: 'uppercase',
+              boxShadow: '0 0 30px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.4)',
+              animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+              opacity: 0,
+            }}>
+              🎤 Eurovision Edition
+            </div>
+          )}
         </div>
 
         {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein. */}
@@ -3821,6 +3840,11 @@ function QuizIntroOverlay({ language, visible }: { language: QQLanguage; visible
         @keyframes qqIntroLineExpand {
           0%   { opacity: 0; transform: scaleX(0); }
           100% { opacity: 0.85; transform: scaleX(1); }
+        }
+        @keyframes qqIntroEurovisionPop {
+          0%   { opacity: 0; transform: translateY(8px) scale(0.85); }
+          70%  { opacity: 1; transform: translateY(-2px) scale(1.06); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes qqIntroAccentShimmer {
           0%   { background-position: -200% 0; }

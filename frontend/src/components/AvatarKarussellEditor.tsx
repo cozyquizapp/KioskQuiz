@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
-import { getSet, MEGA_EMOJI_POOL } from '../avatarSets';
+import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar } from './QQTeamAvatar';
 
 type Props = {
@@ -52,11 +52,16 @@ export function AvatarKarussellEditor({
   // behalten ihre fixen 8 Theme-Emojis. PNG-Sets brauchen keinen Pool.
   const set = getSet(activeSetId);
   const isPng = (set?.source ?? 'emoji') === 'png';
+  // 2026-05-07 (Wolf-Wunsch ESC-Watchparty): bei 'esc'-Set die volle ~47-
+  // Laender-Flaggen-Auswahl statt nur 8 Default-Slots. Spieler koennen ihre
+  // Lieblings-ESC-Flagge waehlen, nicht nur Schweden/Irland/etc.
   const emojiPool: string[] = isPng
     ? []
     : (activeSetId === 'all'
         ? MEGA_EMOJI_POOL
-        : (set?.avatars ?? []));
+        : activeSetId === 'esc'
+          ? ESC_FLAG_POOL
+          : (set?.avatars ?? []));
   const availableSlots = QQ_AVATARS.filter(a => !takenAvatarIds.includes(a.id));
   const allSlotsTaken = availableSlots.length === 0;
   const currentSlot = availableSlots.find(a => a.id === avatarId) ?? availableSlots[0];

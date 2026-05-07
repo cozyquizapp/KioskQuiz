@@ -676,6 +676,10 @@ export default function QQTeamPage() {
           onStammLookup={lookupStammCode}
           stammResult={stammResult}
           stammStatus={stammStatus}
+          eurovisionMode={!!state?.theme?.eurovisionMode}
+          escBgUrl={state?.theme?.eurovisionMode
+            ? (state.theme.mobileBackgroundUrl ?? state.theme.lobbyBackgroundUrl)
+            : null}
         />
       </AvatarSetProvider>
     );
@@ -710,7 +714,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   chosenEmoji, setChosenEmoji,
   teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip,
   takenAvatarIds, takenEmojis, takenTeamNamesLower, serverEmojis,
-  resumeTeam, onResume, onStammLookup, stammResult, stammStatus }: {
+  resumeTeam, onResume, onStammLookup, stammResult, stammStatus,
+  eurovisionMode, escBgUrl }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   chosenEmoji: string | undefined; setChosenEmoji: (e: string | undefined) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
@@ -724,6 +729,10 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   onStammLookup: (code: string) => Promise<void>;
   stammResult: { teamId: string; teamName: string; avatarId: string; wins: number; gamesPlayed: number } | null;
   stammStatus: 'idle' | 'searching' | 'notfound';
+  /** 2026-05-07 v15 (Wolf '/team kommt eurovision noch nicht an'): SetupFlow
+   *  bekommt jetzt auch ESC-Theming, war vorher nur in TeamGameView (post-join). */
+  eurovisionMode?: boolean;
+  escBgUrl?: string | null;
 }) {
   const [stammInput, setStammInput] = useState('');
   const [stammExpanded, setStammExpanded] = useState(false);
@@ -773,14 +782,37 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     `radial-gradient(ellipse at 85% 110%, ${slotColor}14, transparent 55%), ` +
     `radial-gradient(ellipse at 15% 80%, ${slotColor}10, transparent 50%), ` +
     `#0D0A06`;
+  // 2026-05-07 v15 (Wolf '/team kommt eurovision nicht an'): ESC-BG-Override
+  // im Setup analog TeamGameView. ESC-Pink-Lila-Gradient + BG-Image-Layer +
+  // Hearts. Cozy-Setup bleibt unveraendert wenn nicht ESC.
+  const setupPageBg = eurovisionMode
+    ? 'radial-gradient(ellipse at 50% -10%, rgba(255,45,123,0.18), transparent 55%), '
+      + 'radial-gradient(ellipse at 85% 110%, rgba(59,130,246,0.10), transparent 55%), '
+      + 'radial-gradient(ellipse at 15% 80%, rgba(168,85,247,0.10), transparent 50%), '
+      + '#1f0f3d'
+    : teamTintBg;
 
   return (
     <div style={{
       ...darkPage,
-      background: teamTintBg,
+      background: setupPageBg,
       transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
+      {/* ESC-BG-Bild als Atmosphere-Layer */}
+      {eurovisionMode && escBgUrl && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0,
+          backgroundImage: `url(${escBgUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.35,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+      )}
+      {eurovisionMode && <MobileEurovisionHearts />}
       <div style={grainOverlay} />
       <MobileFireflies color={`${slotColor}66`} />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>

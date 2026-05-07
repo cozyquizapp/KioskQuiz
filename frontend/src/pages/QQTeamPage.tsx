@@ -135,6 +135,12 @@ const TEAM_CSS = `
   @keyframes tcreveal  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
   @keyframes tctimer   { from{width:100%} to{width:0%} }
   @keyframes tcwobble  { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+  @keyframes tcCorrectFlash {
+    0%   { opacity: 0; }
+    18%  { opacity: 1; }
+    55%  { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
   @keyframes tcbtnpop  { 0%{transform:scale(0.96)} 60%{transform:scale(1.04)} 100%{transform:scale(1)} }
   @keyframes tcsuccess { 0%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.98)} 100%{transform:scale(1)} }
   @keyframes tcoptIn   { from{opacity:0;transform:translateY(18px) scale(0.94)} to{opacity:1;transform:translateY(0) scale(1)} }
@@ -1257,6 +1263,18 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     setSfxMuted(true);
   }, []);
 
+  // 2026-05-07 (Wolf-Brainstorm 'gruener Glow im BG bei richtiger Antwort'):
+  // Vollbild-Backdrop-Glow als Freude-Moment auf dem eigenen Phone, wenn
+  // das Team beim Reveal richtig lag. Subtiler als der Beamer (dort ist die
+  // grosse Aufdeckung), aber das Phone gibt jedem Team ein eigenes 'wir!'-
+  // Signal — 1.8s Pulse, dann fade-out.
+  const [correctFlashAt, setCorrectFlashAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (correctFlashAt === null) return;
+    const t = window.setTimeout(() => setCorrectFlashAt(null), 1800);
+    return () => window.clearTimeout(t);
+  }, [correctFlashAt]);
+
   const prevPhaseRef = useRef(s.phase);
   const prevQuestionIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1271,6 +1289,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     }
     if (s.phase === 'QUESTION_REVEAL' && prev === 'QUESTION_ACTIVE') {
       const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+      const iAmWinner = s.correctTeamId === myTeamId || winners.includes(myTeamId);
       if (s.correctTeamId === myTeamId) {
         haptic('fastest');
       } else if (winners.includes(myTeamId)) {
@@ -1278,6 +1297,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       } else {
         haptic('wrong');
       }
+      if (iAmWinner) setCorrectFlashAt(Date.now());
     }
     if (s.phase === 'PLACEMENT' && prev === 'QUESTION_REVEAL' && s.correctTeamId === myTeamId) {
       haptic('turn');
@@ -1436,6 +1456,25 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color={ffColor} />
+
+      {/* 2026-05-07: Gruener Glow-Overlay bei richtiger Antwort.
+          radial-gradient von oben+unten + sanftes Pulsieren, 1.8s Anim.
+          pointerEvents:none damit Tap-Targets durchgreifen. */}
+      {correctFlashAt !== null && (
+        <div
+          aria-hidden
+          key={correctFlashAt}
+          style={{
+            position: 'fixed', inset: 0,
+            pointerEvents: 'none',
+            zIndex: 50,
+            background:
+              'radial-gradient(ellipse at 50% 0%, rgba(34,197,94,0.32) 0%, transparent 55%),' +
+              'radial-gradient(ellipse at 50% 100%, rgba(34,197,94,0.22) 0%, transparent 55%)',
+            animation: 'tcCorrectFlash 1.8s ease-out both',
+          }}
+        />
+      )}
 
       {showIdentityBanner && myTeam && <IdentityBanner team={myTeam} lang={lang} />}
       {yourTurnAlert && myTeam && <YourTurnAlert kind={yourTurnAlert.kind} team={myTeam} lang={lang} />}

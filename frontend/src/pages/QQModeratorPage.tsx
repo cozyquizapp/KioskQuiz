@@ -518,7 +518,34 @@ export default function QQModeratorPage() {
     // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Guard via
     // ref. Wenn dieselbe action+state-Kombi schon emittet wurde und State
     // sich nicht relevant geaendert hat, NICHT erneut feuern.
-    const fireKey = `${s.phase}:${(s as any).hotPotatoSlotState ?? '-'}:${q?.id ?? '-'}:${s.introStep ?? '-'}:${s.connections?.phase ?? '-'}:${s.rulesSlideIndex ?? '-'}:${s.questionIndex}`;
+    // 2026-05-07 v3: alle Sub-State-Felder die Autoplay-Branches treiben
+    // muessen im Key sein, sonst dedup blockiert valid follow-up emits.
+    // Vorher haengte z.B. PLACEMENT nach jeder Frage weil pendingFor-Wechsel
+    // nicht im Key war, gleiches Problem bei allAnswered, timerExpired,
+    // muchoRevealStep, comebackHL etc.
+    const hlPhase = s.comebackHL?.phase ?? '-';
+    const hlAnsweredCount = s.comebackHL ? Object.keys(s.comebackHL.answers ?? {}).length : 0;
+    const fireKey = [
+      s.phase,
+      (s as any).hotPotatoSlotState ?? '-',
+      q?.id ?? '-',
+      s.introStep ?? '-',
+      s.connections?.phase ?? '-',
+      s.rulesSlideIndex ?? '-',
+      s.questionIndex,
+      s.pendingFor ?? '-',
+      s.pendingAction ?? '-',
+      s.allAnswered ? 'all' : 'some',
+      (s as any).timerExpired ? 'exp' : 'run',
+      s.muchoRevealStep ?? '-',
+      s.zvzRevealStep ?? '-',
+      s.cheeseRevealStep ?? '-',
+      s.mapRevealStep ?? '-',
+      s.comebackIntroStep ?? '-',
+      hlPhase,
+      hlAnsweredCount,
+      s.answers?.length ?? 0,
+    ].join(':');
     if (autoplayLastFireKeyRef.current === fireKey) return;
     const handle = window.setTimeout(() => {
       autoplayLastFireKeyRef.current = fireKey;
@@ -532,9 +559,13 @@ export default function QQModeratorPage() {
     state?.comebackIntroStep,
     state?.connections?.phase,
     state?.muchoRevealStep, state?.zvzRevealStep, state?.cheeseRevealStep, state?.mapRevealStep,
-    state?.pendingFor, state?.currentQuestion?.id, state?.answers?.length,
+    state?.pendingFor, state?.pendingAction, // 2026-05-07: PLACEMENT-Flow (action-Wechsel)
+    state?.currentQuestion?.id, state?.answers?.length,
     (state as any)?.timerExpired, // 2026-05-02 v2: trigger Autoplay neu wenn Timer abläuft
     (state as any)?.hotPotatoSlotState, // 2026-05-07: HP 3-Phasen-Flow (rolling→landed→finished)
+    state?.comebackHL?.phase, // 2026-05-07: H/L question→reveal Wechsel
+    // comebackHL answers count via stringified key — Effect re-runt wenn Team antwortet
+    state?.comebackHL ? Object.keys(state.comebackHL.answers ?? {}).length : 0,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleKey = useCallback((e: KeyboardEvent) => {

@@ -1212,7 +1212,7 @@ export default function QQModeratorPage() {
                   && !(s.currentQuestion?.bunteTuete?.kind === 'hotPotato'
                        && ((s as any).hotPotatoSlotState === 'rolling'
                            || (s as any).hotPotatoSlotState === 'landed')) && (
-                  <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="R">
+                  <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="Space">
                     👁 Antwort aufdecken
                   </PrimaryBtn>
                 )}

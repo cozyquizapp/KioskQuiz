@@ -2796,7 +2796,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // Alle relevanten PNGs einer Mode werden ueberlagert vorgeladen, opacity-Switch
 // haelt das Flackern aus.
 // ─────────────────────────────────────────────────────────────────────────────
-type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen';
+type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen' | 'flagge';
 
 function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost }: {
   widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean; mirror?: boolean;
@@ -3162,6 +3162,57 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
         }
       };
       tick();
+    } else if (effectiveMode === 'flagge') {
+      // 2026-05-07 (Wolf-ESC): Eurovision-Variante des winken-Modes — Wolf
+      // haelt eine EU-Flagge in der Hand statt zu winken. Logik 1:1 wie
+      // winken: Speak/Pause-Phase mit Mund-Flap, Idle-Blink alle 3.5-5.5s.
+      // Externes speaking-Gate respektiert (synchron zur Sprechblase).
+      let mouthOpenLocal = false;
+      let phase: 'speak' | 'pause' = 'speak';
+      let phaseUntil = Date.now() + 2200 + Math.random() * 1200;
+      let nextBlinkAt = Date.now() + 3500 + Math.random() * 2000;
+      let blinkUntil = 0;
+      const tick = () => {
+        if (!alive) return;
+        const now = Date.now();
+        if (now < blinkUntil) {
+          setCurrentFile('augenzu.mundzu.flagge');
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
+        }
+        if (now >= nextBlinkAt) {
+          blinkUntil = now + 130;
+          nextBlinkAt = now + 130 + 3500 + Math.random() * 2000;
+          setCurrentFile('augenzu.mundzu.flagge');
+          timer = window.setTimeout(tick, 130);
+          return;
+        }
+        const externalSpeak = speakingRef.current;
+        const isSpeaking = externalSpeak !== undefined
+          ? externalSpeak
+          : (() => {
+              if (now >= phaseUntil) {
+                if (phase === 'speak') {
+                  phase = 'pause';
+                  phaseUntil = now + 1200 + Math.random() * 900;
+                } else {
+                  phase = 'speak';
+                  phaseUntil = now + 2000 + Math.random() * 1500;
+                }
+              }
+              return phase === 'speak';
+            })();
+        if (isSpeaking) {
+          mouthOpenLocal = !mouthOpenLocal;
+          setCurrentFile(mouthOpenLocal ? 'augenauf.mundauf.flagge' : 'augenauf.mundzu.flagge');
+          timer = window.setTimeout(tick, 220 + Math.random() * 100);
+        } else {
+          mouthOpenLocal = false;
+          setCurrentFile('augenauf.mundzu.flagge');
+          timer = window.setTimeout(tick, 250);
+        }
+      };
+      tick();
     }
 
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
@@ -3189,6 +3240,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
     'augenauf.mundauf.daumen', 'augenauf.mundzu.daumen',
     'augenzu.mundauf.daumen', 'augenzu.mundzu.daumen',
     'augenzwinker.mundauf.daumen', 'augenzwinker.mundzu.daumen',
+    // 2026-05-07 (Wolf-ESC): Flagge-Posen
+    'augenauf.mundauf.flagge', 'augenauf.mundzu.flagge',
+    'augenzu.mundauf.flagge', 'augenzu.mundzu.flagge',
   ];
 
   // Pro Mode nur die relevanten Posen rendern (sparen 60-70% Memory)
@@ -3204,7 +3258,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
             ? allPoses.filter(p => p.includes('schlafen'))
             : effectiveMode === 'daumen'
               ? allPoses.filter(p => p.includes('daumen'))
-              : allPoses.filter(p => p.includes('ueberrascht'));
+              : effectiveMode === 'flagge'
+                ? allPoses.filter(p => p.includes('flagge'))
+                : allPoses.filter(p => p.includes('ueberrascht'));
 
   return (
     <div style={{
@@ -3782,7 +3838,11 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl }: { lang
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 3.4s both',
           opacity: 0,
         }}>
-          <AnimatedCozyWolf widthCss="clamp(130px, 15vw, 220px)" speaking={visible} />
+          <AnimatedCozyWolf
+            widthCss="clamp(130px, 15vw, 220px)"
+            mode={eurovisionMode ? 'flagge' : undefined}
+            speaking={visible}
+          />
 
           <div style={{
             position: 'relative',
@@ -4237,9 +4297,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 // `welcomedTeamName` setzt (kommt von welcomeTeamId in LobbyView, ~3.2s aktiv
 // nach Team-Join), uebernimmt 'Hallo {teamName}!' bis zum Timeout, dann zurueck
 // zur Idle-Rotation.
-function WolfLobbyGreeter({ lang, welcomedTeamName }: {
+function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
   lang: 'de' | 'en';
   welcomedTeamName: string | null;
+  /** 2026-05-07 (Wolf-ESC): wenn true, Wolf haelt EU-Flagge statt Daumen hoch. */
+  eurovisionMode?: boolean;
 }) {
   const idleSlogans: Slogan[] = lang === 'de'
     ? [
@@ -4320,9 +4382,9 @@ function WolfLobbyGreeter({ lang, welcomedTeamName }: {
           Schicht — verhindert Flicker beim Mund-Flap). */}
       <AnimatedCozyWolf
         widthCss="clamp(140px, 13vw, 200px)"
-        mode="daumen"
+        mode={eurovisionMode ? 'flagge' : 'daumen'}
         speaking={speakingNow}
-        wink={isWelcoming}
+        wink={!eurovisionMode && isWelcoming}
         mirror
       />
     </div>
@@ -4444,6 +4506,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         <WolfLobbyGreeter
           lang={de ? 'de' : 'en'}
           welcomedTeamName={welcomedTeam?.name ?? null}
+          eurovisionMode={s.theme?.eurovisionMode}
         />
       </div>
 
@@ -5493,7 +5556,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           pointerEvents: 'none',
           zIndex: 4,
         }} aria-hidden>
-          <AnimatedCozyWolf widthCss="100%" speaking={false} />
+          <AnimatedCozyWolf
+            widthCss="100%"
+            mode={s.theme?.eurovisionMode ? 'flagge' : undefined}
+            speaking={false}
+          />
         </div>
       )}
       <style>{`
@@ -13689,10 +13756,12 @@ type CoModeratorVariant = 'preGame' | 'pause';
 // Mundbewegung (open-close-Cycle) pro Silbe.
 type Slogan = { text: string; mouths: number };
 
-function WolfCoModerator({ lang, variant, widthCss }: {
+function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
   lang: 'de' | 'en';
   variant: CoModeratorVariant;
   widthCss: string;
+  /** 2026-05-07 (Wolf-ESC): bei true → Wolf haelt EU-Flagge (statt trinken/winken). */
+  eurovisionMode?: boolean;
 }) {
   const slogans: Slogan[] = variant === 'pause'
     ? (lang === 'de'
@@ -13760,7 +13829,12 @@ function WolfCoModerator({ lang, variant, widthCss }: {
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
   }, [idx, enterMs, speakMs]);
 
-  const wolfMode: WolfMode = variant === 'pause' ? 'trinken' : 'winken';
+  const wolfMode: WolfMode = eurovisionMode
+    ? 'flagge'
+    : (variant === 'pause' ? 'trinken' : 'winken');
+  // 2026-05-07 (Wolf-ESC): flagge-Mode hat speak-Frames — speaking-Gate auch
+  // im pause-variant durchreichen (sonst kein Mund-Flap zur Sprechblase).
+  const speakingProp = (variant === 'preGame' || eurovisionMode) ? speakingNow : undefined;
 
   return (
     <div style={{
@@ -13783,7 +13857,7 @@ function WolfCoModerator({ lang, variant, widthCss }: {
       <AnimatedCozyWolf
         widthCss={widthCss}
         mode={wolfMode}
-        speaking={variant === 'preGame' ? speakingNow : undefined}
+        speaking={speakingProp}
       />
     </div>
   );
@@ -14828,6 +14902,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               lang={de ? 'de' : 'en'}
               variant="preGame"
               widthCss="clamp(190px, 19vw, 300px)"
+              eurovisionMode={s.theme?.eurovisionMode}
             />
           </div>
 
@@ -14871,6 +14946,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             lang={de ? 'de' : 'en'}
             variant="pause"
             widthCss="clamp(140px, 14vw, 220px)"
+            eurovisionMode={s.theme?.eurovisionMode}
           />
         </div>
       )}

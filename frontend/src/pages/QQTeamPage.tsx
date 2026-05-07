@@ -2353,7 +2353,19 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   // Step-Reveal; bei MUCHO/ZvZ/Map zaehlt der Backend-Step.
   const solutionVisible = (() => {
     if (!isRevealed) return false;
-    if (q.category === 'MUCHO') return (s.muchoRevealStep ?? 0) >= 2;
+    if (q.category === 'MUCHO') {
+      // 2026-05-07 (Wolf 'Mucho-Reveal kommt auf /team deutlich frueher als
+      // auf /beamer — komplett spoilert'): vorher >= 2 hardcoded, was nur
+      // bei 2-Optionen-MUCHO funktioniert. Bei 4 Optionen ist Step 2 erst
+      // der zweite Avatar-Pop, der Lock-Step (= Korrekt-Reveal) ist
+      // nonEmpty+1. Jetzt: berechne Lock-Step aus tatsaechlicher Anzahl
+      // nicht-leerer Optionen, gate solutionVisible auf >= Lock-Step.
+      const nonEmpty = (q.options ?? []).filter((_: unknown, i: number) =>
+        s.answers.some(a => a.text === String(i))
+      ).length;
+      const lockStep = Math.max(2, nonEmpty + 1);
+      return (s.muchoRevealStep ?? 0) >= lockStep;
+    }
     if (q.category === 'ZEHN_VON_ZEHN') return (s.zvzRevealStep ?? 0) >= 2;
     if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
       // Map-Reveal: erst nach Closeup-Zoom (= step 1+validCount+1) ist

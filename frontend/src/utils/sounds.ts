@@ -151,14 +151,69 @@ function playAudioFile(url: string) {
 
 // ── Synth helpers ─────────────────────────────────────────────────────────────
 
+// 2026-05-07 (Wolf 'mach cozy'): Cozy-Warm-Bus statt direkt zu destination.
+// Alle Synth-Toene routen jetzt durch:
+//   Source → [Lowpass 3.5kHz, Q=0.5] → Destination  (dry path)
+//                       └→ [Reverb-Send 12%] → [Convolver, 0.4s IR] → Destination  (wet path)
+// Effekt: weicher, leicht raumig, glockenspiel-artig statt mechanisch-trocken.
+// IR ist synthetisch generiert (exponentially-decaying white noise), keine
+// externe File-Dependency. Per-Context-Cache verhindert Mehrfach-Aufbau.
+let warmBusInput: GainNode | null = null;
+let warmBusAcRef: AudioContext | null = null;
+
+function getWarmBus(ac: AudioContext): GainNode {
+  if (warmBusInput && warmBusAcRef === ac) return warmBusInput;
+  warmBusAcRef = ac;
+
+  const input = ac.createGain();
+
+  // Dry path: input → lowpass → destination
+  const lowpass = ac.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.frequency.value = 3500;  // schneidet harsche Höhen
+  lowpass.Q.value = 0.5;
+  input.connect(lowpass);
+  lowpass.connect(ac.destination);
+
+  // Wet path: input → reverbSend → convolver → reverbReturn → destination
+  // Synthetic IR: white noise mit ~0.4s exponential decay → Bell-Hall-Eindruck.
+  const irLength = Math.floor(ac.sampleRate * 0.4);
+  const ir = ac.createBuffer(2, irLength, ac.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = ir.getChannelData(ch);
+    for (let i = 0; i < irLength; i++) {
+      const decay = Math.exp(-i / (ac.sampleRate * 0.12));
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+  }
+  const convolver = ac.createConvolver();
+  convolver.buffer = ir;
+  const reverbSend = ac.createGain();
+  reverbSend.gain.value = 0.12;  // 12% wet — dezent, nicht matschig
+  const reverbReturn = ac.createGain();
+  reverbReturn.gain.value = 0.45;  // attenuate output after IR
+
+  input.connect(reverbSend);
+  reverbSend.connect(convolver);
+  convolver.connect(reverbReturn);
+  reverbReturn.connect(ac.destination);
+
+  warmBusInput = input;
+  return input;
+}
+
 function tone(
   freq: number,
   type: OscillatorType,
   startTime: number,
   duration: number,
   gainPeak: number,
-  attack = 0.01,
-  release = 0.1,
+  // 2026-05-07 (Wolf 'mach cozy'): Default-Hüllkurve sanfter — vorher 0.01s
+  // Attack + 0.1s Release wirkte klick-artig, jetzt 0.018s + 0.18s laesst
+  // Toene flowen statt poppen. Cascade/Reveal/Fanfare profitieren am
+  // staerksten; Tick bleibt durch eigene kuerzere Werte schnell genug.
+  attack = 0.018,
+  release = 0.18,
   c?: AudioContext
 ) {
   const ac = c ?? getCtx();
@@ -166,7 +221,8 @@ function tone(
   const osc = ac.createOscillator();
   const gain = ac.createGain();
   osc.connect(gain);
-  gain.connect(ac.destination);
+  // Cozy-Warm-Bus statt direkt zu destination → Lowpass + dezenter Reverb.
+  gain.connect(getWarmBus(ac));
   osc.type = type;
   osc.frequency.setValueAtTime(freq, startTime);
   gain.gain.setValueAtTime(0, startTime);
@@ -821,19 +877,18 @@ export function playQuestionStartFor(category?: string | null) { playSlotForCate
 
 export function playTick() {
   if (_sfxMuted) return;
-  // 2026-05-07 (Sound-Audit P2.1): timerTick als customizable Slot. Wenn
-  // Mod eine Datei hochgeladen oder den Slot deaktiviert hat → respektieren.
-  // Default: Synth-Fallback wie bisher (880 Hz Square).
+  // 2026-05-07 (Sound-Audit P2.1): timerTick als customizable Slot.
   if (!isSlotEnabled('timerTick')) return;
   const url = resolveSlotUrl('timerTick');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // 2026-05-07 (Sound-Audit P2.2): gainPeak 0.09 → 0.12. Tick wird nicht
-  // geduckt waehrend Music laeuft — leichter Boost (+33%) hebt ihn psycho-
-  // akustisch ueber die ungeduckte Hintergrundmusik. Solo bleibt's dezent.
-  tone(880, 'square', t, 0.055, 0.12, 0.004, 0.04, ac);
+  // 2026-05-07 (Wolf 'mach cozy'): Square → Triangle. Square hat scharfe
+  // ungeradzahlige Obertoene (klingt "harsch"), Triangle ist weicher aber
+  // immer noch klar abgrenzbar als Tick. Pitch 880 → 760 leicht runter, das
+  // sitzt komfortabler im warmen Filter-Bus.
+  tone(760, 'triangle', t, 0.055, 0.13, 0.004, 0.04, ac);
 }
 
 /** 2026-05-05 (Phase-7 Bucket-1 BC-1): Audio-Feedback für Mod-Hotkey-Press.
@@ -859,10 +914,11 @@ export function playUrgentTick() {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // P2.2: gainPeak 0.13 → 0.17 — UrgentTick muss noch deutlicher ueber der
-  // Hintergrundmusik liegen als der normale Tick (Endspurt-Drama).
-  tone(1100, 'square', t, 0.06, 0.17, 0.003, 0.04, ac);
-  tone(1100, 'square', t + 0.1, 0.06, 0.17, 0.003, 0.04, ac);
+  // 2026-05-07 (Wolf 'mach cozy'): Square → Triangle, Pitch 1100 → 950 leicht
+  // runter. UrgentTick bleibt Doppel-Hit fuers Endspurt-Drama, klingt aber
+  // weniger schrill mit dem warmen Filter.
+  tone(950, 'triangle', t, 0.06, 0.18, 0.003, 0.04, ac);
+  tone(950, 'triangle', t + 0.1, 0.06, 0.18, 0.003, 0.04, ac);
 }
 
 export function playScoreUp() {

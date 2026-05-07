@@ -287,7 +287,14 @@ export default function QQModeratorPage() {
         const rIdx = s.rulesSlideIndex ?? 0;
         // Slide 2 (Tree-Showcase) braucht länger wegen Pan-Sweep durch alle
         // Phasen (4 Phasen × 2.8s = 11.2s + initialer Pause + Lese-Puffer).
-        delayMs = rIdx === 2 ? 16500 : 8000;
+        // 2026-05-07 (Wolf 'video laeuft, danach kommt direkt regelpage 2'):
+        // ESC-Welcome (rIdx === -2) mit Video braucht ~10s Video + ~5s Cascade
+        // = 15s. Default 8s clipt das Video / die Cascade. Bei ESC+Video also
+        // 18s warten, sonst geht der Welcome-Wordmark unter.
+        const escWelcomeWithVideo = rIdx === -2
+          && !!s.theme?.eurovisionMode
+          && !!s.theme?.welcomeVideoUrl;
+        delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
         const totalSlides = 8;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });

@@ -3845,13 +3845,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               alt="Eurovision Song Contest"
               draggable={false}
                 style={{
-                // 2026-05-07 (Wolf 'logo hier groesser'): Welcome-Page-Logo unter
-                // dem CozyQuiz-Wordmark deutlich prominenter. 60-130 -> 130-260.
+                // 2026-05-07 v3 (Wolf 'logo ohne bg, gerne groesser'): das
+                // 'logo ohne'-Asset ist transparenter weisser Outline-Wordmark.
+                // Frame (borderRadius/boxShadow) entfaellt, dafuer Drop-Shadow
+                // fuer Lesbarkeit. Groesse 130-260 -> 180-340.
                 marginTop: 'clamp(18px, 2.4vh, 36px)',
-                height: 'clamp(130px, 18vh, 260px)',
+                height: 'clamp(180px, 24vh, 340px)',
                 width: 'auto',
-                borderRadius: 24,
-                boxShadow: '0 0 44px rgba(236,72,153,0.55), 0 6px 22px rgba(0,0,0,0.5)',
+                filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.55)) drop-shadow(0 4px 14px rgba(0,0,0,0.5))',
                 animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
                 opacity: 0,
               }}
@@ -15062,11 +15063,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             alt="Eurovision Song Contest"
             draggable={false}
             style={{
-              height: 'clamp(50px, 7vh, 100px)',
+              // 2026-05-07 v3 (Wolf 'logo ohne bg, gerne groesser'):
+              // transparente Outline-Variante — kein Pill-Frame mehr, dafuer
+              // Drop-Shadow + groesser. 50-100 -> 90-180.
+              height: 'clamp(90px, 13vh, 180px)',
               width: 'auto',
-              borderRadius: 12,
-              boxShadow: '0 0 24px rgba(236,72,153,0.4), 0 4px 12px rgba(0,0,0,0.4)',
-              marginBottom: 8,
+              filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+              marginBottom: 12,
               animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
             }}
           />

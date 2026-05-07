@@ -26,7 +26,12 @@ export const EUROVISION_THEME: QQTheme = {
   // Browser-autoplay-policy: muted by default. Filename hat ein Leerzeichen,
   // muss URL-encoded werden ('%20').
   welcomeVideoUrl: '/themes/intro%20vid.mp4',
-  logoUrl: '/themes/eurovision-logo.jpg',
+  // 2026-05-07 v5 (Wolf 'pack gerne das logo ohne bg in die folien, gerne
+  // groesser'): logo-ohne ist die transparente Outline-Variante (weiss auf
+  // transparent), wirkt premium auf dunklem BG. Render-Stellen verzichten
+  // jetzt auf borderRadius/boxShadow (kein Pill-Frame mehr) und werden
+  // groesser dargestellt — siehe QuizIntroOverlay + PreGame-Eyebrow.
+  logoUrl: '/themes/logo%20ohne.png',
   welcomeText: {
     de: 'Bonsoir Europe',
     en: 'Good evening Europe',

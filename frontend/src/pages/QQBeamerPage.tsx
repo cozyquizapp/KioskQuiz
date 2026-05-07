@@ -3833,10 +3833,19 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             aria-label={title}
             style={{
               display: 'inline-flex',
-              fontSize: 'clamp(80px, 12vw, 200px)', fontWeight: 900,
-              letterSpacing: '0.01em',
+              // 2026-05-07 v11 (Wolf 'meine brand-font heisst Stinger Fit,
+              // hab sie in /fonts gepackt'): self-hosted Stinger Fit Regular
+              // — kondensiert mit rundlichen Glyphen, exakt der Brand-Look
+              // aus Wolfs CozyWolf-Logo. Letter-Cascade-Animation bleibt
+              // erhalten, nur Glyph-Look wechselt.
+              fontFamily: eurovisionMode
+                ? "'Stinger Fit', 'Nunito', system-ui, sans-serif"
+                : undefined,
+              fontSize: 'clamp(80px, 12vw, 200px)',
+              fontWeight: eurovisionMode ? 400 : 900, // Stinger Fit hat nur 1 Weight
+              letterSpacing: eurovisionMode ? '0.04em' : '0.01em',
               lineHeight: 0.96,
-              color: '#f8fafc',
+              color: eurovisionMode ? accentHex : '#f8fafc',
               // 2026-05-05 (Shadow-Audit #1): 3 Layer → 2 Layer.
               // Tight glow + wide ambient halo reicht — der dritte 130px-Layer
               // war redundant (vom Backdrop-Halo eh abgedeckt).
@@ -3857,7 +3866,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               animation: 'qqIntroTitleShimmer 1.4s cubic-bezier(0.5, 0, 0.5, 1) 2.6s both',
               clipPath: 'inset(0)', // limit to title-bounds
             }} />
-            {Array.from(title).map((ch, i) => (
+            {Array.from(eurovisionMode ? title.toUpperCase() : title).map((ch, i) => (
               <span key={i} style={{
                 display: 'inline-block',
                 opacity: 0,

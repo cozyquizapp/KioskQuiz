@@ -3593,6 +3593,23 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
   const greeting = lang === 'en'
     ? 'Get comfy — here we go!'
     : 'Macht\'s euch bequem – gleich geht\'s los!';
+  // 2026-05-07 v6 (Wolf 'video VOR cascade, cascade erst nach video einblenden'):
+  // hasIntroVideo = wenn eurovisionMode + welcomeVideoUrl + sichtbar. Solange
+  // das Video laeuft (videoEnded=false), wird die komplette Cascade-Stage
+  // unterdrueckt. onEnded triggert videoEnded=true, dann fadet Video auf
+  // 0.25 BG-Opacity zurueck und Cascade-Animation startet frisch.
+  const hasIntroVideo = !!(eurovisionMode && welcomeVideoUrl && visible);
+  const [videoEnded, setVideoEnded] = useState(false);
+  // Reset wenn Overlay neu angezeigt wird oder Video-URL aendert.
+  useEffect(() => {
+    if (!hasIntroVideo) { setVideoEnded(true); return; }
+    setVideoEnded(false);
+    // Safety-Timeout: falls onEnded nie feuert (404, autoplay-block etc.),
+    // nach 15s zwangsweise Cascade einblenden.
+    const t = window.setTimeout(() => setVideoEnded(true), 15000);
+    return () => window.clearTimeout(t);
+  }, [hasIntroVideo, welcomeVideoUrl]);
+  const cascadeReady = !hasIntroVideo || videoEnded;
   // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
   //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
   //             letter-spacing zoomt auf normal, gold-glow.
@@ -3635,7 +3652,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           + wenn welcomeVideoUrl gesetzt. Hearts/Wordmark/Logo overlay wie
           gewohnt drueber, leichter dunkler Schleier um die Lesbarkeit der
           Letter-Cascade nicht zu verlieren. */}
-      {eurovisionMode && welcomeVideoUrl && visible && (
+      {hasIntroVideo && (
         <>
           <video
             key={welcomeVideoUrl}
@@ -3644,25 +3661,37 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             muted
             playsInline
             preload="auto"
+            onEnded={() => setVideoEnded(true)}
             style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',
               objectFit: 'cover',
-              opacity: 0.55,
+              // 2026-05-07 v6: Volle Opacity solange Video die Buehne hat;
+              // sobald onEnded → 0.25 fuer atmospheric BG-Layer hinter Cascade.
+              opacity: videoEnded ? 0.25 : 1,
+              transition: 'opacity 0.8s ease',
               pointerEvents: 'none',
               zIndex: 0,
             }}
           />
-          {/* Soft-Vignette ueber dem Video damit der Wordmark in der Mitte
-              gut sitzt — radialer Dunkel-Halo aus den Ecken, Mitte bleibt
-              transparent fuer maximale Video-Sichtbarkeit. */}
+          {/* Soft-Vignette ueber dem Video — schwacher Dunkel-Halo aus den
+              Ecken (Mitte bleibt klar). Sichtbar erst nach Video-Ende, damit
+              das Video selbst voll wirken kann. */}
           <div aria-hidden style={{
             position: 'absolute', inset: 0,
             background: 'radial-gradient(ellipse at center, transparent 35%, rgba(5,8,16,0.55) 100%)',
+            opacity: videoEnded ? 1 : 0,
+            transition: 'opacity 0.8s ease',
             pointerEvents: 'none', zIndex: 0,
           }} />
         </>
       )}
+      {/* 2026-05-07 v6: Cascade-Stage erst nachdem das Video zu Ende ist
+          (oder wenn kein Video gesetzt). Container re-mounted bei
+          cascadeReady-Flip → alle CSS-Animations starten frisch mit ihren
+          Delay-Werten. */}
+      {cascadeReady && (
+      <>
       {/* Cinematic-Focus-In: BG-blur fadet in den ersten 0.7s aus.
           Wirkt wie Kamera die scharfstellt. Wolf 2026-05-05. */}
       <div aria-hidden style={{
@@ -4002,6 +4031,8 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           50%      { transform: translateY(-6px); }
         }
       `}</style>
+      </>
+      )}
     </BeamerOverlay>
   );
 }

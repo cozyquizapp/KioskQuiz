@@ -12,15 +12,16 @@ export const EUROVISION_THEME: QQTheme = {
   textColor: '#fde6f0',
   cardBg: '#2d1644',
   eurovisionMode: true,
-  lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
-  // 2026-05-07 v3 (Wolf 'hier sind 3.png/4.png/5.png als text-freie BG-
-  // Varianten'): jetzt visuelle Variety zurueck — alle drei text-frei, jeder
-  // View bekommt eine eigene Stimmung:
-  //   Lobby     = bg-1.png (Herz-only, dezent statisch)
-  //   Pause     = 3.png    (Pink/Blau-Swirl, dynamisch)
-  //   PhaseIntro = 4.png   (Vienna-Herz ohne Text — perfekt zur Halbfinale-Reveal)
+  // 2026-05-07 v6 (Wolf 'die bgs mit herz und 7 durch die ohne herz und 7,
+  // sieht cleaner aus'): heart-containing BGs (bg-1.png, 4.png) raus, nur
+  // noch die abstrakten clean-Varianten:
+  //   Lobby     = 5.png   (sanfter Pink-Magenta-Gradient)
+  //   Pause     = 3.png   (Pink/Blau-Swirl, dynamisch)
+  //   PhaseIntro = 3.png  (gleicher Swirl als Halbfinale-Reveal-Hintergrund)
+  // 4.png bleibt im /themes-Ordner liegen, aktuell ungenutzt.
+  lobbyBackgroundUrl: '/themes/5.png',
   pauseBackgroundUrl: '/themes/3.png',
-  phaseIntroBackgroundUrl: '/themes/4.png',
+  phaseIntroBackgroundUrl: '/themes/3.png',
   // 2026-05-07 v4 (Wolf 'wie geil waere ein 10sec intro video — video ist drin'):
   // Welcome-Video laeuft hinter dem CozyQuiz-Wordmark in der QuizIntroOverlay.
   // Browser-autoplay-policy: muted by default. Filename hat ein Leerzeichen,

@@ -13,10 +13,13 @@ export const EUROVISION_THEME: QQTheme = {
   cardBg: '#2d1644',
   eurovisionMode: true,
   lobbyBackgroundUrl: '/themes/eurovision-bg-1.png',
-  pauseBackgroundUrl: '/themes/eurovision-bg-2.jpg',
-  // 2026-05-07 (Wolf 'PhaseIntro: BG ohne Text nehmen, sonst Halbfinale-Title
-  // unlesbar weil "EUROVISION SONG CONTEST"-Schrift durchbleedet'): Wechsel
-  // von bg-2.jpg (mit eingebranntem Vienna-2026-Text) auf bg-1.png (nur Herz).
+  // 2026-05-07 (Wolf-Audit 'check ob nochmal BG mit Text unleserlich ist'):
+  // bg-2.jpg hat 'EUROVISION SONG CONTEST VIENNA 2026' eingebrannt — kollidiert
+  // mit den Beamer-Titeln (Halbfinale, Kurze Pause, Gleich geht's los). Alle
+  // 3 Views (Lobby, Pause, PhaseIntro) nutzen jetzt das Herz-only bg-1.png.
+  // Konsistent + garantiert lesbar. Wenn Wolf mehr Visual-Variety will, kann
+  // ein zweites text-freies Asset spaeter ergaenzt werden.
+  pauseBackgroundUrl: '/themes/eurovision-bg-1.png',
   phaseIntroBackgroundUrl: '/themes/eurovision-bg-1.png',
   logoUrl: '/themes/eurovision-logo.jpg',
   welcomeText: {

@@ -2798,8 +2798,15 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
 // ─────────────────────────────────────────────────────────────────────────────
 type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen';
 
-function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
+function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost }: {
   widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean; mirror?: boolean;
+  /**
+   * 2026-05-07 (Wolf 'troete in eurovision edition mehr einbauen'): wenn true,
+   * feuert die Troete-Pose im jubel-Mode haeufiger (alle 2.5-4s statt 6-10s)
+   * und bleibt laenger sichtbar (1800ms statt 1200ms). Nur sinnvoll im
+   * jubel-Mode — andere Modi ignorieren das.
+   */
+  troeteBoost?: boolean;
 }) {
   // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop
   // (Ausnahme: winken/jubel/daumen-Modes lesen speaking als externes Mund-Flap-Gate).
@@ -2964,12 +2971,15 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
       let nextBlinkAt = Date.now() + 2500 + Math.random() * 1500;
       let blinkUntil = 0;
       let blinkIsZwinker = false;
-      let nextTroeteAt = Date.now() + 4000 + Math.random() * 4000;
+      // 2026-05-07 v2 (Wolf 'troete in eurovision edition mehr einbauen'):
+      // Mit troeteBoost-Prop feuert die Troete im 2.5-4s-Cycle (statt 6-10s)
+      // und bleibt 1800ms (statt 1200ms). Erste Troete kommt nach ~1.5s damit
+      // der Sieger-Wolf direkt mit Toot startet.
+      const TROETE_DUR_MS = troeteBoost ? 1800 : 1200;
+      const troeteCycleBaseMs = troeteBoost ? 2500 : 6000;
+      const troeteCycleJitterMs = troeteBoost ? 1500 : 4000;
+      let nextTroeteAt = Date.now() + (troeteBoost ? 1500 : 4000) + Math.random() * (troeteBoost ? 1000 : 4000);
       let troeteUntil = 0;
-      // 2026-05-07 (Wolf): Tröte-Pose deutlich länger sichtbar — vorher 400ms,
-      // wirkte wie ein Frame. Jetzt 1200ms damit man das Toot wirklich
-      // wahrnimmt. Cycle-Period 6-10s bleibt damit's nicht zu oft kommt.
-      const TROETE_DUR_MS = 1200;
       const tick = () => {
         if (!alive) return;
         const now = Date.now();
@@ -2981,7 +2991,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
         }
         if (now >= nextTroeteAt) {
           troeteUntil = now + TROETE_DUR_MS;
-          nextTroeteAt = now + TROETE_DUR_MS + 6000 + Math.random() * 4000;
+          nextTroeteAt = now + TROETE_DUR_MS + troeteCycleBaseMs + Math.random() * troeteCycleJitterMs;
           setCurrentFile('augenauf.troete.jubel');
           timer = window.setTimeout(tick, TROETE_DUR_MS);
           return;
@@ -3155,7 +3165,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror }: {
     }
 
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
-  }, [effectiveMode]);
+  }, [effectiveMode, troeteBoost]);
 
   // Welche Datei ist im speaking-Mode sichtbar
   const speakingFile = `augen${eyesOpen ? 'auf' : 'zu'}.mund${mouthOpen ? 'auf' : 'zu'}`;
@@ -4406,8 +4416,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            opacity: 0.55,
-            mixBlendMode: 'screen',
+            // 2026-05-07 (Wolf 'sehe BG nicht'): mixBlendMode screen + 0.55
+            // hat ESC-Buehnenbild fast komplett geschluckt (Screen-Mode laesst
+            // nur helle Pixel durch). Switch auf normal-Blend mit 0.7 — BG
+            // wird klar sichtbar, Content sitzt mit eigenem Card-BG drueber.
+            opacity: 0.7,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -5455,8 +5468,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            opacity: 0.32,
-            mixBlendMode: 'screen',
+            // 2026-05-07 (Wolf 'BG kaum sichtbar'): screen-Blend raus, 0.32 ->
+            // 0.5. PhaseIntro hat groesseren Title drueber, BG darf etwas
+            // dezenter bleiben als Lobby aber muss sichtbar sein.
+            opacity: 0.5,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -14717,8 +14732,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            opacity: 0.45,
-            mixBlendMode: 'screen',
+            // 2026-05-07 (Wolf 'BG kaum sichtbar'): screen-Blend raus, opacity
+            // 0.45 -> 0.65 fuer Pause/PreGame.
+            opacity: 0.65,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -16121,7 +16137,10 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.4s both',
       }}>
-        <WolfJubelWithBubble lang={lang === 'de' ? 'de' : 'en'} />
+        <WolfJubelWithBubble
+          lang={lang === 'de' ? 'de' : 'en'}
+          troeteBoost={s.theme?.eurovisionMode}
+        />
       </div>
     </div>
   );
@@ -16130,7 +16149,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
 // Jubel-Wolf mit Sprechblase fuer GameOverView. Bubble-Tail an den Wolf-
 // Mund (rechts unten ueber dem Wolf-Maul). Slogans + Mund-Sync analog
 // zu WolfCoModerator.
-function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
+function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteBoost?: boolean }) {
   // 2026-05-07 (Wolf): Tröööt-Slogan ergaenzt — passt zur Tröte-Pose und
   // gibt ihr einen Sound-Text. Klingt cozy-cartoonig.
   const slogans: Slogan[] = lang === 'de'
@@ -16191,6 +16210,7 @@ function WolfJubelWithBubble({ lang }: { lang: 'de' | 'en' }) {
         mode="jubel"
         speaking={speakingNow}
         mirror={true}
+        troeteBoost={troeteBoost}
       />
     </div>
   );

@@ -3632,6 +3632,13 @@ function SetupView({
         if (preferredSet && preferredSet !== s.avatarSetId) {
           emit('qq:setAvatarSet', { roomCode, avatarSetId: preferredSet });
         }
+        // 2026-05-07 (Wolf-Bug 'normale Drafts sollen wieder all'-Set zeigen'):
+        // Wenn neuer Draft keine Praeferenz hat ABER das aktuelle Set vom
+        // vorherigen Eurovision-Draft auf 'esc' steht → zurueck auf 'all'.
+        // Andere manuell gewaehlte Sets (halloween/pub/etc.) bleiben unangetastet.
+        else if (!preferredSet && s.avatarSetId === 'esc') {
+          emit('qq:setAvatarSet', { roomCode, avatarSetId: 'all' });
+        }
       })
       .catch(() => {});
     return () => { cancelled = true; };

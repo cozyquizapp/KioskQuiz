@@ -7900,14 +7900,19 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               background: isVisible
                 ? `linear-gradient(180deg, ${hintColor}28, ${hintColor}10)`
                 : 'rgba(255,255,255,0.03)',
+              // 2026-05-07 (Audit P1): border-style dashed↔solid kann der
+                // Browser nicht interpolieren → harter Snap beim Reveal-Wechsel.
+                // Stattdessen ständig solid mit border-color als sub-tilem
+                // Pre-Reveal-Cue (low-alpha) und transition nur auf den
+                // Properties, die der Browser tatsächlich interpoliert.
               border: isVisible
                 ? `2px solid ${hintColor}${isCurrent ? 'cc' : '88'}`
-                : '2px dashed rgba(255,255,255,0.10)',
+                : '2px solid rgba(255,255,255,0.10)',
               boxShadow: isCurrent
                 ? `0 0 28px ${hintColor}55`
                 : isVisible ? `0 0 14px ${hintColor}33` : 'none',
               opacity: isVisible ? 1 : 0.55,
-              transition: 'all 0.5s ease',
+              transition: 'background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, opacity 0.5s ease',
               animation: revealAnim,
               minHeight: 'clamp(200px, 30vh, 300px)',
               justifyContent: 'flex-start', textAlign: 'center',
@@ -11322,7 +11327,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   width: '100%', maxWidth: 1400,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 'clamp(10px, 1.4vh, 18px)',
-                  animation: cheeseHideContent ? undefined : 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both',
+                  // 2026-05-07 (Audit P1): Cheese hat oben schon Frage-Card-
+                  // Animation + Step-Cascade — der scale-bounce hier bringt
+                  // die Card doppelt in Bewegung. Cheese bekommt langFadeIn,
+                  // andere Kategorien behalten den Standard-Bam.
+                  animation: cheeseHideContent
+                    ? undefined
+                    : (q.category === 'CHEESE'
+                        ? 'langFadeIn 0.5s ease both'
+                        : 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.15s both'),
                   transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
                 }}>
                   {/* Shimmer sweep */}

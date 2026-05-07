@@ -3797,7 +3797,10 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           letterSpacing: '0.32em', textTransform: 'uppercase',
           color: accentHex,
           opacity: 0.92,
-          textShadow: `0 0 28px rgba(${accentRgb},0.55), 0 0 8px rgba(${accentRgb},0.35)`,
+          // 2026-05-07 v12 (Wolf 'kontrast teilweise unleserlich'): zusaetzlich
+          // dunkler Halo (rgba(0,0,0,0.55) Drop-Shadow) zur Lesbarkeit auf
+          // Pink/Lila-BG. Pink-Glow bleibt fuer Atmosphaere.
+          textShadow: `0 1px 6px rgba(0,0,0,0.55), 0 0 28px rgba(${accentRgb},0.55), 0 0 8px rgba(${accentRgb},0.35)`,
         }} aria-label={welcome}>
           {Array.from(welcome).map((ch, i) => (
             <span key={i} style={{
@@ -4772,6 +4775,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               style={{
                 fontFamily: fontFam,
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5vw, 100px)' : 'clamp(56px, 9vw, 140px)',
+                // 2026-05-07 v12 (Wolf 'kontrast unleserlich + im ESC-Mode
+                // sollte das nicht gold sein'): in eurovisionMode Pink statt
+                // Gold + dunkler Halo fuer Lesbarkeit auf Pink-Gradient-BG.
+                ...(s.theme?.eurovisionMode ? {
+                  color: '#FF2D7B',
+                  textShadow: '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(255,45,123,0.35)',
+                } : {}),
               }}
               aria-label={wordmark}
             >
@@ -5865,7 +5875,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18vw, 260px)', fontWeight: 900, lineHeight: 0.9,
                 color,
-                textShadow: `0 0 120px ${color}44`,
+                // 2026-05-07 v12 (Wolf 'kontrast unleserlich'): bei ESC-Pink-
+                // Title auf Pink/Lila/Heart-BG dunkler Halo dazu fuer Lesbarkeit.
+                textShadow: isEsc
+                  ? `0 4px 22px rgba(0,0,0,0.7), 0 0 120px ${color}44`
+                  : `0 0 120px ${color}44`,
                 textAlign: 'center',
                 animation: 'roundBam 0.65s var(--qq-ease-out-cubic) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
               }}>
@@ -15258,7 +15272,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 color: modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
-                textShadow: `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
+                // 2026-05-07 v12 (Wolf 'kontrast teilweise unleserlich'): im
+                // ESC-Mode Pink-Title auf Pink/Lila-BG → dunkler Halo dazu fuer
+                // Lesbarkeit. Pink-Glow bleibt fuer Atmosphaere.
+                textShadow: isEsc
+                  ? `0 2px 14px rgba(0,0,0,0.65), 0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`
+                  : `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
                 whiteSpace: 'nowrap',
                 display: 'inline-block',
               }}>

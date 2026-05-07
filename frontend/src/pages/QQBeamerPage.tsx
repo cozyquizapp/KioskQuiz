@@ -3674,22 +3674,24 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',
               objectFit: 'cover',
-              // 2026-05-07 v6: Volle Opacity solange Video die Buehne hat;
-              // sobald onEnded → 0.25 fuer atmospheric BG-Layer hinter Cascade.
-              opacity: videoEnded ? 0.25 : 1,
-              transition: 'opacity 0.8s ease',
+              // 2026-05-07 v7 (Wolf 'video etwas frueher ausfaden — der Vienna-
+              // 2026-Text vom Video sieht man noch hinter dem Wordmark'):
+              // Post-End-Opacity 0.25 -> 0 (komplett weg) plus schnellere
+              // Transition 0.8s -> 0.5s. Cascade hat eh eigene Hearts/Fireflies,
+              // braucht keinen Video-BG-Layer.
+              opacity: videoEnded ? 0 : 1,
+              transition: 'opacity 0.5s ease',
               pointerEvents: 'none',
               zIndex: 0,
             }}
           />
           {/* Soft-Vignette ueber dem Video — schwacher Dunkel-Halo aus den
-              Ecken (Mitte bleibt klar). Sichtbar erst nach Video-Ende, damit
-              das Video selbst voll wirken kann. */}
+              Ecken (Mitte bleibt klar). Sichtbar erst nach Video-Ende. */}
           <div aria-hidden style={{
             position: 'absolute', inset: 0,
             background: 'radial-gradient(ellipse at center, transparent 35%, rgba(5,8,16,0.55) 100%)',
             opacity: videoEnded ? 1 : 0,
-            transition: 'opacity 0.8s ease',
+            transition: 'opacity 0.5s ease',
             pointerEvents: 'none', zIndex: 0,
           }} />
         </>
@@ -3886,14 +3888,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               alt="Eurovision Song Contest"
               draggable={false}
                 style={{
-                // 2026-05-07 v3 (Wolf 'logo ohne bg, gerne groesser'): das
-                // 'logo ohne'-Asset ist transparenter weisser Outline-Wordmark.
-                // Frame (borderRadius/boxShadow) entfaellt, dafuer Drop-Shadow
-                // fuer Lesbarkeit. Groesse 130-260 -> 180-340.
+                // 2026-05-07 v4 (Wolf 'logo deutlich groesser'): clamp(180-340)
+                // -> clamp(260-480). Outline-Wordmark wirkt jetzt dominant
+                // unter dem CozyQuiz-Title.
                 marginTop: 'clamp(18px, 2.4vh, 36px)',
-                height: 'clamp(180px, 24vh, 340px)',
+                height: 'clamp(260px, 32vh, 480px)',
                 width: 'auto',
-                filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.55)) drop-shadow(0 4px 14px rgba(0,0,0,0.5))',
+                filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
                 animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
                 opacity: 0,
               }}

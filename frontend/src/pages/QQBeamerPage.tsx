@@ -14658,35 +14658,66 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
     // Aktuelles Grid als eigener Slide (User-Wunsch 2026-04-28: 'gerne das
     // aktuelle grid auf einem der slides'). Reuse MiniGrid mit großzügiger Größe.
+    // 2026-05-07 v18 (Wolf-Bug 'das grid bzw die avatare ueberlappen unten,
+    // mach dynamisch 2 tabellen eine links eine rechts bei 8 teams, bei 4-6
+    // teams nur auf der rechten seite und mache dann grid und tabelle mittig
+    // zusammengerechnet'): Avatare nicht mehr unter dem Grid (overflow), sondern
+    // als Sidebar-Spalten neben dem Grid.
+    //   ≥7 Teams → 2 Spalten (links + rechts), Split halbe-halbe
+    //   1-6 Teams → nur rechts daneben
+    // Grid + Spalte(n) als Block horizontal mittig.
     panels.push({ key: 'currentGrid', node: (
       <div>
         <div style={{ fontSize: 'clamp(28px, 3.2vw, 42px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
           {de ? 'Aktuelles Brett' : 'Current Board'}
         </div>
-        <div style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          padding: 'clamp(14px, 2vw, 28px)',
-        }}>
-          <MiniGrid state={s} size={420} />
-        </div>
-        {/* Mini-Legende: Team-Avatare mit Cell-Counts unter dem Grid */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12,
-          marginTop: 14,
-        }}>
-          {[...s.teams].sort((a, b) => b.totalCells - a.totalCells).map(t => (
+        {(() => {
+          const sortedByCells = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+          const renderPill = (t: typeof sortedByCells[number]) => (
             <div key={t.id} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '6px 12px', borderRadius: 999,
               background: `${t.color}15`,
               border: `1.5px solid ${t.color}55`,
+              flexShrink: 0,
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
               <span style={{ fontWeight: 900, color: t.color, fontSize: 14 }}>{t.totalCells}</span>
             </div>
-          ))}
-        </div>
+          );
+          const colStyle: React.CSSProperties = {
+            display: 'flex', flexDirection: 'column', gap: 10,
+            justifyContent: 'center',
+          };
+          const splitMode = sortedByCells.length >= 7;
+          if (splitMode) {
+            const half = Math.ceil(sortedByCells.length / 2);
+            const left = sortedByCells.slice(0, half);
+            const right = sortedByCells.slice(half);
+            return (
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                gap: 'clamp(16px, 2.2vw, 32px)',
+                padding: 'clamp(14px, 2vw, 28px)',
+              }}>
+                <div style={colStyle}>{left.map(renderPill)}</div>
+                <MiniGrid state={s} size={420} />
+                <div style={colStyle}>{right.map(renderPill)}</div>
+              </div>
+            );
+          }
+          return (
+            <div style={{
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              gap: 'clamp(16px, 2.2vw, 32px)',
+              padding: 'clamp(14px, 2vw, 28px)',
+            }}>
+              <MiniGrid state={s} size={420} />
+              <div style={colStyle}>{sortedByCells.map(renderPill)}</div>
+            </div>
+          );
+        })()}
       </div>
     )});
   }
@@ -15433,7 +15464,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             auf der Welcome-Page — [CozyQuiz Stinger Fit] × [Eurovision-Logo]
             mit X-Shimmer + Logo-Hover. Kompakter als der Welcome-Hero damit
             das 'Gleich gehts los'-Title darunter dominiert. */}
-        {mode === 'preGame' && s.theme?.eurovisionMode && (s.theme.logoUrl ? (
+        {/* 2026-05-07 v18 (Wolf 'in die pausenfolie noch gleiches COZYQUIZ x
+            Eurovision songcontest'): Eyebrow jetzt auch in pause-Mode aktiv,
+            nicht nur PreGame. Title 'Short Break' / 'Kurze Pause' bleibt als
+            big title darunter erhalten. */}
+        {(mode === 'preGame' || mode === 'pause') && s.theme?.eurovisionMode && (s.theme.logoUrl ? (
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',

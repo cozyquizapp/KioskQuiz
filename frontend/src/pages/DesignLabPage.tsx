@@ -318,25 +318,23 @@ const DESIGNS: DesignConfig[] = [
 ];
 
 // ─── Modern-Web Design-Patterns: Animations + Hover-Effects ──────────────────
-// 2025/2026-Findings aus Stripe / Vercel / Raycast Live-Recherche.
+// Aus Live-Recherche (Stripe, Vercel, Raycast) + Tiefen-Recherche (Jackbox,
+// TV-Game-Shows, Awwwards 2025/26 Trends).
 const MODERN_KEYFRAMES = `
-  /* Stripe-Style Mesh-Gradient Animation: slow drift + breathing.
-     Rotiert die ganze BG-Layer um Pivot center, 60s Cycle.
-     Plus opacity-breathing fuer subtle 'Atem'. */
+  /* Stripe-Style Mesh-Gradient: slow drift + breathing, 60s Cycle. */
   @keyframes auroraDrift {
     0%   { transform: scale(1.05) rotate(0deg);   opacity: 0.95; }
     50%  { transform: scale(1.12) rotate(180deg); opacity: 1.00; }
     100% { transform: scale(1.05) rotate(360deg); opacity: 0.95; }
   }
-  /* Cinematic Noir: animated grain via opacity-flicker auf 3 Noise-Layers
-     (3 Frames @24fps Cycle, je Frame leicht andere Position). */
+  /* Cinematic Noir: animated grain (3-Frame Flicker @24fps). */
   @keyframes grainFlicker {
     0%   { opacity: 0.18; transform: translate(0px, 0px); }
     33%  { opacity: 0.20; transform: translate(-3px, 2px); }
     66%  { opacity: 0.16; transform: translate(2px, -3px); }
     100% { opacity: 0.18; transform: translate(0px, 0px); }
   }
-  /* View-Switch-Cascade: Cards faden hochgleitend rein, gestaffelt. */
+  /* View-Switch-Cascade: gestaffeltes Hereinfaden. */
   @keyframes cardCascade {
     0%   { opacity: 0; transform: translateY(14px) scale(0.98); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -345,10 +343,72 @@ const MODERN_KEYFRAMES = `
     0%   { opacity: 0; transform: translateY(-12px); letter-spacing: 0.1em; }
     100% { opacity: 1; transform: translateY(0); }
   }
-  /* Vercel/Linear-Style Hover-Lift: subtle Y-Shift + Shadow-Elevation.
-     Nicht via @keyframes (wir wollen Hover-driven), sondern via
-     transition (siehe inline CSS) — hier nur dokumentiert. */
+  /* Avatar-Pulse: subtler Glow/Scale-Atemzug fuer 'active' Teams.
+     Discord/Figma-Multiplayer-DNA — zeigt 'Team denkt nach'. */
+  @keyframes avatarPulse {
+    0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 var(--pulse-color, rgba(255,255,255,0.0)); }
+    50%      { transform: scale(1.06); box-shadow: 0 0 24px 4px var(--pulse-color, rgba(255,255,255,0.5)); }
+  }
+  /* Submit-Flow-Bar: fuellt sich von 0 -> 100% in 6s, dann reset.
+     Zeigt 'X/Y haben submitted' (Slido/Mentimeter-Pattern). */
+  @keyframes flowBarFill {
+    0%   { width: 0%; }
+    60%  { width: 62.5%; } /* 5/8 visualisiert */
+    100% { width: 62.5%; }
+  }
+  /* Heartbeat-Pulse aufs gesamte BG: Letzte-10s-Druck-Pattern.
+     Sehr subtil, color-shift max 4 % brightness. WWM-DNA. */
+  @keyframes heartbeatPulse {
+    0%, 100% { filter: brightness(1.00); }
+    50%      { filter: brightness(1.04); }
+  }
+  /* Score-Tickup: counter-Property animiert von 0 -> ziel.
+     Bouncy ease-out (cubic-bezier(.25, 1.4, .3, 1)) — Pointless-DNA. */
+  @keyframes scoreTickup {
+    0%   { --score-num: 0; transform: scale(1); }
+    80%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  /* Variable-Font-Weight Hover-Boost auf Score-Numbers. */
+  @keyframes weightSurge {
+    0%, 100% { font-variation-settings: 'wght' 700; }
+    50%      { font-variation-settings: 'wght' 950; }
+  }
+  /* Hover-Lift via transition (im CSS-Block weiter unten). */
 `;
+
+// ─── Animated Counter (Tickup von 0 -> target mit bouncy easing) ────────────
+function AnimatedNumber({ value, durationMs = 1100, fontFamily, color }: {
+  value: number; durationMs?: number; fontFamily?: string; color?: string;
+}) {
+  const [displayed, setDisplayed] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      // Bouncy ease-out (overshoot leicht ueber 1, dann zurueck — Pointless-DNA)
+      const eased = t < 0.85
+        ? 1 - Math.pow(1 - t / 0.85, 2)
+        : 1 + Math.sin((t - 0.85) / 0.15 * Math.PI) * 0.03;
+      setDisplayed(Math.round(value * Math.max(0, Math.min(1.06, eased))));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else setDisplayed(value);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, durationMs]);
+  return (
+    <span style={{
+      fontFamily,
+      color,
+      fontVariantNumeric: 'tabular-nums',
+      // Variable-Font-Weight Surge beim Tickup (nur sichtbar wenn Font Variable-Axis hat).
+      animation: 'weightSurge 1.1s cubic-bezier(.25, 1.4, .3, 1) both',
+      display: 'inline-block',
+    }}>{displayed}</span>
+  );
+}
 
 // ─── Mini-Fireflies ──────────────────────────────────────────────────────────
 // Vereinfachte Version, nicht die echte aus QQBeamerPage (keine Side-Effects).
@@ -434,6 +494,23 @@ function ModernBgLayers({ d }: { d: DesignConfig }) {
           animation: 'grainFlicker 0.42s steps(3) infinite',
         }} />
       )}
+      {/* UNIVERSAL Grain-Overlay (Recherche-Tipp 'Textured Grains 2025/26
+         Trend' + 'cozy authenticity'). Sehr subtil (4 % opacity), brandet
+         alle 5 Designs als analog/warm. Kein Wettbewerber hat das.
+         Skip im Noir (hat eigenen animierten Grain mit anderer mixBlendMode). */}
+      {!isNoir && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0,
+          backgroundImage:
+            `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'>` +
+            `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter>` +
+            `<rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/></svg>")`,
+          backgroundRepeat: 'repeat',
+          mixBlendMode: 'overlay',
+          opacity: 0.045,
+          pointerEvents: 'none',
+        }} />
+      )}
     </>
   );
 }
@@ -514,7 +591,11 @@ function MockLobby({ d }: { d: DesignConfig }) {
               Joined Teams · {MOCK_TEAMS.length}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {MOCK_TEAMS.map(t => (
+              {MOCK_TEAMS.map((t, idx) => {
+                // Avatar-Pulse demo: 2 Teams 'tippen gerade' (Discord/Figma-DNA).
+                // In live App via socket-Events 'team:typing' getriggert.
+                const isPulsing = idx === 0 || idx === 1;
+                return (
                 <div key={t.id} className="lab-hover" style={{
                   background: d.cardBg,
                   border: `2px solid ${t.color}55`,
@@ -531,6 +612,8 @@ function MockLobby({ d }: { d: DesignConfig }) {
                     background: t.color,
                     display: 'grid', placeItems: 'center',
                     fontSize: 26, lineHeight: 1, flexShrink: 0,
+                    ['--pulse-color' as string]: `${t.color}88`,
+                    animation: isPulsing ? 'avatarPulse 1.6s ease-in-out infinite' : undefined,
                   }}>{t.emoji}</div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
@@ -540,11 +623,12 @@ function MockLobby({ d }: { d: DesignConfig }) {
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{t.name}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: t.connected ? '#22C55E' : d.textSecondary, marginTop: 4 }}>
-                      {t.connected ? '● bereit' : '○ offline'}
+                      {isPulsing ? '● tippt…' : (t.connected ? '● bereit' : '○ offline')}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             <div style={{
               fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#22C55E',
@@ -568,9 +652,30 @@ function MockQuestion({ d }: { d: DesignConfig }) {
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
       background: d.bgBase, color: d.textPrimary,
       fontFamily: d.fonts.body,
+      // Subtler Heartbeat-Pulse: simuliert 'Letzte 10s'-Druck-Pattern (WWM-DNA).
+      // 4 % brightness-Atemzug, infinite. In Live-App nur bei <=10s Restzeit aktiv.
+      animation: 'heartbeatPulse 2s ease-in-out infinite',
     }}>
       <ModernBgLayers d={d} />
       <MiniFireflies color={d.fireflyColor} count={14} />
+
+      {/* Submit-Flow-Bar oben am Beamer-Rand (Slido/Mentimeter-DNA).
+          Zeigt 'X von Y haben submitted' als animated fill. Bei 5/8 = 62.5 %.
+          Sehr subtil (4px hoch, 30 % Opacity), peripheral-vision-only. */}
+      <div aria-hidden style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: 4, background: 'rgba(0,0,0,0.15)',
+        zIndex: 3, pointerEvents: 'none',
+      }}>
+        <div style={{
+          height: '100%',
+          background: `linear-gradient(90deg, ${catColor}, ${catColor})`,
+          boxShadow: `0 0 12px ${catColor}88`,
+          width: '62.5%',
+          animation: 'flowBarFill 6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+          opacity: 0.85,
+        }} />
+      </div>
 
       <div style={{
         position: 'relative', zIndex: 2,
@@ -738,10 +843,16 @@ function MockPause({ d }: { d: DesignConfig }) {
                   fontSize: 20, fontWeight: 800, color: t.color,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{t.name}</div>
+                {/* Score-Tickup mit bouncy easing (Pointless-DNA) +
+                    Variable-Font-Weight-Surge (Awwwards 2025+ Trend).
+                    Animiert beim Mount jedes Mal — Pause-View-Switch triggers fresh. */}
                 <div style={{
                   fontFamily: d.fonts.display, fontWeight: 900, fontSize: 22,
                   color: d.accent, fontVariantNumeric: 'tabular-nums',
-                }}>{t.cells}</div>
+                  minWidth: 28, textAlign: 'right',
+                }}>
+                  <AnimatedNumber value={t.cells} fontFamily={d.fonts.display} color={d.accent} />
+                </div>
               </div>
             ))}
           </div>

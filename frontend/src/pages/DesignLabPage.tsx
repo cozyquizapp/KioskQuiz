@@ -198,20 +198,22 @@ const DESIGNS: DesignConfig[] = [
       { name: 'Mid',          hex: '#9CA3AF' },
     ],
     bgBase: '#0A0814',
+    // 2026-05-08 (Wolf-Pick): Dichte/Opacity dezenter — 5. Blob raus,
+    // 4 verbleibende Blobs ~30 % weniger Opacity, BG rahmt jetzt statt
+    // zu konkurrieren mit dem Card-Pink.
     bgLayers:
-      'radial-gradient(ellipse 60% 45% at 10% 15%, rgba(236,72,153,0.42), transparent 60%),' +
-      'radial-gradient(ellipse 50% 40% at 90% 20%, rgba(30,42,90,0.45), transparent 60%),' +
-      'radial-gradient(ellipse 70% 55% at 30% 85%, rgba(190,24,93,0.32), transparent 65%),' +
-      'radial-gradient(ellipse 55% 45% at 80% 80%, rgba(244,114,182,0.22), transparent 60%),' +
-      'radial-gradient(ellipse 40% 35% at 50% 50%, rgba(190,24,93,0.10), transparent 70%),' +
+      'radial-gradient(ellipse 60% 45% at 10% 15%, rgba(236,72,153,0.30), transparent 65%),' +
+      'radial-gradient(ellipse 50% 40% at 90% 20%, rgba(30,42,90,0.32), transparent 65%),' +
+      'radial-gradient(ellipse 70% 55% at 30% 85%, rgba(190,24,93,0.22), transparent 70%),' +
+      'radial-gradient(ellipse 55% 45% at 80% 80%, rgba(244,114,182,0.15), transparent 65%),' +
       'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
     cardBg: 'linear-gradient(180deg, #1F1A2E 0%, #14101F 100%)',
-    cardBorder: '1.5px solid rgba(236,72,153,0.35)',
+    cardBorder: '1.5px solid rgba(236,72,153,0.32)',
     cardShadow:
       'inset 0 1.5px 0 rgba(255,255,255,0.10), ' +
-      '0 0 0 1px rgba(236,72,153,0.10), ' +
+      '0 0 0 1px rgba(236,72,153,0.08), ' +
       '0 16px 50px rgba(0,0,0,0.65), ' +
-      '0 0 48px rgba(236,72,153,0.18)',
+      '0 0 36px rgba(236,72,153,0.14)',
     cardRadius: 18,
     textPrimary: '#FAFAF7',
     textSecondary: '#9CA3AF',

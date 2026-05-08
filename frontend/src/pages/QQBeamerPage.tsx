@@ -45,10 +45,28 @@ const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 // ── Cozy-Card-Default ─────────────────────────────────────────────────────────
 // Standard-Card-Hintergrund für ALLE Beamer-Cards (Frage, Antwort-Reveal,
 // Stat-Panel, Game-Over, Comeback, Pause). Subtiler Top-zu-Bottom-Gradient
-// gibt der Card visuelle Tiefe (oben „beleuchtet", unten „grounded") statt
-// flachem `#1B1510`. Themes mit eigenem `cardBg` überschreiben das (s.theme
-// gewinnt überall via `s.theme?.cardBg ?? COZY_CARD_BG`).
-export const COZY_CARD_BG = 'linear-gradient(180deg, #1f1610, #150e08)';
+// gibt der Card visuelle Tiefe (oben „beleuchtet", unten „grounded").
+// Themes mit eigenem `cardBg` überschreiben das (s.theme gewinnt überall via
+// `s.theme?.cardBg ?? COZY_CARD_BG`).
+//
+// 2026-05-08 (Aurora-Vivid-Refresh): Sepia-Braun (#1f1610 → #150e08) raus,
+// dunkles Indigo-Hoodie (#1F1A2E → #14101F) als neuer Standard-Look. Wolf-
+// Brand (Pink-Wolf + Navy-Hoodie) auf der Card-Ebene. Eurovision bleibt
+// unangetastet via Theme-Token-Override-Pattern.
+export const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
+
+// ── Hero-Card-Border (Aurora-Vivid) ───────────────────────────────────────────
+// Differenzierung: Hauptfrage-Cards (QuestionView, RevealView, Comeback-Choice)
+// bekommen einen Pink-Glow-Border + subtle outer Aurora-Halo. Sub-Cards
+// (Options, Timer, Mini-Stats) behalten neutral-weiss-Border, sonst wird das
+// Pink omnipräsent.
+export const COZY_HERO_BORDER = '1.5px solid rgba(236,72,153,0.32)';
+export const COZY_HERO_SHADOW =
+  'inset 0 1.5px 0 rgba(255,255,255,0.10), ' +
+  '0 0 0 1px rgba(236,72,153,0.08), ' +
+  '0 16px 50px rgba(0,0,0,0.65), ' +
+  '0 0 36px rgba(236,72,153,0.14)';
+export const COZY_SUB_BORDER = '1px solid rgba(255,255,255,0.10)';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
@@ -81,11 +99,11 @@ function truncName(name: string, max = 28): string {
 
 // ── Category themes ───────────────────────────────────────────────────────────
 const CAT_BG: Record<string, string> = {
-  SCHAETZCHEN:   ['radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%)','radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%)','#0D0A06'].join(','),
-  MUCHO:         ['radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%)','radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%)','#0D0A06'].join(','),
-  BUNTE_TUETE:   ['radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%)','radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%)','#0D0A06'].join(','),
-  ZEHN_VON_ZEHN: ['repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px)','radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%)','#0D0A06'].join(','),
-  CHEESE:        ['radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%)','radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%)','#0D0A06'].join(','),
+  SCHAETZCHEN:   ['radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%)','radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%)','#0A0814'].join(','),
+  MUCHO:         ['radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%)','radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%)','#0A0814'].join(','),
+  BUNTE_TUETE:   ['radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%)','radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%)','#0A0814'].join(','),
+  ZEHN_VON_ZEHN: ['repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px)','radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%)','#0A0814'].join(','),
+  CHEESE:        ['radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%)','radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%)','#0A0814'].join(','),
 };
 // (CAT_BADGE_BG and CAT_ACCENT removed — now imported from qqShared)
 const CAT_GLOW: Record<string, string> = {
@@ -631,7 +649,7 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
         padding: '8px 14px', borderRadius: 8,
         border: '1px solid rgba(251,191,36,0.5)',
         background: 'rgba(15,23,42,0.85)', color: '#FBBF24',
-        fontFamily: "'Nunito', system-ui, sans-serif",
+        fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontWeight: 900, fontSize: 13, cursor: 'pointer',
         boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
         animation: 'fsNudgePulse 2.4s ease-in-out infinite',
@@ -655,27 +673,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const rulesIdx = s.rulesSlideIndex ?? 0;
   const welcomeActive = s.phase === 'RULES' && rulesIdx === -2;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
-  // Pause-/Wartescreen: cozy-warm Look passend zum Quiz, mit weichen Blob-Akzenten.
-  // Pre-Game (gold/amber, „Lagerfeuer entfacht sich") und Paused (lavender/rose,
-  // „kurze Atempause") teilen sich den warmen Cozy-Untergrund.
+  // Pause-/Wartescreen: Aurora-Vivid-Pink-Mesh passend zum CozyWolf-Brand
+  // (Pink-Wolf + Navy-Hoodie). Pre-Game und Paused teilen sich den Pink/Navy-
+  // Aurora-Untergrund — Kategorie-Phases dominieren weiter mit ihren eigenen
+  // CAT_BG-Akzenten, daher keine Konkurrenz.
+  // 2026-05-08 (Aurora-Vivid-Refresh): vorher Amber/Orange (PreGame) + Lavender/
+  // Rose (Paused). Jetzt Brand-Pink/Navy/Magenta — weg von Sepia-Cozy hin zu
+  // Aurora-Vivid-Pink.
   const isPreGame = s.phase === 'LOBBY' && !s.setupDone;
   const isPaused = s.phase === 'PAUSED';
   const pauseBg = isPreGame
     ? [
-        'radial-gradient(ellipse at 22% 28%, rgba(251,191,36,0.30) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 78% 72%, rgba(249,115,22,0.24) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 50% 105%, rgba(244,114,182,0.16) 0%, transparent 60%)',
-        '#0D0A06',
+        'radial-gradient(ellipse at 22% 28%, rgba(236,72,153,0.30) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.32) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 50% 105%, rgba(190,24,93,0.18) 0%, transparent 60%)',
+        '#0A0814',
       ].join(',')
     : isPaused
     ? [
-        'radial-gradient(ellipse at 28% 32%, rgba(167,139,250,0.26) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 78% 70%, rgba(244,114,182,0.20) 0%, transparent 55%)',
-        'radial-gradient(ellipse at 55% 8%, rgba(251,191,36,0.14) 0%, transparent 55%)',
-        '#0D0A06',
+        'radial-gradient(ellipse at 28% 32%, rgba(236,72,153,0.26) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 78% 70%, rgba(30,42,90,0.30) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 55% 8%, rgba(244,114,182,0.16) 0%, transparent 55%)',
+        '#0A0814',
       ].join(',')
     : null;
-  const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0D0A06') : '#0D0A06');
+  const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
   const accent = s.theme?.accentColor ?? '#F59E0B';
   // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.
@@ -684,7 +706,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const cardBg = (isPreGame || isPaused)
     ? COZY_CARD_BG
     : (s.theme?.cardBg ?? COZY_CARD_BG);
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
 
   // ── 3D grid toggle (beamer-local) ──
   // Not persisted: each new question restarts in 2D so the cinematic "Fahrt"
@@ -3551,7 +3573,7 @@ function MuchoOptionsReveal({
                             boxShadow: isFastest
                               ? '0 0 22px rgba(251,191,36,0.6), 0 6px 14px rgba(0,0,0,0.55)'
                               : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${tm.color}55`,
-                            background: '#0d0a06',
+                            background: '#0A0814',
                           }}
                         />
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
@@ -3563,7 +3585,7 @@ function MuchoOptionsReveal({
                             padding: '2px 9px', borderRadius: 999,
                             background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
                             border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
-                            color: isFastest ? '#0d0a06' : '#e2e8f0',
+                            color: isFastest ? '#0A0814' : '#e2e8f0',
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2vw, 15px)',
                             whiteSpace: 'nowrap',
@@ -3864,7 +3886,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               alignItems: 'center',
               gap: eurovisionMode ? 'clamp(20px, 2vw, 40px)' : 0,
               fontFamily: eurovisionMode
-                ? "'Stinger Fit', 'Nunito', system-ui, sans-serif"
+                ? "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif"
                 : undefined,
               // ESC-Stinger: kompakter font-size damit Logo daneben passt.
               // Non-ESC: unveraendert (80-200) als Solo-Hero.
@@ -3934,7 +3956,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                   // herum/uebertrieben. Stattdessen: COZYQUIZ + Logo geshrinkt
                   // damit × proportional dominanter wirkt und natuerlicher
                   // mittig erscheint (Wolfs eigener Vorschlag).
-                  fontFamily: "'Nunito', system-ui, sans-serif",
+                  fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: '0.85em',
                   lineHeight: 1,
@@ -4302,7 +4324,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   if (rawIdx < 0) return null;
   const idx = Math.max(0, Math.min(rawIdx, totalSlides - 1));
   const slide = slides[idx];
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const isLast = idx === totalSlides - 1;
   const hasGrid = !!slide.grid;
 
@@ -4681,7 +4703,7 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
 
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const joinUrl = `${window.location.origin}/team`;
   // 2026-05-07 (Wolf-Bug 'trotz only GB englisch im moderator werden einige
   // texte in der lobby nicht uebersetzt'): vorher lokaler de-State mit 8s-
@@ -4751,12 +4773,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       gap: 'clamp(10px, 1.5vh, 20px)',
       // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: nicht so schwarz, an
       // Setup-Look angleichen). Doppelter Radial-Gradient: oben-mitte amber-Glow,
-      // unten-rechts indigo-Glow auf #0D0A06-Base — exakt wie QQModeratorPage.
+      // unten-rechts indigo-Glow auf #0A0814-Base — exakt wie QQModeratorPage.
       background:
         'radial-gradient(ellipse at 50% -10%, rgba(245,158,11,0.10), transparent 55%), ' +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
-        '#0D0A06',
+        '#0A0814',
     }}>
       {lobbyBgUrl && (
         <div
@@ -4946,7 +4968,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     entspannt im viewport-Center ohne dem Top-Right-Wolf in
                     die Quere zu kommen — und wirkt visuell mittiger. */}
                 <span style={{
-                  fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
+                  fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
                   fontSize: 'clamp(38px, 5.2vw, 82px)',
                   fontWeight: 400,
                   letterSpacing: '0.04em',
@@ -4964,7 +4986,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 {/* 2026-05-07 v20: matched zu COZYQUIZ-Shrink (-24 %). */}
                 <span aria-hidden style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Nunito', system-ui, sans-serif",
+                  fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: 'clamp(28px, 4vw, 62px)',
                   lineHeight: 1,
@@ -5057,7 +5079,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <QRCodeSVG value={joinUrl} size={256} bgColor="#ffffff" fgColor="#0D0A06" level="M"
+            <QRCodeSVG value={joinUrl} size={256} bgColor="#ffffff" fgColor="#0A0814" level="M"
               style={{ width: '100%', height: '100%' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -5292,7 +5314,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const teams = s.teams.filter(t => t.connected).length > 0
     ? s.teams.filter(t => t.connected)
     : s.teams;
@@ -5719,7 +5741,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
   const lang = useLangFlip(s.language);
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Nunito', system-ui, sans-serif` : "'Nunito', system-ui, sans-serif";
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   // 2026-05-07 (Wolf 'mehr Pink+Blau im ESC, Set B+F'): im eurovisionMode
   // alle PhaseIntro-Akzente (Title-Glow, Round-Pille, Phasen-Linie, Wolf-
   // Drop-Shadow, Fireflies) auf ESC-Pink ziehen statt der Phase-Standardfarbe
@@ -8009,7 +8031,7 @@ function BluffWriteScreen({ state: s, accent, lang }: {
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
-                background: '#0d0a06',
+                background: '#0A0814',
                 boxShadow: submitted
                   ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
@@ -8138,7 +8160,7 @@ function BluffVoteWaitingScreen({ state: s, accent, lang }: {
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
-                background: '#0d0a06',
+                background: '#0A0814',
                 boxShadow: voted
                   ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
@@ -8347,7 +8369,7 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                             <span aria-hidden style={{
                               position: 'absolute', top: -5, right: -5,
                               width: 18, height: 18, borderRadius: '50%',
-                              background: '#22C55E', border: '2px solid #0D0A06',
+                              background: '#22C55E', border: '2px solid #0A0814',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1,
                             }}>✓</span>
@@ -8732,7 +8754,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           position: 'absolute',
                           bottom: -4, right: -4,
                           width: 18, height: 18, borderRadius: '50%',
-                          background: '#EF4444', border: '2px solid #0D0A06',
+                          background: '#EF4444', border: '2px solid #0A0814',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
                         }}>✕</span>
@@ -8875,7 +8897,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5vw, 72px)'} style={{
-                background: '#0d0a06',
+                background: '#0A0814',
                 boxShadow: isWinner
                   ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
@@ -8884,7 +8906,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 <div style={{
                   position: 'absolute', bottom: -4, right: -4,
                   width: 26, height: 26, borderRadius: '50%',
-                  background: '#FBBF24', border: '2px solid #0D0A06',
+                  background: '#FBBF24', border: '2px solid #0A0814',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, lineHeight: 1,
                   boxShadow: '0 0 12px rgba(251,191,36,0.55)',
@@ -8895,7 +8917,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 <div style={{
                   position: 'absolute', top: '38%', right: -4,
                   width: 26, height: 26, borderRadius: '50%',
-                  background: '#EF4444', border: '2px solid #0D0A06',
+                  background: '#EF4444', border: '2px solid #0A0814',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, fontWeight: 900, color: '#fff', lineHeight: 1,
                   animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
@@ -10240,7 +10262,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
 
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: '#0D0A06' }}>
+    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: '#0A0814' }}>
       {/* Karte */}
       <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s var(--qq-ease-smooth)' }}>
         <MapContainer
@@ -10452,7 +10474,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 3.8vw, 54px)'} />
                   <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 30px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
@@ -10464,7 +10486,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
-                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9vw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Nunito', system-ui, sans-serif" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
+                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9vw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             });
@@ -10821,7 +10843,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {isCheese && !hasImg && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 1,
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0d0a06',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0A0814',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 14,
           pointerEvents: 'none',
@@ -11552,7 +11574,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '10px 22px', borderRadius: 999,
-              background: '#0D0A06', border: `2px solid ${accent}`,
+              background: '#0A0814', border: `2px solid ${accent}`,
               boxShadow: `0 0 24px ${accent}33`,
               animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
               flexShrink: 0,
@@ -11944,7 +11966,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   padding: '2px 9px', borderRadius: 999,
                                   background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
                                   border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
-                                  color: isFastest ? '#0d0a06' : '#e2e8f0',
+                                  color: isFastest ? '#0A0814' : '#e2e8f0',
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2vw, 15px)',
                                   whiteSpace: 'nowrap',
@@ -15401,7 +15423,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         `radial-gradient(ellipse at 50% -10%, ${modeAccent}1A, transparent 55%), ` +
         `radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ` +
         `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
-        '#0D0A06',
+        '#0A0814',
     }}>
       {bgUrl && (
         <div
@@ -15591,7 +15613,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           }}>
             {/* CozyQuiz-Wordmark — 2026-05-07 v19 proportional geshrinkt zu Lobby. */}
             <span style={{
-              fontFamily: "'Stinger Fit', 'Nunito', system-ui, sans-serif",
+              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
               fontSize: 'clamp(42px, 5.5vw, 82px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
@@ -15608,7 +15630,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 Logo geshrinkt damit X proportional groesser wirkt. */}
             <span aria-hidden style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Nunito', system-ui, sans-serif",
+              fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
               fontWeight: 900,
               fontSize: 'clamp(34px, 4.6vw, 70px)',
               lineHeight: 1,
@@ -16025,7 +16047,7 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
         filter: 'drop-shadow(0 4px 18px rgba(251,191,36,0.45))',
       }}>🧩</div>
       <div style={{
-        fontFamily: "'Nunito', system-ui, sans-serif",
+        fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
         color: '#FBBF24',
         textAlign: 'center',
@@ -16271,7 +16293,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
             animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
           }}>
             <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
-              background: '#0d0a06',
+              background: '#0A0814',
               // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow'):
               // hasActivity (= Team hat schon getippt) → green-Ring + Glow
               // statt ✓-Badge unten rechts. Winner=Gold-Ring, locked=Default.
@@ -16289,7 +16311,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 width: 28, height: 28, borderRadius: '50%',
-                background: '#FBBF24', border: '2px solid #0D0A06',
+                background: '#FBBF24', border: '2px solid #0A0814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, fontWeight: 900, lineHeight: 1,
                 boxShadow: '0 0 14px rgba(251,191,36,0.55)',
@@ -16300,7 +16322,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 minWidth: 28, height: 28, padding: '0 6px', borderRadius: 16,
-                background: '#EF4444', border: '2px solid #0D0A06',
+                background: '#EF4444', border: '2px solid #0A0814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1,
                 animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
@@ -17039,7 +17061,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               background: '#ffffff',
               boxShadow: '0 0 32px rgba(251,191,36,0.35), 0 4px 16px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(251,191,36,0.4)',
             }}>
-              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
+              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0A0814" level="M" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340 }}>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC' }}>
@@ -18343,9 +18365,9 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
 function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: boolean }) {
   return (
     <div style={{
-      minHeight: '100vh', background: '#0D0A06',
+      minHeight: '100vh', background: '#0A0814',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0',
+      fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: '#e2e8f0',
     }}>
       <style>{BEAMER_CSS}</style>
       <Fireflies />

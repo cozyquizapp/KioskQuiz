@@ -1154,12 +1154,127 @@ function WolfWinkShowcase() {
   );
 }
 
+// ─── Slot K: Team-Reveal 3D-Flip (Wolf-Idee 2026-05-09) ─────────────────────
+// Teams werden erst als Rückseite (bunter Kreis + Sigil) gezeigt, dann flippt
+// jede Card via Y-Rotation 180° und enthüllt Avatar + Name. Stagger 350 ms.
+function TeamRevealFlipDemo({ replay }: { replay: number }) {
+  const teams = [
+    { name: 'Wolfsrudel',     emoji: '🐉', color: '#22C55E' },
+    { name: 'Fuchsbande',     emoji: '🦊', color: '#F97316' },
+    { name: 'Kraken-Krew',    emoji: '🐙', color: '#A855F7' },
+    { name: 'Eulenmagier',    emoji: '🦉', color: '#EAB308' },
+    { name: 'Pingu-Patrol',   emoji: '🐧', color: '#0EA5E9' },
+    { name: 'Bären-Brigade',  emoji: '🐻', color: '#E11D48' },
+  ];
+
+  // Re-render jeden Tick um Stagger-Delays per replay-Reset durchzulaufen
+  const startedAt = React.useRef(Date.now());
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    startedAt.current = Date.now();
+    const id = window.setInterval(() => setTick(t => t + 1), 100);
+    return () => window.clearInterval(id);
+  }, [replay]);
+
+  const elapsed = Date.now() - startedAt.current;
+  const STAGGER = 350; // ms zwischen Team-Flips
+  const FLIP_DELAY_BASE = 600; // erste Card flippt nach 600ms
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 18,
+      padding: '14px 18px',
+    }}>
+      {/* Title */}
+      <div style={{
+        fontSize: 22, fontWeight: 900, color: '#f1f5f9',
+        letterSpacing: '-0.02em', textAlign: 'center',
+        textShadow: '0 0 20px rgba(236,72,153,0.45)',
+      }}>HEUTE SPIELEN</div>
+
+      {/* Team-Cards Grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14,
+        maxWidth: 580, width: '100%',
+      }}>
+        {teams.map((t, i) => {
+          const flipAt = FLIP_DELAY_BASE + i * STAGGER;
+          const isFlipped = elapsed >= flipAt;
+          return (
+            <div key={`${replay}-${i}`} style={{
+              perspective: '1200px',
+              aspectRatio: '3 / 4',
+            }}>
+              <div style={{
+                position: 'relative', width: '100%', height: '100%',
+                transformStyle: 'preserve-3d',
+                transition: 'transform 0.85s cubic-bezier(0.34, 1.46, 0.64, 1)',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              }}>
+                {/* Rückseite — bunter Kreis mit ?-Sigil */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  borderRadius: 18,
+                  background: `radial-gradient(circle at 30% 30%, ${t.color}55 0%, ${t.color}1a 50%, rgba(15,23,42,0.95) 100%)`,
+                  border: `2px solid ${t.color}88`,
+                  boxShadow: `0 8px 24px rgba(0,0,0,0.45), inset 0 0 32px ${t.color}33`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 56, fontWeight: 900,
+                  color: `${t.color}cc`,
+                  textShadow: `0 0 18px ${t.color}88`,
+                }}>?</div>
+                {/* Vorderseite — Avatar + Name */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  borderRadius: 18,
+                  background: `linear-gradient(180deg, ${t.color}22, ${t.color}10)`,
+                  border: `2px solid ${t.color}`,
+                  boxShadow: `0 12px 32px rgba(0,0,0,0.55), inset 0 0 40px ${t.color}33, 0 0 24px ${t.color}55`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 10, padding: 14,
+                }}>
+                  <div style={{
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: `${t.color}33`,
+                    border: `2px solid ${t.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 38,
+                    boxShadow: `0 0 24px ${t.color}88`,
+                  }}>{t.emoji}</div>
+                  <div style={{
+                    fontSize: 14, fontWeight: 900, color: t.color,
+                    textAlign: 'center', lineHeight: 1.1,
+                    letterSpacing: '-0.01em',
+                    textShadow: `0 0 8px ${t.color}55`,
+                  }}>{t.name}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{
+        fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
+      }}>
+        Stagger 350 ms · Flip-Easing cubic-bezier(0.34, 1.46, 0.64, 1) · 0.85 s pro Card
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(7).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(8).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1222,6 +1337,12 @@ export default function AnimationsLabPage() {
       blurb: '2-Frame-Wink (Hand oben ↔ Hand unten) als CSS steps(2)-Animation. 4 Augen/Mund-Kombos zum Vergleich der Speed-Varianten. Ring ist in den PNGs drin, bleibt visuell stabil weil identisch in beiden Frames.',
       keepAlive: true, minHeight: 380,
       render: (_r) => <WolfWinkShowcase />,
+    },
+    {
+      label: 'K', title: 'Team-Reveal 3D-Flip',
+      blurb: 'Wolf-Idee: Teams werden erst als Rückseite (bunter Kreis + ?-Sigil) gezeigt, dann flippt jede Card via Y-Rotation 180° und enthüllt Avatar + Name. Stagger 350 ms zwischen den Teams, eigene Spring-Easing für den Flip.',
+      keepAlive: false, minHeight: 480,
+      render: (r) => <TeamRevealFlipDemo replay={r} />,
     },
   ];
 

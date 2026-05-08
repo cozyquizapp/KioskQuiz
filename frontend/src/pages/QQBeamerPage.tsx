@@ -16199,7 +16199,29 @@ function BetRevealSlide({ team, resolution, allTeams }: {
           }}>{team.name}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, minWidth: 380 }}>
-          {targetTeam ? (
+          {/* 2026-05-09 (Wolf): klare Trennung — Disconnect-Fall (kein Tipp)
+              kriegt simplen Hinweis, der oooh-Moment ist NUR für Teams die
+              tatsächlich getippt haben aber Target hatte 0 Wins. */}
+          {!targetTeam ? (
+            // Edge-Case: Team hat keinen Tipp abgegeben (Disconnect/verpasst).
+            // Neutral, kein Drama.
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              padding: '20px 32px', borderRadius: 18,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1.5px solid rgba(255,255,255,0.12)',
+            }}>
+              <div style={{ fontSize: 'clamp(40px, 4.5vw, 64px)', lineHeight: 1, opacity: 0.5 }}>—</div>
+              <div style={{
+                fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 800,
+                color: '#94A3B8', textAlign: 'center',
+              }}>Kein Tipp abgegeben</div>
+              <div style={{
+                fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 700,
+                color: '#64748B', fontStyle: 'italic',
+              }}>0 Bonus-Punkte</div>
+            </div>
+          ) : (
             <>
               <div style={{
                 fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
@@ -16227,45 +16249,38 @@ function BetRevealSlide({ team, resolution, allTeams }: {
                   + Sympathie-Bonus
                 </div>
               )}
+              {isZero ? (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  animation: 'qqFRTitleIn 0.7s ease 0.6s both',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(60px, 7vw, 110px)', lineHeight: 1,
+                    animation: 'qqFROohBob 1.6s ease-in-out infinite',
+                  }}>🥲</div>
+                  <div style={{
+                    fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                    color: '#94A3B8', textAlign: 'center', fontStyle: 'italic',
+                  }}>oooh …</div>
+                  <div style={{
+                    fontSize: 'clamp(15px, 1.4vw, 22px)', fontWeight: 700,
+                    color: '#64748B',
+                  }}>0 Bonus — Tipp ging nicht auf</div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '16px 32px', borderRadius: 22,
+                  background: 'rgba(34,197,94,0.18)',
+                  border: '3px solid rgba(34,197,94,0.65)',
+                  boxShadow: '0 0 32px rgba(34,197,94,0.35)',
+                  fontSize: 'clamp(48px, 5.5vw, 88px)', fontWeight: 900,
+                  color: '#22C55E', letterSpacing: '-0.02em',
+                  animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+                }}>
+                  + {totalBonus}
+                </div>
+              )}
             </>
-          ) : (
-            <div style={{
-              fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 700,
-              color: '#94A3B8', fontStyle: 'italic', textAlign: 'center',
-            }}>
-              Kein Tipp abgegeben
-            </div>
-          )}
-          {isZero ? (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              animation: 'qqFRTitleIn 0.7s ease 0.6s both',
-            }}>
-              <div style={{
-                fontSize: 'clamp(60px, 7vw, 110px)', lineHeight: 1,
-                animation: 'qqFROohBob 1.6s ease-in-out infinite',
-              }}>🥲</div>
-              <div style={{
-                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
-                color: '#94A3B8', textAlign: 'center', fontStyle: 'italic',
-              }}>oooh …</div>
-              <div style={{
-                fontSize: 'clamp(15px, 1.4vw, 22px)', fontWeight: 700,
-                color: '#64748B',
-              }}>0 Bonus-Punkte</div>
-            </div>
-          ) : (
-            <div style={{
-              padding: '16px 32px', borderRadius: 22,
-              background: 'rgba(34,197,94,0.18)',
-              border: '3px solid rgba(34,197,94,0.65)',
-              boxShadow: '0 0 32px rgba(34,197,94,0.35)',
-              fontSize: 'clamp(48px, 5.5vw, 88px)', fontWeight: 900,
-              color: '#22C55E', letterSpacing: '-0.02em',
-              animation: 'qqFRTitleIn 0.7s ease 0.5s both',
-            }}>
-              + {totalBonus}
-            </div>
           )}
         </div>
       </div>

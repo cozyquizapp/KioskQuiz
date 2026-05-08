@@ -167,31 +167,38 @@ function getWarmBus(ac: AudioContext): GainNode {
 
   const input = ac.createGain();
 
+  // 2026-05-08 (Wolf 'sounds zu mechanisch/KI/schrill'): warm-bus
+  // weicher gemacht. Vorher 3500 Hz Lowpass + 0.5 Q + 12 % Reverb-Send +
+  // 0.4s IR — Synth-Sounds klangen trotzdem dünn/schrill bei Live-Vorführung.
+  // Jetzt: 2400 Hz Lowpass (dämpft mehr Höhen), 0.7 Q (sanfterer Roll-off),
+  // 22 % Reverb-Send (mehr Raumklang), 0.6s IR mit 0.18s Decay (längeres,
+  // weicheres Ausklingen). Resultat: Synth wirkt eher „warm-room" als
+  // „cold-laptop".
   // Dry path: input → lowpass → destination
   const lowpass = ac.createBiquadFilter();
   lowpass.type = 'lowpass';
-  lowpass.frequency.value = 3500;  // schneidet harsche Höhen
-  lowpass.Q.value = 0.5;
+  lowpass.frequency.value = 2400;  // schneidet harsche Höhen (war 3500)
+  lowpass.Q.value = 0.7;            // sanfterer Roll-off (war 0.5)
   input.connect(lowpass);
   lowpass.connect(ac.destination);
 
   // Wet path: input → reverbSend → convolver → reverbReturn → destination
-  // Synthetic IR: white noise mit ~0.4s exponential decay → Bell-Hall-Eindruck.
-  const irLength = Math.floor(ac.sampleRate * 0.4);
+  // Synthetic IR: white noise mit ~0.6s exponential decay → mehr Raum.
+  const irLength = Math.floor(ac.sampleRate * 0.6);  // war 0.4
   const ir = ac.createBuffer(2, irLength, ac.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const data = ir.getChannelData(ch);
     for (let i = 0; i < irLength; i++) {
-      const decay = Math.exp(-i / (ac.sampleRate * 0.12));
+      const decay = Math.exp(-i / (ac.sampleRate * 0.18));  // war 0.12
       data[i] = (Math.random() * 2 - 1) * decay;
     }
   }
   const convolver = ac.createConvolver();
   convolver.buffer = ir;
   const reverbSend = ac.createGain();
-  reverbSend.gain.value = 0.12;  // 12% wet — dezent, nicht matschig
+  reverbSend.gain.value = 0.22;  // 22 % wet (war 12 %) — spürbarer Raum
   const reverbReturn = ac.createGain();
-  reverbReturn.gain.value = 0.45;  // attenuate output after IR
+  reverbReturn.gain.value = 0.55;  // attenuate output after IR (war 0.45)
 
   input.connect(reverbSend);
   reverbSend.connect(convolver);

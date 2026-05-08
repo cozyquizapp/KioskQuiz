@@ -723,6 +723,18 @@ export const QQ_BEAMER_CSS = `
     0%   { transform: translateX(-110%) scale(0.92); opacity: 0; }
     100% { transform: translateX(0)     scale(1);    opacity: 1; }
   }
+  /* 2026-05-08 (Wolf-Wunsch zurück): 3D-Slot-Machine-Drop für Higher-Lower
+     Subject-Value-Reveal. Pattern aus /animations Slot-4. ??? rotiert nach
+     oben raus, echte Zahl rotiert von unten rein. Container muss perspective
+     setzen + overflow:hidden, beide Spans absolute → keine Card-Reflows. */
+  @keyframes hlSlotOut {
+    0%   { transform: rotateX(0deg)   translateY(0);    opacity: 1; }
+    100% { transform: rotateX(-90deg) translateY(-50%); opacity: 0; }
+  }
+  @keyframes hlSlotIn {
+    0%   { transform: rotateX(90deg)  translateY(50%);  opacity: 0; }
+    100% { transform: rotateX(0deg)   translateY(0);    opacity: 1; }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

@@ -13842,6 +13842,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative',
+              // 2026-05-08 (Wolf-Wunsch zurück): perspective ermöglicht den
+              // 3D-Slot-Machine-Drop in Y-Achse. Container-Höhe + Width sind
+              // via Hidden-Placeholder schon FIX → keine Card-Größen-Sprünge
+              // mehr (das war der historische Grund warum Slot-Machine raus war).
+              perspective: 600,
             }}>
               {/* Unsichtbarer Platzhalter mit dem ECHTEN Wert reserviert die
                   Breite schon in der Frage-Phase. Sonst springt die Card beim
@@ -13855,32 +13860,35 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', inset: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
               }}>
-                {/* Beide Spans übereinander gerendert; opacity flippt smooth.
-                    Slot-Machine-Drop entfernt — User-Wunsch: 'nur die Zahl
-                    wechselt, kein Wackeln'. */}
+                {/* 2026-05-08 (Wolf-Wunsch 3D-Slot-Machine-Drop wieder rein,
+                    aber mit fixer Card-Größe): Beide Spans absolute, beim Reveal
+                    rotiert „???" 3D nach oben raus, echte Zahl rotiert von unten
+                    rein. Pattern aus /animations Slot-4 (slotOut/slotIn keyframes).
+                    Card-Container hat perspective:600 + overflow:hidden, beide
+                    Spans sind absolut → Card-Layout bleibt 100 % stabil. */}
                 <span style={{
                   position: 'absolute',
                   fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#EC4899',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  // 2026-05-04 (Wolf): timerVignettePulse war ein
-                  // inset-box-shadow-Effekt fuer Screen-Raender (rot),
-                  // angewandt auf einen 92px-Span ergab das ein hartes
-                  // rotes Rechteck hinter dem ???. Stattdessen sanftes
-                  // text-shadow-Pulsen direkt am Glyph.
                   textShadow: '0 0 28px rgba(236,72,153,0.45), 0 0 60px rgba(236,72,153,0.25)',
-                  opacity: isReveal ? 0 : 1,
-                  transition: 'opacity 0.5s ease',
-                  animation: isReveal ? undefined : 'hlQuestionMarkPulse 1.6s ease-in-out infinite',
+                  animation: isReveal
+                    ? 'hlSlotOut 0.4s cubic-bezier(0.4, 0, 0.6, 1) both'
+                    : 'hlQuestionMarkPulse 1.6s ease-in-out infinite',
+                  willChange: 'transform, opacity',
                 }}>???</span>
                 <span style={{
                   position: 'absolute',
                   fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#EC4899',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                   textShadow: '0 0 32px rgba(236,72,153,0.55)',
-                  opacity: isReveal ? 1 : 0,
-                  transition: 'opacity 0.5s ease 0.15s',
+                  animation: isReveal
+                    ? 'hlSlotIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s both'
+                    : undefined,
+                  opacity: isReveal ? undefined : 0,
                   whiteSpace: 'nowrap',
+                  willChange: 'transform, opacity',
                 }}>{fmtHL(pair.subjectValue)}</span>
               </div>
             </div>

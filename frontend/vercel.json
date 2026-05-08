@@ -23,11 +23,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cozyquiz-backend.onrender.com/api/:path*"
+      "destination": "https://backend.cozyquiz.app/api/:path*"
     },
     {
       "source": "/socket.io/:path*",
-      "destination": "https://cozyquiz-backend.onrender.com/socket.io/:path*"
+      "destination": "https://backend.cozyquiz.app/socket.io/:path*"
     },
     {
       "source": "/grid-demo.html",

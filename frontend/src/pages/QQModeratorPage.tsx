@@ -13,6 +13,7 @@ import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
+import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
 
 const QQ_ROOM = 'default';
@@ -3515,7 +3516,7 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
         : setId === 'esc'
           ? ESC_FLAG_POOL
           : (set?.avatars ?? []);
-      const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+      const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count: 8, setAvatars }),
       });
@@ -4604,7 +4605,7 @@ function LobbyView({
                           : setId === 'esc'
                             ? ESC_FLAG_POOL
                             : (set?.avatars ?? []);
-                        const r = await fetch(`/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+                        const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
                           method: 'POST', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ count: n, setAvatars }),
                         });

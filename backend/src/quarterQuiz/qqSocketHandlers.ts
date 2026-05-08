@@ -2265,13 +2265,21 @@ export function registerQQHandlers(io: SocketIOServer): void {
           return;
         }
 
-        // Auto-check: match against answer list
+        // Auto-check: match against answer list (DE + EN combined).
+        // 2026-05-09 (Wolf-Bug 'flag has no red — answer in EN doesn't match'):
+        // vorher nur q.answer (DE) gecheckt → EN-Spieler hatten immer „falsch".
+        // Jetzt beide Listen kombiniert → Team kann in beiden Sprachen tippen.
         const q = room.currentQuestion;
         if (q) {
-          const validAnswers = q.answer
-            .split(/[,;]/)
-            .map(a => a.replace(/[…\.]+$/, '').trim())
-            .filter(a => a.length > 0);
+          const splitAnswerList = (raw?: string): string[] =>
+            (raw ?? '')
+              .split(/[,;]/)
+              .map(a => a.replace(/[…\.]+$/, '').trim())
+              .filter(a => a.length > 0);
+          const validAnswers = [
+            ...splitAnswerList(q.answer),
+            ...splitAnswerList(q.answerEn),
+          ];
           const isMatch = validAnswers.some(valid => similarityScore(trimmed, valid) >= 0.8);
           if (isMatch) {
             // Treffer → akzeptieren + nächstes Team

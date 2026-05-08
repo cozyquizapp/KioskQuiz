@@ -1177,8 +1177,8 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
   }, [replay]);
 
   const elapsed = Date.now() - startedAt.current;
-  const STAGGER = 350; // ms zwischen Team-Flips
-  const FLIP_DELAY_BASE = 600; // erste Card flippt nach 600ms
+  const STAGGER = 600; // ms zwischen Team-Flips — Drama statt Hektik
+  const FLIP_DELAY_BASE = 800; // erste Card flippt nach 800ms (Lese-Pause für Title)
 
   return (
     <div style={{
@@ -1210,7 +1210,7 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
               <div style={{
                 position: 'relative', width: '100%', height: '100%',
                 transformStyle: 'preserve-3d',
-                transition: 'transform 0.85s cubic-bezier(0.34, 1.46, 0.64, 1)',
+                transition: 'transform 1.15s cubic-bezier(0.34, 1.46, 0.64, 1)',
                 transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               }}>
                 {/* Rückseite — bunter Kreis mit ?-Sigil */}
@@ -1241,12 +1241,13 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                   gap: 10, padding: 14,
                 }}>
                   <div style={{
-                    width: 72, height: 72, borderRadius: '50%',
+                    width: 104, height: 104, borderRadius: '50%',
                     background: `${t.color}33`,
-                    border: `2px solid ${t.color}`,
+                    border: `2.5px solid ${t.color}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 38,
-                    boxShadow: `0 0 24px ${t.color}88`,
+                    fontSize: 56,
+                    boxShadow: `0 0 28px ${t.color}99`,
+                    flexShrink: 0,
                   }}>{t.emoji}</div>
                   <div style={{
                     fontSize: 14, fontWeight: 900, color: t.color,
@@ -1263,7 +1264,7 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
       <div style={{
         fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
       }}>
-        Stagger 350 ms · Flip-Easing cubic-bezier(0.34, 1.46, 0.64, 1) · 0.85 s pro Card
+        Stagger 600 ms · Flip-Easing cubic-bezier(0.34, 1.46, 0.64, 1) · 1.15 s pro Card
       </div>
     </div>
   );

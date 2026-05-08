@@ -2821,15 +2821,45 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         </>
       )}
 
-      {s.phase === 'FINAL_REVEAL' && (
-        <div style={{
-          padding: '10px 12px', borderRadius: 8,
-          background: 'rgba(251,191,36,0.10)',
-          color: '#FBBF24', fontSize: 13, fontWeight: 700,
-        }}>
-          Score-Cascade am Beamer · Space → GAME_OVER
-        </div>
-      )}
+      {s.phase === 'FINAL_REVEAL' && (() => {
+        // 2026-05-09 (Wolf-End-Flow): Multi-Step-Choreo. Status zeigt aktuellen
+        // Step + Vorschau auf nächsten. N Teams = 2N+8 max steps.
+        const N = s.teams.length;
+        const step = s.finalRevealStep ?? 0;
+        const labelFor = (st: number): string => {
+          if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
+          if (st === 1) return '1 · Grid-Reveal (größtes Cluster Highlight)';
+          if (st <= 1 + N) {
+            const ti = st - 2;
+            return `${st} · Bet-Reveal Team ${ti + 1}/${N} (aufsteigend nach Bonus)`;
+          }
+          const ab = st - (1 + N);
+          if (ab === 1) return `${st} · 🐢 Underdog Card (Trommelwirbel)`;
+          if (ab === 2) return `${st} · 🐢 Underdog Reveal (+1)`;
+          if (ab === 3) return `${st} · 🦝 Meisterklauer Card`;
+          if (ab === 4) return `${st} · 🦝 Meisterklauer Reveal (+1)`;
+          if (ab === 5) return `${st} · ⚡ Speedy Card`;
+          if (ab === 6) return `${st} · ⚡ Speedy Reveal (+1)`;
+          const rk = ab - 7;
+          const place = N - rk;
+          return `${st} · Ranking #${place} (${rk === 0 ? 'last' : rk === N - 1 ? '🥇 Sieger' : ''})`;
+        };
+        const max = 2 * N + 8;
+        const isLast = step >= max;
+        const next = isLast ? '→ THANKS' : labelFor(step + 1);
+        return (
+          <div style={{
+            padding: '10px 12px', borderRadius: 8,
+            background: 'rgba(251,191,36,0.10)',
+            color: '#FBBF24', fontSize: 12, fontWeight: 700,
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div>🏆 Final-Reveal · Step {step}/{max}</div>
+            <div style={{ color: '#FCD34D', opacity: 0.92 }}>Jetzt: {labelFor(step)}</div>
+            <div style={{ color: '#FCD34D', opacity: 0.65, fontSize: 11 }}>Space → {next}</div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

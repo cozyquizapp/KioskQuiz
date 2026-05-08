@@ -9242,7 +9242,13 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
     const results = await getQQGameResults(200);
     const hit = results.find((r: any) => r.roomCode === roomCode);
     if (!hit) return res.status(404).json({ error: 'Kein Ergebnis für diesen Raum gefunden.' });
-    // Nur die relevanten Felder — kein Grid, kein komplettes Drafts-Dump
+    // 2026-05-09 (Wolf): Brett wird jetzt auf der Summary-Page angezeigt —
+    // Owner-IDs reichen (cellOwners statt full grid), kompakter im Payload.
+    const grid = (hit as any).grid as Array<Array<{ ownerId: string | null }>> | undefined;
+    const gridSize = grid?.length ?? 0;
+    const cellOwners = grid
+      ? grid.map(row => row.map(c => c?.ownerId ?? null))
+      : null;
     res.json({
       id: hit.id,
       roomCode: hit.roomCode,
@@ -9256,6 +9262,9 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
       // die korrekten Spieler-Emojis rendert (Wolf-Bug 'summary emojis fehlen').
       avatarSetId: hit.avatarSetId ?? 'all',
       avatarSetEmojis: hit.avatarSetEmojis ?? null,
+      // 2026-05-09 (Wolf): Brett-Daten für Summary-Render
+      gridSize,
+      cellOwners,
     });
   } catch (err) {
     console.error('QQ summary error:', err);

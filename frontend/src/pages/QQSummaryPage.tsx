@@ -42,6 +42,10 @@ type Summary = {
   avatarSetEmojis?: string[] | null;
   teams: SummaryTeam[];
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
+  /** 2026-05-09 (Wolf): Final-Brett für Summary-Anzeige.
+   *  cellOwners[r][c] = teamId | null. Kompakter Payload. */
+  gridSize?: number;
+  cellOwners?: Array<Array<string | null>>;
 };
 
 type UpcomingEvent = {
@@ -414,6 +418,17 @@ export default function QQSummaryPage() {
         </div>
       </Section>
 
+      {/* 2026-05-09 (Wolf): Final-Brett anzeigen — wer hat welche Felder am
+          Ende. Cells nach team.color gefärbt, Top-Team-Cluster pulsiert. */}
+      {summary.cellOwners && summary.gridSize && summary.gridSize > 0 && (
+        <SummaryBoard
+          gridSize={summary.gridSize}
+          cellOwners={summary.cellOwners}
+          teams={summary.teams}
+          lang={lang}
+        />
+      )}
+
       {/* H3 Superlatives: narrative End-Game-Titel */}
       <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} />
 
@@ -547,6 +562,85 @@ function Hero({ draftTitle, winner, playedAt, lang }: { draftTitle: string; winn
         </div>
       )}
     </div>
+  );
+}
+
+// 2026-05-09 (Wolf): Final-Brett-Renderer für die Summary-Seite. Zeigt das
+// Endbrett mit Team-Color-Cells. Top-Team (höchster largestConnected) hat
+// zusätzlichen Pulse. Klein genug damit's auf dem Phone scrollbar bleibt.
+function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
+  gridSize: number;
+  cellOwners: Array<Array<string | null>>;
+  teams: SummaryTeam[];
+  lang: Lang;
+}) {
+  const topTeam = [...teams].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0))[0];
+  // Cell-Größe für Mobile-First (kompakt)
+  const maxBoardWidth = 320; // px
+  const cellSize = Math.floor(maxBoardWidth / gridSize) - 4;
+  return (
+    <Section title={lang === 'de' ? 'Endbrett' : 'Final board'}>
+      <style>{`
+        @keyframes summaryBoardPulse {
+          0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+          50%      { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 0 12px var(--c-color); }
+        }
+      `}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        padding: '12px 8px',
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${gridSize}, ${cellSize}px)`,
+          gridTemplateRows: `repeat(${gridSize}, ${cellSize}px)`,
+          gap: 4,
+        }}>
+          {cellOwners.map((row, r) => row.map((ownerId, c) => {
+            if (!ownerId) {
+              return (
+                <div key={`${r}-${c}`} style={{
+                  width: cellSize, height: cellSize, borderRadius: 4,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }} />
+              );
+            }
+            const owner = teams.find(t => t.id === ownerId);
+            if (!owner) return null;
+            const isTop = topTeam?.id === owner.id;
+            return (
+              <div key={`${r}-${c}`} style={{
+                width: cellSize, height: cellSize, borderRadius: 4,
+                background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
+                border: `1.5px solid ${owner.color}`,
+                ['--c-color' as any]: `${owner.color}88`,
+                animation: isTop ? 'summaryBoardPulse 2.4s ease-in-out infinite' : undefined,
+                opacity: isTop ? 1 : 0.7,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {owner.emoji && cellSize >= 24 && (
+                  <span style={{ fontSize: cellSize * 0.5, lineHeight: 1 }}>{owner.emoji}</span>
+                )}
+              </div>
+            );
+          }))}
+        </div>
+        {/* Mini-Legende: Top-Team highlighten */}
+        {topTeam && (
+          <div style={{
+            fontSize: 12, color: '#94a3b8', fontWeight: 700,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <span style={{
+              display: 'inline-block', width: 10, height: 10, borderRadius: 3,
+              background: topTeam.color,
+            }} />
+            {lang === 'de' ? 'Größtes Gebiet' : 'Largest area'}: <b style={{ color: topTeam.color }}>{topTeam.name}</b> ({topTeam.largestConnected})
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
 

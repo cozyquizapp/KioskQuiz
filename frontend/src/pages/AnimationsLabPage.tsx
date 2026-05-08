@@ -955,12 +955,71 @@ function BgLayerShowcaseDemo({ replay }: { replay: number }) {
   );
 }
 
+// ─── Slot I: Wolf-Idle-Animation Showcase ───────────────────────────────────
+// 3 Varianten side-by-side. Wolf-PNG hat den pinken Kreis baked-in, daher
+// animiert die Variante das ganze Bild (Kreis + Wolf zusammen). Echtes
+// „Wolf-only-wackeln" braucht entweder Wolf-Posen ohne Kreis oder ein 2-Layer-
+// Asset-Set (waere sauber, ist Wolf-Asset-Arbeit).
+function WolfIdleShowcase() {
+  const POSE = '/avatars/cozywolf/augenauf.mundauf.daumen.png';
+  const variants: Array<{ key: string; label: string; blurb: string; anim: string }> = [
+    { key: 'sway',  label: 'Sway',     blurb: 'Sanftes Wiegen, ±2.5° + 3px Y',           anim: 'wolfSway 4.2s ease-in-out infinite' },
+    { key: 'breath', label: 'Breath',  blurb: 'Atem-Pulse, scale 1 ↔ 1.025',             anim: 'wolfBreath 3.4s ease-in-out infinite' },
+    { key: 'combo', label: 'Combined', blurb: 'Sway + Breath leicht entkoppelt',          anim: 'wolfBreath 3.4s ease-in-out infinite, wolfSway 4.2s ease-in-out infinite' },
+  ];
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14,
+      }}>
+        {variants.map(v => (
+          <div key={v.key} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            padding: 12, borderRadius: 14,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <div style={{
+              width: 140, height: 140,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <img
+                src={POSE}
+                alt={`Wolf ${v.label}`}
+                draggable={false}
+                style={{
+                  width: 140, height: 140, objectFit: 'contain',
+                  animation: v.anim,
+                  willChange: 'transform',
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#fbbf24' }}>{v.label}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.3 }}>{v.blurb}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(168,85,247,0.08)',
+        border: '1px solid rgba(168,85,247,0.25)',
+        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <strong style={{ color: '#e9d5ff' }}>Hinweis zum Kreis:</strong> Das pinke Ring ist Teil des PNG.
+        Variante bewegt deshalb Wolf+Ring zusammen. Für „nur der Kopf wackelt, Ring bleibt stehen"
+        bräuchte ich Posen ohne Ring (oder als 2-Layer-Set). Mit dem aktuellen Asset wirken alle
+        drei Varianten trotzdem deutlich lebendiger als das stehende Bild.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(5).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(6).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1011,6 +1070,12 @@ export default function AnimationsLabPage() {
       blurb: 'Akt 1: Voter-Avatare hoppen pro Option mit 90 ms inner-Stagger an ihre Option-Card (700 ms zwischen Optionen). Akt 2: Korrekte Option doppelblinkt (Lock-Highlight). Akt 3: Winner-Pop mit Spring-Scale auf permanentes Gruen.',
       keepAlive: false, minHeight: 540,
       render: (r) => <MuchoRevealDemo replay={r} />,
+    },
+    {
+      label: 'I', title: 'Wolf-Idle-Animation (3 Varianten)',
+      blurb: 'Drei Varianten side-by-side: Sway (Wiegen), Breath (Atmen), Combined. Wolf-PNG hat Ring eingebettet → Variante bewegt Wolf+Ring zusammen. Für „nur Kopf wackelt" braucht es Posen ohne Ring.',
+      keepAlive: true, minHeight: 360,
+      render: (_r) => <WolfIdleShowcase />,
     },
   ];
 
@@ -1090,6 +1155,15 @@ export default function AnimationsLabPage() {
         @keyframes showCardHeartbeat {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
           50%      { transform: translate(-50%, -50%) scale(1.012); }
+        }
+        /* Slot I: Wolf-Idle-Varianten */
+        @keyframes wolfSway {
+          0%, 100% { transform: translateY(0)    rotate(-2.5deg); }
+          50%      { transform: translateY(-3px) rotate( 2.5deg); }
+        }
+        @keyframes wolfBreath {
+          0%, 100% { transform: scale(1);     }
+          50%      { transform: scale(1.025); }
         }
         @keyframes ffDriftSm {
           0%, 100% { transform: translate(0, 0); opacity: 0.4; }

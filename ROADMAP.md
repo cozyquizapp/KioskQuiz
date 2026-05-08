@@ -52,14 +52,31 @@ Plus 2 Demo-Pages live:
 
 ## 🎯 Sprint-Plan (Reihenfolge zum Picken)
 
-### Sprint Q1 — Diagnose + Cleanup (~1h, Newbie-safe)
+### Sprint Q1 — Diagnose + Cleanup (~1h, Newbie-safe) ✅ ERLEDIGT 2026-05-08
+
 **Ziel:** Klarheit was wirklich groß ist + tote Last raus.
 
-1. **Bundle-Visualizer einbauen** → `npm install -D rollup-plugin-visualizer` → in `vite.config.ts` Plugin hinzufügen mit `template: 'treemap'`, `gzipSize: true`, `brotliSize: true`
-2. **`npm run build`** → `dist/stats.html` öffnen → screenshot/notiz welche Module groß sind
-3. **Dead Deps entfernen**: `cd frontend && npm uninstall three @react-three/drei @react-three/fiber @react-three/postprocessing postprocessing` (sicher, keine Imports verifiziert)
-4. **SVG-Originals aus `public/avatars/cozywolf/`** verschieben nach `assets-source/` o. ä. (NICHT auf Vercel hochladen)
-5. Vorher-Nachher-Größe dokumentieren in dieser ROADMAP.md
+1. ✅ **Bundle-Visualizer eingebaut** — `rollup-plugin-visualizer` als devDep, in `vite.config.ts` als Plugin mit `template: 'treemap'`, `gzipSize: true`, `brotliSize: true`. Output: `dist/stats.html` (351 KB).
+2. ✅ **`npm run build`** Baseline + Nach-Build dokumentiert (siehe Tabelle).
+3. ✅ **Dead Deps entfernt**: `three @react-three/drei @react-three/fiber @react-three/postprocessing postprocessing @types/three` (auch der Type-Dep). Verifiziert: 0 Imports im `src/`. Tree-Shaking hatte sie eh schon aus dem Bundle gehalten — Effekt: `node_modules` schlanker, npm-Bloat weg.
+4. ✅ **SVG-Originals verschoben** von `frontend/public/avatars/cozywolf/*.svg` (4 Files, 4.6 MB) nach `assets-source/cozywolf/`. README in `assets-source/` dokumentiert den Zweck. Sind Quellen für `scripts/compress-cozywolf.js`, gehören nicht aufs Vercel-CDN.
+
+**Vorher-Nachher (2026-05-08):**
+
+| Metrik | Vorher | Nachher | Δ |
+|---|---|---|---|
+| Precache-Entries (SW) | 256 | 252 | -4 (SVGs raus) |
+| Precache-Größe | 109 287 KiB | 104 658 KiB | **-4.5 MB** |
+| `frontend/public/` | ~130 MB | ~125 MB | **-4.6 MB** |
+| JS-Bundle Top-Chunks | Beamer 437 KB / vendor-react 370 KB | identisch | 0 (tree-shaking) |
+| Dead Deps in package.json | 6 | 0 | three-Stack komplett raus |
+
+**Erkenntnisse aus `dist/stats.html`:**
+- Top-3 JS-Chunks: `QQBeamerPage` 437 KB (gzip 112 KB) · `vendor-react` 370 KB (gzip 115 KB) · `QQTeamPage` 169 KB (gzip 46 KB).
+- Beamer-Page allein ist die größte einzelne Quelle. Code-Splitting via React.lazy auf Teil-Bereiche (z. B. Mini-Games / Reveal-Phasen) wäre der nächste Hebel — aber nicht jetzt.
+- Vendor-React 115 KB gzip ist Standard für React 18 + DOM. Kein Quick-Win drin.
+
+**Was als Nächstes: Q2 (AVIF) oder Visual-Polish.**
 
 ### Sprint Q2 — AVIF-Pipeline (~1.5h)
 **Ziel:** First-Paint des Beamers spürbar schneller.

@@ -2466,124 +2466,95 @@ function ThanksRecapVariantR() {
     </div>
   );
 }
-
-// ─── Variante S: Memory-Card-Flip (Brand-konsistent) ─────────────────────────
+// ─── Variante S: News-Ticker / Bauchbinde (Wolf-Wahl 2026-05-09) ─────────────
+// Cards aus dem alten Filmstrip-Vorschlag, OHNE die Filmrollen-Frame
+// (Sprocket-Holes / Border-Top / Dark-Bottom-Gradient). Cards laufen
+// kontinuierlich + langsam von rechts nach links wie eine TV-News-Bauchbinde.
 function ThanksRecapVariantS() {
-  const [idx, setIdx] = React.useState(0);
-  React.useEffect(() => {
-    const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 4000);
-    return () => window.clearInterval(id);
-  }, []);
+  // 3× wiederholen für nahtlosen Loop ohne sichtbare Naht
+  const strip = [...RECAP_MOCK, ...RECAP_MOCK, ...RECAP_MOCK];
   return (
     <div style={{
       position: 'relative',
       width: '100%', height: 600,
       borderRadius: 16, overflow: 'hidden',
-      background: 'radial-gradient(ellipse at center 40%, #1A0F2E 0%, #0A0814 70%)',
+      background: 'radial-gradient(ellipse at center 30%, #1A0F2E 0%, #0A0814 70%)',
       display: 'flex', flexDirection: 'column',
     }}>
       <style>{`
-        @keyframes recapSCardFlipIn {
-          0%   { opacity: 0; transform: translateY(-30px) rotateY(180deg); }
-          50%  { opacity: 1; transform: translateY(8px) rotateY(180deg); }
-          100% { opacity: 1; transform: translateY(0) rotateY(0deg); }
-        }
-        @keyframes recapSCardFlipOut {
-          0%   { opacity: 1; transform: translateX(0) rotateY(0deg); }
-          100% { opacity: 0; transform: translateX(-30px) rotateY(180deg); }
+        @keyframes recapSTickerScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
         }
       `}</style>
-      {/* Thanks-Card oben mittig */}
+      {/* Thanks-Card mittig */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <ThanksCardMock compact />
       </div>
-      {/* 5 Card-Slots nebeneinander, top-card flippt im Cycle */}
+      {/* News-Bauchbinde unten — flach, ohne Filmrollen-Frame, kontinuierlich */}
       <div style={{
-        position: 'relative', height: 220, margin: '0 24px 32px',
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        gap: 'clamp(8px, 1.2vw, 18px)',
-        perspective: '1400px',
+        position: 'relative',
+        height: 156,
+        margin: '0 0 28px',
+        overflow: 'hidden',
       }}>
-        {RECAP_MOCK.map((item, i) => {
-          const isFlipped = i <= idx;
-          return (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          height: '100%', padding: '12px 0',
+          width: 'max-content',
+          animation: 'recapSTickerScroll 60s linear infinite',
+        }}>
+          {strip.map((item, i) => (
             <div key={i} style={{
-              flex: '0 0 auto',
-              width: 'clamp(110px, 12vw, 170px)',
-              aspectRatio: '3 / 4',
-              perspective: '1200px',
-              transition: 'transform 0.5s cubic-bezier(0.34,1.4,0.5,1)',
-              transform: i === idx ? 'scale(1.06) translateY(-6px)' : 'scale(1) translateY(0)',
-              filter: i === idx ? `drop-shadow(0 0 24px ${item.winnerColor}aa)` : 'none',
+              flexShrink: 0,
+              width: 220, height: 132,
+              borderRadius: 10,
+              background: `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
+              border: `1.5px solid ${item.winnerColor}66`,
+              boxShadow: `0 6px 16px rgba(0,0,0,0.4), 0 0 14px ${item.winnerColor}33`,
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              padding: '12px 14px',
+              position: 'relative', overflow: 'hidden',
             }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 26, lineHeight: 1 }}>{item.catEmoji}</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 900, color: item.winnerColor,
+                  textTransform: 'uppercase', letterSpacing: '0.12em',
+                }}>{item.catLabel}</span>
+              </div>
               <div style={{
-                position: 'relative', width: '100%', height: '100%',
-                transformStyle: 'preserve-3d',
-                transition: 'transform 0.85s cubic-bezier(0.34, 1.46, 0.64, 1)',
-                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              }}>
-                {/* Card-Back — Cross-Hatch Pattern (Brand-konsistent zu TeamsReveal) */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  borderRadius: 14,
-                  background:
-                    'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
-                    'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
-                    'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-                  border: '2px solid rgba(236,72,153,0.55)',
-                  boxShadow: '0 6px 18px rgba(0,0,0,0.55), inset 0 0 24px rgba(236,72,153,0.18)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  overflow: 'hidden',
-                }}>
-                  <div aria-hidden style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage:
-                      'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
-                      'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
-                  }} />
-                  <span style={{ fontSize: 32, color: '#FBCFE8', fontWeight: 900,
-                    fontFamily: "'Stinger Fit', system-ui, sans-serif", letterSpacing: '0.04em', position: 'relative' }}>
-                    🐺
-                  </span>
-                </div>
-                {/* Card-Front — Recap-Inhalt */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)',
-                  borderRadius: 14,
-                  background: `linear-gradient(180deg, ${item.winnerColor}22, ${item.winnerColor}10)`,
-                  border: `2px solid ${item.winnerColor}`,
-                  boxShadow: `0 8px 22px rgba(0,0,0,0.5), inset 0 0 30px ${item.winnerColor}22`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 8px', gap: 6,
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 'clamp(28px, 3.6vw, 48px)', lineHeight: 1 }}>{item.catEmoji}</span>
-                    <span style={{
-                      fontSize: 9, fontWeight: 900, color: item.winnerColor,
-                      textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center',
-                    }}>{item.catLabel}</span>
-                  </div>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: `${item.winnerColor}33`,
-                    border: `2px solid ${item.winnerColor}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 22,
-                  }}>{item.winnerEmoji}</div>
-                  <div style={{
-                    fontSize: 10, fontWeight: 800, color: '#F1F5F9',
-                    textAlign: 'center', lineHeight: 1.2,
-                  }}>{item.answer}</div>
-                </div>
+                fontSize: 12, fontWeight: 700, color: '#cbd5e1',
+                lineHeight: 1.3, overflow: 'hidden',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              }}>{item.question}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: `${item.winnerColor}33`,
+                  border: `1.5px solid ${item.winnerColor}`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}>{item.winnerEmoji}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.winnerName}
+                </span>
+                <span style={{ fontSize: 10, color: '#94A3B8', marginLeft: 'auto' }}>→ {item.answer}</span>
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+        {/* Dezente Fade-Gradients an den Rändern, damit Cards sanft rein/raus scrollen */}
+        <div aria-hidden style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: 60,
+          background: 'linear-gradient(90deg, #0A0814 0%, transparent 100%)',
+          pointerEvents: 'none', zIndex: 2,
+        }} />
+        <div aria-hidden style={{
+          position: 'absolute', right: 0, top: 0, bottom: 0, width: 60,
+          background: 'linear-gradient(-90deg, #0A0814 0%, transparent 100%)',
+          pointerEvents: 'none', zIndex: 2,
+        }} />
       </div>
     </div>
   );
@@ -2708,8 +2679,8 @@ export default function AnimationsLabPage() {
       render: (_r) => <ThanksRecapVariantR />,
     },
     {
-      label: 'S', title: 'Recap-S: Memory-Card-Flip (Brand-konsistent)',
-      blurb: 'Cards flippen sequenziell (Y-rotate 180°), eine nach der anderen. Card-Back = Cross-Hatch wie TeamsReveal — Brand-Bogen vom Quiz-Anfang bis Outro. Card-Front zeigt Cat + Winner + Frage + Antwort. Klassisches Spielkarten-Reveal.',
+      label: 'S', title: 'Recap-S: News-Ticker / Bauchbinde (Wolf-Wahl)',
+      blurb: 'Cards aus dem alten Filmstrip-Vorschlag — flach + kontinuierlich von rechts nach links wie eine News-Bauchbinde im TV. Keine Filmrollen-Sprockets, keine Steps, einfacher 60s-Loop mit dezenten Edge-Fades. Pro Card: Cat-Emoji + Cat-Label + Frage + Winner-Avatar + Antwort.',
       keepAlive: true, minHeight: 600,
       render: (_r) => <ThanksRecapVariantS />,
     },

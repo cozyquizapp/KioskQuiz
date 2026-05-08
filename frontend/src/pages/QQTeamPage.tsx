@@ -5247,15 +5247,18 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
         </CozyBtn>
       )}
 
-      {/* Grid */}
+      {/* Grid. 2026-05-09 (Wolf-Bug 'grid springt beim setzen größer/kleiner'):
+          gridTemplateColumns auf 1fr-minmax umgestellt — Mini-Status-Grid
+          (Wartesicht) und Selecting-Grid haben jetzt EINE gemeinsame Maße,
+          kein Layout-Shift mehr beim Wechsel zwischen den beiden Modi. */}
       {selecting && (
         <>
           <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 12 }}>
             {instructionText}
           </div>
           <div style={{
-            display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
-            gap: 4, justifyContent: 'center',
+            display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,
+            gap: 3, width: '100%',
             padding: 6, borderRadius: 8,
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.06)',
@@ -5285,7 +5288,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
                     aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
-                    width: cellSize, height: cellSize, borderRadius: 6,
+                    aspectRatio: '1 / 1', borderRadius: 6,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
                       : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`

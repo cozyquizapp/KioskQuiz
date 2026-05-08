@@ -486,7 +486,9 @@ export default function QQProgressTree({
           })()}
 
           {/* Wolf-Avatar — sitzt auf dem aktuellen Dot, springt bei Wechsel
-              im Bogen zum neuen Dot (gleiche Geste wie RoundMiniTree). */}
+              im Bogen zum neuen Dot. 2026-05-09 (Wolf-Wunsch): pink.png statt
+              logo.png (3D-Wolf vom Desktop), continuous Bounce-Loop während
+              der Tree sichtbar ist, plus großer Hop bei Phase-Wechsel. */}
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
             // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
@@ -500,19 +502,31 @@ export default function QQProgressTree({
                 width: wolfSize,
                 height: wolfSize,
                 borderRadius: '50%',
-                background: '#1a1209',
-                backgroundImage: 'url(/logo.png)',
-                backgroundSize: '112%',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
+                background: 'transparent',
                 border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
                 boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
                 transform: 'translate(-50%, -50%)',
+                // Continuous Bob-Loop: Wolf hüpft sanft auf-und-ab. Bei Phase-
+                // Wechsel überschreibt der größere `roundMiniHop` für 620ms.
+                animation: hopping
+                  ? 'roundMiniHop 620ms var(--qq-ease-smooth) both'
+                  : 'qqWolfBob 1.4s ease-in-out infinite',
                 transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
-                animation: hopping ? 'roundMiniHop 620ms var(--qq-ease-smooth) both' : undefined,
                 zIndex: 3,
                 pointerEvents: 'none',
-              }} />
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
+              }}>
+                <img
+                  src="/avatars/cozywolf/pink.png"
+                  alt=""
+                  draggable={false}
+                  style={{
+                    width: '94%', height: '94%', objectFit: 'contain',
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+                  }}
+                />
+              </div>
             );
           })()}
         </div>

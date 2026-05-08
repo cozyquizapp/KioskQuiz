@@ -159,6 +159,12 @@ export const QQ_BEAMER_CSS = `
     45%  { transform: translate(-50%, -115%); }
     100% { transform: translate(-50%, -50%); }
   }
+  /* 2026-05-09 (Wolf): Continuous Bounce-Loop für Pink-Wolf im Progress-Tree —
+     leichtes Hüpfen über aktuellem Dot, immer wenn der Tree sichtbar ist. */
+  @keyframes qqWolfBob {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50%      { transform: translate(-50%, -68%); }
+  }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }

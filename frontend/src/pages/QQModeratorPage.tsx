@@ -310,7 +310,7 @@ export default function QQModeratorPage() {
           && !!s.theme?.eurovisionMode
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
-        const totalSlides = 8;
+        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -684,9 +684,8 @@ export default function QQModeratorPage() {
     if (e.code === 'Space') {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
-        // 4 Folien: Ziel / So läuft's / Neue Fähigkeiten / Comeback
-        // (entspricht buildRulesSlidesDe/En in QQBeamerPage.tsx)
-        const totalSlides = 8;
+        // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
+        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -832,7 +831,7 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
-        const totalSlides = 8;
+        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -3426,7 +3425,10 @@ function IdleHint({ state }: { state: QQStateUpdate }) {
 function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
-  const totalSlides = 8;
+  // 2026-05-09 (Rules-Audit): 2 neue Slides ergänzt (Final-Tipp + Fair Play).
+  // Slide 8 (4×4) bleibt conditional je nach connectionsEnabled.
+  const hasFinale = s.connectionsEnabled !== false;
+  const totalSlides = hasFinale ? 10 : 9;
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
@@ -3442,7 +3444,9 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
     '🔓 Neue Fähigkeiten',
     '🎁 Bunte Tüte',
     '🔄 Comeback',
-    '🧩 Großes Finale',
+    '🎰 Final-Tipp',
+    '🤝 Fair Play',
+    ...(hasFinale ? ['🧩 Großes Finale'] : []),
   ];
   const label = isWelcome
     ? '🎬 Willkommen'

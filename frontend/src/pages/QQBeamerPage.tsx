@@ -2858,7 +2858,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
+        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Imposter · Fix It · Pin It'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
@@ -2870,6 +2870,31 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide7.line1', 'Letztes Team holt vor dem Finale auf'),
         t('rules.slide7.line2', '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz'),
       ],
+    },
+    {
+      // 2026-05-09 (Rules-Audit Wolf): Final-Tipp ist seit Tipp-Variante-
+      // Refactor neue Mechanik, fehlte komplett in den Rules.
+      icon: '🎰',
+      title: t('rules.slide_final_tip.title', 'Final-Tipp'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_final_tip.line1', 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'),
+        t('rules.slide_final_tip.line2', 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'),
+        t('rules.slide_final_tip.line3', 'Mutual-Tipp (ihr beide tippt aufeinander) = je +1 💞 Sympathie-Bonus'),
+      ],
+      extra: t('rules.slide_final_tip.extra', 'Kein Verlust — niedrigster Bonus = 0, alle Felder bleiben am Brett'),
+    },
+    {
+      // 2026-05-09 (Rules-Audit Wolf): Fair Play / Anti-Google
+      icon: '🤝',
+      title: t('rules.slide_fairplay.title', 'Fair Play'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_fairplay.line1', 'Kein Googeln · Smartphone in die Hosentasche'),
+        t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
+        t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
+      ],
+      extra: t('rules.slide_fairplay.extra', 'Spielfreude > Punkte. Habt Spaß!'),
     },
     {
       icon: '🧩',
@@ -2959,9 +2984,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
+        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Imposter · Fix It · Pin It'),
       ],
-      extra: t('rules.slide6.extra', 'Rules explained before each question'),
+      extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },
     {
       icon: '🔄',
@@ -2969,8 +2994,30 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide7.line1', 'Last-place team catches up before the finale'),
-        t('rules.slide7.line2', '"Higher or Lower?" — each hit steals from the leader'),
+        t('rules.slide7.line2', '„Higher or Lower?" — correct answer steals a cell from the leader'),
       ],
+    },
+    {
+      icon: '🎰',
+      title: t('rules.slide_final_tip.title', 'Final Tip'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_final_tip.line1', 'Before the finale every team tips on another (or own) team'),
+        t('rules.slide_final_tip.line2', 'Per final-category win of your tip = +1 bonus'),
+        t('rules.slide_final_tip.line3', 'Mutual tip (you both tip each other) = +1 💞 sympathy bonus each'),
+      ],
+      extra: t('rules.slide_final_tip.extra', 'No loss — lowest bonus is 0, all cells stay on the board'),
+    },
+    {
+      icon: '🤝',
+      title: t('rules.slide_fairplay.title', 'Fair Play'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_fairplay.line1', 'No googling · phones in your pocket'),
+        t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
+        t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
+      ],
+      extra: t('rules.slide_fairplay.extra', 'Fun > points. Enjoy!'),
     },
     {
       icon: '🧩',
@@ -6279,22 +6326,33 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         );
       })}
 
-      {/* Wolf-Avatar — wartet auf Seiten-Entrance, springt dann in einem Bogen zum neuen Dot */}
+      {/* Wolf-Avatar — wartet auf Seiten-Entrance, springt dann in einem Bogen
+          zum neuen Dot. 2026-05-09: pink.png + continuous Bounce-Loop. */}
       <div style={{
         position: 'absolute', top: '50%', left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
-        background: '#1a1209',
-        backgroundImage: 'url(/logo.png)',
-        backgroundSize: '88%',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
+        background: 'transparent',
         border: `3px solid ${catColor}`,
         boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
         transform: 'translate(-50%, -50%)',
         transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
-        animation: hopping ? 'roundMiniHop 560ms var(--qq-ease-smooth) both' : undefined,
+        animation: hopping
+          ? 'roundMiniHop 560ms var(--qq-ease-smooth) both'
+          : 'qqWolfBob 1.4s ease-in-out infinite',
         zIndex: 2,
-      }} />
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        <img
+          src="/avatars/cozywolf/pink.png"
+          alt=""
+          draggable={false}
+          style={{
+            width: '94%', height: '94%', objectFit: 'contain',
+            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -6302,6 +6360,142 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 // ═══════════════════════════════════════════════════════════════════════════════
 // PHASE INTRO
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// 2026-05-09 (Wolf-Vision): 3D-Card-Reveal für neue Aktionen pro Runde —
+// Klauen (R2) und Stapeln (R3) werden mit derselben Slam+Flip-Choreo wie
+// TeamsRevealView (Slot M) aufgedeckt. Card-Back zeigt Pink-Hatch-Pattern
+// + „NEU"-Wordmark; Vorderseite ist die normale Action-Card.
+function ActionCardReveal({
+  cardData: c, iconNode, iconSize, cardCount, lang, startDelayMs,
+}: {
+  cardData: { count: number; label: string; limit?: string; accent: string; emoji?: string };
+  iconNode: React.ReactNode;
+  iconSize: string;
+  cardCount: number;
+  lang: 'de' | 'en';
+  startDelayMs: number;
+}) {
+  const SLAM_DUR = 1400;
+  const SETTLE = 500;
+  const FLIP_DUR = 1000;
+  const [phase, setPhase] = useState<'hidden' | 'slamming' | 'flipping' | 'done'>('hidden');
+  useEffect(() => {
+    const t1 = window.setTimeout(() => setPhase('slamming'), startDelayMs);
+    const t2 = window.setTimeout(() => setPhase('flipping'), startDelayMs + SLAM_DUR + SETTLE);
+    const t3 = window.setTimeout(() => setPhase('done'), startDelayMs + SLAM_DUR + SETTLE + FLIP_DUR);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); window.clearTimeout(t3); };
+  }, [startDelayMs]);
+  const isFlipped = phase === 'flipping' || phase === 'done';
+  const isVisible = phase !== 'hidden';
+  return (
+    <div style={{
+      flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
+      minWidth: cardCount === 1 ? 280 : 200,
+      maxWidth: cardCount === 1 ? 480 : 480,
+      perspective: '1400px',
+      opacity: isVisible ? 1 : 0,
+      animation: isVisible ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
+      filter: phase === 'done' ? `drop-shadow(0 0 38px ${c.accent}cc)` : 'none',
+      transition: 'filter 0.6s ease',
+      alignSelf: 'stretch',
+      display: 'flex',
+    }}>
+      <div style={{
+        position: 'relative', width: '100%', minHeight: 360,
+        transformStyle: 'preserve-3d',
+        transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
+        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+      }}>
+        {/* Card-Back — Cross-Hatch + großes „NEU" */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          borderRadius: 24,
+          background:
+            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+            'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+          border: '3px solid rgba(236,72,153,0.65)',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 14,
+          overflow: 'hidden',
+        }}>
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            backgroundImage:
+              'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+              'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            fontSize: 'clamp(32px, 3.6vw, 56px)', fontWeight: 900,
+            color: '#FBCFE8', letterSpacing: '0.18em',
+            textShadow: '0 0 24px rgba(236,72,153,0.7)',
+            position: 'relative',
+          }}>{lang === 'en' ? 'NEW' : 'NEU'}</div>
+          <div style={{
+            fontSize: 'clamp(56px, 6.5vw, 96px)', lineHeight: 1,
+            filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
+            position: 'relative',
+          }}>✨</div>
+        </div>
+        {/* Vorderseite — die normale Action-Card */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
+          borderRadius: 24,
+          background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
+          border: `3px solid ${c.accent}aa`,
+          boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(8px, 1.2vh, 16px)',
+          padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
+        }}>
+          <div style={{
+            fontSize: iconSize, lineHeight: 1,
+            filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
+          }}>{iconNode}</div>
+          <div style={{
+            display: 'flex', alignItems: 'baseline',
+            gap: 'clamp(6px, 0.8vw, 12px)',
+            fontWeight: 900, lineHeight: 1,
+            flexWrap: 'wrap', justifyContent: 'center',
+          }}>
+            <span style={{
+              fontSize: 'clamp(36px, 4.2vw, 64px)',
+              color: c.accent, fontVariantNumeric: 'tabular-nums',
+              textShadow: `0 0 22px ${c.accent}88`,
+            }}>{c.count}x</span>
+            <span style={{
+              fontSize: 'clamp(28px, 3.2vw, 48px)',
+              color: '#F1F5F9', letterSpacing: '0.01em',
+            }}>{c.label}</span>
+          </div>
+          <div style={{
+            fontSize: 'clamp(13px, 1.4vw, 19px)',
+            fontWeight: 700, color: '#cbd5e1',
+            textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
+          }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>
+          {c.limit && (
+            <div style={{
+              marginTop: 4, padding: '5px 14px', borderRadius: 999,
+              background: 'rgba(15,23,42,0.6)',
+              border: `1.5px solid ${c.accent}55`,
+              fontSize: 'clamp(11px, 1.15vw, 15px)',
+              fontWeight: 900, color: '#e2e8f0',
+              whiteSpace: 'nowrap',
+              boxShadow: `0 2px 8px ${c.accent}22`,
+            }}>{c.limit}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
@@ -6934,6 +7128,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 label: string;
                 limit?: string;
                 accent: string;
+                /** 2026-05-09 (Wolf): in dieser Runde NEU verfügbar — kriegt
+                 *  einen 3D-Card-Reveal (Slam face-down → Flip), damit der
+                 *  Moment „neue Fähigkeit ist da" episch wirkt. */
+                isNew?: boolean;
               };
               const ph = s.gamePhaseIndex;
               // 2026-04-28 (User-Wunsch): 'Platzieren'-Card nur anzeigen wenn
@@ -6956,9 +7154,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ...(placeCard ? [placeCard] : []),
                     { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
                       limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
-                      accent: '#EC4899' },
+                      accent: '#EC4899', isNew: true },
                   ]
-                : (ph === 3 || ph === 4)
+                : ph === 3
+                ? [
+                    ...(placeCard ? [placeCard] : []),
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EC4899' },
+                    { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
+                      limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
+                      accent: '#06B6D4', isNew: true },
+                  ]
+                : ph === 4
                 ? [
                     ...(placeCard ? [placeCard] : []),
                     { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EC4899' },
@@ -6994,8 +7200,31 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     const iconNode = c.slug
                       ? <QQIcon slug={c.slug} size={iconSize} alt={c.label} />
                       : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
-                    const cardDelayMs = cardBaseMs + i * cardStaggerMs;
+                    // Bei isNew: längerer Delay für die epische 3D-Slam+Flip
+                    // Choreo. Sonst Standard-Stagger.
+                    const cardDelayMs = c.isNew
+                      ? cardBaseMs + i * cardStaggerMs + 600  // extra Build-up
+                      : cardBaseMs + i * cardStaggerMs;
                     const sepDelayMs = cardDelayMs - 100; // separator kurz vor card
+                    // Card-Inhalt (Front-Side bei isNew, sonst direkter Render)
+                    const cardInner = (
+                      <div style={{
+                        width: '100%', height: '100%',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 'clamp(8px, 1.2vh, 16px)',
+                        padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
+                        borderRadius: 24,
+                        background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
+                        border: `3px solid ${c.accent}aa`,
+                        boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+                        boxSizing: 'border-box',
+                      }}>
+                        {/* Card-Inhalt — wird gleich unten als Children eingefügt */}
+                      </div>
+                    );
+                    void cardInner;
+
                     return (
                       <Fragment key={i}>
                         {i > 0 && (
@@ -7008,6 +7237,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                             animation: `phasePop 0.4s var(--qq-ease-bounce) ${sepDelayMs / 1000}s both`,
                           }}>{oder}</div>
                         )}
+                        {c.isNew ? (
+                          // 2026-05-09 (Wolf-Vision): NEUE Aktion mit 3D-Slam+Flip-
+                          // Reveal — Card slammt face-down rein (Card-Back mit Cross-
+                          // Hatch + NEU-Pattern), settled, flippt zur Vorderseite.
+                          // Dieselbe Choreo wie TeamsRevealView (Slot M).
+                          <ActionCardReveal
+                            cardData={c}
+                            iconNode={iconNode}
+                            iconSize={iconSize}
+                            cardCount={cardCount}
+                            lang={lang}
+                            startDelayMs={cardDelayMs}
+                          />
+                        ) : (
                         <div style={{
                           flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
                           minWidth: cardCount === 1 ? 280 : 200,
@@ -7075,6 +7318,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                             </div>
                           )}
                         </div>
+                        )}
                       </Fragment>
                     );
                   })}

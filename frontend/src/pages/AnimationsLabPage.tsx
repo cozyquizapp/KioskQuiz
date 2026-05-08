@@ -2266,8 +2266,8 @@ function ThanksRecapVariantA() {
       <style>{`
         @keyframes recapASlide {
           0%   { opacity: 0; transform: scale(1.04) translateX(20px); filter: blur(8px); }
-          15%  { opacity: 0.32; transform: scale(1) translateX(0); filter: blur(0); }
-          85%  { opacity: 0.32; }
+          15%  { opacity: 0.62; transform: scale(1) translateX(0); filter: blur(0); }
+          85%  { opacity: 0.62; }
           100% { opacity: 0; transform: scale(0.98) translateX(-20px); filter: blur(4px); }
         }
         @keyframes recapAItemIn {
@@ -2315,10 +2315,12 @@ function ThanksRecapVariantA() {
           </div>
         </div>
       ))}
-      {/* Dim-Overlay damit Card-Text klar bleibt */}
+      {/* Dim-Overlay damit Card-Text klar bleibt — leichter (war 0.45→0.75,
+          BG-Slide war zu stark abgedunkelt). Jetzt 0.20 Mitte → 0.55 Rand,
+          BG-Slide-Visibility OK, Card bleibt vorne. */}
       <div aria-hidden style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(10,8,20,0.45) 0%, rgba(10,8,20,0.75) 100%)',
+        background: 'radial-gradient(ellipse at center, rgba(10,8,20,0.20) 0%, rgba(10,8,20,0.55) 100%)',
         zIndex: 2,
       }} />
       <ThanksCardMock />
@@ -2520,8 +2522,8 @@ function ThanksRecapVariantC() {
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
-  // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(13).fill(0));
+  // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H/I-S = 16 Slots).
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(20).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [

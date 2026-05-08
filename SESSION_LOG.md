@@ -60,7 +60,7 @@ Commits heute (~25 Stück), Highlights:
 
 Hetzner-Migration ist live + funktioniert (Dummies klappen, PIN klappt). Aber:
 
-- 🔴 **AKUT MORGEN FRÜH (5 min)**: `ALLOWED_ORIGINS` Env-Var in Coolify setzen, sonst CORS blockiert direkte Backend-Calls (z. B. crashReport, fillTeams nach v2-Edit). Wert: `https://play.cozyquiz.app,https://cozyquiz.app`. Buildtime ❌, Runtime ✅. Dann **Restart** klicken. Nach Hard-Refresh des Browsers funktioniert alles.
+- ✅ **CORS-Fix erledigt** (Jojo am 2026-05-07 spät): `ALLOWED_ORIGINS=https://play.cozyquiz.app,https://cozyquiz.app` in Coolify gesetzt + Restart. Direkte Backend-Calls funktionieren wieder.
 - ⏳ **1 Woche Beobachtung** — bei nächstem echten Quiz checken ob alles stabil. Render bleibt parallel aktiv.
 - ⏳ **Render-Cleanup** nach Stabilität — Service löschen ($7/mo gespart), Render-spezifische ENV-Vars (z. B. RENDER_URL fürs Heartbeat) auf Coolify checken/migrieren.
 - ⏳ **ENV-Var-Inventur**: Render-Dashboard hat ggf. mehr ENV-Vars als die 5 die zu Coolify migriert wurden (z. B. SENTRY_DSN). Vor Render-Kündigung abgleichen.

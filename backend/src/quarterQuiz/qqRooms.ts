@@ -1498,11 +1498,34 @@ export function qqHotPotatoStart(room: QQRoomState, _onTurnExpire: () => void): 
   const alive = getAliveTeams(room);
   console.log(`[hp-debug] qqHotPotatoStart | alive=${alive.length} | joinOrder=${room.joinOrder.length} | connected=${room.joinOrder.filter(id => room.teams[id]?.connected).length} | teams=${JSON.stringify(room.joinOrder.map(id => ({ id, conn: room.teams[id]?.connected, dummy: (room.teams[id] as any)?._dummy })))}`);
   if (alive.length === 0) return;
-  // Random start index stored in room for round-robin tracking
-  const startIdx = Math.floor(Math.random() * alive.length);
-  room._hotPotatoRoundRobinIdx = startIdx;
-  room.hotPotatoActiveTeamId = alive[startIdx];
-  room.hotPotatoSlotState = 'rolling';
+  // 2026-05-09 (Wolf-Wunsch): Reihenfolge nach Scoreboard — bestes Team zuerst,
+  // schlechtestes zuletzt. Fairer für Underdog (mehr Bedenkzeit), kontinuierlich-
+  // aufbauende Spannung. Slot-Machine entfällt — initialer State direkt 'landed',
+  // Mod-Space schaltet auf 'finished' + Timer (1 Step statt 2).
+  // Sort: largestConnected desc, Tiebreak totalCells desc, Tiebreak joinOrder.
+  const sorted = [...alive].sort((a, b) => {
+    const ta = room.teams[a]; const tb = room.teams[b];
+    if (!ta || !tb) return 0;
+    const lA = ta.largestConnected ?? 0; const lB = tb.largestConnected ?? 0;
+    if (lB !== lA) return lB - lA;
+    const cA = ta.totalCells ?? 0; const cB = tb.totalCells ?? 0;
+    if (cB !== cA) return cB - cA;
+    return room.joinOrder.indexOf(a) - room.joinOrder.indexOf(b);
+  });
+  // Wir reordern auch den joinOrder lokal für nextRoundRobinTeam — alive-array
+  // wird über joinOrder iteriert. Das einfachste: wir setzen joinOrder NICHT
+  // permanent um (wäre invasive Änderung), sondern speichern die HP-spezifische
+  // Reihenfolge als sub-snapshot. Round-Robin nutzt joinOrder via getAliveTeams.
+  // Pragmatisch: wir setzen activeTeamId = sorted[0], und der bestehende
+  // round-robin-Index 0 (= erstes Element der filtered alive) startet von dort.
+  // Aber alive ist über joinOrder gefiltert — nicht über sorted. Um das
+  // Round-Robin in Score-Order durchlaufen zu lassen, speichern wir die Order
+  // in einem neuen Field _hotPotatoOrder und konsultieren es in nextRoundRobinTeam.
+  (room as any)._hotPotatoOrder = sorted;
+  room._hotPotatoRoundRobinIdx = 0;
+  room.hotPotatoActiveTeamId = sorted[0];
+  // 'landed' direkt — keine Slot-Machine mehr. Mod-Space → 'finished' + Timer.
+  room.hotPotatoSlotState = 'landed';
   room.hotPotatoTurnEndsAt = null;
   room.lastActivityAt = Date.now();
   // Timer wird erst in qqHotPotatoFinishSlot gestartet.
@@ -1714,11 +1737,13 @@ export function qqHotPotatoCheckWinner(room: QQRoomState): string | string[] | n
 function nextRoundRobinTeam(room: QQRoomState): string | null {
   const alive = getAliveTeams(room);
   if (alive.length === 0) return null;
-  // joinOrder ist die stabile Rotations-Reihenfolge — wir gehen vom aktuell
-  // aktiven Team in joinOrder vorwärts, bis wir ein noch aliveTeam finden.
-  // (Wichtig: wenn das aktuelle Team gerade eliminiert wurde, ist es nicht
-  // mehr in `alive`, aber sein Slot in joinOrder gibt die Position vor.)
-  const order = room.joinOrder;
+  // 2026-05-09 (Wolf-Wunsch HP-Reihenfolge nach Scoreboard): wenn _hotPotatoOrder
+  // gesetzt (= score-sortiert beim Start), nutzen wir das statt joinOrder.
+  // Fallback auf joinOrder für ältere Rooms ohne Score-Order.
+  const order = ((room as any)._hotPotatoOrder as string[] | undefined)
+    && ((room as any)._hotPotatoOrder as string[]).length > 0
+      ? ((room as any)._hotPotatoOrder as string[])
+      : room.joinOrder;
   const startPos = order.indexOf(room.hotPotatoActiveTeamId ?? '');
   if (startPos < 0) return alive[0];
   for (let i = 1; i <= order.length; i++) {

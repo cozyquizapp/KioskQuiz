@@ -84,6 +84,16 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: rotate(-3deg) scale(1);    }
     50%      { transform: rotate( 3deg) scale(1.06); }
   }
+  /* 2026-05-09 (Slot P live in HP): Bouncing-Kartoffel über aktivem Team.
+     Bounce + Rotate kombiniert, weil Doppel-Animation auf transform sonst
+     einander überschreiben würde. */
+  @keyframes qqHpPotatoBounceRotate {
+    0%   { transform: translate(-50%, -100%) translateY(0)    rotate(-12deg); }
+    25%  { transform: translate(-50%, -100%) translateY(-22px) rotate(0deg); }
+    50%  { transform: translate(-50%, -100%) translateY(-32px) rotate(12deg); }
+    75%  { transform: translate(-50%, -100%) translateY(-22px) rotate(0deg); }
+    100% { transform: translate(-50%, -100%) translateY(0)    rotate(-12deg); }
+  }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
      ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */

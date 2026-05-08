@@ -1937,6 +1937,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
           {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
           {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
+          {/* 2026-05-09 (Wolf-Wunsch Live-Wins-Tracker): Permanente Mini-Card
+              in der Final-Phase — zeigt Wins pro Team + verbleibende Kats.
+              Sichtbar während gesamter Final-Phase außer FINAL_BETTING /
+              FINAL_REVEAL (eigene Hero-Views). */}
+          {renderState.finalWagerEnabled
+            && renderState.gamePhaseIndex === renderState.totalPhases
+            && renderState.phase !== 'FINAL_BETTING'
+            && renderState.phase !== 'FINAL_REVEAL'
+            && renderState.phase !== 'GAME_OVER'
+            && renderState.phase !== 'THANKS'
+            && <FinalWinsTracker state={renderState} />}
           {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
           {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
           {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
@@ -2350,21 +2361,13 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
   if (revealed) return null;
 
-  // 2026-05-06: Slot-Machine-Intro (rolling) blendet die normale HP-View
-  // komplett aus — sobald Backend auf 'finished' kippt, kommt die Standard-
-  // Ansicht zurueck (gleiche Komponente, nur anderer Branch).
-  // 2026-05-07 (Wolf '3-Phasen-Flow'): SlotMachine bleibt auch bei 'landed'
-  // sichtbar (zwischen Slot-Stopp und Timer-Start). Erst bei 'finished' wird
-  // die normale HP-View gemountet.
-  if ((s.hotPotatoSlotState === 'rolling' || s.hotPotatoSlotState === 'landed') && s.hotPotatoActiveTeamId) {
-    return (
-      <HotPotatoSlotMachine
-        teams={s.teams}
-        chosenTeamId={s.hotPotatoActiveTeamId}
-        lang={lang}
-      />
-    );
-  }
+  // 2026-05-09 (Wolf-Wunsch 'Slot-Machine raus, Reihenfolge nach Scoreboard'):
+  // Slot-Machine entfällt — Backend bestimmt erstes Team deterministisch
+  // (bestes Score zuerst). Bei state 'landed' (Mod hat noch Announce-Zeit vor
+  // Timer-Start) zeigen wir bereits die normale HP-View mit Active-Pill +
+  // Bouncing-Kartoffel. Bei state 'rolling' (legacy/edge-case) ebenfalls
+  // direkt zur normalen View. Slot-Machine-Component bleibt als Dead-Code,
+  // aber der Branch fällt weg.
 
   // 2026-05-05 (Wolf-Bug 'Chips zu klein'): Card wird jetzt aktiv hochgeschoben
   // bei vielen Antworten → mehr Vertikal-Raum unten → Tier-Schwellen koennen
@@ -2428,10 +2431,14 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         )}
       </div>
 
-      {/* Active team pill + turn timer (Footer — bleibt unten fix) */}
+      {/* Active team pill + turn timer (Footer — bleibt unten fix).
+          2026-05-09 (Slot P live): Fliegende Kartoffel als hovering Visual
+          über der Active-Pill — bouncet + rotiert beim aktiven Team. Wenn
+          Active-Team wechselt, transitioniert die Kartoffel-Position smooth
+          (CSS-transition auf left%). */}
       {activeTeam ? (
         <div style={{
-          flex: '0 0 auto',
+          flex: '0 0 auto', position: 'relative',
           display: 'flex', alignItems: 'center', gap: 16,
           padding: '10px 22px', borderRadius: 999,
           background: `linear-gradient(135deg, ${activeTeam.color}33, ${activeTeam.color}11)`,
@@ -2439,6 +2446,17 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           boxShadow: `0 0 32px ${activeTeam.color}55`,
           animation: 'tcpulse 1.4s ease-in-out infinite',
         }}>
+          {/* Kartoffel über dem Active-Avatar, bouncet + rotiert */}
+          <span aria-hidden style={{
+            position: 'absolute',
+            top: '50%', left: 36,
+            transform: 'translate(-50%, -100%)',
+            fontSize: 'clamp(38px, 4vw, 64px)',
+            lineHeight: 1, pointerEvents: 'none',
+            filter: 'drop-shadow(0 4px 8px rgba(239,68,68,0.6)) drop-shadow(0 0 18px rgba(245,158,11,0.55))',
+            animation: 'qqHpPotatoBounceRotate 1.4s ease-in-out infinite',
+            zIndex: 5,
+          }}>🥔</span>
           <QQTeamAvatar avatarId={activeTeam.avatarId} teamEmoji={activeTeam.emoji} size={36} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#94a3b8' }}>
@@ -5856,23 +5874,28 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
                               pointerEvents: 'none',
                             }} />
-                            {/* Wolf-Avatar im Pink-Wrapper (matcht Vorderseite-
-                                Avatar-Größe) — spiegelt Front-Layout */}
+                            {/* 2026-05-09 (Wolf-Wunsch): Pink-Wolf-PNG (transparent)
+                                ersetzt idle.svg auf der Card-Back. Platzierung
+                                identisch zur Vorderseite (color-circle + 54%
+                                Avatar-Inner-Size). */}
                             <div style={{
                               width: avatarSize, height: avatarSize, borderRadius: '50%',
-                              background: 'rgba(236,72,153,0.18)',
-                              border: '2.5px solid rgba(236,72,153,0.65)',
-                              boxShadow: '0 0 28px rgba(236,72,153,0.55)',
+                              background: 'rgba(236,72,153,0.33)',
+                              border: '2.5px solid #EC4899',
+                              boxShadow: '0 0 28px rgba(236,72,153,0.99)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0,
                               overflow: 'hidden',
                               position: 'relative',
                             }}>
                               <img
-                                src="/avatars/cozywolf/svg/idle.svg"
+                                src="/avatars/cozywolf/pink.png"
                                 alt=""
                                 draggable={false}
-                                style={{ width: '88%', height: '88%', objectFit: 'contain' }}
+                                style={{
+                                  width: '90%', height: '90%', objectFit: 'contain',
+                                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 1px rgba(0,0,0,0.5))',
+                                }}
                               />
                             </div>
                             {/* CozyQuiz-Wordmark in Stinger Fit, Brand-Pink */}
@@ -15095,6 +15118,72 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 2026-05-09 (Wolf-Wunsch Live-Wins-Tracker): Mini-Card am Beamer-Rand während
+// der Final-Phase. Zeigt aktuelle Final-Kat-Wins pro Team + Anzahl verbleibender
+// Kategorien. Update bei jedem qqNextQuestion (= Backend tickt finalPhaseWins).
+// Pop-Animation beim Auf-Tauchen, sanftes Wachsen wenn ein Team gewinnt.
+function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
+  const wins = s.finalPhaseWins ?? {};
+  // Berechne Frage-Index INNERHALB der Final-Phase (0..4)
+  const totalPhases = s.totalPhases ?? 4;
+  const phaseStart = (totalPhases - 1) * 5;          // questionIndex bei Phase-Start
+  const inPhaseIdx = Math.max(0, Math.min(4, s.questionIndex - phaseStart));
+  // verbleibende Kategorien — wenn wir gerade Frage N spielen, ist es noch N..4 (5-N total)
+  // Bei PHASE_INTRO der ersten Final-Frage: 5 verbleibend.
+  const remaining = Math.max(0, 5 - inPhaseIdx);
+
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 'clamp(16px, 2.4vh, 32px)',
+      right: 'clamp(16px, 2vw, 32px)',
+      zIndex: 40,
+      padding: 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.6vw, 22px)',
+      borderRadius: 18,
+      background: 'linear-gradient(135deg, rgba(31,26,46,0.92), rgba(20,16,31,0.88))',
+      border: '1.5px solid rgba(236,72,153,0.55)',
+      boxShadow: '0 12px 36px rgba(0,0,0,0.55), 0 0 32px rgba(236,72,153,0.30)',
+      backdropFilter: 'blur(12px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+      animation: 'qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) both',
+      pointerEvents: 'none',
+      maxWidth: 'min(360px, 30vw)',
+    }}>
+      <div style={{
+        fontSize: 'clamp(10px, 0.9vw, 13px)', fontWeight: 900,
+        color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.14em',
+        marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 14,
+      }}>
+        <span>🏆 Finale</span>
+        <span style={{ color: '#94A3B8' }}>{remaining} Kats übrig</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {s.teams.map(t => {
+          const w = wins[t.id] ?? 0;
+          return (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 'clamp(12px, 1vw, 15px)',
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={22} />
+              <span style={{ flex: 1, color: t.color, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {t.name}
+              </span>
+              <span style={{
+                fontSize: 'clamp(13px, 1.1vw, 17px)', fontWeight: 900,
+                color: w > 0 ? '#FBBF24' : '#475569',
+                minWidth: 22, textAlign: 'right',
+              }}>
+                {w > 0 ? `${w}🏆` : '–'}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

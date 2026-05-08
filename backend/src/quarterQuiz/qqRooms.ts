@@ -273,6 +273,9 @@ export interface QQRoomState {
   finalPhaseWins: Record<string, number>;
   /** Letzter Cells-Snapshot zum Delta-Tracking pro Final-Frage. */
   finalLastSnapshot: Record<string, number> | null;
+  /** Recap-Step zwischen Final-Fragen (0 = normal, 1 = Recap-Slide sichtbar). */
+  finalRecapStep: 0 | 1;
+  finalRecapJustWon: string[] | null;
   /** Legacy/optional: Sieger-Liste (Top-Win-Team(s)) — UI-Hinweis only. */
   finalRoundWinners: string[] | null;
   /** Score-Snapshot beim Start der Final-Phase. */
@@ -434,6 +437,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalBettingSubmitted: {},
       finalPhaseWins: {},
       finalLastSnapshot: null,
+      finalRecapStep: 0,
+      finalRecapJustWon: null,
       finalRoundWinners: null,
       finalBetResolution: null,
       endAwards: null,
@@ -3297,12 +3302,24 @@ export function qqNextQuestion(room: QQRoomState): void {
   // gegen letzten Snapshot und increment finalPhaseWins für Top-Delta-Team.
   // Wird auch bei Phase-End (= letzte Frage gerade abgeschlossen) ausgeführt,
   // sodass qqResolveFinalBets keinen eigenen Tick mehr braucht.
-  if (
-    room.gamePhaseIndex === room.totalPhases &&
-    room.finalLastSnapshot !== null &&
-    !room.finalBetResolution
-  ) {
-    qqTickFinalPhaseWin(room);
+  const isFinalPhaseQuestion = room.gamePhaseIndex === room.totalPhases
+    && room.finalLastSnapshot !== null
+    && !room.finalBetResolution;
+
+  if (isFinalPhaseQuestion) {
+    // 2026-05-09 (Wolf-Wunsch): Recap-Slide zwischen Final-Fragen.
+    // Erster Space (Step 0): Tick + setzt Step 1 (Recap zeigt). Return early.
+    // Zweiter Space (Step 1): Step → 0, eigentlicher Wechsel zur nächsten Frage.
+    if (room.finalRecapStep === 0) {
+      const winnersThisQuestion = qqTickFinalPhaseWinReturn(room);
+      room.finalRecapJustWon = winnersThisQuestion.length > 0 ? winnersThisQuestion : null;
+      room.finalRecapStep = 1;
+      room.lastActivityAt = Date.now();
+      return;
+    }
+    // Step 1: Recap weg, jetzt regulär weiter.
+    room.finalRecapStep = 0;
+    room.finalRecapJustWon = null;
   }
 
   const nextIndex = room.questionIndex + 1;
@@ -3729,6 +3746,8 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     teamTotalSteals:  room.teamTotalSteals ?? {},
     finalPhaseWins:        room.finalPhaseWins ?? {},
     finalLastSnapshot:     room.finalLastSnapshot ?? null,
+    finalRecapStep:        room.finalRecapStep ?? 0,
+    finalRecapJustWon:     room.finalRecapJustWon ?? null,
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
@@ -5176,7 +5195,13 @@ export function qqFinishFinalBetting(room: QQRoomState): void {
  *  (alle Deltas = 0), zählt's als „nobody-win" — kein Increment.
  *  Side-Effect: aktualisiert finalLastSnapshot auf den neuen Stand. */
 export function qqTickFinalPhaseWin(room: QQRoomState): void {
-  if (!room.finalLastSnapshot) return;
+  qqTickFinalPhaseWinReturn(room);
+}
+
+/** Wie qqTickFinalPhaseWin, gibt aber die Winner-IDs der gerade abgeschlossenen
+ *  Frage zurück (für die Recap-Slide-Highlight-Logik). */
+export function qqTickFinalPhaseWinReturn(room: QQRoomState): string[] {
+  if (!room.finalLastSnapshot) return [];
   const now = countCellsByTeam(room);
   const delta: Record<string, number> = {};
   let max = 0;
@@ -5184,14 +5209,17 @@ export function qqTickFinalPhaseWin(room: QQRoomState): void {
     delta[id] = (now[id] ?? 0) - (room.finalLastSnapshot[id] ?? 0);
     if (delta[id] > max) max = delta[id];
   }
+  const winners: string[] = [];
   if (max > 0) {
     for (const id of Object.keys(delta)) {
       if (delta[id] === max) {
         room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
+        winners.push(id);
       }
     }
   }
   room.finalLastSnapshot = { ...now };
+  return winners;
 }
 
 /** Berechnet die Auflösung der Tipps (Bonus = Final-Kat-Wins des getippten

@@ -1937,17 +1937,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
           {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
           {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
-          {/* 2026-05-09 (Wolf-Wunsch Live-Wins-Tracker): Permanente Mini-Card
-              in der Final-Phase — zeigt Wins pro Team + verbleibende Kats.
-              Sichtbar während gesamter Final-Phase außer FINAL_BETTING /
-              FINAL_REVEAL (eigene Hero-Views). */}
+          {/* 2026-05-09 (Wolf-Wunsch v2): Permanenter Tracker raus —
+              Recap-Slide nur zwischen Final-Fragen (finalRecapStep === 1)
+              als großer episch-funkelnder Overlay. Mod-Space schaltet weiter. */}
           {renderState.finalWagerEnabled
             && renderState.gamePhaseIndex === renderState.totalPhases
+            && renderState.finalRecapStep === 1
             && renderState.phase !== 'FINAL_BETTING'
             && renderState.phase !== 'FINAL_REVEAL'
             && renderState.phase !== 'GAME_OVER'
             && renderState.phase !== 'THANKS'
-            && <FinalWinsTracker state={renderState} />}
+            && <FinalRoundRecapSlide state={renderState} />}
           {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
           {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
           {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
@@ -3748,7 +3748,11 @@ function MuchoOptionsReveal({
       gridTemplateColumns: '1fr 1fr',
       columnGap: 18,
       rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
-      paddingBottom: expandedLayout ? 'clamp(70px, 8.5vh, 110px)' : 0,
+      // 2026-05-09 (Wolf 'gewinnercard stand unten raus'): paddingBottom
+      // hochgezogen damit Voter-Reihe (translateY 80%) + Card-Pop-Scale
+      // 1.06 + Time-Pill in der unteren Reihe nicht aus dem Container
+      // hängen. 110 → 160 max, 70 → 100 min.
+      paddingBottom: expandedLayout ? 'clamp(100px, 12vh, 160px)' : 0,
       marginBottom: 'clamp(14px, 1.8vh, 28px)',
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
@@ -12246,9 +12250,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const av = isCheesePortrait
               ? (tc > 6 ? 60 : tc > 4 ? 72 : 84)
               : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
+            // 2026-05-09 (Wolf 'Footer-Avatare zu eng'): Gap vergrössert
+            // damit grüner Glow sichtbar atmet, nicht ineinander fließt.
             const gap = isCheesePortrait
-              ? (tc > 6 ? 10 : tc > 4 ? 14 : 18)
-              : (tc > 6 ? 8 : tc > 4 ? 11 : 14);
+              ? (tc > 6 ? 14 : tc > 4 ? 18 : 22)
+              : (tc > 6 ? 14 : tc > 4 ? 18 : 22);
             const portraitFlow = {
               marginTop: 'clamp(10px, 1.6vh, 22px)' as const,
             };
@@ -15473,24 +15479,69 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       background: COZY_CARD_BG,
       position: 'relative',
     }}>
-      {/* Headline */}
+      {/* 2026-05-09 (Wolf): FinalBettingView komplett refactored auf
+          Tipp-Variante. Vorher: alte Cell-Picker-Beschreibung (irreführend).
+          Jetzt: 3 prominente Bullets + großes Submit-Status. */}
       <div style={{
         fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
-      }}>🎰 Final-Wetten</div>
+      }}>🎰 Final-Tipp</div>
 
       <div style={{
         fontSize: 'clamp(48px, 6.5vw, 110px)', fontWeight: 900, color: '#F1F5F9',
         lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
-        marginBottom: 20,
-      }}>Setzt eure Wetten</div>
+        marginBottom: 12,
+      }}>Tippt jetzt!</div>
 
       <div style={{
-        fontSize: 'clamp(22px, 2.4vw, 40px)', color: '#CBD5E1', fontWeight: 600,
-        textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 56,
-      }}>Welches Team gewinnt die Final-Runde? Tippt eure eigenen Felder + wählt ein Team. <br />
-        <span style={{ color: '#F472B6', fontWeight: 800 }}>Richtig getippt = Bonus-Coins. Falsch = Felder weg.</span>
+        fontSize: 'clamp(20px, 2.2vw, 36px)', color: '#CBD5E1', fontWeight: 700,
+        textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 28,
+      }}>
+        Welches Team holt die Final-Runde am stärksten ab? Schaut auf euer Handy und wählt 1 Team.
+      </div>
+
+      {/* Erklärungs-Bullets */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 'clamp(14px, 1.6vw, 24px)',
+        maxWidth: 1200, width: '100%',
+        marginBottom: 36,
+      }}>
+        {[
+          { icon: '🎯', title: '1 Tipp pro Team', sub: '(Eigenes Team erlaubt)' },
+          { icon: '🏆', title: '+1 Bonus pro Win', sub: 'Eures getippten Teams in den 5 Final-Kats' },
+          { icon: '💞', title: 'Mutual = +1', sub: 'Wenn ihr euch gegenseitig tippt' },
+        ].map((b, i) => (
+          <div key={i} style={{
+            padding: '18px 22px', borderRadius: 18,
+            background: 'rgba(236,72,153,0.10)',
+            border: '1.5px solid rgba(236,72,153,0.42)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            textAlign: 'center',
+            animation: `qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) ${0.15 + i * 0.18}s both`,
+            opacity: 0,
+          }}>
+            <span style={{ fontSize: 'clamp(40px, 4.6vw, 64px)', lineHeight: 1 }}>{b.icon}</span>
+            <span style={{
+              fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 900,
+              color: '#F1F5F9', letterSpacing: '-0.01em',
+            }}>{b.title}</span>
+            <span style={{
+              fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
+              color: '#94A3B8',
+            }}>{b.sub}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#86EFAC', fontWeight: 800,
+        textAlign: 'center', marginBottom: 32, fontStyle: 'italic',
+      }}>
+        ✨ Kein Verlust, kein Cell-Risiko — niedrigster Bonus = 0
       </div>
 
       {/* Submit-Status */}
@@ -15536,10 +15587,205 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
-// 2026-05-09 (Wolf-Wunsch Live-Wins-Tracker): Mini-Card am Beamer-Rand während
-// der Final-Phase. Zeigt aktuelle Final-Kat-Wins pro Team + Anzahl verbleibender
-// Kategorien. Update bei jedem qqNextQuestion (= Backend tickt finalPhaseWins).
-// Pop-Animation beim Auf-Tauchen, sanftes Wachsen wenn ein Team gewinnt.
+// 2026-05-09 (Wolf-Wunsch v2): Recap-Slide nach jeder Final-Frage. Großes
+// Overlay, episch-funkelnd. Zeigt Wins pro Team + Highlight für just-Winner
+// + verbleibende Kategorien. Mod-Space schaltet weiter zur nächsten Frage.
+function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
+  const wins = s.finalPhaseWins ?? {};
+  const justWon = new Set(s.finalRecapJustWon ?? []);
+  const totalPhases = s.totalPhases ?? 4;
+  const phaseStart = (totalPhases - 1) * 5;
+  // Wir sind im Recap NACH der Frage, vor der nächsten — questionIndex ist
+  // noch der just-completed Index. Verbleibend = 5 - (inPhaseIdx + 1).
+  const inPhaseIdx = Math.max(0, Math.min(4, s.questionIndex - phaseStart));
+  const completed = inPhaseIdx + 1;
+  const remaining = Math.max(0, 5 - completed);
+  const isLastFinalQuestion = remaining === 0;
+
+  // Sortiere: justWon zuerst, dann nach Wins desc, dann nach name
+  const teamsSorted = [...s.teams].sort((a, b) => {
+    const aJust = justWon.has(a.id) ? 1 : 0;
+    const bJust = justWon.has(b.id) ? 1 : 0;
+    if (aJust !== bJust) return bJust - aJust;
+    const aw = wins[a.id] ?? 0;
+    const bw = wins[b.id] ?? 0;
+    if (aw !== bw) return bw - aw;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 100,
+      background: 'radial-gradient(ellipse at center, rgba(31,16,46,0.94) 0%, rgba(15,8,23,0.98) 70%, #0d0716 100%)',
+      backdropFilter: 'blur(14px) saturate(140%)',
+      WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '4vh 4vw',
+      animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+      overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes qqFinalRecapIn {
+          0%   { opacity: 0; backdrop-filter: blur(0px); }
+          100% { opacity: 1; backdrop-filter: blur(14px) saturate(140%); }
+        }
+        @keyframes qqRecapTitleLetter {
+          0%   { opacity: 0; transform: translateY(-30px) scale(0.6); filter: blur(8px); }
+          70%  { opacity: 1; transform: translateY(4px) scale(1.06); filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes qqRecapRowIn {
+          0%   { opacity: 0; transform: translateX(-32px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes qqRecapJustWonPulse {
+          0%, 100% { box-shadow: 0 0 32px rgba(251,191,36,0.65), 0 0 64px rgba(251,191,36,0.30); transform: scale(1); }
+          50%      { box-shadow: 0 0 48px rgba(251,191,36,0.95), 0 0 96px rgba(251,191,36,0.50); transform: scale(1.025); }
+        }
+        @keyframes qqRecapSparkle {
+          0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(0.6); }
+          50%  { opacity: 1; transform: translate(-50%, -50%) rotate(180deg) scale(1.2); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(360deg) scale(0.8); }
+        }
+        @keyframes qqRecapWinDigitPop {
+          0%   { transform: scale(0.5); opacity: 0; }
+          50%  { transform: scale(1.4); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Title */}
+      <div style={{
+        fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
+        color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.18em',
+        opacity: 0.92, marginBottom: 12,
+        animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
+      }}>
+        🏆 Zwischenstand · Final-Phase
+      </div>
+      <div style={{
+        fontSize: 'clamp(40px, 5vw, 88px)', fontWeight: 900,
+        color: '#F1F5F9', letterSpacing: '-0.025em', textAlign: 'center',
+        marginBottom: 'clamp(24px, 3vh, 48px)',
+        textShadow: '0 0 36px rgba(236,72,153,0.45)',
+      }}>
+        {(() => {
+          const t = isLastFinalQuestion
+            ? `Frage ${completed}/5 · gleich kommt das Wager-Reveal!`
+            : `Frage ${completed}/5 · noch ${remaining} ${remaining === 1 ? 'Kategorie' : 'Kategorien'}`;
+          return Array.from(t).map((ch, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              animation: `qqRecapTitleLetter 0.65s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.025}s both`,
+              whiteSpace: 'pre',
+            }}>{ch === ' ' ? ' ' : ch}</span>
+          ));
+        })()}
+      </div>
+
+      {/* Team-Reihen — sortiert: just-Won zuerst, dann nach Score */}
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        gap: 'clamp(10px, 1.4vh, 18px)',
+        width: '100%', maxWidth: 920,
+      }}>
+        {teamsSorted.map((t, idx) => {
+          const w = wins[t.id] ?? 0;
+          const isJust = justWon.has(t.id);
+          return (
+            <div key={t.id} style={{
+              display: 'grid',
+              gridTemplateColumns: '64px 1fr auto',
+              gap: 16, alignItems: 'center',
+              padding: '14px 22px', borderRadius: 18,
+              background: isJust
+                ? 'linear-gradient(90deg, rgba(251,191,36,0.18), rgba(245,158,11,0.10))'
+                : 'rgba(255,255,255,0.04)',
+              border: isJust
+                ? '2.5px solid rgba(251,191,36,0.85)'
+                : '1.5px solid rgba(255,255,255,0.10)',
+              animation: isJust
+                ? `qqRecapRowIn 0.55s cubic-bezier(0.34,1.4,0.5,1) ${0.4 + idx * 0.12}s both, qqRecapJustWonPulse 1.6s ease-in-out ${0.95 + idx * 0.12}s infinite`
+                : `qqRecapRowIn 0.55s cubic-bezier(0.34,1.4,0.5,1) ${0.4 + idx * 0.12}s both`,
+              opacity: 0,
+              position: 'relative',
+              overflow: 'visible',
+            }}>
+              {/* Sparkle-Layer für just-Won */}
+              {isJust && (
+                <>
+                  {[0, 60, 120, 200, 270, 330].map((deg, si) => {
+                    const radius = 'clamp(40px, 5vw, 70px)';
+                    return (
+                      <span key={si} aria-hidden style={{
+                        position: 'absolute',
+                        left: '50%', top: '50%',
+                        fontSize: 'clamp(14px, 1.6vw, 22px)',
+                        pointerEvents: 'none',
+                        ['--ang' as any]: `${deg}deg`,
+                        transform: `translate(calc(-50% + cos(${deg}deg) * ${radius}), calc(-50% + sin(${deg}deg) * ${radius}))`,
+                        animation: `qqRecapSparkle 1.4s ease-in-out ${1.0 + si * 0.18}s infinite`,
+                      }}>✨</span>
+                    );
+                  })}
+                </>
+              )}
+              {/* Avatar */}
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%',
+                background: `${t.color}33`,
+                border: `2.5px solid ${t.color}`,
+                boxShadow: `0 0 18px ${t.color}66`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+              }}>
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
+              </div>
+              <div style={{
+                fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 900,
+                color: t.color,
+                position: 'relative', zIndex: 2,
+              }}>{t.name}</div>
+              <div style={{
+                display: 'flex', alignItems: 'baseline', gap: 8,
+                fontWeight: 900,
+                position: 'relative', zIndex: 2,
+              }}>
+                <span style={{
+                  fontSize: 'clamp(36px, 4.4vw, 64px)',
+                  color: w > 0 ? '#FBBF24' : '#475569',
+                  textShadow: w > 0 ? '0 0 24px rgba(251,191,36,0.5)' : 'none',
+                  fontVariantNumeric: 'tabular-nums',
+                  display: 'inline-block',
+                  animation: isJust ? `qqRecapWinDigitPop 0.7s cubic-bezier(0.34,1.6,0.5,1) ${0.85 + idx * 0.12}s both` : undefined,
+                }}>{w}</span>
+                <span style={{
+                  fontSize: 'clamp(18px, 2vw, 28px)', color: '#94A3B8',
+                }}>🏆</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer-Hint */}
+      <div style={{
+        marginTop: 'clamp(24px, 3vh, 40px)',
+        fontSize: 'clamp(13px, 1.2vw, 18px)', color: '#94A3B8',
+        opacity: 0, animation: 'qqRecapTitleLetter 0.5s ease 1.5s both',
+        fontStyle: 'italic',
+      }}>
+        {isLastFinalQuestion
+          ? 'Letzte Final-Frage gespielt — Space für Wager-Reveal'
+          : 'Space für die nächste Final-Frage'}
+      </div>
+    </div>
+  );
+}
+
+// 2026-05-09 (Legacy/Backup): permanenter Tracker. Aktuell deaktiviert
+// zugunsten von FinalRoundRecapSlide. Bleibt im Code falls Wolf zurückwill.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
   const wins = s.finalPhaseWins ?? {};
   // Berechne Frage-Index INNERHALB der Final-Phase (0..4)

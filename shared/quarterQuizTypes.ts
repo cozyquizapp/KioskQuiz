@@ -1075,6 +1075,15 @@ export interface QQStateUpdate {
   /** Letzter Cells-Snapshot zum Delta-Tracking pro Final-Frage. Wird bei
    *  qqStartFinalBetting + nach jeder Final-Frage aktualisiert. */
   finalLastSnapshot: Record<string, number> | null;
+  /** 2026-05-09 (Wolf): Recap-Step zwischen Final-Fragen.
+   *  0 = normal flow / kein Recap sichtbar.
+   *  1 = Recap-Slide ist sichtbar (Mod-Space schaltet zu next-Frage).
+   *  Backend setzt das nach jedem qq:nextQuestion in der Final-Phase auf 1
+   *  (statt direkt zur nächsten Frage zu wechseln); zweiter Mod-Space
+   *  setzt es zurück auf 0 und löst den eigentlichen Wechsel aus. */
+  finalRecapStep: 0 | 1;
+  /** Letzte Frage-Winner-IDs (für Recap-Highlight). null wenn noch nichts. */
+  finalRecapJustWon: string[] | null;
   finalRoundWinners: string[] | null;                 // Legacy/optional: bei Tie alle gemeinsam — UI-Hinweis nur
   finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Wenn true, lösen Space-

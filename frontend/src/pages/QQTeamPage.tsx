@@ -1826,6 +1826,8 @@ function TeamGameView({
           jokersAvailable={Math.max(0, 2 - (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0))}
           jokersTotal={2}
           eurovisionMode={!!s.theme?.eurovisionMode}
+          state={s}
+          myTeamId={myTeamId}
         />
       )}
 
@@ -6606,6 +6608,7 @@ function CozyCard({ children, anim, borderColor, pulse }: { children: React.Reac
 function TeamBottomSheetMenu({
   lang, setLang, onClose, onLeaveRequest,
   jokersAvailable, jokersTotal, eurovisionMode,
+  state, myTeamId,
 }: {
   lang: 'de' | 'en';
   setLang: (l: 'de' | 'en') => void;
@@ -6614,7 +6617,27 @@ function TeamBottomSheetMenu({
   jokersAvailable: number;
   jokersTotal: number;
   eurovisionMode: boolean;
+  state: QQStateUpdate;
+  myTeamId: string;
 }) {
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  const myTeam = state.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  // Compute live stats
+  const totalPhases = state.totalPhases ?? 4;
+  const currentPhase = (state.gamePhaseIndex ?? 0) + 1;
+  const teamScores = state.teams.map(t => {
+    let count = 0;
+    for (let r = 0; r < state.gridSize; r++) {
+      for (let c = 0; c < state.gridSize; c++) {
+        if (state.grid[r]?.[c]?.ownerId === t.id) count++;
+      }
+    }
+    return { id: t.id, name: t.name, count };
+  }).sort((a, b) => b.count - a.count);
+  const myPosition = teamScores.findIndex(t => t.id === myTeamId) + 1;
+  const myCellsCount = teamScores.find(t => t.id === myTeamId)?.count ?? 0;
+  const totalTeams = state.teams.length;
   const itemBase: React.CSSProperties = {
     width: '100%',
     display: 'flex', alignItems: 'center', gap: 14,
@@ -6676,6 +6699,111 @@ function TeamBottomSheetMenu({
         }}>
           {lang === 'de' ? 'Menü' : 'Menu'}
         </div>
+
+        {/* STATS-Row — Phase, Position, Zellen kompakt */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
+          marginBottom: 12,
+        }}>
+          {[
+            {
+              label: lang === 'de' ? 'Phase' : 'Phase',
+              value: `${currentPhase}/${totalPhases}`,
+              accent: '#EC4899',
+            },
+            {
+              label: lang === 'de' ? 'Position' : 'Position',
+              value: totalTeams > 0 ? `#${myPosition}` : '–',
+              accent: myColor,
+            },
+            {
+              label: lang === 'de' ? 'Zellen' : 'Cells',
+              value: String(myCellsCount),
+              accent: '#22C55E',
+            },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              padding: '10px 8px', borderRadius: 14,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 900, color: '#94A3B8',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 4,
+              }}>{stat.label}</div>
+              <div style={{
+                fontSize: 19, fontWeight: 900, color: stat.accent,
+                letterSpacing: '-0.02em', lineHeight: 1,
+              }}>{stat.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* MEIN BRETT — Mini-Grid mit eigenen Zellen highlighted */}
+        {state.gridSize > 0 && (
+          <div style={{
+            padding: '12px 12px 14px',
+            borderRadius: 14,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 900, color: '#94A3B8',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              marginBottom: 8, display: 'flex', justifyContent: 'space-between',
+            }}>
+              <span>{lang === 'de' ? 'Mein Brett' : 'My board'}</span>
+              <span style={{ color: myColor, fontWeight: 900 }}>{myCellsCount}× <span style={{ opacity: 0.7 }}>{lang === 'de' ? 'mein' : 'mine'}</span></span>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${state.gridSize}, 1fr)`,
+              gap: 3,
+              maxWidth: 220, margin: '0 auto',
+            }}>
+              {Array.from({ length: state.gridSize }).flatMap((_, r) =>
+                Array.from({ length: state.gridSize }).map((__, c) => {
+                  const cell = state.grid[r]?.[c];
+                  const isMine = cell?.ownerId === myTeamId;
+                  const ownerTeam = cell?.ownerId ? state.teams.find(t => t.id === cell.ownerId) : null;
+                  const ownerColor = ownerTeam?.color ?? null;
+                  const isStacked = !!cell?.stuck;
+                  const isShielded = !!cell?.shielded;
+                  return (
+                    <div
+                      key={`${r}-${c}`}
+                      style={{
+                        aspectRatio: '1 / 1',
+                        borderRadius: 4,
+                        background: isMine
+                          ? `linear-gradient(135deg, ${myColor}, ${myColor}aa)`
+                          : ownerColor
+                            ? `${ownerColor}55`
+                            : 'rgba(255,255,255,0.05)',
+                        border: isMine
+                          ? `1.5px solid ${myColor}`
+                          : '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: isMine ? `0 0 8px ${myColor}66` : 'none',
+                        position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      {isMine && isStacked && (
+                        <span style={{ fontSize: 9, color: '#fff', opacity: 0.85, lineHeight: 1 }}>★</span>
+                      )}
+                      {isMine && isShielded && !isStacked && (
+                        <span style={{ fontSize: 8, color: '#fff', opacity: 0.85, lineHeight: 1 }}>🛡</span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Sprache */}
         <button
@@ -6745,6 +6873,24 @@ function TeamBottomSheetMenu({
           </span>
         </div>
 
+        {/* Hilfe / Kurz-Regeln */}
+        <button
+          onClick={() => { setHelpOpen(true); if (navigator.vibrate) navigator.vibrate(8); }}
+          style={{ ...itemBase, marginBottom: 10 }}
+          onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          <span style={{ fontSize: 22, lineHeight: 1 }}>❓</span>
+          <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              {lang === 'de' ? 'Hilfe · Kurz-Regeln' : 'Help · Quick rules'}
+            </span>
+            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+              {lang === 'de' ? 'Wie spielt man CozyQuiz?' : 'How to play CozyQuiz'}
+            </span>
+          </span>
+        </button>
+
         {/* Quiz verlassen */}
         <button
           onClick={() => { onLeaveRequest(); if (navigator.vibrate) navigator.vibrate(12); }}
@@ -6787,6 +6933,106 @@ function TeamBottomSheetMenu({
         >
           {lang === 'de' ? 'Schließen' : 'Close'}
         </button>
+      </div>
+
+      {/* Hilfe-Overlay (innerhalb des Menüs gerendert, schliesst sich separat) */}
+      {helpOpen && <HelpModal lang={lang} onClose={() => setHelpOpen(false)} />}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HelpModal — kompakte Quick-Reference. 4-5 Bullet-Points, kein Slide-System.
+// ─────────────────────────────────────────────────────────────────────────
+function HelpModal({ lang, onClose }: { lang: 'de' | 'en'; onClose: () => void }) {
+  const items = lang === 'de' ? [
+    { icon: '🎯', title: 'Spielziel', body: 'Beantworte Fragen richtig — pro richtige Antwort darfst du eine Zelle auf dem Brett setzen.' },
+    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese — jede mit eigener Frage-Mechanik.' },
+    { icon: '⭐', title: 'Joker', body: '2 Joker pro Spiel. Verdienst du, wenn du eine bestimmte Reihe-Form auf dem Brett bildest. Setzt eine Bonus-Zelle.' },
+    { icon: '🔄', title: 'Stehlen + Stapeln', body: 'Felder eines Gegners können geklaut werden. Stapel-Felder (★) zählen doppelt im Endscore und sind unklaubar.' },
+    { icon: '🏆', title: 'Sieger', body: 'Wer am Ende die meisten Felder + Stapel-Bonusse hat, gewinnt.' },
+  ] : [
+    { icon: '🎯', title: 'Goal', body: 'Answer questions correctly — each correct answer lets you place a cell on the board.' },
+    { icon: '🌶️', title: 'Categories', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese — each with its own question mechanic.' },
+    { icon: '⭐', title: 'Jokers', body: '2 jokers per game. Earned by forming a specific row pattern on the board. Places a bonus cell.' },
+    { icon: '🔄', title: 'Steal + Stack', body: 'Opponent cells can be stolen. Stacked cells (★) count double at end-score and are un-stealable.' },
+    { icon: '🏆', title: 'Winner', body: 'Most cells + stack bonuses at the end wins.' },
+  ];
+  return (
+    <>
+      <div
+        onClick={onClose}
+        aria-hidden
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: 1100,
+          animation: 'tcMenuBackdrop 0.2s ease both',
+        }}
+      />
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1101,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px',
+        pointerEvents: 'none',
+      }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            width: '100%', maxWidth: 420,
+            padding: '22px 20px',
+            borderRadius: 24,
+            background: 'rgba(31, 26, 46, 0.94)',
+            backdropFilter: 'blur(28px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+            border: '1px solid rgba(236,72,153,0.32)',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
+            pointerEvents: 'auto',
+            animation: 'tcoptIn 0.28s cubic-bezier(0.32,1.4,0.5,1) both',
+            maxHeight: '85vh', overflowY: 'auto',
+          }}
+        >
+          <div style={{
+            fontSize: 12, fontWeight: 900, color: '#94A3B8',
+            textTransform: 'uppercase', letterSpacing: '0.12em',
+            marginBottom: 14,
+          }}>
+            {lang === 'de' ? 'Kurz-Regeln' : 'Quick rules'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {items.map((it, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <span style={{ fontSize: 22, lineHeight: 1.1, flexShrink: 0 }}>{it.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: '#F1F5F9', marginBottom: 3 }}>{it.title}</div>
+                  <div style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.45 }}>{it.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%', marginTop: 16,
+              padding: '14px', borderRadius: 14,
+              border: '1px solid rgba(236,72,153,0.4)',
+              background: 'rgba(236,72,153,0.12)',
+              color: '#F9A8D4', fontFamily: 'inherit', fontWeight: 900, fontSize: 15,
+              cursor: 'pointer',
+            }}
+          >
+            {lang === 'de' ? 'Verstanden' : 'Got it'}
+          </button>
+        </div>
       </div>
     </>
   );

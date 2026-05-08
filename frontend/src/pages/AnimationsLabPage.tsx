@@ -371,6 +371,107 @@ function FirefliesLayer() {
   );
 }
 
+// ─── H. MUCHO 3-Akt-Reveal ──────────────────────────────────────────────────
+// Akt 1: Voter-Hops (Stagger pro Option) — Avatare poppen pro Option mit
+//   80 ms inner-Stagger an die jeweilige Option-Card.
+// Akt 2: Lock-Doppelblink — korrekte Option pulst 2× hell auf.
+// Akt 3: Winner-Highlight — korrekte Option scale-pop + permanenter Goldrand.
+// Auto-Sequenz nach Replay: Mount 0 ms · Hops bis ~2400 ms · Lock 3000 ms ·
+// Winner 3800 ms.
+const MUCHO_OPTS = [
+  { id: 'A', text: 'Mozart',    voters: [{ k: 'T1', hue: 30  }, { k: 'T2', hue: 230 }, { k: 'T3', hue: 130 }] },
+  { id: 'B', text: 'Bach',      voters: [{ k: 'T4', hue: 280 }] },
+  { id: 'C', text: 'Beethoven', voters: [{ k: 'T5', hue: 0   }, { k: 'T6', hue: 200 }], correct: true },
+  { id: 'D', text: 'Vivaldi',   voters: [{ k: 'T7', hue: 90  }] },
+];
+const HOP_PER_OPTION_MS = 700; // Abstand zwischen den 4 Option-Reveals
+const VOTER_INNER_STAGGER_MS = 90;
+const LOCK_START_MS = HOP_PER_OPTION_MS * MUCHO_OPTS.length + 200; // = 3000
+const WINNER_START_MS = LOCK_START_MS + 800;                         // = 3800
+
+function MuchoRevealDemo({ replay }: { replay: number }) {
+  const correctIdx = MUCHO_OPTS.findIndex(o => o.correct);
+  return (
+    <div key={replay} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{
+        flex: 1, position: 'relative',
+        background: 'radial-gradient(ellipse at center, #0d0a06 0%, #050302 80%)',
+        borderRadius: 12, border: '1px solid rgba(245,158,11,0.18)',
+        padding: '14px 14px 18px',
+        minHeight: 380,
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        {/* Frage-Header */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '3px 10px', borderRadius: 999,
+            background: 'rgba(168,85,247,0.20)', border: '1px solid rgba(168,85,247,0.6)',
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#c4b5fd',
+            marginBottom: 6,
+          }}>🎼 MUCHO</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+            Wer komponierte die 9. Symphonie?
+          </div>
+        </div>
+        {/* 4 Options-Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, flex: 1 }}>
+          {MUCHO_OPTS.map((opt, optIdx) => {
+            const isCorrect = optIdx === correctIdx;
+            const hopStartMs = optIdx * HOP_PER_OPTION_MS;
+            // Animation-Stack pro Option-Card.
+            // Korrekte Option bekommt zusaetzlich Lock-Blink + Winner-Pop.
+            const cardAnim = isCorrect
+              ? `muchoLockBlink 0.85s cubic-bezier(0.4, 0, 0.6, 1) ${LOCK_START_MS}ms both, muchoWinnerPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) ${WINNER_START_MS}ms both`
+              : undefined;
+            return (
+              <div key={opt.id} style={{
+                position: 'relative',
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                minHeight: 84,
+                display: 'flex', flexDirection: 'column', gap: 8,
+                animation: cardAnim,
+                willChange: 'transform, box-shadow',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                    fontFamily: 'monospace', letterSpacing: '0.05em',
+                  }}>{opt.id}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>{opt.text}</span>
+                </div>
+                {/* Voter-Strip */}
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {opt.voters.map((v, vIdx) => {
+                    const delay = hopStartMs + vIdx * VOTER_INNER_STAGGER_MS;
+                    return (
+                      <div key={v.k} style={{
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: `hsl(${v.hue}, 64%, 56%)`,
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 9, fontWeight: 800, color: '#fff',
+                        opacity: 0,
+                        animation: `muchoVoterHop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${delay}ms both`,
+                      }}>{v.k}</div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+        Voter-Hops 700 ms/Option · Lock-Doppelblink @ 3.0 s · Winner-Pop @ 3.8 s (Beethoven = korrekt)
+      </div>
+    </div>
+  );
+}
+
 // ─── A. Q→Reveal→Next 3-Phasen-Flow ─────────────────────────────────────────
 // Echter Beamer-Card-Kontext mit Category-Pill, Frage, 4 Options, Timer.
 // Auto-Progression nach Replay: Q1 (2.8 s) → Reveal1 (2.6 s) → Q2 (2.6 s).
@@ -905,6 +1006,12 @@ export default function AnimationsLabPage() {
       keepAlive: false, minHeight: 540,
       render: (r) => <QRevealNextDemo replay={r} />,
     },
+    {
+      label: 'H', title: 'MUCHO 3-Akt-Reveal',
+      blurb: 'Akt 1: Voter-Avatare hoppen pro Option mit 90 ms inner-Stagger an ihre Option-Card (700 ms zwischen Optionen). Akt 2: Korrekte Option doppelblinkt (Lock-Highlight). Akt 3: Winner-Pop mit Spring-Scale auf permanentes Gruen.',
+      keepAlive: false, minHeight: 540,
+      render: (r) => <MuchoRevealDemo replay={r} />,
+    },
   ];
 
   return (
@@ -1022,6 +1129,50 @@ export default function AnimationsLabPage() {
           0%   { transform: scale(0.4); opacity: 0; }
           100% { transform: scale(1);   opacity: 1; }
         }
+        @keyframes muchoVoterHop {
+          0%   { transform: translateY(-26px) scale(0.4); opacity: 0; }
+          60%  { transform: translateY(4px)   scale(1.10); opacity: 1; }
+          100% { transform: translateY(0)     scale(1);    opacity: 1; }
+        }
+        /* Doppelblink: Border + BG flackern 2× hell */
+        @keyframes muchoLockBlink {
+          0%, 100% {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.10);
+            box-shadow: none;
+          }
+          18%, 56% {
+            background: rgba(251,191,36,0.30);
+            border-color: rgba(251,191,36,0.85);
+            box-shadow: 0 0 24px rgba(251,191,36,0.45);
+          }
+          36%, 76% {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.10);
+            box-shadow: none;
+          }
+        }
+        /* Winner-Pop: Card scale-pop, lands auf 1.04 mit permanent gruenem Border */
+        @keyframes muchoWinnerPop {
+          0%   {
+            transform: scale(1);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.10);
+            box-shadow: none;
+          }
+          50%  {
+            transform: scale(1.10);
+            background: linear-gradient(180deg, rgba(34,197,94,0.32), rgba(34,197,94,0.14));
+            border: 2px solid #22C55E;
+            box-shadow: 0 0 36px rgba(34,197,94,0.55);
+          }
+          100% {
+            transform: scale(1.04);
+            background: linear-gradient(180deg, rgba(34,197,94,0.28), rgba(34,197,94,0.10));
+            border: 2px solid #22C55E;
+            box-shadow: 0 0 24px rgba(34,197,94,0.40);
+          }
+        }
       `}</style>
 
       {/* Header */}
@@ -1033,9 +1184,9 @@ export default function AnimationsLabPage() {
           <span style={{ fontSize: 13, color: '#64748b', fontFamily: 'monospace' }}>/animations</span>
         </div>
         <p style={{ fontSize: 14, color: '#94a3b8', marginTop: 8, maxWidth: 820, lineHeight: 1.5 }}>
-          Die 6 Top-Patterns aus der Animations-Recherche + Bonus 3D Card-Flip. Jede Demo hat einen Replay-Button —
-          kannst beliebig oft re-triggern. Easing/Timing entspricht den 2026-Empfehlungen aus
-          <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 4, fontSize: 12, marginLeft: 4 }}>ANIMATION_PATTERNS.md</code>.
+          Oben: 6 Top-Patterns aus der Animations-Recherche + Bonus 3D Card-Flip — isolierte Stanzen zum Pattern-Vergleich.
+          Unten: 5 Quiz-Realistic Showreels (D · C · B · A · H) im echten Beamer-Card-Kontext —
+          hier triffst du die Auswahl was tatsaechlich ins Live-Quiz uebernommen wird.
         </p>
       </div>
 

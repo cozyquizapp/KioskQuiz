@@ -5787,7 +5787,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               marginTop: 2,
                             }}>✦ ✦ ✦</div>
                           </div>
-                          {/* Vorderseite — Avatar + Team-Name */}
+                          {/* Vorderseite — Avatar im Color-Glow-Kreis + Name
+                              als Text in Team-Color (matcht Slot M Showreel) */}
                           <div style={{
                             position: 'absolute', inset: 0,
                             backfaceVisibility: 'hidden',
@@ -5798,31 +5799,38 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             border: `2px solid ${t.color}`,
                             boxShadow: `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 28px ${t.color}66`,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            gap: 'clamp(8px, 1vw, 14px)', padding: 'clamp(14px, 1.6vw, 22px)',
+                            gap: 'clamp(10px, 1.2vw, 18px)', padding: 'clamp(16px, 1.8vw, 26px)',
                           }}>
-                            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} style={{
-                              boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}55`,
-                              animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
-                            }} />
+                            {/* Color-Tinted-Circle als Avatar-Wrapper (statt nackter QQTeamAvatar) */}
                             <div style={{
-                              padding: 'clamp(4px, 0.6vw, 8px) clamp(10px, 1.2vw, 16px)',
-                              borderRadius: 16,
-                              background: t.color,
-                              textTransform: 'uppercase', letterSpacing: '0.04em',
-                              textAlign: 'center',
-                              boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
-                              maxWidth: '95%',
+                              width: avatarSize, height: avatarSize,
+                              borderRadius: '50%',
+                              background: `${t.color}33`,
+                              border: `2.5px solid ${t.color}`,
+                              boxShadow: `0 0 32px ${t.color}99, 0 12px 40px ${t.color}66`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                              overflow: 'hidden',
+                              animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
                             }}>
-                              <TeamNameLabel
-                                name={t.name}
-                                maxLines={2}
-                                shrinkAfter={14}
-                                color="#fff"
-                                fontWeight={900}
-                                fontSize={nameFont}
-                                style={{ textAlign: 'center' }}
-                              />
+                              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size="86%" />
                             </div>
+                            {/* Name als Text in Team-Color (kein Pill) — bigger,
+                                Showreel-style */}
+                            <TeamNameLabel
+                              name={t.name}
+                              maxLines={2}
+                              shrinkAfter={14}
+                              color={t.color}
+                              fontWeight={900}
+                              fontSize={nameFont}
+                              style={{
+                                textAlign: 'center',
+                                letterSpacing: '-0.01em',
+                                textShadow: `0 0 12px ${t.color}66`,
+                                maxWidth: '95%',
+                              }}
+                            />
                           </div>
                         </div>
                       </div>

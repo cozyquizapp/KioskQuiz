@@ -317,10 +317,14 @@ export default function QQModeratorPage() {
         };
         break;
       }
-      case 'TEAMS_REVEAL':
-        delayMs = 11000; // 8 Teams × Slam-Down (~1.4s each) + Finale-Puls
+      case 'TEAMS_REVEAL': {
+        // 2026-05-09: neue Game-Show-Card-Sequenz (Slot M).
+        // TITLE_HOLD 1.2s + N × PER_TEAM 3.6s + Good-Luck-Hold ~2s + Buffer 1s.
+        // Bei 3 Teams ~14.5s, bei 8 Teams ~32.5s.
+        delayMs = 1200 + s.teams.length * 3600 + 2500;
         action = () => emit('qq:teamsRevealFinish', { roomCode });
         break;
+      }
       case 'PHASE_INTRO': {
         // PHASE_INTRO hat mehrere Substeps (introStep 0-3), qq:activateQuestion
         // advanced sie im Backend sukzessive bevor am Ende QUESTION_ACTIVE kommt:

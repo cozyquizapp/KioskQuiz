@@ -199,9 +199,9 @@ const pill: React.CSSProperties = {
 const mechBadge: React.CSSProperties = {
   padding: '6px 10px',
   borderRadius: 12,
-  background: 'rgba(244, 196, 48, 0.18)',
-  border: '1px solid rgba(244, 196, 48, 0.35)',
-  color: '#fbbf24',
+  background: 'rgba(236, 72, 153, 0.18)',
+  border: '1px solid rgba(236, 72, 153, 0.40)',
+  color: '#EC4899',
   fontSize: 12,
   fontWeight: 800,
   letterSpacing: '0.08em'

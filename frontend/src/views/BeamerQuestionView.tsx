@@ -33,7 +33,7 @@ const BeamerQuestionView: React.FC<BeamerQuestionViewProps> = ({
   t,
   solution,
   footerMeta,
-  cardColor = '#e1b75d',
+  cardColor = '#EC4899',
   leftDecorationSrc,
   rightDecorationSrc
 }) => {

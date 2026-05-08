@@ -570,16 +570,16 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
         background: 'rgba(13,10,6,0.92)',
         borderRadius: 24,
         padding: 'clamp(20px, 2.4vh, 32px) clamp(28px, 3vw, 48px)',
-        border: '1.5px solid rgba(251,191,36,0.4)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(251,191,36,0.15)',
+        border: '1.5px solid rgba(236,72,153,0.4)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(236,72,153,0.15)',
         backdropFilter: 'blur(14px)',
         maxWidth: 1100, width: '92%',
       }}>
         <div style={{
           fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-          color: '#FBBF24', letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: '#EC4899', letterSpacing: '0.1em', textTransform: 'uppercase',
           textAlign: 'center', marginBottom: 14,
-          textShadow: '0 0 18px rgba(251,191,36,0.55)',
+          textShadow: '0 0 18px rgba(236,72,153,0.55)',
         }}>
           {lang === 'en' ? '⏱ Game Replay · Recap' : '⏱ Spielverlauf · Recap'}
         </div>
@@ -647,8 +647,8 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
       style={{
         position: 'fixed', top: 14, right: 14, zIndex: 99999,
         padding: '8px 14px', borderRadius: 8,
-        border: '1px solid rgba(251,191,36,0.5)',
-        background: 'rgba(15,23,42,0.85)', color: '#FBBF24',
+        border: '1px solid rgba(236,72,153,0.5)',
+        background: 'rgba(20,16,31,0.85)', color: '#EC4899',
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontWeight: 900, fontSize: 13, cursor: 'pointer',
         boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
@@ -699,7 +699,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     : null;
   const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
   const textCol = s.theme?.textColor ?? '#e2e8f0';
-  const accent = s.theme?.accentColor ?? '#F59E0B';
+  const accent = s.theme?.accentColor ?? '#EC4899';
   // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.
   // PreGame/Paused nutzen denselben Default wie In-Game (COZY_CARD_BG),
   // damit der ganze Beamer eine konsistente Card-Optik hat.
@@ -1951,8 +1951,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           <div style={{
             fontFamily: fontFam,
             fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
-            color: '#FBBF24', letterSpacing: '0.32em', textTransform: 'uppercase',
-            textShadow: '0 0 18px rgba(251,191,36,0.6)',
+            color: '#EC4899', letterSpacing: '0.32em', textTransform: 'uppercase',
+            textShadow: '0 0 18px rgba(236,72,153,0.6)',
             animation: 'qqGetReadyEyebrow 0.6s ease 0.1s both',
           }}>
             {getReady.reason === 'start'
@@ -1970,11 +1970,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: fontFam,
                 fontSize: 'clamp(140px, 18vw, 240px)', fontWeight: 900, lineHeight: 1,
-                color: '#FFEFC9',
+                color: '#FCE7F3',
                 textShadow:
-                  '0 0 24px rgba(251,191,36,0.8), ' +
-                  '0 0 60px rgba(251,191,36,0.5), ' +
-                  '0 0 120px rgba(251,191,36,0.3), ' +
+                  '0 0 24px rgba(236,72,153,0.8), ' +
+                  '0 0 60px rgba(236,72,153,0.5), ' +
+                  '0 0 120px rgba(236,72,153,0.3), ' +
                   '0 6px 0 rgba(0,0,0,0.5), ' +
                   '0 18px 32px rgba(0,0,0,0.6)',
                 animation: `qqGetReadyCount 1s var(--qq-ease-bounce) ${0.1 + i * 0.45}s both`,
@@ -2142,9 +2142,9 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18,
         padding: '10px 28px', borderRadius: 999,
-        background: 'linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.10))',
-        border: '2px solid rgba(245,158,11,0.55)',
-        boxShadow: '0 0 36px rgba(245,158,11,0.35)',
+        background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(217,119,6,0.10))',
+        border: '2px solid rgba(236,72,153,0.55)',
+        boxShadow: '0 0 36px rgba(236,72,153,0.35)',
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
       }}>
         <span style={{ fontSize: 'clamp(28px, 3vw, 44px)' }}>
@@ -2460,7 +2460,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
                     position: 'absolute', top: -32, left: '50%',
                     transform: 'translateX(-50%)',
                     fontSize: 36, lineHeight: 1, pointerEvents: 'none',
-                    filter: 'drop-shadow(0 0 8px rgba(245,158,11,0.7))',
+                    filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.7))',
                     animation: 'hpPotatoDrop 1.3s cubic-bezier(0.4,1.4,0.6,1) both',
                     zIndex: 5,
                   }}><QQEmojiIcon emoji="🥔"/></span>
@@ -2478,7 +2478,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 // CONFETTI OVERLAY
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CONFETTI_COLORS = ['#F59E0B', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', '#F472B6', '#FCD34D', '#34D399'];
+const CONFETTI_COLORS = ['#EC4899', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', '#F472B6', '#FCD34D', '#34D399'];
 // 2026-05-07 (Wolf 'mehr Pink+Blau, Set E'): ESC-Confetti-Palette — nur Pink,
 // Blau, Lila + helle Akzente. Trifft GameOver-Recap und Winner-Layout, der
 // Climax-Moment im Eurovision-Quiz wirkt dadurch geschlossen ESC-coloriert.
@@ -2549,6 +2549,11 @@ type RulesSlide = {
 
 // Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
 // Override). Defaults bleiben hier als Fallback im Code stehen.
+// 2026-05-08 (Wolf-Wunsch 'regelslides einheitlich im brand'): vorher hatte
+// jede Slide eine random-wirkende Farbe (Blau/Violett/Pink/Rot/Grün/Lila),
+// jetzt einheitlich Brand-Pink. Ueber alle Slides + sprachen.
+const RULES_SLIDE_COLOR = '#EC4899';
+
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
   const abilityLines = totalPhases === 3
@@ -2565,7 +2570,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🏆',
       title: t('rules.slide1.title', 'Das Ziel'),
-      color: '#3B82F6',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide1.line1', 'Größtes zusammenhängendes Gebiet gewinnt'),
       ],
@@ -2573,7 +2578,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '⚡',
       title: t('rules.slide2.title', 'So läuft\'s'),
-      color: '#8B5CF6',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
         t('rules.slide2.line2', 'Richtige Antwort → Feld setzen'),
@@ -2583,7 +2588,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🗺',
       title: t('rules.slide3.title', 'Dein Weg durchs Quiz'),
-      color: '#FBBF24',
+      color: RULES_SLIDE_COLOR,
       lines: [],
       treeShowcase: true,
     },
@@ -2591,7 +2596,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       // Joker explizit eigene Folie mit Mini-Grid-Beispiel.
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker-Bonus'),
-      color: '#FBBF24',
+      color: '#EC4899',
       lines: [
         t('rules.slide4.line1', '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld'),
         t('rules.slide4.line2', 'Max. 2 Joker pro Team'),
@@ -2610,7 +2615,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🔓',
       title: t('rules.slide5.title', 'Neue Fähigkeiten'),
-      color: '#F59E0B',
+      color: '#EC4899',
       lines: abilityLines,
       abilities: [
         { emoji: '⚡', label: t('rules.slide5.abil1', 'Klauen'),  accent: '#EF4444' },
@@ -2620,7 +2625,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🎁',
       title: t('rules.slide6.title', 'Bunte Tüte'),
-      color: '#EF4444',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
         t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
@@ -2630,7 +2635,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🔄',
       title: t('rules.slide7.title', 'Comeback'),
-      color: '#10B981',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide7.line1', 'Letztes Team holt vor dem Finale auf'),
         t('rules.slide7.line2', '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz'),
@@ -2639,7 +2644,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🧩',
       title: t('rules.slide8.title', 'Großes Finale'),
-      color: '#A78BFA',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide8.line1', '16 Begriffe · 4 Gruppen finden'),
         t('rules.slide8.line2', 'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder'),
@@ -2665,7 +2670,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🏆',
       title: t('rules.slide1.title', 'The Goal'),
-      color: '#3B82F6',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide1.line1', 'Largest connected area wins'),
       ],
@@ -2673,7 +2678,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '⚡',
       title: t('rules.slide2.title', 'How It Works'),
-      color: '#8B5CF6',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
         t('rules.slide2.line2', 'Right answer → place a cell'),
@@ -2683,14 +2688,14 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🗺',
       title: t('rules.slide3.title', 'Your Quiz Roadmap'),
-      color: '#FBBF24',
+      color: RULES_SLIDE_COLOR,
       lines: [],
       treeShowcase: true,
     },
     {
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker Bonus'),
-      color: '#FBBF24',
+      color: '#EC4899',
       lines: [
         t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus tile'),
         t('rules.slide4.line2', 'Max 2 jokers per team'),
@@ -2709,7 +2714,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🔓',
       title: t('rules.slide5.title', 'New Abilities'),
-      color: '#F59E0B',
+      color: '#EC4899',
       lines: abilityLines,
       abilities: [
         { emoji: '⚡', label: t('rules.slide5.abil1', 'Steal'), accent: '#EF4444' },
@@ -2719,7 +2724,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🎁',
       title: t('rules.slide6.title', 'Lucky Bag'),
-      color: '#EF4444',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
         t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
@@ -2729,7 +2734,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🔄',
       title: t('rules.slide7.title', 'Comeback'),
-      color: '#10B981',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide7.line1', 'Last-place team catches up before the finale'),
         t('rules.slide7.line2', '"Higher or Lower?" — each hit steals from the leader'),
@@ -2738,7 +2743,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🧩',
       title: t('rules.slide8.title', 'Grand Finale'),
-      color: '#A78BFA',
+      color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide8.line1', '16 terms · find 4 hidden groups'),
         t('rules.slide8.line2', 'Each group = 1 stack-bonus (+1 pt) on your cells'),
@@ -2771,7 +2776,7 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
           const isPin = cell === '🏯';
           const filled = isTeamA || isStar || isPin;
           const bg = isStar
-            ? `linear-gradient(135deg, ${grid.colorA}cc, #F59E0Bcc)`
+            ? `linear-gradient(135deg, ${grid.colorA}cc, #EC4899cc)`
             : isPin
               ? `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`
               : isTeamA
@@ -2782,10 +2787,10 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               width: cellSz, height: cellSz,
               borderRadius: Math.max(4, cellSz * 0.18),
               background: bg,
-              border: filled ? `2px solid ${isStar ? '#F59E0B' : isPin ? '#10B981' : grid.colorA}` : '1px solid rgba(255,255,255,0.08)',
+              border: filled ? `2px solid ${isStar ? '#EC4899' : isPin ? '#10B981' : grid.colorA}` : '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: cellSz * 0.5,
-              boxShadow: filled ? `0 0 12px ${isStar ? '#F59E0B44' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
+              boxShadow: filled ? `0 0 12px ${isStar ? '#EC489944' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
               animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
             }}>
               {isStar ? <QQEmojiIcon emoji="🃏"/> : isPin ? <QQEmojiIcon emoji="🏯"/> : ''}
@@ -3318,7 +3323,7 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
       <div aria-hidden style={{
         position: 'absolute',
         inset: '8% 8% -2% 8%',
-        background: 'radial-gradient(ellipse at center 60%, rgba(251,191,36,0.35) 0%, rgba(251,191,36,0.15) 40%, transparent 70%)',
+        background: 'radial-gradient(ellipse at center 60%, rgba(236,72,153,0.35) 0%, rgba(236,72,153,0.15) 40%, transparent 70%)',
         filter: 'blur(18px)',
         pointerEvents: 'none',
         zIndex: 0,
@@ -3428,7 +3433,7 @@ function MuchoOptionsReveal({
 
   const showLock = locked;
   const akt3On = locked;
-  const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+  const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
   const muchoLabels = ['A', 'B', 'C', 'D'];
 
   // Waehrend QUESTION_ACTIVE (revealStep=0): kompaktes Layout, keine Luecken
@@ -3569,9 +3574,9 @@ function MuchoOptionsReveal({
                             // Kein Doppel-Rand mehr: das Avatar-Artwork hat eh
                             // einen farbigen Kapuzen-/Kreis-Rim. Nur der schnellste
                             // Voter bekommt den Gold-Ring als Winner-Indikator.
-                            border: isFastest ? '4px solid #FBBF24' : 'none',
+                            border: isFastest ? '4px solid #EC4899' : 'none',
                             boxShadow: isFastest
-                              ? '0 0 22px rgba(251,191,36,0.6), 0 6px 14px rgba(0,0,0,0.55)'
+                              ? '0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)'
                               : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${tm.color}55`,
                             background: '#0A0814',
                           }}
@@ -3583,8 +3588,8 @@ function MuchoOptionsReveal({
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
                             padding: '2px 9px', borderRadius: 999,
-                            background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
-                            border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
+                            background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
                             color: isFastest ? '#0A0814' : '#e2e8f0',
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2vw, 15px)',
@@ -3641,10 +3646,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
   // Der Welcome-Cascade hat sein eigenes Farb-Schema in Gold (Subtitle,
   // Goldlinien, Ambient-Glow, Sunrise, Fireflies). Mein Pink-Pass hatte das
   // uebersehen — jetzt im eurovisionMode auf ESC-Pink/Lila gemappt.
-  const accentHex     = eurovisionMode ? '#FF2D7B' : '#fbbf24';
-  const accentRgb     = eurovisionMode ? '255,45,123' : '251,191,36';
-  const accentSoftHex = eurovisionMode ? '#fde6f0' : '#fde68a';
-  const accentWarmHex = eurovisionMode ? '#C084FC' : '#fed7aa'; // accent-2 fuer Fireflies-Variation
+  // 2026-05-08 (Aurora-Vivid): Standard-Accent jetzt Brand-Pink (#EC4899)
+  // statt Amber-Gold (#EC4899). Eurovision behaelt sein Hot-Pink (#FF2D7B).
+  // accentSoft/accentWarm sind Pink-Spektrum statt Gold-Spektrum.
+  const accentHex     = eurovisionMode ? '#FF2D7B' : '#EC4899';
+  const accentRgb     = eurovisionMode ? '255,45,123' : '236,72,153';
+  const accentSoftHex = eurovisionMode ? '#fde6f0' : '#FBCFE8';
+  const accentWarmHex = eurovisionMode ? '#C084FC' : '#F9A8D4'; // accent-2 fuer Fireflies-Variation
   // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
   //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
   //             letter-spacing zoomt auf normal, gold-glow.
@@ -3769,7 +3777,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         transform: 'translate(-50%, -50%)',
         background: eurovisionMode
           ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.20) 0%, rgba(168,85,247,0.10) 38%, transparent 68%)'
-          : 'radial-gradient(ellipse at center, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+          : 'radial-gradient(ellipse at center, rgba(236,72,153,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
         filter: 'blur(34px)',
         animation: 'qqIntroAmbientPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
@@ -3785,7 +3793,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         position: 'absolute', inset: 0,
         background: eurovisionMode
           ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.42) 0%, rgba(168,85,247,0.18) 38%, rgba(59,130,246,0.06) 65%, transparent 80%)'
-          : 'radial-gradient(ellipse at center, rgba(251,191,36,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(251,191,36,0.06) 65%, transparent 80%)',
+          : 'radial-gradient(ellipse at center, rgba(236,72,153,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(236,72,153,0.06) 65%, transparent 80%)',
         opacity: 0,
         transformOrigin: 'center',
         animation: 'qqIntroSunrise 1.6s cubic-bezier(0.16, 0.84, 0.44, 1) 1.4s both',
@@ -4278,8 +4286,8 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
         <div style={{
           fontSize: 'clamp(28px, 3.2vw, 52px)', fontWeight: 700,
           letterSpacing: '0.1em',
-          color: '#fbbf24',
-          textShadow: '0 0 18px rgba(251,191,36,0.55), 0 2px 12px rgba(0,0,0,0.4)',
+          color: '#EC4899',
+          textShadow: '0 0 18px rgba(236,72,153,0.55), 0 2px 12px rgba(0,0,0,0.4)',
           animation: visible ? 'qqRulesIntroSub 0.8s cubic-bezier(0.2,0.8,0.4,1) 0.95s both' : 'none',
         }}>{sub}</div>
       </div>
@@ -4433,7 +4441,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span style={{
                   display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                  background: '#FBBF24', boxShadow: '0 0 12px rgba(251,191,36,0.65)',
+                  background: '#EC4899', boxShadow: '0 0 12px rgba(236,72,153,0.65)',
                   animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
                 }} />
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'
@@ -4772,7 +4780,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       // Setup-Look angleichen). Doppelter Radial-Gradient: oben-mitte amber-Glow,
       // unten-rechts indigo-Glow auf #0A0814-Base — exakt wie QQModeratorPage.
       background:
-        'radial-gradient(ellipse at 50% -10%, rgba(245,158,11,0.10), transparent 55%), ' +
+        'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.10), transparent 55%), ' +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
         '#0A0814',
@@ -4902,7 +4910,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // Gold sonst. Standard-CozyQuiz-Mode unveraendert.
           background: s.theme?.eurovisionMode
             ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.18) 0%, rgba(255,45,123,0.06) 45%, transparent 70%)'
-            : 'radial-gradient(ellipse at center, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.06) 45%, transparent 70%)',
+            : 'radial-gradient(ellipse at center, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.06) 45%, transparent 70%)',
           filter: 'blur(20px)',
           pointerEvents: 'none',
           zIndex: -1,
@@ -4913,7 +4921,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.02em;
-            color: #FBBF24;
+            color: #EC4899;
             display: inline-block;
             position: relative;
           }
@@ -5101,9 +5109,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '8px 18px', borderRadius: 999,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.16), rgba(245,158,11,0.10))',
-            border: '1.5px solid rgba(251,191,36,0.35)',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(251,191,36,0.12)',
+            background: 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
+            border: '1.5px solid rgba(236,72,153,0.35)',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(236,72,153,0.12)',
           }}>
             <img
               src="/logo.png"
@@ -5118,7 +5126,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </span>
             <span style={{
               fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
-              color: '#FBBF24', letterSpacing: '0.04em',
+              color: '#EC4899', letterSpacing: '0.04em',
               textShadow: '0 1px 2px rgba(0,0,0,0.6)',
             }}>
               CozyWolf
@@ -5150,9 +5158,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 2vw, 26px)',
               padding: 'clamp(28px, 4vh, 56px) clamp(20px, 3vw, 40px)',
-              border: '2px dashed rgba(251,191,36,0.4)', borderRadius: 16,
-              background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(245,158,11,0.04))',
-              boxShadow: '0 0 40px rgba(251,191,36,0.12)',
+              border: '2px dashed rgba(236,72,153,0.4)', borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.06), rgba(236,72,153,0.04))',
+              boxShadow: '0 0 40px rgba(236,72,153,0.12)',
             }}>
               <span style={{
                 fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1,
@@ -5162,8 +5170,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
                 <span style={{
                   fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 900,
-                  color: '#FBBF24', letterSpacing: '0.02em',
-                  textShadow: '0 2px 12px rgba(251,191,36,0.3)',
+                  color: '#EC4899', letterSpacing: '0.02em',
+                  textShadow: '0 2px 12px rgba(236,72,153,0.3)',
                   animation: 'lobbyPulse 2.5s ease-in-out infinite',
                 }}>
                   {de ? 'Scannt den QR-Code!' : 'Scan the QR code!'}
@@ -5289,7 +5297,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           {/* Dynamic status */}
           <div style={{
             fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900, textAlign: 'center',
-            color: teamCount < 2 ? '#F59E0B' : '#22C55E',
+            color: teamCount < 2 ? '#EC4899' : '#22C55E',
             animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
           }}>
             {teamCount === 0
@@ -5378,11 +5386,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const titleColor = isEsc ? '#FF2D7B' : '#f8fafc';
   const titleShadow = isEsc
     ? '0 3px 18px rgba(0,0,0,0.6), 0 0 28px rgba(255,45,123,0.45)'
-    : '0 4px 20px rgba(251,191,36,0.25)';
-  const goodLuckColor = isEsc ? '#FF2D7B' : '#fbbf24';
+    : '0 4px 20px rgba(236,72,153,0.25)';
+  const goodLuckColor = isEsc ? '#FF2D7B' : '#EC4899';
   const goodLuckShadow = isEsc
     ? '0 3px 18px rgba(0,0,0,0.6), 0 0 24px rgba(255,45,123,0.55)'
-    : '0 4px 24px rgba(251,191,36,0.5)';
+    : '0 4px 24px rgba(236,72,153,0.5)';
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative',
@@ -5441,7 +5449,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         position: 'absolute', inset: 0,
         background: isEsc
           ? 'radial-gradient(circle at 50% 40%, rgba(255,45,123,0.16) 0%, transparent 55%)'
-          : 'radial-gradient(circle at 50% 40%, rgba(251,191,36,0.12) 0%, transparent 55%)',
+          : 'radial-gradient(circle at 50% 40%, rgba(236,72,153,0.12) 0%, transparent 55%)',
         pointerEvents: 'none',
         zIndex: 1,
       }} />
@@ -6124,13 +6132,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {/* FINALE rollt von oben – mit Gold-Gradient */}
                 <span style={{
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
-                  backgroundImage: 'linear-gradient(180deg, #FDE68A 0%, #F59E0B 45%, #D97706 100%)',
+                  backgroundImage: 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   color: 'transparent',
                   letterSpacing: '0.04em',
-                  textShadow: `0 0 80px #F59E0B55`,
+                  textShadow: `0 0 80px #EC489955`,
                   filter: 'drop-shadow(0 12px 0 rgba(180,83,9,0.35))',
                   animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
                 }}>{finaleWord}</span>
@@ -6391,12 +6399,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ...(placeCard ? [placeCard] : []),
                     { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
                       limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
-                      accent: '#F59E0B' },
+                      accent: '#EC4899' },
                   ]
                 : (ph === 3 || ph === 4)
                 ? [
                     ...(placeCard ? [placeCard] : []),
-                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#F59E0B' },
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EC4899' },
                     { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
                       limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
                       accent: '#06B6D4' },
@@ -6853,21 +6861,21 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Target banner */}
             <div style={{
               padding: '14px 20px', borderRadius: 16,
-              background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(245,158,11,0.10))',
-              border: '2px solid rgba(251,191,36,0.55)',
-              boxShadow: '0 0 0 3px rgba(251,191,36,0.12), 0 8px 24px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(236,72,153,0.10))',
+              border: '2px solid rgba(236,72,153,0.55)',
+              boxShadow: '0 0 0 3px rgba(236,72,153,0.12), 0 8px 24px rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
               animation: 'revealAnswerBam 0.55s var(--qq-ease-out-cubic) both',
             }}>
               <span style={{ fontSize: 'clamp(22px, 2.6vw, 34px)' }}><QQEmojiIcon emoji="🎯"/></span>
               <span style={{
                 fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
-                color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: '#FBCFE8', letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>{lang === 'en' ? 'Target' : 'Lösung'}</span>
               <span style={{
                 fontSize: 'clamp(30px, 4vw, 56px)', fontWeight: 900,
-                color: '#FBBF24',
-                textShadow: '0 2px 12px rgba(251,191,36,0.45)',
+                color: '#EC4899',
+                textShadow: '0 2px 12px rgba(236,72,153,0.45)',
               }}>
                 {targetStr}{unitStr ? ` ${unitStr}` : ''}
               </span>
@@ -6907,7 +6915,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       <span style={{
                         width: 'clamp(26px, 2.8vw, 34px)', height: 'clamp(26px, 2.8vw, 34px)',
                         borderRadius: 8,
-                        background: isWinner ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : 'rgba(100,116,139,0.25)',
+                        background: isWinner ? 'linear-gradient(135deg,#EC4899,#EC4899)' : 'rgba(100,116,139,0.25)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: '#fff',
                         flexShrink: 0,
@@ -6956,7 +6964,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const speedRank: Record<string, number> = {};
         correctVoters.forEach((a, i) => { speedRank[a.teamId] = i + 1; });
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (correctVoters[0]?.submittedAt ?? 0);
-        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
 
         return (
           <div style={{ animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -7022,14 +7030,14 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {showSpeedRank && (
               <div style={{
                 marginTop: 6, padding: '10px 14px', borderRadius: 16,
-                background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(234,179,8,0.06))',
-                border: '1.5px solid rgba(251,191,36,0.35)',
+                background: 'linear-gradient(135deg, rgba(236,72,153,0.12), rgba(234,179,8,0.06))',
+                border: '1.5px solid rgba(236,72,153,0.35)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
                 animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + q.options!.length * 0.07 + 0.1}s both`,
               }}>
                 <span style={{
                   fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
-                  color: '#FBBF24', letterSpacing: '0.04em', textTransform: 'uppercase',
+                  color: '#EC4899', letterSpacing: '0.04em', textTransform: 'uppercase',
                 }}><QQEmojiIcon emoji="⚡"/> Schnellster zuerst</span>
                 {correctVoters.map((a, i) => {
                   const tm = s.teams.find(t => t.id === a.teamId);
@@ -7040,12 +7048,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '4px 10px', borderRadius: 999,
-                      background: rank === 1 ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.28)',
-                      border: rank === 1 ? '1.5px solid rgba(251,191,36,0.6)' : `1.5px solid ${tm.color}`,
+                      background: rank === 1 ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.28)',
+                      border: rank === 1 ? '1.5px solid rgba(236,72,153,0.6)' : `1.5px solid ${tm.color}`,
                     }}>
                       <span style={{
                         fontSize: 'clamp(12px, 1.2vw, 15px)', fontWeight: 900,
-                        color: rank === 1 ? '#FBBF24' : '#cbd5e1',
+                        color: rank === 1 ? '#EC4899' : '#cbd5e1',
                       }}>#{rank}</span>
                       <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(16px, 1.9vw, 22px)'} />
                       <span style={{ fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 900, color: tm.color }}>{tm.name}</span>
@@ -7368,10 +7376,10 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     {hasTie && timeSec && avatarsOn && (
                       <span style={{
                         padding: '4px 10px', borderRadius: 999,
-                        background: i === 0 && isWinner ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.28)',
-                        border: i === 0 && isWinner ? '1.5px solid rgba(251,191,36,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                        background: i === 0 && isWinner ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.28)',
+                        border: i === 0 && isWinner ? '1.5px solid rgba(236,72,153,0.6)' : '1px solid rgba(255,255,255,0.1)',
                         fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-                        color: i === 0 && isWinner ? '#FBBF24' : '#94a3b8',
+                        color: i === 0 && isWinner ? '#EC4899' : '#94a3b8',
                         whiteSpace: 'nowrap',
                         animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${avatarDelay + 0.2}s both`,
                       }}>
@@ -7438,7 +7446,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <span style={{
                     width: 'clamp(32px, 3.5vw, 44px)', height: 'clamp(32px, 3.5vw, 44px)',
                     borderRadius: 8,
-                    background: hitters.length > 0 ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' : 'rgba(100,116,139,0.3)',
+                    background: hitters.length > 0 ? 'linear-gradient(135deg,#EC4899,#EC4899)' : 'rgba(100,116,139,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 900, color: '#fff',
                     flexShrink: 0,
@@ -7558,7 +7566,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       width: 'clamp(32px, 3.5vw, 44px)', height: 'clamp(32px, 3.5vw, 44px)',
                       borderRadius: 8,
-                      background: 'linear-gradient(135deg,#F59E0B,#EA580C)',
+                      background: 'linear-gradient(135deg,#EC4899,#EA580C)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(15px, 1.6vw, 20px)', fontWeight: 900, color: '#fff',
                       flexShrink: 0,
@@ -7851,7 +7859,7 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         const breakdown: Array<{ icon: string; n: number; label: { de: string; en: string }; bg: string }> = [];
         if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
         if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
-        if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(251,191,36,0.22)' });
+        if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(236,72,153,0.22)' });
         // 2026-05-05 (Wolf 'Sieger-Card groesser, lesbarer'): alle Sizes
         // hochgezogen — Avatar 38-60 → 60-92, Name 16-26 → 24-38,
         // Pts-Pille 14-18 → 20-28, Mini-Pillen 12-15 → 16-20. Padding
@@ -8606,7 +8614,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           const isCurrent = !revealed && i === hintIdx;
           const isPast = !revealed && i < hintIdx;
           const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
-          const hintColor = i === 0 ? '#FBBF24' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+          const hintColor = i === 0 ? '#EC4899' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
           // Reveal-only: Teams die GENAU auf diesem Hint richtig waren
           // (atHintIdx === i), nach submittedAt sortiert. Erstes Team = 'fastest'
           // (bekommt Gold-Ring auch wenn nur 1 Team auf diesem Hint richtig war).
@@ -8717,7 +8725,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           size={'clamp(36px, 4vw, 52px)'}
                           style={{
                             boxShadow: isWinnerHint
-                              ? `0 0 0 3px #FBBF24, 0 0 18px rgba(251,191,36,0.65), 0 0 6px ${tm.color}88`
+                              ? `0 0 0 3px #EC4899, 0 0 18px rgba(236,72,153,0.65), 0 0 6px ${tm.color}88`
                               : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
                           }}
                         />
@@ -8782,7 +8790,7 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         const winnerTeams = revealed ? s.teams.filter(t => winnerSet.has(t.id)) : [];
         const winnerHint = revealed && correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
         const primaryWinner = winnerTeams[0] ?? null;
-        const winnerColor = primaryWinner?.color ?? '#FBBF24';
+        const winnerColor = primaryWinner?.color ?? '#EC4899';
         return (
           <div style={{
             display: 'grid',
@@ -8899,17 +8907,17 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5vw, 72px)'} style={{
                 background: '#0A0814',
                 boxShadow: isWinner
-                  ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
+                  ? '0 0 0 3px #EC4899, 0 0 18px #EC489977, 0 4px 10px rgba(0,0,0,0.55)'
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
               }} />
               {isWinner && (
                 <div style={{
                   position: 'absolute', bottom: -4, right: -4,
                   width: 26, height: 26, borderRadius: '50%',
-                  background: '#FBBF24', border: '2px solid #0A0814',
+                  background: '#EC4899', border: '2px solid #0A0814',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, lineHeight: 1,
-                  boxShadow: '0 0 12px rgba(251,191,36,0.55)',
+                  boxShadow: '0 0 12px rgba(236,72,153,0.55)',
                   animation: 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
                 }}>🏆</div>
               )}
@@ -9050,7 +9058,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
         flexShrink: 0,
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#F59E0B',
+          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EC4899',
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
         }}>
           🎁 {lang === 'en' ? 'Top 5 — Reveal' : 'Top 5 — Auflösung'}
@@ -9080,17 +9088,17 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
             ? 'transparent'
             : singleColor
               ? `linear-gradient(135deg, ${singleColor}1f, ${singleColor}07)`
-              : 'linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.04))';
+              : 'linear-gradient(135deg, rgba(236,72,153,0.14), rgba(236,72,153,0.04))';
           const cardBorder = winners.length === 0
             ? 'none'
             : singleColor
               ? `3px solid ${singleColor}88`
-              : '3px solid rgba(251,191,36,0.55)';
+              : '3px solid rgba(236,72,153,0.55)';
           const cardShadow = winners.length === 0
             ? 'none'
             : singleColor
               ? `0 0 48px ${singleColor}33, 0 8px 24px rgba(0,0,0,0.4)`
-              : '0 0 48px rgba(251,191,36,0.22), 0 8px 24px rgba(0,0,0,0.4)';
+              : '0 0 48px rgba(236,72,153,0.22), 0 8px 24px rgba(0,0,0,0.4)';
           return (
         <div style={{
           height: '100%',
@@ -9205,7 +9213,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
           // hoechster Index (rank 5) zuerst, niedrigster Index (rank 1) zuletzt.
           const rowDelay = (perAnswer.length - 1 - idx) * 0.18;
           const rankGradient = rank === 1
-            ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
+            ? 'linear-gradient(135deg,#EC4899,#EC4899)'
             : rank === 2
               ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
               : rank === 3
@@ -9245,7 +9253,7 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
                 flexShrink: 0,
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                 animation: isVisible ? `top5RankPop 0.55s var(--qq-ease-bounce) ${0.1 + rowDelay}s both` : 'none',
-                boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
+                boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : 'none',
               }}>
                 #{rank}
               </div>
@@ -9418,7 +9426,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         flexShrink: 0,
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#F59E0B',
+          fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EC4899',
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
         }}>
           🎁 {lang === 'en' ? 'Lucky Bag — Order' : 'Bunte Tüte — Reihenfolge'}
@@ -9433,7 +9441,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
         {criteriaTxt && (
           <div style={{
             marginTop: 8, fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700,
-            color: '#FDE68A', fontStyle: 'italic',
+            color: '#FBCFE8', fontStyle: 'italic',
           }}>
             ↕ {criteriaTxt}
           </div>
@@ -9460,7 +9468,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             // damit synchron-flippende Reihen kaskadieren statt synchron poppen.
             const rowDelay = (perPosition.length - 1 - idx) * 0.18;
             const rankGradient = rank === 1
-              ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
+              ? 'linear-gradient(135deg,#EC4899,#EC4899)'
               : rank === 2
                 ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
                 : rank === 3
@@ -9500,7 +9508,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                   animation: isVisible ? `top5RankPop 0.55s var(--qq-ease-bounce) ${0.1 + rowDelay}s both` : 'none',
-                  boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
+                  boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : 'none',
                 }}>
                   #{rank}
                 </div>
@@ -9580,10 +9588,10 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
           padding: 'clamp(10px, 1.4vh, 16px) clamp(14px, 1.8vw, 24px)',
           borderRadius: 16,
           background: winners.length > 0
-            ? 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(245,158,11,0.04))'
+            ? 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.04))'
             : 'rgba(148,163,184,0.06)',
           border: winners.length > 0
-            ? '2px solid rgba(251,191,36,0.35)'
+            ? '2px solid rgba(236,72,153,0.35)'
             : '2px solid rgba(148,163,184,0.15)',
           display: 'flex', alignItems: 'center',
           gap: 'clamp(12px, 1.6vw, 22px)',
@@ -9599,7 +9607,7 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
             borderRight: '2px solid rgba(255,255,255,0.08)',
           }}>
             <div style={{
-              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#FBBF24',
+              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900, color: '#EC4899',
               letterSpacing: '0.1em', textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}>
@@ -9968,7 +9976,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             // markiert, damit klar ist 'der hat auch was bekommen'.
             const isInRangeWinner = !isTop && (s.currentQuestionWinners ?? []).includes(r.teamId);
             const rankGradient = rank === 1
-              ? 'linear-gradient(135deg,#FBBF24,#F59E0B)'
+              ? 'linear-gradient(135deg,#EC4899,#EC4899)'
               : rank === 2
                 ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
                 : rank === 3
@@ -10014,7 +10022,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                   animation: isVisible ? 'top5RankPop 0.55s var(--qq-ease-bounce) 0.1s both' : 'none',
-                  boxShadow: rank === 1 ? '0 0 20px rgba(251,191,36,0.5)' : 'none',
+                  boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : 'none',
                 }}>
                   #{rank}
                 </div>
@@ -10049,10 +10057,10 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   </div>
                   <div style={{
                     fontSize: 'clamp(24px, 2.6vw, 40px)', fontWeight: 900,
-                    color: isTop ? '#FDE68A' : '#f1f5f9', marginTop: 4,
+                    color: isTop ? '#FBCFE8' : '#f1f5f9', marginTop: 4,
                     lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
-                    textShadow: isTop ? '0 0 16px rgba(251,191,36,0.35)' : 'none',
+                    textShadow: isTop ? '0 0 16px rgba(236,72,153,0.35)' : 'none',
                   }}>
                     {fmt(r.num)}
                   </div>
@@ -10062,7 +10070,7 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
                   border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                   fontSize: 'clamp(18px, 1.9vw, 28px)', fontWeight: 900,
-                  color: isTop ? '#FDE68A' : '#e2e8f0',
+                  color: isTop ? '#FBCFE8' : '#e2e8f0',
                   fontVariantNumeric: 'tabular-nums',
                   flexShrink: 0,
                   animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
@@ -10191,19 +10199,19 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       position: relative; width: 88px; height: 110px;
       animation: mapTargetDrop 0.75s var(--qq-ease-bounce) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
       transform-origin: 50% 100%;
-      filter: drop-shadow(0 0 18px rgba(251,191,36,0.95)) drop-shadow(0 8px 16px rgba(0,0,0,0.6));
+      filter: drop-shadow(0 0 18px rgba(236,72,153,0.95)) drop-shadow(0 8px 16px rgba(0,0,0,0.6));
     ">
       <span style="
         position: absolute; left: 50%; top: 0;
         transform: translateX(-50%);
         font-size: 96px; line-height: 1;
-        color: #FBBF24;
+        color: #EC4899;
       ">📍</span>
       <div style="
         position: absolute; left: 50%; bottom: -4px;
         width: 10px; height: 10px; border-radius: 50%;
-        background: rgba(251,191,36,0.9);
-        box-shadow: 0 0 14px rgba(251,191,36,1), 0 0 28px rgba(251,191,36,0.6);
+        background: rgba(236,72,153,0.9);
+        box-shadow: 0 0 14px rgba(236,72,153,1), 0 0 28px rgba(236,72,153,0.6);
         transform: translateX(-50%);
         animation: qqTargetPulse 1.6s ease-in-out infinite;
       "></div>
@@ -10357,11 +10365,11 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
             display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
             padding: '8px 16px', borderRadius: 999,
             background: 'rgba(13,10,6,0.85)',
-            border: '1.5px solid rgba(251,191,36,0.35)',
+            border: '1.5px solid rgba(236,72,153,0.35)',
             zIndex: 1000, maxWidth: 'calc(100% - 80px)', justifyContent: 'center',
           }}>
             <span style={{
-              fontSize: 13, fontWeight: 900, color: '#FDE68A',
+              fontSize: 13, fontWeight: 900, color: '#FBCFE8',
               letterSpacing: 0.3, textTransform: 'uppercase',
             }}>
               {lang === 'en' ? '✈ Far away' : '✈ Weit weg'}
@@ -10393,9 +10401,9 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         <div style={{
           position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
           padding: '12px 28px', borderRadius: 999,
-          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(251,191,36,0.4)',
-          color: '#FDE68A', fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 32px)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(251,191,36,0.25)',
+          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(236,72,153,0.4)',
+          color: '#FBCFE8', fontWeight: 900, fontSize: 'clamp(20px, 2.4vw, 32px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(236,72,153,0.25)',
           zIndex: 1000, letterSpacing: 0.3,
         }}>
           <QQEmojiIcon emoji="🌍"/> {title}
@@ -10428,7 +10436,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         <div style={{
           flex: '0 0 38%', padding: '34px 22px 22px',
           background: 'linear-gradient(180deg, rgba(15,23,42,0.96), rgba(13,10,6,0.96))',
-          borderLeft: '2px solid rgba(251,191,36,0.2)',
+          borderLeft: '2px solid rgba(236,72,153,0.2)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -10436,7 +10444,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         }}>
           <div style={{
             fontWeight: 900, fontSize: 'clamp(22px, 2.4vw, 32px)',
-            color: '#FDE68A', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
+            color: '#FBCFE8', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
           }}>
             <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
@@ -10474,7 +10482,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? '#FDE68A' : '#cbd5e1' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? '#FBCFE8' : '#cbd5e1' }}>{medal}</span>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 3.8vw, 54px)'} />
                   <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 30px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
@@ -10482,7 +10490,7 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
                       fontWeight: 900, fontSize: 'clamp(14px, 1.3vw, 18px)',
                       padding: '3px 10px', borderRadius: 999,
                       background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
-                      color: deltaMs === 0 ? '#FDE68A' : '#94a3b8',
+                      color: deltaMs === 0 ? '#FBCFE8' : '#94a3b8',
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
@@ -11323,18 +11331,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // 2026-04-29: Avatare bei Reveal etwas kleiner — Card flacher.
                             size={isFastest ? 'clamp(60px, 6.8vw, 92px)' : 'clamp(46px, 5.2vw, 70px)'}
                             style={{
-                              border: isFastest ? '4px solid #FBBF24' : 'none',
+                              border: isFastest ? '4px solid #EC4899' : 'none',
                               boxShadow: isFastest
-                                ? '0 0 28px rgba(251,191,36,0.65), 0 4px 14px rgba(0,0,0,0.45)'
+                                ? '0 0 28px rgba(236,72,153,0.65), 0 4px 14px rgba(0,0,0,0.45)'
                                 : '0 4px 12px rgba(0,0,0,0.4)',
                             }}
                           />
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 999,
-                          background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
-                          border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                          color: isFastest ? '#FBBF24' : '#cbd5e1',
+                          background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
+                          border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                          color: isFastest ? '#EC4899' : '#cbd5e1',
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6vw, 20px)',
                           whiteSpace: 'nowrap',
@@ -11738,7 +11746,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {criteria && (
                   <div style={{
                     fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
-                    color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: '#EC4899', letterSpacing: '0.1em', textTransform: 'uppercase',
                     textAlign: 'center',
                   }}>
                     {lang === 'en' ? `Sort ${criteria}` : `Sortiert ${criteria}`}
@@ -11753,7 +11761,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     <div key={i} style={{
                       borderRadius: 16, padding: '22px 24px',
                       background: cardBg,
-                      border: '2px solid rgba(245,158,11,0.4)',
+                      border: '2px solid rgba(236,72,153,0.4)',
                       boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(20px, 2.4vw, 34px)', fontWeight: 900, color: '#F1F5F9',
@@ -11942,9 +11950,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               padding: `2px ${padR}px 2px 2px`,
                               borderRadius: 999,
                               background: 'rgba(0,0,0,0.7)',
-                              border: isFastest ? '3px solid #FBBF24' : `2px solid ${tm.color}`,
+                              border: isFastest ? '3px solid #EC4899' : `2px solid ${tm.color}`,
                               boxShadow: isFastest
-                                ? '0 0 22px rgba(251,191,36,0.55), 0 6px 14px rgba(0,0,0,0.55)'
+                                ? '0 0 22px rgba(236,72,153,0.55), 0 6px 14px rgba(0,0,0,0.55)'
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`,
                               animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
                             }}>
@@ -11955,7 +11963,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // Bet-Zahl in Team-Farbe (sofort erkennbar wer wo gesetzt
                                 // hat) + Gold-Text-Shadow als gemeinsamer Akzent.
                                 color: tm.color, fontVariantNumeric: 'tabular-nums',
-                                textShadow: '0 0 12px rgba(251,191,36,0.45), 0 1px 2px rgba(0,0,0,0.6)',
+                                textShadow: '0 0 12px rgba(236,72,153,0.45), 0 1px 2px rgba(0,0,0,0.6)',
                               }}>{pts}</span>
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
@@ -11964,8 +11972,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   left: '50%', bottom: -8,
                                   transform: 'translate(-50%, 50%)',
                                   padding: '2px 9px', borderRadius: 999,
-                                  background: isFastest ? 'rgba(251,191,36,0.95)' : 'rgba(15,23,42,0.95)',
-                                  border: isFastest ? '1.5px solid rgba(251,191,36,1)' : `1.5px solid ${tm.color}`,
+                                  background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
+                                  border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
                                   color: isFastest ? '#0A0814' : '#e2e8f0',
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2vw, 15px)',
@@ -12038,7 +12046,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           fontSize: 'clamp(14px, 1.6vw, 22px)',
                           fontWeight: 900,
                           color: tm.color, fontVariantNumeric: 'tabular-nums',
-                          textShadow: '0 0 10px rgba(251,191,36,0.4), 0 1px 2px rgba(0,0,0,0.6)',
+                          textShadow: '0 0 10px rgba(236,72,153,0.4), 0 1px 2px rgba(0,0,0,0.6)',
                         }}>{pts}</span>
                       </div>
                     ))}
@@ -12143,9 +12151,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 avatarId={ct.team.avatarId}
                                 size={isFastest ? 'clamp(78px, 8.6vw, 116px)' : 'clamp(58px, 6.4vw, 88px)'}
                                 style={{
-                                  border: isFastest ? '4px solid #FBBF24' : 'none',
+                                  border: isFastest ? '4px solid #EC4899' : 'none',
                                   boxShadow: isFastest
-                                    ? `0 0 28px rgba(251,191,36,0.65), 0 4px 14px rgba(0,0,0,0.45)`
+                                    ? `0 0 28px rgba(236,72,153,0.65), 0 4px 14px rgba(0,0,0,0.45)`
                                     : '0 4px 12px rgba(0,0,0,0.4)',
                                 }}
                               />
@@ -12153,9 +12161,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             {timeSec != null && (
                               <span style={{
                                 padding: '3px 10px', borderRadius: 999,
-                                background: isFastest ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.55)',
-                                border: isFastest ? '1.5px solid rgba(251,191,36,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                                color: isFastest ? '#FBBF24' : '#cbd5e1',
+                                background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
+                                border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                color: isFastest ? '#EC4899' : '#cbd5e1',
                                 fontWeight: 900,
                                 fontSize: 'clamp(15px, 1.6vw, 20px)',
                                 whiteSpace: 'nowrap',
@@ -12563,9 +12571,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <QQTeamAvatar avatarId={p.team!.avatarId} teamEmoji={p.team!.emoji} size={isWinner ? 'clamp(72px, 7vw, 96px)' : 'clamp(60px, 6vw, 82px)'} style={{
                           position: 'absolute', left: '50%', top: 0,
                           transform: 'translate(-50%, -50%)',
-                          border: isWinner ? '3px solid #FBBF24' : 'none',
+                          border: isWinner ? '3px solid #EC4899' : 'none',
                           boxShadow: isWinner
-                            ? `0 0 24px ${tColor}aa, 0 0 44px rgba(251,191,36,0.5)`
+                            ? `0 0 24px ${tColor}aa, 0 0 44px rgba(236,72,153,0.5)`
                             : `0 4px 12px rgba(0,0,0,0.5)`,
                         }} />
                         {/* Value-Chip mit DYNAMISCHER Kollisionsvermeidung.
@@ -12862,9 +12870,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
                   padding: '22px 38px', borderRadius: 24,
                   width: '100%', maxWidth: 1400, flexWrap: 'wrap',
-                  background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
-                  border: '2px solid rgba(251,191,36,0.55)',
-                  boxShadow: '0 0 60px rgba(251,191,36,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  background: 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05))',
+                  border: '2px solid rgba(236,72,153,0.55)',
+                  boxShadow: '0 0 60px rgba(236,72,153,0.25), 0 8px 24px rgba(0,0,0,0.4)',
                   animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -12882,7 +12890,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ))}
                   </div>
                   <div style={{
-                    color: '#fbbf24', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 900, lineHeight: 1.2,
+                    color: '#EC4899', fontSize: 'clamp(18px, 2.4vw, 30px)', fontWeight: 900, lineHeight: 1.2,
                   }}>
                     {coMsg}
                   </div>
@@ -13392,7 +13400,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   // H/L: alle tied-letzten Teams. Ohne H/L: Fallback auf altes 1-Team-Verhalten.
   const hlTeams = hl ? hl.teamIds.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams : [];
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
-  const teamColor = team?.color ?? '#F59E0B';
+  const teamColor = team?.color ?? '#EC4899';
   const step = s.comebackIntroStep ?? 0;
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
@@ -13462,7 +13470,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
       }}>
-        <Fireflies color="#FBBF2455" />
+        <Fireflies color="#EC489955" />
         {/* Header: Mehr-oder-Weniger-Pille (Question-Mode).
             2026-05-06 (Konsistenz-Audit S2#4): Auflösung-Variante entfernt —
             keine andere Standard-Kategorie zeigt eine Reveal-Pille. Avatar-
@@ -13477,9 +13485,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             <div style={{
               padding: 'clamp(8px, 1vh, 12px) clamp(20px, 2.2vw, 32px)', borderRadius: 999,
-              background: 'rgba(251,191,36,0.16)',
-              border: '2px solid rgba(251,191,36,0.5)',
-              color: '#FDE68A',
+              background: 'rgba(236,72,153,0.16)',
+              border: '2px solid rgba(236,72,153,0.5)',
+              color: '#FBCFE8',
               fontWeight: 900,
               fontSize: 'clamp(14px, 1.4vw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
@@ -13498,8 +13506,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           padding: 'clamp(18px, 2.6vh, 36px) clamp(28px, 3.5vw, 56px)',
           borderRadius: 24,
           background: 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
-          border: '2px solid rgba(251,191,36,0.32)',
-          boxShadow: '0 4px 0 rgba(251,191,36,0.18), 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+          border: '2px solid rgba(236,72,153,0.32)',
+          boxShadow: '0 4px 0 rgba(236,72,153,0.18), 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
           minHeight: 'clamp(96px, 12vh, 168px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.08s both',
@@ -13605,11 +13613,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
                     borderRadius: 999,
                     background: isCorrect
-                      ? 'rgba(251,191,36,0.22)'
+                      ? 'rgba(236,72,153,0.22)'
                       : `${accentCol}14`,
-                    border: `2.5px solid ${isCorrect ? '#FBBF24' : `${accentCol}66`}`,
+                    border: `2.5px solid ${isCorrect ? '#EC4899' : `${accentCol}66`}`,
                     boxShadow: isCorrect
-                      ? '0 0 44px rgba(251,191,36,0.55), 0 0 14px rgba(251,191,36,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
+                      ? '0 0 44px rgba(236,72,153,0.55), 0 0 14px rgba(236,72,153,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
                       : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
@@ -13627,12 +13635,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   }}>
                     <span style={{
                       fontSize: 'clamp(24px, 2.8vw, 38px)', lineHeight: 1, fontWeight: 900,
-                      color: isCorrect ? '#FBBF24' : accentCol,
+                      color: isCorrect ? '#EC4899' : accentCol,
                       transition: 'color 0.4s ease',
                     }}>{isHigher ? '↑' : '↓'}</span>
                     <span style={{
                       fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
-                      color: isCorrect ? '#FDE68A' : accentCol,
+                      color: isCorrect ? '#FBCFE8' : accentCol,
                       letterSpacing: '0.12em', textTransform: 'uppercase',
                       transition: 'color 0.4s ease',
                     }}>
@@ -13656,15 +13664,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(60px, 7vh, 100px) clamp(22px, 3vw, 40px)', borderRadius: 24,
             minHeight: 'clamp(280px, 34vh, 400px)',
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.05))',
-            border: '3px solid rgba(251,191,36,0.7)',
-            boxShadow: '0 0 44px rgba(251,191,36,0.28), 0 8px 28px rgba(0,0,0,0.4)',
+            background: 'linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.05))',
+            border: '3px solid rgba(236,72,153,0.7)',
+            boxShadow: '0 0 44px rgba(236,72,153,0.28), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
-              color: '#FDE68A', letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: '#FBCFE8', letterSpacing: '0.1em', textTransform: 'uppercase',
               opacity: 0.9,
             }}>{pair.subjectLabel}</div>
             <div style={{
@@ -13690,23 +13698,23 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     wechselt, kein Wackeln'. */}
                 <span style={{
                   position: 'absolute',
-                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#EC4899',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                   // 2026-05-04 (Wolf): timerVignettePulse war ein
                   // inset-box-shadow-Effekt fuer Screen-Raender (rot),
                   // angewandt auf einen 92px-Span ergab das ein hartes
                   // rotes Rechteck hinter dem ???. Stattdessen sanftes
                   // text-shadow-Pulsen direkt am Glyph.
-                  textShadow: '0 0 28px rgba(251,191,36,0.45), 0 0 60px rgba(251,191,36,0.25)',
+                  textShadow: '0 0 28px rgba(236,72,153,0.45), 0 0 60px rgba(236,72,153,0.25)',
                   opacity: isReveal ? 0 : 1,
                   transition: 'opacity 0.5s ease',
                   animation: isReveal ? undefined : 'hlQuestionMarkPulse 1.6s ease-in-out infinite',
                 }}>???</span>
                 <span style={{
                   position: 'absolute',
-                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#FBBF24',
+                  fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#EC4899',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  textShadow: '0 0 32px rgba(251,191,36,0.55)',
+                  textShadow: '0 0 32px rgba(236,72,153,0.55)',
                   opacity: isReveal ? 1 : 0,
                   transition: 'opacity 0.5s ease 0.15s',
                   whiteSpace: 'nowrap',
@@ -13806,7 +13814,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             position: 'absolute', bottom: 32, right: 48, zIndex: 8,
           }}>
-            <BeamerTimer endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent="#FBBF24" />
+            <BeamerTimer endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent="#EC4899" />
           </div>
         )}
       </div>
@@ -13835,7 +13843,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {bamActive && (
         <div aria-hidden style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at center, rgba(255,247,220,0.95) 0%, rgba(251,191,36,0.55) 45%, transparent 80%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,247,220,0.95) 0%, rgba(236,72,153,0.55) 45%, transparent 80%)',
           animation: 'comebackFlash 0.6s ease-out both',
           pointerEvents: 'none', zIndex: 20,
         }} />
@@ -13854,7 +13862,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           position: 'absolute', left: b.left, top: 0,
           fontSize: b.size, lineHeight: 1,
           color: '#FDE047',
-          filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(251,191,36,0.6))`,
+          filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(236,72,153,0.6))`,
           ['--bolt-rot' as string]: `${b.rot}deg`,
           animation: `comebackBoltFall 1.1s var(--qq-ease-smooth-out) ${b.delay}s both`,
           pointerEvents: 'none', zIndex: 6,
@@ -13871,7 +13879,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         // aus 8m Beamer-Distanz gut lesbar, statt mickrig in der Mitte.
         fontSize: bamActive ? 'clamp(68px, 9vw, 128px)' : 'clamp(56px, 6.5vw, 104px)',
         fontWeight: 900,
-        color: '#F59E0B', textAlign: 'center',
+        color: '#EC4899', textAlign: 'center',
         textShadow: '0 0 50px rgba(234,179,8,0.55)',
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
@@ -13906,7 +13914,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
             padding: '6px 18px', borderRadius: 999,
-            background: 'rgba(251,191,36,0.18)', border: '2px solid rgba(251,191,36,0.5)',
+            background: 'rgba(236,72,153,0.18)', border: '2px solid rgba(236,72,153,0.5)',
             fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
             color: '#fde68a', letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
@@ -13919,13 +13927,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             // Normaler Mode behaelt den warmen Gold-Glass-Look.
             background: s.theme?.eurovisionMode
               ? 'linear-gradient(135deg, rgba(45,22,68,0.72), rgba(31,15,61,0.62))'
-              : 'linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03))',
+              : 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.03))',
             border: s.theme?.eurovisionMode
               ? '2px solid rgba(255,45,123,0.55)'
-              : '2px solid rgba(251,191,36,0.4)',
+              : '2px solid rgba(236,72,153,0.4)',
             boxShadow: s.theme?.eurovisionMode
               ? '0 0 32px rgba(255,45,123,0.22), 0 6px 18px rgba(0,0,0,0.4)'
-              : '0 0 32px rgba(251,191,36,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+              : '0 0 32px rgba(236,72,153,0.18), 0 6px 18px rgba(0,0,0,0.4)',
             textAlign: 'center',
             // 2026-05-07 (Layout-Audit): 900 → 1100, sonst sitzt die Mechanik-Card
             // schmaler als der COMEBACK-Title darüber → wirkt zentriert-zu-eng.
@@ -13971,9 +13979,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         <div key="intro0-legacy" style={{
           maxWidth: 1100, textAlign: 'center',
           padding: '36px 48px', borderRadius: 24,
-          background: 'rgba(251,191,36,0.08)',
-          border: '2px solid rgba(251,191,36,0.35)',
-          boxShadow: '0 0 60px rgba(251,191,36,0.15), 0 8px 32px rgba(0,0,0,0.4)',
+          background: 'rgba(236,72,153,0.08)',
+          border: '2px solid rgba(236,72,153,0.35)',
+          boxShadow: '0 0 60px rgba(236,72,153,0.15), 0 8px 32px rgba(0,0,0,0.4)',
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
           position: 'relative', zIndex: 5,
         }}>
@@ -14073,9 +14081,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             padding: 'clamp(18px, 2.2vh, 28px) clamp(28px, 3.2vw, 48px)', borderRadius: 22,
             textAlign: 'center',
             background: cardBg,
-            border: hl ? '2.5px solid rgba(251,191,36,0.55)' : `2.5px solid #EF444455`,
+            border: hl ? '2.5px solid rgba(236,72,153,0.55)' : `2.5px solid #EF444455`,
             boxShadow: hl
-              ? '0 0 44px rgba(251,191,36,0.25), 0 8px 22px rgba(0,0,0,0.4)'
+              ? '0 0 44px rgba(236,72,153,0.25), 0 8px 22px rgba(0,0,0,0.4)'
               : `0 0 44px rgba(239,68,68,0.22), 0 8px 22px rgba(0,0,0,0.4)`,
             fontSize: 'clamp(22px, 2.6vw, 36px)', fontWeight: 900,
             color: hl ? '#fde68a' : '#fecaca',
@@ -14466,14 +14474,14 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
           : 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
         border: eurovisionMode
           ? '2px solid rgba(255,45,123,0.7)'
-          : '2px solid rgba(251,191,36,0.6)',
+          : '2px solid rgba(236,72,153,0.6)',
         borderRadius: isLg ? 24 : 20,
         padding: isLg ? '14px 24px' : '10px 18px',
         fontSize: isLg ? 'clamp(20px, 2.1vw, 30px)' : 'clamp(14px, 1.45vw, 20px)',
         fontWeight: 800,
         lineHeight: 1.25,
         letterSpacing: '0.005em',
-        color: eurovisionMode ? '#fde6f0' : '#FDE68A',
+        color: eurovisionMode ? '#fde6f0' : '#FBCFE8',
         textAlign: 'center',
         // Soft inner highlight + ambient glow
         // 2026-05-06 v5: backdrop-filter raus — beim Bounce-In skaliert die
@@ -14482,7 +14490,7 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
         // Bubble hat genug visuelle Tiefe ueber Gradient+Border+Shadow ohne Blur.
         boxShadow: eurovisionMode
           ? '0 8px 22px rgba(0,0,0,0.45), 0 0 22px rgba(255,45,123,0.30), inset 0 1px 0 rgba(255,180,210,0.12)'
-          : '0 8px 22px rgba(0,0,0,0.45), 0 0 18px rgba(251,191,36,0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
+          : '0 8px 22px rgba(0,0,0,0.45), 0 0 18px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
         // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
         // sind relativ zu totalLifeMs (CSS percentage).
         animation: `qqWolfBubbleLife ${totalLifeMs}ms cubic-bezier(0.34,1.56,0.64,1) both`,
@@ -14512,7 +14520,7 @@ function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSide = 'l
         <path
           d="M 0 0 L 11 13 L 22 0"
           fill={eurovisionMode ? 'rgb(38,18,57)' : 'rgb(33,24,12)'}
-          stroke={eurovisionMode ? 'rgba(255,45,123,0.7)' : 'rgba(251,191,36,0.6)'}
+          stroke={eurovisionMode ? 'rgba(255,45,123,0.7)' : 'rgba(236,72,153,0.6)'}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="butt"
@@ -14579,7 +14587,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
           }} />
           <span style={{
             fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 700,
-            color: '#FBBF24', letterSpacing: '0.16em',
+            color: '#EC4899', letterSpacing: '0.16em',
             textTransform: 'uppercase',
           }}>{de ? 'präsentiert' : 'presents'}</span>
         </div>
@@ -14597,7 +14605,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
               color: '#FFEFC9',
               lineHeight: 1.1,
               letterSpacing: '-0.005em',
-              textShadow: '0 0 24px rgba(251,191,36,0.2)',
+              textShadow: '0 0 24px rgba(236,72,153,0.2)',
               animation: 'qqSloganFade 0.7s ease-in-out both',
               willChange: 'opacity',
             }}
@@ -14633,9 +14641,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // beide Modi auf ESC-Pink (#FF2D7B) — trifft Card-Border, Shimmer, Inner-Glow,
   // Round-Pille, Pause-Dot etc. Hoechster Hebel mit einer Variable.
   const isEsc = !!s.theme?.eurovisionMode;
-  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? '#FBBF24' : '#A78BFA');
-  const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(251,191,36,0.38)' : 'rgba(167,139,250,0.42)');
-  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(251,191,36,0.28)' : 'rgba(167,139,250,0.28)');
+  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? '#EC4899' : '#A78BFA');
+  const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(236,72,153,0.38)' : 'rgba(167,139,250,0.42)');
+  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(236,72,153,0.28)' : 'rgba(167,139,250,0.28)');
   // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
   // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
   // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
@@ -14725,7 +14733,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <span style={{ fontSize: 'clamp(30px, 3.2vw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 28px)', color: '#FBBF24', marginBottom: 4 }}>{it.title}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2vw, 28px)', color: '#EC4899', marginBottom: 4 }}>{it.title}</div>
                   <div style={{ fontSize: 'clamp(15px, 1.7vw, 21px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
                 </div>
               </div>
@@ -14906,7 +14914,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0,
                   fontVariantNumeric: 'tabular-nums',
                 }}>
-                  <span style={{ fontSize: valSize, fontWeight: 900, color: '#FDE68A' }}>{t.largestConnected}</span>
+                  <span style={{ fontSize: valSize, fontWeight: 900, color: '#FBCFE8' }}>{t.largestConnected}</span>
                   <span style={{ fontSize: unitSize, color: '#94a3b8', fontWeight: 700 }}>· {t.totalCells}</span>
                 </span>
               </div>
@@ -14931,7 +14939,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
-          const teamColor = sessionTeam?.color ?? (i === 0 ? '#FBBF24' : i === 1 ? '#CBD5E1' : i === 2 ? '#F97316' : '#94A3B8');
+          const teamColor = sessionTeam?.color ?? (i === 0 ? '#EC4899' : i === 1 ? '#CBD5E1' : i === 2 ? '#F97316' : '#94A3B8');
           const shown = Math.min(entry.wins, maxVisibleWins);
           const overflow = entry.wins - shown;
           // 2026-04-28: Avatar primär aus Session-Team, sonst aus Backend-
@@ -15017,7 +15025,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   };
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
-    const c = color ?? meta.color ?? '#FBBF24';
+    const c = color ?? meta.color ?? '#EC4899';
     const av = avatarId ?? meta.avatarId;
     return (
       // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
@@ -15028,7 +15036,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     );
   };
   // Inline-Variante fuer kompakte Records (Avatar + Name in einer Zeile mit Stat).
-  const teamInline = (name: string, accentFallback = '#F59E0B') => {
+  const teamInline = (name: string, accentFallback = '#EC4899') => {
     const meta = findTeamMeta(name);
     const c = meta.color ?? accentFallback;
     return (
@@ -15125,7 +15133,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   );
 
   // Dark-Pill im Cozy-Header-Style (warmer card-bg + Akzent-Border)
-  const statPill = (value: string | number, label: string, accent = '#FBBF24') => (
+  const statPill = (value: string | number, label: string, accent = '#EC4899') => (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 12,
       padding: '12px 24px', borderRadius: 999,
@@ -15229,10 +15237,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.categoryMasters && funStats.categoryMasters.length > 0) {
     panels.push({ key: 'catMasters', node: (
       <div>
-        {statTitle('👑', 'Kategorie-Meister', 'Category Masters', '#FBBF24')}
+        {statTitle('👑', 'Kategorie-Meister', 'Category Masters', '#EC4899')}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {funStats.categoryMasters.map((cm, i) => {
-            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: '#FBBF24', emoji: '🎯', label: cm.category };
+            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: '#EC4899', emoji: '🎯', label: cm.category };
             const team = s.teams.find(t => t.name === cm.teamName);
             return (
               <div key={i} style={{
@@ -15384,7 +15392,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
         {funStats.funnyAnswers.map((fa, i) => (
           <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-            <div style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 700, color: '#FBBF24' }}>„{fa.text}"</div>
+            <div style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 700, color: '#EC4899' }}>„{fa.text}"</div>
             <div style={{ fontSize: 'clamp(16px, 1.8vw, 22px)', color: '#64748b', marginTop: 4 }}>— {fa.teamName}</div>
           </div>
         ))}
@@ -15504,8 +15512,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 position: 'absolute',
                 top: '-5%', left: `${left}%`,
                 width: size, height: size, borderRadius: '50%',
-                background: i % 2 ? '#FBBF24' : '#FDE68A',
-                boxShadow: '0 0 12px rgba(251,191,36,0.7), 0 0 4px rgba(255,255,255,0.5)',
+                background: i % 2 ? '#EC4899' : '#FBCFE8',
+                boxShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(255,255,255,0.5)',
                 opacity: 0,
                 animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
                 pointerEvents: 'none', zIndex: 3,
@@ -15901,7 +15909,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 // 4×4 CONNECTIONS — Finalrunde (Beamer)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CONNECTIONS_GROUP_COLORS = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA']; // gelb, grün, blau, lila
+const CONNECTIONS_GROUP_COLORS = ['#EC4899', '#22C55E', '#60A5FA', '#A78BFA']; // gelb, grün, blau, lila
 
 export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -15936,7 +15944,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px)',
       position: 'relative',
     }}>
-      <Fireflies color="rgba(251,191,36,0.30)" />
+      <Fireflies color="rgba(236,72,153,0.30)" />
       <ConnectionsHeader state={s} />
       {c.phase === 'intro' && <ConnectionsIntro state={s} />}
       {showBoard && (
@@ -15959,7 +15967,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
 function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections!;
-  const accent = '#FBBF24';
+  const accent = '#EC4899';
   // Event-Wording — kurz und groß auf der Bühne. „Großes Finale" griffig
   // genug für Live-Quiz, vermeidet das technische „4×4 Connections".
   const labelDe = 'Großes Finale';
@@ -16032,13 +16040,13 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
       borderRadius: 16,
       background: urgent
         ? 'linear-gradient(135deg, rgba(239,68,68,0.28), rgba(239,68,68,0.12))'
-        : 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
-      border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(251,191,36,0.55)'}`,
+        : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(236,72,153,0.08))',
+      border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(236,72,153,0.55)'}`,
       boxShadow: urgent
         ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
-        : '0 0 16px rgba(251,191,36,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+        : '0 0 16px rgba(236,72,153,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
       fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
-      color: urgent ? '#FCA5A5' : '#FDE68A',
+      color: urgent ? '#FCA5A5' : '#FBCFE8',
       fontVariantNumeric: 'tabular-nums',
       letterSpacing: '0.04em',
       animation: urgent ? 'bTimerPulse 0.8s ease-in-out infinite' : undefined,
@@ -16065,18 +16073,18 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         fontSize: 'clamp(72px, 12vw, 140px)', lineHeight: 1,
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, cfloat 4s ease-in-out 1s infinite',
-        filter: 'drop-shadow(0 4px 18px rgba(251,191,36,0.45))',
+        filter: 'drop-shadow(0 4px 18px rgba(236,72,153,0.45))',
       }}>🧩</div>
       <div style={{
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontSize: 'clamp(56px, 10vw, 160px)', fontWeight: 900, lineHeight: 1,
-        color: '#FBBF24',
+        color: '#EC4899',
         textAlign: 'center',
         letterSpacing: '-0.005em',
         textShadow:
-          '0 0 14px rgba(251,191,36,0.65), ' +
-          '0 0 40px rgba(251,191,36,0.45), ' +
-          '0 0 96px rgba(251,191,36,0.25), ' +
+          '0 0 14px rgba(236,72,153,0.65), ' +
+          '0 0 40px rgba(236,72,153,0.45), ' +
+          '0 0 96px rgba(236,72,153,0.25), ' +
           '0 5px 0 rgba(0,0,0,0.45), ' +
           '0 14px 28px rgba(0,0,0,0.55)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.3s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
@@ -16090,7 +16098,7 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
         // 1100-Pills wirkten zentriert-eng. Die Connections-Cards unten leben
         // bei 1500 — Subtitle/Pills jetzt im selben Visual-Frame.
         color: '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1400,
-        textShadow: '0 0 22px rgba(251,191,36,0.3)',
+        textShadow: '0 0 22px rgba(236,72,153,0.3)',
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.5s both',
       }}>
         {lang === 'de'
@@ -16116,7 +16124,7 @@ function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 22px', borderRadius: 999,
       background: 'rgba(255,255,255,0.04)',
-      border: '1.5px solid rgba(251,191,36,0.32)',
+      border: '1.5px solid rgba(236,72,153,0.32)',
       fontSize: 'clamp(16px, 1.7vw, 22px)', fontWeight: 900, color: '#e2e8f0',
     }}>
       <span style={{ fontSize: 'clamp(20px, 2vw, 28px)' }}>{emoji}</span>
@@ -16319,7 +16327,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               // hasActivity (= Team hat schon getippt) → green-Ring + Glow
               // statt ✓-Badge unten rechts. Winner=Gold-Ring, locked=Default.
               boxShadow: isWinner
-                ? '0 0 0 3px #FBBF24, 0 0 18px #FBBF2477, 0 4px 10px rgba(0,0,0,0.55)'
+                ? '0 0 0 3px #EC4899, 0 0 18px #EC489977, 0 4px 10px rgba(0,0,0,0.55)'
                 : !locked && hasActivity
                   ? `0 0 0 3px #22C55E, 0 0 18px rgba(34,197,94,0.55), 0 4px 10px rgba(0,0,0,0.55)`
                   : isActiveTeam
@@ -16332,10 +16340,10 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 width: 28, height: 28, borderRadius: '50%',
-                background: '#FBBF24', border: '2px solid #0A0814',
+                background: '#EC4899', border: '2px solid #0A0814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, fontWeight: 900, lineHeight: 1,
-                boxShadow: '0 0 14px rgba(251,191,36,0.55)',
+                boxShadow: '0 0 14px rgba(236,72,153,0.55)',
                 animation: 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
               }}>🏁</div>
             )}
@@ -16388,7 +16396,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       || b.totalCells - a.totalCells;
   });
   const winner = sorted[0];
-  const winnerColor = winner?.color ?? '#F59E0B';
+  const winnerColor = winner?.color ?? '#EC4899';
 
   // 2026-05-05 (Wolf-Wahl 4C): Score-Spotlight-Sequence vor der Recap-Tabelle.
   // Letzter Platz zuerst (revealIdx 0 = sorted[last]), dann aufsteigend bis
@@ -16465,7 +16473,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     const rank = sorted.length - revealIdx;
     const isWinner = rank === 1;
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
-    const teamColor = team?.color ?? '#F59E0B';
+    const teamColor = team?.color ?? '#EC4899';
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -16499,8 +16507,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           {paused && (
             <div style={{
               padding: '4px 12px', borderRadius: 999,
-              background: 'rgba(251,191,36,0.18)', border: '1.5px solid rgba(251,191,36,0.55)',
-              fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#FDE68A',
+              background: 'rgba(236,72,153,0.18)', border: '1.5px solid rgba(236,72,153,0.55)',
+              fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 900, color: '#FBCFE8',
               animation: 'pulse 1.4s ease-in-out infinite',
             }}>
               ⏸ {lang === 'en' ? 'Paused (P to resume)' : 'Pause (P zum Fortsetzen)'}
@@ -16547,7 +16555,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 size={'clamp(140px, 18vw, 260px)'}
                 style={{
                   boxShadow: isWinner
-                    ? `0 0 0 4px #FBBF24, 0 0 60px rgba(251,191,36,0.7), 0 12px 40px rgba(0,0,0,0.5)`
+                    ? `0 0 0 4px #EC4899, 0 0 60px rgba(236,72,153,0.7), 0 12px 40px rgba(0,0,0,0.5)`
                     : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa, 0 12px 36px rgba(0,0,0,0.5)`,
                 }}
               />
@@ -16585,9 +16593,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             }}>
               <span style={{
                 fontSize: 'clamp(80px, 11vw, 180px)', fontWeight: 900,
-                color: '#FDE68A',
+                color: '#FBCFE8',
                 fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                textShadow: '0 0 40px rgba(251,191,36,0.55)',
+                textShadow: '0 0 40px rgba(236,72,153,0.55)',
               }}>{team.largestConnected}</span>
               <span style={{
                 fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 700,
@@ -16731,7 +16739,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 width: sp.size, height: sp.size,
                 fontSize: sp.size,
                 lineHeight: 1,
-                color: '#FBBF24',
+                color: '#EC4899',
                 textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(255,255,255,0.6)`,
                 animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sparkleStartDelay + sp.delay}s infinite`,
                 pointerEvents: 'none',
@@ -16880,7 +16888,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                       fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                       flexShrink: 0,
                     }}>
-                      <span style={{ fontSize: scoreFs, color: '#FDE68A' }}>{tm.largestConnected}</span>
+                      <span style={{ fontSize: scoreFs, color: '#FBCFE8' }}>{tm.largestConnected}</span>
                       <span style={{
                         fontSize: 'clamp(13px, 1.3vw, 17px)', color: '#94a3b8', fontWeight: 700,
                       }}>· {tm.totalCells}</span>
@@ -17032,7 +17040,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '48px 64px', position: 'relative',
     }}>
-      <Fireflies color="rgba(234,179,8,0.35)" />
+      <Fireflies color="rgba(236,72,153,0.40)" />
 
       {/* 2026-05-06 (Wolf 'sleepy wolf auf die allerletzte Page'): Wolf macht
           Feierabend unten links. Schlafen-Mode mit Z-Cycle. Gleiche Position
@@ -17047,22 +17055,21 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       }}>
         <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="schlafen" />
       </div>
-      {/* 2026-05-07 (Audit Layout #3): Letzte Folie war mit maxWidth 900 zu
-          eng — auf 1080p-Beamer ~510px Side-Whitespace je Seite. Card jetzt
-          1300, padding skaliert mit clamp. Wirkt wie ein echtes Grand-Finale. */}
+      {/* 2026-05-08 (Aurora-Vivid): Thanks-Card komplett auf Brand-Pink/Indigo
+          umgestellt — vorher Sepia-BG + Gold-Border + Gold-Headline. */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32,
         padding: 'clamp(40px, 5vh, 72px) clamp(48px, 5vw, 96px)', borderRadius: 24,
-        background: 'linear-gradient(135deg, rgba(20,16,10,0.92), rgba(13,10,6,0.96))',
-        border: '2px solid rgba(251,191,36,0.4)',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(234,179,8,0.2), inset 0 1px 0 rgba(251,191,36,0.15)',
+        background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
+        border: '2px solid rgba(236,72,153,0.4)',
+        boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
         maxWidth: 'min(94vw, 1300px)',
         animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
       }}>
         <div style={{
           fontSize: 'clamp(36px, 4.5vw, 64px)', fontWeight: 900,
-          color: '#FBBF24', textAlign: 'center', lineHeight: 1.1,
-          textShadow: '0 0 40px rgba(251,191,36,0.4)',
+          color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
+          textShadow: '0 0 40px rgba(236,72,153,0.42)',
         }}>
           <QQEmojiIcon emoji="🎉"/> {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
@@ -17080,7 +17087,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             <div style={{
               padding: 14, borderRadius: 16,
               background: '#ffffff',
-              boxShadow: '0 0 32px rgba(251,191,36,0.35), 0 4px 16px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(251,191,36,0.4)',
+              boxShadow: '0 0 32px rgba(236,72,153,0.40), 0 4px 16px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(236,72,153,0.42)',
             }}>
               <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0A0814" level="M" />
             </div>
@@ -17100,9 +17107,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '10px 22px', borderRadius: 999,
-          background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12))',
-          border: '1.5px solid rgba(251,191,36,0.4)',
-          boxShadow: '0 4px 18px rgba(0,0,0,0.4), 0 0 24px rgba(251,191,36,0.15)',
+          background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
+          border: '1.5px solid rgba(236,72,153,0.40)',
+          boxShadow: '0 4px 18px rgba(0,0,0,0.4), 0 0 24px rgba(236,72,153,0.18)',
           marginTop: 4,
         }}>
           <img
@@ -17116,7 +17123,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             {lang === 'de' ? 'ein' : 'a'}
           </span>
           <span style={{
-            fontSize: 20, fontWeight: 900, color: '#FBBF24',
+            fontSize: 20, fontWeight: 900, color: '#EC4899',
             letterSpacing: '0.04em',
             textShadow: '0 1px 2px rgba(0,0,0,0.6)',
           }}>
@@ -17130,7 +17137,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
-          fontSize: 15, color: 'rgba(251,191,36,0.75)', fontWeight: 900,
+          fontSize: 15, color: 'rgba(236,72,153,0.78)', fontWeight: 900,
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           <span>play.cozyquiz.app</span>
@@ -17241,7 +17248,7 @@ export function BeamerTimer({ endsAt, durationSec, accent, expireNow }: { endsAt
 
   const color = isCritical ? '#EF4444'
     : isWarning ? '#F97316'
-    : isAlert ? '#F59E0B'
+    : isAlert ? '#EC4899'
     : accent;
 
   // Hero timer: big ring
@@ -17469,7 +17476,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 // + Goldglow. Leere Cells haben keinen 3D-Effekt.
                 transform: isStuck ? 'translateY(-3px)' : undefined,
                 filter: isStuck
-                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(251,191,36,0.45))'
+                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(236,72,153,0.45))'
                   : team
                     ? 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))'
                     : undefined,
@@ -17555,7 +17562,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     insetTop, insetBottom,
                     hardDrop, softDrop,
                     isAccent      ? `0 0 ${isFlash ? 28 : 24}px ${tColor}bb` : '',
-                    showStar      ? '0 0 10px rgba(251,191,36,0.5)' : '',
+                    showStar      ? '0 0 10px rgba(236,72,153,0.5)' : '',
                     (!isAccent && !showStar && isHighlighted) ? `0 0 14px ${tColor}88` : '',
                   ].filter(Boolean).join(', ');
                   return (
@@ -17570,7 +17577,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Frozen keine. Stuck nutzt jetzt die per-edge Region-
                     // Fusion wie Standard — outer Goldborder weg.
                     ...(showStar
-                      ? { border: '2px solid rgba(251,191,36,0.9)' }
+                      ? { border: '2px solid rgba(236,72,153,0.9)' }
                       : isFrozen
                         ? { border: 'none' }
                         : {
@@ -17653,7 +17660,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {isStuck && (
                   <div style={{
                     position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                    border: '2.5px solid rgba(245,158,11,0.8)',
+                    border: '2.5px solid rgba(236,72,153,0.8)',
                     animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                     pointerEvents: 'none', zIndex: 3,
                   }} />
@@ -17677,7 +17684,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       position: 'absolute',
                       inset: insetPx, borderRadius: layerRadius,
                       background: `linear-gradient(rgba(0,0,0,${darkenAlpha}), rgba(0,0,0,${darkenAlpha})), linear-gradient(135deg, ${tColor}ff, ${tColor}d0)`,
-                      border: '2.5px solid rgba(251,191,36,0.9)',
+                      border: '2.5px solid rgba(236,72,153,0.9)',
                       boxShadow: [
                         `inset 0 1.5px 0 rgba(255,255,255,${0.26 - layerIdx * 0.05})`, // top highlight
                         `inset 0 -2.5px 0 rgba(0,0,0,${0.28 - layerIdx * 0.04})`,      // bottom inner shadow
@@ -17740,15 +17747,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <>
                     <div style={{
                       position: 'absolute', inset: -2, borderRadius: cellRadius + 2,
-                      border: '2.5px solid rgba(251,191,36,0.9)',
-                      background: 'rgba(251,191,36,0.14)',
+                      border: '2.5px solid rgba(236,72,153,0.9)',
+                      background: 'rgba(236,72,153,0.14)',
                       animation: 'shieldGlow 2s ease-in-out infinite',
                       pointerEvents: 'none', zIndex: 2,
                     }} />
                     <div style={{
                       position: 'absolute', top: -5, right: -5,
                       zIndex: 5, lineHeight: 0,
-                      filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.9))',
+                      filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.9))',
                     }}>
                       <QQIcon slug="marker-shield" size={Math.max(16, cellSize * 0.48)} alt="Schild" />
                     </div>
@@ -18120,7 +18127,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     transform: 'translate(-50%, -30px)',
                     lineHeight: 1,
                     pointerEvents: 'none',
-                    filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.9)) drop-shadow(0 0 24px rgba(251,191,36,0.5))',
+                    filter: 'drop-shadow(0 0 12px rgba(236,72,153,0.9)) drop-shadow(0 0 24px rgba(236,72,153,0.5))',
                     ['--jk-dx' as string]: '0px',
                     ['--jk-dy' as string]: '40px',
                     animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
@@ -18195,8 +18202,8 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}>{medal ? <QQEmojiIcon emoji={medal}/> : null}</span>
             <span style={{
-              fontSize: valFs, color: isLeader ? '#FBBF24' : '#F1F5F9', fontWeight: 900,
-              textShadow: isLeader ? '0 0 18px rgba(251,191,36,0.55)' : 'none',
+              fontSize: valFs, color: isLeader ? '#EC4899' : '#F1F5F9', fontWeight: 900,
+              textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
               // Zahlen-Spalte breit genug fuer 2-stellige Werte (10+) — vorher
@@ -18408,11 +18415,11 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
-            border: '3px solid rgba(251,191,36,0.18)',
-            borderTopColor: '#FBBF24',
+            border: '3px solid rgba(236,72,153,0.18)',
+            borderTopColor: '#EC4899',
             animation: 'spin 0.9s linear infinite',
           }} />
-          <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#FBBF24', fontWeight: 700 }}>
+          <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#EC4899', fontWeight: 700 }}>
             {connected
               ? bt.loading.waiting.de
               : 'Server wird wach gemacht — gleich geht’s los'}

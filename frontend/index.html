@@ -14,6 +14,14 @@
     <meta name="description" content="CozyQuiz — a CozyWolf production." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 2026-05-08: Preload des Font-CSS sorgt dafuer, dass die Font-Definitionen
+         vom Preload-Scanner discovered werden, bevor das main-JS-Bundle parsed —
+         Browser kann gstatic-woff2-Requests damit ~100-200 ms frueher starten.
+         display=swap bleibt: FOUT (Fallback flasht kurz auf) ist akzeptabel,
+         display=optional wuerde bei Cold-Loads riskieren dass Nunito gar nicht
+         angezeigt wird, was Wolfs Branding kaputt macht. SW caching (1 Jahr)
+         macht das Ganze ab Visit 2 eh irrelevant. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet" />
     <title>CozyQuiz</title>
   </head>

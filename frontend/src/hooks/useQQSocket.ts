@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { QQStateUpdate, QQAck, qqTeamColor } from '../../../shared/quarterQuizTypes';
 
@@ -40,7 +40,15 @@ export function useQQSocket(roomCode: string) {
     socket.on('reconnect_failed', () => setConnected(false));
 
     socket.on('qq:stateUpdate', (payload: QQStateUpdate) => {
-      setState(normalizeState(payload));
+      // 2026-05-08: startTransition markiert das State-Update als
+      // non-urgent. React darf einen langen Render (z. B. Beamer-Reveal-
+      // Choreografie mit ~16k Zeilen TSX) unterbrechen, falls der User in
+      // der Zwischenzeit klickt — Click-Handler bleibt responsive auch
+      // wenn ein dichter stateUpdate vom Server reinplatzt. Verbessert
+      // perceived perf ohne Logikaenderung.
+      startTransition(() => {
+        setState(normalizeState(payload));
+      });
     });
 
     // Heartbeat: alle 20s ein Noop-Emit, damit Render-Proxy die WS-Verbindung

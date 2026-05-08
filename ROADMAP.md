@@ -109,13 +109,22 @@ Plus 2 Demo-Pages live:
 
 **Was als Nächstes: Q3 (Polish — `font-display: optional`, `useTransition`, Doppelklick-Schutz) oder direkt in Visual-Polish/Mechaniken-Sprints.**
 
-### Sprint Q3 — Polish (~1h)
+### Sprint Q3 — Polish (~1h) ✅ ERLEDIGT 2026-05-08
+
 **Ziel:** Kleinere Best-Practice-Punkte.
 
-1. **`font-display: optional`** + Nunito-Preload in `index.html` (`<link rel="preload" as="font" crossorigin>`)
-2. **`useTransition`-Wrapper** in `useQQSocket.ts` um `setQuizState(next)` — nicht-blocking stateUpdate
-3. **Bundle-Visualizer NOCHMAL laufen** lassen, vergleichen mit Q1-Snapshot
-4. Doppelklick-Schutz auf Mod-Buttons (`useActionLock(500)` Custom-Hook) → Hot-Potato-Doppel-Fire-Bug-Klasse weg
+1. ✅ **Font-Preload statt `display: optional`** — `<link rel="preload" as="style">` fuer das Google-Fonts-CSS in [index.html](frontend/index.html). Preload-Scanner discovered Fonts ~100-200 ms frueher als der main-JS-Parse. **`display=swap` bleibt** — `optional` wuerde riskieren dass Wolfs Branding bei Cold-Loads gar nicht angezeigt wird; SW-Cache (1 Jahr CacheFirst) macht das ab Visit 2 eh egal.
+2. ✅ **`useTransition` im Socket-Hook** — `startTransition(() => setState(...))` in [useQQSocket.ts](frontend/src/hooks/useQQSocket.ts). React darf einen langen Beamer-Render unterbrechen falls der Mod waehrend eines stateUpdate-Bursts klickt. Click-Handler bleibt responsive.
+3. ✅ **Bundle-Visualizer Re-Run** — Vergleich gegen Q1-Snapshot:
+   - QQBeamerPage: 437.29 → 437.54 kB (+0.25 kB, CozyWolfImage-Wrapper)
+   - QQModeratorPage: 120.41 → 120.63 kB (+0.22 kB, useActionLock + 5 Gates)
+   - Sonstige Chunks: identisch. Tree-Shaking sauber, keine Surprise-Imports.
+4. ✅ **`useActionLock`-Hook** in [`frontend/src/hooks/useActionLock.ts`](frontend/src/hooks/useActionLock.ts) — `canFire(key)` returns `true` wenn seit dem letzten Erfolg fuer den Key ≥ ms vergangen sind. Mehrere Keys sind unabhaengig gelockt.
+   - Angewandt auf alle 5 user-triggerbaren `qq:hotPotatoFinishSlot`-Callsites in [QQModeratorPage.tsx](frontend/src/pages/QQModeratorPage.tsx) (Space, R, Enter-Hotkey + 2 Buttons).
+   - Nicht angewandt auf die 2 Autoplay-Callsites — die laufen via setTimeout und koennen nicht user-doppelt-feuern.
+   - Backend hat eh State-basierte Idempotenz, der Lock kappt aber Race Conditions (Timer-Doppelstart, Phase-Skip) clientseitig.
+
+**Was als Nächstes: Quick-Wins-Phase abgeschlossen. Sprung in Visual-Polish (Sprint A) oder Mechaniken (Sprint B).**
 
 ---
 

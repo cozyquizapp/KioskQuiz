@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useQQSocket } from '../hooks/useQQSocket';
+import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig,
@@ -58,6 +59,12 @@ export default function QQModeratorPage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
+
+  // 2026-05-08: Doppelklick-Schutz fuer Mod-Aktionen die zweifach zu fruehen
+  // Phasen-Wechseln fuehren koennen (Hot-Potato-Doppel-Fire-Klasse). 500 ms
+  // Lock pro Key reicht fuer schnelle Doppel-Spaces ohne legitime Folge-Klicks
+  // zu blockieren.
+  const canFire = useActionLock(500);
 
   // Setup/Lobby-Zweiteilung: Wert kommt aus dem server-state (via useQQSocket).
   // Fallback bis der erste State-Update da ist: false (= Setup anzeigen).
@@ -658,7 +665,7 @@ export default function QQModeratorPage() {
         const slotPending = (s as any).hotPotatoSlotState === 'rolling'
           || (s as any).hotPotatoSlotState === 'landed';
         if (subKindActive === 'hotPotato' && slotPending) {
-          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+          if (canFire('hp')) emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
         }
@@ -717,7 +724,7 @@ export default function QQModeratorPage() {
         const slotPendingR = (s as any).hotPotatoSlotState === 'rolling'
           || (s as any).hotPotatoSlotState === 'landed';
         if (subKindR === 'hotPotato' && slotPendingR) {
-          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+          if (canFire('hp')) emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
         }
@@ -791,7 +798,7 @@ export default function QQModeratorPage() {
         const slotPending = (s as any).hotPotatoSlotState === 'rolling'
           || (s as any).hotPotatoSlotState === 'landed';
         if (subKindActive === 'hotPotato' && slotPending) {
-          emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+          if (canFire('hp')) emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
         } else {
           emitRef.current('qq:revealAnswer', { roomCode });
         }
@@ -884,7 +891,7 @@ export default function QQModeratorPage() {
 
     // F18 — Reset (Notfall)
     // F20 — reserviert
-  }, [roomCode]);
+  }, [roomCode, canFire]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKey);
@@ -1303,7 +1310,7 @@ export default function QQModeratorPage() {
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <Btn color="#F59E0B" onClick={() => emit('qq:hotPotatoFinishSlot', { roomCode })}>
+                        <Btn color="#F59E0B" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
                           🎯 Sieger anzeigen (Space)
                         </Btn>
                       </>
@@ -1317,7 +1324,7 @@ export default function QQModeratorPage() {
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoFinishSlot', { roomCode })}>
+                        <Btn color="#22C55E" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
                           ▶ Los geht's (Space)
                         </Btn>
                       </>

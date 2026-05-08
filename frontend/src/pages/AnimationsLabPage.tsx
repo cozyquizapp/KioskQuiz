@@ -371,6 +371,191 @@ function FirefliesLayer() {
   );
 }
 
+// ─── A. Q→Reveal→Next 3-Phasen-Flow ─────────────────────────────────────────
+// Echter Beamer-Card-Kontext mit Category-Pill, Frage, 4 Options, Timer.
+// Auto-Progression nach Replay: Q1 (2.8 s) → Reveal1 (2.6 s) → Q2 (2.6 s).
+// Q1↔Q2 ueber Slide-Transitions (CSS transition, kein Anim-Flicker), Reveal
+// togglet die korrekte Option auf gruenes Highlight.
+type FlowPhase = 'q1' | 'reveal1' | 'q2';
+
+interface FlowQuestion {
+  category: string;
+  catColor: string;
+  catEmoji: string;
+  round: number;
+  text: string;
+  options: string[];
+  correct: number;
+}
+const FLOW_Q1: FlowQuestion = {
+  category: 'GEOGRAPHIE', catColor: '#22C55E', catEmoji: '🌍',
+  round: 1,
+  text: 'Wie viele Bundesländer hat Deutschland?',
+  options: ['14', '15', '16', '17'],
+  correct: 2,
+};
+const FLOW_Q2: FlowQuestion = {
+  category: 'GESCHICHTE', catColor: '#F59E0B', catEmoji: '🏛️',
+  round: 1,
+  text: 'In welchem Jahr fiel die Berliner Mauer?',
+  options: ['1987', '1989', '1991', '1993'],
+  correct: 1,
+};
+
+function FlowQuestionCard({ q, slideState, revealed }: {
+  q: FlowQuestion;
+  /** 'in' = sichtbar, 'left' = nach links rausgeschoben, 'right' = noch rechts wartend */
+  slideState: 'in' | 'left' | 'right';
+  revealed: boolean;
+}) {
+  const tx =
+    slideState === 'in'    ? 'translateX(0)'
+    : slideState === 'left'  ? 'translateX(-105%)'
+    :                          'translateX(105%)';
+  const op = slideState === 'in' ? 1 : 0;
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      transform: tx,
+      opacity: op,
+      transition: slideState === 'in'
+        ? 'transform 0.5s cubic-bezier(0.34, 1.30, 0.64, 1), opacity 0.35s ease-out'
+        : 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in',
+      display: 'flex', flexDirection: 'column', gap: 10,
+      padding: '14px 16px',
+      background: 'linear-gradient(180deg, #1f1610, #150e08)',
+      border: '1px solid rgba(245,158,11,0.22)',
+      borderRadius: 14,
+      boxShadow: '0 14px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,158,11,0.16)',
+      willChange: 'transform, opacity',
+    }}>
+      {/* Pills-Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px', borderRadius: 999,
+          background: `${q.catColor}28`,
+          border: `1px solid ${q.catColor}`,
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.10em',
+          color: q.catColor,
+        }}>{q.catEmoji} {q.category}</div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.10em',
+        }}>RUNDE {q.round}</div>
+      </div>
+      {/* Frage */}
+      <div style={{
+        fontSize: 17, fontWeight: 700, color: '#f1f5f9',
+        textAlign: 'center', lineHeight: 1.3,
+        padding: '4px 8px',
+      }}>{q.text}</div>
+      {/* Options 2×2 */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+        marginTop: 4,
+      }}>
+        {q.options.map((opt, i) => {
+          const isCorrect = i === q.correct;
+          const dim = revealed && !isCorrect;
+          return (
+            <div key={i} style={{
+              padding: '10px 12px', borderRadius: 8,
+              background: revealed && isCorrect
+                ? 'linear-gradient(180deg, rgba(34,197,94,0.30), rgba(34,197,94,0.14))'
+                : 'rgba(255,255,255,0.05)',
+              border: revealed && isCorrect
+                ? '2px solid #22C55E'
+                : '1px solid rgba(255,255,255,0.10)',
+              fontSize: 13, fontWeight: 700,
+              color: dim ? '#64748b' : '#f1f5f9',
+              opacity: dim ? 0.5 : 1,
+              boxShadow: revealed && isCorrect ? '0 0 24px rgba(34,197,94,0.45)' : 'none',
+              transform: revealed && isCorrect ? 'scale(1.02)' : 'scale(1)',
+              transition: 'all 0.45s cubic-bezier(0.34, 1.30, 0.64, 1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              minHeight: 22,
+            }}>
+              <span>{opt}</span>
+              {revealed && isCorrect && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: '#22C55E',
+                  letterSpacing: '0.08em',
+                  animation: 'flowCorrectBadge 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
+                }}>✓ +10</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Mock-Timer */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.10em' }}>TIMER</div>
+        <div style={{
+          flex: 1, height: 6, borderRadius: 999,
+          background: 'rgba(255,255,255,0.08)',
+          overflow: 'hidden', position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            width: revealed ? '0%' : '100%',
+            background: 'linear-gradient(90deg, #22C55E, #fbbf24, #ef4444)',
+            transition: 'width 2.4s linear',
+          }} />
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', fontFamily: 'monospace', minWidth: 28, textAlign: 'right' }}>
+          {revealed ? '0s' : '24s'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QRevealNextDemo({ replay }: { replay: number }) {
+  const [phase, setPhase] = useState<FlowPhase>('q1');
+  useEffect(() => {
+    setPhase('q1');
+    const t1 = setTimeout(() => setPhase('reveal1'), 2800);
+    const t2 = setTimeout(() => setPhase('q2'),     5400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [replay]);
+
+  const q1Slide: 'in' | 'left' = phase === 'q2' ? 'left' : 'in';
+  const q2Slide: 'in' | 'right' = phase === 'q2' ? 'in' : 'right';
+  const phaseLabel =
+    phase === 'q1'      ? 'Phase 1 · Frage'
+    : phase === 'reveal1' ? 'Phase 2 · Reveal'
+    :                       'Phase 3 · Next';
+
+  return (
+    <div key={replay} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{
+        flex: 1, position: 'relative',
+        borderRadius: 12, overflow: 'hidden',
+        background: 'radial-gradient(ellipse at center, #0a0805 0%, #050302 80%)',
+        minHeight: 360,
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        {/* Phase-Label oben */}
+        <div style={{
+          position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.16em',
+          color: '#fbbf24', opacity: 0.7, zIndex: 5,
+          padding: '3px 12px', borderRadius: 999,
+          background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(251,191,36,0.3)',
+        }}>{phaseLabel}</div>
+        {/* Question-Cards Stack */}
+        <div style={{ position: 'absolute', inset: '32px 14px 14px' }}>
+          <FlowQuestionCard q={FLOW_Q1} slideState={q1Slide} revealed={phase === 'reveal1'} />
+          <FlowQuestionCard q={FLOW_Q2} slideState={q2Slide} revealed={false} />
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+        Auto-Loop 2.8 s + 2.6 s + 2.6 s · Slide-Out left + Slide-In right · Reveal-Highlight 450 ms Spring
+      </div>
+    </div>
+  );
+}
+
 // ─── B. 8-Team Score-Cascade mit Position-Swap ──────────────────────────────
 // Teams werden mit Stagger 200 ms hochgeticked (lowest-rank zuerst), dann
 // schiebt der Position-Swap alle 8 Zeilen auf ihre neue Rank-Position. Letztens
@@ -714,6 +899,12 @@ export default function AnimationsLabPage() {
       keepAlive: false, minHeight: 500,
       render: (r) => <ScoreCascadeDemo replay={r} />,
     },
+    {
+      label: 'A', title: 'Q→Reveal→Next 3-Phasen-Flow',
+      blurb: 'Echter Beamer-Card-Kontext mit Category-Pill, 4 Options und Mock-Timer. Auto-Sequenz: Frage-1 → Reveal mit Gruen-Highlight → Slide-Out und Frage-2 slidet rein. Der haeufigste Beat im Spiel (~15× pro Runde).',
+      keepAlive: false, minHeight: 540,
+      render: (r) => <QRevealNextDemo replay={r} />,
+    },
   ];
 
   return (
@@ -826,6 +1017,10 @@ export default function AnimationsLabPage() {
             border-color: rgba(251,191,36,0.45);
             box-shadow: 0 0 24px rgba(251,191,36,0.35);
           }
+        }
+        @keyframes flowCorrectBadge {
+          0%   { transform: scale(0.4); opacity: 0; }
+          100% { transform: scale(1);   opacity: 1; }
         }
       `}</style>
 

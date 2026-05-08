@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * Komprimiert alle cozywolf-PNGs:
- *   - Resize 3000x3000 -> 1024x1024 (Display-Max 240px, 4x Retina = 960px)
- *   - PNG mit Palette/Indexed-Color (max 256 Farben) — Cartoon-flat-color-Stil
- *     verliert visuell nichts, Filesize aber dramatisch (5 MB -> ~300 KB).
+ * Komprimiert alle cozywolf-PNGs UND erzeugt zusaetzlich AVIF+WebP-Versionen:
+ *   - Resize -> 1536x1536 (4K-Beamer-Oversampling, siehe TARGET_SIZE).
+ *   - PNG mit Palette/Indexed-Color (max 256 Farben). Cartoon-flat-color-Stil
+ *     verliert visuell nichts, Filesize aber dramatisch.
+ *   - WebP (quality 80) als Fallback fuer Browser ohne AVIF-Support
+ *     (Safari < 16, alte Android-WebViews).
+ *   - AVIF (quality 50, effort 6) als primaeres Format. ~50-70 % kleiner als PNG
+ *     bei vergleichbarer Wahrnehmungsqualitaet.
+ *
+ *   Resultat: 22 Posen × 3 Formate = 66 Files. Browser laedt automatisch
+ *   die kleinste unterstuetzte Variante via <picture>-Tag in <CozyWolfImage>.
  *
  * Usage: node scripts/compress-cozywolf.js
  */
@@ -20,35 +27,45 @@ async function main() {
   const files = fs.readdirSync(SRC_DIR).filter(f => f.endsWith('.png'));
   console.log(`Found ${files.length} PNGs in ${SRC_DIR}\n`);
 
-  let totalBefore = 0;
-  let totalAfter = 0;
+  const totals = { png: { before: 0, after: 0 }, webp: 0, avif: 0 };
 
   for (const file of files) {
-    const fullPath = path.join(SRC_DIR, file);
-    const before = fs.statSync(fullPath).size;
-    totalBefore += before;
+    const pngPath = path.join(SRC_DIR, file);
+    const webpPath = pngPath.replace(/\.png$/i, '.webp');
+    const avifPath = pngPath.replace(/\.png$/i, '.avif');
+    const beforePng = fs.statSync(pngPath).size;
+    totals.png.before += beforePng;
 
-    // Read into buffer first, then write back — sharp can't read & write the
-    // same path in one chain.
-    const buf = await sharp(fullPath)
-      .resize(TARGET_SIZE, TARGET_SIZE, { fit: 'inside', withoutEnlargement: true })
-      .png({ palette: true, quality: 90, compressionLevel: 9 })
-      .toBuffer();
+    // Pipeline einmal vorbereiten, dann auf 3 Formate fanout. Sharp resize ist
+    // teuer (~80 ms pro Pose) — einmal in den Buffer reicht.
+    const resized = sharp(pngPath)
+      .resize(TARGET_SIZE, TARGET_SIZE, { fit: 'inside', withoutEnlargement: true });
 
-    fs.writeFileSync(fullPath, buf);
-    const after = fs.statSync(fullPath).size;
-    totalAfter += after;
+    const [pngBuf, webpBuf, avifBuf] = await Promise.all([
+      resized.clone().png({ palette: true, quality: 90, compressionLevel: 9 }).toBuffer(),
+      resized.clone().webp({ quality: 80 }).toBuffer(),
+      resized.clone().avif({ quality: 50, effort: 6 }).toBuffer(),
+    ]);
 
-    const beforeKB = (before / 1024).toFixed(0);
-    const afterKB = (after / 1024).toFixed(0);
-    const pct = ((1 - after / before) * 100).toFixed(0);
-    console.log(`  ${file.padEnd(45)} ${beforeKB.padStart(5)} KB -> ${afterKB.padStart(4)} KB (-${pct}%)`);
+    fs.writeFileSync(pngPath, pngBuf);
+    fs.writeFileSync(webpPath, webpBuf);
+    fs.writeFileSync(avifPath, avifBuf);
+
+    const afterPng = pngBuf.length;
+    totals.png.after += afterPng;
+    totals.webp += webpBuf.length;
+    totals.avif += avifBuf.length;
+
+    const kb = (b) => (b / 1024).toFixed(0).padStart(4);
+    console.log(
+      `  ${file.padEnd(45)} png ${kb(afterPng)} KB · webp ${kb(webpBuf.length)} KB · avif ${kb(avifBuf.length)} KB`
+    );
   }
 
-  const totalBeforeMB = (totalBefore / 1024 / 1024).toFixed(1);
-  const totalAfterMB = (totalAfter / 1024 / 1024).toFixed(1);
-  const totalPct = ((1 - totalAfter / totalBefore) * 100).toFixed(0);
-  console.log(`\nTotal: ${totalBeforeMB} MB -> ${totalAfterMB} MB (-${totalPct}%)`);
+  const mb = (b) => (b / 1024 / 1024).toFixed(2);
+  console.log(`\nTotal PNG  : ${mb(totals.png.before)} MB -> ${mb(totals.png.after)} MB`);
+  console.log(`Total WebP : ${mb(totals.webp)} MB`);
+  console.log(`Total AVIF : ${mb(totals.avif)} MB  <-- primaeres Format fuer moderne Browser`);
 }
 
 main().catch(err => {

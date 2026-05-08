@@ -26,6 +26,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
+import { CozyWolfImage } from '../components/CozyWolfImage';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
@@ -3303,11 +3304,13 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
       {/* Pre-Cache: alle Posen mit opacity:0 + width/height 1px gerendert,
           damit Browser sie laedt + decodiert. Verhindert 1-Frame-Flicker
           beim ersten Anzeigen einer noch ungecacheten Pose. Nur einmal
-          beim Mount. */}
+          beim Mount. <picture> sorgt dafuer dass auch die AVIF-Variante
+          (die der Browser tatsaechlich anzeigen wird) vor-decodiert wird,
+          nicht nur die PNG-Fallback-Datei. */}
       {posesForMode.filter(p => p !== visibleFile).map(p => (
-        <img
+        <CozyWolfImage
           key={p}
-          src={`/avatars/cozywolf/${p}.png`}
+          pose={p}
           alt=""
           aria-hidden
           loading="eager"
@@ -3318,16 +3321,18 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
           }}
         />
       ))}
-      {/* Sichtbarer Wolf — nur EIN img-Element, src wechselt mit visibleFile.
+      {/* Sichtbarer Wolf — nur EIN <picture>-Element, pose wechselt mit visibleFile.
           2026-05-07 v5 (Wolf 'Wolf flackert immernoch — wirkt als kommen
           neue Bilder nicht schnell genug'): vorher 6 gestackte imgs mit
           opacity-Toggle — Browser hatte bei Compositing-Swap gelegentlich
           1-Frame-Luecke wo alle imgs als opacity:0 dargestellt wurden.
           Single-img + src-swap: Browser zeigt das alte Bild bis das neue
           im Cache geladen ist (ist es, weil alle Posen vor-gecached sind),
-          dann sofortiger Atomic-Replace ohne Transparent-Frame. */}
-      <img
-        src={`/avatars/cozywolf/${visibleFile}.png`}
+          dann sofortiger Atomic-Replace ohne Transparent-Frame.
+          2026-05-08: <picture>-Wrapper fuer AVIF (-84 %) → WebP → PNG
+          Fallback. Browser-Pick passiert atomar bei pose-Aenderung. */}
+      <CozyWolfImage
+        pose={visibleFile}
         alt=""
         loading="eager"
         decoding="sync"

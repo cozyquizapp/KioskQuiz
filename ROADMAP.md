@@ -78,14 +78,36 @@ Plus 2 Demo-Pages live:
 
 **Was als Nächstes: Q2 (AVIF) oder Visual-Polish.**
 
-### Sprint Q2 — AVIF-Pipeline (~1.5h)
+### Sprint Q2 — AVIF-Pipeline (~1.5h) ✅ ERLEDIGT 2026-05-08
+
 **Ziel:** First-Paint des Beamers spürbar schneller.
 
-1. **`scripts/compress-cozywolf.js` erweitern** um `.avif({ quality: 50, effort: 6 })` + `.webp({ quality: 78 })` outputs (neben PNG)
-2. **`<CozyAvatar>`-Wrapper-Component** mit `<picture>`-Tag (`avif → webp → png` fallback), Props: `src`, `priority` (für `fetchPriority` + `loading=eager`), `alt`
-3. **`<link rel="preload" as="image" type="image/avif">`** in `index.html` für die 2-3 Hero-Posen die im ersten Frame gezeigt werden
-4. Bestehende Cozywolf-Imports schrittweise auf Wrapper migrieren (1-2 Components zuerst)
-5. Bundle-Visualizer + Network-Tab nochmal vergleichen
+1. ✅ **`scripts/compress-cozywolf.js` erweitert** — Sharp-Pipeline rendert jetzt 3 Formate parallel pro Pose: PNG (palette/q90), WebP (q80), AVIF (q50, effort 6). `Promise.all([…])` für Fanout, kein Mehrfach-Resize.
+2. ✅ **`<CozyWolfImage>`-Wrapper** in [`frontend/src/components/CozyWolfImage.tsx`](frontend/src/components/CozyWolfImage.tsx) — `<picture>` mit `<source type="image/avif">` → `<source type="image/webp">` → `<img src=".png">`. `forwardRef` weitergegeben, `src` aus Props entfernt (per `Omit`), alle restlichen img-Attrs gehen durch.
+3. ⏭ **`<link rel="preload">`** ausgelassen — der bestehende JSX-Pre-Cache-Loop in QQBeamerPage rendert eh alle Posen mit `loading="eager"`/`decoding="sync"` und ist seitenspezifisch. Globaler Preload würde auf `/team`, `/builder` etc. Bandbreite verschwenden.
+4. ✅ **Beide Cozywolf-Refs in `QQBeamerPage.tsx` migriert** (Pre-Cache-Loop + Visible-Wolf, Zeile ~3307+3329). Anti-Flicker-Pattern bleibt: src-swap auf `<picture>` rendert React `<source>` und `<img>` simultan, Browser swappt atomar.
+5. ✅ **`vite.config.ts` workbox.globPatterns** um `webp,avif` erweitert — sonst hätte SW nur PNG precached und Browser hätte AVIF on-demand vom Netz geholt (Cold-Load-Penalty).
+
+**Format-Bilanz pro Pose (Durchschnitt):**
+
+| Format | ⌀ Größe | Total (31 Posen) | vs PNG |
+|---|---|---|---|
+| PNG (palette) | ~196 KB | 6.06 MB | baseline |
+| WebP (q80) | ~67 KB | 2.08 MB | **−66%** |
+| AVIF (q50) | ~30 KB | 0.94 MB | **−84%** |
+
+**Bundle-Bilanz:**
+
+| Metrik | Vor Q2 | Nach Q2 | Δ |
+|---|---|---|---|
+| Precache-Entries | 252 | 340 | +88 (avif+webp + sonstige) |
+| Precache-Größe | 104 658 KiB | 107 194 KiB | +2.5 MB (3 Formate precached) |
+| AVIF-Cold-Load (Beamer) | 6.06 MB PNG | 0.94 MB AVIF | **−5.1 MB für moderne Browser** |
+| JS-Bundle | identisch | identisch | 0 (CozyWolfImage tree-inlined) |
+
+**Erkenntnis:** SW-Install kostet jetzt +2.5 MB (alle 3 Formate sind precached für Offline-Reliability), aber *jeder Cold-Load auf einem AVIF-fähigen Browser* spart 5 MB Wolf-Last. Sobald SW installiert ist, ist's eh Cache-Hit; entscheidend ist der erste Beamer-Boot auf einem frischen Device.
+
+**Was als Nächstes: Q3 (Polish — `font-display: optional`, `useTransition`, Doppelklick-Schutz) oder direkt in Visual-Polish/Mechaniken-Sprints.**
 
 ### Sprint Q3 — Polish (~1h)
 **Ziel:** Kleinere Best-Practice-Punkte.

@@ -43,7 +43,11 @@ export default defineConfig({
         // 2026-05-07: cozywolf-PNGs via sharp komprimiert (3000x3000 + 4-5 MB
         // → 1024x1024 indexed-PNG + ~200-250 KB pro Pose, -94 %). Jetzt klein
         // genug fuer Standard-Precache, kein Exclude mehr noetig.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // 2026-05-08: avif + webp dazu — sharp-Pipeline (compress-cozywolf.js)
+        // erzeugt jetzt drei Formate pro Pose, <CozyWolfImage> picked via
+        // <picture>. SW muss alle drei precachen, sonst zieht der Browser die
+        // AVIF-Variante on-demand bei jedem Cold-Load.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,avif}'],
         // 3 MB Limit fuer joker-PNGs (2.3 MB) und category-Logos (1.7 MB).
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes

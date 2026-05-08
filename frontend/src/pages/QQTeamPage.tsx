@@ -940,7 +940,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           </CozyCard>
         )}
         {step === 'COLOR' && (
-          <CozyCard anim borderColor="#EAB308">
+          <CozyCard anim borderColor="#EC4899">
             {/* 2026-05-04 (Wolf): Karussell-Avatar-Editor — Slot via Swipe/Pfeile,
                 Emoji via Tap auf Hero (Bottom-Sheet), Lobby-voll-Empty-State. */}
             <AvatarKarussellEditor
@@ -1161,7 +1161,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           if (isPng) {
             // Beim ersten Mount auto-skip
             return (
-              <CozyCard anim borderColor="#EAB308">
+              <CozyCard anim borderColor="#EC4899">
                 <StepLabel>{lang === 'de' ? 'Avatar' : 'Avatar'}</StepLabel>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <QQTeamAvatar avatarId={avatarId} size={120} />
@@ -1171,13 +1171,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
-                  <CozyBtn color="#EAB308" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
+                  <CozyBtn color="#EC4899" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
                 </div>
               </CozyCard>
             );
           }
           return (
-            <CozyCard anim borderColor="#EAB308">
+            <CozyCard anim borderColor="#EC4899">
               <StepLabel>{lang === 'de' ? 'Wähle einen Avatar' : 'Pick an avatar'}</StepLabel>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
                 {pool.map((em, i) => {
@@ -1214,7 +1214,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               <div style={{ display: 'flex', gap: 8 }}>
                 <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
                 <CozyBtn
-                  color="#EAB308"
+                  color="#EC4899"
                   onClick={() => setStep('NAME')}
                   disabled={!chosenEmoji}
                 >
@@ -1225,7 +1225,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           );
         })()}
         {step === 'NAME' && (
-          <CozyCard anim borderColor="#EAB308">
+          <CozyCard anim borderColor="#EC4899">
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={64} style={{
                 margin: '0 auto',
@@ -1999,7 +1999,7 @@ function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: Q
   }
 
   return (
-    <CozyCard borderColor="#EAB308" pulse>
+    <CozyCard borderColor="#EC4899" pulse>
       <div style={{ textAlign: 'center', padding: '4px 0' }}>
         {/* Own team — hero display */}
         <div style={{

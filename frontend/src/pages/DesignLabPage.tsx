@@ -6,24 +6,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // ─── Google-Fonts laden (one-shot, alle 5 Designs) ────────────────────────────
-// Fonts refined nach Recherche-Findings: Newsreader (Noir Body — DM Serif zu
-// fragil), Archivo Black (Game-Show Body — Bowlby nur fuer 1-3 Worte),
-// Plus Jakarta Sans (modern Body), Caveat (Hand-drawn Headlines).
+// 2026-05-08: Lab auf 5 Aurora-Varianten umgebaut — Brand-Tweak (Pink+Navy
+// statt Stripe-Tech-Palette). Font-Set entsprechend reduziert auf was die
+// 4 Aurora-Varianten brauchen + Bricolage Grotesque / Geist / Space Grotesk
+// / DM Sans als neue Display/Body-Optionen.
 const FONTS_HREF =
   'https://fonts.googleapis.com/css2' +
   '?family=Inter:wght@400;500;700;800;900' +
-  '&family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900' +
   '&family=Nunito:wght@400;700;800;900' +
-  '&family=DM+Serif+Display:ital@0;1' +
-  '&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700' +
-  '&family=Anton' +
-  '&family=Bowlby+One' +
-  '&family=Archivo+Black' +
   '&family=Outfit:wght@300;500;700;900' +
   '&family=Plus+Jakarta+Sans:wght@400;500;700;800' +
-  '&family=Lora:wght@400;700' +
+  '&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800' +
+  '&family=Space+Grotesk:wght@400;500;700' +
+  '&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900' +
   '&family=Caveat:wght@400;700' +
   '&display=swap';
+// Geist wird separat geladen (noch nicht auf Google Fonts) — nutzt das offizielle
+// Vercel-CDN. Kein Font-Display-Risiko, da Lab/Showreel-only.
+const GEIST_FONT_HREF = 'https://cdn.jsdelivr.net/npm/geist@1/dist/geist.css';
 
 // ─── Realistic Dummy-Data ────────────────────────────────────────────────────
 type MockTeam = { id: string; name: string; emoji: string; color: string; cells: number; connected: boolean };
@@ -135,185 +135,176 @@ const DESIGNS: DesignConfig[] = [
     fireflyColor: 'rgba(232, 121, 249, 0.85)',
     wordmark: { text: 'CozyQuiz', weight: 800, tracking: '-0.02em' },
   },
-  // ─── 2. VINTAGE PUB QUIZ ─────────────────────────────────────────────────
-  // Refined: Burnt-Orange/Mustard/Avocado-Palette aus echtem 70er-Quellen,
-  // Parchment 2-Layer (Pattern + Vignette).
+  // ─── 2. AURORA WOLF — Brand-Tweak (Pink+Navy statt Magenta+Cyan+Lime) ────
+  // Aurora-Stage Struktur, aber Akzent-Farben aus dem CozyWolf-Logo
+  // (Pink #EC4899 + Magenta #A21247 + Navy #1E2A5A statt Stripe-Tech-Palette).
+  // Cards bleiben Glas-translucent. Outfit-Display + Plus Jakarta Body.
   {
-    id: 'cafe',
-    name: 'Café Vintage',
-    vibe: '70er-Café-Tapete · Burnt Orange · Parchment-Cards · Wes Anderson Vibe',
-    fonts: { display: "'Fraunces', Georgia, serif", body: "'Lora', Georgia, serif" },
+    id: 'aurora-wolf',
+    name: 'Aurora Wolf',
+    vibe: 'Aurora-Stage mit CozyWolf-Brand-Farben · Pink-Navy-Mesh · Premium-Glas',
+    fonts: { display: "'Outfit', system-ui, sans-serif", body: "'Plus Jakarta Sans', system-ui, sans-serif" },
     palette: [
-      { name: 'Ink',         hex: '#2A1F14' },
-      { name: 'Walnut',      hex: '#3D2317' },
-      { name: 'Parchment',   hex: '#F2E4C9' },
-      { name: 'Cream',       hex: '#E8D5A8' },
-      { name: 'Burnt Orange',hex: '#C8642B' },
-      { name: 'Mustard',     hex: '#D8A24A' },
-      { name: 'Avocado',     hex: '#6B7A3A' },
-      { name: 'Rust Brown',  hex: '#8B3A1F' },
+      { name: 'Void',       hex: '#0A0B14' },
+      { name: 'Hoodie',     hex: '#1E2A5A' }, // Wolf-Hoodie
+      { name: 'Surface',    hex: '#161A2E' },
+      { name: 'Wolf-Pink',  hex: '#EC4899' }, // Wolf-Body
+      { name: 'Magenta',    hex: '#A21247' }, // Logo-Ring
+      { name: 'Bone',       hex: '#F1F5F9' },
+      { name: 'Mint',       hex: '#67E8C9' }, // sparsamer Spannungs-Akzent
+      { name: 'Muted',      hex: '#94A3B8' },
     ],
-    bgBase: '#2A1F14',
+    bgBase: '#0A0B14',
     bgLayers:
-      'radial-gradient(ellipse at 50% 0%, rgba(216,162,74,0.22), transparent 60%),' +
-      'radial-gradient(ellipse at 50% 100%, rgba(139,58,31,0.18), transparent 60%)',
-    bgPatternSvg:
-      `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>` +
-      `<g fill='none' stroke='%23D8A24A' stroke-opacity='0.07' stroke-width='1.2'>` +
-      `<path d='M40 8 L50 28 L70 32 L54 46 L58 66 L40 56 L22 66 L26 46 L10 32 L30 28 Z'/>` +
-      `<circle cx='40' cy='40' r='3'/>` +
-      `</g></svg>")`,
-    cardBg: 'linear-gradient(180deg, #F2E4C9, #E8D5A8)',
-    cardBorder: '2px solid #8B3A1F',
-    // Stockflecken-Vignette via inner-shadow auf der Card → 2-Layer Parchment
+      'radial-gradient(ellipse 70% 50% at 14% 18%, rgba(236,72,153,0.32), transparent 65%),' +
+      'radial-gradient(ellipse 70% 50% at 86% 22%, rgba(30,58,138,0.32), transparent 65%),' +
+      'radial-gradient(ellipse 80% 60% at 25% 90%, rgba(162,18,71,0.22), transparent 65%),' +
+      'radial-gradient(ellipse 60% 50% at 80% 85%, rgba(103,232,201,0.16), transparent 65%),' +
+      'linear-gradient(180deg, #161A2E 0%, #0A0B14 100%)',
+    cardBg: 'linear-gradient(180deg, rgba(22,26,46,0.85), rgba(10,11,20,0.92))',
+    cardBorder: '1px solid rgba(255,255,255,0.10)',
     cardShadow:
-      'inset 0 0 60px rgba(139,58,31,0.18), ' +
-      '0 8px 0 rgba(42,31,20,0.7), ' +
-      '0 24px 40px rgba(0,0,0,0.45)',
-    cardRadius: 6,
-    textPrimary: '#2A1F14',
-    textSecondary: '#5C3A1C',
-    accent: '#C8642B',
+      'inset 0 1px 0 rgba(255,255,255,0.18), ' +
+      '0 24px 64px rgba(0,0,0,0.55), ' +
+      '0 0 32px rgba(236,72,153,0.10)',
+    cardRadius: 20,
+    textPrimary: '#F1F5F9',
+    textSecondary: '#94A3B8',
+    accent: '#EC4899',
     categoryColors: {
-      SCHAETZCHEN: '#D8A24A', MUCHO: '#3D5A80', BUNTE_TUETE: '#C8642B',
-      ZEHN_VON_ZEHN: '#6B7A3A', CHEESE: '#7B4B94',
+      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#EC4899',
+      ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
     },
-    fireflyColor: 'rgba(216, 162, 74, 0.95)',
-    wordmark: { text: 'CozyQuiz', weight: 900, tracking: '0.01em' },
+    fireflyColor: 'rgba(236, 72, 153, 0.85)',
+    wordmark: { text: 'CozyQuiz', weight: 800, tracking: '-0.02em' },
   },
-  // ─── 3. HAND-DRAWN COZY (Studio Ghibli) ──────────────────────────────────
-  // Refined: Hex-Codes aus ewenme/ghibli-Palette, Body Nunito, Caveat fuer
-  // handgeschriebene Akzente (Score/Team-Names).
+  // ─── 3. AURORA VIVID — Pink-Pop, Premium-Karton statt Glas ───────────────
+  // Mehr Aurora-Dichte (5 Blobs), Cards solider statt Glas. Border = soft
+  // Pink-Glow, Inner-Highlight oben fuer Karton-Look. Bricolage Grotesque
+  // (variable, character-stark) + Inter Body.
   {
-    id: 'handdrawn',
-    name: 'Hand-drawn Cozy',
-    vibe: 'Studio-Ghibli-Frames · weiche Sky+Sage · Caveat für handgeschrieben',
-    fonts: { display: "'Caveat', cursive", body: "'Nunito', system-ui, sans-serif" },
+    id: 'aurora-vivid',
+    name: 'Aurora Vivid',
+    vibe: 'Pink-Pop-Aurora · solide Premium-Karton-Cards · Gradient-Glow-Border',
+    fonts: { display: "'Bricolage Grotesque', system-ui, sans-serif", body: "'Inter', system-ui, sans-serif" },
     palette: [
-      { name: 'Cream',       hex: '#F4E8D0' },
-      { name: 'Card-Cream',  hex: '#FBF6E9' },
-      { name: 'Sky',         hex: '#A8C8E1' },
-      { name: 'Sage',        hex: '#9DB68C' },
-      { name: 'Terracotta',  hex: '#D88B6A' },
-      { name: 'Plum',        hex: '#8B6F94' },
-      { name: 'Honey',       hex: '#D9A441' },
-      { name: 'Ink',         hex: '#3E3A36' }, // never pure black!
+      { name: 'Void',         hex: '#0A0814' },
+      { name: 'Hoodie',       hex: '#1E2A5A' },
+      { name: 'Card',         hex: '#1A1525' },
+      { name: 'Wolf-Pink',    hex: '#EC4899' },
+      { name: 'Hot Pink',     hex: '#F472B6' },
+      { name: 'Magenta',      hex: '#BE185D' },
+      { name: 'Bone',         hex: '#FAFAF7' },
+      { name: 'Mid',          hex: '#9CA3AF' },
     ],
-    bgBase: '#F4E8D0',
+    bgBase: '#0A0814',
     bgLayers:
-      'radial-gradient(ellipse at 18% 10%, rgba(168,200,225,0.30), transparent 55%),' +
-      'radial-gradient(ellipse at 82% 90%, rgba(157,182,140,0.28), transparent 55%),' +
-      'radial-gradient(ellipse at 50% 50%, rgba(216,139,106,0.10), transparent 70%)',
-    bgPatternSvg:
-      `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>` +
-      `<g fill='none' stroke='%233E3A36' stroke-opacity='0.05' stroke-width='1.6' stroke-linecap='round'>` +
-      `<path d='M0 40 Q40 20 80 40 T160 40' />` +
-      `<path d='M0 100 Q40 80 80 100 T160 100' />` +
-      `<path d='M0 130 Q40 110 80 130 T160 130' />` +
-      `</g></svg>")`,
-    cardBg: 'linear-gradient(160deg, #FBF6E9, #F0E5C8)',
-    cardBorder: '2.5px solid #3E3A36',
-    cardShadow: '5px 7px 0 #3E3A36, 5px 7px 24px rgba(62,58,54,0.20)',
-    cardRadius: 22,
-    textPrimary: '#3E3A36',
-    textSecondary: '#6B5D4D',
-    accent: '#D88B6A',
-    categoryColors: {
-      SCHAETZCHEN: '#D9A441', MUCHO: '#A8C8E1', BUNTE_TUETE: '#D88B6A',
-      ZEHN_VON_ZEHN: '#9DB68C', CHEESE: '#8B6F94',
-    },
-    fireflyColor: 'rgba(217, 164, 65, 0.75)',
-    wordmark: { text: 'CozyQuiz', weight: 700, tracking: '0' },
-  },
-  // ─── 4. CINEMATIC NOIR ───────────────────────────────────────────────────
-  // Refined: 'true black-not-black' #0A0808, Brass-Gold Spotlight, Wine sehr
-  // sparsam. Body Newsreader (statt DM Serif), echter box-shadow inset
-  // Vignette-Effekt.
-  {
-    id: 'noir',
-    name: 'Cinematic Noir',
-    vibe: 'Blade Runner / Letterboxd · Brass-Spotlight · Bone-on-Pitch',
-    fonts: { display: "'DM Serif Display', Georgia, serif", body: "'Newsreader', Georgia, serif" },
-    palette: [
-      { name: 'Pitch',    hex: '#0A0808' },
-      { name: 'Smoke',    hex: '#1C1A18' },
-      { name: 'Char',     hex: '#262320' },
-      { name: 'Bone',     hex: '#F1E6D6' },
-      { name: 'Brass',    hex: '#CBA135' },
-      { name: 'Wine',     hex: '#7A1818' }, // sehr sparsam, max 3 % Flaeche
-      { name: 'Mist',     hex: '#7A7585' },
-      { name: 'Rust',     hex: '#A85C3D' },
-    ],
-    bgBase: '#0A0808',
-    // Echter box-shadow inset Vignette: blur 200px+ "Linsen"-Gefuehl
-    bgLayers:
-      'radial-gradient(ellipse 50% 70% at 50% 32%, rgba(203,161,53,0.20), transparent 55%)',
-    cardBg: 'linear-gradient(180deg, #1C1A18, #100E0C)',
-    cardBorder: '1px solid rgba(203,161,53,0.22)',
+      'radial-gradient(ellipse 60% 45% at 10% 15%, rgba(236,72,153,0.42), transparent 60%),' +
+      'radial-gradient(ellipse 50% 40% at 90% 20%, rgba(30,42,90,0.45), transparent 60%),' +
+      'radial-gradient(ellipse 70% 55% at 30% 85%, rgba(190,24,93,0.32), transparent 65%),' +
+      'radial-gradient(ellipse 55% 45% at 80% 80%, rgba(244,114,182,0.22), transparent 60%),' +
+      'radial-gradient(ellipse 40% 35% at 50% 50%, rgba(190,24,93,0.10), transparent 70%),' +
+      'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
+    cardBg: 'linear-gradient(180deg, #1F1A2E 0%, #14101F 100%)',
+    cardBorder: '1.5px solid rgba(236,72,153,0.35)',
     cardShadow:
-      'inset 0 0 200px rgba(0,0,0,0.85), ' +     // Linsen-Vignette
-      '0 30px 80px rgba(0,0,0,0.75), ' +
-      'inset 0 1px 0 rgba(241,230,214,0.06)',
-    cardRadius: 4,
-    textPrimary: '#F1E6D6',
-    textSecondary: '#7A7585',
-    accent: '#CBA135',
+      'inset 0 1.5px 0 rgba(255,255,255,0.10), ' +
+      '0 0 0 1px rgba(236,72,153,0.10), ' +
+      '0 16px 50px rgba(0,0,0,0.65), ' +
+      '0 0 48px rgba(236,72,153,0.18)',
+    cardRadius: 18,
+    textPrimary: '#FAFAF7',
+    textSecondary: '#9CA3AF',
+    accent: '#EC4899',
     categoryColors: {
-      SCHAETZCHEN: '#CBA135', MUCHO: '#5B82A6', BUNTE_TUETE: '#7A1818',
-      ZEHN_VON_ZEHN: '#7A9572', CHEESE: '#9B7AAE',
+      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F472B6',
+      ZEHN_VON_ZEHN: '#34D399', CHEESE: '#F472B6',
     },
-    fireflyColor: 'rgba(203, 161, 53, 0.90)',
-    wordmark: { text: 'COZYQUIZ', weight: 400, tracking: '0.18em', transform: 'uppercase' },
+    fireflyColor: 'rgba(236, 72, 153, 0.95)',
+    wordmark: { text: 'CozyQuiz', weight: 700, tracking: '-0.03em' },
   },
-  // ─── 5. NEO-RETRO GAME SHOW ──────────────────────────────────────────────
-  // Refined: Royal/Cobalt + Hot Magenta + Turbo Yellow (Jeopardy 2024+ Palette).
-  // Bowlby nur Wordmark, Body Archivo Black. Card-Magie via chrome-bevel +
-  // light-strip an Card-Kanten (siehe Recherche-Tipp).
+  // ─── 4. AURORA SOFT — Minimal-clean, mehr Atem, Caveat-Akzent ────────────
+  // Reduzierte Aurora (nur 2 grosse weiche Blobs), sehr cleane Cards mit
+  // duennem Border, viel Whitespace-Wirkung. Geist Display (Vercel-Style,
+  // sehr modern) + Caveat als Cozy-Nod fuer handgeschriebene Akzente.
   {
-    id: 'gameshow',
-    name: 'Neo-Retro Game Show',
-    vibe: 'Jeopardy 2024+ / Family Feud · Chrome-Bevels · Bold-Display',
-    fonts: { display: "'Bowlby One', Impact, sans-serif", body: "'Archivo Black', Impact, sans-serif" },
+    id: 'aurora-soft',
+    name: 'Aurora Soft',
+    vibe: 'Minimal-Aurora · 2-Blob-Wash · Geist + Caveat-Akzent · viel Atem',
+    fonts: { display: "'Geist', system-ui, sans-serif", body: "'Geist', system-ui, sans-serif" },
     palette: [
-      { name: 'Stage',     hex: '#0C1838' },
-      { name: 'Royal',     hex: '#1E3A8A' },
-      { name: 'Cobalt',    hex: '#2563EB' },
-      { name: 'Hot Magenta',hex: '#EC4899' },
-      { name: 'Turbo',     hex: '#FACC15' },
-      { name: 'Feud Gold', hex: '#F4B83E' },
-      { name: 'White',     hex: '#FFFFFF' },
-      { name: 'Mint',      hex: '#3DDC84' },
+      { name: 'Deep',        hex: '#0C0E1C' },
+      { name: 'Hoodie',      hex: '#1E2A5A' },
+      { name: 'Surface',     hex: '#15182A' },
+      { name: 'Wolf-Pink',   hex: '#EC4899' },
+      { name: 'Pink-Soft',   hex: '#F9A8D4' },
+      { name: 'Bone',        hex: '#F8FAFC' },
+      { name: 'Mid',         hex: '#94A3B8' },
+      { name: 'Caveat',      hex: '#FBBF24' },
     ],
-    bgBase: '#0C1838',
+    bgBase: '#0C0E1C',
     bgLayers:
-      'radial-gradient(ellipse at 50% 0%, rgba(244,184,62,0.28), transparent 60%),' +
-      'radial-gradient(ellipse at 0% 100%, rgba(236,72,153,0.22), transparent 55%),' +
-      'radial-gradient(ellipse at 100% 100%, rgba(37,99,235,0.20), transparent 55%),' +
-      'linear-gradient(180deg, #0C1838 0%, #050B22 100%)',
-    bgPatternSvg:
-      `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'>` +
-      `<circle cx='20' cy='20' r='1.5' fill='%23FACC15' fill-opacity='0.12'/>` +
-      `</svg>")`,
-    cardBg: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
-    // Chrome-Bevel + Gold-Light-Strip via gestackten box-shadows
-    cardBorder: '4px solid #FACC15',
+      'radial-gradient(ellipse 80% 55% at 20% 25%, rgba(236,72,153,0.20), transparent 70%),' +
+      'radial-gradient(ellipse 75% 60% at 80% 80%, rgba(30,42,90,0.28), transparent 70%),' +
+      'linear-gradient(180deg, #15182A 0%, #0C0E1C 100%)',
+    cardBg: 'linear-gradient(180deg, rgba(21,24,42,0.78), rgba(12,14,28,0.85))',
+    cardBorder: '1px solid rgba(255,255,255,0.06)',
     cardShadow:
-      'inset 0 4px 0 rgba(255,255,255,0.95), ' +
-      'inset 0 -4px 0 rgba(244,184,62,0.5), ' +
-      '0 0 0 2px #0C1838, ' +
-      '0 0 0 6px #F4B83E, ' +
-      '0 12px 40px rgba(244,184,62,0.45), ' +
-      '0 24px 60px rgba(0,0,0,0.5)',
+      'inset 0 1px 0 rgba(255,255,255,0.08), ' +
+      '0 18px 56px rgba(0,0,0,0.45)',
+    cardRadius: 16,
+    textPrimary: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    accent: '#EC4899',
+    categoryColors: {
+      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F9A8D4',
+      ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
+    },
+    fireflyColor: 'rgba(249, 168, 212, 0.80)',
+    wordmark: { text: 'CozyQuiz', weight: 600, tracking: '-0.02em' },
+  },
+  // ─── 5. AURORA BOLD — Hoodie-First, dramatic, harte Pink-Magenta-Border ──
+  // Navy-Hoodie als BG-Hauptton, Pink-Magenta-Aurora als Akzent. Cards mit
+  // 2px Pink-Magenta solidem Border + starkem Shadow. Space Grotesk
+  // (tech-warm) + DM Sans Body. Wirkt wie Brand-Hardcore-Statement.
+  {
+    id: 'aurora-bold',
+    name: 'Aurora Bold',
+    vibe: 'Navy-Hoodie-Stage · Pink-Magenta-Akzent-Aurora · solide 2px Pink-Border',
+    fonts: { display: "'Space Grotesk', system-ui, sans-serif", body: "'DM Sans', system-ui, sans-serif" },
+    palette: [
+      { name: 'Hoodie-Deep', hex: '#0F1530' },
+      { name: 'Hoodie',      hex: '#1E2A5A' },
+      { name: 'Hoodie-Mid',  hex: '#2A3870' },
+      { name: 'Wolf-Pink',   hex: '#EC4899' },
+      { name: 'Magenta',     hex: '#A21247' },
+      { name: 'Hot Pink',    hex: '#F472B6' },
+      { name: 'Bone',        hex: '#FAFAF7' },
+      { name: 'Mid',         hex: '#94A3B8' },
+    ],
+    bgBase: '#0F1530',
+    bgLayers:
+      'radial-gradient(ellipse 60% 45% at 12% 18%, rgba(236,72,153,0.32), transparent 60%),' +
+      'radial-gradient(ellipse 70% 55% at 88% 80%, rgba(162,18,71,0.30), transparent 60%),' +
+      'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(30,42,90,0.40), transparent 70%),' +
+      'linear-gradient(180deg, #1E2A5A 0%, #0F1530 100%)',
+    cardBg: 'linear-gradient(180deg, #161D40 0%, #0F1530 100%)',
+    cardBorder: '2px solid #EC4899',
+    cardShadow:
+      'inset 0 1.5px 0 rgba(244,114,182,0.20), ' +
+      '0 0 0 1px rgba(162,18,71,0.40), ' +
+      '0 20px 60px rgba(0,0,0,0.65), ' +
+      '0 0 36px rgba(236,72,153,0.30)',
     cardRadius: 14,
-    textPrimary: '#0C1838',
-    textSecondary: '#1E3A8A',
-    accent: '#FACC15',
+    textPrimary: '#FAFAF7',
+    textSecondary: '#94A3B8',
+    accent: '#EC4899',
     categoryColors: {
-      SCHAETZCHEN: '#FACC15', MUCHO: '#2563EB', BUNTE_TUETE: '#EC4899',
-      ZEHN_VON_ZEHN: '#3DDC84', CHEESE: '#A855F7',
+      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F472B6',
+      ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
     },
-    fireflyColor: 'rgba(250, 204, 21, 0.95)',
-    wordmark: { text: 'COZYQUIZ', weight: 400, tracking: '0.04em', transform: 'uppercase' },
+    fireflyColor: 'rgba(244, 114, 182, 0.95)',
+    wordmark: { text: 'COZYQUIZ', weight: 700, tracking: '0.02em', transform: 'uppercase' },
   },
 ];
 
@@ -321,11 +312,14 @@ const DESIGNS: DesignConfig[] = [
 // Aus Live-Recherche (Stripe, Vercel, Raycast) + Tiefen-Recherche (Jackbox,
 // TV-Game-Shows, Awwwards 2025/26 Trends).
 const MODERN_KEYFRAMES = `
-  /* Stripe-Style Mesh-Gradient: slow drift + breathing, 60s Cycle. */
+  /* Stripe-Style Mesh-Gradient: slow drift + breathing, 60s Cycle.
+     2026-05-08 (Wolf-Wunsch 'kein Drehen am Background'): Rotation komplett
+     raus, nur translate + scale-breath. Bleibt subtil dynamisch ohne dass
+     der BG visuell rotiert. */
   @keyframes auroraDrift {
-    0%   { transform: scale(1.05) rotate(0deg);   opacity: 0.95; }
-    50%  { transform: scale(1.12) rotate(180deg); opacity: 1.00; }
-    100% { transform: scale(1.05) rotate(360deg); opacity: 0.95; }
+    0%   { transform: translate(0, 0)       scale(1.04); opacity: 0.95; }
+    50%  { transform: translate(-2%, 1.5%)  scale(1.10); opacity: 1.00; }
+    100% { transform: translate(0, 0)       scale(1.04); opacity: 0.95; }
   }
   /* Cinematic Noir: animated grain (3-Frame Flicker @24fps). */
   @keyframes grainFlicker {
@@ -920,15 +914,24 @@ export default function DesignLabPage() {
   const d = DESIGNS[designIdx];
   const view = VIEWS[viewIdx].key;
 
-  // Inject Google Fonts once
+  // Inject Google Fonts + Geist once
   useEffect(() => {
-    const id = 'design-lab-fonts';
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = FONTS_HREF;
-    document.head.appendChild(link);
+    const fontsId = 'design-lab-fonts';
+    if (!document.getElementById(fontsId)) {
+      const link = document.createElement('link');
+      link.id = fontsId;
+      link.rel = 'stylesheet';
+      link.href = FONTS_HREF;
+      document.head.appendChild(link);
+    }
+    const geistId = 'design-lab-geist';
+    if (!document.getElementById(geistId)) {
+      const link = document.createElement('link');
+      link.id = geistId;
+      link.rel = 'stylesheet';
+      link.href = GEIST_FONT_HREF;
+      document.head.appendChild(link);
+    }
   }, []);
 
   // Auto-Cycle: zykliert Designs alle 9s, View bleibt

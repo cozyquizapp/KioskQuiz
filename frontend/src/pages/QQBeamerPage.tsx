@@ -5418,6 +5418,28 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           0%   { opacity: 0; transform: translateY(-30px) scale(0.8); letter-spacing: 0.5em; }
           100% { opacity: 1; transform: translateY(0)     scale(1);   letter-spacing: 0.12em; }
         }
+        /* 2026-05-08 (Wolf-Wunsch 'heute spielen wirkt eher öde'): Letters
+           cascaden einzeln rein (1.2em → 0.1em letter-spacing pro Buchstabe),
+           dann subtle Wave nach Settle. Underline-Reveal expandiert von center
+           als Pink-Gradient. */
+        @keyframes qqTrTitleLetter {
+          0%   { opacity: 0; transform: translateY(-32px) scale(0.6); filter: blur(8px); }
+          70%  { opacity: 1; transform: translateY(4px)   scale(1.06); filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0)     scale(1);   filter: blur(0); }
+        }
+        @keyframes qqTrTitleWave {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-3px); }
+        }
+        @keyframes qqTrUnderline {
+          0%   { opacity: 0; transform: scaleX(0); }
+          60%  { opacity: 1; transform: scaleX(1.05); }
+          100% { opacity: 1; transform: scaleX(1); }
+        }
+        @keyframes qqTrUnderlineShimmer {
+          0%   { background-position: -100% 0; }
+          100% { background-position: 200% 0; }
+        }
         @keyframes qqTrSlam {
           0%   { opacity: 0; transform: translateY(-80vh) scale(2) rotate(-18deg); filter: blur(6px); }
           55%  { opacity: 1; transform: translateY(8%)    scale(1.15) rotate(3deg); filter: blur(0); }
@@ -5476,16 +5498,63 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* Title */}
+      {/* Title — 2026-05-08 (Wolf-Wunsch 'heute spielen wirkt eher öde'):
+          Letters cascaden einzeln rein, dann sanftes Wave-Loop. Pink-Underline
+          expandiert drunter mit Shimmer-Loop. */}
+      <div style={{
+        position: 'relative', zIndex: 2,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 'clamp(8px, 1vh, 14px)',
+        marginBottom: 'clamp(24px, 3vw, 48px)',
+      }}>
       <div style={{
         position: 'relative', zIndex: 2,
         fontSize: 'clamp(36px, 5.2vw, 82px)', fontWeight: 900, color: titleColor,
         textTransform: 'uppercase', letterSpacing: '0.1em',
-        animation: `qqTrTitle ${titleDur}ms cubic-bezier(.2,.8,.2,1) ${titleDelay}ms both`,
         textShadow: titleShadow,
-        marginBottom: 'clamp(24px, 3vw, 48px)',
+        display: 'inline-flex', flexWrap: 'nowrap',
       }}>
-        🎬 {lang === 'en' ? 'Tonight\u2019s teams\u2026' : 'Heute spielen\u2026'}
+        {(() => {
+          const titleText = lang === 'en' ? '🎬 Tonight\u2019s teams\u2026' : '🎬 Heute spielen\u2026';
+          const letters = Array.from(titleText);
+          const letterStagger = 0.05;
+          const baseSec = titleDelay / 1000;
+          return letters.map((ch, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              opacity: 0,
+              whiteSpace: 'pre',
+              animation:
+                `qqTrTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${baseSec + i * letterStagger}s both, ` +
+                `qqTrTitleWave 2.6s ease-in-out ${baseSec + 1.2 + i * 0.06}s infinite`,
+            }}>{ch}</span>
+          ));
+        })()}
+      </div>
+      {/* Pink-Underline — expandiert von center, dann shimmer-loop */}
+      {(() => {
+        const titleText = lang === 'en' ? '🎬 Tonights teams' : '🎬 Heute spielen';
+        const letterCount = Array.from(titleText).length;
+        const baseSec = titleDelay / 1000;
+        const underlineDelay = baseSec + letterCount * 0.05 + 0.1;
+        return (
+          <div style={{
+            width: 'clamp(220px, 35vw, 480px)', height: 3, borderRadius: 999,
+            background: isEsc
+              ? 'linear-gradient(90deg, transparent 0%, rgba(255,45,123,0.7) 25%, #FF2D7B 50%, rgba(255,45,123,0.7) 75%, transparent 100%)'
+              : 'linear-gradient(90deg, transparent 0%, rgba(236,72,153,0.7) 25%, #EC4899 50%, rgba(236,72,153,0.7) 75%, transparent 100%)',
+            backgroundSize: '200% 100%',
+            boxShadow: isEsc
+              ? '0 0 14px rgba(255,45,123,0.55)'
+              : '0 0 14px rgba(236,72,153,0.55)',
+            transformOrigin: 'center',
+            opacity: 0,
+            animation:
+              `qqTrUnderline 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${underlineDelay}s both, ` +
+              `qqTrUnderlineShimmer 3.5s linear ${underlineDelay + 0.8}s infinite`,
+          }} />
+        );
+      })()}
       </div>
 
       {/* Teams grid — feste Reihen, damit 8 als 2×4 statt 7+1 erscheint */}

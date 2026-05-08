@@ -187,7 +187,7 @@ export default function QQProgressTree({
   const currentScheduleEntry = schedule[wolfDotIdxForColor];
   const progressColor = wolfOnFinale
     ? '#A78BFA'
-    : (currentScheduleEntry ? QQ_CATEGORY_COLORS[currentScheduleEntry.category] : '#FBBF24');
+    : (currentScheduleEntry ? QQ_CATEGORY_COLORS[currentScheduleEntry.category] : '#EC4899');
   // Etwas dunklere Variante fuer den Gradient-Endpunkt — gibt dem Strich
   // Tiefe statt einfarbig zu sein. 80% Helligkeit als Hex.
   const progressColorEnd = progressColor;
@@ -285,12 +285,12 @@ export default function QQProgressTree({
                   fontSize: phaseNameSize,
                   fontWeight: 900,
                   color: isCurrentPhase
-                    ? (isShowcase ? '#FBBF24' : variant === 'inline' ? '#FBBF24' : '#b45309')
+                    ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
                     : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b'),
                   letterSpacing: 0.4,
                   textTransform: 'uppercase',
                   flexShrink: 0,
-                  textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
+                  textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                   transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
                   transition: 'all 0.4s var(--qq-ease-out-cubic)',
                 }}
@@ -306,7 +306,7 @@ export default function QQProgressTree({
           {showFinale && (() => {
             const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
             const finaleLabelColor = isFinaleActive
-              ? (isShowcase ? '#FBBF24' : variant === 'inline' ? '#FBBF24' : '#b45309')
+              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
             return (
               <div style={{
@@ -318,7 +318,7 @@ export default function QQProgressTree({
                 letterSpacing: 0.4,
                 textTransform: 'uppercase',
                 flexShrink: 0,
-                textShadow: (isShowcase && isFinaleActive) ? '0 0 18px rgba(251,191,36,0.6)' : 'none',
+                textShadow: (isShowcase && isFinaleActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                 transform: (isShowcase && isFinaleActive) ? 'translateY(-2px)' : 'translateY(0)',
                 transition: 'all 0.4s var(--qq-ease-out-cubic)',
               }}>
@@ -489,7 +489,7 @@ export default function QQProgressTree({
               im Bogen zum neuen Dot (gleiche Geste wie RoundMiniTree). */}
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
-            const wolfColor = currentSchedule ? QQ_CATEGORY_COLORS[currentSchedule.category] : '#FBBF24';
+            const wolfColor = currentSchedule ? QQ_CATEGORY_COLORS[currentSchedule.category] : '#EC4899';
             const wolfSize = Math.round(dotSize * 1.35);
             return (
               <div style={{
@@ -519,8 +519,8 @@ export default function QQProgressTree({
 
       <style>{`
         @keyframes qqTreePulse {
-          0%, 100% { box-shadow: 0 0 0 4px rgba(251,191,36,0.35), 0 6px 14px rgba(0,0,0,0.2); }
-          50%      { box-shadow: 0 0 0 10px rgba(251,191,36,0.10), 0 6px 14px rgba(0,0,0,0.2); }
+          0%, 100% { box-shadow: 0 0 0 4px rgba(236,72,153,0.35), 0 6px 14px rgba(0,0,0,0.2); }
+          50%      { box-shadow: 0 0 0 10px rgba(236,72,153,0.10), 0 6px 14px rgba(0,0,0,0.2); }
         }
       `}</style>
     </div>

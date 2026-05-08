@@ -2170,6 +2170,352 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
   );
 }
 
+// ─── Slot Q/R/S: Thanks-Page Recap-Varianten ─────────────────────────────────
+// Wolf-Wunsch: 3 verschiedene Recap-Versionen für die Thanks-Page. Mock-Data
+// repräsentiert ein 5-Fragen-Quiz, die echte Implementation würde aus
+// `s.questionHistory` ziehen.
+
+type RecapItem = {
+  catLabel: string;
+  catEmoji: string;
+  question: string;
+  answer: string;
+  winnerName: string;
+  winnerEmoji: string;
+  winnerColor: string;
+};
+
+const RECAP_MOCK: RecapItem[] = [
+  { catLabel: 'MUCHO',      catEmoji: '🅰', question: 'Wer war der zweite James Bond?',  answer: 'Roger Moore', winnerName: 'Wolfsrudel',       winnerEmoji: '🐺', winnerColor: '#EC4899' },
+  { catLabel: 'Hot Potato', catEmoji: '🥔', question: 'Länder mit Rot in der Flagge',    answer: 'China',       winnerName: 'Eulen-Spiegel',     winnerEmoji: '🦉', winnerColor: '#F97316' },
+  { catLabel: 'Schätzchen', catEmoji: '🎯', question: 'Höhe des Eiffelturms in Metern?', answer: '330',         winnerName: 'Brain-Trust',       winnerEmoji: '🧠', winnerColor: '#22C55E' },
+  { catLabel: '4 gewinnt',  catEmoji: '🧩', question: 'In welchem Jahr fiel die Mauer?', answer: '1989',        winnerName: 'Cozy Cats',         winnerEmoji: '🐱', winnerColor: '#A855F7' },
+  { catLabel: 'Bunte Tüte', catEmoji: '🎁', question: 'Schwerstes Tier der Welt?',       answer: 'Blauwal',     winnerName: 'Wolfsrudel',        winnerEmoji: '🐺', winnerColor: '#EC4899' },
+];
+
+// Vereinfachte Thanks-Card als Frame für alle Varianten — zeigt Wolf das volle
+// Bild (Headline + Tagline + QR-Mock + Signatur). Pure Mock, kein realer State.
+function ThanksCardMock({ compact }: { compact?: boolean } = {}) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: compact ? 16 : 24,
+      padding: compact ? '28px 36px' : '48px 64px',
+      borderRadius: 24,
+      background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
+      border: '2px solid rgba(236,72,153,0.4)',
+      boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
+      maxWidth: compact ? 560 : 720,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      position: 'relative',
+      zIndex: 5,
+    }}>
+      <div style={{
+        fontSize: compact ? 'clamp(24px, 3vw, 36px)' : 'clamp(32px, 4vw, 52px)',
+        fontWeight: 900, color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
+        textShadow: '0 0 40px rgba(236,72,153,0.42)',
+      }}>
+        🎉 Wir hoffen, ihr hattet Spaß!
+      </div>
+      <div style={{
+        fontSize: compact ? 13 : 16, fontWeight: 700,
+        color: '#cbd5e1', textAlign: 'center', lineHeight: 1.45, maxWidth: 460,
+      }}>
+        📣 Erzählt euren Freunden vom CozyQuiz — und scannt den Code für eure Team-Stats 🎁
+      </div>
+      <div style={{
+        width: compact ? 140 : 180, height: compact ? 140 : 180, borderRadius: 12,
+        background: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 0 32px rgba(236,72,153,0.40), 0 4px 16px rgba(0,0,0,0.4)',
+      }}>
+        <span style={{ fontSize: compact ? 38 : 56, color: '#0A0814' }}>📱 QR</span>
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 16px', borderRadius: 999,
+        background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
+        border: '1.5px solid rgba(236,72,153,0.40)',
+      }}>
+        <span style={{ fontSize: 22 }}>🐺</span>
+        <span style={{ fontSize: 13, fontWeight: 900, color: '#cbd5e1', letterSpacing: '0.04em' }}>
+          CozyQuiz · cozywolf.de
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante A: BG-Slideshow ────────────────────────────────────────────────
+function ThanksRecapVariantA() {
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 4500);
+    return () => window.clearInterval(id);
+  }, []);
+  const cur = RECAP_MOCK[idx];
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at center, #1A0F2E 0%, #0A0814 70%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <style>{`
+        @keyframes recapASlide {
+          0%   { opacity: 0; transform: scale(1.04) translateX(20px); filter: blur(8px); }
+          15%  { opacity: 0.32; transform: scale(1) translateX(0); filter: blur(0); }
+          85%  { opacity: 0.32; }
+          100% { opacity: 0; transform: scale(0.98) translateX(-20px); filter: blur(4px); }
+        }
+        @keyframes recapAItemIn {
+          0%   { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      {/* BG-Slide: durch absolute-overlap fadet alter raus, neuer rein */}
+      {RECAP_MOCK.map((item, i) => i === idx && (
+        <div key={`${idx}-${i}`} aria-hidden style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 28, padding: 48,
+          background: `radial-gradient(ellipse at center, ${item.winnerColor}22 0%, transparent 60%)`,
+          opacity: 0,
+          animation: 'recapASlide 4.5s ease both',
+          zIndex: 1,
+        }}>
+          <div style={{ fontSize: 'clamp(80px, 12vw, 140px)', lineHeight: 1, opacity: 0.85 }}>{item.catEmoji}</div>
+          <div style={{
+            fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
+            color: item.winnerColor, textTransform: 'uppercase', letterSpacing: '0.16em',
+          }}>{item.catLabel}</div>
+          <div style={{
+            fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 700,
+            color: '#F1F5F9', textAlign: 'center', maxWidth: 760, lineHeight: 1.3,
+          }}>„{item.question}"</div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '10px 22px', borderRadius: 999,
+            background: 'rgba(255,255,255,0.08)',
+            border: `1.5px solid ${item.winnerColor}`,
+          }}>
+            <span style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: `${item.winnerColor}33`,
+              border: `2px solid ${item.winnerColor}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26,
+            }}>{item.winnerEmoji}</span>
+            <span style={{ fontSize: 'clamp(16px, 1.6vw, 22px)', fontWeight: 900, color: item.winnerColor }}>
+              {item.winnerName}
+            </span>
+            <span style={{ fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#CBD5E1' }}>→ <b style={{ color: '#F1F5F9' }}>{item.answer}</b></span>
+          </div>
+        </div>
+      ))}
+      {/* Dim-Overlay damit Card-Text klar bleibt */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at center, rgba(10,8,20,0.45) 0%, rgba(10,8,20,0.75) 100%)',
+        zIndex: 2,
+      }} />
+      <ThanksCardMock />
+      {/* Progress-Dots am unteren Rand */}
+      <div style={{
+        position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', gap: 8, zIndex: 6,
+      }}>
+        {RECAP_MOCK.map((_, i) => (
+          <span key={i} style={{
+            width: i === idx ? 18 : 8, height: 6, borderRadius: 999,
+            background: i === idx ? '#EC4899' : 'rgba(255,255,255,0.25)',
+            transition: 'all 0.4s ease',
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante B: Polaroid-Stack ──────────────────────────────────────────────
+function ThanksRecapVariantB() {
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 3500);
+    return () => window.clearInterval(id);
+  }, []);
+  const total = RECAP_MOCK.length;
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at 30% 30%, #1A0F2E 0%, #0A0814 70%)',
+      display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 40,
+      padding: 40,
+    }}>
+      <style>{`
+        @keyframes polaroidIn {
+          0%   { opacity: 0; transform: translate(40px, -20px) rotate(8deg) scale(0.9); }
+          100% { opacity: 1; transform: translate(0, 0) rotate(var(--tilt)) scale(1); }
+        }
+        @keyframes polaroidOut {
+          0%   { opacity: 1; }
+          100% { opacity: 0; transform: translate(-50px, 30px) rotate(-12deg) scale(0.85); }
+        }
+      `}</style>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <ThanksCardMock compact />
+      </div>
+      {/* Polaroid-Stack rechts */}
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        {RECAP_MOCK.map((item, i) => {
+          const offset = (i - idx + total) % total;  // 0 = top, 1 = behind, ...
+          const visible = offset < 4;
+          const tilt = [-3, 5, -8, 2][offset] ?? 0;
+          const dx = [0, 12, 24, 36][offset] ?? 50;
+          const dy = [0, 10, 22, 34][offset] ?? 50;
+          const z = 10 - offset;
+          return visible ? (
+            <div key={i} style={{
+              position: 'absolute',
+              left: '50%', top: '50%',
+              ['--tilt' as any]: `${tilt}deg`,
+              transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${tilt}deg)`,
+              width: 'clamp(220px, 25vw, 320px)',
+              padding: '20px 18px 56px',
+              background: '#fafaf5',
+              borderRadius: 8,
+              boxShadow: '0 14px 36px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3)',
+              zIndex: z,
+              opacity: offset === 0 ? 1 : 0.85,
+              transition: 'all 0.7s cubic-bezier(0.34, 1.4, 0.5, 1)',
+              animation: offset === 0 ? 'polaroidIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1) both' : undefined,
+            }}>
+              <div style={{
+                width: '100%', aspectRatio: '4 / 3',
+                background: `radial-gradient(circle at center, ${item.winnerColor}33 0%, ${item.winnerColor}10 60%, #1a1424 100%)`,
+                borderRadius: 4,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 8, padding: 14,
+              }}>
+                <div style={{ fontSize: 'clamp(48px, 6vw, 72px)', lineHeight: 1 }}>{item.catEmoji}</div>
+                <div style={{
+                  fontSize: 11, fontWeight: 900, color: item.winnerColor,
+                  textTransform: 'uppercase', letterSpacing: '0.14em',
+                }}>{item.catLabel}</div>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: `${item.winnerColor}33`,
+                  border: `2px solid ${item.winnerColor}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                }}>{item.winnerEmoji}</div>
+              </div>
+              <div style={{
+                marginTop: 12, textAlign: 'center',
+                fontFamily: "'Caveat', cursive, 'Nunito', sans-serif",
+                fontSize: 'clamp(15px, 1.6vw, 19px)', fontWeight: 700,
+                color: '#1a1424',
+              }}>{item.winnerName} · {item.answer}</div>
+            </div>
+          ) : null;
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante C: Filmstrip / Endcredits ──────────────────────────────────────
+function ThanksRecapVariantC() {
+  // 3× wiederholen für nahtlosen Loop
+  const strip = [...RECAP_MOCK, ...RECAP_MOCK, ...RECAP_MOCK];
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at center 30%, #1A0F2E 0%, #0A0814 70%)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <style>{`
+        @keyframes filmstripScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+      {/* Thanks-Card oben mittig */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <ThanksCardMock compact />
+      </div>
+      {/* Filmstrip unten — scrollt langsam von rechts nach links */}
+      <div style={{
+        height: 200, position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 30%)',
+        borderTop: '1px solid rgba(236,72,153,0.3)',
+      }}>
+        {/* Sprocket-Holes-Decoration oben + unten */}
+        <div aria-hidden style={{
+          position: 'absolute', left: 0, right: 0, top: 4, height: 12,
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 16px, rgba(255,255,255,0.18) 16px 24px)',
+        }} />
+        <div aria-hidden style={{
+          position: 'absolute', left: 0, right: 0, bottom: 4, height: 12,
+          backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 16px, rgba(255,255,255,0.18) 16px 24px)',
+        }} />
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          height: '100%', padding: '24px 12px',
+          width: 'max-content',
+          animation: 'filmstripScroll 30s linear infinite',
+        }}>
+          {strip.map((item, i) => (
+            <div key={i} style={{
+              flexShrink: 0,
+              width: 220, height: 140,
+              borderRadius: 10,
+              background: `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
+              border: `1.5px solid ${item.winnerColor}66`,
+              boxShadow: `0 6px 16px rgba(0,0,0,0.4), 0 0 14px ${item.winnerColor}33`,
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              padding: '12px 14px',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 26, lineHeight: 1 }}>{item.catEmoji}</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 900, color: item.winnerColor,
+                  textTransform: 'uppercase', letterSpacing: '0.12em',
+                }}>{item.catLabel}</span>
+              </div>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: '#cbd5e1',
+                lineHeight: 1.3, overflow: 'hidden',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              }}>{item.question}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: `${item.winnerColor}33`,
+                  border: `1.5px solid ${item.winnerColor}`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}>{item.winnerEmoji}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.winnerName}
+                </span>
+                <span style={{ fontSize: 10, color: '#94A3B8', marginLeft: 'auto' }}>→ {item.answer}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
@@ -2274,6 +2620,24 @@ export default function AnimationsLabPage() {
       blurb: 'Wolf-Idee: 🥔 fliegt im Bogen zwischen Team-Avataren. Bei Timer-Out fliegt das Team raus (grau) und Kartoffel weiter zum nächsten. Smoke-Trail hinten dran. Replay startet die Sequenz neu.',
       keepAlive: false, minHeight: 360,
       render: (r) => <FlyingPotatoDemo replay={r} />,
+    },
+    {
+      label: 'Q', title: 'Recap-A: BG-Slideshow hinter Thanks-Card',
+      blurb: 'Wolf-Favorit: Vollbild-BG-Layer hinter der Thanks-Card cycelt durch alle Quiz-Fragen — Kategorie · Frage · Winner-Avatar · richtige Antwort. Cross-Fade ~5s pro Slide, subtle 30 % Opacity damit die Thanks-Card im Vordergrund bleibt.',
+      keepAlive: true, minHeight: 600,
+      render: (_r) => <ThanksRecapVariantA />,
+    },
+    {
+      label: 'R', title: 'Recap-B: Polaroid-Stack neben Thanks-Card',
+      blurb: 'Polaroid-Stack mit echten Kategorie-Polaroids fliegt rein, top-Polaroid wechselt alle 3.5s. Tilt-Rotations für Tiefe, dezenter Drop-Schatten. Cinematic & retro.',
+      keepAlive: true, minHeight: 600,
+      render: (_r) => <ThanksRecapVariantB />,
+    },
+    {
+      label: 'S', title: 'Recap-C: Filmstrip / Endcredits',
+      blurb: 'Horizontaler Filmstrip am unteren Rand scrollt langsam von rechts nach links. Pro Frame Mini-Karte mit Cat-Icon + Frage + Winner-Avatar. Endlos-Loop, wie Kino-Credits.',
+      keepAlive: true, minHeight: 600,
+      render: (_r) => <ThanksRecapVariantC />,
     },
   ];
 

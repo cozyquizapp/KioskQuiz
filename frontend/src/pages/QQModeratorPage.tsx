@@ -92,11 +92,11 @@ export default function QQModeratorPage() {
     prevModPhaseRef.current = state.phase;
     if (!prev || prev === state.phase) return;
     if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', '#22C55E');
-    else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', '#F59E0B');
+    else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', '#EC4899');
     else if (state.phase === 'PLACEMENT')      pushToast('Platzierungs-Phase', '📍', '#EF4444');
     else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', '#8B5CF6');
-    else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', '#F59E0B');
-    else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', '#FBBF24');
+    else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', '#EC4899');
+    else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', '#EC4899');
     else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung laeuft', '🎭', '#F97316');
   }, [state?.phase, state?.gamePhaseIndex]);
 
@@ -880,8 +880,9 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // P — Toggle pause
-    if (e.code === 'KeyP') {
+    // P / F19 — Toggle pause (2026-05-08: F19 als Streamdeck-Mapping
+    // ergänzt — Wolf-Audit hatte P ohne Streamdeck-Key gefunden).
+    if (e.code === 'KeyP' || e.code === 'F19') {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
       else if (!['LOBBY', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
@@ -900,14 +901,23 @@ export default function QQModeratorPage() {
 
   const s = state;
   const teamList = s?.teams ?? [];
-  const [settingsOpen, setSettingsOpen] = useState(true);
+  // 2026-05-08 (Wolf-Audit 'mod page total überladen'): Settings-Card
+  // DEFAULT COLLAPSED. Vorher useState(true) → Settings nahmen 180+ px Höhe
+  // weg während Live-Quiz. Jetzt: nur in LOBBY default offen, sonst zu.
+  const [settingsOpen, setSettingsOpen] = useState(() => {
+    return state?.phase === 'LOBBY';
+  });
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
-  // Auto-collapse settings when game starts
+  // Auto-collapse settings when game starts. Plus auto-open wenn zurück
+  // in LOBBY (z. B. via 'Zurück zum Setup').
   const prevPhaseRef = useRef(s?.phase);
   useEffect(() => {
-    if (prevPhaseRef.current === 'LOBBY' && s?.phase && s.phase !== 'LOBBY') {
+    const prev = prevPhaseRef.current;
+    if (prev === 'LOBBY' && s?.phase && s.phase !== 'LOBBY') {
       setSettingsOpen(false);
+    } else if (prev !== 'LOBBY' && s?.phase === 'LOBBY') {
+      setSettingsOpen(true);
     }
     prevPhaseRef.current = s?.phase;
   }, [s?.phase]);
@@ -926,13 +936,13 @@ export default function QQModeratorPage() {
       case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
       case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
-      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#F59E0B', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
+      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#EC4899', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
-      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#FBBF24', sub: s.connections?.phase ?? '' };
-      case 'PAUSED': return { text: '⏸ PAUSE', color: '#F59E0B' };
+      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#EC4899', sub: s.connections?.phase ?? '' };
+      case 'PAUSED': return { text: '⏸ PAUSE', color: '#EC4899' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
-      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#F59E0B', sub: 'QR-Code für Summary' };
+      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#EC4899', sub: 'QR-Code für Summary' };
       default: return { text: s.phase, color: '#475569' };
     }
   }
@@ -972,9 +982,9 @@ export default function QQModeratorPage() {
               title={autoplayPaused ? 'Autoplay fortsetzen' : 'Autoplay pausieren'}
               style={{
                 padding: '6px 14px', borderRadius: 8,
-                border: `1px solid ${autoplayPaused ? 'rgba(251,191,36,0.5)' : 'rgba(34,197,94,0.5)'}`,
-                background: autoplayPaused ? 'rgba(251,191,36,0.18)' : 'rgba(34,197,94,0.14)',
-                color: autoplayPaused ? '#FDE68A' : '#86efac', cursor: 'pointer',
+                border: `1px solid ${autoplayPaused ? 'rgba(236,72,153,0.5)' : 'rgba(34,197,94,0.5)'}`,
+                background: autoplayPaused ? 'rgba(236,72,153,0.18)' : 'rgba(34,197,94,0.14)',
+                color: autoplayPaused ? '#FBCFE8' : '#86efac', cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
                 boxShadow: 'var(--qm-depth-sm)',
               }}
@@ -1160,7 +1170,7 @@ export default function QQModeratorPage() {
                             : 'linear-gradient(90deg, #d97706, #f59e0b)',
                           boxShadow: answeredCount >= connectedTeams
                             ? '0 0 10px rgba(34,197,94,0.55)'
-                            : '0 0 10px rgba(245,158,11,0.45)',
+                            : '0 0 10px rgba(236,72,153,0.45)',
                           transition: 'width 0.3s, background 0.3s',
                         }} />
                       </div>
@@ -1244,7 +1254,7 @@ export default function QQModeratorPage() {
                   && !(s.currentQuestion?.bunteTuete?.kind === 'hotPotato'
                        && ((s as any).hotPotatoSlotState === 'rolling'
                            || (s as any).hotPotatoSlotState === 'landed')) && (
-                  <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="Space">
+                  <PrimaryBtn color="#EC4899" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="Space">
                     👁 Antwort aufdecken
                   </PrimaryBtn>
                 )}
@@ -1310,7 +1320,7 @@ export default function QQModeratorPage() {
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <Btn color="#F59E0B" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
+                        <Btn color="#EC4899" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
                           🎯 Sieger anzeigen (Space)
                         </Btn>
                       </>
@@ -1437,7 +1447,7 @@ export default function QQModeratorPage() {
                           );
                         })}
                       </div>
-                      <Btn color="#F59E0B" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
+                      <Btn color="#EC4899" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
                         ⏹ Alle Hinweise zeigen (Reveal)
                       </Btn>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>
@@ -1600,7 +1610,7 @@ export default function QQModeratorPage() {
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <PrimaryBtn
-                          color={isAutoPhase ? '#64748b' : '#F59E0B'}
+                          color={isAutoPhase ? '#64748b' : '#EC4899'}
                           onClick={() => emit('qq:mapRevealStep', { roomCode })}
                           hotkey="Space"
                         >
@@ -1688,7 +1698,7 @@ export default function QQModeratorPage() {
                           ? `→ Runde ${s.gamePhaseIndex + 1}`
                           : '→ Nächste Frage';
                   return (
-                    <PrimaryBtn color={goesToConnections ? '#FBBF24' : '#22C55E'} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={goesToConnections ? '#EC4899' : '#22C55E'} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );
@@ -1716,10 +1726,10 @@ export default function QQModeratorPage() {
                         <div style={{
                           display: 'flex', flexDirection: 'column', gap: 6,
                           padding: '8px 12px', borderRadius: 8,
-                          border: '1.5px solid #F59E0B88',
-                          background: 'rgba(245,158,11,0.10)',
+                          border: '1.5px solid #EC489988',
+                          background: 'rgba(236,72,153,0.10)',
                         }}>
-                          <div style={{ fontSize: 12, fontWeight: 900, color: '#FBBF24', letterSpacing: '0.04em' }}>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: '#EC4899', letterSpacing: '0.04em' }}>
                             ⚠ STECHFRAGE — gleicher Endstand bei {tieCands.length} Teams
                           </div>
                           <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, lineHeight: 1.35 }}>
@@ -1751,14 +1761,14 @@ export default function QQModeratorPage() {
                       )}
                       {tieResolved && (
                         <div style={{
-                          fontSize: 12, fontWeight: 900, color: '#FBBF24',
+                          fontSize: 12, fontWeight: 900, color: '#EC4899',
                           padding: '4px 10px', borderRadius: 8,
-                          background: 'rgba(251,191,36,0.10)',
+                          background: 'rgba(236,72,153,0.10)',
                         }}>
                           ✓ Stechfrage aufgeloest — {s.teams.find(t => t.id === s.tieBreakerWinnerId)?.name}
                         </div>
                       )}
-                      <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                      <PrimaryBtn color="#EC4899" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
                         ▶ Danke-Folie & QR
                       </PrimaryBtn>
                       {/* 2026-05-02 (Event-Manager-Audit): Endstand exportieren.
@@ -1806,14 +1816,14 @@ export default function QQModeratorPage() {
                                 }}>
                                   <span style={{
                                     minWidth: 22, textAlign: 'center',
-                                    color: rank === 1 ? '#FBBF24' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
+                                    color: rank === 1 ? '#EC4899' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
                                   }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}</span>
                                   <span style={{
                                     flex: 1, color: tm.color, lineHeight: 1.1,
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>{tm.name}</span>
                                   <span style={{
-                                    fontSize: 11, color: '#FDE68A', fontWeight: 900,
+                                    fontSize: 11, color: '#FBCFE8', fontWeight: 900,
                                     fontVariantNumeric: 'tabular-nums',
                                   }}>{tm.largestConnected} F</span>
                                 </div>
@@ -1862,7 +1872,7 @@ export default function QQModeratorPage() {
 
                 {/* ── Secondary: Pause ── */}
                 {!['LOBBY', 'PAUSED', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
-                  <Btn color="#F59E0B" outline onClick={() => emit('qq:pause', { roomCode })}>
+                  <Btn color="#EC4899" outline onClick={() => emit('qq:pause', { roomCode })}>
                     ⏸ Pause <span style={{ fontSize: 10, opacity: 0.6 }}>P</span>
                   </Btn>
                 )}
@@ -1889,7 +1899,7 @@ export default function QQModeratorPage() {
 
             {/* Buzz queue */}
             {s.buzzQueue.length > 0 && (
-              <div style={{ ...card, borderColor: 'rgba(251,191,36,0.3)' }}>
+              <div style={{ ...card, borderColor: 'rgba(236,72,153,0.3)' }}>
                 <div style={sectionLabel}><QQEmojiIcon emoji="⚡"/> Buzz-Reihenfolge</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {s.buzzQueue.map((b, i) => {
@@ -2006,7 +2016,7 @@ export default function QQModeratorPage() {
                               <span style={{ fontSize: 11, color: '#22C55E' }}>●</span>
                             )}
                             {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
-                            {answer && <span style={{ fontSize: 11, color: '#FBBF24' }}>✎ abgegeben</span>}
+                            {answer && <span style={{ fontSize: 11, color: '#EC4899' }}>✎ abgegeben</span>}
                           </div>
                           <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
                             {t.largestConnected} verbunden · {t.totalCells} Felder
@@ -2082,7 +2092,7 @@ export default function QQModeratorPage() {
                               title="Lustige Antwort markieren"
                               style={{
                                 padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
-                                border: '1px solid rgba(251,191,36,0.3)', background: 'transparent',
+                                border: '1px solid rgba(236,72,153,0.3)', background: 'transparent',
                                 fontSize: 16, lineHeight: 1, fontFamily: 'inherit',
                               }}>😂</button>
                           )}
@@ -2350,9 +2360,9 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.03))',
-      border: '1px solid rgba(251,191,36,0.35)',
-      borderLeft: '4px solid #FBBF24',
+      background: 'linear-gradient(135deg, rgba(236,72,153,0.08), rgba(236,72,153,0.03))',
+      border: '1px solid rgba(236,72,153,0.35)',
+      borderLeft: '4px solid #EC4899',
       borderRadius: 8,
       padding: '10px 14px',
       marginBottom: 12,
@@ -2365,7 +2375,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         fontWeight: 900,
         letterSpacing: 0.8,
         textTransform: 'uppercase',
-        color: '#FBBF24',
+        color: '#EC4899',
         marginBottom: 4,
         display: 'flex',
         alignItems: 'center',
@@ -2379,11 +2389,11 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         <div style={{
           marginTop: 8,
           paddingTop: 8,
-          borderTop: '1px dashed rgba(251,191,36,0.3)',
+          borderTop: '1px dashed rgba(236,72,153,0.3)',
           color: '#fef3c7',
           fontStyle: 'italic',
         }}>
-          <span style={{ fontWeight: 900, fontStyle: 'normal', color: '#FBBF24' }}>Frage-Notiz: </span>
+          <span style={{ fontWeight: 900, fontStyle: 'normal', color: '#EC4899' }}>Frage-Notiz: </span>
           {customNote}
         </div>
       )}
@@ -2667,7 +2677,7 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
     SCHAETZCHEN: '#3B82F6',
     MUCHO: '#22C55E',
     ZEHN_VON_ZEHN: '#A855F7',
-    CHEESE: '#FBBF24',
+    CHEESE: '#EC4899',
     BUNTE_TUETE: '#EF4444',
     BUZZER: '#F97316',
     PICTURE_THIS: '#06B6D4',
@@ -2832,9 +2842,9 @@ function TimerPill({ endsAt }: { endsAt: number }) {
   return (
     <div style={{
       padding: '4px 14px', borderRadius: 999, fontWeight: 900, fontSize: 14,
-      background: urgent ? 'rgba(239,68,68,0.2)' : 'rgba(251,191,36,0.15)',
-      border: `1px solid ${urgent ? '#EF4444' : '#FBBF24'}`,
-      color: urgent ? '#EF4444' : '#FBBF24',
+      background: urgent ? 'rgba(239,68,68,0.2)' : 'rgba(236,72,153,0.15)',
+      border: `1px solid ${urgent ? '#EF4444' : '#EC4899'}`,
+      color: urgent ? '#EF4444' : '#EC4899',
       minWidth: 52, textAlign: 'center',
       animation: urgent ? 'pulse 0.5s ease infinite alternate' : 'none',
     }}>
@@ -2867,9 +2877,9 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
   const autoWinnerId = ranked[0]?.distance !== Infinity ? ranked[0]?.teamId : null;
 
   return (
-    <div style={{ ...card, borderColor: 'rgba(245,158,11,0.35)' }}>
+    <div style={{ ...card, borderColor: 'rgba(236,72,153,0.35)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#F59E0B', fontWeight: 900 }}>{fmtNum(targetValue)}</span></div>
+        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#EC4899', fontWeight: 900 }}>{fmtNum(targetValue)}</span></div>
         {phase === 'QUESTION_REVEAL' && !correctTeamId && autoWinnerId && (
           <span style={{ fontSize: 11, color: '#64748b' }}>Auto-Auswertung aktiv</span>
         )}
@@ -2886,19 +2896,19 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
           return (
             <div key={r.teamId} style={{
               padding: '8px 12px', borderRadius: 8,
-              border: `2px solid ${isWinner ? (r.team?.color ?? '#F59E0B') : 'rgba(255,255,255,0.07)'}`,
-              background: isWinner ? `${r.team?.color ?? '#F59E0B'}14` : 'rgba(255,255,255,0.03)',
+              border: `2px solid ${isWinner ? (r.team?.color ?? '#EC4899') : 'rgba(255,255,255,0.07)'}`,
+              background: isWinner ? `${r.team?.color ?? '#EC4899'}14` : 'rgba(255,255,255,0.03)',
               position: 'relative', overflow: 'hidden',
             }}>
               {/* Distance bar */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, height: 2,
                 width: `${barWidth}%`,
-                background: isWinner ? (r.team?.color ?? '#F59E0B') : 'rgba(255,255,255,0.12)',
+                background: isWinner ? (r.team?.color ?? '#EC4899') : 'rgba(255,255,255,0.12)',
                 transition: 'width 0.4s ease',
               }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#F59E0B' : '#475569', width: 18 }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#EC4899' : '#475569', width: 18 }}>
                   {i === 0 ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
                 </span>
                 <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} teamEmoji={r.team?.emoji} size={26} />
@@ -3070,11 +3080,11 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 900, color: '#FBBF24', letterSpacing: 0.4, textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 13, fontWeight: 900, color: '#EC4899', letterSpacing: 0.4, textTransform: 'uppercase' }}>
         🔗 4×4 · {phase}
       </span>
       {phase === 'intro' && (
-        <PrimaryBtn color="#FBBF24" onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
+        <PrimaryBtn color="#EC4899" onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
           ▶ Spielzeit starten ({c.durationSec}s)
         </PrimaryBtn>
       )}
@@ -3083,7 +3093,7 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
           <span style={{ fontSize: 12, color: '#94a3b8' }}>
             {finished}/{totalTeams} fertig
           </span>
-          <PrimaryBtn color="#F59E0B" onClick={() => emit('qq:connectionsForceReveal', { roomCode })}>
+          <PrimaryBtn color="#EC4899" onClick={() => emit('qq:connectionsForceReveal', { roomCode })}>
             ⏹ Auflösen
           </PrimaryBtn>
         </>
@@ -3140,11 +3150,11 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
           const isPlacing = phase === 'placement' && c.placementOrder?.[c.placementCursor ?? 0] === tm.id;
           const statusBg = isPlacing ? 'rgba(34,197,94,0.18)'
             : locked ? 'rgba(239,68,68,0.10)'
-            : finished ? 'rgba(251,191,36,0.10)'
+            : finished ? 'rgba(236,72,153,0.10)'
             : 'rgba(255,255,255,0.02)';
           const statusBorder = isPlacing ? 'rgba(34,197,94,0.55)'
             : locked ? 'rgba(239,68,68,0.4)'
-            : finished ? 'rgba(251,191,36,0.4)'
+            : finished ? 'rgba(236,72,153,0.4)'
             : tm.color + '44';
           return (
             <div key={tm.id} style={{
@@ -3169,7 +3179,7 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
                 />
                 {isPlacing && <span style={{ fontSize: 10, fontWeight: 900, color: '#86efac' }}>SETZT</span>}
                 {locked && <span style={{ fontSize: 10, fontWeight: 900, color: '#FCA5A5' }}>RAUS</span>}
-                {finished && !locked && <span style={{ fontSize: 10, fontWeight: 900, color: '#FBBF24' }}>FERTIG</span>}
+                {finished && !locked && <span style={{ fontSize: 10, fontWeight: 900, color: '#EC4899' }}>FERTIG</span>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
                 {/* Found-Groups als 4 Dots */}
@@ -3219,15 +3229,15 @@ function IdleHint({ state }: { state: QQStateUpdate }) {
       pointerEvents: 'none',
       padding: '8px 20px', borderRadius: 999,
       background: 'rgba(15,12,9,0.88)',
-      border: '1.5px solid rgba(251,191,36,0.5)',
-      boxShadow: '0 6px 20px rgba(0,0,0,0.45), 0 0 18px rgba(251,191,36,0.25)',
-      fontSize: 13, fontWeight: 900, color: '#FDE68A',
+      border: '1.5px solid rgba(236,72,153,0.5)',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.45), 0 0 18px rgba(236,72,153,0.25)',
+      fontSize: 13, fontWeight: 900, color: '#FBCFE8',
       display: 'flex', alignItems: 'center', gap: 10,
       animation: 'idleHintPulse 1.8s ease-in-out infinite',
     }}>
       <kbd style={{
         padding: '2px 10px', borderRadius: 6,
-        background: 'rgba(251,191,36,0.2)', border: '1.5px solid rgba(251,191,36,0.6)',
+        background: 'rgba(236,72,153,0.2)', border: '1.5px solid rgba(236,72,153,0.6)',
         fontFamily: 'monospace', fontSize: 11, fontWeight: 900,
       }}>Space</kbd>
       <span>druecken um weiter</span>
@@ -3322,7 +3332,7 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
               width: cellSize, height: cellSize, borderRadius: 5,
               background: team ? `${team.color}99` : 'rgba(255,255,255,0.05)',
               border: cell.jokerFormed
-                ? '1px solid rgba(251,191,36,0.7)'
+                ? '1px solid rgba(236,72,153,0.7)'
                 : `1px solid ${team ? `${team.color}44` : 'rgba(255,255,255,0.06)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: Math.max(9, cellSize * 0.36),
@@ -3463,8 +3473,8 @@ function actionLabel(action: string, stats: any): string {
 function phasePillStyle(phase: string): React.CSSProperties {
   const colors: Record<string, string> = {
     LOBBY: '#475569', RULES: '#6366f1', PHASE_INTRO: '#3B82F6', QUESTION_ACTIVE: '#22C55E',
-    QUESTION_REVEAL: '#F59E0B', PLACEMENT: '#EF4444',
-    COMEBACK_CHOICE: '#8B5CF6', PAUSED: '#F59E0B', GAME_OVER: '#64748b',
+    QUESTION_REVEAL: '#EC4899', PLACEMENT: '#EF4444',
+    COMEBACK_CHOICE: '#8B5CF6', PAUSED: '#EC4899', GAME_OVER: '#64748b',
   };
   const c = colors[phase] ?? '#475569';
   return {
@@ -3551,7 +3561,7 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
         }}>
           <button
             onClick={() => { setOpen(false); onRestart(); }}
-            style={menuItemStyle('#F59E0B')}
+            style={menuItemStyle('#EC4899')}
           >↺ Quiz neustarten
             <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Punkte & Grid reset, Teams bleiben</span>
           </button>
@@ -3734,9 +3744,9 @@ function SetupView({
   const selectedDraft = drafts.find(d => d.id === selectedDraftId);
 
   // ── Farb-Tokens für Setup (wärmer als der Live-Modus) ─────────────────────
-  const GOLD = '#F59E0B';
-  const GOLD_SOFT = 'rgba(245,158,11,0.15)';
-  const GOLD_BORDER = 'rgba(245,158,11,0.45)';
+  const GOLD = '#EC4899';
+  const GOLD_SOFT = 'rgba(236,72,153,0.15)';
+  const GOLD_BORDER = 'rgba(236,72,153,0.45)';
 
   // Erweiterte Optionen (Comeback-Timer, Bestenliste-Reset, Apply-Sounds-All)
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -3766,7 +3776,7 @@ function SetupView({
     fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
     background: active ? GOLD : 'rgba(255,255,255,0.05)',
     color: active ? '#1a1206' : '#94a3b8',
-    boxShadow: active ? '0 3px 10px rgba(245,158,11,0.35)' : 'none',
+    boxShadow: active ? '0 3px 10px rgba(236,72,153,0.35)' : 'none',
     transition: 'all 0.15s',
   });
 
@@ -3823,13 +3833,13 @@ function SetupView({
         position: 'relative', overflow: 'hidden',
         padding: '20px 24px 22px', borderRadius: 24,
         background:
-          'radial-gradient(ellipse at 0% 0%, rgba(245,158,11,0.22), transparent 55%),' +
+          'radial-gradient(ellipse at 0% 0%, rgba(236,72,153,0.22), transparent 55%),' +
           'radial-gradient(ellipse at 100% 100%, rgba(244,114,182,0.14), transparent 60%),' +
           'linear-gradient(180deg, #1f1610, #150e08)',
         border: `1px solid ${GOLD_BORDER}`,
         boxShadow:
           '0 12px 36px rgba(0,0,0,0.5),' +
-          '0 0 60px rgba(245,158,11,0.10),' +
+          '0 0 60px rgba(236,72,153,0.10),' +
           'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         <div style={{
@@ -3861,11 +3871,11 @@ function SetupView({
                     padding: '12px 14px', borderRadius: 16,
                     border: sel ? `2px solid ${GOLD}` : '1.5px solid rgba(255,220,180,0.12)',
                     background: sel
-                      ? 'linear-gradient(180deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06))'
+                      ? 'linear-gradient(180deg, rgba(236,72,153,0.18), rgba(236,72,153,0.06))'
                       : 'rgba(0,0,0,0.32)',
                     color: '#fef3c7', cursor: 'pointer', fontFamily: 'inherit',
                     boxShadow: sel
-                      ? '0 6px 18px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
+                      ? '0 6px 18px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
                       : 'inset 0 1px 0 rgba(0,0,0,0.4)',
                     transition: 'all 0.15s',
                     display: 'flex', flexDirection: 'column', gap: 6,
@@ -3882,8 +3892,8 @@ function SetupView({
                     <span style={{ opacity: 0.4 }}>·</span>
                     <span style={{
                       padding: '1px 8px', borderRadius: 999,
-                      background: draftFit ? 'rgba(34,197,94,0.14)' : 'rgba(251,191,36,0.14)',
-                      border: `1px solid ${draftFit ? 'rgba(34,197,94,0.32)' : 'rgba(251,191,36,0.32)'}`,
+                      background: draftFit ? 'rgba(34,197,94,0.14)' : 'rgba(236,72,153,0.14)',
+                      border: `1px solid ${draftFit ? 'rgba(34,197,94,0.32)' : 'rgba(236,72,153,0.32)'}`,
                       color: draftFit ? '#86efac' : '#fde68a',
                       fontWeight: 900,
                     }}>{draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}</span>
@@ -3897,8 +3907,8 @@ function SetupView({
           <div style={{
             marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fde68a',
             padding: '6px 12px', borderRadius: 8,
-            background: 'rgba(251,191,36,0.10)',
-            border: '1px solid rgba(251,191,36,0.25)',
+            background: 'rgba(236,72,153,0.10)',
+            border: '1px solid rgba(236,72,153,0.25)',
           }}>
             ℹ Set hat {selectedDraft.questionCount} Fragen — nutze die ersten {fitNeeded} ({phases} Runden × 5)
           </div>
@@ -3968,7 +3978,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🔗 Finale</span>
           <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#FBBF24')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#EC4899')}>An</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -4252,17 +4262,17 @@ function SetupView({
         return (
           <div style={{
             padding: '10px 16px', borderRadius: 16,
-            background: 'rgba(251,191,36,0.06)',
-            border: '1px solid rgba(251,191,36,0.25)',
+            background: 'rgba(236,72,153,0.06)',
+            border: '1px solid rgba(236,72,153,0.25)',
             marginBottom: 4, fontSize: 12, fontWeight: 700, color: '#fde68a',
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fbbf24', marginBottom: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#EC4899', marginBottom: 2 }}>
               Vor dem Start
             </div>
             {issues.map((iss, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                <span style={{ color: '#fbbf24' }}>•</span>
+                <span style={{ color: '#EC4899' }}>•</span>
                 <span>{iss}</span>
               </div>
             ))}
@@ -4413,7 +4423,7 @@ function LobbyView({
   startGame: () => void;
   backToSetup: () => void;
 }) {
-  const GOLD = '#F59E0B';
+  const GOLD = '#EC4899';
   const lobbyCard: React.CSSProperties = {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.09)',
@@ -4443,7 +4453,7 @@ function LobbyView({
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10,
           padding: '6px 14px', borderRadius: 999,
-          background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+          background: 'rgba(236,72,153,0.12)', border: '1px solid rgba(236,72,153,0.3)',
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', color: GOLD,
           textTransform: 'uppercase',
         }}>
@@ -4592,11 +4602,11 @@ function LobbyView({
               return (
               <div style={{
                 marginTop: 12, padding: '10px 12px', borderRadius: 8,
-                background: 'rgba(245,158,11,0.08)',
-                border: '1px dashed rgba(245,158,11,0.35)',
+                background: 'rgba(236,72,153,0.08)',
+                border: '1px dashed rgba(236,72,153,0.35)',
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               }}>
-                <span style={{ fontSize: 10, color: '#F59E0B', fontWeight: 900, letterSpacing: '0.1em' }}>
+                <span style={{ fontSize: 10, color: '#EC4899', fontWeight: 900, letterSpacing: '0.1em' }}>
                   🧪 TEST
                 </span>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -4623,8 +4633,8 @@ function LobbyView({
                       }}
                       style={{
                         padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                        border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.15)',
-                        color: '#F59E0B', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+                        border: '1px solid rgba(236,72,153,0.4)', background: 'rgba(236,72,153,0.15)',
+                        color: '#EC4899', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
                       }}
                     >+ {n} {n === 1 ? 'Dummy' : 'Dummies'}</button>
                   ))}
@@ -4707,7 +4717,7 @@ function ConfigChip({ label, value }: { label: string; value: string }) {
 const page: React.CSSProperties = {
   minHeight: '100vh',
   background:
-    'radial-gradient(circle at 50% -20%, rgba(245,158,11,0.06), transparent 55%), ' +
+    'radial-gradient(circle at 50% -20%, rgba(236,72,153,0.06), transparent 55%), ' +
     'radial-gradient(circle at 90% 110%, rgba(99,102,241,0.05), transparent 50%), ' +
     '#0D0A06',
   color: 'var(--qm-text)',
@@ -4763,7 +4773,7 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
       ['R / F15', 'Antwort aufdecken'],
       ['N / F17 / →', 'Nächste Frage (nur in PLACEMENT)'],
       ['F18', 'Skip aktuelles Team (PLACEMENT, ohne Confirm)'],
-      ['P', 'Pause / Resume'],
+      ['P / F19', 'Pause / Resume'],
     ],
   },
   {

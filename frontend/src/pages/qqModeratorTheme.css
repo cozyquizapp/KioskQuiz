@@ -8,41 +8,44 @@
    =============================================================== */
 
 .qq-mod-shell {
-  /* Surfaces (warm-tinted dark) */
-  --qm-bg:           #0d0a06;
-  --qm-bg-soft:      #120e08;
-  --qm-surface:      rgba(255, 235, 200, 0.045);
-  --qm-surface-hi:   rgba(255, 235, 200, 0.08);
-  --qm-surface-lo:   rgba(255, 235, 200, 0.025);
-  --qm-elev:         #1a130c;
+  /* 2026-05-08 (Wolf 'mod-page altes design'): Aurora-Vivid-Refresh.
+     Vorher: warm-tinted-Sepia (Campfire) + Amber-Akzent. Jetzt: Indigo-
+     Hoodie-Surfaces + Brand-Pink-Akzent — konsistent zum Beamer. */
+  /* Surfaces (Indigo-Hoodie-tinted dark) */
+  --qm-bg:           #0A0814;
+  --qm-bg-soft:      #14101F;
+  --qm-surface:      rgba(236, 72, 153, 0.05);
+  --qm-surface-hi:   rgba(236, 72, 153, 0.10);
+  --qm-surface-lo:   rgba(236, 72, 153, 0.03);
+  --qm-elev:         #1F1A2E;
 
-  /* Borders */
-  --qm-border:       rgba(255, 220, 180, 0.10);
-  --qm-border-hi:    rgba(255, 220, 180, 0.22);
-  --qm-border-lo:    rgba(255, 220, 180, 0.06);
+  /* Borders (Pink-tint) */
+  --qm-border:       rgba(236, 72, 153, 0.12);
+  --qm-border-hi:    rgba(236, 72, 153, 0.26);
+  --qm-border-lo:    rgba(236, 72, 153, 0.06);
 
   /* Text */
-  --qm-text:         #f1e8d8;
-  --qm-text-warm:    #fef3c7;
-  --qm-text-muted:   #a8a395;
-  --qm-text-subtle:  #6b6555;
-  --qm-text-faint:   #4a463c;
+  --qm-text:         #F1F5F9;
+  --qm-text-warm:    #FBCFE8;
+  --qm-text-muted:   #94A3B8;
+  --qm-text-subtle:  #64748B;
+  --qm-text-faint:   #475569;
 
-  /* Accents (campfire) */
-  --qm-accent:       #f59e0b;
-  --qm-accent-soft:  rgba(245, 158, 11, 0.16);
-  --qm-accent-strong:rgba(245, 158, 11, 0.45);
+  /* Accents (Brand-Pink) */
+  --qm-accent:       #EC4899;
+  --qm-accent-soft:  rgba(236, 72, 153, 0.16);
+  --qm-accent-strong:rgba(236, 72, 153, 0.45);
 
-  /* Phase tones (echo getStatusText colors) */
+  /* Phase tones (echo getStatusText colors). Reveal/Paused/Over auf Pink-Spektrum. */
   --qm-tone-lobby:   #475569;
   --qm-tone-rules:   #6366f1;
   --qm-tone-intro:   #3b82f6;
   --qm-tone-active:  #22c55e;
-  --qm-tone-reveal:  #f59e0b;
+  --qm-tone-reveal:  #EC4899;
   --qm-tone-place:   #ef4444;
   --qm-tone-comeback:#8b5cf6;
-  --qm-tone-paused:  #f59e0b;
-  --qm-tone-over:    #fbbf24;
+  --qm-tone-paused:  #EC4899;
+  --qm-tone-over:    #A21247;
 
   /* Shadows */
   --qm-depth-sm:     0 2px 8px rgba(0, 0, 0, 0.32);
@@ -243,8 +246,8 @@
   height: 22px;
   padding: 0 7px;
   border-radius: 6px;
-  background: linear-gradient(180deg, rgba(255, 235, 200, 0.18), rgba(255, 235, 200, 0.06));
-  border: 1px solid rgba(255, 220, 180, 0.32);
+  background: linear-gradient(180deg, rgba(236, 72, 153, 0.18), rgba(236, 72, 153, 0.06));
+  border: 1px solid rgba(236, 72, 153, 0.32);
   border-bottom-width: 2px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 11px;
@@ -347,7 +350,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(8, 6, 3, 0.78);
+  background: rgba(10, 8, 20, 0.82);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -358,19 +361,19 @@
   width: min(760px, 100%);
   max-height: 90vh;
   overflow-y: auto;
-  background: linear-gradient(180deg, #1a130c, #120e08);
+  background: linear-gradient(180deg, #1F1A2E, #14101F);
   border-radius: 18px;
   border: 1px solid var(--qm-border-hi);
-  box-shadow: var(--qm-depth-lg), 0 0 60px rgba(245, 158, 11, 0.08);
+  box-shadow: var(--qm-depth-lg), 0 0 60px rgba(236, 72, 153, 0.10);
   padding: 24px 28px;
   color: var(--qm-text);
   font-family: inherit;
 }
 .qm-cheatsheet-row .qm-kbd {
   min-width: 110px;
-  background: linear-gradient(180deg, rgba(251, 191, 36, 0.22), rgba(251, 191, 36, 0.08));
-  border-color: rgba(251, 191, 36, 0.4);
-  color: #fbbf24;
+  background: linear-gradient(180deg, rgba(236, 72, 153, 0.22), rgba(236, 72, 153, 0.08));
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #EC4899;
 }
 
 /* ----- Reduced motion ------------------------------------------- */

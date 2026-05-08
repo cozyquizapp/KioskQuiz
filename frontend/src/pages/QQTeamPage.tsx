@@ -1487,14 +1487,14 @@ function TeamGameView({
 
   // Dynamic phase/category accent for glows — match beamer accent colors
   const cat = s.currentQuestion?.category;
-  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? '#FEF08A') : '#FEF08A';
-  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? '#FEF08A') : '#FEF08A';
+  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? '#F9A8D4') : '#F9A8D4';
+  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? '#F9A8D4') : '#F9A8D4';
   // Gold for lobby/rules/intro (matches beamer's warm gold fireflies), category accent during questions
-  const LOBBY_GOLD = '#FEF08A';
+  const LOBBY_PINK = '#F9A8D4';
   const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catAccent
     : s.phase === 'PLACEMENT' ? catAccent
     : s.phase === 'GAME_OVER' ? '#EC4899'
-    : LOBBY_GOLD;
+    : LOBBY_PINK;
 
   // Firefly color — uses accent for vibrant glow matching beamer
   const ffColor = `${phaseAccent}55`;
@@ -1947,7 +1947,7 @@ const MOBILE_FF = [
 ];
 
 function MobileFireflies({ color }: { color?: string }) {
-  const c = color ?? '#FEF08A88';
+  const c = color ?? '#F9A8D488';
   return (
     <>
       {MOBILE_FF.map((f, i) => (
@@ -2137,7 +2137,7 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
         {/* Top label */}
         <div style={{
           fontSize: 12, fontWeight: 900, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: '#FEF08A',
+          textTransform: 'uppercase', color: '#F9A8D4',
           animation: 'tcreveal 0.4s ease both',
         }}>
           🎬 {lang === 'en' ? "Today's players" : 'Heute spielen'}
@@ -6355,7 +6355,7 @@ function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onResume, 
     <div style={darkPage}>
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
-      <MobileFireflies color="#FEF08A44" />
+      <MobileFireflies color="#F9A8D444" />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Sprache-Flag oben rechts */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
@@ -6497,7 +6497,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
         }
       `}</style>
       <div style={grainOverlay} />
-      <MobileFireflies color="#FEF08A44" />
+      <MobileFireflies color="#F9A8D444" />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>

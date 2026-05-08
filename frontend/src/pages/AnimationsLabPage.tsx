@@ -1971,34 +1971,37 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
   const toIdx = sequence[stepIdx].to;
 
   let potatoX: number, potatoY: number, potatoRotation: number, potatoBounceY: number, potatoBaseOffset: number;
-  // potatoBaseOffset: positiv = unter dem Avatar, 0 = auf Avatar-Höhe.
-  // Während Hold: Kartoffel sitzt ~50 px UNTER dem Avatar mittig + bounct nach oben.
+  // potatoBaseOffset: positiv = unter dem Avatar (Ruhe-Position), 0 = Avatar-Mitte.
+  // Hold: Team „wirft" die heiße Kartoffel hoch — bis zum oberen Avatar-Kreisrand.
+  // Bei eliminate-Step ist der Wurf-Bogen kraftvoller (Sparkle „katapultiert" weiter).
+  const fromTeam = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
+  const fromIsEliminating = stepIdx > 0 && sequence[stepIdx - 1].eliminate === true;
   if (stepProgress < HOLD_FRAC) {
-    // Hold-Phase: Kartoffel mittig unter Avatar, bouncing nach oben
+    // Hold-Phase: Kartoffel beim aktuellen Team, hochgeworfen + bouncing
     const holdProgress = stepProgress / HOLD_FRAC; // 0..1
     if (stepIdx === 0) potatoX = xForTeam(0);
     else potatoX = xForTeam(sequence[stepIdx - 1].to);
     potatoY = yBase;
-    potatoBaseOffset = 56; // px unter Avatar-Mitte (Avatar ist 76 px hoch → unten + ~12 gap)
-    // Höhere Bounces (28 px), Anti-Aliasing über sin² für „springt mit Anlauf"
-    potatoBounceY = -Math.abs(Math.sin(holdProgress * Math.PI * 4)) * 32;
+    potatoBaseOffset = 56; // Ruhe-Position unten beim Team
+    // 3 Bounces, Amplitude 95 px → bis oberhalb des Avatar-Kreisrands.
+    // Anti-Aliasing über sin³ wäre zu eckig — lineares sin gibt smooth „hochgeworfen + zurück".
+    potatoBounceY = -Math.abs(Math.sin(holdProgress * Math.PI * 3)) * 95;
     potatoRotation = holdProgress * 360 * 2;
   } else if (stepProgress < HOLD_FRAC + THROW_FRAC) {
     // Wurf-Phase: fliegt zum nächsten Avatar
     const throwProgress = (stepProgress - HOLD_FRAC) / THROW_FRAC;
-    const fromTeam = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
     const toTeam = sequence[stepIdx].to;
     const t = throwProgress < 0.5
       ? 2 * throwProgress * throwProgress
       : 1 - Math.pow(-2 * throwProgress + 2, 2) / 2;
     potatoX = xForTeam(fromTeam) + (xForTeam(toTeam) - xForTeam(fromTeam)) * t;
-    const arcHeight = 36;
+    // Bei eliminate: kraftvoller Wurf-Bogen (60 px) — Sparkle „katapultiert"
+    const arcHeight = fromIsEliminating ? 60 : 40;
     potatoY = yBase;
-    // Während Wurf: Start unten beim Sender (offset 56), Bogen über Avatar-Höhe,
-    // Land unten beim Empfänger (offset 56)
     potatoBaseOffset = 56 - Math.sin(throwProgress * Math.PI) * arcHeight;
     potatoBounceY = 0;
-    potatoRotation = throwProgress * 720;
+    // Mehr Spin bei eliminate (3 Umdrehungen statt 2) — wirkt wie „weggeschleudert"
+    potatoRotation = throwProgress * (fromIsEliminating ? 1080 : 720);
   } else {
     // Land-Phase: settle unter neuem Team
     potatoX = xForTeam(sequence[stepIdx].to);

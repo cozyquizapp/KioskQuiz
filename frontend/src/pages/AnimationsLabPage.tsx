@@ -1612,12 +1612,145 @@ function TeamRevealGameShowDemo({ replay }: { replay: number }) {
   );
 }
 
+// ─── Slot N: Pink-Spark um Card-Rand (Wolf-Idee 2026-05-09) ─────────────────
+// CSS Motion Path: ein Spark folgt dem Rand einer Card (rounded rect). Drei
+// Varianten — Single (1 Spark, langsam), Double (2 Sparks, gegenläufig),
+// Trail (3 Sparks gestaffelt für Comet-Effekt).
+function SparkOnCardShowcase() {
+  // Card-Mock-Component — wird in 3 Varianten verwendet
+  const CardWithSparks = ({
+    title, sparks,
+  }: {
+    title: string;
+    sparks: Array<{ size: number; delay: number; dur: number; opacity: number; reverse?: boolean }>;
+  }) => (
+    <div style={{
+      position: 'relative',
+      width: 200, height: 270,
+      borderRadius: 18,
+      background: 'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+      border: '2px solid rgba(236,72,153,0.45)',
+      boxShadow: '0 12px 32px rgba(0,0,0,0.55), inset 0 0 32px rgba(236,72,153,0.18)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 10,
+      // Wichtig: overflow:visible damit Spark-Glow nicht abgeschnitten wird
+      overflow: 'visible',
+    }}>
+      {/* Card-Content */}
+      <div style={{ fontSize: 38, lineHeight: 1 }}>🎰</div>
+      <div style={{
+        fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+        letterSpacing: '0.04em', textAlign: 'center', padding: '0 14px',
+        textShadow: '0 0 12px rgba(236,72,153,0.5)',
+      }}>{title}</div>
+      <div style={{
+        fontSize: 10, color: '#94A3B8', fontWeight: 700,
+        letterSpacing: '0.12em', textTransform: 'uppercase',
+      }}>Important</div>
+      {/* Sparks */}
+      {sparks.map((sp, i) => (
+        <div key={i} aria-hidden style={{
+          position: 'absolute',
+          width: sp.size, height: sp.size,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, #FFFFFF 0%, #FBCFE8 25%, #EC4899 60%, transparent 100%)',
+          boxShadow: `0 0 ${sp.size * 1.4}px ${sp.size * 0.4}px rgba(236,72,153,0.85), 0 0 ${sp.size * 2.6}px rgba(244,114,182,0.55)`,
+          opacity: sp.opacity,
+          // CSS Motion Path: rect mit corner-radius matcht Card-Border
+          // offsetPath/Distance brauchen Browser-Support (Chrome+FF+Safari ab 2023, OK)
+          offsetPath: 'rect(0 100% 100% 0 round 18px)',
+          offsetRotate: '0deg',
+          animation: `sparkOrbit ${sp.dur}s linear ${sp.delay}s infinite ${sp.reverse ? 'reverse' : 'normal'}`,
+          // Pointer-events egal, kein Click-Handler
+          pointerEvents: 'none',
+          // Initial-Position auf Path
+          top: 0, left: 0,
+        } as React.CSSProperties} />
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <style>{`
+        @keyframes sparkOrbit {
+          0%   { offset-distance: 0%; }
+          100% { offset-distance: 100%; }
+        }
+      `}</style>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18,
+        justifyItems: 'center',
+      }}>
+        {/* Variante 1 — Single, langsam, dezent */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <CardWithSparks
+            title="Solo-Spark"
+            sparks={[
+              { size: 12, delay: 0, dur: 4.5, opacity: 1 },
+            ]}
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Single · 4.5 s</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            1 Spark, langsam, dezent — für ruhige Important-Hinweise
+          </div>
+        </div>
+
+        {/* Variante 2 — Double, gegenläufig */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <CardWithSparks
+            title="Doppel-Spark"
+            sparks={[
+              { size: 11, delay: 0, dur: 3.2, opacity: 1 },
+              { size: 11, delay: 0, dur: 3.2, opacity: 1, reverse: true },
+            ]}
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Double · 3.2 s gegenläufig</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            2 Sparks gegenläufig — punchy, treffen sich an Top/Bottom
+          </div>
+        </div>
+
+        {/* Variante 3 — Trail (Comet-Effekt) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <CardWithSparks
+            title="Comet-Trail"
+            sparks={[
+              { size: 13, delay: 0,    dur: 3.5, opacity: 1   },  // Lead
+              { size: 10, delay: -0.18, dur: 3.5, opacity: 0.65 }, // Trail-1
+              { size: 7,  delay: -0.32, dur: 3.5, opacity: 0.35 }, // Trail-2
+            ]}
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Trail · 3 Sparks gestaffelt</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            3 Sparks (Lead + 2 Trail-Sparks kleiner+dimmer) — Comet-Effekt
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(34,197,94,0.08)',
+        border: '1px solid rgba(34,197,94,0.25)',
+        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <strong style={{ color: '#86efac' }}>Tech:</strong> CSS Motion Path
+        (<code style={{ color: '#fbbf24' }}>offset-path</code> + <code style={{ color: '#fbbf24' }}>offset-distance</code>)
+        folgt einem <code>rect(0 100% 100% 0 round 18px)</code>-Pfad, der exakt
+        dem Card-Border entspricht. Browser-Support seit 2023 (Chrome/FF/Safari).
+        Pure CSS, kein JS-Tick → 60 fps stabil. Spark-Glow via <code>radial-gradient</code> +
+        zwei <code>box-shadow</code>-Layer (inner sharp + outer soft).
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(10).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(11).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1698,6 +1831,12 @@ export default function AnimationsLabPage() {
       blurb: 'Wolf-Wunsch: Anmoderation pro Team — eines nach dem anderen. Card slammt rein → settled → flippt → Hold-Pause für Mod-Sprache → nächstes Team. Klassisches Game-Show-Reveal-Format à la „Wer wird Millionär" / „The Voice".',
       keepAlive: false, minHeight: 540,
       render: (r) => <TeamRevealGameShowDemo replay={r} />,
+    },
+    {
+      label: 'N', title: 'Pink-Spark um Card-Rand',
+      blurb: 'Wolf-Idee: Pink-Spark fliegt um den Rand einer Important Card. CSS Motion Path (offset-path) folgt dem rounded rect. 3 Varianten: Single (sanft), Double (punchy), Trail (3 Sparks gestaffelt für Comet-Effekt).',
+      keepAlive: true, minHeight: 420,
+      render: (_r) => <SparkOnCardShowcase />,
     },
   ];
 

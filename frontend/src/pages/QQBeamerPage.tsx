@@ -3788,10 +3788,16 @@ function MuchoOptionsReveal({
               flex: 1,
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '24px 28px',
+              // 2026-05-09 (Wolf 'Mini-Sprung in Reihe wenn Sieger-Card kommt'):
+              // Border einheitlich 3px ausgeführt (vorher 2/3/2) + box-sizing
+              // border-box, sonst wuchs die korrekte Card 2px höher und alle
+              // Cards in derselben Row schoben sich nach. Wrong-Border in
+              // Transparent damit visuell nichts da ist, Höhe aber konstant.
+              boxSizing: 'border-box',
               background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
               border: isCorrect ? '3px solid #22C55E'
-                : isWrong ? '2px solid rgba(255,255,255,0.06)'
-                : `2px solid ${optColor}55`,
+                : isWrong ? '3px solid rgba(255,255,255,0.06)'
+                : `3px solid ${optColor}55`,
               boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
                 : '0 4px 16px rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', gap: 16,
@@ -12682,9 +12688,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       // sonst wirken die Cards inkonsistent. flex:1 + height:100%
                       // zwingt die Inner-Card auf Row-Höhe.
                       flex: 1,
+                      // 2026-05-09 (Wolf 'Mini-Sprung'): box-sizing border-box
+                      // + einheitliche 3px-Border verhindert Layout-Shift wenn
+                      // Sieger-Card kommt (war 2/3/2 = +2px höher → andere Cards
+                      // schoben mit).
+                      boxSizing: 'border-box',
                       borderRadius: 24, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `2px solid rgba(255,255,255,0.06)` : `2px solid ${optColor}55`,
+                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `3px solid rgba(255,255,255,0.06)` : `3px solid ${optColor}55`,
                       boxShadow: isCorrect
                         ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                         : `0 4px 16px rgba(0,0,0,0.3)`,

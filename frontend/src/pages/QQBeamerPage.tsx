@@ -14119,7 +14119,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {showTeam && (hl ? hlTeams.length > 0 : !!team) && (
         <div key="team" style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
-          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+          // 2026-05-08 (Wolf-Audit #4): vorher contentReveal (nur Y-Fade) —
+          // wirkte statisch in Comeback (Game-Climax). Jetzt qqStepSlideIn
+          // (Slide-from-Left) → Step-Wechsel wird sequentiell.
+          animation: 'qqStepSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
           position: 'relative', zIndex: 5,
         }}>
           {hl && hlTeams.length > 1 ? (
@@ -14178,7 +14181,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {showAction && (hl ? hlTeams.length > 0 : !!team) && (
         <div style={{
           width: '100%', maxWidth: 1100,
-          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+          // 2026-05-08 (Wolf-Audit #4): qqStepSlideIn statt contentReveal —
+          // Action-Card slidet von links rein (Drama-Climax-Moment).
+          animation: 'qqStepSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both',
           position: 'relative', zIndex: 5,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           gap: 'clamp(8px, 1.2vh, 14px)',
@@ -16376,7 +16381,12 @@ function ConnectionsGrid({ state: s }: {
                           position: 'relative',
                           // Suspense: pro Team eigener Delay (worst→best),
                           // ALLE Gruppen eines Teams ploppen gleichzeitig.
-                          animation: `phasePop 0.55s var(--qq-ease-bounce) ${teamRevealDelay(tm.id)}s both`,
+                          // 2026-05-08 (Wolf-Audit #5): vorher phasePop
+                          // (scale 0.94→1 + opacity, sehr subtil), jetzt
+                          // muchoVoterDrop — Avatar dropt von oben mit Bounce
+                          // + Brightness-Spike. Connections-Finale wirkt
+                          // damit endlich „dramatic" statt „still".
+                          animation: `muchoVoterDrop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) ${teamRevealDelay(tm.id)}s both`,
                         }}>
                           <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(36px, 3.4vw, 52px)'} style={{
                             boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,

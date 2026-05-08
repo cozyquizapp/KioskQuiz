@@ -689,6 +689,15 @@ export const QQ_BEAMER_CSS = `
     50%  { opacity: 0.7; filter: blur(0); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
+  /* 2026-05-08 (Audit-#4 Comeback-Step-Slide): vorher introStep-Wechsel via
+     contentReveal (nur Y-Fade) — wirkte statisch obwohl Comeback Game-Climax
+     ist. Jetzt: Slide-from-Left (-60px → 0) mit ease-out-expo, 600ms. Macht
+     den Step-Wechsel sequentiell-cinematisch statt nebenher. */
+  @keyframes qqStepSlideIn {
+    0%   { opacity: 0; transform: translateX(-60px) scale(0.96); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

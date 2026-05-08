@@ -1213,44 +1213,57 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                 transition: 'transform 1.15s cubic-bezier(0.34, 1.46, 0.64, 1)',
                 transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               }}>
-                {/* Rückseite — Kreis mit ?-Sigil (in derselben Position wie
-                    Avatar auf Vorderseite) + geblurrter Name darunter. So
-                    matcht das Layout beide Seiten und der Flip-Effekt zeigt
-                    visuelle Kontinuität (Kreis bleibt, Inhalt schärft sich). */}
+                {/* Rückseite — generischer CozyQuiz-Card-Back (Spielkarten-
+                    Style). Alle Cards sehen identisch aus → maximale
+                    Reveal-Spannung. Brand-Pink-Magenta-Gradient, dezentes
+                    Sparkle-Pattern, Wordmark zentral. */}
                 <div style={{
                   position: 'absolute', inset: 0,
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   borderRadius: 18,
-                  background: `radial-gradient(circle at 30% 30%, ${t.color}55 0%, ${t.color}1a 50%, rgba(15,23,42,0.95) 100%)`,
-                  border: `2px solid ${t.color}88`,
-                  boxShadow: `0 8px 24px rgba(0,0,0,0.45), inset 0 0 32px ${t.color}33`,
+                  background:
+                    'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+                    'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+                    'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+                  border: '2px solid rgba(236,72,153,0.55)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 10, padding: 14,
+                  overflow: 'hidden',
                 }}>
+                  {/* Diagonal-Sparkle-Pattern via repeating linear-gradient */}
+                  <div aria-hidden style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+                      'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+                    pointerEvents: 'none',
+                  }} />
+                  {/* Center-Diamond Frame mit CozyQuiz-Wordmark */}
                   <div style={{
-                    width: 104, height: 104, borderRadius: '50%',
-                    background: `${t.color}33`,
-                    border: `2.5px solid ${t.color}88`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: `0 0 22px ${t.color}66`,
-                    flexShrink: 0,
-                    overflow: 'hidden',
+                    position: 'relative',
+                    padding: '14px 18px',
+                    border: '1.5px solid rgba(236,72,153,0.6)',
+                    borderRadius: 12,
+                    background: 'rgba(31,26,46,0.65)',
+                    boxShadow: '0 0 24px rgba(236,72,153,0.35), inset 0 0 16px rgba(236,72,153,0.15)',
                   }}>
-                    <span style={{
-                      fontSize: 56, lineHeight: 1,
-                      filter: 'blur(11px) saturate(1.3)',
-                      opacity: 0.92,
-                      transform: 'scale(0.95)',
-                    }}>{t.emoji}</span>
+                    <div style={{
+                      fontFamily: "'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                      fontSize: 17, fontWeight: 900,
+                      color: '#FBCFE8',
+                      letterSpacing: '0.04em',
+                      textShadow: '0 0 14px rgba(236,72,153,0.7)',
+                      lineHeight: 1,
+                    }}>CozyQuiz</div>
                   </div>
+                  {/* Subtle ✦-Sigil unter Wordmark */}
                   <div style={{
-                    fontSize: 14, fontWeight: 900, color: t.color,
-                    textAlign: 'center', lineHeight: 1.1,
-                    letterSpacing: '-0.01em',
-                    filter: 'blur(7px)',
-                    opacity: 0.7,
-                  }}>{t.name}</div>
+                    fontSize: 14, color: 'rgba(236,72,153,0.55)',
+                    letterSpacing: '0.6em',
+                    marginTop: 2,
+                  }}>✦ ✦ ✦</div>
                 </div>
                 {/* Vorderseite — Avatar + Name */}
                 <div style={{

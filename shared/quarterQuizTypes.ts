@@ -1084,6 +1084,12 @@ export interface QQStateUpdate {
   finalRecapStep: 0 | 1;
   /** Letzte Frage-Winner-IDs (für Recap-Highlight). null wenn noch nichts. */
   finalRecapJustWon: string[] | null;
+  /** 2026-05-09 (Wolf End-Flow): Mehr-Step-Choreo in der FINAL_REVEAL-Phase.
+   *  0 = Title-Hold, 1 = Grid-Reveal, 2..N+1 = Bet-Reveal pro Team
+   *  (aufsteigend nach Bonus), N+2..N+7 = 3 Awards × 2 Steps (Card-Reveal +
+   *  Avatar-Punkt), N+8..2N+7 = Ranking-Slides last→first (single bis #4,
+   *  Treppchen ab #3), 2N+8 = → Thanks. Mod-Space increments. */
+  finalRevealStep: number;
   finalRoundWinners: string[] | null;                 // Legacy/optional: bei Tie alle gemeinsam — UI-Hinweis nur
   finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Wenn true, lösen Space-

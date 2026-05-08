@@ -15859,51 +15859,75 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
-// 2026-05-09 (Final-Wager Refactor): 3-Akt-End-Reveal-Choreo.
-// Akt 1 (~5s): Cluster-Visual — pro Team gestaffelt alle Cells highlighten
-//              mit Color-Glow + Pulse, zeigt visuell die Territorien.
-// Akt 2 (~8s): Wager-Reveal — Score-Cascade mit Cells + Tipp-Bonus + 💞-Marker
-//              für Sympathie-Pairs + Total. Stagger-Reveal von oben nach unten.
-// Akt 3 (~10s): End-Awards — 3 Mario-Party-Awards (Underdog · Meisterklauer ·
-//              Speedy Gonzales) gestaffelt mit Konfetti.
-export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
-  const [act, setAct] = useState<0 | 1 | 2 | 3>(0);
-  useEffect(() => {
-    // Auto-progression: Title-Hold → Cluster → Wager → Awards
-    const t1 = window.setTimeout(() => setAct(1), 1200);   // Title-Hold
-    const t2 = window.setTimeout(() => setAct(2), 6700);   // Cluster ~5.5s
-    const t3 = window.setTimeout(() => setAct(3), 15000);  // Wager ~8.3s
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); window.clearTimeout(t3); };
-  }, []);
+// ═══════════════════════════════════════════════════════════════════════════════
+// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Step-Mapping für N Teams:
+//   0           = Title-Hold "Die Auflösung"
+//   1           = Grid-Reveal (Cluster-Highlight Top-1)
+//   2..N+1      = Bet-Reveal pro Team (aufsteigend nach Bonus, auch 0-Bonus)
+//   N+2 / N+3   = Award 1 (Underdog) Card-Reveal / Avatar+Punkt
+//   N+4 / N+5   = Award 2 (Meisterklauer) Card-Reveal / Avatar+Punkt
+//   N+6 / N+7   = Award 3 (Speedy) Card-Reveal / Avatar+Punkt
+//   N+8..2N+7   = Ranking-Slides last→first (Single bis #4, Treppchen ab #3)
 
-  // Cells pro Team (für Wager-Cascade-Anzeige)
+type FinalStep =
+  | { kind: 'title' }
+  | { kind: 'grid' }
+  | { kind: 'bet'; teamIndex: number }
+  | { kind: 'award-card'; awardIndex: 0 | 1 | 2 }
+  | { kind: 'award-reveal'; awardIndex: 0 | 1 | 2 }
+  | { kind: 'ranking'; rankIndex: number };
+
+function decodeFinalStep(step: number, N: number): FinalStep {
+  if (step <= 0) return { kind: 'title' };
+  if (step === 1) return { kind: 'grid' };
+  if (step <= 1 + N) return { kind: 'bet', teamIndex: step - 2 };
+  const afterBets = step - (1 + N);
+  if (afterBets === 1) return { kind: 'award-card', awardIndex: 0 };
+  if (afterBets === 2) return { kind: 'award-reveal', awardIndex: 0 };
+  if (afterBets === 3) return { kind: 'award-card', awardIndex: 1 };
+  if (afterBets === 4) return { kind: 'award-reveal', awardIndex: 1 };
+  if (afterBets === 5) return { kind: 'award-card', awardIndex: 2 };
+  if (afterBets === 6) return { kind: 'award-reveal', awardIndex: 2 };
+  return { kind: 'ranking', rankIndex: Math.min(N - 1, Math.max(0, afterBets - 7)) };
+}
+
+export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
+  const N = s.teams.length;
+  const step = s.finalRevealStep ?? 0;
+  const phase = decodeFinalStep(step, N);
+
+  const betSorted = [...s.teams]
+    .map(t => ({ team: t, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
+    .sort((a, b) => {
+      if (a.bonus !== b.bonus) return a.bonus - b.bonus;
+      return a.team.name.localeCompare(b.team.name);
+    });
+
   const cellsByTeam: Record<string, number> = {};
   for (const t of s.teams) cellsByTeam[t.id] = 0;
   for (const row of s.grid) for (const cell of row) {
     if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
   }
-  // Award-Picks kommen vom Backend (s.endAwards) — siehe qqResolveFinalBets
   const awards = s.endAwards;
-  const underdog = awards?.underdog ? s.teams.find(t => t.id === awards.underdog) ?? null : null;
-  const meisterklauer = awards?.meisterklauer ? s.teams.find(t => t.id === awards.meisterklauer) ?? null : null;
-  const speedy = awards?.speedy ? s.teams.find(t => t.id === awards.speedy) ?? null : null;
+  const awardPoints: Record<string, number> = {};
+  for (const t of s.teams) awardPoints[t.id] = 0;
+  if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
+  if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
+  if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
 
-  // Wager-Cascade Rows
-  const wagerRows = s.teams.map(t => {
-    const cells = cellsByTeam[t.id] ?? 0;
-    const res = s.finalBetResolution?.[t.id];
-    const bonus = res?.totalBonus ?? 0;
-    return {
+  const finalRanking = [...s.teams]
+    .map(t => ({
       team: t,
-      cells,
-      bonus,
-      targetWins: res?.targetWins ?? 0,
-      sympathy: res?.sympathyBonus ?? 0,
-      mutualWith: res?.mutualWith ?? null,
-      targetTeamId: res?.targetTeamId ?? null,
-      finalScore: cells + bonus,
-    };
-  }).sort((a, b) => b.finalScore - a.finalScore);
+      cells: cellsByTeam[t.id] ?? 0,
+      bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
+      awards: awardPoints[t.id] ?? 0,
+      total: (cellsByTeam[t.id] ?? 0)
+        + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
+        + (awardPoints[t.id] ?? 0),
+    }))
+    .sort((a, b) => b.total - a.total);
 
   return (
     <div style={{
@@ -15911,311 +15935,599 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: '4vh 4vw',
       background: COZY_CARD_BG,
-      position: 'relative',
-      overflow: 'hidden',
+      position: 'relative', overflow: 'hidden',
     }}>
-      {/* Globale Akt-Cross-Fade-Animation: jedes Akt-Container fadet und
-          slidet weich; nur jeweils 1 Akt visible (zentriert) */}
-      <style>{`
-        @keyframes qqFRTitleIn {
-          0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
-          100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
-        }
-        @keyframes qqFRClusterPulse {
-          0%, 100% { transform: scale(1);    box-shadow: 0 0 16px var(--c-color); }
-          50%      { transform: scale(1.06); box-shadow: 0 0 32px var(--c-color); }
-        }
-        @keyframes qqFRRowIn {
-          0%   { opacity: 0; transform: translateX(-40px); }
-          70%  { opacity: 1; transform: translateX(6px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes qqFRAwardCardIn {
-          0%   { opacity: 0; transform: translateY(60px) scale(0.7) rotate(-6deg); filter: blur(8px); }
-          60%  { opacity: 1; transform: translateY(-8px) scale(1.06) rotate(2deg); filter: blur(0); }
-          100% { opacity: 1; transform: translateY(0)    scale(1)    rotate(0);   filter: blur(0); }
-        }
-        @keyframes qqFRSubFade {
-          0%, 100% { opacity: 0.85; }
-          50%      { opacity: 1; }
-        }
-      `}</style>
-
-      {/* Akt-Title — bleibt immer oben sichtbar, Text wechselt pro Akt */}
-      <div style={{
-        position: 'absolute', top: '4vh', left: 0, right: 0,
-        textAlign: 'center', pointerEvents: 'none', zIndex: 10,
-      }}>
-        <div style={{
-          fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
-          color: '#F9A8D4',
-          textTransform: 'uppercase', letterSpacing: '0.18em',
-          opacity: 0.9, marginBottom: 8,
-        }}>
-          {act === 0 ? '🏆 Finale Auflösung'
-           : act === 1 ? '🗺 Akt 1 — Eure Territorien'
-           : act === 2 ? '🎰 Akt 2 — Tipp-Auflösung'
-           : '🎉 Akt 3 — End-Awards'}
-        </div>
-      </div>
-
-      {/* Akt 0 — Title (CozyQuiz Finale-Reveal Hero) */}
-      {act === 0 && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 24,
-          animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
-        }}>
-          <div style={{ fontSize: 'clamp(72px, 10vw, 180px)', lineHeight: 1 }}>🏆</div>
-          <div style={{
-            fontSize: 'clamp(40px, 5.5vw, 96px)', fontWeight: 900,
-            color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
-            textShadow: '0 0 36px rgba(236,72,153,0.45)',
-          }}>Die Auflösung</div>
-        </div>
+      <FinalRevealSharedKeyframes />
+      {phase.kind === 'title' && <TitleHoldSlide />}
+      {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} />}
+      {phase.kind === 'bet' && (
+        <BetRevealSlide
+          team={betSorted[phase.teamIndex]?.team}
+          resolution={betSorted[phase.teamIndex]?.team
+            ? (s.finalBetResolution?.[betSorted[phase.teamIndex].team.id] ?? null)
+            : null}
+          allTeams={s.teams}
+        />
       )}
-
-      {/* Akt 1 — Cluster-Visual (Brett mit Team-Glow) */}
-      {act === 1 && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 24,
-          width: '100%',
-        }}>
-          <div style={{
-            fontSize: 'clamp(28px, 3.5vw, 56px)', fontWeight: 900,
-            color: '#F1F5F9', textAlign: 'center',
-            opacity: 0, animation: 'qqFRTitleIn 0.7s ease 0.2s both',
-            marginBottom: 8,
-          }}>Eure Felder leuchten auf …</div>
-          {/* Mini-Brett — pro Team gestaffelt highlighten */}
-          {(() => {
-            const cellSz = Math.min(64, Math.floor(560 / Math.max(1, s.gridSize)));
-            return (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${s.gridSize}, ${cellSz}px)`,
-                gridTemplateRows: `repeat(${s.gridSize}, ${cellSz}px)`,
-                gap: 6,
-                animation: 'qqFRTitleIn 0.7s ease 0.4s both',
-              }}>
-                {s.grid.map((row, r) => row.map((cell, c) => {
-                  if (!cell.ownerId) {
-                    return (
-                      <div key={`${r}-${c}`} style={{
-                        width: cellSz, height: cellSz,
-                        borderRadius: cellSz * 0.18,
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }} />
-                    );
-                  }
-                  const owner = s.teams.find(t => t.id === cell.ownerId);
-                  if (!owner) return null;
-                  // Pro Team eigenes Pulse-Delay, damit Teams gestaffelt glühen
-                  const teamIdx = s.teams.findIndex(t => t.id === owner.id);
-                  const delay = 0.3 + teamIdx * 0.4;
-                  return (
-                    <div key={`${r}-${c}`} style={{
-                      width: cellSz, height: cellSz,
-                      borderRadius: cellSz * 0.18,
-                      background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
-                      border: `2px solid ${owner.color}`,
-                      ['--c-color' as any]: owner.color,
-                      animation: `qqFRClusterPulse 2.4s ease-in-out ${delay}s infinite`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {owner.emoji && (
-                        <span style={{
-                          fontSize: cellSz * 0.5, lineHeight: 1,
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
-                        }}>{owner.emoji}</span>
-                      )}
-                    </div>
-                  );
-                }))}
-              </div>
-            );
-          })()}
-          <div style={{
-            fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
-            opacity: 0, animation: 'qqFRTitleIn 0.7s ease 0.6s both, qqFRSubFade 2s ease-in-out 1.5s infinite',
-            marginTop: 8, fontStyle: 'italic',
-          }}>(Cluster sind reine Show — kein Bonus für Größe)</div>
-        </div>
-      )}
-
-      {/* Akt 2 — Wager-Reveal (Score-Cascade mit Tipp-Bonus + 💞 Sympathie) */}
-      {act === 2 && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 12,
-          width: '100%', maxWidth: 1100, marginTop: 'clamp(40px, 6vh, 80px)',
-        }}>
-          <div style={{
-            display: 'flex', flexDirection: 'column', gap: 12, width: '100%',
-          }}>
-            {wagerRows.map((row, idx) => {
-              const targetTeam = row.targetTeamId ? s.teams.find(t => t.id === row.targetTeamId) : null;
-              const isMutual = !!row.mutualWith;
-              return (
-                <div key={row.team.id} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '56px 1fr auto auto auto auto',
-                  gap: 14,
-                  alignItems: 'center',
-                  padding: '14px 22px',
-                  borderRadius: 18,
-                  background: idx === 0 ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
-                  border: `1.5px solid ${idx === 0 ? 'rgba(251,191,36,0.45)' : 'rgba(255,255,255,0.10)'}`,
-                  animation: `qqFRRowIn 0.65s cubic-bezier(0.34,1.4,0.5,1) ${0.15 + idx * 0.20}s both`,
-                  opacity: 0,
-                }}>
-                  <div style={{ fontSize: 'clamp(18px, 1.6vw, 28px)', fontWeight: 900, color: '#94A3B8' }}>#{idx + 1}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <QQTeamAvatar avatarId={row.team.avatarId} teamEmoji={row.team.emoji} size={44} />
-                    <div style={{ fontSize: 'clamp(18px, 1.7vw, 28px)', fontWeight: 800, color: row.team.color }}>{row.team.name}</div>
-                    {isMutual && (
-                      <span style={{
-                        fontSize: 'clamp(20px, 2vw, 30px)',
-                        animation: 'qqFRSubFade 1.4s ease-in-out infinite',
-                      }} title="Sympathie-Bonus">💞</span>
-                    )}
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 700,
-                    color: '#CBD5E1', minWidth: 60, textAlign: 'right',
-                  }}>{row.cells}<span style={{ fontSize: '0.65em', color: '#64748B' }}> Felder</span></div>
-                  {/* Tipp-Bonus-Spalte */}
-                  <div style={{
-                    fontSize: 'clamp(13px, 1.1vw, 18px)', fontWeight: 700,
-                    color: targetTeam ? '#94A3B8' : '#475569',
-                    minWidth: 90, textAlign: 'right',
-                  }}>
-                    {targetTeam ? (
-                      <>
-                        <span style={{ fontSize: '0.78em' }}>{targetTeam.emoji ?? '🎯'} </span>
-                        <span style={{ color: targetTeam.color, fontWeight: 900 }}>{row.targetWins}×</span>
-                      </>
-                    ) : (
-                      <span style={{ fontStyle: 'italic', fontSize: '0.85em' }}>kein Tipp</span>
-                    )}
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(15px, 1.4vw, 24px)', fontWeight: 900,
-                    color: row.bonus > 0 ? '#22C55E' : '#475569',
-                    minWidth: 60, textAlign: 'right',
-                  }}>{row.bonus > 0 ? `+${row.bonus}` : ''}</div>
-                  <div style={{
-                    fontSize: 'clamp(22px, 2vw, 36px)', fontWeight: 900,
-                    color: idx === 0 ? '#FBBF24' : row.team.color,
-                    letterSpacing: '-0.02em',
-                    minWidth: 80, textAlign: 'right',
-                  }}>= {row.finalScore}</div>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{
-            marginTop: 16, fontSize: 'clamp(13px, 1vw, 18px)', color: '#64748b',
-            display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center',
-            opacity: 0, animation: 'qqFRTitleIn 0.5s ease 1.6s both',
-          }}>
-            <span>Felder + Tipp-Bonus + 💞 = Endstand</span>
-          </div>
-        </div>
-      )}
-
-      {/* Akt 3 — End-Awards (3 Mario-Party-Style Cards mit Konfetti) */}
-      {act === 3 && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px, 3vh, 40px)',
-          width: '100%', position: 'relative',
-        }}>
-          {/* Konfetti hinter den Cards */}
-          <Confetti active duration={9000} />
-          <div style={{
-            display: 'flex', gap: 'clamp(18px, 2.5vw, 40px)',
-            flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-end',
-          }}>
-            <AwardCard
-              emoji="🐢" titleDe="Underdog-Trostpreis" titleEn="Underdog Award"
-              descDe="Niedrigster Score" descEn="Lowest score"
-              winner={underdog} delay="0.3s" accent="#10B981"
-            />
-            <AwardCard
-              emoji="🦝" titleDe="Meisterklauer" titleEn="Master Thief"
-              descDe="Meiste Klaus" descEn="Most steals"
-              winner={meisterklauer}
-              metric={meisterklauer && awards?.meisterklauerCount ? `${awards.meisterklauerCount}× geklaut` : null}
-              delay="1.0s" accent="#A855F7"
-            />
-            <AwardCard
-              emoji="⚡" titleDe="Speedy Gonzales" titleEn="Speedy Gonzales"
-              descDe="Schnellste Antworten" descEn="Fastest answers"
-              winner={speedy}
-              metric={speedy && awards?.speedyAvgMs ? `+ Ø ${(awards.speedyAvgMs / 1000).toFixed(1)}s` : null}
-              delay="1.7s" accent="#F472B6"
-            />
-          </div>
-          <div style={{
-            fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#94A3B8', marginTop: 8,
-            opacity: 0, animation: 'qqFRTitleIn 0.6s ease 2.4s both',
-            fontStyle: 'italic',
-          }}>+1 Bonus-Punkt für jeden Award-Sieger</div>
-        </div>
-      )}
+      {phase.kind === 'award-card' && <AwardCardSlide awardIndex={phase.awardIndex} />}
+      {phase.kind === 'award-reveal' && <AwardRevealSlide awardIndex={phase.awardIndex} state={s} />}
+      {phase.kind === 'ranking' && <RankingSlide rankIndex={phase.rankIndex} finalRanking={finalRanking} />}
     </div>
   );
 }
 
-function AwardCard({
-  emoji, titleDe, titleEn, descDe, descEn, winner, metric, delay, accent,
-}: {
-  emoji: string; titleDe: string; titleEn: string;
-  descDe: string; descEn: string;
-  winner: QQTeam | null; metric?: string | null;
-  delay: string; accent: string;
-}) {
+function FinalRevealSharedKeyframes() {
+  return (
+    <style>{`
+      @keyframes qqFRTitleIn {
+        0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
+        100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
+      }
+      @keyframes qqFRSlamDown {
+        0%   { opacity: 0; transform: translateY(-90vh) scale(0.6) rotate(-3deg); filter: blur(8px); }
+        55%  { opacity: 1; transform: translateY(8%)    scale(1.06) rotate(1deg);  filter: blur(0); }
+        75%  { transform: translateY(-2%) scale(0.98) rotate(0deg); }
+        100% { transform: translateY(0)    scale(1)    rotate(0deg); }
+      }
+      @keyframes qqFRSlamFromTop {
+        0%   { opacity: 0; transform: translateY(-90vh) scale(0.7); filter: blur(7px); }
+        55%  { opacity: 1; transform: translateY(8%)    scale(1.04); filter: blur(0); }
+        75%  { transform: translateY(-2%) scale(0.98); }
+        100% { transform: translateY(0)    scale(1); }
+      }
+      @keyframes qqFRDrumroll {
+        0%, 100% { transform: rotate(-2deg); }
+        50%      { transform: rotate(2deg); }
+      }
+      @keyframes qqFRPlusOne {
+        0%   { opacity: 0; transform: translate(-50%, -10px) scale(0.5); }
+        50%  { opacity: 1; transform: translate(-50%, -40px) scale(1.4); }
+        100% { opacity: 0; transform: translate(-50%, -80px) scale(1); }
+      }
+      @keyframes qqFRClusterPulse {
+        0%, 100% { box-shadow: 0 0 16px var(--c-color); transform: scale(1); }
+        50%      { box-shadow: 0 0 32px var(--c-color); transform: scale(1.04); }
+      }
+      @keyframes qqFRBoundingSparkle {
+        0%   { offset-distance: 0%; }
+        100% { offset-distance: 100%; }
+      }
+      @keyframes qqFROohBob {
+        0%, 100% { transform: translateY(0) rotate(-2deg); }
+        50%      { transform: translateY(-6px) rotate(2deg); }
+      }
+    `}</style>
+  );
+}
+
+// ─── TitleHoldSlide ─────────────────────────────────────────────────────────
+function TitleHoldSlide() {
   return (
     <div style={{
-      width: 'clamp(220px, 22vw, 320px)',
-      padding: 'clamp(18px, 2.5vh, 28px) clamp(16px, 1.8vw, 26px)',
-      borderRadius: 22,
-      background: `linear-gradient(160deg, ${accent}25, ${accent}10)`,
-      border: `2.5px solid ${accent}88`,
-      boxShadow: `0 20px 60px rgba(0,0,0,0.55), 0 0 60px ${accent}55, inset 0 0 40px ${accent}18`,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-      animation: `qqFRAwardCardIn 0.9s cubic-bezier(0.34, 1.46, 0.64, 1) ${delay} both`,
-      opacity: 0,
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 24,
+      animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
     }}>
-      <div style={{ fontSize: 'clamp(48px, 6vw, 88px)', lineHeight: 1 }}>{emoji}</div>
+      <div style={{ fontSize: 'clamp(72px, 10vw, 180px)', lineHeight: 1 }}>🏆</div>
       <div style={{
-        fontSize: 'clamp(11px, 1vw, 15px)', fontWeight: 900,
-        color: accent, textTransform: 'uppercase', letterSpacing: '0.14em',
-        textAlign: 'center',
-      }}>{titleDe}</div>
+        fontSize: 'clamp(40px, 5.5vw, 96px)', fontWeight: 900,
+        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        textShadow: '0 0 36px rgba(236,72,153,0.45)',
+      }}>Die Auflösung</div>
       <div style={{
-        fontSize: 'clamp(11px, 0.9vw, 13px)', color: '#94A3B8',
-        textAlign: 'center', fontStyle: 'italic',
-      }}>{descDe}</div>
-      {winner ? (
-        <>
-          <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size="clamp(56px, 6vw, 80px)" />
-          <div style={{
-            fontSize: 'clamp(16px, 1.6vw, 22px)', fontWeight: 900,
-            color: winner.color, textAlign: 'center',
-          }}>{winner.name}</div>
-          {metric && (
-            <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#CBD5E1', fontWeight: 700 }}>
-              {metric}
+        fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
+        fontStyle: 'italic',
+      }}>Drück Space — los geht's 🐺</div>
+    </div>
+  );
+}
+
+// ─── GridRevealSlide ────────────────────────────────────────────────────────
+function GridRevealSlide({ state: s, cellsByTeam }: {
+  state: QQStateUpdate;
+  cellsByTeam: Record<string, number>;
+}) {
+  const topTeam = [...s.teams].sort((a, b) =>
+    (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
+  )[0];
+  let minR = s.gridSize, minC = s.gridSize, maxR = -1, maxC = -1;
+  for (let r = 0; r < s.gridSize; r++) {
+    for (let c = 0; c < s.gridSize; c++) {
+      if (s.grid[r]?.[c]?.ownerId === topTeam?.id) {
+        if (r < minR) minR = r;
+        if (c < minC) minC = c;
+        if (r > maxR) maxR = r;
+        if (c > maxC) maxC = c;
+      }
+    }
+  }
+  const hasTopCluster = maxR >= 0 && topTeam;
+  const cellSize = Math.min(64, Math.floor(560 / Math.max(1, s.gridSize)));
+  const gap = 6;
+  const rectLeft = hasTopCluster ? minC * (cellSize + gap) - 4 : 0;
+  const rectTop = hasTopCluster ? minR * (cellSize + gap) - 4 : 0;
+  const rectW = hasTopCluster ? (maxC - minC + 1) * cellSize + (maxC - minC) * gap + 8 : 0;
+  const rectH = hasTopCluster ? (maxR - minR + 1) * cellSize + (maxR - minR) * gap + 8 : 0;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(24px, 3vw, 48px)', width: '100%', maxWidth: 1500,
+    }}>
+      <div style={{
+        position: 'relative',
+        animation: 'qqFRTitleIn 0.7s ease both',
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
+          gridTemplateRows: `repeat(${s.gridSize}, ${cellSize}px)`,
+          gap: gap, position: 'relative',
+        }}>
+          {s.grid.map((row, r) => row.map((cell, c) => {
+            if (!cell.ownerId) {
+              return (
+                <div key={`${r}-${c}`} style={{
+                  width: cellSize, height: cellSize,
+                  borderRadius: cellSize * 0.18,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }} />
+              );
+            }
+            const owner = s.teams.find(t => t.id === cell.ownerId);
+            if (!owner) return null;
+            const isTop = topTeam?.id === owner.id;
+            return (
+              <div key={`${r}-${c}`} style={{
+                width: cellSize, height: cellSize,
+                borderRadius: cellSize * 0.18,
+                background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
+                border: `2px solid ${owner.color}`,
+                ['--c-color' as any]: `${owner.color}aa`,
+                animation: isTop ? 'qqFRClusterPulse 2.4s ease-in-out infinite' : undefined,
+                opacity: isTop ? 1 : 0.55,
+                filter: isTop ? 'none' : 'saturate(0.7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {owner.emoji && (
+                  <span style={{
+                    fontSize: cellSize * 0.5, lineHeight: 1,
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+                  }}>{owner.emoji}</span>
+                )}
+              </div>
+            );
+          }))}
+          {hasTopCluster && (
+            <div style={{
+              position: 'absolute',
+              left: rectLeft, top: rectTop, width: rectW, height: rectH,
+              borderRadius: cellSize * 0.18 + 4,
+              border: '3px solid #EC4899',
+              boxShadow: '0 0 28px rgba(236,72,153,0.7), inset 0 0 18px rgba(236,72,153,0.25)',
+              pointerEvents: 'none',
+              animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+            }}>
+              {[0, 0.33, 0.66].map((delay, i) => (
+                <span key={i} aria-hidden style={{
+                  position: 'absolute', left: 0, top: 0,
+                  width: 14, height: 14,
+                  fontSize: 14, lineHeight: 1,
+                  filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.9))',
+                  ['offsetPath' as any]: `path('M 0 0 L ${rectW} 0 L ${rectW} ${rectH} L 0 ${rectH} Z')`,
+                  ['WebkitOffsetPath' as any]: `path('M 0 0 L ${rectW} 0 L ${rectW} ${rectH} L 0 ${rectH} Z')`,
+                  ['offsetRotate' as any]: 'auto',
+                  animation: `qqFRBoundingSparkle 4s linear ${delay * 4}s infinite`,
+                }}>✨</span>
+              ))}
             </div>
           )}
-        </>
-      ) : (
-        <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#475569', fontStyle: 'italic' }}>
-          (kein Sieger)
+        </div>
+      </div>
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 10,
+        minWidth: 320, maxWidth: 420,
+        animation: 'qqFRTitleIn 0.7s ease 0.3s both',
+      }}>
+        <div style={{
+          fontSize: 'clamp(13px, 1.3vw, 20px)', fontWeight: 900,
+          color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.16em',
+          marginBottom: 6,
+        }}>🏆 Größtes Gebiet</div>
+        {[...s.teams].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0)).map((t, i) => (
+          <div key={t.id} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 14px', borderRadius: 14,
+            background: i === 0 ? `${t.color}22` : 'rgba(255,255,255,0.04)',
+            border: i === 0 ? `2px solid ${t.color}` : '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={36} />
+            <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 17 }}>{t.name}</span>
+            <span style={{
+              fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
+              color: i === 0 ? '#FBBF24' : '#CBD5E1',
+            }}>{t.largestConnected ?? 0}</span>
+            <span style={{ fontSize: 12, color: '#64748B' }}>· {cellsByTeam[t.id] ?? 0} ges.</span>
+          </div>
+        ))}
+        <div style={{
+          marginTop: 12, padding: '8px 12px', borderRadius: 10,
+          background: 'rgba(236,72,153,0.10)',
+          border: '1px solid rgba(236,72,153,0.30)',
+          fontSize: 11, fontWeight: 700, color: '#F472B6',
+          textAlign: 'center', letterSpacing: '0.04em',
+        }}>
+          📌 Brett-Stand fixiert — jetzt kommen die Boni
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BetRevealSlide ─────────────────────────────────────────────────────────
+function BetRevealSlide({ team, resolution, allTeams }: {
+  team?: QQTeam;
+  resolution: import('../../../shared/quarterQuizTypes').QQFinalBetResolution | null;
+  allTeams: QQTeam[];
+}) {
+  if (!team) return null;
+  const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
+  const isMutual = !!resolution?.mutualWith;
+  const totalBonus = resolution?.totalBonus ?? 0;
+  const isZero = totalBonus === 0;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '100%',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 'clamp(40px, 5vw, 80px)',
+        padding: 'clamp(36px, 4vh, 64px)',
+        borderRadius: 32,
+        background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
+        border: `3px solid ${team.color}`,
+        boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+        animation: 'qqFRSlamDown 0.95s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(120px, 13vw, 200px)'} />
+          <div style={{
+            fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+            color: team.color, textAlign: 'center', letterSpacing: '-0.01em',
+          }}>{team.name}</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, minWidth: 380 }}>
+          {targetTeam ? (
+            <>
+              <div style={{
+                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+                color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
+              }}>tippte auf</div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '12px 22px', borderRadius: 999,
+                background: `${targetTeam.color}1a`,
+                border: `2px solid ${targetTeam.color}`,
+              }}>
+                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={48} />
+                <span style={{
+                  fontSize: 'clamp(22px, 2.2vw, 32px)', fontWeight: 900,
+                  color: targetTeam.color,
+                }}>{targetTeam.name}</span>
+              </div>
+              {isMutual && (
+                <div style={{
+                  fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 800,
+                  color: '#F472B6', display: 'flex', alignItems: 'center', gap: 8,
+                  animation: 'qqFRTitleIn 0.6s ease 0.5s both',
+                }}>
+                  <span style={{ fontSize: 'clamp(20px, 2vw, 30px)' }}>💞</span>
+                  + Sympathie-Bonus
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{
+              fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 700,
+              color: '#94A3B8', fontStyle: 'italic', textAlign: 'center',
+            }}>
+              Kein Tipp abgegeben
+            </div>
+          )}
+          {isZero ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              animation: 'qqFRTitleIn 0.7s ease 0.6s both',
+            }}>
+              <div style={{
+                fontSize: 'clamp(60px, 7vw, 110px)', lineHeight: 1,
+                animation: 'qqFROohBob 1.6s ease-in-out infinite',
+              }}>🥲</div>
+              <div style={{
+                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                color: '#94A3B8', textAlign: 'center', fontStyle: 'italic',
+              }}>oooh …</div>
+              <div style={{
+                fontSize: 'clamp(15px, 1.4vw, 22px)', fontWeight: 700,
+                color: '#64748B',
+              }}>0 Bonus-Punkte</div>
+            </div>
+          ) : (
+            <div style={{
+              padding: '16px 32px', borderRadius: 22,
+              background: 'rgba(34,197,94,0.18)',
+              border: '3px solid rgba(34,197,94,0.65)',
+              boxShadow: '0 0 32px rgba(34,197,94,0.35)',
+              fontSize: 'clamp(48px, 5.5vw, 88px)', fontWeight: 900,
+              color: '#22C55E', letterSpacing: '-0.02em',
+              animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+            }}>
+              + {totalBonus}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AwardCardSlide / AwardRevealSlide ──────────────────────────────────────
+const AWARD_DEFS = [
+  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', descDe: 'Niedrigster Score', accent: '#10B981' },
+  { emoji: '🦝', titleDe: 'Meisterklauer',       descDe: 'Meiste Klaus',     accent: '#A855F7' },
+  { emoji: '⚡', titleDe: 'Speedy Gonzales',     descDe: 'Schnellste Antworten', accent: '#F472B6' },
+];
+
+function AwardCardSlide({ awardIndex }: { awardIndex: 0 | 1 | 2 }) {
+  const a = AWARD_DEFS[awardIndex];
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '100%',
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
+        padding: 'clamp(40px, 5vh, 72px)',
+        borderRadius: 32,
+        background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
+        border: `3px solid ${a.accent}`,
+        boxShadow: `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
+        animation: 'qqFRSlamDown 1s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+      }}>
+        <div style={{
+          fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
+          color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
+        }}>🥁 Trommelwirbel …</div>
+        <div style={{
+          fontSize: 'clamp(96px, 12vw, 180px)', lineHeight: 1,
+          animation: 'qqFRDrumroll 0.6s ease-in-out infinite',
+          filter: `drop-shadow(0 0 24px ${a.accent}99)`,
+        }}>{a.emoji}</div>
+        <div style={{
+          fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
+          color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.01em',
+        }}>{a.titleDe}</div>
+        <div style={{
+          fontSize: 'clamp(16px, 1.7vw, 26px)', fontWeight: 700,
+          color: a.accent, fontStyle: 'italic',
+        }}>{a.descDe}</div>
+        <div style={{
+          fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
+          color: '#94A3B8', letterSpacing: '0.4em', marginTop: 8,
+        }}>???</div>
+      </div>
+    </div>
+  );
+}
+
+function AwardRevealSlide({ awardIndex, state: s }: { awardIndex: 0 | 1 | 2; state: QQStateUpdate }) {
+  const a = AWARD_DEFS[awardIndex];
+  const awards = s.endAwards;
+  const winnerId = !awards ? null
+    : awardIndex === 0 ? awards.underdog
+    : awardIndex === 1 ? awards.meisterklauer
+    : awards.speedy;
+  const winner = winnerId ? s.teams.find(t => t.id === winnerId) : null;
+  const metric = !winner ? null
+    : awardIndex === 1 && awards?.meisterklauerCount ? `${awards.meisterklauerCount}× geklaut`
+    : awardIndex === 2 && awards?.speedyAvgMs ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
+    : null;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '100%',
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
+        padding: 'clamp(40px, 5vh, 72px) clamp(48px, 5vw, 88px)',
+        borderRadius: 32,
+        background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
+        border: `3px solid ${a.accent}`,
+        boxShadow: `0 0 100px ${a.accent}88, 0 16px 48px rgba(0,0,0,0.5)`,
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+        position: 'relative',
+      }}>
+        <div style={{
+          fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
+          color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ fontSize: 'clamp(28px, 3vw, 44px)' }}>{a.emoji}</span>
+          {a.titleDe}
+        </div>
+        {winner ? (
+          <>
+            <div style={{ position: 'relative' }}>
+              <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(140px, 15vw, 220px)'} />
+              <span aria-hidden style={{
+                position: 'absolute', left: '50%', top: 0,
+                transform: 'translate(-50%, -10px)',
+                fontSize: 'clamp(48px, 5vw, 80px)', fontWeight: 900,
+                color: '#22C55E',
+                textShadow: '0 0 32px rgba(34,197,94,0.7)',
+                animation: 'qqFRPlusOne 2.2s ease-out 0.4s both',
+                pointerEvents: 'none',
+              }}>+1</span>
+            </div>
+            <div style={{
+              fontSize: 'clamp(40px, 4.5vw, 72px)', fontWeight: 900,
+              color: winner.color, textAlign: 'center', letterSpacing: '-0.01em',
+              textShadow: `0 0 32px ${winner.color}55`,
+            }}>{winner.name}</div>
+            {metric && (
+              <div style={{
+                fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 700,
+                color: '#CBD5E1', fontStyle: 'italic',
+              }}>{metric}</div>
+            )}
+            <div style={{
+              padding: '10px 24px', borderRadius: 999,
+              background: 'rgba(34,197,94,0.18)',
+              border: '2px solid rgba(34,197,94,0.55)',
+              fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 900,
+              color: '#22C55E',
+            }}>
+              + 1 Bonus-Punkt
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 'clamp(20px, 2vw, 28px)', color: '#475569', fontStyle: 'italic' }}>
+            (kein Sieger)
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── RankingSlide (Single bis #4, Treppchen ab #3) ──────────────────────────
+type RankingEntry = {
+  team: QQTeam;
+  cells: number;
+  bonus: number;
+  awards: number;
+  total: number;
+};
+
+function RankingSlide({ rankIndex, finalRanking }: {
+  rankIndex: number;
+  finalRanking: RankingEntry[];
+}) {
+  const N = finalRanking.length;
+  const currentRank = N - rankIndex;
+  const currentEntry = finalRanking[currentRank - 1];
+  const stackSize = rankIndex >= 2 ? Math.min(3, rankIndex) : 0;
+  const stackEntries: RankingEntry[] = [];
+  for (let i = 0; i < stackSize; i++) {
+    const entry = finalRanking[N - 1 - i];
+    if (entry) stackEntries.push(entry);
+  }
+  const isWinner = currentRank === 1;
+  const medal = currentRank === 1 ? '🥇' : currentRank === 2 ? '🥈' : currentRank === 3 ? '🥉' : `#${currentRank}`;
+  const rankColor = currentRank === 1 ? '#FBBF24'
+    : currentRank === 2 ? '#C0C0C0'
+    : currentRank === 3 ? '#CD7F32'
+    : '#94A3B8';
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(20px, 3vh, 40px)',
+      width: '100%', position: 'relative',
+    }}>
+      {isWinner && <ConfettiOverlay />}
+      {currentEntry && (
+        <div key={currentRank} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+          padding: 'clamp(36px, 4vh, 60px) clamp(48px, 5vw, 80px)',
+          borderRadius: 32,
+          background: isWinner
+            ? `linear-gradient(135deg, ${currentEntry.team.color}33, ${currentEntry.team.color}11)`
+            : `linear-gradient(160deg, ${currentEntry.team.color}28, ${currentEntry.team.color}10)`,
+          border: `3px solid ${currentEntry.team.color}`,
+          boxShadow: isWinner
+            ? `0 0 120px ${currentEntry.team.color}aa, 0 0 200px rgba(251,191,36,0.4), 0 16px 48px rgba(0,0,0,0.5)`
+            : `0 0 80px ${currentEntry.team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+          animation: 'qqFRSlamFromTop 1.2s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+          position: 'relative', zIndex: 5,
+        }}>
+          {isWinner && (
+            <div style={{
+              fontSize: 'clamp(56px, 6vw, 100px)', lineHeight: 1,
+              animation: 'qqFRDrumroll 1.4s ease-in-out infinite',
+            }}>👑</div>
+          )}
+          <div style={{
+            fontSize: 'clamp(56px, 6vw, 110px)', fontWeight: 900,
+            color: rankColor, textShadow: `0 0 36px ${rankColor}88`,
+          }}>{medal}</div>
+          <QQTeamAvatar avatarId={currentEntry.team.avatarId} teamEmoji={currentEntry.team.emoji}
+            size={isWinner ? 'clamp(160px, 17vw, 240px)' : 'clamp(120px, 13vw, 180px)'} />
+          <div style={{
+            fontSize: isWinner ? 'clamp(48px, 5vw, 88px)' : 'clamp(36px, 4vw, 60px)',
+            fontWeight: 900,
+            color: currentEntry.team.color, textAlign: 'center', letterSpacing: '-0.01em',
+            textShadow: `0 0 36px ${currentEntry.team.color}66`,
+          }}>{currentEntry.team.name}</div>
+          <div style={{
+            fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+            color: '#F1F5F9',
+          }}>{currentEntry.total} Punkte</div>
+          <div style={{
+            fontSize: 'clamp(13px, 1.3vw, 18px)', color: '#94A3B8',
+          }}>
+            {currentEntry.cells} Felder
+            {currentEntry.bonus > 0 ? ` · + ${currentEntry.bonus} Tipp-Bonus` : ''}
+            {currentEntry.awards > 0 ? ` · + ${currentEntry.awards} Awards` : ''}
+          </div>
+        </div>
+      )}
+      {stackSize > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          gap: 'clamp(16px, 2vw, 32px)',
+          opacity: 0.85,
+          animation: 'qqFRTitleIn 0.6s ease 0.4s both',
+        }}>
+          {stackEntries.map((e, i) => {
+            const r = N - i;
+            const med = r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
+            return (
+              <div key={e.team.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                padding: '16px 24px', borderRadius: 18,
+                background: `${e.team.color}18`,
+                border: `2px solid ${e.team.color}55`,
+                minWidth: 140,
+              }}>
+                <div style={{ fontSize: 'clamp(22px, 2vw, 32px)', fontWeight: 900,
+                  color: r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : '#94A3B8',
+                }}>{med}</div>
+                <QQTeamAvatar avatarId={e.team.avatarId} teamEmoji={e.team.emoji} size={'clamp(48px, 5vw, 72px)'} />
+                <div style={{
+                  fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900, color: e.team.color,
+                  textAlign: 'center', maxWidth: 140,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{e.team.name}</div>
+                <div style={{
+                  fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 900, color: '#CBD5E1',
+                }}>{e.total}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {isWinner && (
+        <div style={{
+          position: 'absolute', right: 'clamp(40px, 6vw, 100px)', bottom: 'clamp(40px, 6vh, 100px)',
+          zIndex: 4, pointerEvents: 'none',
+          animation: 'qqFRTitleIn 0.7s ease 0.8s both',
+        }}>
+          <AnimatedCozyWolf widthCss="clamp(140px, 14vw, 220px)" mode="jubel" speaking={true} />
         </div>
       )}
     </div>

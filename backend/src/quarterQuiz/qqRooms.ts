@@ -276,6 +276,8 @@ export interface QQRoomState {
   /** Recap-Step zwischen Final-Fragen (0 = normal, 1 = Recap-Slide sichtbar). */
   finalRecapStep: 0 | 1;
   finalRecapJustWon: string[] | null;
+  /** End-Flow Step in FINAL_REVEAL-Phase (0..N), Mod-Space increments. */
+  finalRevealStep: number;
   /** Legacy/optional: Sieger-Liste (Top-Win-Team(s)) — UI-Hinweis only. */
   finalRoundWinners: string[] | null;
   /** Score-Snapshot beim Start der Final-Phase. */
@@ -439,6 +441,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalLastSnapshot: null,
       finalRecapStep: 0,
       finalRecapJustWon: null,
+      finalRevealStep: 0,
       finalRoundWinners: null,
       finalBetResolution: null,
       endAwards: null,
@@ -3247,13 +3250,14 @@ export function qqNextQuestion(room: QQRoomState): void {
     return;
   }
 
-  // Final-Wager (2026-05-09): nach FINAL_REVEAL-Score-Cascade führt Space zu
-  // GAME_OVER. Die Bonus-Coins aus finalBetResolution bleiben im State und
-  // werden in der Game-Over-Anzeige zusätzlich zu den Cell-Counts gerendert.
+  // 2026-05-09 (Wolf End-Flow Refactor): in FINAL_REVEAL-Phase iteriert Mod-
+  // Space jetzt durch die Multi-Step-Choreo (Grid → Bets → Awards → Ranking).
+  // Letzter Step wechselt direkt zu THANKS (kein GAME_OVER mehr — Wolfs Wunsch
+  // 'die punkte nicht wieder und wieder zeigen').
   if (room.phase === 'FINAL_REVEAL') {
     updateTerritories(room);
     detectTieBreakerCandidates(room);
-    room.phase = 'GAME_OVER';
+    qqAdvanceFinalReveal(room);
     return;
   }
 
@@ -3748,6 +3752,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalLastSnapshot:     room.finalLastSnapshot ?? null,
     finalRecapStep:        room.finalRecapStep ?? 0,
     finalRecapJustWon:     room.finalRecapJustWon ?? null,
+    finalRevealStep:       room.finalRevealStep ?? 0,
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
@@ -5321,8 +5326,38 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   };
 
   // KEIN Cell-Removal mehr — alle Felder bleiben am Brett (Tipp-Variante).
-  // Phase auf FINAL_REVEAL für 3-Akt-Choreo am Beamer.
+  // Phase auf FINAL_REVEAL für Multi-Step-Choreo am Beamer.
+  // Step 0 = Title-Hold, Mod-Space increments (siehe qqAdvanceFinalReveal).
   room.phase = 'FINAL_REVEAL';
+  room.finalRevealStep = 0;
+  room.lastActivityAt = Date.now();
+}
+
+/** 2026-05-09 (Wolf End-Flow): Berechnet die Anzahl der End-Flow-Steps in
+ *  FINAL_REVEAL für N Teams.
+ *  - 1 Step: Title-Hold (0)
+ *  - 1 Step: Grid-Reveal (1)
+ *  - N Steps: Bet-Reveal pro Team (2..N+1)
+ *  - 6 Steps: 3 Awards × 2 (Card → Avatar+Punkt) (N+2..N+7)
+ *  - N Steps: Ranking-Slides last→first (N+8..2N+7)
+ *  - Plus 1 final step der zur THANKS-Phase wechselt (2N+8)
+ *  Total = 2N + 9 (inkl. Final-Step der Phase wechselt). */
+export function qqFinalRevealMaxStep(room: QQRoomState): number {
+  const N = Object.keys(room.teams).length;
+  return 2 * N + 8;
+}
+
+/** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */
+export function qqAdvanceFinalReveal(room: QQRoomState): void {
+  if (room.phase !== 'FINAL_REVEAL') return;
+  const max = qqFinalRevealMaxStep(room);
+  const next = (room.finalRevealStep ?? 0) + 1;
+  if (next > max) {
+    room.phase = 'THANKS';
+    room.finalRevealStep = 0;
+  } else {
+    room.finalRevealStep = next;
+  }
   room.lastActivityAt = Date.now();
 }
 

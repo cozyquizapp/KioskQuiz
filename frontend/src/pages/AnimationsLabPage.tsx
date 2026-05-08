@@ -371,6 +371,117 @@ function FirefliesLayer() {
   );
 }
 
+// ─── B. 8-Team Score-Cascade mit Position-Swap ──────────────────────────────
+// Teams werden mit Stagger 200 ms hochgeticked (lowest-rank zuerst), dann
+// schiebt der Position-Swap alle 8 Zeilen auf ihre neue Rank-Position. Letztens
+// kriegt der neue #1 (= Kraken nach +28 Punkten Sprung) den Winner-Glow.
+const SCORE_TEAMS = [
+  { id: 1, name: 'Wolfsbande', hue: 230, before: 78, delta:  0 },
+  { id: 2, name: 'Tigerteam',  hue: 30,  before: 71, delta:  5 },
+  { id: 3, name: 'Eulenchor',  hue: 130, before: 68, delta:  9 },
+  { id: 4, name: 'Kraken',     hue: 280, before: 64, delta: 28 }, // LEAP-Team
+  { id: 5, name: 'Foxtrott',   hue: 0,   before: 60, delta: 14 },
+  { id: 6, name: 'Bärenherz',  hue: 200, before: 55, delta: 18 },
+  { id: 7, name: 'Schwalben',  hue: 90,  before: 49, delta:  6 },
+  { id: 8, name: 'Igelpost',   hue: 320, before: 42, delta: 20 },
+];
+
+function ScoreTickup({ from, to, delayMs, durationMs }: {
+  from: number; to: number; delayMs: number; durationMs: number;
+}) {
+  const [val, setVal] = useState(from);
+  useEffect(() => {
+    setVal(from);
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      if (elapsed < delayMs) { frame = requestAnimationFrame(tick); return; }
+      const t = Math.min(1, (elapsed - delayMs) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out-cubic
+      setVal(Math.round(from + (to - from) * eased));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [from, to, delayMs, durationMs]);
+  const showDelta = to > from && val > from && val < to;
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 84, justifyContent: 'flex-end' }}>
+      {showDelta && (
+        <span style={{ fontSize: 10, color: '#22C55E', fontWeight: 800 }}>+{to - from}</span>
+      )}
+      <span style={{ fontSize: 18, fontWeight: 900, color: '#fbbf24', fontFamily: 'monospace' }}>{val}</span>
+    </div>
+  );
+}
+
+function ScoreCascadeDemo({ replay }: { replay: number }) {
+  const teams = SCORE_TEAMS;
+  const ROW_H = 36;
+  const STAGGER_MS = 200;
+  const TICKUP_MS = 600;
+  const SWAP_DELAY_MS = STAGGER_MS * teams.length + 200; // erst alle Tickups, dann Swap
+  const SWAP_MS = 800;
+  const GLOW_DELAY_MS = SWAP_DELAY_MS + SWAP_MS - 100;
+  // Sortierte Listen fuer Rank-Berechnung
+  const beforeOrder = [...teams].sort((a, b) => b.before - a.before).map(t => t.id);
+  const afterOrder  = [...teams].sort((a, b) => (b.before + b.delta) - (a.before + a.delta)).map(t => t.id);
+
+  return (
+    <div key={replay} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{
+        flex: 1, position: 'relative',
+        background: 'linear-gradient(180deg, #1a1410, #0f0a06)',
+        borderRadius: 12,
+        border: '1px solid rgba(245,158,11,0.18)',
+        padding: '12px 14px',
+        minHeight: 340, overflow: 'hidden',
+      }}>
+        <div style={{ position: 'relative', width: '100%', height: teams.length * ROW_H }}>
+          {teams.map((t) => {
+            const beforeRank = beforeOrder.indexOf(t.id);
+            const afterRank = afterOrder.indexOf(t.id);
+            const isWinner = afterRank === 0;
+            const tickupDelay = (teams.length - 1 - beforeRank) * STAGGER_MS; // unten zuerst
+            const swapDiffPx = (afterRank - beforeRank) * ROW_H;
+            return (
+              <div key={t.id} style={{
+                position: 'absolute',
+                left: 0, right: 0, top: beforeRank * ROW_H,
+                height: ROW_H - 4,
+                ['--swapDiff' as any]: `${swapDiffPx}px`,
+                animation: `rowSwap ${SWAP_MS}ms cubic-bezier(0.34, 1.18, 0.64, 1) ${SWAP_DELAY_MS}ms both${
+                  isWinner ? `, rowWinnerGlow 0.8s ease-out ${GLOW_DELAY_MS}ms both` : ''
+                }`,
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 6,
+                padding: '0 10px',
+                willChange: 'transform',
+              }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: `hsl(${t.hue}, 64%, 52%)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800, color: '#fff',
+                  flexShrink: 0,
+                }}>{beforeRank + 1}</div>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.005em' }}>{t.name}</div>
+                <ScoreTickup from={t.before} to={t.before + t.delta} delayMs={tickupDelay} durationMs={TICKUP_MS} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+        Stagger 200 ms · Tickup 600 ms · Position-Swap 800 ms · Kraken springt #4→#1 mit +28
+      </div>
+    </div>
+  );
+}
+
 // ─── C. CHEESE Winner-Avatar-Drop-Cascade ───────────────────────────────────
 function CheeseWinnerCascadeDemo({ replay }: { replay: number }) {
   // 4 Winner-Teams als simple farbige Avatare. 850 ms Stagger pro Drop,
@@ -597,6 +708,12 @@ export default function AnimationsLabPage() {
       keepAlive: false, minHeight: 460,
       render: (r) => <CheeseWinnerCascadeDemo replay={r} />,
     },
+    {
+      label: 'B', title: '8-Team Score-Cascade + Position-Swap',
+      blurb: 'Volles 8-Team-Grid. Stagger-Tickup von unten nach oben (200 ms), dann gestaffelter Position-Swap mit Spring-Bounce. Kraken springt von #4 auf #1 (+28 Punkte) — neuer Spitzenreiter kriegt Winner-Glow.',
+      keepAlive: false, minHeight: 500,
+      render: (r) => <ScoreCascadeDemo replay={r} />,
+    },
   ];
 
   return (
@@ -697,6 +814,18 @@ export default function AnimationsLabPage() {
         @keyframes cheeseLabelFade {
           0%   { opacity: 0; transform: translateX(-50%) translateY(4px); }
           100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes rowSwap {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(var(--swapDiff)); }
+        }
+        @keyframes rowWinnerGlow {
+          0%   { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); box-shadow: none; }
+          100% {
+            background: linear-gradient(90deg, rgba(251,191,36,0.20), rgba(251,191,36,0.04));
+            border-color: rgba(251,191,36,0.45);
+            box-shadow: 0 0 24px rgba(251,191,36,0.35);
+          }
         }
       `}</style>
 

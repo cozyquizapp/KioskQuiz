@@ -343,26 +343,14 @@ export default function QQModeratorPage() {
         break;
       }
       case 'QUESTION_ACTIVE': {
-        // 2026-05-06 (Slot-Machine): Bei HP im rolling-State im Autoplay
-        // erst Slot stoppen (~3.4s = Slot-Animation + 400ms Atempause).
-        // 2026-05-07 (Wolf '3-Phasen-Flow'): Autoplay fired finishSlot
-        // jetzt zweimal — rolling→landed nach 3.4s, landed→finished nach
-        // weiteren 1.8s (Mod-Announce-Pause).
-        // 2026-05-08 (Wolf-Bug 'HP-slot-machine mehrfach im autoplay'):
-        // HP-Action wird nur einmal pro (qId, slotState)-Kombination emittiert.
-        // Verhindert Re-Fire bei state-Updates die andere Felder wechseln
-        // (answers.length etc.) waehrend HP-State noch beim alten Wert ist.
+        // 2026-05-09: HP-Slot-Autoplay läuft jetzt in separatem useEffect
+        // unten (mit minimalen Deps: phase, hps, qId). Dadurch keine
+        // Mehrfach-Triggers mehr durch state-update-Re-Runs (answers.length etc).
+        // Hier nur: bei rolling/landed nichts tun, weiter durchfallen.
         const sk = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
-        const hps = (s as any).hotPotatoSlotState;
-        if (sk === 'hotPotato' && (hps === 'rolling' || hps === 'landed')) {
-          const hpKey = `${q?.id ?? '-'}:${hps}`;
-          if (lastHPFireKeyRef.current === hpKey) return;
-          delayMs = hps === 'rolling' ? 3400 : 1800;
-          action = () => {
-            lastHPFireKeyRef.current = hpKey;
-            emit('qq:hotPotatoFinishSlot', { roomCode });
-          };
-          break;
+        if (sk === 'hotPotato') {
+          const hps = (s as any).hotPotatoSlotState;
+          if (hps === 'rolling' || hps === 'landed') break;
         }
         // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.
         if (s.allAnswered) {
@@ -615,6 +603,34 @@ export default function QQModeratorPage() {
     state?.comebackHL?.phase, // 2026-05-07: H/L question→reveal Wechsel
     // comebackHL answers count via stringified key — Effect re-runt wenn Team antwortet
     state?.comebackHL ? Object.keys(state.comebackHL.answers ?? {}).length : 0,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 2026-05-09 (Wolf-Bug): separater HP-Slot-Autoplay-Effect mit MINIMALEN
+  // Deps. Vorher lief HP-Slot-Branch im großen Outer-Autoplay-Effect mit
+  // ~15 state-Feldern als Deps — bei jedem state-update (answers.length etc.)
+  // wurde der Timer neu gestartet, was zu Multi-Triggers führte trotz Dedup-Ref.
+  // Dieser Effect re-runs NUR wenn (phase, hps, qId) sich ändert → sauber.
+  // Flow: Slot rolling 3.4 s → emit finishSlot → Backend setzt landed →
+  // Effect re-runs mit hps=landed → Timer 1.8 s → emit finishSlot → finished.
+  useEffect(() => {
+    if (!autoplayEnabled || autoplayPaused) return;
+    const s = state;
+    if (!s) return;
+    if (s.phase !== 'QUESTION_ACTIVE') return;
+    const sk = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
+    if (sk !== 'hotPotato') return;
+    const hps = (s as any).hotPotatoSlotState;
+    if (hps !== 'rolling' && hps !== 'landed') return;
+    const delay = hps === 'rolling' ? 3400 : 1800;
+    const timer = window.setTimeout(() => {
+      emitRef.current('qq:hotPotatoFinishSlot', { roomCode });
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [
+    autoplayEnabled, autoplayPaused, roomCode,
+    state?.phase,
+    state?.currentQuestion?.id,
+    (state as any)?.hotPotatoSlotState,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleKey = useCallback((e: KeyboardEvent) => {

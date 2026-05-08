@@ -1038,17 +1038,24 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   }, [s.teams, s.sfxMuted, s.phase]);
 
   // Neuer Frage-Cue bei jeder neuen Question-ID.
+  // 2026-05-09 (Wolf): bei Hot Potato erst Question-Sound feuern wenn Slot
+  // finished ist (= Timer startet). Vorher (rolling/landed) läuft die Slot-
+  // Animation visuell — Question-Sound würde sich mit Slot-Stinger überlagern.
   useEffect(() => {
     if (s.sfxMuted) return;
     const qid = s.currentQuestion?.id ?? null;
     if (!qid) return;
+    const isHotPotato = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind === 'hotPotato';
+    const hps = (s as any).hotPotatoSlotState;
+    // HP-Gate: Question-Sound darf erst feuern wenn Slot finished (= Timer-Start)
+    if (isHotPotato && hps !== 'finished') return;
     if (qid === prevSfxQuestionIdRef.current) return;
     prevSfxQuestionIdRef.current = qid;
     if (s.phase === 'QUESTION_ACTIVE') {
       resumeAudio();
       playQuestionStartFor(s.currentQuestion?.category);
     }
-  }, [s.currentQuestion?.id, s.phase, s.sfxMuted]);
+  }, [s.currentQuestion?.id, s.phase, s.sfxMuted, (s as any).hotPotatoSlotState]);
 
   // ── Music: timer loop (game-show music while question is active) ──
   // Normalfall: laeuft solange ein Frage-Timer aktiv ist (s.timerEndsAt).
@@ -5801,22 +5808,34 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             gap: 'clamp(10px, 1.2vw, 18px)', padding: 'clamp(16px, 1.8vw, 26px)',
                           }}>
-                            {/* Color-Tinted-Circle als Avatar-Wrapper (statt nackter QQTeamAvatar) */}
+                            {/* Avatar — 1:1 wie Slot M Showreel: Color-Tinted-
+                                Circle mit großem Emoji DIREKT (nicht via
+                                QQTeamAvatar). emoji-fontSize ~54% des Wrappers,
+                                damit's wie im Showreel kraftvoll wirkt. */}
                             <div style={{
                               width: avatarSize, height: avatarSize,
                               borderRadius: '50%',
                               background: `${t.color}33`,
                               border: `2.5px solid ${t.color}`,
-                              boxShadow: `0 0 32px ${t.color}99, 0 12px 40px ${t.color}66`,
+                              boxShadow: `0 0 28px ${t.color}99`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0,
                               overflow: 'hidden',
                               animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
                             }}>
-                              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size="86%" />
+                              {t.emoji ? (
+                                // Emoji-Avatar (Standard-Set): Emoji direkt als
+                                // großer Text — wie Slot M Showreel
+                                <span style={{
+                                  fontSize: `calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.54)`,
+                                  lineHeight: 1,
+                                }}>{t.emoji}</span>
+                              ) : (
+                                // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern
+                                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="86%" />
+                              )}
                             </div>
-                            {/* Name als Text in Team-Color (kein Pill) — bigger,
-                                Showreel-style */}
+                            {/* Name als Text in Team-Color — Showreel-style */}
                             <TeamNameLabel
                               name={t.name}
                               maxLines={2}
@@ -5827,7 +5846,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               style={{
                                 textAlign: 'center',
                                 letterSpacing: '-0.01em',
-                                textShadow: `0 0 12px ${t.color}66`,
+                                textShadow: `0 0 8px ${t.color}55`,
                                 maxWidth: '95%',
                               }}
                             />

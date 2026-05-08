@@ -1617,12 +1617,15 @@ function TeamRevealGameShowDemo({ replay }: { replay: number }) {
 // Varianten — Single (1 Spark, langsam), Double (2 Sparks, gegenläufig),
 // Trail (3 Sparks gestaffelt für Comet-Effekt).
 function SparkOnCardShowcase() {
-  // Card-Mock-Component — wird in 3 Varianten verwendet
+  // 2026-05-09 v2 (Wolf-Tuning): schneller + funkelnder + subtiler.
+  // Vorher wirkte's wie „Kugel auf Rennstrecke", jetzt mehr wie Sparkle-
+  // Twinkle. Jeder Spark hat eigene twinkle-Anim (opacity + scale flackert),
+  // Orbit-Speed deutlich schneller (1.6-2.2 s), Sparks kleiner.
   const CardWithSparks = ({
     title, sparks,
   }: {
     title: string;
-    sparks: Array<{ size: number; delay: number; dur: number; opacity: number; reverse?: boolean }>;
+    sparks: Array<{ size: number; delay: number; dur: number; opacity: number; reverse?: boolean; twinkleDur?: number; twinkleOffset?: number }>;
   }) => (
     <div style={{
       position: 'relative',
@@ -1647,26 +1650,30 @@ function SparkOnCardShowcase() {
         fontSize: 10, color: '#94A3B8', fontWeight: 700,
         letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>Important</div>
-      {/* Sparks */}
-      {sparks.map((sp, i) => (
-        <div key={i} aria-hidden style={{
-          position: 'absolute',
-          width: sp.size, height: sp.size,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #FFFFFF 0%, #FBCFE8 25%, #EC4899 60%, transparent 100%)',
-          boxShadow: `0 0 ${sp.size * 1.4}px ${sp.size * 0.4}px rgba(236,72,153,0.85), 0 0 ${sp.size * 2.6}px rgba(244,114,182,0.55)`,
-          opacity: sp.opacity,
-          // CSS Motion Path: rect mit corner-radius matcht Card-Border
-          // offsetPath/Distance brauchen Browser-Support (Chrome+FF+Safari ab 2023, OK)
-          offsetPath: 'rect(0 100% 100% 0 round 18px)',
-          offsetRotate: '0deg',
-          animation: `sparkOrbit ${sp.dur}s linear ${sp.delay}s infinite ${sp.reverse ? 'reverse' : 'normal'}`,
-          // Pointer-events egal, kein Click-Handler
-          pointerEvents: 'none',
-          // Initial-Position auf Path
-          top: 0, left: 0,
-        } as React.CSSProperties} />
-      ))}
+      {/* Sparks — Orbit + Twinkle (zwei parallele Animationen) */}
+      {sparks.map((sp, i) => {
+        const twinkleDur = sp.twinkleDur ?? 0.7;
+        const twinkleOffset = sp.twinkleOffset ?? 0;
+        return (
+          <div key={i} aria-hidden style={{
+            position: 'absolute',
+            width: sp.size, height: sp.size,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #FFFFFF 0%, #FBCFE8 30%, #EC4899 70%, transparent 100%)',
+            // Subtilerer Glow — kleiner Inner-Halo + sanfter Outer-Glow
+            boxShadow: `0 0 ${sp.size * 0.9}px ${sp.size * 0.25}px rgba(236,72,153,0.7), 0 0 ${sp.size * 1.8}px rgba(244,114,182,0.35)`,
+            opacity: sp.opacity,
+            offsetPath: 'rect(0 100% 100% 0 round 18px)',
+            offsetRotate: '0deg',
+            // Orbit (Path-Movement) + Twinkle (Opacity+Scale-Flackern) parallel
+            animation:
+              `sparkOrbit ${sp.dur}s linear ${sp.delay}s infinite ${sp.reverse ? 'reverse' : 'normal'}, ` +
+              `sparkTwinkle ${twinkleDur}s ease-in-out ${twinkleOffset}s infinite`,
+            pointerEvents: 'none',
+            top: 0, left: 0,
+          } as React.CSSProperties} />
+        );
+      })}
     </div>
   );
 
@@ -1677,53 +1684,60 @@ function SparkOnCardShowcase() {
           0%   { offset-distance: 0%; }
           100% { offset-distance: 100%; }
         }
+        @keyframes sparkTwinkle {
+          0%, 100% { opacity: var(--spark-base, 1); transform: scale(1); }
+          25%      { opacity: 0.25;                  transform: scale(0.55); }
+          50%      { opacity: var(--spark-base, 1); transform: scale(1.15); }
+          75%      { opacity: 0.4;                   transform: scale(0.7); }
+        }
       `}</style>
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18,
         justifyItems: 'center',
       }}>
-        {/* Variante 1 — Single, langsam, dezent */}
+        {/* Variante 1 — Twinkle Solo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <CardWithSparks
-            title="Solo-Spark"
+            title="Twinkle"
             sparks={[
-              { size: 12, delay: 0, dur: 4.5, opacity: 1 },
+              { size: 9, delay: 0, dur: 2.0, opacity: 1, twinkleDur: 0.65 },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Single · 4.5 s</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Twinkle · 2.0 s</div>
           <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
-            1 Spark, langsam, dezent — für ruhige Important-Hinweise
+            1 Spark mit Funkel-Pulse — schnell + subtil
           </div>
         </div>
 
-        {/* Variante 2 — Double, gegenläufig */}
+        {/* Variante 2 — Doppel-Twinkle gegenläufig */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <CardWithSparks
-            title="Doppel-Spark"
+            title="Doppel-Twinkle"
             sparks={[
-              { size: 11, delay: 0, dur: 3.2, opacity: 1 },
-              { size: 11, delay: 0, dur: 3.2, opacity: 1, reverse: true },
+              { size: 8, delay: 0, dur: 1.8, opacity: 1, twinkleDur: 0.55, twinkleOffset: 0 },
+              { size: 8, delay: 0, dur: 1.8, opacity: 1, twinkleDur: 0.55, twinkleOffset: 0.3, reverse: true },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Double · 3.2 s gegenläufig</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Double · 1.8 s gegenläufig</div>
           <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
-            2 Sparks gegenläufig — punchy, treffen sich an Top/Bottom
+            2 Sparks twinklen versetzt — punchy aber kein Trail
           </div>
         </div>
 
-        {/* Variante 3 — Trail (Comet-Effekt) */}
+        {/* Variante 3 — Sparkle-Sprinkle (4 Sparks gestaffelt mit unterschiedlichen Speeds) */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <CardWithSparks
-            title="Comet-Trail"
+            title="Sparkle"
             sparks={[
-              { size: 13, delay: 0,    dur: 3.5, opacity: 1   },  // Lead
-              { size: 10, delay: -0.18, dur: 3.5, opacity: 0.65 }, // Trail-1
-              { size: 7,  delay: -0.32, dur: 3.5, opacity: 0.35 }, // Trail-2
+              { size: 9, delay: 0,    dur: 1.6, opacity: 1,   twinkleDur: 0.6,  twinkleOffset: 0     },
+              { size: 7, delay: -0.4, dur: 1.6, opacity: 0.85, twinkleDur: 0.45, twinkleOffset: 0.15 },
+              { size: 6, delay: -0.8, dur: 1.6, opacity: 0.7,  twinkleDur: 0.5,  twinkleOffset: 0.3  },
+              { size: 5, delay: -1.2, dur: 1.6, opacity: 0.55, twinkleDur: 0.4,  twinkleOffset: 0.45 },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Trail · 3 Sparks gestaffelt</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Sparkle · 4 Sparks rotating</div>
           <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
-            3 Sparks (Lead + 2 Trail-Sparks kleiner+dimmer) — Comet-Effekt
+            4 Sparks unterschiedlicher Größen, gestaffelt + twinkle — Sparkle-Storm
           </div>
         </div>
       </div>

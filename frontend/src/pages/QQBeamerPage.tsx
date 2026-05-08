@@ -3885,35 +3885,32 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               display: 'inline-flex',
               alignItems: 'center',
               gap: eurovisionMode ? 'clamp(20px, 2vw, 40px)' : 0,
-              fontFamily: eurovisionMode
-                ? "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif"
-                : undefined,
-              // ESC-Stinger: kompakter font-size damit Logo daneben passt.
-              // Non-ESC: unveraendert (80-200) als Solo-Hero.
-              // 2026-05-07 v19 (Wolf 'cozyquiz noch groesser oder, da
-              // ueberlappt sich einiges'): ESC 60-140 -> 52-118 fuer
-              // proportional kleineren Stinger (Welcome aber breiter als
-              // Lobby weil keinen Wolf top-right hat — moderater Shrink).
-              fontSize: eurovisionMode ? 'clamp(52px, 7vw, 118px)' : 'clamp(80px, 12vw, 200px)',
-              fontWeight: eurovisionMode ? 400 : 900,
-              letterSpacing: eurovisionMode ? '0.04em' : '0.01em',
+              // 2026-05-08 (Wolf-Wunsch 'logo text in standard wie eurovision'):
+              // Stinger-Look jetzt fuer ALLE Drafts (nicht nur ESC). Wordmark
+              // wird in Stinger Fit + Brand-Pink gerendert. Eurovision behaelt
+              // zusaetzlich × + ESC-Logo daneben (Stinger-Composition); Standard
+              // zeigt nur den Wordmark Solo.
+              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontSize: eurovisionMode ? 'clamp(52px, 7vw, 118px)' : 'clamp(72px, 9vw, 158px)',
+              fontWeight: 400,
+              letterSpacing: '0.04em',
               lineHeight: 0.96,
-              color: eurovisionMode ? accentHex : '#f8fafc',
-              textShadow: `0 0 28px rgba(${accentRgb},0.65), 0 0 72px rgba(${accentRgb},0.28)`,
+              color: eurovisionMode ? accentHex : '#EC4899',
+              textShadow: eurovisionMode
+                ? `0 0 28px rgba(${accentRgb},0.65), 0 0 72px rgba(${accentRgb},0.28)`
+                : '0 0 28px rgba(236,72,153,0.65), 0 0 72px rgba(236,72,153,0.28)',
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
               filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.55))',
             }}
           >
             {/* CozyQuiz-Wordmark als Letter-Cascade-Container.
-                2026-05-07 v15 (Wolf 'beide logos leicht hovern lassen'): im
-                ESC-Mode kriegt der CozyQuiz-Wordmark ebenfalls die Hover-
-                Animation analog zum Eurovision-Logo. Startet nach dem
-                Letter-Cascade @ 3.4s. */}
+                2026-05-08: Hover-Float jetzt fuer ALLE Themes — Stinger-Look
+                ist Standard-Wordmark, Hover macht ihn lebendig. */}
             <span style={{
               position: 'relative',
               display: 'inline-flex',
-              ...(eurovisionMode ? { animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite' } : {}),
+              animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite',
             }}>
               {/* Shimmer-Sweep ueber den Wordmark nach Settle */}
               <span aria-hidden style={{
@@ -5027,15 +5024,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <div
               className="cq-wordmark"
               style={{
-                fontFamily: fontFam,
+                // 2026-05-08 (Wolf-Wunsch 'logo text in standard wie eurovision'):
+                // Stinger Fit als Wordmark-Font auch fuer Standard-Drafts.
+                // Eurovision behaelt Hot-Pink (#FF2D7B), Standard nutzt Brand-
+                // Pink (#EC4899). Wave-Animation pro Buchstabe bleibt erhalten.
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                fontWeight: 400,
+                letterSpacing: '0.04em',
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5vw, 100px)' : 'clamp(56px, 9vw, 140px)',
-                // 2026-05-07 v12 (Wolf 'kontrast unleserlich + im ESC-Mode
-                // sollte das nicht gold sein'): in eurovisionMode Pink statt
-                // Gold + dunkler Halo fuer Lesbarkeit auf Pink-Gradient-BG.
-                ...(s.theme?.eurovisionMode ? {
-                  color: '#FF2D7B',
-                  textShadow: '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(255,45,123,0.35)',
-                } : {}),
+                color: s.theme?.eurovisionMode ? '#FF2D7B' : '#EC4899',
+                textShadow: s.theme?.eurovisionMode
+                  ? '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(255,45,123,0.35)'
+                  : '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.40)',
               }}
               aria-label={wordmark}
             >
@@ -15603,6 +15603,27 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             Eurovision songcontest'): Eyebrow jetzt auch in pause-Mode aktiv,
             nicht nur PreGame. Title 'Short Break' / 'Kurze Pause' bleibt als
             big title darunter erhalten. */}
+        {/* 2026-05-08 (Wolf-Wunsch 'logo text in standard wie eurovision'):
+            Standard-Drafts rendern auch den COZYQUIZ-Stinger als Eyebrow,
+            in Brand-Pink statt ESC-Hot-Pink. Ohne × + ESC-Logo daneben. */}
+        {(mode === 'preGame' || mode === 'pause') && !s.theme?.eurovisionMode && (
+          <div style={{
+            marginBottom: 12,
+            animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+          }}>
+            <span style={{
+              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontSize: 'clamp(48px, 6vw, 96px)',
+              fontWeight: 400,
+              letterSpacing: '0.04em',
+              color: '#EC4899',
+              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
+              lineHeight: 0.96,
+              animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+              display: 'inline-block',
+            }}>CozyQuiz</span>
+          </div>
+        )}
         {(mode === 'preGame' || mode === 'pause') && s.theme?.eurovisionMode && (s.theme.logoUrl ? (
           <div style={{
             display: 'inline-flex',

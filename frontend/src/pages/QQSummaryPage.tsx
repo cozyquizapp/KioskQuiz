@@ -483,9 +483,14 @@ function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: La
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, #0b0f1e 0%, #0f172a 100%)',
+      // 2026-05-08 (Aurora-Vivid-Refresh): Brand-Pink-Mesh statt blau-grauem
+      // Slate. Konsistenz zum /beamer + /team Look.
+      background:
+        'radial-gradient(ellipse at 22% 28%, rgba(236,72,153,0.20) 0%, transparent 55%),' +
+        'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.24) 0%, transparent 55%),' +
+        'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
       color: '#e2e8f0',
-      fontFamily: "'Nunito', system-ui, sans-serif",
+      fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       padding: '20px 16px 40px',
     }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>

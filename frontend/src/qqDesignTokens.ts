@@ -87,9 +87,12 @@ export const ACCENT_GOLD = {
 } as const;
 
 /** Game-Phase-Farben fuer die 3 Spielphasen (PhaseIntroView, RoundTransition).
- *  Index 0/1/2 = Phase 1/2/3 → Blau (Aufwaermen) / Amber (Hauptphase) / Rot (Finale).
- *  Vorher inline an mehreren Stellen in QQBeamerPage hardcoded. */
-export const QQ_PHASE_COLORS = ['#3B82F6', '#F59E0B', '#EF4444'] as const;
+ *  Index 0/1/2 = Phase 1/2/3.
+ *  2026-05-08 (Aurora-Vivid-Refresh, Wolf-Wunsch): Pink-Eskalation statt
+ *  Blau→Amber→Rot. Runden werden gefuehlt-intensiver Richtung Finale,
+ *  alles bleibt Brand-konsistent (Pink-Spektrum aus dem Wolf-Logo).
+ *  Vorher: ['#3B82F6', '#F59E0B', '#EF4444'] (zufaellig wirkend). */
+export const QQ_PHASE_COLORS = ['#F9A8D4', '#EC4899', '#A21247'] as const;
 
 /** Standard-Easing — ergaenzt nach Animation-Audit 2026-05-04.
  *  Im Live-Code sind viele Inline-cubic-bezier()-Werte hardgecoded.

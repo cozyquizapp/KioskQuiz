@@ -297,16 +297,18 @@ const QQ_ROOM = 'default';
 // Setup/Lobby + COZY_CARD_BG-Gradient statt flat #1B1510). Spiegelt die
 // Konstanten in QQBeamerPage; bewusst dupliziert um Cross-Import auf den
 // grossen Beamer-Modul zu vermeiden.
+// 2026-05-08 (Aurora-Vivid-Refresh): Phone-BG jetzt analog zum Beamer-Pause-BG
+// (Pink/Navy/Magenta) statt Amber/Indigo/Pink. Brand-Konsistenz CozyWolf-
+// Theme zwischen Beamer und Team-Phone-View.
 const BEAMER_LOBBY_BG =
-  'radial-gradient(ellipse at 50% -10%, rgba(245,158,11,0.10), transparent 55%), ' +
-  'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
-  'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
-  '#0D0A06';
-// 2026-05-01 V2: Wolfs Feedback - Beamer-COZY_CARD_BG (warm-braun) wirkt
-// auf Phone weiterhin zu braun. Phone braucht eine kuehlere Card-Tinte;
-// Slate mit minimalem Indigo-Hauch passt zum Beamer-Setup-Mix
-// (amber/indigo/pink) ohne braun zu werden.
-const COZY_CARD_BG = 'linear-gradient(180deg, #181828, #0E0E18)';
+  'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.18), transparent 55%), ' +
+  'radial-gradient(ellipse at 85% 110%, rgba(30,42,90,0.20), transparent 55%), ' +
+  'radial-gradient(ellipse at 15% 80%, rgba(190,24,93,0.10), transparent 50%), ' +
+  '#0A0814';
+// 2026-05-08 (Aurora-Vivid): Card-BG aufs Beamer-Niveau angeglichen
+// (#1F1A2E → #14101F = Indigo-Hoodie-Gradient). Fuehlt sich auf Phone
+// genauso premium-vivid an wie der Beamer.
+const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
 
 // ── Hook: deadline expiry (sticky once expired). Used to auto-submit + lock
 // inputs when a question/sub-phase timer runs out. Fires 150ms before the
@@ -781,7 +783,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
     `radial-gradient(ellipse at 50% -10%, ${slotColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${slotColor}14, transparent 55%), ` +
     `radial-gradient(ellipse at 15% 80%, ${slotColor}10, transparent 50%), ` +
-    `#0D0A06`;
+    `#0A0814`;
   // 2026-05-07 v15 (Wolf '/team kommt eurovision nicht an'): ESC-BG-Override
   // im Setup analog TeamGameView. ESC-Pink-Lila-Gradient + BG-Image-Layer +
   // Hearts. Cozy-Setup bleibt unveraendert wenn nicht ESC.
@@ -1061,7 +1063,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       padding: '10px 16px', borderRadius: 8,
                       border: 'none',
                       background: stammStatus === 'searching' ? '#475569' : '#F59E0B',
-                      color: '#0D0A06', fontWeight: 900, fontSize: 13,
+                      color: '#0A0814', fontWeight: 900, fontSize: 13,
                       cursor: stammStatus === 'searching' ? 'wait' : 'pointer',
                       fontFamily: 'inherit',
                       opacity: stammInput.trim().length < 4 ? 0.5 : 1,
@@ -1460,11 +1462,11 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   // QQBeamerPage.tsx CAT_BG). Phone ist schmaler, radial-gradients skalieren
   // mit %, also sieht's aehnlich aus.
   const TC_CAT_BG: Record<string, string> = {
-    SCHAETZCHEN:   `radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%), #0D0A06`,
-    MUCHO:         `radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%), radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%), #0D0A06`,
-    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%), radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%), #0D0A06`,
-    ZEHN_VON_ZEHN: `repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px), radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%), #0D0A06`,
-    CHEESE:        `radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%), radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%), #0D0A06`,
+    SCHAETZCHEN:   `radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%), #0A0814`,
+    MUCHO:         `radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%), radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%), #0A0814`,
+    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%), radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%), #0A0814`,
+    ZEHN_VON_ZEHN: `repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px), radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%), #0A0814`,
+    CHEESE:        `radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%), radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%), #0A0814`,
   };
 
   // Phase-Mapping: bei jeder Phase die Beamer-BG verwenden wenn Kategorie
@@ -1482,11 +1484,11 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
     `radial-gradient(ellipse at 50% -10%, ${myTeamColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${myTeamColor}14, transparent 55%), ` +
     `radial-gradient(ellipse at 15% 80%, ${myTeamColor}10, transparent 50%), ` +
-    `#0D0A06`;
+    `#0A0814`;
   const pageBg = usesBeamerCatBg
     ? (TC_CAT_BG[cat] ?? teamTintBg)
     : s.phase === 'GAME_OVER'
-    ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0D0A06`
+    ? `radial-gradient(ellipse at 50% 30%, rgba(251,191,36,0.15) 0%, transparent 50%), #0A0814`
     : teamTintBg;
 
   // 2026-05-07 (Wolf 'wenn /team eurovision-spezifisch geht, gerne mit hearts +
@@ -6279,7 +6281,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                   display: 'block', padding: '14px 16px',
                   borderRadius: 16, textAlign: 'center',
                   background: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-                  color: '#0D0A06', fontWeight: 900, fontSize: 16,
+                  color: '#0A0814', fontWeight: 900, fontSize: 16,
                   textDecoration: 'none',
                   boxShadow: '0 4px 0 #B45309, 0 0 24px rgba(251,191,36,0.35)',
                   animation: 'tcreveal 0.5s ease 0.7s both',
@@ -6705,8 +6707,8 @@ function MobileEurovisionHearts() {
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const darkPage: React.CSSProperties = {
-  minHeight: '100vh', background: '#0D0A06', color: '#e2e8f0',
-  fontFamily: "'Nunito', system-ui, sans-serif",
+  minHeight: '100vh', background: '#0A0814', color: '#e2e8f0',
+  fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
 };
 const grainOverlay: React.CSSProperties = {
   position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,

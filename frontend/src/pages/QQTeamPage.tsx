@@ -1648,9 +1648,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
                         style={{
                           width: 26, height: 26,
                           opacity: used ? 0.4 : 1,
-                          filter: used
-                            ? 'grayscale(1) brightness(0.8)'
-                            : 'drop-shadow(0 0 6px rgba(236,72,153,0.7))',
+                          filter: used ? 'grayscale(1) brightness(0.8)' : undefined,
                           transition: 'opacity 0.3s ease, filter 0.3s ease',
                         }}
                       />

@@ -29,12 +29,16 @@ type Props = {
 
 export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, title, eurovisionMode, square }: Props) {
   let src: string;
+  // Asset-Mismatch: 1.png (Boy-Joker) ist enger gecropped als 2.png (Girl-Joker
+  // mit wider Hat+Hair-Span). Bei objectFit:contain wirkt der Boy ~10% kleiner.
+  // Visueller Ausgleich via inner scale, layout bleibt identisch (size-Box).
+  let visualScale = 1;
   if (eurovisionMode) {
-    // Filename hat Leerzeichen → URL-encoded
     src = square ? '/images/jokers/eu%202.png' : '/images/jokers/eu%201.png';
   } else {
     const variant = (i % 2 === 0) ? 1 : 2;
     src = `/images/jokers/${variant}.png`;
+    if (variant === 1) visualScale = 1.1;
   }
   return (
     <img
@@ -48,6 +52,8 @@ export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, t
         width: size,
         height: size,
         objectFit: 'contain',
+        transform: visualScale !== 1 ? `scale(${visualScale})` : undefined,
+        transformOrigin: 'center',
         ...style,
       }}
       draggable={false}

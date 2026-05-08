@@ -1867,19 +1867,31 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             </div>
           )}
         </>
-      ) : (
+      ) : (() => {
         /* No template: built-in views, wrapped in transition container.
            2026-05-08 (Wolf 'übergänge gefallen mir nicht'): Duration 420 →
            720ms, Easing bounce → ease-out-expo (fließend statt springig),
            qqSlideIn-Keyframe selber cinematischer (echter Y-Slide statt
            subtle blur). Plus zusätzlicher subtiler Pink-Sweep parallel über
            den ganzen Beamer in den ersten 600ms — gibt dem Phase-Wechsel
-           einen Brand-konsistenten „Whoosh"-Moment ohne Bewegung der Card. */
+           einen Brand-konsistenten „Whoosh"-Moment ohne Bewegung der Card.
+           2026-05-08 (Wolf-Wunsch 'nice Übergänge wo passend'): Question→
+           Question-Wechsel (= phaseGroup `Q-id1` → `Q-id2`) bekommt einen
+           horizontalen Slide-In statt des vertikalen qqSlideIn. Klare visuelle
+           „Nächste Frage kommt von rechts"-Sprache statt subtiler Mount-Pop. */
+        const isQuestionToQuestion =
+          phaseGroup.startsWith('Q-') &&
+          prevGroupRef.current.startsWith('Q-') &&
+          phaseGroup !== prevGroupRef.current;
+        const wrapperAnim = isQuestionToQuestion
+          ? 'qqStageSlideInRight 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both'
+          : 'qqSlideIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both';
+        return (
         <div
           key={phaseGroup}
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
-            animation: 'qqSlideIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both',
+            animation: wrapperAnim,
             willChange: 'transform, opacity',
             position: 'relative',
           }}
@@ -1919,7 +1931,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
           {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
         </div>
-      )}
+        );
+      })()}
 
       {/* 2026-05-07: TwelvePoints-Sticker entfernt (Wolf-Feedback 'wirkt
           random eingesetzt, raus'). Plus dieser Aufruf hatte useLangFlip()
@@ -4374,7 +4387,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   : idx < prevIdxRef.current ? 'backward'
                   : 'forward';
   useEffect(() => { prevIdxRef.current = idx; }, [idx]);
-  const slideInAnim = direction === 'forward' ? 'qqRulesSlideInRight' : 'qqRulesSlideInLeft';
+  const slideInAnim = direction === 'forward' ? 'qqStageSlideInRight' : 'qqStageSlideInLeft';
 
   return (
     <div style={{
@@ -16061,15 +16074,28 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   // v3 round 7 (User-Bug 'leerer screen mit finale-badge nach setzen'):
   // 'done'-Phase rendert das gleiche Placement-Grid, damit das End-Resultat
   // sichtbar bleibt bis der Mod weiterklickt (oder Autoplay nach 9s feuert).
+  // 2026-05-08 (Wolf-Wunsch 'nice Übergänge'): Sub-Phase-Wechsel mit Slide-In
+  // (intro → active → reveal → placement). Wrapper umfasst alle Returns
+  // damit auch der Wechsel zu PlacementView animiert ist.
+  const subPhaseKey = `cn-${c.phase}`;
+  const wrapStyle: React.CSSProperties = {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    animation: 'qqStageSlideInRight 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both',
+    willChange: 'transform, opacity',
+  };
   if (c.phase === 'placement' || c.phase === 'done') {
-    return <PlacementView state={s} />;
+    return (
+      <div key={subPhaseKey} style={wrapStyle}>
+        <PlacementView state={s} />
+      </div>
+    );
   }
 
   const showBoard = c.phase === 'active' || c.phase === 'reveal';
 
   return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
+    <div key={subPhaseKey} style={{
+      ...wrapStyle,
       alignItems: 'stretch',
       gap: 'clamp(10px, 1.4vh, 18px)',
       padding: 'clamp(16px, 2vh, 28px) clamp(20px, 2.5vw, 40px)',

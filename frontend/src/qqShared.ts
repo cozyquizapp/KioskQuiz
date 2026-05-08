@@ -699,23 +699,27 @@ export const QQ_BEAMER_CSS = `
     100% { opacity: 1; transform: translateX(0) scale(1); }
   }
 
-  /* 2026-05-08 (Wolf-Wunsch 'regelslides mit /animations Slot-1 animieren'):
-     Slide-Off + Push für RulesView. Beim Slide-N→N+1-Wechsel slidet die alte
-     links raus, neue kommt rechts rein mit Spring-Settle. Bei N→N-1 umgekehrt.
-     Same Pattern wie /animations Slot-1 nur skaliert auf Vollbild-Slides. */
-  @keyframes qqRulesSlideOutLeft {
+  /* 2026-05-08 (Wolf-Wunsch 'nice Übergänge wo passend'): Slide-Off + Push
+     Pattern aus /animations Slot-1, generisch für sequenzielle Stage-Wechsel.
+     Forward (Step N→N+1): neue Card kommt von rechts (qqStageSlideInRight).
+     Backward (N→N-1): von links (qqStageSlideInLeft). Verwendet von:
+     - RulesView (Slide N → Slide N+1)
+     - PhaseIntroView (introStep 0 → 1 → 2)
+     - QuestionView (Question N → Question N+1)
+     - ConnectionsBeamerView (Sub-Phases intro → active → reveal → placement) */
+  @keyframes qqStageSlideOutLeft {
     0%   { transform: translateX(0)     scale(1);    opacity: 1; }
     100% { transform: translateX(-110%) scale(0.92); opacity: 0; }
   }
-  @keyframes qqRulesSlideOutRight {
+  @keyframes qqStageSlideOutRight {
     0%   { transform: translateX(0)     scale(1);    opacity: 1; }
     100% { transform: translateX(110%)  scale(0.92); opacity: 0; }
   }
-  @keyframes qqRulesSlideInRight {
+  @keyframes qqStageSlideInRight {
     0%   { transform: translateX(110%)  scale(0.92); opacity: 0; }
     100% { transform: translateX(0)     scale(1);    opacity: 1; }
   }
-  @keyframes qqRulesSlideInLeft {
+  @keyframes qqStageSlideInLeft {
     0%   { transform: translateX(-110%) scale(0.92); opacity: 0; }
     100% { transform: translateX(0)     scale(1);    opacity: 1; }
   }

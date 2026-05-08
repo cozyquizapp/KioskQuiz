@@ -276,6 +276,23 @@ const TEAM_CSS = `
     60%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Bottom-Sheet Menu — Backdrop fade + Sheet slide-up (iOS-spring) */
+  @keyframes tcMenuBackdrop {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes tcMenuSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  /* Joker-Earned-Toast — slide-down von oben, halt, fade-out */
+  @keyframes tcJokerBanner {
+    0%   { opacity: 0; transform: translate(-50%, -120%) scale(0.85); }
+    14%  { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
+    22%  { transform: translate(-50%, 0) scale(1); }
+    78%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -40%) scale(0.92); }
+  }
 
   button:focus-visible, input:focus-visible {
     outline: 2px solid #EC4899;
@@ -569,6 +586,20 @@ export default function QQTeamPage() {
     }, 200);
   };
 
+  // 2026-05-09 (Wolf-Mobile-Polish): Im Game-Header (TeamGameView) wandern
+  // Sprache + Quiz-Verlassen in ein Bottom-Sheet-Menu. Setup-Flow + MidGame-
+  // Rejoin behalten ihre eigene Flag-Toggle (eigenes UX-Pattern dort).
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const handleLeaveQuiz = () => {
+    localStorage.removeItem('qq_teamName');
+    localStorage.removeItem('qq_avatarId');
+    localStorage.removeItem('qq_emoji');
+    localStorage.removeItem('qq_teamId');
+    if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    window.location.reload();
+  };
+
   const setId = state?.avatarSetId;
   const takenAvatarIds = (state?.teams ?? []).map(t => t.avatarId);
   const takenEmojis = (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
@@ -702,7 +733,10 @@ export default function QQTeamPage() {
     // /team hat jetzt die gleiche Datenbasis.
     <AvatarSetProvider value={setId} emojis={state.avatarSetEmojis}>
       <TeamGameView state={state} myTeam={myTeam ?? null} myTeamId={teamId}
-        emit={emit} roomCode={roomCode} lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip} connected={connected} reconnect={reconnect}
+        emit={emit} roomCode={roomCode} lang={lang} setLang={setLang} connected={connected} reconnect={reconnect}
+        menuOpen={menuOpen} setMenuOpen={setMenuOpen}
+        leaveConfirmOpen={leaveConfirmOpen} setLeaveConfirmOpen={setLeaveConfirmOpen}
+        onLeaveQuiz={handleLeaveQuiz}
         showIdentityBanner={showIdentityBanner} dismissIdentityBanner={() => setShowIdentityBanner(false)} />
     </AvatarSetProvider>
   );
@@ -1268,11 +1302,19 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 // GAME VIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFlip, onFlagClick, connected, reconnect, showIdentityBanner, dismissIdentityBanner }: {
+function TeamGameView({
+  state: s, myTeam, myTeamId, emit, roomCode, lang, setLang,
+  connected, reconnect,
+  menuOpen, setMenuOpen, leaveConfirmOpen, setLeaveConfirmOpen, onLeaveQuiz,
+  showIdentityBanner, dismissIdentityBanner,
+}: {
   state: QQStateUpdate; myTeam: QQTeam | null;
   myTeamId: string; emit: any; roomCode: string;
-  lang: 'de' | 'en'; flagFlip: boolean; onFlagClick: () => void;
+  lang: 'de' | 'en'; setLang: (l: 'de' | 'en') => void;
   connected: boolean; reconnect: () => void;
+  menuOpen: boolean; setMenuOpen: (b: boolean) => void;
+  leaveConfirmOpen: boolean; setLeaveConfirmOpen: (b: boolean) => void;
+  onLeaveQuiz: () => void;
   showIdentityBanner: boolean; dismissIdentityBanner: () => void;
 }) {
   const isMyTurn      = s.pendingFor === myTeamId;
@@ -1580,124 +1622,98 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
         </div>
       )}
 
-      <div style={{ width: '100%', maxWidth: 520, margin: '0 auto', padding: '12px 12px 28px', position: 'relative', zIndex: 5 }}>
+      <div style={{
+        width: '100%', maxWidth: 640, margin: '0 auto',
+        padding: 'max(14px, env(safe-area-inset-top)) 14px max(28px, calc(env(safe-area-inset-bottom) + 12px)) 14px',
+        position: 'relative', zIndex: 5,
+      }}>
 
-        {/* Team header — 2026-05-05 (Wolf-Polish 'sieht aus wie App aus 2003,
-            Avatar hinter Flagge stoert, Joker im Rechteck'):
-            - Watermark-Avatar im BG ENTFERNT (war hinter Flag/Jokern sichtbar
-              und wirkte wie Background-Box — passt nicht zu cleanem Look).
-            - 3-Stop-Gradient durch flachen 2-Stop ersetzt (subtiler Team-Tint).
-            - Border 1.5px → 1px in 30% Alpha (dezenter).
-            - Joker-Container ohne Background → freigestellt direkt im Header.
-            - Flag-Button: Background nur on hover/active, sonst transparent
-              (kein Default-Box-Look mehr).
-            - Padding hoch (10/14 → 12/16) damit's mehr Atemraum hat. */}
+        {/* Team header — 2026-05-09 (Wolf-Mobile-Polish „Konzept A Premium Glass"):
+            Schlanker Header mit Avatar + Teamname + ⋯-Menue-Button. Sprache + Quiz-
+            Verlassen wandern in Bottom-Sheet-Menu. Joker werden NICHT mehr permanent
+            angezeigt — nur als top-toast bei Earn-Flash. Frosted-Glass-BG via
+            backdrop-filter. */}
         {myTeam && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14,
-            padding: '12px 16px', borderRadius: 18,
-            background: `linear-gradient(135deg, ${myTeam.color}1f 0%, rgba(15,12,9,0.9) 70%)`,
-            border: `1px solid ${myTeam.color}33`,
-            boxShadow: `0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          <header style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginBottom: 16,
+            padding: '14px 16px',
+            borderRadius: 22,
+            background: 'rgba(31, 26, 46, 0.55)',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+            border: `1px solid ${myTeam.color}40`,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
             position: 'relative',
           }}>
-            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={36} style={{ flexShrink: 0 }} />
+            <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={44} style={{ flexShrink: 0 }} />
             <TeamNameLabel
               name={myTeam.name}
               maxLines={1}
               shrinkAfter={14}
-              fontSize={20}
+              fontSize={22}
               color={myTeam.color}
               fontWeight={900}
-              style={{ flex: 1, minWidth: 0, textShadow: `0 0 12px ${myTeam.color}55` }}
+              style={{ flex: 1, minWidth: 0, textShadow: `0 0 16px ${myTeam.color}66`, letterSpacing: '-0.01em' }}
             />
-            {/* Joker-Slots — kein BG/Border-Container, freigestellt im Header.
-                Verfuegbare Slots glowen gold, verbrauchte ausgegraut.
-                2026-05-06 (Wolf 'wie auf /beamer anzeigen wenn Joker verdient
-                + dann wieder ausblenden'): Bei Joker-Earn fliegt ein Star als
-                Overlay auf den betroffenen Slot (qqJokerFlyIn-Keyframe), 1.1s
-                Animation, dann verschwunden. Underlying Slot kippt parallel
-                in 'used'-State (Wolfs Logik 'jokersEarned > i = verbraucht'). */}
-            {s.teamPhaseStats[myTeamId] && (
-              <div
-                style={{
-                  display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0,
-                  position: 'relative',
-                }}
-                title={lang === 'de' ? '2 Joker (gesamtes Spiel)' : '2 Jokers (whole game)'}
-                aria-label={`${(s.teamPhaseStats[myTeamId].jokersEarned ?? 0)} of 2 jokers used`}
-              >
-                <style>{`
-                  @keyframes qqJokerFlyIn {
-                    0%   { transform: translate(-50%, -38px) scale(0.5) rotate(-12deg); opacity: 0; }
-                    35%  { opacity: 1; }
-                    65%  { transform: translate(-50%, 4px) scale(1.25) rotate(6deg); opacity: 1; }
-                    100% { transform: translate(-50%, 0) scale(1) rotate(0); opacity: 0; }
-                  }
-                `}</style>
-                {Array.from({ length: 2 }).map((_, i) => {
-                  const used = (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0) > i;
-                  const flashing = jokerFlashIdx === i;
-                  return (
-                    <span key={i} style={{ position: 'relative', display: 'inline-block', width: 26, height: 26 }}>
-                      <JokerIcon
-                        i={i}
-                        size={26}
-                        eurovisionMode={!!s.theme?.eurovisionMode}
-                        alt={used ? `Joker ${i+1} verbraucht` : `Joker ${i+1} verfügbar`}
-                        style={{
-                          width: 26, height: 26,
-                          opacity: used ? 0.4 : 1,
-                          filter: used ? 'grayscale(1) brightness(0.8)' : undefined,
-                          transition: 'opacity 0.3s ease, filter 0.3s ease',
-                        }}
-                      />
-                      {flashing && (
-                        <span aria-hidden style={{
-                          position: 'absolute', top: 0, left: '50%',
-                          width: 26, height: 26,
-                          pointerEvents: 'none',
-                          filter: 'drop-shadow(0 0 14px rgba(236,72,153,0.95)) drop-shadow(0 0 28px rgba(236,72,153,0.55))',
-                          animation: 'qqJokerFlyIn 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
-                          zIndex: 10,
-                        }}>
-                          <JokerIcon i={i} size={26} eurovisionMode={!!s.theme?.eurovisionMode} alt="" style={{ width: 26, height: 26 }} />
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            {/* Language flag — transparent default, subtiler hover. */}
             <button
-              onClick={onFlagClick}
+              onClick={() => { setMenuOpen(true); if (navigator.vibrate) navigator.vibrate(8); }}
+              aria-label={lang === 'de' ? 'Menü öffnen' : 'Open menu'}
               style={{
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                outline: 'none',
-                fontSize: 18, fontFamily: 'inherit',
-                borderRadius: 999,
-                minWidth: 44, minHeight: 44,
+                flexShrink: 0,
+                width: 44, height: 44, borderRadius: 14,
+                border: '1px solid rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.04)',
+                color: '#E2E8F0', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s, transform 0.15s',
-                flexShrink: 0,
-                opacity: 0.75,
+                fontFamily: 'inherit',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.75'; }}
-              aria-label={lang === 'de' ? 'Sprache: Deutsch (klicken für Englisch)' : 'Language: English (click for German)'}
+              onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.94)'; }}
+              onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+              onMouseDown={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
+              onMouseUp={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              <span style={{
-                display: 'inline-block', fontSize: 18, lineHeight: 1,
-                transition: 'transform 0.2s ease-in-out, opacity 0.2s',
-                transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0deg)',
-                opacity: flagFlip ? 0 : 1,
-              }}>
-                {lang === 'de' ? '🇩🇪' : '🇬🇧'}
-              </span>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+                <line x1="3" y1="6.5" x2="19" y2="6.5" />
+                <line x1="3" y1="11" x2="19" y2="11" />
+                <line x1="3" y1="15.5" x2="19" y2="15.5" />
+              </svg>
             </button>
+          </header>
+        )}
+
+        {/* Joker-Earned-Toast — top-center, ~3s, dann weg. Ersetzt den permanenten
+            Joker-Counter im Header (Wolf-Wunsch 2026-05-09: „Joker nerven mich"). */}
+        {myTeam && jokerFlashIdx !== null && s.teamPhaseStats[myTeamId] && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              position: 'fixed',
+              top: 'max(16px, calc(env(safe-area-inset-top) + 8px))',
+              left: '50%',
+              zIndex: 1001,
+              padding: '12px 18px',
+              borderRadius: 22,
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.95), rgba(162,18,71,0.95))',
+              border: '1px solid rgba(252,231,243,0.55)',
+              boxShadow: '0 16px 48px rgba(236,72,153,0.55), 0 0 32px rgba(236,72,153,0.30)',
+              color: '#FDF2F8', fontWeight: 900, fontSize: 14,
+              display: 'flex', alignItems: 'center', gap: 12,
+              animation: 'tcJokerBanner 3s ease-out both',
+              pointerEvents: 'none',
+              maxWidth: 'calc(100vw - 32px)',
+            }}
+          >
+            <JokerIcon i={jokerFlashIdx} size={32} eurovisionMode={!!s.theme?.eurovisionMode} alt="" style={{ width: 32, height: 32 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+              <span style={{ fontSize: 11, opacity: 0.85, letterSpacing: 0.5 }}>
+                {lang === 'de' ? '+1 JOKER' : '+1 JOKER'}
+              </span>
+              <span>{lang === 'de' ? 'verfügbar' : 'available'}</span>
+            </div>
           </div>
         )}
 
@@ -1799,6 +1815,28 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
           </span>
         </div>
       </div>
+
+      {/* Bottom-Sheet-Menu (Mobile-Native iOS-Stil) — Sprache + Quiz verlassen */}
+      {menuOpen && (
+        <TeamBottomSheetMenu
+          lang={lang}
+          setLang={setLang}
+          onClose={() => setMenuOpen(false)}
+          onLeaveRequest={() => { setMenuOpen(false); setLeaveConfirmOpen(true); }}
+          jokersAvailable={Math.max(0, 2 - (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0))}
+          jokersTotal={2}
+          eurovisionMode={!!s.theme?.eurovisionMode}
+        />
+      )}
+
+      {/* Leave-Quiz-Confirm Dialog */}
+      {leaveConfirmOpen && (
+        <LeaveQuizConfirm
+          lang={lang}
+          onCancel={() => setLeaveConfirmOpen(false)}
+          onConfirm={() => { setLeaveConfirmOpen(false); onLeaveQuiz(); }}
+        />
+      )}
     </div>
   );
 }
@@ -6539,16 +6577,308 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
 function CozyCard({ children, anim, borderColor, pulse }: { children: React.ReactNode; anim?: boolean; borderColor?: string; pulse?: boolean }) {
   return (
     <div style={{
-      background: COZY_CARD_BG,
+      // 2026-05-09 (Konzept-A Premium-Glass): Frosted-Glass-Surface statt
+      // solid-Gradient. opacity 0.62 + saturate 160% gibt premium Mobile-Look,
+      // bleibt aber lesbar (kein cleares glass). backdrop-filter mit -webkit-
+      // Fallback fuer Safari iOS.
+      background: 'rgba(31, 26, 46, 0.62)',
+      backdropFilter: 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
       border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: 24, padding: '20px 18px', marginBottom: 14,
-      boxShadow: `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)${borderColor ? `, 0 0 20px ${borderColor}18` : ''}`,
+      borderRadius: 22, padding: '22px 20px', marginBottom: 14,
+      boxShadow: `0 12px 36px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06)${borderColor ? `, 0 0 24px ${borderColor}22` : ''}`,
       animation: anim ? 'tcreveal 0.4s ease both' : pulse ? `tcpulse 2.5s ease-in-out infinite` : undefined,
       ['--c' as string]: borderColor ? `${borderColor}33` : undefined,
       transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
     }}>
       {children}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// TeamBottomSheetMenu — iOS-style bottom-sheet mit Sprache + Quiz verlassen.
+// 2026-05-09 (Wolf-Mobile-Polish „Konzept A"): zentrales Menue im Game-Header,
+// loest die alte Inline-Sprach-Flag im Header ab. Joker-Counter optional als
+// Read-Only-Sektion (Wolf wollte Joker NICHT permanent im Header — hier ist
+// es als Info-Zeile ok, im Bottom-Sheet stoert es niemanden).
+// ─────────────────────────────────────────────────────────────────────────
+function TeamBottomSheetMenu({
+  lang, setLang, onClose, onLeaveRequest,
+  jokersAvailable, jokersTotal, eurovisionMode,
+}: {
+  lang: 'de' | 'en';
+  setLang: (l: 'de' | 'en') => void;
+  onClose: () => void;
+  onLeaveRequest: () => void;
+  jokersAvailable: number;
+  jokersTotal: number;
+  eurovisionMode: boolean;
+}) {
+  const itemBase: React.CSSProperties = {
+    width: '100%',
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '14px 16px',
+    borderRadius: 16,
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: '#F1F5F9',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: 15, fontWeight: 700,
+    textAlign: 'left',
+    transition: 'background 0.15s, transform 0.12s',
+  };
+  return (
+    <>
+      <div
+        onClick={onClose}
+        aria-hidden
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          zIndex: 998,
+          animation: 'tcMenuBackdrop 0.22s ease both',
+        }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={lang === 'de' ? 'Menü' : 'Menu'}
+        style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0,
+          paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom) + 8px))',
+          paddingLeft: 18, paddingRight: 18, paddingTop: 12,
+          borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          background: 'rgba(20, 16, 31, 0.85)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          borderTop: '1px solid rgba(236,72,153,0.32)',
+          boxShadow: '0 -16px 48px rgba(0,0,0,0.55)',
+          zIndex: 999,
+          animation: 'tcMenuSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) both',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Drag-Handle */}
+        <div style={{
+          width: 44, height: 5, background: 'rgba(255,255,255,0.22)',
+          borderRadius: 999, margin: '4px auto 16px',
+        }} />
+
+        <div style={{
+          fontSize: 12, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em',
+          marginBottom: 12, paddingLeft: 4,
+        }}>
+          {lang === 'de' ? 'Menü' : 'Menu'}
+        </div>
+
+        {/* Sprache */}
+        <button
+          onClick={() => {
+            setLang(lang === 'de' ? 'en' : 'de');
+            if (navigator.vibrate) navigator.vibrate(8);
+          }}
+          style={{ ...itemBase, marginBottom: 10 }}
+          onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          <span style={{ fontSize: 26, lineHeight: 1 }}>{lang === 'de' ? '🇩🇪' : '🇬🇧'}</span>
+          <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              {lang === 'de' ? 'Sprache · Deutsch' : 'Language · English'}
+            </span>
+            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+              {lang === 'de' ? 'Tippen zum Wechseln auf Englisch' : 'Tap to switch to German'}
+            </span>
+          </span>
+          <span style={{
+            fontSize: 11, fontWeight: 900, color: '#EC4899',
+            padding: '4px 10px', borderRadius: 999,
+            background: 'rgba(236,72,153,0.12)',
+            border: '1px solid rgba(236,72,153,0.35)',
+            letterSpacing: 0.4,
+          }}>
+            {lang === 'de' ? 'EN' : 'DE'}
+          </span>
+        </button>
+
+        {/* Joker-Counter — read-only Info, nicht klickbar */}
+        <div style={{
+          ...itemBase,
+          cursor: 'default',
+          marginBottom: 10,
+          background: 'rgba(255,255,255,0.02)',
+        }}>
+          <span style={{ display: 'inline-flex', gap: 4 }}>
+            {Array.from({ length: jokersTotal }).map((_, i) => {
+              const used = i >= jokersAvailable;
+              return (
+                <JokerIcon
+                  key={i}
+                  i={i}
+                  size={26}
+                  eurovisionMode={eurovisionMode}
+                  alt=""
+                  style={{
+                    width: 26, height: 26,
+                    opacity: used ? 0.32 : 1,
+                    filter: used ? 'grayscale(1) brightness(0.7)' : undefined,
+                  }}
+                />
+              );
+            })}
+          </span>
+          <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              {lang === 'de' ? 'Joker' : 'Jokers'}
+            </span>
+            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+              {lang === 'de'
+                ? `${jokersAvailable} von ${jokersTotal} verfügbar`
+                : `${jokersAvailable} of ${jokersTotal} available`}
+            </span>
+          </span>
+        </div>
+
+        {/* Quiz verlassen */}
+        <button
+          onClick={() => { onLeaveRequest(); if (navigator.vibrate) navigator.vibrate(12); }}
+          style={{
+            ...itemBase,
+            background: 'rgba(239,68,68,0.10)',
+            border: '1px solid rgba(239,68,68,0.30)',
+            color: '#FCA5A5',
+            marginBottom: 14,
+          }}
+          onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          <span style={{ fontSize: 22, lineHeight: 1 }}>🚪</span>
+          <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              {lang === 'de' ? 'Quiz verlassen' : 'Leave quiz'}
+            </span>
+            <span style={{ fontSize: 12, color: 'rgba(252,165,165,0.7)', fontWeight: 600 }}>
+              {lang === 'de'
+                ? 'Team-Identität wird zurückgesetzt'
+                : 'Team identity will be reset'}
+            </span>
+          </span>
+        </button>
+
+        {/* Schliessen */}
+        <button
+          onClick={onClose}
+          style={{
+            ...itemBase,
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            color: '#94A3B8',
+            fontSize: 14,
+            fontWeight: 800,
+            padding: '12px 16px',
+          }}
+        >
+          {lang === 'de' ? 'Schließen' : 'Close'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// LeaveQuizConfirm — kleine Confirm-Card oben in der Mitte.
+// ─────────────────────────────────────────────────────────────────────────
+function LeaveQuizConfirm({
+  lang, onCancel, onConfirm,
+}: {
+  lang: 'de' | 'en';
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <>
+      <div
+        onClick={onCancel}
+        aria-hidden
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: 1100,
+          animation: 'tcMenuBackdrop 0.2s ease both',
+        }}
+      />
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        style={{
+          position: 'fixed',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'calc(100vw - 32px)', maxWidth: 380,
+          padding: '24px 22px',
+          borderRadius: 24,
+          background: 'rgba(31, 26, 46, 0.92)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          border: '1px solid rgba(239,68,68,0.35)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
+          zIndex: 1101,
+          animation: 'tcoptIn 0.28s cubic-bezier(0.32,1.4,0.5,1) both',
+        }}
+      >
+        <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 8 }}>🚪</div>
+        <div style={{
+          fontSize: 19, fontWeight: 900, textAlign: 'center', color: '#F1F5F9',
+          marginBottom: 8, letterSpacing: '-0.01em',
+        }}>
+          {lang === 'de' ? 'Quiz wirklich verlassen?' : 'Really leave the quiz?'}
+        </div>
+        <div style={{
+          fontSize: 14, fontWeight: 600, textAlign: 'center', color: '#94A3B8',
+          marginBottom: 22, lineHeight: 1.4,
+        }}>
+          {lang === 'de'
+            ? 'Dein Team wird abgemeldet. Du kannst danach mit einem neuen Setup wieder beitreten.'
+            : 'Your team will be logged out. You can rejoin with a fresh setup afterwards.'}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, padding: '14px', borderRadius: 14,
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#E2E8F0', fontFamily: 'inherit', fontWeight: 800, fontSize: 15,
+              cursor: 'pointer',
+            }}
+          >
+            {lang === 'de' ? 'Abbrechen' : 'Cancel'}
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1, padding: '14px', borderRadius: 14,
+              border: '1px solid rgba(239,68,68,0.55)',
+              background: 'linear-gradient(135deg, rgba(239,68,68,0.85), rgba(185,28,28,0.85))',
+              color: '#FEF2F2', fontFamily: 'inherit', fontWeight: 900, fontSize: 15,
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(239,68,68,0.35)',
+            }}
+          >
+            {lang === 'de' ? 'Verlassen' : 'Leave'}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 

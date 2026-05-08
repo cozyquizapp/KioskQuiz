@@ -11,6 +11,7 @@ import {
   QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
+import { getRoundColor } from '../qqDesignTokens';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
@@ -2210,8 +2211,11 @@ function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' |
 }
 
 function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
-  const colors = ['#3B82F6', '#EC4899', '#EF4444', '#A855F7'];
-  const color  = colors[(s.gamePhaseIndex - 1) % 4];
+  // 2026-05-09 (Wolf 'team-Farben noch alt'): nutzt Brand-Pink-Eskalation
+  // (QQ_PHASE_COLORS via getRoundColor) statt buntes Blue/Pink/Red/Purple-
+  // Mapping. Letzte Phase = Magenta (#A21247).
+  const totalPhases = (s.totalPhases ?? 4) as number;
+  const color = getRoundColor(s.gamePhaseIndex, totalPhases);
   // Quiz-Runden heißen immer „Runde N". Das echte „Finale" ist seit
   // Connections-Einführung das 4×4-Mini-Game.
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };

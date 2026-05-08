@@ -85,14 +85,36 @@ export const QQ_BEAMER_CSS = `
     50%      { transform: rotate( 3deg) scale(1.06); }
   }
   /* 2026-05-09 (Slot P live in HP): Bouncing-Kartoffel über aktivem Team.
-     Bounce + Rotate kombiniert, weil Doppel-Animation auf transform sonst
-     einander überschreiben würde. */
+     Bounce + Spin kombiniert, weil Doppel-Animation auf transform sonst
+     einander überschreiben würde.
+     Wolf-Wunsch v2: deutlich mehr Spin (720°/Cycle) — wie im Showreel
+     Slot P, sieht „lebendig hochgeworfen" aus statt nur leicht wackelnd. */
+  @keyframes qqHpPotatoSpin {
+    0%   { transform: translate(-50%, -100%) translateY(0)    rotate(0deg); }
+    30%  { transform: translate(-50%, -100%) translateY(-44px) rotate(220deg); }
+    50%  { transform: translate(-50%, -100%) translateY(-58px) rotate(360deg); }
+    70%  { transform: translate(-50%, -100%) translateY(-44px) rotate(540deg); }
+    100% { transform: translate(-50%, -100%) translateY(0)    rotate(720deg); }
+  }
+  /* Legacy alias — falls irgendwo noch referenziert. Identisch zu Spin. */
   @keyframes qqHpPotatoBounceRotate {
-    0%   { transform: translate(-50%, -100%) translateY(0)    rotate(-12deg); }
-    25%  { transform: translate(-50%, -100%) translateY(-22px) rotate(0deg); }
-    50%  { transform: translate(-50%, -100%) translateY(-32px) rotate(12deg); }
-    75%  { transform: translate(-50%, -100%) translateY(-22px) rotate(0deg); }
-    100% { transform: translate(-50%, -100%) translateY(0)    rotate(-12deg); }
+    0%   { transform: translate(-50%, -100%) translateY(0)    rotate(0deg); }
+    50%  { transform: translate(-50%, -100%) translateY(-32px) rotate(360deg); }
+    100% { transform: translate(-50%, -100%) translateY(0)    rotate(720deg); }
+  }
+  /* Wurf-Bogen wenn aktives Team wechselt: Kartoffel fliegt während die
+     Slot-Transition läuft auf einem Y-Bogen (hoch, dann runter), plus
+     extra Spin (1080°/0.85s) für „katapultiert"-Look. */
+  @keyframes qqHpPotatoThrow {
+    0%   { transform: translate(-50%, -100%) translateY(0)    rotate(0deg); }
+    50%  { transform: translate(-50%, -100%) translateY(-110px) rotate(540deg); }
+    100% { transform: translate(-50%, -100%) translateY(0)    rotate(1080deg); }
+  }
+  /* HP Timer-Pulse: NUR box-shadow + color-shift, KEIN transform — die
+     Active-Card darf sich nicht vergrößern/verkleinern (Wolf 2026-05-09). */
+  @keyframes qqHpTimerGlow {
+    0%   { box-shadow: 0 0 0 rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 24px rgba(239,68,68,0.85); }
   }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment

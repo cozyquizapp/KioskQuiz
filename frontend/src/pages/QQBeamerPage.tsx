@@ -2321,6 +2321,218 @@ function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// HOT POTATO SEMICIRCLE — 5-Slot horizontaler Halbkreis (Wolf 2026-05-09)
+// ACTIVE mittig vorne, slot ±1 rechts/links leicht zurück, slot ±2 weiter zurück.
+// Bei Active-Wechsel rotieren alle Slots — Kartoffel fliegt mit Bogen rüber.
+// ═══════════════════════════════════════════════════════════════════════════════
+function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: {
+  state: any; lang: 'de' | 'en';
+  activeTeam: any | undefined;
+  remaining: number | null;
+  urgent: boolean;
+}) {
+  // Reihenfolge aus Backend (_hotPotatoOrder = score-sortiert) — Fallback joinOrder.
+  const order: string[] = (s as any)._hotPotatoOrder && (s as any)._hotPotatoOrder.length > 0
+    ? (s as any)._hotPotatoOrder
+    : (s.joinOrder ?? []);
+  const eliminated: string[] = s.hotPotatoEliminated ?? [];
+  // Alive-Teams in der Halbkreis-Reihenfolge (eliminierte raus)
+  const aliveIds = order.filter((id: string) => !eliminated.includes(id));
+
+  // 2026-05-09 (Wolf): bei Active-Wechsel kurz die Throw-Animation triggern
+  // statt continuous Spin. 850ms (= Slot-Transition-Dauer) Wurf-Bogen +
+  // 1080° Spin, dann zurück zum Standard-Spin-Loop.
+  const prevActiveRef = useRef<string | null>(null);
+  const [isThrowing, setIsThrowing] = useState(false);
+  useEffect(() => {
+    const cur = activeTeam?.id ?? null;
+    if (cur && prevActiveRef.current && prevActiveRef.current !== cur) {
+      setIsThrowing(true);
+      const t = window.setTimeout(() => setIsThrowing(false), 850);
+      prevActiveRef.current = cur;
+      return () => window.clearTimeout(t);
+    }
+    prevActiveRef.current = cur;
+  }, [activeTeam?.id]);
+  if (!activeTeam) {
+    return (
+      <div style={{
+        flex: '0 0 auto',
+        padding: '8px 18px', borderRadius: 999,
+        background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
+        color: '#94a3b8', fontSize: 15, fontWeight: 700,
+      }}>
+        <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
+      </div>
+    );
+  }
+  const activeIdx = aliveIds.indexOf(activeTeam.id);
+  if (activeIdx < 0 || aliveIds.length === 0) return null;
+
+  // Pro Team: berechne relativen Slot-Index ggü. Active (zentriert auf 0).
+  // Slot -2/-1 = vorherige, +1/+2 = nächste (modulo aliveIds.length).
+  // Wenn aliveIds < 5, fehlende Slots bleiben leer.
+  const N = aliveIds.length;
+  type SlotEntry = { teamId: string; slot: number };
+  const slotEntries: SlotEntry[] = [];
+  for (let i = 0; i < N; i++) {
+    let rel = i - activeIdx;
+    // Wrap zu kürzestem Distanz (modulo N) — z.B. bei N=4, idx=0, prev=3 ist „rel=-1"
+    while (rel >  Math.floor(N / 2))  rel -= N;
+    while (rel < -Math.floor(N / 2))  rel += N;
+    if (Math.abs(rel) > 2) continue;  // nur ±2 sichtbar
+    slotEntries.push({ teamId: aliveIds[i], slot: rel });
+  }
+
+  // Slot-Konfiguration (X-Offset, Y-Offset für Halbkreis-Bogen, Scale, Z-Index, Opacity)
+  // ACTIVE = vorne unten (Slot 0). Slot ±1/±2 sind im Bogen nach hinten oben.
+  const slotConfig = (slot: number) => {
+    const abs = Math.abs(slot);
+    if (abs === 0) return { x: 0,    y: 0,    scale: 1,    z: 5, opacity: 1   };
+    if (abs === 1) return { x: 280,  y: -80,  scale: 0.72, z: 3, opacity: 0.88 };
+    return                  { x: 520,  y: -130, scale: 0.48, z: 1, opacity: 0.65 };
+  };
+
+  return (
+    <div style={{
+      flex: '0 0 auto',
+      position: 'relative',
+      width: '100%', height: 'clamp(180px, 22vh, 260px)',
+      pointerEvents: 'none',
+    }}>
+      {/* Backdrop-Glow hinter dem Active-Team — Spotlight-Effekt */}
+      <div aria-hidden style={{
+        position: 'absolute',
+        left: '50%', bottom: 0,
+        transform: 'translateX(-50%)',
+        width: 'clamp(220px, 26vw, 380px)',
+        height: 'clamp(220px, 26vw, 380px)',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${activeTeam.color}33 0%, transparent 65%)`,
+        filter: 'blur(12px)',
+        zIndex: 0,
+      }} />
+
+      {/* Slot-Container — alle Avatare relativ zum Container-Center positioniert */}
+      <div style={{
+        position: 'absolute',
+        left: '50%', bottom: 0,
+        width: 0, height: 0,
+        zIndex: 2,
+      }}>
+        {slotEntries.map(({ teamId, slot }) => {
+          const t = s.teams.find((x: any) => x.id === teamId);
+          if (!t) return null;
+          const cfg = slotConfig(slot);
+          const xSign = slot > 0 ? 1 : slot < 0 ? -1 : 0;
+          const isActive = slot === 0;
+          // ACTIVE-Slot: groß mit Name + Timer + Kartoffel.
+          // Side-Slots: nur Avatar mit Mini-Label.
+          return (
+            <div
+              key={teamId}
+              style={{
+                position: 'absolute',
+                left: 0, bottom: 0,
+                transform: `translate(calc(${xSign * cfg.x}px - 50%), ${cfg.y}px) scale(${cfg.scale})`,
+                transformOrigin: 'center bottom',
+                zIndex: cfg.z,
+                opacity: cfg.opacity,
+                transition: 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: isActive ? 10 : 6,
+              }}
+            >
+              {isActive ? (
+                // ACTIVE — komplette Card mit Avatar, Name, Timer (nicht-pulsierend)
+                <div style={{
+                  position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 10,
+                  padding: '14px 24px 18px',
+                  borderRadius: 22,
+                  background: `linear-gradient(180deg, ${t.color}33, ${t.color}11)`,
+                  border: `2.5px solid ${t.color}`,
+                  boxShadow: `0 0 48px ${t.color}66, 0 12px 28px rgba(0,0,0,0.5)`,
+                  minWidth: 280,
+                }}>
+                  {/* Bouncing-Kartoffel ÜBER der Active-Card.
+                      Bei Wechsel: Wurf-Bogen-Animation 850ms (sync zur
+                      Slot-Transition), danach zurück zum Idle-Spin. */}
+                  <span aria-hidden style={{
+                    position: 'absolute',
+                    top: 0, left: '50%',
+                    transform: 'translate(-50%, -100%)',
+                    fontSize: 'clamp(56px, 6.5vw, 96px)',
+                    lineHeight: 1, pointerEvents: 'none',
+                    filter: 'drop-shadow(0 4px 8px rgba(239,68,68,0.65)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
+                    animation: isThrowing
+                      ? 'qqHpPotatoThrow 0.85s cubic-bezier(0.4, 1.2, 0.6, 1) both'
+                      : 'qqHpPotatoSpin 1.4s ease-in-out infinite',
+                    zIndex: 6,
+                  }}>🥔</span>
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(72px, 8vw, 120px)'} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, lineHeight: 1.05 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
+                      textTransform: 'uppercase', color: '#94a3b8',
+                    }}>
+                      <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
+                    </span>
+                    <span title={t.name} style={{
+                      fontSize: 'clamp(22px, 2.6vw, 34px)', fontWeight: 900, color: t.color,
+                      maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {truncName(t.name, 22)}
+                    </span>
+                  </div>
+                  {remaining !== null && (
+                    <div style={{
+                      padding: '6px 18px', borderRadius: 999,
+                      background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
+                      border: `2px solid ${urgent ? '#EF4444' : '#475569'}`,
+                      color: urgent ? '#fca5a5' : '#e2e8f0',
+                      fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 900,
+                      minWidth: 76, textAlign: 'center',
+                      // 2026-05-09 (Wolf 'card darf sich durch timer nicht
+                      // vergrößern'): Pulse weg von der Card, NUR der Timer-Pill
+                      // pulsiert — und das auch nur via box-shadow (kein scale).
+                      animation: urgent ? 'qqHpTimerGlow 0.6s ease infinite alternate' : 'none',
+                    }}>
+                      ⏱ {remaining}s
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // SIDE-SLOT (±1 / ±2) — nur Avatar + dezenter Name darunter
+                <>
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(54px, 6vw, 90px)'} />
+                  <div style={{
+                    fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 800, color: t.color,
+                    maxWidth: 120, textAlign: 'center', whiteSpace: 'nowrap',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                  }}>{truncName(t.name, 14)}</div>
+                  <div style={{
+                    fontSize: 9, fontWeight: 900, letterSpacing: 1,
+                    color: '#64748b', textTransform: 'uppercase',
+                  }}>
+                    {slot < 0
+                      ? (lang === 'en' ? 'just played' : 'gespielt')
+                      : (lang === 'en' ? 'up next' : 'gleich dran')}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // HOT POTATO BEAMER VIEW — active team, per-turn timer, used answers
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2431,65 +2643,16 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         )}
       </div>
 
-      {/* Active team pill + turn timer (Footer — bleibt unten fix).
-          2026-05-09 (Slot P live): Fliegende Kartoffel als hovering Visual
-          über der Active-Pill — bouncet + rotiert beim aktiven Team. Wenn
-          Active-Team wechselt, transitioniert die Kartoffel-Position smooth
-          (CSS-transition auf left%). */}
-      {activeTeam ? (
-        <div style={{
-          flex: '0 0 auto', position: 'relative',
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '10px 22px', borderRadius: 999,
-          background: `linear-gradient(135deg, ${activeTeam.color}33, ${activeTeam.color}11)`,
-          border: `2px solid ${activeTeam.color}`,
-          boxShadow: `0 0 32px ${activeTeam.color}55`,
-          animation: 'tcpulse 1.4s ease-in-out infinite',
-        }}>
-          {/* Kartoffel über dem Active-Avatar, bouncet + rotiert */}
-          <span aria-hidden style={{
-            position: 'absolute',
-            top: '50%', left: 36,
-            transform: 'translate(-50%, -100%)',
-            fontSize: 'clamp(38px, 4vw, 64px)',
-            lineHeight: 1, pointerEvents: 'none',
-            filter: 'drop-shadow(0 4px 8px rgba(239,68,68,0.6)) drop-shadow(0 0 18px rgba(245,158,11,0.55))',
-            animation: 'qqHpPotatoBounceRotate 1.4s ease-in-out infinite',
-            zIndex: 5,
-          }}>🥔</span>
-          <QQTeamAvatar avatarId={activeTeam.avatarId} teamEmoji={activeTeam.emoji} size={36} />
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#94a3b8' }}>
-              <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
-            </span>
-            <span title={activeTeam.name} style={{ fontSize: 'clamp(22px, 2.6vw, 34px)', fontWeight: 900, color: activeTeam.color }}>
-              {truncName(activeTeam.name, 26)} {lang === 'en' ? 'is up!' : 'ist dran!'}
-            </span>
-          </div>
-          {remaining !== null && (
-            <div style={{
-              marginLeft: 8, padding: '6px 16px', borderRadius: 999,
-              background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
-              border: `2px solid ${urgent ? '#EF4444' : '#475569'}`,
-              color: urgent ? '#fca5a5' : '#e2e8f0',
-              fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 900,
-              minWidth: 68, textAlign: 'center',
-              animation: urgent ? 'tcpulse 0.5s ease infinite alternate' : 'none',
-            }}>
-              ⏱ {remaining}s
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          flex: '0 0 auto',
-          padding: '8px 18px', borderRadius: 999,
-          background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
-          color: '#94a3b8', fontSize: 15, fontWeight: 700,
-        }}>
-          <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
-        </div>
-      )}
+      {/* 2026-05-09 (Wolf-Halbkreis-Vision): Active-Pill ersetzt durch
+          horizontalen Halbkreis mit 5 Slots. ACTIVE mittig vorne, slot ±1
+          rechts/links leicht zurückgesetzt, slot ±2 noch weiter zurück.
+          Reihenfolge aus Score-Sortierung (_hotPotatoOrder): links das
+          vorherige Team, rechts das nächste. Bei Active-Wechsel rotieren
+          alle Slots — Kartoffel fliegt mit Bogen vom alten zum neuen Slot. */}
+      <HotPotatoSemicircle
+        state={s} lang={lang} activeTeam={activeTeam}
+        remaining={remaining} urgent={urgent}
+      />
 
       {/* Eliminated teams. Frisch eliminierte Teams:
           C1 Shake-Red + Kartoffel-Drop 🥔 + fade-to-grey. */}
@@ -2608,6 +2771,9 @@ type RulesSlide = {
   abilities?: AbilityBadge[];
   /** Wenn true, ersetzt das Slide-Icon-Emoji durch ein Pärchen Joker-PNGs (Boy+Girl) mit Wiggle. */
   heroJokers?: boolean;
+  /** 2026-05-09 (Wolf): wenn true, Slide nur zeigen wenn connectionsEnabled
+   *  im State true ist. Bisher fest verdrahtet für Slide 8 (4×4-Finale). */
+  requiresConnections?: boolean;
 };
 
 // Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
@@ -2709,6 +2875,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🧩',
       title: t('rules.slide8.title', 'Großes Finale'),
       color: RULES_SLIDE_COLOR,
+      requiresConnections: true,
       lines: [
         t('rules.slide8.line1', '16 Begriffe · 4 Gruppen finden'),
         t('rules.slide8.line2', 'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder'),
@@ -2809,6 +2976,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🧩',
       title: t('rules.slide8.title', 'Grand Finale'),
       color: RULES_SLIDE_COLOR,
+      requiresConnections: true,
       lines: [
         t('rules.slide8.line1', '16 terms · find 4 hidden groups'),
         t('rules.slide8.line2', 'Each group = 1 stack-bonus (+1 pt) on your cells'),
@@ -4487,7 +4655,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
   useRuleOverridesVersion();
   const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
-  const slides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
+  const allSlides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
+  // 2026-05-09 (Wolf): Slides mit requiresConnections (z.B. 4×4-Finale) nur
+  // zeigen wenn der Mod das Connections-Feature aktiviert hat. Comeback bleibt.
+  const slides = s.connectionsEnabled === false
+    ? allSlides.filter(sl => !sl.requiresConnections)
+    : allSlides;
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
   // idx<0 = Overlay-Phase (Willkommen/Regel-Intro). Nichts rendern, damit der

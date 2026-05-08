@@ -180,16 +180,15 @@ export default function QQProgressTree({
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
-  // 2026-05-04 (Wolf): Progress-Strich nimmt die Farbe der aktuellen Kategorie
-  // an statt immer gold zu sein. Auf dem Finale-Dot bleibt's lila (Connections-
-  // Marker), bei Showcase-Pause ist's der initiale Wolf-Dot. Fallback: gold.
+  // 2026-05-09 (Wolf 'tree noch bunt'): Progress-Strich + Dots nutzen jetzt
+  // Pink-Eskalation pro Phase (getRoundColor) statt Kategorie-Farben — bleibt
+  // Brand-konsistent. Kategorien werden weiter durch Emojis erkannt (groß im
+  // Dot). Finale-Dot bleibt Lila als Highlight.
   const wolfDotIdxForColor = Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, dotCenters.length - 1));
   const currentScheduleEntry = schedule[wolfDotIdxForColor];
   const progressColor = wolfOnFinale
     ? '#A78BFA'
-    : (currentScheduleEntry ? QQ_CATEGORY_COLORS[currentScheduleEntry.category] : '#EC4899');
-  // Etwas dunklere Variante fuer den Gradient-Endpunkt — gibt dem Strich
-  // Tiefe statt einfarbig zu sein. 80% Helligkeit als Hex.
+    : (currentScheduleEntry ? getRoundColor(currentScheduleEntry.phase, totalPhases) : '#EC4899');
   const progressColorEnd = progressColor;
 
   // 2026-05-05 (Wolf 'progress tree mit rundenfarbe + glow'): inline + hero
@@ -381,7 +380,8 @@ export default function QQProgressTree({
                   const globalIdx = phaseStartIdx + i;
                   const isPast = !showcaseMode && globalIdx < displayIdx;
                   const isCurrent = globalIdx === effectiveDisplayIdx;
-                  const color = QQ_CATEGORY_COLORS[e.category];
+                  // 2026-05-09 (Wolf 'tree noch bunt'): Phasen-Farbe statt Kategorie-Farbe
+                  const color = getRoundColor(e.phase, totalPhases);
                   const label = QQ_CATEGORY_LABELS[e.category];
                   const emoji = e.bunteTueteKind
                     ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji
@@ -489,7 +489,8 @@ export default function QQProgressTree({
               im Bogen zum neuen Dot (gleiche Geste wie RoundMiniTree). */}
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
-            const wolfColor = currentSchedule ? QQ_CATEGORY_COLORS[currentSchedule.category] : '#EC4899';
+            // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
+            const wolfColor = currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : '#EC4899';
             const wolfSize = Math.round(dotSize * 1.35);
             return (
               <div style={{

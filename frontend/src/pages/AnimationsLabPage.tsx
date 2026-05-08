@@ -371,6 +371,103 @@ function FirefliesLayer() {
   );
 }
 
+// ─── C. CHEESE Winner-Avatar-Drop-Cascade ───────────────────────────────────
+function CheeseWinnerCascadeDemo({ replay }: { replay: number }) {
+  // 4 Winner-Teams als simple farbige Avatare. 850 ms Stagger pro Drop,
+  // letzter Avatar bekommt Climax-Glow-Pulse (transform-locked auf scale 1
+  // vom Drop, Pulse nutzt nur box-shadow → kein Anim-Conflict).
+  const winners = [
+    { name: 'Tigerteam',  hue: 30,  emoji: '🐯' },
+    { name: 'Wolfsbande', hue: 230, emoji: '🐺' },
+    { name: 'Kraken',     hue: 280, emoji: '🐙' },
+    { name: 'Eulenchor',  hue: 130, emoji: '🦉' },
+  ];
+  const STAGGER_S = 0.85;
+
+  return (
+    <div key={replay} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Pseudo-CHEESE-Frage mit Bild + korrekter Antwort */}
+      <div style={{
+        flex: 1, position: 'relative',
+        borderRadius: 12,
+        background: 'linear-gradient(180deg, #1a1410, #0f0a06)',
+        border: '1px solid rgba(245,158,11,0.18)',
+        overflow: 'hidden',
+        minHeight: 280,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px 16px 80px',
+      }}>
+        {/* Pseudo-Subject-Card (Cheese-Visual) */}
+        <div style={{
+          width: '78%', maxWidth: 360, aspectRatio: '4/3',
+          borderRadius: 14,
+          background: 'linear-gradient(135deg, #fde68a, #fbbf24 60%, #d97706)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 96, color: '#7c2d12',
+          boxShadow: '0 14px 44px rgba(217,119,6,0.32)',
+          position: 'relative',
+        }}>
+          🧀
+          {/* Korrekte-Antwort-Badge poppt zuerst rein */}
+          <div style={{
+            position: 'absolute', top: 10, right: 12,
+            padding: '4px 10px', borderRadius: 999,
+            background: 'rgba(34,197,94,0.94)', color: '#fff',
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
+            animation: 'cheeseAnswerBadge 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
+          }}>RICHTIG: GOUDA</div>
+        </div>
+        {/* Winner-Avatare am unteren Rand, droppen ueber das Bild */}
+        <div style={{
+          position: 'absolute', bottom: 14, left: 0, right: 0,
+          display: 'flex', justifyContent: 'center', gap: 18, padding: '0 16px',
+        }}>
+          {winners.map((w, i) => {
+            const isLast = i === winners.length - 1;
+            const dropDelay = 0.6 + i * STAGGER_S; // 0.6 s Pause damit Badge zuerst landet
+            return (
+              <div key={i} style={{
+                position: 'relative',
+                animation: `cheeseAvatarDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) ${dropDelay}s both`,
+                willChange: 'transform',
+              }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%',
+                  background: `hsl(${w.hue}, 68%, 56%)`,
+                  border: isLast ? '3px solid #fbbf24' : '2px solid rgba(255,255,255,0.45)',
+                  boxShadow: isLast
+                    ? '0 0 24px rgba(251,191,36,0.7), 0 8px 20px rgba(0,0,0,0.4)'
+                    : '0 6px 16px rgba(0,0,0,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 26,
+                  // Climax-Pulse NUR auf box-shadow → kein transform-Conflict
+                  // mit dem Drop-Wrapper.
+                  animation: isLast
+                    ? `cheeseClimaxPulse 0.85s ease-out ${dropDelay + 0.7}s both`
+                    : undefined,
+                }}>
+                  {w.emoji}
+                </div>
+                <div style={{
+                  position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
+                  fontSize: 10, fontWeight: 800, color: '#f1f5f9',
+                  whiteSpace: 'nowrap',
+                  textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                  opacity: 0,
+                  animation: `cheeseLabelFade 0.4s ease-out ${dropDelay + 0.5}s both`,
+                }}>{w.name}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+        4 Teams richtig · Stagger 850 ms · letzter Avatar = Climax-Glow-Pulse
+      </div>
+    </div>
+  );
+}
+
 // ─── D. Background-Layer Toggle Showcase ────────────────────────────────────
 function BgLayerShowcaseDemo({ replay }: { replay: number }) {
   const allOn = { aurora: true, mesh: true, grain: true, fireflies: true, heartbeat: true };
@@ -494,6 +591,12 @@ export default function AnimationsLabPage() {
       keepAlive: true, replayLabel: '↺ Reset', minHeight: 460,
       render: (r) => <BgLayerShowcaseDemo replay={r} />,
     },
+    {
+      label: 'C', title: 'CHEESE Winner-Avatar-Drop-Cascade',
+      blurb: '4 Teams hatten richtig — Avatare droppen mit Spring-Easing und 850 ms Stagger ueber das Subject-Bild. Letzter Avatar = Climax-Glow-Pulse. Spannungs-Hoehepunkt jeder CHEESE-Frage.',
+      keepAlive: false, minHeight: 460,
+      render: (r) => <CheeseWinnerCascadeDemo replay={r} />,
+    },
   ];
 
   return (
@@ -576,6 +679,24 @@ export default function AnimationsLabPage() {
         @keyframes ffDriftSm {
           0%, 100% { transform: translate(0, 0); opacity: 0.4; }
           50%      { transform: translate(8px, -16px); opacity: 1; }
+        }
+        @keyframes cheeseAvatarDrop {
+          0%   { transform: translateY(-58px) scale(0.45); opacity: 0; }
+          60%  { transform: translateY(6px)   scale(1.08); opacity: 1; }
+          100% { transform: translateY(0)     scale(1);    opacity: 1; }
+        }
+        @keyframes cheeseClimaxPulse {
+          0%   { box-shadow: 0 0 24px rgba(251,191,36,0.7), 0 8px 20px rgba(0,0,0,0.4); }
+          40%  { box-shadow: 0 0 56px rgba(251,191,36,1.0), 0 8px 20px rgba(0,0,0,0.4); }
+          100% { box-shadow: 0 0 24px rgba(251,191,36,0.7), 0 8px 20px rgba(0,0,0,0.4); }
+        }
+        @keyframes cheeseAnswerBadge {
+          0%   { transform: scale(0.4); opacity: 0; }
+          100% { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes cheeseLabelFade {
+          0%   { opacity: 0; transform: translateX(-50%) translateY(4px); }
+          100% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
 

@@ -11638,7 +11638,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          padding: 'clamp(22px, 3.2vh, 50px) clamp(28px, 4vw, 64px)',
+          // 2026-05-08 (Wolf-Bug 'kategorie badge ueberdeckt frage card'):
+          // paddingTop vergroessert (22-50px → 90-130px) damit die absolute
+          // Top-Bar (Badge + Timer auf top:22-50px, ~50px hoch) nicht in die
+          // Card hineinragt. Die Card sitzt jetzt klar UNTER der Top-Bar mit
+          // ~30-40px Gap. Horizontal- und Bottom-Padding bleiben.
+          padding: 'clamp(90px, 11vh, 130px) clamp(28px, 4vw, 64px) clamp(22px, 3.2vh, 50px)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen

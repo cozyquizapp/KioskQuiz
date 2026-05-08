@@ -1059,6 +1059,10 @@ export interface QQStateUpdate {
   finalBettingSubmitted: Record<string, boolean>;     // teamId → has-submitted-flag
   finalRoundWinners: string[] | null;                 // Tied-OK: alle mit max Final-Phase-Score
   finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus + losses
+  /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Wenn true, lösen Space-
+   *  Hotkey + Autoplay den Bet-Phase-Übergang automatisch aus (vor letzter
+   *  Phase = Bet-Phase, nach letzter Frage = Resolve). Default false. */
+  finalWagerEnabled: boolean;
 }
 
 /** Eine einzelne Wette in der Final-Betting-Phase.
@@ -1149,6 +1153,8 @@ export interface QQSubmitFinalBetPayload    { roomCode: string; teamId: string; 
 export interface QQFinishFinalBettingPayload { roomCode: string; }
 /** Mod löst Final-Reveal aus (nach letzter Frage der Final-Phase) */
 export interface QQResolveFinalBetsPayload  { roomCode: string; }
+/** Mod-Toggle im Setup: aktiviert Final-Wager-Mechanik */
+export interface QQSetFinalWagerEnabledPayload { roomCode: string; enabled: boolean; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

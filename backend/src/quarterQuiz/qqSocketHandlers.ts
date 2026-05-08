@@ -15,6 +15,7 @@ import {
   QQShieldClusterPayload, QQShieldCellPayload, QQSandLockCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
   QQStartFinalBettingPayload, QQSubmitFinalBetPayload, QQFinishFinalBettingPayload, QQResolveFinalBetsPayload,
+  QQSetFinalWagerEnabledPayload,
   getRandomDummyEmojis,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
@@ -51,6 +52,7 @@ import {
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqResolveFinalBets,
+  qqSetFinalWagerEnabled,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -2891,6 +2893,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqResolveFinalBets(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:setFinalWagerEnabled', (payload: QQSetFinalWagerEnabledPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqSetFinalWagerEnabled(room, !!payload.enabled);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

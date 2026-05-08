@@ -274,6 +274,8 @@ export interface QQRoomState {
   finalRoundScoreSnapshot: Record<string, number> | null;
   /** Aufgelöste Bonus/Verluste pro Team — wird beim Resolve gesetzt. */
   finalBetResolution: Record<string, import('../../../shared/quarterQuizTypes').QQFinalBetResolution> | null;
+  /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Default false. */
+  finalWagerEnabled: boolean;
 }
 
 // ── In-process room map ───────────────────────────────────────────────────────
@@ -426,6 +428,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalRoundWinners: null,
       finalBetResolution: null,
       finalRoundScoreSnapshot: null,
+      finalWagerEnabled: false,
     };
     qqRooms.set(roomCode, room);
   }
@@ -3107,6 +3110,31 @@ export function qqUndoComebackChoice(room: QQRoomState, teamId: string): void {
 // ── Phase transitions ─────────────────────────────────────────────────────────
 export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): void {
   room.gamePhaseIndex = phaseIndex;
+  // Final-Wager (2026-05-09): wenn Final-Phase einleiten + Toggle aktiv +
+  // noch kein Snapshot → Bet-Phase einleiten statt PHASE_INTRO. Snapshot-Check
+  // verhindert Re-Entry (z.B. nach manuellem Phase-Reset).
+  if (
+    phaseIndex === room.totalPhases
+    && room.finalWagerEnabled
+    && room.finalRoundScoreSnapshot === null
+  ) {
+    // Standard-Phase-Resets vorab (analog zum normalen PHASE_INTRO-Flow)
+    room.questionIndex   = (phaseIndex - 1) * QQ_QUESTIONS_PER_PHASE;
+    room.currentQuestion = room.questions[room.questionIndex] ?? null;
+    room.revealedAnswer  = null;
+    room.correctTeamId   = null;
+    room.pendingFor      = null;
+    room.pendingAction   = null;
+    room.comebackTeamId  = null;
+    room.comebackAction  = null;
+    room.comebackStealTargets = [];
+    room.comebackStealsDone   = [];
+    room.comebackHL      = null;
+    room.swapFirstCell   = null;
+    // qqStartFinalBetting setzt phase + snapshot, ist sicher.
+    qqStartFinalBetting(room);
+    return;
+  }
   room.phase          = 'PHASE_INTRO';
   room.introStep      = 0;
   room.questionIndex  = (phaseIndex - 1) * QQ_QUESTIONS_PER_PHASE;
@@ -3242,7 +3270,13 @@ export function qqNextQuestion(room: QQRoomState): void {
       // finishPlacement koennte den allDone-Reset verpasst haben, z.B. wenn
       // der letzte Zug ueber Comeback/Connections ging).
       clearAllJokerVisuals(room);
-      if (room.connectionsEnabled) {
+      // Final-Wager (2026-05-09): wenn Toggle aktiv + Bets gesetzt aber noch
+      // nicht resolved → erst Score-Cascade, dann GAME_OVER. Comes BEFORE
+      // Connections-Branch, damit Final-Wager Vorrang hat (4×4 ist optional
+      // separate Mechanik, soll ggf. in Bunte-Tüte wandern).
+      if (room.finalWagerEnabled && room.finalRoundScoreSnapshot !== null && !room.finalBetResolution) {
+        qqResolveFinalBets(room);
+      } else if (room.connectionsEnabled) {
         // 2026-05-05 (Wolf-Builder): wenn Draft custom Connections hat, nutzen.
         const payload = room.connectionsPayload ?? QQ_CONNECTIONS_FALLBACK_PAYLOAD;
         qqConnectionsStart(room, payload, {
@@ -3646,6 +3680,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalBettingSubmitted: room.finalBettingSubmitted ?? {},
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
+    finalWagerEnabled:     room.finalWagerEnabled ?? false,
     categoryIsNew:    (() => {
       const q = room.currentQuestion;
       if (!q) return false;
@@ -5018,6 +5053,12 @@ function countCellsByTeam(room: QQRoomState): Record<string, number> {
     }
   }
   return counts;
+}
+
+/** Setup-Toggle: aktiviert/deaktiviert Final-Wager-Mechanik. */
+export function qqSetFinalWagerEnabled(room: QQRoomState, enabled: boolean): void {
+  room.finalWagerEnabled = enabled;
+  room.lastActivityAt = Date.now();
 }
 
 /** Mod startet die Bet-Phase. Cleart vorherige Bets, snapshottet Score. */

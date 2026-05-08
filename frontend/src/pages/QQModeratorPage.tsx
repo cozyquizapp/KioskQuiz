@@ -2718,29 +2718,67 @@ function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
 }
 
 // ── Mod Question Panel (Frage + Antwort fuer Mod sichtbar) ──────────────────
-// 2026-05-09 (Wolf-Final-Wager-Mechanik): kontextueller Steuerungs-Block.
-// Zeigt je nach Phase: „Final-Wetten starten" / „Final-Phase starten" / „Bets auflösen".
+// 2026-05-09 (Wolf-Final-Wager-Mechanik): Status-Block wenn Final-Wager
+// aktiv ist. Toggle ist im Setup; Phase-Übergänge passieren automatisch
+// per Space (qqBeginPhase einleitet Bet-Phase, qqNextQuestion → Resolve).
+// Manuelle Override-Buttons als Fallback falls Wolf was korrigieren muss.
 function FinalWagerControls({ state: s, emit, roomCode }: { state: QQStateUpdate; emit: any; roomCode: string }) {
-  // Welche Phase könnte als „Final" markiert werden? Wenn gamePhaseIndex === totalPhases.
-  const isInFinalPhase = s.gamePhaseIndex === s.totalPhases;
-  // „Vorbereitung möglich": wir sind in Phase totalPhases-1, am Ende (z.B. PLACEMENT/QUESTION_REVEAL)
-  // ODER kurz vor Übergang. Pragmatisch: erlauben wenn gamePhaseIndex < totalPhases.
-  const canStartBetting = s.gamePhaseIndex < s.totalPhases
-    && s.phase !== 'FINAL_BETTING' && s.phase !== 'FINAL_REVEAL'
-    && s.phase !== 'GAME_OVER' && s.phase !== 'THANKS' && s.phase !== 'LOBBY';
-
+  // Toggle nur im Setup (LOBBY + !setupDone) sichtbar/änderbar
+  const inSetup = s.phase === 'LOBBY' && !s.setupDone;
+  const enabled = !!s.finalWagerEnabled;
   const submittedCount = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
   const totalTeams = s.teams.length;
 
-  // Resolve nur in Final-Phase + nicht bereits resolved
-  const canResolve = isInFinalPhase
-    && (s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'PHASE_INTRO')
-    && !s.finalBetResolution
-    && Object.keys(s.finalBets ?? {}).length > 0;
+  // Während Phase: nur sichtbar wenn finalWagerEnabled UND wir sind in einer
+  // betroffenen Phase (FINAL_BETTING / FINAL_REVEAL) oder kurz davor.
+  const showLiveStatus = enabled && (s.phase === 'FINAL_BETTING' || s.phase === 'FINAL_REVEAL');
 
-  if (!canStartBetting && s.phase !== 'FINAL_BETTING' && s.phase !== 'FINAL_REVEAL' && !canResolve) {
-    return null;
+  // Setup-Toggle
+  if (inSetup) {
+    return (
+      <div style={{
+        padding: '14px 16px',
+        borderRadius: 12,
+        background: enabled
+          ? 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(162,18,71,0.10))'
+          : 'rgba(255,255,255,0.04)',
+        border: enabled ? '1px solid rgba(236,72,153,0.45)' : '1px solid rgba(255,255,255,0.10)',
+        marginBottom: 12,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between',
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: enabled ? '#F472B6' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>
+              🎰 Final-Wetten
+            </div>
+            <div style={{ fontSize: 13, color: enabled ? '#FBCFE8' : '#94a3b8', fontWeight: 700, lineHeight: 1.3 }}>
+              {enabled
+                ? 'Vor letzter Phase: Teams wetten Felder auf Sieger-Team'
+                : 'Aus — Spiel ohne Final-Wetten-Mechanik'}
+            </div>
+          </div>
+          <button
+            onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: !enabled })}
+            style={{
+              padding: '10px 18px', borderRadius: 10,
+              border: enabled ? '1px solid rgba(236,72,153,0.6)' : '1px solid rgba(148,163,184,0.4)',
+              background: enabled
+                ? 'linear-gradient(135deg, rgba(236,72,153,0.30), rgba(162,18,71,0.20))'
+                : 'rgba(255,255,255,0.04)',
+              color: enabled ? '#FBCFE8' : '#64748b',
+              fontFamily: 'inherit', fontSize: 13, fontWeight: 900,
+              cursor: 'pointer', letterSpacing: '0.04em',
+              minWidth: 78,
+            }}
+          >{enabled ? 'AN' : 'AUS'}</button>
+        </div>
+      </div>
+    );
   }
+
+  // Live-Status während Bet/Reveal
+  if (!showLiveStatus) return null;
 
   return (
     <div style={{
@@ -2754,69 +2792,20 @@ function FinalWagerControls({ state: s, emit, roomCode }: { state: QQStateUpdate
         fontSize: 11, fontWeight: 900, color: '#F472B6',
         textTransform: 'uppercase', letterSpacing: '0.12em',
         marginBottom: 10,
-      }}>🎰 Final-Wetten</div>
-
-      {canStartBetting && (
-        <button
-          onClick={() => {
-            if (!confirm('Final-Wetten-Phase jetzt starten? Teams setzen ihre Wetten vor der letzten Spiel-Phase.')) return;
-            emit('qq:startFinalBetting', { roomCode });
-          }}
-          style={{
-            width: '100%', padding: '12px',
-            borderRadius: 10,
-            border: '1px solid rgba(236,72,153,0.5)',
-            background: 'linear-gradient(135deg, rgba(236,72,153,0.25), rgba(162,18,71,0.18))',
-            color: '#FBCFE8', fontFamily: 'inherit',
-            fontSize: 14, fontWeight: 900, cursor: 'pointer',
-            letterSpacing: '0.02em',
-          }}
-        >▶ Bet-Phase starten</button>
-      )}
+      }}>🎰 Final-Wetten {s.phase === 'FINAL_BETTING' ? '· Bet-Phase' : '· Auflösung'}</div>
 
       {s.phase === 'FINAL_BETTING' && (
-        <>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '10px 12px', borderRadius: 8,
-            background: 'rgba(255,255,255,0.04)',
-            marginBottom: 10,
-            fontSize: 13,
-          }}>
-            <span style={{ color: '#94A3B8', fontWeight: 700 }}>Wetten gesetzt</span>
-            <span style={{ color: '#F472B6', fontWeight: 900, fontSize: 16 }}>
-              {submittedCount} / {totalTeams}
-            </span>
-          </div>
-          <button
-            onClick={() => emit('qq:finishFinalBetting', { roomCode })}
-            style={{
-              width: '100%', padding: '12px',
-              borderRadius: 10,
-              border: '1px solid rgba(34,197,94,0.5)',
-              background: 'rgba(34,197,94,0.15)',
-              color: '#86EFAC', fontFamily: 'inherit',
-              fontSize: 14, fontWeight: 900, cursor: 'pointer',
-            }}
-          >✓ Final-Phase starten ({submittedCount === totalTeams ? 'alle bereit' : 'auch ohne alle'})</button>
-        </>
-      )}
-
-      {canResolve && (
-        <button
-          onClick={() => {
-            if (!confirm('Final-Wetten jetzt auflösen? Score-Cascade läuft am Beamer.')) return;
-            emit('qq:resolveFinalBets', { roomCode });
-          }}
-          style={{
-            width: '100%', padding: '12px',
-            borderRadius: 10,
-            border: '1px solid rgba(251,191,36,0.5)',
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.20), rgba(245,158,11,0.15))',
-            color: '#FCD34D', fontFamily: 'inherit',
-            fontSize: 14, fontWeight: 900, cursor: 'pointer',
-          }}
-        >🏆 Final-Wetten auflösen</button>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 12px', borderRadius: 8,
+          background: 'rgba(255,255,255,0.04)',
+          fontSize: 13,
+        }}>
+          <span style={{ color: '#94A3B8', fontWeight: 700 }}>Wetten gesetzt · Space → weiter</span>
+          <span style={{ color: '#F472B6', fontWeight: 900, fontSize: 16 }}>
+            {submittedCount} / {totalTeams}
+          </span>
+        </div>
       )}
 
       {s.phase === 'FINAL_REVEAL' && (
@@ -2825,7 +2814,7 @@ function FinalWagerControls({ state: s, emit, roomCode }: { state: QQStateUpdate
           background: 'rgba(251,191,36,0.10)',
           color: '#FBBF24', fontSize: 13, fontWeight: 700,
         }}>
-          Final-Reveal läuft am Beamer · Score-Cascade aktiv
+          Score-Cascade am Beamer · Space → GAME_OVER
         </div>
       )}
     </div>

@@ -1054,12 +1054,112 @@ function WolfIdleShowcase() {
   );
 }
 
+// ─── Slot J: Wolf-Winken Frame-Animation ────────────────────────────────────
+// 8 Frames vom User: 2 Wink-Positionen × 4 Augen/Mund-Kombos.
+// Trick: Frame-Animation via 2 absolute imgs + CSS opacity-toggle (steps(2),
+// keine Bildvor-Vorladung-Probleme weil beide gleichzeitig im DOM).
+function WolfWinkShowcase() {
+  const BASE = '/avatars/cozywolf/wink';
+  const variants: Array<{ key: string; label: string; faces: string }> = [
+    { key: 'aa-ma', label: 'Augen auf · Mund auf', faces: 'augen auf mund auf' },
+    { key: 'aa-mz', label: 'Augen auf · Mund zu',  faces: 'augen auf mund zu' },
+    { key: 'az-ma', label: 'Augen zu · Mund auf',  faces: 'augen zu mund auf' },
+    { key: 'az-mz', label: 'Augen zu · Mund zu',   faces: 'augen zu mund zu' },
+  ];
+  const speeds: Array<{ key: string; label: string; dur: string }> = [
+    { key: 'fast',   label: 'Fast 0.4s',   dur: '0.4s' },
+    { key: 'medium', label: 'Medium 0.6s', dur: '0.6s' },
+    { key: 'slow',   label: 'Slow 0.9s',   dur: '0.9s' },
+  ];
+  const [speedIdx, setSpeedIdx] = useState(1); // medium default
+  const dur = speeds[speedIdx].dur;
+  const SIZE = 150;
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Speed-Toggle */}
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {speeds.map((s, i) => (
+          <button key={s.key} onClick={() => setSpeedIdx(i)} style={{
+            padding: '6px 14px', borderRadius: 999,
+            border: speedIdx === i ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.10)',
+            background: speedIdx === i ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
+            color: speedIdx === i ? '#fbbf24' : '#94a3b8',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: 'all 0.15s ease',
+          }}>{s.label}</button>
+        ))}
+      </div>
+
+      {/* 4-Variant Grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
+      }}>
+        {variants.map(v => {
+          const wink1 = `${BASE}/wink1 ${v.faces}.png`;
+          const wink2 = `${BASE}/wink2 ${v.faces}.png`;
+          return (
+            <div key={v.key} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              padding: 12, borderRadius: 14,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <div style={{
+                width: SIZE, height: SIZE,
+                position: 'relative',
+              }}>
+                {/* Beide Frames absolute übereinander, opacity-toggle via steps(2) */}
+                <img
+                  src={wink1}
+                  alt=""
+                  draggable={false}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: SIZE, height: SIZE, objectFit: 'contain',
+                    animation: `wolfWinkFrame1 ${dur} steps(2) infinite`,
+                    willChange: 'opacity',
+                  }}
+                />
+                <img
+                  src={wink2}
+                  alt={`Wink ${v.faces}`}
+                  draggable={false}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: SIZE, height: SIZE, objectFit: 'contain',
+                    animation: `wolfWinkFrame2 ${dur} steps(2) infinite`,
+                    willChange: 'opacity',
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textAlign: 'center', lineHeight: 1.3 }}>{v.label}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(34,197,94,0.08)',
+        border: '1px solid rgba(34,197,94,0.25)',
+        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <strong style={{ color: '#86efac' }}>✓ Frame-Animation live:</strong> CSS <code style={{ color: '#fbbf24' }}>steps(2)</code> wechselt zwischen
+        wink1 (Hand oben) und wink2 (Hand unten). Default-Speed Medium (0.6s = ~100 Wave/Min, fühlt
+        sich natürlich an). Geile Mischvarianten: Augen-zu+Mund-zu = ruhiges Hallo · Augen-auf+Mund-auf = enthusiastisches Winken.
+        Empfehlung für Eurovision: <strong>Augen-auf · Mund-auf, Medium</strong> als Lobby-Default.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(6).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(7).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1116,6 +1216,12 @@ export default function AnimationsLabPage() {
       blurb: 'Drei Varianten side-by-side: Sway (Wiegen), Breath (Atmen), Combined. Wolf-PNG hat Ring eingebettet → Variante bewegt Wolf+Ring zusammen. Für „nur Kopf wackelt" braucht es Posen ohne Ring.',
       keepAlive: true, minHeight: 360,
       render: (_r) => <WolfIdleShowcase />,
+    },
+    {
+      label: 'J', title: 'Wolf-Winken (Frame-Animation)',
+      blurb: '2-Frame-Wink (Hand oben ↔ Hand unten) als CSS steps(2)-Animation. 4 Augen/Mund-Kombos zum Vergleich der Speed-Varianten. Ring ist in den PNGs drin, bleibt visuell stabil weil identisch in beiden Frames.',
+      keepAlive: true, minHeight: 380,
+      render: (_r) => <WolfWinkShowcase />,
     },
   ];
 
@@ -1208,6 +1314,15 @@ export default function AnimationsLabPage() {
         @keyframes wolfRingBreath {
           0%, 100% { transform: scale(1);     box-shadow: 0 0 0 0 rgba(162,18,71,0); }
           50%      { transform: scale(1.015); box-shadow: 0 0 18px 0 rgba(162,18,71,0.45); }
+        }
+        /* Slot J: Wolf-Winken Frame-Animation — 2 Imgs, alternierende opacity via steps(2) */
+        @keyframes wolfWinkFrame1 {
+          0%, 49%   { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        @keyframes wolfWinkFrame2 {
+          0%, 49%   { opacity: 0; }
+          50%, 100% { opacity: 1; }
         }
         @keyframes ffDriftSm {
           0%, 100% { transform: translate(0, 0); opacity: 0.4; }

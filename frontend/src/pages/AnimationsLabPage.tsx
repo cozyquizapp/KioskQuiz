@@ -2247,8 +2247,119 @@ function ThanksCardMock({ compact }: { compact?: boolean } = {}) {
   );
 }
 
-// ─── Variante A: BG-Slideshow ────────────────────────────────────────────────
-function ThanksRecapVariantA() {
+// ─── Variante Q: Bierdeckel-Tresen (Pub-Vibe) ────────────────────────────────
+function ThanksRecapVariantQ() {
+  // Bierdeckel scrollen kontinuierlich von rechts nach links über Holz-Tresen.
+  const strip = [...RECAP_MOCK, ...RECAP_MOCK, ...RECAP_MOCK];
+  // Zufallsrotationen pro Bierdeckel (deterministisch über Index)
+  const rot = (i: number) => ((i * 73) % 17 - 8); // -8°…+8°
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      // Holz-Tresen-BG: warme Brown-Tones + horizontale Maserung
+      background:
+        'repeating-linear-gradient(180deg, rgba(83,49,21,0.0) 0 4px, rgba(255,180,120,0.04) 4px 6px),' +
+        'repeating-linear-gradient(180deg, rgba(60,30,12,0.0) 0 22px, rgba(0,0,0,0.18) 22px 24px),' +
+        'linear-gradient(180deg, #3a2310 0%, #2a1a0c 60%, #1d130a 100%)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <style>{`
+        @keyframes recapQSlide {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes recapQSpin {
+          0%, 100% { transform: rotate(var(--rot)); }
+          50%      { transform: rotate(calc(var(--rot) + 4deg)); }
+        }
+        @keyframes recapQDroplet {
+          0%   { transform: translateY(0) scale(1); opacity: 0.6; }
+          100% { transform: translateY(8px) scale(1.05); opacity: 0; }
+        }
+      `}</style>
+      {/* Thanks-Card oben mittig */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <ThanksCardMock compact />
+      </div>
+      {/* Tresen-Rim: dunkle Holzkante mit Schatten oben */}
+      <div aria-hidden style={{
+        position: 'absolute', left: 0, right: 0, bottom: 195, height: 12,
+        background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 100%)',
+        pointerEvents: 'none',
+      }} />
+      {/* Kondens-Wassertropfen-Layer */}
+      <div aria-hidden style={{
+        position: 'absolute', left: 0, right: 0, bottom: 24, height: 170,
+        pointerEvents: 'none',
+      }}>
+        {[12, 28, 47, 64, 78, 92].map((x, i) => (
+          <span key={i} style={{
+            position: 'absolute', left: `${x}%`, bottom: `${(i % 3) * 28 + 12}px`,
+            width: 4 + (i % 3) * 2, height: 6 + (i % 3) * 2,
+            borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+            background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.18) 60%, transparent 100%)',
+            filter: 'blur(0.5px)',
+            animation: `recapQDroplet 3s ease-in-out ${i * 0.5}s infinite`,
+            opacity: 0.6,
+          }} />
+        ))}
+      </div>
+      {/* Bierdeckel-Strip — scrollt kontinuierlich */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, bottom: 28, height: 160,
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex', gap: 20, padding: '8px 0', alignItems: 'center', height: '100%',
+          width: 'max-content',
+          animation: 'recapQSlide 35s linear infinite',
+        }}>
+          {strip.map((item, i) => (
+            <div key={i} style={{
+              flexShrink: 0, position: 'relative',
+              width: 140, height: 140, borderRadius: '50%',
+              background: `radial-gradient(circle at 50% 35%, ${item.winnerColor}55 0%, ${item.winnerColor}22 40%, #f5e6c8 70%, #e8d4a8 100%)`,
+              border: '3px solid #fffbe8',
+              boxShadow:
+                'inset 0 -4px 8px rgba(0,0,0,0.15),' +
+                'inset 0 2px 4px rgba(255,255,255,0.4),' +
+                '0 8px 14px rgba(0,0,0,0.45),' +
+                '2px 4px 6px rgba(0,0,0,0.3)',
+              ['--rot' as any]: `${rot(i)}deg`,
+              animation: 'recapQSpin 4s ease-in-out infinite',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: 10, gap: 4,
+            }}>
+              {/* CozyQuiz-Branding-Stempel oben */}
+              <span style={{
+                fontSize: 8, fontWeight: 900, color: 'rgba(83,49,21,0.6)',
+                letterSpacing: '0.18em', textTransform: 'uppercase',
+              }}>🐺 CozyQuiz</span>
+              <span style={{ fontSize: 32, lineHeight: 1 }}>{item.catEmoji}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 900, color: item.winnerColor,
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+              }}>{item.catLabel}</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                marginTop: 2, padding: '2px 6px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.5)',
+              }}>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>{item.winnerEmoji}</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#3a2310' }}>{item.answer}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante R: Vintage-Marquee ─────────────────────────────────────────────
+function ThanksRecapVariantR() {
   const [idx, setIdx] = React.useState(0);
   React.useEffect(() => {
     const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 4500);
@@ -2260,263 +2371,224 @@ function ThanksRecapVariantA() {
       position: 'relative',
       width: '100%', height: 600,
       borderRadius: 16, overflow: 'hidden',
-      background: 'radial-gradient(ellipse at center, #1A0F2E 0%, #0A0814 70%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <style>{`
-        @keyframes recapASlide {
-          0%   { opacity: 0; transform: scale(1.04) translateX(20px); filter: blur(8px); }
-          15%  { opacity: 0.62; transform: scale(1) translateX(0); filter: blur(0); }
-          85%  { opacity: 0.62; }
-          100% { opacity: 0; transform: scale(0.98) translateX(-20px); filter: blur(4px); }
-        }
-        @keyframes recapAItemIn {
-          0%   { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-      {/* BG-Slide: durch absolute-overlap fadet alter raus, neuer rein */}
-      {RECAP_MOCK.map((item, i) => i === idx && (
-        <div key={`${idx}-${i}`} aria-hidden style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 28, padding: 48,
-          background: `radial-gradient(ellipse at center, ${item.winnerColor}22 0%, transparent 60%)`,
-          opacity: 0,
-          animation: 'recapASlide 4.5s ease both',
-          zIndex: 1,
-        }}>
-          <div style={{ fontSize: 'clamp(80px, 12vw, 140px)', lineHeight: 1, opacity: 0.85 }}>{item.catEmoji}</div>
-          <div style={{
-            fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
-            color: item.winnerColor, textTransform: 'uppercase', letterSpacing: '0.16em',
-          }}>{item.catLabel}</div>
-          <div style={{
-            fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 700,
-            color: '#F1F5F9', textAlign: 'center', maxWidth: 760, lineHeight: 1.3,
-          }}>„{item.question}"</div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 14,
-            padding: '10px 22px', borderRadius: 999,
-            background: 'rgba(255,255,255,0.08)',
-            border: `1.5px solid ${item.winnerColor}`,
-          }}>
-            <span style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: `${item.winnerColor}33`,
-              border: `2px solid ${item.winnerColor}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 26,
-            }}>{item.winnerEmoji}</span>
-            <span style={{ fontSize: 'clamp(16px, 1.6vw, 22px)', fontWeight: 900, color: item.winnerColor }}>
-              {item.winnerName}
-            </span>
-            <span style={{ fontSize: 'clamp(14px, 1.4vw, 18px)', color: '#CBD5E1' }}>→ <b style={{ color: '#F1F5F9' }}>{item.answer}</b></span>
-          </div>
-        </div>
-      ))}
-      {/* Dim-Overlay damit Card-Text klar bleibt — leichter (war 0.45→0.75,
-          BG-Slide war zu stark abgedunkelt). Jetzt 0.20 Mitte → 0.55 Rand,
-          BG-Slide-Visibility OK, Card bleibt vorne. */}
-      <div aria-hidden style={{
-        position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(10,8,20,0.20) 0%, rgba(10,8,20,0.55) 100%)',
-        zIndex: 2,
-      }} />
-      <ThanksCardMock />
-      {/* Progress-Dots am unteren Rand */}
-      <div style={{
-        position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', gap: 8, zIndex: 6,
-      }}>
-        {RECAP_MOCK.map((_, i) => (
-          <span key={i} style={{
-            width: i === idx ? 18 : 8, height: 6, borderRadius: 999,
-            background: i === idx ? '#EC4899' : 'rgba(255,255,255,0.25)',
-            transition: 'all 0.4s ease',
-          }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Variante B: Polaroid-Stack ──────────────────────────────────────────────
-function ThanksRecapVariantB() {
-  const [idx, setIdx] = React.useState(0);
-  React.useEffect(() => {
-    const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 3500);
-    return () => window.clearInterval(id);
-  }, []);
-  const total = RECAP_MOCK.length;
-  return (
-    <div style={{
-      position: 'relative',
-      width: '100%', height: 600,
-      borderRadius: 16, overflow: 'hidden',
-      background: 'radial-gradient(ellipse at 30% 30%, #1A0F2E 0%, #0A0814 70%)',
-      display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: 40,
-      padding: 40,
-    }}>
-      <style>{`
-        @keyframes polaroidIn {
-          0%   { opacity: 0; transform: translate(40px, -20px) rotate(8deg) scale(0.9); }
-          100% { opacity: 1; transform: translate(0, 0) rotate(var(--tilt)) scale(1); }
-        }
-        @keyframes polaroidOut {
-          0%   { opacity: 1; }
-          100% { opacity: 0; transform: translate(-50px, 30px) rotate(-12deg) scale(0.85); }
-        }
-      `}</style>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <ThanksCardMock compact />
-      </div>
-      {/* Polaroid-Stack rechts */}
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        {RECAP_MOCK.map((item, i) => {
-          const offset = (i - idx + total) % total;  // 0 = top, 1 = behind, ...
-          const visible = offset < 4;
-          const tilt = [-3, 5, -8, 2][offset] ?? 0;
-          const dx = [0, 12, 24, 36][offset] ?? 50;
-          const dy = [0, 10, 22, 34][offset] ?? 50;
-          const z = 10 - offset;
-          return visible ? (
-            <div key={i} style={{
-              position: 'absolute',
-              left: '50%', top: '50%',
-              ['--tilt' as any]: `${tilt}deg`,
-              transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${tilt}deg)`,
-              width: 'clamp(220px, 25vw, 320px)',
-              padding: '20px 18px 56px',
-              background: '#fafaf5',
-              borderRadius: 8,
-              boxShadow: '0 14px 36px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3)',
-              zIndex: z,
-              opacity: offset === 0 ? 1 : 0.85,
-              transition: 'all 0.7s cubic-bezier(0.34, 1.4, 0.5, 1)',
-              animation: offset === 0 ? 'polaroidIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1) both' : undefined,
-            }}>
-              <div style={{
-                width: '100%', aspectRatio: '4 / 3',
-                background: `radial-gradient(circle at center, ${item.winnerColor}33 0%, ${item.winnerColor}10 60%, #1a1424 100%)`,
-                borderRadius: 4,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: 8, padding: 14,
-              }}>
-                <div style={{ fontSize: 'clamp(48px, 6vw, 72px)', lineHeight: 1 }}>{item.catEmoji}</div>
-                <div style={{
-                  fontSize: 11, fontWeight: 900, color: item.winnerColor,
-                  textTransform: 'uppercase', letterSpacing: '0.14em',
-                }}>{item.catLabel}</div>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: `${item.winnerColor}33`,
-                  border: `2px solid ${item.winnerColor}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22,
-                }}>{item.winnerEmoji}</div>
-              </div>
-              <div style={{
-                marginTop: 12, textAlign: 'center',
-                fontFamily: "'Caveat', cursive, 'Nunito', sans-serif",
-                fontSize: 'clamp(15px, 1.6vw, 19px)', fontWeight: 700,
-                color: '#1a1424',
-              }}>{item.winnerName} · {item.answer}</div>
-            </div>
-          ) : null;
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Variante C: Filmstrip / Endcredits ──────────────────────────────────────
-function ThanksRecapVariantC() {
-  // 3× wiederholen für nahtlosen Loop
-  const strip = [...RECAP_MOCK, ...RECAP_MOCK, ...RECAP_MOCK];
-  return (
-    <div style={{
-      position: 'relative',
-      width: '100%', height: 600,
-      borderRadius: 16, overflow: 'hidden',
       background: 'radial-gradient(ellipse at center 30%, #1A0F2E 0%, #0A0814 70%)',
       display: 'flex', flexDirection: 'column',
     }}>
       <style>{`
-        @keyframes filmstripScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        @keyframes recapRBulb {
+          0%, 100% { box-shadow: 0 0 8px rgba(236,72,153,0.55), 0 0 14px rgba(236,72,153,0.30); }
+          50%      { box-shadow: 0 0 18px rgba(255,180,210,0.95), 0 0 36px rgba(236,72,153,0.65); }
+        }
+        @keyframes recapRBannerSlide {
+          0%   { transform: translateX(40px); opacity: 0; filter: blur(6px); }
+          15%  { transform: translateX(0); opacity: 1; filter: blur(0); }
+          85%  { transform: translateX(0); opacity: 1; }
+          100% { transform: translateX(-40px); opacity: 0; filter: blur(6px); }
+        }
+        @keyframes recapRBgPan {
+          0%   { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
         }
       `}</style>
       {/* Thanks-Card oben mittig */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <ThanksCardMock compact />
       </div>
-      {/* Filmstrip unten — scrollt langsam von rechts nach links */}
+      {/* Marquee unten */}
       <div style={{
-        height: 200, position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 30%)',
-        borderTop: '1px solid rgba(236,72,153,0.3)',
+        position: 'relative',
+        height: 200, margin: '0 24px 24px',
+        borderRadius: 14,
+        background: `
+          radial-gradient(ellipse at 50% 50%, rgba(236,72,153,0.18) 0%, transparent 70%),
+          linear-gradient(135deg, #1a0f2e 0%, #2a1840 50%, #1a0f2e 100%)
+        `,
+        backgroundSize: '200% 100%, 100% 100%',
+        animation: 'recapRBgPan 8s ease-in-out infinite alternate',
+        border: '2px solid rgba(236,72,153,0.45)',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.55), 0 0 28px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
       }}>
-        {/* Sprocket-Holes-Decoration oben + unten */}
-        <div aria-hidden style={{
-          position: 'absolute', left: 0, right: 0, top: 4, height: 12,
-          backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 16px, rgba(255,255,255,0.18) 16px 24px)',
-        }} />
-        <div aria-hidden style={{
-          position: 'absolute', left: 0, right: 0, bottom: 4, height: 12,
-          backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 16px, rgba(255,255,255,0.18) 16px 24px)',
-        }} />
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          height: '100%', padding: '24px 12px',
-          width: 'max-content',
-          animation: 'filmstripScroll 30s linear infinite',
+        {/* Pulsende Pink-Bulbs am Rand */}
+        {(() => {
+          const N = 22; // total bulbs
+          const bulbs = [];
+          // top edge
+          for (let i = 0; i < 8; i++) bulbs.push({ x: 8 + (i / 7) * 84, y: 6, i: i });
+          // bottom edge
+          for (let i = 0; i < 8; i++) bulbs.push({ x: 8 + (i / 7) * 84, y: 94, i: i + 8 });
+          // left edge
+          for (let i = 0; i < 3; i++) bulbs.push({ x: 4, y: 25 + (i / 2) * 50, i: i + 16 });
+          // right edge
+          for (let i = 0; i < 3; i++) bulbs.push({ x: 96, y: 25 + (i / 2) * 50, i: i + 19 });
+          return bulbs.map(b => (
+            <span key={b.i} aria-hidden style={{
+              position: 'absolute',
+              left: `${b.x}%`, top: `${b.y}%`,
+              transform: 'translate(-50%, -50%)',
+              width: 8, height: 8, borderRadius: '50%',
+              background: 'radial-gradient(circle, #fde6f0 0%, #ec4899 60%, #a21247 100%)',
+              animation: `recapRBulb 1.6s ease-in-out ${(b.i * 0.13) % 1.2}s infinite`,
+            }} />
+          ));
+        })()}
+        {/* Inner Banner */}
+        <div key={idx} style={{
+          display: 'flex', alignItems: 'center', gap: 'clamp(20px, 3vw, 40px)',
+          padding: '0 clamp(40px, 5vw, 80px)',
+          animation: 'recapRBannerSlide 4.5s ease both',
         }}>
-          {strip.map((item, i) => (
-            <div key={i} style={{
-              flexShrink: 0,
-              width: 220, height: 140,
-              borderRadius: 10,
-              background: `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
-              border: `1.5px solid ${item.winnerColor}66`,
-              boxShadow: `0 6px 16px rgba(0,0,0,0.4), 0 0 14px ${item.winnerColor}33`,
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              padding: '12px 14px',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 26, lineHeight: 1 }}>{item.catEmoji}</span>
-                <span style={{
-                  fontSize: 10, fontWeight: 900, color: item.winnerColor,
-                  textTransform: 'uppercase', letterSpacing: '0.12em',
-                }}>{item.catLabel}</span>
-              </div>
-              <div style={{
-                fontSize: 12, fontWeight: 700, color: '#cbd5e1',
-                lineHeight: 1.3, overflow: 'hidden',
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-              }}>{item.question}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: `${item.winnerColor}33`,
-                  border: `1.5px solid ${item.winnerColor}`,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14,
-                }}>{item.winnerEmoji}</span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {item.winnerName}
-                </span>
-                <span style={{ fontSize: 10, color: '#94A3B8', marginLeft: 'auto' }}>→ {item.answer}</span>
-              </div>
+          <span style={{ fontSize: 'clamp(48px, 6vw, 80px)', lineHeight: 1 }}>{cur.catEmoji}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{
+              fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 900,
+              color: cur.winnerColor, textTransform: 'uppercase', letterSpacing: '0.18em',
+            }}>{cur.catLabel}</span>
+            <span style={{
+              fontSize: 'clamp(20px, 2.4vw, 32px)', fontWeight: 800,
+              color: '#fde6f0', lineHeight: 1.2, fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
+            }}>{cur.question}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <span style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: `${cur.winnerColor}33`,
+                border: `2px solid ${cur.winnerColor}`,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18,
+              }}>{cur.winnerEmoji}</span>
+              <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: cur.winnerColor }}>{cur.winnerName}</span>
+              <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#cbd5e1' }}>→ {cur.answer}</span>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+// ─── Variante S: Memory-Card-Flip (Brand-konsistent) ─────────────────────────
+function ThanksRecapVariantS() {
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    const id = window.setInterval(() => setIdx(i => (i + 1) % RECAP_MOCK.length), 4000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at center 40%, #1A0F2E 0%, #0A0814 70%)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <style>{`
+        @keyframes recapSCardFlipIn {
+          0%   { opacity: 0; transform: translateY(-30px) rotateY(180deg); }
+          50%  { opacity: 1; transform: translateY(8px) rotateY(180deg); }
+          100% { opacity: 1; transform: translateY(0) rotateY(0deg); }
+        }
+        @keyframes recapSCardFlipOut {
+          0%   { opacity: 1; transform: translateX(0) rotateY(0deg); }
+          100% { opacity: 0; transform: translateX(-30px) rotateY(180deg); }
+        }
+      `}</style>
+      {/* Thanks-Card oben mittig */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <ThanksCardMock compact />
+      </div>
+      {/* 5 Card-Slots nebeneinander, top-card flippt im Cycle */}
+      <div style={{
+        position: 'relative', height: 220, margin: '0 24px 32px',
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        gap: 'clamp(8px, 1.2vw, 18px)',
+        perspective: '1400px',
+      }}>
+        {RECAP_MOCK.map((item, i) => {
+          const isFlipped = i <= idx;
+          return (
+            <div key={i} style={{
+              flex: '0 0 auto',
+              width: 'clamp(110px, 12vw, 170px)',
+              aspectRatio: '3 / 4',
+              perspective: '1200px',
+              transition: 'transform 0.5s cubic-bezier(0.34,1.4,0.5,1)',
+              transform: i === idx ? 'scale(1.06) translateY(-6px)' : 'scale(1) translateY(0)',
+              filter: i === idx ? `drop-shadow(0 0 24px ${item.winnerColor}aa)` : 'none',
+            }}>
+              <div style={{
+                position: 'relative', width: '100%', height: '100%',
+                transformStyle: 'preserve-3d',
+                transition: 'transform 0.85s cubic-bezier(0.34, 1.46, 0.64, 1)',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              }}>
+                {/* Card-Back — Cross-Hatch Pattern (Brand-konsistent zu TeamsReveal) */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  borderRadius: 14,
+                  background:
+                    'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+                    'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+                    'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+                  border: '2px solid rgba(236,72,153,0.55)',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.55), inset 0 0 24px rgba(236,72,153,0.18)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
+                }}>
+                  <div aria-hidden style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+                      'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+                  }} />
+                  <span style={{ fontSize: 32, color: '#FBCFE8', fontWeight: 900,
+                    fontFamily: "'Stinger Fit', system-ui, sans-serif", letterSpacing: '0.04em', position: 'relative' }}>
+                    🐺
+                  </span>
+                </div>
+                {/* Card-Front — Recap-Inhalt */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  borderRadius: 14,
+                  background: `linear-gradient(180deg, ${item.winnerColor}22, ${item.winnerColor}10)`,
+                  border: `2px solid ${item.winnerColor}`,
+                  boxShadow: `0 8px 22px rgba(0,0,0,0.5), inset 0 0 30px ${item.winnerColor}22`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 8px', gap: 6,
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 'clamp(28px, 3.6vw, 48px)', lineHeight: 1 }}>{item.catEmoji}</span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 900, color: item.winnerColor,
+                      textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center',
+                    }}>{item.catLabel}</span>
+                  </div>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: '50%',
+                    background: `${item.winnerColor}33`,
+                    border: `2px solid ${item.winnerColor}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22,
+                  }}>{item.winnerEmoji}</div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, color: '#F1F5F9',
+                    textAlign: 'center', lineHeight: 1.2,
+                  }}>{item.answer}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
@@ -2624,22 +2696,22 @@ export default function AnimationsLabPage() {
       render: (r) => <FlyingPotatoDemo replay={r} />,
     },
     {
-      label: 'Q', title: 'Recap-A: BG-Slideshow hinter Thanks-Card',
-      blurb: 'Wolf-Favorit: Vollbild-BG-Layer hinter der Thanks-Card cycelt durch alle Quiz-Fragen — Kategorie · Frage · Winner-Avatar · richtige Antwort. Cross-Fade ~5s pro Slide, subtle 30 % Opacity damit die Thanks-Card im Vordergrund bleibt.',
+      label: 'Q', title: 'Recap-Q: Bierdeckel-Tresen (Pub-Vibe)',
+      blurb: 'Runde Bierdeckel rutschen über warmes Holz von rechts nach links. Pro Bierdeckel: Cat-Emoji + Winner-Avatar + Antwort. Leichte Rotation pro Deckel, kondensierte Wassertropfen am Holz, dezenter „CozyQuiz"-Branding-Stempel. Pub-Atmosphäre passend zum Hauptmarkt.',
       keepAlive: true, minHeight: 600,
-      render: (_r) => <ThanksRecapVariantA />,
+      render: (_r) => <ThanksRecapVariantQ />,
     },
     {
-      label: 'R', title: 'Recap-B: Polaroid-Stack neben Thanks-Card',
-      blurb: 'Polaroid-Stack mit echten Kategorie-Polaroids fliegt rein, top-Polaroid wechselt alle 3.5s. Tilt-Rotations für Tiefe, dezenter Drop-Schatten. Cinematic & retro.',
+      label: 'R', title: 'Recap-R: Vintage-Marquee (Theater-Banner)',
+      blurb: 'Old-Hollywood-Theatermarquee mit pulsenden Pink-Bulbs am Rand. Inneres Banner scrollt rein und zeigt pro Frage Cat + Winner + Antwort in großer Marquee-Schrift. Warmes Cinema-Gefühl.',
       keepAlive: true, minHeight: 600,
-      render: (_r) => <ThanksRecapVariantB />,
+      render: (_r) => <ThanksRecapVariantR />,
     },
     {
-      label: 'S', title: 'Recap-C: Filmstrip / Endcredits',
-      blurb: 'Horizontaler Filmstrip am unteren Rand scrollt langsam von rechts nach links. Pro Frame Mini-Karte mit Cat-Icon + Frage + Winner-Avatar. Endlos-Loop, wie Kino-Credits.',
+      label: 'S', title: 'Recap-S: Memory-Card-Flip (Brand-konsistent)',
+      blurb: 'Cards flippen sequenziell (Y-rotate 180°), eine nach der anderen. Card-Back = Cross-Hatch wie TeamsReveal — Brand-Bogen vom Quiz-Anfang bis Outro. Card-Front zeigt Cat + Winner + Frage + Antwort. Klassisches Spielkarten-Reveal.',
       keepAlive: true, minHeight: 600,
-      render: (_r) => <ThanksRecapVariantC />,
+      render: (_r) => <ThanksRecapVariantS />,
     },
   ];
 

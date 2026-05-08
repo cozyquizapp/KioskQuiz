@@ -18569,11 +18569,14 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
   // 2026-05-07 v8 (Wolf 'gib dem wolf eurovision sprueche'): im ESC-Mode
   // (=troeteBoost) eigener Slogan-Pool mit Douze-Points / Allez-Allez und
   // klassischen ESC-Phrasen plus weiterhin der Tröötet als Audio-Marker.
+  // 2026-05-09 (Wolf): Toot-Slogans raus — der Speech-Bubble-Text und die
+  // visuelle Tröten-Pose sind nicht synchronisiert (separate Cycles), daher
+  // sagt der Wolf 'Toot' obwohl er gerade nicht trötet. Honest-Fix: Toot-Text
+  // nur über die visuelle Pose kommunizieren.
   const slogans: Slogan[] = troeteBoost
     ? (lang === 'de'
         ? [
             { text: 'Douze points!', mouths: 3 },
-            { text: '🎺 Trööööt!', mouths: 5 },
             { text: 'And the winner is…', mouths: 5 },
             { text: 'Allez, allez!', mouths: 3 },
             { text: 'Glückwunsch Europa!', mouths: 5 },
@@ -18581,7 +18584,6 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
           ]
         : [
             { text: 'Douze points!', mouths: 3 },
-            { text: '🎺 Toooot!', mouths: 4 },
             { text: 'And the winner is…', mouths: 5 },
             { text: 'Allez, allez!', mouths: 3 },
             { text: 'Congratulations Europe!', mouths: 5 },
@@ -18590,7 +18592,6 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
     : (lang === 'de'
         ? [
             { text: 'Glückwunsch!', mouths: 3 },
-            { text: '🎺 Trööööt!', mouths: 5 },
             { text: 'Was für ein Quiz!', mouths: 4 },
             { text: 'Ihr seid wild!', mouths: 3 },
             { text: 'Sauber!', mouths: 2 },
@@ -18598,7 +18599,6 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
           ]
         : [
             { text: 'Congrats!', mouths: 2 },
-            { text: '🎺 Toooot!', mouths: 4 },
             { text: 'What a quiz!', mouths: 3 },
             { text: 'You\'re wild!', mouths: 2 },
             { text: 'Nice one!', mouths: 2 },

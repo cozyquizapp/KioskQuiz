@@ -2587,6 +2587,8 @@ type RulesSlide = {
   treeShowcase?: boolean;
   /** Zeigt Ability-Badges (Bann, Schild, Tauschen, Stapeln) als Icon-Strip unter den Lines. */
   abilities?: AbilityBadge[];
+  /** Wenn true, ersetzt das Slide-Icon-Emoji durch ein Pärchen Joker-PNGs (Boy+Girl) mit Wiggle. */
+  heroJokers?: boolean;
 };
 
 // Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
@@ -2639,6 +2641,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker-Bonus'),
       color: '#EC4899',
+      heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld'),
         t('rules.slide4.line2', 'Max. 2 Joker pro Team'),
@@ -2738,16 +2741,17 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker Bonus'),
       color: '#EC4899',
+      heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus tile'),
         t('rules.slide4.line2', 'Max 2 jokers per team'),
       ],
       grid: {
         cells: [
-          ['A', 'A', null, 'A'],
-          ['A', 'A', null, 'A'],
+          ['A', 'A', '⭐',  'A'],   // ⭐ next to 2×2 block top-right (bonus tile)
+          ['A', 'A',  null, 'A'],
           [null, null, null, 'A'],
-          [null, null, null, 'A'],
+          [null, null, '⭐', 'A'],   // ⭐ next to 4-row bottom-left (bonus tile)
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Both patterns count'),
@@ -3900,9 +3904,43 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         textAlign: 'center',
         padding: '0 6vw',
       }}>
+        {/* 2026-05-09 (Wolf-Wunsch 'CozyQuiz in eine typische App-Card —
+            konsistenter, etwas grösser, schön prominent mittig'): Subtitle +
+            Title in einer Pink-Border-Card mit Glow + dark BG + Cross-Hatch-
+            Pattern — gleicher Look wie Format-Cards auf /formats und Card-Backs
+            in TeamsRevealView. Goldlinien bleiben als Innen-Decorations.
+            Card poppt nach dem Sunrise-Light rein (Delay 1.2s). */}
+        <div style={{
+          position: 'relative',
+          padding: 'clamp(28px, 4.5vh, 60px) clamp(36px, 6.5vw, 100px)',
+          borderRadius: 'clamp(20px, 2.4vw, 32px)',
+          background:
+            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.28) 0%, transparent 60%),' +
+            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.22) 0%, transparent 55%),' +
+            'linear-gradient(135deg, rgba(31,26,46,0.92) 0%, rgba(20,16,31,0.92) 60%, rgba(15,8,23,0.92) 100%)',
+          border: `2.5px solid rgba(${accentRgb},0.65)`,
+          boxShadow: `0 16px 56px rgba(0,0,0,0.55), 0 0 80px rgba(${accentRgb},0.32), inset 0 0 48px rgba(${accentRgb},0.14)`,
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(14px, 2vh, 28px)',
+          animation: 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
+          opacity: 0,
+        }}>
+          {/* Cross-Hatch-Pattern (matcht Card-Back-Look in TeamsReveal) */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            backgroundImage:
+              `repeating-linear-gradient(45deg, rgba(${accentRgb},0.05) 0 2px, transparent 2px 22px),` +
+              `repeating-linear-gradient(-45deg, rgba(${accentRgb},0.04) 0 2px, transparent 2px 22px)`,
+            pointerEvents: 'none',
+          }} />
+
         {/* Subtitle — Letter-Cascade. Jeder Buchstabe erscheint mit eigenem
             stagger 0.04s, fade-in + letter-spacing-zoom (von weit zu normal). */}
         <div style={{
+          position: 'relative',
           display: 'inline-flex',
           fontSize: 'clamp(15px, 1.6vw, 24px)', fontWeight: 900,
           letterSpacing: '0.32em', textTransform: 'uppercase',
@@ -3961,7 +3999,11 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               // zusaetzlich × + ESC-Logo daneben (Stinger-Composition); Standard
               // zeigt nur den Wordmark Solo.
               fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-              fontSize: eurovisionMode ? 'clamp(52px, 7vw, 118px)' : 'clamp(72px, 9vw, 158px)',
+              // 2026-05-09 (Wolf 'etwas größer und schön prominent mittig'):
+              // Standard-Wordmark von clamp(72px,9vw,158px) auf (82px,10vw,178px)
+              // — ~13% größer. Eurovision behält Komposition (X + Logo brauchen
+              // Platz daneben).
+              fontSize: eurovisionMode ? 'clamp(52px, 7vw, 118px)' : 'clamp(82px, 10vw, 178px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
               lineHeight: 0.96,
@@ -4091,6 +4133,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             </div>
           )}
         </div>
+        </div>{/* /Welcome-App-Card */}
 
         {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein.
             2026-05-08 (Wolf 'wirkt eher öde'): Wolf+Sprechblase früher (2.6s
@@ -4191,6 +4234,13 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         @keyframes qqIntroSubLetter {
           0%   { opacity: 0; transform: translateY(-12px); letter-spacing: 0.8em; filter: blur(8px); }
           100% { opacity: 0.92; transform: translateY(0); letter-spacing: 0; filter: blur(0); }
+        }
+        /* 2026-05-09 (Wolf-Wunsch 'CozyQuiz in App-Card prominent'): Card poppt
+           rein nach Sunrise-Light. Subtle scale+blur fuer Stage-Entry. */
+        @keyframes qqIntroWelcomeCard {
+          0%   { opacity: 0; transform: translateY(20px) scale(0.92); filter: blur(8px); }
+          60%  { opacity: 1; transform: translateY(-3px) scale(1.02); filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
         @keyframes qqIntroLineExpand {
           0%   { opacity: 0; transform: scaleX(0); }
@@ -4476,13 +4526,29 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           {/* 2026-05-05 (Wolf 'alle Emojis in Regeln bouncen, sync zum Wave'):
               continuous qqCatNameWave wie Title-Buchstaben. Delay 1.3s = Title-
               Wave-Init (1.0s) + halbe Cascade (~0.3s) → Emoji peakt synchron
-              mit mittlerem Buchstaben statt asynchron dagegen zu wirken. */}
-          <span style={{
-            display: 'inline-block',
-            fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
-            filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-            animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
-          }}><QQEmojiIcon emoji={slide.icon}/></span>
+              mit mittlerem Buchstaben statt asynchron dagegen zu wirken.
+              2026-05-09 (Wolf-Wunsch 'Joker-PNGs prominent auf Joker-Slide'):
+              Bei heroJokers ein Pärchen Joker-PNGs (Boy+Girl) als Hero, mit
+              Wiggle-Animation in Counter-Phase für lebendige Doppel-Pose. */}
+          {slide.heroJokers ? (
+            <div style={{
+              display: 'inline-flex', alignItems: 'flex-end', gap: 'clamp(8px, 1vw, 18px)',
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}>
+              <JokerIcon i={0} size={'clamp(72px, 10vw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
+                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 0.5s infinite' }} />
+              <JokerIcon i={1} size={'clamp(72px, 10vw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
+                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 1.7s infinite' }} />
+            </div>
+          ) : (
+            <span style={{
+              display: 'inline-block',
+              fontSize: 'clamp(64px,9vw,110px)', lineHeight: 1,
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}><QQEmojiIcon emoji={slide.icon}/></span>
+          )}
           <div style={{
             fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 900, letterSpacing: '0.1em',
             textTransform: 'uppercase', color: `${slide.color}88`,
@@ -16310,7 +16376,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             // Panels gleichermassen, kein Layout-Shift).
             height: 'clamp(460px, 60vh, 660px)',
             animation: 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
-            position: 'relative', overflow: 'hidden',
+            overflow: 'hidden',
             // Flex-Column → Inner-Content kann via flex:1 auf volle Card-Höhe
             // wachsen + sich vertikal zentrieren.
             display: 'flex', flexDirection: 'column',

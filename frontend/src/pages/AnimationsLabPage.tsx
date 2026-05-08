@@ -1970,19 +1970,21 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
   const fromIdx = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
   const toIdx = sequence[stepIdx].to;
 
-  let potatoX: number, potatoY: number, potatoRotation: number, potatoBounceY: number;
+  let potatoX: number, potatoY: number, potatoRotation: number, potatoBounceY: number, potatoBaseOffset: number;
+  // potatoBaseOffset: positiv = unter dem Avatar, 0 = auf Avatar-Höhe.
+  // Während Hold: Kartoffel sitzt ~50 px UNTER dem Avatar mittig + bounct nach oben.
   if (stepProgress < HOLD_FRAC) {
-    // Hold-Phase: Kartoffel beim aktuellen Team, bouncing
+    // Hold-Phase: Kartoffel mittig unter Avatar, bouncing nach oben
     const holdProgress = stepProgress / HOLD_FRAC; // 0..1
-    potatoX = xForTeam(toIdx === fromIdx ? toIdx : (stepIdx === 0 ? 0 : sequence[stepIdx - 1].to));
-    // Eigentlich wir sind auf dem PREVIOUS to (stepIdx-1), bzw step 0 starts at fromIdx
     if (stepIdx === 0) potatoX = xForTeam(0);
     else potatoX = xForTeam(sequence[stepIdx - 1].to);
     potatoY = yBase;
-    potatoBounceY = -Math.abs(Math.sin(holdProgress * Math.PI * 4)) * 14; // 4 bounces
-    potatoRotation = holdProgress * 360 * 2; // 2 Umdrehungen während Hold
+    potatoBaseOffset = 56; // px unter Avatar-Mitte (Avatar ist 76 px hoch → unten + ~12 gap)
+    // Höhere Bounces (28 px), Anti-Aliasing über sin² für „springt mit Anlauf"
+    potatoBounceY = -Math.abs(Math.sin(holdProgress * Math.PI * 4)) * 32;
+    potatoRotation = holdProgress * 360 * 2;
   } else if (stepProgress < HOLD_FRAC + THROW_FRAC) {
-    // Wurf-Phase: fliegt zum nächsten
+    // Wurf-Phase: fliegt zum nächsten Avatar
     const throwProgress = (stepProgress - HOLD_FRAC) / THROW_FRAC;
     const fromTeam = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
     const toTeam = sequence[stepIdx].to;
@@ -1990,14 +1992,18 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
       ? 2 * throwProgress * throwProgress
       : 1 - Math.pow(-2 * throwProgress + 2, 2) / 2;
     potatoX = xForTeam(fromTeam) + (xForTeam(toTeam) - xForTeam(fromTeam)) * t;
-    const arcHeight = 28;
+    const arcHeight = 36;
     potatoY = yBase;
-    potatoBounceY = -Math.sin(throwProgress * Math.PI) * arcHeight;
+    // Während Wurf: Start unten beim Sender (offset 56), Bogen über Avatar-Höhe,
+    // Land unten beim Empfänger (offset 56)
+    potatoBaseOffset = 56 - Math.sin(throwProgress * Math.PI) * arcHeight;
+    potatoBounceY = 0;
     potatoRotation = throwProgress * 720;
   } else {
-    // Land-Phase: settle beim neuen Team
+    // Land-Phase: settle unter neuem Team
     potatoX = xForTeam(sequence[stepIdx].to);
     potatoY = yBase;
+    potatoBaseOffset = 56;
     potatoBounceY = 0;
     potatoRotation = 0;
   }
@@ -2116,7 +2122,7 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
             <div key={i} aria-hidden style={{
               position: 'absolute',
               left: `${potatoX}%`, top: `${potatoY}%`,
-              transform: `translate(-50%, calc(-50% + ${potatoBounceY}px))`,
+              transform: `translate(-50%, calc(-50% + ${potatoBaseOffset + potatoBounceY}px))`,
               width: 16, height: 16, borderRadius: '50%',
               background: 'radial-gradient(circle, rgba(180,180,180,0.7) 0%, rgba(120,120,120,0.3) 50%, transparent 100%)',
               animation: `potatoSmoke 0.6s ease-out ${delay}s infinite`,
@@ -2124,19 +2130,16 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
             }} />
           ))}
 
-        {/* Fliegende/Bouncende Kartoffel */}
+        {/* Fliegende/Bouncende Kartoffel — mittig X, Y = Avatar-Mitte +
+            potatoBaseOffset (unter Avatar) + potatoBounceY (Bounce nach oben). */}
         <div style={{
           position: 'absolute',
           left: `${potatoX}%`, top: `${potatoY}%`,
-          transform: `translate(-50%, calc(-50% + ${potatoBounceY}px)) rotate(${potatoRotation}deg)`,
+          transform: `translate(-50%, calc(-50% + ${potatoBaseOffset + potatoBounceY}px)) rotate(${potatoRotation}deg)`,
           fontSize: 38,
           lineHeight: 1,
           filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.7)) drop-shadow(0 0 4px rgba(255,140,0,0.6))',
           pointerEvents: 'none',
-          // Während Hold: Avatar-side-Position (offset rechts vom Avatar)
-          marginLeft: stepProgress < HOLD_FRAC ? 38 : 0,
-          marginTop: stepProgress < HOLD_FRAC ? -8 : 0,
-          transition: 'margin 0.15s',
         }}>🥔</div>
 
         {/* Status-Label oben */}

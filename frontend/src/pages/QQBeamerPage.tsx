@@ -18971,129 +18971,291 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
 // wenn eurovisionMode-Flag zwischen Renders kippt). Wenn ESC-Punkte-Geste
 // spaeter zurueck soll, separate Component mit Hooks im stabilen scope.
 
+// 2026-05-09 (Wolf-Refactor): ThanksView komplett neu. Sieger-Polaroid (schräg)
+// + QR-Code + kleiner Wolf nebeneinander höhen-versetzt. Unten News-Ticker
+// Bauchbinde der durch alle Quiz-Fragen läuft + Sonja+Claude-Dank-Card am Ende.
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const summaryUrl = typeof window !== 'undefined' && roomCode
     ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
     : '';
+
+  // Sieger ermitteln (höchster total = cells + bonus + awards)
+  const cellsByTeam: Record<string, number> = {};
+  for (const t of s.teams) cellsByTeam[t.id] = 0;
+  for (const row of s.grid) for (const cell of row) {
+    if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
+  }
+  const awards = s.endAwards;
+  const awardPoints: Record<string, number> = {};
+  for (const t of s.teams) awardPoints[t.id] = 0;
+  if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
+  if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
+  if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
+  const winner = [...s.teams]
+    .map(t => ({
+      team: t,
+      total: (cellsByTeam[t.id] ?? 0)
+        + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
+        + (awardPoints[t.id] ?? 0),
+    }))
+    .sort((a, b) => b.total - a.total)[0]?.team;
+
   return (
     <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '48px 64px', position: 'relative',
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'space-between',
+      padding: '40px 48px 0', position: 'relative', height: '100%',
     }}>
       <Fireflies color="rgba(236,72,153,0.40)" />
+      <style>{`
+        @keyframes qqThanksTickerScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
+        }
+        @keyframes qqThanksPolaroidWobble {
+          0%, 100% { transform: rotate(-4deg); }
+          50%      { transform: rotate(-2.5deg); }
+        }
+        @keyframes qqThanksCrownBob {
+          0%, 100% { transform: translate(-50%, 0) rotate(-6deg); }
+          50%      { transform: translate(-50%, -4px) rotate(4deg); }
+        }
+      `}</style>
 
-      {/* 2026-05-06 (Wolf 'sleepy wolf auf die allerletzte Page'): Wolf macht
-          Feierabend unten links. Schlafen-Mode mit Z-Cycle. Gleiche Position
-          wie der Lobby-Wolf — Brand-Konsistenz. */}
+      {/* Hero-Card: Headline + 3-Spalten-Body (Polaroid · QR · Wolf) */}
       <div style={{
-        position: 'absolute',
-        left: 'clamp(20px, 3vw, 60px)',
-        bottom: 'clamp(20px, 3vh, 50px)',
-        zIndex: 6,
-        pointerEvents: 'none',
-        animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 0.6s both',
-      }}>
-        <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 240px)" mode="schlafen" />
-      </div>
-      {/* 2026-05-08 (Aurora-Vivid): Thanks-Card komplett auf Brand-Pink/Indigo
-          umgestellt — vorher Sepia-BG + Gold-Border + Gold-Headline. */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32,
-        padding: 'clamp(40px, 5vh, 72px) clamp(48px, 5vw, 96px)', borderRadius: 24,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
+        padding: 'clamp(28px, 3.5vh, 48px) clamp(36px, 4vw, 72px)',
+        borderRadius: 24,
         background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
         border: '2px solid rgba(236,72,153,0.4)',
         boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
-        maxWidth: 'min(94vw, 1300px)',
+        maxWidth: 'min(94vw, 1400px)', width: '100%',
         animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
+        position: 'relative', zIndex: 5,
       }}>
         <div style={{
-          fontSize: 'clamp(36px, 4.5vw, 64px)', fontWeight: 900,
+          fontSize: 'clamp(30px, 3.8vw, 56px)', fontWeight: 900,
           color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
           textShadow: '0 0 40px rgba(236,72,153,0.42)',
         }}>
-          <QQEmojiIcon emoji="🎉"/> {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+          🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
+
+        {/* 3-Spalten-Layout: Polaroid · QR-Code · kleiner Wolf, höhen-versetzt */}
         <div style={{
-          fontSize: 'clamp(18px, 1.9vw, 24px)', fontWeight: 700,
-          color: '#cbd5e1', textAlign: 'center', lineHeight: 1.45,
-          maxWidth: 680,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(24px, 3vw, 56px)', flexWrap: 'wrap',
+          width: '100%', marginTop: 6,
         }}>
-          {lang === 'de'
-            ? '📣 Erzählt euren Freunden vom CozyQuiz — und scannt den Code für eure Team-Stats 🎁'
-            : '📣 Tell your friends about CozyQuiz — and scan the code for your team stats 🎁'}
-        </div>
-        {summaryUrl && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 36, marginTop: 4 }}>
+          {/* Polaroid links — schräg geklebt, höher positioniert */}
+          {winner && (
             <div style={{
-              padding: 14, borderRadius: 16,
-              background: '#ffffff',
-              boxShadow: '0 0 32px rgba(236,72,153,0.40), 0 4px 16px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(236,72,153,0.42)',
+              transform: 'translateY(-12px)',
+              animation: 'qqThanksPolaroidWobble 5s ease-in-out infinite',
             }}>
-              <QRCodeSVG value={summaryUrl} size={240} bgColor="#ffffff" fgColor="#0A0814" level="M" />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340 }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC' }}>
-                <QQEmojiIcon emoji="📱"/> {lang === 'de' ? 'Scannt euer Ergebnis' : 'Scan your result'}
+              <div style={{
+                position: 'relative',
+                width: 'clamp(180px, 19vw, 260px)',
+                padding: '18px 16px 50px',
+                background: '#fafaf5',
+                borderRadius: 6,
+                boxShadow:
+                  '0 16px 40px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.35),' +
+                  'inset 0 1px 0 rgba(255,255,255,0.5)',
+                border: '1px solid rgba(255,255,255,0.4)',
+              }}>
+                {/* Foto-Bereich */}
+                <div style={{
+                  width: '100%', aspectRatio: '4 / 4.4',
+                  background: `radial-gradient(circle at 50% 40%, ${winner.color}55 0%, ${winner.color}22 50%, #1a1424 100%)`,
+                  borderRadius: 4,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative', overflow: 'visible',
+                }}>
+                  {/* Krone über dem Avatar */}
+                  <span aria-hidden style={{
+                    position: 'absolute', left: '50%', top: -22,
+                    fontSize: 'clamp(40px, 4.5vw, 64px)', lineHeight: 1,
+                    pointerEvents: 'none',
+                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(251,191,36,0.7))',
+                    animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
+                    zIndex: 5,
+                  }}>👑</span>
+                  <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji}
+                    size={'70%'} />
+                </div>
+                {/* Caveat-handgeschriebene Notiz */}
+                <div style={{
+                  marginTop: 10, textAlign: 'center',
+                  fontFamily: "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
+                  fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 700,
+                  color: '#1a1424', lineHeight: 1.1,
+                }}>
+                  🏆 {winner.name}
+                </div>
               </div>
-              <div style={{ fontSize: 17, color: '#94a3b8', lineHeight: 1.55, whiteSpace: 'pre-line' }}>
-                {lang === 'de'
-                  ? '• Eure Team-Stats\n• Feedback & Bugs\n• Nächste Quiz-Termine'
-                  : '• Your team stats\n• Feedback & bugs\n• Upcoming events'}
+            </div>
+          )}
+
+          {/* QR-Code Mitte */}
+          {summaryUrl && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            }}>
+              <div style={{
+                padding: 12, borderRadius: 14,
+                background: '#ffffff',
+                boxShadow: '0 0 28px rgba(236,72,153,0.40), 0 4px 14px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(236,72,153,0.42)',
+              }}>
+                <QRCodeSVG value={summaryUrl} size={180} bgColor="#ffffff" fgColor="#0A0814" level="M" />
+              </div>
+              <div style={{
+                fontSize: 13, fontWeight: 900, color: '#cbd5e1',
+                textTransform: 'uppercase', letterSpacing: '0.14em', textAlign: 'center',
+              }}>
+                📱 {lang === 'de' ? 'Stats scannen' : 'Scan stats'}
               </div>
             </div>
+          )}
+
+          {/* Kleiner Wolf rechts — höhen-versetzt nach unten */}
+          <div style={{
+            transform: 'translateY(20px)',
+            pointerEvents: 'none',
+          }}>
+            <AnimatedCozyWolf widthCss="clamp(120px, 13vw, 180px)" mode="schlafen" />
           </div>
-        )}
-        {/* Prominent CozyWolf Signatur */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '10px 22px', borderRadius: 999,
-          background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
-          border: '1.5px solid rgba(236,72,153,0.40)',
-          boxShadow: '0 4px 18px rgba(0,0,0,0.4), 0 0 24px rgba(236,72,153,0.18)',
-          marginTop: 4,
-        }}>
-          <img
-            src="/logo.png"
-            alt=""
-            style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
-          />
-          <span style={{
-            fontSize: 16, fontWeight: 900, color: '#cbd5e1', letterSpacing: '0.04em',
-          }}>
-            {lang === 'de' ? 'ein' : 'a'}
-          </span>
-          <span style={{
-            fontSize: 20, fontWeight: 900, color: '#EC4899',
-            letterSpacing: '0.04em',
-            textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-          }}>
-            CozyWolf
-          </span>
-          <span style={{
-            fontSize: 16, fontWeight: 900, color: '#cbd5e1', letterSpacing: '0.04em',
-          }}>
-            {lang === 'de' ? 'Erlebnis' : 'experience'}
-          </span>
         </div>
+
         <div style={{
           display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
-          fontSize: 15, color: 'rgba(236,72,153,0.78)', fontWeight: 900,
+          fontSize: 13, color: 'rgba(236,72,153,0.78)', fontWeight: 900,
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           <span>play.cozyquiz.app</span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>📸</span>
-            @cozywolf.events
-          </span>
+          <span>📸 @cozywolf.events</span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🐺</span>
-            cozywolf.de
-          </span>
+          <span>🐺 cozywolf.de</span>
         </div>
       </div>
+
+      {/* News-Ticker Bauchbinde unten — durchläuft alle Quiz-Fragen + Sonja-Card */}
+      <ThanksNewsTicker state={s} lang={lang} />
+    </div>
+  );
+}
+
+function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  // Question-History aus dem state — falls vorhanden — als Recap-Items.
+  // Fallback: leerer Recap (zeigt nur die Sonja-Card).
+  const history = (s as any).questionHistory as Array<{
+    questionText?: string; category?: string;
+    correctTeamId?: string | null; correctTeamIds?: string[];
+  }> | undefined;
+  type RecapItem = {
+    catLabel: string; catEmoji: string; question: string;
+    winnerName: string; winnerEmoji?: string; winnerColor: string;
+  };
+  const items: RecapItem[] = [];
+  if (Array.isArray(history)) {
+    for (const h of history) {
+      const cat = (h.category ?? 'MUCHO') as keyof typeof QQ_CATEGORY_LABELS;
+      const catLabelObj = QQ_CATEGORY_LABELS[cat];
+      const catLabel = catLabelObj
+        ? (lang === 'de' ? catLabelObj.de : catLabelObj.en) ?? 'Frage'
+        : 'Frage';
+      const catEmoji = catLabelObj?.emoji ?? '❓';
+      const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
+      const winnerTeam = winnerId ? s.teams.find(t => t.id === winnerId) : null;
+      items.push({
+        catLabel,
+        catEmoji,
+        question: h.questionText ?? '—',
+        winnerName: winnerTeam?.name ?? (lang === 'de' ? 'niemand' : 'no one'),
+        winnerEmoji: winnerTeam?.emoji,
+        winnerColor: winnerTeam?.color ?? '#94A3B8',
+      });
+    }
+  }
+  // Spezial-Card: Sonja+Claude-Dank am Ende des Loops
+  const sonjaCard: RecapItem = {
+    catLabel: lang === 'de' ? 'Besonderer Dank' : 'Special Thanks',
+    catEmoji: '💜',
+    question: lang === 'de'
+      ? 'an Sonja fürs viele Zuhören & Testen — und an Claude fürs Mitbauen 🐺💜🦖'
+      : 'to Sonja for endless listening & testing — and to Claude for co-building 🐺💜🦖',
+    winnerName: 'Cozywolf',
+    winnerEmoji: '🐺',
+    winnerColor: '#EC4899',
+  };
+  const merged = items.length > 0 ? [...items, sonjaCard] : [sonjaCard];
+  // 3× repeat für nahtlosen Loop
+  const strip = [...merged, ...merged, ...merged];
+
+  return (
+    <div style={{
+      width: '100%', height: 156, marginTop: 24,
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        height: '100%', padding: '12px 0',
+        width: 'max-content',
+        animation: 'qqThanksTickerScroll 75s linear infinite',
+      }}>
+        {strip.map((item, i) => (
+          <div key={i} style={{
+            flexShrink: 0,
+            width: 240, height: 132,
+            borderRadius: 10,
+            background: `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
+            border: `1.5px solid ${item.winnerColor}66`,
+            boxShadow: `0 6px 16px rgba(0,0,0,0.4), 0 0 14px ${item.winnerColor}33`,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            padding: '12px 14px',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>{item.catEmoji}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 900, color: item.winnerColor,
+                textTransform: 'uppercase', letterSpacing: '0.12em',
+              }}>{item.catLabel}</span>
+            </div>
+            <div style={{
+              fontSize: 12, fontWeight: 700, color: '#cbd5e1',
+              lineHeight: 1.3, overflow: 'hidden',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            }}>{item.question}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                width: 26, height: 26, borderRadius: '50%',
+                background: `${item.winnerColor}33`,
+                border: `1.5px solid ${item.winnerColor}`,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14,
+              }}>{item.winnerEmoji ?? '🏆'}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {item.winnerName}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Edge-Fades */}
+      <div aria-hidden style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 60,
+        background: 'linear-gradient(90deg, #0A0814 0%, transparent 100%)',
+        pointerEvents: 'none', zIndex: 2,
+      }} />
+      <div aria-hidden style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 60,
+        background: 'linear-gradient(-90deg, #0A0814 0%, transparent 100%)',
+        pointerEvents: 'none', zIndex: 2,
+      }} />
     </div>
   );
 }

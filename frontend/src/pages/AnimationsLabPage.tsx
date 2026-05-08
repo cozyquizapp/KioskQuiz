@@ -1213,7 +1213,10 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                 transition: 'transform 1.15s cubic-bezier(0.34, 1.46, 0.64, 1)',
                 transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               }}>
-                {/* Rückseite — bunter Kreis mit ?-Sigil */}
+                {/* Rückseite — Kreis mit ?-Sigil (in derselben Position wie
+                    Avatar auf Vorderseite) + geblurrter Name darunter. So
+                    matcht das Layout beide Seiten und der Flip-Effekt zeigt
+                    visuelle Kontinuität (Kreis bleibt, Inhalt schärft sich). */}
                 <div style={{
                   position: 'absolute', inset: 0,
                   backfaceVisibility: 'hidden',
@@ -1222,11 +1225,27 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                   background: `radial-gradient(circle at 30% 30%, ${t.color}55 0%, ${t.color}1a 50%, rgba(15,23,42,0.95) 100%)`,
                   border: `2px solid ${t.color}88`,
                   boxShadow: `0 8px 24px rgba(0,0,0,0.45), inset 0 0 32px ${t.color}33`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 56, fontWeight: 900,
-                  color: `${t.color}cc`,
-                  textShadow: `0 0 18px ${t.color}88`,
-                }}>?</div>
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 10, padding: 14,
+                }}>
+                  <div style={{
+                    width: 104, height: 104, borderRadius: '50%',
+                    background: `${t.color}22`,
+                    border: `2px dashed ${t.color}77`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 48, fontWeight: 900,
+                    color: `${t.color}dd`,
+                    textShadow: `0 0 16px ${t.color}88`,
+                    flexShrink: 0,
+                  }}>?</div>
+                  <div style={{
+                    fontSize: 14, fontWeight: 900, color: t.color,
+                    textAlign: 'center', lineHeight: 1.1,
+                    letterSpacing: '-0.01em',
+                    filter: 'blur(7px)',
+                    opacity: 0.7,
+                  }}>{t.name}</div>
+                </div>
                 {/* Vorderseite — Avatar + Name */}
                 <div style={{
                   position: 'absolute', inset: 0,

@@ -1213,10 +1213,10 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                 transition: 'transform 1.15s cubic-bezier(0.34, 1.46, 0.64, 1)',
                 transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               }}>
-                {/* Rückseite — generischer CozyQuiz-Card-Back (Spielkarten-
-                    Style). Alle Cards sehen identisch aus → maximale
-                    Reveal-Spannung. Brand-Pink-Magenta-Gradient, dezentes
-                    Sparkle-Pattern, Wordmark zentral. */}
+                {/* Rückseite — Wolf-Avatar oben + „CozyQuiz" unten (spiegelt
+                    das Vorderseite-Layout: Avatar oben, Name unten). Wolf-SVG
+                    in Pink-Wrapper-Kreis (gleiche Größe wie Team-Avatar auf
+                    Vorderseite), darunter Stinger-Fit-Wordmark in Brand-Pink. */}
                 <div style={{
                   position: 'absolute', inset: 0,
                   backfaceVisibility: 'hidden',
@@ -1240,30 +1240,34 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                       'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
                     pointerEvents: 'none',
                   }} />
-                  {/* Center-Diamond Frame mit CozyQuiz-Wordmark */}
+                  {/* Wolf-Avatar im Pink-Wrapper-Kreis (matcht Vorderseite-Avatar-Größe) */}
                   <div style={{
+                    width: 104, height: 104, borderRadius: '50%',
+                    background: 'rgba(236,72,153,0.18)',
+                    border: '2.5px solid rgba(236,72,153,0.65)',
+                    boxShadow: '0 0 28px rgba(236,72,153,0.55)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    overflow: 'hidden',
                     position: 'relative',
-                    padding: '14px 18px',
-                    border: '1.5px solid rgba(236,72,153,0.6)',
-                    borderRadius: 12,
-                    background: 'rgba(31,26,46,0.65)',
-                    boxShadow: '0 0 24px rgba(236,72,153,0.35), inset 0 0 16px rgba(236,72,153,0.15)',
                   }}>
-                    <div style={{
-                      fontFamily: "'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                      fontSize: 17, fontWeight: 900,
-                      color: '#FBCFE8',
-                      letterSpacing: '0.04em',
-                      textShadow: '0 0 14px rgba(236,72,153,0.7)',
-                      lineHeight: 1,
-                    }}>CozyQuiz</div>
+                    <img
+                      src="/avatars/cozywolf/svg/idle.svg"
+                      alt=""
+                      draggable={false}
+                      style={{ width: '88%', height: '88%', objectFit: 'contain' }}
+                    />
                   </div>
-                  {/* Subtle ✦-Sigil unter Wordmark */}
+                  {/* CozyQuiz-Wordmark in Stinger Fit (Brand-Logo-Font), Pink */}
                   <div style={{
-                    fontSize: 14, color: 'rgba(236,72,153,0.55)',
-                    letterSpacing: '0.6em',
-                    marginTop: 2,
-                  }}>✦ ✦ ✦</div>
+                    fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                    fontSize: 22, fontWeight: 900,
+                    color: '#FBCFE8',
+                    letterSpacing: '0.02em',
+                    textShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
+                    lineHeight: 1,
+                    position: 'relative',
+                  }}>CozyQuiz</div>
                 </div>
                 {/* Vorderseite — Avatar + Name */}
                 <div style={{

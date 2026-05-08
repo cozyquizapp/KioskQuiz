@@ -5769,30 +5769,36 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
                               pointerEvents: 'none',
                             }} />
+                            {/* Wolf-Avatar im Pink-Wrapper (matcht Vorderseite-
+                                Avatar-Größe) — spiegelt Front-Layout */}
                             <div style={{
+                              width: avatarSize, height: avatarSize, borderRadius: '50%',
+                              background: 'rgba(236,72,153,0.18)',
+                              border: '2.5px solid rgba(236,72,153,0.65)',
+                              boxShadow: '0 0 28px rgba(236,72,153,0.55)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                              overflow: 'hidden',
                               position: 'relative',
-                              padding: 'clamp(10px, 1.2vw, 18px) clamp(14px, 1.6vw, 24px)',
-                              border: '1.5px solid rgba(236,72,153,0.6)',
-                              borderRadius: 'clamp(10px, 1vw, 14px)',
-                              background: 'rgba(31,26,46,0.65)',
-                              boxShadow: '0 0 24px rgba(236,72,153,0.35), inset 0 0 16px rgba(236,72,153,0.15)',
                             }}>
-                              <div style={{
-                                fontFamily: "'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                                fontSize: multiRow ? 'clamp(16px, 1.7vw, 26px)' : 'clamp(18px, 2vw, 32px)',
-                                fontWeight: 900,
-                                color: '#FBCFE8',
-                                letterSpacing: '0.04em',
-                                textShadow: '0 0 14px rgba(236,72,153,0.7)',
-                                lineHeight: 1,
-                              }}>CozyQuiz</div>
+                              <img
+                                src="/avatars/cozywolf/svg/idle.svg"
+                                alt=""
+                                draggable={false}
+                                style={{ width: '88%', height: '88%', objectFit: 'contain' }}
+                              />
                             </div>
+                            {/* CozyQuiz-Wordmark in Stinger Fit, Brand-Pink */}
                             <div style={{
-                              fontSize: multiRow ? 'clamp(12px, 1.2vw, 16px)' : 'clamp(14px, 1.4vw, 20px)',
-                              color: 'rgba(236,72,153,0.55)',
-                              letterSpacing: '0.6em',
-                              marginTop: 2,
-                            }}>✦ ✦ ✦</div>
+                              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                              fontSize: multiRow ? 'clamp(20px, 2.2vw, 32px)' : 'clamp(24px, 2.6vw, 40px)',
+                              fontWeight: 900,
+                              color: '#FBCFE8',
+                              letterSpacing: '0.02em',
+                              textShadow: '0 0 14px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
+                              lineHeight: 1,
+                              position: 'relative',
+                            }}>CozyQuiz</div>
                           </div>
                           {/* Vorderseite — Avatar im Color-Glow-Kreis + Name
                               als Text in Team-Color (matcht Slot M Showreel) */}

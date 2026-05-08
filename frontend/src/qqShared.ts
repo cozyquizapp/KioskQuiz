@@ -71,6 +71,13 @@ export const QQ_BEAMER_CSS = `
     70%  { opacity: 1; transform: translateX(-4px) scale(1.012); }
     100% { opacity: 1; transform: translateX(0)    scale(1); }
   }
+  /* 2026-05-09 (Wolf-Pick reactbits.dev/animations/star-border): rotating
+     conic-gradient hinter prominenten Cards (PreGame/Pause/Setup). Pure CSS,
+     GPU-accelerated. Pink-Slow-Variant (4.5s) — subtilster Premium-Look. */
+  @keyframes qqStarBorderSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
      ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */

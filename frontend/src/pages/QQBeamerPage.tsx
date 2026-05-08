@@ -16251,10 +16251,26 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       {activePanel && (
         // 2026-05-07 (Audit Layout #2): maxWidth 1120 → 1500. Vorher schmale
         // Insel mit ~360px Side-Whitespace je Seite auf 1080p-Beamer.
+        // 2026-05-09 (Wolf-Pick reactbits.dev/star-border): rotating Pink-Conic-
+        // Gradient hinter der Card → leuchtender Border-Effekt für PreGame +
+        // Pause. ESC-Mode lässt den Effekt aus (eigene Show-Identität).
         <div style={{
           width: '100%', maxWidth: 'min(94vw, 1500px)', position: 'relative', zIndex: 5,
+          padding: isEsc ? 0 : 2,
+          borderRadius: 26,
+          overflow: 'hidden',
+          isolation: 'isolate',
         }}>
+          {!isEsc && (
+            <div aria-hidden style={{
+              position: 'absolute', inset: '-50%', zIndex: 0,
+              background: 'conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)',
+              animation: 'qqStarBorderSpin 4.5s linear infinite',
+              pointerEvents: 'none',
+            }} />
+          )}
           <div style={{
+            position: 'relative', zIndex: 1,
             background: cardBg,
             borderRadius: 24,
             padding: 'clamp(32px, 4vw, 56px)',

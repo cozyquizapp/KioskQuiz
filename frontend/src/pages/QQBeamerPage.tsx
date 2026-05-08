@@ -1927,6 +1927,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           )}
           {renderState.phase === 'COMEBACK_CHOICE' && <ComebackView state={renderState} />}
           {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
+          {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
+          {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
           {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
           {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
           {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
@@ -14810,6 +14812,200 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
   ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10' },
   CHEESE:        { color: '#8B5CF6', emoji: '📸', label: 'Cheese!' },
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Final-Wager-Mechanik (Wolf 2026-05-09):
+// FINAL_BETTING: Teams setzen Wetten — Beamer zeigt Submit-Counter + Atmosphäre
+// FINAL_REVEAL: dramatische Score-Cascade (Eurovision-Style Score-Race)
+// ─────────────────────────────────────────────────────────────────────────
+export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
+  const submittedIds = Object.entries(s.finalBettingSubmitted ?? {}).filter(([_, v]) => v).map(([id]) => id);
+  const totalTeams = s.teams.length;
+  const submittedCount = submittedIds.length;
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '8vh 6vw',
+      background: COZY_CARD_BG,
+      position: 'relative',
+    }}>
+      {/* Headline */}
+      <div style={{
+        fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#F9A8D4',
+        textTransform: 'uppercase', letterSpacing: '0.18em',
+        marginBottom: 18, opacity: 0.85,
+      }}>🎰 Final-Wetten</div>
+
+      <div style={{
+        fontSize: 'clamp(48px, 6.5vw, 110px)', fontWeight: 900, color: '#F1F5F9',
+        lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
+        marginBottom: 20,
+      }}>Setzt eure Wetten</div>
+
+      <div style={{
+        fontSize: 'clamp(22px, 2.4vw, 40px)', color: '#CBD5E1', fontWeight: 600,
+        textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 56,
+      }}>Welches Team gewinnt die Final-Runde? Tippt eure eigenen Felder + wählt ein Team. <br />
+        <span style={{ color: '#F472B6', fontWeight: 800 }}>Richtig getippt = Bonus-Coins. Falsch = Felder weg.</span>
+      </div>
+
+      {/* Submit-Status */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+        padding: '32px 56px',
+        borderRadius: 32,
+        background: 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(162,18,71,0.06))',
+        border: '2px solid rgba(236,72,153,0.32)',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}>
+        <div style={{
+          fontSize: 'clamp(14px, 1.1vw, 20px)', fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.15em',
+        }}>Wetten abgegeben</div>
+        <div style={{
+          fontSize: 'clamp(56px, 7vw, 130px)', fontWeight: 900,
+          color: submittedCount === totalTeams ? '#22C55E' : '#F472B6',
+          letterSpacing: '-0.04em', lineHeight: 1,
+          textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(236,72,153,0.45)'}`,
+        }}>
+          {submittedCount} / {totalTeams}
+        </div>
+        {/* Avatar-Reihe der Teams: opaque wenn submitted, dim wenn nicht */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
+          {s.teams.map(t => {
+            const done = !!s.finalBettingSubmitted?.[t.id];
+            return (
+              <div key={t.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                opacity: done ? 1 : 0.35,
+                transition: 'opacity 0.5s ease',
+              }}>
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={64} />
+                <div style={{ fontSize: 'clamp(11px, 0.9vw, 16px)', fontWeight: 800, color: t.color }}>{t.name}</div>
+                {done && <div style={{ fontSize: 14, color: '#22C55E' }}>✓</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
+  const winners = s.finalRoundWinners ?? [];
+  const winnerTeams = winners.map(id => s.teams.find(t => t.id === id)).filter(Boolean) as QQTeam[];
+  // Score-Cascade: jedes Team mit (gridCells, bonusCoins, lostBets, finalScore=gridCells+bonusCoins)
+  // sortiert nach finalScore desc.
+  const teamRows = s.teams.map(t => {
+    const cells = (() => {
+      let n = 0;
+      for (const row of s.grid) for (const cell of row) if (cell.ownerId === t.id) n++;
+      return n;
+    })();
+    const res = s.finalBetResolution?.[t.id];
+    const bonus = res?.bonusCoins ?? 0;
+    const lost = res?.lostBets ?? 0;
+    return {
+      team: t,
+      cells, bonus, lost,
+      finalScore: cells + bonus,
+    };
+  }).sort((a, b) => b.finalScore - a.finalScore);
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: '6vh 4vw',
+      background: COZY_CARD_BG,
+      overflow: 'auto',
+    }}>
+      <div style={{
+        fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#FBBF24',
+        textTransform: 'uppercase', letterSpacing: '0.18em',
+        marginBottom: 12, opacity: 0.9,
+      }}>🏆 Final-Auflösung</div>
+
+      <div style={{
+        fontSize: 'clamp(40px, 5.5vw, 90px)', fontWeight: 900, color: '#F1F5F9',
+        lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
+        marginBottom: 20,
+      }}>Die Wetten gehen auf...</div>
+
+      {/* Sieger-Banner */}
+      {winnerTeams.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 18,
+          padding: '18px 28px', borderRadius: 24,
+          background: 'linear-gradient(135deg, rgba(251,191,36,0.20), rgba(245,158,11,0.10))',
+          border: '2px solid rgba(251,191,36,0.55)',
+          boxShadow: '0 0 48px rgba(251,191,36,0.40)',
+          marginBottom: 36,
+        }}>
+          <div style={{ fontSize: 'clamp(16px, 1.4vw, 24px)', color: '#FBBF24', fontWeight: 900, letterSpacing: '0.08em' }}>
+            FINAL-RUNDEN-SIEGER:
+          </div>
+          {winnerTeams.map(t => (
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
+              <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900, color: t.color }}>{t.name}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Score-Cascade — sortiert nach finalScore desc */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 12,
+        width: '100%', maxWidth: 980,
+      }}>
+        {teamRows.map((row, idx) => (
+          <div key={row.team.id} style={{
+            display: 'grid',
+            gridTemplateColumns: '52px 1fr auto auto auto auto',
+            gap: 16,
+            alignItems: 'center',
+            padding: '14px 22px',
+            borderRadius: 18,
+            background: idx === 0 ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
+            border: `1.5px solid ${idx === 0 ? 'rgba(251,191,36,0.45)' : 'rgba(255,255,255,0.10)'}`,
+            animation: `qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) ${idx * 0.18}s both`,
+          }}>
+            <div style={{ fontSize: 'clamp(18px, 1.6vw, 28px)', fontWeight: 900, color: '#94A3B8' }}>#{idx + 1}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <QQTeamAvatar avatarId={row.team.avatarId} teamEmoji={row.team.emoji} size={44} />
+              <div style={{ fontSize: 'clamp(18px, 1.7vw, 28px)', fontWeight: 800, color: row.team.color }}>{row.team.name}</div>
+            </div>
+            <div style={{ fontSize: 'clamp(16px, 1.5vw, 26px)', fontWeight: 900, color: '#CBD5E1' }}>{row.cells}</div>
+            <div style={{
+              fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
+              color: row.bonus > 0 ? '#22C55E' : '#475569',
+              minWidth: 60, textAlign: 'right',
+            }}>{row.bonus > 0 ? `+${row.bonus}` : ''}</div>
+            <div style={{
+              fontSize: 'clamp(13px, 1.1vw, 18px)', fontWeight: 700,
+              color: row.lost > 0 ? '#F87171' : '#475569',
+              minWidth: 50, textAlign: 'right',
+            }}>{row.lost > 0 ? `−${row.lost}` : ''}</div>
+            <div style={{
+              fontSize: 'clamp(22px, 2vw, 36px)', fontWeight: 900,
+              color: idx === 0 ? '#FBBF24' : row.team.color,
+              letterSpacing: '-0.02em',
+              minWidth: 80, textAlign: 'right',
+            }}>= {row.finalScore}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 26, fontSize: 'clamp(13px, 1vw, 18px)', color: '#64748b' }}>
+        Felder · Bonus-Coins · verlorene Wetten · Endstand
+      </div>
+    </div>
+  );
+}
 
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,

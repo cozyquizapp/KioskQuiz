@@ -90,6 +90,8 @@ export type QQPhase =
   | 'PLACEMENT'         // Winning team places / steals a cell
   | 'COMEBACK_CHOICE'   // Last-place team picks comeback action before Phase 3
   | 'CONNECTIONS_4X4'   // 4×4 Connections Finalrunde (eigenes Mini-Game, Sub-Phase via state.connections.phase)
+  | 'FINAL_BETTING'     // Vor Final-Phase: Teams setzen Wetten auf andere Teams. State in finalBets.
+  | 'FINAL_REVEAL'      // Nach Final-Phase: dramatische Score-Cascade-Auflösung. State in finalBetResolution.
   | 'PAUSED'            // Moderator-triggered pause — shows records/leaderboard
   | 'GAME_OVER'         // Final state, territory winner shown
   | 'THANKS';           // Danke-fürs-Spielen-Folie mit QR nach der Siegerehrung
@@ -1048,6 +1050,33 @@ export interface QQStateUpdate {
   allAnswered: boolean;
   // Schedule für Fortschrittsbaum — kompakte Ansicht aller Fragen im Quiz.
   schedule?: QQScheduleEntry[];
+  // ── Final-Wager-Mechanik (eigene Phase FINAL_BETTING vor letzter Spiel-Phase) ──
+  // Teams setzen vor der Final-Runde Felder als „Wette" auf ein anderes (oder eigenes)
+  // Team. Cap: max floor(eigene_Felder / 2). Pro gewettetes Feld auf das Sieger-Team
+  // der Final-Runde = +1 Bonus-Coin im End-Score (Felder bleiben am Brett, Cells
+  // werden nicht visuell konvertiert — Bonus läuft als separate Pile).
+  finalBets: Record<string, QQFinalBet[]>;            // teamId → Array of bets
+  finalBettingSubmitted: Record<string, boolean>;     // teamId → has-submitted-flag
+  finalRoundWinners: string[] | null;                 // Tied-OK: alle mit max Final-Phase-Score
+  finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus + losses
+}
+
+/** Eine einzelne Wette in der Final-Betting-Phase.
+ *  - row/col: das eigene Feld, das als „im Risiko" markiert wird
+ *  - targetTeamId: auf welches Team gewettet wird (kann eigenes Team sein)
+ */
+export interface QQFinalBet {
+  row: number;
+  col: number;
+  targetTeamId: string;
+}
+
+/** Pro Team aufgelöstes Final-Bet-Ergebnis. */
+export interface QQFinalBetResolution {
+  bonusCoins: number;       // Anzahl Bets auf Sieger-Team(s) → +1 pro Stück
+  lostBets: number;         // Anzahl Bets auf nicht-Sieger-Teams → diese Cells werden vom Brett entfernt
+  betsOnWinners: QQFinalBet[];  // welche Bets ausgezahlt haben (für Reveal-Anim)
+  betsLost: QQFinalBet[];       // welche Bets gefloppt sind (für Reveal-Anim)
 }
 
 export interface QQScheduleEntry {
@@ -1111,6 +1140,15 @@ export interface QQSetSfxMutedPayload    { roomCode: string; muted: boolean; }
 export interface QQSetVolumePayload        { roomCode: string; volume: number; }
 export interface QQUpdateSoundConfigPayload { roomCode: string; soundConfig: QQSoundConfig; }
 export interface QQSetEnable3DPayload     { roomCode: string; enabled: boolean; }
+// Final-Betting-Phase
+/** Mod startet die Final-Betting-Phase (vor letzter Spiel-Phase) */
+export interface QQStartFinalBettingPayload { roomCode: string; }
+/** Team submitted seine Wetten (kann auch leer sein = 0 Wetten = 0 Bonus-Chance) */
+export interface QQSubmitFinalBetPayload    { roomCode: string; teamId: string; bets: QQFinalBet[]; }
+/** Mod beendet die Bet-Phase + startet die Final-Phase (auch wenn nicht alle gesubmittet haben) */
+export interface QQFinishFinalBettingPayload { roomCode: string; }
+/** Mod löst Final-Reveal aus (nach letzter Frage der Final-Phase) */
+export interface QQResolveFinalBetsPayload  { roomCode: string; }
 
 // ── Ack response ──────────────────────────────────────────────────────────────
 export interface QQAck {

@@ -65,6 +65,12 @@ export const QQ_BEAMER_CSS = `
     65%  { transform: scale(1.005) translateY(-2px); }
     100% { opacity: 1; transform: scale(1)    translateY(0); }
   }
+  /* Final-Reveal Score-Cascade: Zeile fliegt von rechts rein mit slight Y-Drop. */
+  @keyframes qqFinalRowIn {
+    0%   { opacity: 0; transform: translateX(38px) scale(0.96); }
+    70%  { opacity: 1; transform: translateX(-4px) scale(1.012); }
+    100% { opacity: 1; transform: translateX(0)    scale(1); }
+  }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
      ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */

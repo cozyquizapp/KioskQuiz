@@ -14,6 +14,7 @@ import {
   QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
   QQShieldClusterPayload, QQShieldCellPayload, QQSandLockCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
+  QQStartFinalBettingPayload, QQSubmitFinalBetPayload, QQFinishFinalBettingPayload, QQResolveFinalBetsPayload,
   getRandomDummyEmojis,
 } from '../../../shared/quarterQuizTypes';
 import { scheduleSave, loadAllRooms, deleteSavedRoom } from './qqPersist';
@@ -49,6 +50,7 @@ import {
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
+  qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqResolveFinalBets,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -2852,6 +2854,43 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqResetRoom(room);
         deleteSavedRoom(payload.roomCode).catch(() => {});
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Final-Wager-Mechanik (Wolf 2026-05-09): vor letzter Spiel-Phase Bets setzen ──
+    socket.on('qq:startFinalBetting', (payload: QQStartFinalBettingPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqStartFinalBetting(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:submitFinalBet', (payload: QQSubmitFinalBetPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqSubmitFinalBet(room, payload.teamId, payload.bets);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:finishFinalBetting', (payload: QQFinishFinalBettingPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqFinishFinalBetting(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:resolveFinalBets', (payload: QQResolveFinalBetsPayload, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqResolveFinalBets(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

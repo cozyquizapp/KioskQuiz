@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
-import { QQ_PHASE_COLORS } from '../qqDesignTokens';
+import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -195,7 +195,7 @@ export default function QQProgressTree({
   // 2026-05-05 (Wolf 'progress tree mit rundenfarbe + glow'): inline + hero
   // Varianten bekommen Border + Glow in der aktuellen Runden-Farbe (gleicher
   // Token wie das 'Runde N'-Label oben), 3-Cycle damit Runde 4 = Runde 1-Farbe.
-  const roundColor = QQ_PHASE_COLORS[((state.gamePhaseIndex ?? 1) - 1) % 3];
+  const roundColor = getRoundColor(state.gamePhaseIndex ?? 1, totalPhases);
   const useRoundAccent = variant === 'inline' || variant === 'hero';
 
   const wrapperBg = isShowcase

@@ -86,13 +86,30 @@ export const ACCENT_GOLD = {
   deep:   '#D97706',
 } as const;
 
-/** Game-Phase-Farben fuer die 3 Spielphasen (PhaseIntroView, RoundTransition).
- *  Index 0/1/2 = Phase 1/2/3.
- *  2026-05-08 (Aurora-Vivid-Refresh, Wolf-Wunsch): Pink-Eskalation statt
- *  Blau→Amber→Rot. Runden werden gefuehlt-intensiver Richtung Finale,
- *  alles bleibt Brand-konsistent (Pink-Spektrum aus dem Wolf-Logo).
- *  Vorher: ['#3B82F6', '#F59E0B', '#EF4444'] (zufaellig wirkend). */
-export const QQ_PHASE_COLORS = ['#F9A8D4', '#EC4899', '#A21247'] as const;
+/** Game-Phase-Farben — Pink-Eskalation Richtung Finale.
+ *  Index 0/1/2/3 = Phase 1/2/3/4. Letzte Phase ist immer das intensivste
+ *  Magenta — wenn das Quiz nur 3 Runden hat, ist Phase 3 = #A21247 (Index 2).
+ *  Wenn 4 Runden, ist Phase 4 = #A21247 (Index 3).
+ *  2026-05-08 (Wolf 'finale farbe von letzter runde uebernehmen'):
+ *  vorher 3-Element-Array mit modulo %3 → Phase 4 fiel auf Index 0 (light pink),
+ *  was die letzte Runde SCHWAECHER aussehen liess. Jetzt 4-Element-Array,
+ *  Helper getRoundColor mappt totalPhases-aware. */
+export const QQ_PHASE_COLORS = ['#F9A8D4', '#F472B6', '#EC4899', '#A21247'] as const;
+
+/** Liefert die Brand-Pink-Farbe fuer eine Game-Phase, totalPhases-aware.
+ *  - Wenn 3 Runden: Phase 1=index 0, Phase 2=index 2, Phase 3=index 3 (Finale-Magenta)
+ *  - Wenn 4 Runden: Phase 1-4 = index 0-3 direkt
+ *  Garantiert: letzte Phase ist immer #A21247 (Magenta-Brand). */
+export function getRoundColor(phaseIdx: number, totalPhases: number = 4): string {
+  const last = QQ_PHASE_COLORS.length - 1;
+  if (phaseIdx <= 0) return QQ_PHASE_COLORS[0];
+  if (phaseIdx >= totalPhases) return QQ_PHASE_COLORS[last];
+  if (totalPhases === 3) {
+    // 3 Phasen: 1→0, 2→2, 3→3 (skip 1 fuer mehr Distanz zwischen Phasen)
+    return QQ_PHASE_COLORS[Math.min(last, [0, 2, 3][phaseIdx - 1] ?? phaseIdx - 1)];
+  }
+  return QQ_PHASE_COLORS[Math.min(last, phaseIdx - 1)];
+}
 
 /** Standard-Easing — ergaenzt nach Animation-Audit 2026-05-04.
  *  Im Live-Code sind viele Inline-cubic-bezier()-Werte hardgecoded.

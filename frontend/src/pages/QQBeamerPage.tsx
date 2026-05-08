@@ -18,7 +18,7 @@ import {
 import { BeamerOverlay } from '../components/BeamerOverlay';
 import { JokerIcon } from '../components/JokerIcon';
 import { CustomSlide } from '../components/QQCustomSlide';
-import { QQ_PHASE_COLORS } from '../qqDesignTokens';
+import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
@@ -4036,12 +4036,16 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           )}
         </div>
 
-        {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein. */}
+        {/* Wolf + Sprechblase — kommen erst NACH dem Title-Pop rein.
+            2026-05-08 (Wolf 'wirkt eher öde'): Wolf+Sprechblase früher (2.6s
+            statt 3.4s) damit kein langer Stillstand vor dem Auftritt. Greeting
+            wird zusätzlich Word-Stagger animiert (qqWordFadeUp pro Wort) statt
+            statisch — wirkt lebendig wie der Wolf wirklich spricht. */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(14px, 1.8vw, 28px)',
           marginTop: 'clamp(20px, 2.6vh, 36px)',
-          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 3.4s both',
+          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0,
         }}>
           <AnimatedCozyWolf
@@ -4078,7 +4082,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
               borderRight: '12px solid rgba(15,23,42,0.85)',
             }} />
-            {greeting}
+            {greeting.split(' ').map((word, i) => (
+              <span key={i} style={{
+                display: 'inline-block',
+                opacity: 0,
+                animation: `qqWordFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${3.2 + i * 0.08}s both`,
+                marginRight: 6,
+              }}>{word}</span>
+            ))}
           </div>
         </div>
       </div>
@@ -4204,6 +4215,12 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         @keyframes qqIntroBubbleBob {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-6px); }
+        }
+        /* 2026-05-08 (Welcome-Polish): Word-Stagger fuer Sprechblasen-Greeting.
+           Macht den Wolf-Auftritt lebendig — wie wenn er wirklich spricht. */
+        @keyframes qqWordFadeUp {
+          0%   { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+          100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
         }
       `}</style>
       </>
@@ -5825,7 +5842,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // (gold/lila/grün rotierend). Dadurch wirkt 'Halbfinale 1/2/Finale'
   // konsistent in der ESC-Identitaet.
   const isEsc = !!s.theme?.eurovisionMode;
-  const color = isEsc ? '#FF2D7B' : QQ_PHASE_COLORS[(s.gamePhaseIndex - 1) % 3];
+  const color = isEsc ? '#FF2D7B' : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -6027,7 +6044,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const prevIdx = s.gamePhaseIndex - 1;
   // 2026-05-07: prevColor auch ESC-Pink, damit waehrend Round-Transition
   // kein Farbwechsel stattfindet (Phase-Color cycelt nicht im ESC-Mode).
-  const prevColor = isEsc ? '#FF2D7B' : QQ_PHASE_COLORS[Math.max(0, prevIdx - 1) % 3];
+  const prevColor = isEsc ? '#FF2D7B' : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
   const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
 
@@ -8537,7 +8554,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
     ? 3
     : (hintIndicesArr.length > 0 ? Math.min(...hintIndicesArr) : 0);
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
-  const accent = '#A78BFA';
+  // 2026-05-08 (Wolf-Bugfix): vorher '#A78BFA' (Lila) — passte nicht zur
+  // Bunte-Tüte-Kategorie. Jetzt #F87171 (Bunte-Tüte-Rot, identisch zu
+  // QQ_CAT_ACCENT.BUNTE_TUETE).
+  const accent = '#F87171';
   // Cascade-Avatare: ALLE korrekten Teams (auch die "zu spaet"-Sieger) sortiert
   // nach (atHintIdx ASC, submittedAt ASC) — fuers Stagger-Rendering auf Hints.
   const correctSorted = (s.onlyConnectGuesses ?? [])
@@ -13673,7 +13693,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
                 const isHigher = dir === 'higher';
-                const accentCol = isHigher ? '#22C55E' : '#EF4444';
+                // 2026-05-08 (Wolf-Bugfix): Lower-Card war rot, alles andere
+                // war grün+pink. Lower jetzt Brand-Pink für Konsistenz.
+                const accentCol = isHigher ? '#22C55E' : '#EC4899';
                 const isCorrect = isReveal && correctChoice === dir;
                 const isWrong = isReveal && correctChoice !== dir;
                 return (
@@ -14823,7 +14845,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // vollen Tree-Übersicht jetzt: Runden-Pille + Frage-Fortschritt + RoundMiniTree
   // (nur Dots der aktuellen Runde) — passt in einer Card-Zeile.
   if (mode === 'pause' && (s.schedule?.length ?? 0) > 0) {
-    const roundColor = QQ_PHASE_COLORS[((s.gamePhaseIndex ?? 1) - 1) % 3];
+    const roundColor = getRoundColor(s.gamePhaseIndex ?? 1, s.totalPhases ?? 4);
     const questionInPhase = (s.questionIndex % 5) + 1;
     panels.push({ key: 'progress', node: (
       <div>

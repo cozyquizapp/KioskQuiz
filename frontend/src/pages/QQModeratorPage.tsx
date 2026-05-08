@@ -2279,18 +2279,10 @@ export default function QQModeratorPage() {
             {/* Grid — collapsible */}
             {s.grid && <CollapsibleGrid state={s} />}
 
-            {/* Rangliste */}
-            <div style={card}>
-              <div style={sectionLabel}>Rangliste</div>
-              {[...teamList].sort((a, b) => b.largestConnected - a.largestConnected).map((t, i) => (
-                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
-                  <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 13 }}>{t.name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>{t.largestConnected}</span>
-                </div>
-              ))}
-            </div>
+            {/* Rangliste — 2026-05-08: collapsible, default-collapsed während
+                QUESTION_ACTIVE/REVEAL (Mod sieht nur Header), default-offen
+                in PAUSED/PLACEMENT/COMEBACK/GAME_OVER (wo Rang relevant ist). */}
+            <CollapsibleRanking teams={teamList} phase={s.phase} />
           </div>
         </div>
         </>
@@ -2358,34 +2350,53 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
   const showCustom = customNote && questionPhase;
   const showFunFact = funFact && questionPhase;
 
+  // 2026-05-08 (Wolf-Audit-Followup 'mod überladen'): HostNotes default
+  // collapsed während QUESTION_ACTIVE/REVEAL/PLACEMENT — Mod sieht nur den
+  // 1-Zeilen-Header und kann bei Bedarf aufklappen. In anderen Phasen
+  // (Lobby/Rules/Intro/etc) bleibt voll offen weil dort die Tipps relevant
+  // zum Lesen sind. Bei Phase-Wechsel auto-reset auf Default-State.
+  const [collapsed, setCollapsed] = useState(questionPhase);
+  const lastPhaseRef = useRef(phase);
+  useEffect(() => {
+    if (lastPhaseRef.current !== phase) {
+      lastPhaseRef.current = phase;
+      setCollapsed(questionPhase);
+    }
+  }, [phase, questionPhase]);
+
   return (
     <div style={{
       background: 'linear-gradient(135deg, rgba(236,72,153,0.08), rgba(236,72,153,0.03))',
       border: '1px solid rgba(236,72,153,0.35)',
       borderLeft: '4px solid #EC4899',
       borderRadius: 8,
-      padding: '10px 14px',
+      padding: collapsed ? '6px 14px' : '10px 14px',
       marginBottom: 12,
       fontSize: 13,
       lineHeight: 1.5,
       color: '#e5e7eb',
-    }}>
+      cursor: 'pointer',
+    }}
+    onClick={() => setCollapsed(c => !c)}
+    title={collapsed ? 'Tipp ausklappen' : 'Tipp einklappen'}
+    >
       <div style={{
         fontSize: 11,
         fontWeight: 900,
         letterSpacing: 0.8,
         textTransform: 'uppercase',
         color: '#EC4899',
-        marginBottom: 4,
+        marginBottom: collapsed ? 0 : 4,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
       }}>
         <span>🎙️ Moderator-Tipp</span>
         <span style={{ opacity: 0.6, fontWeight: 700 }}>· {baseNote.title}</span>
+        <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: 12 }}>{collapsed ? '▸' : '▾'}</span>
       </div>
-      <div style={{ color: '#d1d5db' }}>{baseNote.text}</div>
-      {showCustom && (
+      {!collapsed && <div style={{ color: '#d1d5db' }}>{baseNote.text}</div>}
+      {!collapsed && showCustom && (
         <div style={{
           marginTop: 8,
           paddingTop: 8,
@@ -2397,7 +2408,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
           {customNote}
         </div>
       )}
-      {showFunFact && (
+      {!collapsed && showFunFact && (
         <div style={{
           marginTop: 8,
           padding: '8px 10px',
@@ -3291,6 +3302,58 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
       <Btn small color="#EF4444" outline onClick={() => emit('qq:rulesFinish', { roomCode })}>
         ⏭ Überspringen
       </Btn>
+    </div>
+  );
+}
+
+// 2026-05-08 (Wolf-Audit-Followup 'mod überladen'): Rangliste collapsible mit
+// phase-aware default. In QUESTION_ACTIVE/REVEAL nur Header sichtbar (Mod
+// fokussiert auf Antwort-Markierung), in PAUSED/PLACEMENT/COMEBACK/GAME_OVER
+// default-offen (wo Rang relevant ist).
+function CollapsibleRanking({ teams, phase }: { teams: QQStateUpdate['teams']; phase: QQStateUpdate['phase'] }) {
+  const isFocusPhase = phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL';
+  const [open, setOpen] = useState(!isFocusPhase);
+  // Auto-toggle bei Phase-Wechsel auf den default für die neue Phase
+  const lastPhaseRef = useRef(phase);
+  useEffect(() => {
+    if (lastPhaseRef.current !== phase) {
+      lastPhaseRef.current = phase;
+      setOpen(!(phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL'));
+    }
+  }, [phase]);
+  const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const leader = sorted[0];
+  return (
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#94a3b8', fontFamily: 'inherit',
+        }}
+      >
+        <span style={sectionLabel}>Rangliste</span>
+        {!open && leader && (
+          <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginLeft: 'auto', marginRight: 8 }}>
+            #{1} <span style={{ color: leader.color }}>{leader.name}</span> · {leader.largestConnected}
+          </span>
+        )}
+        <span style={{ fontSize: 15, color: '#475569' }}>{open ? '−' : '+'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px' }}>
+          {sorted.map((t, i) => (
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
+              <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 13 }}>{t.name}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>{t.largestConnected}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

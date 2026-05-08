@@ -778,7 +778,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   // (Kategorie-spezifischer BG) uebernimmt TC_CAT_BG. Glow-Lagen subtil
   // gemischt damit Page nicht 'monochrom' wirkt.
   const slot = QQ_AVATARS.find(a => a.id === avatarId);
-  const slotColor = slot?.color ?? '#EAB308';
+  const slotColor = slot?.color ?? '#EC4899';
   const teamTintBg =
     `radial-gradient(ellipse at 50% -10%, ${slotColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${slotColor}14, transparent 55%), ` +
@@ -879,7 +879,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         {/* 2026-05-04 (Wolf): Stammcode-Block ist nach UNTER den Avatar-Editor
             verschoben (war vorher zu prominent oben). Siehe weiter unten. */}
         {resumeTeam && (
-          <CozyCard anim borderColor={resumeTeam.color || '#EAB308'}>
+          <CozyCard anim borderColor={resumeTeam.color || '#EC4899'}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '6px 0 14px',
@@ -897,7 +897,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 </div>
               </div>
             </div>
-            <CozyBtn color={resumeTeam.color || '#EAB308'} onClick={onResume}>
+            <CozyBtn color={resumeTeam.color || '#EC4899'} onClick={onResume}>
               {lang === 'de' ? `Wieder dabei als ${resumeTeam.name}` : `Resume as ${resumeTeam.name}`}
             </CozyBtn>
             <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: '#64748B' }}>
@@ -1149,7 +1149,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 {pool.map((em, i) => {
                   const taken = takenEmojis.includes(em);
                   const sel = chosenEmoji === em;
-                  const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EAB308';
+                  const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EC4899';
                   return (
                     <button
                       key={`${em}-${i}`}
@@ -1479,7 +1479,7 @@ function TeamGameView({ state: s, myTeam, myTeamId, emit, roomCode, lang, flagFl
   // 2026-05-04 (Wolf): vor Quiz-Start (Lobby/Pre-Game) BG in Team-Farbe
   // statt fixer goldbrauner Mix. Sobald Kategorie aktiv ist, uebernimmt
   // TC_CAT_BG. GAME_OVER bleibt im Gold-Spotlight.
-  const myTeamColor = myTeam?.color ?? '#EAB308';
+  const myTeamColor = myTeam?.color ?? '#EC4899';
   const teamTintBg =
     `radial-gradient(ellipse at 50% -10%, ${myTeamColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${myTeamColor}14, transparent 55%), ` +

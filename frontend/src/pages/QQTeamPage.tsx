@@ -6139,6 +6139,10 @@ function ConnectionsTeamTimer({ endsAt }: { endsAt: number }) {
 // Teams (oder sich selbst). Cap: max floor(eigene_Felder / 2).
 // Reveal nach Final-Phase als Bonus-Coins (Score-Cascade auf Beamer).
 // ─────────────────────────────────────────────────────────────────────────
+// 2026-05-09 (Final-Wager Refactor): Tipp-Variante. KEINE Cell-Selection mehr —
+// das Team wählt 1 Tipp aus der Team-Liste. Bonus = N Final-Kat-Wins des
+// getippten Teams (0-5), +1 Sympathie-Bonus bei Mutual-Pair (A→B && B→A).
+// KEIN Verlust, kein Cell-Removal. Self-Tipp erlaubt (kein Sympathie möglich).
 function FinalBettingCard({
   state: s, myTeamId, emit, roomCode, lang,
 }: {
@@ -6148,70 +6152,52 @@ function FinalBettingCard({
   const de = lang === 'de';
   const myTeam = s.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? '#EC4899';
-  // Eigene Cells finden + bet-Cap berechnen
-  const myCells: Array<{ row: number; col: number }> = [];
-  for (let r = 0; r < s.gridSize; r++) {
-    for (let c = 0; c < s.gridSize; c++) {
-      if (s.grid[r]?.[c]?.ownerId === myTeamId) myCells.push({ row: r, col: c });
-    }
-  }
-  const cap = Math.floor(myCells.length / 2);
-  // Local State: per Cell-Key die targetTeamId
-  const [bets, setBets] = React.useState<Record<string, string>>({});
-  const [pickerCell, setPickerCell] = React.useState<{ row: number; col: number } | null>(null);
+  const [pickedTargetId, setPickedTargetId] = React.useState<string | null>(null);
   const submitted = !!s.finalBettingSubmitted?.[myTeamId];
   const totalSubmitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
   const totalTeams = s.teams.length;
 
-  const placedCount = Object.keys(bets).length;
-  const overCap = placedCount > cap;
-
-  const handleCellTap = (r: number, c: number) => {
-    if (submitted) return;
-    const key = `${r}-${c}`;
-    if (bets[key]) {
-      // Bereits gesetzt → toggle off
-      setBets(b => { const next = { ...b }; delete next[key]; return next; });
-      if (navigator.vibrate) navigator.vibrate(10);
-    } else {
-      if (placedCount >= cap) return; // Cap erreicht
-      setPickerCell({ row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate(8);
-    }
-  };
-
-  const handlePickTeam = (targetId: string) => {
-    if (!pickerCell) return;
-    const key = `${pickerCell.row}-${pickerCell.col}`;
-    setBets(b => ({ ...b, [key]: targetId }));
-    setPickerCell(null);
-    if (navigator.vibrate) navigator.vibrate(15);
-  };
-
   const handleSubmit = () => {
-    const betsArray: Array<{ row: number; col: number; targetTeamId: string }> = Object.entries(bets).map(([key, targetTeamId]) => {
-      const [r, c] = key.split('-').map(Number);
-      return { row: r, col: c, targetTeamId };
-    });
-    emit('qq:submitFinalBet', { roomCode, teamId: myTeamId, bets: betsArray });
+    if (!pickedTargetId) {
+      emit('qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: null });
+    } else {
+      emit('qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: { targetTeamId: pickedTargetId } });
+    }
     if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
   };
 
-  // Cell-Größe orientiert sich an PlacementCard
-  const cellSize = Math.min(54, Math.floor(320 / s.gridSize));
-
   if (submitted) {
+    const myBet = s.finalBets?.[myTeamId];
+    const targetTeam = myBet ? s.teams.find(t => t.id === myBet.targetTeamId) : null;
     return (
       <CozyCard borderColor={myColor}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           <div style={{ fontSize: 38, marginBottom: 8 }}>🎲</div>
           <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
-            {de ? 'Wetten abgegeben!' : 'Bets placed!'}
+            {de ? 'Tipp abgegeben!' : 'Tip placed!'}
           </div>
+          {targetTeam && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 999,
+              background: `${targetTeam.color}1a`,
+              border: `1.5px solid ${targetTeam.color}66`,
+              marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 12, color: '#94A3B8' }}>{de ? 'Du tippst auf' : 'You tip'}</span>
+              <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={24} />
+              <span style={{ fontWeight: 900, color: targetTeam.color }}>{targetTeam.name}</span>
+            </div>
+          )}
+          {!targetTeam && (
+            <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 12, fontStyle: 'italic' }}>
+              {de ? 'Kein Tipp abgegeben (0 Bonus möglich)' : 'No tip placed (0 bonus possible)'}
+            </div>
+          )}
           <div style={{ fontSize: 14, color: '#94A3B8', marginBottom: 12 }}>
             {de
-              ? `${totalSubmitted} von ${totalTeams} Teams haben gesetzt`
-              : `${totalSubmitted} of ${totalTeams} teams placed`}
+              ? `${totalSubmitted} von ${totalTeams} Teams haben getippt`
+              : `${totalSubmitted} of ${totalTeams} teams tipped`}
           </div>
           <div style={{
             padding: '12px 14px', borderRadius: 12,
@@ -6231,223 +6217,82 @@ function FinalBettingCard({
     <CozyCard borderColor={myColor} pulse>
       <div style={{ textAlign: 'center', padding: '4px 0 8px' }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
-          {de ? '🎰 Final-Wetten' : '🎰 Final bets'}
+          {de ? '🎰 Final-Tipp' : '🎰 Final tip'}
         </div>
-        <div style={{ fontWeight: 900, fontSize: 20, color: '#F1F5F9', marginBottom: 4, letterSpacing: '-0.01em' }}>
-          {de ? 'Auf wen wettest du?' : 'Who do you bet on?'}
+        <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 4, letterSpacing: '-0.01em' }}>
+          {de ? 'Auf wen tippst du?' : 'Who do you bet on?'}
         </div>
-        <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 14, lineHeight: 1.45 }}>
           {de
-            ? `Tippe bis zu ${cap} eigene Felder + wähle ein Team. Tipp richtig = +1 Bonus pro Feld. Tipp falsch = Feld weg.`
-            : `Tap up to ${cap} own cells + pick a team. Right tip = +1 bonus per cell. Wrong = cell gone.`}
+            ? 'Pro gewonnene Final-Kategorie deines Teams = +1 Bonus. Mutual-Tipp (ihr beide tippt aufeinander) = je +1 💞 Sympathie-Bonus. Kein Verlust!'
+            : 'For each final-category your team wins = +1 bonus. Mutual tip (you both tip each other) = +1 💞 sympathy bonus each. No loss!'}
         </div>
       </div>
 
-      {/* Counter */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '8px 12px', marginBottom: 12,
-        borderRadius: 12,
-        background: overCap ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
-        border: overCap ? '1px solid rgba(239,68,68,0.40)' : '1px solid rgba(255,255,255,0.08)',
-      }}>
-        <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 700 }}>
-          {de ? 'Gesetzt' : 'Placed'}
-        </span>
-        <span style={{ fontSize: 16, fontWeight: 900, color: overCap ? '#F87171' : myColor }}>
-          {placedCount} / {cap}
-        </span>
-      </div>
-
-      {/* Mein Brett zum Tippen */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
-        gap: 4, justifyContent: 'center',
-        marginBottom: 14,
-      }}>
-        {Array.from({ length: s.gridSize }).flatMap((_, r) =>
-          Array.from({ length: s.gridSize }).map((__, c) => {
-            const cell = s.grid[r]?.[c];
-            const isMine = cell?.ownerId === myTeamId;
-            const owner = cell?.ownerId ? s.teams.find(t => t.id === cell.ownerId) : null;
-            const ownerColor = owner?.color ?? null;
-            const ownerEmoji = owner?.emoji ?? null;
-            const key = `${r}-${c}`;
-            const bet = bets[key];
-            const targetTeam = bet ? s.teams.find(t => t.id === bet) : null;
-            return (
-              <button
-                key={key}
-                onClick={() => handleCellTap(r, c)}
-                disabled={!isMine}
-                style={{
-                  // Solid Backgrounds — Lesbarkeit > Style auf kleinen Grids
-                  width: cellSize, height: cellSize,
-                  borderRadius: 8,
-                  background: isMine
-                    ? bet
-                      ? `linear-gradient(135deg, ${myColor}, ${myColor}cc)`
-                      : myColor
-                    : ownerColor ? ownerColor : '#1a1424',
-                  border: isMine
-                    ? bet
-                      ? `2px solid ${targetTeam?.color ?? '#EC4899'}`
-                      : `1.5px solid ${myColor}`
-                    : ownerColor
-                      ? `1px solid ${ownerColor}`
-                      : '1px solid rgba(255,255,255,0.12)',
-                  boxShadow: bet ? `0 0 12px ${targetTeam?.color ?? '#EC4899'}aa` : isMine ? `0 0 6px ${myColor}66` : 'none',
-                  cursor: isMine ? 'pointer' : 'default',
-                  position: 'relative',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: 0, fontFamily: 'inherit',
-                  transition: 'all 0.18s ease',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Bet gesetzt → Target-Team-Emoji (groß), sonst Owner-Emoji
-                    (Farbschwäche-Tauglichkeit). Eigene Cells ohne Bet zeigen
-                    eigenes Emoji subtle. */}
-                {bet && targetTeam ? (
-                  <span style={{
-                    fontSize: Math.floor(cellSize * 0.55), lineHeight: 1,
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
-                  }}>{targetTeam.emoji ?? '⭐'}</span>
-                ) : ownerEmoji ? (
-                  <span style={{
-                    fontSize: Math.floor(cellSize * 0.45), lineHeight: 1,
-                    opacity: isMine ? 0.95 : 0.65,
-                  }}>{ownerEmoji}</span>
-                ) : null}
-              </button>
-            );
-          })
-        )}
+      {/* Team-Liste als Picker. Tap = pick (toggle off bei zweitem Tap). */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        {s.teams.map(t => {
+          const isMe = t.id === myTeamId;
+          const isPicked = pickedTargetId === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => {
+                setPickedTargetId(isPicked ? null : t.id);
+                if (navigator.vibrate) navigator.vibrate(isPicked ? 8 : 15);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: isPicked ? `${t.color}33` : `${t.color}14`,
+                border: isPicked ? `2.5px solid ${t.color}` : `1.5px solid ${t.color}55`,
+                color: '#F1F5F9', cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 15, fontWeight: 800,
+                textAlign: 'left',
+                transition: 'transform 0.14s, background 0.18s, border 0.18s, box-shadow 0.18s',
+                boxShadow: isPicked ? `0 0 24px ${t.color}88, 0 4px 12px rgba(0,0,0,0.3)` : 'none',
+                transform: isPicked ? 'scale(1.02)' : 'scale(1)',
+              }}
+              onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onTouchEnd={(e) => { e.currentTarget.style.transform = isPicked ? 'scale(1.02)' : 'scale(1)'; }}
+            >
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={42} />
+              <span style={{ flex: 1, color: t.color, fontSize: 17 }}>{t.name}</span>
+              {isMe && (
+                <span style={{
+                  fontSize: 10, fontWeight: 900,
+                  padding: '3px 8px', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.10)', color: '#F1F5F9',
+                  letterSpacing: 0.4,
+                }}>{de ? 'ICH' : 'ME'}</span>
+              )}
+              {isPicked && (
+                <span style={{
+                  fontSize: 18, lineHeight: 1,
+                }}>✓</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Submit-Btn */}
-      <CozyBtn
-        color={overCap ? '#F87171' : myColor}
-        onClick={handleSubmit}
-        disabled={overCap}
-      >
-        {placedCount === 0
-          ? (de ? '0 Wetten abgeben (kein Bonus)' : 'Submit 0 bets (no bonus)')
-          : (de ? `${placedCount} Wetten bestätigen` : `Confirm ${placedCount} bets`)}
+      <CozyBtn color={pickedTargetId ? myColor : '#64748B'} onClick={handleSubmit}>
+        {pickedTargetId
+          ? (de ? 'Tipp bestätigen' : 'Confirm tip')
+          : (de ? 'Ohne Tipp abgeben (0 Bonus)' : 'Submit no tip (0 bonus)')}
       </CozyBtn>
-
-      {/* Team-Picker Modal */}
-      {pickerCell && (
-        <TeamPickerModal
-          teams={s.teams}
-          myTeamId={myTeamId}
-          onPick={handlePickTeam}
-          onClose={() => setPickerCell(null)}
-          lang={lang}
-        />
-      )}
     </CozyCard>
   );
 }
 
-function TeamPickerModal({
-  teams, myTeamId, onPick, onClose, lang,
-}: {
-  teams: QQTeam[]; myTeamId: string;
-  onPick: (id: string) => void; onClose: () => void;
-  lang: 'de' | 'en';
-}) {
-  return (
-    <>
-      <div onClick={onClose} aria-hidden style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-        zIndex: 1100,
-        animation: 'tcMenuBackdrop 0.2s ease both',
-      }} />
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 1101,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px',
-        pointerEvents: 'none',
-      }}>
-        <div role="dialog" aria-modal="true" style={{
-          width: '100%', maxWidth: 380,
-          padding: '22px 18px',
-          borderRadius: 24,
-          background: 'rgba(31, 26, 46, 0.92)',
-          backdropFilter: 'blur(28px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          border: '1px solid rgba(236,72,153,0.32)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
-          pointerEvents: 'auto',
-          animation: 'tcoptIn 0.28s cubic-bezier(0.32,1.4,0.5,1) both',
-          maxHeight: '85vh', overflowY: 'auto',
-        }}>
-          <div style={{
-            fontSize: 12, fontWeight: 900, color: '#94A3B8',
-            textTransform: 'uppercase', letterSpacing: '0.12em',
-            marginBottom: 10, textAlign: 'center',
-          }}>
-            {lang === 'de' ? 'Auf welches Team wettest du?' : 'Bet on which team?'}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {teams.map(t => {
-              const isMe = t.id === myTeamId;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => onPick(t.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px',
-                    borderRadius: 14,
-                    background: `${t.color}1a`,
-                    border: `1.5px solid ${t.color}66`,
-                    color: '#F1F5F9', cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: 15, fontWeight: 800,
-                    textAlign: 'left',
-                    transition: 'transform 0.12s, background 0.15s',
-                  }}
-                  onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
-                  onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                >
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={36} />
-                  <span style={{ flex: 1, color: t.color }}>{t.name}</span>
-                  {isMe && (
-                    <span style={{
-                      fontSize: 10, fontWeight: 900,
-                      padding: '3px 8px', borderRadius: 999,
-                      background: 'rgba(255,255,255,0.10)', color: '#F1F5F9',
-                      letterSpacing: 0.4,
-                    }}>{lang === 'de' ? 'ICH' : 'ME'}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: '100%', marginTop: 12,
-              padding: '12px', borderRadius: 14,
-              border: '1px solid rgba(255,255,255,0.14)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#94A3B8', fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
-              cursor: 'pointer',
-            }}
-          >
-            {lang === 'de' ? 'Abbrechen' : 'Cancel'}
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
+// 2026-05-09: TeamPickerModal entfernt — FinalBettingCard zeigt die Team-Liste
+// jetzt direkt inline (Tipp-Variante, kein separates Modal mehr nötig).
 
+// 2026-05-09 (Final-Wager Refactor): Tipp-Variante. Zeigt mein Tipp-Ergebnis:
+// targetTeam · N Wins · Sympathie-Bonus · Total-Bonus.
 function FinalRevealCard({
   state: s, myTeamId, lang,
 }: {
@@ -6457,8 +6302,8 @@ function FinalRevealCard({
   const myTeam = s.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? '#EC4899';
   const myResolution = s.finalBetResolution?.[myTeamId];
-  const winners = s.finalRoundWinners ?? [];
-  const winnerNames = winners.map(id => s.teams.find(t => t.id === id)?.name ?? '?').join(' · ');
+  const targetTeam = myResolution?.targetTeamId ? s.teams.find(t => t.id === myResolution.targetTeamId) : null;
+  const mutualPartner = myResolution?.mutualWith ? s.teams.find(t => t.id === myResolution.mutualWith) : null;
 
   return (
     <CozyCard borderColor={myColor}>
@@ -6467,44 +6312,65 @@ function FinalRevealCard({
         <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
           {de ? 'Final-Auflösung' : 'Final reveal'}
         </div>
-        {winners.length > 0 && (
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#F1F5F9', marginBottom: 12 }}>
-            {de ? 'Sieger der Final-Runde:' : 'Final-round winner:'}<br />
-            <span style={{ color: '#FBBF24' }}>{winnerNames}</span>
+        {!myResolution || !targetTeam ? (
+          <div style={{ fontSize: 14, color: '#94A3B8', fontStyle: 'italic', padding: '14px 0' }}>
+            {de ? 'Du hattest keinen Tipp abgegeben — kein Bonus.' : 'You placed no tip — no bonus.'}
           </div>
-        )}
-        {myResolution && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left', marginBottom: 4 }}>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            {/* Mein Tipp */}
             <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '12px 14px', borderRadius: 12,
-              background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.35)',
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 14px', borderRadius: 14,
+              background: `${targetTeam.color}1a`,
+              border: `1.5px solid ${targetTeam.color}66`,
             }}>
-              <span style={{ fontSize: 13, color: '#86EFAC', fontWeight: 700 }}>
-                {de ? '✨ Bonus-Coins' : '✨ Bonus coins'}
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>
+                {de ? 'Tipp' : 'Tip'}
               </span>
-              <span style={{ fontSize: 22, fontWeight: 900, color: '#22C55E' }}>
-                +{myResolution.bonusCoins}
+              <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={32} />
+              <span style={{ flex: 1, fontWeight: 900, color: targetTeam.color, fontSize: 15, textAlign: 'left' }}>{targetTeam.name}</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: targetTeam.color }}>
+                {myResolution.targetWins}× 🏆
               </span>
             </div>
-            {myResolution.lostBets > 0 && (
+            {/* Sympathie-Bonus 💞 wenn mutual */}
+            {mutualPartner && (
               <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '12px 14px', borderRadius: 12,
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.30)',
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px', borderRadius: 14,
+                background: 'linear-gradient(135deg, rgba(244,114,182,0.18), rgba(236,72,153,0.10))',
+                border: '1.5px solid rgba(244,114,182,0.55)',
+                boxShadow: '0 0 18px rgba(244,114,182,0.35)',
               }}>
-                <span style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 700 }}>
-                  {de ? '💔 Verlorene Felder' : '💔 Lost cells'}
+                <span style={{ fontSize: 22 }}>💞</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FBCFE8', textAlign: 'left' }}>
+                  {de
+                    ? `Sympathie-Bonus mit ${mutualPartner.name}`
+                    : `Sympathy bonus with ${mutualPartner.name}`}
                 </span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: '#F87171' }}>
-                  −{myResolution.lostBets}
-                </span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#FBCFE8' }}>+1</span>
               </div>
             )}
+            {/* Total */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '14px 16px', borderRadius: 14,
+              background: 'rgba(34,197,94,0.12)',
+              border: '2px solid rgba(34,197,94,0.45)',
+              marginTop: 4,
+            }}>
+              <span style={{ fontSize: 14, color: '#86EFAC', fontWeight: 800 }}>
+                {de ? '✨ Dein Bonus' : '✨ Your bonus'}
+              </span>
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#22C55E' }}>
+                +{myResolution.totalBonus}
+              </span>
+            </div>
           </div>
         )}
         <div style={{ marginTop: 14, fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
-          {de ? 'Schau auf den Beamer für die Score-Cascade!' : 'Watch the beamer for the score cascade!'}
+          {de ? 'Schau auf den Beamer für die End-Awards!' : 'Watch the beamer for the end-awards!'}
         </div>
       </div>
     </CozyCard>

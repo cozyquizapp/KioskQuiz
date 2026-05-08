@@ -23,6 +23,7 @@ import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
@@ -15099,23 +15100,48 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
+// 2026-05-09 (Final-Wager Refactor): 3-Akt-End-Reveal-Choreo.
+// Akt 1 (~5s): Cluster-Visual — pro Team gestaffelt alle Cells highlighten
+//              mit Color-Glow + Pulse, zeigt visuell die Territorien.
+// Akt 2 (~8s): Wager-Reveal — Score-Cascade mit Cells + Tipp-Bonus + 💞-Marker
+//              für Sympathie-Pairs + Total. Stagger-Reveal von oben nach unten.
+// Akt 3 (~10s): End-Awards — 3 Mario-Party-Awards (Underdog · Meisterklauer ·
+//              Speedy Gonzales) gestaffelt mit Konfetti.
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
-  const winners = s.finalRoundWinners ?? [];
-  const winnerTeams = winners.map(id => s.teams.find(t => t.id === id)).filter(Boolean) as QQTeam[];
-  // Score-Cascade: jedes Team mit (gridCells, bonusCoins, lostBets, finalScore=gridCells+bonusCoins)
-  // sortiert nach finalScore desc.
-  const teamRows = s.teams.map(t => {
-    const cells = (() => {
-      let n = 0;
-      for (const row of s.grid) for (const cell of row) if (cell.ownerId === t.id) n++;
-      return n;
-    })();
+  const [act, setAct] = useState<0 | 1 | 2 | 3>(0);
+  useEffect(() => {
+    // Auto-progression: Title-Hold → Cluster → Wager → Awards
+    const t1 = window.setTimeout(() => setAct(1), 1200);   // Title-Hold
+    const t2 = window.setTimeout(() => setAct(2), 6700);   // Cluster ~5.5s
+    const t3 = window.setTimeout(() => setAct(3), 15000);  // Wager ~8.3s
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); window.clearTimeout(t3); };
+  }, []);
+
+  // Cells pro Team (für Wager-Cascade-Anzeige)
+  const cellsByTeam: Record<string, number> = {};
+  for (const t of s.teams) cellsByTeam[t.id] = 0;
+  for (const row of s.grid) for (const cell of row) {
+    if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
+  }
+  // Award-Picks kommen vom Backend (s.endAwards) — siehe qqResolveFinalBets
+  const awards = s.endAwards;
+  const underdog = awards?.underdog ? s.teams.find(t => t.id === awards.underdog) ?? null : null;
+  const meisterklauer = awards?.meisterklauer ? s.teams.find(t => t.id === awards.meisterklauer) ?? null : null;
+  const speedy = awards?.speedy ? s.teams.find(t => t.id === awards.speedy) ?? null : null;
+
+  // Wager-Cascade Rows
+  const wagerRows = s.teams.map(t => {
+    const cells = cellsByTeam[t.id] ?? 0;
     const res = s.finalBetResolution?.[t.id];
-    const bonus = res?.bonusCoins ?? 0;
-    const lost = res?.lostBets ?? 0;
+    const bonus = res?.totalBonus ?? 0;
     return {
       team: t,
-      cells, bonus, lost,
+      cells,
+      bonus,
+      targetWins: res?.targetWins ?? 0,
+      sympathy: res?.sympathyBonus ?? 0,
+      mutualWith: res?.mutualWith ?? null,
+      targetTeamId: res?.targetTeamId ?? null,
       finalScore: cells + bonus,
     };
   }).sort((a, b) => b.finalScore - a.finalScore);
@@ -15124,90 +15150,315 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     <div style={{
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '6vh 4vw',
+      padding: '4vh 4vw',
       background: COZY_CARD_BG,
-      overflow: 'auto',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={{
-        fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#FBBF24',
-        textTransform: 'uppercase', letterSpacing: '0.18em',
-        marginBottom: 12, opacity: 0.9,
-      }}>🏆 Final-Auflösung</div>
+      {/* Globale Akt-Cross-Fade-Animation: jedes Akt-Container fadet und
+          slidet weich; nur jeweils 1 Akt visible (zentriert) */}
+      <style>{`
+        @keyframes qqFRTitleIn {
+          0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
+          100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
+        }
+        @keyframes qqFRClusterPulse {
+          0%, 100% { transform: scale(1);    box-shadow: 0 0 16px var(--c-color); }
+          50%      { transform: scale(1.06); box-shadow: 0 0 32px var(--c-color); }
+        }
+        @keyframes qqFRRowIn {
+          0%   { opacity: 0; transform: translateX(-40px); }
+          70%  { opacity: 1; transform: translateX(6px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes qqFRAwardCardIn {
+          0%   { opacity: 0; transform: translateY(60px) scale(0.7) rotate(-6deg); filter: blur(8px); }
+          60%  { opacity: 1; transform: translateY(-8px) scale(1.06) rotate(2deg); filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0)    scale(1)    rotate(0);   filter: blur(0); }
+        }
+        @keyframes qqFRSubFade {
+          0%, 100% { opacity: 0.85; }
+          50%      { opacity: 1; }
+        }
+      `}</style>
 
+      {/* Akt-Title — bleibt immer oben sichtbar, Text wechselt pro Akt */}
       <div style={{
-        fontSize: 'clamp(40px, 5.5vw, 90px)', fontWeight: 900, color: '#F1F5F9',
-        lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
-        marginBottom: 20,
-      }}>Die Wetten gehen auf...</div>
-
-      {/* Sieger-Banner */}
-      {winnerTeams.length > 0 && (
+        position: 'absolute', top: '4vh', left: 0, right: 0,
+        textAlign: 'center', pointerEvents: 'none', zIndex: 10,
+      }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 18,
-          padding: '18px 28px', borderRadius: 24,
-          background: 'linear-gradient(135deg, rgba(251,191,36,0.20), rgba(245,158,11,0.10))',
-          border: '2px solid rgba(251,191,36,0.55)',
-          boxShadow: '0 0 48px rgba(251,191,36,0.40)',
-          marginBottom: 36,
+          fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
+          color: '#F9A8D4',
+          textTransform: 'uppercase', letterSpacing: '0.18em',
+          opacity: 0.9, marginBottom: 8,
         }}>
-          <div style={{ fontSize: 'clamp(16px, 1.4vw, 24px)', color: '#FBBF24', fontWeight: 900, letterSpacing: '0.08em' }}>
-            FINAL-RUNDEN-SIEGER:
-          </div>
-          {winnerTeams.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
-              <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900, color: t.color }}>{t.name}</div>
-            </div>
-          ))}
+          {act === 0 ? '🏆 Finale Auflösung'
+           : act === 1 ? '🗺 Akt 1 — Eure Territorien'
+           : act === 2 ? '🎰 Akt 2 — Tipp-Auflösung'
+           : '🎉 Akt 3 — End-Awards'}
+        </div>
+      </div>
+
+      {/* Akt 0 — Title (CozyQuiz Finale-Reveal Hero) */}
+      {act === 0 && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 24,
+          animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+        }}>
+          <div style={{ fontSize: 'clamp(72px, 10vw, 180px)', lineHeight: 1 }}>🏆</div>
+          <div style={{
+            fontSize: 'clamp(40px, 5.5vw, 96px)', fontWeight: 900,
+            color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+            textShadow: '0 0 36px rgba(236,72,153,0.45)',
+          }}>Die Auflösung</div>
         </div>
       )}
 
-      {/* Score-Cascade — sortiert nach finalScore desc */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', gap: 12,
-        width: '100%', maxWidth: 980,
-      }}>
-        {teamRows.map((row, idx) => (
-          <div key={row.team.id} style={{
-            display: 'grid',
-            gridTemplateColumns: '52px 1fr auto auto auto auto',
-            gap: 16,
-            alignItems: 'center',
-            padding: '14px 22px',
-            borderRadius: 18,
-            background: idx === 0 ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
-            border: `1.5px solid ${idx === 0 ? 'rgba(251,191,36,0.45)' : 'rgba(255,255,255,0.10)'}`,
-            animation: `qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) ${idx * 0.18}s both`,
-          }}>
-            <div style={{ fontSize: 'clamp(18px, 1.6vw, 28px)', fontWeight: 900, color: '#94A3B8' }}>#{idx + 1}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <QQTeamAvatar avatarId={row.team.avatarId} teamEmoji={row.team.emoji} size={44} />
-              <div style={{ fontSize: 'clamp(18px, 1.7vw, 28px)', fontWeight: 800, color: row.team.color }}>{row.team.name}</div>
-            </div>
-            <div style={{ fontSize: 'clamp(16px, 1.5vw, 26px)', fontWeight: 900, color: '#CBD5E1' }}>{row.cells}</div>
-            <div style={{
-              fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
-              color: row.bonus > 0 ? '#22C55E' : '#475569',
-              minWidth: 60, textAlign: 'right',
-            }}>{row.bonus > 0 ? `+${row.bonus}` : ''}</div>
-            <div style={{
-              fontSize: 'clamp(13px, 1.1vw, 18px)', fontWeight: 700,
-              color: row.lost > 0 ? '#F87171' : '#475569',
-              minWidth: 50, textAlign: 'right',
-            }}>{row.lost > 0 ? `−${row.lost}` : ''}</div>
-            <div style={{
-              fontSize: 'clamp(22px, 2vw, 36px)', fontWeight: 900,
-              color: idx === 0 ? '#FBBF24' : row.team.color,
-              letterSpacing: '-0.02em',
-              minWidth: 80, textAlign: 'right',
-            }}>= {row.finalScore}</div>
-          </div>
-        ))}
-      </div>
+      {/* Akt 1 — Cluster-Visual (Brett mit Team-Glow) */}
+      {act === 1 && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 24,
+          width: '100%',
+        }}>
+          <div style={{
+            fontSize: 'clamp(28px, 3.5vw, 56px)', fontWeight: 900,
+            color: '#F1F5F9', textAlign: 'center',
+            opacity: 0, animation: 'qqFRTitleIn 0.7s ease 0.2s both',
+            marginBottom: 8,
+          }}>Eure Felder leuchten auf …</div>
+          {/* Mini-Brett — pro Team gestaffelt highlighten */}
+          {(() => {
+            const cellSz = Math.min(64, Math.floor(560 / Math.max(1, s.gridSize)));
+            return (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${s.gridSize}, ${cellSz}px)`,
+                gridTemplateRows: `repeat(${s.gridSize}, ${cellSz}px)`,
+                gap: 6,
+                animation: 'qqFRTitleIn 0.7s ease 0.4s both',
+              }}>
+                {s.grid.map((row, r) => row.map((cell, c) => {
+                  if (!cell.ownerId) {
+                    return (
+                      <div key={`${r}-${c}`} style={{
+                        width: cellSz, height: cellSz,
+                        borderRadius: cellSz * 0.18,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }} />
+                    );
+                  }
+                  const owner = s.teams.find(t => t.id === cell.ownerId);
+                  if (!owner) return null;
+                  // Pro Team eigenes Pulse-Delay, damit Teams gestaffelt glühen
+                  const teamIdx = s.teams.findIndex(t => t.id === owner.id);
+                  const delay = 0.3 + teamIdx * 0.4;
+                  return (
+                    <div key={`${r}-${c}`} style={{
+                      width: cellSz, height: cellSz,
+                      borderRadius: cellSz * 0.18,
+                      background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
+                      border: `2px solid ${owner.color}`,
+                      ['--c-color' as any]: owner.color,
+                      animation: `qqFRClusterPulse 2.4s ease-in-out ${delay}s infinite`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {owner.emoji && (
+                        <span style={{
+                          fontSize: cellSz * 0.5, lineHeight: 1,
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+                        }}>{owner.emoji}</span>
+                      )}
+                    </div>
+                  );
+                }))}
+              </div>
+            );
+          })()}
+          <div style={{
+            fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
+            opacity: 0, animation: 'qqFRTitleIn 0.7s ease 0.6s both, qqFRSubFade 2s ease-in-out 1.5s infinite',
+            marginTop: 8, fontStyle: 'italic',
+          }}>(Cluster sind reine Show — kein Bonus für Größe)</div>
+        </div>
+      )}
 
-      <div style={{ marginTop: 26, fontSize: 'clamp(13px, 1vw, 18px)', color: '#64748b' }}>
-        Felder · Bonus-Coins · verlorene Wetten · Endstand
-      </div>
+      {/* Akt 2 — Wager-Reveal (Score-Cascade mit Tipp-Bonus + 💞 Sympathie) */}
+      {act === 2 && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 12,
+          width: '100%', maxWidth: 1100, marginTop: 'clamp(40px, 6vh, 80px)',
+        }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 12, width: '100%',
+          }}>
+            {wagerRows.map((row, idx) => {
+              const targetTeam = row.targetTeamId ? s.teams.find(t => t.id === row.targetTeamId) : null;
+              const isMutual = !!row.mutualWith;
+              return (
+                <div key={row.team.id} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '56px 1fr auto auto auto auto',
+                  gap: 14,
+                  alignItems: 'center',
+                  padding: '14px 22px',
+                  borderRadius: 18,
+                  background: idx === 0 ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: `1.5px solid ${idx === 0 ? 'rgba(251,191,36,0.45)' : 'rgba(255,255,255,0.10)'}`,
+                  animation: `qqFRRowIn 0.65s cubic-bezier(0.34,1.4,0.5,1) ${0.15 + idx * 0.20}s both`,
+                  opacity: 0,
+                }}>
+                  <div style={{ fontSize: 'clamp(18px, 1.6vw, 28px)', fontWeight: 900, color: '#94A3B8' }}>#{idx + 1}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <QQTeamAvatar avatarId={row.team.avatarId} teamEmoji={row.team.emoji} size={44} />
+                    <div style={{ fontSize: 'clamp(18px, 1.7vw, 28px)', fontWeight: 800, color: row.team.color }}>{row.team.name}</div>
+                    {isMutual && (
+                      <span style={{
+                        fontSize: 'clamp(20px, 2vw, 30px)',
+                        animation: 'qqFRSubFade 1.4s ease-in-out infinite',
+                      }} title="Sympathie-Bonus">💞</span>
+                    )}
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 700,
+                    color: '#CBD5E1', minWidth: 60, textAlign: 'right',
+                  }}>{row.cells}<span style={{ fontSize: '0.65em', color: '#64748B' }}> Felder</span></div>
+                  {/* Tipp-Bonus-Spalte */}
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.1vw, 18px)', fontWeight: 700,
+                    color: targetTeam ? '#94A3B8' : '#475569',
+                    minWidth: 90, textAlign: 'right',
+                  }}>
+                    {targetTeam ? (
+                      <>
+                        <span style={{ fontSize: '0.78em' }}>{targetTeam.emoji ?? '🎯'} </span>
+                        <span style={{ color: targetTeam.color, fontWeight: 900 }}>{row.targetWins}×</span>
+                      </>
+                    ) : (
+                      <span style={{ fontStyle: 'italic', fontSize: '0.85em' }}>kein Tipp</span>
+                    )}
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(15px, 1.4vw, 24px)', fontWeight: 900,
+                    color: row.bonus > 0 ? '#22C55E' : '#475569',
+                    minWidth: 60, textAlign: 'right',
+                  }}>{row.bonus > 0 ? `+${row.bonus}` : ''}</div>
+                  <div style={{
+                    fontSize: 'clamp(22px, 2vw, 36px)', fontWeight: 900,
+                    color: idx === 0 ? '#FBBF24' : row.team.color,
+                    letterSpacing: '-0.02em',
+                    minWidth: 80, textAlign: 'right',
+                  }}>= {row.finalScore}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{
+            marginTop: 16, fontSize: 'clamp(13px, 1vw, 18px)', color: '#64748b',
+            display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center',
+            opacity: 0, animation: 'qqFRTitleIn 0.5s ease 1.6s both',
+          }}>
+            <span>Felder + Tipp-Bonus + 💞 = Endstand</span>
+          </div>
+        </div>
+      )}
+
+      {/* Akt 3 — End-Awards (3 Mario-Party-Style Cards mit Konfetti) */}
+      {act === 3 && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px, 3vh, 40px)',
+          width: '100%', position: 'relative',
+        }}>
+          {/* Konfetti hinter den Cards */}
+          <Confetti active duration={9000} />
+          <div style={{
+            display: 'flex', gap: 'clamp(18px, 2.5vw, 40px)',
+            flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-end',
+          }}>
+            <AwardCard
+              emoji="🐢" titleDe="Underdog-Trostpreis" titleEn="Underdog Award"
+              descDe="Niedrigster Score" descEn="Lowest score"
+              winner={underdog} delay="0.3s" accent="#10B981"
+            />
+            <AwardCard
+              emoji="🦝" titleDe="Meisterklauer" titleEn="Master Thief"
+              descDe="Meiste Klaus" descEn="Most steals"
+              winner={meisterklauer}
+              metric={meisterklauer && awards?.meisterklauerCount ? `${awards.meisterklauerCount}× geklaut` : null}
+              delay="1.0s" accent="#A855F7"
+            />
+            <AwardCard
+              emoji="⚡" titleDe="Speedy Gonzales" titleEn="Speedy Gonzales"
+              descDe="Schnellste Antworten" descEn="Fastest answers"
+              winner={speedy}
+              metric={speedy && awards?.speedyAvgMs ? `+ Ø ${(awards.speedyAvgMs / 1000).toFixed(1)}s` : null}
+              delay="1.7s" accent="#F472B6"
+            />
+          </div>
+          <div style={{
+            fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#94A3B8', marginTop: 8,
+            opacity: 0, animation: 'qqFRTitleIn 0.6s ease 2.4s both',
+            fontStyle: 'italic',
+          }}>+1 Bonus-Punkt für jeden Award-Sieger</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AwardCard({
+  emoji, titleDe, titleEn, descDe, descEn, winner, metric, delay, accent,
+}: {
+  emoji: string; titleDe: string; titleEn: string;
+  descDe: string; descEn: string;
+  winner: QQTeam | null; metric?: string | null;
+  delay: string; accent: string;
+}) {
+  return (
+    <div style={{
+      width: 'clamp(220px, 22vw, 320px)',
+      padding: 'clamp(18px, 2.5vh, 28px) clamp(16px, 1.8vw, 26px)',
+      borderRadius: 22,
+      background: `linear-gradient(160deg, ${accent}25, ${accent}10)`,
+      border: `2.5px solid ${accent}88`,
+      boxShadow: `0 20px 60px rgba(0,0,0,0.55), 0 0 60px ${accent}55, inset 0 0 40px ${accent}18`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+      animation: `qqFRAwardCardIn 0.9s cubic-bezier(0.34, 1.46, 0.64, 1) ${delay} both`,
+      opacity: 0,
+    }}>
+      <div style={{ fontSize: 'clamp(48px, 6vw, 88px)', lineHeight: 1 }}>{emoji}</div>
+      <div style={{
+        fontSize: 'clamp(11px, 1vw, 15px)', fontWeight: 900,
+        color: accent, textTransform: 'uppercase', letterSpacing: '0.14em',
+        textAlign: 'center',
+      }}>{titleDe}</div>
+      <div style={{
+        fontSize: 'clamp(11px, 0.9vw, 13px)', color: '#94A3B8',
+        textAlign: 'center', fontStyle: 'italic',
+      }}>{descDe}</div>
+      {winner ? (
+        <>
+          <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size="clamp(56px, 6vw, 80px)" />
+          <div style={{
+            fontSize: 'clamp(16px, 1.6vw, 22px)', fontWeight: 900,
+            color: winner.color, textAlign: 'center',
+          }}>{winner.name}</div>
+          {metric && (
+            <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#CBD5E1', fontWeight: 700 }}>
+              {metric}
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#475569', fontStyle: 'italic' }}>
+          (kein Sieger)
+        </div>
+      )}
     </div>
   );
 }

@@ -262,18 +262,25 @@ export interface QQRoomState {
   }>;
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
   // ── Final-Wager-Mechanik (FINAL_BETTING-Phase) ──────────────────────────────
-  /** Pro Team Liste der gesetzten Wetten. Cell wird nicht visuell konvertiert,
-   *  bleibt am Brett. Bei Resolve: Bonus-Coins werden separat addiert ODER
-   *  Cells werden als „verloren" entfernt. */
-  finalBets: Record<string, import('../../../shared/quarterQuizTypes').QQFinalBet[]>;
+  // 2026-05-09 Refactor: Tipp-Variante. 1 Tipp pro Team auf anderes (oder eigenes)
+  // Team. Bonus = Final-Kat-Wins des getippten Teams + 1 wenn mutual.
+  /** Pro Team genau 1 Tipp (oder null = kein Tipp = 0 Bonus-Chance). */
+  finalBets: Record<string, import('../../../shared/quarterQuizTypes').QQFinalBet | null>;
   /** Pro Team Submit-Status (true = Team hat seine Wahl bestätigt). */
   finalBettingSubmitted: Record<string, boolean>;
-  /** Sieger der Final-Runde (Tied-OK: alle mit gleicher Max-Final-Phase-Score). */
+  /** Pro Team akkumulierte Final-Kat-Wins (0..5). Wird per-Frage beim
+   *  qqNextQuestion innerhalb der Final-Phase aus Cells-Delta hochgezählt. */
+  finalPhaseWins: Record<string, number>;
+  /** Letzter Cells-Snapshot zum Delta-Tracking pro Final-Frage. */
+  finalLastSnapshot: Record<string, number> | null;
+  /** Legacy/optional: Sieger-Liste (Top-Win-Team(s)) — UI-Hinweis only. */
   finalRoundWinners: string[] | null;
-  /** Score-Snapshot beim Start der Final-Phase, um „in der Final-Phase erspielte Felder" zu berechnen. */
+  /** Score-Snapshot beim Start der Final-Phase. */
   finalRoundScoreSnapshot: Record<string, number> | null;
-  /** Aufgelöste Bonus/Verluste pro Team — wird beim Resolve gesetzt. */
+  /** Aufgelöste Bonus pro Team — wird beim Resolve gesetzt. */
   finalBetResolution: Record<string, import('../../../shared/quarterQuizTypes').QQFinalBetResolution> | null;
+  /** End-Awards (Mario-Party-Style) — Underdog · Meisterklauer · Speedy. */
+  endAwards: import('../../../shared/quarterQuizTypes').QQEndAwards | null;
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Default false. */
   finalWagerEnabled: boolean;
 }
@@ -425,8 +432,11 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       // Final-Wager-Mechanik (FINAL_BETTING-Phase)
       finalBets: {},
       finalBettingSubmitted: {},
+      finalPhaseWins: {},
+      finalLastSnapshot: null,
       finalRoundWinners: null,
       finalBetResolution: null,
+      endAwards: null,
       finalRoundScoreSnapshot: null,
       finalWagerEnabled: false,
     };
@@ -3257,6 +3267,19 @@ export function qqNextQuestion(room: QQRoomState): void {
   // question (not just the last-of-phase) contributes to summary stats.
   qqFlushQuestionToHistory(room);
 
+  // 2026-05-09 (Final-Wager Refactor): Per-Frage-Win-Tracking — wenn wir in
+  // der Final-Phase sind und ein Snapshot existiert, vergleiche Cells-Delta
+  // gegen letzten Snapshot und increment finalPhaseWins für Top-Delta-Team.
+  // Wird auch bei Phase-End (= letzte Frage gerade abgeschlossen) ausgeführt,
+  // sodass qqResolveFinalBets keinen eigenen Tick mehr braucht.
+  if (
+    room.gamePhaseIndex === room.totalPhases &&
+    room.finalLastSnapshot !== null &&
+    !room.finalBetResolution
+  ) {
+    qqTickFinalPhaseWin(room);
+  }
+
   const nextIndex = room.questionIndex + 1;
 
   // End of phase?
@@ -3678,8 +3701,12 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     introStep:        room.introStep,
     finalBets:        room.finalBets ?? {},
     finalBettingSubmitted: room.finalBettingSubmitted ?? {},
+    teamTotalSteals:  room.teamTotalSteals ?? {},
+    finalPhaseWins:        room.finalPhaseWins ?? {},
+    finalLastSnapshot:     room.finalLastSnapshot ?? null,
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
+    endAwards:             room.endAwards ?? null,
     finalWagerEnabled:     room.finalWagerEnabled ?? false,
     categoryIsNew:    (() => {
       const q = room.currentQuestion;
@@ -5068,19 +5095,25 @@ export function qqStartFinalBetting(room: QQRoomState): void {
   room.phase = 'FINAL_BETTING';
   room.finalBets = {};
   room.finalBettingSubmitted = {};
+  room.finalPhaseWins = {};
+  for (const id of Object.keys(room.teams)) room.finalPhaseWins[id] = 0;
   room.finalRoundWinners = null;
   room.finalBetResolution = null;
-  // Score-Snapshot: Anzahl Cells pro Team JETZT festhalten — nach der Final-
-  // Phase wird verglichen wer am meisten dazu gewonnen hat.
-  room.finalRoundScoreSnapshot = countCellsByTeam(room);
+  // Score-Snapshot: Anzahl Cells pro Team JETZT festhalten — wird beim Wechsel
+  // in die nächste Final-Frage als Delta-Basis genutzt (Per-Frage-Win-Tracking).
+  const initialSnapshot = countCellsByTeam(room);
+  room.finalRoundScoreSnapshot = initialSnapshot;
+  room.finalLastSnapshot = { ...initialSnapshot };
   room.lastActivityAt = Date.now();
 }
 
-/** Team submitted seine Wetten. Validiert Cap (≤ floor(myCells/2)) + Owner. */
+/** Team submitted seinen Tipp.
+ *  2026-05-09 Refactor: Tipp-Variante. 1 Tipp pro Team auf anderes (oder
+ *  eigenes) Team. KEIN Cell-Risk mehr — kein Owner-Check, kein Cap. */
 export function qqSubmitFinalBet(
   room: QQRoomState,
   teamId: string,
-  bets: QQFinalBet[],
+  bet: QQFinalBet | null,
 ): void {
   if (room.phase !== 'FINAL_BETTING') {
     throw new Error('NOT_IN_FINAL_BETTING');
@@ -5088,103 +5121,154 @@ export function qqSubmitFinalBet(
   if (!room.teams[teamId]) {
     throw new Error('TEAM_UNKNOWN');
   }
-  // Cap-Check
-  const myCells = countCellsByTeam(room)[teamId] ?? 0;
-  const cap = Math.floor(myCells / 2);
-  if (bets.length > cap) {
-    throw new Error(`BET_CAP_EXCEEDED: max ${cap}, got ${bets.length}`);
+  if (bet) {
+    if (!room.teams[bet.targetTeamId]) throw new Error('BET_TARGET_UNKNOWN');
   }
-  // Owner-Check: jede Bet muss ein eigenes Feld referenzieren
-  // Target-Check: targetTeamId muss ein bekanntes Team sein
-  const seen = new Set<string>();
-  for (const b of bets) {
-    const cell = room.grid[b.row]?.[b.col];
-    if (!cell) throw new Error('BET_CELL_OUT_OF_RANGE');
-    if (cell.ownerId !== teamId) throw new Error('BET_CELL_NOT_OWNED');
-    if (!room.teams[b.targetTeamId]) throw new Error('BET_TARGET_UNKNOWN');
-    const key = `${b.row}-${b.col}`;
-    if (seen.has(key)) throw new Error('BET_CELL_DUPLICATE');
-    seen.add(key);
-  }
-  room.finalBets[teamId] = bets;
+  room.finalBets[teamId] = bet;
   room.finalBettingSubmitted[teamId] = true;
   room.lastActivityAt = Date.now();
 }
 
 /** Mod beendet die Bet-Phase und startet die Final-Phase (eigentliches Spiel).
- *  Teams die nicht submittet haben, gelten mit 0 Bets (Default). */
+ *  Teams die nicht submittet haben, gelten mit null (= kein Tipp). */
 export function qqFinishFinalBetting(room: QQRoomState): void {
   if (room.phase !== 'FINAL_BETTING') {
     throw new Error('NOT_IN_FINAL_BETTING');
   }
-  // Bei nicht-submittetten Teams: leere Liste (= 0 Bets, 0 Bonus-Chance)
+  // Bei nicht-submittetten Teams: null (= kein Tipp, kein Bonus möglich)
   for (const id of Object.keys(room.teams)) {
-    if (!room.finalBets[id]) room.finalBets[id] = [];
+    if (room.finalBets[id] === undefined) room.finalBets[id] = null;
   }
-  // Phase wechselt zurück zu PHASE_INTRO oder QUESTION_ACTIVE — der Mod
-  // löst die Final-Phase via qqActivateQuestion regulär aus. Wir setzen
-  // auf PHASE_INTRO mit gamePhaseIndex bereits = letzte Phase.
+  // Phase wechselt zurück zu PHASE_INTRO mit letzter Phase = Final-Phase.
   room.phase = 'PHASE_INTRO';
   room.introStep = 0;
   room.lastActivityAt = Date.now();
 }
 
-/** Berechnet die Sieger der Final-Phase (Tied-OK) und löst die Bets auf.
- *  Wechselt zu FINAL_REVEAL für die Score-Cascade-Animation am Beamer. */
-export function qqResolveFinalBets(room: QQRoomState): void {
-  // Erlaubt nach letzter Frage der Final-Phase (typisch QUESTION_REVEAL/PLACEMENT)
-  // Wir validieren softer als andere Übergänge, weil Mod manuell triggert.
-  const snapshot = room.finalRoundScoreSnapshot ?? {};
-  const nowCounts = countCellsByTeam(room);
-  // „Erspielte Felder in der Final-Phase" = now - snapshot
-  const gained: Record<string, number> = {};
+/** Per-Frage-Win-Tracking innerhalb der Final-Phase.
+ *  Delta gegen finalLastSnapshot → Team(s) mit max-gained = Winner(s) dieser
+ *  Kategorie. Bei Tie: alle Top-Teams bekommen +1. Wenn niemand gewonnen hat
+ *  (alle Deltas = 0), zählt's als „nobody-win" — kein Increment.
+ *  Side-Effect: aktualisiert finalLastSnapshot auf den neuen Stand. */
+export function qqTickFinalPhaseWin(room: QQRoomState): void {
+  if (!room.finalLastSnapshot) return;
+  const now = countCellsByTeam(room);
+  const delta: Record<string, number> = {};
+  let max = 0;
   for (const id of Object.keys(room.teams)) {
-    gained[id] = (nowCounts[id] ?? 0) - (snapshot[id] ?? 0);
+    delta[id] = (now[id] ?? 0) - (room.finalLastSnapshot[id] ?? 0);
+    if (delta[id] > max) max = delta[id];
   }
-  // Sieger-Bestimmung: Team(s) mit max gained
+  if (max > 0) {
+    for (const id of Object.keys(delta)) {
+      if (delta[id] === max) {
+        room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
+      }
+    }
+  }
+  room.finalLastSnapshot = { ...now };
+}
+
+/** Berechnet die Auflösung der Tipps (Bonus = Final-Kat-Wins des getippten
+ *  Teams + 1 wenn mutual). Wechselt zu FINAL_REVEAL für die 3-Akt-Choreo.
+ *  Annahme: qqNextQuestion hat den Per-Frage-Win-Tick für ALLE 5 Final-Fragen
+ *  bereits durchgeführt (siehe Block in qqNextQuestion vor `nextIndex`). */
+export function qqResolveFinalBets(room: QQRoomState): void {
+  // Optional: Top-Win-Team(s) für UI-Hint berechnen
   let max = -Infinity;
-  for (const id of Object.keys(gained)) max = Math.max(max, gained[id]);
-  const winners = Object.keys(gained).filter(id => gained[id] === max && max >= 0);
-  room.finalRoundWinners = winners;
+  for (const id of Object.keys(room.finalPhaseWins)) {
+    max = Math.max(max, room.finalPhaseWins[id]);
+  }
+  room.finalRoundWinners = max > 0
+    ? Object.keys(room.finalPhaseWins).filter(id => room.finalPhaseWins[id] === max)
+    : [];
 
   // Per-Team Resolve
   const resolution: Record<string, QQFinalBetResolution> = {};
   for (const teamId of Object.keys(room.teams)) {
-    const bets = room.finalBets[teamId] ?? [];
-    const betsOnWinners: QQFinalBet[] = [];
-    const betsLost: QQFinalBet[] = [];
-    for (const b of bets) {
-      if (winners.includes(b.targetTeamId)) {
-        betsOnWinners.push(b);
-      } else {
-        betsLost.push(b);
-      }
+    const myBet = room.finalBets[teamId] ?? null;
+    if (!myBet) {
+      resolution[teamId] = {
+        targetTeamId: null,
+        targetWins: 0,
+        sympathyBonus: 0,
+        totalBonus: 0,
+        mutualWith: null,
+      };
+      continue;
     }
+    const targetWins = room.finalPhaseWins[myBet.targetTeamId] ?? 0;
+    // Sympathie-Bonus: gegen-Team (= mein Tipp-Target) hat MICH zurück getippt?
+    const reverseBet = room.finalBets[myBet.targetTeamId] ?? null;
+    const isMutual = !!(reverseBet && reverseBet.targetTeamId === teamId && myBet.targetTeamId !== teamId);
+    const sympathyBonus: 0 | 1 = isMutual ? 1 : 0;
     resolution[teamId] = {
-      bonusCoins: betsOnWinners.length,
-      lostBets: betsLost.length,
-      betsOnWinners,
-      betsLost,
+      targetTeamId: myBet.targetTeamId,
+      targetWins,
+      sympathyBonus,
+      totalBonus: targetWins + sympathyBonus,
+      mutualWith: isMutual ? myBet.targetTeamId : null,
     };
   }
   room.finalBetResolution = resolution;
 
-  // Cells der verlorenen Bets vom Brett entfernen — Owner = null
-  for (const teamId of Object.keys(resolution)) {
-    for (const b of resolution[teamId].betsLost) {
-      const cell = room.grid[b.row]?.[b.col];
-      if (cell && cell.ownerId === teamId) {
-        cell.ownerId = null;
-        cell.frozen = false;
-        cell.shielded = false;
-        cell.stuck = false;
-        cell.stackBonus = 0;
-        cell.jokerFormed = false;
-      }
+  // ── End-Awards (Mario-Party-Style) berechnen ─────────────────────────────
+  const teamIds = Object.keys(room.teams);
+  const cells = countCellsByTeam(room);
+  // Underdog: niedrigster totalCells. null wenn alle gleichauf.
+  let underdog: string | null = null;
+  if (teamIds.length > 0) {
+    const sorted = [...teamIds].sort((a, b) => (cells[a] ?? 0) - (cells[b] ?? 0));
+    const min = cells[sorted[0]] ?? 0;
+    const allTied = teamIds.every(id => cells[id] === min);
+    underdog = allTied ? null : sorted[0];
+  }
+  // Meisterklauer: max teamTotalSteals. null wenn niemand geklaut.
+  let meisterklauer: string | null = null;
+  let meisterklauerCount = 0;
+  for (const id of teamIds) {
+    const c = room.teamTotalSteals?.[id] ?? 0;
+    if (c > meisterklauerCount) {
+      meisterklauerCount = c;
+      meisterklauer = id;
     }
   }
+  if (meisterklauerCount === 0) meisterklauer = null;
+  // Speedy: niedrigste avg(submittedAt - firstAnswerOfQuestion) bei korrekten
+  // Antworten. Aus questionHistory.
+  const speedSum: Record<string, number> = {};
+  const speedCount: Record<string, number> = {};
+  for (const h of room.questionHistory) {
+    const answers = (h as any).answers as Array<{ teamId: string; submittedAt: number }> | undefined;
+    if (!answers || answers.length === 0) continue;
+    const first = Math.min(...answers.map(a => a.submittedAt));
+    const correctSet = new Set([...((h as any).correctTeamIds ?? []), ...(h.correctTeamId ? [h.correctTeamId] : [])]);
+    for (const a of answers) {
+      if (!correctSet.has(a.teamId)) continue;
+      speedSum[a.teamId] = (speedSum[a.teamId] ?? 0) + Math.max(0, a.submittedAt - first);
+      speedCount[a.teamId] = (speedCount[a.teamId] ?? 0) + 1;
+    }
+  }
+  let speedy: string | null = null;
+  let speedyAvgMs = 0;
+  let bestAvg = Infinity;
+  for (const id of teamIds) {
+    if (!speedCount[id] || speedCount[id] === 0) continue;
+    const avg = speedSum[id] / speedCount[id];
+    if (avg < bestAvg) {
+      bestAvg = avg;
+      speedy = id;
+      speedyAvgMs = avg;
+    }
+  }
+  room.endAwards = {
+    underdog,
+    meisterklauer, meisterklauerCount,
+    speedy, speedyAvgMs,
+  };
 
-  // Phase auf FINAL_REVEAL für Score-Cascade-Choreo am Beamer
+  // KEIN Cell-Removal mehr — alle Felder bleiben am Brett (Tipp-Variante).
+  // Phase auf FINAL_REVEAL für 3-Akt-Choreo am Beamer.
   room.phase = 'FINAL_REVEAL';
   room.lastActivityAt = Date.now();
 }

@@ -2778,11 +2778,16 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
               {submittedCount} / {totalTeams}
             </span>
           </div>
-          {/* Team-Liste mit Submit-Status + Bet-Count */}
+          {/* Team-Liste mit Submit-Status + Tipp-Target (Tipp-Variante 2026-05-09).
+              Zeigt: Team → tippt auf [Target] · grün wenn Mutual-Pair erkannt. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {s.teams.map(t => {
-              const bets = s.finalBets?.[t.id] ?? [];
+              const myBet = s.finalBets?.[t.id];
+              const targetTeam = myBet ? s.teams.find(tt => tt.id === myBet.targetTeamId) : null;
               const submitted = !!s.finalBettingSubmitted?.[t.id];
+              // Mutual erkennen: target tippt zurück auf t
+              const reverseBet = myBet ? s.finalBets?.[myBet.targetTeamId] : null;
+              const isMutual = !!(reverseBet && reverseBet.targetTeamId === t.id && myBet?.targetTeamId !== t.id);
               return (
                 <div key={t.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -2791,17 +2796,24 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
                   border: submitted ? '1px solid rgba(34,197,94,0.30)' : '1px solid rgba(255,255,255,0.06)',
                   fontSize: 12,
                 }}>
-                  <span style={{ fontSize: 16 }}>{t.emoji ?? '🎯'}</span>
-                  <span style={{ flex: 1, fontWeight: 800, color: t.color }}>{t.name}</span>
+                  <span style={{ fontSize: 16 }}>{(t as any).emoji ?? '🎯'}</span>
+                  <span style={{ fontWeight: 800, color: t.color, minWidth: 90 }}>{t.name}</span>
                   {submitted ? (
                     <>
                       <span style={{ color: '#86EFAC', fontWeight: 900 }}>✓</span>
-                      <span style={{ color: '#94A3B8', fontWeight: 700 }}>
-                        {bets.length} {bets.length === 1 ? 'Wette' : 'Wetten'}
-                      </span>
+                      <span style={{ color: '#94A3B8', fontSize: 11 }}>→</span>
+                      {targetTeam ? (
+                        <>
+                          <span style={{ fontSize: 14 }}>{(targetTeam as any).emoji ?? '🎯'}</span>
+                          <span style={{ color: targetTeam.color, fontWeight: 800 }}>{targetTeam.name}</span>
+                          {isMutual && <span title="Mutual-Pick (Sympathie-Bonus)">💞</span>}
+                        </>
+                      ) : (
+                        <span style={{ color: '#64748B', fontStyle: 'italic' }}>kein Tipp</span>
+                      )}
                     </>
                   ) : (
-                    <span style={{ color: '#64748B', fontWeight: 700 }}>⏳ wartet</span>
+                    <span style={{ color: '#64748B', fontWeight: 700, marginLeft: 'auto' }}>⏳ wartet</span>
                   )}
                 </div>
               );

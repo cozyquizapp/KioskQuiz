@@ -1055,32 +1055,70 @@ export interface QQStateUpdate {
   // Team. Cap: max floor(eigene_Felder / 2). Pro gewettetes Feld auf das Sieger-Team
   // der Final-Runde = +1 Bonus-Coin im End-Score (Felder bleiben am Brett, Cells
   // werden nicht visuell konvertiert — Bonus läuft als separate Pile).
-  finalBets: Record<string, QQFinalBet[]>;            // teamId → Array of bets
+  // 2026-05-09 Refactor: Tipp-Variante. Pro Team 1 Tipp (oder kein Tipp).
+  // Bonus = Anzahl Final-Kategorien-Wins des getippten Teams (0-5). Mutual-Pair
+  // (A→B && B→A) gibt zusätzlich +1 Sympathie-Bonus für beide Teams.
+  // KEIN Verlust mehr — niedrigster Bonus = 0, kein Cell-Removal, keine Strafe.
+  finalBets: Record<string, QQFinalBet | null>;       // teamId → 1 Tipp oder null
   finalBettingSubmitted: Record<string, boolean>;     // teamId → has-submitted-flag
-  finalRoundWinners: string[] | null;                 // Tied-OK: alle mit max Final-Phase-Score
-  finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus + losses
+  /** Lifetime-Steal-Counter pro Team (kumulativ über alle Phasen) — fließt
+   *  in den „Meisterklauer"-End-Award am Ende des Spiels ein. Backend-Source:
+   *  room.teamTotalSteals (increment in qqStealCell). */
+  teamTotalSteals: Record<string, number>;
+  /** End-Awards (Mario-Party-Style) — wird beim qqResolveFinalBets berechnet.
+   *  null wenn noch nicht resolved oder kein klarer Sieger pro Award. */
+  endAwards: QQEndAwards | null;
+  /** Pro Final-Phase-Frage akkumulierte Wins pro Team. Wird beim Wechsel in
+   *  die nächste Final-Frage (qqNextQuestion innerhalb der letzten Phase)
+   *  aus dem Cells-Delta gegen den vorhergegangenen Snapshot berechnet. */
+  finalPhaseWins: Record<string, number>;             // teamId → count of final-cat wins (0-5)
+  /** Letzter Cells-Snapshot zum Delta-Tracking pro Final-Frage. Wird bei
+   *  qqStartFinalBetting + nach jeder Final-Frage aktualisiert. */
+  finalLastSnapshot: Record<string, number> | null;
+  finalRoundWinners: string[] | null;                 // Legacy/optional: bei Tie alle gemeinsam — UI-Hinweis nur
+  finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Wenn true, lösen Space-
    *  Hotkey + Autoplay den Bet-Phase-Übergang automatisch aus (vor letzter
    *  Phase = Bet-Phase, nach letzter Frage = Resolve). Default false. */
   finalWagerEnabled: boolean;
 }
 
-/** Eine einzelne Wette in der Final-Betting-Phase.
- *  - row/col: das eigene Feld, das als „im Risiko" markiert wird
- *  - targetTeamId: auf welches Team gewettet wird (kann eigenes Team sein)
- */
+/** Tipp eines Teams auf ein anderes Team (oder eigenes Team).
+ *  2026-05-09 Refactor: kein Cell-Risk mehr — Tipp-Variante. */
 export interface QQFinalBet {
-  row: number;
-  col: number;
   targetTeamId: string;
 }
 
-/** Pro Team aufgelöstes Final-Bet-Ergebnis. */
+/** End-Awards (Mario-Party-Style): 3 Bonus-Awards die bei qqResolveFinalBets
+ *  berechnet werden. Jeder Award gibt +1 Punkt im End-Score. */
+export interface QQEndAwards {
+  /** Team mit niedrigstem totalCells (Trostpreis). null wenn alle gleichauf. */
+  underdog: string | null;
+  /** Team mit meisten Steals (kumulativ). null wenn niemand geklaut hat. */
+  meisterklauer: string | null;
+  /** Anzahl Klaus des Meisterklauers (zur Anzeige). */
+  meisterklauerCount: number;
+  /** Team mit kürzester avg-Antwortzeit relativ zur ersten korrekten Antwort
+   *  pro Frage. null wenn keine Daten. */
+  speedy: string | null;
+  /** Avg-Zeit in ms. */
+  speedyAvgMs: number;
+}
+
+/** Pro Team aufgelöstes Final-Tipp-Ergebnis.
+ *  bonus = N Final-Kat-Wins des getippten Teams + 1 wenn mutual.
+ *  KEIN Verlust mehr (kein lostBets, keine Cell-Removal). */
 export interface QQFinalBetResolution {
-  bonusCoins: number;       // Anzahl Bets auf Sieger-Team(s) → +1 pro Stück
-  lostBets: number;         // Anzahl Bets auf nicht-Sieger-Teams → diese Cells werden vom Brett entfernt
-  betsOnWinners: QQFinalBet[];  // welche Bets ausgezahlt haben (für Reveal-Anim)
-  betsLost: QQFinalBet[];       // welche Bets gefloppt sind (für Reveal-Anim)
+  /** Auf welches Team das Team getippt hat. null = kein Tipp abgegeben. */
+  targetTeamId: string | null;
+  /** Wins des getippten Teams (0-5). */
+  targetWins: number;
+  /** +1 wenn mutual-Pair (A→B && B→A). 0 sonst. */
+  sympathyBonus: 0 | 1;
+  /** Sum: targetWins + sympathyBonus. */
+  totalBonus: number;
+  /** Bei mutual-Pair: teamId des Sympathie-Partners. */
+  mutualWith: string | null;
 }
 
 export interface QQScheduleEntry {
@@ -1147,8 +1185,8 @@ export interface QQSetEnable3DPayload     { roomCode: string; enabled: boolean; 
 // Final-Betting-Phase
 /** Mod startet die Final-Betting-Phase (vor letzter Spiel-Phase) */
 export interface QQStartFinalBettingPayload { roomCode: string; }
-/** Team submitted seine Wetten (kann auch leer sein = 0 Wetten = 0 Bonus-Chance) */
-export interface QQSubmitFinalBetPayload    { roomCode: string; teamId: string; bets: QQFinalBet[]; }
+/** Team submitted seinen Tipp. bet = null bedeutet bewusst kein Tipp (= 0 Bonus-Chance). */
+export interface QQSubmitFinalBetPayload    { roomCode: string; teamId: string; bet: QQFinalBet | null; }
 /** Mod beendet die Bet-Phase + startet die Final-Phase (auch wenn nicht alle gesubmittet haben) */
 export interface QQFinishFinalBettingPayload { roomCode: string; }
 /** Mod löst Final-Reveal aus (nach letzter Frage der Final-Phase) */

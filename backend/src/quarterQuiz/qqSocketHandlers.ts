@@ -1078,9 +1078,8 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
 }
 
 /**
- * 2026-05-09 (Wolf-Bug): Bots setzen bei Final-Wetten nicht. Wenn FINAL_BETTING-
- * Phase startet, lassen wir alle Dummy-Teams gestaffelt zufällige Bets
- * submitten (zwischen 1 und cap, random Cells auf random Target-Teams).
+ * 2026-05-09 (Tipp-Variante Refactor): Bots tippen automatisch ein zufälliges
+ * anderes Team (oder gelegentlich sich selbst — 20%). Gestaffelt 0.5-2.5s.
  * Aufgerufen von qq:startFinalBetting nach broadcast.
  */
 export function maybeAutoFinalBets(io: SocketIOServer, roomCode: string): void {
@@ -1091,41 +1090,19 @@ export function maybeAutoFinalBets(io: SocketIOServer, roomCode: string): void {
   const dummies = Object.values(room.teams).filter((t: any) => t._dummy && !room.finalBettingSubmitted?.[t.id]) as any[];
   if (dummies.length === 0) return;
   const teamIds = Object.keys(room.teams);
-  // Helper: zähle eigene Felder
-  const ownCellsOf = (teamId: string) => {
-    const cells: Array<{ row: number; col: number }> = [];
-    for (let r = 0; r < room.gridSize; r++) {
-      for (let c = 0; c < room.gridSize; c++) {
-        if (room.grid[r]?.[c]?.ownerId === teamId) cells.push({ row: r, col: c });
-      }
-    }
-    return cells;
-  };
-  // Pro Dummy: gestaffelt 0.5-2.5s zufällig wetten
+  if (teamIds.length === 0) return;
+  // Pro Dummy: gestaffelt 0.5-2.5s einen Tipp abgeben
   dummies.forEach((dummy: any, idx: number) => {
     const delay = 500 + idx * 350 + Math.random() * 600;
     setTimeout(() => {
       const live = getQQRoom(roomCode);
       if (!live || live.phase !== 'FINAL_BETTING') return;
       if (live.finalBettingSubmitted?.[dummy.id]) return;
-      const myCells = ownCellsOf(dummy.id);
-      const cap = Math.floor(myCells.length / 2);
-      if (cap < 1) {
-        // Keine Felder zum wetten → 0 Bets submitten
-        try { qqSubmitFinalBet(live, dummy.id, []); } catch {}
-        broadcast(io, roomCode);
-        return;
-      }
-      // Random count zwischen 1 und cap (mindestens 1, sonst lame)
-      const count = 1 + Math.floor(Math.random() * cap);
-      // Random unique Cells
-      const shuffled = [...myCells].sort(() => Math.random() - 0.5).slice(0, count);
-      // Pro Cell random target team
-      const bets = shuffled.map(({ row, col }) => ({
-        row, col,
-        targetTeamId: teamIds[Math.floor(Math.random() * teamIds.length)],
-      }));
-      try { qqSubmitFinalBet(live, dummy.id, bets); } catch {}
+      // 20% Self-Tipp, 80% anderes random Team
+      const others = teamIds.filter(id => id !== dummy.id);
+      const pickSelf = others.length === 0 || Math.random() < 0.2;
+      const target = pickSelf ? dummy.id : others[Math.floor(Math.random() * others.length)];
+      try { qqSubmitFinalBet(live, dummy.id, { targetTeamId: target }); } catch {}
       broadcast(io, roomCode);
     }, delay);
   });
@@ -2943,7 +2920,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:submitFinalBet', (payload: QQSubmitFinalBetPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqSubmitFinalBet(room, payload.teamId, payload.bets);
+        qqSubmitFinalBet(room, payload.teamId, payload.bet);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

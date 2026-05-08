@@ -3940,17 +3940,11 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               display: 'inline-flex',
               animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite',
             }}>
-              {/* Shimmer-Sweep ueber den Wordmark nach Settle */}
-              <span aria-hidden style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.65) 50%, transparent 62%)',
-                backgroundSize: '220% 100%',
-                backgroundPosition: '-120% 0',
-                mixBlendMode: 'screen',
-                pointerEvents: 'none',
-                animation: 'qqIntroTitleShimmer 1.4s cubic-bezier(0.5, 0, 0.5, 1) 2.6s both',
-                clipPath: 'inset(0)',
-              }} />
+              {/* 2026-05-08 (Wolf 'shimmer-effekt wirkt billig'): Sweep-Overlay
+                  entfernt. Vorher zog ein weißer Linear-Gradient diagonal
+                  über den Wordmark — wirkte wie Cheap-CSS-Sheen-Effekt.
+                  Stinger-Hover-Animation auf dem Container reicht für
+                  Lebendigkeit. */}
               {Array.from(eurovisionMode ? title.toUpperCase() : title).map((ch, i) => (
                 <span key={i} style={{
                   display: 'inline-block',

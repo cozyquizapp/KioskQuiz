@@ -4265,55 +4265,70 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
   const lang = useLangFlip(language);
   const headline = lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln';
   const sub = lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!';
+  // 2026-05-08 (Wolf-Wunsch 'Now the rules als Card wie andere Rules-Slides'):
+  // Vorher Full-Bleed Overlay mit Blau/Lila-Glow (inkonsistent zu den
+  // Card-formatigen Rules-Slides die danach kommen). Jetzt: gleiche Card-
+  // Struktur wie buildRulesSlidesDe (Pink-Border, padding, blur-backdrop,
+  // Icon + Eyebrow + Title + Divider + Subtitle). Macht den Übergang Welcome
+  // → Intro → Slide-0 visuell konsistent (drei Cards in Folge statt
+  // Full-Bleed → Full-Bleed → Card).
+  const accent = '#EC4899';
   return (
     <BeamerOverlay
       visible={visible}
       zIndex={9988}
       hiddenScale={0.98}
-      background="radial-gradient(ellipse at center, #102033 0%, #0a1424 55%, #050912 100%)"
+      background="radial-gradient(ellipse at center, rgba(31,26,46,0.96) 0%, rgba(20,16,31,0.98) 55%, rgba(10,8,20,1) 100%)"
     >
-      {/* Hintergrund-Glow — kühles blau/violett */}
+      {/* Hintergrund-Glow — Brand-Pink statt Blau/Lila */}
       <div style={{
         position: 'absolute', left: '50%', top: '50%',
         width: '140vmin', height: '140vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(139,92,246,0.14) 40%, transparent 65%)',
+        background: 'radial-gradient(circle, rgba(236,72,153,0.22) 0%, rgba(162,18,71,0.12) 40%, transparent 65%)',
         filter: 'blur(10px)',
         animation: visible ? 'qqRulesIntroGlow 3.6s ease-out both' : 'none',
         pointerEvents: 'none',
       }} />
-      {/* Content */}
+      {/* Card — gleiche Struktur wie Rules-Slides (RulesView) */}
       <div style={{
         position: 'relative', zIndex: 5,
+        maxWidth: 1200, width: '94%',
+        background: 'rgba(15,12,9,0.85)',
+        border: `2px solid ${accent}44`,
+        borderRadius: 24,
+        padding: 'clamp(40px, 6vh, 80px) clamp(40px, 6vw, 96px)',
+        boxShadow: `0 0 120px ${accent}22, 0 16px 48px rgba(0,0,0,0.6)`,
+        backdropFilter: 'blur(10px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(18px, 3vh, 36px)', textAlign: 'center', padding: '0 6vw',
+        gap: 'clamp(14px, 2vh, 24px)', textAlign: 'center',
       }}>
         {/* 2026-05-05 v2 (Wolf 'Buch bouncen, sync zum Title-Wave'):
-            Entry-Animation + continuous qqCatNameWave. Delay 1.3s matched
-            zur Mitte der Title-Cascade (Title-Wave startet bei 1.0s + Mitte-
-            Stagger ~0.3s) → Emoji peakn synchron mit mittlerem Buchstaben.
-            Cycle 2.4s identisch zur Title-Wave. */}
+            Entry-Animation + continuous qqCatNameWave. */}
         <div style={{
-          fontSize: 'clamp(72px, 9vw, 140px)', lineHeight: 1,
+          fontSize: 'clamp(64px, 9vw, 110px)', lineHeight: 1,
           display: 'inline-block',
           animation: visible
             ? 'qqRulesIntroIcon 1.1s cubic-bezier(0.2,0.9,0.3,1.3) 0.2s both, qqCatNameWave 2.4s ease-in-out 1.3s infinite'
             : 'none',
-          filter: 'drop-shadow(0 6px 24px rgba(139,92,246,0.55))',
+          filter: `drop-shadow(0 6px 24px ${accent}66)`,
         }}>📖</div>
-        {/* 2026-05-05 (Wolf 'jetzt-kommen-die-regeln Text soll Wave wie nächste
-            Regelseiten'): Letter-by-Letter-Cascade (qqRulesTitleLetter) + danach
-            continuous qqCatNameWave als Wiegen — gleiche Sprache wie die Rules-
-            Slide-Titles direkt darunter. Gradient-Text-Clip durch Solid-Farbe
-            ersetzt damit Letter-Cascade pro Buchstabe sauber animieren kann. */}
+        {/* Eyebrow — analog Rules-Slides "Spielregeln" */}
+        <div style={{
+          fontSize: 'clamp(13px,1.4vw,18px)', fontWeight: 900, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: `${accent}88`,
+        }}>
+          {lang === 'de' ? 'Vorbereitung' : 'Get Ready'}
+        </div>
+        {/* Title — Letter-Cascade analog Rules-Slides */}
         <div
           aria-label={headline}
           style={{
             display: 'inline-flex',
-            fontSize: 'clamp(56px, 7.5vw, 120px)', fontWeight: 900,
+            fontSize: 'clamp(44px, 7vw, 88px)', fontWeight: 900,
             lineHeight: 1.05, letterSpacing: '-0.01em',
-            color: '#c7d2fe',
-            textShadow: '0 0 36px rgba(139,92,246,0.55), 0 0 12px rgba(199,210,254,0.45)',
+            color: accent,
+            textShadow: `0 0 60px ${accent}44`,
           }}
         >
           {Array.from(headline).map((char, i) => (
@@ -4327,11 +4342,20 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
             }}>{char === ' ' ? ' ' : char}</span>
           ))}
         </div>
+        {/* Divider — gleicher Style wie Rules-Slides */}
         <div style={{
-          fontSize: 'clamp(28px, 3.2vw, 52px)', fontWeight: 700,
-          letterSpacing: '0.1em',
-          color: '#EC4899',
-          textShadow: '0 0 18px rgba(236,72,153,0.55), 0 2px 12px rgba(0,0,0,0.4)',
+          width: '100%', height: 3, borderRadius: 2,
+          background: `linear-gradient(90deg, transparent, ${accent}cc 50%, transparent)`,
+          backgroundSize: '200% 100%',
+          animation: visible ? 'lineShimmer 3s linear 1.4s infinite' : 'none',
+          boxShadow: `0 0 18px ${accent}44`,
+        }} />
+        {/* Subtitle */}
+        <div style={{
+          fontSize: 'clamp(22px,3vw,40px)', fontWeight: 700,
+          letterSpacing: '0.05em',
+          color: '#e2e8f0',
+          textShadow: '0 2px 12px rgba(0,0,0,0.4)',
           animation: visible ? 'qqRulesIntroSub 0.8s cubic-bezier(0.2,0.8,0.4,1) 0.95s both' : 'none',
         }}>{sub}</div>
       </div>

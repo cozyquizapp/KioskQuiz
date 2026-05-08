@@ -53,11 +53,25 @@ export const QQ_BEAMER_CSS = `
   @keyframes nbSlide { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
 
   /* ── Gameshow slide transitions ──────────────────────────────────────────── */
-  /* New slide eases in with slight overshoot + blur clearing */
+  /* 2026-05-08 (Wolf 'übergänge gefallen mir nicht'): qqSlideIn cinematischer
+     gemacht — vorher 420ms scale 1.04→1 + minimal -6px slide + blur (zu kurz,
+     zu subtle). Jetzt: 720ms mit echtem Y-Slide (24px), subtle scale 0.96→1
+     + 1.005-Overshoot bei 65 %, dann Settle. Easing ist ease-out-expo statt
+     bounce — fühlt sich „fließend" an statt „springig". Blur raus, war zu
+     fragil und kostete Perf bei 16k-Beamer. */
   @keyframes qqSlideIn {
-    0%   { opacity: 0; transform: scale(1.04) translateY(-6px); filter: blur(3px); }
-    60%  { opacity: 1; filter: blur(0); }
-    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    0%   { opacity: 0; transform: scale(0.96) translateY(24px); }
+    50%  { opacity: 1; }
+    65%  { transform: scale(1.005) translateY(-2px); }
+    100% { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
+     den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
+     ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */
+  @keyframes qqPhaseSweep {
+    0%   { background-position: -120% 0; opacity: 0; }
+    20%  { opacity: 0.85; }
+    100% { background-position: 220% 0;  opacity: 0; }
   }
   /* Soft-Zoom crossfade — sanfter Blur+Scale-Puls über den Screen, kein Diagonal-Sheen */
   @keyframes qqSoftZoom {

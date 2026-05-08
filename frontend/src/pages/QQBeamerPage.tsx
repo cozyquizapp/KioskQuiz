@@ -1868,15 +1868,35 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           )}
         </>
       ) : (
-        /* No template: built-in views, wrapped in transition container */
+        /* No template: built-in views, wrapped in transition container.
+           2026-05-08 (Wolf 'übergänge gefallen mir nicht'): Duration 420 →
+           720ms, Easing bounce → ease-out-expo (fließend statt springig),
+           qqSlideIn-Keyframe selber cinematischer (echter Y-Slide statt
+           subtle blur). Plus zusätzlicher subtiler Pink-Sweep parallel über
+           den ganzen Beamer in den ersten 600ms — gibt dem Phase-Wechsel
+           einen Brand-konsistenten „Whoosh"-Moment ohne Bewegung der Card. */
         <div
           key={phaseGroup}
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
-            animation: 'qqSlideIn 420ms var(--qq-ease-bounce) both',
-            willChange: 'transform, opacity, filter',
+            animation: 'qqSlideIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both',
+            willChange: 'transform, opacity',
+            position: 'relative',
           }}
         >
+          {/* Pink-Sweep — Diagonale Lichtkante die einmalig beim Phase-Mount
+              über den Wrapper streicht. Pointer-events:none, animiert
+              background-position (GPU-cheap). 2026-05-08. */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0, zIndex: 0,
+            pointerEvents: 'none',
+            background: 'linear-gradient(115deg, transparent 38%, rgba(236,72,153,0.10) 50%, transparent 62%)',
+            backgroundSize: '220% 100%',
+            backgroundPosition: '-120% 0',
+            animation: 'qqPhaseSweep 1.0s cubic-bezier(0.5, 0, 0.5, 1) 0.05s both',
+            mixBlendMode: 'screen',
+            opacity: 0.85,
+          }} />
           {/* Während Countdown: renderState ist Snapshot der vorherigen Phase
               (PausedView / RulesView bleiben sichtbar und gefreezed). Nach
               Countdown schwenkt automatisch zum Live-State. */}

@@ -47,7 +47,11 @@ export default defineConfig({
         // erzeugt jetzt drei Formate pro Pose, <CozyWolfImage> picked via
         // <picture>. SW muss alle drei precachen, sonst zieht der Browser die
         // AVIF-Variante on-demand bei jedem Cold-Load.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,avif}'],
+        // 2026-05-08 (Sound-Audit-Lücke): wav dazu — SFX (44-345 KB) instant
+        // statt on-demand-Latenz. mp3 NICHT inkludiert: Lobby-BG-Tracks sind
+        // 4-5 MB jeweils, würden Precache massiv aufblähen + überschreiten
+        // das 3-MB-Limit. BG-Music läuft eh dauerhaft, on-demand-Load OK.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,avif,wav}'],
         // 3 MB Limit fuer joker-PNGs (2.3 MB) und category-Logos (1.7 MB).
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes

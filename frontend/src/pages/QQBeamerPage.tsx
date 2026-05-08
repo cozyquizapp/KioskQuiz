@@ -11710,7 +11710,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // Top-Bar (Badge + Timer auf top:22-50px, ~50px hoch) nicht in die
           // Card hineinragt. Die Card sitzt jetzt klar UNTER der Top-Bar mit
           // ~30-40px Gap. Horizontal- und Bottom-Padding bleiben.
-          padding: 'clamp(90px, 11vh, 130px) clamp(28px, 4vw, 64px) clamp(22px, 3.2vh, 50px)',
+          // 2026-05-08 (Wolf-Bug 'HP-feld schiebt sich unten raus'):
+          // Bei HotPotato braucht das Layout mehr Vertical-Space (Slot-Machine
+          // + Voter-Chips + Winner-Card) — paddingTop reduziert auf 60-90 px.
+          // Card sitzt direkt unter Top-Bar ohne Overlap (Top-Bar endet bei
+          // ~72-100 px), aber ohne den 30-40 px-Gap der bei Standard normal
+          // ist. Spart Vertical-Space nach unten.
+          padding: isHotPotatoActive
+            ? 'clamp(60px, 7vh, 90px) clamp(28px, 4vw, 64px) clamp(16px, 2.4vh, 36px)'
+            : 'clamp(90px, 11vh, 130px) clamp(28px, 4vw, 64px) clamp(22px, 3.2vh, 50px)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen

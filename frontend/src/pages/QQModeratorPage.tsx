@@ -252,6 +252,13 @@ export default function QQModeratorPage() {
   // Autoplay-Effekt. Verhindert Mehrfach-Fires desselben Actions wenn
   // andere Deps sich aendern aber phase/slotState/questionId stabil sind.
   const autoplayLastFireKeyRef = useRef<string | null>(null);
+  // 2026-05-08 (Wolf-Bug 'HP-slot-machine wird im autoplay mehrfach getriggert'):
+  // Zusaetzliches HP-spezifisches Dedup. Vorher reichte autoplayLastFireKeyRef
+  // nicht aus weil andere state-Felder (z. B. answers.length) sich aendern
+  // koennen waehrend hotPotatoSlotState noch beim alten Wert ist. Beim Effect-
+  // Re-Run mit neuem fireKey aber gleichem HP-State wuerde ein zweiter emit
+  // fired. Jetzt: HP-Action nutzt eigenen Ref der nur HP-State + qId trackt.
+  const lastHPFireKeyRef = useRef<string | null>(null);
 
   // ── Autoplay-Tick: Auto-Advance pro Phase (wirkt nur lokal, simuliert Space) ─
   useEffect(() => {
@@ -337,15 +344,20 @@ export default function QQModeratorPage() {
         // 2026-05-07 (Wolf '3-Phasen-Flow'): Autoplay fired finishSlot
         // jetzt zweimal — rolling→landed nach 3.4s, landed→finished nach
         // weiteren 1.8s (Mod-Announce-Pause).
+        // 2026-05-08 (Wolf-Bug 'HP-slot-machine mehrfach im autoplay'):
+        // HP-Action wird nur einmal pro (qId, slotState)-Kombination emittiert.
+        // Verhindert Re-Fire bei state-Updates die andere Felder wechseln
+        // (answers.length etc.) waehrend HP-State noch beim alten Wert ist.
         const sk = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
-        if (sk === 'hotPotato' && (s as any).hotPotatoSlotState === 'rolling') {
-          delayMs = 3400;
-          action = () => emit('qq:hotPotatoFinishSlot', { roomCode });
-          break;
-        }
-        if (sk === 'hotPotato' && (s as any).hotPotatoSlotState === 'landed') {
-          delayMs = 1800;
-          action = () => emit('qq:hotPotatoFinishSlot', { roomCode });
+        const hps = (s as any).hotPotatoSlotState;
+        if (sk === 'hotPotato' && (hps === 'rolling' || hps === 'landed')) {
+          const hpKey = `${q?.id ?? '-'}:${hps}`;
+          if (lastHPFireKeyRef.current === hpKey) return;
+          delayMs = hps === 'rolling' ? 3400 : 1800;
+          action = () => {
+            lastHPFireKeyRef.current = hpKey;
+            emit('qq:hotPotatoFinishSlot', { roomCode });
+          };
           break;
         }
         // Nur wenn alle Teams geantwortet haben — sonst Timer abwarten.

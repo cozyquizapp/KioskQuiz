@@ -263,3 +263,39 @@ Memory-Files neu/erweitert:
 - Q→Reveal Slide-Übergang (#2 vom Audit) — falls Wolf nach Live-Test sagt der State-Wechsel wirkt zu unsichtbar
 
 Wolf-Marathon heute — von Sprint-Q1-Diagnose über Lab-Showreels über Aurora-Vivid-Brand-Refresh bis Mod-Focus-Mode. App ist live-bereit für Eurovision in 7 Tagen.
+
+---
+
+## 2026-05-08 abends · Slide-Übergänge + Rules-Card + HP-Bugfixes (Nachschlag)
+
+**Was passiert ist:** Nach dem Marathon-Log noch 5 weitere Commits — Animations-Polish + zwei akute HotPotato-Bugs.
+
+22. **Rules-Slides Slide-In** (`2caa466e`):
+    Wolf-Wunsch /animations Slot-1 für Rules-Slides. 4 neue qqStageSlideIn{Left,Right}/Out{Left,Right}-Keyframes (generisch in qqShared.ts). Direction-Tracking via useRef in RulesView: idx > prev → forward (von rechts), idx < prev → backward (von links). Card-Mount phasePop → qqStageSlideInRight 0.55 s spring-easing.
+
+23. **Question→Question + Connections-Sub-Phasen Slide** (`2a4171d9`):
+    Globaler Phase-Wrapper differenziert: bei `Q-id1` → `Q-id2` (zwei Question-IDs in Folge) qqStageSlideInRight, sonst qqSlideIn (vertikal). ConnectionsBeamerView Wrapper mit `key={cn-{c.phase}}` + qqStageSlideInRight für intro→active→reveal→placement→done. PHASE_INTRO Steps bewusst NICHT angefasst (600+ Zeilen mit komplexem State-Tracking, Risiko vs Win schlecht).
+
+24. **„Now the rules" Card-Format** (`a3ac4745`):
+    Wolf-Wunsch: Rules-Intro auch als Card wie die anderen Rules-Slides. Card mit Pink-Border + backdrop-blur statt Full-Bleed, BG-Glow Pink/Magenta statt Blau/Lila, Title kleiner (44-88 px statt 56-120), Eyebrow „Vorbereitung / Get Ready" über Title (analog Rules-Slides „Spielregeln"), Pink-Divider mit Shimmer, Subtitle in Off-White. Welcome → Rules-Intro → Slide-0 sind jetzt drei Cards in Folge — visueller Format-Wechsel aufgehoben.
+
+25. **HL 3D-Slot-Machine zurück** (`ba9b3b00`):
+    Wolf hatte Slot-Machine früher rausgenommen wegen Card-Größen-Sprüngen. Jetzt zurück mit fixer Layout-Struktur: Container hat perspective:600 + overflow:hidden, beide Spans (??? + Echt-Zahl) absolute über Hidden-Placeholder → keine Reflows mehr. hlSlotOut (rotateX 0→-90°, translateY 0→-50%, opacity 1→0) + hlSlotIn (rotateX 90°→0°, translateY 50%→0, opacity 0→1, 0.28 s delay).
+
+26. **HP-Autoplay-Mehrfach-Trigger + HP-Layout-Overflow** (`48bab54b`):
+    Zwei akute HotPotato-Bugs aus Dummy-Runden:
+    - Autoplay triggert qq:hotPotatoFinishSlot >2× (Design ist 2×). Root Cause: autoplayLastFireKeyRef enthielt answers.length etc. — bei state-Updates die andere Felder ändern während hotPotatoSlotState noch beim alten Wert ist, re-runt Effect mit neuem fireKey → kein Dedup. Fix: separater lastHPFireKeyRef der nur qId:slotState trackt.
+    - Voter-Chips ragen unten aus Viewport raus seit dem Kategorie-Badge-Padding-Fix (90-130 px paddingTop). HP-Layout (Slot-Machine + Voter-Chips + Winner-Card stacked) braucht mehr Vertical-Space. Fix: paddingTop conditional auf isHotPotatoActive — HP nutzt 60-90 px (Card direkt unter Top-Bar ohne Gap), Standard bleibt 90-130 px.
+
+**Entscheidungen:**
+- PHASE_INTRO Steps Slide bewusst aufgeschoben (zu komplex, in Post-Eurovision-Backlog ergänzt? nein, optional)
+- Welcome-Card-Flip skip (Wolf: „lass es sein, Letter-Cascade reicht")
+
+**Files berührt:**
+- frontend/src/qqShared.ts (qqStageSlideIn{Left,Right}/Out + hlSlotOut/In Keyframes)
+- frontend/src/pages/QQBeamerPage.tsx (RulesView Direction-Tracking, Phase-Wrapper Q→Q-Differenzierung, ConnectionsBeamerView Sub-Phase-Wrapper, RulesIntroOverlay Card-Refactor, HL Subject-Value Slot-Machine, isHotPotatoActive paddingTop)
+- frontend/src/pages/QQModeratorPage.tsx (lastHPFireKeyRef für HP-Autoplay-Dedup)
+
+**Total Tag: 25 Commits** (caffafab → 48bab54b).
+
+**Wolf zieht weiter — Session-Abschluss.** App ist live-bereit für Eurovision in 6-7 Tagen. Sound-Files-Replace + Live-Test bei nächster Session.

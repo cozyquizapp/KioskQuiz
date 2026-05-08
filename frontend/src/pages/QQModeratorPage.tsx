@@ -2765,17 +2765,49 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       }}>🎰 Final-Wetten {s.phase === 'FINAL_BETTING' ? '· Bet-Phase' : '· Auflösung'}</div>
 
       {s.phase === 'FINAL_BETTING' && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '10px 12px', borderRadius: 8,
-          background: 'rgba(255,255,255,0.04)',
-          fontSize: 13,
-        }}>
-          <span style={{ color: '#94A3B8', fontWeight: 700 }}>Wetten gesetzt · Space → weiter</span>
-          <span style={{ color: '#F472B6', fontWeight: 900, fontSize: 16 }}>
-            {submittedCount} / {totalTeams}
-          </span>
-        </div>
+        <>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '10px 12px', borderRadius: 8,
+            background: 'rgba(255,255,255,0.04)',
+            fontSize: 13,
+            marginBottom: 10,
+          }}>
+            <span style={{ color: '#94A3B8', fontWeight: 700 }}>Wetten gesetzt · Space → weiter</span>
+            <span style={{ color: '#F472B6', fontWeight: 900, fontSize: 16 }}>
+              {submittedCount} / {totalTeams}
+            </span>
+          </div>
+          {/* Team-Liste mit Submit-Status + Bet-Count */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {s.teams.map(t => {
+              const bets = s.finalBets?.[t.id] ?? [];
+              const submitted = !!s.finalBettingSubmitted?.[t.id];
+              return (
+                <div key={t.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '6px 10px', borderRadius: 8,
+                  background: submitted ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+                  border: submitted ? '1px solid rgba(34,197,94,0.30)' : '1px solid rgba(255,255,255,0.06)',
+                  fontSize: 12,
+                }}>
+                  <span style={{ fontSize: 16 }}>{t.emoji ?? '🎯'}</span>
+                  <span style={{ flex: 1, fontWeight: 800, color: t.color }}>{t.name}</span>
+                  {submitted ? (
+                    <>
+                      <span style={{ color: '#86EFAC', fontWeight: 900 }}>✓</span>
+                      <span style={{ color: '#94A3B8', fontWeight: 700 }}>
+                        {bets.length} {bets.length === 1 ? 'Wette' : 'Wetten'}
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ color: '#64748B', fontWeight: 700 }}>⏳ wartet</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {s.phase === 'FINAL_REVEAL' && (

@@ -1078,6 +1078,60 @@ export function maybeAutoOnlyConnect(io: SocketIOServer, roomCode: string): void
 }
 
 /**
+ * 2026-05-09 (Wolf-Bug): Bots setzen bei Final-Wetten nicht. Wenn FINAL_BETTING-
+ * Phase startet, lassen wir alle Dummy-Teams gestaffelt zufällige Bets
+ * submitten (zwischen 1 und cap, random Cells auf random Target-Teams).
+ * Aufgerufen von qq:startFinalBetting nach broadcast.
+ */
+export function maybeAutoFinalBets(io: SocketIOServer, roomCode: string): void {
+  const room = getQQRoom(roomCode);
+  if (!room) return;
+  if (room.phase !== 'FINAL_BETTING') return;
+  if (!hasDummyTeams(room)) return;
+  const dummies = Object.values(room.teams).filter((t: any) => t._dummy && !room.finalBettingSubmitted?.[t.id]) as any[];
+  if (dummies.length === 0) return;
+  const teamIds = Object.keys(room.teams);
+  // Helper: zähle eigene Felder
+  const ownCellsOf = (teamId: string) => {
+    const cells: Array<{ row: number; col: number }> = [];
+    for (let r = 0; r < room.gridSize; r++) {
+      for (let c = 0; c < room.gridSize; c++) {
+        if (room.grid[r]?.[c]?.ownerId === teamId) cells.push({ row: r, col: c });
+      }
+    }
+    return cells;
+  };
+  // Pro Dummy: gestaffelt 0.5-2.5s zufällig wetten
+  dummies.forEach((dummy: any, idx: number) => {
+    const delay = 500 + idx * 350 + Math.random() * 600;
+    setTimeout(() => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'FINAL_BETTING') return;
+      if (live.finalBettingSubmitted?.[dummy.id]) return;
+      const myCells = ownCellsOf(dummy.id);
+      const cap = Math.floor(myCells.length / 2);
+      if (cap < 1) {
+        // Keine Felder zum wetten → 0 Bets submitten
+        try { qqSubmitFinalBet(live, dummy.id, []); } catch {}
+        broadcast(io, roomCode);
+        return;
+      }
+      // Random count zwischen 1 und cap (mindestens 1, sonst lame)
+      const count = 1 + Math.floor(Math.random() * cap);
+      // Random unique Cells
+      const shuffled = [...myCells].sort(() => Math.random() - 0.5).slice(0, count);
+      // Pro Cell random target team
+      const bets = shuffled.map(({ row, col }) => ({
+        row, col,
+        targetTeamId: teamIds[Math.floor(Math.random() * teamIds.length)],
+      }));
+      try { qqSubmitFinalBet(live, dummy.id, bets); } catch {}
+      broadcast(io, roomCode);
+    }, delay);
+  });
+}
+
+/**
  * Wenn QUESTION_ACTIVE + Dummies im Raum, lass Dummies gestaffelt antworten
  * (gleichmäßig über das Timer-Fenster verteilt, mit Jitter).
  * Echte Teams bleiben unberührt — sie antworten selbst via Socket.
@@ -2091,6 +2145,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (room.phase === 'PLACEMENT' && room.pendingFor) {
           maybeAutoPlace(io, payload.roomCode);
         }
+        // 2026-05-09: wenn nextQuestion in FINAL_BETTING-Phase wechselt
+        // (auto via qqBeginPhase wenn finalWagerEnabled), Bots auto-betten lassen
+        if (room.phase === 'FINAL_BETTING') {
+          maybeAutoFinalBets(io, payload.roomCode);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
@@ -2875,6 +2934,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqStartFinalBetting(room);
         broadcast(io, payload.roomCode);
+        // Dummy-Teams setzen ihre Bets automatisch (random Felder/Targets)
+        maybeAutoFinalBets(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

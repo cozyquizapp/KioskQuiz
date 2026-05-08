@@ -6272,6 +6272,7 @@ function FinalBettingCard({
             const isMine = cell?.ownerId === myTeamId;
             const owner = cell?.ownerId ? s.teams.find(t => t.id === cell.ownerId) : null;
             const ownerColor = owner?.color ?? null;
+            const ownerEmoji = owner?.emoji ?? null;
             const key = `${r}-${c}`;
             const bet = bets[key];
             const targetTeam = bet ? s.teams.find(t => t.id === bet) : null;
@@ -6292,21 +6293,32 @@ function FinalBettingCard({
                     ? bet
                       ? `2px solid ${targetTeam?.color ?? '#EC4899'}`
                       : `1.5px solid ${myColor}aa`
-                    : '1px solid rgba(255,255,255,0.08)',
+                    : ownerColor
+                      ? `1px solid ${ownerColor}aa`
+                      : '1px solid rgba(255,255,255,0.08)',
                   boxShadow: bet ? `0 0 12px ${targetTeam?.color ?? '#EC4899'}88` : 'none',
                   cursor: isMine ? 'pointer' : 'default',
                   position: 'relative',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: 0, fontFamily: 'inherit',
                   transition: 'all 0.18s ease',
+                  overflow: 'hidden',
                 }}
               >
-                {bet && targetTeam && (
+                {/* Bet gesetzt → Target-Team-Emoji (groß), sonst Owner-Emoji
+                    (Farbschwäche-Tauglichkeit). Eigene Cells ohne Bet zeigen
+                    eigenes Emoji subtle. */}
+                {bet && targetTeam ? (
                   <span style={{
-                    fontSize: 22, lineHeight: 1,
+                    fontSize: Math.floor(cellSize * 0.55), lineHeight: 1,
                     filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
                   }}>{targetTeam.emoji ?? '⭐'}</span>
-                )}
+                ) : ownerEmoji ? (
+                  <span style={{
+                    fontSize: Math.floor(cellSize * 0.45), lineHeight: 1,
+                    opacity: isMine ? 0.95 : 0.65,
+                  }}>{ownerEmoji}</span>
+                ) : null}
               </button>
             );
           })
@@ -7141,6 +7153,7 @@ function TeamBottomSheetMenu({
                   const isMine = cell?.ownerId === myTeamId;
                   const ownerTeam = cell?.ownerId ? state.teams.find(t => t.id === cell.ownerId) : null;
                   const ownerColor = ownerTeam?.color ?? null;
+                  const ownerEmoji = ownerTeam?.emoji ?? null;
                   const isStacked = !!cell?.stuck;
                   const isShielded = !!cell?.shielded;
                   return (
@@ -7156,17 +7169,37 @@ function TeamBottomSheetMenu({
                             : 'rgba(255,255,255,0.05)',
                         border: isMine
                           ? `1.5px solid ${myColor}`
-                          : '1px solid rgba(255,255,255,0.08)',
+                          : ownerColor
+                            ? `1px solid ${ownerColor}aa`
+                            : '1px solid rgba(255,255,255,0.08)',
                         boxShadow: isMine ? `0 0 8px ${myColor}66` : 'none',
                         position: 'relative',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden',
                       }}
                     >
+                      {/* Owner-Emoji als Identifier (Farbschwäche-tauglich) */}
+                      {ownerEmoji && (
+                        <span style={{
+                          fontSize: 12, lineHeight: 1,
+                          opacity: isMine ? 0.95 : 0.75,
+                          filter: isMine ? 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' : 'none',
+                        }}>{ownerEmoji}</span>
+                      )}
+                      {/* Stacked/Shielded-Marker als kleines Overlay top-right */}
                       {isMine && isStacked && (
-                        <span style={{ fontSize: 9, color: '#fff', opacity: 0.85, lineHeight: 1 }}>★</span>
+                        <span style={{
+                          position: 'absolute', top: 0, right: 1,
+                          fontSize: 8, color: '#fff', lineHeight: 1,
+                          textShadow: '0 0 3px rgba(0,0,0,0.8)',
+                        }}>★</span>
                       )}
                       {isMine && isShielded && !isStacked && (
-                        <span style={{ fontSize: 8, color: '#fff', opacity: 0.85, lineHeight: 1 }}>🛡</span>
+                        <span style={{
+                          position: 'absolute', top: 0, right: 1,
+                          fontSize: 7, color: '#fff', lineHeight: 1,
+                          textShadow: '0 0 3px rgba(0,0,0,0.8)',
+                        }}>🛡</span>
                       )}
                     </div>
                   );

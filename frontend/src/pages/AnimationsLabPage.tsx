@@ -1881,17 +1881,19 @@ function StarBorderShowcase() {
 }
 
 // ─── Slot P: Fliegende Kartoffel (Hot-Potato Visual) ────────────────────────
-// 🥔 hüpft im Bogen zwischen 4 Avataren, manche fliegen unterwegs raus (grau).
-// Smoke-Trail hinter der Kartoffel via Pseudo-Element. Replay startet neu.
+// Per Step: Hold-Phase (60%): Kartoffel bounct/dreht beim aktiven Avatar.
+// Wurf-Phase (35%): Kartoffel fliegt im Bogen zum nächsten Avatar.
+// Land-Phase (5%): Settle.
+// Bei Elimination: Click-Spark-Burst (rote Sparks aus Avatar), Avatar wird
+// grau + slidet aus der Reihe nach 1.2s. Kartoffel überspringt das Team.
 function FlyingPotatoDemo({ replay }: { replay: number }) {
-  const teams = [
+  const initialTeams = [
     { emoji: '🐉', color: '#22C55E', name: 'Wolfsrudel' },
     { emoji: '🦊', color: '#F97316', name: 'Fuchsbande' },
     { emoji: '🐙', color: '#A855F7', name: 'Kraken-Krew' },
     { emoji: '🦉', color: '#EAB308', name: 'Eulenmagier' },
   ];
-  // Sequenz: zu welchem Team fliegt die Kartoffel + bei welchem Step wird wer eliminiert
-  // [teamIdx, eliminateAfter] — eliminateAfter=true: dieses Team fliegt nach diesem Throw raus
+  // Sequenz: zu welchem Team + ob das Team danach eliminiert wird
   const sequence: Array<{ to: number; eliminate?: boolean }> = [
     { to: 0 },
     { to: 1 },
@@ -1902,46 +1904,110 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
     { to: 3 },
     { to: 0 },
   ];
-  const STEP = 1400; // ms pro Wurf
+  const STEP = 2200;
+  const HOLD_FRAC = 0.6; // 60% Hold beim Avatar (bounce/rotate)
+  const THROW_FRAC = 0.35; // 35% Wurf
+  const ELIMINATE_BLINK_FRAC = 0.1; // letzte 10% des Hold = rot blinken (vor Wurf)
+  const SLIDE_OUT_DELAY = 1200; // ms nach eliminate-Wurf bevor Avatar verschwindet
 
   const startedAt = React.useRef(Date.now());
   const [, setTick] = React.useState(0);
   React.useEffect(() => {
     startedAt.current = Date.now();
-    const id = window.setInterval(() => setTick(t => t + 1), 60);
+    const id = window.setInterval(() => setTick(t => t + 1), 50);
     return () => window.clearInterval(id);
   }, [replay]);
 
   const elapsed = Date.now() - startedAt.current;
   const stepIdx = Math.min(sequence.length - 1, Math.floor(elapsed / STEP));
   const stepProgress = (elapsed % STEP) / STEP; // 0..1
-  // Eliminations: bei jedem Step der eliminate hat, ab dem Wurf raus
-  const eliminated = new Set<number>();
-  for (let i = 0; i <= stepIdx; i++) {
-    if (sequence[i].eliminate && i < stepIdx) eliminated.add(sequence[i].to);
+
+  // Eliminations sammeln (basiert auf elapsed time, damit Slide-Out delayed wirkt)
+  // Team i wird eliminiert: ab Step k wo sequence[k].eliminate && sequence[k].to === i
+  // visible bis: stepEnd_k + SLIDE_OUT_DELAY, dann fade-out
+  type ElimInfo = { idx: number; eliminatedAtStep: number; spillAtMs: number };
+  const eliminations: ElimInfo[] = [];
+  for (let k = 0; k < sequence.length; k++) {
+    if (sequence[k].eliminate) {
+      eliminations.push({
+        idx: sequence[k].to,
+        eliminatedAtStep: k,
+        spillAtMs: (k + 1) * STEP, // burst beim Wurf-Start des nächsten Steps
+      });
+    }
   }
+  const isElim = (i: number) => eliminations.some(e => e.idx === i && elapsed >= e.spillAtMs);
+  // Spark-Burst-Trigger: 600ms Window nach spillAtMs
+  const sparkBurstFor = (i: number): number | null => {
+    const e = eliminations.find(e => e.idx === i);
+    if (!e) return null;
+    const sinceBurst = elapsed - e.spillAtMs;
+    if (sinceBurst < 0 || sinceBurst > 600) return null;
+    return sinceBurst / 600; // 0..1 progress
+  };
+  // Slide-Out: nach SLIDE_OUT_DELAY rutscht Avatar raus
+  const isSlideOut = (i: number) => {
+    const e = eliminations.find(e => e.idx === i);
+    if (!e) return false;
+    return elapsed >= e.spillAtMs + SLIDE_OUT_DELAY;
+  };
 
-  // Avatar-Positionen (in % der Container-Breite, vertikal mittig)
-  const avatarPositions = teams.map((_, i) => ({
-    x: 12 + i * 25, // 12%, 37%, 62%, 87%
-    y: 50, // mittig
-  }));
+  // Avatar-Positionen: Teams die rausgerutscht sind verlieren ihren Slot
+  // (Animation: alive-Avatare rücken zusammen)
+  const aliveTeams = initialTeams.map((_, i) => i).filter(i => !isSlideOut(i));
+  const slotForTeam = (i: number): number => aliveTeams.indexOf(i);
+  const slotCount = Math.max(1, aliveTeams.length);
+  const xForSlot = (slot: number) => {
+    if (slot < 0) return 50; // Slide-out Teams Mitte (sind eh unsichtbar)
+    const padding = 12;
+    const span = 100 - padding * 2;
+    return padding + (span / Math.max(1, slotCount - 1)) * slot;
+  };
+  const xForTeam = (i: number) => xForSlot(slotForTeam(i));
+  const yBase = 50;
 
-  // Kartoffel-Position interpoliert zwischen aktuelles & nächstes Team
+  // Kartoffel-Position
   const fromIdx = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
   const toIdx = sequence[stepIdx].to;
-  const fromPos = avatarPositions[fromIdx];
-  const toPos = avatarPositions[toIdx];
-  // ease-in-out
-  const t = stepProgress < 0.5
-    ? 2 * stepProgress * stepProgress
-    : 1 - Math.pow(-2 * stepProgress + 2, 2) / 2;
-  const potatoX = fromPos.x + (toPos.x - fromPos.x) * t;
-  // Bogen via parabel: max bei stepProgress=0.5
-  const arcHeight = 22; // % höher als baseline
-  const potatoY = avatarPositions[0].y - Math.sin(stepProgress * Math.PI) * arcHeight;
-  // Rotation während des Wurfs
-  const potatoRotation = stepProgress * 540; // 1.5 Umdrehungen
+
+  let potatoX: number, potatoY: number, potatoRotation: number, potatoBounceY: number;
+  if (stepProgress < HOLD_FRAC) {
+    // Hold-Phase: Kartoffel beim aktuellen Team, bouncing
+    const holdProgress = stepProgress / HOLD_FRAC; // 0..1
+    potatoX = xForTeam(toIdx === fromIdx ? toIdx : (stepIdx === 0 ? 0 : sequence[stepIdx - 1].to));
+    // Eigentlich wir sind auf dem PREVIOUS to (stepIdx-1), bzw step 0 starts at fromIdx
+    if (stepIdx === 0) potatoX = xForTeam(0);
+    else potatoX = xForTeam(sequence[stepIdx - 1].to);
+    potatoY = yBase;
+    potatoBounceY = -Math.abs(Math.sin(holdProgress * Math.PI * 4)) * 14; // 4 bounces
+    potatoRotation = holdProgress * 360 * 2; // 2 Umdrehungen während Hold
+  } else if (stepProgress < HOLD_FRAC + THROW_FRAC) {
+    // Wurf-Phase: fliegt zum nächsten
+    const throwProgress = (stepProgress - HOLD_FRAC) / THROW_FRAC;
+    const fromTeam = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
+    const toTeam = sequence[stepIdx].to;
+    const t = throwProgress < 0.5
+      ? 2 * throwProgress * throwProgress
+      : 1 - Math.pow(-2 * throwProgress + 2, 2) / 2;
+    potatoX = xForTeam(fromTeam) + (xForTeam(toTeam) - xForTeam(fromTeam)) * t;
+    const arcHeight = 28;
+    potatoY = yBase;
+    potatoBounceY = -Math.sin(throwProgress * Math.PI) * arcHeight;
+    potatoRotation = throwProgress * 720;
+  } else {
+    // Land-Phase: settle beim neuen Team
+    potatoX = xForTeam(sequence[stepIdx].to);
+    potatoY = yBase;
+    potatoBounceY = 0;
+    potatoRotation = 0;
+  }
+
+  // Spark-Burst-Particles (12 sparks radial)
+  const burstFor = (i: number): { x: number; y: number; progress: number } | null => {
+    const p = sparkBurstFor(i);
+    if (p === null) return null;
+    return { x: xForTeam(i), y: yBase, progress: p };
+  };
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1949,6 +2015,10 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
         @keyframes potatoSmoke {
           0%   { opacity: 0.75; transform: scale(0.6) translateY(0); }
           100% { opacity: 0;    transform: scale(1.6) translateY(-12px); }
+        }
+        @keyframes redBlink {
+          0%, 100% { box-shadow: 0 0 18px rgba(239,68,68,0.9), 0 0 36px rgba(239,68,68,0.55); }
+          50%      { box-shadow: 0 0 4px rgba(239,68,68,0.4); }
         }
       `}</style>
       <div style={{
@@ -1959,67 +2029,116 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
         border: '1px solid rgba(255,255,255,0.08)',
         overflow: 'hidden',
       }}>
-        {/* Avatare in Reihe */}
-        {teams.map((tt, i) => {
-          const isOut = eliminated.has(i);
-          const isHolding = !isOut && i === toIdx && stepProgress > 0.85;
+        {/* Avatare */}
+        {initialTeams.map((tt, i) => {
+          const slideOut = isSlideOut(i);
+          const elim = isElim(i);
+          // Hold beim aktuellen Team in stepProgress < HOLD_FRAC: aktiv = sequence[stepIdx-1].to (or 0)
+          const holdTeam = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
+          const isActiveHolding = !elim && stepProgress < HOLD_FRAC && i === holdTeam;
+          // Letzte 10% des Hold: red-blink wenn das Team gleich eliminiert wird
+          const willBeElimNext = stepIdx < sequence.length - 1
+            && sequence[stepIdx].eliminate
+            && sequence[stepIdx].to === i
+            && stepProgress > HOLD_FRAC - ELIMINATE_BLINK_FRAC && stepProgress < HOLD_FRAC;
           return (
             <div key={i} style={{
               position: 'absolute',
-              left: `${avatarPositions[i].x}%`, top: `${avatarPositions[i].y}%`,
+              left: `${xForTeam(i)}%`, top: `${yBase}%`,
               transform: 'translate(-50%, -50%)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              transition: 'opacity 0.5s, filter 0.5s',
-              opacity: isOut ? 0.35 : 1,
-              filter: isOut ? 'grayscale(1)' : 'none',
+              transition: 'left 0.6s cubic-bezier(0.34, 1.46, 0.64, 1), opacity 0.5s, filter 0.5s, transform 0.5s',
+              opacity: slideOut ? 0 : (elim ? 0.32 : 1),
+              filter: elim ? 'grayscale(1)' : 'none',
+              pointerEvents: 'none',
             }}>
               <div style={{
                 width: 76, height: 76, borderRadius: '50%',
                 background: `${tt.color}33`,
                 border: `2.5px solid ${tt.color}`,
-                boxShadow: isHolding
-                  ? `0 0 36px ${tt.color}cc, 0 0 12px rgba(239,68,68,0.55)`
-                  : `0 0 18px ${tt.color}55`,
+                boxShadow: isActiveHolding
+                  ? `0 0 24px ${tt.color}99`
+                  : `0 0 12px ${tt.color}44`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 40, lineHeight: 1,
                 transition: 'box-shadow 0.3s',
+                animation: willBeElimNext ? 'redBlink 0.25s ease-in-out infinite' : undefined,
               }}>{tt.emoji}</div>
               <div style={{
                 fontSize: 11, fontWeight: 900, color: tt.color,
                 letterSpacing: '-0.01em', textAlign: 'center',
                 textShadow: `0 0 6px ${tt.color}55`,
               }}>{tt.name}</div>
-              {isOut && (
-                <div style={{
-                  position: 'absolute', top: 32, left: '50%', transform: 'translateX(-50%) rotate(-12deg)',
-                  fontSize: 30,
-                }}>💥</div>
-              )}
             </div>
           );
         })}
-        {/* Smoke-Particles (3 Stück hinter Kartoffel, gestaffelt) */}
-        {[0, 0.15, 0.3].map((delay, i) => (
-          <div key={i} aria-hidden style={{
-            position: 'absolute',
-            left: `${potatoX}%`, top: `${potatoY}%`,
-            transform: 'translate(-50%, -50%)',
-            width: 18, height: 18, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(180,180,180,0.7) 0%, rgba(120,120,120,0.3) 50%, transparent 100%)',
-            animation: `potatoSmoke 0.6s ease-out ${delay}s infinite`,
-            pointerEvents: 'none',
-          }} />
-        ))}
-        {/* Fliegende Kartoffel */}
+
+        {/* Click-Spark-Burst bei Eliminierung — 12 Sparks radial */}
+        {initialTeams.map((_, i) => {
+          const burst = burstFor(i);
+          if (!burst) return null;
+          const SPARK_COUNT = 12;
+          return (
+            <div key={`burst-${i}`} aria-hidden style={{
+              position: 'absolute',
+              left: `${burst.x}%`, top: `${burst.y}%`,
+              transform: 'translate(-50%, -50%)',
+              width: 0, height: 0,
+              pointerEvents: 'none',
+            }}>
+              {Array.from({ length: SPARK_COUNT }).map((_, sIdx) => {
+                const angle = (sIdx / SPARK_COUNT) * Math.PI * 2;
+                const distance = 60 * burst.progress; // px outward
+                const sparkX = Math.cos(angle) * distance;
+                const sparkY = Math.sin(angle) * distance;
+                const opacity = 1 - burst.progress;
+                const size = 6 * (1 - burst.progress * 0.5);
+                return (
+                  <div key={sIdx} style={{
+                    position: 'absolute',
+                    left: sparkX, top: sparkY,
+                    width: size, height: size,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, #FFF 0%, #FBBF24 30%, #EF4444 70%, transparent 100%)',
+                    boxShadow: `0 0 ${size * 1.5}px rgba(239,68,68,${opacity}), 0 0 ${size * 3}px rgba(251,191,36,${opacity * 0.5})`,
+                    opacity,
+                    transform: 'translate(-50%, -50%)',
+                  }} />
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* Smoke-Particles hinter Kartoffel (nur in Wurf-Phase) */}
+        {stepProgress >= HOLD_FRAC && stepProgress < HOLD_FRAC + THROW_FRAC &&
+          [0, 0.15, 0.3].map((delay, i) => (
+            <div key={i} aria-hidden style={{
+              position: 'absolute',
+              left: `${potatoX}%`, top: `${potatoY}%`,
+              transform: `translate(-50%, calc(-50% + ${potatoBounceY}px))`,
+              width: 16, height: 16, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(180,180,180,0.7) 0%, rgba(120,120,120,0.3) 50%, transparent 100%)',
+              animation: `potatoSmoke 0.6s ease-out ${delay}s infinite`,
+              pointerEvents: 'none',
+            }} />
+          ))}
+
+        {/* Fliegende/Bouncende Kartoffel */}
         <div style={{
           position: 'absolute',
           left: `${potatoX}%`, top: `${potatoY}%`,
-          transform: `translate(-50%, -50%) rotate(${potatoRotation}deg)`,
-          fontSize: 42,
+          transform: `translate(-50%, calc(-50% + ${potatoBounceY}px)) rotate(${potatoRotation}deg)`,
+          fontSize: 38,
           lineHeight: 1,
           filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.7)) drop-shadow(0 0 4px rgba(255,140,0,0.6))',
           pointerEvents: 'none',
+          // Während Hold: Avatar-side-Position (offset rechts vom Avatar)
+          marginLeft: stepProgress < HOLD_FRAC ? 38 : 0,
+          marginTop: stepProgress < HOLD_FRAC ? -8 : 0,
+          transition: 'margin 0.15s',
         }}>🥔</div>
+
         {/* Status-Label oben */}
         <div style={{
           position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
@@ -2035,11 +2154,11 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
         border: '1px solid rgba(239,68,68,0.20)',
         color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#FCA5A5' }}>Sequenz:</strong> Kartoffel hüpft im Bogen zwischen Avataren
-        (parabel-Trajectory mit ease-in-out). Bei „Timer-Out" → Team wird grau + 💥-Marker, Kartoffel fliegt
-        zum nächsten lebenden Team. Smoke-Trail via 3 gestaffelte radial-Gradient-Partikel mit fade-out.
-        Idee: dieses Visual ersetzt den Per-Turn-Timer in HP — semantisch passend, „heiße Kartoffel" wird
-        wirklich rumgegeben.
+        <strong style={{ color: '#FCA5A5' }}>Pro Team-Turn:</strong> Hold (60%) → Kartoffel bounct + dreht
+        sich beim Avatar (4 Bounces × 2 Umdrehungen). Letzte 10% Hold: Avatar red-blinkt wenn Elimination
+        ansteht (Warnung). Wurf (35%) → Bogen mit Smoke-Trail. Bei Elimination: <strong>Click-Spark-Burst</strong>
+        (12 Sparks radial in Pink-Gold-Rot, fade + scale-out 600 ms). Avatar wird grau, nach 1.2 s rutscht
+        er aus der Reihe — alive-Avatare rücken zusammen (transition 0.6 s spring).
       </div>
     </div>
   );

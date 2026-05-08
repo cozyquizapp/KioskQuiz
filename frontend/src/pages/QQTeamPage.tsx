@@ -6282,21 +6282,22 @@ function FinalBettingCard({
                 onClick={() => handleCellTap(r, c)}
                 disabled={!isMine}
                 style={{
+                  // Solid Backgrounds — Lesbarkeit > Style auf kleinen Grids
                   width: cellSize, height: cellSize,
                   borderRadius: 8,
                   background: isMine
                     ? bet
-                      ? `linear-gradient(135deg, ${myColor}, ${myColor}aa)`
-                      : `${myColor}33`
-                    : ownerColor ? `${ownerColor}33` : 'rgba(255,255,255,0.04)',
+                      ? `linear-gradient(135deg, ${myColor}, ${myColor}cc)`
+                      : myColor
+                    : ownerColor ? ownerColor : '#1a1424',
                   border: isMine
                     ? bet
                       ? `2px solid ${targetTeam?.color ?? '#EC4899'}`
-                      : `1.5px solid ${myColor}aa`
+                      : `1.5px solid ${myColor}`
                     : ownerColor
-                      ? `1px solid ${ownerColor}aa`
-                      : '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: bet ? `0 0 12px ${targetTeam?.color ?? '#EC4899'}88` : 'none',
+                      ? `1px solid ${ownerColor}`
+                      : '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: bet ? `0 0 12px ${targetTeam?.color ?? '#EC4899'}aa` : isMine ? `0 0 6px ${myColor}66` : 'none',
                   cursor: isMine ? 'pointer' : 'default',
                   position: 'relative',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -7160,19 +7161,21 @@ function TeamBottomSheetMenu({
                     <div
                       key={`${r}-${c}`}
                       style={{
+                        // Solid backgrounds (statt glassy) — Lesbarkeit > Style
+                        // bei kleinen Grid-Cells. Matcht /beamer-Grid-Logic.
                         aspectRatio: '1 / 1',
                         borderRadius: 4,
                         background: isMine
-                          ? `linear-gradient(135deg, ${myColor}, ${myColor}aa)`
+                          ? myColor
                           : ownerColor
-                            ? `${ownerColor}55`
-                            : 'rgba(255,255,255,0.05)',
+                            ? ownerColor
+                            : '#1a1424',
                         border: isMine
                           ? `1.5px solid ${myColor}`
                           : ownerColor
-                            ? `1px solid ${ownerColor}aa`
-                            : '1px solid rgba(255,255,255,0.08)',
-                        boxShadow: isMine ? `0 0 8px ${myColor}66` : 'none',
+                            ? `1px solid ${ownerColor}`
+                            : '1px solid rgba(255,255,255,0.10)',
+                        boxShadow: isMine ? `0 0 6px ${myColor}88` : 'none',
                         position: 'relative',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         overflow: 'hidden',

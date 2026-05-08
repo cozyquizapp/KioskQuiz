@@ -698,6 +698,27 @@ export const QQ_BEAMER_CSS = `
     60%  { opacity: 1; }
     100% { opacity: 1; transform: translateX(0) scale(1); }
   }
+
+  /* 2026-05-08 (Wolf-Wunsch 'regelslides mit /animations Slot-1 animieren'):
+     Slide-Off + Push für RulesView. Beim Slide-N→N+1-Wechsel slidet die alte
+     links raus, neue kommt rechts rein mit Spring-Settle. Bei N→N-1 umgekehrt.
+     Same Pattern wie /animations Slot-1 nur skaliert auf Vollbild-Slides. */
+  @keyframes qqRulesSlideOutLeft {
+    0%   { transform: translateX(0)     scale(1);    opacity: 1; }
+    100% { transform: translateX(-110%) scale(0.92); opacity: 0; }
+  }
+  @keyframes qqRulesSlideOutRight {
+    0%   { transform: translateX(0)     scale(1);    opacity: 1; }
+    100% { transform: translateX(110%)  scale(0.92); opacity: 0; }
+  }
+  @keyframes qqRulesSlideInRight {
+    0%   { transform: translateX(110%)  scale(0.92); opacity: 0; }
+    100% { transform: translateX(0)     scale(1);    opacity: 1; }
+  }
+  @keyframes qqRulesSlideInLeft {
+    0%   { transform: translateX(-110%) scale(0.92); opacity: 0; }
+    100% { transform: translateX(0)     scale(1);    opacity: 1; }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

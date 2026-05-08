@@ -4364,6 +4364,18 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const isLast = idx === totalSlides - 1;
   const hasGrid = !!slide.grid;
 
+  // 2026-05-08 (Wolf-Wunsch 'regelslides mit /animations Slot-1 animieren'):
+  // Direction-Tracking — bei Slide N→N+1 slidet die neue Card von rechts rein
+  // (forward), bei N→N-1 von links (backward). Vorher: phasePop-Mount (subtle
+  // scale 0.94→1). Pragma-Variante ohne Dual-Render — alte Slide unmountet
+  // via React-key-Wechsel sofort, neue Slide kommt dramatisch rein.
+  const prevIdxRef = useRef(idx);
+  const direction = idx > prevIdxRef.current ? 'forward'
+                  : idx < prevIdxRef.current ? 'backward'
+                  : 'forward';
+  useEffect(() => { prevIdxRef.current = idx; }, [idx]);
+  const slideInAnim = direction === 'forward' ? 'qqRulesSlideInRight' : 'qqRulesSlideInLeft';
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -4372,7 +4384,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
-      {/* Main card — full-width for beamer readability */}
+      {/* Main card — full-width for beamer readability.
+          2026-05-08 (Wolf-Wunsch /animations Slot-1): Slide-In statt phasePop.
+          Forward = von rechts, Backward = von links. Spring-Easing für sanftes
+          Settle-Overshoot. */}
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
         maxWidth: 1200, width: '94%', maxHeight: '92vh', overflow: 'hidden',
@@ -4381,8 +4396,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: 24,
         padding: `clamp(24px, 4vh, ${hasGrid ? 52 : 60}px) clamp(32px, 5vw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        animation: 'phasePop 0.5s var(--qq-ease-bounce) both',
+        animation: `${slideInAnim} 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both`,
         backdropFilter: 'blur(10px)',
+        willChange: 'transform, opacity',
       }}>
         {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
             Stage-Look statt links-rechts-Layout. */}

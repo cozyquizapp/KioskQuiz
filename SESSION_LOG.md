@@ -385,3 +385,71 @@ Wolf-Marathon heute — von Sprint-Q1-Diagnose über Lab-Showreels über Aurora-
 **Total Tag: 25 Commits** (caffafab → 48bab54b).
 
 **Wolf zieht weiter — Session-Abschluss.** App ist live-bereit für Eurovision in 6-7 Tagen. Sound-Files-Replace + Live-Test bei nächster Session.
+
+---
+
+## 2026-05-09 — Marathon 2: Final-Wager-Refactor + End-Flow-Reveal + Recap
+
+Direkter Folge-Tag. ~16 Commits (`4ba28633` → `e9ddc68d`). Stand bei Beginn: Final-Wager war Cell-Picker-Skelett, GameOver direkt nach FINAL_REVEAL, Thanks war statisch.
+
+### Was gemacht wurde
+
+1. **Polish-Bugs vom Anfang** (`4ba28633`): idle.svg Wolf-Asset hatte weißen 450×450 BG-Rect (Canva-Export) → sed-strip; Joker-Bonus-Rules-Slide hatte 2 Joker-PNGs (Boy+Girl) als Hero, EN-Mini-Grid hatte fehlende ⭐-Cells; Welcome-Overlay „CozyQuiz" in Pink-Border-App-Card mit `qqIntroWelcomeCard`-Keyframe.
+
+2. **Final-Wager Tipp-Variante** (`a3065857`): Cell-Picker komplett raus. `QQFinalBet = { targetTeamId }`, `QQFinalBetResolution` neu (`targetWins + sympathyBonus + totalBonus + mutualWith`). KEIN Verlust mehr. Per-Frage-Win-Tracking via `qqTickFinalPhaseWin` (Cells-Delta gegen Snapshot). `room.endAwards` (Underdog/Meisterklauer/Speedy) in `qqResolveFinalBets`. /team `FinalBettingCard` als Team-Liste-Picker. Bots: 80%-other / 20%-self.
+
+3. **HP-Halbkreis** (`15098b45`): Reihenfolge nach Scoreboard (bestes zuerst). Slot-Machine raus — Backend setzt direkt 'landed', 1 Mod-Step. 5-Slot-Halbkreis-Layout (-2/-1/0/+1/+2), 3D nach hinten gehend, Active mittig vorne. Bei Wechsel rotieren Slots via 0.85s-transition. Kartoffel-Wurf mit `qqHpPotatoThrow` (1080° Spin + 110px Y-Bogen). Card-Pulse weg (Wolf: „darf sich durch Timer nicht vergrößern").
+
+4. **Pink-Wolf-Tree + Live-Wins-Tracker** (`29115368`, `15098b45`): `pink.png` ersetzt `logo.png` in Progress-Tree, continuous `qqWolfBob`-Loop. Tree-Phasen + /team Phase-Farben auf `getRoundColor` Pink-Eskalation umgestellt. Live-Wins-Tracker → Recap-Slide nach jeder Final-Frage.
+
+5. **3D Card-Reveal für neue Aktionen** (`e688e1ef`): R2 Steal isNew, R3 Stack isNew → Slam face-down (Card-Back: NEU + ✨ + Cross-Hatch) → Settle → Flip 1.0s. Wie TeamsRevealView Slot M.
+
+6. **/team Grid-Sprung-Fix** (`e688e1ef`): Selecting + Mini-Grid hatten unterschiedliche `gridTemplateColumns` — beide auf `1fr + aspect-ratio: 1/1`.
+
+7. **Rules-Audit + neue Slides** (`e688e1ef`): Bunte-Tüte aktualisiert (Reihenfolge→Fix It, CozyGuessr→Pin It, Imposter raus). NEU: 🎰 Final-Tipp + 🤝 Fair Play. totalSlides 9/10 dynamisch.
+
+8. **Wolf-Iter-Fixes-Runde** (`ab9c540e`): Imposter komplett aus Rules + Memory-MD `feature_imposter_disabled.md` fett. ABCD/123 als 🅰🅱🅲🅳 / 1️⃣2️⃣3️⃣ (auch Drift-Partikel). Bottom-Sheet ✕-Button + Drag-Handle als Tap. CozyGuessr pinker Glow-Dot weg. Grüner Submit-Glow von 18px/0.75 → 10px/0.55. Steal #EC4899 → #EF4444. Connect 4 Spoiler-Fix: „Richtig!"-Banner raus, neutral „Tipp eingegangen", Strike-Counter „Versuch X/3".
+
+9. **MUCHO/ZvZ Mini-Sprung** (`4f7807c2`): Border 2px → 3px bei correct = +2px Outer-Höhe content-box default → andere Cards in Row schoben. Fix: `box-sizing: border-box` + einheitliche 3px-Border (Wrong-State transparent).
+
+10. **3 Recap-Varianten + News-Ticker als Wolf-Wahl** (`aff9d135`, `e1ff9417`, `ab6dc58e`): Iter 1: BG-Slideshow / Polaroid-Stack / Filmstrip. Iter 2: Bierdeckel / Vintage-Marquee / Memory-Card-Flip. Wolf-Wahl: News-Ticker mit Filmstrip-Cards aber OHNE Frame (TV-Bauchbinde, 60s linear loop, Edge-Fades).
+
+11. **GameOver-Wolf Toot-Honesty** (`e1ff9417`): „Trööööt!"/„Toooot!" Speech-Bubble-Slogans entfernt — Wolf-Speech und Trompete-Pose laufen auf separaten Cycles, „toot darf er nur sagen wenn er auch trötet".
+
+12. **End-Flow Multi-Step FinalRevealView** (`6bf0292f`): `room.finalRevealStep` (0..2N+8). `qqAdvanceFinalReveal` increments, letzter Step → THANKS direkt. `decodeFinalStep(step, N)` mappt step → kind. TitleHoldSlide → GridRevealSlide (Brett links + Tabelle rechts, Cluster-Highlight Top-1, Sparkle-Bounding-Rect mit `offset-path`) → BetRevealSlide aufsteigend nach Bonus, 0-Bonus mit 🥲 „oooh"-Moment → AwardCardSlide (🥁 Trommelwirbel ???) → AwardRevealSlide (Avatar + +1 Floating) → RankingSlide (Single bis #4, ab #3 Treppchen-Stack, Sieger mit 👑 + jubel-Wolf + Konfetti). **GameOver übersprungen** — Wolfs „Punkte nicht wieder und wieder zeigen".
+
+13. **ThanksView komplett neu** (`ff0b914d`): Hero-Card mittig: Polaroid (-12px Y, schräg, Krone, wackelt) + QR-Code (180px) + Wolf (schlafen, +20px Y) nebeneinander höhen-versetzt. Polaroid: Sieger-Avatar mit pulsierender 👑, Caveat-Cursive „handgeschriebene" Notiz mit Team-Name. News-Ticker-Bauchbinde unten (75s Loop) durch Quiz-History. **Letzte Card im Loop**: 💜 „Besonderer Dank an Sonja fürs Zuhören & Testen — und an Claude fürs Mitbauen 🐺💜🦖".
+
+14. **Mod-Page End-Flow-Status + Brett auf Summary** (`e9ddc68d`): Mod in FINAL_REVEAL: Live-Status `Step X/max · Jetzt: <name> · Space → <next>`. Backend `/api/qq/summary/:roomCode` liefert jetzt `cellOwners + gridSize`. `SummaryBoard`-Component mit Team-Color-Cells, Top-Cluster pulsiert, Mini-Legende drunter.
+
+### Wichtige Entscheidungen
+
+- **Game-Over wird übersprungen.** Direkt von Ranking-Slide → Thanks. Ranking ist der finale Reveal-Moment.
+- **Keine Live-Tabelle bei Bet-Reveal/Awards.** Erst beim Ranking kommt alles zusammen — maximaler Suspense.
+- **Treppchen-Stack-Kompromiss:** Single-Slide bis Platz 4, ab #3 baut sich Treppchen auf.
+- **Imposter ist DEAKTIVIERT** — `feature_imposter_disabled.md` als Memory-MD mit fettem Hinweis.
+- **Recap-Variante S = News-Ticker** (Wolf-Wahl). Cards aus dem alten Filmstrip, OHNE Frame, kontinuierlich + flach.
+- **Sonja+Claude-Card** als allerletzte Recap-Card im Loop.
+
+### Files (heute massiv berührt)
+
+- `shared/quarterQuizTypes.ts` — QQFinalBet/Resolution refactored, `finalRevealStep`, `finalRecapStep`, `endAwards`, `teamTotalSteals`, `finalPhaseWins`
+- `backend/src/quarterQuiz/qqRooms.ts` — qqStartFinalBetting/Submit/Finish/Resolve, `qqAdvanceFinalReveal`, `qqTickFinalPhaseWin`, HP-Order nach Score
+- `backend/src/server.ts` — `/api/qq/summary` cellOwners + gridSize
+- `frontend/src/pages/QQBeamerPage.tsx` — Multi-Step FinalRevealView komplett neu, neue ThanksView, Mucho-Avatar-Spacing, Mucho/ZvZ Mini-Sprung, Toot-Honesty
+- `frontend/src/pages/QQTeamPage.tsx` — FinalBettingCard Team-Picker, Bottom-Sheet ✕, Phase-Farben tokens, Connect 4 Spoiler-Fix, Grid-Sprung-Fix
+- `frontend/src/pages/QQModeratorPage.tsx` — Bet-Übersicht Tipp-Targets, End-Flow-Status mit Step-Mapping
+- `frontend/src/pages/QQSummaryPage.tsx` — SummaryBoard-Component
+- `frontend/src/pages/AnimationsLabPage.tsx` — 3 Recap-Varianten + Iter zu News-Ticker
+- `frontend/src/components/QQProgressTree.tsx` — Pink-Wolf-PNG, qqWolfBob
+- `frontend/src/qqShared.ts` — qqHp* Animations, qqJokerWiggle, qqWolfBob, qqHpTimerGlow
+- `frontend/public/avatars/cozywolf/svg/idle.svg` — weißer Rect raus
+- `frontend/public/avatars/cozywolf/pink.png` — neues Asset (Pink-Wolf von Wolf)
+
+### Memory-Files heute
+
+- `feature_imposter_disabled.md` — neuer Eintrag, fett markiert in MEMORY.md
+
+**Total Tag: ~16 Commits** (`4ba28633` → `e9ddc68d`). Alle gepusht.
+
+**App-Stand für Eurovision (in 5-6 Tagen):** Final-Wager-Mechanik live-bereit, End-Flow als geschlossene Choreo durchspielbar, Thanks-Outro mit Recap. `/mopo`-Page für Mobile-Mod kommt als Folge-Task.

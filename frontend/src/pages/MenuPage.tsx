@@ -8,6 +8,7 @@ type LinkItem = { path: string; label: string; emoji: string; note?: string };
 // ─────────────────────────────────────────────────────────────────────────
 const cozyQuizLinks: LinkItem[] = [
   { path: '/moderator',   label: 'Moderator',          emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
+  { path: '/mopo',        label: 'MoPo (mobile Mod)',  emoji: '📲', note: 'iPhone-Version — großer Space-Button + Mod-Facts' },
   { path: '/beamer',      label: 'Beamer',             emoji: '📽️', note: 'Grid live anzeigen' },
   { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
   { path: '/builder',     label: 'QQ Builder',         emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },

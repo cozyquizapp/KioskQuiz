@@ -90,3 +90,57 @@ Optionen für morgen, Wolf wählt:
 - Vor allem nach 1 Woche stabilem Hetzner-Betrieb
 
 Wolfs Hetzner-Migration heute war ein **großer Schritt** — von Free-Tier-Bug-Magnet zu eigenem voll kontrollierten EU-Server. Damit ist eine wichtige Foundation gelegt; ab morgen kann sich der Fokus wieder auf Sichtbares (Design/Mechanik/Animation) verschieben.
+
+---
+
+## 2026-05-08 vormittags · Repo-Diagnose + Roadmap
+
+**Was passiert ist:**
+
+Kurze Morning-Session bevor Jojo Chat verlassen musste (Context voll). Ziel: vor dem Optimieren erst den Ist-Zustand erfassen.
+
+1. **CORS-Fix bestätigt erledigt** (Jojo hat's noch gestern Abend selbst durchgezogen). `ALLOWED_ORIGINS=https://play.cozyquiz.app,https://cozyquiz.app` in Coolify, Restart durch.
+
+2. **Repo-Diagnostics**:
+   - `vite.config.ts` ist erstaunlich gut konfiguriert: manualChunks (vendor-react/socket/qrcode/router/canvas + admin/editors), VitePWA mit Auto-Update, Workbox-Caching, korrekte SPA-Fallbacks
+   - `frontend/public/` ist **130 MB** total — avatars/ 51 MB · themes/ 21 MB · icons/ 21 MB · sounds/ 19 MB · images/ 9.4 MB · categories/ 6.4 MB
+   - Cozywolf-PNGs schon mit sharp -94 % komprimiert (aktuell 13 MB für 22 Posen)
+   - **SVG-Originals der Cozywolf-Posen liegen mit im public/-Folder** (~5-6 MB Source-Files, gehören nicht auf Vercel-CDN)
+   - **Dead Dependencies in package.json**: `three`, `@react-three/drei`, `@react-three/fiber`, `@react-three/postprocessing`, `postprocessing` — keine Imports im src/ verifiziert. Tree-shaking schützt das Bundle, aber Disk + npm-Bloat. ~600KB-1MB
+   - Leaflet bleibt — ist tatsächlich für Pin-It-Mechanik in QQBeamerPage + QQTeamPage genutzt
+   - **Bundle-Visualizer fehlt** komplett → blind optimieren
+   - **AVIF-Pipeline fehlt** → nur PNG, kein WebP/AVIF-Fallback
+   - **useTransition** im Socket-Hook nicht genutzt
+   - Vite 5 (nicht 7) — kein Druck zum Upgrade
+
+3. **Web-Recherche-Agent verifiziert**:
+   - **AVIF für Vite-React 2026**: Sharp-Script erweitern + `<CozyAvatar>`-Wrapper mit `<picture>`-Tag ist der best fit. Vercel `<Image>` geht nicht mit Vite, `vite-imagetools` overkill. Lohnt sich für First-Paint, ~600 KB Diff zu WebP-only.
+   - **Vite manualChunks 2026**: Function-Syntax bleibt, Jojos aktuelle Config ist korrekt (nur node_modules-Pfade — `src/`-Pfade würden React.lazy brechen).
+   - **Bundle-Visualizer 2026**: `rollup-plugin-visualizer` mit `template: 'treemap'`, `gzipSize: true, brotliSize: true`. Standard.
+
+4. **`ROADMAP.md`** als langlebige Reference erstellt:
+   - Sprint Q1 (Diagnose + Cleanup, ~1h): Bundle-Visualizer einbauen → npm run build → dead deps uninstall → SVG-Originals raus aus public/
+   - Sprint Q2 (AVIF-Pipeline, ~1.5h): compress-cozywolf erweitern + `<CozyAvatar>`-Wrapper
+   - Sprint Q3 (Polish, ~1h): font-display + useTransition + Doppelklick-Schutz
+   - Spätere Sprints: Visual-Polish (Design + Animations + Emoji), Mechaniken (Sprint 1-3 aus GRID_TENSION_IDEAS), Production-Resilience, Render-Cleanup
+   - Kontext-Block für nächste Claude-Session
+
+**Entscheidungen:**
+
+- **Sprint Q1 als nächster konkreter Schritt** (Diagnose vor Optimierung).
+- AVIF-Approach: eigenes sharp-Script statt Library-Magic.
+- Vite-manualChunks wie aktuell lassen (ist 2026 korrekt).
+- Dead Three/Three-Helpers können sicher deinstalliert werden.
+
+**Files berührt:**
+- `ROADMAP.md` — NEU, Sprint-Plan + Repo-Diagnose + Kontext-Block
+- `SESSION_LOG.md` — CORS als erledigt markiert + dieser Eintrag
+- Commits: `ca72be20` (CORS done) · `d508d2d4` (ROADMAP)
+
+**Offen / Next Steps:**
+
+- ⏭ **Sprint Q1 starten** sobald nächste Session beginnt (~1h, Newbie-safe)
+- ⏳ 1 Woche Hetzner-Beobachtung (bei nächstem echtem Quiz auf Stabilität checken) → dann Render kündigen
+- ⏳ Nach Sprint Q1: Daten-getriebener Pick zwischen Q2 (AVIF), Visual-Polish, Mechaniken oder Production-Resilience
+
+Jojo verlässt diesen Chat mit vollem Context. Nächste Session findet alles in Roadmap + Session-Log + Memory. Foundation-Phase ist abgeschlossen — ab nächster Session geht's an die sichtbare Polish-Arbeit.

@@ -2858,7 +2858,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Imposter · Fix It · Pin It'),
+        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Fix It · Pin It'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
@@ -2984,7 +2984,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Imposter · Fix It · Pin It'),
+        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Fix It · Pin It'),
       ],
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },
@@ -3734,7 +3734,8 @@ function MuchoOptionsReveal({
   const showLock = locked;
   const akt3On = locked;
   const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
-  const muchoLabels = ['A', 'B', 'C', 'D'];
+  // 2026-05-09 (Wolf): Negative-Squared-Latin-Emojis statt Plain-Text.
+  const muchoLabels = ['🅰', '🅱', '🅲', '🅳'];
 
   // Waehrend QUESTION_ACTIVE (revealStep=0): kompaktes Layout, keine Luecken
   // zwischen A/B und C/D. Erst wenn Voter-Avatare einfliegen (revealStep>=1)
@@ -7154,12 +7155,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ...(placeCard ? [placeCard] : []),
                     { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen',
                       limit: lang === 'en' ? 'max 2x per round' : 'max 2x pro Runde',
-                      accent: '#EC4899', isNew: true },
+                      accent: '#EF4444', isNew: true },
                   ]
                 : ph === 3
                 ? [
                     ...(placeCard ? [placeCard] : []),
-                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EC4899' },
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EF4444' },
                     { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
                       limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
                       accent: '#06B6D4', isNew: true },
@@ -7167,7 +7168,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 : ph === 4
                 ? [
                     ...(placeCard ? [placeCard] : []),
-                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EC4899' },
+                    { count: 1, emoji: '⚡', label: lang === 'en' ? 'Steal' : 'Klauen', accent: '#EF4444' },
                     { count: 1, emoji: '🏯', label: lang === 'en' ? 'Stack' : 'Stapeln',
                       limit: lang === 'en' ? '+1 pt · max 3 per game' : '+1 Pkt · max 3 pro Spiel',
                       accent: '#06B6D4' },
@@ -8835,7 +8836,7 @@ function BluffWriteScreen({ state: s, accent, lang }: {
               // nicht ✓-Haekchen' fuer Submit-Status): drop-shadow gruen
               // wenn submitted, sonst grayscale.
               filter: submitted
-                ? 'drop-shadow(0 0 18px rgba(34,197,94,0.75)) drop-shadow(0 0 6px rgba(34,197,94,0.55))'
+                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
                 : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
@@ -8964,7 +8965,7 @@ function BluffVoteWaitingScreen({ state: s, accent, lang }: {
               opacity: voted ? 1 : 0.55,
               // 2026-05-05 (Wolf): green-glow statt ✓-Badge fuer Submit-Status.
               filter: voted
-                ? 'drop-shadow(0 0 18px rgba(34,197,94,0.75)) drop-shadow(0 0 6px rgba(34,197,94,0.55))'
+                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
                 : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
@@ -11011,14 +11012,8 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         font-size: 96px; line-height: 1;
         color: #EC4899;
       ">📍</span>
-      <div style="
-        position: absolute; left: 50%; bottom: -4px;
-        width: 10px; height: 10px; border-radius: 50%;
-        background: rgba(236,72,153,0.9);
-        box-shadow: 0 0 14px rgba(236,72,153,1), 0 0 28px rgba(236,72,153,0.6);
-        transform: translateX(-50%);
-        animation: qqTargetPulse 1.6s ease-in-out infinite;
-      "></div>
+      <!-- 2026-05-09 (Wolf): pulsierender pinker Glow-Dot entfernt — war
+           redundant zum 📍 selbst, sah aus wie ein Bug. -->
     </div>`,
     iconSize: [88, 110] as any,
     iconAnchor: [44, 105] as any, // Pin-Tip an lat/lng (5px Offset, da Emoji-Tip nicht ganz unten)
@@ -12292,7 +12287,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       flexShrink: 0,
                       opacity: answered ? 1 : 0.55,
                       filter: answered
-                        ? 'drop-shadow(0 0 18px rgba(34,197,94,0.85)) drop-shadow(0 0 6px rgba(34,197,94,0.6))'
+                        ? 'drop-shadow(0 0 10px rgba(34,197,94,0.6)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
                         : 'grayscale(0.4)',
                       transition: 'opacity 0.4s ease, filter 0.4s ease',
                     }}>
@@ -12651,7 +12646,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const optImg = q.optionImages?.[i];
                 const isCorrect = zvzLocked && i === q.correctOptionIndex;
                 const isWrong = zvzLocked && i !== q.correctOptionIndex;
-                const label = `${i + 1}`;
+                // 2026-05-09 (Wolf): Keycap-Digit-Emoji als Option-Label.
+                const label = ['1️⃣','2️⃣','3️⃣'][i] ?? `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
                 const highestForOpt = zvzHighestPerOption[i];
@@ -19634,11 +19630,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
 
 // I1 Kategorie-Partikel: subtile Emoji-Glyphen-Drift pro Kategorie.
 // Nur in QUESTION_ACTIVE sichtbar, laeuft mit ffmove-Animation.
+// 2026-05-09 (Wolf): MUCHO + ZvZ Drift-Partikel auf Emoji-Variants gehoben.
 const CAT_PARTICLE_GLYPHS: Record<string, string[]> = {
-  SCHAETZCHEN:   ['1', '2', '3', '?', '∞'],
-  MUCHO:         ['A', 'B', 'C', 'D'],
+  SCHAETZCHEN:   ['1️⃣', '2️⃣', '3️⃣', '?', '∞'],
+  MUCHO:         ['🅰', '🅱', '🅲', '🅳'],
   BUNTE_TUETE:   ['🎲', '🎁', '⭐'],
-  ZEHN_VON_ZEHN: ['5', '10', '⚡'],
+  ZEHN_VON_ZEHN: ['1️⃣', '2️⃣', '3️⃣', '⚡'],
   CHEESE:        ['📸', '🔍'],
 };
 export const CategoryParticles = memo(function CategoryParticles({ category, color }: { category?: string; color?: string }) {

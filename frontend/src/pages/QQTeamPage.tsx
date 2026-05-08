@@ -3666,7 +3666,8 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de', time
 
 // ── Mu-Cho: A/B/C/D buttons ───────────────────────────────────────────────────
 const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
-const MUCHO_LABELS = ['A','B','C','D'];
+// 2026-05-09 (Wolf): A/B/C/D als Negative-Squared-Latin-Emojis statt Plain-Text.
+const MUCHO_LABELS = ['🅰','🅱','🅲','🅳'];
 
 function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -3810,7 +3811,8 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
           }}>
             <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
+              {/* 2026-05-09 (Wolf): Keycap-Digit-Emoji statt Plain-Number-Label. */}
+              <span style={{ fontSize: 18, marginRight: 8, verticalAlign: '-2px' }}>{['1️⃣','2️⃣','3️⃣'][i] ?? `${i + 1}`}</span>
               {label}
             </div>
             {/* − */}
@@ -4221,23 +4223,39 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
         })}
       </div>
 
-      {/* Status-Banner: nur was MICH betrifft (Multi-Winner — egal was andere machen) */}
+      {/* 2026-05-09 (Wolf-Spoiler-Fix): Richtig wird NICHT mehr direkt
+          enthüllt — Status zeigt neutral „Tipp eingegangen, warte auf
+          andere". Falsche Versuche bleiben sichtbar (Strike-Counter), damit
+          Teams wissen ob sie noch raten können. Backend erlaubt 3 Versuche. */}
       {isMyWin && (
         <div style={{
           padding: '10px 14px', borderRadius: 8, textAlign: 'center',
-          background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.45)',
-          fontSize: 14, fontWeight: 900, color: '#86EFAC',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
+          fontSize: 14, fontWeight: 900, color: '#CBD5E1',
         }}>
-          {lang === 'de' ? '✓ Richtig! Wartet auf Auflösung.' : '✓ Correct! Wait for reveal.'}
+          {lang === 'de' ? '✓ Tipp eingegangen — wartest auf Auflösung' : '✓ Tip submitted — waiting for reveal'}
         </div>
       )}
       {isLocked && (
         <div style={{
           padding: '10px 14px', borderRadius: 8, textAlign: 'center',
-          background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.4)',
-          fontSize: 13, fontWeight: 900, color: '#FCA5A5',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
+          fontSize: 13, fontWeight: 900, color: '#94A3B8',
         }}>
-          {lang === 'de' ? '✕ Falsch — gesperrt für diese Frage.' : '✕ Wrong — locked out for this question.'}
+          {lang === 'de' ? 'Alle Versuche genutzt — wartest auf Auflösung' : 'All tries used — waiting for reveal'}
+        </div>
+      )}
+      {/* Strike-Hint: wenn Team schon falsche Versuche hatte aber noch nicht
+          locked (und noch nicht gewonnen) — neutral als „Versuch X/3" */}
+      {!alreadyAnswered && (s.onlyConnectStrikes?.[myTeamId] ?? 0) > 0 && (
+        <div style={{
+          padding: '8px 12px', borderRadius: 8, textAlign: 'center',
+          background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.35)',
+          fontSize: 12, fontWeight: 800, color: '#FCD34D',
+        }}>
+          {lang === 'de'
+            ? `Versuch ${(s.onlyConnectStrikes?.[myTeamId] ?? 0) + 1}/3 — du kannst nochmal raten`
+            : `Try ${(s.onlyConnectStrikes?.[myTeamId] ?? 0) + 1}/3 — guess again`}
         </div>
       )}
 
@@ -4258,11 +4276,11 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             canSubmit={!expired && val.trim().length >= 1}
             submitted={false}
             catColor={catColor}
-            label={lang === 'de' ? '✓ Tipp abgeben (1×)' : '✓ Submit guess (1×)'}
+            label={lang === 'de' ? '✓ Tipp abgeben' : '✓ Submit guess'}
             lang={lang}
           />
           <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
-            {lang === 'de' ? '⚠ Nur ein Tipp — falsch = gesperrt für diese Frage' : '⚠ One try only — wrong = locked out'}
+            {lang === 'de' ? 'Bis zu 3 Versuche pro Team — Tipp wird erst beim Reveal aufgelöst' : 'Up to 3 tries per team — answer is revealed at the end'}
           </div>
         </>
       )}
@@ -6943,18 +6961,54 @@ function TeamBottomSheetMenu({
           overflowY: 'auto',
         }}
       >
-        {/* Drag-Handle */}
-        <div style={{
-          width: 44, height: 5, background: 'rgba(255,255,255,0.22)',
-          borderRadius: 999, margin: '4px auto 16px',
-        }} />
+        {/* Drag-Handle — klickbar/tap-bar (schließt das Menü). 2026-05-09 (Wolf-
+            Bug 'ich versuche jedes mal so zu schließen'): Handle als Tap-Target
+            wrapped, plus expliziter X-Button oben rechts als Backup. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={lang === 'de' ? 'Menü schließen' : 'Close menu'}
+          style={{
+            display: 'block',
+            width: 80, padding: '10px 0',
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            margin: '0 auto 8px', textAlign: 'center',
+          }}
+        >
+          <span style={{
+            display: 'inline-block',
+            width: 44, height: 5, background: 'rgba(255,255,255,0.22)',
+            borderRadius: 999,
+          }} />
+        </button>
 
+        {/* Header-Row: Title links + X-Close-Button rechts */}
         <div style={{
-          fontSize: 12, fontWeight: 900, color: '#94A3B8',
-          textTransform: 'uppercase', letterSpacing: '0.12em',
-          marginBottom: 12, paddingLeft: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 12, paddingLeft: 4, paddingRight: 4,
         }}>
-          {lang === 'de' ? 'Menü' : 'Menu'}
+          <div style={{
+            fontSize: 12, fontWeight: 900, color: '#94A3B8',
+            textTransform: 'uppercase', letterSpacing: '0.12em',
+          }}>
+            {lang === 'de' ? 'Menü' : 'Menu'}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={lang === 'de' ? 'Menü schließen' : 'Close menu'}
+            style={{
+              width: 36, height: 36, borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#F1F5F9', fontSize: 18, fontWeight: 700, lineHeight: 1,
+              cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.15s, transform 0.12s',
+            }}
+            onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+            onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >✕</button>
         </div>
 
         {/* STATS-Row — Phase, Position, Zellen kompakt */}

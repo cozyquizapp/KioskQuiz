@@ -4,6 +4,92 @@ Chronologisches Protokoll von Arbeits-Sessions. Trigger: Wolf sagt „log das", 
 
 ---
 
+## 2026-05-09 · Marathon-Session: Final-Wager + Game-Show-Reveal + HP-Visual
+
+**Was passiert ist:** Riesige Session, ~50 Commits. Vier thematische Blöcke:
+
+### 1. Final-Wager-Mechanik MVP + Brainstorm-Refinement
+- Erste Implementation als Cell-Picker-Variante live (Commit `b66dad6c`): Bet = `{ row, col, targetTeamId }`, Bonus +1 pro richtig, Cells werden bei falsch entfernt
+- Streamdeck-Integration (Setup-Toggle „🎰 Final-Wetten" in Quick-Settings, Space-Flow durch alle 3 neuen Phasen FINAL_BETTING + FINAL_REVEAL automatisch)
+- Bot-Auto-Bets gestaffelt
+- Mod-Page Bet-Übersicht (Submit-Status pro Team)
+- **Mid-Session Wolf-Brainstorm hat Mechanik komplett gepivotet** → siehe `memory/project_final_wager_spec.md`. Final-Spec: 1 Tipp pro Team, Bonus = Anzahl Final-Kat-Wins des getippten Teams, **Sympathie-Bonus +1 mutual**, KEIN Verlust. Refactor steht aus.
+
+### 2. Game-Show-Reveal für TeamsRevealView (Slot M live)
+- Sequenzielle Card-Sequenz pro Team: Slam-Down → Settle face-down → Flip Y-Rotate → Spotlight-Hold (3.6s/Team)
+- Card-Back: Wolf-Avatar (idle.svg ohne Ring) oben + „CozyQuiz" in Stinger-Fit unten — spiegelt Front-Layout
+- Mehrere Iterationen weil Live-View nicht 1:1 wie Showreel aussah → Memory `feedback_showreel_to_live_one_to_one.md` angelegt: bei Migration JSX wörtlich kopieren, nicht durch existing Components zwingen
+- Autoplay-Delay dynamisch (TITLE_HOLD + N×3.6s + 2.5s buffer)
+
+### 3. Hot-Potato-Polish + Visualisierung
+- HP-Match akzeptiert jetzt EN-Antworten (q.answer + q.answerEn kombiniert)
+- HP-Autoplay separater useEffect mit minimalen Deps → Multi-Trigger-Bug gelöst
+- Question-Sound HP-Gate: feuert erst bei `finished` (nicht während rolling/landed)
+- /animations Slot P „Fliegende Kartoffel": Hold (Bounce bis oberer Avatar-Rand) → Wurf (Bogen mit Smoke-Trail) → Click-Spark-Burst bei Eliminierung → Avatar grau → Slide-Out nach 1.2s, alive-Avatare rücken zusammen
+- Wolf-Entscheidung: HP-Reihenfolge ab nächster Session **nach Scoreboard** (bestes zuerst, schlechtestes zuletzt). Slot-Machine kommt raus, Slot P ersetzt sie als HP-Visual.
+
+### 4. Polish-Sweeps
+- Vercel-Cache-Bug am Handy nach Hetzner-Migration (kein Code-Bug)
+- Mehrere Brand-Refresh-Reste auf /team gefixt (gold→pink, JSX-Doppel-Quotes)
+- Joker-Fix: Pink-Glow weg + Boy-Joker Größenausgleich (1.10× scale)
+- /team Mobile-Polish „Konzept A" komplett: Frosted-Glass, Edge-to-Edge, Bottom-Sheet-Menu mit Mini-Grid + Stats + Hilfe + Quiz-Verlassen
+- LeaveQuizConfirm-Modal aus der Mitte verschoben → Flex-Wrapper-Fix
+- Star-Border (reactbits.dev) live in PreGame + Pause-Cards
+- Rules-Slide 4: Joker-PNGs auf Test-Grid + Wiggle-Animation
+- /animations Slots ergänzt: K (parallel Flip) · L (Slam+Flip) · **M (Game-Show, live)** · N (Spark — Wolf abgelehnt) · O (Star-Border) · P (Fliegende Kartoffel)
+
+### Wolf-Asset-Beiträge
+- Wolf-SVG ohne Ring (`/avatars/cozywolf/svg/idle.svg`) — für Card-Back-Wolf
+- 8 Wink-Frame-PNGs (`/avatars/cozywolf/wink/`) — 4 Augen/Mund-Kombos × 2 Hand-Positionen, für Frame-Animation in /animations Slot J
+
+**Entscheidungen:**
+
+- Final-Wager Tipp-Variante (kein Cell-Picker) + Sympathie-Bonus + kein Verlust
+- HP-Reihenfolge nach Scoreboard, Slot-Machine raus
+- Cluster-Visual am End-Reveal (nur Glow, KEIN Bonus — Variante a)
+- 3 End-Awards (🐢 Underdog · 🦝 Meisterklauer · ⚡ Speedy Gonzales)
+- Joker-Mechanik bleibt 1:1 wie ist (Cap 2, Pattern-basiert)
+- Star-Border NUR in PreGame + Pause (nicht überall, sonst zu viel)
+- TeamsRevealView Game-Show-Sequenz Slot M live (Konsens nach Slot-Vergleich K/L/M)
+
+**Files berührt:** ~25 Code-Files + zahlreiche Memory-Updates. Highlights:
+- `frontend/src/pages/QQBeamerPage.tsx` (TeamsRevealView, FinalRevealView, FinalBettingView, RulesView Joker, Star-Border in PausedView)
+- `frontend/src/pages/QQTeamPage.tsx` (FinalBettingCard, TeamBottomSheetMenu, LeaveQuizConfirm, Mini-Grid solid)
+- `frontend/src/pages/QQModeratorPage.tsx` (FinalWagerControls, Bet-Übersicht, separater HP-Autoplay-Effect, Quick-Settings-Toggle)
+- `frontend/src/pages/AnimationsLabPage.tsx` (Slots K-P)
+- `backend/src/quarterQuiz/qqRooms.ts` (FinalBetting-Phase + Resolver, qqBeginPhase auto-Wager-Trigger, qqNextQuestion FINAL_REVEAL → GAME_OVER)
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` (4 Final-Wager-Sockets, maybeAutoFinalBets, HP-EN-Match)
+- `shared/quarterQuizTypes.ts` (QQFinalBet, QQFinalBetResolution, neue Phasen)
+
+**Memory-Updates:**
+- NEU: `feedback_showreel_to_live_one_to_one.md` (Showreel→Live 1:1 kopieren)
+- NEU: `project_final_wager_spec.md` (Tipp-Variante final-Spec für Refactor)
+- NEU: `project_team_mobile_polish_konzept_a.md` (Bottom-Sheet-Menu, kein Joker im Header)
+
+**Offen / Next Steps:**
+
+⏳ **Final-Wager-Refactor** (Cell-Picker → Tipp-Variante)
+- Backend Resolver umbauen + Sympathie-Pair-Detection
+- /team UI: nur TeamPickerModal
+- /beamer FinalRevealView Score-Cascade mit Sympathie-Marker
+
+⏳ **HP-Reihenfolge** nach Scoreboard + Slot-Machine raus + Slot P live in HP-View
+
+⏳ **End-Reveal in 3 Akten**
+- Akt 1: Cluster-Glow-Visual
+- Akt 2: Wager-Reveal mit Sympathie-Marker
+- Akt 3: 3 End-Awards mit Konfetti
+
+⏳ **Live-Wins-Tracker** zwischen Final-Kategorien
+
+⏳ **Test mit Wolf**: Final-Wager-Mechanik mit Dummies durchspielen, Vibe-Check
+
+Wolf hat ~50 Commits durchgezogen, alle deployed (Vercel + Hetzner). Marathon-Session mit viel Brainstorm-zu-Code-Pivot. Nächste Session beginnt mit Final-Wager-Refactor (1-2h) + Test-Run vor Eurovision (in ~5 Tagen).
+
+🦖 Jojo over and out.
+
+---
+
 ## 2026-05-08 · Recherche-Marathon + Hetzner-Migration
 
 **Was passiert ist:**

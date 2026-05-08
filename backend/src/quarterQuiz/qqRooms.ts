@@ -3179,6 +3179,16 @@ export function qqNextQuestion(room: QQRoomState): void {
     return;
   }
 
+  // Final-Wager (2026-05-09): nach FINAL_REVEAL-Score-Cascade führt Space zu
+  // GAME_OVER. Die Bonus-Coins aus finalBetResolution bleiben im State und
+  // werden in der Game-Over-Anzeige zusätzlich zu den Cell-Counts gerendert.
+  if (room.phase === 'FINAL_REVEAL') {
+    updateTerritories(room);
+    detectTieBreakerCandidates(room);
+    room.phase = 'GAME_OVER';
+    return;
+  }
+
   // Double-Press-Guard: Wenn der Moderator Space/„Nächste Frage" doppelt drückt,
   // darf der 2. Call nicht ein zweites Mal Comeback triggern. Phase ist nach dem
   // 1. Call bereits COMEBACK_CHOICE / PHASE_INTRO / GAME_OVER — in diesen Zuständen

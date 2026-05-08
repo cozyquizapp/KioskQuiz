@@ -512,6 +512,24 @@ export default function QQModeratorPage() {
       case 'PAUSED':
         // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
         break;
+      case 'FINAL_BETTING': {
+        // Auto-Advance nur wenn alle Teams gesetzt haben — sonst auf Mod
+        // warten (er will evtl noch warten oder manuell triggern).
+        const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
+        const total = s.teams.length;
+        if (total > 0 && submitted >= total) {
+          delayMs = 2200; // kurze Lese-Pause zum „alle haben gesetzt"-Moment
+          action = () => emit('qq:finishFinalBetting', { roomCode });
+        }
+        break;
+      }
+      case 'FINAL_REVEAL': {
+        // Score-Cascade läuft — Lesepause skaliert mit Team-Anzahl
+        // (Stagger 180ms pro Zeile + Buffer).
+        delayMs = 4000 + s.teams.length * 800;
+        action = () => emit('qq:nextQuestion', { roomCode });
+        break;
+      }
       case 'CONNECTIONS_4X4': {
         // 4×4-Finale durchspielen: Sub-Phasen via state.connections.phase steuern.
         // - intro:     Lesepause für die Mechanik-Erklärung, dann Spielzeit starten
@@ -721,6 +739,14 @@ export default function QQModeratorPage() {
         }
         else if (cp === 'done')      emitRef.current('qq:nextQuestion', { roomCode });
       }
+      // Final-Wager (2026-05-09): Space-Steuerung für die 2 neuen Phasen.
+      // Start der Bet-Phase ist explizit Mod-Button — Space würde sonst
+      // zwischen Phase 3 und 4 immer Bet-Phase einleiten, auch wenn nicht
+      // gewünscht. FINAL_BETTING + FINAL_REVEAL haben dann normalen Space-Flow.
+      else if (s.phase === 'FINAL_BETTING')
+        emitRef.current('qq:finishFinalBetting', { roomCode });
+      else if (s.phase === 'FINAL_REVEAL')
+        emitRef.current('qq:nextQuestion', { roomCode });
       else if (s.phase === 'GAME_OVER')
         emitRef.current('qq:showThanks', { roomCode });
       return;
@@ -952,6 +978,11 @@ export default function QQModeratorPage() {
       case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
       case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#EC4899', sub: s.connections?.phase ?? '' };
+      case 'FINAL_BETTING': {
+        const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
+        return { text: '🎰 FINAL-WETTEN', color: '#F472B6', sub: `${submitted}/${s.teams.length} Teams gesetzt` };
+      }
+      case 'FINAL_REVEAL': return { text: '🏆 FINAL-AUFLÖSUNG', color: '#FBBF24', sub: 'Score-Cascade am Beamer' };
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#EC4899' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
       case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#EC4899', sub: 'QR-Code für Summary' };

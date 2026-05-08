@@ -6816,14 +6816,19 @@ function LeaveQuizConfirm({
           animation: 'tcMenuBackdrop 0.2s ease both',
         }}
       />
+      {/* Flex-Wrapper für Viewport-Zentrierung (vermeidet transform-Conflict
+          mit der tcoptIn-Animation, die selbst translateY/scale anwendet). */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1101,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px',
+        pointerEvents: 'none',
+      }}>
       <div
         role="alertdialog"
         aria-modal="true"
         style={{
-          position: 'fixed',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'calc(100vw - 32px)', maxWidth: 380,
+          width: '100%', maxWidth: 380,
           padding: '24px 22px',
           borderRadius: 24,
           background: 'rgba(31, 26, 46, 0.92)',
@@ -6831,7 +6836,7 @@ function LeaveQuizConfirm({
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           border: '1px solid rgba(239,68,68,0.35)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
-          zIndex: 1101,
+          pointerEvents: 'auto',
           animation: 'tcoptIn 0.28s cubic-bezier(0.32,1.4,0.5,1) both',
         }}
       >
@@ -6877,6 +6882,7 @@ function LeaveQuizConfirm({
             {lang === 'de' ? 'Verlassen' : 'Leave'}
           </button>
         </div>
+      </div>
       </div>
     </>
   );

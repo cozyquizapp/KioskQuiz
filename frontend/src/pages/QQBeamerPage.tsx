@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
-  QQStateUpdate, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
+  QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
   QQQuestionImage,
   QQOptionImage,
@@ -5422,13 +5422,28 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   void tick;
   const elapsed = Date.now() - anchor;
 
-  // Timing: 0.8s Titel → pro Team 0.9s stagger → 1.2s Outro-Grid mit "VIEL GLÜCK!"
+  // 2026-05-09 (Wolf-Idee Slot M Game-Show-Reveal): Sequenzielle Per-Team-
+  // Sequenz statt parallele Stagger. Pro Team: Card slammt face-down rein
+  // (Card-Back = CozyQuiz-Pattern), settled, flippt, Spotlight-Hold für
+  // Mod-Anmoderation, dann nächstes Team.
   const titleDelay = 0;
   const titleDur = 800;
-  const perTeamDelay = 900;
-  const revealedCount = Math.max(0, Math.min(teams.length, Math.floor((elapsed - titleDur) / perTeamDelay) + 1));
-  const goodLuckDelay = titleDur + teams.length * perTeamDelay + 400;
+  const TITLE_HOLD = 1200;             // Title allein nach Letter-Cascade
+  const SLAM_DUR = 1400;
+  const SETTLE = 500;                  // Card sitzt face-down (Spannung)
+  const FLIP_DUR = 1000;
+  const HOLD_AFTER_FLIP = 700;         // Mod-Sprech-Pause pro Team
+  const PER_TEAM = SLAM_DUR + SETTLE + FLIP_DUR + HOLD_AFTER_FLIP; // 3600
+  // Per-Team-Phasen: für jedes Team Status (hidden | slamming | flipping | held)
+  const teamStart = (i: number) => TITLE_HOLD + i * PER_TEAM;
+  const flipStartFor = (i: number) => teamStart(i) + SLAM_DUR + SETTLE;
+  const holdEndFor = (i: number) => flipStartFor(i) + FLIP_DUR + HOLD_AFTER_FLIP;
+  const goodLuckDelay = TITLE_HOLD + teams.length * PER_TEAM + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
+  // revealedCount nicht mehr benötigt für Render — pro Team berechnen wir
+  // den Status direkt. Behalten als Compat falls anderswo abgegriffen.
+  const revealedCount = Math.max(0, Math.min(teams.length,
+    elapsed < TITLE_HOLD ? 0 : Math.floor((elapsed - TITLE_HOLD) / PER_TEAM) + 1));
 
   // 2026-04-30 v3 round 6 (User-Bug 'sound trifft avatar-erscheinen nicht'):
   // Statt per 250ms-Tick auf revealedCount zu pollen (= Sound bis zu 250ms
@@ -5443,7 +5458,10 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     const cascadeTotal = teams.length + 1;
     const timers: number[] = [];
     for (let i = 0; i < teams.length; i++) {
-      const fireAt = anchor + titleDur + i * perTeamDelay;
+      // 2026-05-09 (Game-Show-Reveal): Cascade-Note feuert jetzt beim
+      // FLIP-Start (= Avatar wird sichtbar) statt beim Slam-Start. Sync zum
+      // visuellen Reveal-Moment, nicht zum „Mystery-Card-fällt-rein".
+      const fireAt = anchor + flipStartFor(i);
       const delay = Math.max(0, fireAt - Date.now());
       timers.push(window.setTimeout(() => {
         try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
@@ -5531,6 +5549,14 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           55%  { opacity: 1; transform: translateY(8%)    scale(1.15) rotate(3deg); filter: blur(0); }
           75%  { transform: translateY(-2%) scale(0.96) rotate(-1deg); }
           100% { transform: translateY(0)    scale(1) rotate(0deg); }
+        }
+        /* 2026-05-09 (Game-Show-Reveal Slot M): Slam für Cards (3:4 box)
+           mit etwas heftiger overshoot (1.18 statt 1.15). Identisch zu Slot M. */
+        @keyframes qqGsTeamSlam {
+          0%   { opacity: 0; transform: translateY(-90vh) scale(2)    rotate(-18deg); filter: blur(7px); }
+          55%  { opacity: 1; transform: translateY(8%)    scale(1.18) rotate(3deg);   filter: blur(0); }
+          75%  {            transform: translateY(-2%)    scale(0.96) rotate(-1deg); }
+          100% { opacity: 1; transform: translateY(0)     scale(1)    rotate(0);     filter: blur(0); }
         }
         @keyframes qqTrFlash {
           0%   { opacity: 0; }
@@ -5643,10 +5669,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       })()}
       </div>
 
-      {/* Teams grid — feste Reihen, damit 8 als 2×4 statt 7+1 erscheint */}
+      {/* Teams grid — Game-Show-Card-Reveal (sequenziell). Pro Team:
+          Card slammt face-down rein → settled → flippt zur Vorderseite →
+          Spotlight-Hold für Mod-Anmoderation → nächstes Team. */}
       {(() => {
         const n = teams.length;
-        // Ausgewogene Reihen: 7→4+3, 8→4+4, 9→5+4, 10→5+5, ≥11 dynamisch
         const rowSizes: number[] =
           n <= 6 ? [n]
           : n === 7 ? [4, 3]
@@ -5661,23 +5688,21 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
             })();
         const many = n > 5;
         const multiRow = rowSizes.length > 1;
-        // Bei mehreren Reihen kleiner skalieren, damit beides in die Bühne passt
-        // 2026-05-07 (Layout-Audit): multiRow-Cap 180 → 220. Bei 5-8 Teams in
-        // 2 Reihen wirkten 180er-Avatare gegen den 92vw-Container schmal.
-        // 4×220 + Gaps fitten auf 1920er-Bühne mit Reserve.
-        const discSize = multiRow
-          ? 'clamp(110px, 11vw, 220px)'
-          : many ? 'clamp(130px, 13vw, 210px)' : 'clamp(160px, 17vw, 260px)';
-        const discFont = multiRow
-          ? 'clamp(52px, 6.2vw, 100px)'
-          : many ? 'clamp(62px, 7.8vw, 118px)' : 'clamp(78px, 10vw, 140px)';
-        const nameFont = multiRow ? 'clamp(20px, 2.4vw, 32px)' : 'clamp(22px, 2.6vw, 36px)';
+        // Card-Width — Avatar ist ~55% der Card-Width
+        const cardWidth = multiRow
+          ? 'clamp(140px, 13vw, 220px)'
+          : many ? 'clamp(160px, 15vw, 240px)' : 'clamp(190px, 18vw, 280px)';
+        const avatarSize = multiRow
+          ? 'clamp(82px, 8vw, 130px)'
+          : many ? 'clamp(96px, 9.5vw, 160px)' : 'clamp(118px, 12vw, 196px)';
+        const nameFont = multiRow ? 'clamp(16px, 1.7vw, 24px)' : 'clamp(18px, 1.9vw, 28px)';
         let cursor = 0;
         return (
           <div style={{
             display: 'flex', flexDirection: 'column',
             gap: 'clamp(18px, 2.4vw, 36px)',
             alignItems: 'center', maxWidth: '92vw',
+            position: 'relative', zIndex: 2,
           }}>
             {rowSizes.map((size, rIdx) => {
               const slice = teams.slice(cursor, cursor + size);
@@ -5685,59 +5710,120 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
               cursor += size;
               return (
                 <div key={rIdx} style={{
-                  display: 'flex', gap: 'clamp(12px, 2vw, 28px)',
+                  display: 'flex', gap: 'clamp(14px, 2vw, 32px)',
                   justifyContent: 'center', flexWrap: 'nowrap',
                 }}>
                   {slice.map((t, j) => {
                     const i = startI + j;
-                    const shown = i < revealedCount;
-                    const slamDelay = titleDur + i * perTeamDelay;
+                    const startMs = teamStart(i);
+                    const flipMs = flipStartFor(i);
+                    const holdEndMs = holdEndFor(i);
+                    const isVisible = elapsed >= startMs;
+                    const isFlipped = elapsed >= flipMs;
+                    const isInSpotlight = elapsed >= flipMs && elapsed < holdEndMs;
                     return (
                       <div key={t.id} style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: 10,
-                        opacity: shown ? 1 : 0,
-                        animation: shown ? `qqTrSlam 900ms cubic-bezier(.2,.9,.2,1) 0ms both` : 'none',
-                        animationDelay: shown ? '0ms' : `${slamDelay}ms`,
+                        width: cardWidth,
+                        aspectRatio: '3 / 4',
+                        perspective: '1200px',
+                        opacity: isVisible ? 1 : 0,
+                        animation: isVisible
+                          ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both`
+                          : 'none',
+                        filter: isInSpotlight ? `drop-shadow(0 0 38px ${t.color}cc)` : 'none',
+                        transition: 'filter 0.6s ease',
                       }}>
-                        {/* Avatar-Disc — Ring ist im PNG eingebrannt, nur Glow drumherum */}
-                        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={discSize} style={{
-                          boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}55`,
-                          animation: shown ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
-                        }} />
-                        {/* Flash overlay on slam */}
-                        {shown && (
-                          <div style={{
-                            position: 'absolute',
-                            width: discSize,
-                            height: discSize,
-                            borderRadius: '50%',
-                            background: '#fff',
-                            pointerEvents: 'none',
-                            animation: 'qqTrFlash 600ms ease-out both',
-                          }} />
-                        )}
-                        {/* Team name (Pill) — 2-zeilig erlaubt bei langen Witznamen.
-                            textAlign: center sorgt dafuer dass auch wrapped Texte
-                            („Halbwissen Gold Wert" / „Frag-Mich-Was-Leichtes")
-                            mittig in der Pille stehen statt links-buendig. */}
                         <div style={{
-                          padding: '6px 14px', borderRadius: 16,
-                          background: t.color,
-                          textTransform: 'uppercase', letterSpacing: '0.04em',
-                          textAlign: 'center',
-                          boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
-                          maxWidth: multiRow ? '24vw' : '20vw',
+                          position: 'relative', width: '100%', height: '100%',
+                          transformStyle: 'preserve-3d',
+                          transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
+                          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                         }}>
-                          <TeamNameLabel
-                            name={t.name}
-                            maxLines={2}
-                            shrinkAfter={14}
-                            color="#fff"
-                            fontWeight={900}
-                            fontSize={nameFont}
-                            style={{ textAlign: 'center' }}
-                          />
+                          {/* Rückseite — generischer CozyQuiz-Card-Back */}
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                            borderRadius: 'clamp(14px, 1.4vw, 22px)',
+                            background:
+                              'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+                              'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+                              'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+                            border: '2px solid rgba(236,72,153,0.55)',
+                            boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            gap: 12, padding: 'clamp(14px, 1.6vw, 22px)',
+                            overflow: 'hidden',
+                          }}>
+                            <div aria-hidden style={{
+                              position: 'absolute', inset: 0,
+                              backgroundImage:
+                                'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+                                'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+                              pointerEvents: 'none',
+                            }} />
+                            <div style={{
+                              position: 'relative',
+                              padding: 'clamp(10px, 1.2vw, 18px) clamp(14px, 1.6vw, 24px)',
+                              border: '1.5px solid rgba(236,72,153,0.6)',
+                              borderRadius: 'clamp(10px, 1vw, 14px)',
+                              background: 'rgba(31,26,46,0.65)',
+                              boxShadow: '0 0 24px rgba(236,72,153,0.35), inset 0 0 16px rgba(236,72,153,0.15)',
+                            }}>
+                              <div style={{
+                                fontFamily: "'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                                fontSize: multiRow ? 'clamp(16px, 1.7vw, 26px)' : 'clamp(18px, 2vw, 32px)',
+                                fontWeight: 900,
+                                color: '#FBCFE8',
+                                letterSpacing: '0.04em',
+                                textShadow: '0 0 14px rgba(236,72,153,0.7)',
+                                lineHeight: 1,
+                              }}>CozyQuiz</div>
+                            </div>
+                            <div style={{
+                              fontSize: multiRow ? 'clamp(12px, 1.2vw, 16px)' : 'clamp(14px, 1.4vw, 20px)',
+                              color: 'rgba(236,72,153,0.55)',
+                              letterSpacing: '0.6em',
+                              marginTop: 2,
+                            }}>✦ ✦ ✦</div>
+                          </div>
+                          {/* Vorderseite — Avatar + Team-Name */}
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                            transform: 'rotateY(180deg)',
+                            borderRadius: 'clamp(14px, 1.4vw, 22px)',
+                            background: `linear-gradient(180deg, ${t.color}22, ${t.color}10)`,
+                            border: `2px solid ${t.color}`,
+                            boxShadow: `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 28px ${t.color}66`,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            gap: 'clamp(8px, 1vw, 14px)', padding: 'clamp(14px, 1.6vw, 22px)',
+                          }}>
+                            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} style={{
+                              boxShadow: `0 12px 40px ${t.color}88, 0 0 60px ${t.color}55`,
+                              animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
+                            }} />
+                            <div style={{
+                              padding: 'clamp(4px, 0.6vw, 8px) clamp(10px, 1.2vw, 16px)',
+                              borderRadius: 16,
+                              background: t.color,
+                              textTransform: 'uppercase', letterSpacing: '0.04em',
+                              textAlign: 'center',
+                              boxShadow: `0 4px 12px rgba(0,0,0,0.3)`,
+                              maxWidth: '95%',
+                            }}>
+                              <TeamNameLabel
+                                name={t.name}
+                                maxLines={2}
+                                shrinkAfter={14}
+                                color="#fff"
+                                fontWeight={900}
+                                fontSize={nameFont}
+                                style={{ textAlign: 'center' }}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );

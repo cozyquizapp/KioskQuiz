@@ -1763,12 +1763,294 @@ function SparkOnCardShowcase() {
   );
 }
 
+// ─── Slot O: Star-Border (inspired by reactbits.dev/animations/star-border) ──
+// Conic-Gradient rotiert hinter der Card mit overflow:hidden → wirkt wie
+// leuchtender Border. 3 Varianten zum Vergleich.
+function StarBorderShowcase() {
+  const StarBorderCard = ({
+    title, gradient, dur,
+  }: {
+    title: string;
+    gradient: string;
+    dur: string;
+  }) => (
+    <div style={{
+      position: 'relative',
+      width: 200, height: 270,
+      borderRadius: 18,
+      overflow: 'hidden',
+      // 2px Border-Effect: outer-Wrapper hat das rotating Layer,
+      // inner-Card sitzt 2px innen via padding
+      padding: 2,
+      isolation: 'isolate',
+    }}>
+      {/* Rotating Conic-Gradient als „Border-Light" */}
+      <div aria-hidden style={{
+        position: 'absolute',
+        inset: '-50%',
+        zIndex: 0,
+        background: gradient,
+        animation: `starBorderSpin ${dur} linear infinite`,
+      }} />
+      {/* Inner-Card */}
+      <div style={{
+        position: 'relative',
+        width: '100%', height: '100%',
+        zIndex: 1,
+        borderRadius: 16,
+        background: 'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 10,
+      }}>
+        <div style={{ fontSize: 38, lineHeight: 1 }}>⭐</div>
+        <div style={{
+          fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+          letterSpacing: '0.04em', textAlign: 'center', padding: '0 14px',
+          textShadow: '0 0 12px rgba(236,72,153,0.5)',
+        }}>{title}</div>
+        <div style={{
+          fontSize: 10, color: '#94A3B8', fontWeight: 700,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+        }}>Important</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <style>{`
+        @keyframes starBorderSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18,
+        justifyItems: 'center',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <StarBorderCard
+            title="Pink Slow"
+            gradient="conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)"
+            dur="4.5s"
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Pink · 4.5 s</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            1 Pink-Strahl, langsam — subtilster Look
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <StarBorderCard
+            title="Pink Fast"
+            gradient="conic-gradient(from 0deg, transparent 0% 60%, rgba(244,114,182,0.95) 70%, #EC4899 80%, rgba(244,114,182,0.95) 90%, transparent 100%)"
+            dur="2.5s"
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Pink · 2.5 s</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            Breiterer Pink-Strahl, schneller — punchy
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <StarBorderCard
+            title="Multi"
+            gradient="conic-gradient(from 0deg, transparent 0% 50%, #EC4899 60%, #FBCFE8 70%, #A21247 80%, transparent 90% 100%)"
+            dur="3.2s"
+          />
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Multi-Color · 3.2 s</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+            Pink + Hellpink + Magenta — kräftiger Brand-Sweep
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(34,197,94,0.08)',
+        border: '1px solid rgba(34,197,94,0.25)',
+        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <strong style={{ color: '#86efac' }}>Tech:</strong> conic-gradient mit transparent-Sektoren rotiert hinter
+        einer dunklen Inner-Card. <code style={{ color: '#fbbf24' }}>overflow:hidden</code> + <code>border-radius</code>
+        am Outer-Wrapper sorgt für sauber abgeschnittene Border-Form. Pure CSS, kein JS, GPU-accelerated.
+        Conic-Gradient ist breit-supported (Chrome 69+/FF 83+/Safari 12.1+).
+      </div>
+    </div>
+  );
+}
+
+// ─── Slot P: Fliegende Kartoffel (Hot-Potato Visual) ────────────────────────
+// 🥔 hüpft im Bogen zwischen 4 Avataren, manche fliegen unterwegs raus (grau).
+// Smoke-Trail hinter der Kartoffel via Pseudo-Element. Replay startet neu.
+function FlyingPotatoDemo({ replay }: { replay: number }) {
+  const teams = [
+    { emoji: '🐉', color: '#22C55E', name: 'Wolfsrudel' },
+    { emoji: '🦊', color: '#F97316', name: 'Fuchsbande' },
+    { emoji: '🐙', color: '#A855F7', name: 'Kraken-Krew' },
+    { emoji: '🦉', color: '#EAB308', name: 'Eulenmagier' },
+  ];
+  // Sequenz: zu welchem Team fliegt die Kartoffel + bei welchem Step wird wer eliminiert
+  // [teamIdx, eliminateAfter] — eliminateAfter=true: dieses Team fliegt nach diesem Throw raus
+  const sequence: Array<{ to: number; eliminate?: boolean }> = [
+    { to: 0 },
+    { to: 1 },
+    { to: 2, eliminate: true }, // Kraken raus
+    { to: 3 },
+    { to: 0 },
+    { to: 1, eliminate: true }, // Fuchs raus
+    { to: 3 },
+    { to: 0 },
+  ];
+  const STEP = 1400; // ms pro Wurf
+
+  const startedAt = React.useRef(Date.now());
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    startedAt.current = Date.now();
+    const id = window.setInterval(() => setTick(t => t + 1), 60);
+    return () => window.clearInterval(id);
+  }, [replay]);
+
+  const elapsed = Date.now() - startedAt.current;
+  const stepIdx = Math.min(sequence.length - 1, Math.floor(elapsed / STEP));
+  const stepProgress = (elapsed % STEP) / STEP; // 0..1
+  // Eliminations: bei jedem Step der eliminate hat, ab dem Wurf raus
+  const eliminated = new Set<number>();
+  for (let i = 0; i <= stepIdx; i++) {
+    if (sequence[i].eliminate && i < stepIdx) eliminated.add(sequence[i].to);
+  }
+
+  // Avatar-Positionen (in % der Container-Breite, vertikal mittig)
+  const avatarPositions = teams.map((_, i) => ({
+    x: 12 + i * 25, // 12%, 37%, 62%, 87%
+    y: 50, // mittig
+  }));
+
+  // Kartoffel-Position interpoliert zwischen aktuelles & nächstes Team
+  const fromIdx = stepIdx === 0 ? 0 : sequence[stepIdx - 1].to;
+  const toIdx = sequence[stepIdx].to;
+  const fromPos = avatarPositions[fromIdx];
+  const toPos = avatarPositions[toIdx];
+  // ease-in-out
+  const t = stepProgress < 0.5
+    ? 2 * stepProgress * stepProgress
+    : 1 - Math.pow(-2 * stepProgress + 2, 2) / 2;
+  const potatoX = fromPos.x + (toPos.x - fromPos.x) * t;
+  // Bogen via parabel: max bei stepProgress=0.5
+  const arcHeight = 22; // % höher als baseline
+  const potatoY = avatarPositions[0].y - Math.sin(stepProgress * Math.PI) * arcHeight;
+  // Rotation während des Wurfs
+  const potatoRotation = stepProgress * 540; // 1.5 Umdrehungen
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <style>{`
+        @keyframes potatoSmoke {
+          0%   { opacity: 0.75; transform: scale(0.6) translateY(0); }
+          100% { opacity: 0;    transform: scale(1.6) translateY(-12px); }
+        }
+      `}</style>
+      <div style={{
+        position: 'relative',
+        width: '100%', height: 240,
+        borderRadius: 14,
+        background: 'radial-gradient(ellipse at 50% 80%, rgba(239,68,68,0.10) 0%, transparent 60%), #0d0a06',
+        border: '1px solid rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+      }}>
+        {/* Avatare in Reihe */}
+        {teams.map((tt, i) => {
+          const isOut = eliminated.has(i);
+          const isHolding = !isOut && i === toIdx && stepProgress > 0.85;
+          return (
+            <div key={i} style={{
+              position: 'absolute',
+              left: `${avatarPositions[i].x}%`, top: `${avatarPositions[i].y}%`,
+              transform: 'translate(-50%, -50%)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              transition: 'opacity 0.5s, filter 0.5s',
+              opacity: isOut ? 0.35 : 1,
+              filter: isOut ? 'grayscale(1)' : 'none',
+            }}>
+              <div style={{
+                width: 76, height: 76, borderRadius: '50%',
+                background: `${tt.color}33`,
+                border: `2.5px solid ${tt.color}`,
+                boxShadow: isHolding
+                  ? `0 0 36px ${tt.color}cc, 0 0 12px rgba(239,68,68,0.55)`
+                  : `0 0 18px ${tt.color}55`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 40, lineHeight: 1,
+                transition: 'box-shadow 0.3s',
+              }}>{tt.emoji}</div>
+              <div style={{
+                fontSize: 11, fontWeight: 900, color: tt.color,
+                letterSpacing: '-0.01em', textAlign: 'center',
+                textShadow: `0 0 6px ${tt.color}55`,
+              }}>{tt.name}</div>
+              {isOut && (
+                <div style={{
+                  position: 'absolute', top: 32, left: '50%', transform: 'translateX(-50%) rotate(-12deg)',
+                  fontSize: 30,
+                }}>💥</div>
+              )}
+            </div>
+          );
+        })}
+        {/* Smoke-Particles (3 Stück hinter Kartoffel, gestaffelt) */}
+        {[0, 0.15, 0.3].map((delay, i) => (
+          <div key={i} aria-hidden style={{
+            position: 'absolute',
+            left: `${potatoX}%`, top: `${potatoY}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 18, height: 18, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(180,180,180,0.7) 0%, rgba(120,120,120,0.3) 50%, transparent 100%)',
+            animation: `potatoSmoke 0.6s ease-out ${delay}s infinite`,
+            pointerEvents: 'none',
+          }} />
+        ))}
+        {/* Fliegende Kartoffel */}
+        <div style={{
+          position: 'absolute',
+          left: `${potatoX}%`, top: `${potatoY}%`,
+          transform: `translate(-50%, -50%) rotate(${potatoRotation}deg)`,
+          fontSize: 42,
+          lineHeight: 1,
+          filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.7)) drop-shadow(0 0 4px rgba(255,140,0,0.6))',
+          pointerEvents: 'none',
+        }}>🥔</div>
+        {/* Status-Label oben */}
+        <div style={{
+          position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
+          padding: '4px 12px', borderRadius: 999,
+          background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.45)',
+          fontSize: 11, fontWeight: 900, color: '#FCA5A5',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>🥔 Hot Potato</div>
+      </div>
+      <div style={{
+        padding: '10px 14px', borderRadius: 10,
+        background: 'rgba(239,68,68,0.06)',
+        border: '1px solid rgba(239,68,68,0.20)',
+        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+      }}>
+        <strong style={{ color: '#FCA5A5' }}>Sequenz:</strong> Kartoffel hüpft im Bogen zwischen Avataren
+        (parabel-Trajectory mit ease-in-out). Bei „Timer-Out" → Team wird grau + 💥-Marker, Kartoffel fliegt
+        zum nächsten lebenden Team. Smoke-Trail via 3 gestaffelte radial-Gradient-Partikel mit fade-out.
+        Idee: dieses Visual ersetzt den Per-Turn-Timer in HP — semantisch passend, „heiße Kartoffel" wird
+        wirklich rumgegeben.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(11).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(13).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1855,6 +2137,18 @@ export default function AnimationsLabPage() {
       blurb: 'Wolf-Idee: Pink-Spark fliegt um den Rand einer Important Card. CSS Motion Path (offset-path) folgt dem rounded rect. 3 Varianten: Single (sanft), Double (punchy), Trail (3 Sparks gestaffelt für Comet-Effekt).',
       keepAlive: true, minHeight: 420,
       render: (_r) => <SparkOnCardShowcase />,
+    },
+    {
+      label: 'O', title: 'Star-Border (reactbits.dev)',
+      blurb: 'Conic-Gradient rotiert hinter der Card → leuchtender Border-Effekt à la reactbits.dev/animations/star-border. 3 Varianten: Pink-Slow (subtil), Pink-Fast (punchy), Multi-Color (Pink + Magenta + Weiß).',
+      keepAlive: true, minHeight: 380,
+      render: (_r) => <StarBorderShowcase />,
+    },
+    {
+      label: 'P', title: 'Fliegende Kartoffel (Hot-Potato)',
+      blurb: 'Wolf-Idee: 🥔 fliegt im Bogen zwischen Team-Avataren. Bei Timer-Out fliegt das Team raus (grau) und Kartoffel weiter zum nächsten. Smoke-Trail hinten dran. Replay startet die Sequenz neu.',
+      keepAlive: false, minHeight: 360,
+      render: (r) => <FlyingPotatoDemo replay={r} />,
     },
   ];
 

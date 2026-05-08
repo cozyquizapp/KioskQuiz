@@ -2645,10 +2645,10 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          ['A', 'A', null, 'A'],
-          ['A', 'A', null, 'A'],
+          ['A', 'A', '⭐',  'A'],   // ⭐ neben 2×2-Block oben rechts (Bonus-Feld)
+          ['A', 'A',  null, 'A'],
           [null, null, null, 'A'],
-          [null, null, null, 'A'],
+          [null, null, '⭐', 'A'],   // ⭐ neben 4er-Reihe unten links (Bonus-Feld)
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
@@ -2796,7 +2796,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
 }
 
 /** Mini grid example for rules slides */
-function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string }) {
+function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string; eurovisionMode?: boolean }) {
   const rows = grid.cells.length;
   const cols = grid.cells[0].length;
   const cellSz = Math.min(84, Math.floor(340 / Math.max(rows, cols)));
@@ -2824,6 +2824,11 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               : isTeamA
                 ? `${grid.colorA}aa`
                 : 'rgba(255,255,255,0.06)';
+          // 2026-05-09 (Wolf-Wunsch): Joker-Cells nutzen die echten Joker-PNGs
+          // (boy/girl alternierend per row+col-index) statt 🃏-Emoji + Wiggle-
+          // Animation für „der Joker leuchtet auf, wenn das Pattern gebildet ist".
+          const inDelay = 0.3 + (r * cols + c) * 0.06;
+          const jokerVariantIndex = r + c;
           return (
             <div key={`${r}-${c}`} style={{
               width: cellSz, height: cellSz,
@@ -2832,10 +2837,25 @@ function RulesMiniGrid({ grid, slideColor }: { grid: NonNullable<RulesSlide['gri
               border: filled ? `2px solid ${isStar ? '#EC4899' : isPin ? '#10B981' : grid.colorA}` : '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: cellSz * 0.5,
-              boxShadow: filled ? `0 0 12px ${isStar ? '#EC489944' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
-              animation: filled ? `gridCellIn 0.4s ease ${0.3 + (r * cols + c) * 0.06}s both` : undefined,
+              boxShadow: filled ? `0 0 12px ${isStar ? '#EC489988' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
+              animation: filled
+                ? isStar
+                  // Joker: erst rein-fade, dann wiggle-Pulse infinite
+                  ? `gridCellIn 0.4s ease ${inDelay}s both, qqJokerWiggle 2.4s ease-in-out ${inDelay + 0.5}s infinite`
+                  : `gridCellIn 0.4s ease ${inDelay}s both`
+                : undefined,
+              overflow: 'hidden',
             }}>
-              {isStar ? <QQEmojiIcon emoji="🃏"/> : isPin ? <QQEmojiIcon emoji="🏯"/> : ''}
+              {isStar
+                ? <JokerIcon
+                    i={jokerVariantIndex}
+                    size={Math.floor(cellSz * 0.85)}
+                    eurovisionMode={!!eurovisionMode}
+                    alt=""
+                  />
+                : isPin
+                  ? <QQEmojiIcon emoji="🏯"/>
+                  : ''}
             </div>
           );
         }))}
@@ -4596,7 +4616,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           </div>
 
           {/* Mini grid example */}
-          {slide.grid && <RulesMiniGrid grid={slide.grid} slideColor={slide.color} />}
+          {slide.grid && <RulesMiniGrid grid={slide.grid} slideColor={slide.color} eurovisionMode={!!s.theme?.eurovisionMode} />}
         </div>
 
         {/* Extra callout — zentriert */}

@@ -78,6 +78,12 @@ export const QQ_BEAMER_CSS = `
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
   }
+  /* Joker-Wiggle für Rules-Slide-Demo: subtile rotation + scale-puls als
+     „der Joker leuchtet auf, wenn das Pattern gebildet ist". */
+  @keyframes qqJokerWiggle {
+    0%, 100% { transform: rotate(-3deg) scale(1);    }
+    50%      { transform: rotate( 3deg) scale(1.06); }
+  }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
      ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */

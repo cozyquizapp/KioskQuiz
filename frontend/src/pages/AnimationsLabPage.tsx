@@ -1270,12 +1270,145 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
   );
 }
 
+// ─── Slot L: Team-Reveal Slam-Down + Flip (Full Package) ────────────────────
+// Card slammt als Rückseite von oben rein (Game-Show-Slam), settled, dann
+// flippt sie zur Vorderseite. Inner-Wrapper für Flip, Outer-Wrapper für Slam,
+// damit beide Transforms unabhängig laufen.
+function TeamRevealSlamFlipDemo({ replay }: { replay: number }) {
+  const teams = [
+    { name: 'Wolfsrudel',     emoji: '🐉', color: '#22C55E' },
+    { name: 'Fuchsbande',     emoji: '🦊', color: '#F97316' },
+    { name: 'Kraken-Krew',    emoji: '🐙', color: '#A855F7' },
+    { name: 'Eulenmagier',    emoji: '🦉', color: '#EAB308' },
+    { name: 'Pingu-Patrol',   emoji: '🐧', color: '#0EA5E9' },
+    { name: 'Bären-Brigade',  emoji: '🐻', color: '#E11D48' },
+  ];
+
+  const startedAt = React.useRef(Date.now());
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    startedAt.current = Date.now();
+    const id = window.setInterval(() => setTick(t => t + 1), 100);
+    return () => window.clearInterval(id);
+  }, [replay]);
+
+  const elapsed = Date.now() - startedAt.current;
+  // Timing pro Card (gestaffelt mit STAGGER):
+  //   0           → Card existiert noch nicht (display: none)
+  //   STAGGER_BASE → slam beginnt (1.4 s qqTeamSlam)
+  //   +1600 ms    → flip beginnt (1.15 s)
+  const STAGGER = 700;
+  const STAGGER_BASE = 700;
+  const SLAM_DUR = 1400;
+  const FLIP_DELAY_AFTER_SLAM = 200; // Lese-Pause nach Settle
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 18,
+      padding: '14px 18px',
+    }}>
+      <style>{`
+        @keyframes qqTeamSlam {
+          0%   { opacity: 0; transform: translateY(-90vh) scale(2)    rotate(-18deg); filter: blur(7px); }
+          55%  { opacity: 1; transform: translateY(8%)    scale(1.18) rotate(3deg);   filter: blur(0); }
+          75%  {            transform: translateY(-2%)    scale(0.96) rotate(-1deg); }
+          100% { opacity: 1; transform: translateY(0)     scale(1)    rotate(0);     filter: blur(0); }
+        }
+      `}</style>
+
+      <div style={{
+        fontSize: 22, fontWeight: 900, color: '#f1f5f9',
+        letterSpacing: '-0.02em', textAlign: 'center',
+        textShadow: '0 0 20px rgba(236,72,153,0.45)',
+      }}>HEUTE SPIELEN</div>
+
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14,
+        maxWidth: 580, width: '100%',
+      }}>
+        {teams.map((t, i) => {
+          const slamStart = STAGGER_BASE + i * STAGGER;
+          const slamEnd = slamStart + SLAM_DUR;
+          const flipStart = slamEnd + FLIP_DELAY_AFTER_SLAM;
+          const isVisible = elapsed >= slamStart;
+          const isFlipped = elapsed >= flipStart;
+          return (
+            <div key={`${replay}-${i}`} style={{
+              perspective: '1200px',
+              aspectRatio: '3 / 4',
+              opacity: isVisible ? 1 : 0,
+              animation: isVisible ? `qqTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
+            }}>
+              <div style={{
+                position: 'relative', width: '100%', height: '100%',
+                transformStyle: 'preserve-3d',
+                transition: 'transform 1.15s cubic-bezier(0.34, 1.46, 0.64, 1)',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              }}>
+                {/* Rückseite */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  borderRadius: 18,
+                  background: `radial-gradient(circle at 30% 30%, ${t.color}55 0%, ${t.color}1a 50%, rgba(15,23,42,0.95) 100%)`,
+                  border: `2px solid ${t.color}88`,
+                  boxShadow: `0 8px 24px rgba(0,0,0,0.45), inset 0 0 32px ${t.color}33`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 56, fontWeight: 900,
+                  color: `${t.color}cc`,
+                  textShadow: `0 0 18px ${t.color}88`,
+                }}>?</div>
+                {/* Vorderseite */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  borderRadius: 18,
+                  background: `linear-gradient(180deg, ${t.color}22, ${t.color}10)`,
+                  border: `2px solid ${t.color}`,
+                  boxShadow: `0 12px 32px rgba(0,0,0,0.55), inset 0 0 40px ${t.color}33, 0 0 24px ${t.color}55`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 10, padding: 14,
+                }}>
+                  <div style={{
+                    width: 104, height: 104, borderRadius: '50%',
+                    background: `${t.color}33`,
+                    border: `2.5px solid ${t.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 56,
+                    boxShadow: `0 0 28px ${t.color}99`,
+                    flexShrink: 0,
+                  }}>{t.emoji}</div>
+                  <div style={{
+                    fontSize: 14, fontWeight: 900, color: t.color,
+                    textAlign: 'center', lineHeight: 1.1,
+                    letterSpacing: '-0.01em',
+                    textShadow: `0 0 8px ${t.color}55`,
+                  }}>{t.name}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{
+        fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
+      }}>
+        Stagger 700 ms · Slam 1.4 s · Settle-Pause 0.2 s · Flip 1.15 s
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
   const replay = (i: number) => setReplays(r => r.map((v, j) => j === i ? v + 1 : v));
   // 2026-05-08: zweiter Counter-Set fuer Showreels (D/C/B/A/H = 5 Slots).
-  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(8).fill(0));
+  const [showreelReplays, setShowreelReplays] = useState<number[]>(() => Array(9).fill(0));
   const replayShowreel = (i: number) => setShowreelReplays(r => r.map((v, j) => j === i ? v + 1 : v));
 
   const demos = [
@@ -1341,9 +1474,15 @@ export default function AnimationsLabPage() {
     },
     {
       label: 'K', title: 'Team-Reveal 3D-Flip',
-      blurb: 'Wolf-Idee: Teams werden erst als Rückseite (bunter Kreis + ?-Sigil) gezeigt, dann flippt jede Card via Y-Rotation 180° und enthüllt Avatar + Name. Stagger 350 ms zwischen den Teams, eigene Spring-Easing für den Flip.',
+      blurb: 'Wolf-Idee: Teams werden erst als Rückseite (bunter Kreis + ?-Sigil) gezeigt, dann flippt jede Card via Y-Rotation 180° und enthüllt Avatar + Name. Stagger 600 ms zwischen den Teams, eigene Spring-Easing für den Flip.',
       keepAlive: false, minHeight: 480,
       render: (r) => <TeamRevealFlipDemo replay={r} />,
+    },
+    {
+      label: 'L', title: 'Team-Reveal Slam-Down + Flip (Full Package)',
+      blurb: 'Kombiniert: Card slammt als Rückseite von oben rein (rotate + scale-overshoot), settled, dann flippt sie zur Vorderseite. Slot K + existing TeamsReveal-Slam vereint — Doppel-Drama für epische Show.',
+      keepAlive: false, minHeight: 540,
+      render: (r) => <TeamRevealSlamFlipDemo replay={r} />,
     },
   ];
 

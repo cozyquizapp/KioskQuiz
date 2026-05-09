@@ -74,12 +74,10 @@
    - Wolf vermutet: vor Hard-Reload aufgenommen → ggf. nicht mehr aktuell, trotzdem prüfen ob Autoplay-Delay genug ist für 3D-Slam+Settle+Flip
 
 ### KLÄRUNG NÖTIG
-10. **Autoplay-Stop bei Final-Standings**
-    - Wolfs Aussage: „autoplay stopped bei standing ist ja ein bug, wurde der gefixt? es soll ja nicht stoppen und nur manuell weiterghen"
-    - **Zwei Lesarten:**
-      - „soll nicht stoppen, nur manuell weiter" → Widersprüchlich (wenn nicht stoppt, läuft autoplay durch; wenn nur manuell, stoppt es)
-      - Wahrscheinliche Intention: „soll stoppen, nur manuell weitergehen" → das hab ich aktuell so gefixt (`if (s.finalRecapStep === 1) return;`)
-    - **Frage an Wolf**: ist das aktuelle Verhalten (Autoplay pausiert bei Standings, Mod muss manuell Space) richtig? Oder soll Autoplay durchlaufen?
+10. ~~**Autoplay-Stop bei Final-Standings**~~ ✅ **GEFIXT 2026-05-09 v2** (Commit `84e50c05`)
+    - Wolf-Klärung: Autoplay soll durchlaufen, kein Stop.
+    - Früherer Return-Block (`if (s.finalRecapStep === 1) return;`) entfernt.
+    - Stattdessen im PLACEMENT-Case längerer Delay: `inFinalRecap ? 8000 : 3500` ms — gibt der 0B-Score-Cascade (~3s Anim) + Lese-Zeit Raum, bevor zur nächsten Final-Frage geschaltet wird.
 
 ---
 

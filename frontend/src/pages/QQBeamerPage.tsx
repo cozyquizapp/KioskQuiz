@@ -16500,12 +16500,21 @@ function RankingSlide({ rankIndex, finalRanking, lang }: {
   const N = finalRanking.length;
   const currentRank = N - rankIndex;
   const currentEntry = finalRanking[currentRank - 1];
-  const stackSize = rankIndex >= 2 ? Math.min(3, rankIndex) : 0;
-  const stackEntries: RankingEntry[] = [];
+  // 2026-05-09 v3 (Wolf-Spec 'erst Platz 3 aufs Treppchen'): Treppchen erst
+  // ab Platz 2 sichtbar (zeigt Platz 3). Bei Platz 1 zeigt es Platz 2 + 3.
+  // Plätze N..3 werden prominent gezeigt + verschwinden, KEIN Treppchen.
+  // Vorher: stackSize ab rankIndex>=2 → Treppchen schon bei Platz N-2 sichtbar
+  // (z.B. bei N=4 → Platz 2 mit Treppchen, aber rankIndex 2 ist eher mittig).
+  const stackSize = Math.max(0, rankIndex - (N - 3));
+  // Stack-Entries: i=0 → Platz 3 (index 2), i=1 → Platz 2 (index 1).
+  const stackEntries: Array<{ entry: RankingEntry; rank: number }> = [];
   for (let i = 0; i < stackSize; i++) {
-    const entry = finalRanking[N - 1 - i];
-    if (entry) stackEntries.push(entry);
+    const entry = finalRanking[2 - i];
+    if (entry) stackEntries.push({ entry, rank: 3 - i });
   }
+  // Sortiere für Treppchen-Visual: Platz 2 LINKS, Platz 3 RECHTS (nicht Sieger).
+  // Klassische Podium-Anordnung. Bei nur Platz 3 vorhanden: rechts.
+  stackEntries.sort((a, b) => a.rank - b.rank); // 2 zuerst → links, 3 danach → rechts
   const isWinner = currentRank === 1;
   const medal = currentRank === 1 ? '🥇' : currentRank === 2 ? '🥈' : currentRank === 3 ? '🥉' : `#${currentRank}`;
   const rankColor = currentRank === 1 ? '#FBBF24'
@@ -16516,15 +16525,20 @@ function RankingSlide({ rankIndex, finalRanking, lang }: {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: stackSize > 0 ? 'space-between' : 'center',
       gap: 'clamp(20px, 3vh, 40px)',
+      // 2026-05-09 v3 (Wolf 'treppchen 2-3 + Wolf waren abgeschnitten'):
+      // Padding-Bottom genug für Wolf-Decoration unten rechts (clamp 200px),
+      // damit beim Winner-Slide nichts clipped. Padding-X breit für Treppchen.
+      padding: 'clamp(20px, 2vh, 40px) clamp(40px, 4vw, 80px) clamp(40px, 5vh, 100px)',
       width: '100%', position: 'relative',
+      boxSizing: 'border-box',
     }}>
       {isWinner && <ConfettiOverlay />}
       {currentEntry && (
         <div key={currentRank} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
-          padding: 'clamp(36px, 4vh, 60px) clamp(48px, 5vw, 80px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          padding: 'clamp(28px, 3vh, 48px) clamp(40px, 4.5vw, 72px)',
           borderRadius: 32,
           background: isWinner
             ? `linear-gradient(135deg, ${currentEntry.team.color}33, ${currentEntry.team.color}11)`
@@ -16535,6 +16549,7 @@ function RankingSlide({ rankIndex, finalRanking, lang }: {
             : `0 0 80px ${currentEntry.team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           animation: 'qqFRSlamFromTop 1.2s cubic-bezier(0.34, 1.46, 0.64, 1) both',
           position: 'relative', zIndex: 5,
+          maxWidth: 'min(86vw, 720px)',
         }}>
           {isWinner && (
             <div style={{
@@ -16543,19 +16558,19 @@ function RankingSlide({ rankIndex, finalRanking, lang }: {
             }}>👑</div>
           )}
           <div style={{
-            fontSize: 'clamp(56px, 6vw, 110px)', fontWeight: 900,
+            fontSize: 'clamp(48px, 5.4vw, 96px)', fontWeight: 900,
             color: rankColor, textShadow: `0 0 36px ${rankColor}88`,
           }}>{medal}</div>
           <QQTeamAvatar avatarId={currentEntry.team.avatarId} teamEmoji={currentEntry.team.emoji}
-            size={isWinner ? 'clamp(160px, 17vw, 240px)' : 'clamp(120px, 13vw, 180px)'} />
+            size={isWinner ? 'clamp(150px, 16vw, 220px)' : 'clamp(110px, 12vw, 170px)'} />
           <div style={{
-            fontSize: isWinner ? 'clamp(48px, 5vw, 88px)' : 'clamp(36px, 4vw, 60px)',
+            fontSize: isWinner ? 'clamp(44px, 4.8vw, 80px)' : 'clamp(32px, 3.6vw, 56px)',
             fontWeight: 900,
             color: currentEntry.team.color, textAlign: 'center', letterSpacing: '-0.01em',
             textShadow: `0 0 36px ${currentEntry.team.color}66`,
           }}>{currentEntry.team.name}</div>
           <div style={{
-            fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+            fontSize: 'clamp(26px, 2.8vw, 44px)', fontWeight: 900,
             color: '#F1F5F9',
           }}>{currentEntry.total} {de ? 'Punkte' : 'points'}</div>
           <div style={{
@@ -16567,50 +16582,105 @@ function RankingSlide({ rankIndex, finalRanking, lang }: {
           </div>
         </div>
       )}
+      {/* Treppchen mit echten Stufen-Höhen (Platz 2 mittlere Stufe, Platz 3
+          niedrigste). Beim Sieger-Slide steht Platz 1 oben prominent als Hero;
+          Treppchen-Lücke in der Mitte signalisiert „dahin gehört der Sieger". */}
       {stackSize > 0 && (
         <div style={{
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          gap: 'clamp(16px, 2vw, 32px)',
-          opacity: 0.85,
+          gap: 'clamp(8px, 1vw, 16px)',
           animation: 'qqFRTitleIn 0.6s ease 0.4s both',
+          maxWidth: '92vw',
         }}>
-          {stackEntries.map((e, i) => {
-            const r = N - i;
-            const med = r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
-            return (
-              <div key={e.team.id} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                padding: '16px 24px', borderRadius: 18,
-                background: `${e.team.color}18`,
-                border: `2px solid ${e.team.color}55`,
-                minWidth: 140,
-              }}>
-                <div style={{ fontSize: 'clamp(22px, 2vw, 32px)', fontWeight: 900,
-                  color: r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : '#94A3B8',
-                }}>{med}</div>
-                <QQTeamAvatar avatarId={e.team.avatarId} teamEmoji={e.team.emoji} size={'clamp(48px, 5vw, 72px)'} />
-                <div style={{
-                  fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900, color: e.team.color,
-                  textAlign: 'center', maxWidth: 140,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>{e.team.name}</div>
-                <div style={{
-                  fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 900, color: '#CBD5E1',
-                }}>{e.total}</div>
-              </div>
-            );
-          })}
+          {/* Platz 2 (links) — wenn vorhanden */}
+          {stackEntries.find(s => s.rank === 2) && (() => {
+            const s = stackEntries.find(s2 => s2.rank === 2)!;
+            return <PodiumStep entry={s.entry} rank={2} podiumHeight={64} />;
+          })()}
+          {/* Lücke in der Mitte für Platz 1 (visuelles Signal: hier gehört der Sieger hin) */}
+          {isWinner && (
+            <div style={{
+              width: 'clamp(140px, 13vw, 200px)', height: 92,
+              borderRadius: '12px 12px 0 0',
+              background: 'linear-gradient(180deg, rgba(251,191,36,0.25), rgba(251,191,36,0.10))',
+              border: '2.5px solid rgba(251,191,36,0.7)',
+              borderBottom: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+              color: '#FBBF24', textShadow: '0 0 20px rgba(251,191,36,0.8)',
+              boxShadow: '0 -8px 24px rgba(251,191,36,0.35)',
+              flexShrink: 0,
+            }}>1</div>
+          )}
+          {/* Platz 3 (rechts) — wenn vorhanden */}
+          {stackEntries.find(s => s.rank === 3) && (() => {
+            const s = stackEntries.find(s2 => s2.rank === 3)!;
+            return <PodiumStep entry={s.entry} rank={3} podiumHeight={36} />;
+          })()}
         </div>
       )}
       {isWinner && (
         <div style={{
-          position: 'absolute', right: 'clamp(40px, 6vw, 100px)', bottom: 'clamp(40px, 6vh, 100px)',
+          position: 'absolute',
+          right: 'clamp(20px, 3vw, 60px)',
+          bottom: 'clamp(20px, 3vh, 60px)',
           zIndex: 4, pointerEvents: 'none',
           animation: 'qqFRTitleIn 0.7s ease 0.8s both',
         }}>
-          <AnimatedCozyWolf widthCss="clamp(140px, 14vw, 220px)" mode="jubel" speaking={true} />
+          <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" mode="jubel" speaking={true} />
         </div>
       )}
+    </div>
+  );
+}
+
+// 2026-05-09 v3: Treppchen-Stufe mit echter Stufenhöhe für Visual-Signal.
+// Card oben (Avatar + Medal + Name + Total), darunter solide Podium-Stufe.
+function PodiumStep({ entry, rank, podiumHeight }: {
+  entry: RankingEntry; rank: number; podiumHeight: number;
+}) {
+  const med = rank === 2 ? '🥈' : '🥉';
+  const podiumColor = rank === 2 ? '#C0C0C0' : '#CD7F32';
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      flexShrink: 0,
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        padding: '14px 18px',
+        borderRadius: '14px 14px 0 0',
+        background: `${entry.team.color}1f`,
+        border: `2px solid ${entry.team.color}66`,
+        borderBottom: 'none',
+        minWidth: 'clamp(120px, 11vw, 170px)',
+      }}>
+        <div style={{
+          fontSize: 'clamp(24px, 2.4vw, 38px)', fontWeight: 900,
+          color: podiumColor,
+        }}>{med}</div>
+        <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji}
+          size={'clamp(56px, 6vw, 88px)'} />
+        <div style={{
+          fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
+          color: entry.team.color, textAlign: 'center',
+          maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{entry.team.name}</div>
+        <div style={{
+          fontSize: 'clamp(18px, 1.8vw, 28px)', fontWeight: 900, color: '#F1F5F9',
+        }}>{entry.total}</div>
+      </div>
+      {/* Solide Podium-Stufe */}
+      <div style={{
+        width: '100%', height: podiumHeight,
+        background: `linear-gradient(180deg, ${podiumColor}aa, ${podiumColor}55)`,
+        border: `2px solid ${podiumColor}`,
+        borderTop: 'none',
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px ${podiumColor}55`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 'clamp(22px, 2.2vw, 36px)', fontWeight: 900,
+        color: '#1a1424', letterSpacing: '0.05em',
+      }}>{rank}</div>
     </div>
   );
 }

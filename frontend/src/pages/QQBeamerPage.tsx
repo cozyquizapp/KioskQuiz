@@ -16154,15 +16154,18 @@ function FinalRevealSharedKeyframes() {
         0%   { opacity: 0; transform: translateY(80px) scale(0.9); }
         100% { opacity: 1; transform: translateY(0)    scale(1); }
       }
-      /* 2026-05-09 v5 Race-Keyframes */
+      /* 2026-05-09 v5.1 Race-Keyframes — höhere Amplitude + schnellere Anim
+         für mehr Race-Dynamik (Wolf-Feedback 'mehr Dynamik') */
       @keyframes qqRaceBob {
-        0%, 100% { transform: translateY(0) rotate(-1deg); }
-        50%      { transform: translateY(-8px) rotate(1deg); }
+        0%, 100% { transform: translateY(0)    rotate(-2deg) scale(1); }
+        25%      { transform: translateY(-14px) rotate(2deg)  scale(1.03); }
+        50%      { transform: translateY(-6px)  rotate(-1deg) scale(1); }
+        75%      { transform: translateY(-12px) rotate(3deg)  scale(1.02); }
       }
       @keyframes qqRaceTrail {
-        0%   { opacity: 0.3; transform: translateY(-8px) scaleY(0.85); }
-        50%  { opacity: 1;   transform: translateY(4px)  scaleY(1.1); }
-        100% { opacity: 0.3; transform: translateY(-8px) scaleY(0.85); }
+        0%   { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
+        50%  { opacity: 1;   transform: translateY(8px)   scaleY(1.25); }
+        100% { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
       }
       @keyframes qqRaceFallOut {
         0%   { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); }
@@ -16995,8 +16998,10 @@ function RaceFinalSlide({ finalRanking, lang }: {
   );
 }
 
-// Race-Team-Unit: Avatar mit Speed-Lines + async Wackeln. Wenn inSlowMo:
-// Avatar floaten verlangsamen + scale 1.4× (Sieger über Ziellinie).
+// Race-Team-Unit: Avatar oben + Speed-Lines IM Flow direkt drunter. Vorher
+// SpeedLines absolute → Layout zerschossen bei vielen Avataren in einer Reihe
+// (Wolf-Bug 2026-05-09 v5.1: Streifen erst bei 2 Teams sichtbar).
+// Avatar-Wackel-Amplitude erhöht für mehr Dynamik.
 function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, inSlowMo }: {
   team: QQTeam;
   avatarSize: string;
@@ -17008,16 +17013,15 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, inSlowMo }: {
     <div style={{
       position: 'relative',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 4,
       transform: `translateY(${yOffset}px)`,
       animation: inSlowMo
         ? 'qqRaceWinnerSlowMo 1.5s cubic-bezier(0.2, 0.85, 0.3, 1) both'
-        : `qqRaceBob 1.6s ease-in-out ${bobDelay}s infinite`,
+        : `qqRaceBob 1.0s ease-in-out ${bobDelay}s infinite`,
       flexShrink: 0,
       transition: 'transform 0.4s ease',
     }}>
-      {/* Speed-Lines — vertikal nach unten unterm Avatar, animiert */}
-      <RaceSpeedLines color={team.color} avatarSize={avatarSize} />
-      {/* Avatar */}
+      {/* Avatar — TOP des Stacks */}
       <div style={{
         width: avatarSize, height: avatarSize, borderRadius: '50%',
         background: team.color,
@@ -17031,50 +17035,53 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, inSlowMo }: {
         <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji}
           size={avatarSize} flat />
       </div>
-      {/* Team-Name dezent unter Avatar */}
+      {/* Speed-Lines — direkt unter Avatar im Flow (nicht absolute!) */}
+      <RaceSpeedLines color={team.color} />
+      {/* Team-Name dezent ganz unten */}
       <div style={{
-        marginTop: 8,
         fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 900,
         color: team.color,
         textShadow: `0 0 12px ${team.color}66`,
         maxWidth: 'clamp(100px, 14vw, 200px)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         textAlign: 'center',
+        marginTop: 4,
       }}>{team.name}</div>
     </div>
   );
 }
 
-// Speed-Lines unter dem Avatar: 5-7 vertikale Striche in Teamfarbe, je nach
-// Avatar-Größe. Animiert mit qqRaceTrail (translateY-Loop + opacity-Pulse).
-function RaceSpeedLines({ color, avatarSize }: { color: string; avatarSize: string }) {
-  // 6 Striche mit unterschiedlichen Längen + Delays
+// Speed-Lines: 7 vertikale Striche in Teamfarbe direkt unter Avatar. Im Flow
+// (nicht absolute) damit Layout in der Race-Bahn stabil ist. Variable
+// Höhen + Delays für Cartoon-Sonic-Look. Schnellere Anim (0.4s statt 0.6s).
+function RaceSpeedLines({ color }: { color: string }) {
+  // 7 Striche — etwas mehr als vorher für dichteren Look
   const lines = [
-    { x: 0,   length: 0.7, delay: 0.0,  width: 3 },
-    { x: 16,  length: 1.0, delay: 0.15, width: 4 },
-    { x: 30,  length: 0.5, delay: 0.3,  width: 3 },
-    { x: 46,  length: 0.85, delay: 0.1,  width: 4 },
-    { x: 62,  length: 0.6, delay: 0.25, width: 3 },
-    { x: 78,  length: 0.95, delay: 0.0,  width: 4 },
+    { lengthVw: 1.0, delay: 0.00, widthPx: 4 },
+    { lengthVw: 1.6, delay: 0.18, widthPx: 5 },
+    { lengthVw: 0.8, delay: 0.32, widthPx: 4 },
+    { lengthVw: 1.9, delay: 0.08, widthPx: 5 },
+    { lengthVw: 1.2, delay: 0.24, widthPx: 4 },
+    { lengthVw: 1.7, delay: 0.04, widthPx: 5 },
+    { lengthVw: 0.9, delay: 0.28, widthPx: 4 },
   ];
+  // Container-Höhe: matched zur längsten Linie (clamp damit auf TV proportional bleibt)
+  const containerHeight = 'clamp(60px, 7vh, 110px)';
   return (
     <div aria-hidden style={{
-      position: 'absolute',
-      top: '50%', left: '50%',
-      transform: 'translateX(-50%)',
-      width: avatarSize, height: avatarSize,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      gap: 'clamp(3px, 0.4vw, 7px)',
+      height: containerHeight,
       pointerEvents: 'none',
-      zIndex: 1,
     }}>
       {lines.map((l, i) => (
         <span key={i} style={{
-          position: 'absolute',
-          left: `${l.x}%`, top: '70%',
-          width: l.width,
-          height: `calc(${avatarSize} * ${l.length})`,
-          background: `linear-gradient(180deg, ${color}cc 0%, ${color}66 60%, transparent 100%)`,
-          borderRadius: 2,
-          animation: `qqRaceTrail 0.6s ease-in-out ${l.delay}s infinite`,
+          width: l.widthPx,
+          height: `clamp(${l.lengthVw * 30}px, ${l.lengthVw * 4}vh, ${l.lengthVw * 60}px)`,
+          background: `linear-gradient(180deg, ${color}ee 0%, ${color}99 50%, ${color}33 90%, transparent 100%)`,
+          borderRadius: 3,
+          animation: `qqRaceTrail 0.4s ease-in-out ${l.delay}s infinite`,
+          transformOrigin: 'top center',
         }} />
       ))}
     </div>

@@ -539,3 +539,64 @@ Vollständig: `~/.claude/.../memory/project_designer_audit_2026_05_09.md`
 **Total Tag**: ~30 Commits (`84e50c05` → `c0a88f48`). Alle gepusht. **Vercel stuck nach `30149483`** — 24h-Reset oder Pro-Upgrade.
 
 **Stand für nächste Session**: Endgame handwerklich solide, dramaturgisch ausbaufähig. Designer-Audit zeigt klare P0-Hebel. Vor Live-Quizzes: Vercel Pro + die 3 P0-Findings. Mutige Treppchen-Komprimierung als optional-Big-Hit-Refactor.
+
+---
+
+## 2026-05-09 — Crescendo v4 + Race v5 (Designer-Audit-Followup)
+
+**Tageslauf (Abend)**: Designer-Audit gab 7,4/10 — P0 #1 Sieger-Crescendo wurde direkt angegangen. Erst v4 Crescendo (3 Steps Stage/Fill/Drop) gebaut, dann Wolf-Pivot zu v5 Race-Metapher (1 Auto-Choreo) nach Brainstorm + Speed-Lines-Mockup.
+
+### Was passiert ist
+
+**Crescendo v4** (`cedfffa5`):
+- Backend `qqFinalRevealMaxStep` 2N+6 → N+9
+- 3 neue Slides: PodiumStageSlide / PodiumFillSlide / WinnerDropSlide
+- Mod-Steps von 22 (N=8) auf 17 reduziert
+- 6 Keyframes: qqFRWinnerSlotPulse / qqFRWinnerDrop / qqFRCrownDrop / qqFRCrownWobble / qqFRPodiumLoserFade / qqFRPodiumStepIn
+- `/finalreveal-test` Standalone-Page mit Step-Slider + Quick-Jumps + Replay-Button
+
+**Race v5** (`559888f0`):
+- Wolf-Brainstorm: „alle racen wie ein Rennen mit Schweif, fallen gestaffelt zurück"
+- Speed-Lines-Mockup-Bild als Visual-Referenz: Avatare on-the-spot mit vertikalen Speed-Lines drunter
+- Backend N+9 → N+7 (1 Auto-Choreo statt 3 Mod-Steps)
+- RaceFinalSlide mit phase-state-machine (race / staggered-fall / p3-podium / p2-final-race / p2-podium / winner-slowmo / finish)
+- Auto-Choreo via setTimeout-Cascade (~12-15s je nach N)
+- Sub-Components: RaceTeamUnit (Avatar + Bob-Anim) + RaceSpeedLines (7 vertikale Striche)
+- 5 neue Keyframes: qqRaceBob / qqRaceTrail / qqRaceFallOut / qqRaceWinnerSlowMo / qqRaceWinnerSnap
+- Mod-Steps N=8: 15 (war 17 in v4, war 22 vor Crescendo)
+
+**Race v5.1 Bugfix + mehr Dynamik** (`<this commit>`):
+- Wolf-Bug: Speed-Lines erst bei 2 Teams sichtbar, nicht bei vollem Race
+- Root: SpeedLines absolute-positioned hatte `top: 50%` + `width: avatarSize`
+  → bei eng angeordneten flex-Children kollidierten die Layouts
+- Fix: SpeedLines IM FLOW als regulärer flex-child direkt unter Avatar
+  (Avatar oben → SpeedLines mitte → Name unten als 3-Stack)
+- Plus mehr Dynamik:
+  - qqRaceBob Amplitude -8px → -14px, 4-Step-Curve statt 2-Step,
+    leichter Scale-Pulse (1 → 1.03)
+  - qqRaceTrail schneller (0.4s statt 0.6s), mehr scaleY-Range (0.7-1.25)
+  - Bob-Duration 1.6s → 1.0s
+  - 7 Striche statt 6, dichter (gap clamp 3-7)
+
+### Wichtige Entscheidungen
+- **Race-Metapher schlägt Crescendo-Drop**: bessere Narrativität für Pub-Publikum, „wer kommt als erstes ins Ziel" universell verstanden.
+- **1 Auto-Choreo statt 3 Mod-Steps**: weniger Streamdeck-Tap-Last, mehr Drama-Build innerhalb des Steps.
+- **Stationäre Race**: Avatare bewegen sich nicht horizontal, Speed-Lines suggerieren Bewegung. Löst N=8-Crowding ohne Position-Tracking.
+- **Slow-Mo-Sieger schwebt über Ziellinie** vor Snap aufs Treppchen — Wolf-Wahl statt direktem Snap.
+- **Trail SOFORT weg wenn Team fällt** (klares „aus dem Rennen"-Signal) — Wolf-Wahl statt synchronem Fade.
+- **Legacy-Components** (PodiumStageSlide / PodiumFillSlide / WinnerDropSlide aus v4) bleiben im Code als Reference, sind unused.
+
+### Files
+- `backend/src/quarterQuiz/qqRooms.ts` — qqFinalRevealMaxStep N+7
+- `frontend/src/pages/QQBeamerPage.tsx` — RaceFinalSlide + RaceTeamUnit + RaceSpeedLines, 5 neue Keyframes, decodeFinalStep race-final
+- `frontend/src/pages/QQFinalRevealTestPage.tsx` — neu (Standalone-Test mit Step-Slider, Quick-Jumps, Replay-Button)
+- `frontend/src/App.tsx` — Route `/finalreveal-test`
+- `frontend/src/pages/MenuPage.tsx` — Menu-Eintrag „🎬 FinalReveal Test"
+
+### Memory-Files
+- `project_designer_audit_2026_05_09.md` — bleibt aktuell, P0 #1 ist abgehakt durch Race v5
+- (kein neues Memory-File — nur Code-Iterationen)
+
+**Stand**: Race-Final ist im echten Quiz drin (Backend + Frontend Code). Aber Coolify Backend muss redeployed werden (qqFinalRevealMaxStep changed) + Vercel deploy hängt am 24h-Limit. Test-Page funktioniert ohne Backend-Deploy → Wolf nutzt sie für visuelle Iteration.
+
+**Nächste Iteration**: nach Vercel-Reset / Pro-Upgrade visuell live testen. Restliche Audit-Findings (P0 #2 Thanks-Hero-Hierarchie, P0 #3 Recap-Strip-Monotonie, P1 Award-Flip / Brand-Subs / 0-Bonus / PodiumStep / Summary-Underdog, P2 Crown-Bob / Insta-Footer-Pill) als Picklist offen.

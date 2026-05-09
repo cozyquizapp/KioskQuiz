@@ -518,16 +518,41 @@ function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: La
       padding: '20px 16px 40px',
     }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <LangToggle lang={lang} onLang={onLang} />
+        <TopBar lang={lang} onLang={onLang} />
         {children}
       </div>
     </div>
   );
 }
 
-function LangToggle({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+// 2026-05-09 v2 (Wolf): klickbarer Instagram-Pill oben links + LangToggle
+// rechts in einer Top-Bar. Brand-Gradient (Pink → Lila → Orange) wie das
+// Instagram-Logo, kompakt mit 📸 + @cozywolf.events Handle.
+function TopBar({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      marginBottom: 12, gap: 12, flexWrap: 'wrap',
+    }}>
+      <a
+        href="https://instagram.com/cozywolf.events"
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '6px 14px', borderRadius: 999,
+          background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+          color: '#fff', textDecoration: 'none',
+          fontSize: 12, fontWeight: 900, fontFamily: 'inherit',
+          letterSpacing: 0.3,
+          boxShadow: '0 4px 14px rgba(220,39,67,0.45), 0 0 18px rgba(188,24,136,0.4)',
+          border: '1px solid rgba(255,255,255,0.18)',
+        }}
+        title="@cozywolf.events auf Instagram"
+      >
+        <span style={{ fontSize: 16, lineHeight: 1 }}>📸</span>
+        @cozywolf.events
+      </a>
       <div style={{
         display: 'inline-flex', borderRadius: 999,
         background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',

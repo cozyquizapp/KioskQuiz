@@ -40,38 +40,38 @@
 ## OFFENE TODOs (für nächste Session)
 
 ### Klein/schnell
-1. **Gestackte (gestapelte) Felder auf /team besser markieren**
-   - Aktuell semi-gut erkennbar
-   - **Wolf-Idee**: Schloss-Symbol drauf statt Avatar, BG bleibt Teamfarbe → klar dass „nicht klaubar"
-2. **Bluff Intro/Badge Emoji-Inkonsistenz**
-   - Im Intro 🎁 (Geschenk)
-   - Als Badge ein anderer Emoji (vermutlich 🎭)
-   - → Eine Variante wählen, überall konsistent
-3. **Standings: Text noch größer**
-   - Wolf glaubt nicht ganz dass letzter Fix gegriffen hat → nochmal prüfen ob die rowH/avatarSize-Bumps tatsächlich live sind
+1. ~~**Gestackte (gestapelte) Felder auf /team besser markieren**~~ ✅ **GEFIXT 2026-05-09 v2** (`bf33e613`)
+   - Cell-Picker: 🏯 → 🔒 (Burg-Verb → Schloss-Resultat „lock")
+   - Mini-Map: Avatar+Pink-Ring → 🔒, BG bleibt Teamfarbe
+2. ~~**Bluff Intro/Badge Emoji-Inkonsistenz**~~ ✅ **GEFIXT 2026-05-09 v2** (`bf33e613`)
+   - News-Ticker zog Cat-Emoji (🎁) statt Sub-Emoji für Bunte-Tüte-Subs.
+   - Backend: `bunteTueteKind` in questionHistory + Live-State, Frontend nutzt SUB_EMOJI-Map.
+3. ~~**Standings: Text noch größer**~~ ✅ **GEFIXT 2026-05-09 v3** (`bf33e613`)
+   - Verifiziert: vorheriger Bump war live. v3 nochmal hochgezogen (rowH 78→92 / 92→108 / 110→130, Name+Score min/max).
 
 ### Performance
-4. **Standings-Slide laggt** (auf /beamer)
-   - Vermutlich die qqRecapSwap-Anim + Tickup-Anim + viele Teams-divs gleichzeitig
-   - Mögliche Hebel: `will-change: transform`, weniger gestaffelte Animationen, requestAnimationFrame-Tickup statt mehrere parallele timer
+4. ~~**Standings-Slide laggt**~~ ✅ **GEFIXT 2026-05-09 v3** (`4335da9f`)
+   - Root-Cause: 8 parallele rAF-Loops mit setState-Tickup → 8× React-Re-Renders pro Frame.
+   - Fix: direkte DOM-Manipulation via useRef.textContent + style.color, KEIN setState. Plus contain: 'layout paint style' auf Team-Rows.
 
-### Thank-You Page (Screenshot 2 zeigt Bugs)
-5. **Polaroid leer** — Avatar wird nicht im Polaroid-Foto gerendert (nur grünes BG sichtbar)
-6. **News-Ticker dreifach am Ende** — Ticker-Loop scheint Sonja-Card 3× hintereinander zu zeigen statt 1× pro Loop
-7. **Layout grundsätzlich** — könnte Polish brauchen (Wolf zeigt's auf Screenshot, ggf. mehr Bugs)
+### Thank-You Page
+5. ~~**Polaroid leer**~~ ✅ **GEFIXT 2026-05-09 v2** (`06c21fd5`)
+   - Avatar `size="70%"` → CSS font-size: calc(70%*0.6) ist relativ zur Parent-Font-Size, nicht Container-Width → 6.7px Mini-Glyph. Fix: absolute Pixel-Sizes.
+6. ~~**News-Ticker dreifach am Ende**~~ ✅ **GEFIXT 2026-05-09 v2** (`06c21fd5`)
+   - Root-Cause: questionHistory war nur im Summary-Save-Payload, nicht im Live-State. Frontend bekam undefined → strip = [sonja, sonja, sonja]. Jetzt im Live-State (slim).
+7. ~~**Layout grundsätzlich**~~ ✅ **REFACTORED 2026-05-09 v3** (`3cf48cf3`)
+   - Polaroid → runder Sticker (Sonjas Wunsch), Wolf-Decoration weiter unten + überlappend Card-Rand (statt über Text), QR rechts, Sticker mittig groß als Hero, Award-Reihe horizontal unter Hero. Text-Bump für Beamer-Lesbarkeit (Headline 28→40/72px etc).
 
 ### Mid-size Refactor
-8. **Auflösung-Flow Anpassungen** (Wolf will explizit besprechen):
-   - Bet-Auflösung
-   - Special-Awards-Auflösung
-   - End-Auflösung
-   - → Wolf bringt Vorschläge in nächster Session
+8. ~~**Auflösung-Flow Anpassungen**~~ ✅ **GEFIXT 2026-05-09 v3** (Commits `b4bdf72e` Awards+Bet, `77a9c310` Treppchen)
+   - Bet-Auflösung: Card minimal größer + Innen-Cascade per animation-delay (Team-Card → Tipp-Team @0.55s → Punkte/Sympathie @1.1s)
+   - Special-Awards: 1 Slide mit 3 Cards nebeneinander (statt 6 separate Slides), alle gleich groß (BG+Front identisch dimensioniert), Space flippt 3D links→mitte→rechts. Backend qqFinalRevealMaxStep 2N+8 → 2N+6.
+   - Treppchen: ab Platz 2 Treppchen sichtbar (Platz 3), bei Platz 1 voll (Platz 2 + Sieger-Lücke + Platz 3) mit echten Stufen-Höhen. Plätze N..3 nur prominent + verschwinden.
 
 ### Bug-Investigation
-9. **Autoplay Runde 3 Card-Drehung geskippt**
-   - 3D-Action-Card-Reveal wurde übersprungen (zu schnell weiter)
-   - Card sah kleiner aus (eventuell ungesyncter Halo-Fix?)
-   - Wolf vermutet: vor Hard-Reload aufgenommen → ggf. nicht mehr aktuell, trotzdem prüfen ob Autoplay-Delay genug ist für 3D-Slam+Settle+Flip
+9. ~~**Autoplay Runde 3 Card-Drehung geskippt**~~ ✅ **GEFIXT 2026-05-09 v2** (`9db05f14`)
+   - Root-Cause: R3 Stack-Card (isNew @ index 2) fertig erst bei 7350ms (850 + 2×1500 + 600 + 2900 SLAM+SETTLE+FLIP), Autoplay schaltete bei 5500ms weiter → Card noch im Slam, Halo+Flip nicht fertig (Wolfs „kleiner aussehen"-Eindruck).
+   - Fix: Delay ph-abhängig (R1=5850, R2=7350, R3=8850, R4=5750)
 
 ### KLÄRUNG NÖTIG
 10. ~~**Autoplay-Stop bei Final-Standings**~~ ✅ **GEFIXT 2026-05-09 v2** (Commit `84e50c05`)

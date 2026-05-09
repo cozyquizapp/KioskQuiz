@@ -16608,13 +16608,26 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
                   pointerEvents: 'none',
                 }}>+1</span>
               </div>
-              <div style={{
-                fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
-                color: winner.color, textAlign: 'center', letterSpacing: '-0.01em',
-                textShadow: `0 0 28px ${winner.color}55`,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                maxWidth: '100%',
-              }}>{winner.name}</div>
+              {/* 2026-05-09 v3 (Wolf-Bug 'Award-Card team-name truncated'):
+                  Wrap auf 2 Zeilen statt nowrap-ellipsis. Bei langen Namen
+                  kleinere FontSize (clamp 22-36 statt 28-48) damit's reinpasst.
+                  Card-Größe (height clamp 360-540) bleibt fix → Layout stabil. */}
+              {(() => {
+                const isLong = winner.name.length > 10;
+                return (
+                  <div style={{
+                    fontSize: isLong ? 'clamp(20px, 2.2vw, 34px)' : 'clamp(28px, 3vw, 48px)',
+                    fontWeight: 900,
+                    color: winner.color, textAlign: 'center', letterSpacing: '-0.01em',
+                    textShadow: `0 0 28px ${winner.color}55`,
+                    whiteSpace: 'normal',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    wordBreak: 'break-word', hyphens: 'auto',
+                    maxWidth: '100%', lineHeight: 1.1,
+                  }}>{winner.name}</div>
+                );
+              })()}
               {metric && (
                 <div style={{
                   fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 700,
@@ -19346,9 +19359,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
 
   return (
     <div style={{
+      // 2026-05-09 v9 (Wolf-Layout-Refinement): Hero-Card vertikal in der
+      // Bildschirm-MITTE (mit flex 1 + alignItems center im Top-Bereich), Recap
+      // unten näher am Rand (eigener Bottom-Bereich mit padding-bottom 16).
+      // Vorher: justifyContent center stackte beide zusammen mittig → Card
+      // war oberhalb der echten Mitte, Recap zu hoch/zu weit weg vom Rand.
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '24px 32px', gap: 28, position: 'relative', height: '100%',
+      position: 'relative', height: '100%',
     }}>
       <Fireflies color="rgba(236,72,153,0.40)" />
       <style>{`
@@ -19369,6 +19386,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           50%      { transform: rotate(8deg) translateY(-3px); }
         }
       `}</style>
+
+      {/* Top-Bereich (flex 1) — Hero-Card vertikal+horizontal mittig zentriert.
+          Recap-Ticker ist in eigenem Bottom-Bereich (siehe weiter unten) mit
+          minimalem padding zum Bildschirm-Rand. */}
+      <div style={{
+        flex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(16px, 2vh, 28px) clamp(24px, 3vw, 40px) clamp(8px, 1vh, 16px)',
+        minHeight: 0,
+      }}>
 
       {/* Hero-Card: Headline + 3-Spalten-Body (Wolf · Sieger · QR) + Brand-Footer.
           v5 (Wolf-Spec): alle 3 Spalten EXAKT gleich groß + design-konsistent
@@ -19488,8 +19515,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         </div>
       </div>
 
-      {/* News-Ticker Bauchbinde unten — durchläuft alle Quiz-Fragen + Sonja-Card */}
-      <ThanksNewsTicker state={s} lang={lang} />
+      </div> {/* /Top-Bereich (flex 1) */}
+
+      {/* Bottom-Bereich: Recap-Ticker mit kleinem padding zum Bildschirm-Rand */}
+      <div style={{ flexShrink: 0, paddingBottom: 16 }}>
+        <ThanksNewsTicker state={s} lang={lang} />
+      </div>
     </div>
   );
 }
@@ -19526,10 +19557,10 @@ function ThanksColumnCard({
   );
 }
 
-// Einheitlicher Subtitle für alle 3 Spalten — Caveat-Handschrift, mittig.
-// 2026-05-09 v6 (Wolf-Bug 'Käpt'n Kl...' truncated): bei emphasized (Sieger-
-// Name) erlauben wir jetzt Wrap auf 2 Zeilen + leicht kleinere FontSize bei
-// langen Namen damit nichts mehr abgeschnitten wird.
+// Einheitlicher Subtitle für alle 3 Spalten — gleiche System-Font wie Team-
+// Name (Wolf-Korrektur 2026-05-09: Caveat-Handschrift unter Wolf/QR wirkte
+// inkonsistent zum Team-Namen). emphasized = Sieger (groß, fett, Color),
+// non-emphasized = Wolf-/Scan-Subtitle (kleiner, light).
 function ThanksColumnSubtitle({
   text, color, emphasized,
 }: {
@@ -19540,13 +19571,11 @@ function ThanksColumnSubtitle({
   const isLong = text.length > 10;
   return (
     <div style={{
-      fontFamily: emphasized
-        ? 'inherit'
-        : "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
+      fontFamily: 'inherit', // einheitlich für alle 3 Subtitles
       fontSize: emphasized
         ? (isLong ? 'clamp(22px, 2.4vw, 36px)' : 'clamp(28px, 3vw, 48px)')
-        : 'clamp(20px, 2.2vw, 32px)',
-      fontWeight: emphasized ? 900 : 700,
+        : 'clamp(18px, 2vw, 28px)',
+      fontWeight: emphasized ? 900 : 800,
       color: color ?? '#F1F5F9',
       textAlign: 'center',
       letterSpacing: emphasized ? '-0.01em' : '0',

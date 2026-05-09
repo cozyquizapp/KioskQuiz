@@ -2399,11 +2399,14 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
 
   // Slot-Konfiguration (X-Offset, Y-Offset für Halbkreis-Bogen, Scale, Z-Index, Opacity)
   // ACTIVE = vorne unten (Slot 0). Slot ±1/±2 sind im Bogen nach hinten oben.
+  // 2026-05-09 (Wolf 'side-teams etwas größer + leicht transparent — klar dass
+  // sie nicht spielen'): scales hoch (0.72→0.85, 0.48→0.62), opacities runter
+  // (0.88→0.55, 0.65→0.38) damit Side-Teams präsent aber visuell sekundär sind.
   const slotConfig = (slot: number) => {
     const abs = Math.abs(slot);
-    if (abs === 0) return { x: 0,    y: 0,    scale: 1,    z: 5, opacity: 1   };
-    if (abs === 1) return { x: 280,  y: -80,  scale: 0.72, z: 3, opacity: 0.88 };
-    return                  { x: 520,  y: -130, scale: 0.48, z: 1, opacity: 0.65 };
+    if (abs === 0) return { x: 0,    y: 0,    scale: 1,    z: 5, opacity: 1    };
+    if (abs === 1) return { x: 300,  y: -70,  scale: 0.85, z: 3, opacity: 0.55 };
+    return                  { x: 540,  y: -120, scale: 0.62, z: 1, opacity: 0.38 };
   };
 
   return (
@@ -2469,16 +2472,19 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
                   boxShadow: `0 0 48px ${t.color}66, 0 12px 28px rgba(0,0,0,0.5)`,
                   minWidth: 280,
                 }}>
-                  {/* Bouncing-Kartoffel ÜBER der Active-Card.
-                      Bei Wechsel: Wurf-Bogen-Animation 850ms (sync zur
-                      Slot-Transition), danach zurück zum Idle-Spin. */}
+                  {/* 2026-05-09 (Wolf 'kartoffel über dem timer vor der team-
+                      card — teamname/avatar nicht sehen ist nicht so schlimm'):
+                      Kartoffel sitzt jetzt zentriert über dem Avatar-Bereich,
+                      etwas größer als vorher. Bei Wechsel: Wurf-Bogen-Animation
+                      850ms (sync zur Slot-Transition), danach Idle-Spin. */}
                   <span aria-hidden style={{
                     position: 'absolute',
-                    top: 0, left: '50%',
-                    transform: 'translate(-50%, -100%)',
-                    fontSize: 'clamp(56px, 6.5vw, 96px)',
+                    top: 'clamp(8px, 1vh, 14px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: 'clamp(76px, 8.5vw, 130px)',
                     lineHeight: 1, pointerEvents: 'none',
-                    filter: 'drop-shadow(0 4px 8px rgba(239,68,68,0.65)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
+                    filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.7)) drop-shadow(0 0 26px rgba(245,158,11,0.65))',
                     animation: isThrowing
                       ? 'qqHpPotatoThrow 0.85s cubic-bezier(0.4, 1.2, 0.6, 1) both'
                       : 'qqHpPotatoSpin 1.4s ease-in-out infinite',
@@ -5746,28 +5752,34 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   void tick;
   const elapsed = Date.now() - anchor;
 
-  // 2026-05-09 (Wolf-Idee Slot M Game-Show-Reveal): Sequenzielle Per-Team-
-  // Sequenz statt parallele Stagger. Pro Team: Card slammt face-down rein
-  // (Card-Back = CozyQuiz-Pattern), settled, flippt, Spotlight-Hold für
-  // Mod-Anmoderation, dann nächstes Team.
-  const titleDelay = 0;
+  // 2026-05-09 v3 (Wolf 'animation eher lame, kein Herzlich-Willkommen-Moment'):
+  // Komplett-Refactor:
+  //   1) WELCOME-Hero (1.4s): „🎉 Herzlich Willkommen!" slammt rein, hält
+  //   2) FADE-zu-Subtitle (0.4s): morpht in das kleinere „Heute spielen…"
+  //   3) TEAMS PARALLEL (Stagger 280ms): alle Cards überlappen sich beim Slam
+  //      statt sequentiell zu warten. Slam→Settle→Flip in einem Atemzug.
+  //   4) VIEL GLÜCK (mit Konfetti)
+  // Total ~5s bei 4 Teams (vorher ~15s) — viel energetischer.
+  const titleDelay = 0; // (legacy — Letter-Cascade des Subtitles ist im DOM gehidet bis showSubtitle true wird)
   const titleDur = 800;
-  const TITLE_HOLD = 1200;             // Title allein nach Letter-Cascade
+  const WELCOME_DUR = 1400;            // Welcome-Hero hold
+  const WELCOME_FADE = 400;            // Crossfade zu Subtitle
+  const TITLE_HOLD = WELCOME_DUR + WELCOME_FADE; // Subtitle erscheint = Teams können starten
   const SLAM_DUR = 1400;
-  const SETTLE = 500;                  // Card sitzt face-down (Spannung)
-  const FLIP_DUR = 1000;
-  const HOLD_AFTER_FLIP = 700;         // Mod-Sprech-Pause pro Team
-  const PER_TEAM = SLAM_DUR + SETTLE + FLIP_DUR + HOLD_AFTER_FLIP; // 3600
-  // Per-Team-Phasen: für jedes Team Status (hidden | slamming | flipping | held)
-  const teamStart = (i: number) => TITLE_HOLD + i * PER_TEAM;
+  const SETTLE = 300;                  // Settle gekürzt 500→300 (mehr Energie)
+  const FLIP_DUR = 900;                // Flip gekürzt 1000→900
+  const TEAM_STAGGER = 280;            // Team-zu-Team-Stagger (parallel, nicht sequentiell)
+  const PER_TEAM_TOTAL = SLAM_DUR + SETTLE + FLIP_DUR; // 2600 für ein Team
+  const teamStart = (i: number) => TITLE_HOLD + i * TEAM_STAGGER;
   const flipStartFor = (i: number) => teamStart(i) + SLAM_DUR + SETTLE;
-  const holdEndFor = (i: number) => flipStartFor(i) + FLIP_DUR + HOLD_AFTER_FLIP;
-  const goodLuckDelay = TITLE_HOLD + teams.length * PER_TEAM + 400;
+  const holdEndFor = (i: number) => flipStartFor(i) + FLIP_DUR;
+  const goodLuckDelay = TITLE_HOLD + (teams.length - 1) * TEAM_STAGGER + PER_TEAM_TOTAL + 400;
   const showGoodLuck = elapsed >= goodLuckDelay;
-  // revealedCount nicht mehr benötigt für Render — pro Team berechnen wir
-  // den Status direkt. Behalten als Compat falls anderswo abgegriffen.
+  const showWelcome = elapsed < WELCOME_DUR + WELCOME_FADE;
+  const showSubtitle = elapsed >= WELCOME_DUR;
+  // revealedCount obsolet — pro Team direkt berechnet. Compat-Stub falls abgegriffen.
   const revealedCount = Math.max(0, Math.min(teams.length,
-    elapsed < TITLE_HOLD ? 0 : Math.floor((elapsed - TITLE_HOLD) / PER_TEAM) + 1));
+    elapsed < TITLE_HOLD ? 0 : Math.floor((elapsed - TITLE_HOLD) / TEAM_STAGGER) + 1));
 
   // 2026-04-30 v3 round 6 (User-Bug 'sound trifft avatar-erscheinen nicht'):
   // Statt per 250ms-Tick auf revealedCount zu pollen (= Sound bis zu 250ms
@@ -5934,7 +5946,46 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* Title — 2026-05-08 (Wolf-Wunsch 'heute spielen wirkt eher öde'):
+      {/* 2026-05-09 v3 (Wolf 'kein Herzlich-Willkommen-Moment'): WELCOME-Hero
+          slammt zuerst rein, hält ~1.4s, dann crossfade zum kleineren Subtitle
+          „Heute spielen…". Confetti-Burst beim Welcome-Slam. */}
+      {showWelcome && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+          opacity: elapsed < WELCOME_DUR
+            ? 1
+            : Math.max(0, 1 - (elapsed - WELCOME_DUR) / WELCOME_FADE),
+          transition: 'opacity 0.4s ease',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            fontSize: 'clamp(56px, 8vw, 130px)', fontWeight: 900,
+            color: isEsc ? '#FF2D7B' : '#EC4899',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            textShadow: isEsc
+              ? '0 4px 28px rgba(0,0,0,0.7), 0 0 48px rgba(255,45,123,0.7), 0 0 16px rgba(255,255,255,0.3)'
+              : '0 4px 28px rgba(0,0,0,0.7), 0 0 48px rgba(236,72,153,0.7), 0 0 16px rgba(255,255,255,0.3)',
+            animation: 'qqGsTeamSlam 1s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+            textAlign: 'center', lineHeight: 1,
+          }}>
+            🎉 {lang === 'en' ? 'Welcome!' : 'Herzlich Willkommen!'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 700,
+            color: '#cbd5e1', letterSpacing: '0.1em', textTransform: 'uppercase',
+            opacity: 0,
+            animation: 'qqTrGood 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both',
+            textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+          }}>
+            {lang === 'en' ? '✨ Tonight at CozyQuiz ✨' : '✨ Heute bei CozyQuiz ✨'}
+          </div>
+        </div>
+      )}
+
+      {/* Subtitle Title — fade-in nach Welcome (1.4s+).
           Letters cascaden einzeln rein, dann sanftes Wave-Loop. Pink-Underline
           expandiert drunter mit Shimmer-Loop. */}
       <div style={{
@@ -5942,6 +5993,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', gap: 'clamp(8px, 1vh, 14px)',
         marginBottom: 'clamp(24px, 3vw, 48px)',
+        opacity: showSubtitle ? 1 : 0,
+        transform: showSubtitle ? 'translateY(0)' : 'translateY(-12px)',
+        transition: 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
       }}>
       <div style={{
         position: 'relative', zIndex: 2,
@@ -6596,9 +6650,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     map: {
       emoji: '🗺️',
       de: { name:    getRuleText('bunte.map.name',    'de', 'CozyGuessr'),
-            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.') },
+            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte — nächstes Team gewinnt.') },
       en: { name:    getRuleText('bunte.map.name',    'en', 'CozyGuessr'),
-            explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map — closer means more points.') },
+            explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map — closest team wins.') },
     },
   };
   const bunteKind = cat === 'BUNTE_TUETE'
@@ -10997,24 +11051,6 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           <QQEmojiIcon emoji="🌍"/> {title}
         </div>
 
-        {/* Antwort-Label unten (wenn Target sichtbar) — dunkler Pill mit
-            gold-gruenem Text, damit er auf der hellblauen Leaflet-Voyager-Map
-            kontrastreich lesbar ist. */}
-        {showTarget && q.answer && (
-          <div style={{
-            position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-            padding: '14px 32px', borderRadius: 16,
-            background: 'rgba(13,10,6,0.92)',
-            border: '2.5px solid rgba(34,197,94,0.7)',
-            color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8vw, 38px)',
-            boxShadow: '0 0 50px rgba(34,197,94,0.35), 0 8px 24px rgba(0,0,0,0.45)',
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) both',
-            zIndex: 1000,
-          }}>
-            {formatRevealedAnswer(lang, q.answer, q.answerEn)}
-          </div>
-        )}
       </div>
 
       {/* Ranking-Panel rechts (slide-in) — Sizing so dass min. 8 Teams reinpassen.
@@ -11087,6 +11123,27 @@ function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
               );
             });
           })()}
+        </div>
+      )}
+
+      {/* Antwort-Label unten — 2026-05-09 (Wolf 'reveal text leicht rechts
+          versetzt'): pill ist jetzt im OUTER container statt im map-flex-item.
+          Bei eingeblendetem Ranking-Panel (38%) bleibt die Pill mittig im
+          gesamten Beamer-Viewport, nicht nur im Map-Bereich. */}
+      {showTarget && q.answer && (
+        <div style={{
+          position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 32px', borderRadius: 16,
+          background: 'rgba(13,10,6,0.92)',
+          border: '2.5px solid rgba(34,197,94,0.7)',
+          color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8vw, 38px)',
+          boxShadow: '0 0 50px rgba(34,197,94,0.35), 0 8px 24px rgba(0,0,0,0.45)',
+          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          textAlign: 'center',
+          animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) both',
+          zIndex: 1000, pointerEvents: 'none',
+        }}>
+          {formatRevealedAnswer(lang, q.answer, q.answerEn)}
         </div>
       )}
     </div>
@@ -12810,10 +12867,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }
               return null;
             };
-            // Density-Skalierung: bei vielen Antworten Pills/Font kompakter, sonst sprengen sie den Beamer.
+            // Density-Skalierung: bei vielen Antworten Pills/Font kompakter,
+            // sonst sprengen sie den Beamer. 2026-05-09 (Wolf 'all possible
+            // answers etwas größer in der mitte, wenn noch platz dynamisch'):
+            // neue 'xl'-Stufe für sehr wenige Antworten — dort haben wir Platz
+            // und nutzen ihn für deutlich größere Pills + Header.
             const N = allAnswers.length;
             const tier =
-              N <= 12 ? 'lg'
+              N <= 6  ? 'xl'
+              : N <= 12 ? 'lg'
               : N <= 25 ? 'md'
               : N <= 50 ? 'sm'
               : 'xs';
@@ -12822,7 +12884,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // langsamer (war 50/25/12/8ms), jetzt sichtbar als Cascade-Effekt.
             // Sync zur Sound-Cascade (Pentatonik-Notes pro qualified Team).
             const tierStyles = {
-              lg: { fontSize: 'clamp(16px, 1.8vw, 24px)', pad: '8px 18px', padAvatar: '4px 16px 4px 4px', avatarSize: 'clamp(30px, 3vw, 40px)', gap: 10, headerFs: 'clamp(20px, 2.4vw, 32px)', containerPad: '18px 22px', stagger: 0.18 },
+              xl: { fontSize: 'clamp(24px, 2.8vw, 40px)', pad: '12px 26px', padAvatar: '6px 24px 6px 6px', avatarSize: 'clamp(40px, 4vw, 56px)', gap: 14, headerFs: 'clamp(26px, 3vw, 44px)', containerPad: '24px 28px', stagger: 0.22 },
+              lg: { fontSize: 'clamp(19px, 2.1vw, 30px)', pad: '10px 22px', padAvatar: '5px 20px 5px 5px', avatarSize: 'clamp(34px, 3.4vw, 46px)', gap: 12, headerFs: 'clamp(22px, 2.6vw, 36px)', containerPad: '20px 24px', stagger: 0.18 },
               md: { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px', padAvatar: '3px 12px 3px 3px', avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6, headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.09 },
               sm: { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px', padAvatar: '2px 9px 2px 2px', avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4, headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.045 },
               xs: { fontSize: 'clamp(10px, 1vw, 13px)', pad: '2px 7px', padAvatar: '2px 7px 2px 2px', avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3, headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px', stagger: 0.025 },
@@ -12832,7 +12895,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 width: '100%', maxWidth: 1400,
                 marginBottom: 'clamp(8px, 1.2vh, 24px)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
+                gap: tier === 'xl' ? 18 : tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
                 // 2026-05-07 (Audit P2): revealAnswerBam (scale-bounce) auf dem
                 // Container sprang mit den Chip-Cascades durch — alle Chips
                 // huepften synchron mit dem Container-Scale, plus jeder Chip
@@ -12868,7 +12931,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const showAvatar = !!authorTeam && (tier !== 'xs');
                     return (
                       <div key={`${a}-${i}`} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: tier === 'lg' ? 8 : 4,
+                        display: 'inline-flex', alignItems: 'center', gap: tier === 'xl' ? 12 : tier === 'lg' ? 8 : 4,
                         padding: showAvatar ? tierStyles.padAvatar : tierStyles.pad,
                         borderRadius: 999,
                         fontSize: tierStyles.fontSize, fontWeight: 900,

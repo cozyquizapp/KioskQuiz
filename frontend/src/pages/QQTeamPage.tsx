@@ -5241,40 +5241,49 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 // pro Team, ueberall in der App identisch. 3D-Plaettchen-Look
                 // bleibt (Inset-Highlight + Inset-Shadow + Hard-Edge-Drop + Soft-Drop).
                 const tColor = team?.color ?? null;
-                const platticHi = 'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.20), 2px 3px 0 rgba(0,0,0,0.45), 0 7px 12px rgba(0,0,0,0.35)';
+                // 2026-05-09 (Wolf 'grid in /team bitte wirklich immer gleich —
+                // vor place siehts unsymmetrisch und komisch aus'): Owner-
+                // Cell-Styling in Selecting-Mode an Mini-Grid (Wartesicht)
+                // angeglichen. Keine schweren 2px-3px-Hard-Shadows mehr,
+                // schmalere Border-Radius, gleiche Tiefe-Optik in beiden Modi.
+                const ownerShadow = tColor
+                  ? [
+                      'inset 0 1px 0 rgba(255,255,255,0.22)',
+                      'inset 0 -1.5px 0 rgba(0,0,0,0.20)',
+                      '1px 1.5px 0 rgba(0,0,0,0.35)',
+                    ].join(', ')
+                  : '';
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
                     aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
-                    aspectRatio: '1 / 1', borderRadius: 6,
+                    aspectRatio: '1 / 1', borderRadius: 4,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
-                      : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}bb)`
-                      : tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}d9)` : 'rgba(255,255,255,0.04)',
-                    // 2026-05-07 (Live-Test-Bug): cell.jokerFormed-Border ergaenzt,
-                    // damit Joker-Felder auch auf /team visuell hervorstechen.
-                    border: isPending ? `3px dashed ${actionColor}`
-                      : isSwapSelected ? `3px solid ${actionColor}`
-                      : isStuckCell ? `3px solid rgba(236,72,153,0.95)`
-                      : cell.jokerFormed ? `2.5px solid #EC4899`
-                      : isStuckCandidate ? `2px solid #EC4899`
-                      : clickable ? `2px solid ${actionColor}`
-                      : tColor ? `1px solid ${tColor}55`
+                      : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}c0)`
+                      : tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}d0)` : 'rgba(255,255,255,0.04)',
+                    border: isPending ? `2px dashed ${actionColor}`
+                      : isSwapSelected ? `2px solid ${actionColor}`
+                      : isStuckCell ? `1.5px solid rgba(236,72,153,0.9)`
+                      : cell.jokerFormed ? `1.5px solid #EC4899`
+                      : isStuckCandidate ? `1.5px solid #EC4899`
+                      : clickable ? `1.5px solid ${actionColor}`
+                      : tColor ? `1px solid ${tColor}`
                       : '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
                     opacity: team ? 1 : (clickable || isSwapSelected ? 1 : 0.3),
                     transition: 'all 0.15s, box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
-                    boxShadow: isPending ? `0 0 0 4px ${actionColor}55, 0 0 22px ${actionColor}aa, ${platticHi}`
-                      : isSwapSelected ? `0 0 14px ${actionColor}88, ${platticHi}`
-                      : isStuckCandidate ? `0 0 10px #EC489988, ${platticHi}`
+                    boxShadow: isPending ? `0 0 0 3px ${actionColor}55, 0 0 16px ${actionColor}aa`
+                      : isSwapSelected ? `0 0 12px ${actionColor}88${ownerShadow ? `, ${ownerShadow}` : ''}`
+                      : isStuckCandidate ? `0 0 10px #EC489988${ownerShadow ? `, ${ownerShadow}` : ''}`
                       : isStuckCell
-                        ? `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -3px 0 rgba(0,0,0,0.22), 3px 4px 0 rgba(217,119,6,0.85), 6px 8px 0 rgba(180,83,9,0.55), 0 0 18px rgba(236,72,153,0.6)`
-                        : isFrozenCell ? `0 0 8px rgba(147,210,255,0.5), ${platticHi}`
-                        : isMine && tColor ? `0 0 14px ${tColor}88, ${platticHi}`
-                        : team ? platticHi
-                        : clickable ? `0 0 8px ${actionColor}44` : 'none',
+                        ? `${ownerShadow}, 0 0 10px rgba(236,72,153,0.55)`
+                        : isFrozenCell ? `${ownerShadow}, 0 0 8px rgba(147,210,255,0.5)`
+                        : isMine && tColor ? `${ownerShadow}, 0 0 8px ${tColor}77`
+                        : team ? ownerShadow
+                        : clickable ? `0 0 6px ${actionColor}44` : 'none',
                     animation: isPending ? 'tccellPendingPulse 1.2s ease-in-out infinite'
                       : justStolen ? 'stealFlash 0.8s ease-out both'
                       : tappedCell === `${r}-${c}` ? 'tccellTap 0.25s ease both' : undefined,

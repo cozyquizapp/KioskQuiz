@@ -16938,13 +16938,16 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       {isFinish && <ConfettiOverlay />}
 
       {/* Race-Bahn — Avatare absolute positioniert für freie X-Bewegung.
-          2026-05-09 v7 (Wolf 'Top 3 finden ihren Platz'): Jeder Avatar
-          startet bei seiner initial-X (gleichmäßig 8-92%) und driftet via
-          CSS-Transition über 9s zur target-X. Top 3 driften zu Treppchen-
-          Stufen (38/50/62%), P4..PN zu Rändern (kein Overlap mit Treppchen). */}
+          2026-05-09 v7.1 (Bugfix Wolf 'erste Sekunden leer, Avatare oben'):
+          Race-Bahn-Container mit `flex: 1` collapsed zu 0-Höhe weil alle
+          children position: absolute sind und keine intrinsische Höhe
+          beitragen. Fix: explizite Höhe-Garantie via height: 100% +
+          minHeight: 70vh, damit `top: 50%` der Avatare auf eine definite
+          Höhe greift (statt 50% von 0 = 0 = ganz oben). */}
       <div style={{
         flex: 1, position: 'relative', zIndex: 2,
-        // Kein padding, alignItems/justifyContent — Avatare positionieren sich selbst
+        height: '100%',
+        minHeight: '70vh',
       }}>
         {finalRanking.map((entry) => {
           const fallen = fallenIds.has(entry.team.id);
@@ -16968,7 +16971,6 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
               top: '50%',
               transform: 'translate(-50%, -50%)',
               // Würdevoller Drift über 9s mit cubic-bezier ease-out
-              // (langsam beginnen, dann schwingen sie auf Position ein)
               transition: 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
               zIndex: fallen ? 1 : 2,
             }}>
@@ -17012,16 +17014,19 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
           }}>
             {isFinish && p1 && (
               <>
-                {/* Crown */}
+                {/* Crown — 2026-05-09 v7.1 (Bugfix Wolf 'keine Krone'):
+                    z-index 5 → 30 (über Sieger-Avatar + Treppchen),
+                    top in pixel statt %, damit auch bei kleinem Slot sichtbar */}
                 <span aria-hidden style={{
                   position: 'absolute',
-                  left: '50%', top: '-32%',
+                  left: '50%',
+                  top: 'clamp(-160px, -14vh, -110px)',
                   transform: 'translateX(-50%)',
                   fontSize: 'clamp(56px, 6.5vw, 100px)', lineHeight: 1,
                   pointerEvents: 'none',
                   filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
                   animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
-                  zIndex: 5,
+                  zIndex: 30,
                 }}>👑</span>
                 {/* Sieger-Avatar */}
                 <div style={{

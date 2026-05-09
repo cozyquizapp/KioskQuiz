@@ -17599,22 +17599,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           width: '100%', maxWidth: 'min(94vw, 1500px)', position: 'relative', zIndex: 5,
           borderRadius: 26,
           isolation: 'isolate',
+          // 2026-05-09 v5 (Wolf 'unter der card durch'): wrapper bekommt
+          // EXPLIZITE Höhe matching inner-card (clamp 460-660). Vorher hatte
+          // wrapper auto-height die durch subpixel-rounding ggf. minimal
+          // anders rendert als inner-card height → SVG bottom-edge konnte
+          // 1-3px tiefer sitzen.
+          height: 'clamp(460px, 60vh, 660px)',
         }}>
           {!isEsc && (
-            // 2026-05-09 v4 (Wolf 'läuft am unteren rand leicht versetzt nach
-            // unten unter der card durch'): zwei Fixes:
-            // 1) display:block + verticalAlign:top verhindert SVG-Inline-
-            //    Baseline-Quirk (manche Browser geben absolut positionierten
-            //    inline-SVGs einen 1-3px Baseline-Offset nach unten).
-            // 2) Rect 1px nach innen versetzt (statt 0/100% → 1/100%-2px)
-            //    sodass der 2px-Stroke ENTIRELY INNERHALB der SVG-Bounds
-            //    sitzt, kein Outside-Halbteil mehr. drop-shadow gibt weiter
-            //    den weichen Outer-Glow.
+            // SVG-Border-Trace, Stroke 1px innerhalb der Bounds. Drop-Shadow
+            // entfernt (vorher: 6px blur extended visibly into the
+            // inner-card's eigene 0 14px 48px shadow zone unter der Card →
+            // wirkte wie der Stroke wäre nach unten versetzt). Stroke 2.5px
+            // + alpha 0.7 kompensiert das fehlende Glow.
             <svg
               aria-hidden
               style={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%',
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
                 pointerEvents: 'none', zIndex: 2,
                 overflow: 'visible',
                 display: 'block',
@@ -17628,10 +17630,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   width: 'calc(100% - 2px)', height: 'calc(100% - 2px)',
                   rx: '23px', ry: '23px',
                   fill: 'none',
-                  stroke: 'rgba(236,72,153,0.6)',
-                  strokeWidth: 2,
+                  stroke: 'rgba(236,72,153,0.7)',
+                  strokeWidth: 2.5,
                   strokeDasharray: '18 82',
-                  filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.5))',
                   animation: 'qqStarBorderTrace 3.6s linear infinite',
                 }}
               />

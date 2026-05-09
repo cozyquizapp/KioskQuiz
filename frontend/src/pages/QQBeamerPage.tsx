@@ -19670,8 +19670,8 @@ function ThanksColumnSubtitle({
 // Container weniger hoch (320 → 220). Konstantes clean durchlaufen.
 type RecapStripItem =
   | { kind: 'phase-pill'; phase: number }
-  | { kind: 'cat-pill'; catEmoji: string; catColor: string; winner: QQTeam | null;
-      questionText: string }
+  | { kind: 'cat-pill'; catEmoji: string; catColor: string; catLabelDe: string;
+      catLabelEn: string; winner: QQTeam | null }
   | { kind: 'awards-pill' }
   | { kind: 'award-pill'; emoji: string; color: string; labelDe: string; labelEn: string;
       winner: QQTeam }
@@ -19684,9 +19684,13 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     correctTeamId?: string | null; correctTeamIds?: string[];
   }> | undefined;
 
-  const BUNTE_SUB_EMOJI: Record<string, string> = {
-    onlyConnect: '🧩', bluff: '🎭', hotPotato: '🔥',
-    top5: '🥇', order: '⚡', map: '🗺',
+  const BUNTE_SUB_INFO: Record<string, { emoji: string; de: string; en: string }> = {
+    onlyConnect: { emoji: '🧩', de: '4 gewinnt', en: 'Only Connect' },
+    bluff:       { emoji: '🎭', de: 'Bluff',     en: 'Bluff' },
+    hotPotato:   { emoji: '🔥', de: 'Hot Potato', en: 'Hot Potato' },
+    top5:        { emoji: '🥇', de: 'Top 5',     en: 'Top 5' },
+    order:       { emoji: '⚡', de: 'Reihenfolge', en: 'Order' },
+    map:         { emoji: '🗺', de: 'CozyGuessr', en: 'CozyGuessr' },
   };
 
   const totalPhases = s.totalPhases ?? 4;
@@ -19708,14 +19712,14 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         const catLabelObj = QQ_CATEGORY_LABELS[cat];
         const catColor = QQ_CATEGORY_COLORS[cat] ?? '#94A3B8';
         const subKind = (h as any).bunteTueteKind as string | undefined;
-        const catEmoji = (subKind && BUNTE_SUB_EMOJI[subKind])
-          || catLabelObj?.emoji
-          || '❓';
+        const subInfo = subKind ? BUNTE_SUB_INFO[subKind] : undefined;
+        const catEmoji = subInfo?.emoji ?? catLabelObj?.emoji ?? '❓';
+        const catLabelDe = subInfo?.de ?? catLabelObj?.de ?? 'Frage';
+        const catLabelEn = subInfo?.en ?? catLabelObj?.en ?? 'Question';
         const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
         const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
         items.push({
-          kind: 'cat-pill', catEmoji, catColor, winner,
-          questionText: h.questionText ?? '',
+          kind: 'cat-pill', catEmoji, catColor, catLabelDe, catLabelEn, winner,
         });
       }
     }
@@ -19865,19 +19869,87 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         subItalic: true,
       };
     }
-    // cat-pill — 2026-05-09 v10 (Wolf 'Variante 3'): nur Cat-Emoji-Badge mit
-    // Winner-Avatar-Overlay, KEIN Text. Antwort-ohne-Frage-Kontext war zu
-    // kryptisch (z.B. „1378" / „A" / „Berlin" allein → unklar). Stattdessen
-    // minimalistisches Visual: Cat-Color + Cat-Emoji = welche Cat, Winner-
-    // Overlay = wer gewonnen hat. Detail-Recap kommt via QR-Summary.
-    const accent = item.catColor;
+    // cat-pill — 2026-05-09 v11 (Wolf 'kategorie name + krone auf avatar'):
+    // 3-Element-Layout (Cat-Badge + Cat-Name + Crown-Avatar) statt minimal-
+    // only-Badge. Variante 3 war zu kryptisch ohne Kategorie-Kontext. Wird
+    // weiter unten als Custom-Layout gerendert (return early aus PillData).
     return {
-      accent,
-      badge: <BadgeCircle color={accent} content={item.catEmoji}
-        overlayWinner={item.winner} />,
+      accent: item.catColor,
+      badge: null,           // ignoriert — custom-Render
       main: '', sub: null, subItalic: false,
     };
   })();
+
+  // Cat-Pill bekommt eigenes 3-Element-Layout (Cat-Badge + Cat-Name + Crown-
+  // Avatar) statt der Standard-Pill-Komposition. Pill-Höhe + Width identisch
+  // damit der Strip strict gleich aussieht.
+  if (item.kind === 'cat-pill') {
+    const accent = item.catColor;
+    const catName = lang === 'de' ? item.catLabelDe : item.catLabelEn;
+    const isLong = catName.length > 10;
+    return (
+      <div style={{
+        flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12,
+        padding: '14px 22px 14px 18px',
+        borderRadius: 999,
+        background: `linear-gradient(135deg, ${accent}33, ${accent}11)`,
+        border: `2.5px solid ${accent}`,
+        boxShadow: `0 0 24px ${accent}55, 0 4px 14px rgba(0,0,0,0.35)`,
+        width: 'clamp(320px, 28vw, 460px)',
+        minWidth: 'clamp(320px, 28vw, 460px)',
+        maxWidth: 'clamp(320px, 28vw, 460px)',
+        height: 116,
+        boxSizing: 'border-box',
+      }}>
+        {/* Cat-Badge (88px) — KEIN Winner-Overlay (Krone-Avatar steht rechts) */}
+        <BadgeCircle color={accent} content={item.catEmoji} />
+        {/* Cat-Name mittig */}
+        <div style={{
+          flex: 1, minWidth: 0,
+          fontSize: isLong ? 'clamp(18px, 1.9vw, 28px)' : 'clamp(22px, 2.2vw, 34px)',
+          fontWeight: 900, color: accent,
+          letterSpacing: '0.02em',
+          textShadow: `0 0 14px ${accent}66`,
+          textAlign: 'center',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          lineHeight: 1.1,
+        }}>{catName}</div>
+        {/* Winner-Avatar rechts mit Krone überlappend oben */}
+        {item.winner && (
+          <div style={{
+            position: 'relative',
+            width: 64, height: 64,
+            flexShrink: 0,
+          }}>
+            <span aria-hidden style={{
+              position: 'absolute',
+              left: '50%', top: -22,
+              transform: 'translateX(-50%) rotate(-6deg)',
+              fontSize: 32, lineHeight: 1,
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6)) drop-shadow(0 0 10px rgba(251,191,36,0.6))',
+              zIndex: 3,
+              pointerEvents: 'none',
+            }}>👑</span>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: item.winner.color,
+              border: `3px solid ${item.winner.color}`,
+              boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 16px ${item.winner.color}66`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <QQTeamAvatar
+                avatarId={item.winner.avatarId}
+                teamEmoji={item.winner.emoji}
+                size={56} flat
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Wolf-Spec 'alle pills gleich groß': einheitliche Width für ALLE Item-Typen.
   // Cat-Pill (minimal-Variante) zentriert nur Badge — sonst Badge links + Text.

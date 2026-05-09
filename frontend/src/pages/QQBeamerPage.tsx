@@ -15988,29 +15988,27 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09 v4 Crescendo)
+// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09 v5 Race)
 // ═══════════════════════════════════════════════════════════════════════════════
-// Step-Mapping für N Teams (v4 — Lineare N-Ranking-Slides → 3 Akte):
+// Step-Mapping für N Teams (v5 — Race-Metapher als 1 Auto-Choreo):
 //   0           = Title-Hold "Die Auflösung"
 //   1           = Grid-Reveal (Cluster-Highlight Top-1)
 //   2..N+1      = Bet-Reveal pro Team (aufsteigend nach Bonus, auch 0-Bonus)
-//   N+2         = Awards-Overview: alle 3 Cards BG (Award-Name + Emoji + ???)
-//   N+3         = linke Card flippt 3D → zeigt Sieger
-//   N+4         = mittlere Card flippt
-//   N+5         = rechte Card flippt
-//   N+6         = podium-stage (alle Teams gleichzeitig, gemischt)
-//   N+7         = podium-fill (Verlierer synchron auf Stufen, Mitte leer)
-//   N+8         = winner-drop (Drumroll → Sieger fällt in Mitte-Lücke)
-//   max = N+9 → THANKS
+//   N+2..N+5    = awards-overview (Overview + 3 Flips)
+//   N+6         = race-final (Auto-Choreo 12-15s): alle racen on-the-spot
+//                 mit Speed-Lines + async Wackeln → Verlierer fallen
+//                 gestaffelt nach unten raus → Platz 3 lande auf Treppchen
+//                 → finaler Race P1 vs P2 → Platz 2 lande auf Treppchen
+//                 → Sieger schwebt Slow-Mo über Ziellinie → Snap auf
+//                 Mitte-Treppchen + Konfetti + Climax-Sound
+//   max = N+7 → THANKS
 
 type FinalStep =
   | { kind: 'title' }
   | { kind: 'grid' }
   | { kind: 'bet'; teamIndex: number }
   | { kind: 'awards-overview'; revealedCount: 0 | 1 | 2 | 3 }
-  | { kind: 'podium-stage' }
-  | { kind: 'podium-fill' }
-  | { kind: 'winner-drop' };
+  | { kind: 'race-final' };
 
 function decodeFinalStep(step: number, N: number): FinalStep {
   if (step <= 0) return { kind: 'title' };
@@ -16021,9 +16019,7 @@ function decodeFinalStep(step: number, N: number): FinalStep {
   if (afterBets === 2) return { kind: 'awards-overview', revealedCount: 1 };
   if (afterBets === 3) return { kind: 'awards-overview', revealedCount: 2 };
   if (afterBets === 4) return { kind: 'awards-overview', revealedCount: 3 };
-  if (afterBets === 5) return { kind: 'podium-stage' };
-  if (afterBets === 6) return { kind: 'podium-fill' };
-  return { kind: 'winner-drop' };
+  return { kind: 'race-final' };
 }
 
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
@@ -16085,9 +16081,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
         />
       )}
       {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealedCount={phase.revealedCount} state={s} lang={lang} />}
-      {phase.kind === 'podium-stage' && <PodiumStageSlide finalRanking={finalRanking} lang={lang} />}
-      {phase.kind === 'podium-fill'  && <PodiumFillSlide finalRanking={finalRanking} lang={lang} />}
-      {phase.kind === 'winner-drop'  && <WinnerDropSlide finalRanking={finalRanking} lang={lang} />}
+      {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
     </div>
   );
 }
@@ -16159,6 +16153,30 @@ function FinalRevealSharedKeyframes() {
       @keyframes qqFRPodiumStepIn {
         0%   { opacity: 0; transform: translateY(80px) scale(0.9); }
         100% { opacity: 1; transform: translateY(0)    scale(1); }
+      }
+      /* 2026-05-09 v5 Race-Keyframes */
+      @keyframes qqRaceBob {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50%      { transform: translateY(-8px) rotate(1deg); }
+      }
+      @keyframes qqRaceTrail {
+        0%   { opacity: 0.3; transform: translateY(-8px) scaleY(0.85); }
+        50%  { opacity: 1;   transform: translateY(4px)  scaleY(1.1); }
+        100% { opacity: 0.3; transform: translateY(-8px) scaleY(0.85); }
+      }
+      @keyframes qqRaceFallOut {
+        0%   { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); }
+        100% { opacity: 0; transform: translate(-50%, 280px) scale(0.7) rotate(15deg); }
+      }
+      @keyframes qqRaceWinnerSlowMo {
+        0%   { transform: translateY(0) scale(1.4); }
+        50%  { transform: translateY(-30px) scale(1.5); }
+        100% { transform: translateY(0) scale(1.4); }
+      }
+      @keyframes qqRaceWinnerSnap {
+        0%   { transform: scale(2.2) translateY(-80px); opacity: 0.7; filter: blur(4px); }
+        60%  { transform: scale(1.15) translateY(0); opacity: 1; filter: blur(0); }
+        100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
       }
     `}</style>
   );
@@ -16691,9 +16709,380 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CRESCENDO-AKT — 3 neue Slides ersetzen die N-linearen RankingSlides
-// (Wolf 2026-05-09 v4 nach Designer-Audit 7,4/10 → P0: kein Crescendo)
-// Konzept: 1 grandioser Sieger-Moment statt N gleicher Slams.
+// RACE-FINALE — Wolf 2026-05-09 v5 (nach Brainstorm + Speed-Lines-Mockup)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Konzept: Race-Metapher statt linearer Slides. Alle Teams "rennen on-the-
+// spot" mit Speed-Lines hinter sich (Pseudo-Movement), wackeln async, fallen
+// gestaffelt nach unten weg ("bleibt auf der Strecke"). Top-3 landen auf
+// Treppchen, Sieger schwebt Slow-Mo über Ziellinie. EINE Auto-Choreo statt
+// 3 Mod-Steps — Mod startet sie mit einem Space, Rest läuft selbst.
+
+type RacePhase =
+  | 'race'              // 0-3s: alle racen + wackeln, Speed-Lines pulsen
+  | 'staggered-fall'    // 3-9s: N..4 fallen gestaffelt nach unten weg
+  | 'p3-podium'         // +1s: Platz 3 lande auf rechter Stufe
+  | 'p2-final-race'     // +2s: P1+P2 racen alleine weiter, Camera-Push
+  | 'p2-podium'         // +1s: Platz 2 lande auf linker Stufe
+  | 'winner-slowmo'     // +1.5s: Sieger schwebt Slow-Mo über Ziellinie
+  | 'finish';           // Sieger snap auf Mitte-Stufe + Crown + Konfetti
+
+function RaceFinalSlide({ finalRanking, lang }: {
+  finalRanking: RankingEntry[]; lang: 'de' | 'en';
+}) {
+  const N = finalRanking.length;
+  const p1 = finalRanking[0];
+  const p2 = finalRanking[1];
+  const p3 = finalRanking[2];
+  const de = lang === 'de';
+
+  const [phase, setPhase] = useState<RacePhase>('race');
+  // Welche Team-IDs sind "auf der Strecke geblieben" (gefallen, nach unten weg)?
+  const [fallenIds, setFallenIds] = useState<Set<string>>(new Set());
+  // Welche sind aufs Treppchen gerutscht (animiert auf Stufen-Position)?
+  const [podiumIds, setPodiumIds] = useState<Set<string>>(new Set());
+
+  // Auto-Choreo via Timeline — alle Setpoints als setTimeout-Cascade
+  useEffect(() => {
+    const handles: number[] = [];
+    let cursor = 3000; // Initial Race-Hold 3s
+
+    // Plätze N..4 fallen gestaffelt (von schlechtester nach Platz 4)
+    for (let rank = N; rank >= 4; rank--) {
+      const teamId = finalRanking[rank - 1]?.team.id;
+      if (!teamId) continue;
+      handles.push(window.setTimeout(() => {
+        setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
+        if (rank === 4) setPhase('p3-podium');
+      }, cursor));
+      cursor += 600;
+    }
+
+    // Platz 3 → rechte Treppchen-Stufe
+    cursor += 400;
+    if (p3) {
+      handles.push(window.setTimeout(() => {
+        setPodiumIds(prev => { const next = new Set(prev); next.add(p3.team.id); return next; });
+        setPhase('p2-final-race');
+      }, cursor));
+    }
+
+    // P1 + P2 racen alleine weiter — Drama-Build (Camera-Push)
+    cursor += 2000;
+
+    // Platz 2 → linke Treppchen-Stufe
+    if (p2) {
+      handles.push(window.setTimeout(() => {
+        setPodiumIds(prev => { const next = new Set(prev); next.add(p2.team.id); return next; });
+        setPhase('p2-podium');
+      }, cursor));
+      cursor += 1000;
+    }
+
+    // Sieger Slow-Mo
+    handles.push(window.setTimeout(() => {
+      setPhase('winner-slowmo');
+      try { playFanfare(); } catch {}
+    }, cursor));
+    cursor += 1500;
+
+    // Finish — Sieger snap auf Mitte-Stufe + Konfetti + Climax
+    handles.push(window.setTimeout(() => {
+      setPhase('finish');
+      try { playClimaxFinish(); } catch {}
+    }, cursor));
+
+    return () => handles.forEach(h => window.clearTimeout(h));
+  }, [N, finalRanking, p2, p3]);
+
+  if (!p1) return null;
+
+  const isFinishing = phase === 'winner-slowmo' || phase === 'finish';
+  const isFinish = phase === 'finish';
+
+  // Avatar-Größe: bei N=8 kleiner damit alle reinpassen
+  const avatarSize = N <= 4
+    ? 'clamp(140px, 14vw, 200px)'
+    : N <= 6
+      ? 'clamp(110px, 11vw, 160px)'
+      : 'clamp(80px, 9vw, 130px)';
+
+  // Stable Y-Offset pro Team-ID für asynchrones Wackeln (deterministisch)
+  const yOffsetForTeam = (id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    return (hash % 30) - 15; // -15 bis +15px Offset
+  };
+  const bobDelayForTeam = (id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = ((hash << 7) - hash) + id.charCodeAt(i);
+    return Math.abs(hash % 1200) / 1000; // 0-1.2s Delay
+  };
+
+  return (
+    <div style={{
+      flex: 1, width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+      // BG-Shift bei Finish: goldenes Radial-Pulse
+      background: isFinish
+        ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, rgba(217,119,6,0.18) 35%, rgba(15,8,23,0.95) 80%)'
+        : 'radial-gradient(ellipse at 50% 50%, rgba(31,16,46,0.95) 0%, rgba(15,8,23,0.98) 80%)',
+      transition: 'background 0.8s ease',
+      // Camera-Push bei p2-final-race + finish
+      transform: phase === 'p2-final-race' || phase === 'p2-podium' || isFinishing ? 'scale(1.04)' : 'scale(1)',
+      transformOrigin: 'center 35%',
+    }}>
+      {isFinish && <ConfettiOverlay />}
+
+      {/* Ziellinie oben — gestrichelte gold-leuchtende horizontale Linie */}
+      <div aria-hidden style={{
+        position: 'absolute', left: '5%', right: '5%',
+        top: '18%', height: 4,
+        background: 'repeating-linear-gradient(90deg, rgba(251,191,36,0.85) 0 14px, rgba(0,0,0,0) 14px 22px)',
+        boxShadow: '0 0 20px rgba(251,191,36,0.6)',
+        zIndex: 1,
+        opacity: phase === 'race' || phase === 'staggered-fall' || phase === 'p2-final-race' || phase === 'winner-slowmo' ? 1 : 0.3,
+        transition: 'opacity 0.6s ease',
+      }} />
+      <div aria-hidden style={{
+        position: 'absolute', left: 0, right: 0, top: '14%',
+        textAlign: 'center',
+        fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 900,
+        color: 'rgba(251,191,36,0.85)', letterSpacing: '0.18em', textTransform: 'uppercase',
+        zIndex: 1,
+      }}>{de ? 'Ziellinie' : 'Finish'}</div>
+
+      {/* Race-Bahn — Avatare horizontal verteilt mit Speed-Lines */}
+      <div style={{
+        flex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(10px, 2vw, 32px)',
+        padding: '8% 4% 0',
+        position: 'relative', zIndex: 2,
+      }}>
+        {finalRanking.map((entry) => {
+          const fallen = fallenIds.has(entry.team.id);
+          const onPodium = podiumIds.has(entry.team.id);
+          const isWinner = entry.team.id === p1.team.id;
+          // Sieger erreicht das Treppchen-Slot auch beim 'finish'-Phase via class
+          const winnerOnPodium = isWinner && isFinish;
+
+          // Wenn auf Treppchen oder gefallen → render an Treppchen-Position oder weg
+          if (onPodium || winnerOnPodium) return null;
+          if (fallen) {
+            return (
+              <div key={entry.team.id} style={{
+                position: 'absolute',
+                left: '50%', bottom: '-20%',
+                animation: 'qqRaceFallOut 1.0s cubic-bezier(0.4, 0, 1, 1) both',
+                opacity: 0,
+                pointerEvents: 'none',
+              }} />
+            );
+          }
+
+          // Slow-Mo nur für Sieger ab 'winner-slowmo'-Phase
+          const inSlowMo = isWinner && phase === 'winner-slowmo';
+
+          return (
+            <RaceTeamUnit
+              key={entry.team.id}
+              team={entry.team}
+              avatarSize={avatarSize}
+              yOffset={yOffsetForTeam(entry.team.id)}
+              bobDelay={bobDelayForTeam(entry.team.id)}
+              inSlowMo={inSlowMo}
+            />
+          );
+        })}
+      </div>
+
+      {/* Treppchen unten — wird sichtbar sobald Platz 3 oder 2 podium-state hat */}
+      {(podiumIds.size > 0 || isFinish) && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          gap: 'clamp(6px, 0.8vw, 14px)',
+          padding: '0 clamp(20px, 3vw, 60px) clamp(20px, 3vh, 48px)',
+          position: 'relative', zIndex: 3,
+          animation: 'qqFRTitleIn 0.6s ease both',
+        }}>
+          {/* Platz 2 (links, mittlere Stufe) */}
+          {p2 && (podiumIds.has(p2.team.id) || isFinish) ? (
+            <PodiumStepFinal entry={p2.team} rank={2} podiumHeight={84}
+              avatarSize={'clamp(82px, 9vw, 128px)'} />
+          ) : (
+            <div style={{ width: 'clamp(120px, 12vw, 170px)' }} />
+          )}
+
+          {/* Platz 1 (Mitte, höchste Stufe) — Sieger lande hier beim 'finish' */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            flexShrink: 0, gap: 6,
+            position: 'relative',
+          }}>
+            {isFinish && p1 && (
+              <>
+                {/* Crown */}
+                <span aria-hidden style={{
+                  position: 'absolute',
+                  left: '50%', top: '-32%',
+                  transform: 'translateX(-50%)',
+                  fontSize: 'clamp(56px, 6.5vw, 100px)', lineHeight: 1,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
+                  animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
+                  zIndex: 5,
+                }}>👑</span>
+                {/* Sieger-Avatar */}
+                <div style={{
+                  width: 'clamp(140px, 14vw, 200px)', height: 'clamp(140px, 14vw, 200px)',
+                  borderRadius: '50%',
+                  background: p1.team.color,
+                  border: `4px solid ${p1.team.color}`,
+                  boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  animation: 'qqRaceWinnerSnap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                }}>
+                  <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
+                    size={'clamp(140px, 14vw, 200px)'} flat />
+                </div>
+                <div style={{
+                  fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 900,
+                  color: p1.team.color,
+                  textShadow: `0 0 20px ${p1.team.color}88`,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  maxWidth: 240,
+                  animation: 'qqFRTitleIn 0.5s ease 0.4s both',
+                }}>{p1.team.name}</div>
+              </>
+            )}
+            {/* Höchste Stufe — gold */}
+            <div style={{
+              width: 'clamp(140px, 14vw, 200px)', height: 124,
+              background: 'linear-gradient(180deg, rgba(251,191,36,0.55), rgba(217,119,6,0.40))',
+              border: '2.5px solid rgba(251,191,36,0.85)',
+              borderTop: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'clamp(36px, 3.8vw, 60px)', fontWeight: 900,
+              color: '#0A0814',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
+            }}>1</div>
+          </div>
+
+          {/* Platz 3 (rechts, niedrigste Stufe) */}
+          {p3 && (podiumIds.has(p3.team.id) || isFinish) ? (
+            <PodiumStepFinal entry={p3.team} rank={3} podiumHeight={52}
+              avatarSize={'clamp(72px, 8vw, 108px)'} />
+          ) : (
+            <div style={{ width: 'clamp(120px, 12vw, 170px)' }} />
+          )}
+        </div>
+      )}
+
+      {/* Wolf-Decoration unten rechts beim Finish */}
+      {isFinish && (
+        <div style={{
+          position: 'absolute', right: 'clamp(20px, 3vw, 60px)',
+          bottom: 'clamp(20px, 3vh, 60px)',
+          zIndex: 4, pointerEvents: 'none',
+          animation: 'qqFRTitleIn 0.7s ease 0.6s both',
+        }}>
+          <AnimatedCozyWolf widthCss="clamp(100px, 11vw, 170px)" mode="jubel" speaking={true} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Race-Team-Unit: Avatar mit Speed-Lines + async Wackeln. Wenn inSlowMo:
+// Avatar floaten verlangsamen + scale 1.4× (Sieger über Ziellinie).
+function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, inSlowMo }: {
+  team: QQTeam;
+  avatarSize: string;
+  yOffset: number;
+  bobDelay: number;
+  inSlowMo: boolean;
+}) {
+  return (
+    <div style={{
+      position: 'relative',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      transform: `translateY(${yOffset}px)`,
+      animation: inSlowMo
+        ? 'qqRaceWinnerSlowMo 1.5s cubic-bezier(0.2, 0.85, 0.3, 1) both'
+        : `qqRaceBob 1.6s ease-in-out ${bobDelay}s infinite`,
+      flexShrink: 0,
+      transition: 'transform 0.4s ease',
+    }}>
+      {/* Speed-Lines — vertikal nach unten unterm Avatar, animiert */}
+      <RaceSpeedLines color={team.color} avatarSize={avatarSize} />
+      {/* Avatar */}
+      <div style={{
+        width: avatarSize, height: avatarSize, borderRadius: '50%',
+        background: team.color,
+        border: `4px solid ${team.color}`,
+        boxShadow: `0 0 30px ${team.color}99, 0 6px 18px rgba(0,0,0,0.5)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 2,
+        transform: inSlowMo ? 'scale(1.4)' : 'scale(1)',
+        transition: 'transform 0.6s cubic-bezier(0.2, 0.85, 0.3, 1)',
+      }}>
+        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji}
+          size={avatarSize} flat />
+      </div>
+      {/* Team-Name dezent unter Avatar */}
+      <div style={{
+        marginTop: 8,
+        fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 900,
+        color: team.color,
+        textShadow: `0 0 12px ${team.color}66`,
+        maxWidth: 'clamp(100px, 14vw, 200px)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        textAlign: 'center',
+      }}>{team.name}</div>
+    </div>
+  );
+}
+
+// Speed-Lines unter dem Avatar: 5-7 vertikale Striche in Teamfarbe, je nach
+// Avatar-Größe. Animiert mit qqRaceTrail (translateY-Loop + opacity-Pulse).
+function RaceSpeedLines({ color, avatarSize }: { color: string; avatarSize: string }) {
+  // 6 Striche mit unterschiedlichen Längen + Delays
+  const lines = [
+    { x: 0,   length: 0.7, delay: 0.0,  width: 3 },
+    { x: 16,  length: 1.0, delay: 0.15, width: 4 },
+    { x: 30,  length: 0.5, delay: 0.3,  width: 3 },
+    { x: 46,  length: 0.85, delay: 0.1,  width: 4 },
+    { x: 62,  length: 0.6, delay: 0.25, width: 3 },
+    { x: 78,  length: 0.95, delay: 0.0,  width: 4 },
+  ];
+  return (
+    <div aria-hidden style={{
+      position: 'absolute',
+      top: '50%', left: '50%',
+      transform: 'translateX(-50%)',
+      width: avatarSize, height: avatarSize,
+      pointerEvents: 'none',
+      zIndex: 1,
+    }}>
+      {lines.map((l, i) => (
+        <span key={i} style={{
+          position: 'absolute',
+          left: `${l.x}%`, top: '70%',
+          width: l.width,
+          height: `calc(${avatarSize} * ${l.length})`,
+          background: `linear-gradient(180deg, ${color}cc 0%, ${color}66 60%, transparent 100%)`,
+          borderRadius: 2,
+          animation: `qqRaceTrail 0.6s ease-in-out ${l.delay}s infinite`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEGACY (v4 Crescendo) — unused nach v5 Race aber Code bleibt als Reference
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Akt 1: PodiumStageSlide ────────────────────────────────────────────────

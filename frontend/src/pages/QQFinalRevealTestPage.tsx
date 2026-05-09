@@ -4,16 +4,14 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
  * QQFinalRevealTestPage — Standalone-Vorschau der FinalReveal-Choreografie.
- * Slider zum manuellen Step-Steuern (0..N+9), Team-Count + Award-Set Toggle.
+ * Slider zum manuellen Step-Steuern (0..N+7), Team-Count + Award-Set Toggle.
  *
- * Akt-Mapping (siehe decodeFinalStep):
+ * Akt-Mapping (siehe decodeFinalStep) — v5 Race:
  *   0          = title
  *   1          = grid
  *   2..N+1     = bet (1 pro Team, aufsteigend nach Bonus)
  *   N+2..N+5   = awards-overview (Overview + 3 Flips)
- *   N+6        = podium-stage (Crescendo Akt 1)
- *   N+7        = podium-fill  (Crescendo Akt 2)
- *   N+8        = winner-drop  (Crescendo Akt 3)
+ *   N+6        = race-final (Auto-Choreo 12-15s mit Speed-Lines + Slow-Mo)
  */
 
 const TEAMS_5 = [
@@ -65,26 +63,28 @@ function getStepLabel(step: number, N: number): string {
   if (ab === 2) return `${step} · Awards: Card 1 flipped (🐢)`;
   if (ab === 3) return `${step} · Awards: Card 2 flipped (🦝)`;
   if (ab === 4) return `${step} · Awards: Card 3 flipped (⚡)`;
-  if (ab === 5) return `${step} · 🎬 PODIUM-STAGE (alle gemischt)`;
-  if (ab === 6) return `${step} · 🎬 PODIUM-FILL (Verlierer auf Stufen)`;
-  if (ab === 7) return `${step} · 🏆 WINNER-DROP (Sieger fällt)`;
-  return `${step} · (max ${N + 8})`;
+  if (ab === 5) return `${step} · 🏁 RACE-FINAL (Auto-Choreo 12-15s)`;
+  return `${step} · (max ${N + 6})`;
 }
 
 export default function QQFinalRevealTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [teamCount, setTeamCount] = useState<3 | 5 | 8>(5);
-  const [step, setStep] = useState<number>(13); // start auf winner-drop bei N=5
+  // Default: race-final Step (N+6) bei N=5 → 11
+  const [step, setStep] = useState<number>(11);
+  // Replay-Counter: erhöht sich bei „Replay"-Klick → erzwingt Re-Mount
+  // damit die Race-Auto-Choreo neu startet ohne Step-Wechsel.
+  const [replayKey, setReplayKey] = useState<number>(0);
 
   const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
   const N = teams.length;
-  const maxStep = N + 8;
+  const maxStep = N + 6; // race-final ist letzter Step
   const grid = buildMockGrid(teams);
 
-  // Default: bei Team-Count-Wechsel auf winner-drop springen
+  // Default: bei Team-Count-Wechsel auf race-final springen
   const handleTeamCountChange = (n: 3 | 5 | 8) => {
     setTeamCount(n);
-    setStep(n + 8); // winner-drop für neuen N
+    setStep(n + 6); // race-final für neuen N
   };
 
   // Mock endAwards (alle 3 vergeben)
@@ -234,25 +234,33 @@ export default function QQFinalRevealTestPage() {
           </div>
         </div>
 
-        {/* Quick-Jumps zu den Crescendo-Akten */}
+        {/* Quick-Jumps zu den Hauptphasen */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Crescendo-Quick-Jump</div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button style={step === N + 6 ? btnActive : btnStyle} onClick={() => setStep(N + 6)}>Stage</button>
-            <button style={step === N + 7 ? btnActive : btnStyle} onClick={() => setStep(N + 7)}>Fill</button>
-            <button style={step === N + 8 ? btnActive : btnStyle} onClick={() => setStep(N + 8)}>Drop 🏆</button>
+          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Quick-Jump</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
+            <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Grid</button>
+            <button style={step === N + 5 ? btnActive : btnStyle} onClick={() => setStep(N + 5)}>Awards</button>
+            <button style={step === N + 6 ? btnActive : btnStyle} onClick={() => setStep(N + 6)}>🏁 Race</button>
           </div>
+          {/* Replay Race: gleicher Step + force re-mount via key in render */}
         </div>
 
-        {/* Step-Buttons (Prev / Next) */}
+        {/* Step-Buttons (Prev / Next / Replay) */}
         <div style={{ display: 'flex', gap: 4 }}>
           <button style={btnStyle} onClick={() => setStep(Math.max(0, step - 1))}>◀ Prev</button>
           <button style={btnStyle} onClick={() => setStep(Math.min(maxStep, step + 1))}>Next ▶</button>
+          <button
+            style={{ ...btnStyle, background: 'rgba(251,191,36,0.18)', borderColor: 'rgba(251,191,36,0.5)' }}
+            onClick={() => setReplayKey(k => k + 1)}
+            title="Race-Choreo neu starten"
+          >🔁 Replay</button>
         </div>
       </div>
 
-      {/* FinalRevealView mit aktuellem Step */}
-      <div key={`${teamCount}-${step}`} style={{ flex: 1, display: 'flex' }}>
+      {/* FinalRevealView mit aktuellem Step — key includes replayKey damit
+          Replay-Button ein force-Re-Mount auslöst (Auto-Choreo fängt von vorn an). */}
+      <div key={`${teamCount}-${step}-${replayKey}`} style={{ flex: 1, display: 'flex' }}>
         <FinalRevealView state={mockState} />
       </div>
     </div>

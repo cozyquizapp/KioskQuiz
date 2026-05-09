@@ -2736,12 +2736,15 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
 // CONFETTI OVERLAY
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// 2026-05-09 v7.2 (Wolf 'konfetti hängt'): Count 50→80, duration 1.8-3.2s
+// → 2.5-4.5s, delay 0-0.8s → 0-0.5s, ease-in → cubic-bezier(0.4,0.05,0.7,0.95)
+// für schnelleren Fall-Start statt langsamem ease-in-Beginn.
 const CONFETTI_COLORS = ['#EC4899', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', '#F472B6', '#FCD34D', '#34D399'];
 // 2026-05-07 (Wolf 'mehr Pink+Blau, Set E'): ESC-Confetti-Palette — nur Pink,
 // Blau, Lila + helle Akzente. Trifft GameOver-Recap und Winner-Layout, der
 // Climax-Moment im Eurovision-Quiz wirkt dadurch geschlossen ESC-coloriert.
 const CONFETTI_COLORS_ESC = ['#FF2D7B', '#3B82F6', '#A78BFA', '#EC4899', '#60A5FA', '#C084FC', '#F472B6', '#fde6f0'];
-const CONFETTI_COUNT = 50;
+const CONFETTI_COUNT = 80;
 
 function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) {
   const palette = eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS;
@@ -2750,8 +2753,8 @@ function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) 
       id: i,
       x: Math.random() * 100,
       color: palette[i % palette.length],
-      delay: Math.random() * 0.8,
-      duration: 1.8 + Math.random() * 1.4,
+      delay: Math.random() * 0.5,
+      duration: 2.5 + Math.random() * 2.0,
       size: 6 + Math.random() * 6,
       rotation: 360 + Math.random() * 720,
       startY: -(20 + Math.random() * 60),
@@ -2771,7 +2774,7 @@ function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) 
           background: p.color,
           ['--cy' as string]: `${p.startY}px`,
           ['--cr' as string]: `${p.rotation}deg`,
-          animation: `confettiFall ${p.duration}s ease-in ${p.delay}s both`,
+          animation: `confettiFall ${p.duration}s cubic-bezier(0.4, 0.05, 0.7, 0.95) ${p.delay}s both`,
         }} />
       ))}
     </div>
@@ -16154,23 +16157,21 @@ function FinalRevealSharedKeyframes() {
         0%   { opacity: 0; transform: translateY(80px) scale(0.9); }
         100% { opacity: 1; transform: translateY(0)    scale(1); }
       }
-      /* 2026-05-09 v7 Race-Keyframes — Wolf 'episch nicht chaotisch':
-         Y ±70-80px, X ±22px, Cycle 4-6s. Bewegung ist groß und dramatisch,
-         aber langsam genug um würdevoll zu wirken statt wild. Cubic-bezier
-         smooth-out, keine harten Snap-Punkte.
-         RocketFall: bis 115vh (komplett aus Bild), opacity 0 bei 60%. */
+      /* 2026-05-09 v7.2 Race-Keyframes — Wolf 'mehr hoch/runter, weniger links/rechts':
+         Y ±100-115px (war ±70-80), X ±10-12px (war ±22). Vertikales Schweben
+         dominanter, horizontales Wackeln subtiler. Cycle 4-6s bleibt — episch. */
       @keyframes qqRaceRocketA {
         0%   { transform: translate(0,    0)    rotate(-1deg) scale(1); }
-        30%  { transform: translate(14px, -68px) rotate(2deg) scale(1.025); }
-        55%  { transform: translate(-10px, -25px) rotate(-1deg) scale(1); }
-        80%  { transform: translate(18px, -78px) rotate(2.5deg) scale(1.02); }
+        30%  { transform: translate(8px,  -95px) rotate(1.5deg) scale(1.025); }
+        55%  { transform: translate(-6px, -35px) rotate(-1deg) scale(1); }
+        80%  { transform: translate(10px, -110px) rotate(2deg) scale(1.02); }
         100% { transform: translate(0,    0)    rotate(-1deg) scale(1); }
       }
       @keyframes qqRaceRocketB {
         0%   { transform: translate(0,    0)    rotate(0deg)  scale(1); }
-        25%  { transform: translate(-22px, -38px) rotate(-2deg) scale(1.02); }
-        55%  { transform: translate(15px, -72px) rotate(2deg)  scale(1); }
-        80%  { transform: translate(-13px, -18px) rotate(-2deg) scale(1.025); }
+        25%  { transform: translate(-12px, -50px) rotate(-1.5deg) scale(1.02); }
+        55%  { transform: translate(8px,  -100px) rotate(1.5deg) scale(1); }
+        80%  { transform: translate(-7px, -25px) rotate(-1.5deg) scale(1.025); }
         100% { transform: translate(0,    0)    rotate(0deg)  scale(1); }
       }
       @keyframes qqRaceTrail {
@@ -16754,45 +16755,47 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   const [phase, setPhase] = useState<RacePhase>('race');
   const [fallenIds, setFallenIds] = useState<Set<string>>(new Set());
   const [podiumIds, setPodiumIds] = useState<Set<string>>(new Set());
-  // 2026-05-09 v7 (Wolf 'Top 3 finden ihren Platz während Race'): Drift-Trigger.
-  // Bei Mount false → 200ms später true → CSS-Transition auf left% triggert
-  // → Top 3 driften zu ihren Treppchen-X-Positionen über 9s, P4..PN driften
-  // zu Rändern (raus aus Treppchen-Bereich, kein Overlap).
-  const [driftStarted, setDriftStarted] = useState(false);
+  // 2026-05-09 v7.2 (Wolf-Bugfix 'rumsortiere + Spoiler durch Drift-Position'):
+  // Vorher: alle Avatare drifteten beim Mount zu ihrer Treppchen-X-Position
+  // → am Ende der Race-Phase war anhand der Avatar-Position klar wer P1/P2/P3
+  //   wird (Treppchen + drifted-Avatare verraten das Ranking).
+  // Jetzt: pro-Team driften — nur dann zur target-X driften wenn das Team
+  // tatsächlich fällt (parallel zur Fall-Animation). P1 driftet erst NACH
+  // P2-Landung zur Mitte (sein würdevoller Solo-Moment).
+  const [driftedIds, setDriftedIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const driftHandle = window.setTimeout(() => setDriftStarted(true), 200);
-    return () => window.clearTimeout(driftHandle);
-  }, []);
-
-  // 2026-05-09 v7 (Wolf 'episch nicht chaotisch'):
-  // Pacing klar gestreckt — Race-Hold 8s (Mod-Zeit für Vorhersagen), Stagger
-  // 2.0s (Jubel/Trauer-Reaktionen pro abgehängtem Team), Pause vor P3 1.5s,
-  // P1-Solo nach P2-Land 2.5s (P1 schwebt würdevoll), Slow-Mo 1.5s.
+  // 2026-05-09 v7.2 (Wolf-Bugfix 'rumsortiere + Spoiler'):
+  // Drift wird pro Team getriggert — gleichzeitig mit Fall (für N..4 + P2 +
+  // P3) bzw. nach P2-Landung (für P1 = würdevolles Solo zur Mitte).
+  // Während Race-Hold + Stagger-Falls bleiben die nicht-gefallenen Avatare
+  // bei ihrer initial-X — keine Position verrät das Ranking.
   // Total bei N=8 ~28s, bei N=4 ~17s.
   useEffect(() => {
     const handles: number[] = [];
-    let cursor = 8000; // Race-Hold 8s — alle 8 Raketen schwingen + driften
+    let cursor = 8000; // Race-Hold 8s — alle Raketen schweben in initial-Position
 
-    // Plätze N..4 fallen gestaffelt (schlechtester zuerst).
-    // 2.0s zwischen Falls — Wolf moderiert Reaktion pro Team.
+    // Plätze N..4 fallen gestaffelt (schlechtester zuerst). Drift + Fall
+    // gleichzeitig → Avatar driftet zu Rand-Position WÄHREND er fällt
+    // (1.6s Fall überlappt mit 1.5s Drift, ergibt nahtlose Bewegung).
     for (let rank = N; rank >= 4; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
       handles.push(window.setTimeout(() => {
+        setDriftedIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         if (rank === 4) setPhase('p3-podium');
       }, cursor));
       cursor += 2000;
     }
 
-    // Pause vor P3 — letzte N..4-Rakete fertig fallen lassen + Spannungs-Build
+    // Pause vor P3
     cursor += 1500;
 
-    // P3 fällt → 1.1s später erscheint auf rechter Treppchen-Stufe
+    // P3 fällt + driftet zu 62% gleichzeitig
     if (p3) {
       const p3Id = p3.team.id;
       handles.push(window.setTimeout(() => {
+        setDriftedIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
         setFallenIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
       }, cursor));
       cursor += 1100;
@@ -16803,13 +16806,14 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 1000;
     }
 
-    // P1 + P2 alleine — Camera-Push, Spannung
+    // P1 + P2 alleine — Camera-Push, Spannung. P1 + P2 sind noch in initial-X!
     cursor += 2000;
 
-    // P2 fällt → 1.1s später erscheint auf linker Treppchen-Stufe
+    // P2 fällt + driftet zu 38% gleichzeitig
     if (p2) {
       const p2Id = p2.team.id;
       handles.push(window.setTimeout(() => {
+        setDriftedIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
         setFallenIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
       }, cursor));
       cursor += 1100;
@@ -16817,11 +16821,17 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
         setPodiumIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
         setPhase('p2-podium');
       }, cursor));
-      cursor += 1000;
+      cursor += 800;
     }
 
-    // P1 racet noch würdevoll alleine in der Mitte — episches Solo
-    cursor += 2500;
+    // P1 driftet jetzt würdevoll zur Mitte (sein Solo-Moment)
+    if (p1) {
+      const p1Id = p1.team.id;
+      handles.push(window.setTimeout(() => {
+        setDriftedIds(prev => { const next = new Set(prev); next.add(p1Id); return next; });
+      }, cursor));
+      cursor += 2500;
+    }
 
     // Sieger Slow-Mo
     handles.push(window.setTimeout(() => {
@@ -16837,7 +16847,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     }, cursor));
 
     return () => handles.forEach(h => window.clearTimeout(h));
-  }, [N, finalRanking, p2, p3]);
+  }, [N, finalRanking, p1, p2, p3]);
 
   if (!p1) return null;
 
@@ -16959,8 +16969,10 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
 
           const inSlowMo = isWinner && phase === 'winner-slowmo';
 
-          // Drift-X: bei Mount initial → 200ms später target → CSS-Transition läuft
-          const xPct = driftStarted
+          // 2026-05-09 v7.2: Drift pro Team beim Fall-Event (nicht bei Mount).
+          // Default = initial-X (gleichmäßig verteilt, keine Position verrät Rank).
+          // Bei driftedIds.has(id) → drift zu target-X (parallel zum Fall, 1.5s).
+          const xPct = driftedIds.has(entry.team.id)
             ? teamXPositions.target[entry.team.id]
             : teamXPositions.initial[entry.team.id];
 
@@ -16970,8 +16982,9 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
               left: `${xPct}%`,
               top: '50%',
               transform: 'translate(-50%, -50%)',
-              // Würdevoller Drift über 9s mit cubic-bezier ease-out
-              transition: 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
+              // 1.5s Drift — parallel zum 1.6s Fall, ergibt nahtloser Übergang
+              // zur Treppchen-X. Bei P1 (Solo nach P2-Land): elegant zur Mitte.
+              transition: 'left 1.5s cubic-bezier(0.4, 0, 0.6, 1)',
               zIndex: fallen ? 1 : 2,
             }}>
               <RaceTeamUnit

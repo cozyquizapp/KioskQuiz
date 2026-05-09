@@ -15914,23 +15914,23 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09)
+// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09 v3)
 // ═══════════════════════════════════════════════════════════════════════════════
-// Step-Mapping für N Teams:
+// Step-Mapping für N Teams (v3 — Awards als 1 Slide mit 3 3D-Flip-Cards):
 //   0           = Title-Hold "Die Auflösung"
 //   1           = Grid-Reveal (Cluster-Highlight Top-1)
 //   2..N+1      = Bet-Reveal pro Team (aufsteigend nach Bonus, auch 0-Bonus)
-//   N+2 / N+3   = Award 1 (Underdog) Card-Reveal / Avatar+Punkt
-//   N+4 / N+5   = Award 2 (Meisterklauer) Card-Reveal / Avatar+Punkt
-//   N+6 / N+7   = Award 3 (Speedy) Card-Reveal / Avatar+Punkt
-//   N+8..2N+7   = Ranking-Slides last→first (Single bis #4, Treppchen ab #3)
+//   N+2         = Awards-Overview: alle 3 Cards BG (Award-Name + Emoji + ???)
+//   N+3         = linke Card flippt 3D → zeigt Sieger
+//   N+4         = mittlere Card flippt
+//   N+5         = rechte Card flippt
+//   N+6..2N+5   = Ranking-Slides last→first (Treppchen ab Platz 2)
 
 type FinalStep =
   | { kind: 'title' }
   | { kind: 'grid' }
   | { kind: 'bet'; teamIndex: number }
-  | { kind: 'award-card'; awardIndex: 0 | 1 | 2 }
-  | { kind: 'award-reveal'; awardIndex: 0 | 1 | 2 }
+  | { kind: 'awards-overview'; revealedCount: 0 | 1 | 2 | 3 }
   | { kind: 'ranking'; rankIndex: number };
 
 function decodeFinalStep(step: number, N: number): FinalStep {
@@ -15938,13 +15938,11 @@ function decodeFinalStep(step: number, N: number): FinalStep {
   if (step === 1) return { kind: 'grid' };
   if (step <= 1 + N) return { kind: 'bet', teamIndex: step - 2 };
   const afterBets = step - (1 + N);
-  if (afterBets === 1) return { kind: 'award-card', awardIndex: 0 };
-  if (afterBets === 2) return { kind: 'award-reveal', awardIndex: 0 };
-  if (afterBets === 3) return { kind: 'award-card', awardIndex: 1 };
-  if (afterBets === 4) return { kind: 'award-reveal', awardIndex: 1 };
-  if (afterBets === 5) return { kind: 'award-card', awardIndex: 2 };
-  if (afterBets === 6) return { kind: 'award-reveal', awardIndex: 2 };
-  return { kind: 'ranking', rankIndex: Math.min(N - 1, Math.max(0, afterBets - 7)) };
+  if (afterBets === 1) return { kind: 'awards-overview', revealedCount: 0 };
+  if (afterBets === 2) return { kind: 'awards-overview', revealedCount: 1 };
+  if (afterBets === 3) return { kind: 'awards-overview', revealedCount: 2 };
+  if (afterBets === 4) return { kind: 'awards-overview', revealedCount: 3 };
+  return { kind: 'ranking', rankIndex: Math.min(N - 1, Math.max(0, afterBets - 5)) };
 }
 
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
@@ -16005,8 +16003,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           lang={lang}
         />
       )}
-      {phase.kind === 'award-card' && <AwardCardSlide awardIndex={phase.awardIndex} lang={lang} />}
-      {phase.kind === 'award-reveal' && <AwardRevealSlide awardIndex={phase.awardIndex} state={s} lang={lang} />}
+      {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealedCount={phase.revealedCount} state={s} lang={lang} />}
       {phase.kind === 'ranking' && <RankingSlide rankIndex={phase.rankIndex} finalRanking={finalRanking} lang={lang} />}
     </div>
   );
@@ -16238,105 +16235,109 @@ function BetRevealSlide({ team, resolution, allTeams, lang }: {
   const totalBonus = resolution?.totalBonus ?? 0;
   const isZero = totalBonus === 0;
 
+  // 2026-05-09 v3 (Wolf 'Card minimal größer + per-Team-Cascade'): Card etwas
+  // großzügiger gepolstert + Avatar bumped. Innen-Cascade per animation-delay:
+  // Team-Card sofort, dann Tipp-Team bei +0.55s, Punkte/Sympathie bei +1.1s.
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
       width: '100%',
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 'clamp(40px, 5vw, 80px)',
-        padding: 'clamp(36px, 4vh, 64px)',
+        display: 'flex', alignItems: 'center', gap: 'clamp(48px, 5.5vw, 96px)',
+        padding: 'clamp(44px, 5vh, 76px) clamp(56px, 6vw, 96px)',
         borderRadius: 32,
         background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
         border: `3px solid ${team.color}`,
         boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
         animation: 'qqFRSlamDown 0.95s cubic-bezier(0.34, 1.46, 0.64, 1) both',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(120px, 13vw, 200px)'} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15vw, 240px)'} />
           <div style={{
-            fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+            fontSize: 'clamp(32px, 3.4vw, 56px)', fontWeight: 900,
             color: team.color, textAlign: 'center', letterSpacing: '-0.01em',
           }}>{team.name}</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, minWidth: 380 }}>
-          {/* 2026-05-09 (Wolf): klare Trennung — Disconnect-Fall (kein Tipp)
-              kriegt simplen Hinweis, der oooh-Moment ist NUR für Teams die
-              tatsächlich getippt haben aber Target hatte 0 Wins. */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, minWidth: 420 }}>
+          {/* Disconnect-Fall: kein Tipp, neutraler Hinweis. */}
           {!targetTeam ? (
-            // Edge-Case: Team hat keinen Tipp abgegeben (Disconnect/verpasst).
-            // Neutral, kein Drama.
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              padding: '20px 32px', borderRadius: 18,
+              padding: '22px 36px', borderRadius: 18,
               background: 'rgba(255,255,255,0.04)',
               border: '1.5px solid rgba(255,255,255,0.12)',
+              animation: 'qqFRTitleIn 0.6s ease 0.55s both',
             }}>
-              <div style={{ fontSize: 'clamp(40px, 4.5vw, 64px)', lineHeight: 1, opacity: 0.5 }}>—</div>
+              <div style={{ fontSize: 'clamp(44px, 5vw, 72px)', lineHeight: 1, opacity: 0.5 }}>—</div>
               <div style={{
-                fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 800,
+                fontSize: 'clamp(20px, 2vw, 30px)', fontWeight: 800,
                 color: '#94A3B8', textAlign: 'center',
               }}>{de ? 'Kein Tipp abgegeben' : 'No tip submitted'}</div>
               <div style={{
-                fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 700,
+                fontSize: 'clamp(15px, 1.4vw, 20px)', fontWeight: 700,
                 color: '#64748B', fontStyle: 'italic',
               }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
             <>
+              {/* Sub-step 1: "tippte auf" + Tipp-Team — kommt nach Team-Slam mit Delay */}
               <div style={{
-                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
                 color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
+                animation: 'qqFRTitleIn 0.5s ease 0.55s both',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '12px 22px', borderRadius: 999,
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '14px 26px', borderRadius: 999,
                 background: `${targetTeam.color}1a`,
-                border: `2px solid ${targetTeam.color}`,
+                border: `2.5px solid ${targetTeam.color}`,
+                animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
               }}>
-                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={48} />
+                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5vw, 76px)'} />
                 <span style={{
-                  fontSize: 'clamp(22px, 2.2vw, 32px)', fontWeight: 900,
+                  fontSize: 'clamp(26px, 2.6vw, 40px)', fontWeight: 900,
                   color: targetTeam.color,
                 }}>{targetTeam.name}</span>
               </div>
               {isMutual && (
                 <div style={{
-                  fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 800,
+                  fontSize: 'clamp(17px, 1.7vw, 26px)', fontWeight: 800,
                   color: '#F472B6', display: 'flex', alignItems: 'center', gap: 8,
-                  animation: 'qqFRTitleIn 0.6s ease 0.5s both',
+                  animation: 'qqFRTitleIn 0.6s ease 0.95s both',
                 }}>
-                  <span style={{ fontSize: 'clamp(20px, 2vw, 30px)' }}>💞</span>
+                  <span style={{ fontSize: 'clamp(22px, 2.2vw, 34px)' }}>💞</span>
                   {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
                 </div>
               )}
+              {/* Sub-step 2: Punkte-Cascade — kommt zuletzt mit weiterem Delay */}
               {isZero ? (
                 <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  animation: 'qqFRTitleIn 0.7s ease 0.6s both',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                  animation: 'qqFRTitleIn 0.7s ease 1.1s both',
                 }}>
                   <div style={{
-                    fontSize: 'clamp(60px, 7vw, 110px)', lineHeight: 1,
-                    animation: 'qqFROohBob 1.6s ease-in-out infinite',
+                    fontSize: 'clamp(64px, 7.5vw, 120px)', lineHeight: 1,
+                    animation: 'qqFROohBob 1.6s ease-in-out 1.1s infinite',
                   }}>🥲</div>
                   <div style={{
-                    fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                    fontSize: 'clamp(30px, 3.2vw, 48px)', fontWeight: 900,
                     color: '#94A3B8', textAlign: 'center', fontStyle: 'italic',
                   }}>oooh …</div>
                   <div style={{
-                    fontSize: 'clamp(15px, 1.4vw, 22px)', fontWeight: 700,
+                    fontSize: 'clamp(16px, 1.5vw, 24px)', fontWeight: 700,
                     color: '#64748B',
                   }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
                 </div>
               ) : (
                 <div style={{
-                  padding: '16px 32px', borderRadius: 22,
+                  padding: '20px 38px', borderRadius: 24,
                   background: 'rgba(34,197,94,0.18)',
                   border: '3px solid rgba(34,197,94,0.65)',
-                  boxShadow: '0 0 32px rgba(34,197,94,0.35)',
-                  fontSize: 'clamp(48px, 5.5vw, 88px)', fontWeight: 900,
+                  boxShadow: '0 0 36px rgba(34,197,94,0.35)',
+                  fontSize: 'clamp(56px, 6.2vw, 100px)', fontWeight: 900,
                   color: '#22C55E', letterSpacing: '-0.02em',
-                  animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+                  animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 1.1s both',
                 }}>
                   + {totalBonus}
                 </div>
@@ -16356,127 +16357,206 @@ const AWARD_DEFS = [
   { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: '#F472B6' },
 ];
 
-function AwardCardSlide({ awardIndex, lang }: { awardIndex: 0 | 1 | 2; lang: 'de' | 'en' }) {
-  const a = AWARD_DEFS[awardIndex];
+// 2026-05-09 v3 (Wolf-Refactor): Awards-Overview-Slide. Alle 3 Cards
+// nebeneinander, immer gleich groß (BG + Front identisch dimensioniert), Space
+// flippt links → mitte → rechts via revealedCount. Kein Spring weil isFlipped
+// als CSS-Transition läuft, BG bleibt Slot identisch breit. Flip-Choreo wie
+// /animations Slot 07 "🎴 Bonus: 3D Card-Flip". Title & Subtitle bleiben oben
+// dauerhaft sichtbar — die Cards selbst sind das Drama.
+function AwardsOverviewSlide({ revealedCount, state: s, lang }: {
+  revealedCount: 0 | 1 | 2 | 3; state: QQStateUpdate; lang: 'de' | 'en';
+}) {
   const de = lang === 'de';
+  const awards = s.endAwards;
   return (
     <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 'clamp(28px, 3.5vh, 48px)',
       width: '100%',
+      padding: 'clamp(20px, 2vh, 36px) clamp(24px, 3vw, 48px)',
     }}>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
-        padding: 'clamp(40px, 5vh, 72px)',
-        borderRadius: 32,
-        background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
-        border: `3px solid ${a.accent}`,
-        boxShadow: `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
-        animation: 'qqFRSlamDown 1s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+        fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
+        color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.18em',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+      }}>{de ? '🏅 Special Awards' : '🏅 Special Awards'}</div>
+      <div style={{
+        fontSize: 'clamp(34px, 4vw, 60px)', fontWeight: 900,
+        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        textShadow: '0 0 36px rgba(251,191,36,0.45)',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
+      }}>{de ? 'Drei besondere Auszeichnungen' : 'Three special awards'}</div>
+
+      <div style={{
+        display: 'flex', alignItems: 'stretch', justifyContent: 'center',
+        gap: 'clamp(20px, 2.5vw, 44px)',
+        width: '100%', maxWidth: 'min(96vw, 1400px)',
       }}>
-        <div style={{
-          fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
-          color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
-        }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
-        <div style={{
-          fontSize: 'clamp(96px, 12vw, 180px)', lineHeight: 1,
-          animation: 'qqFRDrumroll 0.6s ease-in-out infinite',
-          filter: `drop-shadow(0 0 24px ${a.accent}99)`,
-        }}>{a.emoji}</div>
-        <div style={{
-          fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
-          color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.01em',
-        }}>{de ? a.titleDe : a.titleEn}</div>
-        <div style={{
-          fontSize: 'clamp(16px, 1.7vw, 26px)', fontWeight: 700,
-          color: a.accent, fontStyle: 'italic',
-        }}>{de ? a.descDe : a.descEn}</div>
-        <div style={{
-          fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
-          color: '#94A3B8', letterSpacing: '0.4em', marginTop: 8,
-        }}>???</div>
+        {[0, 1, 2].map(i => {
+          const winnerId = !awards ? null
+            : i === 0 ? awards.underdog
+            : i === 1 ? awards.meisterklauer
+            : awards.speedy;
+          const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
+          return (
+            <AwardFlipCard
+              key={i}
+              awardIndex={i as 0 | 1 | 2}
+              isFlipped={revealedCount > i}
+              winner={winner}
+              awards={awards}
+              lang={lang}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function AwardRevealSlide({ awardIndex, state: s, lang }: { awardIndex: 0 | 1 | 2; state: QQStateUpdate; lang: 'de' | 'en' }) {
+// 3D-Flip-Card mit identischer Dimension auf BG- und Front-Seite (gleicher
+// padding/min-height-Container — der innere `flip-inner`-Wrapper rotiert,
+// Größe ist outside fixed). Wolfs Anker-Anforderung: zu jedem Zeitpunkt sind
+// alle 3 Cards gleich groß. BG: Award-Name + Emoji + ???. Front: Team-Sieger
+// + +1-Bonus.
+function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
+  awardIndex: 0 | 1 | 2;
+  isFlipped: boolean;
+  winner: QQTeam | null;
+  awards: QQStateUpdate['endAwards'];
+  lang: 'de' | 'en';
+}) {
   const a = AWARD_DEFS[awardIndex];
   const de = lang === 'de';
-  const awards = s.endAwards;
-  const winnerId = !awards ? null
-    : awardIndex === 0 ? awards.underdog
-    : awardIndex === 1 ? awards.meisterklauer
-    : awards.speedy;
-  const winner = winnerId ? s.teams.find(t => t.id === winnerId) : null;
   const metric = !winner ? null
     : awardIndex === 1 && awards?.meisterklauerCount
       ? (de ? `${awards.meisterklauerCount}× geklaut` : `${awards.meisterklauerCount}× stolen`)
     : awardIndex === 2 && awards?.speedyAvgMs ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
     : null;
 
+  const cardCommonStyle: React.CSSProperties = {
+    position: 'absolute', inset: 0,
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    borderRadius: 28,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    padding: 'clamp(20px, 2.5vh, 36px) clamp(20px, 2vw, 32px)',
+    gap: 'clamp(8px, 1.2vh, 18px)',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+  };
+
   return (
     <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '100%',
+      flex: '1 1 0', minWidth: 200, maxWidth: 480,
+      perspective: '1600px',
+      animation: 'qqFRSlamDown 0.9s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+      filter: `drop-shadow(0 0 28px ${a.accent}88)`,
     }}>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        padding: 'clamp(40px, 5vh, 72px) clamp(48px, 5vw, 88px)',
-        borderRadius: 32,
-        background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
-        border: `3px solid ${a.accent}`,
-        boxShadow: `0 0 100px ${a.accent}88, 0 16px 48px rgba(0,0,0,0.5)`,
-        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.34, 1.46, 0.64, 1) both',
         position: 'relative',
+        width: '100%',
+        // Feste Höhe damit BG + Front identische Box haben (Wolf: alle 3 Cards
+        // immer gleich groß). aspectRatio würde mit flex-1 schwanken, also
+        // expliziter min-height über vh.
+        minHeight: 'clamp(360px, 44vh, 540px)',
+        transformStyle: 'preserve-3d',
+        WebkitTransformStyle: 'preserve-3d',
+        transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
+        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
       }}>
+        {/* BG — Award-Name + Emoji + ??? */}
         <div style={{
-          fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
-          color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
-          display: 'flex', alignItems: 'center', gap: 10,
+          ...cardCommonStyle,
+          background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
+          border: `3px solid ${a.accent}`,
+          boxShadow: `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
         }}>
-          <span style={{ fontSize: 'clamp(28px, 3vw, 44px)' }}>{a.emoji}</span>
-          {de ? a.titleDe : a.titleEn}
+          <div style={{
+            fontSize: 'clamp(11px, 1.2vw, 18px)', fontWeight: 900,
+            color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
+          }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
+          <div style={{
+            fontSize: 'clamp(76px, 9vw, 140px)', lineHeight: 1,
+            animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
+            filter: `drop-shadow(0 0 22px ${a.accent}99)`,
+          }}>{a.emoji}</div>
+          <div style={{
+            fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900,
+            color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.01em',
+          }}>{de ? a.titleDe : a.titleEn}</div>
+          <div style={{
+            fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 700,
+            color: a.accent, fontStyle: 'italic', textAlign: 'center',
+          }}>{de ? a.descDe : a.descEn}</div>
+          <div style={{
+            fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+            color: '#94A3B8', letterSpacing: '0.4em',
+          }}>???</div>
         </div>
-        {winner ? (
-          <>
-            <div style={{ position: 'relative' }}>
-              <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(140px, 15vw, 220px)'} />
-              <span aria-hidden style={{
-                position: 'absolute', left: '50%', top: 0,
-                transform: 'translate(-50%, -10px)',
-                fontSize: 'clamp(48px, 5vw, 80px)', fontWeight: 900,
-                color: '#22C55E',
-                textShadow: '0 0 32px rgba(34,197,94,0.7)',
-                animation: 'qqFRPlusOne 2.2s ease-out 0.4s both',
-                pointerEvents: 'none',
-              }}>+1</span>
-            </div>
-            <div style={{
-              fontSize: 'clamp(40px, 4.5vw, 72px)', fontWeight: 900,
-              color: winner.color, textAlign: 'center', letterSpacing: '-0.01em',
-              textShadow: `0 0 32px ${winner.color}55`,
-            }}>{winner.name}</div>
-            {metric && (
-              <div style={{
-                fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 700,
-                color: '#CBD5E1', fontStyle: 'italic',
-              }}>{metric}</div>
-            )}
-            <div style={{
-              padding: '10px 24px', borderRadius: 999,
-              background: 'rgba(34,197,94,0.18)',
-              border: '2px solid rgba(34,197,94,0.55)',
-              fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 900,
-              color: '#22C55E',
-            }}>
-              {de ? '+ 1 Bonus-Punkt' : '+ 1 bonus point'}
-            </div>
-          </>
-        ) : (
-          <div style={{ fontSize: 'clamp(20px, 2vw, 28px)', color: '#475569', fontStyle: 'italic' }}>
-            {de ? '(kein Sieger)' : '(no winner)'}
+
+        {/* Front — Sieger Avatar + +1 */}
+        <div style={{
+          ...cardCommonStyle,
+          transform: 'rotateY(180deg)',
+          background: winner
+            ? `linear-gradient(160deg, ${winner.color}28, ${winner.color}10)`
+            : `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
+          border: winner ? `3px solid ${winner.color}` : `3px solid ${a.accent}`,
+          boxShadow: winner
+            ? `0 0 100px ${winner.color}88, 0 16px 48px rgba(0,0,0,0.5)`
+            : `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1.2vw, 18px)', fontWeight: 900,
+            color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{ fontSize: 'clamp(20px, 2.2vw, 30px)' }}>{a.emoji}</span>
+            {de ? a.titleDe : a.titleEn}
           </div>
-        )}
+          {winner ? (
+            <>
+              <div style={{ position: 'relative' }}>
+                <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji}
+                  size={'clamp(110px, 12vw, 170px)'} />
+                <span aria-hidden style={{
+                  position: 'absolute', left: '50%', top: 0,
+                  transform: 'translate(-50%, -10px)',
+                  fontSize: 'clamp(40px, 4.4vw, 70px)', fontWeight: 900,
+                  color: '#22C55E',
+                  textShadow: '0 0 28px rgba(34,197,94,0.7)',
+                  animation: isFlipped ? 'qqFRPlusOne 2.2s ease-out 0.6s both' : 'none',
+                  pointerEvents: 'none',
+                }}>+1</span>
+              </div>
+              <div style={{
+                fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
+                color: winner.color, textAlign: 'center', letterSpacing: '-0.01em',
+                textShadow: `0 0 28px ${winner.color}55`,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}>{winner.name}</div>
+              {metric && (
+                <div style={{
+                  fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 700,
+                  color: '#CBD5E1', fontStyle: 'italic',
+                }}>{metric}</div>
+              )}
+              <div style={{
+                padding: '8px 18px', borderRadius: 999,
+                background: 'rgba(34,197,94,0.18)',
+                border: '2px solid rgba(34,197,94,0.55)',
+                fontSize: 'clamp(13px, 1.4vw, 20px)', fontWeight: 900,
+                color: '#22C55E',
+              }}>{de ? '+ 1 Bonus' : '+ 1 bonus'}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 'clamp(16px, 1.6vw, 22px)', color: '#475569', fontStyle: 'italic' }}>
+              {de ? '(kein Sieger)' : '(no winner)'}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

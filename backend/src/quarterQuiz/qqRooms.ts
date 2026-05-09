@@ -5354,7 +5354,12 @@ export function qqResolveFinalBets(room: QQRoomState): void {
  *  Total = 2N + 9 (inkl. Final-Step der Phase wechselt). */
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
   const N = Object.keys(room.teams).length;
-  return 2 * N + 8;
+  // 2026-05-09 v3 (Wolf-Refactor Award-Reveal): Awards jetzt 1 Slide mit 3
+  // 3D-Flip-Cards = 4 Steps (Overview + 3 Flips) statt 6 (3× Card+Reveal).
+  // 2 Steps eingespart → max = 2N+6 statt 2N+8.
+  // Mapping: 0=title, 1=grid, 2..N+1=bet, N+2..N+5=awards-overview (4 steps),
+  // N+6..2N+5=ranking (N steps), Backend max = 2N+6 → THANKS bei step>2N+5.
+  return 2 * N + 6;
 }
 
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */

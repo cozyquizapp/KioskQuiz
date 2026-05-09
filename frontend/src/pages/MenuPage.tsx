@@ -22,6 +22,7 @@ const cozyQuizLinks: LinkItem[] = [
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
   { path: '/thanks-test',         label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
+  { path: '/finalreveal-test',    label: 'FinalReveal Test',   emoji: '🎬', note: 'Endgame-Choreografie scrubben — Step-Slider 0..N+8 + Quick-Jumps zu Crescendo-Akten (Stage/Fill/Drop 🏆)' },
   { path: '/testpage',            label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },

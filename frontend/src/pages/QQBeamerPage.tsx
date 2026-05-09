@@ -19489,13 +19489,37 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 />
               </div>
             )}
-            {winner && (
-              <ThanksColumnSubtitle
-                text={winner.name}
-                color={winner.color}
-                emphasized
-              />
-            )}
+            {/* 2026-05-09 v12 (Wolf-Konsistenz): 2-zeilig analog COZYWOLF/
+                SCAN MICH — Team-Name groß einzeilig in Team-Farbe, drunter
+                „haben gewonnen" / „have won" in gleicher Sub-Größe wie
+                „bedankt sich" / „und finde es raus". */}
+            {winner && (() => {
+              const isLong = winner.name.length > 10;
+              return (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 2, lineHeight: 1.05, textAlign: 'center',
+                  maxWidth: '100%',
+                }}>
+                  <div style={{
+                    fontSize: isLong ? 'clamp(22px, 2.4vw, 36px)' : 'clamp(28px, 3vw, 44px)',
+                    fontWeight: 900,
+                    color: winner.color,
+                    letterSpacing: '-0.01em',
+                    textShadow: `0 0 24px ${winner.color}66`,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                  }}>{winner.name}</div>
+                  <div style={{
+                    fontFamily: 'inherit',
+                    fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
+                    color: '#F1F5F9',
+                    whiteSpace: 'nowrap',
+                  }}>{lang === 'de' ? 'haben gewonnen' : 'have won'}</div>
+                </div>
+              );
+            })()}
           </ThanksColumnCard>
 
           <ThanksColumnCard accent="#EC4899" delay={0.15}>

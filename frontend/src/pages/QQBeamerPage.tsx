@@ -19706,6 +19706,13 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     subDe: 'fürs Mitbauen', subEn: 'for co-building',
     color: '#22D3EE',
   });
+  items.push({
+    kind: 'thanks-pill',
+    emoji: '🛟',
+    nameDe: 'Danke Seva', nameEn: 'Thanks Seva',
+    subDe: 'für den Support', subEn: 'for the support',
+    color: '#F59E0B',
+  });
 
   // 2× strip + translateX(-50%) für nahtlosen Loop
   const strip = [...items, ...items];
@@ -19760,15 +19767,13 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
 function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en' }) {
   const de = lang === 'de';
 
-  // Pro Item-Typ: Akzentfarbe + Badge-JSX + Texte
+  // Pro Item-Typ: Akzentfarbe + Badge-JSX + Texte (oder kein Text → Badge mittig)
   type PillData = {
     accent: string;
     badge: React.ReactNode;
-    main: string;
+    main: string;        // '' = minimal-Variante, nur Badge zentriert
     sub: string | null;
     subItalic: boolean;
-    minWidth: number;
-    maxWidth: number;
   };
   const data: PillData = (() => {
     if (item.kind === 'phase-pill') {
@@ -19780,7 +19785,6 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         main: de ? `Runde ${item.phase}` : `Round ${item.phase}`,
         sub: null,
         subItalic: false,
-        minWidth: 280, maxWidth: 380,
       };
     }
     if (item.kind === 'awards-pill') {
@@ -19791,7 +19795,6 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         main: de ? 'Special Awards' : 'Special Awards',
         sub: de ? 'die Bonus-Punkte' : 'bonus points',
         subItalic: true,
-        minWidth: 360, maxWidth: 480,
       };
     }
     if (item.kind === 'award-pill') {
@@ -19800,12 +19803,9 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         accent,
         badge: <BadgeCircle color={accent} content={item.emoji}
           overlayWinner={item.winner} />,
-        // 2026-05-09 v9 (Wolf-Hierarchie): groß = Award-Name (matched großer
-        // Cat-Badge), klein = Team-Name (matched kleiner Winner-Avatar-Overlay)
         main: de ? item.labelDe : item.labelEn,
         sub: item.winner.name,
         subItalic: false,
-        minWidth: 360, maxWidth: 520,
       };
     }
     if (item.kind === 'thanks-pill') {
@@ -19816,64 +19816,69 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         main: de ? item.nameDe : item.nameEn,
         sub: de ? item.subDe : item.subEn,
         subItalic: true,
-        minWidth: 360, maxWidth: 480,
       };
     }
-    // cat-pill — 2026-05-09 v9 (Wolf-Hierarchie): groß = Antwort (matched
-    // großer Cat-Badge), klein = Team-Name (matched kleiner Winner-Overlay)
+    // cat-pill — 2026-05-09 v10 (Wolf 'Variante 3'): nur Cat-Emoji-Badge mit
+    // Winner-Avatar-Overlay, KEIN Text. Antwort-ohne-Frage-Kontext war zu
+    // kryptisch (z.B. „1378" / „A" / „Berlin" allein → unklar). Stattdessen
+    // minimalistisches Visual: Cat-Color + Cat-Emoji = welche Cat, Winner-
+    // Overlay = wer gewonnen hat. Detail-Recap kommt via QR-Summary.
     const accent = item.catColor;
-    const winnerName = item.winner?.name ?? '—';
-    const questionText = item.questionText || (de ? '—' : '—');
     return {
       accent,
       badge: <BadgeCircle color={accent} content={item.catEmoji}
         overlayWinner={item.winner} />,
-      main: questionText,
-      sub: winnerName,
-      subItalic: false,
-      minWidth: 380, maxWidth: 560,
+      main: '', sub: null, subItalic: false,
     };
   })();
+
+  // Wolf-Spec 'alle pills gleich groß': einheitliche Width für ALLE Item-Typen.
+  // Cat-Pill (minimal-Variante) zentriert nur Badge — sonst Badge links + Text.
+  const isMinimal = data.main === '';
+  const PILL_WIDTH = 'clamp(320px, 28vw, 460px)';
 
   return (
     <div style={{
       flexShrink: 0,
-      display: 'flex', alignItems: 'center', gap: 18,
+      display: 'flex', alignItems: 'center',
+      justifyContent: isMinimal ? 'center' : 'flex-start',
+      gap: isMinimal ? 0 : 18,
       padding: '14px 28px 14px 18px',
       borderRadius: 999,
       background: `linear-gradient(135deg, ${data.accent}33, ${data.accent}11)`,
       border: `2.5px solid ${data.accent}`,
       boxShadow: `0 0 24px ${data.accent}55, 0 4px 14px rgba(0,0,0,0.35)`,
-      minWidth: data.minWidth,
-      maxWidth: data.maxWidth,
-      // Fixed Höhe damit Pills strict gleich aussehen — Avatar-Overlay ragt
-      // nicht raus weil Badge-Container größer als Inhalt
+      width: PILL_WIDTH,
+      minWidth: PILL_WIDTH,
+      maxWidth: PILL_WIDTH,
       height: 116,
       boxSizing: 'border-box',
     }}>
       {data.badge}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-        gap: 4, minWidth: 0, flex: 1,
-      }}>
+      {!isMinimal && (
         <div style={{
-          fontSize: 'clamp(22px, 2.1vw, 32px)', fontWeight: 900,
-          color: data.accent, letterSpacing: '0.02em',
-          textShadow: `0 0 14px ${data.accent}66`,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          maxWidth: '100%', lineHeight: 1.1,
-        }}>{data.main}</div>
-        {data.sub && (
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+          gap: 4, minWidth: 0, flex: 1,
+        }}>
           <div style={{
-            fontSize: 'clamp(13px, 1.3vw, 18px)',
-            fontWeight: data.subItalic ? 700 : 800,
-            fontStyle: data.subItalic ? 'italic' : 'normal',
-            color: '#cbd5e1',
+            fontSize: 'clamp(22px, 2.1vw, 32px)', fontWeight: 900,
+            color: data.accent, letterSpacing: '0.02em',
+            textShadow: `0 0 14px ${data.accent}66`,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            maxWidth: '100%', lineHeight: 1.2,
-          }}>{data.sub}</div>
-        )}
-      </div>
+            maxWidth: '100%', lineHeight: 1.1,
+          }}>{data.main}</div>
+          {data.sub && (
+            <div style={{
+              fontSize: 'clamp(13px, 1.3vw, 18px)',
+              fontWeight: data.subItalic ? 700 : 800,
+              fontStyle: data.subItalic ? 'italic' : 'normal',
+              color: '#cbd5e1',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              maxWidth: '100%', lineHeight: 1.2,
+            }}>{data.sub}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

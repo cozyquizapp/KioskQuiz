@@ -15756,7 +15756,11 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               top: beforeRank * rowH, height: rowH - 6,
               ['--swapDiff' as any]: `${swapDiffPx}px`,
               animation: animation || undefined,
+              // 2026-05-09 v3 (TODO 4 Performance): contain isoliert das Row-
+              // Subtree für Layout/Paint/Style — Browser muss nicht den
+              // ganzen Container neu layouten wenn ein Tickup-Wert ändert.
               willChange: 'transform',
+              contain: 'layout paint style',
               display: 'grid',
               gridTemplateColumns: `${avatarSize + 8}px 1fr auto`,
               gap: 14, alignItems: 'center',
@@ -15808,42 +15812,67 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   );
 }
 
-// Tickup-Helper für Recap-Score-Cascade. Animiert ganzzahlig from→to mit
-// ease-out-cubic. Zeigt während Tickup einen kleinen +N-Hint grün.
+// 2026-05-09 v3 (Wolf TODO 4 'Standings laggt'): Tickup mit DIREKTER DOM-
+// Manipulation statt setState. Vorher: pro Team eigener rAF-Loop +
+// setState pro Frame → bei 8 Teams 8× Re-Render des Score-Spans pro
+// Animation-Frame. Jetzt: rAF schreibt direkt textContent + style — KEIN
+// React-State, KEIN Re-Render, GPU-only-Update. Spürbar performanter
+// auf Beamer/TV (schwächere GPUs).
 function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
   from: number; to: number; delayMs: number; durationMs: number; rowH: number;
 }) {
-  const [val, setVal] = useState(from);
+  const valRef = useRef<HTMLSpanElement>(null);
+  const deltaRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    setVal(from);
     let frame = 0;
     const start = performance.now();
+    let lastVal = from;
+    // Initial-Setup: from-Wert sichtbar, Delta hidden.
+    if (valRef.current) {
+      valRef.current.textContent = String(from);
+      valRef.current.style.color = from > 0 ? '#FBBF24' : '#475569';
+      valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
+    }
+    if (deltaRef.current) deltaRef.current.style.opacity = '0';
+
     const tick = (now: number) => {
       const elapsed = now - start;
       if (elapsed < delayMs) { frame = requestAnimationFrame(tick); return; }
       const t = Math.min(1, (elapsed - delayMs) / durationMs);
       const eased = 1 - Math.pow(1 - t, 3);
-      setVal(Math.round(from + (to - from) * eased));
+      const val = Math.round(from + (to - from) * eased);
+      if (val !== lastVal) {
+        lastVal = val;
+        if (valRef.current) {
+          valRef.current.textContent = String(val);
+          valRef.current.style.color = val > 0 ? '#FBBF24' : '#475569';
+          valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
+        }
+        if (deltaRef.current) {
+          const showDelta = to > from && val > from && val < to;
+          deltaRef.current.style.opacity = showDelta ? '1' : '0';
+        }
+      }
       if (t < 1) frame = requestAnimationFrame(tick);
+      else if (deltaRef.current) deltaRef.current.style.opacity = '0';
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [from, to, delayMs, durationMs]);
-  const showDelta = to > from && val > from && val < to;
+
   return (
     <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
-      {showDelta && (
-        <span style={{
-          fontSize: `clamp(11px, 1.1vw, ${Math.round(rowH * 0.22)}px)`,
-          color: '#22C55E', fontWeight: 900,
-        }}>+{to - from}</span>
-      )}
-      <span style={{
+      <span ref={deltaRef} style={{
+        fontSize: `clamp(11px, 1.1vw, ${Math.round(rowH * 0.22)}px)`,
+        color: '#22C55E', fontWeight: 900,
+        opacity: 0, transition: 'opacity 0.1s linear',
+      }}>+{to - from}</span>
+      <span ref={valRef} style={{
         fontSize: `clamp(34px, 4vw, ${Math.round(rowH * 0.66)}px)`,
-        color: val > 0 ? '#FBBF24' : '#475569',
-        textShadow: val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
+        color: from > 0 ? '#FBBF24' : '#475569',
+        textShadow: from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
-      }}>{val}</span>
+      }}>{from}</span>
     </span>
   );
 }

@@ -17769,7 +17769,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   fill: 'none',
                   stroke: 'rgba(236,72,153,0.7)',
                   strokeWidth: 2.5,
-                  strokeDasharray: '18 82',
+                  strokeDasharray: '9 91',
                   animation: 'qqStarBorderTrace 3.6s linear infinite',
                 }}
               />

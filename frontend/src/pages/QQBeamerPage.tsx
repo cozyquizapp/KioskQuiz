@@ -2798,16 +2798,9 @@ const RULES_SLIDE_COLOR = '#EC4899';
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
-  const abilityLines = totalPhases === 3
-    ? [
-        t('rules.slide5.r2', 'Runde 2: Klauen freigeschaltet'),
-        t('rules.slide5.r3short', 'Runde 3: Stapeln — sichert euer Feld dauerhaft + 1 Bonus-Punkt'),
-      ]
-    : [
-        t('rules.slide5.r2', 'Runde 2: Klauen freigeschaltet'),
-        t('rules.slide5.r3', 'Runde 3: Stapeln — Feld dauerhaft sichern + 1 Bonus-Punkt'),
-        t('rules.slide5.r4', 'Runde 4: alles bleibt — letzte Quiz-Runde'),
-      ];
+  // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus — Klauen/Stapeln werden
+  // beim Runden-Intro (R2/R3) als Überraschung enthüllt (3D-Card-Flip mit
+  // NEU-Badge), Wolf erklärt sie dann live.
   return [
     {
       icon: '🏆',
@@ -2856,16 +2849,6 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       },
     },
     {
-      icon: '🔓',
-      title: t('rules.slide5.title', 'Neue Fähigkeiten'),
-      color: '#EC4899',
-      lines: abilityLines,
-      abilities: [
-        { emoji: '⚡', label: t('rules.slide5.abil1', 'Klauen'),  accent: '#EF4444' },
-        { emoji: '🏯', label: t('rules.slide5.abil2', 'Stapeln'), accent: '#06B6D4' },
-      ],
-    },
-    {
       icon: '🎁',
       title: t('rules.slide6.title', 'Bunte Tüte'),
       color: RULES_SLIDE_COLOR,
@@ -2886,14 +2869,14 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       // 2026-05-09 (Rules-Audit Wolf): Final-Tipp ist seit Tipp-Variante-
-      // Refactor neue Mechanik, fehlte komplett in den Rules.
+      // Refactor neue Mechanik. Sympathie-Bonus bewusst NICHT erwähnt —
+      // Wolf möchte den als Überraschung beim End-Reveal lassen.
       icon: '🎰',
       title: t('rules.slide_final_tip.title', 'Final-Tipp'),
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide_final_tip.line1', 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'),
         t('rules.slide_final_tip.line2', 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'),
-        t('rules.slide_final_tip.line3', 'Mutual-Tipp (ihr beide tippt aufeinander) = je +1 💞 Sympathie-Bonus'),
       ],
       extra: t('rules.slide_final_tip.extra', 'Kein Verlust — niedrigster Bonus = 0, alle Felder bleiben am Brett'),
     },
@@ -2925,16 +2908,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
 
 function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
   const t = (k: string, fb: string) => getRuleText(k, 'en', fb);
-  const abilityLines = totalPhases === 3
-    ? [
-        t('rules.slide5.r2', 'Round 2: Steal unlocked'),
-        t('rules.slide5.r3short', 'Round 3: Stack — lock your tile + 1 bonus pt'),
-      ]
-    : [
-        t('rules.slide5.r2', 'Round 2: Steal unlocked'),
-        t('rules.slide5.r3', 'Round 3: Stack — lock your tile + 1 bonus pt'),
-        t('rules.slide5.r4', 'Round 4: everything stays — last quiz round'),
-      ];
+  // 2026-05-09 (Wolf): New-Abilities slide removed — Steal/Stack revealed
+  // as a surprise at the round-intro (3D card-flip with NEW badge).
   return [
     {
       icon: '🏆',
@@ -2982,16 +2957,6 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       },
     },
     {
-      icon: '🔓',
-      title: t('rules.slide5.title', 'New Abilities'),
-      color: '#EC4899',
-      lines: abilityLines,
-      abilities: [
-        { emoji: '⚡', label: t('rules.slide5.abil1', 'Steal'), accent: '#EF4444' },
-        { emoji: '🏯', label: t('rules.slide5.abil2', 'Stack'), accent: '#06B6D4' },
-      ],
-    },
-    {
       icon: '🎁',
       title: t('rules.slide6.title', 'Lucky Bag'),
       color: RULES_SLIDE_COLOR,
@@ -3017,7 +2982,6 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide_final_tip.line1', 'Before the finale every team tips on another (or own) team'),
         t('rules.slide_final_tip.line2', 'Per final-category win of your tip = +1 bonus'),
-        t('rules.slide_final_tip.line3', 'Mutual tip (you both tip each other) = +1 💞 sympathy bonus each'),
       ],
       extra: t('rules.slide_final_tip.extra', 'No loss — lowest bonus is 0, all cells stay on the board'),
     },
@@ -7289,6 +7253,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           // den Container (1700) — alle Cards bekamen großen
                           // Spacing zueinander, Inhalt war underfilled.
                           maxWidth: cardCount === 1 ? 480 : 480,
+                          // 2026-05-09 (Wolf 'cards immer alle gleich gross'):
+                          // gleicher minHeight wie ActionCardReveal (3D-Pfad),
+                          // damit non-3D + 3D Karten in einer Zeile uniform sind.
+                          // Container hat align-items: stretch — die 360 erzwingen
+                          // den Mindestabstand, Stretch gleicht Mehrhöhe an.
+                          minHeight: 360,
+                          boxSizing: 'border-box',
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
                           justifyContent: 'center',
                           gap: 'clamp(8px, 1.2vh, 16px)',
@@ -15545,9 +15516,11 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         marginBottom: 36,
       }}>
         {[
+          // 2026-05-09 (Wolf): Mutual/Sympathie-Bonus-Bullet entfernt — bleibt
+          // Überraschung beim End-Reveal (FinalRevealView zeigt die +1
+          // automatisch wenn mutual erkannt).
           { icon: '🎯', title: '1 Tipp pro Team', sub: '(Eigenes Team erlaubt)' },
           { icon: '🏆', title: '+1 Bonus pro Win', sub: 'Eures getippten Teams in den 5 Final-Kats' },
-          { icon: '💞', title: 'Mutual = +1', sub: 'Wenn ihr euch gegenseitig tippt' },
         ].map((b, i) => (
           <div key={i} style={{
             padding: '18px 22px', borderRadius: 18,

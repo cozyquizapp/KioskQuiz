@@ -6251,9 +6251,11 @@ function FinalBettingCard({
           {de ? 'Auf wen tippst du?' : 'Who do you bet on?'}
         </div>
         <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 14, lineHeight: 1.45 }}>
+          {/* 2026-05-09 (Wolf): Sympathie-Bonus bewusst nicht erwähnt — bleibt
+              Überraschung beim End-Reveal. */}
           {de
-            ? 'Pro gewonnene Final-Kategorie deines Teams = +1 Bonus. Mutual-Tipp (ihr beide tippt aufeinander) = je +1 💞 Sympathie-Bonus. Kein Verlust!'
-            : 'For each final-category your team wins = +1 bonus. Mutual tip (you both tip each other) = +1 💞 sympathy bonus each. No loss!'}
+            ? 'Pro gewonnene Final-Kategorie deines Tipps = +1 Bonus. Kein Verlust!'
+            : 'For each final-category win of your tip = +1 bonus. No loss!'}
         </div>
       </div>
 

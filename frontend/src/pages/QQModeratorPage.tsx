@@ -317,7 +317,8 @@ export default function QQModeratorPage() {
           && !!s.theme?.eurovisionMode
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
-        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
+        // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
+        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -738,7 +739,8 @@ export default function QQModeratorPage() {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
-        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
+        // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
+        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -884,7 +886,8 @@ export default function QQModeratorPage() {
     if (e.code === 'F13') {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
-        const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
+        // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
+        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -3509,9 +3512,10 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   state: QQStateUpdate; roomCode: string; emit: any; onStartGame: () => void;
 }) {
   // 2026-05-09 (Rules-Audit): 2 neue Slides ergänzt (Final-Tipp + Fair Play).
-  // Slide 8 (4×4) bleibt conditional je nach connectionsEnabled.
+  // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → R2/R3-Abilities werden
+  // beim Runden-Intro als Überraschung enthüllt. Slide-Count: 9 mit Finale, 8 ohne.
   const hasFinale = s.connectionsEnabled !== false;
-  const totalSlides = hasFinale ? 10 : 9;
+  const totalSlides = hasFinale ? 9 : 8;
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
@@ -3524,7 +3528,6 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
     '⚡ So läuft\'s',
     '🗺 Roadmap',
     '⭐ Joker-Bonus',
-    '🔓 Neue Fähigkeiten',
     '🎁 Bunte Tüte',
     '🔄 Comeback',
     '🎰 Final-Tipp',

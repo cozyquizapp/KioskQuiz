@@ -19527,6 +19527,9 @@ function ThanksColumnCard({
 }
 
 // Einheitlicher Subtitle für alle 3 Spalten — Caveat-Handschrift, mittig.
+// 2026-05-09 v6 (Wolf-Bug 'Käpt'n Kl...' truncated): bei emphasized (Sieger-
+// Name) erlauben wir jetzt Wrap auf 2 Zeilen + leicht kleinere FontSize bei
+// langen Namen damit nichts mehr abgeschnitten wird.
 function ThanksColumnSubtitle({
   text, color, emphasized,
 }: {
@@ -19534,22 +19537,29 @@ function ThanksColumnSubtitle({
   color?: string;
   emphasized?: boolean;
 }) {
+  const isLong = text.length > 10;
   return (
     <div style={{
       fontFamily: emphasized
         ? 'inherit'
         : "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
       fontSize: emphasized
-        ? 'clamp(28px, 3vw, 48px)'
+        ? (isLong ? 'clamp(22px, 2.4vw, 36px)' : 'clamp(28px, 3vw, 48px)')
         : 'clamp(20px, 2.2vw, 32px)',
       fontWeight: emphasized ? 900 : 700,
       color: color ?? '#F1F5F9',
       textAlign: 'center',
       letterSpacing: emphasized ? '-0.01em' : '0',
       textShadow: emphasized && color ? `0 0 24px ${color}66` : 'none',
-      whiteSpace: 'nowrap',
+      // emphasized: Wrap erlauben (max 2 Zeilen) — non-emphasized bleibt nowrap.
+      whiteSpace: emphasized ? 'normal' : 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      display: emphasized ? '-webkit-box' : 'block',
+      WebkitLineClamp: emphasized ? 2 : 1,
+      WebkitBoxOrient: 'vertical',
+      wordBreak: 'break-word',
+      hyphens: 'auto',
       maxWidth: '100%',
       lineHeight: 1.1,
     }}>{text}</div>
@@ -19649,8 +19659,10 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
 
   // 2× strip + translateX(-50%) für nahtlosen Loop
   const strip = [...items, ...items];
-  // Tick-Speed: ~3.5s pro Item (Pills sind kompakter als vorher Slides)
-  const tickerDurationS = Math.max(30, items.length * 3.5);
+  // 2026-05-09 v9 (Wolf 'langsamer + smoother'): ~7s pro Item (war 3.5s),
+  // min 60s (war 30s). Linear bleibt — konstanter Scroll ohne stop-and-go.
+  // will-change: transform → GPU-Layer, smoother bei vielen Pills.
+  const tickerDurationS = Math.max(60, items.length * 7);
 
   return (
     <div style={{
@@ -19662,6 +19674,7 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
         display: 'flex', alignItems: 'center', gap: 24,
         height: '100%', padding: '0 24px',
         width: 'max-content',
+        willChange: 'transform',
         animation: items.length > 0
           ? `qqThanksTickerScroll ${tickerDurationS}s linear infinite`
           : 'none',

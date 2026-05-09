@@ -4954,11 +4954,17 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                   : (lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board')}
               </div>
               <div style={{
-                display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,
+                // 2026-05-09 v3: square-grid-pattern wie selecting-mode für
+                // konsistente Zell-Größen.
+                display: 'grid',
+                gridTemplateColumns: `repeat(${s.gridSize}, 1fr)`,
+                gridTemplateRows: `repeat(${s.gridSize}, 1fr)`,
+                aspectRatio: '1 / 1',
                 gap: 3, width: '100%', marginBottom: 6,
                 padding: 6, borderRadius: 8,
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.06)',
+                boxSizing: 'border-box',
               }}>
                 {s.grid.flatMap((row, r) =>
                   row.map((cell, c) => {
@@ -4972,7 +4978,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                         // 2026-05-05 (Wolf 'sieht alt aus mit Kreisen'): borderRadius
                         // 6 → 4 (eckiger), volle Team-Farbe statt 2-Layer-Gradient,
                         // Beamer-Tile-Look mit Inset-Highlight + Bottom-Shadow.
-                        aspectRatio: '1 / 1', borderRadius: 4,
+                        // aspectRatio raus — Grid garantiert square via 1fr rows.
+                        minWidth: 0, minHeight: 0, borderRadius: 4,
                         background: cellTeam
                           ? (isStuckCell
                               ? `linear-gradient(135deg, ${cellTeam.color}ff, ${cellTeam.color}c0)`
@@ -5215,11 +5222,22 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
             {instructionText}
           </div>
           <div style={{
-            display: 'grid', gridTemplateColumns: `repeat(${s.gridSize}, minmax(0, 1fr))`,
+            // 2026-05-09 v3 (Wolf 'überlappen total — clickable + filled
+            // unterschiedlich groß'): aspectRatio auf den GRID-Container statt
+            // auf die Cells. Grid ist quadratisch, gridTemplateRows: 1fr +
+            // gridTemplateColumns: 1fr → jede Cell garantiert quadratisch
+            // (Cell = 1fr × 1fr eines square Grids). aspectRatio auf Cells
+            // funktionierte vorher nicht zuverlässig — Browser ließen empty
+            // Cells zur Row-Höhe stretchen.
+            display: 'grid',
+            gridTemplateColumns: `repeat(${s.gridSize}, 1fr)`,
+            gridTemplateRows: `repeat(${s.gridSize}, 1fr)`,
+            aspectRatio: '1 / 1',
             gap: 3, width: '100%',
             padding: 6, borderRadius: 8,
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.06)',
+            boxSizing: 'border-box',
           }}>
             {s.grid.flatMap((row, r) =>
               row.map((cell, c) => {
@@ -5257,7 +5275,8 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
                     aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
-                    aspectRatio: '1 / 1', borderRadius: 4,
+                    // aspectRatio raus — Grid garantiert square cells via gridTemplateRows: 1fr
+                    minWidth: 0, minHeight: 0, borderRadius: 4,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
                       : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}c0)`

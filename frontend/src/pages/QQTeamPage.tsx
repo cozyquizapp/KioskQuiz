@@ -2249,8 +2249,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
     onlyConnect: {
       emoji: '🧩',
       name:    { de: '4 gewinnt',     en: 'Only Connect' },
-      explain: { de: '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.',
-                 en: '4 clues, one answer — solve with fewest clues to win an action.' },
+      explain: { de: '4 Begriffe — was verbindet sie? Ein Tipp pro Team, schnellste richtige Antwort gewinnt zuerst.',
+                 en: '4 terms — what connects them? One guess per team, fastest correct answer wins first.' },
     },
     bluff: {
       emoji: '🎭',
@@ -2267,8 +2267,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
     top5: {
       emoji: '🏆',
       name:    { de: 'Top 5',         en: 'Top 5' },
-      explain: { de: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.',
-                 en: 'Guess the most common answers — higher rank, more points.' },
+      explain: { de: 'Bis zu 5 Antworten — meiste Treffer gewinnt.',
+                 en: 'Up to 5 answers — most hits wins.' },
     },
     oneOfEight: {
       emoji: '🕵️',
@@ -2285,8 +2285,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
     map: {
       emoji: '🗺️',
       name:    { de: 'CozyGuessr',    en: 'CozyGuessr' },
-      explain: { de: 'Errate den Ort auf der Karte — je näher, desto mehr Punkte.',
-                 en: 'Guess the location on the map — closer means more points.' },
+      explain: { de: 'Errate den Ort auf der Karte — nächstes Team gewinnt.',
+                 en: 'Guess the location on the map — closest team wins.' },
     },
   };
   const bunteKind = cat === 'BUNTE_TUETE' ? (s.currentQuestion?.bunteTuete?.kind as string | undefined) : undefined;
@@ -2366,11 +2366,11 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Close Call' }, lines: { de: ['Wer am nächsten dran liegt, gewinnt', 'Knapp dran zählt auch'], en: ['Closest guess wins', 'Near misses also count'] } },
               MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
-              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Was ist das?', 'Erste richtige Antwort gewinnt'], en: ['What is this?', 'First correct answer wins'] } },
-              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Nennt die häufigsten Antworten', 'Je oben, desto mehr Punkte'], en: ['Name the most common answers', 'Higher rank = more points'] } },
+              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Erkennt das Bild — tippt die Antwort ins Handy.'], en: ['Spot the image — type your answer.'] } },
+              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Bis zu 5 Antworten', 'Meiste Treffer gewinnt'], en: ['Up to 5 answers', 'Most hits wins'] } },
               'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['Findet die EINE falsche Aussage', 'unter 7 wahren'], en: ['Spot the ONE false statement', 'among 7 true ones'] } },
               'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
-              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Je näher, desto mehr Punkte'], en: ['Guess the location on the map', 'Closer = more points'] } },
+              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Nächstes Team gewinnt'], en: ['Guess the location on the map', 'Closest team wins'] } },
               'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten', 'Keine Antwort vor Zeitende = raus'], en: ['Take turns', 'No answer before time runs out = out'] } },
               'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Begriffe — was verbindet sie?', '1 Tipp · schnellste richtig zuerst'], en: ['4 terms — what connects them?', '1 guess · fastest correct first'] } },
               'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },

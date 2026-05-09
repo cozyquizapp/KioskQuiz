@@ -17590,27 +17590,44 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       {activePanel && (
         // 2026-05-07 (Audit Layout #2): maxWidth 1120 → 1500. Vorher schmale
         // Insel mit ~360px Side-Whitespace je Seite auf 1080p-Beamer.
-        // 2026-05-09 (Wolf-Pick reactbits.dev/star-border): rotating Pink-Conic-
-        // Gradient hinter der Card → leuchtender Border-Effekt für PreGame +
-        // Pause. ESC-Mode lässt den Effekt aus (eigene Show-Identität).
+        // 2026-05-09 v3 (Wolf 'star-border soll um die ganze Card laufen,
+        // nicht ein dicker Balken'): SVG-rect mit animated stroke-dashoffset
+        // statt rotierendem Conic-Gradient. Light läuft sauber den Rand
+        // entlang, auch bei sehr breiten Cards (1500×660). ESC-Mode lässt den
+        // Effekt aus (eigene Show-Identität).
         <div style={{
           width: '100%', maxWidth: 'min(94vw, 1500px)', position: 'relative', zIndex: 5,
-          padding: isEsc ? 0 : 2,
           borderRadius: 26,
-          overflow: 'hidden',
           isolation: 'isolate',
         }}>
           {!isEsc && (
-            // 2026-05-09 v2 (Wolf 'sparkle etwas zu hoch — dezenter und schneller'):
-            // alpha 0.9→0.45 (deutlich dezenter), rotation 4.5s→2.8s (schneller),
-            // gradient-stops weicher (65/80/95 statt 70/80/90) für sanften Verlauf
-            // statt harter Kante.
-            <div aria-hidden style={{
-              position: 'absolute', inset: '-50%', zIndex: 0,
-              background: 'conic-gradient(from 0deg, transparent 0% 65%, rgba(236,72,153,0.45) 80%, transparent 95% 100%)',
-              animation: 'qqStarBorderSpin 2.8s linear infinite',
-              pointerEvents: 'none',
-            }} />
+            // SVG-Border-Trace liegt EXAKT auf der Card-Außenkante (rx 24
+            // matcht innere Card). Stroke 2px halb innen / halb außen — der
+            // außere Halbteil + drop-shadow geben das umlaufende Border-Light.
+            <svg
+              aria-hidden
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                pointerEvents: 'none', zIndex: 2,
+                overflow: 'visible',
+              }}
+            >
+              <rect
+                pathLength={100}
+                style={{
+                  x: '0px', y: '0px',
+                  width: '100%', height: '100%',
+                  rx: '24px', ry: '24px',
+                  fill: 'none',
+                  stroke: 'rgba(236,72,153,0.6)',
+                  strokeWidth: 2,
+                  strokeDasharray: '18 82',
+                  filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.5))',
+                  animation: 'qqStarBorderTrace 3.6s linear infinite',
+                }}
+              />
+            </svg>
           )}
           <div style={{
             position: 'relative', zIndex: 1,

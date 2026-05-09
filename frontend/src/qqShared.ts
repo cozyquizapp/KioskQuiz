@@ -71,12 +71,23 @@ export const QQ_BEAMER_CSS = `
     70%  { opacity: 1; transform: translateX(-4px) scale(1.012); }
     100% { opacity: 1; transform: translateX(0)    scale(1); }
   }
-  /* 2026-05-09 (Wolf-Pick reactbits.dev/animations/star-border): rotating
-     conic-gradient hinter prominenten Cards (PreGame/Pause/Setup). Pure CSS,
-     GPU-accelerated. Pink-Slow-Variant (4.5s) — subtilster Premium-Look. */
+  /* 2026-05-09 v3 (Wolf 'star-border ist ein dicker Balken statt umlaufender
+     Light — soll wie reactbits.dev'): conic-gradient rotiert um Center → bei
+     sehr breiten Cards (1500×660) wirkt der Sweep wie ein durchschiebender
+     Balken statt einer Linie die DIE KANTE entlangläuft. Lösung: SVG-rect mit
+     stroke-dashoffset-Animation. pathLength=100 normalisiert auf Prozent →
+     Dasharray "18 82" = 18% Light + 82% Transparent, läuft sauber den
+     gerundeten Rand entlang.
+
+     qqStarBorderSpin bleibt als Legacy-Keyframe (falls noch wo verlinkt).
+     qqStarBorderTrace ist der neue saubere Effect. */
   @keyframes qqStarBorderSpin {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
+  }
+  @keyframes qqStarBorderTrace {
+    from { stroke-dashoffset: 100; }
+    to   { stroke-dashoffset: 0; }
   }
   /* Joker-Wiggle für Rules-Slide-Demo: subtile rotation + scale-puls als
      „der Joker leuchtet auf, wenn das Pattern gebildet ist". */

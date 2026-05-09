@@ -16157,34 +16157,56 @@ function FinalRevealSharedKeyframes() {
         0%   { opacity: 0; transform: translateY(80px) scale(0.9); }
         100% { opacity: 1; transform: translateY(0)    scale(1); }
       }
-      /* 2026-05-09 v7.2 Race-Keyframes — Wolf 'mehr hoch/runter, weniger links/rechts':
-         Y ±100-115px (war ±70-80), X ±10-12px (war ±22). Vertikales Schweben
-         dominanter, horizontales Wackeln subtiler. Cycle 4-6s bleibt — episch. */
+      /* 2026-05-09 v7.3 Race-Keyframes — Wolf 'manchmal synchron':
+         4 verschiedene Patterns (A, B, C, D) mit unterschiedlichen Peak-Zeiten
+         + Y-Amplituden + Asymmetrien → bei N=8 keine zwei Avatare wackeln gleich.
+         Y ±90-115px, X minimal (±8-12px), Cycle 4-7s. */
       @keyframes qqRaceRocketA {
-        0%   { transform: translate(0,    0)    rotate(-1deg) scale(1); }
+        /* Symmetrisch, Y-Peaks bei 30% und 80% */
+        0%   { transform: translate(0,    0)     rotate(-1deg) scale(1); }
         30%  { transform: translate(8px,  -95px) rotate(1.5deg) scale(1.025); }
         55%  { transform: translate(-6px, -35px) rotate(-1deg) scale(1); }
         80%  { transform: translate(10px, -110px) rotate(2deg) scale(1.02); }
-        100% { transform: translate(0,    0)    rotate(-1deg) scale(1); }
+        100% { transform: translate(0,    0)     rotate(-1deg) scale(1); }
       }
       @keyframes qqRaceRocketB {
-        0%   { transform: translate(0,    0)    rotate(0deg)  scale(1); }
-        25%  { transform: translate(-12px, -50px) rotate(-1.5deg) scale(1.02); }
+        /* Versetzt, Y-Peak bei 55% (Mitte), kleinere zweite Welle */
+        0%   { transform: translate(0,    0)     rotate(0deg)  scale(1); }
+        25%  { transform: translate(-10px, -40px) rotate(-1.5deg) scale(1.02); }
         55%  { transform: translate(8px,  -100px) rotate(1.5deg) scale(1); }
         80%  { transform: translate(-7px, -25px) rotate(-1.5deg) scale(1.025); }
-        100% { transform: translate(0,    0)    rotate(0deg)  scale(1); }
+        100% { transform: translate(0,    0)     rotate(0deg)  scale(1); }
+      }
+      @keyframes qqRaceRocketC {
+        /* Single big swing — ein langer Hoch-Halt-Tief Zyklus */
+        0%   { transform: translate(0,    0)     rotate(0.5deg) scale(1); }
+        18%  { transform: translate(6px,  -55px) rotate(1deg) scale(1.015); }
+        45%  { transform: translate(-8px, -115px) rotate(-1.5deg) scale(1.03); }
+        72%  { transform: translate(5px,  -45px) rotate(1deg) scale(1.01); }
+        100% { transform: translate(0,    0)     rotate(0.5deg) scale(1); }
+      }
+      @keyframes qqRaceRocketD {
+        /* Asymmetrisch — schneller Aufstieg, langsamer Fall */
+        0%   { transform: translate(0,    0)     rotate(-0.5deg) scale(1); }
+        15%  { transform: translate(-9px, -80px) rotate(-2deg) scale(1.02); }
+        40%  { transform: translate(7px,  -105px) rotate(1.5deg) scale(1.025); }
+        70%  { transform: translate(-5px, -60px) rotate(-1deg) scale(1.01); }
+        100% { transform: translate(0,    0)     rotate(-0.5deg) scale(1); }
       }
       @keyframes qqRaceTrail {
         0%   { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
         50%  { opacity: 1;   transform: translateY(8px)   scaleY(1.25); }
         100% { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
       }
+      /* 2026-05-09 v7.3 (Wolf 'gerade runter fallen, keine opacity-Änderung,
+         sieht eher wie Rennen aus'): Reine vertikale Bewegung ohne X-Drift,
+         opacity bleibt 1 (Avatar fällt einfach aus dem Bild raus), kein blur,
+         kein scale-collapse. */
       @keyframes qqRaceRocketFall {
-        0%   { transform: translate(0, 0)      scale(1)    rotate(0);    opacity: 1;   filter: blur(0); }
-        10%  { transform: translate(0, 12px)   scale(0.96) rotate(-1deg); opacity: 1; }
-        35%  { transform: translate(0, 28vh)   scale(0.84) rotate(5deg);  opacity: 0.55; filter: blur(1.5px); }
-        60%  { transform: translate(0, 65vh)   scale(0.62) rotate(-6deg); opacity: 0.18; filter: blur(3px); }
-        100% { transform: translate(0, 115vh)  scale(0.45) rotate(14deg); opacity: 0;    filter: blur(5px); }
+        0%   { transform: translate(0, 0)     scale(1)    rotate(0); opacity: 1; }
+        15%  { transform: translate(0, 8vh)   scale(0.98) rotate(0); opacity: 1; }
+        50%  { transform: translate(0, 45vh)  scale(0.94) rotate(0); opacity: 1; }
+        100% { transform: translate(0, 120vh) scale(0.85) rotate(0); opacity: 1; }
       }
       @keyframes qqRaceWinnerSlowMo {
         0%   { transform: translateY(0) scale(1.4); }
@@ -16195,6 +16217,16 @@ function FinalRevealSharedKeyframes() {
         0%   { transform: scale(2.2) translateY(-80px); opacity: 0.7; filter: blur(4px); }
         60%  { transform: scale(1.15) translateY(0); opacity: 1; filter: blur(0); }
         100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+      }
+      /* 2026-05-09 v7.3 (Wolf 'konfetti klebt am oberen rand'): confettiFall
+         wird normalerweise via QQ_BEAMER_CSS in QQBeamerPage's Wrapper
+         injected — aber die Test-Page rendert FinalRevealView direkt ohne
+         diese Style-Injection. Hier nochmal mit-injecten damit Test-Page
+         funktioniert. Live-Beamer doppelt definiert (harmlos). */
+      @keyframes confettiFall {
+        0%   { transform: translateY(var(--cy, -60px)) rotate(0deg) scale(1); opacity: 1; }
+        75%  { opacity: 1; }
+        100% { transform: translateY(calc(100vh + 40px)) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
       }
     `}</style>
   );
@@ -16764,24 +16796,22 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   // P2-Landung zur Mitte (sein würdevoller Solo-Moment).
   const [driftedIds, setDriftedIds] = useState<Set<string>>(new Set());
 
-  // 2026-05-09 v7.2 (Wolf-Bugfix 'rumsortiere + Spoiler'):
-  // Drift wird pro Team getriggert — gleichzeitig mit Fall (für N..4 + P2 +
-  // P3) bzw. nach P2-Landung (für P1 = würdevolles Solo zur Mitte).
-  // Während Race-Hold + Stagger-Falls bleiben die nicht-gefallenen Avatare
-  // bei ihrer initial-X — keine Position verrät das Ranking.
-  // Total bei N=8 ~28s, bei N=4 ~17s.
+  // 2026-05-09 v7.3 (Wolf 'gerade runter fallen, kein diagonal-drift'):
+  // Strikt sequenzielle Choreo —
+  // - P4..PN: KEIN Drift, fallen gerade von ihrer initial-X-Position runter
+  // - P3/P2: erst Drift zur Treppchen-X (1s, horizontal-only), DANN Fall
+  //   (gerade runter, vertikal). Drift und Fall NICHT überlappen.
+  // - P1: driftet nach P2-Landung würdevoll zur Mitte, dann Slow-Mo
+  // Total bei N=8 ~31s, bei N=4 ~18s.
   useEffect(() => {
     const handles: number[] = [];
-    let cursor = 8000; // Race-Hold 8s — alle Raketen schweben in initial-Position
+    let cursor = 8000; // Race-Hold 8s
 
-    // Plätze N..4 fallen gestaffelt (schlechtester zuerst). Drift + Fall
-    // gleichzeitig → Avatar driftet zu Rand-Position WÄHREND er fällt
-    // (1.6s Fall überlappt mit 1.5s Drift, ergibt nahtlose Bewegung).
+    // Plätze N..4 fallen gestaffelt — KEIN Drift, gerade von initial-X runter.
     for (let rank = N; rank >= 4; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
       handles.push(window.setTimeout(() => {
-        setDriftedIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         if (rank === 4) setPhase('p3-podium');
       }, cursor));
@@ -16791,14 +16821,17 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     // Pause vor P3
     cursor += 1500;
 
-    // P3 fällt + driftet zu 62% gleichzeitig
+    // P3: erst Drift zu 62% (1s), dann Fall gerade runter
     if (p3) {
       const p3Id = p3.team.id;
       handles.push(window.setTimeout(() => {
         setDriftedIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
+      }, cursor));
+      cursor += 1000; // Drift-Dauer (matches transition-duration 1.5s leicht überlappend)
+      handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
       }, cursor));
-      cursor += 1100;
+      cursor += 1100; // P3 mid-fall, Treppchen erscheint
       handles.push(window.setTimeout(() => {
         setPodiumIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
         setPhase('p2-final-race');
@@ -16806,14 +16839,17 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 1000;
     }
 
-    // P1 + P2 alleine — Camera-Push, Spannung. P1 + P2 sind noch in initial-X!
+    // P1 + P2 alleine — Camera-Push, beide noch in initial-X
     cursor += 2000;
 
-    // P2 fällt + driftet zu 38% gleichzeitig
+    // P2: erst Drift zu 38% (1s), dann Fall gerade runter
     if (p2) {
       const p2Id = p2.team.id;
       handles.push(window.setTimeout(() => {
         setDriftedIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
+      }, cursor));
+      cursor += 1000;
+      handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
       }, cursor));
       cursor += 1100;
@@ -16824,7 +16860,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 800;
     }
 
-    // P1 driftet jetzt würdevoll zur Mitte (sein Solo-Moment)
+    // P1 driftet würdevoll zur Mitte (sein Solo-Moment)
     if (p1) {
       const p1Id = p1.team.id;
       handles.push(window.setTimeout(() => {
@@ -16875,17 +16911,20 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     for (let i = 0; i < id.length; i++) hash = ((hash << 7) - hash) + id.charCodeAt(i);
     return -(Math.abs(hash) % 4500) / 1000; // -4.5s bis 0s (max range bei 4-6s cycles)
   };
-  // Variable Duration → keine zwei Raketen wackeln im selben Tempo (4-6s)
+  // Variable Duration → keine zwei Raketen wackeln im selben Tempo (3.5-7s)
   const bobDurationForTeam = (id: string): number => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = ((hash << 11) - hash) + id.charCodeAt(i);
-    return 4.0 + (Math.abs(hash) % 2000) / 1000; // 4.0-6.0s — länger = würdevoller
+    return 3.5 + (Math.abs(hash) % 3500) / 1000; // 3.5-7.0s — breiter Range gegen Sync
   };
-  // Variant A vs B → 2 Bewegungs-Pattern, deterministisch
-  const bobVariantForTeam = (id: string): 'A' | 'B' => {
+  // 2026-05-09 v7.3 (Wolf 'manchmal synchron'): 4 Patterns statt 2 — bei N=8
+  // statistisch nur 2 Avatare pro Variant + variable Duration → praktisch
+  // niemand wackelt im selben Tempo + selben Pattern.
+  const bobVariantForTeam = (id: string): 'A' | 'B' | 'C' | 'D' => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = ((hash << 13) - hash) + id.charCodeAt(i);
-    return Math.abs(hash) % 2 === 0 ? 'A' : 'B';
+    const variants = ['A', 'B', 'C', 'D'] as const;
+    return variants[Math.abs(hash) % 4];
   };
 
   // 2026-05-09 v7: X-Positionen pro Team berechnen.
@@ -17114,14 +17153,12 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDura
   avatarSize: string;
   yOffset: number;
   bobDelay: number;
-  bobVariant: 'A' | 'B';
+  bobVariant: 'A' | 'B' | 'C' | 'D';
   bobDuration: number;
   inSlowMo: boolean;
   falling: boolean;
 }) {
-  const bobAnim = bobVariant === 'A'
-    ? `qqRaceRocketA ${bobDuration}s ease-in-out ${bobDelay}s infinite`
-    : `qqRaceRocketB ${bobDuration}s ease-in-out ${bobDelay}s infinite`;
+  const bobAnim = `qqRaceRocket${bobVariant} ${bobDuration}s ease-in-out ${bobDelay}s infinite`;
   return (
     <div style={{
       // yOffset-Wrapper: konstanter vertikaler Versatz pro Team (-60..+60px)

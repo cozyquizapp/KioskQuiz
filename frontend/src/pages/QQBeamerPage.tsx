@@ -2367,6 +2367,12 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
     }
     prevActiveRef.current = cur;
   }, [activeTeam?.id]);
+  // 2026-05-09 v3 (Wolf 'keine teams von ganz rechts nach ganz links durch
+  // den slide fliegen lassen'): Wrap-Detection. Wenn ein Team beim Active-
+  // Wechsel zwischen den extremen Slots wrappt (z.B. -2 → +2 bei kleinen
+  // Lobbys mit modulo-Logik), CSS-Transition für DIESEN Render unterbinden.
+  // Snap statt Fly-Across. Side-Slots die nur ±1 wandern animieren weiterhin.
+  const prevSlotsRef = useRef<Map<string, number>>(new Map());
   if (!activeTeam) {
     return (
       <div style={{
@@ -2396,6 +2402,15 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
     if (Math.abs(rel) > 2) continue;  // nur ±2 sichtbar
     slotEntries.push({ teamId: aliveIds[i], slot: rel });
   }
+
+  // 2026-05-09 v3 (Wrap-Anti-Fly-Across): nach jedem Render prevSlots updaten.
+  // Bei nächstem Render kennen wir den vorherigen Slot pro Team — damit kann
+  // wrapped-Detection den transition:none-Pfad nehmen.
+  useEffect(() => {
+    const next = new Map<string, number>();
+    for (const e of slotEntries) next.set(e.teamId, e.slot);
+    prevSlotsRef.current = next;
+  });
 
   // Slot-Konfiguration (X-Offset, Y-Offset für Halbkreis-Bogen, Scale, Z-Index, Opacity)
   // ACTIVE = vorne unten (Slot 0). Slot ±1/±2 sind im Bogen nach hinten oben.
@@ -2442,8 +2457,12 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
           const cfg = slotConfig(slot);
           const xSign = slot > 0 ? 1 : slot < 0 ? -1 : 0;
           const isActive = slot === 0;
-          // ACTIVE-Slot: groß mit Name + Timer + Kartoffel.
-          // Side-Slots: nur Avatar mit Mini-Label.
+          // 2026-05-09 v3: Wrap-Detection — wenn Team-Slot um >1 sprang
+          // (modulo-wrap zwischen extremen Slots) → kein transform-transition,
+          // sondern Snap. Verhindert das "fly-across-the-stage" bei kleinen
+          // Lobbys.
+          const prevSlot = prevSlotsRef.current.get(teamId);
+          const wrapped = prevSlot !== undefined && Math.abs(slot - prevSlot) > 1;
           return (
             <div
               key={teamId}
@@ -2454,13 +2473,15 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
                 transformOrigin: 'center bottom',
                 zIndex: cfg.z,
                 opacity: cfg.opacity,
-                transition: 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease',
+                transition: wrapped
+                  ? 'opacity 0.6s ease'
+                  : 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: isActive ? 10 : 6,
               }}
             >
               {isActive ? (
-                // ACTIVE — komplette Card mit Avatar, Name, Timer (nicht-pulsierend)
+                // ACTIVE — Card mit Avatar, Name, Timer + Kartoffel SEITLICH daneben
                 <div style={{
                   position: 'relative',
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -2472,17 +2493,17 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
                   boxShadow: `0 0 48px ${t.color}66, 0 12px 28px rgba(0,0,0,0.5)`,
                   minWidth: 280,
                 }}>
-                  {/* 2026-05-09 (Wolf 'kartoffel über dem timer vor der team-
-                      card — teamname/avatar nicht sehen ist nicht so schlimm'):
-                      Kartoffel sitzt jetzt zentriert über dem Avatar-Bereich,
-                      etwas größer als vorher. Bei Wechsel: Wurf-Bogen-Animation
-                      850ms (sync zur Slot-Transition), danach Idle-Spin. */}
+                  {/* 2026-05-09 v3 (Wolf 'kartoffel darf antworten nicht
+                      verdecken — nicht über card, nicht über timer, sondern
+                      NEBEN die card'): Kartoffel rechts ausserhalb der
+                      Active-Card platziert, vertikal mittig zur Card.
+                      Avatar/Name/Timer bleiben innerhalb der Card sichtbar. */}
                   <span aria-hidden style={{
                     position: 'absolute',
-                    top: 'clamp(8px, 1vh, 14px)',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 'clamp(76px, 8.5vw, 130px)',
+                    right: 'clamp(-110px, -8vw, -70px)',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: 'clamp(70px, 7.5vw, 110px)',
                     lineHeight: 1, pointerEvents: 'none',
                     filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.7)) drop-shadow(0 0 26px rgba(245,158,11,0.65))',
                     animation: isThrowing
@@ -2514,9 +2535,6 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
                       color: urgent ? '#fca5a5' : '#e2e8f0',
                       fontSize: 'clamp(20px, 2.4vw, 30px)', fontWeight: 900,
                       minWidth: 76, textAlign: 'center',
-                      // 2026-05-09 (Wolf 'card darf sich durch timer nicht
-                      // vergrößern'): Pulse weg von der Card, NUR der Timer-Pill
-                      // pulsiert — und das auch nur via box-shadow (kein scale).
                       animation: urgent ? 'qqHpTimerGlow 0.6s ease infinite alternate' : 'none',
                     }}>
                       ⏱ {remaining}s
@@ -2524,24 +2542,11 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
                   )}
                 </div>
               ) : (
-                // SIDE-SLOT (±1 / ±2) — nur Avatar + dezenter Name darunter
-                <>
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(54px, 6vw, 90px)'} />
-                  <div style={{
-                    fontSize: 'clamp(11px, 1vw, 14px)', fontWeight: 800, color: t.color,
-                    maxWidth: 120, textAlign: 'center', whiteSpace: 'nowrap',
-                    overflow: 'hidden', textOverflow: 'ellipsis',
-                    textShadow: '0 1px 4px rgba(0,0,0,0.6)',
-                  }}>{truncName(t.name, 14)}</div>
-                  <div style={{
-                    fontSize: 9, fontWeight: 900, letterSpacing: 1,
-                    color: '#64748b', textTransform: 'uppercase',
-                  }}>
-                    {slot < 0
-                      ? (lang === 'en' ? 'just played' : 'gespielt')
-                      : (lang === 'en' ? 'up next' : 'gleich dran')}
-                  </div>
-                </>
+                // SIDE-SLOT (±1 / ±2) — 2026-05-09 v3 (Wolf 'text unter
+                // avataren unlesbar, nimm den raus, links/rechts reichen
+                // avatare'): nur noch Avatar, kein Teamname, kein 'gespielt'/
+                // 'gleich dran'-Label. Wirkt visuell ruhiger.
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(54px, 6vw, 90px)'} />
               )}
             </div>
           );
@@ -13003,34 +13008,36 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return null;
             };
             // Density-Skalierung: bei vielen Antworten Pills/Font kompakter,
-            // sonst sprengen sie den Beamer. 2026-05-09 (Wolf 'all possible
-            // answers etwas größer in der mitte, wenn noch platz dynamisch'):
-            // neue 'xl'-Stufe für sehr wenige Antworten — dort haben wir Platz
-            // und nutzen ihn für deutlich größere Pills + Header.
+            // sonst sprengen sie den Beamer. 2026-05-09 v3 (Wolf 'all possible
+            // answers immer noch zu klein, dynamisch hochziehen wenn Platz'):
+            // neue 'xxl'-Stufe für ≤4 Antworten + xl/lg deutlich vergrößert.
+            // Schwellen großzügiger: xl bis 8 (war 6), lg bis 16 (war 12).
             const N = allAnswers.length;
             const tier =
-              N <= 6  ? 'xl'
-              : N <= 12 ? 'lg'
-              : N <= 25 ? 'md'
-              : N <= 50 ? 'sm'
+              N <= 4  ? 'xxl'
+              : N <= 8  ? 'xl'
+              : N <= 16 ? 'lg'
+              : N <= 30 ? 'md'
+              : N <= 60 ? 'sm'
               : 'xs';
             // 2026-05-06 (Wolf 'keine Cascade-Animation bei Hot Potato, aber
             // Cascade-Sound schon — Animation anpassen'): Stagger deutlich
             // langsamer (war 50/25/12/8ms), jetzt sichtbar als Cascade-Effekt.
             // Sync zur Sound-Cascade (Pentatonik-Notes pro qualified Team).
             const tierStyles = {
-              xl: { fontSize: 'clamp(24px, 2.8vw, 40px)', pad: '12px 26px', padAvatar: '6px 24px 6px 6px', avatarSize: 'clamp(40px, 4vw, 56px)', gap: 14, headerFs: 'clamp(26px, 3vw, 44px)', containerPad: '24px 28px', stagger: 0.22 },
-              lg: { fontSize: 'clamp(19px, 2.1vw, 30px)', pad: '10px 22px', padAvatar: '5px 20px 5px 5px', avatarSize: 'clamp(34px, 3.4vw, 46px)', gap: 12, headerFs: 'clamp(22px, 2.6vw, 36px)', containerPad: '20px 24px', stagger: 0.18 },
-              md: { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px', padAvatar: '3px 12px 3px 3px', avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6, headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.09 },
-              sm: { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px', padAvatar: '2px 9px 2px 2px', avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4, headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.045 },
-              xs: { fontSize: 'clamp(10px, 1vw, 13px)', pad: '2px 7px', padAvatar: '2px 7px 2px 2px', avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3, headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px', stagger: 0.025 },
+              xxl: { fontSize: 'clamp(36px, 4vw, 64px)', pad: '18px 36px', padAvatar: '10px 32px 10px 10px', avatarSize: 'clamp(56px, 5.6vw, 80px)', gap: 22, headerFs: 'clamp(34px, 3.8vw, 56px)', containerPad: '36px 40px', stagger: 0.28 },
+              xl:  { fontSize: 'clamp(28px, 3.2vw, 48px)', pad: '14px 30px', padAvatar: '8px 28px 8px 8px',   avatarSize: 'clamp(46px, 4.6vw, 64px)', gap: 16, headerFs: 'clamp(28px, 3.2vw, 48px)', containerPad: '28px 32px', stagger: 0.24 },
+              lg:  { fontSize: 'clamp(22px, 2.4vw, 34px)', pad: '11px 24px', padAvatar: '6px 22px 6px 6px',   avatarSize: 'clamp(38px, 3.8vw, 52px)', gap: 13, headerFs: 'clamp(24px, 2.8vw, 40px)', containerPad: '22px 26px', stagger: 0.18 },
+              md:  { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px',  padAvatar: '3px 12px 3px 3px',   avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6,  headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.09 },
+              sm:  { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px',   padAvatar: '2px 9px 2px 2px',    avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4,  headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.045 },
+              xs:  { fontSize: 'clamp(10px, 1vw, 13px)',   pad: '2px 7px',   padAvatar: '2px 7px 2px 2px',    avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3,  headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px',  stagger: 0.025 },
             }[tier];
             return (
               <div style={{
                 width: '100%', maxWidth: 1400,
                 marginBottom: 'clamp(8px, 1.2vh, 24px)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: tier === 'xl' ? 18 : tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
+                gap: tier === 'xxl' ? 22 : tier === 'xl' ? 18 : tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
                 // 2026-05-07 (Audit P2): revealAnswerBam (scale-bounce) auf dem
                 // Container sprang mit den Chip-Cascades durch — alle Chips
                 // huepften synchron mit dem Container-Scale, plus jeder Chip
@@ -13054,7 +13061,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // 2026-05-07 (Audit Layout #1, Wolf-Screenshot): cap 220-380
                   // → 380-760. Vorher clipte der Container bei vielen Antworten
                   // → Card schwebte mittig + ~25 % Vertikal-Luecke unten.
-                  maxHeight: 'clamp(380px, 60vh, 760px)', overflow: 'hidden',
+                  // 2026-05-09 v3 (Wolf 'noch platz oben und unten'): max-
+                  // height auf 78vh hochgezogen damit größere Tiers (xxl/xl)
+                  // den verfügbaren Platz nutzen können.
+                  maxHeight: 'clamp(420px, 78vh, 920px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);
@@ -13066,7 +13076,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const showAvatar = !!authorTeam && (tier !== 'xs');
                     return (
                       <div key={`${a}-${i}`} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: tier === 'xl' ? 12 : tier === 'lg' ? 8 : 4,
+                        display: 'inline-flex', alignItems: 'center', gap: tier === 'xxl' ? 14 : tier === 'xl' ? 12 : tier === 'lg' ? 8 : 4,
                         padding: showAvatar ? tierStyles.padAvatar : tierStyles.pad,
                         borderRadius: 999,
                         fontSize: tierStyles.fontSize, fontWeight: 900,

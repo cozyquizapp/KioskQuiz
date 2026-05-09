@@ -16218,6 +16218,13 @@ function FinalRevealSharedKeyframes() {
         60%  { transform: scale(1.15) translateY(0); opacity: 1; filter: blur(0); }
         100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
       }
+      /* 2026-05-09 v8 (Wolf 'Treppchen steigt von unten mit allen Avataren'):
+         Slide-from-bottom mit subtle overshoot — wirkt würdevoll und episch. */
+      @keyframes qqRacePodiumRise {
+        0%   { opacity: 0; transform: translateY(80vh) scale(0.95); }
+        60%  { opacity: 1; transform: translateY(-12px) scale(1.005); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
       /* 2026-05-09 v7.3 (Wolf 'konfetti klebt am oberen rand'): confettiFall
          wird normalerweise via QQ_BEAMER_CSS in QQBeamerPage's Wrapper
          injected — aber die Test-Page rendert FinalRevealView direkt ohne
@@ -16767,14 +16774,73 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
 // Treppchen, Sieger schwebt Slow-Mo über Ziellinie. EINE Auto-Choreo statt
 // 3 Mod-Steps — Mod startet sie mit einem Space, Rest läuft selbst.
 
+// 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen avataren'):
+// Vereinfachte Phasen — alle nicht-Sieger fallen gerade runter, P1 schwebt
+// solo, dann Treppchen aus dem Boden mit ALLEN Avataren P2..PN drauf, dann
+// P1 lands auf Mitte-Stufe.
 type RacePhase =
-  | 'race'              // 0-3s: alle racen + wackeln, Speed-Lines pulsen
-  | 'staggered-fall'    // 3-9s: N..4 fallen gestaffelt nach unten weg
-  | 'p3-podium'         // +1s: Platz 3 lande auf rechter Stufe
-  | 'p2-final-race'     // +2s: P1+P2 racen alleine weiter, Camera-Push
-  | 'p2-podium'         // +1s: Platz 2 lande auf linker Stufe
-  | 'winner-slowmo'     // +1.5s: Sieger schwebt Slow-Mo über Ziellinie
-  | 'finish';           // Sieger snap auf Mitte-Stufe + Crown + Konfetti
+  | 'race'              // 0-8s: alle in initial-X, schweben async
+  | 'staggered-fall'    // 8s-: N..2 fallen gestaffelt (gerade runter, 2s stagger)
+  | 'p1-solo'           // P1 alleine schwebt (4s)
+  | 'podium-rises'      // Treppchen steigt mit ALLEN P2..PN drauf (2.5s)
+  | 'winner-slowmo'     // P1 slow-mo (1.5s)
+  | 'finish';           // P1 snap auf Mitte-Stufe + Crown + Konfetti
+
+// Slot-Config pro Rang — Stufen-Höhe + Avatar-Größe + Slot-Breite.
+// Rang 1-3: klassisches Olympia-Podium (groß/mittel/niedrig).
+// Rang 4+: minimal niedrige Stufen (kein dramatischer Höhenunterschied,
+// nur sichtbare Position-Indikator).
+function getSlotConfig(rank: number): {
+  podiumHeight: string; avatarSize: string; slotWidth: string;
+  fontSize: string; rankFontSize: string;
+} {
+  if (rank === 1) return {
+    podiumHeight: 'clamp(110px, 13vh, 170px)',
+    avatarSize: 'clamp(110px, 12vw, 170px)',
+    slotWidth: 'clamp(140px, 14vw, 200px)',
+    fontSize: 'clamp(16px, 1.7vw, 26px)',
+    rankFontSize: 'clamp(36px, 3.8vw, 60px)',
+  };
+  if (rank === 2) return {
+    podiumHeight: 'clamp(78px, 9vh, 124px)',
+    avatarSize: 'clamp(85px, 9vw, 130px)',
+    slotWidth: 'clamp(115px, 12vw, 165px)',
+    fontSize: 'clamp(13px, 1.3vw, 19px)',
+    rankFontSize: 'clamp(22px, 2.4vw, 38px)',
+  };
+  if (rank === 3) return {
+    podiumHeight: 'clamp(50px, 6vh, 80px)',
+    avatarSize: 'clamp(75px, 8vw, 110px)',
+    slotWidth: 'clamp(115px, 12vw, 165px)',
+    fontSize: 'clamp(12px, 1.2vw, 18px)',
+    rankFontSize: 'clamp(20px, 2.2vw, 32px)',
+  };
+  // Rang 4+: minimal — kleinere Avatare, sehr niedrige Stufe, kompakter Slot
+  return {
+    podiumHeight: 'clamp(20px, 2.5vh, 32px)',
+    avatarSize: 'clamp(55px, 6vw, 88px)',
+    slotWidth: 'clamp(78px, 8.5vw, 120px)',
+    fontSize: 'clamp(10px, 1vw, 14px)',
+    rankFontSize: 'clamp(13px, 1.3vw, 18px)',
+  };
+}
+
+// Display-Reihenfolge der Ränge (links → rechts). P1 in der Mitte, gerade
+// Plätze nach links (P2 nahe an P1, P4 weiter weg, ...), ungerade nach
+// rechts (P3 nahe an P1, P5 weiter weg, ...). Klassisches Olympia-Layout
+// erweitert auf bis zu N=8.
+//   N=3:  [P2, P1, P3]
+//   N=5:  [P4, P2, P1, P3, P5]
+//   N=8:  [P8, P6, P4, P2, P1, P3, P5, P7]
+function getOrderedRanks(N: number): number[] {
+  const left: number[] = [];
+  const right: number[] = [];
+  for (let r = 2; r <= N; r++) {
+    if (r % 2 === 0) left.unshift(r); // gerade: am Anfang einsetzen → P2 zuletzt (innen)
+    else right.push(r);
+  }
+  return [...left, 1, ...right];
+}
 
 function RaceFinalSlide({ finalRanking, lang: _lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
@@ -16796,94 +16862,62 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   // P2-Landung zur Mitte (sein würdevoller Solo-Moment).
   const [driftedIds, setDriftedIds] = useState<Set<string>>(new Set());
 
-  // 2026-05-09 v7.3 (Wolf 'gerade runter fallen, kein diagonal-drift'):
-  // Strikt sequenzielle Choreo —
-  // - P4..PN: KEIN Drift, fallen gerade von ihrer initial-X-Position runter
-  // - P3/P2: erst Drift zur Treppchen-X (1s, horizontal-only), DANN Fall
-  //   (gerade runter, vertikal). Drift und Fall NICHT überlappen.
-  // - P1: driftet nach P2-Landung würdevoll zur Mitte, dann Slow-Mo
-  // Total bei N=8 ~31s, bei N=4 ~18s.
+  // 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen
+  // avataren von unten, dann P1 fällt drauf'):
+  // - N..2 fallen gerade gestaffelt (kein Drift, einfach raus aus dem Bild)
+  // - P1 schwebt 4s alleine — würdevoller Solo-Moment, Spannung baut sich
+  // - P1 driftet zur Mitte (1.5s)
+  // - Treppchen steigt aus dem Boden mit ALLEN Avataren P2..PN drauf (2.5s)
+  // - P1 Slow-Mo (1.5s) → Snap auf Mitte-Stufe + Crown + Konfetti
+  // Total bei N=8 ~31s, bei N=4 ~22s.
   useEffect(() => {
     const handles: number[] = [];
     let cursor = 8000; // Race-Hold 8s
 
-    // Plätze N..4 fallen gestaffelt — KEIN Drift, gerade von initial-X runter.
-    for (let rank = N; rank >= 4; rank--) {
+    // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr
+    for (let rank = N; rank >= 2; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
       handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
-        if (rank === 4) setPhase('p3-podium');
+        if (rank === 2) setPhase('p1-solo');
       }, cursor));
       cursor += 2000;
     }
 
-    // Pause vor P3
-    cursor += 1500;
+    // P1 schwebt 4s alleine — Solo-Moment, Spannung
+    cursor += 4000;
 
-    // P3: erst Drift zu 62% (1s), dann Fall gerade runter
-    if (p3) {
-      const p3Id = p3.team.id;
-      handles.push(window.setTimeout(() => {
-        setDriftedIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
-      }, cursor));
-      cursor += 1000; // Drift-Dauer (matches transition-duration 1.5s leicht überlappend)
-      handles.push(window.setTimeout(() => {
-        setFallenIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
-      }, cursor));
-      cursor += 1100; // P3 mid-fall, Treppchen erscheint
-      handles.push(window.setTimeout(() => {
-        setPodiumIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
-        setPhase('p2-final-race');
-      }, cursor));
-      cursor += 1000;
-    }
-
-    // P1 + P2 alleine — Camera-Push, beide noch in initial-X
-    cursor += 2000;
-
-    // P2: erst Drift zu 38% (1s), dann Fall gerade runter
-    if (p2) {
-      const p2Id = p2.team.id;
-      handles.push(window.setTimeout(() => {
-        setDriftedIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
-      }, cursor));
-      cursor += 1000;
-      handles.push(window.setTimeout(() => {
-        setFallenIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
-      }, cursor));
-      cursor += 1100;
-      handles.push(window.setTimeout(() => {
-        setPodiumIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
-        setPhase('p2-podium');
-      }, cursor));
-      cursor += 800;
-    }
-
-    // P1 driftet würdevoll zur Mitte (sein Solo-Moment)
+    // P1 driftet zur Mitte (1.5s)
     if (p1) {
       const p1Id = p1.team.id;
       handles.push(window.setTimeout(() => {
         setDriftedIds(prev => { const next = new Set(prev); next.add(p1Id); return next; });
       }, cursor));
-      cursor += 2500;
+      cursor += 1500;
     }
 
-    // Sieger Slow-Mo
+    // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s)
+    handles.push(window.setTimeout(() => {
+      setPhase('podium-rises');
+    }, cursor));
+    cursor += 2500;
+
+    // P1 Slow-Mo
     handles.push(window.setTimeout(() => {
       setPhase('winner-slowmo');
       try { playFanfare(); } catch {}
     }, cursor));
     cursor += 1500;
 
-    // Finish
+    // Finish — P1 lands auf Mitte-Stufe + Crown + Konfetti
     handles.push(window.setTimeout(() => {
       setPhase('finish');
       try { playClimaxFinish(); } catch {}
     }, cursor));
 
     return () => handles.forEach(h => window.clearTimeout(h));
-  }, [N, finalRanking, p1, p2, p3]);
+  }, [N, finalRanking, p1]);
 
   if (!p1) return null;
 
@@ -16995,8 +17029,8 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
         ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, rgba(217,119,6,0.18) 35%, rgba(15,8,23,0.95) 80%)'
         : 'radial-gradient(ellipse at 50% 50%, rgba(31,16,46,0.95) 0%, rgba(15,8,23,0.98) 80%)',
       transition: 'background 0.8s ease',
-      // Camera-Push bei p2-final-race + finish
-      transform: phase === 'p2-final-race' || phase === 'p2-podium' || isFinishing ? 'scale(1.04)' : 'scale(1)',
+      // Camera-Push während P1-Solo + Treppchen-Rise + Slow-Mo + Finish
+      transform: phase === 'p1-solo' || phase === 'podium-rises' || isFinishing ? 'scale(1.04)' : 'scale(1)',
       transformOrigin: 'center 35%',
     }}>
       {isFinish && <ConfettiOverlay />}
@@ -17056,88 +17090,97 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
         })}
       </div>
 
-      {/* Treppchen unten — wird sichtbar sobald Platz 3 oder 2 podium-state hat */}
-      {(podiumIds.size > 0 || isFinish) && (
+      {/* 2026-05-09 v8 (Wolf 'bis zu 8 Treppchen-Stufen, alle Avatare drauf'):
+          Treppchen-Block dynamisch nach N. Erscheint ab phase 'podium-rises'
+          mit slide-from-bottom Animation. Alle P2..PN sind gleichzeitig
+          sichtbar, P1-Slot ist leer bis isFinish (P1 fällt von oben drauf). */}
+      {(phase === 'podium-rises' || isFinishing) && (
         <div style={{
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          gap: 'clamp(6px, 0.8vw, 14px)',
+          gap: 'clamp(3px, 0.4vw, 8px)',
           padding: '0 clamp(20px, 3vw, 60px) clamp(20px, 3vh, 48px)',
           position: 'relative', zIndex: 3,
-          animation: 'qqFRTitleIn 0.6s ease both',
+          animation: 'qqRacePodiumRise 1.8s cubic-bezier(0.34, 1.4, 0.64, 1) both',
         }}>
-          {/* Platz 2 (links, mittlere Stufe) */}
-          {p2 && (podiumIds.has(p2.team.id) || isFinish) ? (
-            <PodiumStepFinal entry={p2.team} rank={2} podiumHeight={84}
-              avatarSize={'clamp(82px, 9vw, 128px)'} />
-          ) : (
-            <div style={{ width: 'clamp(120px, 12vw, 170px)' }} />
-          )}
+          {getOrderedRanks(N).map((rank) => {
+            const config = getSlotConfig(rank);
+            const team = finalRanking[rank - 1]?.team;
 
-          {/* Platz 1 (Mitte, höchste Stufe) — Sieger lande hier beim 'finish' */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            flexShrink: 0, gap: 6,
-            position: 'relative',
-          }}>
-            {isFinish && p1 && (
-              <>
-                {/* Crown — 2026-05-09 v7.1 (Bugfix Wolf 'keine Krone'):
-                    z-index 5 → 30 (über Sieger-Avatar + Treppchen),
-                    top in pixel statt %, damit auch bei kleinem Slot sichtbar */}
-                <span aria-hidden style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: 'clamp(-160px, -14vh, -110px)',
-                  transform: 'translateX(-50%)',
-                  fontSize: 'clamp(56px, 6.5vw, 100px)', lineHeight: 1,
-                  pointerEvents: 'none',
-                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
-                  animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
-                  zIndex: 30,
-                }}>👑</span>
-                {/* Sieger-Avatar */}
-                <div style={{
-                  width: 'clamp(140px, 14vw, 200px)', height: 'clamp(140px, 14vw, 200px)',
-                  borderRadius: '50%',
-                  background: p1.team.color,
-                  border: `4px solid ${p1.team.color}`,
-                  boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  animation: 'qqRaceWinnerSnap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            // Mitte-Slot (P1) — Avatar erscheint nur bei isFinish (snap-from-above)
+            if (rank === 1) {
+              return (
+                <div key="rank-1" style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  flexShrink: 0, gap: 6,
+                  position: 'relative',
+                  width: config.slotWidth,
                 }}>
-                  <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
-                    size={'clamp(140px, 14vw, 200px)'} flat />
+                  {isFinish && p1 && (
+                    <>
+                      <span aria-hidden style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: 'clamp(-160px, -14vh, -110px)',
+                        transform: 'translateX(-50%)',
+                        fontSize: 'clamp(56px, 6.5vw, 100px)', lineHeight: 1,
+                        pointerEvents: 'none',
+                        filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
+                        animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
+                        zIndex: 30,
+                      }}>👑</span>
+                      <div style={{
+                        width: config.avatarSize, height: config.avatarSize,
+                        borderRadius: '50%',
+                        background: p1.team.color,
+                        border: `4px solid ${p1.team.color}`,
+                        boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        animation: 'qqRaceWinnerSnap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                      }}>
+                        <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
+                          size={config.avatarSize} flat />
+                      </div>
+                      <div style={{
+                        fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
+                        color: p1.team.color,
+                        textShadow: `0 0 20px ${p1.team.color}88`,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        maxWidth: 240,
+                        animation: 'qqFRTitleIn 0.5s ease 0.4s both',
+                      }}>{p1.team.name}</div>
+                    </>
+                  )}
+                  {/* Höchste Stufe — gold */}
+                  <div style={{
+                    width: config.slotWidth, height: config.podiumHeight,
+                    background: 'linear-gradient(180deg, rgba(251,191,36,0.55), rgba(217,119,6,0.40))',
+                    border: '2.5px solid rgba(251,191,36,0.85)',
+                    borderTop: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: config.rankFontSize, fontWeight: 900,
+                    color: '#0A0814',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
+                  }}>1</div>
                 </div>
-                <div style={{
-                  fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 900,
-                  color: p1.team.color,
-                  textShadow: `0 0 20px ${p1.team.color}88`,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  maxWidth: 240,
-                  animation: 'qqFRTitleIn 0.5s ease 0.4s both',
-                }}>{p1.team.name}</div>
-              </>
-            )}
-            {/* Höchste Stufe — gold */}
-            <div style={{
-              width: 'clamp(140px, 14vw, 200px)', height: 124,
-              background: 'linear-gradient(180deg, rgba(251,191,36,0.55), rgba(217,119,6,0.40))',
-              border: '2.5px solid rgba(251,191,36,0.85)',
-              borderTop: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(36px, 3.8vw, 60px)', fontWeight: 900,
-              color: '#0A0814',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
-            }}>1</div>
-          </div>
+              );
+            }
 
-          {/* Platz 3 (rechts, niedrigste Stufe) */}
-          {p3 && (podiumIds.has(p3.team.id) || isFinish) ? (
-            <PodiumStepFinal entry={p3.team} rank={3} podiumHeight={52}
-              avatarSize={'clamp(72px, 8vw, 108px)'} />
-          ) : (
-            <div style={{ width: 'clamp(120px, 12vw, 170px)' }} />
-          )}
+            // Sonstige Slots (P2..PN) — Avatar + Name + Stufe immer sichtbar
+            // sobald Treppchen rises (alle gleichzeitig).
+            if (!team) return <div key={`rank-${rank}`} style={{ width: config.slotWidth }} />;
+            return (
+              <PodiumStepFinal
+                key={`rank-${rank}`}
+                entry={team}
+                rank={rank}
+                podiumHeight={config.podiumHeight}
+                avatarSize={config.avatarSize}
+                slotWidth={config.slotWidth}
+                fontSize={config.fontSize}
+                rankFontSize={config.rankFontSize}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -17451,39 +17494,56 @@ function PodiumFillSlide({ finalRanking, lang }: {
 }
 
 // Podium-Stufe für Akt 2 + Akt 3 — Avatar oben, Stufe drunter mit Rank-Number.
-function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize }: {
-  entry: QQTeam; rank: number; podiumHeight: number; avatarSize: string;
+// 2026-05-09 v8 (Wolf '8 Treppchen-Stufen'): Erweitert für alle Ränge 2..N.
+// Stufen-Farbe nach Rang:
+//   2 = silber, 3 = bronze, 4+ = dunkelgrau (neutral, nicht-medaillert).
+// slotWidth + fontSize + rankFontSize kommen aus getSlotConfig — bei rank>=4
+// alles kompakter (kleiner Avatar, niedrige Stufe, kleine Rank-Zahl).
+function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fontSize, rankFontSize }: {
+  entry: QQTeam; rank: number;
+  podiumHeight: number | string;
+  avatarSize: string;
+  slotWidth?: string;
+  fontSize?: string;
+  rankFontSize?: string;
 }) {
-  const podiumColor = rank === 2 ? '#C0C0C0' : '#CD7F32';
+  const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569';
+  const isMinor = rank >= 4;
+  const effectiveSlotWidth = slotWidth ?? 'clamp(120px, 12vw, 170px)';
+  const effectiveFontSize = fontSize ?? 'clamp(13px, 1.3vw, 19px)';
+  const effectiveRankFontSize = rankFontSize ?? 'clamp(22px, 2.4vw, 38px)';
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      flexShrink: 0, gap: 6,
+      flexShrink: 0, gap: isMinor ? 3 : 6,
+      width: effectiveSlotWidth,
     }}>
       <div style={{
         width: avatarSize, height: avatarSize, borderRadius: '50%',
         background: entry.color,
-        border: `4px solid ${entry.color}`,
-        boxShadow: `0 0 24px ${entry.color}88, 0 6px 16px rgba(0,0,0,0.5)`,
+        border: isMinor ? `2.5px solid ${entry.color}` : `4px solid ${entry.color}`,
+        boxShadow: isMinor
+          ? `0 0 12px ${entry.color}66, 0 3px 10px rgba(0,0,0,0.4)`
+          : `0 0 24px ${entry.color}88, 0 6px 16px rgba(0,0,0,0.5)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <QQTeamAvatar avatarId={entry.avatarId} teamEmoji={entry.emoji}
           size={avatarSize} flat />
       </div>
       <div style={{
-        fontSize: 'clamp(13px, 1.3vw, 19px)', fontWeight: 900,
+        fontSize: effectiveFontSize, fontWeight: 900,
         color: entry.color,
-        maxWidth: 200,
+        maxWidth: effectiveSlotWidth,
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{entry.name}</div>
       <div style={{
-        width: 'clamp(120px, 12vw, 170px)', height: podiumHeight,
+        width: effectiveSlotWidth, height: podiumHeight,
         background: `linear-gradient(180deg, ${podiumColor}aa, ${podiumColor}55)`,
         border: `2px solid ${podiumColor}`,
         borderBottom: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900,
-        color: '#0A0814',
+        fontSize: effectiveRankFontSize, fontWeight: 900,
+        color: isMinor ? '#E2E8F0' : '#0A0814',
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 -4px 16px ${podiumColor}55`,
       }}>{rank}</div>
     </div>

@@ -348,7 +348,24 @@ export default function QQModeratorPage() {
         const isFinal = s.gamePhaseIndex === s.totalPhases;
         const step = s.introStep ?? 0;
         if (step === 0) delayMs = isFinal ? 9500 : 7500;
-        else if (step === 1) delayMs = 5500; // Rule-Reminder
+        else if (step === 1) {
+          // 2026-05-09 v2 (Wolf-Bug 'autoplay R3 card-drehung geskippt'):
+          // Action-Card-Cascade hat pro-Phase unterschiedliche Längen.
+          // - cardBaseMs (850) + i*cardStaggerMs (1500) ist der Start-Delay pro Card.
+          // - Bei isNew (3D-Slam+Flip) extra +600ms Build-up + 2900ms Choreo
+          //   (SLAM 1400 + SETTLE 500 + FLIP 1000).
+          // - Sonst phasePop ~400ms.
+          // Letzte-Card-Done-Time + ~1500ms Lese-Puffer:
+          // R1 (Place isNew @0):     850 + 600 + 2900 = 4350 → +1500 = 5850ms
+          // R2 (Steal isNew @1):     850 + 1500 + 600 + 2900 = 5850 → +1500 = 7350ms
+          // R3 (Stack isNew @2):     850 + 3000 + 600 + 2900 = 7350 → +1500 = 8850ms
+          // R4 (alle non-isNew):     850 + 3000 + 400 = 4250 → +1500 = 5750ms
+          const ph = s.gamePhaseIndex;
+          if (ph === 1) delayMs = 5850;
+          else if (ph === 2) delayMs = 7350;
+          else if (ph === 3) delayMs = 8850;
+          else delayMs = 5750; // R4 (Final): keine isNew Action-Cards
+        }
         else if (step === 2) delayMs = s.categoryIsNew ? 4500 : 5000;
         else delayMs = 6500; // Category-Explanation
         action = () => emit('qq:activateQuestion', { roomCode });

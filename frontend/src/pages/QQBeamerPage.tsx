@@ -8671,14 +8671,20 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* Frage */}
+      {/* Frage — 2026-05-09 (Wolf-Konzept-D): kleiner als zuvor, damit Real-Card-
+          Hero in der Mitte mehr Platz bekommt. Pre-Reveal bleibt sie groß
+          (Frage ist da das Hauptelement), Reveal scaled sie down. */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5,
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
       }}>
         <div style={{
-          fontSize: 'clamp(34px, 4vw, 64px)', fontWeight: 900,
+          fontSize: phase === 'reveal'
+            ? 'clamp(22px, 2.4vw, 38px)'
+            : 'clamp(34px, 4vw, 64px)',
+          fontWeight: 900,
           color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+          transition: 'font-size 0.5s ease',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : q.text}
         </div>
@@ -8691,152 +8697,276 @@ function BluffBeamerView({ state: s, lang, revealed }: {
       {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
       {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
 
-      {/* 2026-05-05 (Wolf-Konzept): Reveal stapelt jetzt vertikal:
-          Frage → Bluff-Tabelle (Real-Card grün ist Teil der Tabelle, jede Card
-          in Author-Team-Farbe + Avatar als Watermark) → Sieger-Pille unten.
-          Die separate „Echte Antwort"-Hero-Card entfaellt — sie war redundant
-          zur ersten Tabellen-Zeile (gruene Real-Card mit ✓ echt). */}
-      {phase === 'reveal' && <BluffVoteScreen state={s} accent={accent} lang={lang} revealed={true} />}
+      {/* 2026-05-09 (Konzept-D Refactor): Reveal-Layout neu:
+          1) Hero-Real-Card mittig (RIESIG, dominantes Element)
+          2) Sieger-Banner direkt drunter (compact, eine Reihe)
+          3) Mini-Bluff-Pills horizontal unten
+          Alles in einer einzigen `BluffRevealHero`-Komponente. */}
+      {phase === 'reveal' && <BluffRevealHero state={s} lang={lang} />}
 
-      {/* Sieger-Pille — unten unter der Tabelle. */}
-      {phase === 'reveal' && (() => {
-        // 2026-05-02 (Audit B Anti-Pattern Fix): Backend-Truth via
-        // s.currentQuestionWinners (von qqMarkCorrect gesetzt) statt lokaler
-        // Sort/Tie-Logik. Stellt sicher, dass Beamer-Anzeige + tatsaechlich
-        // punktiertes Team nie divergieren wenn evalBluff-Logik geaendert wird.
-        // 2026-05-06 (Wolf 'bei einem Tie muss das zweite Team auch angezeigt
-        // werden'): bei mehreren Winners ALLE Avatare anzeigen statt nur
-        // ersten + '+1 weitere'-Hint.
-        const points = s.bluffPoints ?? {};
-        const winners = s.currentQuestionWinners ?? [];
-        if (winners.length === 0) return null;
-        const winnerTeams = winners
-          .map(id => s.teams.find(t => t.id === id))
-          .filter(Boolean) as typeof s.teams;
-        if (winnerTeams.length === 0) return null;
-        const winnerTeam = winnerTeams[0]; // fuer Card-Farbe / primaeren Akzent
-        const isCoTie = winnerTeams.length > 1;
-        const wPts = points[winnerTeam.id];
-        // 2026-05-04 (Wolf): Winner-Card war als grosse fixed-bottom Pille
-        // ueber den Voter-Avataren — sie ueberdeckte ~50% des Reveal-Inhalts.
-        // Jetzt: kompakte horizontale Banner-Pille, fixed top-center, eine
-        // einzige Zeile mit Avatar + Name + Total-Punkte + Mini-Breakdown
-        // als Pille-Reihe rechts. Avatar-Grid darunter bleibt frei.
-        const breakdown: Array<{ icon: string; n: number; label: { de: string; en: string }; bg: string }> = [];
-        if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
-        if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
-        if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(236,72,153,0.22)' });
-        // 2026-05-05 (Wolf 'Sieger-Card groesser, lesbarer'): alle Sizes
-        // hochgezogen — Avatar 38-60 → 60-92, Name 16-26 → 24-38,
-        // Pts-Pille 14-18 → 20-28, Mini-Pillen 12-15 → 16-20. Padding
-        // entsprechend.
-        return (
-          // 2026-05-07 (Wolf-Bug 'Gewinnercard fehlt bei Bluff'): Pille zur
-          // Hero-Card aufgewertet — mit '🎉 SIEGER!'-Badge oben, größerem
-          // Padding, breiterem Glow + 2-spaltigem Card-Layout. Vorher war
-          // sie eine schmale horizontale Banner-Pille → wirkte gegen die
-          // grossen MUCHO/ZvZ/Cheese-Cards wie 'fehlt da nicht was?'.
+    </div>
+  );
+}
+
+// 2026-05-09 (Wolf-Konzept-D): Bluff-Reveal komplett neues Layout.
+// - Hero-Real-Card riesig in der Mitte (echte Antwort als Star)
+// - Sieger-Banner direkt drunter (Avatar + Name + Reinfälle-Pillen, kompakt)
+// - Bluffs als horizontale Mini-Pills ganz unten (Author-Avatar + Bluff-Text + Voter-Dots)
+function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  const opts = s.bluffOptions ?? [];
+  const realOpt = opts.find(o => o.source === 'real');
+  const bluffOpts = opts.filter(o => o.source !== 'real');
+
+  // Voters je Option für die Mini-Pills
+  const votersByOption: Record<string, string[]> = {};
+  for (const [teamId, optId] of Object.entries(s.bluffVotes ?? {})) {
+    if (!votersByOption[optId]) votersByOption[optId] = [];
+    votersByOption[optId].push(teamId);
+  }
+
+  // Sieger-Daten
+  const winners = s.currentQuestionWinners ?? [];
+  const winnerTeams = winners
+    .map(id => s.teams.find(t => t.id === id))
+    .filter(Boolean) as typeof s.teams;
+  const winnerTeam = winnerTeams[0] ?? null;
+  const isCoTie = winnerTeams.length > 1;
+  const points = s.bluffPoints ?? {};
+  const wPts = winnerTeam ? points[winnerTeam.id] : null;
+  const breakdown: Array<{ icon: string; n: number; label: { de: string; en: string }; bg: string }> = [];
+  if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
+  if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
+  if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(236,72,153,0.22)' });
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(16px, 2vh, 28px)',
+      width: '100%', position: 'relative', zIndex: 5,
+      padding: '0 clamp(8px, 1.5vw, 24px)',
+    }}>
+      {/* HERO: Real-Card mittig — riesig, grün, dominantes Element */}
+      {realOpt && (
+        <div style={{
+          maxWidth: 'min(1300px, 92vw)', width: '100%',
+          padding: 'clamp(28px, 4vh, 56px) clamp(36px, 4.5vw, 72px)',
+          borderRadius: 32,
+          background: 'linear-gradient(135deg, rgba(34,197,94,0.28) 0%, rgba(34,197,94,0.08) 100%)',
+          border: '3px solid rgba(34,197,94,0.85)',
+          boxShadow: '0 0 80px rgba(34,197,94,0.45), 0 14px 40px rgba(0,0,0,0.5)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.4vh, 18px)',
+          animation: 'revealAnswerBam 0.7s var(--qq-ease-out-cubic) 0.15s both',
+        }}>
           <div style={{
-            alignSelf: 'center',
-            maxWidth: 'min(1100px, 96vw)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', gap: 'clamp(10px, 1.4vh, 16px)',
-            padding: 'clamp(20px, 2.4vh, 32px) clamp(28px, 3.2vw, 48px)',
-            borderRadius: 28,
-            background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}0d)`,
-            border: `3px solid ${winnerTeam.color}cc`,
-            boxShadow: `0 0 60px ${winnerTeam.color}66, 0 0 22px ${winnerTeam.color}88, 0 8px 28px rgba(0,0,0,0.55)`,
-            animation: 'revealWinnerIn 0.6s var(--qq-ease-bounce) 0.7s both',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            position: 'relative', zIndex: 5,
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '5px 16px', borderRadius: 999,
+            background: 'rgba(34,197,94,0.35)', border: '1.5px solid #22C55E',
+            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
+            color: '#86EFAC', letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>
-            <div style={{
-              padding: '5px 16px', borderRadius: 999,
-              background: `linear-gradient(135deg, ${winnerTeam.color}, ${winnerTeam.color}dd)`,
-              fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900,
-              color: '#0a1f0d', letterSpacing: '0.12em', textTransform: 'uppercase',
-              boxShadow: `0 4px 12px ${winnerTeam.color}55`,
-              animation: 'phasePop 0.45s var(--qq-ease-bounce) 1.0s both',
-            }}>
-              🎉 {lang === 'de' ? 'Sieger' : 'Winner'}
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 'clamp(16px, 2vw, 28px)',
-              width: '100%', justifyContent: 'center',
-            }}>
-            {/* Avatare aller Winners nebeneinander (bei Tie). Erste wird mit
-                vollem Glow gerendert, weitere etwas kompakter mit gleichem
-                Treatment — keine '+N weitere'-Versteckung mehr. */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 'clamp(-12px, -1vw, -6px)',
-              flexShrink: 0,
-            }}>
-              {winnerTeams.map((tm, idx) => (
-                <QQTeamAvatar
-                  key={tm.id}
-                  avatarId={tm.avatarId}
-                  teamEmoji={tm.emoji}
-                  size={idx === 0 ? 'clamp(60px, 6.5vw, 92px)' : 'clamp(50px, 5.5vw, 78px)'}
-                  style={{
-                    boxShadow: `0 0 22px ${tm.color}88, 0 0 0 3px rgba(15,23,42,0.6)`,
-                    marginLeft: idx === 0 ? 0 : 'clamp(-14px, -1.4vw, -8px)',
-                    zIndex: winnerTeams.length - idx,
-                  }}
-                />
-              ))}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              {isCoTie ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {winnerTeams.map(tm => (
-                    <TeamNameLabel
-                      key={tm.id}
-                      name={tm.name}
-                      maxLines={1}
-                      shrinkAfter={18}
-                      color={tm.color}
-                      fontWeight={900}
-                      fontSize="clamp(18px, 2vw, 28px)"
-                      style={{ lineHeight: 1.15 }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <TeamNameLabel
-                  name={winnerTeam.name}
-                  maxLines={1}
-                  shrinkAfter={18}
-                  color={winnerTeam.color}
-                  fontWeight={900}
-                  fontSize="clamp(24px, 2.6vw, 38px)"
-                  style={{ lineHeight: 1.1 }}
-                />
-              )}
-            </div>
-            {/* 2026-05-06 (Wolf 'die 2 Punkte muessen den Spielenden nicht
-                angezeigt werden, sind nur intern relevant — gewinnen tut das
-                Team wie immer 1 Aktion'): Total-Pkt-Pille entfernt. Breakdown-
-                Pillen (Reinfaelle/Glueck/Echt) bleiben als 'wie viele Teams
-                sind auf den Bluff reingefallen'-Info — die ist erzaehlerisch
-                relevant, nicht system-intern. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            ✓ {lang === 'de' ? 'Echte Antwort' : 'Real answer'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(36px, 5.6vw, 88px)', fontWeight: 900,
+            color: '#86EFAC', textAlign: 'center', lineHeight: 1.12,
+            textShadow: '0 0 32px rgba(34,197,94,0.55)',
+            letterSpacing: '-0.01em', maxWidth: '100%', wordBreak: 'break-word',
+          }}>
+            {realOpt.text}
+          </div>
+        </div>
+      )}
+
+      {/* SIEGER-BANNER direkt unter Hero — kompakt, eine Reihe */}
+      {winnerTeam && (
+        <div style={{
+          maxWidth: 'min(1100px, 90vw)',
+          display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.8vw, 24px)',
+          padding: 'clamp(10px, 1.4vh, 18px) clamp(20px, 2.4vw, 36px)',
+          borderRadius: 999,
+          background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}0d)`,
+          border: `2.5px solid ${winnerTeam.color}cc`,
+          boxShadow: `0 0 36px ${winnerTeam.color}66, 0 6px 18px rgba(0,0,0,0.5)`,
+          animation: 'revealWinnerIn 0.55s var(--qq-ease-bounce) 0.5s both',
+          flexWrap: 'wrap', justifyContent: 'center',
+        }}>
+          <span style={{
+            padding: '4px 12px', borderRadius: 999,
+            background: `linear-gradient(135deg, ${winnerTeam.color}, ${winnerTeam.color}dd)`,
+            fontSize: 'clamp(11px, 1.2vw, 15px)', fontWeight: 900,
+            color: '#0a1f0d', letterSpacing: '0.12em', textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}>
+            🎉 {lang === 'de' ? 'Sieger' : 'Winner'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            {winnerTeams.map((tm, idx) => (
+              <QQTeamAvatar
+                key={tm.id}
+                avatarId={tm.avatarId}
+                teamEmoji={tm.emoji}
+                size={'clamp(44px, 4.6vw, 64px)'}
+                style={{
+                  boxShadow: `0 0 16px ${tm.color}88, 0 0 0 2px rgba(15,23,42,0.6)`,
+                  marginLeft: idx === 0 ? 0 : 'clamp(-10px, -1vw, -6px)',
+                  zIndex: winnerTeams.length - idx,
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            {isCoTie ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {winnerTeams.map(tm => (
+                  <TeamNameLabel
+                    key={tm.id}
+                    name={tm.name}
+                    maxLines={1}
+                    shrinkAfter={18}
+                    color={tm.color}
+                    fontWeight={900}
+                    fontSize="clamp(15px, 1.6vw, 22px)"
+                    style={{ lineHeight: 1.15 }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <TeamNameLabel
+                name={winnerTeam.name}
+                maxLines={1}
+                shrinkAfter={18}
+                color={winnerTeam.color}
+                fontWeight={900}
+                fontSize="clamp(20px, 2.2vw, 30px)"
+                style={{ lineHeight: 1.1 }}
+              />
+            )}
+          </div>
+          {breakdown.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {breakdown.map((b, i) => (
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
-                  padding: '6px 12px', borderRadius: 999,
+                  padding: '4px 10px', borderRadius: 999,
                   background: b.bg,
-                  fontSize: 'clamp(16px, 1.7vw, 20px)', fontWeight: 900, color: '#f1f5f9',
+                  fontSize: 'clamp(13px, 1.4vw, 17px)', fontWeight: 900, color: '#f1f5f9',
                   whiteSpace: 'nowrap',
                 }}>
                   {b.icon} {b.n}
                 </span>
               ))}
             </div>
-            </div>
-          </div>
-        );
-      })()}
+          )}
+        </div>
+      )}
 
+      {/* MINI-BLUFF-PILLS horizontal — Author-Avatar + Bluff-Text + Voter-Dots */}
+      {bluffOpts.length > 0 && (
+        <div style={{
+          width: '100%', maxWidth: 'min(1500px, 96vw)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: 8,
+        }}>
+          <div style={{
+            fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+            color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
+            opacity: 0.75,
+          }}>
+            🎭 {lang === 'de' ? 'Die Bluffs' : 'The bluffs'}
+          </div>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+            gap: 'clamp(8px, 1vw, 14px)',
+            width: '100%',
+          }}>
+            {bluffOpts.map((opt, i) => {
+              const contribIds = opt.source === 'team' ? opt.contributors : [];
+              const authorTeam = contribIds[0] ? s.teams.find(t => t.id === contribIds[0]) : null;
+              const extraAuthors = contribIds.length > 1 ? contribIds.length - 1 : 0;
+              const voters = votersByOption[opt.id] ?? [];
+              const cardColor = authorTeam?.color ?? '#64748b';
+              return (
+                <div key={opt.id} style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  gap: 'clamp(8px, 1vw, 14px)',
+                  padding: '8px 16px 8px 10px',
+                  borderRadius: 999,
+                  background: `${cardColor}1a`,
+                  border: `1.5px solid ${cardColor}66`,
+                  boxShadow: `0 4px 12px rgba(0,0,0,0.35), 0 0 12px ${cardColor}22`,
+                  animation: `contentReveal 0.5s var(--qq-ease-out-cubic) ${0.7 + i * 0.08}s both`,
+                  maxWidth: 'min(440px, 90vw)',
+                }}>
+                  {/* Author-Avatar */}
+                  {authorTeam && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', flexShrink: 0,
+                      position: 'relative',
+                    }}>
+                      <QQTeamAvatar
+                        avatarId={authorTeam.avatarId} teamEmoji={authorTeam.emoji}
+                        size={'clamp(28px, 2.8vw, 38px)'}
+                        style={{
+                          boxShadow: `0 0 8px ${authorTeam.color}77, 0 0 0 2px rgba(15,23,42,0.55)`,
+                        }}
+                      />
+                      {extraAuthors > 0 && (
+                        <span style={{
+                          position: 'absolute', right: -6, bottom: -4,
+                          background: '#0A0814', border: `1.5px solid ${authorTeam.color}`,
+                          borderRadius: 999, padding: '1px 5px',
+                          fontSize: 9, fontWeight: 900, color: authorTeam.color,
+                          lineHeight: 1.1,
+                        }}>+{extraAuthors}</span>
+                      )}
+                    </div>
+                  )}
+                  {/* Bluff-Text */}
+                  <span style={{
+                    fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800,
+                    color: '#F1F5F9', overflow: 'hidden',
+                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    minWidth: 0, flex: 1,
+                  }}>{opt.text}</span>
+                  {/* Voter-Dots — kleine Avatare derer die für DIESEN Bluff gestimmt haben */}
+                  {voters.length > 0 && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 0,
+                      paddingLeft: 8, marginLeft: 4,
+                      borderLeft: `1px dashed ${cardColor}55`,
+                      flexShrink: 0,
+                    }}>
+                      {voters.slice(0, 4).map((vid, vi) => {
+                        const tm = s.teams.find(t => t.id === vid);
+                        if (!tm) return null;
+                        return (
+                          <QQTeamAvatar
+                            key={vid}
+                            avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                            size={'clamp(20px, 2vw, 28px)'}
+                            title={tm.name}
+                            style={{
+                              boxShadow: `0 0 0 1.5px ${tm.color}, 0 0 0 3px rgba(10,8,20,0.85)`,
+                              marginLeft: vi === 0 ? 0 : -8,
+                              zIndex: voters.length - vi,
+                            }}
+                          />
+                        );
+                      })}
+                      {voters.length > 4 && (
+                        <span style={{
+                          marginLeft: 4,
+                          fontSize: 11, fontWeight: 900, color: '#cbd5e1',
+                        }}>+{voters.length - 4}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3667,7 +3667,9 @@ function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de', time
 // ── Mu-Cho: A/B/C/D buttons ───────────────────────────────────────────────────
 const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
 // 2026-05-09 (Wolf): A/B/C/D als Negative-Squared-Latin-Emojis statt Plain-Text.
-const MUCHO_LABELS = ['🅰','🅱','🅲','🅳'];
+// 2026-05-09 v2 (Wolf): zurück auf Plain Text — die OS-Emoji-Versions
+// 🅰🅱🅲🅳 wurden als blaue Squares gerendert, doppeln den existing Box-Look.
+const MUCHO_LABELS = ['A','B','C','D'];
 
 function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -3811,8 +3813,9 @@ function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { qu
             animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
           }}>
             <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
-              {/* 2026-05-09 (Wolf): Keycap-Digit-Emoji statt Plain-Number-Label. */}
-              <span style={{ fontSize: 18, marginRight: 8, verticalAlign: '-2px' }}>{['1️⃣','2️⃣','3️⃣'][i] ?? `${i + 1}`}</span>
+              {/* 2026-05-09 v2 (Wolf): zurück auf Plain Number — Keycap-
+                  Emojis 1️⃣2️⃣3️⃣ wurden als blaue OS-Squares gerendert. */}
+              <span style={{ fontSize: 13, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
               {label}
             </div>
             {/* − */}

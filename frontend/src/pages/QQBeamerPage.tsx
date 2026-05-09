@@ -3735,7 +3735,11 @@ function MuchoOptionsReveal({
   const akt3On = locked;
   const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
   // 2026-05-09 (Wolf): Negative-Squared-Latin-Emojis statt Plain-Text.
-  const muchoLabels = ['🅰', '🅱', '🅲', '🅳'];
+  // 2026-05-09 v2 (Wolf): zurück auf Plain Text — Emoji-Version 🅰🅱🅲🅳
+  // wurde auf Mac/iPhone als blaue OS-Squares mit weißem Buchstaben gerendert,
+  // hat den existing Square-Box-Look doppelt-eingerahmt. Plain-Text in der
+  // farbigen Box ist cleaner.
+  const muchoLabels = ['A', 'B', 'C', 'D'];
 
   // Waehrend QUESTION_ACTIVE (revealStep=0): kompaktes Layout, keine Luecken
   // zwischen A/B und C/D. Erst wenn Voter-Avatare einfliegen (revealStep>=1)
@@ -7151,7 +7155,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               const hasFreeCells = s.grid.some(row => row.some(c => !c.ownerId));
               const placeCard: ActionCardData | null = hasFreeCells
                 ? (ph === 1
-                    ? { count: 1, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color }
+                    // 2026-05-09 (Wolf): Place ist in R1 brandneu für die Spieler →
+                    // soll auch flippen wie die NEW-Cards in R2/R3.
+                    ? { count: 1, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color, isNew: true }
                     : ph === 2
                     ? { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren', accent: color }
                     : { count: 2, emoji: '📍', label: lang === 'en' ? 'Place' : 'Platzieren',
@@ -12658,8 +12664,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const optImg = q.optionImages?.[i];
                 const isCorrect = zvzLocked && i === q.correctOptionIndex;
                 const isWrong = zvzLocked && i !== q.correctOptionIndex;
-                // 2026-05-09 (Wolf): Keycap-Digit-Emoji als Option-Label.
-                const label = ['1️⃣','2️⃣','3️⃣'][i] ?? `${i + 1}`;
+                // 2026-05-09 v2 (Wolf): Plain-Number als großer Text in
+                // Option-Color statt Box+Keycap-Emoji.
+                const label = `${i + 1}`;
                 const optColor = accent;
                 const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
                 const highestForOpt = zvzHighestPerOption[i];
@@ -12717,13 +12724,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       {optImg?.url && (
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
                       )}
+                      {/* 2026-05-09 v2 (Wolf): Box weg, große Zahl in
+                          Option-Color statt Container-Box. Bei isCorrect
+                          grün, bei isWrong gedimmt grau, sonst optColor. */}
                       <div style={{
                         position: 'relative', zIndex: 1,
-                        width: 56, height: 56, borderRadius: 16,
-                        background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
+                        width: 56, height: 56,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-                        boxShadow: isCorrect ? '0 0 16px rgba(34,197,94,0.6)' : `0 2px 8px ${optColor}44`,
+                        fontSize: 56, fontWeight: 900, flexShrink: 0,
+                        color: isCorrect ? '#22C55E' : isWrong ? '#475569' : optColor,
+                        textShadow: isCorrect ? '0 0 18px rgba(34,197,94,0.6)' : `0 0 12px ${optColor}55`,
+                        letterSpacing: '-0.04em',
                         transition: 'all 0.3s ease',
                       }}>{label}</div>
                       <div style={{
@@ -20378,10 +20389,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
 // Nur in QUESTION_ACTIVE sichtbar, laeuft mit ffmove-Animation.
 // 2026-05-09 (Wolf): MUCHO + ZvZ Drift-Partikel auf Emoji-Variants gehoben.
 const CAT_PARTICLE_GLYPHS: Record<string, string[]> = {
-  SCHAETZCHEN:   ['1️⃣', '2️⃣', '3️⃣', '?', '∞'],
-  MUCHO:         ['🅰', '🅱', '🅲', '🅳'],
+  SCHAETZCHEN:   ['1', '2', '3', '?', '∞'],
+  MUCHO:         ['A', 'B', 'C', 'D'],
   BUNTE_TUETE:   ['🎲', '🎁', '⭐'],
-  ZEHN_VON_ZEHN: ['1️⃣', '2️⃣', '3️⃣', '⚡'],
+  ZEHN_VON_ZEHN: ['1', '2', '3', '⚡'],
   CHEESE:        ['📸', '🔍'],
 };
 export const CategoryParticles = memo(function CategoryParticles({ category, color }: { category?: string; color?: string }) {

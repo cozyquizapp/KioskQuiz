@@ -19563,7 +19563,8 @@ function ThanksColumnSubtitle({
 // Container weniger hoch (320 → 220). Konstantes clean durchlaufen.
 type RecapStripItem =
   | { kind: 'phase-pill'; phase: number }
-  | { kind: 'cat-pill'; catEmoji: string; catColor: string; winner: QQTeam | null }
+  | { kind: 'cat-pill'; catEmoji: string; catColor: string; winner: QQTeam | null;
+      questionText: string }
   | { kind: 'awards-pill' }
   | { kind: 'award-pill'; emoji: string; color: string; labelDe: string; labelEn: string;
       winner: QQTeam }
@@ -19605,7 +19606,10 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
           || '❓';
         const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
         const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
-        items.push({ kind: 'cat-pill', catEmoji, catColor, winner });
+        items.push({
+          kind: 'cat-pill', catEmoji, catColor, winner,
+          questionText: h.questionText ?? '',
+        });
       }
     }
   }
@@ -19632,7 +19636,7 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     kind: 'thanks-pill',
     emoji: '💜',
     nameDe: 'Danke Sonja', nameEn: 'Thanks Sonja',
-    subDe: 'fürs Testen', subEn: 'for testing',
+    subDe: 'fürs Zuhören', subEn: 'for listening',
     color: '#A855F7',
   });
   items.push({
@@ -19650,12 +19654,12 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
 
   return (
     <div style={{
-      width: '100%', height: 220, marginTop: 12,
+      width: '100%', height: 160, marginTop: 12,
       position: 'relative', overflow: 'hidden',
       flexShrink: 0,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 28,
+        display: 'flex', alignItems: 'center', gap: 24,
         height: '100%', padding: '0 24px',
         width: 'max-content',
         animation: items.length > 0
@@ -19679,153 +19683,181 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
   );
 }
 
-// Ein Pill im flat Strip — kompakter Cat-Kreis + überlappender Winner-
-// Avatar (cat-pill / award-pill) ODER Phase-Marker / Awards-Marker /
-// Thanks-Pill (eigene Stile). Alle haben gleiche Container-Höhe für
-// konsistentes Strip-Layout mit gleichmäßigem Abstand.
+// 2026-05-09 v8 (Wolf-Refinement 'alle Pills gleich groß wie Sonja/Claude'):
+// Alle Recap-Items (Phase / Cat / Awards / Award / Thanks) folgen jetzt der
+// gleichen Pill-Struktur: Badge links + Text-Stack rechts (Hauptzeile + Sub).
+// Einheitliche Höhe + min-Width → konsistenter Loop, sauberer Look.
+//   - Phase-Pill: Badge mit Phase-Number, Hauptzeile „Runde X", kein Sub
+//   - Cat-Pill: Cat-Kreis + Winner-Avatar überlappend, Hauptzeile = Winner-
+//     Name, Sub = Frage-Text (klein, kursiv, ellipsis)
+//   - Awards-Marker: 🏅 Badge, „Special Awards" + Sub „die Bonus-Punkte"
+//   - Award-Pill: Award-Kreis + Winner-Avatar, Hauptzeile = Winner-Name,
+//     Sub = Award-Label (Underdog/Meisterklauer/Speedy)
+//   - Thanks-Pill (Sonja/Claude): Emoji-Badge, „Danke X" + Sub
 function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en' }) {
   const de = lang === 'de';
 
-  // Phase-Pill: rounded pill etwas größer als Cat-Pills (visueller Marker)
-  if (item.kind === 'phase-pill') {
-    return (
-      <div style={{
-        flexShrink: 0,
-        padding: '14px 28px',
-        borderRadius: 999,
-        background: 'linear-gradient(135deg, rgba(236,72,153,0.28), rgba(162,18,71,0.22))',
-        border: '2.5px solid rgba(236,72,153,0.85)',
-        boxShadow: '0 0 24px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.35)',
-        fontSize: 'clamp(20px, 2vw, 30px)', fontWeight: 900,
-        color: '#FBCFE8', letterSpacing: '0.12em', textTransform: 'uppercase',
-        textShadow: '0 0 16px rgba(236,72,153,0.7)',
-        whiteSpace: 'nowrap',
-      }}>
-        {de ? `Runde ${item.phase}` : `Round ${item.phase}`}
-      </div>
-    );
-  }
-
-  // Awards-Marker: gleicher Stil wie Phase-Pill aber Gold
-  if (item.kind === 'awards-pill') {
-    return (
-      <div style={{
-        flexShrink: 0,
-        padding: '14px 28px',
-        borderRadius: 999,
-        background: 'linear-gradient(135deg, rgba(251,191,36,0.28), rgba(217,119,6,0.22))',
-        border: '2.5px solid rgba(251,191,36,0.85)',
-        boxShadow: '0 0 24px rgba(251,191,36,0.45), 0 4px 14px rgba(0,0,0,0.35)',
-        fontSize: 'clamp(20px, 2vw, 30px)', fontWeight: 900,
-        color: '#FEF3C7', letterSpacing: '0.12em', textTransform: 'uppercase',
-        textShadow: '0 0 16px rgba(251,191,36,0.7)',
-        whiteSpace: 'nowrap',
-      }}>
-        {de ? '🏅 Special Awards' : '🏅 Special Awards'}
-      </div>
-    );
-  }
-
-  // Thanks-Pill (Sonja / Claude) — eigener Stil mit großem Emoji + Name + Sub
-  if (item.kind === 'thanks-pill') {
-    return (
-      <div style={{
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '12px 24px',
-        borderRadius: 999,
-        background: `linear-gradient(135deg, ${item.color}33, ${item.color}11)`,
-        border: `2.5px solid ${item.color}`,
-        boxShadow: `0 0 24px ${item.color}55, 0 4px 14px rgba(0,0,0,0.35)`,
-      }}>
-        <span style={{
-          fontSize: 'clamp(40px, 4vw, 60px)', lineHeight: 1,
-          filter: `drop-shadow(0 0 16px ${item.color}aa)`,
-        }}>{item.emoji}</span>
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
-        }}>
-          <span style={{
-            fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
-            color: item.color, letterSpacing: '0.04em',
-            textShadow: `0 0 14px ${item.color}66`,
-            whiteSpace: 'nowrap',
-          }}>{de ? item.nameDe : item.nameEn}</span>
-          <span style={{
-            fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
-            color: '#cbd5e1', fontStyle: 'italic',
-            whiteSpace: 'nowrap',
-          }}>{de ? item.subDe : item.subEn}</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Cat-Pill / Award-Pill: Cat-Kreis + überlappender Winner-Avatar oben drauf.
-  // Award-Pill zusätzlich mit Label darunter (Underdog/Meisterklauer/Speedy).
-  const isAward = item.kind === 'award-pill';
-  const emoji = isAward ? item.emoji : item.catEmoji;
-  const color = isAward ? item.color : item.catColor;
-  const winner = isAward ? item.winner : item.winner;
-  const label = isAward ? (de ? item.labelDe : item.labelEn) : null;
-
-  const catSize = 84;
-  const avatarSize = 60;
+  // Pro Item-Typ: Akzentfarbe + Badge-JSX + Texte
+  type PillData = {
+    accent: string;
+    badge: React.ReactNode;
+    main: string;
+    sub: string | null;
+    subItalic: boolean;
+    minWidth: number;
+    maxWidth: number;
+  };
+  const data: PillData = (() => {
+    if (item.kind === 'phase-pill') {
+      const accent = '#EC4899';
+      return {
+        accent,
+        badge: <BadgeCircle color={accent} content={String(item.phase)}
+          contentStyle={{ fontSize: 38, fontWeight: 900, color: '#fff' }} />,
+        main: de ? `Runde ${item.phase}` : `Round ${item.phase}`,
+        sub: null,
+        subItalic: false,
+        minWidth: 280, maxWidth: 380,
+      };
+    }
+    if (item.kind === 'awards-pill') {
+      const accent = '#FBBF24';
+      return {
+        accent,
+        badge: <BadgeCircle color={accent} content="🏅" />,
+        main: de ? 'Special Awards' : 'Special Awards',
+        sub: de ? 'die Bonus-Punkte' : 'bonus points',
+        subItalic: true,
+        minWidth: 360, maxWidth: 480,
+      };
+    }
+    if (item.kind === 'award-pill') {
+      const accent = item.color;
+      return {
+        accent,
+        badge: <BadgeCircle color={accent} content={item.emoji}
+          overlayWinner={item.winner} />,
+        main: item.winner.name,
+        sub: de ? item.labelDe : item.labelEn,
+        subItalic: false,
+        minWidth: 360, maxWidth: 520,
+      };
+    }
+    if (item.kind === 'thanks-pill') {
+      const accent = item.color;
+      return {
+        accent,
+        badge: <BadgeCircle color={accent} content={item.emoji} />,
+        main: de ? item.nameDe : item.nameEn,
+        sub: de ? item.subDe : item.subEn,
+        subItalic: true,
+        minWidth: 360, maxWidth: 480,
+      };
+    }
+    // cat-pill
+    const accent = item.catColor;
+    const winnerName = item.winner?.name ?? (de ? '—' : '—');
+    return {
+      accent,
+      badge: <BadgeCircle color={accent} content={item.catEmoji}
+        overlayWinner={item.winner} />,
+      main: winnerName,
+      sub: item.questionText || null,
+      subItalic: true,
+      minWidth: 380, maxWidth: 560,
+    };
+  })();
 
   return (
     <div style={{
       flexShrink: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 6,
-      // Padding-top für überlappenden Avatar damit nichts gecroppt wird
-      paddingTop: avatarSize / 2,
+      display: 'flex', alignItems: 'center', gap: 18,
+      padding: '14px 28px 14px 18px',
+      borderRadius: 999,
+      background: `linear-gradient(135deg, ${data.accent}33, ${data.accent}11)`,
+      border: `2.5px solid ${data.accent}`,
+      boxShadow: `0 0 24px ${data.accent}55, 0 4px 14px rgba(0,0,0,0.35)`,
+      minWidth: data.minWidth,
+      maxWidth: data.maxWidth,
+      // Fixed Höhe damit Pills strict gleich aussehen — Avatar-Overlay ragt
+      // nicht raus weil Badge-Container größer als Inhalt
+      height: 116,
+      boxSizing: 'border-box',
     }}>
+      {data.badge}
       <div style={{
-        position: 'relative',
-        width: catSize, height: catSize,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        gap: 4, minWidth: 0, flex: 1,
       }}>
-        {/* Cat-Kreis mit cat-color */}
         <div style={{
-          width: catSize, height: catSize, borderRadius: '50%',
-          background: `radial-gradient(circle at 50% 40%, ${color}cc 0%, ${color}88 100%)`,
-          border: `2.5px solid ${color}`,
-          boxShadow: `0 4px 14px ${color}55, inset 0 -4px 14px rgba(0,0,0,0.18)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: Math.round(catSize * 0.45), lineHeight: 1,
-        }}>
-          {emoji}
-        </div>
-        {/* Winner-Avatar überlappend oben drauf */}
-        {winner && (
+          fontSize: 'clamp(22px, 2.1vw, 32px)', fontWeight: 900,
+          color: data.accent, letterSpacing: '0.02em',
+          textShadow: `0 0 14px ${data.accent}66`,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          maxWidth: '100%', lineHeight: 1.1,
+        }}>{data.main}</div>
+        {data.sub && (
           <div style={{
-            position: 'absolute',
-            left: '50%', top: -avatarSize * 0.5,
-            transform: 'translateX(-50%)',
-            width: avatarSize, height: avatarSize,
-            borderRadius: '50%',
-            background: winner.color,
-            border: `3px solid ${winner.color}`,
-            boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 18px ${winner.color}66`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 2,
-          }}>
-            <QQTeamAvatar
-              avatarId={winner.avatarId}
-              teamEmoji={winner.emoji}
-              size={avatarSize - 8}
-              flat
-            />
-          </div>
+            fontSize: 'clamp(13px, 1.3vw, 18px)',
+            fontWeight: data.subItalic ? 700 : 800,
+            fontStyle: data.subItalic ? 'italic' : 'normal',
+            color: '#cbd5e1',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            maxWidth: '100%', lineHeight: 1.2,
+          }}>{data.sub}</div>
         )}
       </div>
-      {/* Optional: Award-Label unter dem Kreis */}
-      {label && (
+    </div>
+  );
+}
+
+// Badge-Kreis mit optionaler Winner-Avatar-Overlay (kleiner Kreis oben rechts).
+// Einheitlicher Style für alle Pill-Typen — feste Größe (88px) damit Pills
+// alle gleich hoch wirken.
+function BadgeCircle({ color, content, contentStyle, overlayWinner }: {
+  color: string;
+  content: React.ReactNode;
+  contentStyle?: React.CSSProperties;
+  overlayWinner?: QQTeam | null;
+}) {
+  const size = 88;
+  const overlaySize = 44;
+  return (
+    <div style={{
+      position: 'relative',
+      width: size, height: size, flexShrink: 0,
+    }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: `radial-gradient(circle at 50% 40%, ${color}cc 0%, ${color}88 100%)`,
+        border: `2.5px solid ${color}`,
+        boxShadow: `0 4px 14px ${color}55, inset 0 -4px 14px rgba(0,0,0,0.18)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: Math.round(size * 0.5), lineHeight: 1,
+        ...contentStyle,
+      }}>
+        {content}
+      </div>
+      {overlayWinner && (
         <div style={{
-          fontSize: 'clamp(12px, 1.1vw, 16px)', fontWeight: 900,
-          color: color, textAlign: 'center',
-          textTransform: 'uppercase', letterSpacing: '0.06em',
-          whiteSpace: 'nowrap',
-        }}>{label}</div>
+          position: 'absolute',
+          right: -overlaySize * 0.25,
+          bottom: -overlaySize * 0.15,
+          width: overlaySize, height: overlaySize,
+          borderRadius: '50%',
+          background: overlayWinner.color,
+          border: `2.5px solid ${overlayWinner.color}`,
+          boxShadow: `0 4px 10px rgba(0,0,0,0.5), 0 0 14px ${overlayWinner.color}66`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2,
+        }}>
+          <QQTeamAvatar
+            avatarId={overlayWinner.avatarId}
+            teamEmoji={overlayWinner.emoji}
+            size={overlaySize - 6}
+            flat
+          />
+        </div>
       )}
     </div>
   );

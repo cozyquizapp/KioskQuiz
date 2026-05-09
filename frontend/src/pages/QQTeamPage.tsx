@@ -1748,11 +1748,24 @@ function TeamGameView({
         {s.phase === 'RULES'           && <RulesCard lang={lang} />}
         {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealCard myTeam={myTeam} lang={lang} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
-        {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
-          <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
-        )}
-        {s.phase === 'PLACEMENT' && (
-          <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} lang={lang} />
+        {/* 2026-05-09 (Wolf): während Final-Recap (zwischen Final-Fragen)
+            zeigt /team einen Hinweis-Text statt der normalen QuestionCard /
+            PlacementCard. So bekommt der Spieler etwas Konkretes auf seinem
+            Phone, während der Beamer die Standings zeigt. Nur wenn finalWager
+            an UND wir in der Final-Phase sind. */}
+        {(s as any).finalRecapStep === 1
+          && s.finalWagerEnabled
+          && s.gamePhaseIndex === s.totalPhases ? (
+          <FinalRecapHintCard state={s} myTeamId={myTeamId} lang={lang} />
+        ) : (
+          <>
+            {(s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') && (
+              <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
+            )}
+            {s.phase === 'PLACEMENT' && (
+              <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} lang={lang} />
+            )}
+          </>
         )}
         {s.phase === 'COMEBACK_CHOICE' && (
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
@@ -6274,6 +6287,68 @@ function FinalBettingCard({
           ? (de ? 'Tipp bestätigen' : 'Confirm tip')
           : (de ? 'Ohne Tipp abgeben (0 Bonus)' : 'Submit no tip (0 bonus)')}
       </CozyBtn>
+    </CozyCard>
+  );
+}
+
+// 2026-05-09 v3 (Wolf 'während recap auf /team einen hinweis statt voller
+// tabelle'): kompakte Card die zwischen Final-Fragen erscheint. Zeigt
+// das eigene Tipp-Target + Wins-Status, und führt Spieler-Blick zum
+// Beamer fürs vollständige Standing.
+function FinalRecapHintCard({
+  state: s, myTeamId, lang,
+}: {
+  state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const myBet = (s.finalBets ?? {})[myTeamId];
+  const targetTeam = myBet?.targetTeamId ? s.teams.find(t => t.id === myBet.targetTeamId) : null;
+  const targetWins = targetTeam ? ((s.finalPhaseWins ?? {})[targetTeam.id] ?? 0) : 0;
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  return (
+    <CozyCard borderColor={myColor}>
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 36, marginBottom: 6 }}>📊</div>
+        <div style={{
+          fontSize: 11, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8,
+        }}>
+          {de ? '🎰 Zwischenstand' : '🎰 Standings'}
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.4, marginBottom: 14 }}>
+          {de ? 'Schau auf den Beamer — wie steht dein Tipp?' : 'Check the screen — how\'s your tip doing?'}
+        </div>
+        {targetTeam ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: 16,
+            background: `${targetTeam.color}1a`,
+            border: `1.5px solid ${targetTeam.color}66`,
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {de ? 'Dein Tipp' : 'Your tip'}
+            </span>
+            <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={36} />
+            <span style={{ fontWeight: 900, color: targetTeam.color, fontSize: 16, flex: 1, textAlign: 'left' }}>
+              {targetTeam.name}
+            </span>
+            <span style={{
+              fontSize: 22, fontWeight: 900, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums',
+              textShadow: '0 0 12px rgba(251,191,36,0.5)',
+            }}>{targetWins} 🏆</span>
+          </div>
+        ) : (
+          <div style={{
+            fontSize: 13, color: '#94A3B8', fontStyle: 'italic',
+            padding: '10px 14px', borderRadius: 12,
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            {de ? 'Du hattest keinen Tipp abgegeben.' : 'You placed no tip.'}
+          </div>
+        )}
+      </div>
     </CozyCard>
   );
 }

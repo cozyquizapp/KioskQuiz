@@ -1919,38 +1919,44 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           }} />
           {/* Während Countdown: renderState ist Snapshot der vorherigen Phase
               (PausedView / RulesView bleiben sichtbar und gefreezed). Nach
-              Countdown schwenkt automatisch zum Live-State. */}
-          {renderState.phase === 'LOBBY' && !renderState.setupDone && <PausedView state={renderState} mode="preGame" />}
-          {renderState.phase === 'LOBBY' && renderState.setupDone  && <LobbyView state={renderState} />}
-          {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
-          {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
-          {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}
-          {(renderState.phase === 'QUESTION_ACTIVE' || renderState.phase === 'QUESTION_REVEAL') && !placementFlash && (
-            <QuestionView key={renderState.currentQuestion?.id} state={renderState} revealed={renderState.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
-          )}
-          {renderState.phase === 'PLACEMENT'       && <PlacementView key={`place-${renderState.questionIndex}`} state={renderState} use3D={use3D} enable3DTransition={renderState.enable3DTransition} />}
-          {/* Placement flash: briefly show PlacementView with highlighted cell after placing */}
-          {placementFlash && (
-            <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
-          )}
-          {renderState.phase === 'COMEBACK_CHOICE' && <ComebackView state={renderState} />}
-          {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
-          {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
-          {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
-          {/* 2026-05-09 (Wolf-Wunsch v2): Permanenter Tracker raus —
-              Recap-Slide nur zwischen Final-Fragen (finalRecapStep === 1)
-              als großer episch-funkelnder Overlay. Mod-Space schaltet weiter. */}
+              Countdown schwenkt automatisch zum Live-State.
+              2026-05-09 (Wolf 'standings sitzen vor der grid card, sollen
+              eigenständige seite sein nicht im vordergrund'): Final-Recap
+              (zwischen Final-Fragen) ist jetzt eigene Vollbild-Seite ANSTELLE
+              der Question/Placement-View — kein Overlay mehr. */}
           {renderState.finalWagerEnabled
-            && renderState.gamePhaseIndex === renderState.totalPhases
-            && renderState.finalRecapStep === 1
-            && renderState.phase !== 'FINAL_BETTING'
-            && renderState.phase !== 'FINAL_REVEAL'
-            && renderState.phase !== 'GAME_OVER'
-            && renderState.phase !== 'THANKS'
-            && <FinalRoundRecapSlide state={renderState} />}
-          {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
-          {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
-          {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
+           && renderState.gamePhaseIndex === renderState.totalPhases
+           && renderState.finalRecapStep === 1
+           && renderState.phase !== 'FINAL_BETTING'
+           && renderState.phase !== 'FINAL_REVEAL'
+           && renderState.phase !== 'GAME_OVER'
+           && renderState.phase !== 'THANKS'
+           && renderState.phase !== 'PAUSED'
+           && renderState.phase !== 'LOBBY' ? (
+            <FinalRoundRecapSlide state={renderState} />
+          ) : (
+            <>
+              {renderState.phase === 'LOBBY' && !renderState.setupDone && <PausedView state={renderState} mode="preGame" />}
+              {renderState.phase === 'LOBBY' && renderState.setupDone  && <LobbyView state={renderState} />}
+              {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
+              {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
+              {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}
+              {(renderState.phase === 'QUESTION_ACTIVE' || renderState.phase === 'QUESTION_REVEAL') && !placementFlash && (
+                <QuestionView key={renderState.currentQuestion?.id} state={renderState} revealed={renderState.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
+              )}
+              {renderState.phase === 'PLACEMENT'       && <PlacementView key={`place-${renderState.questionIndex}`} state={renderState} use3D={use3D} enable3DTransition={renderState.enable3DTransition} />}
+              {placementFlash && (
+                <PlacementView key={`flash-${s.questionIndex}`} state={placementFlash.state} flashCell={placementFlash.cell} use3D={use3D} enable3DTransition={s.enable3DTransition} />
+              )}
+              {renderState.phase === 'COMEBACK_CHOICE' && <ComebackView state={renderState} />}
+              {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
+              {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
+              {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
+              {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
+              {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
+              {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
+            </>
+          )}
         </div>
         );
       })()}
@@ -14436,12 +14442,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     display: 'inline-flex', alignItems: 'center', gap: 12,
                     padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
                     borderRadius: 999,
+                    // 2026-05-09 (Wolf 'higher button bei richtig nicht pink
+                    // sondern grün leuchten'): correct = ALWAYS green
+                    // (universelle "richtig"-Farbe), egal ob Higher oder Lower.
                     background: isCorrect
-                      ? 'rgba(236,72,153,0.22)'
+                      ? 'rgba(34,197,94,0.22)'
                       : `${accentCol}14`,
-                    border: `2.5px solid ${isCorrect ? '#EC4899' : `${accentCol}66`}`,
+                    border: `2.5px solid ${isCorrect ? '#22C55E' : `${accentCol}66`}`,
                     boxShadow: isCorrect
-                      ? '0 0 44px rgba(236,72,153,0.55), 0 0 14px rgba(236,72,153,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
+                      ? '0 0 44px rgba(34,197,94,0.55), 0 0 14px rgba(34,197,94,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
                       : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
@@ -14459,12 +14468,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   }}>
                     <span style={{
                       fontSize: 'clamp(24px, 2.8vw, 38px)', lineHeight: 1, fontWeight: 900,
-                      color: isCorrect ? '#EC4899' : accentCol,
+                      color: isCorrect ? '#22C55E' : accentCol,
                       transition: 'color 0.4s ease',
                     }}>{isHigher ? '↑' : '↓'}</span>
                     <span style={{
                       fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
-                      color: isCorrect ? '#FBCFE8' : accentCol,
+                      color: isCorrect ? '#86EFAC' : accentCol,
                       letterSpacing: '0.12em', textTransform: 'uppercase',
                       transition: 'color 0.4s ease',
                     }}>
@@ -15648,22 +15657,26 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const SWAP_MS = 800;
   const GLOW_DELAY_MS = SWAP_DELAY_MS + SWAP_MS - 100;
 
-  // Row-Höhe & Avatar-Größe abh. von Team-Count damit nichts unten abschneidet
-  // (Wolf 'tabelle ist zu hoch, unten teams abgeschnitten').
-  const rowH = N >= 7 ? 60 : N >= 5 ? 72 : 88;
-  const avatarSize = N >= 7 ? 42 : N >= 5 ? 50 : 60;
+  // 2026-05-09 v2 (Wolf 'tabelle größer, soll slide ausfüllen mit angenehmem
+  // rand'): Row-Höhe deutlich hochgezogen — Tabelle füllt mehr vom verfügbaren
+  // Vertikal-Space. Bei 8 Teams 78px (war 60), bei 5-6 Teams 92px (war 72),
+  // bei 3-4 Teams 110px (war 88).
+  const rowH = N >= 7 ? 78 : N >= 5 ? 92 : 110;
+  const avatarSize = N >= 7 ? 54 : N >= 5 ? 64 : 78;
   const containerH = rowH * N;
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, zIndex: 100,
+      // 2026-05-09 v2 (Wolf 'standings sollen eigenständige seite sein, nicht
+      // im vordergrund'): kein absolute-overlay mehr, sondern reguläre full-
+      // page View — flex 1, full size, padding gibt angenehmen Rand.
+      flex: 1, width: '100%', height: '100%',
       background: 'radial-gradient(ellipse at center, rgba(31,16,46,0.94) 0%, rgba(15,8,23,0.98) 70%, #0d0716 100%)',
-      backdropFilter: 'blur(14px) saturate(140%)',
-      WebkitBackdropFilter: 'blur(14px) saturate(140%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '3vh 4vw',
+      padding: 'clamp(40px, 5vh, 80px) clamp(48px, 6vw, 120px)',
       animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       overflow: 'hidden',
+      position: 'relative',
     }}>
       <style>{`
         @keyframes qqFinalRecapIn {
@@ -15716,9 +15729,10 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         })()}
       </div>
 
-      {/* Team-Reihen — absolute am before-Slot, Tickup + Position-Swap */}
+      {/* Team-Reihen — absolute am before-Slot, Tickup + Position-Swap.
+          2026-05-09 v2: maxWidth 920 → 1200 für mehr Tabellen-Breite. */}
       <div style={{
-        position: 'relative', width: '100%', maxWidth: 920, height: containerH,
+        position: 'relative', width: '100%', maxWidth: 1200, height: containerH,
       }}>
         {s.teams.map(t => {
           const beforeRank = beforeOrder.indexOf(t.id);
@@ -15789,17 +15803,8 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         })}
       </div>
 
-      {/* Footer-Hint */}
-      <div style={{
-        marginTop: 'clamp(20px, 2.5vh, 36px)',
-        fontSize: 'clamp(13px, 1.2vw, 18px)', color: '#94A3B8',
-        opacity: 0, animation: 'qqRecapTitleLetter 0.5s ease 1.5s both',
-        fontStyle: 'italic',
-      }}>
-        {isLastFinalQuestion
-          ? (de ? 'Letzte Final-Frage gespielt — Space für Wager-Reveal' : 'Last final question played — space for wager reveal')
-          : (de ? 'Space für die nächste Final-Frage' : 'Space for the next final question')}
-      </div>
+      {/* 2026-05-09 v2 (Wolf): Footer-Hint 'Space for next final question'
+          entfernt — im Autoplay läuft's manuell, im Live-Mod weiß er selbst. */}
     </div>
   );
 }

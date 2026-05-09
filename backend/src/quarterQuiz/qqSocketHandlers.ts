@@ -1396,6 +1396,28 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     // w&auml;hlt obwohl freie Felder existieren, 65% Chance auf Fallback zu PLACE
     // (= 35% STEAL bleibt). Damit klauen Bots strategisch aber nicht zu oft.
     if (action === 'FREE') {
+      // 2026-05-09 (Wolf-Bug '1 feld klauen vom leader klappt nicht im dummy'):
+      // Comeback-Phase mit pendingAction='FREE' → Team soll 1 Feld vom LEADER
+      // klauen. Vorher: Dummy-FREE-Branch ohne stealFilter → konnte ANY-Cell
+      // klauen ODER Place wählen → Game-Stuck. Jetzt: erkennen wir einen
+      // aktiven Comeback-Steal-Kontext (comebackAction='STEAL_1' + targets),
+      // wird FREE auf STEAL mit Leader-Filter eingeschränkt — kein Place/Stapel.
+      const isComebackSteal = live.comebackAction === 'STEAL_1'
+        && (live.comebackStealTargets?.length ?? 0) > 0;
+      if (isComebackSteal) {
+        const targets = live.comebackStealTargets ?? [];
+        const done = live.comebackStealsDone ?? [];
+        const allowedOwners = new Set(
+          targets.length >= 2 ? targets.filter(id => !done.includes(id)) : targets
+        );
+        const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
+          availableKinds: ['STEAL'], phase,
+          stealFilter: (cell) => cell.ownerId != null && allowedOwners.has(cell.ownerId),
+        });
+        if (!choice) { skipStuckDummy(); return; }
+        dispatchFreeChoice(io, roomCode, teamId, choice);
+        return;
+      }
       const kinds: DummyActionKind[] = [];
       const hasFreeCellNow = live.grid.some(row => row.some(c => c.ownerId === null));
       if (hasFreeCellNow) kinds.push('PLACE');
@@ -3128,6 +3150,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
           } else if ((room.phase as string) === 'PLACEMENT' && room.pendingFor) {
             maybeAutoPlace(io, payload.roomCode);
           }
+          // 2026-05-09 (Wolf-Bug 'Bet-Phase wurde übersprungen'): wenn Comeback
+          // beendet ist und qqBeginPhase auto auf FINAL_BETTING geschaltet hat,
+          // Bots auto-betten lassen — sonst sitzt das Spiel fest.
+          else if ((room.phase as string) === 'FINAL_BETTING') {
+            maybeAutoFinalBets(io, payload.roomCode);
+          }
         }
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -3141,6 +3169,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           clearHLAutoReveal(room);
           qqComebackFinishAllAndGoToFinale(room);
           broadcast(io, payload.roomCode);
+          // 2026-05-09 (Wolf-Bug): Skip-Comeback führt direkt in Final-Phase.
+          // Wenn Bet-Mode an, Bots auto-betten lassen.
+          if ((room.phase as string) === 'FINAL_BETTING') {
+            maybeAutoFinalBets(io, payload.roomCode);
+          }
         }
         ok(ack);
       } catch (e) { fail(ack, e); }

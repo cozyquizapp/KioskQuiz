@@ -274,6 +274,10 @@ export default function QQModeratorPage() {
     if (!s) return;
     // Game-Over → Autoplay aus, Loop nicht endlos.
     if (s.phase === 'GAME_OVER' || s.phase === 'THANKS' || s.phase === 'LOBBY') return;
+    // 2026-05-09 (Wolf 'im autoplay muss man bei Final-Recap manuell Space
+    // drücken'): Final-Recap (zwischen Final-Fragen) blockiert Autoplay —
+    // Mod soll bewusst weiter klicken, damit er die Standings auflesen kann.
+    if ((s as any).finalRecapStep === 1) return;
 
     const q = s.currentQuestion;
     const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
@@ -515,10 +519,13 @@ export default function QQModeratorPage() {
       case 'FINAL_BETTING': {
         // Auto-Advance nur wenn alle Teams gesetzt haben — sonst auf Mod
         // warten (er will evtl noch warten oder manuell triggern).
+        // 2026-05-09 (Wolf 'bet-phase wurde übersprungen'): Lese-Pause auf
+        // 4.5s erhöht (war 2.2s) — bei 4 Bots die in 0.5-2.5s submitten
+        // ist die Phase sonst nach ~3s vorbei und wirkt geskippt.
         const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
         const total = s.teams.length;
         if (total > 0 && submitted >= total) {
-          delayMs = 2200; // kurze Lese-Pause zum „alle haben gesetzt"-Moment
+          delayMs = 4500;
           action = () => emit('qq:finishFinalBetting', { roomCode });
         }
         break;

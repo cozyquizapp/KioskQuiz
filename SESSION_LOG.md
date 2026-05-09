@@ -453,3 +453,89 @@ Direkter Folge-Tag. ~16 Commits (`4ba28633` → `e9ddc68d`). Stand bei Beginn: F
 **Total Tag: ~16 Commits** (`4ba28633` → `e9ddc68d`). Alle gepusht.
 
 **App-Stand für Eurovision (in 5-6 Tagen):** Final-Wager-Mechanik live-bereit, End-Flow als geschlossene Choreo durchspielbar, Thanks-Outro mit Recap. `/mopo`-Page für Mobile-Mod kommt als Folge-Task.
+
+---
+
+## 2026-05-09 — Marathon-Tag: TODO-Liste + Thanks/Recap/FinalReveal-Refactor + Designer-Audit
+
+**Tageslauf**: ~7 Stunden Live-Iteration mit Wolf, ~30 Commits, 10 Bug-TODOs aus Live-Test-Feedback abgehakt + 9 Design-Iterationen Thanks-Page (v3 → v12) + Final-Reveal-Choreografie überarbeitet + Summary-Page-Konsistenz + Designer-Audit als Abschluss.
+
+### Was passiert ist (chronologisch)
+
+**Block A — Vormittag, TODO-Liste aus Live-Test 2026-05-08**
+
+1. **TODO 10 Autoplay-Stop bei Final-Standings** (`84e50c05`): Wolf-Klärung „durchlaufen, nicht stoppen". Stop-Block raus, im PLACEMENT-Case `inFinalRecap ? 8000 : 3500` ms damit Score-Cascade Lese-Zeit hat.
+2. **TODO 5/6/7 Thanks-Page v2** (`06c21fd5`): Polaroid-Layout-Pivot, Avatar-Bug-Fix (`size="70%"` → absolute Pixel weil CSS font-size:% relativ zu Parent ist nicht Container-Width → 6.7px Mini-Glyph), questionHistory in Live-State (war nur in Summary-Save → 3× Sonja stuck-Look).
+3. **TODO 9 Autoplay R3 Card-Skip** (`9db05f14`): R3 Stack-Card (isNew @idx 2) fertig erst bei 7350ms, Autoplay schaltete bei 5500ms → Card-Skip. Delay ph-abhängig (R1 5850 / R2 7350 / R3 8850 / R4 5750).
+4. **TODO 1+2+3 Quick-Wins** (`bf33e613`): 🏯 → 🔒 für gestackte Felder (Picker + Mini-Map), Bluff-Sub-Emoji im Recap (Backend `bunteTueteKind` in History + Live-State), Standings-Text-Bump v3 (rowH 78→92 / 92→108 / 110→130).
+5. **TODO 4 Standings-Performance** (`4335da9f`): Bei N=8 Teams 8 parallele rAF-Loops mit setState → 8× Re-Renders pro Frame. Fix: direct DOM-Manipulation via useRef.textContent + style.color, KEIN setState. Plus `contain: layout paint style` auf Team-Rows.
+6. **TODO 8 Award-3D-Reveal + Bet-Cascade** (`b4bdf72e`): 6 Award-Steps → 4 (Overview-Slide mit 3 Cards + 3 Flips). 3D-Flip identisch dimensioniert via `min-height clamp 360-540`. Bet-Reveal mit Per-Team-Cascade per animation-delay (Team 0s → Tipp +0.55s → Punkte +1.1s).
+7. **Treppchen-Refactor** (`77a9c310`): Vorher Treppchen ab rankIndex>=2. Wolf-Spec: Plätze N..3 prominent + verschwinden, Platz 2 Treppchen-Stub mit Platz 3, Platz 1 voll-Treppchen mit Sieger-Lücke + Stufen-Höhen.
+
+**Block B — Mittag/Nachmittag, Thanks-Page Design-Iterationen v3 → v12**
+
+8. **Thanks v3** (`3cf48cf3`): Polaroid → runder Sticker (Sonjas Wunsch). Team-color radial-gradient als BG.
+9. **Custom Wolf-Head-Asset** (`507ac2f8`): generisches 🐺 → dediziertes head-only-PNG aus Wolfs Desktop. 890KB → 20KB / 10KB / 7.5KB via sharp.
+10. **Thanks v4** (`5bca21f7`): Sieger-Sticker → Action-Card-Stil. Awards raus aus Card → in News-Ticker. Wolf-Decoration weiter rechts. Custom Wolf-Asset überall (Brand-Footer, Get-Ready, Reveal-Hint, Sonja-Card).
+11. **/thanks-test Standalone-Page** (`0aeb5732`): Mock-State mit Toggle DE/EN, 3/5/8 Teams, Award-Sets. Plus README + MEMORY auf Coolify (Backend von Render migriert).
+12. **Thanks v5** (`7e4c1c42`): 3 Spalten EXAKT gleich groß via flex 1 1 0 + alignItems stretch. ThanksColumnCard-Helper.
+13. **Tree-Slides v6** (`d709bdd7`): pro Phase eine große Slide mit RUNDE-Header + 5 Cat-Kreise + überlappende Winner-Avatare.
+14. **Flat Pill-Strip v7** (`1a534edf`): Wolf-Refinement — alles in flat durchlaufendem Strip. Phase-Pills VOR Cat-Pills, gleichmäßiger Abstand.
+15. **Action-Card-Größen + Connect-4** (`0d14de71`): Stack-Card vs Place/Steal Drift gefixt mit `height: 360` fix. Connect-4 Winner-Card kompakt wie CHEESE/MUCHO.
+16. **Pills v8 einheitlich** (`26ad0e41`): alle Recap-Items folgen Sonja/Claude-Pattern. BadgeCircle-Helper. Sonja-„fürs Testen" → „fürs Zuhören".
+17. **Wrap + Recap-Speed** (`9d6d22ed`): Sieger-Name Wrap auf 2 Zeilen + dynamische FontSize. Tick-Speed 3.5s → 7s, will-change transform.
+18. **Layout v9 + Award-Wrap** (`335dfad4`): Outer in Top (flex 1 mittig) + Bottom-Bereich aufgesplittet. Subtitle-Font einheitlich `inherit`. Award-Card Team-Name Wrap.
+19. **Summary-Awards-Konsistenz** (`c15f48a3`): Backend `endAwards` ins Save-Payload. Summary Superlatives = die 3 Recap-Awards. Pill-Hierarchie umgekehrt.
+20. **cozywolf-Subtitle 2-zeilig** (`30149483`): „cozywolf bedankt sich" abgeschnitten. Fix: Stinger Fit Brand-Font + Pink + Glow oben, „bedankt sich" drunter.
+21. **Variante 3 + Seva-Pill** (`c39b601c`): Cat-Pills nur Badge ohne Text. Alle Pills strict gleiche Width via PILL_WIDTH. Plus dritte Thanks-Pill für Seva 🛟.
+22. **Summary Insta-Pill** (`2b6885ab`): klickbarer Instagram-Brand-Gradient-Pill in Summary-TopBar.
+23. **COZYWOLF caps + SCAN MICH** (`d601d0ef`): Brand-konsistent uppercase + 2-zeilig analog Wolf-Block.
+24. **Sieger-Spalte 2-zeilig** (`c2f341c3`): Team-Name groß einzeilig in Team-Farbe + „haben gewonnen" drunter — alle 3 Spalten gleiche Komposition.
+25. **Cat-Pill Kontext** (`c0a88f48`): Wolf-Pivot zurück zu mehr Info — 3-Element (Cat-Badge + Cat-Name + Winner-Avatar mit Krone 👑). Pure-Variante-3 war zu kryptisch.
+
+**Block C — Designer-Audit + Vercel-Limit**
+
+26. Designer-Audit (general-purpose Agent in Designer-Persona) — kritische Außensicht. Memory `project_designer_audit_2026_05_09.md` mit Top-3-Stärken, P0/P1/P2-Findings, mutige Refactor-Idee (Treppchen-Komprimierung).
+27. **Vercel-Hobby-Limit** (100 deployments/24h): nach commit `30149483` reached, letzte 4 Commits stuck. Pro-Plan-Empfehlung für Live-Quizzes.
+
+### Wichtige Entscheidungen
+- **Backend ist auf Coolify, NICHT mehr Render** (Wolf-Migration).
+- **Custom Wolf-Head-Asset** ersetzt 🐺 in Brand-UI, NICHT in semantischen Stat-Awards.
+- **Sonja-Subtitle** „fürs Zuhören" statt „fürs Testen".
+- **Cat-Pill mit 3-Element-Layout** (nicht pure-minimal). Variante 3 ohne Text war zu kryptisch.
+- **Summary-Ehrentitel = die 3 Recap-Awards** (Underdog/Meisterklauer/Speedy) — konsistent zwischen Beamer + Phone.
+- **Vercel auf Pro upgraden** vor Live-Quizzes — Hobby-Limit ist bei Iteration-Sessions zu schnell weg.
+
+### Designer-Audit Top-Findings
+**Gesamteinschätzung**: mechanisch sauber, emotional flach — kein klarer Crescendo-Moment.
+
+**P0**: Sieger-Slide kein Crescendo-Delta · Thanks-Card 3 gleichgewichtige Hero-Spalten · Recap-Strip ~30 Pills monoton
+
+**P1**: Award-Flip identisch L→M→R · Brand-Subs konkurrieren mit Sieger-Name · BetReveal 0-Bonus „🥲 oooh" verstößt Anti-Shaming · PodiumStep ellipsed Names · Summary-Underdog-Metric exponiert Score
+
+**Mutige Idee**: Treppchen-Reveal komprimieren — alle Avatare gleichzeitig auf Bühne, synchron auf Stufen, Drumroll-Spotlight, Sieger fällt in Mitte-Lücke. **1 grandioser Moment statt 7 mittelschöne**.
+
+Vollständig: `~/.claude/.../memory/project_designer_audit_2026_05_09.md`
+
+### Files (heute massiv berührt)
+- `frontend/src/pages/QQBeamerPage.tsx` — ThanksView v3→v12, FinalRevealView-Refactors, ActionCardReveal-Größen, OnlyConnect-Winner, Recap-Strip 8 Iterationen
+- `frontend/src/pages/QQTeamPage.tsx` — Schloss-Symbol auf gestackten Cells
+- `frontend/src/pages/QQModeratorPage.tsx` — Autoplay-Delays
+- `frontend/src/pages/QQSummaryPage.tsx` — Ehrentitel + Insta-TopBar-Pill
+- `frontend/src/components/WolfHeadIcon.tsx` — neu (Custom-Wolf Inline-Component)
+- `frontend/src/pages/QQThanksTestPage.tsx` — neu (Standalone-Vorschau)
+- `frontend/public/avatars/cozywolf/head.{png,webp,avif}` — neu (256px head-only)
+- `backend/src/quarterQuiz/qqRooms.ts` — questionHistory + endAwards in Live-State, FinalReveal max-step 2N+6
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` — endAwards ins Save
+- `backend/src/server.ts` — endAwards aus Summary-Endpoint
+- `shared/quarterQuizTypes.ts` — Type-Updates
+- `README.md` + `MEMORY.md` — Coolify-Migration-Doku
+
+### Memory-Files heute
+- `feedback_askuserquestion_clarifications.md` — neu (Wolf liebt Klick-Klärungen)
+- `project_designer_audit_2026_05_09.md` — neu (Audit-Output)
+- `user_workload_state.md` — 7h-Marathon-Update
+
+**Total Tag**: ~30 Commits (`84e50c05` → `c0a88f48`). Alle gepusht. **Vercel stuck nach `30149483`** — 24h-Reset oder Pro-Upgrade.
+
+**Stand für nächste Session**: Endgame handwerklich solide, dramaturgisch ausbaufähig. Designer-Audit zeigt klare P0-Hebel. Vor Live-Quizzes: Vercel Pro + die 3 P0-Findings. Mutige Treppchen-Komprimierung als optional-Big-Hit-Refactor.

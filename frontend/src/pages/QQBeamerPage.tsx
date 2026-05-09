@@ -190,8 +190,8 @@ const bt = {
     // Quiz-Runden heißen immer „Runde N". Das echte „Finale" ist seit
     // Connections-Einführung das 4×4-Mini-Game (eigene Phase, eigener Header).
     names: { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] },
-    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Stapeln freigeschaltet!', 'Letzte Quiz-Runde!'],
-             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Stack unlocked!', 'Last quiz round!'] },
+    descs: { de: ['', 'Erobert das Spielfeld!', 'Klaut euren Gegnern Felder!', 'Stapeln freigeschaltet!', 'Quiz-Buddy-Punkte!'],
+             en: ['', 'Conquer the grid!', 'Steal from your rivals!', 'Stack unlocked!', 'Quiz buddy points!'] },
     of: { de: 'Phase {a} von {b}', en: 'Phase {a} of {b}' },
     fields: { de: 'Felder', en: 'fields' },
   },
@@ -2854,7 +2854,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Fix It · Pin It'),
+        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
@@ -2962,7 +2962,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Fix It · Pin It'),
+        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
       ],
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },
@@ -6554,9 +6554,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     onlyConnect: {
       emoji: '🧩',
       de: { name:    getRuleText('bunte.onlyConnect.name',    'de', '4 gewinnt'),
-            explain: getRuleText('bunte.onlyConnect.explain', 'de', '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.') },
+            explain: getRuleText('bunte.onlyConnect.explain', 'de', '4 Begriffe — was verbindet sie? Ein Tipp pro Team, schnellste richtige Antwort gewinnt zuerst.') },
       en: { name:    getRuleText('bunte.onlyConnect.name',    'en', 'Only Connect'),
-            explain: getRuleText('bunte.onlyConnect.explain', 'en', '4 clues, one answer — solve with fewest clues to win an action.') },
+            explain: getRuleText('bunte.onlyConnect.explain', 'en', '4 terms — what connects them? One guess per team, fastest correct answer wins first.') },
     },
     bluff: {
       emoji: '🎭',
@@ -6646,14 +6646,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       emoji: '🏯',
       de: s.connectionsEnabled !== false
         ? [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
-           getRuleText('round.4.line2_finale', 'de', 'Letzte Quiz-Runde — danach kommt der Stapel-Bonus im Finale!')]
+           getRuleText('round.4.line2_finale', 'de', 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!')]
         : [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
-           getRuleText('round.4.line2_nofin', 'de', 'Letzte Runde — alles bleibt verfügbar!')],
+           getRuleText('round.4.line2_nofin', 'de', 'Quiz-Buddy-Punkte — alles bleibt verfügbar!')],
       en: s.connectionsEnabled !== false
         ? [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.4.line2_finale', 'en', 'Last quiz round — stack-bonus finale follows!')]
+           getRuleText('round.4.line2_finale', 'en', 'Collect quiz buddy points — stack-bonus finale follows!')]
         : [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.4.line2_nofin', 'en', 'Final round — everything stays available!')],
+           getRuleText('round.4.line2_nofin', 'en', 'Quiz buddy points — everything stays available!')],
     },
   };
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
@@ -7402,8 +7402,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:onlyConnect': {
               emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' },
               lines: {
-                de: ['4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.'],
-                en: ['4 clues, one answer — solve with fewest clues to win an action.'],
+                de: ['4 Begriffe — was verbindet sie? Ein Tipp pro Team, schnellste richtige Antwort gewinnt zuerst.'],
+                en: ['4 terms — what connects them? One guess per team, fastest correct answer wins first.'],
               },
             },
             'BUNTE_TUETE:bluff': {
@@ -8564,6 +8564,11 @@ function BluffBeamerView({ state: s, lang, revealed }: {
       gap: 'clamp(14px, 2vh, 24px)',
       padding: 'clamp(20px, 2.5vh, 36px) clamp(24px, 3vw, 48px) clamp(16px, 2vh, 28px)',
       position: 'relative',
+      // 2026-05-09 (Wolf 'gewinnercard bei bluff unten abgeschnitten'): outer
+      // braucht min-height: 0 + overflow: hidden, sonst expandiert das innere
+      // BluffVoteScreen-grid über die verfügbare Höhe und drückt die Sieger-
+      // Card raus aus dem Beamer-Viewport.
+      minHeight: 0, overflow: 'hidden',
     }}>
       <Fireflies color={`${accent}55`} />
 
@@ -9015,7 +9020,11 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
     const cols = opts.length >= 6 ? 3 : opts.length >= 4 ? 2 : 1;
     return (
       <div style={{
-        flex: 1, display: 'grid',
+        // 2026-05-09 (Wolf 'gewinnercard bluff abgeschnitten'): flex 1 1 0 +
+        // min-height: 0 + overflow: hidden, damit das Grid bei wenig Platz
+        // schrumpft und Sieger-Card unten sichtbar bleibt.
+        flex: '1 1 0', minHeight: 0, overflow: 'hidden',
+        display: 'grid',
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gap: 'clamp(10px, 1.4vh, 18px)',
         maxWidth: cols === 3 ? 1500 : cols === 2 ? 1200 : 900,
@@ -9256,6 +9265,8 @@ function BluffVoteScreen({ state: s, accent, lang, revealed }: {
   );
 }
 
+// 2026-05-09 v2 (Wolf-Reform): Connect 4 — alle 4 Hints sofort sichtbar,
+// 1 Tipp pro Team, Reveal mit Lösung + Winner-Card wie CHEESE.
 function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   state: QQStateUpdate; lang: 'de' | 'en'; revealed: boolean;
 }) {
@@ -9263,75 +9274,34 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
   const answer = formatRevealedAnswer(lang, bt.answer, bt.answerEn);
-  // Per-Team-Modell: Beamer zeigt MIN(...indices) damit kein Spoiler.
-  // Teams die mehr Hinweise haben sehen sie nur auf eigenem /team.
-  const hintIndicesArr = Object.values(s.onlyConnectHintIndices ?? {});
-  const hintIdx = revealed
-    ? 3
-    : (hintIndicesArr.length > 0 ? Math.min(...hintIndicesArr) : 0);
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
-  // 2026-05-08 (Wolf-Bugfix): vorher '#A78BFA' (Lila) — passte nicht zur
-  // Bunte-Tüte-Kategorie. Jetzt #F87171 (Bunte-Tüte-Rot, identisch zu
-  // QQ_CAT_ACCENT.BUNTE_TUETE).
   const accent = '#F87171';
-  // Cascade-Avatare: ALLE korrekten Teams (auch die "zu spaet"-Sieger) sortiert
-  // nach (atHintIdx ASC, submittedAt ASC) — fuers Stagger-Rendering auf Hints.
+  // 2026-05-09 v2: alle Hints sofort sichtbar; correctSorted nach submittedAt
+  // (= Speed) — Reihenfolge der Action-Vergabe analog Standard-Mechaniken.
   const correctSorted = (s.onlyConnectGuesses ?? [])
     .filter(g => g.correct)
     .slice()
-    .sort((a, b) => (a.atHintIdx - b.atHintIdx) || (a.submittedAt - b.submittedAt));
-  const winnerByTeam: Record<string, { atHintIdx: number; submittedAt: number; rank: number }> = {};
-  correctSorted.forEach((g, idx) => { winnerByTeam[g.teamId] = { atHintIdx: g.atHintIdx, submittedAt: g.submittedAt, rank: idx + 1 }; });
-  // 2026-05-02 (Audit B Anti-Pattern Fix): "Echte Sieger" (= bekommen Aktion)
-  // kommen jetzt aus s.currentQuestionWinners (Backend-Truth via qqMarkCorrect
-  // + evalOnlyConnect). Vorher rechnete Frontend selbst aus raw onlyConnectGuesses
-  // — Risiko, dass Beamer-Anzeige + tatsaechlich punktiertes Team divergieren
-  // wenn evalOnlyConnect Tie-Break-Logik geaendert wird.
+    .sort((a, b) => a.submittedAt - b.submittedAt);
   const winnerSet = new Set(s.currentQuestionWinners ?? []);
-  const minWinHint = correctSorted.length > 0 ? correctSorted[0].atHintIdx : -1;
 
-  // 2026-05-06 (Wolf '4 gewinnt Reveal ist nicht wirklich mit Cascade
-  // weder in der Animation noch im Sound, faellt aus dem Quiz-Raster'):
-  // Cascade-Timings vereinheitlicht. Reihenfolge:
-  //   Hint 0 popt bei 0.00s + tick
-  //   Hint 1 popt bei 0.65s + tick
-  //   Hint 2 popt bei 1.30s + tick
-  //   Hint 3 popt bei 1.95s + tick
-  //   Avatare pro Hint poppen kurz nach ihrem Hint, gestaffelt
-  //   Loesung-Card slamt bei 2.85s + RevealHighlight
-  // Keyframe-Delays unten verwenden dieselben Werte. Tick-Sound pro Hint
-  // (auch wenn keine Avatare drauf) gibt rhythmische Cascade-Akzentuierung.
-  const HINT_BASE_DELAY = 0.00;
-  const HINT_STEP = 0.65;
-  const AVATAR_OFFSET = 0.30; // Avatar popt 300ms nach seinem Hint
-  const AVATAR_STEP = 0.20;   // pro zusaetzlichem Avatar im Hint
-  const SOLUTION_DELAY = HINT_BASE_DELAY + HINT_STEP * 4 + 0.25; // 2.85s
+  // 2026-05-09 v2: Reveal-Choreo CHEESE-style — Lösung-Card slammt zuerst (0.4s),
+  // dann Winner-Cards gestaffelt (0.85s + 0.18s pro Team). Sound entsprechend.
+  const SOLUTION_DELAY = 0.4;
+  const WINNER_BASE = 0.85;
+  const WINNER_STEP = 0.18;
   useEffect(() => {
     if (!revealed || s.sfxMuted) return;
     const handles: number[] = [];
-    const cascadeTotal = correctSorted.length + 4 + 1; // 4 Hint-Ticks + Avatar-Cascade + Solution-Top
-    let cascadeIdx = 0;
-    // Pro Hint: leichter Tick beim Pop (Pentatonik-Note rank=hintI*ratio)
-    for (let hintI = 0; hintI < 4; hintI++) {
-      const tickIdx = cascadeIdx++;
-      const tickDelayMs = (HINT_BASE_DELAY + hintI * HINT_STEP) * 1000 - 60;
-      handles.push(window.setTimeout(() => {
-        try { playAvatarCascadeNote(tickIdx, cascadeTotal); } catch {}
-      }, Math.max(0, tickDelayMs)));
-      // Avatare auf diesem Hint
-      const teamsOnHint = correctSorted.filter(g => g.atHintIdx === hintI);
-      teamsOnHint.forEach((_g, gIdx) => {
-        const avatarIdx = cascadeIdx++;
-        const delayMs = (HINT_BASE_DELAY + hintI * HINT_STEP + AVATAR_OFFSET + gIdx * AVATAR_STEP) * 1000 - 60;
-        handles.push(window.setTimeout(() => {
-          try { playAvatarCascadeNote(avatarIdx, cascadeTotal); } catch {}
-        }, Math.max(0, delayMs)));
-      });
-    }
-    // Loesung-Card: 'gruenes Feld'-Sound passend zum Card-Slam
+    const cascadeTotal = Math.max(2, correctSorted.length + 1);
     handles.push(window.setTimeout(() => {
       try { playRevealHighlight(); } catch {}
     }, Math.max(0, SOLUTION_DELAY * 1000 - 60)));
+    correctSorted.forEach((_g, idx) => {
+      const delayMs = (WINNER_BASE + idx * WINNER_STEP) * 1000 - 60;
+      handles.push(window.setTimeout(() => {
+        try { playAvatarCascadeNote(idx + 1, cascadeTotal); } catch {}
+      }, Math.max(0, delayMs)));
+    });
     return () => handles.forEach(h => window.clearTimeout(h));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed, correctSorted.length, s.sfxMuted]);
@@ -9374,28 +9344,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* Frage oben mittig — mit Hinweis-Counter (X/4) als Sub-Header (Wolf-
-          Wunsch 2026-05-04: Counter zentriert ueber der Frage statt rechts
-          oben). */}
+      {/* Frage oben mittig */}
       <div style={{
         textAlign: 'center', position: 'relative', zIndex: 5,
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.2vh, 14px)',
       }}>
-        {!revealed && (
-          <div style={{
-            display: 'inline-block',
-            padding: '6px 18px', borderRadius: 999,
-            background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
-            fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 900, color: '#cbd5e1',
-            letterSpacing: '0.06em',
-          }}>
-            {lang === 'de' ? `Hinweis ${hintIdx + 1} / 4` : `Clue ${hintIdx + 1} / 4`}
-          </div>
-        )}
         <div style={{
-          // 2026-05-07 (Layout-Audit): 1100 -> 1400, weil Hint-Grid darunter
-          // 1280 breit ist und die Frage darueber schmaler wirkte als das Grid.
           fontSize: 'clamp(26px, 3vw, 44px)', fontWeight: 900,
           color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
         }}>
@@ -9403,182 +9357,47 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* 4 Hint-Slots, jeweils horizontal nebeneinander.
-          User-Wunsch 2026-04-28: Im Reveal die Team-Avatare auf dem Hint
-          anzeigen, an dem sie es richtig hatten. Schnellster bei Tie mit
-          Gold-Ring + 🥇-Badge markiert. */}
+      {/* 2026-05-09 v2 (Wolf-Reform): 2×2 Hint-Grid mittig zentriert. Alle 4
+          Hints sofort sichtbar (kein progressives Reveal, keine Avatare auf
+          Hints). Im Reveal-Modus stays the grid sichtbar als Kontext, Lösung
+          + Winner-Card kommen darunter. */}
       <div style={{
-        flex: 1,
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(10px, 1.4vw, 22px)',
-        alignItems: 'stretch', position: 'relative', zIndex: 5,
-        maxWidth: 1280, width: '100%', margin: '0 auto',
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 5,
       }}>
-        {[0, 1, 2, 3].map(i => {
-          const isVisible = revealed || i <= hintIdx;
-          const isCurrent = !revealed && i === hintIdx;
-          const isPast = !revealed && i < hintIdx;
-          const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
-          const hintColor = i === 0 ? '#EC4899' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
-          // Reveal-only: Teams die GENAU auf diesem Hint richtig waren
-          // (atHintIdx === i), nach submittedAt sortiert. Erstes Team = 'fastest'
-          // (bekommt Gold-Ring auch wenn nur 1 Team auf diesem Hint richtig war).
-          const teamsAtThisHint = revealed
-            ? correctSorted.filter(g => g.atHintIdx === i)
-            : [];
-          // 2026-04-28: Auch Locked-Teams (Dummies/Teams die falsch geraten
-          // haben) auf 'ihrem' Hint anzeigen — User-Frage 'spielen die dummys
-          // connect 4? sie sind nicht zu sehen'. Sie spielen, aber wenn sie
-          // falsch raten → locked. Mit grauem Avatar + ✕ wird das sichtbar.
-          const lockedAtThisHint = revealed
-            ? (s.onlyConnectGuesses ?? [])
-                .filter(g => !g.correct && g.atHintIdx === i)
-                .sort((a, b) => a.submittedAt - b.submittedAt)
-            : [];
-          // 2026-05-04: Wolf-Wunsch — Hint-Text auf gleicher Hoehe ueber alle 4
-          // Cards, unabhaengig davon ob unten Avatare sind. Loesung: feste
-          // Footer-Reservierung (unten ein Slot mit min-height fuer Avatare).
-          // Avatare-Bereich ist absolut positioniert am Card-Boden, sodass der
-          // Text-Bereich exakt gleich gross bleibt. Card-padding-bottom haelt
-          // den Avatare-Platz frei.
-          const hasAvatarRow = revealed && (teamsAtThisHint.length > 0 || lockedAtThisHint.length > 0);
-          // 2026-05-06 v2 (Wolf '4-Gewinnt Cards: viele Hoehen-Wechsel und
-          // Position-Sprünge zwischen Question und Reveal, sanftes Hochgleiten
-          // wäre passender'): phasePop (bouncy scale) durch contentReveal
-          // (sanftes Slide-up + Fade-in) ersetzt. Question-Phase: nur
-          // Glow auf isCurrent — kein Bounce mehr beim Hint-Pop.
-          const revealAnim = revealed
-            ? `contentReveal 0.55s var(--qq-ease-out-cubic) ${HINT_BASE_DELAY + i * HINT_STEP}s both`
-            : (isCurrent ? 'activeTeamGlow 2.4s ease-in-out infinite' : undefined);
-          return (
-            <div key={i} style={{
-              position: 'relative',
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              padding: 'clamp(18px, 2vh, 28px) clamp(10px, 1vw, 16px) clamp(72px, 9vh, 104px)',
-              borderRadius: 16,
-              background: isVisible
-                ? `linear-gradient(180deg, ${hintColor}28, ${hintColor}10)`
-                : 'rgba(255,255,255,0.03)',
-              // 2026-05-07 (Audit P1): border-style dashed↔solid kann der
-                // Browser nicht interpolieren → harter Snap beim Reveal-Wechsel.
-                // Stattdessen ständig solid mit border-color als sub-tilem
-                // Pre-Reveal-Cue (low-alpha) und transition nur auf den
-                // Properties, die der Browser tatsächlich interpoliert.
-              border: isVisible
-                ? `2px solid ${hintColor}${isCurrent ? 'cc' : '88'}`
-                : '2px solid rgba(255,255,255,0.10)',
-              boxShadow: isCurrent
-                ? `0 0 28px ${hintColor}55`
-                : isVisible ? `0 0 14px ${hintColor}33` : 'none',
-              opacity: isVisible ? 1 : 0.55,
-              transition: 'background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, opacity 0.5s ease',
-              animation: revealAnim,
-              minHeight: 'clamp(200px, 30vh, 300px)',
-              justifyContent: 'flex-start', textAlign: 'center',
-              gap: 8,
-            }}>
-              <div style={{
-                fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
-                color: isVisible ? hintColor : '#475569',
-                letterSpacing: '0.1em', textTransform: 'uppercase',
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, minmax(280px, 1fr))',
+          gap: 'clamp(14px, 1.8vw, 28px)',
+          maxWidth: 1100, width: '100%',
+        }}>
+          {[0, 1, 2, 3].map(i => {
+            const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
+            const hintColor = i === 0 ? '#EC4899' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+            return (
+              <div key={i} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: 'clamp(20px, 3vh, 36px) clamp(20px, 2vw, 32px)',
+                borderRadius: 18,
+                background: `linear-gradient(180deg, ${hintColor}28, ${hintColor}10)`,
+                border: `2px solid ${hintColor}88`,
+                boxShadow: `0 0 18px ${hintColor}33`,
+                minHeight: 'clamp(120px, 16vh, 180px)',
+                textAlign: 'center', gap: 10,
+                animation: `contentReveal 0.5s var(--qq-ease-out-cubic) ${0.15 + i * 0.10}s both`,
               }}>
-                {lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}
-                {isPast && <span style={{ marginLeft: 6 }}>✓</span>}
-                {/* 2026-04-30 v3: 'X Pkt'-Label entfernt — Connect-4 vergibt
-                    keine Hinweis-basierten Punkte. Sieger = Team(s) mit
-                    wenigsten Hinweisen, bekommen 1 Aktion (wie sonst auch). */}
-              </div>
-              <div style={{
-                fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 900,
-                color: isVisible ? '#F1F5F9' : 'transparent',
-                lineHeight: 1.2,
-                // 2026-05-06 v2: revealAnswerBam (scale-bounce) ersetzt durch
-                // contentReveal (sanftes slide-up) — quizweit konsistente
-                // Hint-Reveal-Sprache.
-                animation: isCurrent ? 'contentReveal 0.45s var(--qq-ease-out-cubic) both' : undefined,
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {isVisible ? hintText : '?'}
-              </div>
-              {/* Reveal: Team-Avatare auf diesem Hint — absolut am Card-Boden,
-                  damit die Text-Mitte ueber alle 4 Cards gleich bleibt egal
-                  wieviele Avatare drunterstehen. */}
-              {hasAvatarRow && (
                 <div style={{
-                  position: 'absolute',
-                  left: 'clamp(8px, 1vw, 14px)',
-                  right: 'clamp(8px, 1vw, 14px)',
-                  bottom: 'clamp(10px, 1.4vh, 18px)',
-                  display: 'flex', flexWrap: 'wrap', gap: 6,
-                  justifyContent: 'center',
-                  paddingTop: 8,
-                  // 2026-05-05 (Wolf): gestrichelte Trennlinie raus.
-                }}>
-                  {/* Richtig — Sieger-Hint (== minWinHint): alle Teams gold + 🥇.
-                      Korrekt aber spaeter (höherer Hint): team-color, kein Medal. */}
-                  {teamsAtThisHint.map((g, gIdx) => {
-                    const tm = s.teams.find(t => t.id === g.teamId);
-                    if (!tm) return null;
-                    const isWinnerHint = i === minWinHint;
-                    return (
-                      <div key={`c-${g.teamId}`} style={{
-                        position: 'relative',
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP + AVATAR_OFFSET + gIdx * AVATAR_STEP}s both`,
-                      }}>
-                        <QQTeamAvatar
-                          avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                          size={'clamp(36px, 4vw, 52px)'}
-                          style={{
-                            boxShadow: isWinnerHint
-                              ? `0 0 0 3px #EC4899, 0 0 18px rgba(236,72,153,0.65), 0 0 6px ${tm.color}88`
-                              : `0 0 0 2px ${tm.color}, 0 0 10px ${tm.color}55`,
-                          }}
-                        />
-                        {isWinnerHint && (
-                          <span aria-hidden style={{
-                            position: 'absolute',
-                            top: -10, right: -8,
-                            fontSize: 18, lineHeight: 1,
-                            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))',
-                          }}>🥇</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {/* Locked (falsch geraten an genau diesem Hint): grau + ✕ */}
-                  {lockedAtThisHint.map((g, gIdx) => {
-                    const tm = s.teams.find(t => t.id === g.teamId);
-                    if (!tm) return null;
-                    return (
-                      <div key={`l-${g.teamId}`} style={{
-                        position: 'relative',
-                        opacity: 0.6,
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${HINT_BASE_DELAY + i * HINT_STEP + AVATAR_OFFSET + 0.1 + gIdx * AVATAR_STEP}s both`,
-                      }}>
-                        <QQTeamAvatar
-                          avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                          size={'clamp(32px, 3.4vw, 44px)'}
-                          style={{
-                            filter: 'grayscale(0.65)',
-                            boxShadow: `0 0 0 2px rgba(148,163,184,0.6)`,
-                          }}
-                        />
-                        <span aria-hidden style={{
-                          position: 'absolute',
-                          bottom: -4, right: -4,
-                          width: 18, height: 18, borderRadius: '50%',
-                          background: '#EF4444', border: '2px solid #0A0814',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1,
-                        }}>✕</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                  fontSize: 'clamp(11px, 1.1vw, 14px)', fontWeight: 900,
+                  color: hintColor,
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                }}>{lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}</div>
+                <div style={{
+                  fontSize: 'clamp(24px, 2.8vw, 44px)', fontWeight: 900,
+                  color: '#F1F5F9', lineHeight: 1.15,
+                }}>{hintText}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Reveal: ZWEI getrennte Cards nebeneinander.
@@ -9592,8 +9411,16 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           Beide Cards bleiben im Question-Mode mit visibility:hidden gerendert,
           damit der Layout-Space reserviert ist (kein Sprung beim Reveal). */}
       {(() => {
-        const winnerTeams = revealed ? s.teams.filter(t => winnerSet.has(t.id)) : [];
-        const winnerHint = revealed && correctSorted.length > 0 ? correctSorted[0].atHintIdx : null;
+        // 2026-05-09 v2: Winner-Order = correctSorted (= submitted-time-order),
+        // gefiltert auf winnerSet (Backend-Truth). Speed = Reihenfolge.
+        const orderedWinnerIds = correctSorted
+          .map(g => g.teamId)
+          .filter(id => winnerSet.has(id));
+        const winnerTeams = revealed
+          ? orderedWinnerIds
+              .map(id => s.teams.find(t => t.id === id))
+              .filter((t): t is NonNullable<typeof t> => !!t)
+          : [];
         const primaryWinner = winnerTeams[0] ?? null;
         const winnerColor = primaryWinner?.color ?? '#EC4899';
         return (
@@ -9644,36 +9471,23 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               }}>
                 {winnerTeams.map((tm, idx) => (
                   <div key={tm.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.4vw, 22px)',
-                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${SOLUTION_DELAY + 0.4 + idx * 0.18}s both`,
+                    display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 18px)',
+                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${WINNER_BASE + idx * WINNER_STEP}s both`,
                   }}>
                     <QQTeamAvatar
                       avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                      size={'clamp(80px, 9vw, 130px)'}
+                      size={'clamp(64px, 7vw, 100px)'}
                       style={{
-                        boxShadow: `0 0 0 3px ${tm.color}, 0 0 26px ${tm.color}cc, 0 0 12px ${tm.color}88`,
+                        boxShadow: `0 0 0 3px ${tm.color}, 0 0 22px ${tm.color}cc, 0 0 10px ${tm.color}88`,
                         flexShrink: 0,
                       }}
                     />
                     <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
-                      minWidth: 0,
+                      fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
+                      color: tm.color, textShadow: `0 0 16px ${tm.color}55`,
+                      lineHeight: 1.1,
                     }}>
-                      <div style={{
-                        fontSize: 'clamp(22px, 2.6vw, 38px)', fontWeight: 900,
-                        color: tm.color, textShadow: `0 0 16px ${tm.color}55`,
-                        lineHeight: 1.1,
-                      }}>
-                        {teamDisplayName(tm.name, true)}
-                      </div>
-                      {winnerHint !== null && (
-                        <div style={{
-                          fontSize: 'clamp(15px, 1.6vw, 22px)', fontWeight: 700,
-                          color: '#cbd5e1',
-                        }}>
-                          {lang === 'de' ? `auf Hinweis ${winnerHint + 1}` : `on clue ${winnerHint + 1}`}
-                        </div>
-                      )}
+                      {teamDisplayName(tm.name, true)}
                     </div>
                   </div>
                 ))}
@@ -9688,6 +9502,9 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           ausgestellt wurden (Anti-Public-Shaming). Sieger sind im Reveal-Card
           oben rechts; auf welchem Hinweis sie es hatten siehst du an den
           Hint-Cards mit Gold-Ring. */}
+      {/* 2026-05-09 v2 (Wolf-Reform): Submit-Status-Reihe — pre-reveal pro Team
+          Avatar mit ✓ wenn submitted (richtig) oder ✕ wenn locked. Anti-Spoiler:
+          ✓ und ✕ sehen identisch aus von außen, nur Team weiß ob's richtig war. */}
       {!revealed && (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -9698,59 +9515,31 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         {s.teams.map((tm) => {
           const isLocked = lockedSet.has(tm.id);
           const isWinner = winnerSet.has(tm.id);
-          const dim = !isLocked && !isWinner;
-          const strikes = (s.onlyConnectStrikes ?? {})[tm.id] ?? 0;
+          const hasSubmitted = isLocked || isWinner;
           return (
-            <div key={tm.id} title={`${tm.name}${strikes > 0 ? ` · ${strikes} Strikes` : ''}`} style={{
+            <div key={tm.id} title={tm.name} style={{
               position: 'relative',
               display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               flexShrink: 0,
-              opacity: dim && strikes === 0 ? 0.55 : 1,
-              filter: dim && strikes === 0 ? 'grayscale(0.4)' : 'none',
+              opacity: hasSubmitted ? 1 : 0.55,
+              filter: hasSubmitted ? 'none' : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5vw, 72px)'} style={{
                 background: '#0A0814',
-                boxShadow: isWinner
-                  ? '0 0 0 3px #EC4899, 0 0 18px #EC489977, 0 4px 10px rgba(0,0,0,0.55)'
+                boxShadow: hasSubmitted
+                  ? `0 0 0 2px ${tm.color}, 0 0 14px ${tm.color}88, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
               }} />
-              {isWinner && (
+              {hasSubmitted && (
                 <div style={{
                   position: 'absolute', bottom: -4, right: -4,
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: '#EC4899', border: '2px solid #0A0814',
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: '#0A0814', border: `2px solid ${tm.color}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, lineHeight: 1,
-                  boxShadow: '0 0 12px rgba(236,72,153,0.55)',
+                  fontSize: 12, lineHeight: 1, color: tm.color, fontWeight: 900,
                   animation: 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
-                }}>🏆</div>
-              )}
-              {isLocked && !isWinner && (
-                <div style={{
-                  position: 'absolute', top: '38%', right: -4,
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: '#EF4444', border: '2px solid #0A0814',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, fontWeight: 900, color: '#fff', lineHeight: 1,
-                  animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
-                }}>✕</div>
-              )}
-              {/* Strike-Dots: 3 Slots, gefüllt = strike, leer = noch frei.
-                  Nach 3 Strikes → locked (✕ erscheint statt Dots). */}
-              {!isWinner && !isLocked && strikes > 0 && (
-                <div style={{
-                  display: 'flex', gap: 3, alignItems: 'center',
-                }}>
-                  {[0, 1, 2].map(idx => (
-                    <span key={idx} style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: idx < strikes ? '#EF4444' : 'rgba(148,163,184,0.25)',
-                      boxShadow: idx < strikes ? '0 0 6px rgba(239,68,68,0.6)' : 'none',
-                      transition: 'background 0.3s ease, box-shadow 0.3s ease',
-                    }} />
-                  ))}
-                </div>
+                }}>✓</div>
               )}
             </div>
           );
@@ -15473,6 +15262,8 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
 // FINAL_REVEAL: dramatische Score-Cascade (Eurovision-Style Score-Race)
 // ─────────────────────────────────────────────────────────────────────────
 export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const de = lang === 'de';
   const submittedIds = Object.entries(s.finalBettingSubmitted ?? {}).filter(([_, v]) => v).map(([id]) => id);
   const totalTeams = s.teams.length;
   const submittedCount = submittedIds.length;
@@ -15492,19 +15283,21 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
-      }}>🎰 Final-Tipp</div>
+      }}>{de ? '🎰 Final-Tipp' : '🎰 Final tip'}</div>
 
       <div style={{
         fontSize: 'clamp(48px, 6.5vw, 110px)', fontWeight: 900, color: '#F1F5F9',
         lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 12,
-      }}>Tippt jetzt!</div>
+      }}>{de ? 'Tippt jetzt!' : 'Place your tip!'}</div>
 
       <div style={{
         fontSize: 'clamp(20px, 2.2vw, 36px)', color: '#CBD5E1', fontWeight: 700,
         textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 28,
       }}>
-        Welches Team holt die Final-Runde am stärksten ab? Schaut auf euer Handy und wählt 1 Team.
+        {de
+          ? 'Welches Team holt die Final-Runde am stärksten ab? Schaut auf euer Handy und wählt 1 Team.'
+          : 'Which team will dominate the final round? Check your phone and pick 1 team.'}
       </div>
 
       {/* Erklärungs-Bullets */}
@@ -15515,13 +15308,19 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         maxWidth: 1200, width: '100%',
         marginBottom: 36,
       }}>
-        {[
+        {(de
           // 2026-05-09 (Wolf): Mutual/Sympathie-Bonus-Bullet entfernt — bleibt
           // Überraschung beim End-Reveal (FinalRevealView zeigt die +1
           // automatisch wenn mutual erkannt).
-          { icon: '🎯', title: '1 Tipp pro Team', sub: '(Eigenes Team erlaubt)' },
-          { icon: '🏆', title: '+1 Bonus pro Win', sub: 'Eures getippten Teams in den 5 Final-Kats' },
-        ].map((b, i) => (
+          ? [
+              { icon: '🎯', title: '1 Tipp pro Team', sub: '(Eigenes Team erlaubt)' },
+              { icon: '🏆', title: '+1 Bonus pro Win', sub: 'Eures getippten Teams in den 5 Final-Kats' },
+            ]
+          : [
+              { icon: '🎯', title: '1 tip per team', sub: '(own team allowed)' },
+              { icon: '🏆', title: '+1 bonus per win', sub: 'of your tipped team in the 5 final cats' },
+            ]
+        ).map((b, i) => (
           <div key={i} style={{
             padding: '18px 22px', borderRadius: 18,
             background: 'rgba(236,72,153,0.10)',
@@ -15549,7 +15348,9 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#86EFAC', fontWeight: 800,
         textAlign: 'center', marginBottom: 32, fontStyle: 'italic',
       }}>
-        ✨ Kein Verlust, kein Cell-Risiko — niedrigster Bonus = 0
+        {de
+          ? '✨ Kein Verlust, kein Cell-Risiko — niedrigster Bonus = 0'
+          : '✨ No loss, no cell risk — lowest bonus = 0'}
       </div>
 
       {/* Submit-Status */}
@@ -15564,7 +15365,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         <div style={{
           fontSize: 'clamp(14px, 1.1vw, 20px)', fontWeight: 900, color: '#94A3B8',
           textTransform: 'uppercase', letterSpacing: '0.15em',
-        }}>Wetten abgegeben</div>
+        }}>{de ? 'Tipps abgegeben' : 'Tips submitted'}</div>
         <div style={{
           fontSize: 'clamp(56px, 7vw, 130px)', fontWeight: 900,
           color: submittedCount === totalTeams ? '#22C55E' : '#F472B6',
@@ -15599,6 +15400,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
 // Overlay, episch-funkelnd. Zeigt Wins pro Team + Highlight für just-Winner
 // + verbleibende Kategorien. Mod-Space schaltet weiter zur nächsten Frage.
 function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const de = lang === 'de';
   const wins = s.finalPhaseWins ?? {};
   const justWon = new Set(s.finalRecapJustWon ?? []);
   const totalPhases = s.totalPhases ?? 4;
@@ -15610,16 +15413,38 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const remaining = Math.max(0, 5 - completed);
   const isLastFinalQuestion = remaining === 0;
 
-  // Sortiere: justWon zuerst, dann nach Wins desc, dann nach name
-  const teamsSorted = [...s.teams].sort((a, b) => {
-    const aJust = justWon.has(a.id) ? 1 : 0;
-    const bJust = justWon.has(b.id) ? 1 : 0;
-    if (aJust !== bJust) return bJust - aJust;
-    const aw = wins[a.id] ?? 0;
-    const bw = wins[b.id] ?? 0;
-    if (aw !== bw) return bw - aw;
-    return a.name.localeCompare(b.name);
-  });
+  // 2026-05-09 v2 (Wolf '/animations 0B 8-Team Score-Cascade + Position-Swap'):
+  // Vorher Sort-im-JSX → Tabelle springt instant um. Jetzt: 2 Rankings (before/
+  // after), jede Reihe absolute am before-Slot, Tickup +1 für just-Winner,
+  // dann gestaffelter Position-Swap zur after-Rank-Position. Mitfieber-Moment
+  // pro Team gleichzeitig.
+  const N = s.teams.length;
+  const currentWins: Record<string, number> = {};
+  for (const t of s.teams) currentWins[t.id] = wins[t.id] ?? 0;
+  const prevWins: Record<string, number> = {};
+  for (const t of s.teams) prevWins[t.id] = currentWins[t.id] - (justWon.has(t.id) ? 1 : 0);
+  const beforeOrder = [...s.teams].sort((a, b) => {
+    const w = (prevWins[b.id] ?? 0) - (prevWins[a.id] ?? 0);
+    return w !== 0 ? w : a.name.localeCompare(b.name);
+  }).map(t => t.id);
+  const afterOrder = [...s.teams].sort((a, b) => {
+    const w = (currentWins[b.id] ?? 0) - (currentWins[a.id] ?? 0);
+    return w !== 0 ? w : a.name.localeCompare(b.name);
+  }).map(t => t.id);
+
+  // Stagger: Tickup zuerst (gestaffelt von unten nach oben), dann Position-Swap
+  const STAGGER_MS = 180;
+  const TICKUP_MS = 600;
+  const TICKUP_BASE_MS = 600;
+  const SWAP_DELAY_MS = TICKUP_BASE_MS + N * STAGGER_MS + 250;
+  const SWAP_MS = 800;
+  const GLOW_DELAY_MS = SWAP_DELAY_MS + SWAP_MS - 100;
+
+  // Row-Höhe & Avatar-Größe abh. von Team-Count damit nichts unten abschneidet
+  // (Wolf 'tabelle ist zu hoch, unten teams abgeschnitten').
+  const rowH = N >= 7 ? 60 : N >= 5 ? 72 : 88;
+  const avatarSize = N >= 7 ? 42 : N >= 5 ? 50 : 60;
+  const containerH = rowH * N;
 
   return (
     <div style={{
@@ -15628,7 +15453,7 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       backdropFilter: 'blur(14px) saturate(140%)',
       WebkitBackdropFilter: 'blur(14px) saturate(140%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '4vh 4vw',
+      padding: '3vh 4vw',
       animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       overflow: 'hidden',
     }}>
@@ -15642,23 +15467,13 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
           70%  { opacity: 1; transform: translateY(4px) scale(1.06); filter: blur(0); }
           100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
-        @keyframes qqRecapRowIn {
-          0%   { opacity: 0; transform: translateX(-32px); }
-          100% { opacity: 1; transform: translateX(0); }
+        @keyframes qqRecapSwap {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(var(--swapDiff)); }
         }
-        @keyframes qqRecapJustWonPulse {
-          0%, 100% { box-shadow: 0 0 32px rgba(251,191,36,0.65), 0 0 64px rgba(251,191,36,0.30); transform: scale(1); }
-          50%      { box-shadow: 0 0 48px rgba(251,191,36,0.95), 0 0 96px rgba(251,191,36,0.50); transform: scale(1.025); }
-        }
-        @keyframes qqRecapSparkle {
-          0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(0.6); }
-          50%  { opacity: 1; transform: translate(-50%, -50%) rotate(180deg) scale(1.2); }
-          100% { opacity: 0; transform: translate(-50%, -50%) rotate(360deg) scale(0.8); }
-        }
-        @keyframes qqRecapWinDigitPop {
-          0%   { transform: scale(0.5); opacity: 0; }
-          50%  { transform: scale(1.4); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
+        @keyframes qqRecapWinnerGlow {
+          0%   { box-shadow: 0 0 0 rgba(251,191,36,0); border-color: rgba(255,255,255,0.10); }
+          100% { box-shadow: 0 0 36px rgba(251,191,36,0.55), 0 0 72px rgba(251,191,36,0.25); border-color: rgba(251,191,36,0.85); }
         }
       `}</style>
 
@@ -15666,21 +15481,23 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900,
         color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.18em',
-        opacity: 0.92, marginBottom: 12,
+        opacity: 0.92, marginBottom: 10,
         animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
       }}>
-        🏆 Zwischenstand · Final-Phase
+        🏆 {de ? 'Zwischenstand · Final-Phase' : 'Standings · Final phase'}
       </div>
       <div style={{
-        fontSize: 'clamp(40px, 5vw, 88px)', fontWeight: 900,
+        fontSize: 'clamp(32px, 4.2vw, 72px)', fontWeight: 900,
         color: '#F1F5F9', letterSpacing: '-0.025em', textAlign: 'center',
-        marginBottom: 'clamp(24px, 3vh, 48px)',
+        marginBottom: 'clamp(20px, 2.5vh, 40px)',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
       }}>
         {(() => {
           const t = isLastFinalQuestion
-            ? `Frage ${completed}/5 · gleich kommt das Wager-Reveal!`
-            : `Frage ${completed}/5 · noch ${remaining} ${remaining === 1 ? 'Kategorie' : 'Kategorien'}`;
+            ? (de ? `Frage ${completed}/5 · gleich kommt das Wager-Reveal!` : `Question ${completed}/5 · wager reveal next!`)
+            : (de
+                ? `Frage ${completed}/5 · noch ${remaining} ${remaining === 1 ? 'Kategorie' : 'Kategorien'}`
+                : `Question ${completed}/5 · ${remaining} ${remaining === 1 ? 'category' : 'categories'} left`);
           return Array.from(t).map((ch, i) => (
             <span key={i} style={{
               display: 'inline-block',
@@ -15691,84 +15508,72 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         })()}
       </div>
 
-      {/* Team-Reihen — sortiert: just-Won zuerst, dann nach Score */}
+      {/* Team-Reihen — absolute am before-Slot, Tickup + Position-Swap */}
       <div style={{
-        display: 'flex', flexDirection: 'column',
-        gap: 'clamp(10px, 1.4vh, 18px)',
-        width: '100%', maxWidth: 920,
+        position: 'relative', width: '100%', maxWidth: 920, height: containerH,
       }}>
-        {teamsSorted.map((t, idx) => {
-          const w = wins[t.id] ?? 0;
+        {s.teams.map(t => {
+          const beforeRank = beforeOrder.indexOf(t.id);
+          const afterRank = afterOrder.indexOf(t.id);
           const isJust = justWon.has(t.id);
+          const isTopAfter = afterRank === 0;
+          const swapDiffPx = (afterRank - beforeRank) * rowH;
+          const w = currentWins[t.id] ?? 0;
+          const wPrev = prevWins[t.id] ?? 0;
+          // Tickup-Delay gestaffelt von unten nach oben (lowest rank first)
+          const tickupDelay = TICKUP_BASE_MS + (N - 1 - beforeRank) * STAGGER_MS;
+          const swapAnim = beforeRank !== afterRank
+            ? `qqRecapSwap ${SWAP_MS}ms cubic-bezier(0.34, 1.18, 0.64, 1) ${SWAP_DELAY_MS}ms both`
+            : '';
+          const glowAnim = isTopAfter && isJust
+            ? `qqRecapWinnerGlow 0.8s ease-out ${GLOW_DELAY_MS}ms both`
+            : '';
+          const animation = [swapAnim, glowAnim].filter(Boolean).join(', ');
           return (
             <div key={t.id} style={{
+              position: 'absolute', left: 0, right: 0,
+              top: beforeRank * rowH, height: rowH - 6,
+              ['--swapDiff' as any]: `${swapDiffPx}px`,
+              animation: animation || undefined,
+              willChange: 'transform',
               display: 'grid',
-              gridTemplateColumns: '64px 1fr auto',
-              gap: 16, alignItems: 'center',
-              padding: '14px 22px', borderRadius: 18,
+              gridTemplateColumns: `${avatarSize + 8}px 1fr auto`,
+              gap: 14, alignItems: 'center',
+              padding: '0 18px', borderRadius: 14,
               background: isJust
                 ? 'linear-gradient(90deg, rgba(251,191,36,0.18), rgba(245,158,11,0.10))'
                 : 'rgba(255,255,255,0.04)',
               border: isJust
-                ? '2.5px solid rgba(251,191,36,0.85)'
+                ? '2px solid rgba(251,191,36,0.7)'
                 : '1.5px solid rgba(255,255,255,0.10)',
-              animation: isJust
-                ? `qqRecapRowIn 0.55s cubic-bezier(0.34,1.4,0.5,1) ${0.4 + idx * 0.12}s both, qqRecapJustWonPulse 1.6s ease-in-out ${0.95 + idx * 0.12}s infinite`
-                : `qqRecapRowIn 0.55s cubic-bezier(0.34,1.4,0.5,1) ${0.4 + idx * 0.12}s both`,
-              opacity: 0,
-              position: 'relative',
-              overflow: 'visible',
+              boxSizing: 'border-box',
             }}>
-              {/* Sparkle-Layer für just-Won */}
-              {isJust && (
-                <>
-                  {[0, 60, 120, 200, 270, 330].map((deg, si) => {
-                    const radius = 'clamp(40px, 5vw, 70px)';
-                    return (
-                      <span key={si} aria-hidden style={{
-                        position: 'absolute',
-                        left: '50%', top: '50%',
-                        fontSize: 'clamp(14px, 1.6vw, 22px)',
-                        pointerEvents: 'none',
-                        ['--ang' as any]: `${deg}deg`,
-                        transform: `translate(calc(-50% + cos(${deg}deg) * ${radius}), calc(-50% + sin(${deg}deg) * ${radius}))`,
-                        animation: `qqRecapSparkle 1.4s ease-in-out ${1.0 + si * 0.18}s infinite`,
-                      }}>✨</span>
-                    );
-                  })}
-                </>
-              )}
-              {/* Avatar */}
               <div style={{
-                width: 64, height: 64, borderRadius: '50%',
+                width: avatarSize, height: avatarSize, borderRadius: '50%',
                 background: `${t.color}33`,
-                border: `2.5px solid ${t.color}`,
-                boxShadow: `0 0 18px ${t.color}66`,
+                border: `2px solid ${t.color}`,
+                boxShadow: `0 0 14px ${t.color}55`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                position: 'relative', zIndex: 2,
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize - 8} />
               </div>
               <div style={{
-                fontSize: 'clamp(20px, 2vw, 32px)', fontWeight: 900,
+                fontSize: `clamp(16px, 1.7vw, ${Math.round(rowH * 0.34)}px)`, fontWeight: 900,
                 color: t.color,
-                position: 'relative', zIndex: 2,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{t.name}</div>
               <div style={{
-                display: 'flex', alignItems: 'baseline', gap: 8,
-                fontWeight: 900,
-                position: 'relative', zIndex: 2,
+                display: 'flex', alignItems: 'baseline', gap: 8, fontWeight: 900,
               }}>
+                <RecapScoreTickup
+                  from={wPrev} to={w}
+                  delayMs={tickupDelay}
+                  durationMs={TICKUP_MS}
+                  rowH={rowH}
+                />
                 <span style={{
-                  fontSize: 'clamp(36px, 4.4vw, 64px)',
-                  color: w > 0 ? '#FBBF24' : '#475569',
-                  textShadow: w > 0 ? '0 0 24px rgba(251,191,36,0.5)' : 'none',
-                  fontVariantNumeric: 'tabular-nums',
-                  display: 'inline-block',
-                  animation: isJust ? `qqRecapWinDigitPop 0.7s cubic-bezier(0.34,1.6,0.5,1) ${0.85 + idx * 0.12}s both` : undefined,
-                }}>{w}</span>
-                <span style={{
-                  fontSize: 'clamp(18px, 2vw, 28px)', color: '#94A3B8',
+                  fontSize: `clamp(14px, 1.5vw, ${Math.round(rowH * 0.32)}px)`,
+                  color: '#94A3B8',
                 }}>🏆</span>
               </div>
             </div>
@@ -15778,16 +15583,56 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
 
       {/* Footer-Hint */}
       <div style={{
-        marginTop: 'clamp(24px, 3vh, 40px)',
+        marginTop: 'clamp(20px, 2.5vh, 36px)',
         fontSize: 'clamp(13px, 1.2vw, 18px)', color: '#94A3B8',
         opacity: 0, animation: 'qqRecapTitleLetter 0.5s ease 1.5s both',
         fontStyle: 'italic',
       }}>
         {isLastFinalQuestion
-          ? 'Letzte Final-Frage gespielt — Space für Wager-Reveal'
-          : 'Space für die nächste Final-Frage'}
+          ? (de ? 'Letzte Final-Frage gespielt — Space für Wager-Reveal' : 'Last final question played — space for wager reveal')
+          : (de ? 'Space für die nächste Final-Frage' : 'Space for the next final question')}
       </div>
     </div>
+  );
+}
+
+// Tickup-Helper für Recap-Score-Cascade. Animiert ganzzahlig from→to mit
+// ease-out-cubic. Zeigt während Tickup einen kleinen +N-Hint grün.
+function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
+  from: number; to: number; delayMs: number; durationMs: number; rowH: number;
+}) {
+  const [val, setVal] = useState(from);
+  useEffect(() => {
+    setVal(from);
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      if (elapsed < delayMs) { frame = requestAnimationFrame(tick); return; }
+      const t = Math.min(1, (elapsed - delayMs) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(from + (to - from) * eased));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [from, to, delayMs, durationMs]);
+  const showDelta = to > from && val > from && val < to;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
+      {showDelta && (
+        <span style={{
+          fontSize: `clamp(11px, 1.1vw, ${Math.round(rowH * 0.22)}px)`,
+          color: '#22C55E', fontWeight: 900,
+        }}>+{to - from}</span>
+      )}
+      <span style={{
+        fontSize: `clamp(28px, 3.6vw, ${Math.round(rowH * 0.62)}px)`,
+        color: val > 0 ? '#FBBF24' : '#475569',
+        textShadow: val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
+        fontVariantNumeric: 'tabular-nums',
+      }}>{val}</span>
+    </span>
   );
 }
 
@@ -15891,6 +15736,7 @@ function decodeFinalStep(step: number, N: number): FinalStep {
 }
 
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
   const N = s.teams.length;
   const step = s.finalRevealStep ?? 0;
   const phase = decodeFinalStep(step, N);
@@ -15935,8 +15781,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       position: 'relative', overflow: 'hidden',
     }}>
       <FinalRevealSharedKeyframes />
-      {phase.kind === 'title' && <TitleHoldSlide />}
-      {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} />}
+      {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
+      {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} lang={lang} />}
       {phase.kind === 'bet' && (
         <BetRevealSlide
           team={betSorted[phase.teamIndex]?.team}
@@ -15944,11 +15790,12 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             ? (s.finalBetResolution?.[betSorted[phase.teamIndex].team.id] ?? null)
             : null}
           allTeams={s.teams}
+          lang={lang}
         />
       )}
-      {phase.kind === 'award-card' && <AwardCardSlide awardIndex={phase.awardIndex} />}
-      {phase.kind === 'award-reveal' && <AwardRevealSlide awardIndex={phase.awardIndex} state={s} />}
-      {phase.kind === 'ranking' && <RankingSlide rankIndex={phase.rankIndex} finalRanking={finalRanking} />}
+      {phase.kind === 'award-card' && <AwardCardSlide awardIndex={phase.awardIndex} lang={lang} />}
+      {phase.kind === 'award-reveal' && <AwardRevealSlide awardIndex={phase.awardIndex} state={s} lang={lang} />}
+      {phase.kind === 'ranking' && <RankingSlide rankIndex={phase.rankIndex} finalRanking={finalRanking} lang={lang} />}
     </div>
   );
 }
@@ -15998,7 +15845,8 @@ function FinalRevealSharedKeyframes() {
 }
 
 // ─── TitleHoldSlide ─────────────────────────────────────────────────────────
-function TitleHoldSlide() {
+function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
+  const de = lang === 'de';
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -16010,20 +15858,22 @@ function TitleHoldSlide() {
         fontSize: 'clamp(40px, 5.5vw, 96px)', fontWeight: 900,
         color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
-      }}>Die Auflösung</div>
+      }}>{de ? 'Die Auflösung' : 'The reveal'}</div>
       <div style={{
         fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
         fontStyle: 'italic',
-      }}>Drück Space — los geht's 🐺</div>
+      }}>{de ? 'Drück Space — los geht\'s 🐺' : 'Press space — let\'s go 🐺'}</div>
     </div>
   );
 }
 
 // ─── GridRevealSlide ────────────────────────────────────────────────────────
-function GridRevealSlide({ state: s, cellsByTeam }: {
+function GridRevealSlide({ state: s, cellsByTeam, lang }: {
   state: QQStateUpdate;
   cellsByTeam: Record<string, number>;
+  lang: 'de' | 'en';
 }) {
+  const de = lang === 'de';
   const topTeam = [...s.teams].sort((a, b) =>
     (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
   )[0];
@@ -16131,7 +15981,7 @@ function GridRevealSlide({ state: s, cellsByTeam }: {
           fontSize: 'clamp(13px, 1.3vw, 20px)', fontWeight: 900,
           color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.16em',
           marginBottom: 6,
-        }}>🏆 Größtes Gebiet</div>
+        }}>{de ? '🏆 Größtes Gebiet' : '🏆 Largest area'}</div>
         {[...s.teams].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0)).map((t, i) => (
           <div key={t.id} style={{
             display: 'flex', alignItems: 'center', gap: 12,
@@ -16145,7 +15995,7 @@ function GridRevealSlide({ state: s, cellsByTeam }: {
               fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
               color: i === 0 ? '#FBBF24' : '#CBD5E1',
             }}>{t.largestConnected ?? 0}</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>· {cellsByTeam[t.id] ?? 0} ges.</span>
+            <span style={{ fontSize: 12, color: '#64748B' }}>· {cellsByTeam[t.id] ?? 0} {de ? 'ges.' : 'total'}</span>
           </div>
         ))}
         <div style={{
@@ -16155,7 +16005,7 @@ function GridRevealSlide({ state: s, cellsByTeam }: {
           fontSize: 11, fontWeight: 700, color: '#F472B6',
           textAlign: 'center', letterSpacing: '0.04em',
         }}>
-          📌 Brett-Stand fixiert — jetzt kommen die Boni
+          {de ? '📌 Brett-Stand fixiert — jetzt kommen die Boni' : '📌 Board locked — now the bonuses'}
         </div>
       </div>
     </div>
@@ -16163,12 +16013,14 @@ function GridRevealSlide({ state: s, cellsByTeam }: {
 }
 
 // ─── BetRevealSlide ─────────────────────────────────────────────────────────
-function BetRevealSlide({ team, resolution, allTeams }: {
+function BetRevealSlide({ team, resolution, allTeams, lang }: {
   team?: QQTeam;
   resolution: import('../../../shared/quarterQuizTypes').QQFinalBetResolution | null;
   allTeams: QQTeam[];
+  lang: 'de' | 'en';
 }) {
   if (!team) return null;
+  const de = lang === 'de';
   const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
   const isMutual = !!resolution?.mutualWith;
   const totalBonus = resolution?.totalBonus ?? 0;
@@ -16212,18 +16064,18 @@ function BetRevealSlide({ team, resolution, allTeams }: {
               <div style={{
                 fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 800,
                 color: '#94A3B8', textAlign: 'center',
-              }}>Kein Tipp abgegeben</div>
+              }}>{de ? 'Kein Tipp abgegeben' : 'No tip submitted'}</div>
               <div style={{
                 fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 700,
                 color: '#64748B', fontStyle: 'italic',
-              }}>0 Bonus-Punkte</div>
+              }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
             <>
               <div style={{
                 fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
                 color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
-              }}>tippte auf</div>
+              }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 padding: '12px 22px', borderRadius: 999,
@@ -16243,7 +16095,7 @@ function BetRevealSlide({ team, resolution, allTeams }: {
                   animation: 'qqFRTitleIn 0.6s ease 0.5s both',
                 }}>
                   <span style={{ fontSize: 'clamp(20px, 2vw, 30px)' }}>💞</span>
-                  + Sympathie-Bonus
+                  {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
                 </div>
               )}
               {isZero ? (
@@ -16262,7 +16114,7 @@ function BetRevealSlide({ team, resolution, allTeams }: {
                   <div style={{
                     fontSize: 'clamp(15px, 1.4vw, 22px)', fontWeight: 700,
                     color: '#64748B',
-                  }}>0 Bonus — Tipp ging nicht auf</div>
+                  }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
                 </div>
               ) : (
                 <div style={{
@@ -16287,13 +16139,14 @@ function BetRevealSlide({ team, resolution, allTeams }: {
 
 // ─── AwardCardSlide / AwardRevealSlide ──────────────────────────────────────
 const AWARD_DEFS = [
-  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', descDe: 'Niedrigster Score', accent: '#10B981' },
-  { emoji: '🦝', titleDe: 'Meisterklauer',       descDe: 'Meiste Klaus',     accent: '#A855F7' },
-  { emoji: '⚡', titleDe: 'Speedy Gonzales',     descDe: 'Schnellste Antworten', accent: '#F472B6' },
+  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981' },
+  { emoji: '🦝', titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7' },
+  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: '#F472B6' },
 ];
 
-function AwardCardSlide({ awardIndex }: { awardIndex: 0 | 1 | 2 }) {
+function AwardCardSlide({ awardIndex, lang }: { awardIndex: 0 | 1 | 2; lang: 'de' | 'en' }) {
   const a = AWARD_DEFS[awardIndex];
+  const de = lang === 'de';
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -16311,7 +16164,7 @@ function AwardCardSlide({ awardIndex }: { awardIndex: 0 | 1 | 2 }) {
         <div style={{
           fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
           color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
-        }}>🥁 Trommelwirbel …</div>
+        }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
         <div style={{
           fontSize: 'clamp(96px, 12vw, 180px)', lineHeight: 1,
           animation: 'qqFRDrumroll 0.6s ease-in-out infinite',
@@ -16320,11 +16173,11 @@ function AwardCardSlide({ awardIndex }: { awardIndex: 0 | 1 | 2 }) {
         <div style={{
           fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
           color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.01em',
-        }}>{a.titleDe}</div>
+        }}>{de ? a.titleDe : a.titleEn}</div>
         <div style={{
           fontSize: 'clamp(16px, 1.7vw, 26px)', fontWeight: 700,
           color: a.accent, fontStyle: 'italic',
-        }}>{a.descDe}</div>
+        }}>{de ? a.descDe : a.descEn}</div>
         <div style={{
           fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900,
           color: '#94A3B8', letterSpacing: '0.4em', marginTop: 8,
@@ -16334,8 +16187,9 @@ function AwardCardSlide({ awardIndex }: { awardIndex: 0 | 1 | 2 }) {
   );
 }
 
-function AwardRevealSlide({ awardIndex, state: s }: { awardIndex: 0 | 1 | 2; state: QQStateUpdate }) {
+function AwardRevealSlide({ awardIndex, state: s, lang }: { awardIndex: 0 | 1 | 2; state: QQStateUpdate; lang: 'de' | 'en' }) {
   const a = AWARD_DEFS[awardIndex];
+  const de = lang === 'de';
   const awards = s.endAwards;
   const winnerId = !awards ? null
     : awardIndex === 0 ? awards.underdog
@@ -16343,7 +16197,8 @@ function AwardRevealSlide({ awardIndex, state: s }: { awardIndex: 0 | 1 | 2; sta
     : awards.speedy;
   const winner = winnerId ? s.teams.find(t => t.id === winnerId) : null;
   const metric = !winner ? null
-    : awardIndex === 1 && awards?.meisterklauerCount ? `${awards.meisterklauerCount}× geklaut`
+    : awardIndex === 1 && awards?.meisterklauerCount
+      ? (de ? `${awards.meisterklauerCount}× geklaut` : `${awards.meisterklauerCount}× stolen`)
     : awardIndex === 2 && awards?.speedyAvgMs ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
     : null;
 
@@ -16368,7 +16223,7 @@ function AwardRevealSlide({ awardIndex, state: s }: { awardIndex: 0 | 1 | 2; sta
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <span style={{ fontSize: 'clamp(28px, 3vw, 44px)' }}>{a.emoji}</span>
-          {a.titleDe}
+          {de ? a.titleDe : a.titleEn}
         </div>
         {winner ? (
           <>
@@ -16402,12 +16257,12 @@ function AwardRevealSlide({ awardIndex, state: s }: { awardIndex: 0 | 1 | 2; sta
               fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 900,
               color: '#22C55E',
             }}>
-              + 1 Bonus-Punkt
+              {de ? '+ 1 Bonus-Punkt' : '+ 1 bonus point'}
             </div>
           </>
         ) : (
           <div style={{ fontSize: 'clamp(20px, 2vw, 28px)', color: '#475569', fontStyle: 'italic' }}>
-            (kein Sieger)
+            {de ? '(kein Sieger)' : '(no winner)'}
           </div>
         )}
       </div>
@@ -16424,10 +16279,12 @@ type RankingEntry = {
   total: number;
 };
 
-function RankingSlide({ rankIndex, finalRanking }: {
+function RankingSlide({ rankIndex, finalRanking, lang }: {
   rankIndex: number;
   finalRanking: RankingEntry[];
+  lang: 'de' | 'en';
 }) {
+  const de = lang === 'de';
   const N = finalRanking.length;
   const currentRank = N - rankIndex;
   const currentEntry = finalRanking[currentRank - 1];
@@ -16488,13 +16345,13 @@ function RankingSlide({ rankIndex, finalRanking }: {
           <div style={{
             fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
             color: '#F1F5F9',
-          }}>{currentEntry.total} Punkte</div>
+          }}>{currentEntry.total} {de ? 'Punkte' : 'points'}</div>
           <div style={{
             fontSize: 'clamp(13px, 1.3vw, 18px)', color: '#94A3B8',
           }}>
-            {currentEntry.cells} Felder
-            {currentEntry.bonus > 0 ? ` · + ${currentEntry.bonus} Tipp-Bonus` : ''}
-            {currentEntry.awards > 0 ? ` · + ${currentEntry.awards} Awards` : ''}
+            {currentEntry.cells} {de ? 'Felder' : 'cells'}
+            {currentEntry.bonus > 0 ? ` · + ${currentEntry.bonus} ${de ? 'Tipp-Bonus' : 'tip bonus'}` : ''}
+            {currentEntry.awards > 0 ? ` · + ${currentEntry.awards} ${de ? 'Awards' : 'awards'}` : ''}
           </div>
         </div>
       )}

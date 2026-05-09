@@ -353,7 +353,9 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       connectionsTimerSec: QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
       connectionsMaxFails: QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
       _connectionsTimerHandle: null,
-      connectionsEnabled: true,
+      // 2026-05-09 (Wolf): Default OFF — 4x4 wurde durch FinalBets ersetzt,
+      // beides zusammen überlädt das Quiz. Mod-Toggle bleibt für Sonderfälle.
+      connectionsEnabled: false,
       shuffleQuestionsInRound: true,
       swapFirstCell: null,
       language: 'both',
@@ -446,7 +448,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalBetResolution: null,
       endAwards: null,
       finalRoundScoreSnapshot: null,
-      finalWagerEnabled: false,
+      // 2026-05-09 (Wolf): Default ON — FinalBets ist der neue Standard-Quiz-Flow.
+      finalWagerEnabled: true,
     };
     qqRooms.set(roomCode, room);
   }
@@ -3659,7 +3662,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     connections:          room.connections ?? null,
     connectionsTimerSec:  room.connectionsTimerSec ?? QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
     connectionsMaxFails:  room.connectionsMaxFails ?? QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
-    connectionsEnabled:   room.connectionsEnabled ?? true,
+    connectionsEnabled:   room.connectionsEnabled ?? false,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
@@ -3756,7 +3759,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
-    finalWagerEnabled:     room.finalWagerEnabled ?? false,
+    finalWagerEnabled:     room.finalWagerEnabled ?? true,
     categoryIsNew:    (() => {
       const q = room.currentQuestion;
       if (!q) return false;
@@ -4442,37 +4445,34 @@ export function qqOnlyConnectReset(room: QQRoomState): void {
 }
 
 /** Strikes-Limit für 4 gewinnt: nach N falschen Tipps wird das Team gesperrt.
- *  User-Wunsch 2026-04-28: '3 strikes statt 1'. */
-export const QQ_ONLY_CONNECT_MAX_STRIKES = 3;
+ *  2026-05-09 v2 (Wolf-Reform): zurueck auf 1 — alle Hints sofort sichtbar,
+ *  also auch nur 1 Tipp. Gleiche UX wie Standard-Submit. */
+export const QQ_ONLY_CONNECT_MAX_STRIKES = 1;
 
 /**
- * Start: jedes verbundene Team beginnt bei Hint-Index 0.
- * Reset zuerst (falls vorherige Frage State hinterlassen hat).
+ * Start: alle 4 Hinweise sofort sichtbar für alle Teams.
  *
- * 2026-05-03 (Wolf-Wunsch): zurueck auf per-Team-Hint-Modell.
- * - Jedes Team schaltet seinen naechsten Hinweis selbst frei via
- *   qq:onlyConnectAdvanceTeamHint (Phone-Button).
- * - Beamer zeigt MIN(hintIndices) — nur die Hints die ALLE Teams haben.
- * - Score: 4-atHintIdx Punkte (wer auf weniger Hints richtig ist gewinnt
- *   mehr Punkte = unterschiedliche Punkte fuer unterschiedliche Hint-
- *   Levels, das war der Wolf-Wunsch).
- * - Question-Timer laeuft (qqStartTimer) wie sonst auch — bei Ablauf
- *   triggert Standard-qq:revealAnswer den Reveal-Pfad.
+ * 2026-05-09 v2 (Wolf-Reform): zurueck zur einfachen Variante.
+ * - ALLE 4 Hints sofort sichtbar (hintIndices[teamId] = 3 für alle).
+ * - Jedes Team hat 1 Tipp. Richtig → Aktion. Falsch → locked (kein Strike-
+ *   Loop mehr, ein Versuch reicht).
+ * - Reihenfolge der Aktionen nach submittedAt (= Speed) wie sonst auch.
+ * - Question-Timer laeuft (qqStartTimer) wie sonst auch.
+ * - Kein progressives Hint-Pacing, keine Auto-Ticks, kein Min-Duration-Gate.
  *
- * onAdvanceTick-Param bleibt fuer API-Kompatibilitaet, wird aber nicht
- * mehr verwendet (kein globaler Auto-Tick mehr).
+ * onAdvanceTick-Param bleibt fuer API-Kompatibilitaet (Aufrufer prüfen ihn).
  */
 export function qqOnlyConnectStart(room: QQRoomState, _onAdvanceTick?: () => void): void {
   qqOnlyConnectReset(room);
   const now = Date.now();
   for (const teamId of room.joinOrder) {
     if (!room.teams[teamId]) continue;
-    room.onlyConnectHintIndices[teamId] = 0;
+    // Alle Hints sofort sichtbar — keine progressive Cascade mehr.
+    room.onlyConnectHintIndices[teamId] = 3;
     room.onlyConnectHintRevealedAt[teamId] = now;
   }
   room.lastActivityAt = now;
   room._onlyConnectStartedAt = now;
-  // Kein globaler Auto-Tick — Teams advancen sich selbst via Phone-Button.
 }
 
 /**
@@ -4630,38 +4630,26 @@ export function qqOnlyConnectAllDone(room: QQRoomState): boolean {
   return counted > 0;
 }
 
-/** B2 (2026-04-29) + 2026-04-30 v2: Hartes Min-Duration-Gate — Runde darf nicht
- *  in unter 25s vorbei sein. User-Feedback 2026-04-30 (8 Iterationen vorher):
- *  '4 connect mit dummys wird nicht aufgelöst — runde endet nach paar
- *  sekunden, kein reveal'. Trotz mehrerer Gate-Tunings (2.5s/8s/MeaningfulProgress)
- *  blieb das Symptom. Neuer Ansatz: Hard-Floor 25s — alle Gates raus,
- *  Runde KANN unter keinen Umstaenden vor 25s enden, egal was Dummies tun.
- *  Damit ist das Reveal-Display garantiert sichtbar — Dummies kommen pro
- *  4-12s-Tick, also bei 25s sind ~3-4 Hints durch und Avatare auf Hints. */
+/** 2026-05-09 v2 (Wolf-Reform): Min-Duration auf 5s reduziert — alle 4 Hints
+ *  sind jetzt sofort sichtbar, kein Hint-Reveal-Pacing mehr. 5s reichen damit
+ *  Mod & Spieler die Frage lesen können bevor Dummies sie gleich beenden. */
 function onlyConnectMinDurationReached(room: QQRoomState): boolean {
-  if (!room._onlyConnectStartedAt) return false; // strict: kein Start = nicht erlaubt
-  return Date.now() - room._onlyConnectStartedAt >= 25000;
+  if (!room._onlyConnectStartedAt) return false;
+  return Date.now() - room._onlyConnectStartedAt >= 5000;
 }
 
-/** Combiner fuer alle AutoFinish-Gates — eine Quelle der Wahrheit.
- *  2026-04-30 Revision: MeaningfulProgress-Gate (verlangte Hint>=2 ODER
- *  einen korrekten Guess) entfernt. Bei Pure-Dummy-Lobbys mit allen
- *  Bots an idx=1 lockend hing die Runde dadurch endlos. MinDuration 8s
- *  + MinHint (idx>=1) + AllDone reicht als Schutz gegen Insta-End. */
+/** Combiner fuer AutoFinish-Gates.
+ *  2026-05-09 v2 (Wolf-Reform): MinHint-Gate entfernt (alle Hints sind sofort
+ *  sichtbar). Nur MinDuration (5s) + AllDone bleiben. */
 export function qqOnlyConnectCanAutoFinish(room: QQRoomState): boolean {
-  return qqOnlyConnectAllDone(room)
-    && qqOnlyConnectMinHintReached(room)
-    && onlyConnectMinDurationReached(room);
+  return qqOnlyConnectAllDone(room) && onlyConnectMinDurationReached(room);
 }
 
-/** Min-Hint-Gate für AutoFinish: 4 gewinnt darf nicht beendet werden bevor
- *  mindestens Hint 2 (idx=1) sichtbar war — sonst beenden Dummies in einer
- *  reinen Test-Lobby die Runde in 5s und der User sieht nichts. (Bug
- *  2026-04-28: 'runde bricht direkt ab ohne dass jemand gespielt hat'). */
-export function qqOnlyConnectMinHintReached(room: QQRoomState): boolean {
-  const indices = Object.values(room.onlyConnectHintIndices ?? {});
-  if (indices.length === 0) return false;
-  return Math.max(...indices) >= 1;
+/** 2026-05-09 v2 (Wolf-Reform): obsolet seit alle Hints sofort sichtbar.
+ *  Bleibt als no-op-Wrapper für API-Kompatibilität (Aufrufer in
+ *  qqSocketHandlers/qqAi referenzieren das noch). */
+export function qqOnlyConnectMinHintReached(_room: QQRoomState): boolean {
+  return true;
 }
 
 /** Moderator-Force-Reveal: setzt ALLE Teams auf Hint 3 (= alle Hinweise sichtbar).
@@ -5195,10 +5183,11 @@ export function qqFinishFinalBetting(room: QQRoomState): void {
 }
 
 /** Per-Frage-Win-Tracking innerhalb der Final-Phase.
- *  Delta gegen finalLastSnapshot → Team(s) mit max-gained = Winner(s) dieser
- *  Kategorie. Bei Tie: alle Top-Teams bekommen +1. Wenn niemand gewonnen hat
- *  (alle Deltas = 0), zählt's als „nobody-win" — kein Increment.
- *  Side-Effect: aktualisiert finalLastSnapshot auf den neuen Stand. */
+ *  2026-05-09 v2 (Wolf 'gewinnen tun alle teams die die antwort richtig haben'):
+ *  Vorher cells-delta-basiert (nur Top-Delta-Team gewann). Jetzt: ALLE Teams
+ *  in _currentQuestionWinners bekommen +1 — also jeder der die Frage richtig
+ *  beantwortet hat, unabhängig von Speed/Cells. Snapshot bleibt für Pause/
+ *  Resume-Konsistenz aber wird nicht mehr für Win-Detection genutzt. */
 export function qqTickFinalPhaseWin(room: QQRoomState): void {
   qqTickFinalPhaseWinReturn(room);
 }
@@ -5206,24 +5195,15 @@ export function qqTickFinalPhaseWin(room: QQRoomState): void {
 /** Wie qqTickFinalPhaseWin, gibt aber die Winner-IDs der gerade abgeschlossenen
  *  Frage zurück (für die Recap-Slide-Highlight-Logik). */
 export function qqTickFinalPhaseWinReturn(room: QQRoomState): string[] {
-  if (!room.finalLastSnapshot) return [];
-  const now = countCellsByTeam(room);
-  const delta: Record<string, number> = {};
-  let max = 0;
-  for (const id of Object.keys(room.teams)) {
-    delta[id] = (now[id] ?? 0) - (room.finalLastSnapshot[id] ?? 0);
-    if (delta[id] > max) max = delta[id];
+  // Quelle der Wahrheit: _currentQuestionWinners (gesetzt bei applyAutoEval/
+  // qqMarkCorrect). Enthält ALLE korrekten Teams, sortiert nach Speed.
+  const winners = (room._currentQuestionWinners ?? []).filter(Boolean);
+  for (const id of winners) {
+    if (!room.teams[id]) continue;
+    room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
   }
-  const winners: string[] = [];
-  if (max > 0) {
-    for (const id of Object.keys(delta)) {
-      if (delta[id] === max) {
-        room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
-        winners.push(id);
-      }
-    }
-  }
-  room.finalLastSnapshot = { ...now };
+  // Snapshot trotzdem mitführen (für evtl. zukünftige Cluster-Visuals)
+  room.finalLastSnapshot = { ...countCellsByTeam(room) };
   return winners;
 }
 

@@ -2221,8 +2221,8 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
   // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
   // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Letzte Quiz-Runde — danach Stapel-Bonus im Finale!'],
-                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Last quiz round — stack-bonus finale follows!'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!'],
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Collect quiz buddy points — stack-bonus finale follows!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -2321,7 +2321,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
               2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 tiles or steal', 'Per correct answer'] },
               3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
-              4: { emoji: '🏯', de: ['Letzte Quiz-Runde', 'danach Stapel-Bonus im Finale'], en: ['Last quiz round', 'stack-bonus finale follows'] },
+              4: { emoji: '🏯', de: ['Quiz-Buddy-Punkte', 'danach Stapel-Bonus im Finale'], en: ['Quiz buddy points', 'stack-bonus finale follows'] },
             };
             const r = RULES[s.gamePhaseIndex] ?? RULES[3];
             return (
@@ -2372,7 +2372,7 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
               'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Je näher, desto mehr Punkte'], en: ['Guess the location on the map', 'Closer = more points'] } },
               'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten', 'Keine Antwort vor Zeitende = raus'], en: ['Take turns', 'No answer before time runs out = out'] } },
-              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Hinweise, eine Lösung', 'Wenigste Hinweise = 1 Aktion'], en: ['4 clues, one answer', 'Fewest clues = 1 action'] } },
+              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Begriffe — was verbindet sie?', '1 Tipp · schnellste richtig zuerst'], en: ['4 terms — what connects them?', '1 guess · fastest correct first'] } },
               'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },
             };
             const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');
@@ -4100,33 +4100,24 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   return null;
 }
 
+// 2026-05-09 v2 (Wolf-Reform): Connect 4 vereinfacht.
+// - Alle 4 Hints sofort sichtbar (kein progressives Freischalten mehr).
+// - 1 Tipp pro Team. Richtig → Aktion. Falsch → gelockt.
+// - Reihenfolge der Aktionen nach Speed (submittedAt) wie sonst auch.
 function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
 }) {
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOnlyConnect;
   const hintsAll = (lang === 'en' && bt.hintsEn?.length === 4 ? bt.hintsEn : bt.hints) ?? [];
-  // Per-Team-Hint-Level. Team kann durch Tap auf den naechsten Slot freischalten.
-  const hintIdx = Math.max(0, (s.onlyConnectHintIndices ?? {})[myTeamId] ?? 0);
   const isLocked = (s.onlyConnectLockedTeams ?? []).includes(myTeamId);
-  // Multi-Winner: hat MEIN Team schon richtig gelegen?
   const isMyWin = (s.onlyConnectGuesses ?? []).some(g => g.teamId === myTeamId && g.correct);
-  // alreadyAnswered = ich hab schon submittet (egal ob richtig oder gesperrt)
   const alreadyAnswered = isMyWin || isLocked;
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (!alreadyAnswered) ref.current?.focus(); }, [alreadyAnswered]);
 
-  // 2026-05-05 (Wolf-Wunsch '/team uebersichtlicher'): durch Tap auf den
-  // naechsten Hint-Slot freischalten — kein extra Button mehr.
-  const advanceHint = () => {
-    if (alreadyAnswered) return;
-    if (hintIdx >= 3) return;
-    emit('qq:onlyConnectAdvanceTeamHint', { roomCode, teamId: myTeamId });
-  };
-
-  // B7: Auto-Submit bei Timer-End (falls Text vorhanden + nicht schon locked).
   const expired = useExpiry(s.timerEndsAt ?? null);
   const valRef = useRef(val); valRef.current = val;
   const firedRef = useRef(false);
@@ -4151,85 +4142,45 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Regel-Hint oben — kompakt, klar, ohne Punkte-Logik (Wolf-Wunsch:
-          Punktlogik ist intern, Spieler interessiert nur die Mechanik). */}
       {!alreadyAnswered && (
         <div style={{
           fontSize: 12, color: '#94A3B8', textAlign: 'center', fontWeight: 700,
           lineHeight: 1.4, padding: '0 4px',
         }}>
           {lang === 'de'
-            ? 'Wer mit den wenigsten Hinweisen löst, gewinnt.'
-            : 'Solve with fewest hints to win.'}
+            ? 'Was verbindet diese 4 Begriffe? 1 Tipp pro Team.'
+            : 'What connects these 4 terms? 1 guess per team.'}
         </div>
       )}
 
-      {/* 4 Hint-Slots vertikal — verdeckte Slots klickbar zum Freischalten
-          (Wolf-Wunsch '/team uebersichtlicher: durch klicken freischalten'). */}
+      {/* 4 Hint-Slots — ALLE sofort sichtbar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {[0, 1, 2, 3].map(i => {
-          const isVisible = i <= hintIdx;
-          const isCurrent = i === hintIdx && !alreadyAnswered;
-          const isNextLockable = i === hintIdx + 1 && !alreadyAnswered;
           const hintColor = i === 0 ? '#EC4899' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
-          const clickable = isNextLockable;
           return (
-            <button
-              key={i}
-              type="button"
-              onClick={clickable ? advanceHint : undefined}
-              disabled={!clickable}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '12px 14px', borderRadius: 10,
-                background: isVisible
-                  ? `${hintColor}18`
-                  : clickable
-                    ? `${hintColor}10`
-                    : 'rgba(255,255,255,0.03)',
-                border: isVisible
-                  ? `1px solid ${hintColor}55`
-                  : clickable
-                    ? `1.5px dashed ${hintColor}88`
-                    : '1px dashed rgba(255,255,255,0.10)',
-                boxShadow: isCurrent
-                  ? `0 0 12px ${hintColor}44`
-                  : clickable
-                    ? `0 0 14px ${hintColor}33`
-                    : 'none',
-                opacity: isVisible ? 1 : (clickable ? 0.95 : 0.4),
-                cursor: clickable ? 'pointer' : 'default',
-                transition: 'all 0.3s ease',
-                fontFamily: 'inherit', textAlign: 'left',
-                width: '100%', minHeight: 44,
-              }}
-            >
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '12px 14px', borderRadius: 10,
+              background: `${hintColor}18`,
+              border: `1px solid ${hintColor}55`,
+              fontFamily: 'inherit', textAlign: 'left',
+              width: '100%', minHeight: 44,
+              animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.06}s both`,
+            }}>
               <span style={{
                 fontSize: 11, fontWeight: 900,
-                color: isVisible ? hintColor : (clickable ? hintColor : '#475569'),
+                color: hintColor,
                 letterSpacing: '0.1em', textTransform: 'uppercase',
                 width: 32, textAlign: 'center', flexShrink: 0,
               }}>{lang === 'de' ? `H${i+1}` : `C${i+1}`}</span>
               <span style={{
-                fontSize: 16, fontWeight: 900,
-                color: isVisible ? '#F1F5F9' : (clickable ? `${hintColor}cc` : 'transparent'),
-                flex: 1,
-              }}>
-                {isVisible
-                  ? hintsAll[i]
-                  : clickable
-                    ? (lang === 'de' ? '🔓 Tippen zum Freischalten' : '🔓 Tap to reveal')
-                    : '?'}
-              </span>
-            </button>
+                fontSize: 16, fontWeight: 900, color: '#F1F5F9', flex: 1,
+              }}>{hintsAll[i]}</span>
+            </div>
           );
         })}
       </div>
 
-      {/* 2026-05-09 (Wolf-Spoiler-Fix): Richtig wird NICHT mehr direkt
-          enthüllt — Status zeigt neutral „Tipp eingegangen, warte auf
-          andere". Falsche Versuche bleiben sichtbar (Strike-Counter), damit
-          Teams wissen ob sie noch raten können. Backend erlaubt 3 Versuche. */}
       {isMyWin && (
         <div style={{
           padding: '10px 14px', borderRadius: 8, textAlign: 'center',
@@ -4245,24 +4196,10 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
           fontSize: 13, fontWeight: 900, color: '#94A3B8',
         }}>
-          {lang === 'de' ? 'Alle Versuche genutzt — wartest auf Auflösung' : 'All tries used — waiting for reveal'}
-        </div>
-      )}
-      {/* Strike-Hint: wenn Team schon falsche Versuche hatte aber noch nicht
-          locked (und noch nicht gewonnen) — neutral als „Versuch X/3" */}
-      {!alreadyAnswered && (s.onlyConnectStrikes?.[myTeamId] ?? 0) > 0 && (
-        <div style={{
-          padding: '8px 12px', borderRadius: 8, textAlign: 'center',
-          background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.35)',
-          fontSize: 12, fontWeight: 800, color: '#FCD34D',
-        }}>
-          {lang === 'de'
-            ? `Versuch ${(s.onlyConnectStrikes?.[myTeamId] ?? 0) + 1}/3 — du kannst nochmal raten`
-            : `Try ${(s.onlyConnectStrikes?.[myTeamId] ?? 0) + 1}/3 — guess again`}
+          {lang === 'de' ? 'Tipp abgegeben — wartest auf Auflösung' : 'Tip submitted — waiting for reveal'}
         </div>
       )}
 
-      {/* Freitext-Eingabe (nur wenn nicht locked + nicht selbst gewonnen) */}
       {!alreadyAnswered && (
         <>
           <StandardInput
@@ -4283,7 +4220,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
             lang={lang}
           />
           <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', fontWeight: 700 }}>
-            {lang === 'de' ? 'Bis zu 3 Versuche pro Team — Tipp wird erst beim Reveal aufgelöst' : 'Up to 3 tries per team — answer is revealed at the end'}
+            {lang === 'de' ? '1 Versuch — schnellste richtige Antwort gewinnt zuerst' : '1 try — fastest correct answer wins first'}
           </div>
         </>
       )}

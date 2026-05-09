@@ -218,7 +218,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
     description: 'Name + 1-Zeiler pro Sub-Mechanik. Erscheint im Cat-Intro vor jeder Bunte-Tüte-Frage.',
     items: [
       { key: 'bunte.onlyConnect.name',    label: '4 gewinnt — Name',    defaultDe: '4 gewinnt',     defaultEn: 'Only Connect' },
-      { key: 'bunte.onlyConnect.explain', label: '4 gewinnt — Erkl.',   defaultDe: '4 Hinweise, eine Lösung — wer mit den wenigsten Hinweisen löst, gewinnt eine Aktion.', defaultEn: '4 clues, one answer — solve with fewest clues to win an action.' },
+      { key: 'bunte.onlyConnect.explain', label: '4 gewinnt — Erkl.',   defaultDe: '4 Begriffe — was verbindet sie? Ein Tipp pro Team, schnellste richtige Antwort gewinnt zuerst.', defaultEn: '4 terms — what connects them? One guess per team, fastest correct answer wins first.' },
 
       { key: 'bunte.bluff.name',          label: 'Bluff — Name',        defaultDe: 'Bluff',         defaultEn: 'Bluff' },
       { key: 'bunte.bluff.explain',       label: 'Bluff — Erkl.',       defaultDe: 'Erfindet plausible Falsch-Antworten und ratet die echte.', defaultEn: 'Make up plausible fake answers and find the real one.' },
@@ -256,8 +256,8 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'round.3.line2', label: 'Runde 3 — Zeile 2', defaultDe: 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!', defaultEn: 'Stack unlocked — lock your tile + 1 extra point!' },
 
       { key: 'round.4.line1',         label: 'Runde 4 — Zeile 1', defaultDe: 'Pro richtige Antwort wählt eine Aktion:', defaultEn: 'Per correct answer choose one action:' },
-      { key: 'round.4.line2_finale',  label: 'Runde 4 — Zeile 2 (mit Finale)', defaultDe: 'Letzte Quiz-Runde — danach kommt der Stapel-Bonus im Finale!', defaultEn: 'Last quiz round — stack-bonus finale follows!' },
-      { key: 'round.4.line2_nofin',   label: 'Runde 4 — Zeile 2 (ohne Finale)', defaultDe: 'Letzte Runde — alles bleibt verfügbar!', defaultEn: 'Final round — everything stays available!' },
+      { key: 'round.4.line2_finale',  label: 'Runde 4 — Zeile 2 (mit Finale)', defaultDe: 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!', defaultEn: 'Collect quiz buddy points — stack-bonus finale follows!' },
+      { key: 'round.4.line2_nofin',   label: 'Runde 4 — Zeile 2 (ohne Finale)', defaultDe: 'Quiz-Buddy-Punkte — alles bleibt verfügbar!', defaultEn: 'Quiz buddy points — everything stays available!' },
     ],
   },
 ];

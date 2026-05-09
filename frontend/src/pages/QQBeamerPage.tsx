@@ -6440,7 +6440,10 @@ function ActionCardReveal({
       perspective: '1400px',
       opacity: isVisible ? 1 : 0,
       animation: isVisible ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
-      filter: phase === 'done' ? `drop-shadow(0 0 38px ${c.accent}cc)` : 'none',
+      // 2026-05-09 v2 (Wolf 'card-back wirkt anders groß als card-front'):
+      // outer drop-shadow ab `slamming` (vorher nur in `done` → Halo erschien
+      // erst beim Flip → wirkte als ob die Card plötzlich größer wird).
+      filter: isVisible ? `drop-shadow(0 0 28px ${c.accent}88)` : 'none',
       transition: 'filter 0.6s ease',
       alignSelf: 'stretch',
       display: 'flex',
@@ -6451,7 +6454,10 @@ function ActionCardReveal({
         transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
       }}>
-        {/* Card-Back — Cross-Hatch + großes „NEU" */}
+        {/* Card-Back — Cross-Hatch + großes „NEU".
+            2026-05-09 v2 (Wolf): Pink-Glow-Halo (0 0 40px accent44) hinzu —
+            matcht Card-Front, sodass beim Flip kein "Größen-Shift" wahrnehmbar
+            ist. Vorher hatte nur die Vorderseite den Halo. */}
         <div style={{
           position: 'absolute', inset: 0,
           backfaceVisibility: 'hidden',
@@ -6462,7 +6468,7 @@ function ActionCardReveal({
             'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
             'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
           border: '3px solid rgba(236,72,153,0.65)',
-          boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+          boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           gap: 14,
           overflow: 'hidden',
@@ -17617,6 +17623,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               style={{
                 position: 'absolute',
                 top: 0, left: 0, right: 0, bottom: 0,
+                width: '100%', height: '100%',
                 pointerEvents: 'none', zIndex: 2,
                 overflow: 'visible',
                 display: 'block',

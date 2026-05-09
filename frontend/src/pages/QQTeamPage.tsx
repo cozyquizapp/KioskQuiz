@@ -5017,32 +5017,24 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           : inStreak ? 'tcRowPulse 2.5s ease-in-out infinite' : undefined,
                         transition: 'all 0.3s ease',
                       }}>
-                        {/* 2026-05-05 (Wolf 'gruen und blau sehen gestapelt
-                            fast gleich aus'): statt Pagoden-Emoji jetzt Avatar
-                            mit Goldring drumherum — Team-Identitaet bleibt
-                            erhalten + Stack klar als zusaetzlicher Ring. */}
+                        {/* 2026-05-09 v2 (Wolf TODO 1): gestackte Felder zeigen
+                            🔒-Schloss statt Avatar — klarer „nicht klaubar"-
+                            Eindruck. BG-Teamfarbe bleibt (Eigentum erkennbar).
+                            Vorher: Avatar + Pink-Ring (semi-gut erkennbar). */}
                         {cellTeam ? (
-                          <div style={{
-                            position: 'relative',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '100%', height: '100%',
-                          }}>
-                            {isStuckCell && (
-                              <div aria-hidden style={{
-                                position: 'absolute',
-                                inset: '12%',
-                                borderRadius: '50%',
-                                border: '2px solid rgba(236,72,153,0.95)',
-                                boxShadow: '0 0 6px rgba(236,72,153,0.55)',
-                                pointerEvents: 'none',
-                              }} />
-                            )}
+                          isStuckCell ? (
+                            <div style={{
+                              fontSize: Math.max(12, Math.floor(miniCellSize * 0.7)),
+                              lineHeight: 1,
+                              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))',
+                            }}>🔒</div>
+                          ) : (
                             <QQTeamAvatar
                               avatarId={cellTeam.avatarId}
                               teamEmoji={cellTeam.emoji}
-                              size={Math.max(16, Math.floor(miniCellSize * (isStuckCell ? 0.65 : 0.85)))}
+                              size={Math.max(16, Math.floor(miniCellSize * 0.85))}
                             />
-                          </div>
+                          )
                         ) : null}
                       </div>
                     );
@@ -5411,8 +5403,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                           zeigten auf /team nichts, /beamer aber schon. Vorrang:
                           Stack > Joker > Avatar (Stack-Bonus auf Joker-Cell
                           ueberschreibt visuell, weil 🏯 die staerkere Aussage ist). */}
+                      {/* 2026-05-09 v2 (Wolf TODO 1 'gestackte Felder besser
+                          markieren'): 🏯 (Burg = Verb) → 🔒 (Schloss = Resultat
+                          „lock = nicht klaubar"). BG-Teamfarbe bleibt — semantisch
+                          klarer als das Action-Verb. */}
                       {isStuckCell
-                        ? <QQEmojiIcon emoji="🏯"/>
+                        ? <QQEmojiIcon emoji="🔒"/>
                         : cell.jokerFormed
                           ? <JokerIcon i={r + c} size={Math.max(24, Math.floor(cellSize * 0.95))} alt="Joker" eurovisionMode={!!s.theme?.eurovisionMode} square />
                           : team

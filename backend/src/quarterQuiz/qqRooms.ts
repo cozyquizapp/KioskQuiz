@@ -888,10 +888,18 @@ export function qqFlushQuestionToHistory(room: QQRoomState): void {
         ...((room['_placementQueue'] as string[] | undefined) ?? []),
       ];
   const uniqueIds = Array.from(new Set(correctIds));
+  // 2026-05-09 v2 (Wolf TODO 2 'Bluff Emoji-Inkonsistenz'): bunteTueteKind
+  // mit aufnehmen, sodass der News-Ticker auf der Thanks-Page das Sub-
+  // spezifische Emoji (🎭 Bluff / 🧩 onlyConnect / 🔥 hotPotato / ...) statt
+  // immer nur das Parent-Cat-Emoji 🎁 zeigen kann.
+  const bunteTueteKind = room.currentQuestion.category === 'BUNTE_TUETE'
+    ? room.currentQuestion.bunteTuete?.kind
+    : undefined;
   room.questionHistory.push({
     _qIndex: qIdx,
     questionText: room.currentQuestion.answer ?? room.currentQuestion.text ?? '',
     category: room.currentQuestion.category,
+    bunteTueteKind,
     answers,
     correctTeamId: room.correctTeamId,
     correctTeamIds: uniqueIds,
@@ -3778,6 +3786,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     questionHistory:       room.questionHistory.map(h => ({
       questionText: h.questionText,
       category: h.category,
+      bunteTueteKind: (h as any).bunteTueteKind,
       correctTeamId: h.correctTeamId,
       correctTeamIds: h.correctTeamIds,
     })),

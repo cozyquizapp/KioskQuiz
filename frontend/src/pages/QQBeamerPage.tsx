@@ -15657,12 +15657,11 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const SWAP_MS = 800;
   const GLOW_DELAY_MS = SWAP_DELAY_MS + SWAP_MS - 100;
 
-  // 2026-05-09 v2 (Wolf 'tabelle größer, soll slide ausfüllen mit angenehmem
-  // rand'): Row-Höhe deutlich hochgezogen — Tabelle füllt mehr vom verfügbaren
-  // Vertikal-Space. Bei 8 Teams 78px (war 60), bei 5-6 Teams 92px (war 72),
-  // bei 3-4 Teams 110px (war 88).
-  const rowH = N >= 7 ? 78 : N >= 5 ? 92 : 110;
-  const avatarSize = N >= 7 ? 54 : N >= 5 ? 64 : 78;
+  // 2026-05-09 v3 (Wolf TODO 3 'text noch größer'): zweiter Bump nach v2.
+  // 8 Teams 78→92, 5-6 Teams 92→108, 3-4 Teams 110→130.
+  // Avatare proportional mit hochgezogen.
+  const rowH = N >= 7 ? 92 : N >= 5 ? 108 : 130;
+  const avatarSize = N >= 7 ? 64 : N >= 5 ? 76 : 92;
   const containerH = rowH * N;
 
   return (
@@ -15780,7 +15779,7 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize - 8} />
               </div>
               <div style={{
-                fontSize: `clamp(16px, 1.7vw, ${Math.round(rowH * 0.34)}px)`, fontWeight: 900,
+                fontSize: `clamp(20px, 2vw, ${Math.round(rowH * 0.38)}px)`, fontWeight: 900,
                 color: t.color,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{t.name}</div>
@@ -15840,7 +15839,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         }}>+{to - from}</span>
       )}
       <span style={{
-        fontSize: `clamp(28px, 3.6vw, ${Math.round(rowH * 0.62)}px)`,
+        fontSize: `clamp(34px, 4vw, ${Math.round(rowH * 0.66)}px)`,
         color: val > 0 ? '#FBBF24' : '#475569',
         textShadow: val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
@@ -19372,15 +19371,32 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     catLabel: string; catEmoji: string; question: string;
     winnerName: string; winnerEmoji?: string; winnerColor: string;
   };
+  // 2026-05-09 v2 (Wolf TODO 2 'Bluff-Emoji-Inkonsistenz'): bei Bunte-Tüte-
+  // Sub-Mechaniken das Sub-spezifische Emoji + Label nutzen (🎭 Bluff /
+  // 🧩 4 gewinnt / 🔥 Hot Potato / 🥇 Top 5 / ⚡ Reihenfolge / 🗺 CozyGuessr),
+  // nicht das Parent-Cat-Emoji 🎁. Macht den Recap-Ticker konsistent zur
+  // Bluff-Beamer-View und zu den Sub-Intros.
+  const BUNTE_SUB_EMOJI: Record<string, { emoji: string; de: string; en: string }> = {
+    onlyConnect: { emoji: '🧩', de: '4 gewinnt', en: 'Only Connect' },
+    bluff:       { emoji: '🎭', de: 'Bluff',     en: 'Bluff' },
+    hotPotato:   { emoji: '🔥', de: 'Hot Potato', en: 'Hot Potato' },
+    top5:        { emoji: '🥇', de: 'Top 5',     en: 'Top 5' },
+    order:       { emoji: '⚡', de: 'Reihenfolge', en: 'Order' },
+    map:         { emoji: '🗺', de: 'CozyGuessr', en: 'CozyGuessr' },
+  };
   const items: RecapItem[] = [];
   if (Array.isArray(history)) {
     for (const h of history) {
       const cat = (h.category ?? 'MUCHO') as keyof typeof QQ_CATEGORY_LABELS;
       const catLabelObj = QQ_CATEGORY_LABELS[cat];
-      const catLabel = catLabelObj
-        ? (lang === 'de' ? catLabelObj.de : catLabelObj.en) ?? 'Frage'
-        : 'Frage';
-      const catEmoji = catLabelObj?.emoji ?? '❓';
+      const subKind = (h as any).bunteTueteKind as string | undefined;
+      const subInfo = subKind ? BUNTE_SUB_EMOJI[subKind] : undefined;
+      const catLabel = subInfo
+        ? (lang === 'de' ? subInfo.de : subInfo.en)
+        : (catLabelObj
+            ? (lang === 'de' ? catLabelObj.de : catLabelObj.en) ?? 'Frage'
+            : 'Frage');
+      const catEmoji = subInfo?.emoji ?? catLabelObj?.emoji ?? '❓';
       const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
       const winnerTeam = winnerId ? s.teams.find(t => t.id === winnerId) : null;
       items.push({

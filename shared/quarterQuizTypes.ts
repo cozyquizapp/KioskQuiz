@@ -1098,10 +1098,12 @@ export interface QQStateUpdate {
   finalWagerEnabled: boolean;
   /** 2026-05-09 v2: Frage-Recap-Daten für THANKS-Page-News-Ticker. Slim-
    *  Variante (nur winner-relevante Felder), volle Daten bleiben in der
-   *  Summary-Save-Pipeline. */
+   *  Summary-Save-Pipeline. bunteTueteKind erlaubt dem Ticker das Sub-
+   *  spezifische Emoji (🎭 Bluff / 🧩 onlyConnect / ...) statt 🎁. */
   questionHistory?: Array<{
     questionText: string;
     category: string;
+    bunteTueteKind?: string;
     correctTeamId: string | null;
     correctTeamIds?: string[];
   }>;

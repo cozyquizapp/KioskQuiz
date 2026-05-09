@@ -6464,7 +6464,12 @@ function ActionCardReveal({
       display: 'flex',
     }}>
       <div style={{
-        position: 'relative', width: '100%', minHeight: 360,
+        // 2026-05-09 v3 (Wolf 'stack card nicht gleich groß wie steal/place'):
+        // FIXED height statt minHeight — non-isNew Cards können bei mehr
+        // Inhalt höher werden und stretchten via alignItems:stretch über 360,
+        // isNew Card mit absolute-positionierten Front/Back blieb auf 360
+        // gepinnt → Größen-Drift. Jetzt alle hart auf 360.
+        position: 'relative', width: '100%', height: 360,
         transformStyle: 'preserve-3d',
         transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -7322,17 +7327,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         <div style={{
                           flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
                           minWidth: cardCount === 1 ? 280 : 200,
-                          // 2026-05-07 (Layout-Audit): Multi-Card max 360 → 480.
-                          // Bei 2-3 Action-Cards wirkten 360 Cards schmal gegen
-                          // den Container (1700) — alle Cards bekamen großen
-                          // Spacing zueinander, Inhalt war underfilled.
                           maxWidth: cardCount === 1 ? 480 : 480,
-                          // 2026-05-09 (Wolf 'cards immer alle gleich gross'):
-                          // gleicher minHeight wie ActionCardReveal (3D-Pfad),
-                          // damit non-3D + 3D Karten in einer Zeile uniform sind.
-                          // Container hat align-items: stretch — die 360 erzwingen
-                          // den Mindestabstand, Stretch gleicht Mehrhöhe an.
-                          minHeight: 360,
+                          // 2026-05-09 v3 (Wolf 'stack card nicht gleich groß'):
+                          // FIXED height (statt minHeight) — bei alignItems:
+                          // stretch konnte non-isNew Card über 360 wachsen wenn
+                          // Inhalt mehr brauchte, isNew (absolute Front/Back)
+                          // blieb fest auf 360 → Drift. Jetzt alle hart 360.
+                          height: 360,
                           boxSizing: 'border-box',
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
                           justifyContent: 'center',
@@ -7343,6 +7344,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           border: `3px solid ${c.accent}aa`,
                           boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
                           animation: `phasePop 0.6s var(--qq-ease-bounce) ${cardDelayMs / 1000}s both`,
+                          overflow: 'hidden',
                         }}>
                           {/* Icon — gross + drop-shadow als Fokus-Element */}
                           <div style={{
@@ -9660,43 +9662,82 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               </div>
             </div>
 
-            {/* Sieger-Card — in der Farbe des Gewinner-Teams. */}
-            {winnerTeams.length > 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 'clamp(14px, 1.8vw, 28px)', flexWrap: 'wrap',
-                padding: 'clamp(16px, 2vh, 28px)',
-                borderRadius: 24,
-                minHeight: 'clamp(140px, 18vh, 220px)',
-                background: `linear-gradient(135deg, ${winnerColor}26, ${winnerColor}08)`,
-                border: `2.5px solid ${winnerColor}aa`,
-                boxShadow: `0 0 40px ${winnerColor}55, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY + 0.15}s both` : undefined,
-              }}>
-                {winnerTeams.map((tm, idx) => (
-                  <div key={tm.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 18px)',
-                    animation: `phasePop 0.5s var(--qq-ease-bounce) ${WINNER_BASE + idx * WINNER_STEP}s both`,
-                  }}>
-                    <QQTeamAvatar
-                      avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                      size={'clamp(64px, 7vw, 100px)'}
-                      style={{
-                        boxShadow: `0 0 0 3px ${tm.color}, 0 0 22px ${tm.color}cc, 0 0 10px ${tm.color}88`,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{
-                      fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
-                      color: tm.color, textShadow: `0 0 16px ${tm.color}55`,
-                      lineHeight: 1.1,
-                    }}>
-                      {teamDisplayName(tm.name, true)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Sieger-Card — kompakter Stil analog CHEESE/MUCHO/ZvZ:
+                nur Avatare nebeneinander mit Zeit-Pill darunter, KEINE Team-
+                Namen. Schnellster bekommt Pink-Gold-Ring.
+                2026-05-09 v3 (Wolf-Bug 'connect 4 winnercard viiiel zu groß +
+                unten abgeschnitten'): vorher Avatar+Team-Name horizontal mit
+                flexWrap auf mehrere Zeilen → Card konnte höher als Container
+                wachsen. Jetzt fix kompakte Höhe wie Lösung-Card. */}
+            {winnerTeams.length > 0 && (() => {
+              // t0 = Question-Start, berechnet aus timer (oder Fallback erste Submission)
+              const t0 = s.timerEndsAt && s.timerDurationSec
+                ? s.timerEndsAt - s.timerDurationSec * 1000
+                : correctSorted[0]?.submittedAt ?? null;
+              const guessByTeam = new Map(correctSorted.map(g => [g.teamId, g]));
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 'clamp(14px, 1.8vw, 28px)', flexWrap: 'wrap',
+                  padding: 'clamp(16px, 2vh, 28px)',
+                  borderRadius: 24,
+                  minHeight: 'clamp(140px, 18vh, 220px)',
+                  background: `linear-gradient(135deg, ${winnerColor}26, ${winnerColor}08)`,
+                  border: `2.5px solid ${winnerColor}aa`,
+                  boxShadow: `0 0 40px ${winnerColor}55, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                  animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY + 0.15}s both` : undefined,
+                }}>
+                  {winnerTeams.map((tm, idx) => {
+                    const guess = guessByTeam.get(tm.id);
+                    const timeSec = t0 != null && guess
+                      ? Math.max(0, (guess.submittedAt - t0) / 1000)
+                      : null;
+                    const isFastest = idx === 0;
+                    const avatarSize = isFastest
+                      ? 'clamp(72px, 7.5vw, 104px)'
+                      : 'clamp(60px, 6.4vw, 88px)';
+                    return (
+                      <div key={tm.id} style={{
+                        position: 'relative',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${WINNER_BASE + idx * WINNER_STEP}s both`,
+                      }}>
+                        <QQTeamAvatar
+                          avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                          size={avatarSize}
+                          style={{
+                            border: isFastest ? '4px solid #EC4899' : 'none',
+                            boxShadow: isFastest
+                              ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)`
+                              : `0 0 0 3px ${tm.color}, 0 0 14px ${tm.color}88, 0 6px 14px rgba(0,0,0,0.55)`,
+                            background: '#0A0814',
+                            flexShrink: 0,
+                          }}
+                        />
+                        {timeSec != null && (
+                          <span style={{
+                            position: 'absolute',
+                            left: '50%', bottom: -8,
+                            transform: 'translate(-50%, 50%)',
+                            padding: '3px 11px', borderRadius: 999,
+                            background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
+                            color: isFastest ? '#0A0814' : '#e2e8f0',
+                            fontWeight: 900,
+                            fontSize: 'clamp(12px, 1.3vw, 17px)',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                            lineHeight: 1.1,
+                          }}>
+                            {timeSec.toFixed(1)}s
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         );
       })()}

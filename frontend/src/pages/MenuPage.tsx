@@ -21,6 +21,7 @@ const cozyQuizLinks: LinkItem[] = [
 // Extras — Tools, Admin, Stats (verbliebene Editoren)
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
+  { path: '/thanks-test',         label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
   { path: '/testpage',            label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },

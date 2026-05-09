@@ -285,23 +285,29 @@ Polish. War seit 2026-04-26 pausiert, wurde im Cleanup mitabgeraeumt.
 
 ## Architektur
 
+> ⚠️ **WICHTIG (2026-05-09)**: Backend ist auf **Coolify** (self-hosted), **NICHT mehr Render**.
+> Bei Backend-Deploy-Fragen also Coolify checken (nicht Render-Dashboard). Render-Doku unten
+> ist Legacy und wird sukzessive ersetzt — TODO: konkrete Coolify-URL + Server-Hostname hier
+> einzutragen.
+
 | Komponente | Stack | Hosting |
 |---|---|---|
 | Frontend | Vite + React + Tailwind + PWA | Vercel (`https://play.cozyquiz.app`) |
-| Backend | Express + Socket.IO + Mongoose | Render Free Tier (`https://cozyquiz-backend.onrender.com`) |
+| Backend | Express + Socket.IO + Mongoose | **Coolify** (self-hosted, ersetzte Render) |
 | Datenbank | MongoDB Atlas | `cluster0.4xushmp.mongodb.net` |
 | Bilder | Cloudinary | Cloudinary |
 | Error-Tracking | Sentry | Sentry |
 | Übersetzung | DeepL | DeepL API |
 
-> **Hinweis**: Render-Free-Tier schläft nach Inaktivität → MongoDB-Reconnect dauert bis 15 s
-> beim ersten Request nach Wakeup.
+> **Coolify-Notiz**: bei Backend-Code-Push manuell Redeploy in Coolify-UI auslösen
+> (oder Auto-Deploy-Hook konfigurieren falls noch nicht aktiv). Kein Free-Tier-Sleep wie
+> bei Render — Container läuft persistent.
 
 ---
 
 ## Env-Variablen
 
-### Render (Backend)
+### Coolify (Backend) — vormals Render
 | Variable | Beschreibung |
 |---|---|
 | `ADMIN_PIN` | PIN für Moderator-Zugang |
@@ -356,7 +362,9 @@ scripts/compress-cozywolf.js                — Wolf-PNG-Komprimierung (sharp, i
 
 ## Deploy
 
-- **Push auf `main`** → Auto-Deploy auf Render (Backend) + Vercel (Frontend)
+- **Frontend**: Push auf `main` → Auto-Deploy auf Vercel
+- **Backend**: Push auf `main` → ggf. manuell Redeploy in **Coolify**-UI auslösen
+  (Render-Auto-Deploy funktioniert nicht mehr — Backend ist seit 2026-05-09 auf Coolify)
 - **Health-Check**: `GET /api/health` → `{ ok: true, db: "connected" }`
 - **Node-Version**: ≥ 18 erforderlich (in `engines` deklariert)
 - Pre-Push-Checks: `cd frontend && npx vite build` (gibt PWA-Manifest aus)
@@ -369,7 +377,7 @@ scripts/compress-cozywolf.js                — Wolf-PNG-Komprimierung (sharp, i
 |---|---|---|
 | Niedrig | `server.ts` ist 8000-Zeilen-Monolith — aufteilen in Module | 1-2 Tage |
 | Niedrig | Admin-Sessions in-memory — gehen bei Restart verloren (Workaround: PIN erneut eingeben) | 2-3 h + Redis-Addon |
-| Mittel | Render Free Tier schläft nach Inaktivität → MongoDB-Reconnect bis 15 s | Bezahltes Render-Plan |
+| Erledigt | ~~Render Free Tier schläft~~ → seit 2026-05-09 Coolify-Hosting (kein Sleep) | Migration durch |
 | Niedrig | `QQBuiltinSlide.tsx` + `QQCustomSlide.tsx` `makePreviewState` returnt outdated `QQStateUpdate` shape (TS-Errors) | 1-2 h beim Slide-Editor-Polish |
 
 ---

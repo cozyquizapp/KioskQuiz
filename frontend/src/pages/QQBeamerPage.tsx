@@ -2744,7 +2744,7 @@ const CONFETTI_COLORS = ['#EC4899', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', 
 // Blau, Lila + helle Akzente. Trifft GameOver-Recap und Winner-Layout, der
 // Climax-Moment im Eurovision-Quiz wirkt dadurch geschlossen ESC-coloriert.
 const CONFETTI_COLORS_ESC = ['#FF2D7B', '#3B82F6', '#A78BFA', '#EC4899', '#60A5FA', '#C084FC', '#F472B6', '#fde6f0'];
-const CONFETTI_COUNT = 80;
+const CONFETTI_COUNT = 110;
 
 function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) {
   const palette = eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS;
@@ -2753,8 +2753,8 @@ function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) 
       id: i,
       x: Math.random() * 100,
       color: palette[i % palette.length],
-      delay: Math.random() * 0.5,
-      duration: 2.5 + Math.random() * 2.0,
+      delay: Math.random() * 1.5,
+      duration: 4.5 + Math.random() * 3.0,
       size: 6 + Math.random() * 6,
       rotation: 360 + Math.random() * 720,
       startY: -(20 + Math.random() * 60),
@@ -3130,7 +3130,7 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
 // Alle relevanten PNGs einer Mode werden ueberlagert vorgeladen, opacity-Switch
 // haelt das Flackern aus.
 // ─────────────────────────────────────────────────────────────────────────────
-type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen' | 'flagge';
+type WolfMode = 'speaking' | 'winken' | 'jubel' | 'trinken' | 'schlafen' | 'ueberrascht' | 'daumen' | 'flagge' | 'troete';
 
 function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost }: {
   widthCss: string; speaking?: boolean; mode?: WolfMode; wink?: boolean; mirror?: boolean;
@@ -3496,6 +3496,32 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
         }
       };
       tick();
+    } else if (effectiveMode === 'troete') {
+      // 2026-05-09 v8 (Wolf 'nur Tröte im Mund mit Augen auf und zu'):
+      // Konstante Tröte-Pose, periodische Blinks. Da kein augenzu.troete-Asset
+      // existiert, nutzt Blink-Frame augenzu.mundzu.jubel (130ms = quick blink,
+      // Tröte fehlt nur kurz). Idle-Blink alle 2.5-4s.
+      let nextBlinkAt = Date.now() + 2500 + Math.random() * 1500;
+      let blinkUntil = 0;
+      const tick = () => {
+        if (!alive) return;
+        const now = Date.now();
+        if (now < blinkUntil) {
+          setCurrentFile('augenzu.mundzu.jubel');
+          timer = window.setTimeout(tick, blinkUntil - now);
+          return;
+        }
+        if (now >= nextBlinkAt) {
+          blinkUntil = now + 130;
+          nextBlinkAt = now + 130 + 2500 + Math.random() * 1500;
+          setCurrentFile('augenzu.mundzu.jubel');
+          timer = window.setTimeout(tick, 130);
+          return;
+        }
+        setCurrentFile('augenauf.troete.jubel');
+        timer = window.setTimeout(tick, 250);
+      };
+      tick();
     } else if (effectiveMode === 'flagge') {
       // 2026-05-07 (Wolf-ESC): Eurovision-Variante des winken-Modes — Wolf
       // haelt eine EU-Flagge in der Hand statt zu winken. Logik 1:1 wie
@@ -3594,7 +3620,9 @@ function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troeteBoost 
               ? allPoses.filter(p => p.includes('daumen'))
               : effectiveMode === 'flagge'
                 ? allPoses.filter(p => p.includes('flagge'))
-                : allPoses.filter(p => p.includes('ueberrascht'));
+                : effectiveMode === 'troete'
+                  ? ['augenauf.troete.jubel', 'augenzu.mundzu.jubel']
+                  : allPoses.filter(p => p.includes('ueberrascht'));
 
   return (
     <div style={{
@@ -16225,6 +16253,14 @@ function FinalRevealSharedKeyframes() {
         60%  { opacity: 1; transform: translateY(-12px) scale(1.005); }
         100% { opacity: 1; transform: translateY(0) scale(1); }
       }
+      /* 2026-05-09 v8.1 (Wolf 'TRÖÖT als Sprachtext, keine bubble'):
+         Periodisches Pop-In neben dem Tröte-Wolf — alle ~2.8s ein burst.
+         Synchronisiert ungefähr mit der intern getriggerten Tröte-Pose. */
+      @keyframes qqWolfTroeet {
+        0%, 65%, 100% { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+        15%           { opacity: 1; transform: scale(1.15) rotate(-8deg); }
+        45%           { opacity: 1; transform: scale(1) rotate(-8deg); }
+      }
       /* 2026-05-09 v7.3 (Wolf 'konfetti klebt am oberen rand'): confettiFall
          wird normalerweise via QQ_BEAMER_CSS in QQBeamerPage's Wrapper
          injected — aber die Test-Page rendert FinalRevealView direkt ohne
@@ -16897,6 +16933,11 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 1500;
     }
 
+    // 2026-05-09 v8.1 (Wolf 'Sprung von Drift-Ende zu Treppchen zu schnell'):
+    // P1 schwebt nach Drift noch 2s in der Mitte — Spannung, Anticipation,
+    // dann erst kommt das Treppchen aus dem Boden.
+    cursor += 2000;
+
     // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s)
     handles.push(window.setTimeout(() => {
       setPhase('podium-rises');
@@ -17184,7 +17225,11 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
         </div>
       )}
 
-      {/* Wolf-Decoration unten rechts beim Finish */}
+      {/* Wolf-Decoration unten rechts beim Finish.
+          2026-05-09 v8.1 (Wolf 'spiegeln, nur Tröte, Augen auf+zu, TRÖÖT'):
+          mirror=true → Wolf schaut nach links zur Mitte (zum Sieger).
+          mode='troete' → konstante Tröte-Pose mit periodischem Blink.
+          TRÖÖT!-Text links neben dem Wolf, periodisch animiert. */}
       {isFinish && (
         <div style={{
           position: 'absolute', right: 'clamp(20px, 3vw, 60px)',
@@ -17192,7 +17237,28 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
           zIndex: 4, pointerEvents: 'none',
           animation: 'qqFRTitleIn 0.7s ease 0.6s both',
         }}>
-          <AnimatedCozyWolf widthCss="clamp(100px, 11vw, 170px)" mode="jubel" speaking={true} />
+          <div style={{ position: 'relative' }}>
+            <AnimatedCozyWolf
+              widthCss="clamp(100px, 11vw, 170px)"
+              mode="troete"
+              mirror={true}
+            />
+            {/* TRÖÖT! Sprachtext — keine Bubble, einfach Wort als Floating-Element */}
+            <div style={{
+              position: 'absolute',
+              top: '8%',
+              left: '-28%',
+              fontSize: 'clamp(20px, 2.6vw, 44px)',
+              fontWeight: 900,
+              color: '#FBBF24',
+              textShadow: '0 0 14px rgba(251,191,36,0.85), 0 4px 10px rgba(0,0,0,0.7), 0 0 2px #0A0814',
+              letterSpacing: '0.04em',
+              fontFamily: 'var(--font-game, system-ui)',
+              animation: 'qqWolfTroeet 2.8s ease-in-out infinite',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}>TRÖÖT!</div>
+          </div>
         </div>
       )}
     </div>

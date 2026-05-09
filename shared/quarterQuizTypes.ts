@@ -1096,6 +1096,15 @@ export interface QQStateUpdate {
    *  Hotkey + Autoplay den Bet-Phase-Übergang automatisch aus (vor letzter
    *  Phase = Bet-Phase, nach letzter Frage = Resolve). Default false. */
   finalWagerEnabled: boolean;
+  /** 2026-05-09 v2: Frage-Recap-Daten für THANKS-Page-News-Ticker. Slim-
+   *  Variante (nur winner-relevante Felder), volle Daten bleiben in der
+   *  Summary-Save-Pipeline. */
+  questionHistory?: Array<{
+    questionText: string;
+    category: string;
+    correctTeamId: string | null;
+    correctTeamIds?: string[];
+  }>;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).

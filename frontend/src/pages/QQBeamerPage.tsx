@@ -19084,9 +19084,12 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
 // wenn eurovisionMode-Flag zwischen Renders kippt). Wenn ESC-Punkte-Geste
 // spaeter zurueck soll, separate Component mit Hooks im stabilen scope.
 
-// 2026-05-09 (Wolf-Refactor): ThanksView komplett neu. Sieger-Polaroid (schräg)
-// + QR-Code + kleiner Wolf nebeneinander höhen-versetzt. Unten News-Ticker
-// Bauchbinde der durch alle Quiz-Fragen läuft + Sonja+Claude-Dank-Card am Ende.
+// 2026-05-09 v2 (Wolf-Pivot): ThanksView Layout-Refactor.
+// Card mittig zentriert (Headline + QR + Brand + Wolf als Decorator inside,
+// unten rechts überlappend "Card als Bett"). Links neben der Card: Sieger-
+// Polaroid (Slot vertikal stapelbar für spätere all-time-Wand). Rechts:
+// 3 Award-Polaroids (Underdog 🐢 / Meisterklauer 🦝 / Speedy ⚡) klein. Unten
+// News-Ticker. Avatar-Bug fix: absolute Pixel-Sizes statt %.
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const summaryUrl = typeof window !== 'undefined' && roomCode
@@ -19114,11 +19117,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     }))
     .sort((a, b) => b.total - a.total)[0]?.team;
 
+  // Award-Polaroids (rechts) — nur wenn Award-Daten vorhanden
+  const underdogTeam = awards?.underdog ? s.teams.find(t => t.id === awards.underdog) : null;
+  const meisterklauerTeam = awards?.meisterklauer ? s.teams.find(t => t.id === awards.meisterklauer) : null;
+  const speedyTeam = awards?.speedy ? s.teams.find(t => t.id === awards.speedy) : null;
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'space-between',
-      padding: '40px 48px 0', position: 'relative', height: '100%',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '24px 32px', gap: 28, position: 'relative', height: '100%',
     }}>
       <Fireflies color="rgba(236,72,153,0.40)" />
       <style>{`
@@ -19130,92 +19138,65 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           0%, 100% { transform: rotate(-4deg); }
           50%      { transform: rotate(-2.5deg); }
         }
+        @keyframes qqThanksPolaroidWobbleR {
+          0%, 100% { transform: rotate(3deg); }
+          50%      { transform: rotate(1.5deg); }
+        }
         @keyframes qqThanksCrownBob {
           0%, 100% { transform: translate(-50%, 0) rotate(-6deg); }
           50%      { transform: translate(-50%, -4px) rotate(4deg); }
         }
+        @keyframes qqWolfBreath {
+          0%, 100% { transform: rotate(8deg) translateY(0); }
+          50%      { transform: rotate(8deg) translateY(-3px); }
+        }
       `}</style>
 
-      {/* Hero-Card: Headline + 3-Spalten-Body (Polaroid · QR · Wolf) */}
+      {/* 3-Spalten-Layout: Sieger-Polaroid links · Hero-Card mittig · Award-Polaroids rechts */}
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        padding: 'clamp(28px, 3.5vh, 48px) clamp(36px, 4vw, 72px)',
-        borderRadius: 24,
-        background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
-        border: '2px solid rgba(236,72,153,0.4)',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
-        maxWidth: 'min(94vw, 1400px)', width: '100%',
-        animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
-        position: 'relative', zIndex: 5,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(20px, 2.5vw, 48px)', width: '100%',
+        maxWidth: 'min(96vw, 1500px)',
       }}>
+        {/* LEFT: Sieger-Polaroid (Wand der Gewinner — Phase 2: vertikal stapelbar) */}
         <div style={{
-          fontSize: 'clamp(30px, 3.8vw, 56px)', fontWeight: 900,
-          color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
-          textShadow: '0 0 40px rgba(236,72,153,0.42)',
+          display: 'flex', flexDirection: 'column', gap: 16,
+          flexShrink: 0,
+          animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) 0.1s both',
         }}>
-          🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+          {winner && <ThanksPolaroid
+            team={winner}
+            captionEmoji="🏆"
+            crown
+            wobble="L"
+            size="big"
+          />}
+          {/* Phase 2: weitere all-time Sieger-Polaroids hier stacken */}
         </div>
 
-        {/* 3-Spalten-Layout: Polaroid · QR-Code · kleiner Wolf, höhen-versetzt */}
+        {/* MIDDLE: Hero-Card mit Wolf-Decorator unten rechts inside */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 'clamp(24px, 3vw, 56px)', flexWrap: 'wrap',
-          width: '100%', marginTop: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+          padding: 'clamp(24px, 3vh, 40px) clamp(32px, 3.5vw, 60px) clamp(48px, 5vh, 70px)',
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
+          border: '2px solid rgba(236,72,153,0.4)',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
+          animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
+          position: 'relative', zIndex: 5,
         }}>
-          {/* Polaroid links — schräg geklebt, höher positioniert */}
-          {winner && (
-            <div style={{
-              transform: 'translateY(-12px)',
-              animation: 'qqThanksPolaroidWobble 5s ease-in-out infinite',
-            }}>
-              <div style={{
-                position: 'relative',
-                width: 'clamp(180px, 19vw, 260px)',
-                padding: '18px 16px 50px',
-                background: '#fafaf5',
-                borderRadius: 6,
-                boxShadow:
-                  '0 16px 40px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.35),' +
-                  'inset 0 1px 0 rgba(255,255,255,0.5)',
-                border: '1px solid rgba(255,255,255,0.4)',
-              }}>
-                {/* Foto-Bereich */}
-                <div style={{
-                  width: '100%', aspectRatio: '4 / 4.4',
-                  background: `radial-gradient(circle at 50% 40%, ${winner.color}55 0%, ${winner.color}22 50%, #1a1424 100%)`,
-                  borderRadius: 4,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  position: 'relative', overflow: 'visible',
-                }}>
-                  {/* Krone über dem Avatar */}
-                  <span aria-hidden style={{
-                    position: 'absolute', left: '50%', top: -22,
-                    fontSize: 'clamp(40px, 4.5vw, 64px)', lineHeight: 1,
-                    pointerEvents: 'none',
-                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(251,191,36,0.7))',
-                    animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
-                    zIndex: 5,
-                  }}>👑</span>
-                  <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji}
-                    size={'70%'} />
-                </div>
-                {/* Caveat-handgeschriebene Notiz */}
-                <div style={{
-                  marginTop: 10, textAlign: 'center',
-                  fontFamily: "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
-                  fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 700,
-                  color: '#1a1424', lineHeight: 1.1,
-                }}>
-                  🏆 {winner.name}
-                </div>
-              </div>
-            </div>
-          )}
+          <div style={{
+            fontSize: 'clamp(28px, 3.4vw, 50px)', fontWeight: 900,
+            color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
+            textShadow: '0 0 40px rgba(236,72,153,0.42)',
+          }}>
+            🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
+          </div>
 
-          {/* QR-Code Mitte */}
+          {/* QR-Code */}
           {summaryUrl && (
             <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
             }}>
               <div style={{
                 padding: 12, borderRadius: 14,
@@ -19233,30 +19214,149 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             </div>
           )}
 
-          {/* Kleiner Wolf rechts — höhen-versetzt nach unten */}
+          {/* Brand-Footer */}
           <div style={{
-            transform: 'translateY(20px)',
-            pointerEvents: 'none',
+            display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
+            fontSize: 13, color: 'rgba(236,72,153,0.78)', fontWeight: 900,
+            letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
-            <AnimatedCozyWolf widthCss="clamp(120px, 13vw, 180px)" mode="schlafen" />
+            <span>play.cozyquiz.app</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>📸 @cozywolf.events</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>🐺 cozywolf.de</span>
+          </div>
+
+          {/* Wolf-Decorator: unten rechts inside Card, leicht überlappend ("Card als Bett") */}
+          <div aria-hidden style={{
+            position: 'absolute',
+            right: 'clamp(-24px, -2vw, -16px)',
+            bottom: 'clamp(-20px, -2vh, -12px)',
+            pointerEvents: 'none',
+            transformOrigin: 'bottom right',
+            animation: 'qqWolfBreath 4s ease-in-out infinite',
+            filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))',
+            zIndex: 6,
+          }}>
+            <AnimatedCozyWolf widthCss="clamp(110px, 11vw, 160px)" mode="schlafen" />
           </div>
         </div>
 
+        {/* RIGHT: Special-Awards der Runde (3 kleine Polaroids vertikal) */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: 'center',
-          fontSize: 13, color: 'rgba(236,72,153,0.78)', fontWeight: 900,
-          letterSpacing: '0.1em', textTransform: 'uppercase',
+          display: 'flex', flexDirection: 'column', gap: 14,
+          flexShrink: 0,
+          animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) 0.2s both',
         }}>
-          <span>play.cozyquiz.app</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>📸 @cozywolf.events</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>🐺 cozywolf.de</span>
+          {underdogTeam && <ThanksPolaroid
+            team={underdogTeam}
+            captionEmoji="🐢"
+            captionLabel={lang === 'de' ? 'Underdog' : 'Underdog'}
+            wobble="R"
+            size="small"
+          />}
+          {meisterklauerTeam && <ThanksPolaroid
+            team={meisterklauerTeam}
+            captionEmoji="🦝"
+            captionLabel={lang === 'de' ? 'Meisterklauer' : 'Master Stealer'}
+            wobble="L"
+            size="small"
+          />}
+          {speedyTeam && <ThanksPolaroid
+            team={speedyTeam}
+            captionEmoji="⚡"
+            captionLabel={lang === 'de' ? 'Speedy' : 'Speedy'}
+            wobble="R"
+            size="small"
+          />}
         </div>
       </div>
 
       {/* News-Ticker Bauchbinde unten — durchläuft alle Quiz-Fragen + Sonja-Card */}
       <ThanksNewsTicker state={s} lang={lang} />
+    </div>
+  );
+}
+
+// 2026-05-09 v2: gemeinsame Polaroid-Komponente für Sieger (groß, Krone) und
+// Awards (klein, Award-Emoji als Caption). Avatar mit absoluter Pixel-Größe
+// statt % — sonst rendert das Emoji wegen `font-size: calc(70% * 0.6)` als
+// 6.7px Mini-Glyph (CSS-% ist parent-font-size, nicht Container-Width).
+function ThanksPolaroid({
+  team, captionEmoji, captionLabel, crown, wobble, size,
+}: {
+  team: { id: string; name: string; avatarId: string; emoji?: string; color: string };
+  captionEmoji: string;
+  captionLabel?: string;
+  crown?: boolean;
+  wobble: 'L' | 'R';
+  size: 'big' | 'small';
+}) {
+  const isBig = size === 'big';
+  const polaroidWidth = isBig ? 'clamp(180px, 19vw, 260px)' : 'clamp(118px, 12vw, 168px)';
+  const padding = isBig ? '18px 16px 50px' : '12px 10px 36px';
+  const captionFontSize = isBig ? 'clamp(20px, 2vw, 28px)' : 'clamp(14px, 1.3vw, 20px)';
+  const avatarPxClamp = isBig ? 'clamp(120px, 13vw, 180px)' : 'clamp(78px, 8vw, 110px)';
+  const crownFontSize = 'clamp(40px, 4.5vw, 64px)';
+  const wobbleAnim = wobble === 'L' ? 'qqThanksPolaroidWobble' : 'qqThanksPolaroidWobbleR';
+
+  return (
+    <div style={{
+      animation: `${wobbleAnim} 5s ease-in-out infinite`,
+    }}>
+      <div style={{
+        position: 'relative',
+        width: polaroidWidth,
+        padding,
+        background: '#fafaf5',
+        borderRadius: 6,
+        boxShadow:
+          '0 16px 40px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.35),' +
+          'inset 0 1px 0 rgba(255,255,255,0.5)',
+        border: '1px solid rgba(255,255,255,0.4)',
+      }}>
+        {/* Foto-Bereich */}
+        <div style={{
+          width: '100%', aspectRatio: '4 / 4.4',
+          background: `radial-gradient(circle at 50% 40%, ${team.color}55 0%, ${team.color}22 50%, #1a1424 100%)`,
+          borderRadius: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative', overflow: 'visible',
+        }}>
+          {/* Krone (nur Sieger-Polaroid) */}
+          {crown && (
+            <span aria-hidden style={{
+              position: 'absolute', left: '50%', top: -22,
+              fontSize: crownFontSize, lineHeight: 1,
+              pointerEvents: 'none',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(251,191,36,0.7))',
+              animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
+              zIndex: 5,
+            }}>👑</span>
+          )}
+          {/* Avatar mit absoluter Pixel-Größe via clamp — fixt %-size Mini-Emoji-Bug */}
+          <QQTeamAvatar
+            avatarId={team.avatarId}
+            teamEmoji={team.emoji}
+            size={avatarPxClamp}
+          />
+        </div>
+        {/* Caveat-handgeschriebene Notiz */}
+        <div style={{
+          marginTop: 10, textAlign: 'center',
+          fontFamily: "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
+          fontSize: captionFontSize, fontWeight: 700,
+          color: '#1a1424', lineHeight: 1.1,
+        }}>
+          {captionEmoji} {captionLabel ?? team.name}
+          {captionLabel && (
+            <div style={{
+              fontSize: isBig ? 16 : 11, fontWeight: 600,
+              color: '#1a1424', opacity: 0.7, marginTop: 2,
+            }}>{team.name}</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

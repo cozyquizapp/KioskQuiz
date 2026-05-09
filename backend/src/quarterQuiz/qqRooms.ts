@@ -3770,6 +3770,17 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
     finalWagerEnabled:     room.finalWagerEnabled ?? true,
+    // 2026-05-09 v2 (Wolf-Bug 'Thanks-Ticker stuck dreifach'): questionHistory
+    // war bisher nur im Summary-Save-Payload, nicht im Live-State. Frontend-
+    // Ticker bekam undefined → strip = 3× Sonja-Card → Loop optisch stuck.
+    // Jetzt im Live-State, damit der Ticker während der THANKS-Phase echte
+    // Recap-Items zeigt.
+    questionHistory:       room.questionHistory.map(h => ({
+      questionText: h.questionText,
+      category: h.category,
+      correctTeamId: h.correctTeamId,
+      correctTeamIds: h.correctTeamIds,
+    })),
     categoryIsNew:    (() => {
       const q = room.currentQuestion;
       if (!q) return false;

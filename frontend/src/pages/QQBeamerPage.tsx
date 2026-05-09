@@ -28,6 +28,7 @@ import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
+import { WolfHeadIcon } from '../components/WolfHeadIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
@@ -2014,10 +2015,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             color: '#EC4899', letterSpacing: '0.32em', textTransform: 'uppercase',
             textShadow: '0 0 18px rgba(236,72,153,0.6)',
             animation: 'qqGetReadyEyebrow 0.6s ease 0.1s both',
+            display: 'inline-flex', alignItems: 'center', gap: 12, justifyContent: 'center',
           }}>
+            {/* 2026-05-09 v4 (Wolf-Brand): generisches 🐺 → Custom-Wolf-Asset */}
+            <WolfHeadIcon size={32} />
             {getReady.reason === 'start'
-              ? (s.language === 'en' ? '🐺 Get ready' : '🐺 Macht euch bereit')
-              : (s.language === 'en' ? '🐺 Back in' : '🐺 Weiter geht\'s in')}
+              ? (s.language === 'en' ? 'Get ready' : 'Macht euch bereit')
+              : (s.language === 'en' ? 'Back in' : 'Weiter geht\'s in')}
           </div>
           <div style={{
             position: 'relative',
@@ -16100,7 +16104,11 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       <div style={{
         fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
         fontStyle: 'italic',
-      }}>{de ? 'Drück Space — los geht\'s 🐺' : 'Press space — let\'s go 🐺'}</div>
+        display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+      }}>
+        {de ? 'Drück Space — los geht\'s' : 'Press space — let\'s go'}
+        <WolfHeadIcon size={26} />
+      </div>
     </div>
   );
 }
@@ -19262,12 +19270,11 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
 // wenn eurovisionMode-Flag zwischen Renders kippt). Wenn ESC-Punkte-Geste
 // spaeter zurueck soll, separate Component mit Hooks im stabilen scope.
 
-// 2026-05-09 v3 (Wolf-Feedback nach Live-Test): Polaroid → runder Sticker
-// (Sonjas Wunsch). Layout-Pivot: Sieger-Sticker mittig + groß als Hero, QR
-// rechts daneben, Award-Sticker als kleine Reihe unter Sticker+QR. Wolf-
-// Decorator weiter runter und überlappend Card-Rand (statt Text verdecken).
-// Text deutlich gebumpt (Beamer-/TV-Lesbarkeit). Award-Card-BG bleibt
-// Team-color radial-gradient (nicht Cloud-Landscape).
+// 2026-05-09 v4 (Wolf-Feedback Live-Test 2): Sieger-Sticker → Action-Card-Stil
+// (mit pinkem/Team-Color-Border + 3D-Look) für Konsistenz zum Spiel-UI.
+// Awards komplett raus aus Thanks-Card, ziehen in News-Ticker als Recap-Items
+// nach den Kategorie-Winnern. Wolf-Decorator weiter rechts (verdeckte vorher
+// cozywolf.de-Text). Brand-Footer 🐺 → Custom WolfHeadIcon (cozywolf-Brand).
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const summaryUrl = typeof window !== 'undefined' && roomCode
@@ -19286,19 +19293,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
   if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
   if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
-  const winner = [...s.teams]
+  const winnerEntry = [...s.teams]
     .map(t => ({
       team: t,
       total: (cellsByTeam[t.id] ?? 0)
         + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
         + (awardPoints[t.id] ?? 0),
     }))
-    .sort((a, b) => b.total - a.total)[0]?.team;
-
-  const underdogTeam = awards?.underdog ? s.teams.find(t => t.id === awards.underdog) : null;
-  const meisterklauerTeam = awards?.meisterklauer ? s.teams.find(t => t.id === awards.meisterklauer) : null;
-  const speedyTeam = awards?.speedy ? s.teams.find(t => t.id === awards.speedy) : null;
-  const hasAnyAward = !!(underdogTeam || meisterklauerTeam || speedyTeam);
+    .sort((a, b) => b.total - a.total)[0];
+  const winner = winnerEntry?.team;
 
   return (
     <div style={{
@@ -19310,15 +19313,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       <style>{`
         @keyframes qqThanksTickerScroll {
           0%   { transform: translateX(0); }
-          100% { transform: translateX(-33.333%); }
+          100% { transform: translateX(-50%); }
         }
-        @keyframes qqThanksStickerWobble {
-          0%, 100% { transform: rotate(-3deg); }
-          50%      { transform: rotate(-1deg); }
-        }
-        @keyframes qqThanksStickerWobbleR {
-          0%, 100% { transform: rotate(2deg); }
-          50%      { transform: rotate(0deg); }
+        @keyframes qqThanksWinnerCardIn {
+          0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(6px); }
+          100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
         }
         @keyframes qqThanksCrownBob {
           0%, 100% { transform: translate(-50%, 0) rotate(-6deg); }
@@ -19330,11 +19329,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         }
       `}</style>
 
-      {/* Hero-Card: Headline + 2-Spalten-Body (Sieger-Sticker · QR) + Award-Reihe + Brand-Footer */}
+      {/* Hero-Card: Headline + 2-Spalten-Body (Sieger-ActionCard · QR) + Brand-Footer.
+          Awards sind RAUS aus dieser Card → leben jetzt im News-Ticker. */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: 'clamp(28px, 3.5vh, 48px)',
-        padding: 'clamp(28px, 3.5vh, 48px) clamp(48px, 5vw, 90px) clamp(56px, 6vh, 88px)',
+        padding: 'clamp(28px, 3.5vh, 48px) clamp(48px, 5vw, 90px) clamp(40px, 4.5vh, 60px)',
         borderRadius: 24,
         background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
         border: '2px solid rgba(236,72,153,0.4)',
@@ -19343,7 +19343,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
         position: 'relative', zIndex: 5,
       }}>
-        {/* Headline — deutlich größer (Beamer-Lesbarkeit) */}
+        {/* Headline */}
         <div style={{
           fontSize: 'clamp(40px, 4.6vw, 72px)', fontWeight: 900,
           color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
@@ -19352,16 +19352,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
         </div>
 
-        {/* Body: Sieger-Sticker mittig groß + QR rechts daneben */}
+        {/* Body: Sieger-Hero-Card mittig groß + QR rechts daneben */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(40px, 5vw, 90px)', width: '100%',
         }}>
-          {winner && <ThanksSticker
+          {winner && <ThanksWinnerCard
             team={winner}
-            crown
-            wobble="L"
-            size="big"
+            total={winnerEntry?.total ?? 0}
+            lang={lang}
           />}
 
           {summaryUrl && (
@@ -19387,38 +19386,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           )}
         </div>
 
-        {/* Award-Sticker-Reihe (klein, horizontal) — nur wenn Awards vorhanden */}
-        {hasAnyAward && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-            gap: 'clamp(36px, 4vw, 72px)',
-            animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) 0.25s both',
-          }}>
-            {underdogTeam && <ThanksSticker
-              team={underdogTeam}
-              captionEmoji="🐢"
-              captionLabel={lang === 'de' ? 'Underdog' : 'Underdog'}
-              wobble="R"
-              size="small"
-            />}
-            {meisterklauerTeam && <ThanksSticker
-              team={meisterklauerTeam}
-              captionEmoji="🦝"
-              captionLabel={lang === 'de' ? 'Meisterklauer' : 'Master Stealer'}
-              wobble="L"
-              size="small"
-            />}
-            {speedyTeam && <ThanksSticker
-              team={speedyTeam}
-              captionEmoji="⚡"
-              captionLabel={lang === 'de' ? 'Speedy' : 'Speedy'}
-              wobble="R"
-              size="small"
-            />}
-          </div>
-        )}
-
-        {/* Brand-Footer — gebumpt für Lesbarkeit */}
+        {/* Brand-Footer — Custom Wolf-Asset statt 🐺 */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 24px)', flexWrap: 'wrap', justifyContent: 'center',
           fontSize: 'clamp(15px, 1.4vw, 22px)', color: 'rgba(236,72,153,0.85)', fontWeight: 900,
@@ -19428,16 +19396,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           <span style={{ opacity: 0.4 }}>·</span>
           <span>📸 @cozywolf.events</span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span>🐺 cozywolf.de</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <WolfHeadIcon size={26} /> cozywolf.de
+          </span>
         </div>
 
-        {/* Wolf-Decorator: weit unten rechts, überlappend Card-Rand nach UNTEN raus
-            (vorher: über Brand-Footer-Text). Wolf ragt aus der Card raus, ist nicht
-            mehr inside über dem Text. */}
+        {/* Wolf-Decorator: weiter rechts raus, damit cozywolf.de-Text frei sichtbar */}
         <div aria-hidden style={{
           position: 'absolute',
-          right: 'clamp(-30px, -2.5vw, -16px)',
-          bottom: 'clamp(-72px, -7vh, -52px)',
+          right: 'clamp(-90px, -8vw, -60px)',
+          bottom: 'clamp(-90px, -9vh, -64px)',
           pointerEvents: 'none',
           transformOrigin: 'bottom right',
           animation: 'qqWolfBreath 4s ease-in-out infinite',
@@ -19454,114 +19422,118 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   );
 }
 
-// 2026-05-09 v3: runder Sticker (Polaroid abgelöst). Team-color radial gradient
-// als BG-Mood (Wolfs Wahl), white sticker-edge + drop-shadow für 3D-Stick-an-
-// Wand-Vibe, Caption-Pille überlappend unten. Sieger groß mit Krone, Awards klein
-// mit Award-Emoji + Team-Name darunter.
-function ThanksSticker({
-  team, captionEmoji, captionLabel, crown, wobble, size,
+// 2026-05-09 v4 (Wolf-Wahl 'Action-Card-Stil für Sieger'): Sieger-Hero-Card im
+// gleichen Stil wie die Round-Intro-Action-Cards (linear-gradient mit Team-
+// Color-Akzent, 3px Border in Team-Color, Box-Shadow + Inset-Highlight). Innen
+// runder Avatar-Disc mit SOLID Team-Color BG (Wolfs Wunsch: füllt komplett),
+// Krone überlappend obendrauf, Team-Name groß, Total-Score-Pill darunter. Gleiche
+// Designsprache wie das Spiel-UI → konsistent.
+function ThanksWinnerCard({
+  team, total, lang,
 }: {
   team: { id: string; name: string; avatarId: string; emoji?: string; color: string };
-  captionEmoji?: string;
-  captionLabel?: string;
-  crown?: boolean;
-  wobble: 'L' | 'R';
-  size: 'big' | 'small';
+  total: number;
+  lang: 'de' | 'en';
 }) {
-  const isBig = size === 'big';
-  // Sieger-Sticker bewusst groß — er ist der Hero. Awards kompakt.
-  const stickerSize = isBig ? 'clamp(240px, 26vw, 360px)' : 'clamp(140px, 14vw, 200px)';
-  const avatarSize = isBig ? 'clamp(150px, 16vw, 220px)' : 'clamp(82px, 9vw, 122px)';
-  const crownFontSize = 'clamp(56px, 6vw, 96px)';
-  const captionFs = isBig
-    ? 'clamp(28px, 2.8vw, 42px)'        // Sieger-Name groß
-    : 'clamp(17px, 1.6vw, 24px)';        // Award-Label klein
-  const subCaptionFs = isBig
-    ? 'clamp(18px, 1.8vw, 26px)'         // (nicht genutzt bei Sieger — keine zweite Zeile)
-    : 'clamp(13px, 1.2vw, 18px)';        // Team-Name unter Award-Label
-  const wobbleAnim = wobble === 'L' ? 'qqThanksStickerWobble' : 'qqThanksStickerWobbleR';
-
+  const c = team.color;
   return (
     <div style={{
-      position: 'relative',
-      animation: `${wobbleAnim} 5s ease-in-out infinite`,
       flexShrink: 0,
+      animation: 'qqThanksWinnerCardIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.1s both',
+      position: 'relative',
     }}>
-      {/* Round Sticker Body */}
+      {/* Action-Card-Stil-Container */}
       <div style={{
-        width: stickerSize, aspectRatio: '1 / 1',
-        borderRadius: '50%',
-        background: `radial-gradient(circle at 50% 40%, ${team.color}cc 0%, ${team.color}66 50%, ${team.color}33 100%)`,
-        border: `${isBig ? 6 : 4}px solid #fafaf5`,
-        boxShadow: '0 18px 40px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.35), inset 0 0 30px rgba(0,0,0,0.18)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', overflow: 'visible',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(14px, 1.8vh, 24px)',
+        padding: 'clamp(28px, 3.2vh, 48px) clamp(36px, 4vw, 64px) clamp(24px, 2.6vh, 36px)',
+        borderRadius: 24,
+        background: `linear-gradient(180deg, ${c}28, ${c}10)`,
+        border: `3px solid ${c}cc`,
+        boxShadow: `0 0 60px ${c}55, 0 8px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.10)`,
+        position: 'relative',
+        minWidth: 'clamp(280px, 28vw, 420px)',
       }}>
-        {/* Krone (nur Sieger) */}
-        {crown && (
+        {/* Avatar-Disc — SOLID Team-Color (Wolfs Wunsch: füllt komplett) + Krone überlappend */}
+        <div style={{
+          position: 'relative',
+          width: 'clamp(180px, 19vw, 280px)',
+          height: 'clamp(180px, 19vw, 280px)',
+          borderRadius: '50%',
+          background: c, // SOLID — kein Gradient-Fadeout
+          border: `4px solid ${c}`,
+          boxShadow: `0 0 40px ${c}aa, inset 0 -8px 28px rgba(0,0,0,0.22), inset 0 4px 0 rgba(255,255,255,0.18)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {/* Krone überlappend oben */}
           <span aria-hidden style={{
-            position: 'absolute', left: '50%', top: '-18%',
-            fontSize: crownFontSize, lineHeight: 1,
+            position: 'absolute', left: '50%', top: '-22%',
+            fontSize: 'clamp(60px, 6.8vw, 110px)', lineHeight: 1,
             pointerEvents: 'none',
-            filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 24px rgba(251,191,36,0.75))',
+            filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
             animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
             zIndex: 5,
           }}>👑</span>
-        )}
-        <QQTeamAvatar
-          avatarId={team.avatarId}
-          teamEmoji={team.emoji}
-          size={avatarSize}
-        />
-      </div>
-
-      {/* Caption-Pille — überlappend unten am Sticker (Caveat-Handschrift-Style) */}
-      <div style={{
-        position: 'absolute',
-        bottom: isBig ? '-9%' : '-12%',
-        left: '50%', transform: 'translateX(-50%)',
-        padding: isBig ? '8px 22px' : '5px 14px',
-        borderRadius: 999,
-        background: '#fafaf5',
-        boxShadow: '0 8px 18px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
-        border: '1px solid rgba(0,0,0,0.08)',
-        fontFamily: "'Caveat', 'Bricolage Grotesque', cursive, system-ui, sans-serif",
-        textAlign: 'center', whiteSpace: 'nowrap',
-        zIndex: 6,
-      }}>
-        <div style={{
-          fontSize: captionFs, fontWeight: 700,
-          color: '#1a1424', lineHeight: 1.05,
-        }}>
-          {captionEmoji ? `${captionEmoji} ` : '🏆 '}{captionLabel ?? team.name}
+          <QQTeamAvatar
+            avatarId={team.avatarId}
+            teamEmoji={team.emoji}
+            size={'clamp(140px, 15vw, 220px)'}
+            flat
+          />
         </div>
-        {captionLabel && (
-          <div style={{
-            fontSize: subCaptionFs, fontWeight: 600,
-            color: '#1a1424', opacity: 0.65, lineHeight: 1.05, marginTop: 1,
-          }}>{team.name}</div>
-        )}
+
+        {/* Team-Name — groß und prominent */}
+        <div style={{
+          fontSize: 'clamp(32px, 3.6vw, 56px)', fontWeight: 900,
+          color: c, textAlign: 'center', letterSpacing: '-0.01em',
+          textShadow: `0 0 28px ${c}66`,
+          maxWidth: '100%',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{team.name}</div>
+
+        {/* Total-Score-Pill (subtil) */}
+        <div style={{
+          padding: 'clamp(8px, 1vh, 12px) clamp(20px, 2vw, 32px)',
+          borderRadius: 999,
+          background: 'rgba(15,23,42,0.6)',
+          border: `1.5px solid ${c}88`,
+          boxShadow: `0 2px 8px ${c}22`,
+          fontSize: 'clamp(20px, 2.2vw, 32px)', fontWeight: 900,
+          color: '#F1F5F9',
+        }}>
+          🏆 {total} {lang === 'de' ? 'Punkte' : 'points'}
+        </div>
       </div>
     </div>
   );
 }
 
+// 2026-05-09 v4 (Wolf-Feedback Live-Test 2): News-Ticker-Refactor.
+// - Cards deutlich größer (Width 240→340, Höhe 132→200, Padding hoch)
+// - Container-Höhe 156→220 — Cards werden nicht mehr abgeschnitten
+// - FontSizes hoch (catLabel 10→13, question 12→15, winner 11→14)
+// - Special-Awards (🐢/🦝/⚡) ziehen vom Hero in den Ticker als Recap-Items,
+//   gerendert NACH den Kategorie-Winnern und VOR der Sonja-Card
+// - Sonja-Card 1× pro Loop (statt 3×) via strip = 2× merged + animation
+//   translateX(-50%) (vorher 3× + -33.33% = stuck-Look bei wenig Items)
+// - Sonja-Card Avatar-Kreis nutzt Custom WolfHeadIcon (statt 🐺 Emoji)
+// - Question-Text auf 1 Zeile (statt 2) — nur das Nötigste lesbar
+type ThanksTickerItem = {
+  catLabel: string;
+  catEmoji: string;
+  primary: string;        // Frage-Text bei Kategorie-Winner ODER Award-Beschreibung
+  winnerName: string;
+  winnerEmoji?: string;
+  winnerColor: string;
+  isSonja?: boolean;
+};
+
 function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
-  // Question-History aus dem state — falls vorhanden — als Recap-Items.
-  // Fallback: leerer Recap (zeigt nur die Sonja-Card).
   const history = (s as any).questionHistory as Array<{
     questionText?: string; category?: string;
     correctTeamId?: string | null; correctTeamIds?: string[];
   }> | undefined;
-  type RecapItem = {
-    catLabel: string; catEmoji: string; question: string;
-    winnerName: string; winnerEmoji?: string; winnerColor: string;
-  };
-  // 2026-05-09 v2 (Wolf TODO 2 'Bluff-Emoji-Inkonsistenz'): bei Bunte-Tüte-
-  // Sub-Mechaniken das Sub-spezifische Emoji + Label nutzen (🎭 Bluff /
-  // 🧩 4 gewinnt / 🔥 Hot Potato / 🥇 Top 5 / ⚡ Reihenfolge / 🗺 CozyGuessr),
-  // nicht das Parent-Cat-Emoji 🎁. Macht den Recap-Ticker konsistent zur
-  // Bluff-Beamer-View und zu den Sub-Intros.
+
   const BUNTE_SUB_EMOJI: Record<string, { emoji: string; de: string; en: string }> = {
     onlyConnect: { emoji: '🧩', de: '4 gewinnt', en: 'Only Connect' },
     bluff:       { emoji: '🎭', de: 'Bluff',     en: 'Bluff' },
@@ -19570,7 +19542,7 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     order:       { emoji: '⚡', de: 'Reihenfolge', en: 'Order' },
     map:         { emoji: '🗺', de: 'CozyGuessr', en: 'CozyGuessr' },
   };
-  const items: RecapItem[] = [];
+  const items: ThanksTickerItem[] = [];
   if (Array.isArray(history)) {
     for (const h of history) {
       const cat = (h.category ?? 'MUCHO') as keyof typeof QQ_CATEGORY_LABELS;
@@ -19588,86 +19560,129 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
       items.push({
         catLabel,
         catEmoji,
-        question: h.questionText ?? '—',
+        primary: h.questionText ?? '—',
         winnerName: winnerTeam?.name ?? (lang === 'de' ? 'niemand' : 'no one'),
         winnerEmoji: winnerTeam?.emoji,
         winnerColor: winnerTeam?.color ?? '#94A3B8',
       });
     }
   }
-  // Spezial-Card: Sonja+Claude-Dank am Ende des Loops
-  const sonjaCard: RecapItem = {
+
+  // Special-Awards als Ticker-Items NACH den Kategorie-Winnern.
+  const awards = s.endAwards;
+  const pushAward = (
+    awardId: string | null | undefined,
+    catEmoji: string,
+    catLabelDe: string, catLabelEn: string,
+    descDe: string, descEn: string,
+  ) => {
+    if (!awardId) return;
+    const team = s.teams.find(t => t.id === awardId);
+    if (!team) return;
+    items.push({
+      catLabel: lang === 'de' ? catLabelDe : catLabelEn,
+      catEmoji,
+      primary: lang === 'de' ? descDe : descEn,
+      winnerName: team.name,
+      winnerEmoji: team.emoji,
+      winnerColor: team.color,
+    });
+  };
+  pushAward(awards?.underdog,      '🐢', 'Underdog',      'Underdog',      'Niedrigster Score',     'Lowest score');
+  pushAward(awards?.meisterklauer, '🦝', 'Meisterklauer', 'Master Stealer', 'Meiste Klau-Aktionen',  'Most steals');
+  pushAward(awards?.speedy,        '⚡', 'Speedy',        'Speedy',        'Schnellste Antworten',  'Fastest answers');
+
+  // Sonja-Card 1× am Ende
+  const sonjaCard: ThanksTickerItem = {
     catLabel: lang === 'de' ? 'Besonderer Dank' : 'Special Thanks',
     catEmoji: '💜',
-    question: lang === 'de'
-      ? 'an Sonja fürs viele Zuhören & Testen — und an Claude fürs Mitbauen 🐺💜🦖'
-      : 'to Sonja for endless listening & testing — and to Claude for co-building 🐺💜🦖',
+    primary: lang === 'de'
+      ? 'an Sonja & Claude fürs Mitbauen 💜🦖'
+      : 'to Sonja & Claude for co-building 💜🦖',
     winnerName: 'Cozywolf',
-    winnerEmoji: '🐺',
     winnerColor: '#EC4899',
+    isSonja: true,
   };
-  const merged = items.length > 0 ? [...items, sonjaCard] : [sonjaCard];
-  // 3× repeat für nahtlosen Loop
-  const strip = [...merged, ...merged, ...merged];
+  const merged = [...items, sonjaCard];
+  // 2026-05-09 v4: nahtloser Loop via 2× merged + translateX(-50%) — vorher
+  // 3× + -33.33% sah bei wenig items als 3× Sonja stuck aus. Jetzt: bei
+  // merged.length >= 2 echter Loop, bei merged.length === 1 (nur Sonja)
+  // optisch still aber wenigstens nicht 3× verdoppelt.
+  const strip = [...merged, ...merged];
+
+  // Tick-Speed: pro Card ~6s sichtbar — Duration = merged.length * 6 (mindestens 30s)
+  const tickerDurationS = Math.max(30, merged.length * 6);
 
   return (
     <div style={{
-      width: '100%', height: 156, marginTop: 24,
+      width: '100%', height: 220, marginTop: 16,
       position: 'relative', overflow: 'hidden',
+      flexShrink: 0,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        height: '100%', padding: '12px 0',
+        display: 'flex', alignItems: 'center', gap: 18,
+        height: '100%', padding: '16px 0',
         width: 'max-content',
-        animation: 'qqThanksTickerScroll 75s linear infinite',
+        animation: `qqThanksTickerScroll ${tickerDurationS}s linear infinite`,
       }}>
         {strip.map((item, i) => (
           <div key={i} style={{
             flexShrink: 0,
-            width: 240, height: 132,
-            borderRadius: 10,
-            background: `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
-            border: `1.5px solid ${item.winnerColor}66`,
-            boxShadow: `0 6px 16px rgba(0,0,0,0.4), 0 0 14px ${item.winnerColor}33`,
+            width: 340, height: 188,
+            borderRadius: 14,
+            background: item.isSonja
+              ? `linear-gradient(135deg, ${item.winnerColor}33, #1a1424)`
+              : `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
+            border: `2px solid ${item.winnerColor}88`,
+            boxShadow: `0 8px 20px rgba(0,0,0,0.4), 0 0 18px ${item.winnerColor}44`,
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            padding: '12px 14px',
+            padding: '14px 18px',
             position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 26, lineHeight: 1 }}>{item.catEmoji}</span>
+            {/* Header: Cat-Emoji + Cat-Label */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 34, lineHeight: 1 }}>{item.catEmoji}</span>
               <span style={{
-                fontSize: 10, fontWeight: 900, color: item.winnerColor,
+                fontSize: 13, fontWeight: 900, color: item.winnerColor,
                 textTransform: 'uppercase', letterSpacing: '0.12em',
               }}>{item.catLabel}</span>
             </div>
+            {/* Primary-Text: Frage ODER Award-Beschreibung — 1 Zeile, ellipsis */}
             <div style={{
-              fontSize: 12, fontWeight: 700, color: '#cbd5e1',
+              fontSize: 16, fontWeight: 700, color: '#e2e8f0',
               lineHeight: 1.3, overflow: 'hidden',
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}>{item.question}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            }}>{item.primary}</div>
+            {/* Footer: Avatar-Kreis + Winner-Name */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
-                width: 26, height: 26, borderRadius: '50%',
-                background: `${item.winnerColor}33`,
-                border: `1.5px solid ${item.winnerColor}`,
+                width: 36, height: 36, borderRadius: '50%',
+                background: item.isSonja ? '#fafaf5' : `${item.winnerColor}33`,
+                border: `2px solid ${item.winnerColor}`,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14,
-              }}>{item.winnerEmoji ?? '🏆'}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {item.winnerName}
+                fontSize: 18,
+                overflow: 'hidden',
+              }}>
+                {item.isSonja
+                  ? <WolfHeadIcon size={28} />
+                  : (item.winnerEmoji ?? '🏆')}
               </span>
+              <span style={{
+                fontSize: 15, fontWeight: 900, color: item.winnerColor,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{item.winnerName}</span>
             </div>
           </div>
         ))}
       </div>
       {/* Edge-Fades */}
       <div aria-hidden style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: 60,
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 80,
         background: 'linear-gradient(90deg, #0A0814 0%, transparent 100%)',
         pointerEvents: 'none', zIndex: 2,
       }} />
       <div aria-hidden style={{
-        position: 'absolute', right: 0, top: 0, bottom: 0, width: 60,
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
         background: 'linear-gradient(-90deg, #0A0814 0%, transparent 100%)',
         pointerEvents: 'none', zIndex: 2,
       }} />

@@ -19515,25 +19515,26 @@ function ThanksColumnSubtitle({
   );
 }
 
-// 2026-05-09 v4 (Wolf-Feedback Live-Test 2): News-Ticker-Refactor.
-// - Cards deutlich größer (Width 240→340, Höhe 132→200, Padding hoch)
-// - Container-Höhe 156→220 — Cards werden nicht mehr abgeschnitten
-// - FontSizes hoch (catLabel 10→13, question 12→15, winner 11→14)
-// - Special-Awards (🐢/🦝/⚡) ziehen vom Hero in den Ticker als Recap-Items,
-//   gerendert NACH den Kategorie-Winnern und VOR der Sonja-Card
-// - Sonja-Card 1× pro Loop (statt 3×) via strip = 2× merged + animation
-//   translateX(-50%) (vorher 3× + -33.33% = stuck-Look bei wenig Items)
-// - Sonja-Card Avatar-Kreis nutzt Custom WolfHeadIcon (statt 🐺 Emoji)
-// - Question-Text auf 1 Zeile (statt 2) — nur das Nötigste lesbar
-type ThanksTickerItem = {
-  catLabel: string;
+// 2026-05-09 v6 (Wolf-Pivot 'Tree-Style Recap-Slides' nach Mockup):
+// - Pro Phase 1 großer Slide mit RUNDE-X-Header + 5 Cat-Kreise (cat-color
+//   BG, cat-emoji im Center) horizontal verbunden, mit Winner-Team-Avatar
+//   überlappend oben drauf (organisch versetzt)
+// - Awards-Slide: gleiche Tree-Logik mit 3 Award-Kreisen
+// - Sonja + Claude jeweils eigener Slide (eigener Stil, voll-zentriert mit
+//   großem Emoji + Bedankung)
+// - Continuous Scroll-Loop via translateX(-50%) auf 2× strip (gleichmäßig)
+// - Slide ~70vw breit, ~300px hoch — voll lesbar auf Beamer/TV
+type RecapTreeItem = {
   catEmoji: string;
-  primary: string;        // Frage-Text bei Kategorie-Winner ODER Award-Beschreibung
-  winnerName: string;
-  winnerEmoji?: string;
-  winnerColor: string;
-  isSonja?: boolean;
+  catColor: string;
+  winner: QQTeam | null;
+  label?: string; // Optional Untertitel-Label (für Awards: 'Underdog' etc.)
 };
+type RecapSlide =
+  | { kind: 'phase'; phase: number; items: RecapTreeItem[] }
+  | { kind: 'awards'; items: RecapTreeItem[] }
+  | { kind: 'sonja' }
+  | { kind: 'claude' };
 
 function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const history = (s as any).questionHistory as Array<{
@@ -19541,162 +19542,280 @@ function ThanksNewsTicker({ state: s, lang }: { state: QQStateUpdate; lang: 'de'
     correctTeamId?: string | null; correctTeamIds?: string[];
   }> | undefined;
 
-  const BUNTE_SUB_EMOJI: Record<string, { emoji: string; de: string; en: string }> = {
-    onlyConnect: { emoji: '🧩', de: '4 gewinnt', en: 'Only Connect' },
-    bluff:       { emoji: '🎭', de: 'Bluff',     en: 'Bluff' },
-    hotPotato:   { emoji: '🔥', de: 'Hot Potato', en: 'Hot Potato' },
-    top5:        { emoji: '🥇', de: 'Top 5',     en: 'Top 5' },
-    order:       { emoji: '⚡', de: 'Reihenfolge', en: 'Order' },
-    map:         { emoji: '🗺', de: 'CozyGuessr', en: 'CozyGuessr' },
+  const BUNTE_SUB_EMOJI: Record<string, string> = {
+    onlyConnect: '🧩', bluff: '🎭', hotPotato: '🔥',
+    top5: '🥇', order: '⚡', map: '🗺',
   };
-  const items: ThanksTickerItem[] = [];
-  if (Array.isArray(history)) {
-    for (const h of history) {
-      const cat = (h.category ?? 'MUCHO') as keyof typeof QQ_CATEGORY_LABELS;
-      const catLabelObj = QQ_CATEGORY_LABELS[cat];
-      const subKind = (h as any).bunteTueteKind as string | undefined;
-      const subInfo = subKind ? BUNTE_SUB_EMOJI[subKind] : undefined;
-      const catLabel = subInfo
-        ? (lang === 'de' ? subInfo.de : subInfo.en)
-        : (catLabelObj
-            ? (lang === 'de' ? catLabelObj.de : catLabelObj.en) ?? 'Frage'
-            : 'Frage');
-      const catEmoji = subInfo?.emoji ?? catLabelObj?.emoji ?? '❓';
-      const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
-      const winnerTeam = winnerId ? s.teams.find(t => t.id === winnerId) : null;
-      items.push({
-        catLabel,
-        catEmoji,
-        primary: h.questionText ?? '—',
-        winnerName: winnerTeam?.name ?? (lang === 'de' ? 'niemand' : 'no one'),
-        winnerEmoji: winnerTeam?.emoji,
-        winnerColor: winnerTeam?.color ?? '#94A3B8',
-      });
+
+  const totalPhases = s.totalPhases ?? 4;
+  const QUESTIONS_PER_PHASE = 5;
+
+  // Pro Phase eine Slide aus questionHistory aufbauen (5 Items pro Slide).
+  // Falls keine History (Backend nicht aktualisiert): überspringe Phase-Slides.
+  const phaseSlides: RecapSlide[] = [];
+  if (Array.isArray(history) && history.length > 0) {
+    for (let phaseIdx = 1; phaseIdx <= totalPhases; phaseIdx++) {
+      const phaseStart = (phaseIdx - 1) * QUESTIONS_PER_PHASE;
+      const items: RecapTreeItem[] = [];
+      for (let qInPhase = 0; qInPhase < QUESTIONS_PER_PHASE; qInPhase++) {
+        const h = history[phaseStart + qInPhase];
+        if (!h) {
+          items.push({ catEmoji: '❓', catColor: '#475569', winner: null });
+          continue;
+        }
+        const cat = (h.category ?? 'MUCHO') as keyof typeof QQ_CATEGORY_LABELS;
+        const catLabelObj = QQ_CATEGORY_LABELS[cat];
+        const catColor = QQ_CATEGORY_COLORS[cat] ?? '#94A3B8';
+        const subKind = (h as any).bunteTueteKind as string | undefined;
+        const catEmoji = (subKind && BUNTE_SUB_EMOJI[subKind])
+          || catLabelObj?.emoji
+          || '❓';
+        const winnerId = h.correctTeamId ?? h.correctTeamIds?.[0] ?? null;
+        const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
+        items.push({ catEmoji, catColor, winner });
+      }
+      // Skip leere Phase-Slides (keine Frage gespielt in dieser Phase)
+      if (items.some(it => it.winner)) phaseSlides.push({ kind: 'phase', phase: phaseIdx, items });
     }
   }
 
-  // Special-Awards als Ticker-Items NACH den Kategorie-Winnern.
+  // Awards-Slide (gleiche Tree-Logik, 3 Kreise statt 5) — mit Untertitel-Labels
   const awards = s.endAwards;
-  const pushAward = (
-    awardId: string | null | undefined,
-    catEmoji: string,
-    catLabelDe: string, catLabelEn: string,
-    descDe: string, descEn: string,
-  ) => {
-    if (!awardId) return;
-    const team = s.teams.find(t => t.id === awardId);
-    if (!team) return;
-    items.push({
-      catLabel: lang === 'de' ? catLabelDe : catLabelEn,
-      catEmoji,
-      primary: lang === 'de' ? descDe : descEn,
-      winnerName: team.name,
-      winnerEmoji: team.emoji,
-      winnerColor: team.color,
+  const awardItems: RecapTreeItem[] = [];
+  const pushAwardItem = (id: string | null | undefined, emoji: string, color: string,
+                         labelDe: string, labelEn: string) => {
+    if (!id) return;
+    const team = s.teams.find(t => t.id === id) ?? null;
+    awardItems.push({
+      catEmoji: emoji, catColor: color, winner: team,
+      label: lang === 'de' ? labelDe : labelEn,
     });
   };
-  pushAward(awards?.underdog,      '🐢', 'Underdog',      'Underdog',      'Niedrigster Score',     'Lowest score');
-  pushAward(awards?.meisterklauer, '🦝', 'Meisterklauer', 'Master Stealer', 'Meiste Klau-Aktionen',  'Most steals');
-  pushAward(awards?.speedy,        '⚡', 'Speedy',        'Speedy',        'Schnellste Antworten',  'Fastest answers');
+  pushAwardItem(awards?.underdog,      '🐢', '#10B981', 'Underdog',      'Underdog');
+  pushAwardItem(awards?.meisterklauer, '🦝', '#A855F7', 'Meisterklauer', 'Master Stealer');
+  pushAwardItem(awards?.speedy,        '⚡', '#F472B6', 'Speedy',        'Speedy');
 
-  // Sonja-Card 1× am Ende
-  const sonjaCard: ThanksTickerItem = {
-    catLabel: lang === 'de' ? 'Besonderer Dank' : 'Special Thanks',
-    catEmoji: '💜',
-    primary: lang === 'de'
-      ? 'an Sonja & Claude fürs Mitbauen 💜🦖'
-      : 'to Sonja & Claude for co-building 💜🦖',
-    winnerName: 'Cozywolf',
-    winnerColor: '#EC4899',
-    isSonja: true,
-  };
-  const merged = [...items, sonjaCard];
-  // 2026-05-09 v4: nahtloser Loop via 2× merged + translateX(-50%) — vorher
-  // 3× + -33.33% sah bei wenig items als 3× Sonja stuck aus. Jetzt: bei
-  // merged.length >= 2 echter Loop, bei merged.length === 1 (nur Sonja)
-  // optisch still aber wenigstens nicht 3× verdoppelt.
-  const strip = [...merged, ...merged];
+  const slides: RecapSlide[] = [...phaseSlides];
+  if (awardItems.length > 0) slides.push({ kind: 'awards', items: awardItems });
+  slides.push({ kind: 'sonja' });
+  slides.push({ kind: 'claude' });
 
-  // Tick-Speed: pro Card ~6s sichtbar — Duration = merged.length * 6 (mindestens 30s)
-  const tickerDurationS = Math.max(30, merged.length * 6);
+  // 2× strip + translateX(-50%) für nahtlosen Loop
+  const strip = [...slides, ...slides];
+  // Tick-Speed: ~10s pro Slide
+  const tickerDurationS = Math.max(40, slides.length * 10);
 
   return (
     <div style={{
-      width: '100%', height: 220, marginTop: 16,
+      width: '100%', height: 320, marginTop: 12,
       position: 'relative', overflow: 'hidden',
       flexShrink: 0,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 18,
-        height: '100%', padding: '16px 0',
+        display: 'flex', alignItems: 'stretch', gap: 28,
+        height: '100%', padding: '8px 0',
         width: 'max-content',
-        animation: `qqThanksTickerScroll ${tickerDurationS}s linear infinite`,
+        animation: slides.length > 0
+          ? `qqThanksTickerScroll ${tickerDurationS}s linear infinite`
+          : 'none',
       }}>
-        {strip.map((item, i) => (
-          <div key={i} style={{
-            flexShrink: 0,
-            width: 340, height: 188,
-            borderRadius: 14,
-            background: item.isSonja
-              ? `linear-gradient(135deg, ${item.winnerColor}33, #1a1424)`
-              : `linear-gradient(135deg, ${item.winnerColor}22, #1a1424)`,
-            border: `2px solid ${item.winnerColor}88`,
-            boxShadow: `0 8px 20px rgba(0,0,0,0.4), 0 0 18px ${item.winnerColor}44`,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            padding: '14px 18px',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            {/* Header: Cat-Emoji + Cat-Label */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 34, lineHeight: 1 }}>{item.catEmoji}</span>
-              <span style={{
-                fontSize: 13, fontWeight: 900, color: item.winnerColor,
-                textTransform: 'uppercase', letterSpacing: '0.12em',
-              }}>{item.catLabel}</span>
-            </div>
-            {/* Primary-Text: Frage ODER Award-Beschreibung — 1 Zeile, ellipsis */}
-            <div style={{
-              fontSize: 16, fontWeight: 700, color: '#e2e8f0',
-              lineHeight: 1.3, overflow: 'hidden',
-              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}>{item.primary}</div>
-            {/* Footer: Avatar-Kreis + Winner-Name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{
-                width: 36, height: 36, borderRadius: '50%',
-                // 2026-05-09 v5 (Wolf-Korrektur 'Wolf-Asset transparent'):
-                // Sonja-Card-Avatar-BG auf Pink-Tint (transparent) statt
-                // weißem #fafaf5 — der transparente Wolf-Head soll auf
-                // Card-Hintergrund liegen, nicht auf weiß.
-                background: `${item.winnerColor}33`,
-                border: `2px solid ${item.winnerColor}`,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18,
-                overflow: 'hidden',
-              }}>
-                {item.isSonja
-                  ? <WolfHeadIcon size={28} />
-                  : (item.winnerEmoji ?? '🏆')}
-              </span>
-              <span style={{
-                fontSize: 15, fontWeight: 900, color: item.winnerColor,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>{item.winnerName}</span>
-            </div>
-          </div>
-        ))}
+        {strip.map((slide, i) => <RecapSlideCard key={i} slide={slide} lang={lang} />)}
       </div>
       {/* Edge-Fades */}
       <div aria-hidden style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: 80,
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 100,
         background: 'linear-gradient(90deg, #0A0814 0%, transparent 100%)',
         pointerEvents: 'none', zIndex: 2,
       }} />
       <div aria-hidden style={{
-        position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 100,
         background: 'linear-gradient(-90deg, #0A0814 0%, transparent 100%)',
         pointerEvents: 'none', zIndex: 2,
       }} />
+    </div>
+  );
+}
+
+// Eine Slide im Recap-Strip — Tree-Layout für phase/awards, eigener Stil
+// für sonja/claude. Größen so gewählt dass Cat-Kreis + Winner-Avatar
+// gut lesbar auf TV/Beamer sind. Cat-Kreise verbunden durch dezente
+// horizontale Linie (wie ProgressTree-Visual). Winner-Avatare überlappend
+// oben drauf, leicht organisch versetzt pro Position.
+function RecapSlideCard({ slide, lang }: { slide: RecapSlide; lang: 'de' | 'en' }) {
+  const de = lang === 'de';
+  // Slide-Container — einheitliches Design
+  const slideContainer: React.CSSProperties = {
+    flexShrink: 0,
+    width: 'clamp(640px, 70vw, 1000px)',
+    height: '100%',
+    borderRadius: 22,
+    background: 'linear-gradient(180deg, rgba(31,26,46,0.85), rgba(20,16,31,0.9))',
+    border: '2px solid rgba(236,72,153,0.32)',
+    boxShadow: '0 12px 30px rgba(0,0,0,0.45), 0 0 40px rgba(236,72,153,0.12)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    padding: '24px 36px',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
+  if (slide.kind === 'sonja') {
+    return (
+      <div style={slideContainer}>
+        <div style={{
+          fontSize: 'clamp(80px, 9vw, 130px)', lineHeight: 1, marginBottom: 8,
+          filter: 'drop-shadow(0 0 24px rgba(168,85,247,0.6))',
+        }}>💜</div>
+        <div style={{
+          fontSize: 'clamp(28px, 3.2vw, 44px)', fontWeight: 900,
+          color: '#A855F7', letterSpacing: '0.04em',
+          textShadow: '0 0 24px rgba(168,85,247,0.5)',
+        }}>{de ? 'Danke Sonja' : 'Thank you Sonja'}</div>
+        <div style={{
+          fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 700,
+          color: '#cbd5e1', fontStyle: 'italic', marginTop: 6, textAlign: 'center',
+        }}>{de ? 'fürs viele Zuhören & Testen' : 'for endless listening & testing'}</div>
+      </div>
+    );
+  }
+
+  if (slide.kind === 'claude') {
+    return (
+      <div style={slideContainer}>
+        <div style={{
+          fontSize: 'clamp(80px, 9vw, 130px)', lineHeight: 1, marginBottom: 8,
+          filter: 'drop-shadow(0 0 24px rgba(34,211,238,0.6))',
+        }}>🦖</div>
+        <div style={{
+          fontSize: 'clamp(28px, 3.2vw, 44px)', fontWeight: 900,
+          color: '#22D3EE', letterSpacing: '0.04em',
+          textShadow: '0 0 24px rgba(34,211,238,0.5)',
+        }}>{de ? 'Danke Claude' : 'Thank you Claude'}</div>
+        <div style={{
+          fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 700,
+          color: '#cbd5e1', fontStyle: 'italic', marginTop: 6, textAlign: 'center',
+        }}>{de ? 'fürs Mitbauen' : 'for co-building'}</div>
+      </div>
+    );
+  }
+
+  // Phase- oder Awards-Slide → Tree-Layout
+  const headerLabel = slide.kind === 'phase'
+    ? (de ? `Runde ${slide.phase}` : `Round ${slide.phase}`)
+    : (de ? 'Special Awards' : 'Special Awards');
+  const headerColor = slide.kind === 'phase' ? '#EC4899' : '#FBBF24';
+  const items = slide.items;
+  const itemCount = items.length;
+
+  // Konstante Größen für Cat-Kreise + Winner-Avatare (gut lesbar)
+  const catSize = itemCount === 3 ? 96 : 84; // Awards (3) etwas größer
+  const avatarSize = catSize - 28;
+  const gapPx = itemCount === 3 ? 56 : 36;
+
+  return (
+    <div style={slideContainer}>
+      {/* Header */}
+      <div style={{
+        fontSize: 'clamp(28px, 3.2vw, 44px)', fontWeight: 900,
+        color: headerColor, letterSpacing: '0.06em', textTransform: 'uppercase',
+        textShadow: `0 0 26px ${headerColor}55`,
+        marginBottom: 20,
+      }}>{headerLabel}</div>
+
+      {/* Tree-Body: Cat-Kreise verbunden durch Linie, Winner-Avatare drauf.
+          Bei Awards-Slide zusätzlich Untertitel-Label unter jedem Kreis. */}
+      <div style={{
+        position: 'relative',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        gap: gapPx,
+      }}>
+        {/* Verbindungslinie hinter den Kreisen — auf Höhe Cat-Kreis-Mitte */}
+        <div aria-hidden style={{
+          position: 'absolute', left: catSize / 2, right: catSize / 2,
+          top: catSize / 2 - 1, height: 2,
+          background: 'linear-gradient(90deg, transparent 0%, rgba(236,72,153,0.4) 8%, rgba(236,72,153,0.4) 92%, transparent 100%)',
+          zIndex: 0,
+        }} />
+        {items.map((item, i) => (
+          <div key={i} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 8, flexShrink: 0,
+          }}>
+            <RecapTreeNode
+              item={item}
+              catSize={catSize}
+              avatarSize={avatarSize}
+              indexHint={i}
+            />
+            {item.label && (
+              <div style={{
+                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+                color: item.catColor, textAlign: 'center',
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                whiteSpace: 'nowrap',
+              }}>{item.label}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Ein Tree-Node: Cat-Kreis (cat-color BG + cat-emoji) + überlappender
+// Winner-Avatar oben drauf. Avatar-Position leicht organisch versetzt
+// pro Index (Tilt + Mini-Offset) damit's nicht zu uniform aussieht, aber
+// trotzdem klar zuordbar zur Cat darunter.
+function RecapTreeNode({ item, catSize, avatarSize, indexHint }: {
+  item: RecapTreeItem;
+  catSize: number;
+  avatarSize: number;
+  indexHint: number;
+}) {
+  // Mini-Tilt + horizontaler Mini-Offset variieren pro Index (organisch)
+  const tilts = [-6, 4, -3, 5, -4, 3];
+  const tilt = tilts[indexHint % tilts.length];
+  const offsetX = (indexHint % 2 === 0 ? -4 : 6);
+  return (
+    <div style={{
+      position: 'relative',
+      flexShrink: 0,
+      width: catSize, height: catSize,
+      zIndex: 1,
+    }}>
+      {/* Cat-Kreis mit cat-color */}
+      <div style={{
+        width: catSize, height: catSize, borderRadius: '50%',
+        background: `radial-gradient(circle at 50% 40%, ${item.catColor}cc 0%, ${item.catColor}88 100%)`,
+        border: `2.5px solid ${item.catColor}`,
+        boxShadow: `0 4px 14px ${item.catColor}55, inset 0 -4px 14px rgba(0,0,0,0.18)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: Math.round(catSize * 0.45), lineHeight: 1,
+      }}>
+        {item.catEmoji}
+      </div>
+      {/* Winner-Avatar überlappend oben drauf */}
+      {item.winner && (
+        <div style={{
+          position: 'absolute',
+          left: `calc(50% + ${offsetX}px)`,
+          top: -avatarSize * 0.5,
+          transform: `translateX(-50%) rotate(${tilt}deg)`,
+          width: avatarSize, height: avatarSize,
+          borderRadius: '50%',
+          background: item.winner.color,
+          border: `3px solid ${item.winner.color}`,
+          boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 18px ${item.winner.color}66`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2,
+        }}>
+          <QQTeamAvatar
+            avatarId={item.winner.avatarId}
+            teamEmoji={item.winner.emoji}
+            size={avatarSize - 8}
+            flat
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -17601,9 +17601,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           isolation: 'isolate',
         }}>
           {!isEsc && (
-            // SVG-Border-Trace liegt EXAKT auf der Card-Außenkante (rx 24
-            // matcht innere Card). Stroke 2px halb innen / halb außen — der
-            // außere Halbteil + drop-shadow geben das umlaufende Border-Light.
+            // 2026-05-09 v4 (Wolf 'läuft am unteren rand leicht versetzt nach
+            // unten unter der card durch'): zwei Fixes:
+            // 1) display:block + verticalAlign:top verhindert SVG-Inline-
+            //    Baseline-Quirk (manche Browser geben absolut positionierten
+            //    inline-SVGs einen 1-3px Baseline-Offset nach unten).
+            // 2) Rect 1px nach innen versetzt (statt 0/100% → 1/100%-2px)
+            //    sodass der 2px-Stroke ENTIRELY INNERHALB der SVG-Bounds
+            //    sitzt, kein Outside-Halbteil mehr. drop-shadow gibt weiter
+            //    den weichen Outer-Glow.
             <svg
               aria-hidden
               style={{
@@ -17611,14 +17617,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 width: '100%', height: '100%',
                 pointerEvents: 'none', zIndex: 2,
                 overflow: 'visible',
+                display: 'block',
+                verticalAlign: 'top',
               }}
             >
               <rect
                 pathLength={100}
                 style={{
-                  x: '0px', y: '0px',
-                  width: '100%', height: '100%',
-                  rx: '24px', ry: '24px',
+                  x: '1px', y: '1px',
+                  width: 'calc(100% - 2px)', height: 'calc(100% - 2px)',
+                  rx: '23px', ry: '23px',
                   fill: 'none',
                   stroke: 'rgba(236,72,153,0.6)',
                   strokeWidth: 2,

@@ -19779,8 +19779,10 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         accent,
         badge: <BadgeCircle color={accent} content={item.emoji}
           overlayWinner={item.winner} />,
-        main: item.winner.name,
-        sub: de ? item.labelDe : item.labelEn,
+        // 2026-05-09 v9 (Wolf-Hierarchie): groß = Award-Name (matched großer
+        // Cat-Badge), klein = Team-Name (matched kleiner Winner-Avatar-Overlay)
+        main: de ? item.labelDe : item.labelEn,
+        sub: item.winner.name,
         subItalic: false,
         minWidth: 360, maxWidth: 520,
       };
@@ -19796,16 +19798,18 @@ function RecapStripPill({ item, lang }: { item: RecapStripItem; lang: 'de' | 'en
         minWidth: 360, maxWidth: 480,
       };
     }
-    // cat-pill
+    // cat-pill — 2026-05-09 v9 (Wolf-Hierarchie): groß = Antwort (matched
+    // großer Cat-Badge), klein = Team-Name (matched kleiner Winner-Overlay)
     const accent = item.catColor;
-    const winnerName = item.winner?.name ?? (de ? '—' : '—');
+    const winnerName = item.winner?.name ?? '—';
+    const questionText = item.questionText || (de ? '—' : '—');
     return {
       accent,
       badge: <BadgeCircle color={accent} content={item.catEmoji}
         overlayWinner={item.winner} />,
-      main: winnerName,
-      sub: item.questionText || null,
-      subItalic: true,
+      main: questionText,
+      sub: winnerName,
+      subItalic: false,
       minWidth: 380, maxWidth: 560,
     };
   })();

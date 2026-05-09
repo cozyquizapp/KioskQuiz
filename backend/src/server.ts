@@ -9265,6 +9265,9 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
       // 2026-05-09 (Wolf): Brett-Daten für Summary-Render
       gridSize,
       cellOwners,
+      // 2026-05-09: 3 End-Awards (Underdog/Meisterklauer/Speedy) durchreichen
+      // damit Summary-Page die gleichen Ehrentitel zeigt wie der Recap-Strip.
+      endAwards: (hit as any).endAwards ?? null,
     });
   } catch (err) {
     console.error('QQ summary error:', err);

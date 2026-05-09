@@ -186,6 +186,10 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     grid: room.grid,
     questionHistory: room.questionHistory,
     funnyAnswers: room.funnyAnswers,
+    // 2026-05-09 (Wolf-Konsistenz): die 3 End-Awards (Underdog/Meisterklauer/
+    // Speedy) ins Save-Payload damit Summary-Page die gleichen Ehrentitel zeigt
+    // wie der Recap-Strip am Ende des Spiels.
+    endAwards: room.endAwards ?? null,
   };
   saveQQGameResult(result).catch(() => {/* fire and forget */});
 

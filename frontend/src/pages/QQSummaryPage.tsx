@@ -46,6 +46,15 @@ type Summary = {
    *  cellOwners[r][c] = teamId | null. Kompakter Payload. */
   gridSize?: number;
   cellOwners?: Array<Array<string | null>>;
+  /** 2026-05-09 (Wolf-Konsistenz): die 3 End-Awards aus dem Spiel — gleiche
+   *  Ehrentitel wie der Recap-Strip auf der Thanks-Page. */
+  endAwards?: {
+    underdog?: string | null;
+    meisterklauer?: string | null;
+    meisterklauerCount?: number;
+    speedy?: string | null;
+    speedyAvgMs?: number;
+  } | null;
 };
 
 type UpcomingEvent = {
@@ -430,7 +439,7 @@ export default function QQSummaryPage() {
       )}
 
       {/* H3 Superlatives: narrative End-Game-Titel */}
-      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} />
+      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} />
 
       {myFunny && (
         <Section title={tr('yourMoment', lang)}>
@@ -716,76 +725,75 @@ function Stat({ label, value, suffix, accent }: { label: string; value: number |
   );
 }
 
-// H3 Superlatives: leitet narrative Titel aus den Team-Stats ab.
-// Max 4 werden angezeigt, nur wenn sie Sinn machen (>0-Werte / eindeutig).
-function Superlatives({ teams, selectedId, lang }: {
+// H3 Superlatives → 3 End-Awards (Underdog/Meisterklauer/Speedy) — Wolf-
+// Konsistenz 2026-05-09: gleiche Ehrentitel wie der Recap-Strip auf der
+// Thanks-Page. Backend übergibt endAwards (mit Team-IDs + Bonus-Daten).
+// Vorher: 4 abgeleitete Titel (Meister-Klauer, Trefferkönig, Joker-Jäger,
+// Territorium-König) — durch die 3 neuen ersetzt.
+function Superlatives({ teams, selectedId, lang, endAwards }: {
   teams: SummaryTeam[]; selectedId: string; lang: Lang;
+  endAwards: Summary['endAwards'];
 }) {
-  if (teams.length < 2) return null;
+  if (teams.length < 2 || !endAwards) return null;
 
   type SuperTitle = {
     emoji: string;
     titleDe: string; titleEn: string;
     descDe: string; descEn: string;
     winner: SummaryTeam;
-    metric: string; // e.g. "6 Klaus"
+    metric: string;
     accent: string;
   };
   const titles: SuperTitle[] = [];
 
-  // Meister-Klauer
-  const stealsSorted = [...teams].sort((a, b) => b.stealsUsed - a.stealsUsed);
-  if (stealsSorted[0].stealsUsed >= 2 && stealsSorted[0].stealsUsed > stealsSorted[1].stealsUsed) {
-    titles.push({
-      emoji: '⚡',
-      titleDe: 'Meister-Klauer', titleEn: 'Master Thief',
-      descDe: 'meiste Klaus im Spiel', descEn: 'most steals overall',
-      winner: stealsSorted[0],
-      metric: `${stealsSorted[0].stealsUsed}× ${lang === 'de' ? 'geklaut' : 'stolen'}`,
-      accent: '#EF4444',
-    });
-  }
-  // Trefferkönig
-  const withAccuracy = teams
-    .filter(t => t.answered >= 5)
-    .map(t => ({ t, acc: t.correct / t.answered }));
-  if (withAccuracy.length > 0) {
-    withAccuracy.sort((a, b) => b.acc - a.acc);
-    const top = withAccuracy[0];
-    if (top.acc >= 0.6) {
+  // 🐢 Underdog-Trostpreis — niedrigster Score
+  if (endAwards.underdog) {
+    const team = teams.find(t => t.id === endAwards.underdog);
+    if (team) {
       titles.push({
-        emoji: '🎯',
-        titleDe: 'Trefferkönig', titleEn: 'Accuracy King',
-        descDe: 'beste Trefferquote', descEn: 'highest accuracy',
-        winner: top.t,
-        metric: `${Math.round(top.acc * 100)}%`,
-        accent: '#22C55E',
+        emoji: '🐢',
+        titleDe: 'Underdog', titleEn: 'Underdog',
+        descDe: 'Niedrigster Score', descEn: 'Lowest score',
+        winner: team,
+        metric: `${team.score} ${lang === 'de' ? 'Punkte' : 'points'}`,
+        accent: '#10B981',
       });
     }
   }
-  // Joker-Jäger
-  const jokerSorted = [...teams].sort((a, b) => b.jokersEarned - a.jokersEarned);
-  if (jokerSorted[0].jokersEarned >= 1 && jokerSorted[0].jokersEarned > (jokerSorted[1]?.jokersEarned ?? 0)) {
-    titles.push({
-      emoji: '⭐',
-      titleDe: 'Joker-Jäger', titleEn: 'Joker Hunter',
-      descDe: 'meiste Joker verdient', descEn: 'most jokers earned',
-      winner: jokerSorted[0],
-      metric: `${jokerSorted[0].jokersEarned} ⭐`,
-      accent: '#F59E0B',
-    });
+
+  // 🦝 Meisterklauer — meiste Klau-Aktionen
+  if (endAwards.meisterklauer) {
+    const team = teams.find(t => t.id === endAwards.meisterklauer);
+    if (team) {
+      const count = endAwards.meisterklauerCount ?? team.stealsUsed;
+      titles.push({
+        emoji: '🦝',
+        titleDe: 'Meisterklauer', titleEn: 'Master Stealer',
+        descDe: 'Meiste Klau-Aktionen', descEn: 'Most steals',
+        winner: team,
+        metric: `${count}× ${lang === 'de' ? 'geklaut' : 'stolen'}`,
+        accent: '#A855F7',
+      });
+    }
   }
-  // Territorium-König (Sieger mit dem größten zusammenhängenden Gebiet)
-  const largestSorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
-  if (largestSorted[0].largestConnected >= 3) {
-    titles.push({
-      emoji: '🏆',
-      titleDe: 'Territorium-König', titleEn: 'Territory King',
-      descDe: 'größtes Cluster', descEn: 'biggest cluster',
-      winner: largestSorted[0],
-      metric: `${largestSorted[0].largestConnected} ${lang === 'de' ? 'Punkte' : 'points'}`,
-      accent: '#3B82F6',
-    });
+
+  // ⚡ Speedy Gonzales — schnellste Antworten (avg ms)
+  if (endAwards.speedy) {
+    const team = teams.find(t => t.id === endAwards.speedy);
+    if (team) {
+      const avgMs = endAwards.speedyAvgMs ?? null;
+      const metric = avgMs != null
+        ? `Ø ${(avgMs / 1000).toFixed(1)}s`
+        : (lang === 'de' ? 'Schnellste Antworten' : 'Fastest answers');
+      titles.push({
+        emoji: '⚡',
+        titleDe: 'Speedy Gonzales', titleEn: 'Speedy Gonzales',
+        descDe: 'Schnellste Antworten', descEn: 'Fastest answers',
+        winner: team,
+        metric,
+        accent: '#F472B6',
+      });
+    }
   }
 
   if (titles.length === 0) return null;

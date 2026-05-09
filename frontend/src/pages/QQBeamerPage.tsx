@@ -2331,11 +2331,24 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   remaining: number | null;
   urgent: boolean;
 }) {
-  // Reihenfolge aus Backend (_hotPotatoOrder = score-sortiert) — Fallback joinOrder.
+  // 2026-05-09 v2 (Wolf-Bug 'kein aktives Team / keine Kartoffel sichtbar'):
+  // _hotPotatoOrder und joinOrder werden nicht im State broadcast (Backend-
+  // internal). Fallback: aus s.teams selbst sortieren — gleiche Sort-Logik
+  // wie im Backend (largestConnected desc → totalCells desc → name).
+  const eliminated: string[] = s.hotPotatoEliminated ?? [];
   const order: string[] = (s as any)._hotPotatoOrder && (s as any)._hotPotatoOrder.length > 0
     ? (s as any)._hotPotatoOrder
-    : (s.joinOrder ?? []);
-  const eliminated: string[] = s.hotPotatoEliminated ?? [];
+    : (s.joinOrder && s.joinOrder.length > 0)
+      ? s.joinOrder
+      : [...s.teams]
+          .sort((a: any, b: any) => {
+            const lA = a.largestConnected ?? 0; const lB = b.largestConnected ?? 0;
+            if (lB !== lA) return lB - lA;
+            const cA = a.totalCells ?? 0; const cB = b.totalCells ?? 0;
+            if (cB !== cA) return cB - cA;
+            return (a.name ?? '').localeCompare(b.name ?? '');
+          })
+          .map((t: any) => t.id);
   // Alive-Teams in der Halbkreis-Reihenfolge (eliminierte raus)
   const aliveIds = order.filter((id: string) => !eliminated.includes(id));
 

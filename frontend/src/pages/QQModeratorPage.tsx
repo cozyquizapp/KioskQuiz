@@ -252,6 +252,13 @@ export default function QQModeratorPage() {
   // Autoplay-Effekt. Verhindert Mehrfach-Fires desselben Actions wenn
   // andere Deps sich aendern aber phase/slotState/questionId stabil sind.
   const autoplayLastFireKeyRef = useRef<string | null>(null);
+  // 2026-05-09 v2 (Wolf-Bug 'autoplay langsam / hängt'): ref-stabiler Timer.
+  // Vorher: bei jedem state-update der Effect-Deps anfasste (z.B. bots tippen
+  // → answers.length++) → Cleanup → clearTimeout → Effect-Re-Run → neuer Timer.
+  // Bei vielen Updates kollabierte der Timer und feuerte nie. Jetzt halten
+  // wir Timer + zugehörigen fireKey im Ref. Wenn fireKey gleich bleibt zwischen
+  // Effect-Re-Runs, Timer NICHT clearen sondern weiterlaufen lassen.
+  const autoplayTimerRef = useRef<{ handle: number; fireKey: string } | null>(null);
   // 2026-05-08 (Wolf-Bug 'HP-slot-machine wird im autoplay mehrfach getriggert'):
   // Zusaetzliches HP-spezifisches Dedup. Vorher reichte autoplayLastFireKeyRef
   // nicht aus weil andere state-Felder (z. B. answers.length) sich aendern
@@ -516,9 +523,41 @@ export default function QQModeratorPage() {
         break;
       }
       case 'FINAL_REVEAL': {
-        // Score-Cascade läuft — Lesepause skaliert mit Team-Anzahl
-        // (Stagger 180ms pro Zeile + Buffer).
-        delayMs = 4000 + s.teams.length * 800;
+        // 2026-05-09 v2 (Wolf 'autoplay langsam'): Step-aware delays.
+        // Multi-Step End-Reveal hat 2N+8 Steps — bei fixer 7s wären das ~115s
+        // bei 4 Teams. Jetzt pro Step-Typ angepasst:
+        //   title:        1.5s (nur Hero-Hold)
+        //   grid:         5s   (Brett zeigen mit Cluster-Pulse)
+        //   bet (Team):   3s normal, 4s bei 0-Bonus (oooh-Pause)
+        //   award-card:   2s (Trommelwirbel)
+        //   award-reveal: 3s (+1-Animation)
+        //   ranking:      3.2s pro Slide, Sieger 5s (Konfetti)
+        const N = s.teams.length;
+        const step = (s as any).finalRevealStep ?? 0;
+        if (step <= 0) {
+          delayMs = 1500;
+        } else if (step === 1) {
+          delayMs = 5000;
+        } else if (step <= 1 + N) {
+          // Bet-Reveal — bei 0-Bonus etwas länger für oooh-Pause
+          const teamIdx = step - 2;
+          const sortedTeams = [...s.teams]
+            .map(t => ({ id: t.id, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
+            .sort((a, b) => a.bonus - b.bonus);
+          const bonusForThisTeam = sortedTeams[teamIdx]?.bonus ?? 0;
+          delayMs = bonusForThisTeam === 0 ? 4000 : 3000;
+        } else {
+          const ab = step - (1 + N);
+          if (ab >= 1 && ab <= 6) {
+            // Award Card / Reveal alternierend
+            delayMs = (ab % 2 === 1) ? 2000 : 3000;
+          } else {
+            // Ranking
+            const rk = ab - 7;
+            const isWinner = rk >= N - 1;
+            delayMs = isWinner ? 5000 : 3200;
+          }
+        }
         action = () => emit('qq:nextQuestion', { roomCode });
         break;
       }
@@ -582,13 +621,24 @@ export default function QQModeratorPage() {
       hlPhase,
       hlAnsweredCount,
       s.answers?.length ?? 0,
+      (s as any).finalRevealStep ?? 0, // 2026-05-09: Step in fireKey, sonst dedup blockt
     ].join(':');
     if (autoplayLastFireKeyRef.current === fireKey) return;
+    // 2026-05-09 v2 (Wolf-Bug 'autoplay langsam'): ref-stabiler Timer.
+    // Wenn schon ein Timer für DIESELBE fireKey läuft, weiter laufen lassen.
+    // Verhindert Timer-Reset bei Bot-Antworten / state-Updates die fireKey
+    // nicht ändern aber Effect-Deps anfassen.
+    if (autoplayTimerRef.current?.fireKey === fireKey) return;
+    // Anderer fireKey läuft → diesen abbrechen und neuen starten
+    if (autoplayTimerRef.current) {
+      window.clearTimeout(autoplayTimerRef.current.handle);
+    }
     const handle = window.setTimeout(() => {
       autoplayLastFireKeyRef.current = fireKey;
+      autoplayTimerRef.current = null;
       action!();
-    }, delayMs);
-    return () => window.clearTimeout(handle);
+    }, delayMs) as unknown as number;
+    autoplayTimerRef.current = { handle, fireKey };
   }, [
     autoplayEnabled, autoplayPaused, roomCode, emit,
     state?.phase, state?.rulesSlideIndex, state?.allAnswered,
@@ -603,6 +653,9 @@ export default function QQModeratorPage() {
     state?.comebackHL?.phase, // 2026-05-07: H/L question→reveal Wechsel
     // comebackHL answers count via stringified key — Effect re-runt wenn Team antwortet
     state?.comebackHL ? Object.keys(state.comebackHL.answers ?? {}).length : 0,
+    // 2026-05-09 (Wolf End-Flow): Multi-Step FINAL_REVEAL braucht Re-Trigger
+    // bei jedem Step-Wechsel sonst hängt Autoplay nach erstem Step.
+    (state as any)?.finalRevealStep,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2026-05-09 (Wolf-Bug): separater HP-Slot-Autoplay-Effect mit MINIMALEN

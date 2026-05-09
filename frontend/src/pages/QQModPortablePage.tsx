@@ -37,33 +37,98 @@ export default function QQModPortablePage() {
     }
   }, [connected, reconnect]);
 
+  // 2026-05-09 v2 (Wolf-Bug 'flow überspringt'): Echte Space-Hotkey-Logik
+  // 1:1 aus QQModeratorPage übernommen (line ~684). Berücksichtigt jetzt
+  // alle Sub-Steps: HotPotato Slot-Pending, MUCHO/ZvZ/Map/Cheese Reveal-
+  // Sub-Steps, Comeback HL-Phasen, Connections-Sub-Phasen.
   const handleSpace = () => {
-    if (!state) return;
+    const s = state;
+    if (!s) return;
     if (navigator.vibrate) navigator.vibrate(20);
-    // Phase-spezifische Action — wir mappen die wichtigsten Phasen.
-    // Für Edge-Cases (Connections sub-phases, Comeback-Choice) drückt Wolf am Laptop.
-    const p = state.phase;
-    if (p === 'RULES') {
-      // Folge-Slide oder Finish bei letzter
-      const totalSlides = (state.connectionsEnabled !== false) ? 10 : 9;
-      if ((state.rulesSlideIndex ?? 0) >= totalSlides - 1) {
+
+    const q = s.currentQuestion;
+
+    // Reveal-In-Progress-Flags (identisch zu QQModeratorPage)
+    const isMapReveal = q?.category === 'BUNTE_TUETE'
+      && (q as any)?.bunteTuete?.kind === 'map';
+    const mapValidPinCount = s.answers?.filter((a: any) => {
+      const parts = String(a.text ?? '').split(',');
+      const lat = Number(parts[0]); const lng = Number(parts[1]);
+      return Number.isFinite(lat) && Number.isFinite(lng);
+    }).length ?? 0;
+    const mapMaxStep = 1 + mapValidPinCount + 1;
+    const mapRevealInProgress = isMapReveal && (s.mapRevealStep ?? 0) < mapMaxStep;
+
+    const isMuchoReveal = q?.category === 'MUCHO';
+    let muchoNonEmptyKey = 0;
+    if (isMuchoReveal && q?.options) {
+      for (let i = 0; i < q.options.length; i++) {
+        if (s.answers?.some((a: any) => a.text === String(i))) muchoNonEmptyKey++;
+      }
+    }
+    const muchoRevealInProgress = isMuchoReveal && (s.muchoRevealStep ?? 0) < muchoNonEmptyKey + 1;
+
+    const isZvZReveal = q?.category === 'ZEHN_VON_ZEHN' && s.phase === 'QUESTION_REVEAL';
+    const zvzRevealInProgress = isZvZReveal && (s.zvzRevealStep ?? 0) < 2;
+
+    // RULES — Slide weiterschalten oder finish
+    if (s.phase === 'RULES') {
+      const totalSlides = (s.connectionsEnabled !== false) ? 10 : 9;
+      if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
         emit('qq:rulesFinish', { roomCode });
       } else {
         emit('qq:rulesNext', { roomCode });
       }
       return;
     }
-    if (p === 'PAUSED')           { emit('qq:resume', { roomCode }); return; }
-    if (p === 'PHASE_INTRO')      { emit('qq:activateQuestion', { roomCode }); return; }
-    if (p === 'QUESTION_ACTIVE')  { emit('qq:revealAnswer', { roomCode }); return; }
-    if (p === 'QUESTION_REVEAL')  { emit('qq:nextQuestion', { roomCode }); return; }
-    if (p === 'PLACEMENT')        { emit('qq:nextQuestion', { roomCode }); return; }
-    if (p === 'TEAMS_REVEAL')     { emit('qq:rulesStart', { roomCode }); return; }
-    if (p === 'COMEBACK_CHOICE')  { emit('qq:nextQuestion', { roomCode }); return; }
-    if (p === 'CONNECTIONS_4X4')  { emit('qq:nextQuestion', { roomCode }); return; }
-    if (p === 'FINAL_BETTING')    { emit('qq:finishFinalBetting', { roomCode }); return; }
-    if (p === 'FINAL_REVEAL')     { emit('qq:nextQuestion', { roomCode }); return; }
-    if (p === 'GAME_OVER')        { emit('qq:nextQuestion', { roomCode }); return; }
+    if (s.phase === 'PAUSED')        { emit('qq:resume', { roomCode }); return; }
+    if (s.phase === 'TEAMS_REVEAL')  { emit('qq:teamsRevealFinish', { roomCode }); return; }
+    if (s.phase === 'PHASE_INTRO')   { emit('qq:activateQuestion', { roomCode }); return; }
+    if (s.phase === 'QUESTION_ACTIVE') {
+      // HotPotato Slot-Machine Sonderfall (rolling/landed → finishSlot)
+      const subKindActive = (q?.bunteTuete as { kind?: string } | undefined)?.kind;
+      const slotPending = (s as any).hotPotatoSlotState === 'rolling'
+        || (s as any).hotPotatoSlotState === 'landed';
+      if (subKindActive === 'hotPotato' && slotPending) {
+        emit('qq:hotPotatoFinishSlot', { roomCode });
+      } else {
+        emit('qq:revealAnswer', { roomCode });
+      }
+      return;
+    }
+    if (s.phase === 'QUESTION_REVEAL') {
+      // CozyGuessr/MUCHO/ZvZ progressiv aufdecken, sonst startPlacement
+      if (mapRevealInProgress)         emit('qq:mapRevealStep', { roomCode });
+      else if (muchoRevealInProgress)  emit('qq:muchoRevealStep', { roomCode });
+      else if (zvzRevealInProgress)    emit('qq:zvzRevealStep', { roomCode });
+      else                              emit('qq:startPlacement', { roomCode });
+      return;
+    }
+    if (s.phase === 'COMEBACK_CHOICE') {
+      const hl = s.comebackHL;
+      if (hl && (hl.phase === 'question' || hl.phase === 'reveal')) {
+        emit('qq:comebackHLStep', { roomCode });
+      } else {
+        emit('qq:comebackIntroStep', { roomCode });
+      }
+      return;
+    }
+    if (s.phase === 'PLACEMENT') {
+      if (!s.pendingFor) emit('qq:nextQuestion', { roomCode });
+      return;
+    }
+    if (s.phase === 'CONNECTIONS_4X4') {
+      const cp = s.connections?.phase;
+      if (cp === 'intro')           emit('qq:connectionsBegin', { roomCode });
+      else if (cp === 'active')     emit('qq:connectionsForceReveal', { roomCode });
+      else if (cp === 'reveal')     emit('qq:connectionsToPlacement', { roomCode });
+      else if (cp === 'placement' && !s.pendingFor) emit('qq:connectionsToPlacement', { roomCode });
+      else if (cp === 'done')       emit('qq:nextQuestion', { roomCode });
+      return;
+    }
+    if (s.phase === 'FINAL_BETTING') { emit('qq:finishFinalBetting', { roomCode }); return; }
+    if (s.phase === 'FINAL_REVEAL')  { emit('qq:nextQuestion', { roomCode }); return; }
+    if (s.phase === 'GAME_OVER')     { emit('qq:showThanks', { roomCode }); return; }
     // Fallback
     emit('qq:nextQuestion', { roomCode });
   };

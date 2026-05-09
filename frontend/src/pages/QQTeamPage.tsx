@@ -4975,16 +4975,12 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     const isStuckCell = !!cell.stuck;
                     return (
                       <div key={`${r}-${c}`} style={{
-                        // 2026-05-05 (Wolf 'sieht alt aus mit Kreisen'): borderRadius
-                        // 6 → 4 (eckiger), volle Team-Farbe statt 2-Layer-Gradient,
-                        // Beamer-Tile-Look mit Inset-Highlight + Bottom-Shadow.
+                        // 2026-05-09 v4 (Wolf 'reicht nur bg ohne den kreis'):
+                        // Linear-Gradient raus — solid Team-Color BG, kein
+                        // Kreis-Eindruck mehr durch diagonalen Verlauf.
                         // aspectRatio raus — Grid garantiert square via 1fr rows.
                         minWidth: 0, minHeight: 0, borderRadius: 4,
-                        background: cellTeam
-                          ? (isStuckCell
-                              ? `linear-gradient(135deg, ${cellTeam.color}ff, ${cellTeam.color}c0)`
-                              : `linear-gradient(135deg, ${cellTeam.color}ff, ${cellTeam.color}d0)`)
-                          : 'rgba(255,255,255,0.04)',
+                        background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.04)',
                         border: cellTeam
                           ? (isStuckCell
                               ? `1.5px solid rgba(236,72,153,0.9)`
@@ -5259,16 +5255,16 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                 // pro Team, ueberall in der App identisch. 3D-Plaettchen-Look
                 // bleibt (Inset-Highlight + Inset-Shadow + Hard-Edge-Drop + Soft-Drop).
                 const tColor = team?.color ?? null;
-                // 2026-05-09 (Wolf 'grid in /team bitte wirklich immer gleich —
-                // vor place siehts unsymmetrisch und komisch aus'): Owner-
-                // Cell-Styling in Selecting-Mode an Mini-Grid (Wartesicht)
-                // angeglichen. Keine schweren 2px-3px-Hard-Shadows mehr,
-                // schmalere Border-Radius, gleiche Tiefe-Optik in beiden Modi.
+                // 2026-05-09 v4 (Wolf 'reicht nur bg ohne den kreis'): Cell-
+                // Styling weiter vereinfacht — Linear-Gradient raus (machte
+                // diagonalen Hell/Dunkel-Verlauf der visuell wie "Disc innen"
+                // wirkte), nur solid Team-Color BG. Inset-Highlight + Bottom-
+                // Drop-Shadow bleiben minimal für leichten 3D-Effekt.
                 const ownerShadow = tColor
                   ? [
-                      'inset 0 1px 0 rgba(255,255,255,0.22)',
-                      'inset 0 -1.5px 0 rgba(0,0,0,0.20)',
-                      '1px 1.5px 0 rgba(0,0,0,0.35)',
+                      'inset 0 1px 0 rgba(255,255,255,0.18)',
+                      'inset 0 -1.5px 0 rgba(0,0,0,0.18)',
+                      '1px 1.5px 0 rgba(0,0,0,0.30)',
                     ].join(', ')
                   : '';
                 return (
@@ -5279,8 +5275,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
                     minWidth: 0, minHeight: 0, borderRadius: 4,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
-                      : isStuckCell && tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}c0)`
-                      : tColor ? `linear-gradient(135deg, ${tColor}ff, ${tColor}d0)` : 'rgba(255,255,255,0.04)',
+                      : tColor ? tColor : 'rgba(255,255,255,0.04)',
                     border: isPending ? `2px dashed ${actionColor}`
                       : isSwapSelected ? `2px solid ${actionColor}`
                       : isStuckCell ? `1.5px solid rgba(236,72,153,0.9)`

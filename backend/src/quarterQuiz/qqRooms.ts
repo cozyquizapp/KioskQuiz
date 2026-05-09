@@ -974,6 +974,16 @@ export function qqActivateQuestion(
   room._currentQuestionWinners = [];
   room.pendingFor     = null;
   room.pendingAction  = null;
+  // 2026-05-09 (Wolf-Bug 'in neuer Runde wird Joker getriggert obwohl noch
+  // kein Place gesetzt'): placementsLeft per Team auf 0 zurücksetzen — wenn
+  // ein Joker-Bonus einer vorherigen Frage nicht konsumiert wurde, leakte
+  // er placementsLeft>0 in die neue Frage → bei nächster richtiger Antwort
+  // wurde pendingAction='PLACE_1' (statt PLACE_2) → Frontend zeigt
+  // Joker-Hint, obwohl der Joker eigentlich nie verdient wurde.
+  for (const id of room.joinOrder) {
+    const stats = room.teamPhaseStats[id];
+    if (stats) stats.placementsLeft = 0;
+  }
   room.answers        = [];
   // 2026-05-02 Bug-Fix (Wolfs Hot-Potato-Insta-End): allAnswered wurde von
   // vorheriger Frage NICHT reset → Mod-Autoplay sah allAnswered=true bei

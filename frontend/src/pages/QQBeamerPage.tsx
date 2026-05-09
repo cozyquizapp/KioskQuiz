@@ -19434,7 +19434,28 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             }}>
               <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 220px)" mode="schlafen" />
             </div>
-            <ThanksColumnSubtitle text={lang === 'de' ? 'cozywolf bedankt sich' : 'cozywolf says thanks'} />
+            {/* 2026-05-09 v10 (Wolf 'cozywolf bedankt sich abgeschnitten'):
+                2-zeilig — „cozywolf" oben in Brand-Font (Stinger Fit) + Pink,
+                darunter „bedankt sich" / „says thanks" in normaler Font. */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 2, lineHeight: 1.05, textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                color: '#EC4899',
+                letterSpacing: '0.02em',
+                textShadow: '0 0 24px rgba(236,72,153,0.45)',
+                whiteSpace: 'nowrap',
+              }}>cozywolf</div>
+              <div style={{
+                fontFamily: 'inherit',
+                fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
+                color: '#F1F5F9',
+                whiteSpace: 'nowrap',
+              }}>{lang === 'de' ? 'bedankt sich' : 'says thanks'}</div>
+            </div>
           </ThanksColumnCard>
 
           <ThanksColumnCard accent={winner?.color ?? '#EC4899'} delay={0.10}>

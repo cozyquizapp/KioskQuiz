@@ -16038,18 +16038,19 @@ type FinalStep =
   | { kind: 'title' }
   | { kind: 'grid' }
   | { kind: 'bet'; teamIndex: number }
-  | { kind: 'awards-overview'; revealedCount: 0 | 1 | 2 | 3 }
+  | { kind: 'awards-overview' }      // alle 3 BG-Cards mit Erklärung
+  | { kind: 'awards-reveal' }        // Auto-Choreo: 3 Cards gestaffelt flippen
   | { kind: 'race-final' };
 
+// 2026-05-10 (Wolf 'Awards: 2 Steps statt 4 — alle zeigen, dann alle
+// automatisch aufdecken mit Zeit zwischen einzelnen'):
 function decodeFinalStep(step: number, N: number): FinalStep {
   if (step <= 0) return { kind: 'title' };
   if (step === 1) return { kind: 'grid' };
   if (step <= 1 + N) return { kind: 'bet', teamIndex: step - 2 };
   const afterBets = step - (1 + N);
-  if (afterBets === 1) return { kind: 'awards-overview', revealedCount: 0 };
-  if (afterBets === 2) return { kind: 'awards-overview', revealedCount: 1 };
-  if (afterBets === 3) return { kind: 'awards-overview', revealedCount: 2 };
-  if (afterBets === 4) return { kind: 'awards-overview', revealedCount: 3 };
+  if (afterBets === 1) return { kind: 'awards-overview' };
+  if (afterBets === 2) return { kind: 'awards-reveal' };
   return { kind: 'race-final' };
 }
 
@@ -16111,7 +16112,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           lang={lang}
         />
       )}
-      {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealedCount={phase.revealedCount} state={s} lang={lang} />}
+      {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealMode="closed" state={s} lang={lang} />}
+      {phase.kind === 'awards-reveal' && <AwardsOverviewSlide revealMode="auto-reveal" state={s} lang={lang} />}
       {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
     </div>
   );
@@ -16276,6 +16278,8 @@ function FinalRevealSharedKeyframes() {
 }
 
 // ─── TitleHoldSlide ─────────────────────────────────────────────────────────
+// 2026-05-10 (Wolf 'Drück Space soll nicht stehen — Mod-Hint im Live-Feed
+// fehl am Platz'): Subtitle entfernt. Nur Pokal + Titel.
 function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
   const de = lang === 'de';
   return (
@@ -16290,14 +16294,6 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
         color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
       }}>{de ? 'Die Auflösung' : 'The reveal'}</div>
-      <div style={{
-        fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#94A3B8',
-        fontStyle: 'italic',
-        display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',
-      }}>
-        {de ? 'Drück Space — los geht\'s' : 'Press space — let\'s go'}
-        <WolfHeadIcon size={26} />
-      </div>
     </div>
   );
 }
@@ -16312,24 +16308,8 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
   const topTeam = [...s.teams].sort((a, b) =>
     (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
   )[0];
-  let minR = s.gridSize, minC = s.gridSize, maxR = -1, maxC = -1;
-  for (let r = 0; r < s.gridSize; r++) {
-    for (let c = 0; c < s.gridSize; c++) {
-      if (s.grid[r]?.[c]?.ownerId === topTeam?.id) {
-        if (r < minR) minR = r;
-        if (c < minC) minC = c;
-        if (r > maxR) maxR = r;
-        if (c > maxC) maxC = c;
-      }
-    }
-  }
-  const hasTopCluster = maxR >= 0 && topTeam;
   const cellSize = Math.min(64, Math.floor(560 / Math.max(1, s.gridSize)));
   const gap = 6;
-  const rectLeft = hasTopCluster ? minC * (cellSize + gap) - 4 : 0;
-  const rectTop = hasTopCluster ? minR * (cellSize + gap) - 4 : 0;
-  const rectW = hasTopCluster ? (maxC - minC + 1) * cellSize + (maxC - minC) * gap + 8 : 0;
-  const rectH = hasTopCluster ? (maxR - minR + 1) * cellSize + (maxR - minR) * gap + 8 : 0;
 
   return (
     <div style={{
@@ -16381,30 +16361,11 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               </div>
             );
           }))}
-          {hasTopCluster && (
-            <div style={{
-              position: 'absolute',
-              left: rectLeft, top: rectTop, width: rectW, height: rectH,
-              borderRadius: cellSize * 0.18 + 4,
-              border: '3px solid #EC4899',
-              boxShadow: '0 0 28px rgba(236,72,153,0.7), inset 0 0 18px rgba(236,72,153,0.25)',
-              pointerEvents: 'none',
-              animation: 'qqFRTitleIn 0.7s ease 0.5s both',
-            }}>
-              {[0, 0.33, 0.66].map((delay, i) => (
-                <span key={i} aria-hidden style={{
-                  position: 'absolute', left: 0, top: 0,
-                  width: 14, height: 14,
-                  fontSize: 14, lineHeight: 1,
-                  filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.9))',
-                  ['offsetPath' as any]: `path('M 0 0 L ${rectW} 0 L ${rectW} ${rectH} L 0 ${rectH} Z')`,
-                  ['WebkitOffsetPath' as any]: `path('M 0 0 L ${rectW} 0 L ${rectW} ${rectH} L 0 ${rectH} Z')`,
-                  ['offsetRotate' as any]: 'auto',
-                  animation: `qqFRBoundingSparkle 4s linear ${delay * 4}s infinite`,
-                }}>✨</span>
-              ))}
-            </div>
-          )}
+          {/* 2026-05-10 (Wolf 'Umrandung um Top-Cluster ist falsch'):
+              Bounding-Box + Sparkles entfernt — die Cluster-Erkennung war
+              irreführend (markierte oft mehr als den tatsächlichen
+              connected-Cluster). Cluster-Pulse via qqFRClusterPulse auf
+              den einzelnen Zellen reicht als Hervorhebung. */}
         </div>
       </div>
       <div style={{
@@ -16589,11 +16550,31 @@ const AWARD_DEFS = [
 // als CSS-Transition läuft, BG bleibt Slot identisch breit. Flip-Choreo wie
 // /animations Slot 07 "🎴 Bonus: 3D Card-Flip". Title & Subtitle bleiben oben
 // dauerhaft sichtbar — die Cards selbst sind das Drama.
-function AwardsOverviewSlide({ revealedCount, state: s, lang }: {
-  revealedCount: 0 | 1 | 2 | 3; state: QQStateUpdate; lang: 'de' | 'en';
+// 2026-05-10 (Wolf '2 Steps statt 4 — alle zeigen, dann alle automatisch
+// aufdecken mit Zeit zwischen einzelnen'):
+// - revealMode='closed': alle 3 BG-Cards (Drumroll-Animation), kein Flip
+// - revealMode='auto-reveal': interner Stagger flippt Card 1 → 2 → 3
+//   automatisch mit 2s Pause zwischen jedem Reveal (Wolf moderiert)
+function AwardsOverviewSlide({ revealMode, state: s, lang }: {
+  revealMode: 'closed' | 'auto-reveal'; state: QQStateUpdate; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
   const awards = s.endAwards;
+  const [revealedCount, setRevealedCount] = useState<0 | 1 | 2 | 3>(0);
+
+  useEffect(() => {
+    if (revealMode !== 'auto-reveal') {
+      setRevealedCount(0);
+      return;
+    }
+    // Stagger: 0.8s → Card 1 (1.1s flip) → 2.0s pause → Card 2 → 2.0s pause → Card 3
+    // Total ~8s, gibt Wolf Zeit pro Award zu moderieren.
+    const handles: number[] = [];
+    handles.push(window.setTimeout(() => setRevealedCount(1), 800));
+    handles.push(window.setTimeout(() => setRevealedCount(2), 800 + 1100 + 2000));
+    handles.push(window.setTimeout(() => setRevealedCount(3), 800 + 1100 + 2000 + 1100 + 2000));
+    return () => handles.forEach(h => window.clearTimeout(h));
+  }, [revealMode]);
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',

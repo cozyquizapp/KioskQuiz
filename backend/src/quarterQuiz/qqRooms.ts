@@ -5354,14 +5354,13 @@ export function qqResolveFinalBets(room: QQRoomState): void {
  *  Total = 2N + 9 (inkl. Final-Step der Phase wechselt). */
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
   const N = Object.keys(room.teams).length;
-  // 2026-05-09 v5 (Race-Refactor nach Wolf-Brainstorm): Crescendo wird zur
-  // Race-Metapher — alle Teams racen on-the-spot mit Speed-Lines, fallen
-  // gestaffelt zurück, Sieger schwebt slow-mo über Ziellinie. EINE
-  // zusammenhängende Auto-Choreo statt 3 Mod-Steps.
-  // Mapping: 0=title, 1=grid, 2..N+1=bet, N+2..N+5=awards-overview,
-  // N+6=race-final (Auto-Choreo 12-15s), max = N+7 → THANKS.
-  // Bei N=4: 11 Steps (war 13), bei N=8: 15 Steps (war 17).
-  return N + 7;
+  // 2026-05-10 (Wolf 'Awards: 2 Steps statt 4'): Awards-Section von 4
+  // Mod-Steps auf 2 reduziert (overview + auto-reveal mit Stagger).
+  // Mapping: 0=title, 1=grid, 2..N+1=bet, N+2=awards-overview,
+  // N+3=awards-reveal (Auto-Choreo 8s), N+4=race-final (Auto-Choreo ~33s),
+  // max = N+5 → THANKS.
+  // Bei N=4: 9 Steps (war 11), bei N=8: 13 Steps (war 15).
+  return N + 5;
 }
 
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */

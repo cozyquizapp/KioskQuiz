@@ -4,14 +4,15 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
  * QQFinalRevealTestPage — Standalone-Vorschau der FinalReveal-Choreografie.
- * Slider zum manuellen Step-Steuern (0..N+7), Team-Count + Award-Set Toggle.
+ * Slider zum manuellen Step-Steuern (0..N+4), Team-Count + Award-Set Toggle.
  *
- * Akt-Mapping (siehe decodeFinalStep) — v5 Race:
- *   0          = title
- *   1          = grid
- *   2..N+1     = bet (1 pro Team, aufsteigend nach Bonus)
- *   N+2..N+5   = awards-overview (Overview + 3 Flips)
- *   N+6        = race-final (Auto-Choreo 12-15s mit Speed-Lines + Slow-Mo)
+ * Akt-Mapping (siehe decodeFinalStep) — v8 (2026-05-10):
+ *   0       = title
+ *   1       = grid
+ *   2..N+1  = bet (1 pro Team, aufsteigend nach Bonus)
+ *   N+2     = awards-overview (alle 3 BG-Cards mit Erklärung)
+ *   N+3     = awards-reveal (Auto-Choreo: 3 Flips gestaffelt, ~8s)
+ *   N+4     = race-final (Auto-Choreo ~33s mit Treppchen-Rise)
  */
 
 const TEAMS_5 = [
@@ -59,32 +60,30 @@ function getStepLabel(step: number, N: number): string {
   if (step === 1) return '1 · Grid-Reveal';
   if (step <= 1 + N) return `${step} · Bet-Reveal Team ${step - 1}/${N}`;
   const ab = step - (1 + N);
-  if (ab === 1) return `${step} · Awards: alle BG`;
-  if (ab === 2) return `${step} · Awards: Card 1 flipped (🐢)`;
-  if (ab === 3) return `${step} · Awards: Card 2 flipped (🦝)`;
-  if (ab === 4) return `${step} · Awards: Card 3 flipped (⚡)`;
-  if (ab === 5) return `${step} · 🏁 RACE-FINAL (Auto-Choreo 12-15s)`;
-  return `${step} · (max ${N + 6})`;
+  if (ab === 1) return `${step} · Awards: Overview (alle BG)`;
+  if (ab === 2) return `${step} · Awards: Auto-Reveal (3× Flip ~8s)`;
+  if (ab === 3) return `${step} · 🏁 RACE-FINAL (Auto-Choreo ~33s)`;
+  return `${step} · (max ${N + 4})`;
 }
 
 export default function QQFinalRevealTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [teamCount, setTeamCount] = useState<3 | 5 | 8>(5);
-  // Default: race-final Step (N+6) bei N=5 → 11
-  const [step, setStep] = useState<number>(11);
+  // Default: race-final Step (N+4) bei N=5 → 9
+  const [step, setStep] = useState<number>(9);
   // Replay-Counter: erhöht sich bei „Replay"-Klick → erzwingt Re-Mount
   // damit die Race-Auto-Choreo neu startet ohne Step-Wechsel.
   const [replayKey, setReplayKey] = useState<number>(0);
 
   const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
   const N = teams.length;
-  const maxStep = N + 6; // race-final ist letzter Step
+  const maxStep = N + 4; // race-final ist letzter Step (war N+6 vor Awards-Refactor)
   const grid = buildMockGrid(teams);
 
   // Default: bei Team-Count-Wechsel auf race-final springen
   const handleTeamCountChange = (n: 3 | 5 | 8) => {
     setTeamCount(n);
-    setStep(n + 6); // race-final für neuen N
+    setStep(n + 4); // race-final für neuen N
   };
 
   // Mock endAwards (alle 3 vergeben)
@@ -240,8 +239,9 @@ export default function QQFinalRevealTestPage() {
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
             <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Grid</button>
-            <button style={step === N + 5 ? btnActive : btnStyle} onClick={() => setStep(N + 5)}>Awards</button>
-            <button style={step === N + 6 ? btnActive : btnStyle} onClick={() => setStep(N + 6)}>🏁 Race</button>
+            <button style={step === N + 2 ? btnActive : btnStyle} onClick={() => setStep(N + 2)}>Awards BG</button>
+            <button style={step === N + 3 ? btnActive : btnStyle} onClick={() => setStep(N + 3)}>Awards Reveal</button>
+            <button style={step === N + 4 ? btnActive : btnStyle} onClick={() => setStep(N + 4)}>🏁 Race</button>
           </div>
           {/* Replay Race: gleicher Step + force re-mount via key in render */}
         </div>

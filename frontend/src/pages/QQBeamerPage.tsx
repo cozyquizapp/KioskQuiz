@@ -16154,22 +16154,36 @@ function FinalRevealSharedKeyframes() {
         0%   { opacity: 0; transform: translateY(80px) scale(0.9); }
         100% { opacity: 1; transform: translateY(0)    scale(1); }
       }
-      /* 2026-05-09 v5.1 Race-Keyframes — höhere Amplitude + schnellere Anim
-         für mehr Race-Dynamik (Wolf-Feedback 'mehr Dynamik') */
-      @keyframes qqRaceBob {
-        0%, 100% { transform: translateY(0)    rotate(-2deg) scale(1); }
-        25%      { transform: translateY(-14px) rotate(2deg)  scale(1.03); }
-        50%      { transform: translateY(-6px)  rotate(-1deg) scale(1); }
-        75%      { transform: translateY(-12px) rotate(3deg)  scale(1.02); }
+      /* 2026-05-09 v6 Race-Keyframes — Wolf-Vision 'wie 8 Raketen nebeneinander':
+         2 organische Bob-Patterns (RocketA / RocketB), per-Team via Hash + variable
+         Duration (2.0-3.2s) + negativer Delay → komplett asynchron.
+         RocketFall: kurzes Absacken → drift nach unten → blur+fade (1.6s).
+         qqRaceFallOut wurde entfernt (war Hard-Cut, keine sichtbare Anim). */
+      @keyframes qqRaceRocketA {
+        0%   { transform: translate(0,    0)    rotate(-2deg) scale(1); }
+        25%  { transform: translate(8px,  -18px) rotate(2deg)  scale(1.03); }
+        50%  { transform: translate(-6px, -8px)  rotate(-1deg) scale(1); }
+        75%  { transform: translate(10px, -22px) rotate(3deg)  scale(1.02); }
+        100% { transform: translate(0,    0)    rotate(-2deg) scale(1); }
+      }
+      @keyframes qqRaceRocketB {
+        0%   { transform: translate(0,     0)    rotate(0deg)  scale(1); }
+        20%  { transform: translate(-12px, -10px) rotate(-3deg) scale(1.02); }
+        50%  { transform: translate(8px,   -16px) rotate(2deg)  scale(1); }
+        80%  { transform: translate(-6px,  -6px)  rotate(-2deg) scale(1.03); }
+        100% { transform: translate(0,     0)    rotate(0deg)  scale(1); }
       }
       @keyframes qqRaceTrail {
         0%   { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
         50%  { opacity: 1;   transform: translateY(8px)   scaleY(1.25); }
         100% { opacity: 0.4; transform: translateY(-12px) scaleY(0.7); }
       }
-      @keyframes qqRaceFallOut {
-        0%   { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); }
-        100% { opacity: 0; transform: translate(-50%, 280px) scale(0.7) rotate(15deg); }
+      @keyframes qqRaceRocketFall {
+        0%   { transform: translate(0, 0)     scale(1)    rotate(0);    opacity: 1;   filter: blur(0); }
+        15%  { transform: translate(0, 6px)   scale(0.97) rotate(-1deg); opacity: 1; }
+        45%  { transform: translate(0, 90px)  scale(0.85) rotate(4deg);  opacity: 0.75; filter: blur(1px); }
+        75%  { transform: translate(0, 240px) scale(0.65) rotate(-6deg); opacity: 0.35; filter: blur(2.5px); }
+        100% { transform: translate(0, 480px) scale(0.5)  rotate(12deg); opacity: 0;    filter: blur(5px); }
       }
       @keyframes qqRaceWinnerSlowMo {
         0%   { transform: translateY(0) scale(1.4); }
@@ -16729,27 +16743,35 @@ type RacePhase =
   | 'winner-slowmo'     // +1.5s: Sieger schwebt Slow-Mo über Ziellinie
   | 'finish';           // Sieger snap auf Mitte-Stufe + Crown + Konfetti
 
-function RaceFinalSlide({ finalRanking, lang }: {
+function RaceFinalSlide({ finalRanking, lang: _lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const N = finalRanking.length;
   const p1 = finalRanking[0];
   const p2 = finalRanking[1];
   const p3 = finalRanking[2];
-  const de = lang === 'de';
 
   const [phase, setPhase] = useState<RacePhase>('race');
-  // Welche Team-IDs sind "auf der Strecke geblieben" (gefallen, nach unten weg)?
+  // Welche Team-IDs sind "auf der Strecke geblieben" (sacken nach unten weg
+  // mit qqRaceRocketFall — sichtbarer Slow-Down, drift, blur+fade über 1.6s).
   const [fallenIds, setFallenIds] = useState<Set<string>>(new Set());
   // Welche sind aufs Treppchen gerutscht (animiert auf Stufen-Position)?
   const [podiumIds, setPodiumIds] = useState<Set<string>>(new Set());
 
-  // Auto-Choreo via Timeline — alle Setpoints als setTimeout-Cascade
+  // 2026-05-09 v6 (Wolf '8 Raketen, darf gerne dauern, ich moderiere parallel'):
+  // Pacing gestreckt — Race-Hold 5s, Stagger-Fall 1.3s zwischen Falls,
+  // P1+P2-Solo-Race 3.5s, P2-Podium 1s, Slow-Mo 1.5s. Total bei N=8 ~21s,
+  // bei N=4 ~13s. Choreo: Plätze N..4 fallen raus → P3 fällt + landet auf
+  // Treppchen → P2 dito → P1 racet alleine kurz weiter → Slow-Mo-Stop →
+  // Mitte-Stufe + Krone + Konfetti.
   useEffect(() => {
     const handles: number[] = [];
-    let cursor = 3000; // Initial Race-Hold 3s
+    let cursor = 5000; // Initial Race-Hold 5s
 
-    // Plätze N..4 fallen gestaffelt (von schlechtester nach Platz 4)
+    // Plätze N..4 fallen gestaffelt (von schlechtester nach Platz 4).
+    // Sichtbare 1.6s-Fall-Anim, daher 1.3s zwischen Starts (überlappt
+    // bewusst — die letzten Raketen sind noch sichtbar während die nächste
+    // schon fällt, gibt Race-Gefühl).
     for (let rank = N; rank >= 4; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
@@ -16757,29 +16779,45 @@ function RaceFinalSlide({ finalRanking, lang }: {
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         if (rank === 4) setPhase('p3-podium');
       }, cursor));
-      cursor += 600;
+      cursor += 1300;
     }
 
-    // Platz 3 → rechte Treppchen-Stufe
-    cursor += 400;
+    // Pause vor P3 — die letzte N..4-Rakete soll auch sichtbar fertig fallen
+    cursor += 800;
+
+    // Platz 3 fällt → 1.6s später erscheint P3 auf rechter Treppchen-Stufe.
     if (p3) {
+      const p3Id = p3.team.id;
       handles.push(window.setTimeout(() => {
-        setPodiumIds(prev => { const next = new Set(prev); next.add(p3.team.id); return next; });
+        setFallenIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
+      }, cursor));
+      cursor += 1100; // P3 ist mid-fall (60% der Anim) wenn Treppchen erscheint
+      handles.push(window.setTimeout(() => {
+        setPodiumIds(prev => { const next = new Set(prev); next.add(p3Id); return next; });
         setPhase('p2-final-race');
       }, cursor));
+      cursor += 800;
     }
 
     // P1 + P2 racen alleine weiter — Drama-Build (Camera-Push)
-    cursor += 2000;
+    cursor += 1500;
 
-    // Platz 2 → linke Treppchen-Stufe
+    // Platz 2 fällt → 1.1s später erscheint P2 auf linker Treppchen-Stufe.
     if (p2) {
+      const p2Id = p2.team.id;
       handles.push(window.setTimeout(() => {
-        setPodiumIds(prev => { const next = new Set(prev); next.add(p2.team.id); return next; });
+        setFallenIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
+      }, cursor));
+      cursor += 1100;
+      handles.push(window.setTimeout(() => {
+        setPodiumIds(prev => { const next = new Set(prev); next.add(p2Id); return next; });
         setPhase('p2-podium');
       }, cursor));
-      cursor += 1000;
+      cursor += 800;
     }
+
+    // P1 alleine — kurzer Solo-Race-Moment für Spannung
+    cursor += 1200;
 
     // Sieger Slow-Mo
     handles.push(window.setTimeout(() => {
@@ -16809,16 +16847,31 @@ function RaceFinalSlide({ finalRanking, lang }: {
       ? 'clamp(110px, 11vw, 160px)'
       : 'clamp(80px, 9vw, 130px)';
 
-  // Stable Y-Offset pro Team-ID für asynchrones Wackeln (deterministisch)
+  // Stable Per-Team-Hash-Funktionen — geben jedem Team eine eigene Bob-
+  // Variante, Duration und Phase-Offset. Deterministisch via team.id-Hash.
   const yOffsetForTeam = (id: string): number => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
     return (hash % 30) - 15; // -15 bis +15px Offset
   };
+  // Negative Delays → Animation startet sofort, aber jede Rakete in eigener
+  // Cycle-Phase (kein synchrones Loswippen).
   const bobDelayForTeam = (id: string): number => {
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = ((hash << 7) - hash) + id.charCodeAt(i);
-    return Math.abs(hash % 1200) / 1000; // 0-1.2s Delay
+    return -(Math.abs(hash) % 2200) / 1000; // -2.2s bis 0s
+  };
+  // Variable Duration → keine zwei Raketen wackeln im selben Tempo
+  const bobDurationForTeam = (id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = ((hash << 11) - hash) + id.charCodeAt(i);
+    return 2.0 + (Math.abs(hash) % 1200) / 1000; // 2.0-3.2s
+  };
+  // Variant A vs B → 2 unterschiedliche Bewegungs-Pattern (Y-betont vs X-betont)
+  const bobVariantForTeam = (id: string): 'A' | 'B' => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = ((hash << 13) - hash) + id.charCodeAt(i);
+    return Math.abs(hash) % 2 === 0 ? 'A' : 'B';
   };
 
   return (
@@ -16838,25 +16891,9 @@ function RaceFinalSlide({ finalRanking, lang }: {
     }}>
       {isFinish && <ConfettiOverlay />}
 
-      {/* Ziellinie oben — gestrichelte gold-leuchtende horizontale Linie */}
-      <div aria-hidden style={{
-        position: 'absolute', left: '5%', right: '5%',
-        top: '18%', height: 4,
-        background: 'repeating-linear-gradient(90deg, rgba(251,191,36,0.85) 0 14px, rgba(0,0,0,0) 14px 22px)',
-        boxShadow: '0 0 20px rgba(251,191,36,0.6)',
-        zIndex: 1,
-        opacity: phase === 'race' || phase === 'staggered-fall' || phase === 'p2-final-race' || phase === 'winner-slowmo' ? 1 : 0.3,
-        transition: 'opacity 0.6s ease',
-      }} />
-      <div aria-hidden style={{
-        position: 'absolute', left: 0, right: 0, top: '14%',
-        textAlign: 'center',
-        fontSize: 'clamp(13px, 1.2vw, 18px)', fontWeight: 900,
-        color: 'rgba(251,191,36,0.85)', letterSpacing: '0.18em', textTransform: 'uppercase',
-        zIndex: 1,
-      }}>{de ? 'Ziellinie' : 'Finish'}</div>
-
-      {/* Race-Bahn — Avatare horizontal verteilt mit Speed-Lines */}
+      {/* Race-Bahn — Avatare horizontal verteilt mit Speed-Lines.
+          2026-05-09 v6 (Wolf): Ziellinie raus — visuell unnötig, Choreo
+          erzählt die Story (Plätze fallen → P3/P2 aufs Treppchen → P1 Slow-Mo). */}
       <div style={{
         flex: 1,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -16871,20 +16908,13 @@ function RaceFinalSlide({ finalRanking, lang }: {
           // Sieger erreicht das Treppchen-Slot auch beim 'finish'-Phase via class
           const winnerOnPodium = isWinner && isFinish;
 
-          // Wenn auf Treppchen oder gefallen → render an Treppchen-Position oder weg
+          // Auf Treppchen → wird vom Treppchen-Block weiter unten gerendert
           if (onPodium || winnerOnPodium) return null;
-          if (fallen) {
-            return (
-              <div key={entry.team.id} style={{
-                position: 'absolute',
-                left: '50%', bottom: '-20%',
-                animation: 'qqRaceFallOut 1.0s cubic-bezier(0.4, 0, 1, 1) both',
-                opacity: 0,
-                pointerEvents: 'none',
-              }} />
-            );
-          }
 
+          // 2026-05-09 v6: Gefallene Raketen rendern weiter, aber mit
+          // qqRaceRocketFall-Animation (kurzes Absacken → drift down → fade).
+          // Vorher war hier ein leerer absolute-div → Avatar war sofort weg,
+          // keine sichtbare Fall-Anim.
           // Slow-Mo nur für Sieger ab 'winner-slowmo'-Phase
           const inSlowMo = isWinner && phase === 'winner-slowmo';
 
@@ -16895,7 +16925,10 @@ function RaceFinalSlide({ finalRanking, lang }: {
               avatarSize={avatarSize}
               yOffset={yOffsetForTeam(entry.team.id)}
               bobDelay={bobDelayForTeam(entry.team.id)}
+              bobVariant={bobVariantForTeam(entry.team.id)}
+              bobDuration={bobDurationForTeam(entry.team.id)}
               inSlowMo={inSlowMo}
+              falling={fallen}
             />
           );
         })}
@@ -17001,25 +17034,39 @@ function RaceFinalSlide({ finalRanking, lang }: {
 // Race-Team-Unit: Avatar oben + Speed-Lines IM Flow direkt drunter. Vorher
 // SpeedLines absolute → Layout zerschossen bei vielen Avataren in einer Reihe
 // (Wolf-Bug 2026-05-09 v5.1: Streifen erst bei 2 Teams sichtbar).
-// Avatar-Wackel-Amplitude erhöht für mehr Dynamik.
-function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, inSlowMo }: {
+//
+// 2026-05-09 v6 (Wolf '8 Raketen nebeneinander, asynchron'): Bob-Animation
+// pro Team variabel — variant A/B + duration 2.0-3.2s + negativer Delay
+// → keine zwei Raketen wackeln synchron. Beim falling: ganzer Wrapper läuft
+// qqRaceRocketFall (drift down + blur + fade), Speed-Lines faden mit aus
+// weil sie im selben Wrapper sind.
+function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDuration, inSlowMo, falling }: {
   team: QQTeam;
   avatarSize: string;
   yOffset: number;
   bobDelay: number;
+  bobVariant: 'A' | 'B';
+  bobDuration: number;
   inSlowMo: boolean;
+  falling: boolean;
 }) {
+  const bobAnim = bobVariant === 'A'
+    ? `qqRaceRocketA ${bobDuration}s ease-in-out ${bobDelay}s infinite`
+    : `qqRaceRocketB ${bobDuration}s ease-in-out ${bobDelay}s infinite`;
   return (
     <div style={{
       position: 'relative',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: 4,
       transform: `translateY(${yOffset}px)`,
-      animation: inSlowMo
-        ? 'qqRaceWinnerSlowMo 1.5s cubic-bezier(0.2, 0.85, 0.3, 1) both'
-        : `qqRaceBob 1.0s ease-in-out ${bobDelay}s infinite`,
+      animation: falling
+        ? 'qqRaceRocketFall 1.6s cubic-bezier(0.4, 0, 0.7, 1) both'
+        : inSlowMo
+          ? 'qqRaceWinnerSlowMo 1.5s cubic-bezier(0.2, 0.85, 0.3, 1) both'
+          : bobAnim,
       flexShrink: 0,
       transition: 'transform 0.4s ease',
+      pointerEvents: falling ? 'none' : 'auto',
     }}>
       {/* Avatar — TOP des Stacks */}
       <div style={{

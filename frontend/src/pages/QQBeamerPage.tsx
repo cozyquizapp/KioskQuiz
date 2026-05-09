@@ -16255,6 +16255,14 @@ function FinalRevealSharedKeyframes() {
         60%  { opacity: 1; transform: translateY(-12px) scale(1.005); }
         100% { opacity: 1; transform: translateY(0) scale(1); }
       }
+      /* 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Pop-Animation für jede
+         Countdown-Zahl — scale-explode, blur-clear, hold, leichter ausfade. */
+      @keyframes qqRaceCountdownPop {
+        0%   { opacity: 0; transform: scale(0.4); filter: blur(8px); }
+        35%  { opacity: 1; transform: scale(1.25); filter: blur(0); }
+        65%  { opacity: 1; transform: scale(1); filter: blur(0); }
+        100% { opacity: 0.4; transform: scale(0.9); filter: blur(0); }
+      }
       /* 2026-05-09 v8.1 (Wolf 'TRÖÖT als Sprachtext, keine bubble'):
          Periodisches Pop-In neben dem Tröte-Wolf — alle ~2.8s ein burst.
          Synchronisiert ungefähr mit der intern getriggerten Tröte-Pose. */
@@ -16792,12 +16800,11 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
 // 3 Mod-Steps — Mod startet sie mit einem Space, Rest läuft selbst.
 
 // 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen avataren'):
-// Vereinfachte Phasen — alle nicht-Sieger fallen gerade runter, P1 schwebt
-// solo, dann Treppchen aus dem Boden mit ALLEN Avataren P2..PN drauf, dann
-// P1 lands auf Mitte-Stufe.
+// 2026-05-10 v8.3 (Wolf 'Countdown 3-2-1 vor Race'):
 type RacePhase =
-  | 'race'              // 0-8s: alle in initial-X, schweben async
-  | 'staggered-fall'    // 8s-: N..2 fallen gestaffelt (gerade runter, 2s stagger)
+  | 'countdown'         // 0-3.5s: BEREIT? → 3 → 2 → 1 → GO! (Auto-Choreo)
+  | 'race'              // 3.5-8.5s: alle in initial-X, schweben async (5s Hold)
+  | 'staggered-fall'    // N..2 fallen gestaffelt (gerade runter, 2s stagger)
   | 'p1-solo'           // P1 alleine schwebt (4s)
   | 'podium-rises'      // Treppchen steigt mit ALLEN P2..PN drauf (2.5s)
   | 'winner-slowmo'     // P1 slow-mo (1.5s)
@@ -16867,7 +16874,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   const p2 = finalRanking[1];
   const p3 = finalRanking[2];
 
-  const [phase, setPhase] = useState<RacePhase>('race');
+  const [phase, setPhase] = useState<RacePhase>('countdown');
   const [fallenIds, setFallenIds] = useState<Set<string>>(new Set());
   const [podiumIds, setPodiumIds] = useState<Set<string>>(new Set());
   // 2026-05-09 v7.2 (Wolf-Bugfix 'rumsortiere + Spoiler durch Drift-Position'):
@@ -16889,7 +16896,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   // Total bei N=8 ~31s, bei N=4 ~22s.
   useEffect(() => {
     const handles: number[] = [];
-    let cursor = 8000; // Race-Hold 8s
+    // 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): 3.5s Countdown-Phase
+    // (BEREIT 0.8s → 3 0.7s → 2 0.7s → 1 0.8s → GO! 0.5s) + 5s Race-Hold
+    // = 8.5s bis erstes Team fällt (war 8s).
+    let cursor = 3500; // Countdown Auto-Choreo läuft
+    handles.push(window.setTimeout(() => setPhase('race'), cursor));
+    cursor += 5000; // Race-Hold 5s
 
     // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr
     for (let rank = N; rank >= 2; rank--) {
@@ -17056,6 +17068,11 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       transformOrigin: 'center 35%',
     }}>
       {isFinish && <ConfettiOverlay />}
+
+      {/* 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay
+          während phase==='countdown'. Avatare schweben im Hintergrund, der
+          Countdown-Text liegt darüber. Mod kann mitzählen lassen. */}
+      {phase === 'countdown' && <RaceCountdownOverlay />}
 
       {/* Race-Bahn — Avatare absolute positioniert für freie X-Bewegung.
           2026-05-09 v7.1 (Bugfix Wolf 'erste Sekunden leer, Avatare oben'):
@@ -17541,6 +17558,51 @@ function PodiumFillSlide({ finalRanking, lang }: {
 }
 
 // Podium-Stufe für Akt 2 + Akt 3 — Avatar oben, Stufe drunter mit Rank-Number.
+// 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay.
+// Steps: BEREIT? (0.8s) → 3 (0.7s) → 2 (0.7s) → 1 (0.8s) → GO! (0.5s).
+// Total 3.5s — synchron zum cursor-Sprung in RaceFinalSlide useEffect.
+// Wolf moderiert „Bereit, drei, zwei, eins, los!" mit.
+function RaceCountdownOverlay() {
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+
+  useEffect(() => {
+    const handles: number[] = [];
+    handles.push(window.setTimeout(() => setStep(1), 800));   // → 3
+    handles.push(window.setTimeout(() => setStep(2), 1500));  // → 2
+    handles.push(window.setTimeout(() => setStep(3), 2200));  // → 1
+    handles.push(window.setTimeout(() => setStep(4), 3000));  // → GO!
+    return () => handles.forEach(h => window.clearTimeout(h));
+  }, []);
+
+  const labels: { text: string; color: string; size: string; glow: string }[] = [
+    { text: 'BEREIT?', color: '#FBBF24', size: 'clamp(50px, 6vw, 110px)', glow: 'rgba(251,191,36,0.7)' },
+    { text: '3',       color: '#FBBF24', size: 'clamp(140px, 18vw, 320px)', glow: 'rgba(251,191,36,0.85)' },
+    { text: '2',       color: '#F59E0B', size: 'clamp(140px, 18vw, 320px)', glow: 'rgba(245,158,11,0.85)' },
+    { text: '1',       color: '#EF4444', size: 'clamp(140px, 18vw, 320px)', glow: 'rgba(239,68,68,0.85)' },
+    { text: 'GO!',     color: '#22C55E', size: 'clamp(160px, 20vw, 360px)', glow: 'rgba(34,197,94,0.95)' },
+  ];
+  const current = labels[step];
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 10,
+      pointerEvents: 'none',
+    }}>
+      <div key={step} style={{
+        fontSize: current.size,
+        fontWeight: 900,
+        color: current.color,
+        textShadow: `0 0 60px ${current.glow}, 0 0 120px ${current.glow}, 0 8px 28px rgba(0,0,0,0.7)`,
+        letterSpacing: '-0.02em',
+        animation: 'qqRaceCountdownPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        fontFamily: 'var(--font-game, system-ui)',
+      }}>{current.text}</div>
+    </div>
+  );
+}
+
 // 2026-05-09 v8 (Wolf '8 Treppchen-Stufen'): Erweitert für alle Ränge 2..N.
 // Stufen-Farbe nach Rang:
 //   2 = silber, 3 = bronze, 4+ = dunkelgrau (neutral, nicht-medaillert).

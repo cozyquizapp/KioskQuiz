@@ -274,10 +274,10 @@ export default function QQModeratorPage() {
     if (!s) return;
     // Game-Over → Autoplay aus, Loop nicht endlos.
     if (s.phase === 'GAME_OVER' || s.phase === 'THANKS' || s.phase === 'LOBBY') return;
-    // 2026-05-09 (Wolf 'im autoplay muss man bei Final-Recap manuell Space
-    // drücken'): Final-Recap (zwischen Final-Fragen) blockiert Autoplay —
-    // Mod soll bewusst weiter klicken, damit er die Standings auflesen kann.
-    if ((s as any).finalRecapStep === 1) return;
+    // 2026-05-09 v2 (Wolf-Klärung 'soll durchlaufen, kein Stop'): Final-Recap
+    // (zwischen Final-Fragen) blockiert Autoplay NICHT mehr. Längerer Delay
+    // im PLACEMENT-Case unten (siehe finalRecapStep-Branch) lässt die Score-
+    // Cascade in Ruhe auslaufen, bevor automatisch weitergeschaltet wird.
 
     const q = s.currentQuestion;
     const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
@@ -471,7 +471,13 @@ export default function QQModeratorPage() {
       case 'PLACEMENT':
         // Auto-next nur wenn KEIN Team mehr was setzen muss (Animationen fertig).
         if (!s.pendingFor) {
-          delayMs = 3500; // Slam-Down + Placement-Flash abwarten
+          // 2026-05-09 v2 (Wolf 'autoplay soll durchlaufen, nicht stoppen'):
+          // Final-Recap (Step 1, zwischen Final-Fragen) zeigt 0B-Score-Cascade
+          // mit Tickup + Position-Swap + Glow (~3s Anim + Lese-Zeit). Längerer
+          // Delay als Standard-Placement, damit Standings lesbar sind, bevor
+          // Autoplay zur nächsten Final-Frage weiterschaltet.
+          const inFinalRecap = (s as any).finalRecapStep === 1;
+          delayMs = inFinalRecap ? 8000 : 3500; // Slam-Down + Placement-Flash abwarten
           action = () => emit('qq:nextQuestion', { roomCode });
         } else {
           // 2026-05-03 (Wolf-Bug 'Comeback haengt'): wenn pendingFor offline ist

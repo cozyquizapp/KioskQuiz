@@ -2572,8 +2572,8 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
 // ausser wenn schon Mit-Gewinner aktiv sind (forceOpen=true).
 function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, emit }: {
   forceOpen: boolean;
-  nonWinners: { id: string; name: string; color: string; avatarId: string }[];
-  coWinners: { id: string; name: string; color: string; avatarId: string }[];
+  nonWinners: { id: string; name: string; color: string; avatarId: string; emoji?: string }[];
+  coWinners: { id: string; name: string; color: string; avatarId: string; emoji?: string }[];
   roomCode: string;
   emit: (event: string, payload: any) => Promise<any>;
 }) {

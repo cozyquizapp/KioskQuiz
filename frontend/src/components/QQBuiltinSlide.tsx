@@ -21,7 +21,11 @@ const MOCK_GRID = Array.from({ length: MOCK_GRID_SIZE }, (_, r) =>
   }))
 );
 
-const MOCK_STATE_BASE: QQStateUpdate = {
+// 2026-05-09 (TS-Cleanup): State-Mock für Slide-Preview. Da die Liste der
+// QQStateUpdate-Felder ständig wächst (~95 Felder), nutzen wir hier einen
+// pragmatischen Cast statt jedes neue Feld manuell zu mocken — diese Mocks
+// bedienen NUR die Preview-Render-Pfade, nicht die volle Game-Logik.
+const MOCK_STATE_BASE = {
   roomCode: 'DEMO',
   phase: 'LOBBY',
   setupDone: true,
@@ -76,7 +80,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   muchoRevealStep: 0,
   zvzRevealStep: 0,
   cheeseRevealStep: 0,
-};
+} as unknown as QQStateUpdate;
 
 const MOCK_QUESTION_BASE = {
   id: 'preview',

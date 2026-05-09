@@ -159,11 +159,19 @@ export const QQ_BEAMER_CSS = `
     45%  { transform: translate(-50%, -115%); }
     100% { transform: translate(-50%, -50%); }
   }
-  /* 2026-05-09 (Wolf): Continuous Bounce-Loop für Pink-Wolf im Progress-Tree —
-     leichtes Hüpfen über aktuellem Dot, immer wenn der Tree sichtbar ist. */
+  /* 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen — linie ist fix'): Outer
+     Bounce entfernt. qqWolfBob bleibt als Legacy-Keyframe (falls noch wo
+     verlinkt), wird aber nicht mehr genutzt. Stattdessen: qqWolfHeadBob
+     animiert NUR das innere Wolf-Bild — Kreis sitzt fix auf der Linie. */
   @keyframes qqWolfBob {
     0%, 100% { transform: translate(-50%, -50%); }
     50%      { transform: translate(-50%, -68%); }
+  }
+  @keyframes qqWolfHeadBob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25%      { transform: translateY(-4%) rotate(-2deg); }
+    50%      { transform: translateY(-2%) rotate(0deg); }
+    75%      { transform: translateY(-4%) rotate(2deg); }
   }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }

@@ -506,11 +506,11 @@ export default function QQProgressTree({
                 border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
                 boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
                 transform: 'translate(-50%, -50%)',
-                // Continuous Bob-Loop: Wolf hüpft sanft auf-und-ab. Bei Phase-
-                // Wechsel überschreibt der größere `roundMiniHop` für 620ms.
-                animation: hopping
-                  ? 'roundMiniHop 620ms var(--qq-ease-smooth) both'
-                  : 'qqWolfBob 1.4s ease-in-out infinite',
+                // 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen, linie ist fix'):
+                // Outer-Bounce + roundMiniHop entfernt. Kreis sitzt fix auf der
+                // Linie, slidet horizontal zum nächsten Dot via transition. Der
+                // KOPF (innen) wackelt subtil via qqWolfHeadBob — alive-Feeling
+                // ohne dass der Kreis von der Linie abhebt.
                 transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
                 zIndex: 3,
                 pointerEvents: 'none',
@@ -524,6 +524,7 @@ export default function QQProgressTree({
                   style={{
                     width: '94%', height: '94%', objectFit: 'contain',
                     filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+                    animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
                   }}
                 />
               </div>

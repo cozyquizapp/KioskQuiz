@@ -115,7 +115,10 @@ const MOCK_GRID = Array.from({ length: MOCK_GRID_SIZE }, (_, r) =>
   }))
 );
 
-const MOCK_STATE_BASE: QQStateUpdate = {
+// 2026-05-09 (TS-Cleanup): siehe QQBuiltinSlide — pragmatischer Cast für
+// Slide-Preview-Mocks, da QQStateUpdate ständig wächst und Mock NUR den
+// Render-Pfad bedient.
+const MOCK_STATE_BASE = {
   roomCode: 'DEMO',
   phase: 'LOBBY',
   setupDone: true,
@@ -170,7 +173,7 @@ const MOCK_STATE_BASE: QQStateUpdate = {
   muchoRevealStep: 0,
   zvzRevealStep: 0,
   cheeseRevealStep: 0,
-};
+} as unknown as QQStateUpdate;
 
 const MOCK_QUESTION_BASE = {
   id: 'preview',

@@ -6372,8 +6372,9 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         );
       })}
 
-      {/* Wolf-Avatar — wartet auf Seiten-Entrance, springt dann in einem Bogen
-          zum neuen Dot. 2026-05-09: pink.png + continuous Bounce-Loop. */}
+      {/* Wolf-Avatar — sitzt fix auf der Linie, slidet horizontal zum nächsten
+          Dot. 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen, linie ist fix'):
+          outer-Bounce/Hop entfernt; KOPF (innen) wackelt subtil. */}
       <div style={{
         position: 'absolute', top: '50%', left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
@@ -6382,9 +6383,6 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
         transform: 'translate(-50%, -50%)',
         transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
-        animation: hopping
-          ? 'roundMiniHop 560ms var(--qq-ease-smooth) both'
-          : 'qqWolfBob 1.4s ease-in-out infinite',
         zIndex: 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
@@ -6396,6 +6394,7 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
           style={{
             width: '94%', height: '94%', objectFit: 'contain',
             filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+            animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
           }}
         />
       </div>
@@ -17602,10 +17601,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           isolation: 'isolate',
         }}>
           {!isEsc && (
+            // 2026-05-09 v2 (Wolf 'sparkle etwas zu hoch — dezenter und schneller'):
+            // alpha 0.9→0.45 (deutlich dezenter), rotation 4.5s→2.8s (schneller),
+            // gradient-stops weicher (65/80/95 statt 70/80/90) für sanften Verlauf
+            // statt harter Kante.
             <div aria-hidden style={{
               position: 'absolute', inset: '-50%', zIndex: 0,
-              background: 'conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)',
-              animation: 'qqStarBorderSpin 4.5s linear infinite',
+              background: 'conic-gradient(from 0deg, transparent 0% 65%, rgba(236,72,153,0.45) 80%, transparent 95% 100%)',
+              animation: 'qqStarBorderSpin 2.8s linear infinite',
               pointerEvents: 'none',
             }} />
           )}

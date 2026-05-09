@@ -19445,10 +19445,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
                 fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
                 color: '#EC4899',
-                letterSpacing: '0.02em',
+                letterSpacing: '0.04em',
                 textShadow: '0 0 24px rgba(236,72,153,0.45)',
                 whiteSpace: 'nowrap',
-              }}>cozywolf</div>
+                textTransform: 'uppercase',
+              }}>COZYWOLF</div>
               <div style={{
                 fontFamily: 'inherit',
                 fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
@@ -19516,7 +19517,29 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 </div>
               </div>
             )}
-            <ThanksColumnSubtitle text={lang === 'de' ? '📱 scan mich' : '📱 scan me'} />
+            {/* 2026-05-09 v11 (Wolf 'scan me wirkt deplatziert'): 2-zeilig
+                wie COZYWOLF-Spalte — oben SCAN MICH groß in Brand-Font + Pink,
+                drunter „und finde es raus" als auffordernde Sub-Zeile. */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 2, lineHeight: 1.05, textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                color: '#EC4899',
+                letterSpacing: '0.04em',
+                textShadow: '0 0 24px rgba(236,72,153,0.45)',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
+              }}>{lang === 'de' ? 'SCAN MICH' : 'SCAN ME'}</div>
+              <div style={{
+                fontFamily: 'inherit',
+                fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
+                color: '#F1F5F9',
+                whiteSpace: 'nowrap',
+              }}>{lang === 'de' ? 'und finde es raus' : 'and find out'}</div>
+            </div>
           </ThanksColumnCard>
         </div>
 

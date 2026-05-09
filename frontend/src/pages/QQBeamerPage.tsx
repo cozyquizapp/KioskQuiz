@@ -16927,16 +16927,31 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     return variants[Math.abs(hash) % 4];
   };
 
-  // 2026-05-09 v7: X-Positionen pro Team berechnen.
-  // initial = gleichmäßig verteilt (8-92%). target = Treppchen-X für Top 3,
-  // Ränder für P4..PN. Drift via CSS-Transition über 9s.
+  // 2026-05-09 v7.4 (Wolf 'random shuffle — kein Spoiler durch Position'):
+  // Initial-Verteilung NICHT mehr nach Rang (P1 links → PN rechts), sondern
+  // random gemischt. Stagger-Fall trifft dadurch random Positionen — Mod
+  // sieht nicht mehr „rechts = schlechtester". Bei Replay/Remount neuer
+  // Shuffle (useMemo mit []-deps läuft nur bei Mount).
+  const shuffledIndices = useMemo(() => {
+    const indices = Array.from({ length: N }, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    return indices;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N]); // bei N-Wechsel neuer Shuffle, Replay = component-Remount = fresh
+
   const teamXPositions = useMemo(() => {
     const initial: Record<string, number> = {};
     const target: Record<string, number> = {};
 
-    // Initial: gleichmäßig 8-92% der Slide-Breite
-    finalRanking.forEach((entry, idx) => {
-      initial[entry.team.id] = N === 1 ? 50 : 8 + (84 / (N - 1)) * idx;
+    // Initial: gemäß shuffledIndices verteilt (random Position 8-92%)
+    shuffledIndices.forEach((rankIdx, shufflePos) => {
+      const entry = finalRanking[rankIdx];
+      if (entry) {
+        initial[entry.team.id] = N === 1 ? 50 : 8 + (84 / (N - 1)) * shufflePos;
+      }
     });
 
     // Target: Top 3 zu Treppchen-Positionen, kalibriert mit den
@@ -16967,7 +16982,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
 
     return { initial, target };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalRanking, N]);
+  }, [finalRanking, N, shuffledIndices]);
 
   return (
     <div style={{

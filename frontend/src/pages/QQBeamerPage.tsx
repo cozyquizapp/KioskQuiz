@@ -6532,7 +6532,12 @@ function ActionCardReveal({
       // `height: 360` matched non-isNew Card exakt. `alignSelf: stretch` raus
       // (zog Outer auf parent-row-Höhe — Inner blieb bei 360 und wirkte dann
       // kleiner). Plus boxSizing für saubere Box-Berechnung.
-      height: 360,
+      // 2026-05-10 (Spacing-Audit P1 #9): height → minHeight. Zusammen mit
+      // Inner perspective height: '100%' unten und alignItems:stretch im
+      // Parent (PhaseIntroView Z. 7341) wachsen jetzt isNew + non-isNew
+      // Cards SYNCHRON zur natürlichen Maximum-Höhe der Row. Bei langen
+      // DE-Labels wird die ganze Row höher, alle Cards bleiben gleich groß.
+      minHeight: 360,
       boxSizing: 'border-box',
       perspective: '1400px',
       opacity: isVisible ? 1 : 0,
@@ -6547,7 +6552,12 @@ function ActionCardReveal({
         // Inhalt höher werden und stretchten via alignItems:stretch über 360,
         // isNew Card mit absolute-positionierten Front/Back blieb auf 360
         // gepinnt → Größen-Drift. Jetzt alle hart auf 360.
-        position: 'relative', width: '100%', height: 360,
+        // 2026-05-10 (Spacing-Audit P1 #9): height: 360 → '100%'. Outer
+        // ActionCardReveal hat jetzt minHeight:360, Parent-Row stretcht via
+        // alignItems:stretch. Inner perspective-Wrapper nimmt 100% der Outer-
+        // Höhe → Front/Back (inset:0) füllen automatisch mit. Bei wachsenden
+        // Sibling-Cards bleiben Outer + Inner + Front/Back synchron.
+        position: 'relative', width: '100%', height: '100%',
         transformStyle: 'preserve-3d',
         transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -7411,7 +7421,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           // stretch konnte non-isNew Card über 360 wachsen wenn
                           // Inhalt mehr brauchte, isNew (absolute Front/Back)
                           // blieb fest auf 360 → Drift. Jetzt alle hart 360.
-                          height: 360,
+                          // 2026-05-10 (Spacing-Audit P1 #9, Wolf-Idee 'wenn
+                          // eine Card wächst alle mit'): zurück auf minHeight.
+                          // Damit isNew nicht driftet wurde unten in ActionCard-
+                          // Reveal die Outer-Höhe ebenfalls auf minHeight + die
+                          // innere perspective-Wrapper-Höhe auf 100% gestellt.
+                          // alignItems:stretch im Parent (Z. 7341) synct dann
+                          // alle Cards der Row auf die natürliche Maximum-Höhe.
+                          minHeight: 360,
                           boxSizing: 'border-box',
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
                           justifyContent: 'center',

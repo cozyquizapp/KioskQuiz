@@ -15632,13 +15632,15 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   );
 }
 
-// Kategorie-Akzente fürs Panel-Design (konsistent mit Beamer-Quiz)
-const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: string }> = {
-  SCHAETZCHEN:   { color: '#EAB308', emoji: '🎯', label: 'Schätzchen' },
-  MUCHO:         { color: '#3B82F6', emoji: '🔤', label: 'Mucho Choice' },
-  BUNTE_TUETE:   { color: '#EF4444', emoji: '🎁', label: 'Bunte Tüte' },
-  ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10' },
-  CHEESE:        { color: '#8B5CF6', emoji: '📸', label: 'Cheese!' },
+// Kategorie-Akzente fürs Panel-Design (konsistent mit Beamer-Quiz).
+// 2026-05-10 (Wolf-Audit Klasse 2): labelEn-Feld hinzu — label rendert im
+// Pause-Stat-Panel (catMeta.label, ~Z. 18539). Vorher zeigte EN-Spiel DE-Texte.
+const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: string; labelEn: string }> = {
+  SCHAETZCHEN:   { color: '#EAB308', emoji: '🎯', label: 'Schätzchen',   labelEn: 'Close Call' },
+  MUCHO:         { color: '#3B82F6', emoji: '🔤', label: 'Mucho Choice', labelEn: 'Mu-Cho' },
+  BUNTE_TUETE:   { color: '#EF4444', emoji: '🎁', label: 'Bunte Tüte',   labelEn: 'Lucky Bag' },
+  ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10',    labelEn: 'All In' },
+  CHEESE:        { color: '#8B5CF6', emoji: '📸', label: 'Cheese!',      labelEn: 'Picture This' },
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -18524,8 +18526,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('👑', 'Kategorie-Meister', 'Category Masters', '#EC4899')}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {funStats.categoryMasters.map((cm, i) => {
-            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: '#EC4899', emoji: '🎯', label: cm.category };
+            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: '#EC4899', emoji: '🎯', label: cm.category, labelEn: cm.category };
             const team = s.teams.find(t => t.name === cm.teamName);
+            const catLabel = de ? catMeta.label : catMeta.labelEn;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
@@ -18536,7 +18539,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 4vw, 52px)'} style={{ flexShrink: 0 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 26px)', color: team?.color ?? '#e2e8f0' }}>{cm.teamName}</div>
-                  <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catMeta.label}</div>
+                  <div style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catLabel}</div>
                 </div>
                 {statPill(cm.count, de ? 'richtig' : 'correct', catMeta.color)}
               </div>

@@ -7405,7 +7405,10 @@ function HelpModal({ lang, onClose }: { lang: 'de' | 'en'; onClose: () => void }
     { icon: '🏆', title: 'Sieger', body: 'Wer am Ende die meisten Felder + Stapel-Bonusse hat, gewinnt.' },
   ] : [
     { icon: '🎯', title: 'Goal', body: 'Answer questions correctly — each correct answer lets you place a cell on the board.' },
-    { icon: '🌶️', title: 'Categories', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese — each with its own question mechanic.' },
+    // 2026-05-10 (Wolf-Audit Klasse 2): EN-Card hatte DE-Kategorienamen drin
+    // ('Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese'). Jetzt EN-Brand-
+    // Namen aus QQ_CATEGORY_LABELS — bleiben hardcoded da Help-Text statisch.
+    { icon: '🌶️', title: 'Categories', body: 'Close Call · Mu-Cho · Lucky Bag · All In · Picture This — each with its own question mechanic.' },
     { icon: '⭐', title: 'Jokers', body: '2 jokers per game. Earned by forming a specific row pattern on the board. Places a bonus cell.' },
     { icon: '🔄', title: 'Steal + Stack', body: 'Opponent cells can be stolen. Stacked cells (★) count double at end-score and are un-stealable.' },
     { icon: '🏆', title: 'Winner', body: 'Most cells + stack bonuses at the end wins.' },

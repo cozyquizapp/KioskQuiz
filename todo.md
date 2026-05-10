@@ -133,7 +133,7 @@ Code-Anker: `frontend/src/pages/QQBeamerPage.tsx` ThanksView, Suchwort
 
 Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 
-- [ ] **L1 — Welcome doppelt**: „Welcome tonight at Quiznight" vor den Regeln wird gezeigt, obwohl Teams in der Lobby schon welcomed werden. Doppelt-gemoppelt — den Pre-Rules-Welcome rausnehmen.
+- [x] **L1 — Welcome doppelt** ✅ FIX (QQBeamerPage.tsx): QuizIntroOverlay-Render-Call vor RulesIntro entfernt + welcomeActive-Variable. Component bleibt im File falls später wieder gewünscht.
 - [ ] **L2 — „Saxofon" Spelling-Tolerance**: /team hat "Saxofon" als richtig gezeigt, /beamer aber keinen Punkt vergeben für CHEESE-Frage. Wo wird die Answer-Normalisierung gemacht? Frontend-Vorschau matcht, Backend-Match nicht.
 - [ ] **L3 — „stadium" akzeptiert für Wembley Stadium**: nur generisches Wort, darf NICHT als richtige Antwort durchgehen. Min-Length oder Substring-Schutz.
 - [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.

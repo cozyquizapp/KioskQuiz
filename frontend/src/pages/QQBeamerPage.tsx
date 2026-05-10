@@ -693,13 +693,14 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
 
 function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpdate; slideTemplates: QQSlideTemplates; roomCode: string }) {
   const cat = s.currentQuestion?.category;
-  // Drei Overlay-Stufen vor den Regel-Folien:
-  //   -2 = Willkommens-Screen ("Willkommen beim BLOCK QUIZ")
-  //   -1 = Regel-Intro ("Jetzt kommen die Regeln — gut aufpassen!")
+  // 2026-05-10 (Wolf-Live-Test L1): Welcome-Stufe (-2) deaktiviert — Teams
+  // werden in der Lobby schon ge-welcomed (Wolf-Greeter „Hallo Team X!"),
+  // ein zweiter Welcome-Overlay war doppelt. rulesSlideIndex -2 wird jetzt
+  // einfach als „kein Render" behandelt — Mod-Page kann ihn auch nicht
+  // direkt ansteuern (rulesPrev/rulesNext clamen ohnehin auf 0..maxIndex).
+  //   -1 = Regel-Intro („Jetzt kommen die Regeln — gut aufpassen!")
   //    0..= normale Regel-Folien (RulesView)
-  // Crossfade zwischen -2 → -1 → Regeln via opacity transition.
   const rulesIdx = s.rulesSlideIndex ?? 0;
-  const welcomeActive = s.phase === 'RULES' && rulesIdx === -2;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
   // Pause-/Wartescreen: Aurora-Vivid-Pink-Mesh passend zum CozyWolf-Brand
   // (Pink-Wolf + Navy-Hoodie). Pre-Game und Paused teilen sich den Pink/Navy-
@@ -1998,11 +1999,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           zerlegte (error #310, jede Sekunde) wenn eurovisionMode zwischen
           Renders wechselt. */}
 
-      {/* Willkommens-Overlay (rulesSlideIndex === -2). Crossfade raus beim
-          Übergang zum Regel-Intro. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
-      {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
-          Willkommen und erster Regel-Folie. */}
+      {/* 2026-05-10 (Wolf-Live-Test L1): QuizIntroOverlay (Pre-Rules-Welcome
+          „Herzlich Willkommen zum CozyQuiz") entfernt — Teams werden bereits
+          in der Lobby ge-welcomed („Hallo Team X!"-Banner + Wolf-Greeter),
+          ein zweiter epischer Welcome-Overlay vor den Regeln war doppelt-
+          gemoppelt. QuizIntroOverlay-Component bleibt unten im File falls
+          später wieder gewünscht. */}
+      {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade direkt aus
+          dem Lobby-Look in die erste Regel-Folie. */}
       <RulesIntroOverlay language={s.language} visible={rulesIntroActive} eurovisionMode={s.theme?.eurovisionMode} />
 
       {/* C3 Timer-Urgency-Vignette: pulsierender roter Screen-Rand bei <=5s,

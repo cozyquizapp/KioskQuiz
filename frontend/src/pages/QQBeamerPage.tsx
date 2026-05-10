@@ -16049,6 +16049,17 @@ type FinalStep =
 
 // 2026-05-10 (Wolf 'Awards: 2 Steps statt 4 — alle zeigen, dann alle
 // automatisch aufdecken mit Zeit zwischen einzelnen'):
+// 2026-05-10 (Audit-P2): RankingEntry-Type aus Legacy-Block hochgezogen,
+// damit Legacy-Komponenten gefahrlos gelöscht werden können (RaceFinalSlide
+// + PodiumStepFinal nutzen den Type weiterhin).
+type RankingEntry = {
+  team: QQTeam;
+  cells: number;
+  bonus: number;
+  awards: number;
+  total: number;
+};
+
 function decodeFinalStep(step: number, N: number): FinalStep {
   if (step <= 0) return { kind: 'title' };
   if (step === 1) return { kind: 'grid' };
@@ -16065,36 +16076,48 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   const step = s.finalRevealStep ?? 0;
   const phase = decodeFinalStep(step, N);
 
-  const betSorted = [...s.teams]
-    .map(t => ({ team: t, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
-    .sort((a, b) => {
-      if (a.bonus !== b.bonus) return a.bonus - b.bonus;
-      return a.team.name.localeCompare(b.team.name);
-    });
+  // 2026-05-10 (Audit-P0 Bugfix): finalRanking + Helper-Maps via useMemo
+  // stabilisieren. Vorher wurden bei JEDEM Parent-Render neue Arrays/Objects
+  // erzeugt — Folge: RaceFinalSlide useEffect [N, finalRanking, p1] feuerte
+  // bei jedem Socket-State-Update mid-Choreo neu, ALLE setTimeouts wurden
+  // re-scheduled, Phasen-Cursor sprang zurück, Sounds doppelt.
+  const { betSorted, cellsByTeam, awardPoints, finalRanking } = useMemo(() => {
+    const betSorted = [...s.teams]
+      .map(t => ({ team: t, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
+      .sort((a, b) => {
+        if (a.bonus !== b.bonus) return a.bonus - b.bonus;
+        return a.team.name.localeCompare(b.team.name);
+      });
 
-  const cellsByTeam: Record<string, number> = {};
-  for (const t of s.teams) cellsByTeam[t.id] = 0;
-  for (const row of s.grid) for (const cell of row) {
-    if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
-  }
-  const awards = s.endAwards;
-  const awardPoints: Record<string, number> = {};
-  for (const t of s.teams) awardPoints[t.id] = 0;
-  if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
-  if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
-  if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
+    const cellsByTeam: Record<string, number> = {};
+    for (const t of s.teams) cellsByTeam[t.id] = 0;
+    for (const row of s.grid) for (const cell of row) {
+      if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
+    }
+    const awards = s.endAwards;
+    const awardPoints: Record<string, number> = {};
+    for (const t of s.teams) awardPoints[t.id] = 0;
+    if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
+    if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
+    if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
 
-  const finalRanking = [...s.teams]
-    .map(t => ({
-      team: t,
-      cells: cellsByTeam[t.id] ?? 0,
-      bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
-      awards: awardPoints[t.id] ?? 0,
-      total: (cellsByTeam[t.id] ?? 0)
-        + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
-        + (awardPoints[t.id] ?? 0),
-    }))
-    .sort((a, b) => b.total - a.total);
+    const finalRanking = [...s.teams]
+      .map(t => ({
+        team: t,
+        cells: cellsByTeam[t.id] ?? 0,
+        bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
+        awards: awardPoints[t.id] ?? 0,
+        total: (cellsByTeam[t.id] ?? 0)
+          + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
+          + (awardPoints[t.id] ?? 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    return { betSorted, cellsByTeam, awardPoints, finalRanking };
+  }, [s.teams, s.grid, s.finalBetResolution, s.endAwards]);
+  // awardPoints + cellsByTeam aktuell weiter verwendet, awardPoints
+  // currently unused outside useMemo — bleibt drin für Future-Use im Recap.
+  void awardPoints;
 
   return (
     <div style={{
@@ -16885,14 +16908,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
 
   const [phase, setPhase] = useState<RacePhase>('countdown');
   const [fallenIds, setFallenIds] = useState<Set<string>>(new Set());
-  const [podiumIds, setPodiumIds] = useState<Set<string>>(new Set());
+  // 2026-05-10 (Audit-P0): podiumIds entfernt — seit v8 wird setPodiumIds
+  // nirgends mehr aufgerufen, der State war toter Code-Pfad. Treppchen-Slots
+  // erscheinen jetzt via phase==='podium-rises' alle gleichzeitig.
   // 2026-05-09 v7.2 (Wolf-Bugfix 'rumsortiere + Spoiler durch Drift-Position'):
-  // Vorher: alle Avatare drifteten beim Mount zu ihrer Treppchen-X-Position
-  // → am Ende der Race-Phase war anhand der Avatar-Position klar wer P1/P2/P3
-  //   wird (Treppchen + drifted-Avatare verraten das Ranking).
-  // Jetzt: pro-Team driften — nur dann zur target-X driften wenn das Team
-  // tatsächlich fällt (parallel zur Fall-Animation). P1 driftet erst NACH
-  // P2-Landung zur Mitte (sein würdevoller Solo-Moment).
+  // driftedIds tracked welche Teams zu ihrer target-X driften (in v8 nur P1
+  // nach P2-fall — aktuell der einzige Drifter).
   const [driftedIds, setDriftedIds] = useState<Set<string>>(new Set());
 
   // 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen
@@ -16960,7 +16981,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     }, cursor));
 
     return () => handles.forEach(h => window.clearTimeout(h));
-  }, [N, finalRanking, p1]);
+  // 2026-05-10 (Audit-P0): Deps auf stabile Identifier reduziert. finalRanking
+  // ist jetzt useMemo-stabilisiert (FinalRevealView), aber Socket-State-Updates
+  // mid-Choreo könnten trotzdem neue Refs liefern wenn s.teams/s.grid sich
+  // ändern. p1?.team.id ist primitive → restart nur wenn Sieger wirklich wechselt.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N, p1?.team.id]);
 
   if (!p1) return null;
 
@@ -16974,34 +17000,34 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       ? 'clamp(110px, 11vw, 160px)'
       : 'clamp(80px, 9vw, 130px)';
 
-  // Stable Per-Team-Hash-Funktionen — deterministisch via team.id-Hash.
-  // 2026-05-09 v7 (Wolf 'episch nicht chaotisch'): Werte hochgezogen,
-  // aber Cycles länger gehalten → große Bewegung wirkt würdevoll.
-  const yOffsetForTeam = (id: string): number => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
-    return (hash % 120) - 60; // -60 bis +60px konstanter Y-Versatz
-  };
-  // Negative Delays → Animation startet sofort, jede Rakete in eigener Cycle-Phase
-  const bobDelayForTeam = (id: string): number => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = ((hash << 7) - hash) + id.charCodeAt(i);
-    return -(Math.abs(hash) % 4500) / 1000; // -4.5s bis 0s (max range bei 4-6s cycles)
-  };
-  // Variable Duration → keine zwei Raketen wackeln im selben Tempo (3.5-7s)
-  const bobDurationForTeam = (id: string): number => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = ((hash << 11) - hash) + id.charCodeAt(i);
-    return 3.5 + (Math.abs(hash) % 3500) / 1000; // 3.5-7.0s — breiter Range gegen Sync
-  };
-  // 2026-05-09 v7.3 (Wolf 'manchmal synchron'): 4 Patterns statt 2 — bei N=8
-  // statistisch nur 2 Avatare pro Variant + variable Duration → praktisch
-  // niemand wackelt im selben Tempo + selben Pattern.
-  const bobVariantForTeam = (id: string): 'A' | 'B' | 'C' | 'D' => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = ((hash << 13) - hash) + id.charCodeAt(i);
+  // 2026-05-10 (Audit-P2): Vorher 4 separate Hash-Funktionen mit je eigenem
+  // String-Hash (4 Schleifen pro Team pro Render). Jetzt 1 Base-Hash, daraus
+  // alle 4 Werte abgeleitet via verschiedene Modulo-Buckets. Per-Team gemoized.
+  const teamRaceParams = useMemo(() => {
+    const cache: Record<string, {
+      yOffset: number;
+      bobDelay: number;
+      bobDuration: number;
+      bobVariant: 'A' | 'B' | 'C' | 'D';
+    }> = {};
     const variants = ['A', 'B', 'C', 'D'] as const;
-    return variants[Math.abs(hash) % 4];
+    for (const entry of finalRanking) {
+      const id = entry.team.id;
+      // Single djb2-style hash, dann verschiedene Bit-Slicings
+      let hash = 5381;
+      for (let i = 0; i < id.length; i++) hash = ((hash << 5) + hash) + id.charCodeAt(i);
+      const h = Math.abs(hash);
+      cache[id] = {
+        yOffset: (h % 120) - 60,                          // -60..+60px konstanter Y-Versatz
+        bobDelay: -((h >>> 8) % 4500) / 1000,             // -4.5..0s (negative → mid-cycle start)
+        bobDuration: 3.5 + ((h >>> 16) % 3500) / 1000,    // 3.5..7.0s
+        bobVariant: variants[(h >>> 4) % 4],              // A | B | C | D
+      };
+    }
+    return cache;
+  }, [finalRanking]);
+  const getRaceParams = (id: string) => teamRaceParams[id] ?? {
+    yOffset: 0, bobDelay: 0, bobDuration: 5, bobVariant: 'A' as const,
   };
 
   // 2026-05-09 v7.4 (Wolf 'random shuffle — kein Spoiler durch Position'):
@@ -17040,31 +17066,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       }
     });
 
-    // Target: Top 3 zu Treppchen-Positionen, kalibriert mit den
-    // PodiumStepFinal-Slot-Breiten (Mitte-Slot ~14vw, Seiten-Slots ~12vw).
+    // 2026-05-10 (Audit-P1): Target-X nur für P1 — seit v8 driftet KEIN
+    // anderes Team mehr horizontal (P2/P3 erscheinen direkt auf Treppchen-
+    // Stufe wenn Treppchen rises, P4..PN fallen gerade von initial-X runter).
+    // Vorher war target-X für P2..PN berechnet aber nie gelesen (~20 Zeilen
+    // toter Aufwand pro Render).
     if (p1) target[p1.team.id] = 50;  // Mitte
-    if (p2) target[p2.team.id] = 38;  // links der Mitte
-    if (p3) target[p3.team.id] = 62;  // rechts der Mitte
-
-    // P4..PN driften zu Rändern, gleichmäßig verteilt links + rechts.
-    // So überlappen sie nicht mit Top-3-Treppchen-Bereich (38-62%).
-    const restTeams = finalRanking.slice(3);
-    const half = Math.ceil(restTeams.length / 2);
-    restTeams.forEach((entry, i) => {
-      if (i < half) {
-        // Links: 4-28%
-        target[entry.team.id] = restTeams.length === 1
-          ? 16
-          : (half === 1 ? 16 : 4 + (24 / (half - 1)) * i);
-      } else {
-        // Rechts: 72-96%
-        const rightIdx = i - half;
-        const rightCount = restTeams.length - half;
-        target[entry.team.id] = rightCount === 1
-          ? 84
-          : 72 + (24 / Math.max(1, rightCount - 1)) * rightIdx;
-      }
-    });
 
     return { initial, target };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -17106,20 +17113,20 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       }}>
         {finalRanking.map((entry) => {
           const fallen = fallenIds.has(entry.team.id);
-          const onPodium = podiumIds.has(entry.team.id);
           const isWinner = entry.team.id === p1.team.id;
-          const winnerOnPodium = isWinner && isFinish;
-
-          if (onPodium || winnerOnPodium) return null;
+          // Sieger erscheint im Treppchen-Mitte-Slot beim 'finish' → hier null
+          if (isWinner && isFinish) return null;
 
           const inSlowMo = isWinner && phase === 'winner-slowmo';
 
           // 2026-05-09 v7.2: Drift pro Team beim Fall-Event (nicht bei Mount).
           // Default = initial-X (gleichmäßig verteilt, keine Position verrät Rank).
           // Bei driftedIds.has(id) → drift zu target-X (parallel zum Fall, 1.5s).
-          const xPct = driftedIds.has(entry.team.id)
+          // 2026-05-10 (Audit-P1): Defensive ?? 50 falls Race-Condition bei
+          // Live-Team-Beitritt teamXPositions noch nicht populiert hat.
+          const xPct = (driftedIds.has(entry.team.id)
             ? teamXPositions.target[entry.team.id]
-            : teamXPositions.initial[entry.team.id];
+            : teamXPositions.initial[entry.team.id]) ?? 50;
 
           return (
             <div key={entry.team.id} style={{
@@ -17135,10 +17142,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
               <RaceTeamUnit
                 team={entry.team}
                 avatarSize={avatarSize}
-                yOffset={yOffsetForTeam(entry.team.id)}
-                bobDelay={bobDelayForTeam(entry.team.id)}
-                bobVariant={bobVariantForTeam(entry.team.id)}
-                bobDuration={bobDurationForTeam(entry.team.id)}
+                {...getRaceParams(entry.team.id)}
                 inSlowMo={inSlowMo}
                 falling={fallen}
               />
@@ -17202,7 +17206,9 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
                         color: p1.team.color,
                         textShadow: `0 0 20px ${p1.team.color}88`,
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        maxWidth: 240,
+                        // 2026-05-10 (Audit-P1): maxWidth von 240 auf clamp →
+                        // skaliert mit Beamer-Auflösung (TV/4K).
+                        maxWidth: 'clamp(180px, 18vw, 320px)',
                         animation: 'qqFRTitleIn 0.5s ease 0.4s both',
                       }}>{p1.team.name}</div>
                     </>
@@ -17388,194 +17394,12 @@ function RaceSpeedLines({ color }: { color: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LEGACY (v4 Crescendo) — unused nach v5 Race aber Code bleibt als Reference
+// 2026-05-10 (Audit-P2 Cleanup): Legacy v4-Crescendo-Komponenten gelöscht
+// (PodiumStageSlide, PodiumFillSlide, WinnerDropSlide, RankingSlide,
+// PodiumStep — ~620 Zeilen). Wurden seit v5 Race-Refactor nicht mehr von
+// FinalRevealView referenziert.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Akt 1: PodiumStageSlide ────────────────────────────────────────────────
-// Alle Teams gleichzeitig auf leerer Bühne, GEMISCHT (random shuffle, NICHT
-// nach Rang sortiert) — Spannungsaufbau „wer wird wo landen?". Avatar-Größe
-// skaliert mit Teamcount damit alle reinpassen (4 Teams groß, 8 Teams klein).
-function PodiumStageSlide({ finalRanking, lang }: {
-  finalRanking: RankingEntry[]; lang: 'de' | 'en';
-}) {
-  const N = finalRanking.length;
-  // Stable Shuffle pro Render (deterministisch via team.id-Hash, nicht Math.random
-  // — sonst flackert es bei React-Re-Renders). Sortiert Strings → konstant.
-  const shuffled = useMemo(() => {
-    return [...finalRanking].sort((a, b) =>
-      (a.team.id + 'salt').localeCompare(b.team.id + 'salt2'));
-  }, [finalRanking]);
-  const avatarSize = N <= 4
-    ? 'clamp(140px, 16vw, 220px)'
-    : N <= 6
-      ? 'clamp(110px, 13vw, 180px)'
-      : 'clamp(80px, 10vw, 140px)';
-  const de = lang === 'de';
-
-  return (
-    <div style={{
-      flex: 1, width: '100%',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', gap: 'clamp(40px, 5vh, 72px)',
-      animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
-    }}>
-      <div style={{
-        fontSize: 'clamp(36px, 4.6vw, 80px)', fontWeight: 900,
-        color: '#FBBF24', textAlign: 'center', letterSpacing: '0.02em',
-        textShadow: '0 0 36px rgba(251,191,36,0.55)',
-      }}>{de ? '✨ Die Auflösung ✨' : '✨ The Reveal ✨'}</div>
-
-      {/* Bühne — Avatare horizontal verteilt, gemischt */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        gap: 'clamp(20px, 3vw, 56px)', flexWrap: 'wrap',
-        maxWidth: '92vw',
-      }}>
-        {shuffled.map((entry, i) => (
-          <div key={entry.team.id} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-            animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.08 + i * 0.10}s both`,
-          }}>
-            <div style={{
-              width: avatarSize, height: avatarSize, borderRadius: '50%',
-              background: entry.team.color,
-              border: `4px solid ${entry.team.color}`,
-              boxShadow: `0 0 28px ${entry.team.color}88, 0 6px 18px rgba(0,0,0,0.5)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji}
-                size={avatarSize} flat />
-            </div>
-            <div style={{
-              fontSize: N <= 6 ? 'clamp(16px, 1.6vw, 24px)' : 'clamp(13px, 1.3vw, 19px)',
-              fontWeight: 900, color: entry.team.color,
-              textShadow: `0 0 14px ${entry.team.color}55`,
-              maxWidth: avatarSize, textAlign: 'center',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>{entry.team.name}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{
-        fontSize: 'clamp(16px, 1.6vw, 24px)', color: '#94A3B8', fontStyle: 'italic',
-        animation: 'qqFRTitleIn 0.6s ease 1.2s both',
-      }}>{de ? 'Wer steht wo?' : 'Who lands where?'}</div>
-    </div>
-  );
-}
-
-// ─── Akt 2: PodiumFillSlide ─────────────────────────────────────────────────
-// Synchrone Animation: Plätze N..4 fade-out, Plätze 3+2 rutschen auf Stufen,
-// Mitte (Sieger-Slot) bleibt leer mit goldenem Pulse. CSS-Transitions auf
-// transform/opacity, kein JS-Tween. Bühnen-Layout: links P2 (mittlere Stufe),
-// mitte P1 (leer, gold pulsiert), rechts P3 (niedrigste Stufe).
-function PodiumFillSlide({ finalRanking, lang }: {
-  finalRanking: RankingEntry[]; lang: 'de' | 'en';
-}) {
-  const N = finalRanking.length;
-  const p1 = finalRanking[0];
-  const p2 = finalRanking[1];
-  const p3 = finalRanking[2];
-  const losers = finalRanking.slice(3); // Plätze 4..N
-  const de = lang === 'de';
-
-  return (
-    <div style={{
-      flex: 1, width: '100%',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'flex-end',
-      padding: '0 clamp(20px, 3vw, 60px) clamp(20px, 3vh, 48px)',
-      gap: 'clamp(20px, 3vh, 40px)',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Verlierer (Plätze 4..N) — fade-out + slide-down raus aus Bild */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        gap: 'clamp(20px, 3vw, 56px)', position: 'absolute',
-        top: 'clamp(40px, 8vh, 100px)',
-        left: 0, right: 0,
-        flexWrap: 'wrap',
-        animation: 'qqFRPodiumLoserFade 1.4s ease-in 0.2s both',
-      }}>
-        {losers.map((entry) => (
-          <div key={entry.team.id} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-          }}>
-            <div style={{
-              width: 'clamp(80px, 10vw, 140px)', height: 'clamp(80px, 10vw, 140px)',
-              borderRadius: '50%',
-              background: entry.team.color,
-              border: `3px solid ${entry.team.color}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji}
-                size={'clamp(80px, 10vw, 140px)'} flat />
-            </div>
-            <div style={{
-              fontSize: 'clamp(13px, 1.3vw, 19px)', fontWeight: 900,
-              color: entry.team.color,
-            }}>{entry.team.name}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Treppchen-Reihe — Platz 2 links, leerer Sockel mitte, Platz 3 rechts */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        gap: 'clamp(8px, 1vw, 16px)',
-        animation: 'qqFRPodiumStepIn 1.2s cubic-bezier(0.34, 1.18, 0.64, 1) 0.6s both',
-      }}>
-        {/* Platz 2 (links, mittlere Stufe) */}
-        {p2 && <PodiumStepFinal entry={p2.team} rank={2} podiumHeight={88} avatarSize={'clamp(96px, 11vw, 150px)'} />}
-
-        {/* Platz 1 (Mitte, leer, gold pulsiert) */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          flexShrink: 0,
-        }}>
-          <div style={{
-            width: 'clamp(140px, 14vw, 200px)',
-            height: 'clamp(140px, 14vw, 200px)',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(251,191,36,0.25) 0%, rgba(251,191,36,0.05) 60%, transparent 100%)',
-            border: '3px dashed rgba(251,191,36,0.7)',
-            boxShadow: '0 0 40px rgba(251,191,36,0.45), inset 0 0 32px rgba(251,191,36,0.18)',
-            animation: 'qqFRWinnerSlotPulse 1.6s ease-in-out infinite',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(48px, 5.5vw, 80px)', color: 'rgba(251,191,36,0.55)',
-            fontWeight: 900,
-          }}>?</div>
-          {/* Höchste Stufe — gold getönt */}
-          <div style={{
-            width: 'clamp(140px, 14vw, 200px)', height: 124,
-            background: 'linear-gradient(180deg, rgba(251,191,36,0.45), rgba(217,119,6,0.30))',
-            border: '2.5px solid rgba(251,191,36,0.7)',
-            borderTop: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(36px, 3.8vw, 60px)', fontWeight: 900,
-            color: '#0A0814',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 -8px 32px rgba(251,191,36,0.45)',
-          }}>1</div>
-        </div>
-
-        {/* Platz 3 (rechts, niedrigste Stufe) */}
-        {p3 && <PodiumStepFinal entry={p3.team} rank={3} podiumHeight={56} avatarSize={'clamp(80px, 9vw, 124px)'} />}
-      </div>
-
-      {N >= 4 && (
-        <div style={{
-          fontSize: 'clamp(15px, 1.5vw, 22px)', color: '#94A3B8',
-          fontStyle: 'italic', textAlign: 'center',
-          position: 'absolute', bottom: 12, left: 0, right: 0,
-          animation: 'qqFRTitleIn 0.6s ease 2s both',
-        }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
-      )}
-    </div>
-  );
-}
-
-// Podium-Stufe für Akt 2 + Akt 3 — Avatar oben, Stufe drunter mit Rank-Number.
 // 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay.
 // Steps: BEREIT? (0.8s) → 3 (0.7s) → 2 (0.7s) → 1 (0.8s) → GO! (0.5s).
 // Total 3.5s — synchron zum cursor-Sprung in RaceFinalSlide useEffect.
@@ -17685,403 +17509,6 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
 //             Crown landet 0.2s nach Avatar mit Wobble
 //   2.3s+: Climax — Konfetti-Burst, BG-Shift gold, Camera-Push (scale 1.05),
 //          Plätze 2+3 bowen ±5° Richtung Sieger, Climax-Sound-Crash
-function WinnerDropSlide({ finalRanking, lang }: {
-  finalRanking: RankingEntry[]; lang: 'de' | 'en';
-}) {
-  const p1 = finalRanking[0];
-  const p2 = finalRanking[1];
-  const p3 = finalRanking[2];
-  const de = lang === 'de';
-  const [phase, setPhase] = useState<'drumroll' | 'drop' | 'climax'>('drumroll');
-
-  useEffect(() => {
-    const t1 = window.setTimeout(() => setPhase('drop'), 1500);
-    const t2 = window.setTimeout(() => setPhase('climax'), 2300);
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
-  }, []);
-
-  // Sound: Drumroll am Mount, Climax-Crash bei Drop-Lande (~2.0s)
-  useEffect(() => {
-    // playFanfare ist der existing „dramatischer Bell-Layer" — dient als
-    // Drumroll-Ersatz bis Wolf custom Drumroll-Asset einlegt.
-    try { playFanfare(); } catch {}
-    const t = window.setTimeout(() => {
-      try { playClimaxFinish(); } catch {}
-    }, 2000);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  if (!p1) return null;
-
-  const isClimax = phase === 'climax';
-
-  return (
-    <div style={{
-      flex: 1, width: '100%',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'flex-end',
-      padding: '0 clamp(20px, 3vw, 60px) clamp(20px, 3vh, 48px)',
-      gap: 'clamp(20px, 3vh, 40px)',
-      position: 'relative',
-      overflow: 'hidden',
-      // Phase 3c: Camera-Push (sanfter Zoom auf den ganzen Slide)
-      transform: isClimax ? 'scale(1.04)' : 'scale(1)',
-      transition: 'transform 0.8s cubic-bezier(0.2, 0.85, 0.3, 1)',
-      // Phase 3c: BG-Shift auf goldenes Radial-Pulse
-      background: isClimax
-        ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, rgba(217,119,6,0.18) 35%, rgba(15,8,23,0.95) 80%)'
-        : 'radial-gradient(ellipse at 50% 60%, rgba(15,8,23,0.95) 0%, rgba(8,4,12,0.98) 80%)',
-    }}>
-      {isClimax && <ConfettiOverlay />}
-
-      {/* Spotlight-Cone — leuchtet die Mitte vor + während Drop */}
-      {phase !== 'climax' && (
-        <div aria-hidden style={{
-          position: 'absolute', left: '50%', top: 0, bottom: 0,
-          width: 'clamp(280px, 30vw, 480px)',
-          transform: 'translateX(-50%)',
-          background: 'linear-gradient(180deg, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.05) 60%, transparent 100%)',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }} />
-      )}
-
-      {/* Treppchen — Plätze 2+3 stehen still */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        gap: 'clamp(8px, 1vw, 16px)',
-        position: 'relative', zIndex: 2,
-      }}>
-        {/* Platz 2 (links) — bowt bei climax leicht Richtung Sieger */}
-        {p2 && (
-          <div style={{
-            transform: isClimax ? 'rotate(5deg)' : 'rotate(0)',
-            transformOrigin: 'bottom center',
-            transition: 'transform 0.6s ease',
-          }}>
-            <PodiumStepFinal entry={p2.team} rank={2} podiumHeight={88}
-              avatarSize={'clamp(96px, 11vw, 150px)'} />
-          </div>
-        )}
-
-        {/* Mitte: Sieger-Slot (während drumroll leer, dann Avatar fällt rein) */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          flexShrink: 0,
-        }}>
-          {phase === 'drumroll' ? (
-            // Phase 1 — leerer Slot pulsiert
-            <div style={{
-              width: 'clamp(140px, 14vw, 200px)', height: 'clamp(140px, 14vw, 200px)',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(251,191,36,0.30) 0%, rgba(251,191,36,0.05) 60%, transparent 100%)',
-              border: '3px dashed rgba(251,191,36,0.85)',
-              boxShadow: '0 0 56px rgba(251,191,36,0.55), inset 0 0 36px rgba(251,191,36,0.22)',
-              animation: 'qqFRWinnerSlotPulse 1.0s ease-in-out infinite',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(56px, 6vw, 92px)', color: 'rgba(251,191,36,0.7)',
-              fontWeight: 900,
-            }}>?</div>
-          ) : (
-            // Phase 2+3 — Sieger-Avatar mit Crown
-            <div style={{
-              position: 'relative',
-              animation: 'qqFRWinnerDrop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-            }}>
-              {/* Crown — landet 0.25s nach Avatar mit Wobble */}
-              <span aria-hidden style={{
-                position: 'absolute',
-                left: '50%', top: '-32%',
-                transform: 'translateX(-50%)',
-                fontSize: 'clamp(60px, 7vw, 110px)', lineHeight: 1,
-                pointerEvents: 'none',
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
-                animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
-                zIndex: 5,
-              }}>👑</span>
-              <div style={{
-                width: 'clamp(170px, 17vw, 240px)', height: 'clamp(170px, 17vw, 240px)',
-                borderRadius: '50%',
-                background: p1.team.color,
-                border: `5px solid ${p1.team.color}`,
-                boxShadow: `0 0 60px ${p1.team.color}cc, 0 0 120px rgba(251,191,36,0.45), 0 12px 32px rgba(0,0,0,0.55)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
-                  size={'clamp(170px, 17vw, 240px)'} flat />
-              </div>
-            </div>
-          )}
-          {/* Höchste Stufe — gold */}
-          <div style={{
-            width: 'clamp(140px, 14vw, 200px)', height: 124,
-            background: 'linear-gradient(180deg, rgba(251,191,36,0.55), rgba(217,119,6,0.40))',
-            border: '2.5px solid rgba(251,191,36,0.85)',
-            borderTop: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(36px, 3.8vw, 60px)', fontWeight: 900,
-            color: '#0A0814',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
-            marginTop: 4,
-          }}>1</div>
-        </div>
-
-        {/* Platz 3 (rechts) — bowt bei climax leicht Richtung Sieger */}
-        {p3 && (
-          <div style={{
-            transform: isClimax ? 'rotate(-5deg)' : 'rotate(0)',
-            transformOrigin: 'bottom center',
-            transition: 'transform 0.6s ease',
-          }}>
-            <PodiumStepFinal entry={p3.team} rank={3} podiumHeight={56}
-              avatarSize={'clamp(80px, 9vw, 124px)'} />
-          </div>
-        )}
-      </div>
-
-      {/* Sieger-Name + Punkte — erscheint bei climax */}
-      {isClimax && (
-        <div style={{
-          fontSize: 'clamp(40px, 5vw, 84px)', fontWeight: 900,
-          color: p1.team.color,
-          textShadow: `0 0 36px ${p1.team.color}88, 0 0 72px rgba(251,191,36,0.45)`,
-          textAlign: 'center', letterSpacing: '-0.01em',
-          animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.1s both',
-          position: 'relative', zIndex: 3,
-          maxWidth: '90vw',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>🏆 {p1.team.name}</div>
-      )}
-
-      {/* Drumroll-Hint */}
-      {phase === 'drumroll' && (
-        <div style={{
-          fontSize: 'clamp(18px, 1.8vw, 28px)', color: '#FBBF24',
-          fontStyle: 'italic', fontWeight: 800,
-          letterSpacing: '0.1em', textTransform: 'uppercase',
-          animation: 'qqFRDrumroll 0.4s ease-in-out infinite',
-          position: 'relative', zIndex: 3,
-        }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
-      )}
-
-      {/* Wolf-Decoration unten rechts beim Climax */}
-      {isClimax && (
-        <div style={{
-          position: 'absolute', right: 'clamp(20px, 3vw, 60px)',
-          bottom: 'clamp(20px, 3vh, 60px)',
-          zIndex: 4, pointerEvents: 'none',
-          animation: 'qqFRTitleIn 0.7s ease 0.4s both',
-        }}>
-          <AnimatedCozyWolf widthCss="clamp(120px, 13vw, 200px)" mode="jubel" speaking={true} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── RankingSlide (LEGACY — unused nach v4 Crescendo, archiviert für Reference) ────
-type RankingEntry = {
-  team: QQTeam;
-  cells: number;
-  bonus: number;
-  awards: number;
-  total: number;
-};
-
-function RankingSlide({ rankIndex, finalRanking, lang }: {
-  rankIndex: number;
-  finalRanking: RankingEntry[];
-  lang: 'de' | 'en';
-}) {
-  const de = lang === 'de';
-  const N = finalRanking.length;
-  const currentRank = N - rankIndex;
-  const currentEntry = finalRanking[currentRank - 1];
-  // 2026-05-09 v3 (Wolf-Spec 'erst Platz 3 aufs Treppchen'): Treppchen erst
-  // ab Platz 2 sichtbar (zeigt Platz 3). Bei Platz 1 zeigt es Platz 2 + 3.
-  // Plätze N..3 werden prominent gezeigt + verschwinden, KEIN Treppchen.
-  // Vorher: stackSize ab rankIndex>=2 → Treppchen schon bei Platz N-2 sichtbar
-  // (z.B. bei N=4 → Platz 2 mit Treppchen, aber rankIndex 2 ist eher mittig).
-  const stackSize = Math.max(0, rankIndex - (N - 3));
-  // Stack-Entries: i=0 → Platz 3 (index 2), i=1 → Platz 2 (index 1).
-  const stackEntries: Array<{ entry: RankingEntry; rank: number }> = [];
-  for (let i = 0; i < stackSize; i++) {
-    const entry = finalRanking[2 - i];
-    if (entry) stackEntries.push({ entry, rank: 3 - i });
-  }
-  // Sortiere für Treppchen-Visual: Platz 2 LINKS, Platz 3 RECHTS (nicht Sieger).
-  // Klassische Podium-Anordnung. Bei nur Platz 3 vorhanden: rechts.
-  stackEntries.sort((a, b) => a.rank - b.rank); // 2 zuerst → links, 3 danach → rechts
-  const isWinner = currentRank === 1;
-  const medal = currentRank === 1 ? '🥇' : currentRank === 2 ? '🥈' : currentRank === 3 ? '🥉' : `#${currentRank}`;
-  const rankColor = currentRank === 1 ? '#FBBF24'
-    : currentRank === 2 ? '#C0C0C0'
-    : currentRank === 3 ? '#CD7F32'
-    : '#94A3B8';
-
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: stackSize > 0 ? 'space-between' : 'center',
-      gap: 'clamp(20px, 3vh, 40px)',
-      // 2026-05-09 v3 (Wolf 'treppchen 2-3 + Wolf waren abgeschnitten'):
-      // Padding-Bottom genug für Wolf-Decoration unten rechts (clamp 200px),
-      // damit beim Winner-Slide nichts clipped. Padding-X breit für Treppchen.
-      padding: 'clamp(20px, 2vh, 40px) clamp(40px, 4vw, 80px) clamp(40px, 5vh, 100px)',
-      width: '100%', position: 'relative',
-      boxSizing: 'border-box',
-    }}>
-      {isWinner && <ConfettiOverlay />}
-      {currentEntry && (
-        <div key={currentRank} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-          padding: 'clamp(28px, 3vh, 48px) clamp(40px, 4.5vw, 72px)',
-          borderRadius: 32,
-          background: isWinner
-            ? `linear-gradient(135deg, ${currentEntry.team.color}33, ${currentEntry.team.color}11)`
-            : `linear-gradient(160deg, ${currentEntry.team.color}28, ${currentEntry.team.color}10)`,
-          border: `3px solid ${currentEntry.team.color}`,
-          boxShadow: isWinner
-            ? `0 0 120px ${currentEntry.team.color}aa, 0 0 200px rgba(251,191,36,0.4), 0 16px 48px rgba(0,0,0,0.5)`
-            : `0 0 80px ${currentEntry.team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-          animation: 'qqFRSlamFromTop 1.2s cubic-bezier(0.34, 1.46, 0.64, 1) both',
-          position: 'relative', zIndex: 5,
-          maxWidth: 'min(86vw, 720px)',
-        }}>
-          {isWinner && (
-            <div style={{
-              fontSize: 'clamp(56px, 6vw, 100px)', lineHeight: 1,
-              animation: 'qqFRDrumroll 1.4s ease-in-out infinite',
-            }}>👑</div>
-          )}
-          <div style={{
-            fontSize: 'clamp(48px, 5.4vw, 96px)', fontWeight: 900,
-            color: rankColor, textShadow: `0 0 36px ${rankColor}88`,
-          }}>{medal}</div>
-          <QQTeamAvatar avatarId={currentEntry.team.avatarId} teamEmoji={currentEntry.team.emoji}
-            size={isWinner ? 'clamp(150px, 16vw, 220px)' : 'clamp(110px, 12vw, 170px)'} />
-          <div style={{
-            fontSize: isWinner ? 'clamp(44px, 4.8vw, 80px)' : 'clamp(32px, 3.6vw, 56px)',
-            fontWeight: 900,
-            color: currentEntry.team.color, textAlign: 'center', letterSpacing: '-0.01em',
-            textShadow: `0 0 36px ${currentEntry.team.color}66`,
-          }}>{currentEntry.team.name}</div>
-          <div style={{
-            fontSize: 'clamp(26px, 2.8vw, 44px)', fontWeight: 900,
-            color: '#F1F5F9',
-          }}>{currentEntry.total} {de ? 'Punkte' : 'points'}</div>
-          <div style={{
-            fontSize: 'clamp(13px, 1.3vw, 18px)', color: '#94A3B8',
-          }}>
-            {currentEntry.cells} {de ? 'Felder' : 'cells'}
-            {currentEntry.bonus > 0 ? ` · + ${currentEntry.bonus} ${de ? 'Tipp-Bonus' : 'tip bonus'}` : ''}
-            {currentEntry.awards > 0 ? ` · + ${currentEntry.awards} ${de ? 'Awards' : 'awards'}` : ''}
-          </div>
-        </div>
-      )}
-      {/* Treppchen mit echten Stufen-Höhen (Platz 2 mittlere Stufe, Platz 3
-          niedrigste). Beim Sieger-Slide steht Platz 1 oben prominent als Hero;
-          Treppchen-Lücke in der Mitte signalisiert „dahin gehört der Sieger". */}
-      {stackSize > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          gap: 'clamp(8px, 1vw, 16px)',
-          animation: 'qqFRTitleIn 0.6s ease 0.4s both',
-          maxWidth: '92vw',
-        }}>
-          {/* Platz 2 (links) — wenn vorhanden */}
-          {stackEntries.find(s => s.rank === 2) && (() => {
-            const s = stackEntries.find(s2 => s2.rank === 2)!;
-            return <PodiumStep entry={s.entry} rank={2} podiumHeight={64} />;
-          })()}
-          {/* Lücke in der Mitte für Platz 1 (visuelles Signal: hier gehört der Sieger hin) */}
-          {isWinner && (
-            <div style={{
-              width: 'clamp(140px, 13vw, 200px)', height: 92,
-              borderRadius: '12px 12px 0 0',
-              background: 'linear-gradient(180deg, rgba(251,191,36,0.25), rgba(251,191,36,0.10))',
-              border: '2.5px solid rgba(251,191,36,0.7)',
-              borderBottom: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900,
-              color: '#FBBF24', textShadow: '0 0 20px rgba(251,191,36,0.8)',
-              boxShadow: '0 -8px 24px rgba(251,191,36,0.35)',
-              flexShrink: 0,
-            }}>1</div>
-          )}
-          {/* Platz 3 (rechts) — wenn vorhanden */}
-          {stackEntries.find(s => s.rank === 3) && (() => {
-            const s = stackEntries.find(s2 => s2.rank === 3)!;
-            return <PodiumStep entry={s.entry} rank={3} podiumHeight={36} />;
-          })()}
-        </div>
-      )}
-      {isWinner && (
-        <div style={{
-          position: 'absolute',
-          right: 'clamp(20px, 3vw, 60px)',
-          bottom: 'clamp(20px, 3vh, 60px)',
-          zIndex: 4, pointerEvents: 'none',
-          animation: 'qqFRTitleIn 0.7s ease 0.8s both',
-        }}>
-          <AnimatedCozyWolf widthCss="clamp(110px, 12vw, 180px)" mode="jubel" speaking={true} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 2026-05-09 v3: Treppchen-Stufe mit echter Stufenhöhe für Visual-Signal.
-// Card oben (Avatar + Medal + Name + Total), darunter solide Podium-Stufe.
-function PodiumStep({ entry, rank, podiumHeight }: {
-  entry: RankingEntry; rank: number; podiumHeight: number;
-}) {
-  const med = rank === 2 ? '🥈' : '🥉';
-  const podiumColor = rank === 2 ? '#C0C0C0' : '#CD7F32';
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      flexShrink: 0,
-    }}>
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        padding: '14px 18px',
-        borderRadius: '14px 14px 0 0',
-        background: `${entry.team.color}1f`,
-        border: `2px solid ${entry.team.color}66`,
-        borderBottom: 'none',
-        minWidth: 'clamp(120px, 11vw, 170px)',
-      }}>
-        <div style={{
-          fontSize: 'clamp(24px, 2.4vw, 38px)', fontWeight: 900,
-          color: podiumColor,
-        }}>{med}</div>
-        <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji}
-          size={'clamp(56px, 6vw, 88px)'} />
-        <div style={{
-          fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
-          color: entry.team.color, textAlign: 'center',
-          maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>{entry.team.name}</div>
-        <div style={{
-          fontSize: 'clamp(18px, 1.8vw, 28px)', fontWeight: 900, color: '#F1F5F9',
-        }}>{entry.total}</div>
-      </div>
-      {/* Solide Podium-Stufe */}
-      <div style={{
-        width: '100%', height: podiumHeight,
-        background: `linear-gradient(180deg, ${podiumColor}aa, ${podiumColor}55)`,
-        border: `2px solid ${podiumColor}`,
-        borderTop: 'none',
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px ${podiumColor}55`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 'clamp(22px, 2.2vw, 36px)', fontWeight: 900,
-        color: '#1a1424', letterSpacing: '0.05em',
-      }}>{rank}</div>
-    </div>
-  );
-}
-
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,
   // gerne auch bei pause wenn es passt'): im ESC-Mode translucent Card-BG aus

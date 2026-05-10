@@ -44,6 +44,10 @@ import {
 import { compressImageIfNeeded } from '../utils/imageCompress';
 import { ConnectionsEditorModal } from '../components/ConnectionsEditor';
 import { CozyWolfImage } from '../components/CozyWolfImage';
+import {
+  playCozyClick, playCozySave, playCozyUpload, playCozyMilestone,
+  getBuilderMuted, setBuilderMuted,
+} from './cozyBuilderSounds';
 import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
@@ -62,6 +66,44 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
   'reveal': 'Aufdecken', 'slide-in': 'Einfahren',
 };
 const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'oneOfEight', 'order', 'map', 'onlyConnect', 'bluff'];
+
+// 2026-05-10 CozyBuilder Audit #19: Smart-Unit-Suggest. Extrahiert
+// das wahrscheinliche Unit-Wort aus einem Schätzchen-Frage-Text.
+// Beispiele:
+//   'Wie viele Brücken hat Hamburg?'        → 'Brücken'
+//   'Wie viele Spieler stehen auf dem Feld?' → 'Spieler'
+//   'Wie viel Kalorien hat ein Big Mac?'    → 'Kalorien'
+//   'Wie hoch ist der Mount Everest in Metern?' → 'Meter'
+// Gibt null zurück wenn kein klares Pattern matched.
+function suggestSchaetzchenUnit(text: string): string | null {
+  const t = text.trim();
+  if (!t || t.length < 6) return null;
+  // Pattern 1: 'Wie viele/viel X …' (X = nächstes Wort, meist Plural)
+  let m = t.match(/wie\s+viele?\s+([A-ZÄÖÜa-zäöüß-]{3,})/i);
+  if (m) {
+    const word = m[1];
+    // Filtere triviale Verb-Form-Hits ('hat', 'ist', etc.)
+    if (!/^(hat|ist|sind|war|hatten|gibt|wird|werden|sieht|stehen)$/i.test(word)) {
+      return capitalize(word);
+    }
+  }
+  // Pattern 2: '… in Metern/Kilometern/Sekunden/…'
+  m = t.match(/in\s+([A-ZÄÖÜa-zäöüß]{4,})n?\b/i);
+  if (m) {
+    const word = m[1];
+    if (/(meter|kilometer|sekunde|minute|stunde|jahr|tag|monat|gramm|liter)/i.test(word)) {
+      // 'Metern' → 'Meter', 'Sekunden' → 'Sekunden' (bleibt — Plural ok)
+      return capitalize(word.replace(/n$/, ''));
+    }
+  }
+  // Pattern 3: 'Anzahl der X' / 'Anzahl X'
+  m = t.match(/anzahl\s+(?:der|von)?\s*([A-ZÄÖÜa-zäöüß-]{3,})/i);
+  if (m) return capitalize(m[1]);
+  return null;
+}
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function makeEmptyQuestion(phaseIndex: number, questionIndexInPhase: number, category: QQCategory, draftId: string): QQQuestion {
@@ -187,13 +229,19 @@ function makeSampleDraft(): QQDraft {
   return { id, title: '🗺️ Hamburg Probekatalog', phases: 3, language: 'both', questions, createdAt: Date.now(), updatedAt: Date.now() };
 }
 
-function makeEmptyDraft(phases: 3 | 4): QQDraft {
+function makeEmptyDraft(phases: 3 | 4, existingCount = 0): QQDraft {
   const id = `qq-draft-${Date.now().toString(36)}`;
   const questions: QQQuestion[] = [];
   for (let p = 1; p <= phases; p++) {
     CATEGORIES.forEach((cat, qi) => questions.push(makeEmptyQuestion(p, qi, cat, id)));
   }
-  return { id, title: 'Neuer Fragensatz', phases, language: 'both', questions, createdAt: Date.now(), updatedAt: Date.now() };
+  // 2026-05-10 CozyBuilder Audit (Quick-Win): Default-Titel mit Counter +
+  // Datum statt N× 'Neuer Fragensatz'. Wolf umbenennt sofort, aber wenn er
+  // es vergisst sind die Drafts in der Liste eindeutig.
+  const dd = String(new Date().getDate()).padStart(2, '0');
+  const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+  const title = `Quiz #${existingCount + 1} · ${dd}.${mm}.`;
+  return { id, title, phases, language: 'both', questions, createdAt: Date.now(), updatedAt: Date.now() };
 }
 
 function cellPreview(q: QQQuestion | undefined): { text: string; sub?: string; answer?: string } {
@@ -249,6 +297,19 @@ export default function QQBuilderPage() {
       return next;
     });
   };
+  // 2026-05-10 CozyBuilder Audit #15: Sound-Layer Toggle (localStorage).
+  const [soundMuted, setSoundMuted] = useState<boolean>(() => getBuilderMuted());
+  const toggleSound = () => {
+    setSoundMuted(prev => {
+      const next = !prev;
+      setBuilderMuted(next);
+      if (!next) playCozyClick(); // Wenn entmutet, kurzes Click-Feedback
+      return next;
+    });
+  };
+  // 2026-05-10 CozyBuilder Audit #14: Milestone-Toasts.
+  const [milestoneToast, setMilestoneToast] = useState<{ icon: string; text: string; key: number } | null>(null);
+  const shownMilestonesRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const optionFileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -373,6 +434,8 @@ export default function QQBuilderPage() {
     const existing = draft.questions.filter(q => q.phaseIndex === phase && q.category === cat);
     const newQ = makeEmptyQuestion(phase, draft.questions.length, cat, draft.id);
     newQ.id = `${draft.id}-p${phase}-${cat}-${Date.now().toString(36)}`;
+    // 2026-05-10 Audit #15: Cozy-Click bei Add-Question.
+    try { playCozyClick(); } catch {}
     return { ...draft, questions: [...draft.questions, newQ], updatedAt: Date.now() };
   }
   function deleteQuestion(draft: QQDraft, id: string): QQDraft {
@@ -400,7 +463,10 @@ export default function QQBuilderPage() {
   }
 
   async function createDraft(phases: 3 | 4) {
-    const draft = makeEmptyDraft(phases);
+    // existingCount = nur Wolfs eigene Quiz-#-Drafts, nicht Demo-Packs
+    // (qq-vol-*/qq-sample-*/qq-esc/qq-eurovision sind nicht „Quiz #N").
+    const wolfDrafts = drafts.filter(d => /^Quiz #\d+/.test(d.title));
+    const draft = makeEmptyDraft(phases, wolfDrafts.length);
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
@@ -430,6 +496,8 @@ export default function QQBuilderPage() {
         // 2026-05-10 CozyBuilder Pack A #4: Save-Cascade triggern (✓-Pop).
         setSaveCascade(c => c + 1);
         setAutoSavedAt(Date.now());
+        // 2026-05-10 Audit #15: Save-Bell. Subtle 2-Ton-Belohnung.
+        try { playCozySave(); } catch {}
       }
     } finally { setSaving(false); }
   }
@@ -567,6 +635,8 @@ export default function QQBuilderPage() {
       if (!q) return;
       const updated = { ...q, image: { url: data.imageUrl, layout: q.image?.layout ?? 'fullscreen' as QQImageLayout, animation: q.image?.animation ?? 'none' as QQImageAnimation, bgRemovedUrl: undefined } };
       setActiveDraft(updateQuestion(activeDraft, updated));
+      // 2026-05-10 Audit #15: Upload-Chime nach Bild-Upload.
+      try { playCozyUpload(); } catch {}
     } finally { setUploadingFor(null); }
   }
 
@@ -619,6 +689,46 @@ export default function QQBuilderPage() {
     }
   }, [wizardMode, activeDraft?.id, activeQId, activeDraft]);
 
+  // 2026-05-10 CozyBuilder Audit #14: Milestone-Toasts mit Wolf.
+  // Bei Meilensteinen feiert Wolf das Schreib-Fortschritt — Toast 2.5s
+  // mit Pink-Magenta-Gradient + kleiner Fanfare-Sound.
+  // Pro Draft-ID nur jeweils 1× pro Milestone, damit beim Wechseln zwischen
+  // Drafts der Toast nicht spam-weise erscheint.
+  useEffect(() => {
+    if (!activeDraft) return;
+    const filledCount = activeDraft.questions.filter(q => q.text?.trim()).length;
+    const phaseCount = activeDraft.phases;
+    const fullPhases: number[] = [];
+    for (let p = 1; p <= phaseCount; p++) {
+      const phaseQs = activeDraft.questions.filter(q => q.phaseIndex === p);
+      if (phaseQs.length > 0 && phaseQs.every(q => q.text?.trim())) fullPhases.push(p);
+    }
+    const enCoverage = activeDraft.questions.filter(q => q.text?.trim()).length > 0
+      && activeDraft.questions.every(q => !q.text?.trim() || q.textEn?.trim());
+
+    const milestones: Array<{ key: string; icon: string; text: string }> = [];
+    if (filledCount === 5)  milestones.push({ key: `${activeDraft.id}-5q`,  icon: '🐺', text: '5 Fragen geschrieben — Wolf nickt anerkennend.' });
+    if (filledCount === 10) milestones.push({ key: `${activeDraft.id}-10q`, icon: '🎉', text: '10 Fragen geschrieben — Bier verdient!' });
+    if (filledCount === 25) milestones.push({ key: `${activeDraft.id}-25q`, icon: '🔥', text: '25 Fragen — Wolf ist beeindruckt.' });
+    for (const p of fullPhases) {
+      milestones.push({ key: `${activeDraft.id}-p${p}-full`, icon: '✨', text: `Phase ${p} ist voll — sieht echt gut aus.` });
+    }
+    if (enCoverage && activeDraft.questions.length >= 5) {
+      milestones.push({ key: `${activeDraft.id}-all-en`, icon: '🌍', text: 'Alle EN-Felder gefüllt — internationalisiert!' });
+    }
+
+    for (const m of milestones) {
+      if (shownMilestonesRef.current.has(m.key)) continue;
+      shownMilestonesRef.current.add(m.key);
+      setMilestoneToast({ icon: m.icon, text: m.text, key: Date.now() });
+      try { playCozyMilestone(); } catch {}
+      window.setTimeout(() => {
+        setMilestoneToast(prev => (prev && prev.text === m.text ? null : prev));
+      }, 2800);
+      break; // 1 Milestone pro Effect-Run, sonst stapeln sie
+    }
+  }, [activeDraft]);
+
   if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onDelete={deleteDraft} />;
 
   return (
@@ -638,6 +748,27 @@ export default function QQBuilderPage() {
           aria-hidden
         >✓</div>
       )}
+      {/* 2026-05-10 CozyBuilder Audit #14: Milestone-Toast. */}
+      {milestoneToast && (
+        <div
+          key={`milestone-${milestoneToast.key}`}
+          style={{
+            position: 'fixed', top: 90, right: 28, zIndex: 8001,
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 20px 14px 16px', borderRadius: 16,
+            background: `linear-gradient(135deg, ${COZY_PINK}, ${COZY_MAGENTA})`,
+            color: '#fff', fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+            boxShadow: `0 12px 32px ${COZY_PINK}55, 0 0 0 1px ${COZY_PINK}66`,
+            maxWidth: 360,
+            animation: 'cozyMilestoneIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, cozyMilestoneOut 0.4s ease 2.4s forwards',
+            pointerEvents: 'none',
+          }}
+          aria-live="polite"
+        >
+          <span style={{ fontSize: 26, lineHeight: 1, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>{milestoneToast.icon}</span>
+          <span style={{ lineHeight: 1.35 }}>{milestoneToast.text}</span>
+        </div>
+      )}
       <style>{`
         .qq-filmstrip-thumb:hover .qq-filmstrip-design-btn { opacity: 1 !important; }
         /* 2026-05-10 CozyBuilder Pack A #4: Save-Button Click-Bounce.
@@ -655,6 +786,15 @@ export default function QQBuilderPage() {
           0%   { transform: scale(1); }
           50%  { transform: scale(1.08); }
           100% { transform: scale(1); }
+        }
+        /* 2026-05-10 CozyBuilder Audit #14: Milestone-Toast Drop-In + Out. */
+        @keyframes cozyMilestoneIn {
+          0%   { opacity: 0; transform: translateY(-30px) scale(0.92); }
+          100% { opacity: 1; transform: translateY(0)     scale(1); }
+        }
+        @keyframes cozyMilestoneOut {
+          0%   { opacity: 1; transform: translateY(0)    scale(1); }
+          100% { opacity: 0; transform: translateY(-12px) scale(0.96); }
         }
         @media (max-width: 800px) {
           .qq-builder-body { flex-direction: column !important; }
@@ -954,6 +1094,22 @@ export default function QQBuilderPage() {
           >🪄 Wizard</button>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* 2026-05-10 CozyBuilder Audit #15: Sound-Toggle. Subtle Beats
+              fürs Schreib-Erlebnis (Save-Bell, Click, Upload-Chime).
+              localStorage-persistiert in 'qq-builder-sound-muted'. */}
+          <button
+            onClick={toggleSound}
+            style={{
+              padding: '6px 10px', borderRadius: 8,
+              border: `1px solid ${soundMuted ? 'rgba(255,255,255,0.1)' : COZY_PINK + '44'}`,
+              background: soundMuted ? 'rgba(255,255,255,0.04)' : `${COZY_PINK}14`,
+              color: soundMuted ? '#64748B' : COZY_PINK,
+              cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+              transition: 'all 0.15s',
+            }}
+            title={soundMuted ? 'Sounds aktivieren' : 'Sounds stummschalten'}
+            aria-label={soundMuted ? 'Sounds aktivieren' : 'Sounds stummschalten'}
+          >{soundMuted ? '🔇' : '🔊'}</button>
           {/* 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill. Reduziert
               Save-Angst — Wolf sieht live dass localStorage-Backup safe ist. */}
           <AutoSavePill timestamp={autoSavedAt} />
@@ -1752,6 +1908,30 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
         <div>
           <label style={labelStyle}>Einheit (DE) <span style={{ color: '#334155' }}>opt.</span></label>
           <input value={q.unit ?? ''} onChange={e => onChange({ ...q, unit: e.target.value })} style={inputStyle} placeholder={q.isYearAnswer ? '(meist leer)' : 'z.B. Meter'} />
+          {/* 2026-05-10 CozyBuilder Audit #19: Smart-Unit-Suggest aus Frage-
+              Text. Heuristik: 'Wie viele Brücken …' → Vorschlag 'Brücken'. */}
+          {(() => {
+            if (q.isYearAnswer || (q.unit ?? '').trim()) return null;
+            const suggested = suggestSchaetzchenUnit(q.text ?? '');
+            if (!suggested) return null;
+            return (
+              <button
+                type="button"
+                onClick={() => onChange({ ...q, unit: suggested })}
+                style={{
+                  marginTop: 6, padding: '4px 10px', borderRadius: 999,
+                  border: `1px dashed ${COZY_PINK}55`,
+                  background: 'rgba(236,72,153,0.08)',
+                  color: '#FBCFE8', fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+                  cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                }}
+                title="Klick um Vorschlag zu übernehmen"
+              >
+                <span>✨</span><span>Vorschlag: <strong>{suggested}</strong></span>
+              </button>
+            );
+          })()}
         </div>
         <div>
           <label style={labelStyle}>Unit (EN) <span style={{ color: '#334155' }}>opt.</span></label>

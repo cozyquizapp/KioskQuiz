@@ -12749,6 +12749,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // (Hängen unter dem Tile) brauchen genug Luft.
               rowGap: expandedLayout ? (heavyChips ? 'clamp(140px, 17vh, 200px)' : 'clamp(100px, 12vh, 140px)') : 18,
               paddingBottom: expandedLayout ? (heavyChips ? 'clamp(130px, 14vh, 180px)' : 'clamp(100px, 11vh, 140px)') : 0,
+              // 2026-05-10 (Wolf-Live-Test L9 '10v10 unten viel Platz, Cards
+              // nach oben gequetscht'): minHeight + paddingTop damit Cards
+              // vertikal-mittig statt top-aligned sitzen. Nutzt verfügbaren
+              // Platz unter der Question-Card aus.
+              minHeight: 'clamp(280px, 38vh, 460px)',
+              alignContent: 'center',
+              marginTop: 16,
               marginBottom: 16,
               width: '100%', maxWidth: 1400,
               animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',

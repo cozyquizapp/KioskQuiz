@@ -67,6 +67,56 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
 };
 const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'oneOfEight', 'order', 'map', 'onlyConnect', 'bluff'];
 
+// 2026-05-11 (Wolf-Wunsch): Wizard-Sub-Steps. Statt langer Scroll-Liste klickt
+// Wolf sich pro Frage durch wenige Felder-Blöcke. Pro Kategorie eigenes Schema.
+// Die `fields`-IDs werden vom QuestionEditor (visibleSection-Prop) gefiltert.
+export type WizardSubStep = {
+  id: string;
+  label: string;
+  emoji: string;
+  /** Welche Editor-Sections in diesem Step sichtbar sind. */
+  sections: WizardSection[];
+};
+export type WizardSection =
+  | 'text'         // Frage-Text DE + EN
+  | 'main'         // Kategorie-spezifische Hauptfelder (Antwort/Optionen/SubMech/...)
+  | 'image'        // Bild-Upload + (CHEESE-Layout-Toggle)
+  | 'imagePosition'// Position/Zoom Canvas + Slider
+  | 'funFact'      // Fun-Fact DE + EN
+  | 'music';       // Musik-URL + musicMode (selten)
+
+const SUB_STEPS_BY_CATEGORY: Record<QQCategory, WizardSubStep[]> = {
+  SCHAETZCHEN: [
+    { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
+    { id: 'main',     label: 'Antwort',  emoji: '✅', sections: ['main'] },
+    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'imagePosition'] },
+    { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
+  ],
+  MUCHO: [
+    { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
+    { id: 'main',     label: 'Optionen', emoji: '🔤', sections: ['main'] },
+    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'imagePosition'] },
+    { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
+  ],
+  ZEHN_VON_ZEHN: [
+    { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
+    { id: 'main',     label: 'Optionen', emoji: '🔤', sections: ['main'] },
+    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'imagePosition'] },
+    { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
+  ],
+  BUNTE_TUETE: [
+    { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
+    { id: 'main',     label: 'Mechanik', emoji: '🎁', sections: ['main'] },
+    { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
+  ],
+  CHEESE: [
+    { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
+    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'imagePosition'] },
+    { id: 'main',     label: 'Antwort',  emoji: '✅', sections: ['main'] },
+    { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
+  ],
+};
+
 // 2026-05-10 CozyBuilder Audit #19: Smart-Unit-Suggest. Extrahiert
 // das wahrscheinliche Unit-Wort aus einem Schätzchen-Frage-Text.
 // Beispiele:
@@ -1236,11 +1286,16 @@ export default function QQBuilderPage() {
 }
 
 // ── Question editor panel ──────────────────────────────────────────────────────
-function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload, onFileDrop }: {
+function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload, onFileDrop, visibleSections, fullWidth }: {
   question: QQQuestion; onChange: (q: QQQuestion) => void; onUpload: () => void; onRemoveBg: () => void; onDelete: () => void;
   uploadingFor: string | null; removingBgFor: string | null; fileInputRef: React.RefObject<HTMLInputElement>;
   onOptionImageUpload: (optIdx: number) => void;
   onFileDrop?: (file: File) => void;
+  /** 2026-05-11 Wizard-Sub-Steps: wenn gesetzt, nur die genannten Sektionen
+   *  rendern. Wenn undefined: alle Sektionen sichtbar (Grid-Mode). */
+  visibleSections?: Set<WizardSection>;
+  /** Wizard-Mode: Editor füllt verfügbare Breite, kein 480-Sidebar-Fix. */
+  fullWidth?: boolean;
 }) {
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catLabel = QQ_CATEGORY_LABELS[q.category];
@@ -1251,6 +1306,8 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
   const warnCount = issues.filter(i => i.level === 'warning').length;
   // 2026-05-10 CozyBuilder Pack B #9: Drag-Drop-State für Visual-Highlight.
   const [dragOver, setDragOver] = useState(false);
+  // 2026-05-11 Wizard-Sub-Steps: Helper für conditional-Section-Render.
+  const show = (s: WizardSection) => !visibleSections || visibleSections.has(s);
 
   function setImg(patch: Partial<QQQuestionImage>) {
     onChange({ ...q, image: { ...(img ?? { url: '', layout: 'fullscreen', animation: 'none' }), ...patch } });
@@ -1268,9 +1325,10 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         if (file) onFileDrop(file);
       }}
       style={{
-        width: 480, flexShrink: 0,
-        borderLeft: `1px solid ${dragOver ? COZY_PINK : 'rgba(255,255,255,0.07)'}`,
-        background: dragOver ? `${COZY_PINK}14` : '#1e293b',
+        ...(fullWidth
+          ? { width: '100%', flex: 1, borderLeft: 'none' }
+          : { width: 480, flexShrink: 0, borderLeft: `1px solid ${dragOver ? COZY_PINK : 'rgba(255,255,255,0.07)'}` }),
+        background: dragOver ? `${COZY_PINK}14` : (fullWidth ? 'transparent' : '#1e293b'),
         overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14,
         position: 'relative',
         transition: 'background 0.15s ease, border-color 0.15s ease',
@@ -1328,73 +1386,76 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
       <MiniPreviewPanel question={q} />
 
 
-      {/* Question text DE/EN — always shown */}
-      <div>
-        <label style={labelStyle}>Frage (DE)</label>
-        <textarea value={q.text} onChange={e => onChange({ ...q, text: e.target.value })} style={{ ...textareaStyle, borderColor: catColor + '44' }} rows={3} placeholder="Fragetext auf Deutsch…" />
-      </div>
-      <div>
-        <label style={labelStyle}>Frage (EN) <span style={{ color: '#334155' }}>optional</span></label>
-        <textarea value={q.textEn ?? ''} onChange={e => onChange({ ...q, textEn: e.target.value })} style={textareaStyle} rows={2} placeholder="Question text in English…" />
-      </div>
+      {/* Question text DE/EN — Section 'text' */}
+      {show('text') && (
+        <>
+          <div>
+            <label style={labelStyle}>Frage (DE)</label>
+            <textarea value={q.text} onChange={e => onChange({ ...q, text: e.target.value })} style={{ ...textareaStyle, borderColor: catColor + '44' }} rows={fullWidth ? 4 : 3} placeholder="Fragetext auf Deutsch…" autoFocus={fullWidth} />
+          </div>
+          <div>
+            <label style={labelStyle}>Frage (EN) <span style={{ color: '#334155' }}>optional</span></label>
+            <textarea value={q.textEn ?? ''} onChange={e => onChange({ ...q, textEn: e.target.value })} style={textareaStyle} rows={fullWidth ? 3 : 2} placeholder="Question text in English…" />
+          </div>
+          {/* Moderator host note — private, only visible in /moderator */}
+          <div>
+            <label style={labelStyle}>
+              🎙️ Moderator-Notiz <span style={{ color: '#334155' }}>nur für Moderator sichtbar</span>
+            </label>
+            <textarea
+              value={q.hostNote ?? ''}
+              onChange={e => onChange({ ...q, hostNote: e.target.value || undefined })}
+              style={{ ...textareaStyle, borderColor: 'rgba(251,191,36,0.3)' }}
+              rows={2}
+              placeholder="Ablauf-Tipp oder Hinweis zur Mechanik für diese Frage…"
+            />
+          </div>
+        </>
+      )}
 
-      {/* Moderator host note — private, only visible in /moderator */}
-      <div>
-        <label style={labelStyle}>
-          🎙️ Moderator-Notiz <span style={{ color: '#334155' }}>nur für Moderator sichtbar</span>
-        </label>
-        <textarea
-          value={q.hostNote ?? ''}
-          onChange={e => onChange({ ...q, hostNote: e.target.value || undefined })}
-          style={{ ...textareaStyle, borderColor: 'rgba(251,191,36,0.3)' }}
-          rows={2}
-          placeholder="Ablauf-Tipp oder Hinweis zur Mechanik für diese Frage…"
-        />
-      </div>
+      {/* Fun Fact — Section 'funFact' */}
+      {show('funFact') && (
+        <div>
+          <label style={labelStyle}>
+            💡 Fun Fact <span style={{ color: '#334155' }}>optional, zum Auflockern</span>
+          </label>
+          <textarea
+            value={q.funFact ?? ''}
+            onChange={e => onChange({ ...q, funFact: e.target.value || undefined })}
+            style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.35)' }}
+            rows={fullWidth ? 3 : 2}
+            placeholder="Witziger oder überraschender Fakt zum Thema — wirft der Moderator bei Bedarf ein."
+          />
+          <label style={{ ...labelStyle, marginTop: 6 }}>
+            Fun Fact (EN) <span style={{ color: '#334155' }}>optional</span>
+          </label>
+          <textarea
+            value={q.funFactEn ?? ''}
+            onChange={e => onChange({ ...q, funFactEn: e.target.value || undefined })}
+            style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.2)' }}
+            rows={fullWidth ? 3 : 2}
+            placeholder="Fun fact in English…"
+          />
+        </div>
+      )}
 
-      {/* Fun Fact — optional mood-lightener for moderator */}
-      <div>
-        <label style={labelStyle}>
-          💡 Fun Fact <span style={{ color: '#334155' }}>optional, zum Auflockern</span>
-        </label>
-        <textarea
-          value={q.funFact ?? ''}
-          onChange={e => onChange({ ...q, funFact: e.target.value || undefined })}
-          style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.35)' }}
-          rows={2}
-          placeholder="Witziger oder überraschender Fakt zum Thema — wirft der Moderator bei Bedarf ein."
-        />
-        <label style={{ ...labelStyle, marginTop: 6 }}>
-          Fun Fact (EN) <span style={{ color: '#334155' }}>optional</span>
-        </label>
-        <textarea
-          value={q.funFactEn ?? ''}
-          onChange={e => onChange({ ...q, funFactEn: e.target.value || undefined })}
-          style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.2)' }}
-          rows={2}
-          placeholder="Fun fact in English…"
-        />
-      </div>
+      {/* ── Category-specific answer fields — Section 'main' ── */}
+      {show('main') && <CategoryFields question={q} onChange={onChange} catColor={catColor} onOptionImageUpload={onOptionImageUpload} />}
 
-      {/* ── Category-specific answer fields ── */}
-      <CategoryFields question={q} onChange={onChange} catColor={catColor} onOptionImageUpload={onOptionImageUpload} />
-
-      {/* ── Image section ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
+      {/* ── Image-Header + Upload + BG-remove — Section 'image' ── */}
+      {show('image') && (
+      <div style={{ borderTop: visibleSections ? 'none' : '1px solid rgba(255,255,255,0.07)', paddingTop: visibleSections ? 0 : 12 }}>
         <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 10 }}>
           🖼 Bild {q.category === 'CHEESE' ? '(Pflicht)' : '(optional)'}
         </div>
 
         {img?.url && (
-          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', height: 140 }}>
+          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', height: fullWidth ? 200 : 140 }}>
             <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               objectFit: (img.layout === 'cutout' || img.layout === 'window-left' || img.layout === 'window-right') ? 'contain' : 'cover',
               transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
             }} />
-            <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700, background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: 4 }}>
-              {img.layout === 'fullscreen' ? 'Vollbild' : img.layout === 'window-left' ? 'Links' : img.layout === 'window-right' ? 'Rechts' : img.layout === 'cutout' ? 'Freisteller' : 'Kein Bild'}
-            </div>
             {img.bgRemovedUrl && <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(34,197,94,0.9)', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>✓ BG entfernt</div>}
           </div>
         )}
@@ -1404,97 +1465,17 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         </button>
 
         {img?.url && (
-          <>
-            <button onClick={onRemoveBg} disabled={!!removingBgFor} style={{ ...btnStyle('#8B5CF6'), width: '100%', marginBottom: 10 }}>
-              {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
-            </button>
+          <button onClick={onRemoveBg} disabled={!!removingBgFor} style={{ ...btnStyle('#8B5CF6'), width: '100%', marginBottom: 10 }}>
+            {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
+          </button>
+        )}
+      </div>
+      )}
 
-            {/* 2026-05-11 (Wolf-Feedback 'das ändert nichts'): Layout + Animation
-                Picker bei CHEESE-Fragen ausblenden — der Beamer-Code ignoriert
-                beide bei CHEESE (Bild ist immer fullscreen, layout='cutout' hat
-                eigene Animation). Für CHEESE übernimmt der separate Horizontal/
-                Hochkant-Toggle weiter oben die Layout-Steuerung. */}
-            {q.category !== 'CHEESE' && (
-              <>
-                {/* Layout: visual icon buttons */}
-                <label style={labelStyle}>Layout</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 10 }}>
-                  {(Object.keys(LAYOUT_LABELS) as QQImageLayout[]).map(l => (
-                    <button key={l} onClick={() => setImg({ layout: l })} title={LAYOUT_LABELS[l]}
-                      style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.layout === l ? catColor + '33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.layout === l ? catColor : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      {/* 16:9 mini icon */}
-                      <div style={{ width: 38, height: 22, borderRadius: 3, background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                        {l === 'fullscreen' && <div style={{ position: 'absolute', inset: 0, background: catColor + '70' }} />}
-                        {l === 'window-left' && <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', background: catColor + '70' }} />}
-                        {l === 'window-right' && <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', background: catColor + '70' }} />}
-                        {l === 'cutout' && <>
-                          <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 10, height: 15, background: catColor + '90', borderRadius: '50% 50% 0 0' }} />
-                          <div style={{ position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: catColor + '90', borderRadius: '50%' }} />
-                        </>}
-                      </div>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: img.layout === l ? catColor : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{LAYOUT_LABELS[l]}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Animation: icon + label buttons */}
-                <label style={labelStyle}>Animation</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 4 }}>
-                  {(Object.keys(ANIM_LABELS) as QQImageAnimation[]).map(a => {
-                    const icons: Record<QQImageAnimation, string> = { none: '—', float: '🌊', 'zoom-in': '🔍', reveal: '✨', 'slide-in': '➡️' };
-                    return (
-                      <button key={a} onClick={() => setImg({ animation: a })}
-                        style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.animation === a ? '#F59E0B33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.animation === a ? '#F59E0B' : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                        <span style={{ fontSize: 14 }}>{icons[a]}</span>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: img.animation === a ? '#F59E0B' : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{ANIM_LABELS[a]}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            {/* Animation timeline visualization */}
-            {img.animation !== 'none' && (
-              <div style={{ background: '#0a0f1a', borderRadius: 10, padding: '10px 14px', marginBottom: 4, border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: 10, color: '#475569', fontWeight: 800, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>⏱ Animation Timeline</div>
-                {(() => {
-                  const delay = img.animDelay ?? 0;
-                  const dur = img.animDuration ?? 1;
-                  const total = Math.max(4, delay + dur + 0.5);
-                  const delayPct = (delay / total) * 100;
-                  const durPct = (dur / total) * 100;
-                  return (
-                    <div style={{ position: 'relative', marginBottom: 22 }}>
-                      {/* track */}
-                      <div style={{ height: 24, background: 'rgba(255,255,255,0.04)', borderRadius: 6, position: 'relative', overflow: 'visible' }}>
-                        {/* delay zone */}
-                        {delay > 0 && (
-                          <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${delayPct}%`, background: 'rgba(255,255,255,0.04)', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 8, color: '#334155', fontWeight: 700, whiteSpace: 'nowrap' }}>warten</span>
-                          </div>
-                        )}
-                        {/* animation segment */}
-                        <div style={{ position: 'absolute', top: 2, bottom: 2, left: `${delayPct}%`, width: `${durPct}%`, background: 'linear-gradient(90deg, #F59E0B, #FBBF24)', borderRadius: 4, minWidth: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 9, color: '#000', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', padding: '0 4px' }}>{ANIM_LABELS[img.animation]}</span>
-                        </div>
-                      </div>
-                      {/* time labels */}
-                      <div style={{ position: 'absolute', top: 28, left: 0, fontSize: 9, color: '#475569', fontWeight: 700 }}>0s</div>
-                      {delay > 0 && (
-                        <div style={{ position: 'absolute', top: 28, left: `${delayPct}%`, fontSize: 9, color: '#94a3b8', fontWeight: 700, transform: 'translateX(-50%)' }}>{delay.toFixed(1)}s</div>
-                      )}
-                      <div style={{ position: 'absolute', top: 28, left: `${delayPct + durPct}%`, fontSize: 9, color: '#94a3b8', fontWeight: 700, transform: 'translateX(-50%)' }}>{(delay + dur).toFixed(1)}s</div>
-                      <div style={{ position: 'absolute', top: 28, right: 0, fontSize: 9, color: '#334155', fontWeight: 700 }}>{total.toFixed(1)}s</div>
-                    </div>
-                  );
-                })()}
-                <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
-                  Einblenden nach <b style={{ color: '#e2e8f0' }}>{(img.animDelay ?? 0).toFixed(1)}s</b> · Dauer <b style={{ color: '#e2e8f0' }}>{(img.animDuration ?? 1).toFixed(1)}s</b>
-                </div>
-              </div>
-            )}
-
+      {/* ── Image position canvas + sliders — Section 'imagePosition' ── */}
+      {show('imagePosition') && img?.url && (
+      <div style={{ borderTop: visibleSections ? 'none' : '1px solid rgba(255,255,255,0.07)', paddingTop: visibleSections ? 0 : 12 }}>
+        <>
             {/* Image position & scale controls — drag canvas */}
             <label style={{ ...labelStyle, marginTop: 8 }}>Position & Größe <span style={{ fontSize: 10, color: '#334155', fontWeight: 400 }}>Drag = verschieben · Scroll = Zoom</span></label>
             <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1659,26 +1640,14 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 <button onClick={() => setImg({ opacity: 1, brightness: 100, contrast: 100, blur: 0 })} style={{ ...btnStyle('#475569'), width: '100%', marginTop: 8, fontSize: 11 }}>↩ Filter zurücksetzen</button>
               ) : null}
             </div>
-
-            {/* Animation timing */}
-            <label style={{ ...labelStyle, marginTop: 12 }}>Animation Timing</label>
-            <div style={{ background: '#0f172a', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Verzögerung ({(img.animDelay ?? 0).toFixed(1)}s)</div>
-                  <input type="range" min={0} max={50} value={(img.animDelay ?? 0) * 10} onChange={e => setImg({ animDelay: Number(e.target.value) / 10 })} style={{ width: '100%' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: '#475569', marginBottom: 3 }}>Dauer ({(img.animDuration ?? 1).toFixed(1)}s)</div>
-                  <input type="range" min={1} max={100} value={(img.animDuration ?? 1) * 10} onChange={e => setImg({ animDuration: Number(e.target.value) / 10 })} style={{ width: '100%' }} />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+            {/* 2026-05-11 (Wolf-Cleanup): Animation-Timing-Sliders entfernt —
+                wirken nur bei layout='cutout' (Picker entfernt). */}
+        </>
       </div>
+      )}
 
-      {/* ── Floating Emojis (per-question override) ── */}
+      {/* ── Floating Emojis — only in Grid-Mode (advanced) ── */}
+      {!visibleSections && (
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 8 }}>
           ✨ Deko-Emojis <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span>
@@ -1706,7 +1675,9 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         </div>
       </div>
 
-      {/* ── Music (per-question MP3) ── */}
+      )}
+      {/* ── Music (per-question MP3) — only in Grid-Mode (advanced) ── */}
+      {!visibleSections && (
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 8 }}>
           🎵 Hintergrundmusik <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional, MP3)</span>
@@ -1759,6 +1730,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
           </label>
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -2525,25 +2497,60 @@ function WizardView({
   const safeIdx = curIdx < 0 ? 0 : curIdx;
   const curQ = qs[safeIdx];
 
-  // Pfeil-Tasten — eigenes useEffect (zusätzlich zum globalen Cmd+J/K).
-  // Hier ohne Cmd, weil im Wizard die Pfeile primärer Nav-Mode sind.
+  // 2026-05-11 Wizard Sub-Steps: pro Frage einen Sub-Step-Index merken.
+  // Beim Wechsel zwischen Fragen bleibt die letzte Step-Position erhalten —
+  // Wolf kann z.B. „Antwort" für alle Fragen durchklicken bleibend auf dem
+  // 'main'-Step.
+  const [subStepByQuestion, setSubStepByQuestion] = useState<Record<string, number>>({});
+  const curSubSteps = curQ ? SUB_STEPS_BY_CATEGORY[curQ.category] : [];
+  const curSubStepIdx = Math.min(
+    Math.max(0, subStepByQuestion[curQ?.id ?? ''] ?? 0),
+    Math.max(0, curSubSteps.length - 1),
+  );
+  const curSubStep = curSubSteps[curSubStepIdx];
+  const visibleSections = curSubStep ? new Set(curSubStep.sections) : undefined;
+
+  function setSubStep(idx: number) {
+    if (!curQ) return;
+    setSubStepByQuestion(prev => ({ ...prev, [curQ.id]: idx }));
+  }
+  function goToQuestion(idx: number, atLastStep = false) {
+    const nextQ = qs[idx];
+    if (!nextQ) return;
+    const nextSteps = SUB_STEPS_BY_CATEGORY[nextQ.category];
+    const targetStep = atLastStep ? Math.max(0, nextSteps.length - 1) : 0;
+    setSubStepByQuestion(prev => ({ ...prev, [nextQ.id]: targetStep }));
+    setActiveQId(nextQ.id);
+  }
+
+  // Pfeil-Tasten — Sub-Step-Nav innerhalb Frage, an Step-Grenzen springt's
+  // zur Nachbar-Frage (Step 0 bzw. letzter Step).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const tgt = e.target as HTMLElement | null;
       if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        const next = safeIdx > 0 ? safeIdx - 1 : qs.length - 1;
-        if (qs[next]) setActiveQId(qs[next].id);
+        if (curSubStepIdx > 0) {
+          setSubStep(curSubStepIdx - 1);
+        } else {
+          const prevIdx = safeIdx > 0 ? safeIdx - 1 : qs.length - 1;
+          goToQuestion(prevIdx, /* atLastStep */ true);
+        }
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
-        const next = (safeIdx + 1) % qs.length;
-        if (qs[next]) setActiveQId(qs[next].id);
+        if (curSubStepIdx < curSubSteps.length - 1) {
+          setSubStep(curSubStepIdx + 1);
+        } else {
+          const nextIdx = (safeIdx + 1) % qs.length;
+          goToQuestion(nextIdx, /* atLastStep */ false);
+        }
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [safeIdx, qs, setActiveQId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIdx, qs, curSubStepIdx, curSubSteps.length, curQ?.id]);
 
   if (!curQ) {
     return (
@@ -2572,9 +2579,8 @@ function WizardView({
 
       {/* Phase-Header + Counter */}
       <div style={{
-        padding: '16px 32px',
+        padding: '14px 32px 10px',
         display: 'flex', alignItems: 'center', gap: 16,
-        borderBottom: `1px solid ${COZY_PINK}1a`,
         background: `linear-gradient(180deg, ${catColor}10, transparent)`,
       }}>
         <div style={{
@@ -2596,13 +2602,56 @@ function WizardView({
           Frage <span style={{ color: COZY_PINK, fontSize: 16 }}>{safeIdx + 1}</span> <span style={{ opacity: 0.55 }}>/ {qs.length}</span>
         </div>
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700 }}>
-          ← → Pfeile zum Wechseln · Cmd+Enter zum nächsten leeren Slot
+        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textAlign: 'right', lineHeight: 1.5 }}>
+          ← → Schritte · Cmd+Enter nächster leerer Slot
+        </div>
+      </div>
+
+      {/* 2026-05-11 Sub-Stepper — pro Kategorie eigenes Step-Schema.
+          Klick auf einen Step springt direkt, ← → wechselt sequenziell.
+          Visuelle Indikatoren: gefüllter Step = Pink-Solid, leerer = Outline. */}
+      <div style={{
+        padding: '4px 32px 12px',
+        display: 'flex', gap: 6, alignItems: 'center',
+        borderBottom: `1px solid ${COZY_PINK}1a`,
+        overflowX: 'auto',
+      }}>
+        {curSubSteps.map((step, i) => {
+          const isActive = i === curSubStepIdx;
+          const isDone = i < curSubStepIdx;
+          return (
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => setSubStep(i)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '8px 14px', borderRadius: 999,
+                border: `2px solid ${isActive ? COZY_PINK : COZY_PINK + '33'}`,
+                background: isActive ? `${COZY_PINK}22` : (isDone ? `${COZY_PINK}10` : 'transparent'),
+                color: isActive ? '#fff' : (isDone ? COZY_PINK : '#94A3B8'),
+                fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
+                cursor: 'pointer',
+                boxShadow: isActive ? `0 0 12px ${COZY_PINK}55` : 'none',
+                transition: 'all 0.15s',
+                flexShrink: 0,
+              }}
+              aria-current={isActive ? 'step' : undefined}
+            >
+              <span style={{ fontSize: 14, opacity: isActive ? 1 : 0.7 }}>{step.emoji}</span>
+              <span style={{ letterSpacing: '0.02em' }}>{step.label}</span>
+              {isDone && <span style={{ fontSize: 11, marginLeft: 2 }}>✓</span>}
+            </button>
+          );
+        })}
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+          Schritt {curSubStepIdx + 1}/{curSubSteps.length}
         </div>
       </div>
 
       {/* Phase-Progress-Strip (4 oder 3 Bänder mit aktueller Position) */}
-      <div style={{ padding: '8px 32px', display: 'flex', gap: 6 }}>
+      <div style={{ padding: '8px 32px 4px', display: 'flex', gap: 6 }}>
         {Array.from({ length: phaseCount }, (_, pi) => {
           const phaseQs = qs.filter(q => q.phaseIndex === pi + 1);
           const filled = phaseQs.filter(q => q.text?.trim()).length;
@@ -2610,7 +2659,7 @@ function WizardView({
           return (
             <div key={pi} style={{
               flex: 1,
-              height: 6, borderRadius: 4,
+              height: 4, borderRadius: 4,
               background: `${COZY_PINK}1a`,
               position: 'relative', overflow: 'hidden',
               border: isActive ? `1px solid ${COZY_PINK}88` : '1px solid transparent',
@@ -2626,32 +2675,36 @@ function WizardView({
         })}
       </div>
 
-      {/* Editor (zentriert, breiter als Grid-Editor) */}
+      {/* Editor (zentriert, breiter als Grid-Editor).
+          Prev/Next-Buttons sind Step-aware: am Step-Anfang/-Ende springt der
+          Pfeil zur Nachbar-Frage; sonst innerhalb der aktuellen Frage. */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'center',
-        gap: 12, padding: '16px 24px 12px', overflow: 'hidden',
+        gap: 12, padding: '12px 24px 12px', overflow: 'hidden',
       }}>
-        {/* Prev-Button — riesig, linke Spalte */}
+        {/* Prev-Button — Step-aware */}
         <button
-          onClick={() => !isFirst && setActiveQId(qs[safeIdx - 1].id)}
-          disabled={isFirst}
+          onClick={() => {
+            if (curSubStepIdx > 0) setSubStep(curSubStepIdx - 1);
+            else if (!isFirst) goToQuestion(safeIdx - 1, true);
+          }}
+          disabled={isFirst && curSubStepIdx === 0}
           style={{
             flexShrink: 0, width: 56,
-            background: isFirst ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
-            border: `1px solid ${isFirst ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
-            color: isFirst ? '#334155' : COZY_PINK,
+            background: (isFirst && curSubStepIdx === 0) ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
+            border: `1px solid ${(isFirst && curSubStepIdx === 0) ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
+            color: (isFirst && curSubStepIdx === 0) ? '#334155' : COZY_PINK,
             borderRadius: 16, fontFamily: 'inherit', fontSize: 28, fontWeight: 900,
-            cursor: isFirst ? 'default' : 'pointer',
+            cursor: (isFirst && curSubStepIdx === 0) ? 'default' : 'pointer',
             transition: 'all 0.15s',
           }}
-          title="Vorherige Frage (←)"
-          aria-label="Vorherige Frage"
+          title={curSubStepIdx > 0 ? 'Vorheriger Schritt (←)' : 'Vorherige Frage (←)'}
+          aria-label={curSubStepIdx > 0 ? 'Vorheriger Schritt' : 'Vorherige Frage'}
         >‹</button>
 
-        {/* Editor-Card — wir reusen QuestionEditor, aber im Wizard mit
-            box-flex statt fixer 480-Sidebar-Width. */}
+        {/* Editor-Card — Single-Step-Inhalt, breit-zentral. */}
         <div
-          key={curQ.id}
+          key={`${curQ.id}-${curSubStepIdx}`}
           style={{
             flex: 1, maxWidth: 820,
             animation: 'cozyWizardSlideIn 0.3s ease both',
@@ -2670,6 +2723,8 @@ function WizardView({
               uploadingFor={uploadingFor}
               removingBgFor={removingBgFor}
               fileInputRef={fileInputRef}
+              visibleSections={visibleSections}
+              fullWidth
               onUpload={onUpload}
               onRemoveBg={onRemoveBg}
               onChange={onChange}
@@ -2682,19 +2737,22 @@ function WizardView({
 
         {/* Next-Button — rechte Spalte, gleich groß wie Prev */}
         <button
-          onClick={() => !isLast && setActiveQId(qs[safeIdx + 1].id)}
-          disabled={isLast}
+          onClick={() => {
+            if (curSubStepIdx < curSubSteps.length - 1) setSubStep(curSubStepIdx + 1);
+            else if (!isLast) goToQuestion(safeIdx + 1, false);
+          }}
+          disabled={isLast && curSubStepIdx === curSubSteps.length - 1}
           style={{
             flexShrink: 0, width: 56,
-            background: isLast ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
-            border: `1px solid ${isLast ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
-            color: isLast ? '#334155' : COZY_PINK,
+            background: (isLast && curSubStepIdx === curSubSteps.length - 1) ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
+            border: `1px solid ${(isLast && curSubStepIdx === curSubSteps.length - 1) ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
+            color: (isLast && curSubStepIdx === curSubSteps.length - 1) ? '#334155' : COZY_PINK,
             borderRadius: 16, fontFamily: 'inherit', fontSize: 28, fontWeight: 900,
-            cursor: isLast ? 'default' : 'pointer',
+            cursor: (isLast && curSubStepIdx === curSubSteps.length - 1) ? 'default' : 'pointer',
             transition: 'all 0.15s',
           }}
-          title="Nächste Frage (→)"
-          aria-label="Nächste Frage"
+          title={curSubStepIdx < curSubSteps.length - 1 ? 'Nächster Schritt (→)' : 'Nächste Frage (→)'}
+          aria-label={curSubStepIdx < curSubSteps.length - 1 ? 'Nächster Schritt' : 'Nächste Frage'}
         >›</button>
       </div>
 

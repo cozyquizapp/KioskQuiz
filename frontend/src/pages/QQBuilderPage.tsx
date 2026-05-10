@@ -1002,45 +1002,67 @@ export default function QQBuilderPage() {
       <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraftRaw(activeDraft)} />
 
       {/* Header — 2026-05-10 CozyBuilder Pack A: Navy + Pink-Tint statt
-          Tailwind-Slate. Subtle Pink-Border-Bottom als Brand-Anker. */}
+          Tailwind-Slate. Subtle Pink-Border-Bottom als Brand-Anker.
+          2026-05-11 (Wolf-Wunsch 'Wizard im Vollbild'): Settings (Title-
+          Input, Runden, Sprache, Theme) + Aktions-Buttons (CSV, 4×4
+          Finale, Host-Sheet, EN befüllen) im Wizard ausgeblendet. Bleiben:
+          Zurück, Grid|Wizard-Toggle, Sound, Save. Plus Read-Only-Title
+          als Mini-Pille damit Wolf weiß welcher Draft offen ist. */}
       <div style={{ padding: '12px 24px', background: 'rgba(236,72,153,0.06)', borderBottom: `1px solid ${COZY_PINK}22`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
         <button onClick={() => setActiveDraft(null)} style={btnStyle('#475569')}>← Zurück</button>
-        <input value={activeDraft.title} onChange={e => setActiveDraft({ ...activeDraft, title: e.target.value, updatedAt: Date.now() })}
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'inherit', minWidth: 220 }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Runden:</span>
-          {([3, 4] as const).map(n => (
-            <button key={n} onClick={() => {
-              if (n === activeDraft.phases) return;
-              if (!confirm(`Zu ${n} Runden wechseln?`)) return;
-              const newDraft: QQDraft = { ...activeDraft, phases: n, questions: makeEmptyDraft(n).questions.map((eq, i) => activeDraft.questions[i] ?? eq), updatedAt: Date.now() };
-              setActiveDraft(newDraft);
-            }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13, background: activeDraft.phases === n ? COZY_PINK : 'rgba(255,255,255,0.07)', color: activeDraft.phases === n ? '#fff' : '#94a3b8' }}>{n}</button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Sprache:</span>
-          <select value={activeDraft.language} onChange={e => setActiveDraft({ ...activeDraft, language: e.target.value as QQLanguage })}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '4px 8px', color: '#fff', fontFamily: 'inherit', fontSize: 13 }}>
-            <option value="both">DE + EN</option>
-            <option value="de">Deutsch</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Theme:</span>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
-              const th = QQ_THEME_PRESETS[t];
-              const active = (activeDraft.theme?.preset ?? 'default') === t;
-              return (
-                <button key={t} onClick={() => setActiveDraft({ ...activeDraft, theme: { ...th }, updatedAt: Date.now() })}
-                  title={t.charAt(0).toUpperCase() + t.slice(1)}
-                  style={{ width: 22, height: 22, borderRadius: 6, border: active ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer', background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`, boxShadow: active ? `0 0 8px ${th.accentColor}66` : 'none' }} />
-              );
-            })}
+        {wizardMode ? (
+          // Wizard-Mode: nur kompakter Read-Only-Title (klein, kein Edit).
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 12px', borderRadius: 8,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            fontSize: 13, fontWeight: 800, color: '#CBD5E1',
+            maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }} title={activeDraft.title}>
+            <span>📝</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeDraft.title}</span>
           </div>
-        </div>
+        ) : (
+          <>
+            <input value={activeDraft.title} onChange={e => setActiveDraft({ ...activeDraft, title: e.target.value, updatedAt: Date.now() })}
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'inherit', minWidth: 220 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Runden:</span>
+              {([3, 4] as const).map(n => (
+                <button key={n} onClick={() => {
+                  if (n === activeDraft.phases) return;
+                  if (!confirm(`Zu ${n} Runden wechseln?`)) return;
+                  const newDraft: QQDraft = { ...activeDraft, phases: n, questions: makeEmptyDraft(n).questions.map((eq, i) => activeDraft.questions[i] ?? eq), updatedAt: Date.now() };
+                  setActiveDraft(newDraft);
+                }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13, background: activeDraft.phases === n ? COZY_PINK : 'rgba(255,255,255,0.07)', color: activeDraft.phases === n ? '#fff' : '#94a3b8' }}>{n}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Sprache:</span>
+              <select value={activeDraft.language} onChange={e => setActiveDraft({ ...activeDraft, language: e.target.value as QQLanguage })}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '4px 8px', color: '#fff', fontFamily: 'inherit', fontSize: 13 }}>
+                <option value="both">DE + EN</option>
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Theme:</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
+                  const th = QQ_THEME_PRESETS[t];
+                  const active = (activeDraft.theme?.preset ?? 'default') === t;
+                  return (
+                    <button key={t} onClick={() => setActiveDraft({ ...activeDraft, theme: { ...th }, updatedAt: Date.now() })}
+                      title={t.charAt(0).toUpperCase() + t.slice(1)}
+                      style={{ width: 22, height: 22, borderRadius: 6, border: active ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer', background: `linear-gradient(135deg, ${th.bgColor}, ${th.accentColor})`, boxShadow: active ? `0 0 8px ${th.accentColor}66` : 'none' }} />
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
         {/* 2026-05-10 CozyBuilder #30: Grid ↔ Wizard Mode-Toggle.
             Grid = Übersicht für Browse/Reorder, Wizard = Slide-by-Slide
             zum konzentrierten Schreiben. Wolf-Preferenz in localStorage. */}
@@ -1088,14 +1110,22 @@ export default function QQBuilderPage() {
           {/* 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill. Reduziert
               Save-Angst — Wolf sieht live dass localStorage-Backup safe ist. */}
           <AutoSavePill timestamp={autoSavedAt} />
-          <button onClick={() => setShowImport(true)} style={btnStyle('#10B981')} title="Fragen aus CSV-Datei importieren (Vorlage im Modal)">📥 CSV</button>
-          <button
-            onClick={() => setShowConnections(true)}
-            style={btnStyle(activeDraft.connections ? '#A855F7' : '#64748B')}
-            title={activeDraft.connections ? '4×4 Finale anpassen — eigenes Set gespeichert' : '4×4 Finale erstellen (sonst Default-Set)'}
-          >🏆 4×4 Finale {activeDraft.connections ? '✓' : ''}</button>
-          <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
-          <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+          {/* 2026-05-11 (Wolf-Wunsch 'Wizard im Vollbild'): Setup-Aktionen (CSV-
+              Import, 4×4-Finale-Editor, Host-Sheet-Export, EN-Bulk-Übersetzung)
+              im Wizard ausgeblendet — sind Grid-Mode-Werkzeuge. Wolf wechselt
+              kurz auf 📋 Grid wenn er sie braucht. */}
+          {!wizardMode && (
+            <>
+              <button onClick={() => setShowImport(true)} style={btnStyle('#10B981')} title="Fragen aus CSV-Datei importieren (Vorlage im Modal)">📥 CSV</button>
+              <button
+                onClick={() => setShowConnections(true)}
+                style={btnStyle(activeDraft.connections ? '#A855F7' : '#64748B')}
+                title={activeDraft.connections ? '4×4 Finale anpassen — eigenes Set gespeichert' : '4×4 Finale erstellen (sonst Default-Set)'}
+              >🏆 4×4 Finale {activeDraft.connections ? '✓' : ''}</button>
+              <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
+              <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+            </>
+          )}
           {/* 2026-05-05 (Wolf 'editor useless geworden'): Folien-Editor-Button
               aus Builder entfernt. Slide-Editor jetzt nur noch im Menü unter
               Extras erreichbar fuer bestehende Drafts. */}

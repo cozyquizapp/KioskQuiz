@@ -136,7 +136,7 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [x] **L1 — Welcome doppelt** ✅ FIX (QQBeamerPage.tsx): QuizIntroOverlay-Render-Call vor RulesIntro entfernt + welcomeActive-Variable. Component bleibt im File falls später wieder gewünscht.
 - [x] **L2 — „Saxofon" Spelling-Tolerance** ✅ FIX (`shared/textNormalization.ts`): `ph→f` phonetische Normalisierung. Saxofon/Saxophone, Telefon/Telephone, Foto/Photo etc. matchen jetzt exakt nach Normalisierung.
 - [x] **L3 — „stadium" akzeptiert für Wembley Stadium** ✅ FIX (`shared/textNormalization.ts`): Substring-Tolerance jetzt mit Min-Ratio 0.5. „stadium" (7) in „wembley stadium" (15) = 0.47 → blockt. „herr der ringe" (14) in „der herr der ringe" (18) = 0.78 → matched weiter.
-- [ ] **L4 — Endzusammenfassung der Punkte** ❓ Wolf-Quote unklar. Bei nächster Gelegenheit präzisieren lassen: meinst du den Final-Score-Display, den Gewinner-Showcase, oder ein Recap?
+- [x] **L4 — Endzusammenfassung der Punkte** ✅ Wolf-Klärung 2026-05-10: bezog sich versehentlich auf L10 (Doppel-Notiz). Mit L10-Fix `afd51f82` mit-erledigt.
 - [x] **L5 — pic1 HotPotato Antworten überlappen mit Trivia-Trio** ✅ FIX (`QQBeamerPage.tsx` HotPotatoBeamerView): Chips-Container von `justifyContent: center` auf `flex-start` umgestellt + paddingTop/Bottom. Chips wachsen jetzt nach unten begrenzt durch overflow:hidden statt in beide Richtungen vom Center aus zu expandieren.
 - [ ] **L6 — Joker-Bug Audit-Ergebnis (2026-05-10)** 🔍
 
@@ -155,8 +155,7 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
   - `state.teamPhaseStats[teamId].jokersThisPhase` + `jokersEarned`
   - `room.teamTotalSteals[teamId]` über mehrere Runden — Korreliert mit Joker-Wieder-Trigger?
 
-  **Mögliche Lösungs-Richtung** (NICHT umgesetzt — Trade-off-Entscheidung):
-  - `cells.some(...)` → `cells.every(p => isNeverCounted(p.r, p.c))` blockt Re-Detection vollständig, könnte aber legitime Pattern-mit-Kanten-Overlap blockieren.
+  **Wolf-Entscheidung 2026-05-10**: Option (c) — erstmal NICHTS ändern. Beim nächsten Auftritt im Live-Test Network-Tab-Snapshot ziehen (`state.grid[r][c]` für die 4 Cells: `ownerId`, `jokerFormed`, `jokerCounted`, `stuck` + `state.teamPhaseStats[teamId].jokersThisPhase/jokersEarned` + `room.teamTotalSteals[teamId]`), dann zwischen Fix-Option (a) `cells.every(...)` und Option (b) `jokerCounted` per Steal NICHT resetten entscheiden.
 
   **Files**: `qqBfs.ts:122-187`, `qqRooms.ts:2231/2357/2468/2522/2673/3466 (handleJokerDetection)/3585/3247`, `shared/quarterQuizTypes.ts:106-107` (QQCell-Field-Semantik).
 - [x] **L7 — pic3 Comeback rechte „NEW"-Card kleiner als linke** ✅ FIX (`QQBeamerPage.tsx` ActionCardReveal): Outer-Wrapper bekommt explizit `height: 360` matching non-isNew Card, `alignSelf: stretch` raus (zog Outer auf parent-row-Höhe, Inner blieb 360 → wirkte kleiner).

@@ -275,7 +275,6 @@ export default function QQBuilderPage() {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [removingBgFor, setRemovingBgFor] = useState<string | null>(null);
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
@@ -358,7 +357,7 @@ export default function QQBuilderPage() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!activeDraft) return;
-      if (showRestore || showImport || showConnections || showPreview || validationPrompt) return;
+      if (showRestore || showImport || showConnections || validationPrompt) return;
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
       // Cmd+S → Save
@@ -391,7 +390,7 @@ export default function QQBuilderPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDraft, activeQId, saving, showRestore, showImport, showConnections, showPreview, validationPrompt]);
+  }, [activeDraft, activeQId, saving, showRestore, showImport, showConnections, validationPrompt]);
 
   // ── Warn before leaving with unsaved changes ──
   useEffect(() => {
@@ -849,119 +848,6 @@ export default function QQBuilderPage() {
           onClose={() => setShowConnections(false)}
         />
       )}
-      {showPreview && activeQ && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setShowPreview(false)}>
-          <div style={{ width: '80vw', maxWidth: 960, aspectRatio: '16/9', background: COZY_NAVY, borderRadius: 16, border: `3px solid ${QQ_CATEGORY_COLORS[activeQ.category]}`, boxShadow: `0 0 80px ${QQ_CATEGORY_COLORS[activeQ.category]}33`, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, position: 'relative' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ position: 'absolute', top: 12, right: 16, cursor: 'pointer', fontSize: 20, color: '#475569' }} onClick={() => setShowPreview(false)}>✕</div>
-            <div style={{ padding: '6px 16px', borderRadius: 20, background: QQ_CATEGORY_COLORS[activeQ.category] + '33', border: `1px solid ${QQ_CATEGORY_COLORS[activeQ.category]}66`, fontSize: 14, fontWeight: 900, color: QQ_CATEGORY_COLORS[activeQ.category] }}>
-              {QQ_CATEGORY_LABELS[activeQ.category].emoji} {QQ_CATEGORY_LABELS[activeQ.category].de}
-            </div>
-            {activeQ.image?.url && (
-              <img src={activeQ.image.bgRemovedUrl || activeQ.image.url} alt="" style={{ maxHeight: '40%', maxWidth: '60%', objectFit: 'contain', borderRadius: 12, transform: `translate(${activeQ.image.offsetX ?? 0}%, ${activeQ.image.offsetY ?? 0}%) scale(${activeQ.image.scale ?? 1}) rotate(${activeQ.image.rotation ?? 0}deg)` }} />
-            )}
-            <div style={{ fontSize: 28, fontWeight: 900, textAlign: 'center', lineHeight: 1.3, maxWidth: '80%' }}>{activeQ.text || 'Kein Fragetext'}</div>
-            {activeQ.textEn && <div style={{ fontSize: 18, color: '#64748b', textAlign: 'center', fontStyle: 'italic' }}>{activeQ.textEn}</div>}
-            {activeQ.options && (
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
-                {activeQ.options.map((opt, i) => (
-                  <div key={i} style={{ padding: '8px 20px', borderRadius: 10, background: i === activeQ.correctOptionIndex ? '#22C55E33' : 'rgba(255,255,255,0.06)', border: `2px solid ${i === activeQ.correctOptionIndex ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, fontWeight: 800, fontSize: 16 }}>
-                    {String.fromCharCode(65 + i)}: {opt}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* 4 gewinnt / Only Connect: 4 Hinweise + Antwort */}
-            {activeQ.category === 'BUNTE_TUETE' && activeQ.bunteTuete?.kind === 'onlyConnect' && (() => {
-              const oc = activeQ.bunteTuete;
-              const hints = (oc.hints ?? []);
-              const hintColors = ['#FBBF24', '#22C55E', '#60A5FA', '#A78BFA'];
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4, width: '90%', maxWidth: 720 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-                    🧩 4 Hinweise
-                  </div>
-                  {[0, 1, 2, 3].map(i => {
-                    const h = hints[i];
-                    const col = hintColors[i];
-                    return (
-                      <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '10px 16px', borderRadius: 10,
-                        background: h ? `${col}1a` : 'rgba(255,255,255,0.04)',
-                        border: `1.5px solid ${h ? `${col}66` : 'rgba(255,255,255,0.08)'}`,
-                      }}>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: col, letterSpacing: '0.08em', minWidth: 32 }}>H{i + 1}</span>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: h ? '#F1F5F9' : '#475569', fontStyle: h ? 'normal' : 'italic' }}>
-                          {h || '—'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {oc.answer && (
-                    <div style={{
-                      marginTop: 8, padding: '12px 20px', borderRadius: 12,
-                      background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.5)',
-                      fontSize: 22, fontWeight: 900, color: '#86efac', textAlign: 'center',
-                    }}>✓ {oc.answer}</div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Bluff: echte Antwort prominent */}
-            {activeQ.category === 'BUNTE_TUETE' && activeQ.bunteTuete?.kind === 'bluff' && (() => {
-              const bf = activeQ.bunteTuete;
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4, width: '80%', maxWidth: 600 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: '#F472B6', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-                    🎭 Bluff · echte Antwort
-                  </div>
-                  <div style={{
-                    padding: '16px 24px', borderRadius: 14,
-                    background: bf.realAnswer ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: bf.realAnswer ? '2px solid rgba(34,197,94,0.5)' : '2px dashed rgba(255,255,255,0.12)',
-                    fontSize: 28, fontWeight: 900,
-                    color: bf.realAnswer ? '#86efac' : '#475569',
-                    textAlign: 'center',
-                    fontStyle: bf.realAnswer ? 'normal' : 'italic',
-                  }}>
-                    {bf.realAnswer ? `✓ ${bf.realAnswer}` : '(noch keine echte Antwort gesetzt)'}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* SCHAETZCHEN: Zielwert + Einheit */}
-            {activeQ.category === 'SCHAETZCHEN' && activeQ.targetValue != null && (
-              <div style={{
-                marginTop: 8, padding: '12px 24px', borderRadius: 12,
-                background: 'rgba(245,158,11,0.18)', border: '2px solid rgba(245,158,11,0.5)',
-                fontSize: 24, fontWeight: 900, color: '#fde68a', textAlign: 'center',
-              }}>
-                🎯 {activeQ.targetValue.toLocaleString('de-DE')}{activeQ.unit ? ` ${activeQ.unit}` : ''}
-              </div>
-            )}
-
-            {/* Plain answer für sonstige offene BUNTE_TUETE / CHEESE */}
-            {!activeQ.options && activeQ.answer
-              && activeQ.category !== 'SCHAETZCHEN'
-              && activeQ.bunteTuete?.kind !== 'onlyConnect'
-              && activeQ.bunteTuete?.kind !== 'bluff'
-              && (
-                <div style={{
-                  marginTop: 4, padding: '10px 22px', borderRadius: 12,
-                  background: 'rgba(34,197,94,0.15)', border: '2px solid rgba(34,197,94,0.5)',
-                  fontSize: 22, fontWeight: 900, color: '#86efac',
-                }}>✓ {activeQ.answer}</div>
-              )}
-
-            <div style={{ position: 'absolute', bottom: 16, right: 20, fontSize: 12, color: '#334155' }}>Phase {activeQ.phaseIndex} · Slot {activeQ.questionIndexInPhase + 1}</div>
-          </div>
-        </div>
-      )}
       {/* Validation prompt modal */}
       {validationPrompt && (() => {
         const v = validateDraft(validationPrompt.draft);
@@ -1124,7 +1010,8 @@ export default function QQBuilderPage() {
           {/* 2026-05-05 (Wolf 'editor useless geworden'): Folien-Editor-Button
               aus Builder entfernt. Slide-Editor jetzt nur noch im Menü unter
               Extras erreichbar fuer bestehende Drafts. */}
-          <button onClick={() => setShowPreview(true)} style={btnStyle('#8B5CF6')} disabled={!activeQ}>👁 Vorschau</button>
+          {/* 2026-05-11 (Wolf): 👁 Vorschau-Button entfernt — Modal zeigte
+              fake/random Beamer-Render. Wolf nutzt /beamer für echte Vorschau. */}
           {(() => {
             const v = validateDraft(activeDraft);
             const hasIssues = v.totalErrors > 0 || v.totalWarnings > 0;
@@ -2517,9 +2404,14 @@ function brandCreateBtn(secondary?: boolean): React.CSSProperties {
 
 // ── Mini preview wrapper (kollabierbar, Zustand persistiert) ──────────────────
 function MiniPreviewPanel({ question }: { question: QQQuestion }) {
+  // 2026-05-11 (Wolf): Mini-Preview nur noch bei CHEESE — andere Kategorien
+  // hatten ein 'random'-Render das mit Beamer-Realität nicht matched.
+  // Bei CHEESE: Dual-Frame zeigt beide Beamer-Layouts live.
+  // useState VOR dem early-return (Rules of Hooks).
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('qq-builder-preview-collapsed') === '1'; } catch { return false; }
   });
+  if (question.category !== 'CHEESE') return null;
   function toggle() {
     setCollapsed(c => {
       const next = !c;
@@ -2536,7 +2428,7 @@ function MiniPreviewPanel({ question }: { question: QQQuestion }) {
         textTransform: 'uppercase', letterSpacing: 0.08, padding: 0,
         marginBottom: collapsed ? 0 : 8,
       }}>
-        <span>🖥️ Live-Vorschau</span>
+        <span>🎬 Beamer-Vorschau</span>
         <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{collapsed ? '▸' : '▾'}</span>
       </button>
       {!collapsed && <QQMiniPreview question={question} />}

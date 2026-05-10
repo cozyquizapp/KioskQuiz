@@ -18,6 +18,11 @@ export function QQMiniPreview({ question: q }: { question: QQQuestion }) {
   const posX = 50 + (img?.offsetX ?? 0) / 2; // -100..100 → 0..100
   const posY = 50 + (img?.offsetY ?? 0) / 2;
   const zoom = Math.max(1, img?.scale ?? 1);
+  // 2026-05-10 (Wolf-Wunsch): CHEESE-Portrait-Layout im Mini-Preview matchen.
+  // Wenn explizit gesetzt → diese Wahl. Sonst Auto-Detect ist hier nicht
+  // möglich (kein DOM-Image-Preload im Mini-Preview), also Landscape-Default
+  // als sicherer Fallback. Wolf-Workflow: setzt eh manuell.
+  const isCheesePortrait = isCheese && img?.cheeseLayout === 'portrait';
 
   return (
     <div style={{
@@ -27,8 +32,21 @@ export function QQMiniPreview({ question: q }: { question: QQQuestion }) {
       overflow: 'hidden', position: 'relative',
       boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
     }}>
-      {/* CHEESE background */}
-      {isCheese && img?.url && (
+      {/* CHEESE Portrait-Layout — Bild links 50%, Card rechts 50% */}
+      {isCheese && isCheesePortrait && img?.url && (
+        <>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, bottom: 0, width: '50%',
+            backgroundImage: `url(${img.bgRemovedUrl || img.url})`,
+            backgroundSize: 'cover',
+            backgroundPosition: `${posX}% ${posY}%`,
+            transform: `scale(${zoom})`,
+            transformOrigin: `${posX}% ${posY}%`,
+          }} />
+        </>
+      )}
+      {/* CHEESE Landscape-Layout — Bild fullscreen */}
+      {isCheese && !isCheesePortrait && img?.url && (
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url(${img.bgRemovedUrl || img.url})`,
@@ -73,14 +91,20 @@ export function QQMiniPreview({ question: q }: { question: QQQuestion }) {
         P{q.phaseIndex} · {q.questionIndexInPhase + 1}
       </div>
 
-      {/* Frage-Card unten — bei CHEESE semi-transparent, sonst solid */}
+      {/* Frage-Card — bei CHEESE Portrait: rechts 50%, sonst unten Streifen.
+          2026-05-10 (Wolf-Wunsch): Layout matched die Beamer-Render-Wahl. */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0,
+        position: 'absolute',
+        ...(isCheesePortrait
+          ? { top: 0, right: 0, bottom: 0, width: '50%' }
+          : { left: 0, right: 0, bottom: 0 }),
         padding: isCheese ? '10px 12px' : '8px 12px 10px',
         background: isCheese ? 'rgba(15,23,42,0.78)' : 'transparent',
         backdropFilter: isCheese ? 'blur(2px)' : 'none',
-        minHeight: isCheese ? '32%' : undefined,
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 4,
+        minHeight: isCheese && !isCheesePortrait ? '32%' : undefined,
+        display: 'flex', flexDirection: 'column',
+        justifyContent: isCheesePortrait ? 'center' : 'flex-end',
+        gap: 4,
       }}>
         <div style={{
           fontSize: 13, fontWeight: 900, color: '#f8fafc', lineHeight: 1.25,

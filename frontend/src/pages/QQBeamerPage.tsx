@@ -11480,12 +11480,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // unsichtbar bis Portrait-Detection durch ist — sonst rendert der Container
   // mit isCheesePortrait=false (Default) und shifted dann sichtbar wenn ein
   // Portrait erkannt wurde.
+  // 2026-05-10 (Wolf-Wunsch): img.cheeseLayout-Override gewinnt vor Auto-
+  // Detection. Damit Wolf bei Edge-Cases (quadratische Bilder, fast-Quadrat
+  // Karten) explizit forcen kann was er will.
   const [isCheesePortrait, setIsCheesePortrait] = useState(false);
   const [imgReady, setImgReady] = useState(false);
   useEffect(() => {
     if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
       setImgReady(true); // kein Bild → kein Detection-Bedarf
+      return;
+    }
+    // Manueller Override per Builder gewinnt vor Auto-Detection.
+    if (img.cheeseLayout === 'portrait') {
+      setIsCheesePortrait(true);
+      setImgReady(true);
+      return;
+    }
+    if (img.cheeseLayout === 'landscape') {
+      setIsCheesePortrait(false);
+      setImgReady(true);
       return;
     }
     setImgReady(false);
@@ -11496,7 +11510,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     };
     tester.onerror = () => { setIsCheesePortrait(false); setImgReady(true); };
     tester.src = img.url;
-  }, [isCheese, useMapPicture, img?.url]);
+  }, [isCheese, useMapPicture, img?.url, img?.cheeseLayout]);
 
   // 2026-05-04 v3 (Wolf): Timer-Outro-Animation klappt nicht bei Frueh-Abbruch
   // (alle abgegeben → Backend reveal → s.timerEndsAt wird null → Component

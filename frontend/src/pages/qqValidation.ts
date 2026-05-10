@@ -119,10 +119,13 @@ export function validateQuestion(q: QQQuestion): Issue[] {
     }
   }
 
-  // CHEESE — Bild ist Pflicht
+  // CHEESE — Bild ist Pflicht. Layout-Wahl ist empfohlen aber nicht zwingend
+  // (Beamer fällt auf Auto-Detection zurück wenn ungesetzt → 2026-05-10).
   if (q.category === 'CHEESE') {
     if (!q.image?.url) {
       issues.push({ level: 'error', field: 'image', message: 'Bild fehlt (Picture-This braucht ein Bild)' });
+    } else if (!q.image.cheeseLayout) {
+      issues.push({ level: 'warning', field: 'image', message: 'Beamer-Layout (Horizontal/Hochkant) nicht gewählt — Auto-Detection wird raten' });
     }
   }
 

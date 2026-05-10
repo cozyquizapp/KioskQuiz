@@ -508,6 +508,12 @@ export interface QQQuestionImage {
   // Animation timing
   animDelay?: number;     // seconds delay before animation starts (0-5)
   animDuration?: number;  // seconds for animation duration (0.1-10)
+  /** 2026-05-10 (Wolf-Wunsch): CHEESE-Layout-Override pro Frage. Bei 'landscape'
+   *  wird Image fullscreen + Card-Overlay unten gerendert; bei 'portrait'
+   *  2-Spalten-Layout (Bild links, Card rechts). Wenn nicht gesetzt
+   *  (= undefined), fällt der Beamer auf Auto-Detection zurück (Image-Dimension-
+   *  basiert) — Backward-Compat zu alten Drafts. Nur für category=CHEESE relevant. */
+  cheeseLayout?: 'landscape' | 'portrait';
 }
 
 // ── Option image (for MUCHO / ZEHN_VON_ZEHN answer cards) ─────────────────────

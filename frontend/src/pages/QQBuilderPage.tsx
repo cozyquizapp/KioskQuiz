@@ -2053,21 +2053,89 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
   }
 
   // CHEESE / Picture This ──────────────────────────────────────────────────────
-  if (q.category === 'CHEESE') return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 12, color: '#94a3b8' }}>
-        Ein Bild wird gezeigt. Teams tippen die Antwort als Freitext. Bild unten hochladen.
+  if (q.category === 'CHEESE') {
+    // 2026-05-10 (Wolf-Wunsch): Layout-Toggle pro CHEESE-Frage. Beamer
+    // respektiert die Wahl, sonst Auto-Detection als Fallback.
+    const currentLayout = q.image?.cheeseLayout;
+    const setCheeseLayout = (layout: 'landscape' | 'portrait') => {
+      onChange({
+        ...q,
+        image: {
+          ...(q.image ?? { url: '', layout: 'fullscreen', animation: 'none' }),
+          cheeseLayout: layout,
+        },
+      });
+    };
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 12, color: '#94a3b8' }}>
+          Ein Bild wird gezeigt. Teams tippen die Antwort als Freitext. Bild unten hochladen.
+        </div>
+        {/* Layout-Picker — pflicht für sauberes Beamer-Render (Auto-Fallback wenn ungesetzt).
+            2026-05-10 (Wolf-Reasoning): Layout ist UNABHÄNGIG vom Bild-Format —
+            du kannst ein Querformat-Foto bewusst hochkant zeigen wenn der
+            relevante Bildausschnitt vertikal liegt (Beamer crop'pt dann). */}
+        <div>
+          <label style={labelStyle}>📐 Beamer-Layout (wie wird's auf dem Beamer angeordnet?)</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setCheeseLayout('landscape')}
+              style={{
+                padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
+                border: `2px solid ${currentLayout === 'landscape' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
+                background: currentLayout === 'landscape' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
+                color: currentLayout === 'landscape' ? COZY_PINK : '#CBD5E1',
+                boxShadow: currentLayout === 'landscape' ? `0 0 12px ${COZY_PINK}44` : 'none',
+                transition: 'all 0.15s',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 22, lineHeight: 1 }}>🖼️</span>
+              <span>Horizontal</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild vollflächig,<br/>Card unten</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCheeseLayout('portrait')}
+              style={{
+                padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
+                border: `2px solid ${currentLayout === 'portrait' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
+                background: currentLayout === 'portrait' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
+                color: currentLayout === 'portrait' ? COZY_PINK : '#CBD5E1',
+                boxShadow: currentLayout === 'portrait' ? `0 0 12px ${COZY_PINK}44` : 'none',
+                transition: 'all 0.15s',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 22, lineHeight: 1 }}>📱</span>
+              <span>Hochkant</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild links,<br/>Card rechts</span>
+            </button>
+          </div>
+          {!currentLayout && (
+            <div style={{
+              marginTop: 6, padding: '6px 10px', borderRadius: 8,
+              background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)',
+              fontSize: 11, fontWeight: 700, color: '#FCD34D',
+            }}>
+              ⚠️ Layout nicht gewählt — Beamer rät automatisch nach Bild-Dimension.
+            </div>
+          )}
+        </div>
+        <div>
+          <label style={labelStyle}>Antwort (DE)</label>
+          <input value={q.answer} onChange={e => onChange({ ...q, answer: e.target.value })} style={{ ...inputStyle, borderColor: 'rgba(139,92,246,0.4)' }} placeholder="z.B. Jungfernstieg" />
+        </div>
+        <div>
+          <label style={labelStyle}>Answer (EN) <span style={{ color: '#334155' }}>opt.</span></label>
+          <input value={q.answerEn ?? ''} onChange={e => onChange({ ...q, answerEn: e.target.value })} style={inputStyle} placeholder="e.g. Jungfernstieg" />
+        </div>
       </div>
-      <div>
-        <label style={labelStyle}>Antwort (DE)</label>
-        <input value={q.answer} onChange={e => onChange({ ...q, answer: e.target.value })} style={{ ...inputStyle, borderColor: 'rgba(139,92,246,0.4)' }} placeholder="z.B. Jungfernstieg" />
-      </div>
-      <div>
-        <label style={labelStyle}>Answer (EN) <span style={{ color: '#334155' }}>opt.</span></label>
-        <input value={q.answerEn ?? ''} onChange={e => onChange({ ...q, answerEn: e.target.value })} style={inputStyle} placeholder="e.g. Jungfernstieg" />
-      </div>
-    </div>
-  );
+    );
+  }
 
   // BUNTE_TUETE ────────────────────────────────────────────────────────────────
   if (q.category === 'BUNTE_TUETE') {

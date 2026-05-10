@@ -136,14 +136,14 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [x] **L1 — Welcome doppelt** ✅ FIX (QQBeamerPage.tsx): QuizIntroOverlay-Render-Call vor RulesIntro entfernt + welcomeActive-Variable. Component bleibt im File falls später wieder gewünscht.
 - [x] **L2 — „Saxofon" Spelling-Tolerance** ✅ FIX (`shared/textNormalization.ts`): `ph→f` phonetische Normalisierung. Saxofon/Saxophone, Telefon/Telephone, Foto/Photo etc. matchen jetzt exakt nach Normalisierung.
 - [x] **L3 — „stadium" akzeptiert für Wembley Stadium** ✅ FIX (`shared/textNormalization.ts`): Substring-Tolerance jetzt mit Min-Ratio 0.5. „stadium" (7) in „wembley stadium" (15) = 0.47 → blockt. „herr der ringe" (14) in „der herr der ringe" (18) = 0.78 → matched weiter.
-- [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.
+- [ ] **L4 — Endzusammenfassung der Punkte** ❓ Wolf-Quote unklar. Bei nächster Gelegenheit präzisieren lassen: meinst du den Final-Score-Display, den Gewinner-Showcase, oder ein Recap?
 - [x] **L5 — pic1 HotPotato Antworten überlappen mit Trivia-Trio** ✅ FIX (`QQBeamerPage.tsx` HotPotatoBeamerView): Chips-Container von `justifyContent: center` auf `flex-start` umgestellt + paddingTop/Bottom. Chips wachsen jetzt nach unten begrenzt durch overflow:hidden statt in beide Richtungen vom Center aus zu expandieren.
-- [ ] **L6 — pic2 Joker-Bug: 4 Joker markiert obwohl 2 der Felder gerade gesetzt wurden**. Joker-Detection darf neu-gesetzte-im-selben-Zug-Felder nicht als „bestehender Block" werten.
+- [ ] **L6 — pic2 Joker-Bug 4 markiert obwohl 2 frische Cells** 🔍 BRAUCHT REPRO: Backend-Logik `detectNewJokers` in `qqBfs.ts:122` nutzt `cells.some(p => isNeverCounted(p.r, p.c))` als „neu"-Kriterium. Wenn der Bug-Repro nicht eindeutig ist, könnte ein Fix legitime Joker brechen. Wolf sollte DevTools-State-Snapshot (`grid[r][c].jokerCounted` für die 4 Cells) beim nächsten Auftreten posten.
 - [x] **L7 — pic3 Comeback rechte „NEW"-Card kleiner als linke** ✅ FIX (`QQBeamerPage.tsx` ActionCardReveal): Outer-Wrapper bekommt explizit `height: 360` matching non-isNew Card, `alignSelf: stretch` raus (zog Outer auf parent-row-Höhe, Inner blieb 360 → wirkte kleiner).
 - [x] **L8 — pic4 Mu-Cho untere Winner-Card abgeschnitten** ✅ FIX (`QQBeamerPage.tsx` Single-Winner-Banner): Banner ~15-20% kompakter — Avatar 8vw→7vw, font 5vw→4.2vw, padding/gap/margin reduziert. Damit Mu-Cho-Reveal mit 4 Optionen den viewport-Bottom (overflow:hidden) nicht mehr verlässt.
 - [x] **L9 — pic5 10v10 unten viel Platz** ✅ FIX (`QQBeamerPage.tsx` ZvZ-Grid): `minHeight: clamp(280px,38vh,460px)` + `alignContent: center` + marginTop dazu. Cards nutzen jetzt den Platz vertikal-mittig statt top-aligned.
-- [ ] **L10 — pic6 „Grösstes Gebiet"-Final-Page**: anderes Grid-Layout als im Quiz. Soll dasselbe Layout nutzen wie Placement-Phase (Grid + Tabelle daneben), nur der Sieger erhellt.
-- [ ] **L11 — Autoplay-Audit**: skippt Events, funktioniert manchmal gar nicht. Audit der Autoplay-State-Machine + Event-Trigger.
+- [ ] **L10 — pic6 „Grösstes Gebiet" Layout-Swap auf Placement-Style** 🔨 GRÖSSER: Backbreaker — der Final-Result-Renderer ist eine eigene Component (vermutlich in FinalRevealView oder verwandt). Umbau auf Placement-Phase-Layout (Grid + Sidebar-Tabelle) braucht 30-60 min sauberen Refactor. Nächste Session als isolierter Commit.
+- [ ] **L11 — Autoplay-Audit** 🔍 RECHERCHE: skippt Events, funktioniert manchmal nicht. Eigener Audit-Pass nötig — sieht keinen schnellen single-line-Fix. Nächste Session.
 
 ## Offen — Stand 2026-05-10 (nach Marathon-Tag)
 

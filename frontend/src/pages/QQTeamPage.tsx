@@ -5587,10 +5587,12 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
   const fmtHL = (n: number) => {
     if (isYearUnitHL) return String(Math.round(n));
     const abs = Math.abs(n);
-    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
-    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';
+    // 2026-05-10 (Wolf 'EN-Mode zeigt DE-Suffix'): Mrd./Mio. nur bei DE.
+    const isEn = lang === 'en';
+    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + (isEn ? ' bn' : ' Mrd.');
+    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + (isEn ? ' M' : ' Mio.');
     if (abs >= 10_000) return Math.round(n / 1000) + 'k';
-    if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+    if (abs >= 1000) return n.toLocaleString(isEn ? 'en-US' : 'de-DE');
     return n % 1 === 0 ? String(n) : n.toFixed(1);
   };
 
@@ -5617,16 +5619,26 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
           ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} — {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
         </div>
 
-        {/* Frage-Text — Format-B custom, Format-A auto-generiert */}
+        {/* Frage-Text — Format-B custom, Format-A auto-generiert.
+            2026-05-10 (Wolf-Bug 'EN-Spiel zeigt DE-Frage'): Fallback auf
+            *En-Felder wenn lang='en'. */}
+        {(() => null)()}
         <div style={{
           fontSize: 14, fontWeight: 700, color: '#cbd5e1', textAlign: 'center',
           marginBottom: 12, lineHeight: 1.4,
         }}>
-          {pair.customQuestion
-            ? pair.customQuestion
-            : (lang === 'en'
-                ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
-                : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`)}
+          {(() => {
+            const isEn = lang === 'en';
+            const pAnchor = isEn ? (pair.anchorLabelEn ?? pair.anchorLabel) : pair.anchorLabel;
+            const pSubject = isEn ? (pair.subjectLabelEn ?? pair.subjectLabel) : pair.subjectLabel;
+            const pUnit = isEn ? (pair.unitEn ?? pair.unit) : pair.unit;
+            const pCustom = isEn ? (pair.customQuestionEn ?? pair.customQuestion) : pair.customQuestion;
+            return pCustom
+              ? pCustom
+              : (isEn
+                  ? `Does ${pSubject} have more or less ${pUnit} than ${pAnchor}?`
+                  : `Hat ${pSubject} mehr oder weniger ${pUnit} als ${pAnchor}?`);
+          })()}
         </div>
 
         {/* Anchor-Info */}
@@ -5636,13 +5648,13 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
           textAlign: 'center', marginBottom: 10,
         }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: '#86efac', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
-            {pair.anchorLabel}
+            {lang === 'en' ? (pair.anchorLabelEn ?? pair.anchorLabel) : pair.anchorLabel}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#86efac', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
             {fmtHL(pair.anchorValue)}
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', opacity: 0.7, marginTop: 2 }}>
-            {pair.unit}
+            {lang === 'en' ? (pair.unitEn ?? pair.unit) : pair.unit}
           </div>
         </div>
 
@@ -5654,7 +5666,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
           textAlign: 'center', marginBottom: 14,
         }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: '#FBCFE8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
-            {pair.subjectLabel}
+            {lang === 'en' ? (pair.subjectLabelEn ?? pair.subjectLabel) : pair.subjectLabel}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#EC4899', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
             {isReveal ? fmtHL(pair.subjectValue) : '???'}

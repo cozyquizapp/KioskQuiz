@@ -14416,10 +14416,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const fmtHL = (n: number) => {
     if (isYearUnitHL) return String(Math.round(n));
     const abs = Math.abs(n);
-    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' Mrd.';
-    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' Mio.';
+    // 2026-05-10 (Wolf 'EN-Mode zeigt DE-Suffix'): Mrd./Mio. nur bei DE,
+    // bn/M bei EN. Plus thousands-Separator schon lang-bedingt.
+    const isEn = lang === 'en';
+    if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + (isEn ? ' bn' : ' Mrd.');
+    if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + (isEn ? ' M' : ' Mio.');
     if (abs >= 10_000) return Math.round(n / 1000) + 'k';
-    if (abs >= 1000) return n.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE');
+    if (abs >= 1000) return n.toLocaleString(isEn ? 'en-US' : 'de-DE');
     return n % 1 === 0 ? String(n) : n.toFixed(1);
   };
 
@@ -14437,11 +14440,19 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     // Frage-Text: bei Format-B customQuestion direkt, bei Format-A auto-generieren
     // („Hat München mehr oder weniger Einwohner als Berlin?"). Macht den Quiz-Show-
     // Moment deutlich starker als nur zwei Cards mit Zahlen.
-    const questionText = pair.customQuestion
-      ? pair.customQuestion
-      : (lang === 'en'
-          ? `Does ${pair.subjectLabel} have more or less ${pair.unit} than ${pair.anchorLabel}?`
-          : `Hat ${pair.subjectLabel} mehr oder weniger ${pair.unit} als ${pair.anchorLabel}?`);
+    // 2026-05-10 (Wolf-Bug 'EN-Spiel zeigt DE-Frage'): Fallback auf *En-Felder
+    // wenn lang='en'. Falls *En fehlt → DE-Wert (Backward-Compat zu alten
+    // Einträgen ohne EN-Übersetzung).
+    const isEn = lang === 'en';
+    const pAnchor = isEn ? (pair.anchorLabelEn ?? pair.anchorLabel) : pair.anchorLabel;
+    const pSubject = isEn ? (pair.subjectLabelEn ?? pair.subjectLabel) : pair.subjectLabel;
+    const pUnit = isEn ? (pair.unitEn ?? pair.unit) : pair.unit;
+    const pCustom = isEn ? (pair.customQuestionEn ?? pair.customQuestion) : pair.customQuestion;
+    const questionText = pCustom
+      ? pCustom
+      : (isEn
+          ? `Does ${pSubject} have more or less ${pUnit} than ${pAnchor}?`
+          : `Hat ${pSubject} mehr oder weniger ${pUnit} als ${pAnchor}?`);
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -14533,7 +14544,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
               color: '#86efac', letterSpacing: '0.1em', textTransform: 'uppercase',
               opacity: 0.8,
-            }}>{pair.anchorLabel}</div>
+            }}>{pAnchor}</div>
             <div style={{
               fontSize: 'clamp(44px, 6vw, 92px)', fontWeight: 900, color: '#86efac',
               fontVariantNumeric: 'tabular-nums', lineHeight: 1,
@@ -14541,7 +14552,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>{fmtHL(pair.anchorValue)}</div>
             <div style={{
               fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,
-            }}>{pair.unit}</div>
+            }}>{pUnit}</div>
           </div>
 
           {/* VS-Badge — der Hero zwischen den beiden Cards. Question: grosse
@@ -14658,7 +14669,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               fontSize: 'clamp(14px, 1.6vw, 22px)', fontWeight: 900,
               color: '#FBCFE8', letterSpacing: '0.1em', textTransform: 'uppercase',
               opacity: 0.9,
-            }}>{pair.subjectLabel}</div>
+            }}>{pSubject}</div>
             <div style={{
               lineHeight: 1, height: 'clamp(44px, 6vw, 92px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -14715,7 +14726,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </div>
             <div style={{
               fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700, color: '#cbd5e1', opacity: 0.7,
-            }}>{pair.unit}</div>
+            }}>{pUnit}</div>
           </div>
         </div>
 

@@ -309,6 +309,14 @@ export interface QQHLPair {
   /** Freie Text-Überschreibung (nur für anchor-kind): komplette Frage-Formulierung.
    *  Ohne wird automatisch generiert aus den Labels + Unit. */
   customQuestion?: string;
+
+  // 2026-05-10 (Wolf-Bug 'Comeback Frage DE in EN-Spiel'): EN-Parallel-Felder.
+  // Frontend fällt auf DE zurück wenn EN fehlt (Backward-Compat zu alten
+  // Einträgen ohne *En).
+  unitEn?: string;
+  anchorLabelEn?: string;
+  subjectLabelEn?: string;
+  customQuestionEn?: string;
 }
 
 /** Moderator-wählbare Zeit pro H/L-Runde. */

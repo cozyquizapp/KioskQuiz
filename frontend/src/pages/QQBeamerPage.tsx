@@ -16418,63 +16418,146 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
 }
 
 // ─── GridRevealSlide ────────────────────────────────────────────────────────
+// L10 (2026-05-10, Wolf): Final-Lock-View „Größtes Gebiet" als Placement-
+// Page-Großformat statt Mini-Grid. Größte zusammenhängende Region pro Team
+// wird via Frontend-BFS (4-connectivity, matched backend qqBfs.ts) ermittelt
+// und gehighlightet; kleinere Inseln + Empty-Cells gedimmt.
 function GridRevealSlide({ state: s, cellsByTeam, lang }: {
   state: QQStateUpdate;
   cellsByTeam: Record<string, number>;
   lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
-  const topTeam = [...s.teams].sort((a, b) =>
-    (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
-  )[0];
-  const cellSize = Math.min(64, Math.floor(560 / Math.max(1, s.gridSize)));
+
+  // Per-Team Largest-Region-Cells. Matched backend (qqBfs.ts computeTerritories):
+  // 4-Nachbarschaft, stuck-cells zählen 2 Punkte. Wir behalten die Cells der
+  // höchstwertigen Komponente pro Team → die kommen visuell „nach vorne".
+  const largestRegionCells = useMemo(() => {
+    const N = s.gridSize;
+    const visited: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
+    const bestCellsByTeam: Record<string, Set<string>> = {};
+    const bestScoreByTeam: Record<string, number> = {};
+    const bfs = (sr: number, sc: number, teamId: string): { cells: Set<string>; score: number } => {
+      const cells = new Set<string>();
+      const queue: [number, number][] = [[sr, sc]];
+      visited[sr][sc] = true;
+      let score = 0;
+      while (queue.length > 0) {
+        const [r, c] = queue.shift()!;
+        cells.add(`${r}-${c}`);
+        score += s.grid[r][c].stuck ? 2 : 1;
+        const n: [number, number][] = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+        for (const [nr, nc] of n) {
+          if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+          if (visited[nr][nc]) continue;
+          if (s.grid[nr][nc].ownerId !== teamId) continue;
+          visited[nr][nc] = true;
+          queue.push([nr, nc]);
+        }
+      }
+      return { cells, score };
+    };
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        if (visited[r][c]) continue;
+        const cell = s.grid[r][c];
+        if (cell.ownerId === null) { visited[r][c] = true; continue; }
+        const teamId = cell.ownerId;
+        const { cells, score } = bfs(r, c, teamId);
+        const prev = bestScoreByTeam[teamId] ?? -1;
+        if (score > prev) {
+          bestScoreByTeam[teamId] = score;
+          bestCellsByTeam[teamId] = cells;
+        }
+      }
+    }
+    return bestCellsByTeam;
+  }, [s.grid, s.gridSize]);
+
+  // PlacementView-Sizing übernehmen — großes Grid links, Ranking rechts.
+  // Etwas konservativer als PlacementView (Beamer-Rand für die Sidebar offen
+  // halten); Sidebar nimmt mehr Breite als die alte (war 320-420, jetzt ~520).
+  const gridMaxSize = typeof window !== 'undefined'
+    ? Math.min(900, window.innerHeight * 0.78, window.innerWidth * 0.50)
+    : 720;
   const gap = 6;
+  const cellSize = Math.floor((gridMaxSize - (s.gridSize - 1) * gap) / s.gridSize);
+  const cellRadius = Math.max(4, cellSize * 0.16);
+
+  // Sort: largestConnected primary, totalCells als Tiebreaker (matched
+  // GameOverView/Recap-Slide-Logik in QQBeamerPage:18024+).
+  const ranking = [...s.teams].sort((a, b) => {
+    const la = a.largestConnected ?? 0;
+    const lb = b.largestConnected ?? 0;
+    if (lb !== la) return lb - la;
+    return (cellsByTeam[b.id] ?? 0) - (cellsByTeam[a.id] ?? 0);
+  });
+  const leaderId = ranking[0]?.id;
 
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: 'clamp(24px, 3vw, 48px)', width: '100%', maxWidth: 1500,
+      gap: 'clamp(20px, 2vw, 36px)', width: '100%',
     }}>
+      {/* LEFT: Big grid mit Largest-Region-Highlight */}
       <div style={{
         position: 'relative',
         animation: 'qqFRTitleIn 0.7s ease both',
+        flexShrink: 0,
       }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
           gridTemplateRows: `repeat(${s.gridSize}, ${cellSize}px)`,
-          gap: gap, position: 'relative',
+          gap, padding: 12, borderRadius: 18,
+          background: 'rgba(255,255,255,0.03)',
+          border: '3px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 0 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}>
           {s.grid.map((row, r) => row.map((cell, c) => {
+            const key = `${r}-${c}`;
             if (!cell.ownerId) {
               return (
-                <div key={`${r}-${c}`} style={{
-                  width: cellSize, height: cellSize,
-                  borderRadius: cellSize * 0.18,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                <div key={key} style={{
+                  width: cellSize, height: cellSize, borderRadius: cellRadius,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  opacity: 0.45,
                 }} />
               );
             }
             const owner = s.teams.find(t => t.id === cell.ownerId);
             if (!owner) return null;
-            const isTop = topTeam?.id === owner.id;
+            const inRegion = !!largestRegionCells[owner.id]?.has(key);
+            const isLeaderRegion = inRegion && owner.id === leaderId;
+            const color = owner.color;
+            // In-Region: voll deckend + Glow. Off-Region: stark gedimmt,
+            // gray-saturate, kein Glow — Spieler sieht „die kleinen Inseln
+            // zählen nicht für's größte Gebiet".
+            const bgA = inRegion ? 'ff' : '55';
+            const bgB = inRegion ? 'cc' : '33';
+            const borderAlpha = inRegion ? 'ff' : '33';
+            const borderWidth = inRegion ? 2 : 1;
             return (
-              <div key={`${r}-${c}`} style={{
-                width: cellSize, height: cellSize,
-                borderRadius: cellSize * 0.18,
-                background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
-                border: `2px solid ${owner.color}`,
-                ['--c-color' as any]: `${owner.color}aa`,
-                animation: isTop ? 'qqFRClusterPulse 2.4s ease-in-out infinite' : undefined,
-                opacity: isTop ? 1 : 0.55,
-                filter: isTop ? 'none' : 'saturate(0.7)',
+              <div key={key} style={{
+                width: cellSize, height: cellSize, borderRadius: cellRadius,
+                background: `linear-gradient(135deg, ${color}${bgA}, ${color}${bgB})`,
+                border: `${borderWidth}px solid ${color}${borderAlpha}`,
+                ['--c-color' as any]: `${color}aa`,
+                animation: isLeaderRegion
+                  ? 'qqFRClusterPulse 2.4s ease-in-out infinite'
+                  : (inRegion ? 'qqFRTitleIn 0.5s ease both' : undefined),
+                boxShadow: inRegion
+                  ? (isLeaderRegion
+                      ? `0 0 24px ${color}cc, inset 0 0 14px ${color}55`
+                      : `0 0 12px ${color}88, inset 0 1px 0 rgba(255,255,255,0.18)`)
+                  : 'inset 0 0 8px rgba(0,0,0,0.5)',
+                opacity: inRegion ? 1 : 0.35,
+                filter: inRegion ? 'none' : 'grayscale(0.55) saturate(0.65)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'opacity 0.4s ease, filter 0.4s ease',
               }}>
                 {owner.emoji && (
-                  // 2026-05-10 (Wolf 'Eurovision Flaggen inkonsistent'):
-                  // CountryFlagOrEmoji statt raw <span> für Twemoji-Image-
-                  // Fallback bei Country-Flag-Codepoints.
                   <CountryFlagOrEmoji
                     emoji={owner.emoji}
                     fontSize={cellSize * 0.5}
@@ -16484,44 +16567,50 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               </div>
             );
           }))}
-          {/* 2026-05-10 (Wolf 'Umrandung um Top-Cluster ist falsch'):
-              Bounding-Box + Sparkles entfernt — die Cluster-Erkennung war
-              irreführend (markierte oft mehr als den tatsächlichen
-              connected-Cluster). Cluster-Pulse via qqFRClusterPulse auf
-              den einzelnen Zellen reicht als Hervorhebung. */}
         </div>
       </div>
+
+      {/* RIGHT: Ranking-Sidebar — gleiche Sort-Order wie GameOverView. */}
       <div style={{
         display: 'flex', flexDirection: 'column', gap: 10,
-        minWidth: 320, maxWidth: 420,
+        width: 'clamp(380px, 32vw, 540px)', flexShrink: 0,
         animation: 'qqFRTitleIn 0.7s ease 0.3s both',
       }}>
         <div style={{
-          fontSize: 'clamp(13px, 1.3vw, 20px)', fontWeight: 900,
+          fontSize: 'clamp(14px, 1.35vw, 22px)', fontWeight: 900,
           color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.16em',
-          marginBottom: 6,
+          marginBottom: 2,
         }}>{de ? '🏆 Größtes Gebiet' : '🏆 Largest area'}</div>
-        {[...s.teams].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0)).map((t, i) => (
-          <div key={t.id} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '10px 14px', borderRadius: 14,
-            background: i === 0 ? `${t.color}22` : 'rgba(255,255,255,0.04)',
-            border: i === 0 ? `2px solid ${t.color}` : '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={36} />
-            <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 17 }}>{t.name}</span>
-            <span style={{
-              fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
-              color: i === 0 ? '#FBBF24' : '#CBD5E1',
-            }}>{t.largestConnected ?? 0}</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>· {cellsByTeam[t.id] ?? 0} {de ? 'ges.' : 'total'}</span>
-          </div>
-        ))}
+        {ranking.map((t, i) => {
+          const isLeader = i === 0;
+          return (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '12px 16px', borderRadius: 16,
+              background: isLeader ? `${t.color}22` : 'rgba(255,255,255,0.04)',
+              border: isLeader ? `2px solid ${t.color}` : '1px solid rgba(255,255,255,0.08)',
+              boxShadow: isLeader ? `0 0 24px ${t.color}55` : 'none',
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={isLeader ? 48 : 40} />
+              <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: isLeader ? 21 : 18 }}>{t.name}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
+                <span style={{
+                  fontSize: 'clamp(22px, 2.4vw, 34px)', fontWeight: 900,
+                  color: isLeader ? '#FBBF24' : '#E2E8F0',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>{t.largestConnected ?? 0}</span>
+                <span style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                  · {cellsByTeam[t.id] ?? 0} {de ? 'ges.' : 'total'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
         <div style={{
-          marginTop: 12, padding: '8px 12px', borderRadius: 10,
+          marginTop: 10, padding: '10px 14px', borderRadius: 12,
           background: 'rgba(236,72,153,0.10)',
           border: '1px solid rgba(236,72,153,0.30)',
-          fontSize: 11, fontWeight: 700, color: '#F472B6',
+          fontSize: 12, fontWeight: 700, color: '#F472B6',
           textAlign: 'center', letterSpacing: '0.04em',
         }}>
           {de ? '📌 Brett-Stand fixiert — jetzt kommen die Boni' : '📌 Board locked — now the bonuses'}

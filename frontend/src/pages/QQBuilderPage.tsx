@@ -236,6 +236,19 @@ export default function QQBuilderPage() {
   const [saveCascade, setSaveCascade] = useState<number>(0);
   // 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill (Zeitstempel sichtbar).
   const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
+  // 2026-05-10 CozyBuilder Pack C #30: Wizard-Modus (Slide-by-Slide statt
+  // Grid). localStorage-persistiert, damit Wolf seinen bevorzugten Modus
+  // zwischen Sessions hält. Toggle via Grid|Wizard-Button im Header.
+  const [wizardMode, setWizardMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('qq-builder-wizard') === '1'; } catch { return false; }
+  });
+  const toggleWizardMode = () => {
+    setWizardMode(v => {
+      const next = !v;
+      try { localStorage.setItem('qq-builder-wizard', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const optionFileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -597,6 +610,15 @@ export default function QQBuilderPage() {
   }
   const activeQ = activeDraft && activeQId ? activeDraft.questions.find(q => q.id === activeQId) ?? null : null;
 
+  // 2026-05-10 CozyBuilder #30: Wenn Wizard-Modus aktiv und keine Frage
+  // ausgewählt, springe automatisch auf Frage 1. Sonst sieht der Wizard
+  // leer aus (nichts editierbar).
+  useEffect(() => {
+    if (wizardMode && activeDraft && !activeQId && activeDraft.questions.length > 0) {
+      setActiveQId(activeDraft.questions[0].id);
+    }
+  }, [wizardMode, activeDraft?.id, activeQId, activeDraft]);
+
   if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onDelete={deleteDraft} />;
 
   return (
@@ -904,6 +926,33 @@ export default function QQBuilderPage() {
             })}
           </div>
         </div>
+        {/* 2026-05-10 CozyBuilder #30: Grid ↔ Wizard Mode-Toggle.
+            Grid = Übersicht für Browse/Reorder, Wizard = Slide-by-Slide
+            zum konzentrierten Schreiben. Wolf-Preferenz in localStorage. */}
+        <div style={{ display: 'flex', gap: 0, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 3, border: `1px solid ${COZY_PINK}22` }}>
+          <button
+            onClick={() => wizardMode && toggleWizardMode()}
+            style={{
+              padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 800, fontSize: 12, transition: 'all 0.15s',
+              background: !wizardMode ? COZY_PINK : 'transparent',
+              color: !wizardMode ? '#fff' : '#94A3B8',
+              boxShadow: !wizardMode ? `0 0 12px ${COZY_PINK}66` : 'none',
+            }}
+            title="Grid-Übersicht — alle Fragen auf einen Blick"
+          >📋 Grid</button>
+          <button
+            onClick={() => !wizardMode && toggleWizardMode()}
+            style={{
+              padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 800, fontSize: 12, transition: 'all 0.15s',
+              background: wizardMode ? COZY_PINK : 'transparent',
+              color: wizardMode ? '#fff' : '#94A3B8',
+              boxShadow: wizardMode ? `0 0 12px ${COZY_PINK}66` : 'none',
+            }}
+            title="Wizard — Slide-by-Slide, konzentriert eine Frage nach der anderen"
+          >🪄 Wizard</button>
+        </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill. Reduziert
               Save-Angst — Wolf sieht live dass localStorage-Backup safe ist. */}
@@ -953,7 +1002,24 @@ export default function QQBuilderPage() {
         </div>
       </div>
 
-      {/* Body */}
+      {/* Body — 2026-05-10 CozyBuilder #30: Wizard-Mode-Switch.
+          Wizard = WizardView (Slide-by-Slide), Default = Grid+Editor-Split. */}
+      {wizardMode ? (
+        <WizardView
+          activeDraft={activeDraft}
+          activeQId={activeQId}
+          setActiveQId={setActiveQId}
+          uploadingFor={uploadingFor}
+          removingBgFor={removingBgFor}
+          fileInputRef={fileInputRef}
+          onUpload={() => activeQ && uploadImage(activeQ.id)}
+          onRemoveBg={() => activeQ && removeBg(activeQ)}
+          onChange={(updated: QQQuestion) => setActiveDraft(updateQuestion(activeDraft, updated))}
+          onDelete={() => activeQ && (setActiveDraft(deleteQuestion(activeDraft, activeQ.id)), setActiveQId(null))}
+          onOptionImageUpload={(optIdx: number) => activeQ && (setOptionUploadTarget({ questionId: activeQ.id, optionIndex: optIdx }), setTimeout(() => optionFileInputRef.current?.click(), 0))}
+          onFileDrop={(file: File) => activeQ && uploadImageFile(activeQ.id, file)}
+        />
+      ) : (
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }} className="qq-builder-body">
         {/* Grid */}
         <div style={{ flex: 1, overflow: 'auto', padding: 24 }} className="qq-builder-grid">
@@ -1118,6 +1184,7 @@ export default function QQBuilderPage() {
         )}
         {!activeQ && <EmptyStateWolf />}
       </div>
+      )}
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={() => activeQ && uploadImage(activeQ.id)} />
       <input ref={optionFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadOptionImage} />
@@ -2272,6 +2339,302 @@ function AutoSavePill({ timestamp }: { timestamp: number | null }) {
     >
       <span style={{ fontSize: 10 }}>💾</span>
       <span>{label}</span>
+    </div>
+  );
+}
+
+// ── WizardView — Slide-by-Slide-Schreib-Modus ─────────────────────────────────
+// 2026-05-10 CozyBuilder #30 (Audit Big-Bet): Wolf-Wunsch „der builder führt
+// mich durch's quiz, eine Frage nach der anderen". Toggle im Header — Grid
+// bleibt für Übersicht, Wizard für konzentriertes Schreiben.
+//
+// Layout:
+//   - Top: Phase-Header + Counter „Frage 3/20" + Validation-Inline
+//   - Center: QuestionEditor zentral & breit (max 820px statt 480px Sidebar)
+//   - Bottom: Mini-Filmstrip (alle Fragen) + Big-Prev/Next-Buttons
+//   - Pfeiltasten ← → navigieren (Hotkey-Wiring in QQBuilderPage)
+function WizardView({
+  activeDraft, activeQId, setActiveQId,
+  uploadingFor, removingBgFor, fileInputRef,
+  onUpload, onRemoveBg, onChange, onDelete, onOptionImageUpload, onFileDrop,
+}: {
+  activeDraft: QQDraft;
+  activeQId: string | null;
+  setActiveQId: (id: string | null) => void;
+  uploadingFor: string | null;
+  removingBgFor: string | null;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onUpload: () => void;
+  onRemoveBg: () => void;
+  onChange: (q: QQQuestion) => void;
+  onDelete: () => void;
+  onOptionImageUpload: (optIdx: number) => void;
+  onFileDrop: (file: File) => void;
+}) {
+  const qs = activeDraft.questions;
+  const curIdx = activeQId ? qs.findIndex(q => q.id === activeQId) : 0;
+  const safeIdx = curIdx < 0 ? 0 : curIdx;
+  const curQ = qs[safeIdx];
+
+  // Pfeil-Tasten — eigenes useEffect (zusätzlich zum globalen Cmd+J/K).
+  // Hier ohne Cmd, weil im Wizard die Pfeile primärer Nav-Mode sind.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const next = safeIdx > 0 ? safeIdx - 1 : qs.length - 1;
+        if (qs[next]) setActiveQId(qs[next].id);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const next = (safeIdx + 1) % qs.length;
+        if (qs[next]) setActiveQId(qs[next].id);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [safeIdx, qs, setActiveQId]);
+
+  if (!curQ) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8' }}>
+        Keine Fragen in diesem Draft.
+      </div>
+    );
+  }
+
+  const catLabel = QQ_CATEGORY_LABELS[curQ.category];
+  const catColor = QQ_CATEGORY_COLORS[curQ.category];
+  const phaseCount = activeDraft.phases;
+  const isFirst = safeIdx === 0;
+  const isLast = safeIdx === qs.length - 1;
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      background: COZY_NAVY, overflow: 'hidden',
+      animation: 'cozyWizardFadeIn 0.35s ease both',
+    }}>
+      <style>{`
+        @keyframes cozyWizardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cozyWizardSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+      `}</style>
+
+      {/* Phase-Header + Counter */}
+      <div style={{
+        padding: '16px 32px',
+        display: 'flex', alignItems: 'center', gap: 16,
+        borderBottom: `1px solid ${COZY_PINK}1a`,
+        background: `linear-gradient(180deg, ${catColor}10, transparent)`,
+      }}>
+        <div style={{
+          padding: '6px 16px', borderRadius: 999,
+          background: `${catColor}22`, border: `1.5px solid ${catColor}66`,
+          fontSize: 13, fontWeight: 900, color: catColor,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span>{catLabel.emoji}</span>
+          <span>Phase {curQ.phaseIndex} · {catLabel.de}</span>
+        </div>
+        <div style={{
+          fontSize: 14, fontWeight: 800, color: '#CBD5E1',
+          background: 'rgba(255,255,255,0.06)',
+          padding: '6px 14px', borderRadius: 999,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          Frage <span style={{ color: COZY_PINK, fontSize: 16 }}>{safeIdx + 1}</span> <span style={{ opacity: 0.55 }}>/ {qs.length}</span>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700 }}>
+          ← → Pfeile zum Wechseln · Cmd+Enter zum nächsten leeren Slot
+        </div>
+      </div>
+
+      {/* Phase-Progress-Strip (4 oder 3 Bänder mit aktueller Position) */}
+      <div style={{ padding: '8px 32px', display: 'flex', gap: 6 }}>
+        {Array.from({ length: phaseCount }, (_, pi) => {
+          const phaseQs = qs.filter(q => q.phaseIndex === pi + 1);
+          const filled = phaseQs.filter(q => q.text?.trim()).length;
+          const isActive = curQ.phaseIndex === pi + 1;
+          return (
+            <div key={pi} style={{
+              flex: 1,
+              height: 6, borderRadius: 4,
+              background: `${COZY_PINK}1a`,
+              position: 'relative', overflow: 'hidden',
+              border: isActive ? `1px solid ${COZY_PINK}88` : '1px solid transparent',
+            }}>
+              <div style={{
+                position: 'absolute', top: 0, left: 0, bottom: 0,
+                width: `${(filled / Math.max(1, phaseQs.length)) * 100}%`,
+                background: COZY_PINK,
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Editor (zentriert, breiter als Grid-Editor) */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'center',
+        gap: 12, padding: '16px 24px 12px', overflow: 'hidden',
+      }}>
+        {/* Prev-Button — riesig, linke Spalte */}
+        <button
+          onClick={() => !isFirst && setActiveQId(qs[safeIdx - 1].id)}
+          disabled={isFirst}
+          style={{
+            flexShrink: 0, width: 56,
+            background: isFirst ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
+            border: `1px solid ${isFirst ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
+            color: isFirst ? '#334155' : COZY_PINK,
+            borderRadius: 16, fontFamily: 'inherit', fontSize: 28, fontWeight: 900,
+            cursor: isFirst ? 'default' : 'pointer',
+            transition: 'all 0.15s',
+          }}
+          title="Vorherige Frage (←)"
+          aria-label="Vorherige Frage"
+        >‹</button>
+
+        {/* Editor-Card — wir reusen QuestionEditor, aber im Wizard mit
+            box-flex statt fixer 480-Sidebar-Width. */}
+        <div
+          key={curQ.id}
+          style={{
+            flex: 1, maxWidth: 820,
+            animation: 'cozyWizardSlideIn 0.3s ease both',
+            display: 'flex', flexDirection: 'column', minHeight: 0,
+          }}
+        >
+          <div style={{
+            flex: 1, overflow: 'auto',
+            background: COZY_NAVY_DARK,
+            borderRadius: 18,
+            border: `1px solid ${COZY_PINK}22`,
+            boxShadow: `0 0 0 1px ${COZY_PINK}0d, 0 16px 40px rgba(0,0,0,0.35)`,
+          }}>
+            <QuestionEditor
+              question={curQ}
+              uploadingFor={uploadingFor}
+              removingBgFor={removingBgFor}
+              fileInputRef={fileInputRef}
+              onUpload={onUpload}
+              onRemoveBg={onRemoveBg}
+              onChange={onChange}
+              onDelete={onDelete}
+              onOptionImageUpload={onOptionImageUpload}
+              onFileDrop={onFileDrop}
+            />
+          </div>
+        </div>
+
+        {/* Next-Button — rechte Spalte, gleich groß wie Prev */}
+        <button
+          onClick={() => !isLast && setActiveQId(qs[safeIdx + 1].id)}
+          disabled={isLast}
+          style={{
+            flexShrink: 0, width: 56,
+            background: isLast ? 'rgba(255,255,255,0.03)' : `${COZY_PINK}15`,
+            border: `1px solid ${isLast ? 'rgba(255,255,255,0.05)' : COZY_PINK + '44'}`,
+            color: isLast ? '#334155' : COZY_PINK,
+            borderRadius: 16, fontFamily: 'inherit', fontSize: 28, fontWeight: 900,
+            cursor: isLast ? 'default' : 'pointer',
+            transition: 'all 0.15s',
+          }}
+          title="Nächste Frage (→)"
+          aria-label="Nächste Frage"
+        >›</button>
+      </div>
+
+      {/* Mini-Filmstrip am Boden — alle Fragen, current highlighted, Phase-Trenner */}
+      <WizardFilmstrip
+        questions={qs}
+        activeQId={activeQId}
+        phaseCount={phaseCount}
+        onJump={(id) => setActiveQId(id)}
+      />
+    </div>
+  );
+}
+
+// ── WizardFilmstrip — kompakter Mini-Strip aller Fragen unten ─────────────────
+function WizardFilmstrip({ questions, activeQId, phaseCount, onJump }: {
+  questions: QQQuestion[];
+  activeQId: string | null;
+  phaseCount: number;
+  onJump: (id: string) => void;
+}) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  // Auto-Scroll: zentriert die aktive Card im sichtbaren Bereich.
+  useEffect(() => {
+    const active = stripRef.current?.querySelector('[data-active="1"]') as HTMLElement | null;
+    if (active && stripRef.current) {
+      const stripRect = stripRef.current.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      const offset = (activeRect.left + activeRect.width / 2) - (stripRect.left + stripRect.width / 2);
+      stripRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  }, [activeQId]);
+
+  return (
+    <div style={{
+      padding: '10px 24px 18px',
+      borderTop: `1px solid ${COZY_PINK}14`,
+      background: 'rgba(0,0,0,0.18)',
+    }}>
+      <div ref={stripRef} style={{
+        display: 'flex', gap: 6, overflowX: 'auto', scrollBehavior: 'smooth',
+        paddingBottom: 4,
+      }}>
+        {Array.from({ length: phaseCount }, (_, pi) => {
+          const phaseQs = questions.filter(q => q.phaseIndex === pi + 1);
+          return (
+            <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              {pi > 0 && (
+                <div style={{
+                  width: 1, height: 28, background: `${COZY_PINK}33`, margin: '0 6px',
+                  alignSelf: 'center',
+                }} />
+              )}
+              <div style={{
+                fontSize: 9, fontWeight: 900, color: '#475569',
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+                writingMode: 'horizontal-tb', padding: '0 4px',
+                alignSelf: 'center',
+              }}>P{pi + 1}</div>
+              {phaseQs.map(q => {
+                const isActive = q.id === activeQId;
+                const filled = !!q.text?.trim();
+                const catColor = QQ_CATEGORY_COLORS[q.category];
+                return (
+                  <button
+                    key={q.id}
+                    data-active={isActive ? '1' : '0'}
+                    onClick={() => onJump(q.id)}
+                    title={q.text || `${QQ_CATEGORY_LABELS[q.category].de} (leer)`}
+                    style={{
+                      width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                      border: isActive ? `2px solid ${COZY_PINK}` : `1px solid ${catColor}33`,
+                      background: filled ? `${catColor}33` : 'rgba(255,255,255,0.03)',
+                      color: filled ? catColor : '#475569',
+                      fontFamily: 'inherit', fontSize: 14, fontWeight: 900,
+                      cursor: 'pointer',
+                      boxShadow: isActive ? `0 0 14px ${COZY_PINK}66` : 'none',
+                      transition: 'all 0.15s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {QQ_CATEGORY_LABELS[q.category].emoji}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

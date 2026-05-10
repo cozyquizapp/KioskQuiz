@@ -138,12 +138,67 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [x] **L3 — „stadium" akzeptiert für Wembley Stadium** ✅ FIX (`shared/textNormalization.ts`): Substring-Tolerance jetzt mit Min-Ratio 0.5. „stadium" (7) in „wembley stadium" (15) = 0.47 → blockt. „herr der ringe" (14) in „der herr der ringe" (18) = 0.78 → matched weiter.
 - [ ] **L4 — Endzusammenfassung der Punkte** ❓ Wolf-Quote unklar. Bei nächster Gelegenheit präzisieren lassen: meinst du den Final-Score-Display, den Gewinner-Showcase, oder ein Recap?
 - [x] **L5 — pic1 HotPotato Antworten überlappen mit Trivia-Trio** ✅ FIX (`QQBeamerPage.tsx` HotPotatoBeamerView): Chips-Container von `justifyContent: center` auf `flex-start` umgestellt + paddingTop/Bottom. Chips wachsen jetzt nach unten begrenzt durch overflow:hidden statt in beide Richtungen vom Center aus zu expandieren.
-- [ ] **L6 — pic2 Joker-Bug 4 markiert obwohl 2 frische Cells** 🔍 BRAUCHT REPRO: Backend-Logik `detectNewJokers` in `qqBfs.ts:122` nutzt `cells.some(p => isNeverCounted(p.r, p.c))` als „neu"-Kriterium. Wenn der Bug-Repro nicht eindeutig ist, könnte ein Fix legitime Joker brechen. Wolf sollte DevTools-State-Snapshot (`grid[r][c].jokerCounted` für die 4 Cells) beim nächsten Auftreten posten.
+- [ ] **L6 — Joker-Bug Audit-Ergebnis (2026-05-10)** 🔍
+
+  **Top-Hypothese — Re-Detection nach Steal-Roundtrip**:
+  - `qqBfs.ts:122-172` `detectNewJokers` qualifiziert ein Pattern als NEU sobald **eine** Cell `!jokerCounted` ist (`cells.some(p => isNeverCounted)` Zeile 145).
+  - Bei Steal/Swap/SandLock wird `jokerCounted=false` auf der betroffenen Cell zurückgesetzt (`qqRooms.ts:2362, 2468, 2522, 2673`).
+  - **Szenario**: Team A formt 2x2 in Runde 2 (Joker++). Runde 5: Team B klaut 1 Cell. Runde 7: Team A klaut zurück → `jokerCounted=false` auf dieser Cell → **identisches 2x2 wird wieder als NEU erkannt** → 4 Sterne + Bonus erneut.
+  - Per-Phase-Cap rettet nur innerhalb derselben Runde, nicht über Phasen.
+
+  **Alt-Hypothese (wenn Hypothese 1 nicht passt)**:
+  Die 4 Sterne sind **ein einziges Pattern** (2x2 oder 4-Line) mit 4 Cells, alle korrekt markiert — Wolf hat es als „4 separate Joker" wahrgenommen. Spec sagt: 1 Pattern = 4 Sterne = 1 Bonus-Slot.
+
+  **Debug-Schritte für Wolf** (DevTools Network-Tab beim nächsten Auftritt, `server:stateUpdate` Payload):
+  - Für die 4 markierten Cells aus `state.grid[r][c]`: `ownerId` (alle gleich?), `jokerFormed`, `jokerCounted`, `stuck`
+  - Wenn 3/4 `jokerCounted=true` + 1/4 `false` → Hypothese 1 bestätigt
+  - `state.teamPhaseStats[teamId].jokersThisPhase` + `jokersEarned`
+  - `room.teamTotalSteals[teamId]` über mehrere Runden — Korreliert mit Joker-Wieder-Trigger?
+
+  **Mögliche Lösungs-Richtung** (NICHT umgesetzt — Trade-off-Entscheidung):
+  - `cells.some(...)` → `cells.every(p => isNeverCounted(p.r, p.c))` blockt Re-Detection vollständig, könnte aber legitime Pattern-mit-Kanten-Overlap blockieren.
+
+  **Files**: `qqBfs.ts:122-187`, `qqRooms.ts:2231/2357/2468/2522/2673/3466 (handleJokerDetection)/3585/3247`, `shared/quarterQuizTypes.ts:106-107` (QQCell-Field-Semantik).
 - [x] **L7 — pic3 Comeback rechte „NEW"-Card kleiner als linke** ✅ FIX (`QQBeamerPage.tsx` ActionCardReveal): Outer-Wrapper bekommt explizit `height: 360` matching non-isNew Card, `alignSelf: stretch` raus (zog Outer auf parent-row-Höhe, Inner blieb 360 → wirkte kleiner).
 - [x] **L8 — pic4 Mu-Cho untere Winner-Card abgeschnitten** ✅ FIX (`QQBeamerPage.tsx` Single-Winner-Banner): Banner ~15-20% kompakter — Avatar 8vw→7vw, font 5vw→4.2vw, padding/gap/margin reduziert. Damit Mu-Cho-Reveal mit 4 Optionen den viewport-Bottom (overflow:hidden) nicht mehr verlässt.
 - [x] **L9 — pic5 10v10 unten viel Platz** ✅ FIX (`QQBeamerPage.tsx` ZvZ-Grid): `minHeight: clamp(280px,38vh,460px)` + `alignContent: center` + marginTop dazu. Cards nutzen jetzt den Platz vertikal-mittig statt top-aligned.
-- [ ] **L10 — pic6 „Grösstes Gebiet" Layout-Swap auf Placement-Style** 🔨 GRÖSSER: Backbreaker — der Final-Result-Renderer ist eine eigene Component (vermutlich in FinalRevealView oder verwandt). Umbau auf Placement-Phase-Layout (Grid + Sidebar-Tabelle) braucht 30-60 min sauberen Refactor. Nächste Session als isolierter Commit.
-- [ ] **L11 — Autoplay-Audit** 🔍 RECHERCHE: skippt Events, funktioniert manchmal nicht. Eigener Audit-Pass nötig — sieht keinen schnellen single-line-Fix. Nächste Session.
+- [ ] **L10 — pic6 „Grösstes Gebiet" final-Lock-View** 🔨 STRATEGIE (Wolf-Vorschlag 2026-05-10):
+
+  Den Final-Lock-Renderer (= „bevor gelockt wird, gesamtes Grid wird gezählt") **als Kopie der normalen Placement-Page-Layout** aufbauen statt eigener Komponente. Nur die Cells die zum größten Gebiet jedes Teams gehören erhellen (visuelle Glow/Border), Rest gedimmt.
+
+  **Was zu kopieren ist**: `PlacementView` in `QQBeamerPage.tsx:14046+` mit Grid + Sidebar-Tabelle.
+
+  **Was anzupassen ist**:
+  - In Final-Lock-Phase: für jedes Team via BFS die größte verbundene Region berechnen (Helper existiert vermutlich schon in `qqBfs.ts`)
+  - Cells dieser Regionen visuell hervorheben (Glow + scale, oder eigene Border-Color)
+  - Rest gedimmt (opacity 0.4)
+  - Sidebar-Tabelle gleiche Sort-Order wie GameOverView: `largestConnected` primary + `totalCells` tiebreak
+
+  **Aufwand**: 30-60 min, isolierter Commit beim Chat-Wechsel.
+- [ ] **L11 — Autoplay-Audit-Ergebnis (2026-05-10)** 🔍
+
+  **Architektur**: Rein client-seitig in `QQModeratorPage.tsx`. Backend hat keinen Auto-Advance außer `scheduleMapAutoAdvance` (qqSocketHandlers.ts:3005 für CozyGuessr-Map).
+  - Toggle: `autoplayEnabled`/`autoplayPaused` in localStorage (`qqAutoplayMode`)
+  - Outer-Effect: `QQModeratorPage.tsx:270-690` mit phase-switch + setTimeout-cascade
+  - Inner-HP-Effect: `QQModeratorPage.tsx:692-718` separat (Multi-Trigger-Bug-Fix history)
+
+  **Warum Events skippen — Top-3**:
+  1. **FINAL_REVEAL-Step-Mapping veraltet** (`QQModeratorPage.tsx:556-594`) — rechnet noch nach altem v2 (`2N+8`), Race-Final-Refactor `559888f0` hat backend auf `betSlotsCount + 5` umgestellt. **Race-Final-Step (12-15s Auto-Choreo) bekommt 3.2s Ranking-Delay und wird mitten reingefeuert** → Race wird geskippt, Wolf sieht nur Sieger-Slide für 1-2s. **Hauptverdacht für „skippt Events".**
+  2. Effect-Deps unvollständig: `state?.finalBetResolution` + `state?.endAwards` + `state?.finalBettingSubmitted` fehlen → server-State-Update ohne fireKey-Change = kein Re-Schedule.
+  3. OnlyConnect-Hard-Floor (`:404-417`): bei Timer<25s wird else-Branch skipped, wartet auf Backend-AutoFinish. Kein Failsafe-Timer → wenn Backend nicht feuert, hängt Autoplay.
+
+  **Warum manchmal gar nicht — Top-3**:
+  A. **Kein `useEffect`-Return-Cleanup** im Outer-Effect (`:663-666` macht Cleanup nur inline beim Effect-Re-Run). Timer überlebt Unmount/Phase-Wechsel. Refs (`autoplayLastFireKeyRef`, `autoplayTimerRef`) bleiben mit stale fireKey besetzt → silent no-op.
+  B. **Dedup-Lock nach Pause/Resume**: laufender Timer feuert während Pause weiter (kein Cleanup), setzt `autoplayLastFireKeyRef = fireKey`. Resume → fireKey-Match → return → nichts passiert.
+  C. **Reconnect/session:restarted** cleart Refs nicht.
+
+  **Fix-Vorschläge**:
+  - **Fix 1 (P0, 30 min)**: FINAL_REVEAL-Mapping mit `decodeFinalStep`-Helper alignieren (oder gleichen Helper aus shared/ nutzen). Race-Final-Step braucht 30-32s Delay (RaceFinalSlide intern: countdown 3.5 + race 5 + N×2 falls 6×2=12 + 4 solo + 1.5 drift + 2 anticipation + 2.5 podium + 1.5 slowmo).
+  - **Fix 2 (P0, 10-20 min)**: Outer-Effect-Return-Cleanup (`clearTimeout` bei unmount + fireKey-change + Pause-Toggle-Off + Refs nullen). VORSICHT: alter Kommentar im Code warnt vor Cleanup-Reset-Bug — saubere Lösung: Cleanup nur bei Unmount, fireKey-Change bleibt inline.
+  - **Fix 3 (P1, 15 min)**: Failsafe-Timer 60s für Custom-Pipelines (OnlyConnect/Bluff/HotPotato/Imposter „warte-auf-Backend"-Pfade) → emit revealAnswer fallback.
+  - **Fix 4 (P2, 20 min)**: `qqDecodeFinalStep` als shared util exportieren — Mod-Autoplay + Beamer-View teilen sich SoT.
+
+  **Files**: `QQModeratorPage.tsx:50-53, 270-690 (Outer), 556-594 (FINAL_REVEAL switch), 663-672 (Inline-Cleanup), 692-718 (HP-Inner)`, `qqRooms.ts:5367-5395 (qqFinalRevealMaxStep + qqAdvanceFinalReveal)`, `qqSocketHandlers.ts:3005 (Map-AutoAdvance)`.
 
 ## Offen — Stand 2026-05-10 (nach Marathon-Tag)
 

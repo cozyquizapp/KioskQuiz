@@ -694,3 +694,90 @@ Komplette Landing-Page-Überarbeitung in einem separaten Repo:
 **Stand**: Live-ready für Pub-Quiz-Test. ThanksView + Summary + cozywolf.de sind konsistent Brand-Pink. Alle gefährlichen Polish-Punkte (Brand-Bugs, false-positives, RAF-Leak, Lang-Stale-Closure) sind raus. Mod-Page hat Z-Undo-Hotkey für Live-Korrekturen. Test-Pages erreichbar via Menu für Stand-Alone-Visual-Iteration ohne ein echtes Quiz durchziehen zu müssen.
 
 **Offen**: Treppchen-Win-Page Confetti-Storm-Refactor (Wolf-Wahl Option C), 4 spekulative Animation-Easings + 5 Layout-Cap-Bumps aus 3-Tage-altem Audit (Zeilen-Nummern unsicher — bei Live-Repro punktuell fixen), Mod-Page-Refactors aus Post-Eurovision-Backlog (Teams-Compact, Host-Toast, Show-Hide, Settings-Refactor, Shift+Space, Streamdeck-Toast, Comeback-Race-Lock, Question→Reveal-Race), Impressum + Datenschutz-Pages für cozywolf.de (Footer-Links zeigen auf `#`), `hallo@cozywolf.de`-Mail einrichten und Frontend-Konstante updaten.
+
+---
+
+## 2026-05-10 (spät) — Live-Test-Sweep + Audits + Mail-Setup + Legal-Pages
+
+**Tageslauf**: Nach Wolfs erstem Live-Test 11 Findings durchgezogen — 7 direkt gefixt, 4 mit ausführlichen Audits/Strategien dokumentiert. Plus Mail-Setup (`hallo@cozywolf.de` via Strato→ImprovMX→Gmail), Impressum + Datenschutz auf beiden Sites mit „Im Aufbau"-Banner, Stable Summary-Links (by-id), /team Audit-Fixes (Ack-Toast + Brand-Pink), Summary-Test-Page + Menu-Untermenü.
+
+### Live-Test-Findings (11)
+
+✅ **L1** Pre-Rules-Welcome-Overlay raus (doppelt mit Lobby-Greeter)
+✅ **L2** `ph→f`-Normalisierung — Saxofon/Saxophone matchen jetzt
+✅ **L3** Substring-Min-Ratio 0.5 — „stadium" für Wembley Stadium blockiert
+✅ **L5** HotPotato-Chips top-aligned (kein Overlap mit Trivia-Trio)
+✅ **L7** Comeback NEW-Card gleiche Größe wie Steal-Card (`height: 360`, `alignSelf: stretch` raus)
+✅ **L8** Mu-Cho Winner-Banner kompakter (Avatar 8vw→7vw, Padding/Font ~15-20% kleiner)
+✅ **L9** 10v10 vertikal-mittig (`minHeight: clamp(280px,38vh,460px)` + `alignContent: center`)
+
+🟡 **L4 = L10** (Wolf-Klarstellung): Final-Lock-View „Grösstes Gebiet". **Strategie**: Placement-Page-Layout kopieren + Sieger-Cells erhellen. ~30-60min beim nächsten Mal.
+
+🔍 **L6 Joker-Bug — Audit dokumentiert in todo.md**: Top-Hypothese = Re-Detection nach Steal-Roundtrip. `detectNewJokers` qualifiziert als NEU sobald `cells.some(p => isNeverCounted)` — bei Steal/Swap wird `jokerCounted=false` resettet → identisches 2x2 kann später wieder triggern. Debug-Schritte: DevTools-State-Snapshot von `grid[r][c].jokerFormed/jokerCounted/ownerId` für die 4 betroffenen Cells.
+
+🔍 **L11 Autoplay — Audit dokumentiert in todo.md**: Top-Verdacht „skippt Events" = FINAL_REVEAL-Step-Mapping in `QQModeratorPage.tsx:556-594` ist vor Race-Final-Refactor (`559888f0`) und rechnet mit `2N+8` statt `betSlotsCount+5`. Race-Final-Step (12-15s) bekommt 3.2s Ranking-Delay → Race wird geskippt. Top-Verdacht „manchmal gar nicht" = kein useEffect-Return-Cleanup im Outer-Effect → Timer überleben Unmount/Phase-Wechsel. Fix-Vorschläge in todo.md mit Aufwand-Schätzung.
+
+### Mail-Setup `hallo@cozywolf.de` ✅
+
+- Strato-MX-Records auf ImprovMX (`mx1.improvmx.com` prio hoch, `mx2.improvmx.com` prio niedrig — Strato-UI-Mapping war counter-intuitiv)
+- SPF-TXT-Record `v=spf1 include:spf.improvmx.com ~all` auf Apex-Domain
+- Inbox-Forwarding zu `cozyquiz.app@gmail.com` getestet, läuft
+- `EMAIL`-Konstante in beiden Repos getauscht (LegalPage + QQLandingPage + LandingPage + cozywolf-landing)
+
+### Legal-Pages auf beiden Sites ✅
+
+- `play.cozyquiz.app/impressum` + `/datenschutz` via `LegalPage.tsx` + Route
+- `cozywolf.de/impressum` + `/datenschutz` via `LegalPage.tsx` + pathname-Mini-Router + `vercel.json` SPA-Rewrites
+- **Placeholder-Modus aktiv** mit „⚠️ Im Aufbau"-Banner — Klar-Name + Anschrift via `{...}`-Slots, ergänzt sobald Gewerbe-Anmeldung steht
+- DDG §5 + DSGVO Art. 6/13 + TDDDG §25 Abs. 2 abgedeckt nach e-Recht24-Standard. Aufsichtsbehörde Hamburg.
+- Disclaimer: ist kein anwaltlicher Rat, vor Pitch nochmal review
+
+### Stable Summary-Links (Option A) ✅
+
+- Backend: `lastGameResultId` im Room-State + state-update, neuer Endpoint `/api/qq/summary/by-id/:gameId`
+- Frontend: Route `/summary/by-id/:gameId` + Param-Erkennung im QQSummaryPage
+- ThanksView baut QR mit `/summary/by-id/{id}` (Fallback auf roomCode wenn id noch nicht da)
+- DB hat kein TTL — alte Spiele bleiben unbegrenzt persistiert, lookup über 200 letzte limit
+
+### /team Audit-Fixes (P0-1 + P0-2) ✅
+
+- **Ack-Error-Toast**: `safeEmit()`-Wrapper + `AckErrorToast`-Component (window-event-basiert, 3.2s Pink-Toast oben + Haptic). 25+ Action-Sites umgeschrieben. Vorher: TIMER_EXPIRED/WRONG_PHASE/NOT_YOUR_TURN silent gedroppt, Spieler dachte Submit ging durch. Erwartbar: spürbarer Quality-Lift.
+- **Brand-Refresh**: 6× Amber-Hardcodes → Brand-Pink (`#fde68a` → `#FBCFE8`, Hint-Card-BG, Thanks-CTA-Shadow `#B45309` → `#A21247`, Focus-Outline-Amber in main.css → Brand-Pink). Olympia-Medaillen + Trophy-Gold semantisch korrekt belassen.
+
+### Summary-Test-Page + Menu-Untermenü ✅
+
+- `/summary-test` Route mit Sticky-Toolbar (Teams 3/5/8, Awards alle/nur-1/keine, ESC-Mode an/aus)
+- QQSummaryPage akzeptiert optional `mockSummary`-Prop (skip REST-Fetch)
+- MenuPage: neues 'CozyQuiz · Test-Pages'-Panel (Pink-Akzent) mit Thanks/Treppchen/Summary/Avatar-Picker
+
+### /team Joker-Pragma-Patch + Z-Hotkey ✅
+
+- `myJokersThisPhase > 0` Gate auf isJoker — schließt false-positive aus
+- `KeyZ` im QUESTION_REVEAL ruft `qq:undoMarkCorrect` (war bisher nur Maus-Button)
+
+### Files (heute)
+- `frontend/src/pages/QQBeamerPage.tsx` (L1, L5, L7, L8, L9, ThanksView-Iterationen)
+- `frontend/src/pages/QQTeamPage.tsx` (Ack-Toast + Brand + Joker-Pragma + L2-Saxofon-Match indirekt)
+- `frontend/src/pages/QQModeratorPage.tsx` (Z-Hotkey)
+- `frontend/src/pages/QQSummaryPage.tsx` (Audit-Fixes, mockSummary-Prop)
+- `frontend/src/pages/QQSummaryTestPage.tsx` (neu)
+- `frontend/src/pages/LegalPage.tsx` (neu, Impressum + Datenschutz für play.cozyquiz.app)
+- `frontend/src/pages/MenuPage.tsx` (Test-Pages-Sub-Panel)
+- `frontend/src/pages/QQLandingPage.tsx`, `LandingPage.tsx` (Mail-Adresse)
+- `frontend/src/App.tsx` (Routes: /summary/by-id/:gameId, /summary-test, /impressum, /datenschutz)
+- `frontend/src/main.css` (Focus-Outline Brand-Pink)
+- `backend/src/server.ts` (`/api/qq/summary/by-id/:gameId`, eurovisionMode im Summary)
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` (lastGameResultId in persistGameResult)
+- `backend/src/quarterQuiz/qqRooms.ts` (lastGameResultId im state-update)
+- `shared/quarterQuizTypes.ts` (lastGameResultId)
+- `shared/textNormalization.ts` (L2 ph→f + L3 Substring-Min-Ratio)
+- `c:/Users/hornu/Desktop/desktop/cozywolf-landing/src/App.tsx` + `LegalPage.tsx` + `main.tsx` + `vercel.json` (Brand-Refresh + Legal-Pages + Mail-Adresse)
+- `todo.md` + `SESSION_LOG.md` + `COZYWOLF_LANDING.md`
+
+### Memory-Files
+- `reference_cozywolf_landing.md` neu (Pfad zum separaten Repo)
+- Andere Memories blieben — keine architektonischen Erkenntnisse die festgehalten werden müssen.
+
+**Stand bei Chat-Wechsel**: Live-ready für nächsten Pub-Test. ⚠️ Coolify-Backend muss redeployed werden (Backend-Änderungen in qqRooms.ts, qqSocketHandlers.ts, server.ts, textNormalization.ts). 4 offene Live-Test-Findings (L4=L10, L6, L11) sind in todo.md mit ausführlichen Audit-Ergebnissen + Debug-Schritten dokumentiert.
+
+**Nächste Session-Empfehlung**: L11 Autoplay-Fix-1 (FINAL_REVEAL-Mapping, ~30min, P0) + Fix-2 (Cleanup, 10-20min, P0) zuerst angehen — fixt das spürbare „Race wird geskippt"-Symptom. Dann L10 (Grösstes-Gebiet-Layout, 30-60min). L6 erst wenn Wolf das Joker-Symptom wieder live einfangen kann mit DevTools-Snapshot.

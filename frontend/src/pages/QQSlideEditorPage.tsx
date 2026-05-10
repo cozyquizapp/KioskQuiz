@@ -767,7 +767,7 @@ export default function QQSlideEditorPage() {
   if (!draftId || !draft) return (
     <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: "'Nunito', sans-serif", color: '#e2e8f0' }}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>Kein Fragensatz ausgewählt</div>
-      <button onClick={() => navigate('/builder')} style={btn('#3B82F6')}>← QQ Builder</button>
+      <button onClick={() => navigate('/builder')} style={btn('#3B82F6')}>← CozyBuilder</button>
     </div>
   );
 

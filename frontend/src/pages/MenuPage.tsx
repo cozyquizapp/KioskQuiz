@@ -11,7 +11,7 @@ const cozyQuizLinks: LinkItem[] = [
   { path: '/mopo',        label: 'MoPo (mobile Mod)',  emoji: '📲', note: 'iPhone-Version — großer Space-Button + Mod-Facts' },
   { path: '/beamer',      label: 'Beamer',             emoji: '📽️', note: 'Grid live anzeigen' },
   { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
-  { path: '/builder',     label: 'QQ Builder',         emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
+  { path: '/builder',     label: 'CozyBuilder',        emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
   { path: '/library',     label: 'Fragenbibliothek',   emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
   { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },

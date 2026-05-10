@@ -13847,21 +13847,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
             // Single-winner Banner — Team-Farben-Card (User-Feedback:
             // Gewinner-Card unten in Team-Farbe statt nur am Loesungsfeld oben).
+            // 2026-05-10 (Wolf-Live-Test L8 'Mu-Cho untere Card abgeschnitten'):
+            // Avatar 8vw→7vw, font 5vw→4.2vw, padding 2vh→1.6vh, sub-margin
+            // 6→4 — Banner ~15-20% kompakter damit Reveal bei Mu-Cho mit 4 Optionen
+            // + Frage nicht den viewport-Bottom verlässt (overflow:hidden global).
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 'clamp(20px, 2.4vw, 36px)',
-                padding: 'clamp(16px, 2vh, 26px) clamp(24px, 3vw, 42px)',
+                gap: 'clamp(16px, 2vw, 30px)',
+                padding: 'clamp(12px, 1.6vh, 22px) clamp(20px, 2.6vw, 36px)',
                 width: '100%', maxWidth: 1400,
-                borderRadius: 24,
+                borderRadius: 22,
                 background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: `3px solid ${team!.color}88`,
                 boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
                 animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
               }}>
-                <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(64px, 8vw, 110px)'} style={{
+                <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(56px, 7vw, 92px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 28px ${team!.color}88`,
+                  boxShadow: `0 0 24px ${team!.color}88`,
                   animation: `celebShake 0.6s ease ${avatarDelay}s both`,
                 }} />
                 <div style={{ minWidth: 0 }}>
@@ -13871,14 +13875,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     shrinkAfter={18}
                     color={team!.color}
                     fontWeight={900}
-                    fontSize="clamp(36px, 5vw, 72px)"
+                    fontSize="clamp(30px, 4.2vw, 60px)"
                     style={{
-                      textShadow: `0 0 30px ${team!.color}55`,
+                      textShadow: `0 0 24px ${team!.color}55`,
                       padding: '0 0.3em',
                     }}
                   />
                   <div style={{
-                    color: '#cbd5e1', fontSize: 'clamp(20px, 2.8vw, 36px)', fontWeight: 900, marginTop: 6, lineHeight: 1.2,
+                    color: '#cbd5e1', fontSize: 'clamp(17px, 2.4vw, 30px)', fontWeight: 900, marginTop: 4, lineHeight: 1.2,
                   }}>
                     {winMsg}
                   </div>

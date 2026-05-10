@@ -20749,23 +20749,22 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             pointerEvents: 'none',
           }} />
 
-          {/* Inner content — 3-col grid: Events-Platzhalter (schmal) · Sieger
-              · QR-Co-Hero. Nach Designer-Recherche: Sieger + QR gleich-
-              prominent als 2-Co-Heroes in der Card, Events-Spalte
-              hält das Skelett für später (siehe todo.md). */}
+          {/* Inner content — 2-col grid: Sieger · QR-Co-Hero. Sieger und QR
+              gleich-prominent als 2-Co-Heroes.
+              2026-05-10 (Spacing-Audit P0): vorheriger 0.5fr-Platzhalter
+              („Nächste Termine"-Block, kam nie) hat 17% Card-Breite leer
+              gefressen und Sieger+QR nach rechts gerückt — Card wirkte
+              unbalanciert, Star-Border traced um halb-leere Card. Solange
+              cozywolf.de + Buchungs-Flow noch nicht stehen ist 2-col korrekt.
+              todo.md hat den 3-col-Restore-Skelett-Plan unter „Later". */}
           <div style={{
             position: 'relative', zIndex: 2,
             flex: 1, minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: '0.5fr 1.2fr 1.1fr',
+            gridTemplateColumns: '1.2fr 1.1fr',
             gap: 'clamp(20px, 2.5vw, 40px)',
             alignItems: 'stretch',
           }}>
-
-            {/* LINKS: Platzhalter — Nächstes-Event-Block kommt später (siehe
-                todo.md). Aktuell leer, damit Sieger optisch zentriert bleibt
-                und das 3-col-Skelett für späteren Termine-Block bereitsteht. */}
-            <div aria-hidden style={{ minWidth: 0 }} />
 
             {/* MITTE: Sieger-Hero — Wolf 2026-05-10: Avatar etwas größer,
                 Text-Format „Team / {Name} / hat heute gewonnen", Punkte-Pille

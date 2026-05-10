@@ -58,6 +58,31 @@ const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 // unangetastet via Theme-Token-Override-Pattern.
 export const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
 
+// 2026-05-10 (Audit-P0 Eurovision-Konsistenz): Brand-Color-Helper.
+// Vorher 15+ Stellen mit hardcoded #EC4899 / rgba(236,72,153,...) ohne
+// Eurovision-Check → ESC-Edition zeigte falsche Brand-Farben.
+// Jetzt: 1× import, alle Stellen lesen `eurovisionMode` aus s.theme.
+// Pure function (kein Hook), damit auch in nicht-Component-Helpers nutzbar.
+export function getBrandColors(eurovisionMode?: boolean) {
+  return eurovisionMode
+    ? {
+        accentHex:  '#FF2D7B',          // ESC-Pink-Hauptakzent
+        accentRgb:  '255,45,123',       // für rgba(...)
+        accentSoft: '#fde6f0',          // Light-Pink für Subtle-Glow
+        accentWarm: '#C084FC',          // Lila als 2. Akzent (Sympathie etc)
+        magenta:    '#C084FC',          // Magenta-Pendant
+        gradientPill: 'linear-gradient(135deg, #FF2D7B 0%, #C084FC 50%, #6D28D9 100%)',
+      }
+    : {
+        accentHex:  '#EC4899',          // Brand-Pink
+        accentRgb:  '236,72,153',
+        accentSoft: '#FBCFE8',
+        accentWarm: '#F9A8D4',
+        magenta:    '#A21247',
+        gradientPill: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+      };
+}
+
 // ── Hero-Card-Border (Aurora-Vivid) ───────────────────────────────────────────
 // Differenzierung: Hauptfrage-Cards (QuestionView, RevealView, Comeback-Choice)
 // bekommen einen Pink-Glow-Border + subtle outer Aurora-Halo. Sub-Cards
@@ -1978,7 +2003,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
       {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
           Willkommen und erster Regel-Folie. */}
-      <RulesIntroOverlay language={s.language} visible={rulesIntroActive} />
+      <RulesIntroOverlay language={s.language} visible={rulesIntroActive} eurovisionMode={s.theme?.eurovisionMode} />
 
       {/* C3 Timer-Urgency-Vignette: pulsierender roter Screen-Rand bei <=5s,
           zusaetzlich zum bestehenden Timer-Pill-Shake. */}
@@ -4623,18 +4648,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
 // Aktiv bei rulesSlideIndex === -1. Crossfade vom Willkommen rein, in die
 // erste Regel-Folie raus. Kühlere Palette (blau/violett) als Kontrast zum
 // warmen Welcome, damit der Übergang auch farblich spürbar ist.
-function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visible: boolean }) {
+function RulesIntroOverlay({ language, visible, eurovisionMode }: {
+  language: QQLanguage; visible: boolean; eurovisionMode?: boolean;
+}) {
   const lang = useLangFlip(language);
   const headline = lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln';
   const sub = lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!';
-  // 2026-05-08 (Wolf-Wunsch 'Now the rules als Card wie andere Rules-Slides'):
-  // Vorher Full-Bleed Overlay mit Blau/Lila-Glow (inkonsistent zu den
-  // Card-formatigen Rules-Slides die danach kommen). Jetzt: gleiche Card-
-  // Struktur wie buildRulesSlidesDe (Pink-Border, padding, blur-backdrop,
-  // Icon + Eyebrow + Title + Divider + Subtitle). Macht den Übergang Welcome
-  // → Intro → Slide-0 visuell konsistent (drei Cards in Folge statt
-  // Full-Bleed → Full-Bleed → Card).
-  const accent = '#EC4899';
+  // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): accent themed via getBrandColors.
+  const accent = getBrandColors(eurovisionMode).accentHex;
   return (
     <BeamerOverlay
       visible={visible}
@@ -4642,12 +4663,12 @@ function RulesIntroOverlay({ language, visible }: { language: QQLanguage; visibl
       hiddenScale={0.98}
       background="radial-gradient(ellipse at center, rgba(31,26,46,0.96) 0%, rgba(20,16,31,0.98) 55%, rgba(10,8,20,1) 100%)"
     >
-      {/* Hintergrund-Glow — Brand-Pink statt Blau/Lila */}
+      {/* Hintergrund-Glow — Brand-Pink (Eurovision: ESC-Pink) */}
       <div style={{
         position: 'absolute', left: '50%', top: '50%',
         width: '140vmin', height: '140vmin',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(236,72,153,0.22) 0%, rgba(162,18,71,0.12) 40%, transparent 65%)',
+        background: `radial-gradient(circle, rgba(${getBrandColors(eurovisionMode).accentRgb},0.22) 0%, rgba(162,18,71,0.12) 40%, transparent 65%)`,
         filter: 'blur(10px)',
         animation: visible ? 'qqRulesIntroGlow 3.6s ease-out both' : 'none',
         pointerEvents: 'none',
@@ -16160,6 +16181,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             resolution={s.finalBetResolution?.[slot.team.id] ?? null}
             allTeams={s.teams}
             lang={lang}
+            eurovisionMode={s.theme?.eurovisionMode}
           />
         );
       })()}
@@ -16487,14 +16509,18 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
 }
 
 // ─── BetRevealSlide ─────────────────────────────────────────────────────────
-function BetRevealSlide({ team, resolution, allTeams, lang }: {
+function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   team?: QQTeam;
   resolution: import('../../../shared/quarterQuizTypes').QQFinalBetResolution | null;
   allTeams: QQTeam[];
   lang: 'de' | 'en';
+  eurovisionMode?: boolean;
 }) {
   if (!team) return null;
   const de = lang === 'de';
+  // 2026-05-10 (Audit-P0 Eurovision): Sympathie-Bonus-Text in ESC-Lila statt
+  // hardcoded Hot-Pink wenn Eurovision-Edition aktiv ist.
+  const sympathyColor = eurovisionMode ? '#C084FC' : '#F472B6';
   const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
   const isMutual = !!resolution?.mutualWith;
   const totalBonus = resolution?.totalBonus ?? 0;
@@ -16568,7 +16594,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang }: {
               {isMutual && (
                 <div style={{
                   fontSize: 'clamp(17px, 1.7vw, 26px)', fontWeight: 800,
-                  color: '#F472B6', display: 'flex', alignItems: 'center', gap: 8,
+                  color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
                   animation: 'qqFRTitleIn 0.6s ease 0.95s both',
                 }}>
                   <span style={{ fontSize: 'clamp(22px, 2.2vw, 34px)' }}>💞</span>
@@ -20208,6 +20234,8 @@ function WolfJubelWithBubble({ lang, troeteBoost }: { lang: 'de' | 'en'; troeteB
 // cozywolf.de-Text). Brand-Footer 🐺 → Custom WolfHeadIcon (cozywolf-Brand).
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
+  // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): brand-themed colors via Helper.
+  const brand = getBrandColors(!!s.theme?.eurovisionMode);
   const summaryUrl = typeof window !== 'undefined' && roomCode
     ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
     : '';
@@ -20247,7 +20275,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       position: 'relative', height: '100%',
       padding: 'clamp(20px, 2.5vh, 36px)',
     }}>
-      <Fireflies color="rgba(236,72,153,0.40)" />
+      <Fireflies color={`rgba(${brand.accentRgb},0.40)`} />
       <style>{`
         @keyframes qqThanksXStarSpin {
           from { transform: rotate(0deg); }
@@ -20277,7 +20305,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         <div aria-hidden style={{
           position: 'absolute', inset: '-50%',
           zIndex: 0,
-          background: 'conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)',
+          background: `conic-gradient(from 0deg, transparent 0% 70%, rgba(${brand.accentRgb},0.9) 80%, transparent 90% 100%)`,
           animation: 'qqThanksXStarSpin 6s linear infinite',
         }} />
 
@@ -20287,10 +20315,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           width: '100%', height: '100%',
           borderRadius: 30,
           background:
-            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
-            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+            `radial-gradient(ellipse at 50% 30%, rgba(${brand.accentRgb},0.32) 0%, transparent 60%),` +
+            `radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),` +
             'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-          boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+          boxShadow: `0 0 40px rgba(${brand.accentRgb},0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(${brand.accentRgb},0.18)`,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           padding: 'clamp(28px, 3vh, 44px) clamp(36px, 4vw, 64px)',
           overflow: 'hidden',
@@ -20299,8 +20327,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           <div aria-hidden style={{
             position: 'absolute', inset: 0,
             backgroundImage:
-              'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
-              'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+              `repeating-linear-gradient(45deg, rgba(${brand.accentRgb},0.06) 0 2px, transparent 2px 22px),` +
+              `repeating-linear-gradient(-45deg, rgba(${brand.accentRgb},0.04) 0 2px, transparent 2px 22px)`,
             pointerEvents: 'none',
           }} />
 
@@ -20310,11 +20338,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             top: 'clamp(16px, 2vh, 24px)', left: 'clamp(16px, 2vw, 28px)',
             padding: 'clamp(8px, 1vh, 12px) clamp(16px, 1.8vw, 24px)',
             borderRadius: 999,
-            background: 'linear-gradient(135deg, #EC4899, #A21247)',
+            background: `linear-gradient(135deg, ${brand.accentHex}, ${brand.magenta})`,
             color: '#fff',
             fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
             letterSpacing: '0.18em', textTransform: 'uppercase',
-            boxShadow: '0 6px 16px rgba(236,72,153,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
+            boxShadow: `0 6px 16px rgba(${brand.accentRgb},0.55), inset 0 1px 0 rgba(255,255,255,0.25)`,
             border: '1.5px solid rgba(255,255,255,0.18)',
             animation: 'qqThanksXBadgePulse 2.4s ease-in-out infinite',
             transformOrigin: 'center',
@@ -20396,15 +20424,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: 'clamp(8px, 1vh, 14px) clamp(14px, 1.6vw, 22px)',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
-              border: '1.5px solid rgba(236,72,153,0.55)',
+              background: `linear-gradient(135deg, rgba(${brand.accentRgb},0.20), rgba(162,18,71,0.16))`,
+              border: `1.5px solid rgba(${brand.accentRgb},0.55)`,
               boxShadow: '0 4px 12px rgba(0,0,0,0.45)',
             }}>
               <WolfHeadIcon size={28} />
               <span style={{
                 fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
                 fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
-                color: '#FBCFE8', letterSpacing: '0.04em',
+                color: brand.accentSoft, letterSpacing: '0.04em',
                 textTransform: 'uppercase',
               }}>cozywolf</span>
             </div>
@@ -20416,8 +20444,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 <div style={{
                   padding: 8, borderRadius: 10,
                   background: '#fff',
-                  border: '2px solid rgba(236,72,153,0.65)',
-                  boxShadow: '0 0 18px rgba(236,72,153,0.45), 0 4px 10px rgba(0,0,0,0.4)',
+                  border: `2px solid rgba(${brand.accentRgb},0.65)`,
+                  boxShadow: `0 0 18px rgba(${brand.accentRgb},0.45), 0 4px 10px rgba(0,0,0,0.4)`,
                 }}>
                   <QRCodeSVG
                     value={summaryUrl}
@@ -20427,7 +20455,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 </div>
                 <div style={{
                   fontSize: 10, fontWeight: 900,
-                  color: '#FBCFE8', letterSpacing: '0.18em', textTransform: 'uppercase',
+                  color: brand.accentSoft, letterSpacing: '0.18em', textTransform: 'uppercase',
                 }}>{lang === 'de' ? 'scan mich' : 'scan me'}</div>
               </div>
             )}
@@ -20443,7 +20471,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           width: 'clamp(120px, 13vw, 180px)',
           zIndex: 6,
           pointerEvents: 'none',
-          filter: 'drop-shadow(0 6px 16px rgba(236,72,153,0.55))',
+          filter: `drop-shadow(0 6px 16px rgba(${brand.accentRgb},0.55))`,
         }}>
           <AnimatedCozyWolf widthCss="100%" mode="jubel" speaking={true} />
         </div>
@@ -20453,7 +20481,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       <div style={{
         display: 'flex', alignItems: 'center',
         gap: 'clamp(12px, 1.4vw, 22px)', flexWrap: 'wrap', justifyContent: 'center',
-        fontSize: 'clamp(13px, 1.2vw, 18px)', color: 'rgba(236,72,153,0.7)', fontWeight: 900,
+        fontSize: 'clamp(13px, 1.2vw, 18px)', color: `rgba(${brand.accentRgb},0.7)`, fontWeight: 900,
         letterSpacing: '0.1em', textTransform: 'uppercase',
         marginTop: 'clamp(16px, 2vh, 28px)',
         zIndex: 5,
@@ -20464,9 +20492,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: 'clamp(5px, 0.6vh, 8px) clamp(12px, 1.2vw, 18px)',
           borderRadius: 999,
-          background: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+          background: brand.gradientPill,
           color: '#fff',
-          boxShadow: '0 6px 18px rgba(236,72,153,0.45), inset 0 1px 0 rgba(255,255,255,0.22)',
+          boxShadow: `0 6px 18px rgba(${brand.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
           border: '1.5px solid rgba(255,255,255,0.18)',
           letterSpacing: '0.06em',
         }}>📸 @cozywolf.events</span>

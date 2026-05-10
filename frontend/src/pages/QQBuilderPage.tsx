@@ -1409,41 +1409,50 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
               {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
             </button>
 
-            {/* Layout: visual icon buttons */}
-            <label style={labelStyle}>Layout</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 10 }}>
-              {(Object.keys(LAYOUT_LABELS) as QQImageLayout[]).map(l => (
-                <button key={l} onClick={() => setImg({ layout: l })} title={LAYOUT_LABELS[l]}
-                  style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.layout === l ? catColor + '33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.layout === l ? catColor : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  {/* 16:9 mini icon */}
-                  <div style={{ width: 38, height: 22, borderRadius: 3, background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                    {l === 'fullscreen' && <div style={{ position: 'absolute', inset: 0, background: catColor + '70' }} />}
-                    {l === 'window-left' && <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', background: catColor + '70' }} />}
-                    {l === 'window-right' && <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', background: catColor + '70' }} />}
-                    {l === 'cutout' && <>
-                      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 10, height: 15, background: catColor + '90', borderRadius: '50% 50% 0 0' }} />
-                      <div style={{ position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: catColor + '90', borderRadius: '50%' }} />
-                    </>}
-                  </div>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: img.layout === l ? catColor : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{LAYOUT_LABELS[l]}</span>
-                </button>
-              ))}
-            </div>
+            {/* 2026-05-11 (Wolf-Feedback 'das ändert nichts'): Layout + Animation
+                Picker bei CHEESE-Fragen ausblenden — der Beamer-Code ignoriert
+                beide bei CHEESE (Bild ist immer fullscreen, layout='cutout' hat
+                eigene Animation). Für CHEESE übernimmt der separate Horizontal/
+                Hochkant-Toggle weiter oben die Layout-Steuerung. */}
+            {q.category !== 'CHEESE' && (
+              <>
+                {/* Layout: visual icon buttons */}
+                <label style={labelStyle}>Layout</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 10 }}>
+                  {(Object.keys(LAYOUT_LABELS) as QQImageLayout[]).map(l => (
+                    <button key={l} onClick={() => setImg({ layout: l })} title={LAYOUT_LABELS[l]}
+                      style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.layout === l ? catColor + '33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.layout === l ? catColor : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      {/* 16:9 mini icon */}
+                      <div style={{ width: 38, height: 22, borderRadius: 3, background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                        {l === 'fullscreen' && <div style={{ position: 'absolute', inset: 0, background: catColor + '70' }} />}
+                        {l === 'window-left' && <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', background: catColor + '70' }} />}
+                        {l === 'window-right' && <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', background: catColor + '70' }} />}
+                        {l === 'cutout' && <>
+                          <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 10, height: 15, background: catColor + '90', borderRadius: '50% 50% 0 0' }} />
+                          <div style={{ position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: catColor + '90', borderRadius: '50%' }} />
+                        </>}
+                      </div>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: img.layout === l ? catColor : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{LAYOUT_LABELS[l]}</span>
+                    </button>
+                  ))}
+                </div>
 
-            {/* Animation: icon + label buttons */}
-            <label style={labelStyle}>Animation</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 4 }}>
-              {(Object.keys(ANIM_LABELS) as QQImageAnimation[]).map(a => {
-                const icons: Record<QQImageAnimation, string> = { none: '—', float: '🌊', 'zoom-in': '🔍', reveal: '✨', 'slide-in': '➡️' };
-                return (
-                  <button key={a} onClick={() => setImg({ animation: a })}
-                    style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.animation === a ? '#F59E0B33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.animation === a ? '#F59E0B' : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <span style={{ fontSize: 14 }}>{icons[a]}</span>
-                    <span style={{ fontSize: 9, fontWeight: 800, color: img.animation === a ? '#F59E0B' : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{ANIM_LABELS[a]}</span>
-                  </button>
-                );
-              })}
-            </div>
+                {/* Animation: icon + label buttons */}
+                <label style={labelStyle}>Animation</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 4 }}>
+                  {(Object.keys(ANIM_LABELS) as QQImageAnimation[]).map(a => {
+                    const icons: Record<QQImageAnimation, string> = { none: '—', float: '🌊', 'zoom-in': '🔍', reveal: '✨', 'slide-in': '➡️' };
+                    return (
+                      <button key={a} onClick={() => setImg({ animation: a })}
+                        style={{ padding: '7px 4px', borderRadius: 9, border: 'none', cursor: 'pointer', background: img.animation === a ? '#F59E0B33' : 'rgba(255,255,255,0.04)', outline: `2px solid ${img.animation === a ? '#F59E0B' : 'transparent'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: 14 }}>{icons[a]}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, color: img.animation === a ? '#F59E0B' : '#475569', lineHeight: 1, whiteSpace: 'nowrap' }}>{ANIM_LABELS[a]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* Animation timeline visualization */}
             {img.animation !== 'none' && (

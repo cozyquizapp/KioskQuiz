@@ -4,6 +4,205 @@ Chronologisches Protokoll von Arbeits-Sessions. Trigger: Wolf sagt „log das", 
 
 ---
 
+## 2026-05-11 — CozyBuilder Total-Refactor + Live-Test-Fixes + EN-i18n + Spacing-Audit
+
+**Tageslauf**: Riesige Session ~35 Commits. Vier thematische Blöcke:
+
+### 1. Live-Test-Findings L10 + L11 ✅
+- **L10 Final-Lock-View Refactor** (`afd51f82`): GridRevealSlide neu im
+  PlacementView-Sizing (900px statt 64px-Mini), Frontend-BFS für
+  größte verbundene Region pro Team, Sieger-Region mit Pulse, kleine
+  Inseln gedimmt.
+- **L11 Autoplay-Fixes** (`2d56333a`):
+  - Fix 1: FINAL_REVEAL-Step-Mapping aligned mit `qqFinalRevealMaxStep`
+    (`betSlotsCount + 5` statt alt `2N+8`). Race-Final bekommt jetzt
+    `20 + 2N + 4` sec statt 3.2s → kein Mid-Choreo-Abbruch.
+  - Fix 2: Outer-Effect-Cleanup in 2 zusätzlichen Effects (kein
+    generisches return-cleanup, sonst killt's den ref-stabilen Timer).
+    Reaktiver Pause/Stop-Cancel + unmount-Vollcleanup.
+
+### 2. Spacing-Audit Pack ✅ (7 Fixes)
+4 parallele Beamer-View-Audits, dann mit Wolf gefiltert nach Cascade-
+Risiko:
+- L1 ComebackView fly-up clamp(-510→-390) — kein Top-Edge-Overshoot
+- L2 HotPotato Question paddingTop +20px — Top-Bar-Overlap weg
+- L4 GameOverView Wolf-Jubel top→bottom (Winner-Hero atmet bei N≥7)
+- L5 LobbyView Team-Grid-Gap 6→10 px bei N≥7
+- L6 ThanksView linke leere Spalte gedroppt (3-col → 2-col)
+- L7 Connections Group-Avatare bei N≥6 von 36-52→28-40 px
+- L8 PhaseIntroView Cards synchron via minHeight + alignItems:stretch
+
+Bewusst SKIPP: L3 RaceTeamUnit yOffset (Wolf will Raketen-Vielfalt
+behalten) + L9 RaceFinal-Padding für N=8 (seltener Worst-Case).
+
+### 3. EN-Localization-Sweep ✅
+Wolf-Bug-Discovery: Comeback zeigt DE-Frage im EN-Spiel. Audit als
+Systemleck identifiziert. 5 Commits:
+- QQHLPair Type bekommt unitEn/anchorLabelEn/subjectLabelEn/
+  customQuestionEn + Frontend-Fallback (Beamer + /team)
+- 69 H/L-Pool-Einträge EN-übersetzt
+- H/L Number-Format-Suffix Mrd./Mio. → bn/M bei EN
+- Sample-Drafts (qq-vol-1..5): 15× Schätzchen-unitEn, 2× HotPotato-
+  answerEn, 3× Top5-answersEn, 3× Order-criteriaEn
+- /team HelpModal EN-Section + PAUSE_CAT_ACCENT.labelEn-Field
+- Builder-Translate-Button: 4 fehlende Bunte-Tüte-Felder fixed
+  (onlyConnect.answer + acceptedAnswers, bluff.realAnswer)
+
+⚠️ /api/translate hängt weiter an MyMemory, nicht DeepL. translateText()
+ist im Backend schon DeepL-fähig — Endpoint freigeben wäre Pack C.
+
+### 4. CozyBuilder Total-Refactor 🪄 (Hauptblock)
+
+**Designer-Audit** (`2598f4b6`): 3 parallele AI-Agents auf Builder-Page
+(Content-Flow / Visual-UX / Feature-Wishlist). Konsolidiert in
+[COZYBUILDER_AUDIT.md](COZYBUILDER_AUDIT.md) — 36 Findings sortiert in
+Quick-Wins / Mid-Bets / AI-Assist / Big-Bets. Gesamtdiagnose: 'Linear/
+Notion-Klon, Brand-DNA fehlt'. Marken-Richtung: 'Heimathafen statt
+Werkzeugkasten'.
+
+**Pack A — Brand + Wärme** (`0b023296`):
+- Brand-Farben-Sweep (Navy/Pink/Magenta-Tokens, Page-BG/Header/Save-
+  Button auf Brand)
+- CozyWolf in DraftListScreen mit Sprechblase + 4 Random-Greetings
+- 'CozyBuilder'-Eyebrow statt 'CozyQuiz'
+- Save-Button belohnt (Pink-Glow + Click-Bounce + ✓-Cascade)
+- Empty-State-Wolf statt '← Slot auswählen'
+
+**Pack B — Workflow-Heilen** (`ea41ac06`):
+- Save-Modal entschärft (nur noch Errors blocken)
+- Auto-Save-Pill 'gerade gespeichert / vor Xs gespeichert'
+- Drag-Drop + Paste-from-Clipboard für Bilder
+- Tastatur-Nav Cmd+S / J/K / Enter
+
+**Wizard-Modus** (`1aa20c53`): Slide-by-Slide-Editor mit Toggle
+'📋 Grid | 🪄 Wizard', Phase+Counter+Filmstrip-Layout.
+
+**Polish-Pack** (`7417ad51`): Sound-Layer (cozyBuilderSounds.ts — 3
+subtile Beats Save/Click/Upload + Milestone-Fanfare), Milestone-Toasts
+mit Wolf-Charakter (5/10/25 Fragen + Phase voll + alle EN), Smart-
+Default Schätzchen-Unit aus Frage-Text-Heuristik, Default-Titel mit
+Counter+Datum statt 'Neuer Fragensatz'.
+
+**CHEESE-Layout-Toggle Saga** (3 Commits):
+- Per-Frage `cheeseLayout`: 'landscape' | 'portrait' Override (alte
+  Auto-Detection fällt nur noch zurück wenn ungesetzt)
+- Wolf-Insight: 'ich croppe ein Querformat-Bild bewusst auf einen
+  Hochkant-Ausschnitt' → Auto-Detection unmöglich, manuell richtig
+- Dual-Frame Builder-Preview (zeigt LIVE beide Beamer-Layouts mit
+  Position/Zoom-Sync) ersetzt 'random'-Mini-Preview
+- 👁 Vorschau-Modal komplett entfernt (zeigte fake/random Render)
+- Layout-Toggle ins Bild-Sub-Step verschoben (war fälschlich im
+  Antwort-Sub-Step, Wolf konnte ihn nicht finden)
+
+**Layout+Animation Picker komplett entfernt** (`38c60986`):
+Wolf-Feedback 'nutz ich nicht' bei Window-Links/Rechts/Freisteller.
+Default-Layout 'fullscreen' bleibt beim Bild-Upload. Alte Drafts mit
+Window-Layouts werden weiterhin korrekt vom Beamer gerendert.
+
+**Wizard Sub-Steps** (`38c60986`): Slide-by-Slide INNERHALB einer Frage.
+Pro Kategorie eigenes Step-Schema (3-5 Steps: Frage/Antwort/Bild/Fact
+etc). QuestionEditor bekommt `visibleSections`-Prop + `fullWidth`-Prop.
+Mini-Stepper mit Pink-Pills, ← → wechselt Steps + an Step-Grenzen zur
+Nachbar-Frage.
+
+**Vollbild-Fokus-Mode** (`b82571ba`): Header-Chrome im Wizard
+ausgeblendet (Title-Edit, Runden, Sprache, Theme, CSV, 4×4 Finale,
+Host-Sheet, EN befüllen). Bleibt: Zurück, Title-Pille (read-only),
+Grid|Wizard, Sound, Auto-Save, Save.
+
+**Mod-Notiz + Fun-Fact gemerged** (`70e97af3`): Wolf-Entscheid 'ist
+eigentlich das gleiche'. hostNote aus Builder entfernt, funFact (mit
+DE+EN) bleibt als einziges Mod-Private-Feld. Backward-Compat: alte
+Drafts mit hostNote bleiben in DB + Mod-Cheatsheet.
+
+**Polish-Pack 5 Items** (`fea81490`):
+- Step-Transitions punchier (slide+scale+blur, bouncy 0.42s)
+- Filmstrip-Custom-Hover-Tooltip mit Frage-Preview
+- Kategorie-Farbe stärker im Body (Card-Border + 4px-Accent-Streifen
+  + Textarea-Focus-Glow per CSS-Custom-Property)
+- Empty-State im Bild-Step (große einladende Drop-Zone statt
+  Upload-Button)
+- Inline-Validation-Dots an Step-Pills (rot/amber pro Step)
+
+**Rename QQ Builder → CozyBuilder** (`3024507f`): User-facing Labels
+in MenuPage + QQSlideEditorPage. Code-interne Bezeichner bleiben.
+
+### Architektur-Diskussion 💭 (Wolf-Frage zur nächsten App)
+
+Wolf fragte: 'wie würde man eine App so bauen dass ein Canva-Editor
+mit echter Live-Vorschau möglich ist?'. Antwort dokumentiert:
+- Slide-Spec-Datenmodell ZUERST (Zod-Schema)
+- Generischer Renderer der das Spec konsumiert (1 Komponente, KEIN
+  hardcoded Phase-spezifischer Code)
+- Editor + Live-Game teilen denselben Renderer
+- Animations als Daten (Framer Motion variants oder GSAP Timeline)
+- Theme-Tokens als CSS-Vars von Tag 1, NICHT inline clamp()
+
+Auf 'Wie aufwendig wäre Einbau in CozyQuiz jetzt?': 3 realistische
+Optionen analysiert.
+- Option A (Full Rewrite): 6-9 Monate Fulltime — Suizid
+- Option B (Hybrid): 2-3 Monate, aber doppelte Wartung
+- Option C (Theme-Editor mit CSS-Var-Knöpfen): 1 Woche, sinnvoll
+- Option D (1 Slide als Pilot): 1-2 Monate
+
+Wolf entschied: **'nö, lass mal, Builder reicht aktuell'**. Idee in
+Memory abgelegt für später.
+
+### Entscheidungen heute
+- Skript-Approach für EN-Übersetzungen verworfen → manuell pragmatischer
+- L3 Race-Avatar-yOffset NICHT angefasst — Raketen-Vielfalt wichtig
+- L9 RaceFinal-Padding für N=8 SKIPP — seltener Worst-Case
+- Mod-Notiz mit Fun-Fact gemerged — Wolf: 'ist eigentlich das gleiche'
+- Layout+Animation Picker im Builder komplett entfernt
+- Architektur-Refactor verworfen, Canva-Editor-Idee geparkt
+- CHEESE-Layout: manueller Toggle statt Auto-Detection (Wolf-Reasoning:
+  Crop kann nicht automatisch erkannt werden)
+- Wizard-Modus + Vollbild-Fokus = Default-Workflow für konzentriertes
+  Schreiben
+
+### Files (Highlights)
+- `frontend/src/pages/QQBuilderPage.tsx` (~1500 Zeilen
+  Refactor + Wizard + Sub-Steps + Fokus-Mode + Polish)
+- `frontend/src/pages/cozyBuilderSounds.ts` (NEU, Web-Audio-Beats)
+- `frontend/src/pages/QQMiniPreview.tsx` (Rewrite: CHEESE-Dual-Frame)
+- `frontend/src/pages/QQBeamerPage.tsx` (L10 + L11 + Spacing + EN +
+  CHEESE-Override)
+- `frontend/src/pages/QQTeamPage.tsx` (Comeback EN-Fallback +
+  HelpModal Brand-EN)
+- `frontend/src/pages/QQModeratorPage.tsx` (L11 + Schaetz-Ranking
+  EN-Fallback)
+- `backend/src/quarterQuiz/qqHLData.ts` (komplett-Rewrite mit EN)
+- `backend/src/server.ts` (Sample-Drafts EN-Felder)
+- `shared/quarterQuizTypes.ts` (QQHLPair EN-Felder + cheeseLayout)
+- `COZYBUILDER_AUDIT.md` (NEU, 342 Zeilen, 36 Findings)
+- `todo.md` (L4/L6/L10/L11 status updates)
+- `frontend/src/pages/MenuPage.tsx` (CozyBuilder Rename)
+
+### Memory-Updates
+- Keine neuen Memory-Files heute — alle relevanten Patterns in
+  COZYBUILDER_AUDIT.md festgehalten.
+
+### Offen / Next Steps
+- ⏳ **Fragebibliothek** für alle Kategorien (auch Bunte Tüte). Sehr
+  groß. Mit Tracking welche Frage wie oft + wo schon verwendet wurde.
+  Nach 10 Monaten Live-Quiz wiederholen sich Fragen, langweilig für
+  Stammgäste. Nächster großer Block — Wolf-Wunsch direkt nach diesem
+  Log-Eintrag.
+- ⏳ Pack C/D/E aus COZYBUILDER_AUDIT.md (AI-Plumbing, Fact-Check +
+  Themen-Generator, Wizard-Pre/Post-Pages)
+- ⏳ L6 Joker-Bug (Wolf-Network-Tab-Snapshot beim nächsten Live)
+- ⏳ DeepL als /api/translate (Builder-Übersetzungsqualität-Lift)
+- ⏳ Theme-Editor mit CSS-Var-Knöpfen (Wolf abgelehnt für jetzt,
+  später vielleicht)
+
+⚠️ **Coolify-Backend muss redeployed werden** — backend/src/server.ts
++ qqHLData.ts haben Änderungen für die EN-Sweep-Sample-Drafts +
+Comeback-Pool. Beim nächsten Wolf-Backend-Push aktiv triggern.
+
+🦖 Jojo over and out.
+
+---
+
 ## 2026-05-10 (Abend) — Spacing-Audit-Fixes + EN-i18n + CozyBuilder Pack A/B
 
 **Was passiert ist**: 4-Stränge-Session nach der Live-Test-Fix-Welle:

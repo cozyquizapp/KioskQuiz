@@ -2561,6 +2561,326 @@ function ThanksRecapVariantS() {
 }
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 2026-05-10 (Wolf 'Thanks-Page Vorschläge aus App-Designer + Teilnehmer-
+// Sicht'): 4 Konzepte als Showreels T/U/V/W. Mock-Daten, Layout-Studie.
+// Wolf wählt eine, dann ins Live-Thanks-Page übernehmen.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Mock-Daten für die Thanks-Varianten
+const THANKS_MOCK = {
+  winnerName: 'Käpt\'n Kluk',
+  winnerColor: '#22C55E',
+  winnerEmoji: '🦝',
+  awards: [
+    { emoji: '🐢', label: 'Underdog' },
+    { emoji: '🦝', label: 'Meisterklauer' },
+    { emoji: '⚡', label: 'Speedy' },
+  ],
+  edition: '042',
+};
+
+// ─── Variante T: Hero-Sieger Center-Stage ───────────────────────────────────
+function ThanksVariantT() {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.18) 0%, rgba(15,8,23,0.95) 80%)',
+      display: 'flex', flexDirection: 'column',
+      padding: '32px 36px',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <style>{`
+        @keyframes thanksTHeroPulse { 0%,100% { box-shadow: 0 0 60px ${THANKS_MOCK.winnerColor}88, 0 0 120px rgba(251,191,36,0.45); } 50% { box-shadow: 0 0 80px ${THANKS_MOCK.winnerColor}cc, 0 0 160px rgba(251,191,36,0.65); } }
+        @keyframes thanksTConfetti { 0% { transform: translateY(-30px); opacity: 1; } 100% { transform: translateY(140vh); opacity: 0; } }
+        @keyframes thanksTCrownBob { 0%,100% { transform: translateX(-50%) rotate(0deg); } 50% { transform: translateX(-50%) translateY(-4px) rotate(2deg); } }
+      `}</style>
+      {/* subtle Konfetti */}
+      {Array.from({ length: 30 }).map((_, i) => (
+        <span key={i} aria-hidden style={{
+          position: 'absolute', top: 0, left: `${(i * 11) % 100}%`,
+          width: 6, height: 9, borderRadius: 1,
+          background: ['#EC4899','#FBBF24','#22C55E','#A855F7','#3B82F6'][i % 5],
+          animation: `thanksTConfetti ${3 + (i % 4) * 0.5}s ease-in ${(i * 0.2) % 2}s infinite`,
+        }} />
+      ))}
+
+      {/* Sieger-Hero zentral */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
+          <span aria-hidden style={{
+            position: 'absolute', left: '50%', top: '-30%',
+            fontSize: 72, lineHeight: 1, pointerEvents: 'none',
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(251,191,36,0.85))',
+            animation: 'thanksTCrownBob 2.4s ease-in-out infinite',
+          }}>👑</span>
+          <div style={{
+            width: 220, height: 220, borderRadius: '50%',
+            background: THANKS_MOCK.winnerColor,
+            border: `5px solid ${THANKS_MOCK.winnerColor}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 110, lineHeight: 1,
+            animation: 'thanksTHeroPulse 2.6s ease-in-out infinite',
+          }}>{THANKS_MOCK.winnerEmoji}</div>
+        </div>
+        <div style={{
+          fontSize: 36, fontWeight: 900, color: THANKS_MOCK.winnerColor,
+          textShadow: `0 0 20px ${THANKS_MOCK.winnerColor}88`,
+          marginTop: 18, letterSpacing: '-0.01em',
+        }}>{THANKS_MOCK.winnerName}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', marginTop: 4 }}>
+          haben gewonnen
+        </div>
+      </div>
+
+      {/* Footer-Row: cozywolf links · QR rechts (beide kleiner) */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginTop: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#EC4899', letterSpacing: '0.04em', opacity: 0.75 }}>cozywolf</div>
+          <div style={{ fontSize: 13, color: '#94A3B8' }}>cozywolf.de · @cozywolf.events</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{
+            width: 90, height: 90, borderRadius: 8, background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22, color: '#0A0814',
+          }}>📱 QR</div>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#EC4899', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75 }}>scan mich</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante U: Polaroid-Wall (Pinwand) ────────────────────────────────────
+function ThanksVariantU() {
+  const polaroids = [
+    { rot: -3, top: 60, left: 40, content: 'sieger' as const },
+    { rot: 2, top: 80, left: 380, content: 'wolf' as const },
+    { rot: -1, top: 50, left: 700, content: 'qr' as const },
+  ];
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background:
+        'repeating-linear-gradient(45deg, rgba(120,80,40,0.22) 0px 2px, transparent 2px 6px),' +
+        'radial-gradient(ellipse at 50% 50%, #6B4226 0%, #3D2817 80%)',
+      display: 'flex', justifyContent: 'center', padding: 24,
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: 1000, height: '100%' }}>
+        {polaroids.map((p, i) => (
+          <div key={i} style={{
+            position: 'absolute', top: p.top, left: p.left,
+            transform: `rotate(${p.rot}deg)`,
+            background: '#fdf6e3',
+            padding: '14px 14px 38px',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4)',
+            width: 240,
+          }}>
+            {/* Push-Pin */}
+            <span style={{
+              position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)',
+              fontSize: 18, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+            }}>📌</span>
+            {/* Polaroid-Inhalt */}
+            <div style={{
+              width: '100%', height: 200, background: '#0A0814',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexDirection: 'column', gap: 8,
+            }}>
+              {p.content === 'sieger' && (
+                <>
+                  <span style={{ fontSize: 70, lineHeight: 1 }}>👑</span>
+                  <div style={{
+                    width: 110, height: 110, borderRadius: '50%',
+                    background: THANKS_MOCK.winnerColor,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 52, marginTop: -34,
+                  }}>{THANKS_MOCK.winnerEmoji}</div>
+                </>
+              )}
+              {p.content === 'wolf' && (
+                <>
+                  <span style={{ fontSize: 90, lineHeight: 1 }}>🐺</span>
+                  <div style={{ fontSize: 13, color: '#EC4899', fontWeight: 900, letterSpacing: '0.04em' }}>cozywolf</div>
+                </>
+              )}
+              {p.content === 'qr' && (
+                <div style={{ width: 140, height: 140, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: '#0A0814' }}>📱</div>
+              )}
+            </div>
+            <div style={{
+              fontFamily: "'Caveat', 'Bradley Hand', cursive",
+              fontSize: 24, fontWeight: 700, color: '#0A0814',
+              textAlign: 'center', marginTop: 8,
+            }}>
+              {p.content === 'sieger' && `${THANKS_MOCK.winnerName}!`}
+              {p.content === 'wolf' && 'thanks for playing'}
+              {p.content === 'qr' && 'scan me #042'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Variante V: Cinema-Outro Credits-Roll ──────────────────────────────────
+function ThanksVariantV() {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: '#000',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <style>{`
+        @keyframes thanksVCreditsScroll {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(-180%); }
+        }
+      `}</style>
+      <div style={{
+        position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        animation: 'thanksVCreditsScroll 16s linear infinite',
+        gap: 32, padding: '40px 0',
+      }}>
+        <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Heute gewonnen</div>
+        <div style={{
+          fontSize: 56, fontWeight: 900, color: '#fff',
+          textShadow: '0 0 30px rgba(255,255,255,0.3)',
+        }}>{THANKS_MOCK.winnerName}</div>
+        <div style={{
+          width: 160, height: 160, borderRadius: '50%',
+          background: THANKS_MOCK.winnerColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 84, lineHeight: 1,
+        }}>{THANKS_MOCK.winnerEmoji}</div>
+
+        <div style={{ height: 24 }} />
+        <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Special Awards</div>
+        {THANKS_MOCK.awards.map((a, i) => (
+          <div key={i} style={{ fontSize: 22, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 28 }}>{a.emoji}</span>{a.label}
+          </div>
+        ))}
+
+        <div style={{ height: 32 }} />
+        <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Ein Quiz von</div>
+        <div style={{
+          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
+          fontSize: 48, fontWeight: 900, color: '#EC4899',
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+          textShadow: '0 0 24px rgba(236,72,153,0.5)',
+        }}>cozywolf</div>
+
+        <div style={{ height: 32 }} />
+        <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Findet uns</div>
+        <div style={{ fontSize: 18, color: '#fff' }}>cozywolf.de</div>
+        <div style={{ fontSize: 18, color: '#fff' }}>@cozywolf.events</div>
+
+        <div style={{ height: 24 }} />
+        <div style={{ width: 160, height: 160, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, color: '#000' }}>📱 QR</div>
+      </div>
+      {/* Top + Bottom Fade */}
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 100, background: 'linear-gradient(180deg, #000 0%, transparent 100%)', pointerEvents: 'none', zIndex: 5 }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 100, background: 'linear-gradient(0deg, #000 0%, transparent 100%)', pointerEvents: 'none', zIndex: 5 }} />
+    </div>
+  );
+}
+
+// ─── Variante W: Magazine-Spread (Cover-Style) ──────────────────────────────
+function ThanksVariantW() {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: 'linear-gradient(135deg, #fdf6e3 0%, #f5e6c8 100%)',
+      display: 'flex', flexDirection: 'column',
+      padding: '24px 32px',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      {/* Magazine-Header */}
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        borderBottom: '3px solid #0A0814', paddingBottom: 8,
+      }}>
+        <div style={{
+          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
+          fontSize: 36, fontWeight: 900, color: '#0A0814',
+          letterSpacing: '-0.02em',
+        }}>COZYQUIZ</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#0A0814', letterSpacing: '0.18em' }}>
+          EDITION #{THANKS_MOCK.edition} · {new Date().toLocaleDateString('de')}
+        </div>
+      </div>
+
+      {/* Body: 60% Foto links · 40% Text rechts */}
+      <div style={{ flex: 1, display: 'flex', gap: 24, marginTop: 20 }}>
+        <div style={{
+          flex: 1.5, position: 'relative',
+          background: '#0A0814',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 0,
+          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.4)',
+        }}>
+          <span aria-hidden style={{
+            position: 'absolute', left: '50%', top: 24, transform: 'translateX(-50%)',
+            fontSize: 70, lineHeight: 1, pointerEvents: 'none',
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7))',
+          }}>👑</span>
+          <div style={{
+            width: 240, height: 240, borderRadius: '50%',
+            background: THANKS_MOCK.winnerColor,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 130, lineHeight: 1,
+            boxShadow: `0 0 60px ${THANKS_MOCK.winnerColor}aa`,
+          }}>{THANKS_MOCK.winnerEmoji}</div>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ GEWONNEN</div>
+            <div style={{ fontSize: 38, fontWeight: 900, color: '#0A0814', lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {THANKS_MOCK.winnerName}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ NEXT EVENT</div>
+            <div style={{ fontSize: 18, color: '#0A0814', fontWeight: 700, lineHeight: 1.2 }}>
+              cozywolf.de/events<br/>
+              <span style={{ fontSize: 14, color: '#666' }}>+ @cozywolf.events folgen</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ TEAM-STATS</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 90, height: 90, background: '#0A0814', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#fff' }}>📱</div>
+              <div style={{ fontSize: 14, color: '#0A0814', fontWeight: 700 }}>SCAN MICH<br/><span style={{ fontSize: 12, fontWeight: 400, color: '#666' }}>holt euch eure Stats</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        borderTop: '2px solid #0A0814', paddingTop: 8, marginTop: 12,
+        display: 'flex', justifyContent: 'space-between',
+        fontSize: 12, fontWeight: 700, color: '#0A0814',
+      }}>
+        <span>@cozywolf.events</span>
+        <span>★ COZY QUIZ EDITION #{THANKS_MOCK.edition}</span>
+        <span>cozywolf.de</span>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function AnimationsLabPage() {
   const [replays, setReplays] = useState<number[]>(() => Array(7).fill(0));
@@ -2683,6 +3003,31 @@ export default function AnimationsLabPage() {
       blurb: 'Cards aus dem alten Filmstrip-Vorschlag — flach + kontinuierlich von rechts nach links wie eine News-Bauchbinde im TV. Keine Filmrollen-Sprockets, keine Steps, einfacher 60s-Loop mit dezenten Edge-Fades. Pro Card: Cat-Emoji + Cat-Label + Frage + Winner-Avatar + Antwort.',
       keepAlive: true, minHeight: 600,
       render: (_r) => <ThanksRecapVariantS />,
+    },
+    // 2026-05-10 (Wolf 'Thanks-Page Vorschläge'): T/U/V/W = 4 Konzept-Studien
+    {
+      label: 'T', title: 'Thanks-T: Hero-Sieger Center-Stage',
+      blurb: 'Sieger-Avatar groß zentral mit Krone + Glow-Pulse, leichtes Konfetti im BG. Footer-Row klein: cozywolf links + QR rechts (~25% Höhe). Klare Hierarchie — Sieger ist visuell eindeutig dominant. App-Designer-Ansatz: 1 Hero, alles andere subtil.',
+      keepAlive: true, minHeight: 640,
+      render: (_r) => <ThanksVariantT />,
+    },
+    {
+      label: 'U', title: 'Thanks-U: Polaroid-Wall (Pinwand)',
+      blurb: '3 Polaroids leicht rotiert auf Holz/Pinwand-BG, mit Push-Pins. Sieger-Polaroid mit Krone, cozywolf-Polaroid, QR-Polaroid. Handschrift-Font für die Bildunterschriften. Erinnerung-Vibe, persönlich, super social-media-tauglich (Screenshot = Postkarte).',
+      keepAlive: true, minHeight: 640,
+      render: (_r) => <ThanksVariantU />,
+    },
+    {
+      label: 'V', title: 'Thanks-V: Cinema-Outro Credits-Roll',
+      blurb: 'Schwarzer BG, Text scrollt langsam von unten nach oben (16s Loop, Star-Wars-Style). Reihenfolge: HEUTE GEWONNEN → Sieger → Awards → cozywolf → Findet uns → QR. Filmisches Outro, würdevoll, „Quiz wird zur Show". Cinema-Branche-Vibe.',
+      keepAlive: true, minHeight: 640,
+      render: (_r) => <ThanksVariantV />,
+    },
+    {
+      label: 'W', title: 'Thanks-W: Magazine-Spread (Cover)',
+      blurb: 'Zeitschriften-Cover-Layout: COZYQUIZ-Header + Edition-Nummer, links 60% Sieger-Foto auf schwarzem Block, rechts 40% Headlines (★ GEWONNEN, ★ NEXT EVENT, ★ TEAM-STATS). Stinger-Fit-Brand-Font. Sehr stylish, social-media-cover-bereit, druckbar.',
+      keepAlive: true, minHeight: 640,
+      render: (_r) => <ThanksVariantW />,
     },
   ];
 

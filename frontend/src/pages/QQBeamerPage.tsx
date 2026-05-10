@@ -20262,424 +20262,456 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     .sort((a, b) => b.total - a.total)[0];
   const winner = winnerEntry?.team;
 
-  // 2026-05-10 v3 (Wolf 'es soll die setup page sein vom anfang — hier
-  // schließt sich der kreis'): Layout 1:1 gespiegelt zu LobbyView. Wordmark
-  // oben, Wolf top-right (schlafend statt winkend), 2-col-Grid mit QR links
-  // und Teams-Result-Grid rechts (Sieger-Krone + Award-Badges statt
-  // bereit/offline-Status), Pulse-Subtitle unten.
-  const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
-  const isEsc = !!s.theme?.eurovisionMode;
-  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
-  const teamCount = s.teams.length;
-  const qrSize = 'min(44vh, 420px)';
+  // 2026-05-10 v4 (Wolf 'auf den mock bauen, schän ausgebaut'): Zurück zum
+  // 3-Col-Layout (Events/Insta · Sieger · Awards). Wolf-Schlafen unten links
+  // OHNE Bubble (Mock zeigte Bubble, Wolf will explizit ohne — schlafen-Animation
+  // mit Z's reicht). Awards mit kleinen Avatar-Discs + Award-Emoji-Badge.
   const de = lang === 'de';
-
-  // Sortiere Teams nach total für Rang-Anzeige
-  const ranked = [...s.teams]
-    .map(t => ({
-      team: t,
-      cells: cellsByTeam[t.id] ?? 0,
-      bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
-      awardPts: awardPoints[t.id] ?? 0,
-      total:
-        (cellsByTeam[t.id] ?? 0)
-        + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
-        + (awardPoints[t.id] ?? 0),
-    }))
-    .sort((a, b) => b.total - a.total);
-  const rankByTeam: Record<string, number> = {};
-  ranked.forEach((r, i) => { rankByTeam[r.team.id] = i + 1; });
+  const findTeam = (id: string | null | undefined) =>
+    id ? s.teams.find(t => t.id === id) ?? null : null;
+  const speedyTeam = findTeam(awards?.speedy);
+  const meisterklauerTeam = findTeam(awards?.meisterklauer);
+  const underdogTeam = findTeam(awards?.underdog);
+  const winnerCells = winner ? (cellsByTeam[winner.id] ?? 0) : 0;
+  const winnerBonus = winner ? (s.finalBetResolution?.[winner.id]?.totalBonus ?? 0) : 0;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
-      position: 'relative', overflow: 'hidden',
-      gap: 'clamp(10px, 1.5vh, 20px)',
-      // Identisch zu LobbyView — schließt den Kreis visuell.
-      background:
-        `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
-        'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
-        `radial-gradient(ellipse at 15% 80%, rgba(${brand.accentRgb},0.05), transparent 50%), ` +
-        '#0A0814',
-      fontFamily: fontFam,
+      alignItems: 'center', justifyContent: 'space-between',
+      position: 'relative', height: '100%', overflow: 'hidden',
+      padding: 'clamp(14px, 1.8vh, 24px) clamp(20px, 2.5vw, 36px) clamp(16px, 2vh, 28px)',
+      gap: 'clamp(10px, 1.4vh, 18px)',
     }}>
-      {lobbyBgUrl && (
-        <div aria-hidden style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `url(${lobbyBgUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.7,
-          pointerEvents: 'none',
-          zIndex: 0,
-        }} />
-      )}
-      <Fireflies />
-      {isEsc && <EurovisionHearts />}
-
+      <Fireflies color={`rgba(${brand.accentRgb},0.35)`} />
       <style>{`
+        @keyframes qqThanksDanke {
+          0%   { opacity: 0; transform: translateY(-8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes qqThanksHeroIn {
+          0%   { opacity: 0; transform: translateY(20px) scale(0.94); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes qqThanksColIn {
+          0%   { opacity: 0; transform: translateY(14px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
         @keyframes qqThanksCrownBob {
           0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
           50%      { transform: translate(-50%, -4px) rotate(3deg); }
         }
-        @keyframes qqThanksCardIn {
-          0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes qqThanksWinnerGlow {
+          0%, 100% { box-shadow: 0 0 60px var(--wg, rgba(255,255,255,0.4)), 0 0 120px rgba(251,191,36,0.25), 0 12px 36px rgba(0,0,0,0.55); }
+          50%      { box-shadow: 0 0 90px var(--wg, rgba(255,255,255,0.6)), 0 0 160px rgba(251,191,36,0.40), 0 12px 36px rgba(0,0,0,0.55); }
         }
-        /* Mirror Lobby keyframes — falls Thanks ohne vorher gemountete Lobby
-           gerendert wird (z.B. Direkt-Navigation), brauchen wir Fallback-Defs. */
-        @keyframes qqLobbyWordmarkEntry {
-          0%   { opacity: 0; transform: translateY(8px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes qqLobbyTitleGlow {
-          0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.96); }
-          50%      { opacity: 0.85; transform: translate(-50%, -50%) scale(1.04); }
+        @keyframes qqThanksAwardIn {
+          0%   { opacity: 0; transform: translateX(20px); }
+          100% { opacity: 1; transform: translateX(0); }
         }
       `}</style>
 
-      {/* Top-right: Wolf schlafend — spiegelt den winkenden Lobby-Wolf. */}
+      {/* ── HEADLINE-Block oben (außerhalb Card) ── */}
       <div style={{
-        position: 'absolute',
-        right: 'clamp(20px, 2.5vw, 48px)',
-        top: 'clamp(16px, 2.5vh, 32px)',
-        zIndex: 7,
-        pointerEvents: 'none',
-        animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(4px, 0.6vh, 10px)', textAlign: 'center', zIndex: 5,
+        animation: 'qqThanksDanke 0.7s ease both',
+        flexShrink: 0,
       }}>
-        <AnimatedCozyWolf
-          widthCss="clamp(140px, 13vw, 200px)"
-          mode="schlafen"
-          mirror
-        />
+        <div style={{
+          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+          fontSize: 'clamp(38px, 4.4vw, 70px)', fontWeight: 900,
+          color: brand.accentHex, letterSpacing: '-0.01em',
+          textShadow: `0 0 40px rgba(${brand.accentRgb},0.5), 0 3px 14px rgba(0,0,0,0.6)`,
+          lineHeight: 1,
+        }}>CozyQuiz</div>
+        <div style={{
+          display: 'inline-block',
+          padding: 'clamp(6px, 0.8vh, 10px) clamp(20px, 2.2vw, 36px)',
+          background: 'rgba(0,0,0,0.6)',
+          borderRadius: 10,
+          fontSize: 'clamp(24px, 2.8vw, 44px)', fontWeight: 900,
+          color: brand.accentSoft, letterSpacing: '0.14em',
+          textTransform: 'uppercase', lineHeight: 1.05,
+          textShadow: `0 2px 12px rgba(${brand.accentRgb},0.5)`,
+          animation: 'qqThanksDanke 0.7s ease 0.15s both',
+        }}>{de ? 'Danke fürs Spielen' : 'Thanks for Playing'}</div>
+        <div style={{
+          fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 700,
+          color: '#CBD5E1', fontStyle: 'italic',
+          animation: 'qqThanksDanke 0.7s ease 0.3s both',
+        }}>🎉 {de ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}</div>
       </div>
 
-      {/* Top: CozyQuiz-Wordmark — identisch zu LobbyView (Stinger Fit + Wave). */}
+      {/* ── HERO-Card 16:9 mit 3-Col-Grid (Events/Insta · Sieger · Awards) ── */}
       <div style={{
-        textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
-        animation: 'qqLobbyWordmarkEntry 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both',
-        paddingTop: 'clamp(6px, 1vh, 14px)',
-      }}>
-        <div aria-hidden style={{
-          position: 'absolute',
-          left: '50%', top: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'clamp(420px, 60vw, 900px)',
-          height: 'clamp(180px, 26vh, 320px)',
-          background: isEsc
-            ? `radial-gradient(ellipse at center, rgba(${brand.accentRgb},0.18) 0%, rgba(${brand.accentRgb},0.06) 45%, transparent 70%)`
-            : `radial-gradient(ellipse at center, rgba(${brand.accentRgb},0.18) 0%, rgba(${brand.accentRgb},0.06) 45%, transparent 70%)`,
-          filter: 'blur(20px)',
-          pointerEvents: 'none',
-          zIndex: -1,
-          animation: 'qqLobbyTitleGlow 6s ease-in-out infinite',
-        }} />
-        {(() => {
-          // ESC-Stinger (COZYQUIZ × ESC-Logo) wenn Logo gesetzt ist — analog Lobby.
-          if (isEsc && s.theme?.logoUrl) {
-            return (
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 'clamp(18px, 2.2vw, 40px)',
-              }}>
-                <span style={{
-                  fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-                  fontSize: 'clamp(38px, 5.2vw, 82px)',
-                  fontWeight: 400,
-                  letterSpacing: '0.04em',
-                  color: brand.accentHex,
-                  textShadow: `0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(${brand.accentRgb},0.55)`,
-                  lineHeight: 0.96,
-                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
-                }}>COZYQUIZ</span>
-                <span aria-hidden style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-                  fontWeight: 900,
-                  fontSize: 'clamp(28px, 4vw, 62px)',
-                  lineHeight: 1,
-                  height: '1em',
-                  color: '#fde6f0',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                  animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
-                }}>×</span>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
-                }}>
-                  <img
-                    src={s.theme.logoUrl}
-                    alt="Eurovision Song Contest"
-                    draggable={false}
-                    style={{
-                      height: 'clamp(60px, 8.5vh, 126px)',
-                      width: 'auto',
-                      filter: `drop-shadow(0 0 24px rgba(${brand.accentRgb},0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))`,
-                    }}
-                  />
-                </span>
-              </div>
-            );
-          }
-          const wordmark = 'CozyQuiz';
-          const stagger = 0.07;
-          return (
-            <div
-              className="cq-wordmark"
-              style={{
-                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-                fontWeight: 400,
-                letterSpacing: '0.04em',
-                fontSize: 'clamp(56px, 9vw, 140px)',
-                color: brand.accentHex,
-                textShadow: `0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(${brand.accentRgb},0.40)`,
-                fontSmooth: 'always',
-                WebkitFontSmoothing: 'antialiased',
-                display: 'inline-block',
-                lineHeight: 1,
-              } as React.CSSProperties}
-              aria-label={wordmark}
-            >
-              {Array.from(wordmark).map((ch, i) => (
-                <span
-                  key={i}
-                  style={{
-                    display: 'inline-block',
-                    animation: `qqCatNameWave 2.6s ease-in-out ${0.85 + i * stagger}s infinite`,
-                    whiteSpace: ch === ' ' ? 'pre' : undefined,
-                  }}
-                >{ch}</span>
-              ))}
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* Center: 2-column — QR links, Teams-Result rechts (mirror Lobby). */}
-      <div style={{
-        flex: 1, display: 'grid',
-        gridTemplateColumns: 'auto 1fr',
-        alignItems: 'center',
-        columnGap: 'clamp(24px, 3vw, 48px)',
         position: 'relative', zIndex: 5,
-        width: '100%',
-        padding: '0 clamp(24px, 4vw, 80px)',
-        minHeight: 0,
+        width: '100%', maxWidth: 'min(96vw, 1500px)',
+        flex: 1, minHeight: 0,
+        borderRadius: 28,
+        background:
+          `radial-gradient(ellipse at 50% 30%, rgba(${brand.accentRgb},0.30) 0%, transparent 60%),` +
+          `radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.24) 0%, transparent 55%),` +
+          'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+        border: `2.5px solid rgba(${brand.accentRgb},0.55)`,
+        boxShadow: `0 0 40px rgba(${brand.accentRgb},0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 32px rgba(${brand.accentRgb},0.16)`,
+        overflow: 'hidden',
+        animation: 'qqThanksHeroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both',
       }}>
-        {/* Left: QR-Code (zeigt jetzt zur Summary-Page) */}
+        {/* Cross-Hatch-Brand-Pattern Overlay */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0,
+          backgroundImage:
+            `repeating-linear-gradient(45deg, rgba(${brand.accentRgb},0.06) 0 2px, transparent 2px 22px),` +
+            `repeating-linear-gradient(-45deg, rgba(${brand.accentRgb},0.04) 0 2px, transparent 2px 22px)`,
+          pointerEvents: 'none',
+        }} />
+
+        {/* 3-Column-Grid */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5vh, 18px)',
-          flexShrink: 0, justifySelf: 'start',
-          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
+          position: 'relative', zIndex: 2,
+          width: '100%', height: '100%',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1.5fr 1fr',
+          gap: 'clamp(20px, 2.5vw, 40px)',
+          padding: 'clamp(24px, 3vh, 40px) clamp(28px, 3vw, 56px)',
         }}>
-          {summaryUrl ? (
-            <>
+
+          {/* ── LINKS: Nächste Events + Instagram ── */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            gap: 18, minWidth: 0,
+            animation: 'qqThanksColIn 0.7s ease 0.5s both',
+          }}>
+            <div>
               <div style={{
-                background: '#ffffff', borderRadius: 24, padding: 'clamp(14px, 2vh, 24px)',
-                animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
-                boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
-                width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
+                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+                marginBottom: 10,
+                padding: '4px 12px', borderRadius: 999,
+                background: `rgba(${brand.accentRgb},0.12)`,
+                border: `1px solid rgba(${brand.accentRgb},0.35)`,
+                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
               }}>
-                <QRCodeSVG value={summaryUrl} size={256} bgColor="#ffffff" fgColor="#0A0814" level="M"
-                  style={{ width: '100%', height: '100%' }} />
+                <span aria-hidden>📅</span>
+                {de ? 'Nächste Events' : 'Next Events'}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: 'clamp(18px, 2vw, 28px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 4,
-                }}>
-                  {de ? 'Scannen für eure Stats!' : 'Scan for your stats!'}
-                </div>
-                <div style={{
-                  fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#94a3b8', fontFamily: 'monospace',
-                  background: cardBg, padding: '6px 16px', borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  display: 'inline-block',
-                }}>
-                  {summaryUrl.replace('https://', '').replace('http://', '')}
-                </div>
+              <div style={{
+                fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 800,
+                color: '#F1F5F9', lineHeight: 1.3,
+                marginBottom: 6,
+              }}>{de ? 'Pub-Quiz · Firmen-Events · Geburtstage' : 'Pub Quiz · Corporate · Birthdays'}</div>
+              <div style={{
+                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
+                color: '#94A3B8', lineHeight: 1.35,
+              }}>{de
+                ? 'Termine + Buchung auf'
+                : 'Dates + booking at'}{' '}
+                <span style={{ color: brand.accentSoft, fontWeight: 900 }}>cozywolf.de</span>
               </div>
-            </>
-          ) : (
-            <div style={{
-              width: qrSize, height: qrSize,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 24, border: '2px dashed rgba(236,72,153,0.4)',
-              background: 'rgba(15,8,23,0.4)',
-              fontSize: 'clamp(48px, 6vw, 80px)',
-            }}>🎉</div>
-          )}
-          {/* CozyWolf-Branding — identisch zu Lobby */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 18px', borderRadius: 999,
-            background: `linear-gradient(135deg, rgba(${brand.accentRgb},0.16), rgba(${brand.accentRgb},0.10))`,
-            border: `1.5px solid rgba(${brand.accentRgb},0.35)`,
-            boxShadow: `0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(${brand.accentRgb},0.12)`,
-          }}>
-            <img
-              src="/logo.png"
-              alt=""
-              style={{ width: 28, height: 28, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
-            />
-            <span style={{
-              fontSize: 'clamp(12px, 1.1vw, 15px)', fontWeight: 900,
-              color: '#cbd5e1', letterSpacing: '0.04em',
-            }}>
-              {de ? 'präsentiert von' : 'presented by'}
-            </span>
-            <span style={{
-              fontSize: 'clamp(14px, 1.4vw, 18px)', fontWeight: 900,
-              color: brand.accentHex, letterSpacing: '0.04em',
-              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-            }}>
-              CozyWolf
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Teams-Result-Grid — mirror Lobby teams-grid */}
-        <div style={{
-          minWidth: 0, width: '100%',
-          display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 18px)',
-          alignItems: 'stretch', justifyContent: 'center',
-        }}>
-          <div style={{
-            fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-            color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
-            textAlign: 'center', opacity: 0.7,
-          }}>
-            {de ? 'Endergebnis' : 'Final Standings'} · {teamCount}
+            </div>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
+                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+                marginBottom: 10,
+                padding: '4px 12px', borderRadius: 999,
+                background: `rgba(${brand.accentRgb},0.12)`,
+                border: `1px solid rgba(${brand.accentRgb},0.35)`,
+                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
+              }}>
+                <span aria-hidden>📸</span>
+                {de ? 'Folgt mir' : 'Follow me'}
+              </div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                padding: 'clamp(8px, 0.9vh, 12px) clamp(16px, 1.6vw, 22px)',
+                borderRadius: 999,
+                background: brand.gradientPill,
+                color: '#fff',
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
+                letterSpacing: '0.04em',
+                boxShadow: `0 6px 18px rgba(${brand.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
+                border: '1.5px solid rgba(255,255,255,0.18)',
+              }}>
+                <span aria-hidden style={{ fontSize: 'clamp(16px, 1.6vw, 22px)' }}>📷</span>
+                @cozywolf.events
+              </div>
+            </div>
           </div>
 
+          {/* ── MITTE: Sieger-Hero (Avatar groß + Crown + Name) ── */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: teamCount > 6 ? 6 : 'clamp(8px, 1.2vw, 14px)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 'clamp(12px, 1.6vh, 22px)',
+            minWidth: 0,
+            animation: 'qqThanksColIn 0.7s ease 0.4s both',
           }}>
-            {ranked.map((r, i) => {
-              const t = r.team;
-              const compact = teamCount > 6;
-              const rank = rankByTeam[t.id];
-              const isWinner = rank === 1;
-              const teamAwards: Array<{emoji: string; label: string; accent: string}> = [];
-              if (awards?.underdog === t.id) teamAwards.push({ emoji: '🐢', label: de ? 'Underdog' : 'Underdog', accent: '#10B981' });
-              if (awards?.meisterklauer === t.id) teamAwards.push({ emoji: '🦝', label: de ? 'Meisterklauer' : 'Master Stealer', accent: '#A855F7' });
-              if (awards?.speedy === t.id) teamAwards.push({ emoji: '⚡', label: 'Speedy', accent: brand.accentWarm });
+            {winner && (
+              <div style={{ position: 'relative' }}>
+                <span aria-hidden style={{
+                  position: 'absolute', left: '50%', top: '-30%',
+                  fontSize: 'clamp(54px, 6vw, 96px)', lineHeight: 1,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(251,191,36,0.9))',
+                  animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
+                  zIndex: 5,
+                }}>👑</span>
+                <div style={{
+                  ['--wg' as string]: `${winner.color}cc`,
+                  width: 'clamp(150px, 17vw, 240px)', height: 'clamp(150px, 17vw, 240px)',
+                  borderRadius: '50%',
+                  background: winner.color,
+                  border: `5px solid ${winner.color}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  animation: 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
+                } as React.CSSProperties}>
+                  <QQTeamAvatar
+                    avatarId={winner.avatarId}
+                    teamEmoji={winner.emoji}
+                    size={'clamp(118px, 14vw, 188px)'}
+                    flat
+                  />
+                </div>
+              </div>
+            )}
+            {winner && (() => {
+              const isLong = winner.name.length > 12;
               return (
-                <div key={t.id} style={{
-                  padding: compact
-                    ? 'clamp(16px, 2vh, 24px) clamp(20px, 2.2vw, 28px)'
-                    : 'clamp(18px, 2.2vh, 26px) clamp(22px, 2.4vw, 30px)',
-                  borderRadius: compact ? 18 : 22,
-                  background: cardBg,
-                  border: `2px solid ${isWinner ? t.color : t.color + '55'}`,
-                  boxShadow: isWinner
-                    ? `0 8px 28px rgba(0,0,0,0.4), 0 0 60px ${t.color}99, 0 0 30px ${t.color}55`
-                    : `0 8px 28px rgba(0,0,0,0.4), 0 0 24px ${t.color}22`,
-                  display: 'flex', alignItems: 'center',
-                  gap: compact ? 'clamp(14px, 1.5vw, 20px)' : 'clamp(14px, 1.6vw, 20px)',
-                  animation: `qqThanksCardIn 0.5s var(--qq-ease-bounce) ${0.4 + i * 0.06}s both`,
-                  minWidth: 0,
-                  position: 'relative',
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 6, lineHeight: 1.05, textAlign: 'center', maxWidth: '100%',
                 }}>
-                  {/* Avatar mit Crown-Overlay für Sieger */}
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={compact ? 'clamp(56px, 5.4vw, 76px)' : 'clamp(64px, 6vw, 88px)'} />
-                    {isWinner && (
-                      <span aria-hidden style={{
-                        position: 'absolute', left: '50%', top: '-58%',
-                        fontSize: compact ? 'clamp(28px, 3vw, 42px)' : 'clamp(32px, 3.4vw, 48px)',
-                        lineHeight: 1, pointerEvents: 'none',
-                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.7)) drop-shadow(0 0 18px rgba(251,191,36,0.85))',
-                        animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
-                        zIndex: 5,
-                      }}>👑</span>
+                  <div style={{
+                    fontSize: isLong ? 'clamp(24px, 2.6vw, 40px)' : 'clamp(30px, 3.2vw, 48px)',
+                    fontWeight: 900,
+                    color: winner.color,
+                    letterSpacing: '-0.01em',
+                    textShadow: `0 0 22px ${winner.color}77, 0 2px 8px rgba(0,0,0,0.7)`,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                  }}>{winner.name}</div>
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.25vw, 18px)', fontWeight: 800,
+                    color: '#94A3B8',
+                    letterSpacing: '0.18em', textTransform: 'uppercase',
+                  }}>{de ? 'haben gewonnen' : 'have won'}</div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    marginTop: 4,
+                    padding: '4px 14px', borderRadius: 999,
+                    background: `${winner.color}22`,
+                    border: `1.5px solid ${winner.color}66`,
+                    fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                    color: winner.color,
+                    letterSpacing: '0.04em',
+                  }}>
+                    <span aria-hidden>🏆</span>
+                    {de ? `${winnerCells + winnerBonus} Punkte` : `${winnerCells + winnerBonus} pts`}
+                    {winnerBonus > 0 && (
+                      <span style={{ opacity: 0.8 }}>
+                        ({winnerCells}+{winnerBonus}🎯)
+                      </span>
                     )}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    {/* Rank-Pill + Team-Name */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        padding: '2px 10px', borderRadius: 999,
-                        background: isWinner ? `${t.color}` : `${t.color}33`,
-                        border: `1.5px solid ${t.color}`,
-                        color: isWinner ? '#0A0814' : t.color,
-                        fontSize: compact ? 'clamp(11px, 1.05vw, 14px)' : 'clamp(12px, 1.1vw, 15px)',
-                        fontWeight: 900, letterSpacing: '0.05em',
-                        flexShrink: 0,
-                      }}>#{rank}</span>
-                      <span style={{
-                        fontWeight: 900,
-                        fontSize: t.name.length > 16
-                          ? (compact ? 'clamp(15px, 1.55vw, 21px)' : 'clamp(16px, 1.7vw, 24px)')
-                          : (compact ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(20px, 2.1vw, 30px)'),
-                        color: t.color,
-                        lineHeight: 1.1,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        wordBreak: 'break-word',
-                        minWidth: 0,
-                      } as React.CSSProperties} title={t.name}>
-                        {t.name}
-                      </span>
-                    </div>
-                    {/* Score-Row + Award-Badges */}
-                    <div style={{
-                      marginTop: 6,
-                      display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-                    }}>
-                      <span style={{
-                        fontSize: compact ? 'clamp(12px, 1.15vw, 16px)' : 'clamp(13px, 1.25vw, 17px)',
-                        fontWeight: 800,
-                        color: '#94A3B8',
-                        letterSpacing: '0.04em',
-                      }}>
-                        {de ? `${r.total} Punkte` : `${r.total} pts`}
-                        {r.bonus > 0 && (
-                          <span style={{ color: brand.accentHex, marginLeft: 6 }}>
-                            +{r.bonus}🎯
-                          </span>
-                        )}
-                      </span>
-                      {teamAwards.map((a, ai) => (
-                        <span key={ai} style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          padding: '3px 10px', borderRadius: 999,
-                          background: `${a.accent}22`,
-                          border: `1px solid ${a.accent}88`,
-                          fontSize: compact ? 'clamp(10px, 1vw, 13px)' : 'clamp(11px, 1.05vw, 14px)',
-                          fontWeight: 800,
-                          color: a.accent,
-                          letterSpacing: '0.04em',
-                        }} title={a.label}>
-                          <span aria-hidden>{a.emoji}</span>
-                          {a.label}
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 </div>
               );
-            })}
+            })()}
           </div>
 
-          {/* Bottom-Pulse — mirror Lobby's status text */}
+          {/* ── RECHTS: 3 Special Awards mit kleinen Avataren ── */}
           <div style={{
-            fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 900, textAlign: 'center',
-            color: brand.accentHex,
-            animation: 'lobbyPulse 2.5s ease-in-out infinite',
-            textShadow: `0 0 20px rgba(${brand.accentRgb},0.4)`,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-around',
+            gap: 'clamp(10px, 1.3vh, 18px)',
+            minWidth: 0,
           }}>
-            {de ? '🎉 Wir hoffen ihr hattet Spaß! · Bis zum nächsten Quiz!' : '🎉 We hope you had fun! · See you next time!'}
+            <div style={{
+              fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
+              color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+              textAlign: 'center',
+              padding: '4px 12px', borderRadius: 999,
+              background: `rgba(${brand.accentRgb},0.12)`,
+              border: `1px solid rgba(${brand.accentRgb},0.35)`,
+              alignSelf: 'center',
+              textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
+              animation: 'qqThanksColIn 0.7s ease 0.55s both',
+            }}>
+              ⭐ {de ? 'Special Awards' : 'Special Awards'}
+            </div>
+            <div style={{
+              display: 'flex', flexDirection: 'column',
+              gap: 'clamp(10px, 1.3vh, 16px)',
+            }}>
+              <ThanksAwardRow
+                emoji="🐢"
+                label="Underdog"
+                accent="#10B981"
+                winner={underdogTeam}
+                lang={lang as 'de' | 'en'}
+                delay={0.65}
+              />
+              <ThanksAwardRow
+                emoji="🦝"
+                label={de ? 'Meisterklauer' : 'Master Stealer'}
+                accent="#A855F7"
+                winner={meisterklauerTeam}
+                lang={lang as 'de' | 'en'}
+                delay={0.78}
+              />
+              <ThanksAwardRow
+                emoji="⚡"
+                label="Speedy"
+                accent={brand.accentWarm}
+                winner={speedyTeam}
+                lang={lang as 'de' | 'en'}
+                delay={0.91}
+              />
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* ── FOOTER-Row: Wolf-Schlafen links (OHNE Bubble) + QR-Code rechts ── */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        width: '100%', maxWidth: 'min(96vw, 1500px)',
+        zIndex: 5,
+        gap: 16,
+        padding: '0 clamp(8px, 1vw, 18px)',
+        flexShrink: 0,
+      }}>
+        {/* Wolf-Schlafen links — Disc-Frame, OHNE Speech-Bubble.
+            Wolf-Quote: 'unten links schlafender wolf ohne sprechen'.
+            Schlafen-Mode zeigt Z's via Animation — kein extra Text/Bubble. */}
+        <div style={{
+          width: 'clamp(110px, 12vw, 170px)', height: 'clamp(110px, 12vw, 170px)',
+          borderRadius: '50%',
+          background: 'rgba(15,8,23,0.6)',
+          border: `2.5px solid rgba(${brand.accentRgb},0.55)`,
+          boxShadow: `0 0 28px rgba(${brand.accentRgb},0.4), 0 6px 18px rgba(0,0,0,0.5)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+          flexShrink: 0,
+          animation: 'qqThanksColIn 0.7s ease 0.5s both',
+        }}>
+          <AnimatedCozyWolf widthCss="92%" mode="schlafen" />
+        </div>
+
+        {/* QR-Code rechts mit Text */}
+        {summaryUrl && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            animation: 'qqThanksColIn 0.7s ease 0.6s both',
+          }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+              gap: 3, lineHeight: 1.15, textAlign: 'right',
+            }}>
+              <div style={{
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
+                color: '#F1F5F9',
+              }}>{de ? 'Scannt den Code' : 'Scan the code'}</div>
+              <div style={{
+                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 700,
+                color: '#94A3B8',
+              }}>{de ? 'für eure Team-Stats' : 'for your team stats'}</div>
+              <div style={{
+                fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+                marginTop: 4,
+                textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
+              }}>{de ? '↗ scan mich' : '↗ scan me'}</div>
+            </div>
+            <div style={{
+              padding: 10, borderRadius: 14,
+              background: '#fff',
+              border: `2.5px solid rgba(${brand.accentRgb},0.7)`,
+              boxShadow: `0 0 22px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
+              flexShrink: 0,
+            }}>
+              <QRCodeSVG
+                value={summaryUrl}
+                size={108}
+                bgColor="#ffffff" fgColor="#0A0814" level="M"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 2026-05-10 v4 (Wolf '3 Awards mit Avatar in klein'): Award-Row für rechte
+// Spalte. Kleine Avatar-Disc in Award-Akzent-Farbe + Award-Emoji-Badge oben
+// rechts + Label + Team-Name. Disc-Größe bewusst kompakt damit alle 3 Rows
+// nebeneinander Platz haben ohne den Sieger-Hero in der Mitte zu erschlagen.
+function ThanksAwardRow({ emoji, label, accent, winner, lang, delay = 0 }: {
+  emoji: string;
+  label: string;
+  accent: string;
+  winner: QQTeam | null;
+  lang: 'de' | 'en';
+  delay?: number;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      animation: `qqThanksAwardIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s both`,
+    }}>
+      {/* Award-Disc mit kleinem Avatar */}
+      <div style={{
+        position: 'relative',
+        width: 'clamp(60px, 6.4vw, 92px)', height: 'clamp(60px, 6.4vw, 92px)',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          width: '100%', height: '100%', borderRadius: '50%',
+          background: winner?.color ?? '#1E293B',
+          border: `3px solid ${accent}`,
+          boxShadow: `0 0 20px ${accent}88, 0 4px 12px rgba(0,0,0,0.4), inset 0 -4px 10px rgba(0,0,0,0.25)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+        }}>
+          {winner ? (
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size="100%" flat />
+          ) : (
+            <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', opacity: 0.4 }}>—</span>
+          )}
+        </div>
+        {/* Award-Emoji-Badge oben rechts */}
+        <span aria-hidden style={{
+          position: 'absolute', right: -4, top: -4,
+          width: 'clamp(28px, 2.8vw, 38px)', height: 'clamp(28px, 2.8vw, 38px)',
+          borderRadius: '50%',
+          background: '#0A0814',
+          border: `2px solid ${accent}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 'clamp(15px, 1.5vw, 22px)', lineHeight: 1,
+          boxShadow: `0 0 10px ${accent}aa`,
+        }}>{emoji}</span>
+      </div>
+      {/* Label + Team-Name */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1,
+        gap: 3, lineHeight: 1.1,
+      }}>
+        <div style={{
+          fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
+          color: accent,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          textShadow: `0 0 10px ${accent}55`,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{label}</div>
+        <div style={{
+          fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
+          color: winner?.color ?? '#475569',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{winner ? winner.name : (lang === 'de' ? '— niemand —' : '— nobody —')}</div>
       </div>
     </div>
   );

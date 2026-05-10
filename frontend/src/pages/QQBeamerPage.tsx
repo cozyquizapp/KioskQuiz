@@ -40,6 +40,7 @@ import {
   playStapelStamp, playTeamJoin,
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
+  playWoodKnock, playWinnerCardReveal,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -17034,19 +17035,27 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
   // Total bei N=8 ~31s, bei N=4 ~22s.
   useEffect(() => {
     const handles: number[] = [];
+    // 2026-05-10 (Wolf 'Music während Race + austauschbare Sounds'):
+    // Music-Loop startet sofort bei Mount (countdown läuft schon, Loop unter
+    // den Countdown-Ticks). finaleMusic-Slot ist bestehend customizable via
+    // Mod-Panel, fallback auf Lobby-Pool.
+    try { startFinaleLoop(); } catch {}
+
     // 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): 3.5s Countdown-Phase
     // (BEREIT 0.8s → 3 0.7s → 2 0.7s → 1 0.8s → GO! 0.5s) + 5s Race-Hold
-    // = 8.5s bis erstes Team fällt (war 8s).
+    // = 8.5s bis erstes Team fällt.
     let cursor = 3500; // Countdown Auto-Choreo läuft
     handles.push(window.setTimeout(() => setPhase('race'), cursor));
     cursor += 5000; // Race-Hold 5s
 
-    // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr
+    // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr.
+    // 2026-05-10 (Wolf 'mehr sounds für race'): Fall-Thud bei jedem Team-Out.
     for (let rank = N; rank >= 2; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
       handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
+        try { playWoodKnock(); } catch {}
         if (rank === 2) setPhase('p1-solo');
       }, cursor));
       cursor += 2000;
@@ -17069,15 +17078,18 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     // dann erst kommt das Treppchen aus dem Boden.
     cursor += 2000;
 
-    // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s)
+    // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s).
+    // Whoosh-Sound für den Aufstiegs-Moment.
     handles.push(window.setTimeout(() => {
       setPhase('podium-rises');
+      try { playWinnerCardReveal(); } catch {}
     }, cursor));
     cursor += 2500;
 
-    // P1 Slow-Mo
+    // P1 Slow-Mo — Music duckt für Fanfare im Vordergrund
     handles.push(window.setTimeout(() => {
       setPhase('winner-slowmo');
+      try { setMusicDucked(true); } catch {}
       try { playFanfare(); } catch {}
     }, cursor));
     cursor += 1500;
@@ -17088,7 +17100,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       try { playClimaxFinish(); } catch {}
     }, cursor));
 
-    return () => handles.forEach(h => window.clearTimeout(h));
+    return () => {
+      handles.forEach(h => window.clearTimeout(h));
+      // Music-Cleanup bei Unmount/Remount (Replay).
+      try { stopLobbyLoop(); } catch {}
+      try { setMusicDucked(false); } catch {}
+    };
   // 2026-05-10 (Audit-P0): Deps auf stabile Identifier reduziert. finalRanking
   // ist jetzt useMemo-stabilisiert (FinalRevealView), aber Socket-State-Updates
   // mid-Choreo könnten trotzdem neue Refs liefern wenn s.teams/s.grid sich
@@ -17608,10 +17625,12 @@ function RaceCountdownOverlay() {
 
   useEffect(() => {
     const handles: number[] = [];
-    handles.push(window.setTimeout(() => setStep(1), 800));   // → 3
-    handles.push(window.setTimeout(() => setStep(2), 1500));  // → 2
-    handles.push(window.setTimeout(() => setStep(3), 2200));  // → 1
-    handles.push(window.setTimeout(() => setStep(4), 3000));  // → GO!
+    // 2026-05-10 (Wolf 'mehr sounds für race'): Tick pro Countdown-Step
+    // (3-2-1 = playTick, GO = playFanfare-light via playWinnerCardReveal).
+    handles.push(window.setTimeout(() => { setStep(1); try { playTick(); } catch {} }, 800));   // → 3
+    handles.push(window.setTimeout(() => { setStep(2); try { playTick(); } catch {} }, 1500));  // → 2
+    handles.push(window.setTimeout(() => { setStep(3); try { playTick(); } catch {} }, 2200));  // → 1
+    handles.push(window.setTimeout(() => { setStep(4); try { playWinnerCardReveal(); } catch {} }, 3000));  // → GO!
     return () => handles.forEach(h => window.clearTimeout(h));
   }, []);
 

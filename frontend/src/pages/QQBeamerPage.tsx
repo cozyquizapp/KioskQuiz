@@ -5688,7 +5688,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // Immer 2-spaltig: 1-2 Teams = 2 Spalten (eine Zeile), 3-4 = 2×2,
               // 5-8 = 2×3 / 2×4. Hält Karten schön breit statt quetschig-schmal.
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              gap: teamCount > 6 ? 6 : 'clamp(8px, 1.2vw, 14px)',
+              // 2026-05-10 (Spacing-Audit P2): Compact-Gap von 6 auf 10 bumpt —
+              // bei 7-8 Teams verschmolzen die Cards auf 8 m Beamer-Distanz
+              // optisch zu einem Block. 10 px hält sichtbare Atmung ohne dass
+              // die Cards merklich schmaler werden.
+              gap: teamCount > 6 ? 10 : 'clamp(8px, 1.2vw, 14px)',
             }}>
               {s.teams.map((t, i) => {
                 const compact = teamCount > 6;

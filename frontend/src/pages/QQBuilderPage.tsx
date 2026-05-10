@@ -859,6 +859,15 @@ export default function QQBuilderPage() {
       )}
       <style>{`
         .qq-filmstrip-thumb:hover .qq-filmstrip-design-btn { opacity: 1 !important; }
+        /* 2026-05-11: Wizard-Filmstrip Hover-Tooltip mit Frage-Preview. */
+        .qq-filmstrip-chip-wrap:hover .qq-filmstrip-tooltip { opacity: 1 !important; }
+        /* 2026-05-11: Kategorie-Focus-Glow auf Textareas. catColor per
+           CSS-Custom-Property (--cozy-focus-color). */
+        textarea.cozy-input:focus, input.cozy-input:focus {
+          outline: none !important;
+          border-color: var(--cozy-focus-color, ${COZY_PINK}) !important;
+          box-shadow: 0 0 0 3px var(--cozy-focus-color, ${COZY_PINK})22, 0 0 18px var(--cozy-focus-color, ${COZY_PINK})33 !important;
+        }
         /* 2026-05-10 CozyBuilder Pack A #4: Save-Button Click-Bounce.
            Wolfs am-häufigsten-gedrückter Button belohnt jetzt sichtbar.
            Glow pulst sanft wenn ready, beim Klick kurz schrumpfen-bouncen. */
@@ -1470,11 +1479,26 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         <>
           <div>
             <label style={labelStyle}>Frage (DE)</label>
-            <textarea value={q.text} onChange={e => onChange({ ...q, text: e.target.value })} style={{ ...textareaStyle, borderColor: catColor + '44' }} rows={fullWidth ? 4 : 3} placeholder="Fragetext auf Deutsch…" autoFocus={fullWidth} />
+            <textarea
+              className="cozy-input"
+              value={q.text}
+              onChange={e => onChange({ ...q, text: e.target.value })}
+              style={{ ...textareaStyle, borderColor: catColor + '55', ['--cozy-focus-color' as any]: catColor }}
+              rows={fullWidth ? 4 : 3}
+              placeholder="Fragetext auf Deutsch…"
+              autoFocus={fullWidth}
+            />
           </div>
           <div>
             <label style={labelStyle}>Frage (EN) <span style={{ color: '#334155' }}>optional</span></label>
-            <textarea value={q.textEn ?? ''} onChange={e => onChange({ ...q, textEn: e.target.value })} style={textareaStyle} rows={fullWidth ? 3 : 2} placeholder="Question text in English…" />
+            <textarea
+              className="cozy-input"
+              value={q.textEn ?? ''}
+              onChange={e => onChange({ ...q, textEn: e.target.value })}
+              style={{ ...textareaStyle, borderColor: catColor + '33', ['--cozy-focus-color' as any]: catColor }}
+              rows={fullWidth ? 3 : 2}
+              placeholder="Question text in English…"
+            />
           </div>
         </>
       )}
@@ -1520,25 +1544,66 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
           🖼 Bild {q.category === 'CHEESE' ? '(Pflicht)' : '(optional)'}
         </div>
 
-        {img?.url && (
-          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', height: fullWidth ? 200 : 140 }}>
-            <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: (img.layout === 'cutout' || img.layout === 'window-left' || img.layout === 'window-right') ? 'contain' : 'cover',
-              transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
-            }} />
-            {img.bgRemovedUrl && <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(34,197,94,0.9)', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>✓ BG entfernt</div>}
+        {img?.url ? (
+          // Bild vorhanden: Preview + Replace/Remove
+          <>
+            <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', position: 'relative', background: '#0f172a', height: fullWidth ? 200 : 140 }}>
+              <img src={img.bgRemovedUrl ?? img.url} alt="" style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: (img.layout === 'cutout' || img.layout === 'window-left' || img.layout === 'window-right') ? 'contain' : 'cover',
+                transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
+              }} />
+              {img.bgRemovedUrl && <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(34,197,94,0.9)', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>✓ BG entfernt</div>}
+            </div>
+            <button onClick={() => fileInputRef.current?.click()} disabled={!!uploadingFor} style={{ ...btnStyle('#3B82F6'), width: '100%', marginBottom: 6 }}>
+              {uploadingFor === q.id ? '⏳ Lädt hoch…' : '🔄 Bild ersetzen'}
+            </button>
+            <button onClick={onRemoveBg} disabled={!!removingBgFor} style={{ ...btnStyle('#8B5CF6'), width: '100%', marginBottom: 10 }}>
+              {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
+            </button>
+          </>
+        ) : (
+          // Empty-State: große einladende Drop-Zone statt nüchterner Upload-Button.
+          // 2026-05-11: Wolf-Maskottchen + Drag-Drop-Hint + Strg+V-Hinweis.
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              minHeight: fullWidth ? 280 : 180,
+              borderRadius: 14,
+              border: `2px dashed ${catColor}55`,
+              background: `${catColor}08`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 10, padding: '24px 16px',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `${catColor}14`;
+              e.currentTarget.style.borderColor = `${catColor}99`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = `${catColor}08`;
+              e.currentTarget.style.borderColor = `${catColor}55`;
+            }}
+          >
+            <div style={{ fontSize: fullWidth ? 60 : 44, lineHeight: 1, opacity: 0.7 }}>
+              {q.category === 'CHEESE' ? '🧀' : '🖼️'}
+            </div>
+            <div style={{ fontSize: fullWidth ? 16 : 14, fontWeight: 900, color: '#F8FAFC', textAlign: 'center' }}>
+              {uploadingFor === q.id ? '⏳ Lädt hoch…' : 'Bild hier loslassen oder klicken'}
+            </div>
+            <div style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', fontWeight: 600, lineHeight: 1.4 }}>
+              Drag &amp; Drop · Strg+V aus Zwischenablage · Klick zum Auswählen
+            </div>
+            {q.category === 'CHEESE' && (
+              <div style={{
+                marginTop: 4, padding: '4px 10px', borderRadius: 999,
+                background: `${catColor}22`, border: `1px solid ${catColor}66`,
+                fontSize: 10, fontWeight: 800, color: catColor,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>Pflicht für Picture-This</div>
+            )}
           </div>
-        )}
-
-        <button onClick={() => fileInputRef.current?.click()} disabled={!!uploadingFor} style={{ ...btnStyle('#3B82F6'), width: '100%', marginBottom: 6 }}>
-          {uploadingFor === q.id ? '⏳ Lädt hoch…' : img?.url ? '🔄 Bild ersetzen' : '📤 Bild hochladen'}
-        </button>
-
-        {img?.url && (
-          <button onClick={onRemoveBg} disabled={!!removingBgFor} style={{ ...btnStyle('#8B5CF6'), width: '100%', marginBottom: 10 }}>
-            {removingBgFor === q.id ? '⏳ Entferne Hintergrund…' : '✂️ Hintergrund entfernen'}
-          </button>
         )}
       </div>
       )}
@@ -2528,6 +2593,35 @@ function WizardView({
     if (!curQ) return;
     setSubStepByQuestion(prev => ({ ...prev, [curQ.id]: idx }));
   }
+
+  // 2026-05-11: Per-Step-Validation. Mappt Validation-Issues auf Sub-Step-IDs,
+  // damit jeder Step im Mini-Stepper einen roten/amber-Dot bekommen kann wenn
+  // er Errors/Warnings hat. validateQuestion(q) gibt { field, level } pro Issue.
+  // Mapping field → Step-ID basiert auf den Feldern die in jedem Step gerendert
+  // werden (siehe SUB_STEPS_BY_CATEGORY + QuestionEditor visibleSections-Map).
+  const validationByStep = curQ ? (() => {
+    const issues = validateQuestion(curQ);
+    const map: Record<string, { errors: number; warnings: number }> = {};
+    for (const step of curSubSteps) map[step.id] = { errors: 0, warnings: 0 };
+    for (const iss of issues) {
+      // field-Mapping: vereinfacht — die meisten Issues mit 'text' gehören zu
+      // 'text'-Step, 'image' zum 'image'-Step etc. Default = 'main'-Step.
+      let stepId = 'main';
+      if (iss.field === 'text' || iss.field === 'textEn') stepId = 'text';
+      else if (iss.field === 'image') {
+        // Image-Issues: Bild + cheeseLayout-Wahl gehören zum image-Step.
+        stepId = curSubSteps.find(s => s.id === 'image') ? 'image' : 'main';
+      }
+      else if (iss.field === 'funFact') stepId = 'funFact';
+      // Wenn Step-Map den stepId nicht hat (z.B. Bunte-Tüte hat kein image-Step),
+      // fall-back auf 'main'.
+      if (!map[stepId]) stepId = 'main';
+      if (!map[stepId]) continue;
+      if (iss.level === 'error') map[stepId].errors++;
+      else map[stepId].warnings++;
+    }
+    return map;
+  })() : {};
   function goToQuestion(idx: number, atLastStep = false) {
     const nextQ = qs[idx];
     if (!nextQ) return;
@@ -2588,7 +2682,13 @@ function WizardView({
     }}>
       <style>{`
         @keyframes cozyWizardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes cozyWizardSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        /* 2026-05-11: Step-Transitions punchier — translate + leichter scale +
+           subtle pink-glow-trail beim Wechsel. Bouncy-easing, 0.42s. */
+        @keyframes cozyWizardSlideIn {
+          0%   { opacity: 0; transform: translateX(36px) scale(0.985); filter: blur(2px); }
+          60%  { opacity: 1; transform: translateX(-4px) scale(1.005); filter: blur(0); }
+          100% { opacity: 1; transform: translateX(0)    scale(1); filter: blur(0); }
+        }
       `}</style>
 
       {/* 2026-05-11 Wizard Focus-Mode — Top-Stack auf 1 Zeile komprimiert.
@@ -2623,9 +2723,14 @@ function WizardView({
         </div>
         {/* Vertikaler Divider */}
         <div style={{ width: 1, height: 24, background: `${COZY_PINK}22`, flexShrink: 0 }} />
-        {/* Sub-Stepper-Pills */}
+        {/* Sub-Stepper-Pills mit Validation-Indikator */}
         {curSubSteps.map((step, i) => {
           const isActive = i === curSubStepIdx;
+          // 2026-05-11: Validation-Dot pro Step.
+          const v = validationByStep[step.id] ?? { errors: 0, warnings: 0 };
+          const hasErr = v.errors > 0;
+          const hasWarn = v.warnings > 0 && !hasErr;
+          const dotColor = hasErr ? '#EF4444' : hasWarn ? '#F59E0B' : null;
           return (
             <button
               key={step.id}
@@ -2641,13 +2746,22 @@ function WizardView({
                 cursor: 'pointer',
                 boxShadow: isActive ? `0 0 14px ${COZY_PINK}55` : 'none',
                 transition: 'all 0.15s',
-                flexShrink: 0,
+                flexShrink: 0, position: 'relative',
               }}
               aria-current={isActive ? 'step' : undefined}
-              title={`Step ${i + 1}: ${step.label}`}
+              title={`Step ${i + 1}: ${step.label}${hasErr ? ` · ${v.errors} Fehler` : hasWarn ? ` · ${v.warnings} Warnung${v.warnings > 1 ? 'en' : ''}` : ''}`}
             >
               <span style={{ fontSize: 14 }}>{step.emoji}</span>
               <span style={{ letterSpacing: '0.02em' }}>{step.label}</span>
+              {dotColor && (
+                <span aria-hidden style={{
+                  position: 'absolute', top: -3, right: -3,
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: dotColor,
+                  boxShadow: `0 0 8px ${dotColor}cc`,
+                  border: `1.5px solid ${COZY_NAVY}`,
+                }} />
+              )}
             </button>
           );
         })}
@@ -2703,10 +2817,23 @@ function WizardView({
             flex: 1, overflow: 'auto',
             background: COZY_NAVY_DARK,
             borderRadius: 18,
-            border: `1px solid ${COZY_PINK}22`,
-            boxShadow: `0 0 0 1px ${COZY_PINK}0d, 0 16px 40px rgba(0,0,0,0.35)`,
+            // 2026-05-11: Kategorie-Farbe als subtler Akzent statt überall Pink.
+            // Card-Border + Glow nehmen catColor → jede Kategorie fühlt sich
+            // eigen an.
+            border: `1px solid ${catColor}33`,
+            boxShadow: `0 0 0 1px ${catColor}14, 0 16px 40px rgba(0,0,0,0.35), 0 0 60px ${catColor}10`,
             display: 'flex', flexDirection: 'column',
+            position: 'relative',
           }}>
+            {/* Vertikaler Kategorie-Akzent-Streifen (4px) links — visueller
+                Kat-Anker, sehr subtil aber sofort lesbar. */}
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0,
+              width: 4, borderRadius: '18px 0 0 18px',
+              background: `linear-gradient(180deg, ${catColor}, ${catColor}88)`,
+              opacity: 0.7,
+              pointerEvents: 'none',
+            }} />
             {/* Step-Hero — großer Titel + Mini-Tipp pro Step. Wolf weiß
                 sofort „was tue ich hier?". Kategorie-Farbe als Akzent. */}
             {(() => {
@@ -2887,26 +3014,56 @@ function WizardFilmstrip({ questions, activeQId, phaseCount, onJump }: {
                 const isActive = q.id === activeQId;
                 const filled = !!q.text?.trim();
                 const catColor = QQ_CATEGORY_COLORS[q.category];
+                const catLbl = QQ_CATEGORY_LABELS[q.category];
+                // 2026-05-11: Custom-Hover-Tooltip mit Frage-Preview + Kat-Name.
+                // Schöner als native browser-title-Attribut.
                 return (
-                  <button
-                    key={q.id}
-                    data-active={isActive ? '1' : '0'}
-                    onClick={() => onJump(q.id)}
-                    title={q.text || `${QQ_CATEGORY_LABELS[q.category].de} (leer)`}
-                    style={{
-                      width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                      border: isActive ? `2px solid ${COZY_PINK}` : `1px solid ${catColor}33`,
-                      background: filled ? `${catColor}33` : 'rgba(255,255,255,0.03)',
-                      color: filled ? catColor : '#475569',
-                      fontFamily: 'inherit', fontSize: 14, fontWeight: 900,
-                      cursor: 'pointer',
-                      boxShadow: isActive ? `0 0 14px ${COZY_PINK}66` : 'none',
-                      transition: 'all 0.15s',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >
-                    {QQ_CATEGORY_LABELS[q.category].emoji}
-                  </button>
+                  <div key={q.id} style={{ position: 'relative' }} className="qq-filmstrip-chip-wrap">
+                    <button
+                      data-active={isActive ? '1' : '0'}
+                      onClick={() => onJump(q.id)}
+                      style={{
+                        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                        border: isActive ? `2px solid ${COZY_PINK}` : `1px solid ${catColor}33`,
+                        background: filled ? `${catColor}33` : 'rgba(255,255,255,0.03)',
+                        color: filled ? catColor : '#475569',
+                        fontFamily: 'inherit', fontSize: 14, fontWeight: 900,
+                        cursor: 'pointer',
+                        boxShadow: isActive ? `0 0 14px ${COZY_PINK}66` : 'none',
+                        transition: 'all 0.15s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      {catLbl.emoji}
+                    </button>
+                    {/* Hover-Tooltip mit Frage-Preview + Kat-Name */}
+                    <div className="qq-filmstrip-tooltip" style={{
+                      position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
+                      transform: 'translateX(-50%)',
+                      pointerEvents: 'none', opacity: 0,
+                      transition: 'opacity 0.15s ease',
+                      background: 'rgba(20,27,58,0.96)',
+                      border: `1px solid ${catColor}66`,
+                      borderRadius: 10, padding: '8px 12px',
+                      maxWidth: 240, minWidth: 140,
+                      fontSize: 11, lineHeight: 1.4, color: '#F8FAFC',
+                      fontWeight: 600,
+                      boxShadow: `0 8px 20px rgba(0,0,0,0.5), 0 0 0 1px ${catColor}33`,
+                      zIndex: 10,
+                      whiteSpace: 'normal',
+                    }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 900, color: catColor,
+                        textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
+                      }}>{catLbl.emoji} {catLbl.de}</div>
+                      <div style={{
+                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
+                        {q.text?.trim() || <span style={{ color: '#64748B', fontStyle: 'italic', fontWeight: 700 }}>leer</span>}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>

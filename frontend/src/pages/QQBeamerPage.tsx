@@ -5843,19 +5843,16 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   void tick;
   const elapsed = Date.now() - anchor;
 
-  // 2026-05-09 v3 (Wolf 'animation eher lame, kein Herzlich-Willkommen-Moment'):
-  // Komplett-Refactor:
-  //   1) WELCOME-Hero (1.4s): „🎉 Herzlich Willkommen!" slammt rein, hält
-  //   2) FADE-zu-Subtitle (0.4s): morpht in das kleinere „Heute spielen…"
-  //   3) TEAMS PARALLEL (Stagger 280ms): alle Cards überlappen sich beim Slam
-  //      statt sequentiell zu warten. Slam→Settle→Flip in einem Atemzug.
-  //   4) VIEL GLÜCK (mit Konfetti)
-  // Total ~5s bei 4 Teams (vorher ~15s) — viel energetischer.
-  const titleDelay = 0; // (legacy — Letter-Cascade des Subtitles ist im DOM gehidet bis showSubtitle true wird)
+  // 2026-05-09 v3: WELCOME-Hero + Subtitle + Teams-Parallel.
+  // 2026-05-11 (Wolf-Bug 'kurzer Herzlich-Willkommen-Flash vor Heute spielen
+  // weg'): WELCOME-Hero komplett deaktiviert — startet jetzt direkt mit
+  // „Heute spielen…" + Team-Cascade. Welcome-Moment bleibt im Pre-Rules-
+  // QuizIntroOverlay (rulesSlideIndex === -2), an dieser Stelle war's doppelt.
+  const titleDelay = 0;
   const titleDur = 800;
-  const WELCOME_DUR = 1400;            // Welcome-Hero hold
-  const WELCOME_FADE = 400;            // Crossfade zu Subtitle
-  const TITLE_HOLD = WELCOME_DUR + WELCOME_FADE; // Subtitle erscheint = Teams können starten
+  const WELCOME_DUR = 0;               // war 1400 — deaktiviert
+  const WELCOME_FADE = 0;              // war 400 — deaktiviert
+  const TITLE_HOLD = 0;                // Teams starten sofort (vorher = 1800)
   const SLAM_DUR = 1400;
   const SETTLE = 300;                  // Settle gekürzt 500→300 (mehr Energie)
   const FLIP_DUR = 900;                // Flip gekürzt 1000→900
@@ -6037,46 +6034,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      {/* 2026-05-09 v3 (Wolf 'kein Herzlich-Willkommen-Moment'): WELCOME-Hero
-          slammt zuerst rein, hält ~1.4s, dann crossfade zum kleineren Subtitle
-          „Heute spielen…". Confetti-Burst beim Welcome-Slam. */}
-      {showWelcome && (
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 6,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
-          opacity: elapsed < WELCOME_DUR
-            ? 1
-            : Math.max(0, 1 - (elapsed - WELCOME_DUR) / WELCOME_FADE),
-          transition: 'opacity 0.4s ease',
-          pointerEvents: 'none',
-        }}>
-          <div style={{
-            fontSize: 'clamp(56px, 8vw, 130px)', fontWeight: 900,
-            color: isEsc ? '#FF2D7B' : '#EC4899',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
-            textShadow: isEsc
-              ? '0 4px 28px rgba(0,0,0,0.7), 0 0 48px rgba(255,45,123,0.7), 0 0 16px rgba(255,255,255,0.3)'
-              : '0 4px 28px rgba(0,0,0,0.7), 0 0 48px rgba(236,72,153,0.7), 0 0 16px rgba(255,255,255,0.3)',
-            animation: 'qqGsTeamSlam 1s cubic-bezier(0.34, 1.46, 0.64, 1) both',
-            textAlign: 'center', lineHeight: 1,
-          }}>
-            🎉 {lang === 'en' ? 'Welcome!' : 'Herzlich Willkommen!'}
-          </div>
-          <div style={{
-            fontSize: 'clamp(20px, 2.4vw, 36px)', fontWeight: 700,
-            color: '#cbd5e1', letterSpacing: '0.1em', textTransform: 'uppercase',
-            opacity: 0,
-            animation: 'qqTrGood 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both',
-            textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-          }}>
-            {lang === 'en' ? '✨ Tonight at CozyQuiz ✨' : '✨ Heute bei CozyQuiz ✨'}
-          </div>
-        </div>
-      )}
+      {/* 2026-05-11 (Wolf-Bug): WELCOME-Hero entfernt — Welcome-Moment lebt
+          im Pre-Rules-QuizIntroOverlay. TeamsRevealView startet jetzt direkt
+          mit dem „Heute spielen…"-Subtitle + Team-Cascade. */}
 
-      {/* Subtitle Title — fade-in nach Welcome (1.4s+).
+      {/* Subtitle Title — startet sofort beim Mount (kein Welcome-Wait mehr).
           Letters cascaden einzeln rein, dann sanftes Wave-Loop. Pink-Underline
           expandiert drunter mit Shimmer-Loop. */}
       <div style={{

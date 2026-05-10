@@ -254,6 +254,71 @@ export default function QQBuilderPage() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [activeDraft]);
 
+  // 2026-05-10 CozyBuilder Pack B #9: globaler Paste-Handler. Strg+V
+  // Bild-aus-Clipboard auf aktiven Slot upen wenn nicht in Text-Input
+  // fokussiert (sonst stört es normales Text-Paste).
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+      if (!activeQId) return;
+      const item = Array.from(e.clipboardData?.items ?? []).find(it => it.type.startsWith('image/'));
+      if (!item) return;
+      const file = item.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      const renamed = new File([file], `paste-${Date.now()}.png`, { type: file.type });
+      void uploadImageFile(activeQId, renamed);
+    }
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeQId, activeDraft?.id]);
+
+  // 2026-05-10 CozyBuilder Pack B #10: Tastatur-Navigation.
+  // Cmd/Ctrl+S    → explizit speichern (überschreibt Browser-Default).
+  // Cmd/Ctrl+J/K  → vorheriger/nächster Slot.
+  // Cmd/Ctrl+Enter → save + nächster LEERER Slot (Schreib-Flow).
+  // Ignoriert wenn Modal offen ist oder Eingabefeld fokussiert (Tab-Navigation
+  // in Inputs bleibt intakt; nur Cmd+S/J/K/Enter werden abgefangen).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!activeDraft) return;
+      if (showRestore || showImport || showConnections || showPreview || validationPrompt) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      // Cmd+S → Save
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        if (!saving) void saveDraft(activeDraft);
+        return;
+      }
+      // Cmd+Enter → Save + Sprung zum nächsten leeren Slot
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!saving) void saveDraft(activeDraft);
+        const nextEmpty = activeDraft.questions.find(q => !q.text?.trim());
+        if (nextEmpty) setActiveQId(nextEmpty.id);
+        return;
+      }
+      // Cmd+J / Cmd+K → Slot-Navigation
+      if (e.key === 'j' || e.key === 'J' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        const qs = activeDraft.questions;
+        if (qs.length === 0) return;
+        const curIdx = activeQId ? qs.findIndex(q => q.id === activeQId) : -1;
+        const dir = (e.key === 'j' || e.key === 'J') ? 1 : -1;
+        const nextIdx = curIdx < 0
+          ? (dir > 0 ? 0 : qs.length - 1)
+          : (curIdx + dir + qs.length) % qs.length;
+        setActiveQId(qs[nextIdx].id);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDraft, activeQId, saving, showRestore, showImport, showConnections, showPreview, validationPrompt]);
+
   // ── Warn before leaving with unsaved changes ──
   useEffect(() => {
     if (!activeDraft) return;
@@ -355,10 +420,14 @@ export default function QQBuilderPage() {
       }
     } finally { setSaving(false); }
   }
-  // Validiert Draft und zeigt Prompt bei Problemen — sonst direkt speichern.
+  // Validiert Draft und zeigt Prompt NUR bei Errors — sonst direkt speichern.
+  // 2026-05-10 CozyBuilder Pack B #6: Warnings blocken Save nicht mehr.
+  // Wolf-Schmerz war: jedes Save endete im 'Trotzdem speichern'-Modal weil
+  // EN-Felder noch leer waren. Jetzt fließt Save just-works durch; Warnings
+  // sind im Header-Save-Button als Counter sichtbar.
   async function saveDraft(draft: QQDraft) {
     const v = validateDraft(draft);
-    if (v.totalErrors > 0 || v.totalWarnings > 0) {
+    if (v.totalErrors > 0) {
       setValidationPrompt({ draft });
       return;
     }
@@ -451,9 +520,18 @@ export default function QQBuilderPage() {
     if (activeDraft?.id === id) setActiveDraft(null);
   }
 
+  // 2026-05-10 CozyBuilder Pack B #9: in 2 Layer aufgeteilt damit Drop/Paste
+  // ohne fileInputRef-Roundtrip uploaden kann. uploadImage = Wrapper für
+  // File-Picker-Flow (greift den ref-File), uploadImageFile = pure File-Upload
+  // (für Drag-Drop + Paste-from-Clipboard).
   async function uploadImage(questionId: string) {
     const rawFile = fileInputRef.current?.files?.[0];
-    if (!rawFile || !activeDraft) return;
+    if (!rawFile) return;
+    await uploadImageFile(questionId, rawFile);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+  async function uploadImageFile(questionId: string, rawFile: File) {
+    if (!activeDraft) return;
     setUploadingFor(questionId);
     // 2026-05-05 (Wolf 'bilddatei zu gross, automatisch komprimieren'):
     // statt hard-fail bei >2MB: clientside Canvas-Komprimierung (max
@@ -465,7 +543,6 @@ export default function QQBuilderPage() {
     } catch (e) {
       alert('Bild konnte nicht verarbeitet werden');
       setUploadingFor(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
     try {
@@ -477,7 +554,7 @@ export default function QQBuilderPage() {
       if (!q) return;
       const updated = { ...q, image: { url: data.imageUrl, layout: q.image?.layout ?? 'fullscreen' as QQImageLayout, animation: q.image?.animation ?? 'none' as QQImageAnimation, bgRemovedUrl: undefined } };
       setActiveDraft(updateQuestion(activeDraft, updated));
-    } finally { setUploadingFor(null); if (fileInputRef.current) fileInputRef.current.value = ''; }
+    } finally { setUploadingFor(null); }
   }
 
   async function removeBg(question: QQQuestion) {
@@ -827,7 +904,10 @@ export default function QQBuilderPage() {
             })}
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill. Reduziert
+              Save-Angst — Wolf sieht live dass localStorage-Backup safe ist. */}
+          <AutoSavePill timestamp={autoSavedAt} />
           <button onClick={() => setShowImport(true)} style={btnStyle('#10B981')} title="Fragen aus CSV-Datei importieren (Vorlage im Modal)">📥 CSV</button>
           <button
             onClick={() => setShowConnections(true)}
@@ -1033,6 +1113,7 @@ export default function QQBuilderPage() {
             onChange={updated => setActiveDraft(updateQuestion(activeDraft, updated))}
             onDelete={() => { setActiveDraft(deleteQuestion(activeDraft, activeQ.id)); setActiveQId(null); }}
             onOptionImageUpload={(optIdx: number) => { setOptionUploadTarget({ questionId: activeQ.id, optionIndex: optIdx }); setTimeout(() => optionFileInputRef.current?.click(), 0); }}
+            onFileDrop={(file: File) => uploadImageFile(activeQ.id, file)}
           />
         )}
         {!activeQ && <EmptyStateWolf />}
@@ -1045,10 +1126,11 @@ export default function QQBuilderPage() {
 }
 
 // ── Question editor panel ──────────────────────────────────────────────────────
-function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload }: {
+function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete, uploadingFor, removingBgFor, fileInputRef, onOptionImageUpload, onFileDrop }: {
   question: QQQuestion; onChange: (q: QQQuestion) => void; onUpload: () => void; onRemoveBg: () => void; onDelete: () => void;
   uploadingFor: string | null; removingBgFor: string | null; fileInputRef: React.RefObject<HTMLInputElement>;
   onOptionImageUpload: (optIdx: number) => void;
+  onFileDrop?: (file: File) => void;
 }) {
   const catColor = QQ_CATEGORY_COLORS[q.category];
   const catLabel = QQ_CATEGORY_LABELS[q.category];
@@ -1057,13 +1139,46 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
   const issues = validateQuestion(q);
   const errorCount = issues.filter(i => i.level === 'error').length;
   const warnCount = issues.filter(i => i.level === 'warning').length;
+  // 2026-05-10 CozyBuilder Pack B #9: Drag-Drop-State für Visual-Highlight.
+  const [dragOver, setDragOver] = useState(false);
 
   function setImg(patch: Partial<QQQuestionImage>) {
     onChange({ ...q, image: { ...(img ?? { url: '', layout: 'fullscreen', animation: 'none' }), ...patch } });
   }
 
   return (
-    <div className="qq-builder-editor" style={{ width: 480, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div
+      className="qq-builder-editor"
+      onDragOver={(e) => { if (onFileDrop && e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragOver(true); } }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        if (!onFileDrop) return;
+        e.preventDefault(); setDragOver(false);
+        const file = Array.from(e.dataTransfer.files ?? []).find(f => f.type.startsWith('image/'));
+        if (file) onFileDrop(file);
+      }}
+      style={{
+        width: 480, flexShrink: 0,
+        borderLeft: `1px solid ${dragOver ? COZY_PINK : 'rgba(255,255,255,0.07)'}`,
+        background: dragOver ? `${COZY_PINK}14` : '#1e293b',
+        overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14,
+        position: 'relative',
+        transition: 'background 0.15s ease, border-color 0.15s ease',
+      }}
+    >
+      {/* Drop-Hint-Overlay — sichtbar nur während Drag-Over */}
+      {dragOver && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 8, borderRadius: 18,
+          border: `3px dashed ${COZY_PINK}`,
+          background: 'rgba(236,72,153,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none', zIndex: 100,
+          fontSize: 18, fontWeight: 900, color: '#fff',
+          textShadow: `0 0 12px ${COZY_PINK}`,
+          letterSpacing: '0.04em',
+        }}>📎 Bild hier loslassen</div>
+      )}
 
       {/* Validation summary */}
       {issues.length > 0 && (
@@ -2110,6 +2225,53 @@ function MiniPreviewPanel({ question }: { question: QQQuestion }) {
         <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{collapsed ? '▸' : '▾'}</span>
       </button>
       {!collapsed && <QQMiniPreview question={question} />}
+    </div>
+  );
+}
+
+// ── Auto-Save-Pill ────────────────────────────────────────────────────────────
+// 2026-05-10 CozyBuilder Pack B #7: zeigt „Auto-saved Xs ago" oder ein
+// pulsierendes ✓ nach Server-Save. Live-Updates per 1s-Timer.
+function AutoSavePill({ timestamp }: { timestamp: number | null }) {
+  const [, force] = useState(0);
+  const [pulseKey, setPulseKey] = useState(0);
+  const prevTsRef = useRef<number | null>(null);
+
+  // Re-render every 1s so 'X s ago' counter ticks live
+  useEffect(() => {
+    const i = setInterval(() => force(n => n + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+
+  // Pulse-Animation triggern bei Timestamp-Update
+  useEffect(() => {
+    if (timestamp && timestamp !== prevTsRef.current) {
+      prevTsRef.current = timestamp;
+      setPulseKey(k => k + 1);
+    }
+  }, [timestamp]);
+
+  if (!timestamp) return null;
+  const ageSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  const label = ageSec < 3 ? 'gerade gespeichert'
+    : ageSec < 60 ? `vor ${ageSec}s gespeichert`
+    : ageSec < 3600 ? `vor ${Math.floor(ageSec / 60)} min gespeichert`
+    : 'lokal gesichert';
+  return (
+    <div
+      key={pulseKey}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '5px 10px', borderRadius: 999,
+        background: 'rgba(34,197,94,0.10)',
+        border: '1px solid rgba(34,197,94,0.30)',
+        fontSize: 11, fontWeight: 700, color: '#86EFAC',
+        animation: ageSec < 1 ? 'cozyAutoSaveTick 0.6s ease-out' : undefined,
+      }}
+      title="Lokale Sicherung (auto-saved alle 2 Sek + nach jedem Server-Save)"
+    >
+      <span style={{ fontSize: 10 }}>💾</span>
+      <span>{label}</span>
     </div>
   );
 }

@@ -907,6 +907,19 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // Z — Undo Mark-Correct (Wolf 2026-05-10): falls Mod versehentlich falschen
+    // Sieger markiert hat. Nur in QUESTION_REVEAL aktiv und nur wenn ein
+    // correctTeamId gesetzt ist (sonst nichts zum Rückgängigmachen). Backend
+    // setzt zurück auf 'kein Sieger', Mod kann dann neu markieren.
+    if (e.code === 'KeyZ') {
+      e.preventDefault();
+      if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId) {
+        playHotkeyFeedback();
+        emitRef.current('qq:undoMarkCorrect', { roomCode });
+      }
+      return;
+    }
+
     // Number keys 1–5 → mark team correct (same as CozyQuiz)
     if (['Digit1','Digit2','Digit3','Digit4','Digit5'].includes(e.code)) {
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
@@ -5154,6 +5167,7 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
       ['1–5', 'Team 1–5 korrekt (im QUESTION_REVEAL)'],
       ['F14', 'Team 1 korrekt (Buzz-Winner)'],
       ['Esc / Backspace / F16', 'Niemand korrekt'],
+      ['Z', 'Letzten Mark-Correct rückgängig (im QUESTION_REVEAL)'],
     ],
   },
   {

@@ -4,6 +4,134 @@ Chronologisches Protokoll von Arbeits-Sessions. Trigger: Wolf sagt „log das", 
 
 ---
 
+## 2026-05-10 (Abend) — Spacing-Audit-Fixes + EN-i18n + CozyBuilder Pack A/B
+
+**Was passiert ist**: 4-Stränge-Session nach der Live-Test-Fix-Welle:
+
+### 1. Spacing-Audits → 7 isolierte Fixes (P0/P1/P2)
+4 parallele Audits auf alle Beamer-Phasen-Views, konsolidiert + nach
+Cascade-Risiko gefiltert. Wolf hat 7 grüne (= sichere) + 1 gelben Fix
+freigegeben:
+- L1 ComebackView fly-up Y-Clamp -510→-390 (kein Top-Edge-Overshoot mehr)
+- L2 HotPotato Question paddingTop +20px (Top-Bar-Overlap weg)
+- L3 RaceTeamUnit yOffset BEWUSST nicht angefasst — Wolf will Raketen-
+  Vielfalt, theoretisches Clipping nur N=8 Worst-Case
+- L4 GameOverView Wolf-Jubel von top:22vh → bottom:6vh (Winner-Hero
+  bekommt Atemraum bei N=7-8)
+- L5 LobbyView Team-Grid-Gap 6→10 px bei N≥7 (keine Block-Verschmelzung)
+- L6 ThanksView linke leere Spalte gedroppt (3-col → 2-col, ausbalanciert)
+- L7 Connections Group-Avatare bei N≥6 von 36-52 → 28-40 px (kein Wrap+
+  Spring-Out aus Cells)
+- L8 PhaseIntroView Cards via Wolf-Idee: nicht einzeln, sondern
+  SYNCHRON wachsen via minHeight + alignItems:stretch + Inner 100%
+
+### 2. EN-Localization-Sweep
+Bug-Discovery durch Wolf: Comeback zeigte DE-Frage im EN-Spiel. Audit
+hat das als Systemleck identifiziert. 5 Commits:
+- QQHLPair Type bekommt unitEn/anchorLabelEn/subjectLabelEn/
+  customQuestionEn-Felder, Frontend mit Fallback (Beamer + /team)
+- 69 H/L-Pool-Einträge in qqHLData.ts EN-übersetzt (Land-Namen,
+  „Mont Blanc"/„Kilimanjaro" etc., 6 customQuestion-Templates)
+- Number-Format-Suffix bei Comeback: „Mrd."/„Mio." → „bn"/„M" bei EN
+- Sample-Drafts (qq-vol-1..5): 15× Schätzchen-`unitEn`, 2× HotPotato-
+  `answerEn` (Europa 47 + Olympia 45 Sportarten), 3× Top5-`answersEn`,
+  3× Order-`criteriaEn`. Plus Frontend-Fallback bei Schätzchen-Reveal
+  Unit und Mod-SchaetzRanking-Prop.
+- P1: /team HelpModal EN-Section bekommt Brand-EN-Kategorienamen
+  („Close Call · Mu-Cho · Lucky Bag · All In · Picture This"),
+  PAUSE_CAT_ACCENT bekommt labelEn-Feld + lang-Render.
+- Builder-Translate-Button: 4 fehlende Bunte-Tüte-Felder fixed
+  (onlyConnect.answer + acceptedAnswers, bluff.realAnswer).
+
+⚠️ /api/translate hängt weiter an MyMemory (qualitäts-mäßig okay aber
+unter DeepL). Backend hat translateText() schon (DeepL) — könnte als
+Endpoint freigegeben werden, ist aber Pack C-Material.
+
+### 3. CozyBuilder Designer-Audit
+3 parallele AI-Agents auf Builder-Page (~2000 Zeilen):
+Content-Flow / Visual-UX / Feature-Wishlist. Synthese als
+COZYBUILDER_AUDIT.md im Repo-Root abgelegt — 36 nummerierte Findings
+sortiert in Quick-Wins / Mid-Bets / AI-Assist / Big-Bets.
+
+**Gesamtdiagnose**: Builder fühlt sich heute wie Linear/Notion an
+statt wie CozyQuiz. Brand-DNA fehlt komplett. Marken-Richtung:
+'Heimathafen statt Werkzeugkasten'.
+
+### 4. CozyBuilder Pack A + B umgesetzt (2 Commits)
+
+**Pack A — Brand + Wärme** (Commit `0b023296`):
+- #1 Brand-Farben-Sweep — COZY_NAVY/COZY_NAVY_DARK/COZY_PINK/
+  COZY_MAGENTA als File-Tokens. Page-BG, Header-Tint, Tab-Underline,
+  Save-Button, Modals alles auf Brand. Errors → Magenta (Brand-Finale),
+  OK → Pink (Primary).
+- #2 CozyWolf in DraftListScreen — Wolf-Pose „augenauf.mundauf.winken"
+  + Sprechblase Pink-Magenta-Verlauf, 4 Random-Greetings, 'CozyBuilder'-
+  Eyebrow. Create-Buttons als Brand-Cards.
+- #4 Save-Button belohnt — Pink-Glow wenn ready, Click-Shrink-Bounce
+  (scale 0.96), 1.2s ✓-Cascade fixed top-right nach Save-Success.
+- #5 Empty-State-Wolf — CozyWolf 200×200 mit Idle-Wiggle (4s sine) +
+  6 Random-Sprüchen statt „← Slot auswählen".
+
+**Pack B — Workflow-Heilen** (Commit `ea41ac06`):
+- #6 Save-Modal entschärft — saveDraft prüft nur noch Errors, Warnings
+  blocken nicht mehr. Kein „Trotzdem speichern"-Modal-Spam mehr.
+- #7 Auto-Save-Pill im Header — „gerade gespeichert" / „vor Xs
+  gespeichert", live tickender Counter, Pulse bei Update. Brand-Grün.
+- #9 Drag-Drop + Paste-from-Clipboard für Bilder — Editor-Panel als
+  Drop-Zone mit Pink-Highlight-Overlay, globaler Paste-Handler
+  (Strg+V Bild auf activeQ). Spart ~5 min/Quiz.
+- #10 Tastatur-Navigation — Cmd/Ctrl+S Save, +J/K Slot-Wechsel,
+  +Enter Save + Sprung zum nächsten leeren Slot. 25 Fragen ohne Maus.
+
+**Entscheidungen heute**:
+- Skript-Approach für EN-Übersetzung verworfen → manuelle Übersetzung
+  pragmatischer für die Menge (~200 Strings) + bessere Eigennamen-
+  Kontrolle. Skript-Plumbing-Investition lohnt nicht für 1-Shot.
+- L10 Race-Final-Padding für N=8 NICHT umgesetzt — selten relevant.
+- Connections-Avatar-Verkleinerung bei N≥6 trotz Trade-off (Lesbarkeit
+  vs. Chaos) durchgezogen, Wolf testet danach.
+- ThanksView 3-col → 2-col: Skelett bleibt in todo.md als „Later" für
+  wenn cozywolf.de Termine-Block kommt.
+
+**Files berührt** (Highlights):
+- `frontend/src/pages/QQBuilderPage.tsx` (~360 Zeilen ergänzt für
+  Pack A+B, neue Komponenten EmptyStateWolf + AutoSavePill)
+- `frontend/src/pages/QQBeamerPage.tsx` (Spacing-Fixes + EN-Fallbacks
+  + GridRevealSlide L10 + ComebackView fly-up)
+- `frontend/src/pages/QQTeamPage.tsx` (ComebackCard EN-Fallback +
+  HelpModal EN-Brand-Namen + fmtHL EN-Suffix)
+- `frontend/src/pages/QQModeratorPage.tsx` (L11 FINAL_REVEAL-Mapping +
+  L11 Cleanup-Effects + SchaetzRanking unit EN-Fallback)
+- `backend/src/quarterQuiz/qqHLData.ts` (komplett-Rewrite mit EN)
+- `backend/src/quarterQuiz/qqBfs.ts` (genutzt für L10 BFS-Helper)
+- `backend/src/server.ts` (Sample-Drafts EN-Felder)
+- `shared/quarterQuizTypes.ts` (QQHLPair EN-Felder)
+- `shared/textNormalization.ts` (L2/L3 ph→f + Substring-Min-Ratio
+  schon am Vormittag)
+- `COZYBUILDER_AUDIT.md` (NEU, 342 Zeilen)
+- `todo.md` (L4 als L10-Dupe, L6 = Wolf-Entscheid c, L10/L11 ✅)
+
+**Memory-Updates**:
+- Keine neuen Memory-Files — alle relevanten Patterns in
+  COZYBUILDER_AUDIT.md festgehalten (langfristige Referenz für
+  Pack C-E + zukünftige Builder-Refactors).
+
+**Offen / Next Steps**:
+- ⏳ **Pack C (AI-Plumbing + Pilot)**: Backend `/api/qq/llm` Endpoint
+  mit Claude Haiku + #25 Auto-Distraktoren + #26 Auto-funFact.
+  Beide rechtfertigen die API-Investition.
+- ⏳ **Pack D (AI-Erweiterung)**: #24 Fact-Check + #27 Thema-Generator.
+- ⏳ **Pack E (Big-Bet wenn Zeit)**: #30 Wizard ODER #32 Bibliothek.
+- ⏳ **L6 Joker-Bug**: beim nächsten Live-Auftritt Network-Tab-
+  Snapshot ziehen, dann Fix-Option (a) vs (b) entscheiden.
+- ⏳ **DeepL als /api/translate**: aktuell MyMemory. translateText()
+  ist im Backend schon DeepL-fähig — Endpoint freigeben würde
+  Builder-Übersetzungsqualität deutlich heben.
+
+🦖 Jojo over and out.
+
+---
+
 ## 2026-05-09 · Marathon-Session: Final-Wager + Game-Show-Reveal + HP-Visual
 
 **Was passiert ist:** Riesige Session, ~50 Commits. Vier thematische Blöcke:

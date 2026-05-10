@@ -20377,25 +20377,17 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         zIndex: 1,
       }} />
 
-      {/* ── PreGame-spezifische Atmo-Effekte: BgBreath + Spotlight-Sweep +
-          Fall-Particles. 1:1 aus PausedView (mode='preGame') übernommen,
-          damit Thanks visuell genauso „alive" wirkt wie das Setup. ── */}
+      {/* ── PreGame-spezifische Atmo-Effekte: BgBreath + Fall-Particles.
+          Spotlight-Sweep wurde entfernt (Wolf 2026-05-10: 'geht nur über
+          1/3 screen und sieht abgeschnitten aus'). Der diagonale Lichtkegel
+          ist im Setup mit dem PreGame-Layout abgestimmt; in der Thanks-Card-
+          Komposition wirkt er stattdessen wie eine isolierte Halbinsel. ── */}
       <div aria-hidden style={{
         position: 'absolute', inset: 0,
         background: `radial-gradient(ellipse at 50% 60%, rgba(${brand.accentRgb},0.10) 0%, transparent 70%)`,
         opacity: 0,
         animation: 'qqPreGameBgBreath 9s ease-in-out infinite',
         pointerEvents: 'none', zIndex: 0,
-      }} />
-      <div aria-hidden style={{
-        position: 'absolute', top: '-30%', left: '-20%',
-        width: '50%', height: '160%',
-        background: `linear-gradient(110deg, transparent 30%, rgba(${brand.accentRgb},0.18) 48%, rgba(255,255,255,0.10) 50%, rgba(${brand.accentRgb},0.18) 52%, transparent 70%)`,
-        filter: 'blur(20px)',
-        opacity: 0.7,
-        transformOrigin: 'top left',
-        animation: 'qqPreGameSpotlight 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite',
-        pointerEvents: 'none', zIndex: 2, mixBlendMode: 'screen',
       }} />
       {Array.from({ length: 8 }).map((_, i) => {
         const left = 6 + (i * 13.7) % 88;
@@ -20554,27 +20546,35 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         height: 'clamp(460px, 60vh, 660px)',
       }}>
         {!isEsc && (
+          // 2026-05-10 (Wolf 'border sparkle funktioniert nicht'): Sparkle
+          // deutlicher gemacht — Stroke 2.5→4px, Dasharray '9 91'→'24 76'
+          // (Spur 24% statt 9% Umfang sichtbar, also 2-3× größerer Comet),
+          // brand.accentHex direkt statt 0.7-Alpha, drop-shadow-Glow auf
+          // dem SVG für sichtbares „Funkeln". Speed leicht runter (3.6s →
+          // 4.5s) damit die Spur ruhiger wirkt.
           <svg
             aria-hidden
             style={{
               position: 'absolute',
               top: 0, left: 0, right: 0, bottom: 0,
               width: '100%', height: '100%',
-              pointerEvents: 'none', zIndex: 2,
+              pointerEvents: 'none', zIndex: 3,
               overflow: 'visible', display: 'block', verticalAlign: 'top',
+              filter: `drop-shadow(0 0 6px rgba(${brand.accentRgb},0.85)) drop-shadow(0 0 14px rgba(${brand.accentRgb},0.5))`,
             }}
           >
             <rect
               pathLength={100}
               style={{
-                x: '1px', y: '1px',
-                width: 'calc(100% - 2px)', height: 'calc(100% - 2px)',
-                rx: '23px', ry: '23px',
+                x: '2px', y: '2px',
+                width: 'calc(100% - 4px)', height: 'calc(100% - 4px)',
+                rx: '22px', ry: '22px',
                 fill: 'none',
-                stroke: `rgba(${brand.accentRgb},0.7)`,
-                strokeWidth: 2.5,
-                strokeDasharray: '9 91',
-                animation: 'qqStarBorderTrace 3.6s linear infinite',
+                stroke: brand.accentHex,
+                strokeWidth: 4,
+                strokeLinecap: 'round',
+                strokeDasharray: '24 76',
+                animation: 'qqStarBorderTrace 4.5s linear infinite',
               }}
             />
           </svg>
@@ -20749,10 +20749,6 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     color: brand.accentHex, letterSpacing: '0.02em',
                     textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
                   }}>📱 {de ? 'Feedback + auf Insta folgen' : 'Feedback + follow us on Insta'}</div>
-                  <div style={{
-                    fontSize: 'clamp(11px, 1.15vw, 16px)', fontWeight: 700,
-                    color: '#94A3B8', fontStyle: 'italic',
-                  }}>{de ? '30 Sek — wir lesen jedes Wort' : '30 sec — we read every word'}</div>
                 </div>
               </div>
             )}

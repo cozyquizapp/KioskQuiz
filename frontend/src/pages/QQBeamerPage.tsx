@@ -20334,6 +20334,24 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           0%   { background-position: -100% 0; }
           100% { background-position: 200% 0; }
         }
+        @keyframes qqPreGameBgBreath {
+          0%, 100% { opacity: 0.0; transform: scale(0.9); }
+          50%      { opacity: 0.55; transform: scale(1.08); }
+        }
+        @keyframes qqPreGameSpotlight {
+          0%   { transform: rotate(8deg) translate(-30%, -30%); opacity: 0; }
+          15%  { opacity: 0.7; }
+          60%  { transform: rotate(8deg) translate(180%, 60%); opacity: 0.7; }
+          80%  { opacity: 0; }
+          100% { transform: rotate(8deg) translate(220%, 80%); opacity: 0; }
+        }
+        @keyframes qqPreGameFallParticle {
+          0%   { transform: translateY(0) translateX(0); opacity: 0; }
+          10%  { opacity: 0.85; }
+          50%  { transform: translateY(50vh) translateX(8px); opacity: 0.85; }
+          90%  { opacity: 0.4; }
+          100% { transform: translateY(110vh) translateX(-6px); opacity: 0; }
+        }
       `}</style>
 
       {/* ── Ambient ring-light (mirror PausedView qqPauseAura) ── */}
@@ -20352,6 +20370,45 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         zIndex: 1,
       }} />
 
+      {/* ── PreGame-spezifische Atmo-Effekte: BgBreath + Spotlight-Sweep +
+          Fall-Particles. 1:1 aus PausedView (mode='preGame') übernommen,
+          damit Thanks visuell genauso „alive" wirkt wie das Setup. ── */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        background: `radial-gradient(ellipse at 50% 60%, rgba(${brand.accentRgb},0.10) 0%, transparent 70%)`,
+        opacity: 0,
+        animation: 'qqPreGameBgBreath 9s ease-in-out infinite',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
+      <div aria-hidden style={{
+        position: 'absolute', top: '-30%', left: '-20%',
+        width: '50%', height: '160%',
+        background: `linear-gradient(110deg, transparent 30%, rgba(${brand.accentRgb},0.18) 48%, rgba(255,255,255,0.10) 50%, rgba(${brand.accentRgb},0.18) 52%, transparent 70%)`,
+        filter: 'blur(20px)',
+        opacity: 0.7,
+        transformOrigin: 'top left',
+        animation: 'qqPreGameSpotlight 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite',
+        pointerEvents: 'none', zIndex: 2, mixBlendMode: 'screen',
+      }} />
+      {Array.from({ length: 8 }).map((_, i) => {
+        const left = 6 + (i * 13.7) % 88;
+        const dur = 11 + (i % 4) * 2.5;
+        const delay = (i * 1.4) % 9;
+        const size = 3 + (i % 3) * 1.5;
+        return (
+          <span key={`fall-${i}`} aria-hidden style={{
+            position: 'absolute',
+            top: '-5%', left: `${left}%`,
+            width: size, height: size, borderRadius: '50%',
+            background: i % 2 ? brand.accentHex : brand.accentSoft,
+            boxShadow: `0 0 12px rgba(${brand.accentRgb},0.7), 0 0 4px rgba(255,255,255,0.5)`,
+            opacity: 0,
+            animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
+            pointerEvents: 'none', zIndex: 3,
+          }} />
+        );
+      })}
+
       {/* ── Wolf bottom-LEFT in schlafen-Mode — exakte PreGame-Position,
           ohne Sprechblase (Wolf-Quote: Schlafen-Animation zeigt nur Z's). ── */}
       <div style={{
@@ -20367,6 +20424,38 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           mode="schlafen"
         />
       </div>
+
+      {/* ── QR top-RIGHT außerhalb der Card — Wolf-Wunsch 2026-05-10:
+          QR raus aus der Card, ab in die Page-Ecke oben rechts. Nur noch
+          „scan me" als kleiner Text. Pinke Umrandung wie bisher. ── */}
+      {summaryUrl && (
+        <div style={{
+          position: 'absolute',
+          right: 'clamp(20px, 3vw, 60px)',
+          top: 'clamp(20px, 3vh, 40px)',
+          zIndex: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1s both',
+        }}>
+          <div style={{
+            padding: 8, borderRadius: 12,
+            background: '#fff',
+            border: `2.5px solid rgba(${brand.accentRgb},0.75)`,
+            boxShadow: `0 0 20px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
+          }}>
+            <QRCodeSVG
+              value={summaryUrl}
+              size={104}
+              bgColor="#ffffff" fgColor="#0A0814" level="M"
+            />
+          </div>
+          <div style={{
+            fontSize: 'clamp(11px, 1.1vw, 15px)', fontWeight: 900,
+            color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+            textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
+          }}>{de ? '↗ scan me' : '↗ scan me'}</div>
+        </div>
+      )}
 
       {/* ── HERO: kleines CozyQuiz-Eyebrow + großer „Danke fürs Spielen"-Title
           mit Letter-Cascade + Wave (mirror „Gleich geht's los"-Block). ── */}
@@ -20434,23 +20523,26 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </div>
         )}
 
-        {/* Big Title „Danke fürs Spielen" — exakt der Letter-Cascade + Wave
-            wie „Gleich geht's los" / „Kurze Pause" in PausedView. */}
+        {/* Big Title — Wolf-Wording 2026-05-10 (mit korrekter Groß-/Klein-
+            schreibung — Wolf-Klarstellung: 'nicht wie getippt'). Letter-Cascade
+            + Wave identisch zu Setup-Title. */}
         {(() => {
-          const titleText = de ? 'Danke fürs Spielen' : 'Thanks for Playing';
+          const titleText = de
+            ? 'Danke fürs Spielen, wir hoffen ihr hattet Spaß!'
+            : 'Thanks for Playing, we hope you had fun!';
           return (
             <div
               aria-label={titleText}
               style={{
-                fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
+                fontSize: 'clamp(36px, 4.6vw, 72px)', fontWeight: 900,
                 color: brand.accentHex,
                 letterSpacing: '-0.01em',
-                lineHeight: 1.05,
+                lineHeight: 1.1,
+                textAlign: 'center',
+                maxWidth: 'min(94vw, 1500px)',
                 textShadow: isEsc
                   ? `0 2px 14px rgba(0,0,0,0.65), 0 0 24px rgba(${brand.accentRgb},0.30), 0 0 56px rgba(${brand.accentRgb},0.30)`
                   : `0 0 24px rgba(${brand.accentRgb},0.28), 0 0 56px rgba(${brand.accentRgb},0.28)`,
-                whiteSpace: 'nowrap',
-                display: 'inline-block',
               }}>
               {Array.from(titleText).map((ch, i) => (
                 <span
@@ -20458,7 +20550,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   style={{
                     display: 'inline-block',
                     whiteSpace: ch === ' ' ? 'pre' : 'normal',
-                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
+                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.025}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.04}s infinite`,
                   }}
                 >{ch}</span>
               ))}
@@ -20466,13 +20558,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           );
         })()}
 
-        {/* Subtitle „Wir hoffen, ihr hattet Spaß!" — italic, Light-Gray. */}
+        {/* Farewell-Subtitle „Bis zum nächsten Mal!" — italic, Light-Gray. */}
         <div style={{
-          marginTop: 6,
-          fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 700,
+          marginTop: 8,
+          fontSize: 'clamp(18px, 1.9vw, 28px)', fontWeight: 700,
           color: '#CBD5E1', fontStyle: 'italic',
-          animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.45s both',
-        }}>🎉 {de ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}</div>
+          animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.55s both',
+        }}>{de ? 'Bis zum nächsten Mal!' : 'See you next time!'}</div>
       </div>
 
       {/* ── Big Card (mirror PausedView Hero-Card-Wrapper) — fixe Höhe,
@@ -20556,11 +20648,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 und das 3-col-Skelett für späteren Termine-Block bereitsteht. */}
             <div aria-hidden style={{ minWidth: 0 }} />
 
-            {/* MITTE: Sieger-Hero */}
+            {/* MITTE: Sieger-Hero — Wolf 2026-05-10: Avatar etwas größer,
+                Text-Format „Team / {Name} / hat heute gewonnen", Punkte-Pille
+                raus (Punkte hat man im Live-Reveal gesehen, hier reicht der
+                Sieger-Hero pur). */}
             <div style={{
               display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(12px, 1.6vh, 22px)',
+              gap: 'clamp(14px, 1.8vh, 26px)',
               minWidth: 0,
               animation: 'qqThanksColIn 0.7s ease 0.4s both',
             }}>
@@ -20568,25 +20663,25 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 <div style={{ position: 'relative' }}>
                   <span aria-hidden style={{
                     position: 'absolute', left: '50%', top: '-30%',
-                    fontSize: 'clamp(54px, 6vw, 96px)', lineHeight: 1,
+                    fontSize: 'clamp(64px, 7vw, 110px)', lineHeight: 1,
                     pointerEvents: 'none',
-                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(251,191,36,0.9))',
+                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.9))',
                     animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
                     zIndex: 5,
                   }}>👑</span>
                   <div style={{
                     ['--wg' as string]: `${winner.color}cc`,
-                    width: 'clamp(150px, 17vw, 240px)', height: 'clamp(150px, 17vw, 240px)',
+                    width: 'clamp(180px, 20vw, 290px)', height: 'clamp(180px, 20vw, 290px)',
                     borderRadius: '50%',
                     background: winner.color,
-                    border: `5px solid ${winner.color}`,
+                    border: `6px solid ${winner.color}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     animation: 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
                   } as React.CSSProperties}>
                     <QQTeamAvatar
                       avatarId={winner.avatarId}
                       teamEmoji={winner.emoji}
-                      size={'clamp(118px, 14vw, 188px)'}
+                      size={'clamp(142px, 16vw, 230px)'}
                       flat
                     />
                   </div>
@@ -20597,10 +20692,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 return (
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: 6, lineHeight: 1.05, textAlign: 'center', maxWidth: '100%',
+                    gap: 4, lineHeight: 1.05, textAlign: 'center', maxWidth: '100%',
                   }}>
                     <div style={{
-                      fontSize: isLong ? 'clamp(24px, 2.6vw, 40px)' : 'clamp(30px, 3.2vw, 48px)',
+                      fontSize: 'clamp(15px, 1.55vw, 22px)', fontWeight: 800,
+                      color: '#94A3B8',
+                      letterSpacing: '0.22em', textTransform: 'uppercase',
+                    }}>{de ? 'Team' : 'Team'}</div>
+                    <div style={{
+                      fontSize: isLong ? 'clamp(28px, 3vw, 46px)' : 'clamp(36px, 3.8vw, 58px)',
                       fontWeight: 900,
                       color: winner.color,
                       letterSpacing: '-0.01em',
@@ -20608,81 +20708,23 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       whiteSpace: 'nowrap',
                       overflow: 'hidden', textOverflow: 'ellipsis',
                       maxWidth: '100%',
+                      marginTop: 2,
                     }}>{winner.name}</div>
                     <div style={{
-                      fontSize: 'clamp(13px, 1.25vw, 18px)', fontWeight: 800,
-                      color: '#94A3B8',
-                      letterSpacing: '0.18em', textTransform: 'uppercase',
-                    }}>{de ? 'haben gewonnen' : 'have won'}</div>
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 8,
                       marginTop: 4,
-                      padding: '4px 14px', borderRadius: 999,
-                      background: `${winner.color}22`,
-                      border: `1.5px solid ${winner.color}66`,
-                      fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
-                      color: winner.color,
+                      fontSize: 'clamp(15px, 1.55vw, 22px)', fontWeight: 800,
+                      color: '#CBD5E1',
                       letterSpacing: '0.04em',
-                    }}>
-                      <span aria-hidden>🏆</span>
-                      {de ? `${winnerCells + winnerBonus} Punkte` : `${winnerCells + winnerBonus} pts`}
-                      {winnerBonus > 0 && (
-                        <span style={{ opacity: 0.8 }}>
-                          ({winnerCells}+{winnerBonus}🎯)
-                        </span>
-                      )}
-                    </div>
+                    }}>{de ? 'hat heute gewonnen' : 'won today'}</div>
                   </div>
                 );
               })()}
             </div>
 
-            {/* RECHTS: nur QR-Code mit kurzem Text — rechts unten in der Card.
-                Wolf-Quote: 'Scannt den QR-Code · Lasst euer Feedback da und
-                folgt uns auf Instagram!'. Mehr Text bewusst nicht. */}
-            <div style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'flex-end', justifyContent: 'flex-end',
-              minWidth: 0,
-              animation: 'qqThanksColIn 0.7s ease 0.5s both',
-            }}>
-              {summaryUrl && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                }}>
-                  <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-                    gap: 4, lineHeight: 1.2, textAlign: 'right',
-                    maxWidth: 'clamp(180px, 18vw, 260px)',
-                  }}>
-                    <div style={{
-                      fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 900,
-                      color: '#F1F5F9',
-                      letterSpacing: '0.01em',
-                    }}>{de ? 'Scannt den QR-Code' : 'Scan the QR code'}</div>
-                    <div style={{
-                      fontSize: 'clamp(12px, 1.2vw, 17px)', fontWeight: 700,
-                      color: '#CBD5E1', lineHeight: 1.3,
-                    }}>{de
-                      ? 'Lasst euer Feedback da und folgt uns auf Instagram!'
-                      : 'Leave us feedback and follow us on Instagram!'}</div>
-                  </div>
-                  <div style={{
-                    padding: 10, borderRadius: 14,
-                    background: '#fff',
-                    border: `2.5px solid rgba(${brand.accentRgb},0.7)`,
-                    boxShadow: `0 0 22px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
-                    flexShrink: 0,
-                  }}>
-                    <QRCodeSVG
-                      value={summaryUrl}
-                      size={120}
-                      bgColor="#ffffff" fgColor="#0A0814" level="M"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* RECHTS: Platzhalter — QR ist nach außerhalb der Card oben rechts
+                gewandert (Wolf-Wunsch 2026-05-10). 3-Col-Skelett bleibt erhalten,
+                damit Sieger optisch in der Mitte bleibt. */}
+            <div aria-hidden style={{ minWidth: 0 }} />
           </div>
         </div>
       </div>

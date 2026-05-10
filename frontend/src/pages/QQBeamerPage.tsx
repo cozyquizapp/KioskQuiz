@@ -7817,7 +7817,8 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
           return { ...a, num, distance, team };
         }).sort((a, b) => a.distance - b.distance);
         const maxDistance = Math.max(1, ...scored.filter(s => Number.isFinite(s.distance)).map(s => s.distance));
-        const unitStr = (q as any).unit ?? '';
+        // 2026-05-10 (Wolf-Bug 'EN-Spiel zeigt DE-unit'): EN-Fallback ergänzt.
+        const unitStr = (lang === 'en' && (q as any).unitEn ? (q as any).unitEn : (q as any).unit) ?? '';
         // Jahreszahlen ohne Tausenderpunkt — sonst sieht 1500 wie 1,5 aus.
         // Auto-Detection: int zwischen 1000-2100 sieht aus wie eine Jahreszahl.
         // (User-Bug 2026-04-28: '1.914' erschien weil unit nicht 'Jahr' war.)

@@ -2182,7 +2182,7 @@ export default function QQModeratorPage() {
                 answers={s.answers}
                 teams={s.teams}
                 targetValue={s.currentQuestion.targetValue}
-                unit={s.currentQuestion.unit}
+                unit={(s.language === 'en' && s.currentQuestion.unitEn) ? s.currentQuestion.unitEn : s.currentQuestion.unit}
                 correctTeamId={s.correctTeamId}
                 phase={s.phase}
                 roomCode={roomCode}

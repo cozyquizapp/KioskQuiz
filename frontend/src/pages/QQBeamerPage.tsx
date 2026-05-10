@@ -780,39 +780,43 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Sonst rendert die neue Phase schon hinter dem Backdrop-Blur und
   // animiert/spielt durch.
   const prevReadyPhaseRef = useRef(s.phase);
-  const [getReady, setGetReady] = useState<{ id: number; reason: 'resume' | 'start' } | null>(null);
-  // Snapshot-Ref: hält den State-Stand vom Moment des Phase-Wechsels — wird
-  // während des Countdowns gerendert statt des Live-States.
-  const frozenStateRef = useRef<QQStateUpdate | null>(null);
+  // 2026-05-10 (Audit-P0 Frozen-State-Race-Fix): frozenState als Teil des
+  // useState-Werts statt separater useRef. Vorher: zwei Quellen (frozenStateRef
+  // + getReady), die getrennt gesetzt/genullt wurden → Race wenn ref vor
+  // setState-flush genullt wurde → renderState fiel 1 Frame auf live-s zurück
+  // → visible Phase-Snap. Jetzt: 1 atomic State, getReady ist null oder
+  // {id, reason, frozenState} — kein Inter-Frame-Mismatch mehr möglich.
+  const [getReady, setGetReady] = useState<{
+    id: number;
+    reason: 'resume' | 'start';
+    frozenState: QQStateUpdate;
+  } | null>(null);
   useEffect(() => {
     const prev = prevReadyPhaseRef.current;
     prevReadyPhaseRef.current = s.phase;
     // 1) Resume nach Pause — egal in welche Phase wir zurückkehren
     if (prev === 'PAUSED' && s.phase !== 'PAUSED' && s.phase !== 'LOBBY') {
-      // Wir frieren den letzten PausedView-State (mit phase=PAUSED) — der ist
-      // im aktuellen `s` allerdings schon überschrieben. Workaround:
-      // erzeugen einen Pseudo-State der phase erzwingt.
-      frozenStateRef.current = { ...s, phase: 'PAUSED' as any };
-      setGetReady({ id: Date.now(), reason: 'resume' });
-      const t = window.setTimeout(() => {
-        frozenStateRef.current = null;
-        setGetReady(null);
-      }, 3200);
+      setGetReady({
+        id: Date.now(),
+        reason: 'resume',
+        frozenState: { ...s, phase: 'PAUSED' as any },
+      });
+      const t = window.setTimeout(() => setGetReady(null), 3200);
       return () => window.clearTimeout(t);
     }
     // 2) Quiz-Start nach Regeln → erste Runde
     if (prev === 'RULES' && s.phase === 'PHASE_INTRO' && s.gamePhaseIndex === 1) {
-      frozenStateRef.current = { ...s, phase: 'RULES' as any };
-      setGetReady({ id: Date.now(), reason: 'start' });
-      const t = window.setTimeout(() => {
-        frozenStateRef.current = null;
-        setGetReady(null);
-      }, 3200);
+      setGetReady({
+        id: Date.now(),
+        reason: 'start',
+        frozenState: { ...s, phase: 'RULES' as any },
+      });
+      const t = window.setTimeout(() => setGetReady(null), 3200);
       return () => window.clearTimeout(t);
     }
   }, [s.phase, s.gamePhaseIndex]);
-  // Während Countdown rendern wir den frozen-Snapshot statt des Live-States.
-  const renderState: QQStateUpdate = (getReady && frozenStateRef.current) ? frozenStateRef.current : s;
+  // Atomic: entweder frozen-Snapshot (während Countdown) oder live-State.
+  const renderState: QQStateUpdate = getReady ? getReady.frozenState : s;
 
   // ── Sound: sync volume & config from server state ──
   // Volume only applies to SFX (music has its own volume handling)

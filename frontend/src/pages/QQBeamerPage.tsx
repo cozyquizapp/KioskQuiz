@@ -20229,11 +20229,17 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           versetzt zu hoch oben — kommt nicht ins Spiel rein. Jetzt etwas
           weiter unten (top:18%-22%) und ~30% kleiner (60-100 statt 90-140),
           plus mirror=true sodass Wolf nach links zur Mitte schaut statt aus
-          dem Bild raus. Zwischen Sieger-Hero und Rankings positioniert. */}
+          dem Bild raus. Zwischen Sieger-Hero und Rankings positioniert.
+          2026-05-10 (Spacing-Audit P1): top → bottom. Bei 7-8 Teams wuchs die
+          rechte Rankings-Spalte nach oben in den 22vh-Bereich und kollidierte
+          mit Winner-Sparkle-Ring. Wolf rutscht an Bottom-Right (6vh), schaut
+          mirror=true nach links/oben zur Sieger-Bühne. Macht oberen Bereich
+          frei für Winner-Hero-Animation, wirkt zusätzlich natürlicher
+          („zur Bühne hochjubeln"). */}
       <div style={{
         position: 'absolute',
         right: 'clamp(20px, 2vw, 40px)',
-        top: 'clamp(140px, 22vh, 220px)',
+        bottom: 'clamp(40px, 6vh, 80px)',
         zIndex: 7,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.4s both',

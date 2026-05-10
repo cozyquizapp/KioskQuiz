@@ -20513,36 +20513,34 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
               fontSize: 'clamp(48px, 6vw, 96px)',
               fontWeight: 400,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.06em',
               color: brand.accentHex,
               textShadow: `0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(${brand.accentRgb},0.6)`,
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
+              textTransform: 'uppercase',
             }}>CozyQuiz</span>
           </div>
         )}
 
-        {/* Big Title — Wolf-Wording 2026-05-10 (mit korrekter Groß-/Klein-
-            schreibung — Wolf-Klarstellung: 'nicht wie getippt'). Letter-Cascade
-            + Wave identisch zu Setup-Title. */}
+        {/* Big Title „Danke für's Spielen!" — Letter-Cascade + Wave wie auf
+            Setup-Page. Wolf 2026-05-10. */}
         {(() => {
-          const titleText = de
-            ? 'Danke fürs Spielen, wir hoffen ihr hattet Spaß!'
-            : 'Thanks for Playing, we hope you had fun!';
+          const titleText = de ? "Danke für's Spielen!" : 'Thanks for Playing!';
           return (
             <div
               aria-label={titleText}
               style={{
-                fontSize: 'clamp(36px, 4.6vw, 72px)', fontWeight: 900,
+                fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
                 color: brand.accentHex,
                 letterSpacing: '-0.01em',
-                lineHeight: 1.1,
-                textAlign: 'center',
-                maxWidth: 'min(94vw, 1500px)',
+                lineHeight: 1.05,
                 textShadow: isEsc
                   ? `0 2px 14px rgba(0,0,0,0.65), 0 0 24px rgba(${brand.accentRgb},0.30), 0 0 56px rgba(${brand.accentRgb},0.30)`
                   : `0 0 24px rgba(${brand.accentRgb},0.28), 0 0 56px rgba(${brand.accentRgb},0.28)`,
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
               }}>
               {Array.from(titleText).map((ch, i) => (
                 <span
@@ -20550,7 +20548,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   style={{
                     display: 'inline-block',
                     whiteSpace: ch === ' ' ? 'pre' : 'normal',
-                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.025}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.04}s infinite`,
+                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
                   }}
                 >{ch}</span>
               ))}
@@ -20558,13 +20556,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           );
         })()}
 
-        {/* Farewell-Subtitle „Bis zum nächsten Mal!" — italic, Light-Gray. */}
+        {/* Subtitle (zwei Sätze) — italic, Light-Gray. */}
         <div style={{
-          marginTop: 8,
+          marginTop: 10,
           fontSize: 'clamp(18px, 1.9vw, 28px)', fontWeight: 700,
           color: '#CBD5E1', fontStyle: 'italic',
+          textAlign: 'center', lineHeight: 1.3,
           animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.55s both',
-        }}>{de ? 'Bis zum nächsten Mal!' : 'See you next time!'}</div>
+        }}>{de
+          ? 'Wir hoffen ihr hattet Spaß! Bis zum nächsten Mal!'
+          : 'We hope you had fun! See you next time!'}</div>
       </div>
 
       {/* ── Big Card (mirror PausedView Hero-Card-Wrapper) — fixe Höhe,

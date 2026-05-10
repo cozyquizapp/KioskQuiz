@@ -6524,15 +6524,17 @@ function ActionCardReveal({
       flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
       minWidth: cardCount === 1 ? 280 : 200,
       maxWidth: cardCount === 1 ? 480 : 480,
+      // 2026-05-10 (Wolf-Live-Test L7 'rechte Card kleiner als linke'):
+      // `height: 360` matched non-isNew Card exakt. `alignSelf: stretch` raus
+      // (zog Outer auf parent-row-Höhe — Inner blieb bei 360 und wirkte dann
+      // kleiner). Plus boxSizing für saubere Box-Berechnung.
+      height: 360,
+      boxSizing: 'border-box',
       perspective: '1400px',
       opacity: isVisible ? 1 : 0,
       animation: isVisible ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
-      // 2026-05-09 v2 (Wolf 'card-back wirkt anders groß als card-front'):
-      // outer drop-shadow ab `slamming` (vorher nur in `done` → Halo erschien
-      // erst beim Flip → wirkte als ob die Card plötzlich größer wird).
       filter: isVisible ? `drop-shadow(0 0 28px ${c.accent}88)` : 'none',
       transition: 'filter 0.6s ease',
-      alignSelf: 'stretch',
       display: 'flex',
     }}>
       <div style={{

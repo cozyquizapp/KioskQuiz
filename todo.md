@@ -139,7 +139,7 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.
 - [x] **L5 — pic1 HotPotato Antworten überlappen mit Trivia-Trio** ✅ FIX (`QQBeamerPage.tsx` HotPotatoBeamerView): Chips-Container von `justifyContent: center` auf `flex-start` umgestellt + paddingTop/Bottom. Chips wachsen jetzt nach unten begrenzt durch overflow:hidden statt in beide Richtungen vom Center aus zu expandieren.
 - [ ] **L6 — pic2 Joker-Bug: 4 Joker markiert obwohl 2 der Felder gerade gesetzt wurden**. Joker-Detection darf neu-gesetzte-im-selben-Zug-Felder nicht als „bestehender Block" werten.
-- [ ] **L7 — pic3 Comeback Phase 3: rechte „NEW"-Card kleiner als linke „1x Steal"-Card**. Beide gleich groß rendern.
+- [x] **L7 — pic3 Comeback rechte „NEW"-Card kleiner als linke** ✅ FIX (`QQBeamerPage.tsx` ActionCardReveal): Outer-Wrapper bekommt explizit `height: 360` matching non-isNew Card, `alignSelf: stretch` raus (zog Outer auf parent-row-Höhe, Inner blieb 360 → wirkte kleiner).
 - [ ] **L8 — pic4 Mu-Cho: untere Card („Drei Halbe Ne Ganze"-Toast) wird unten abgeschnitten**. Padding/maxHeight oder Position fixen.
 - [ ] **L9 — pic5 10-von-10: viel Platz unten, Cards nach oben gequetscht**. Vertikal verteilen statt top-aligned.
 - [ ] **L10 — pic6 „Grösstes Gebiet"-Final-Page**: anderes Grid-Layout als im Quiz. Soll dasselbe Layout nutzen wie Placement-Phase (Grid + Tabelle daneben), nur der Sieger erhellt.

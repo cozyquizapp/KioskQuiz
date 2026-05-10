@@ -131,7 +131,7 @@ const STEP_HERO: Record<string, { title: string; tip: string }> = {
   'SCHAETZCHEN/text':    { title: '📝 Worüber wird geschätzt?',    tip: 'Frag nach einer Zahl. Kurz, klar, eindeutig beantwortbar.' },
   'SCHAETZCHEN/main':    { title: '✅ Die Zahl, auf die getippt wird', tip: 'Bei Jahreszahlen den Toggle aktivieren — Beamer zeigt dann „1989" statt „1.989".' },
   'SCHAETZCHEN/image':   { title: '🖼️ Bild (optional)',            tip: 'Visualisiert das Thema. Drag-Drop oder Strg+V zum Einfügen.' },
-  'SCHAETZCHEN/funFact': { title: '💡 Fun-Fact zur Auflockerung',    tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+  'SCHAETZCHEN/funFact': { title: '💡 Mod-Notiz / Fun-Fact',          tip: 'Nur du siehst es. Fun-Fact für Publikum + Ablauf-Tipp/Mechanik-Hinweis für dich — alles in einem Feld.' },
   // MUCHO
   'MUCHO/text':    { title: '📝 Die Quiz-Frage',                    tip: 'Eine Frage mit 4 Antwort-Optionen.' },
   'MUCHO/main':    { title: '✅ 4 Optionen, eine ist richtig',       tip: 'Plausible Distraktoren machen die Frage spannend.' },
@@ -1460,7 +1460,12 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
       {(show('image') || !visibleSections) && <MiniPreviewPanel question={q} />}
 
 
-      {/* Question text DE/EN — Section 'text' */}
+      {/* Question text DE/EN — Section 'text'.
+          2026-05-11 (Wolf-Entscheid 'Mod-Notiz + Fun-Fact sind eigentlich
+          gleich'): hostNote-Field aus dem Builder entfernt. Fun-Fact (mit
+          DE+EN) ist jetzt das einzige Mod-Private-Feld. Alte Drafts mit
+          hostNote bleiben in der DB; Mod-Cheatsheet rendert sie weiter,
+          aber im Builder nicht mehr editierbar. */}
       {show('text') && (
         <>
           <div>
@@ -1471,44 +1476,36 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
             <label style={labelStyle}>Frage (EN) <span style={{ color: '#334155' }}>optional</span></label>
             <textarea value={q.textEn ?? ''} onChange={e => onChange({ ...q, textEn: e.target.value })} style={textareaStyle} rows={fullWidth ? 3 : 2} placeholder="Question text in English…" />
           </div>
-          {/* Moderator host note — private, only visible in /moderator */}
-          <div>
-            <label style={labelStyle}>
-              🎙️ Moderator-Notiz <span style={{ color: '#334155' }}>nur für Moderator sichtbar</span>
-            </label>
-            <textarea
-              value={q.hostNote ?? ''}
-              onChange={e => onChange({ ...q, hostNote: e.target.value || undefined })}
-              style={{ ...textareaStyle, borderColor: 'rgba(251,191,36,0.3)' }}
-              rows={2}
-              placeholder="Ablauf-Tipp oder Hinweis zur Mechanik für diese Frage…"
-            />
-          </div>
         </>
       )}
 
-      {/* Fun Fact — Section 'funFact' */}
+      {/* Mod-Notiz / Fun-Fact — Section 'funFact'.
+          2026-05-11 (Wolf-Merge): das EINZIGE Mod-Private-Feld jetzt. Vorher
+          gab es zusätzlich q.hostNote — semantisch quasi identisch (beides
+          mod-privat), aber doppelte UI. Wolf nutzt jetzt nur funFact (mit
+          DE+EN). Im Mod-Cheatsheet wird beides gerendert (falls hostNote
+          aus alten Drafts noch da ist), aber im Builder nur funFact. */}
       {show('funFact') && (
         <div>
           <label style={labelStyle}>
-            💡 Fun Fact <span style={{ color: '#334155' }}>optional, zum Auflockern</span>
+            💡 Mod-Notiz / Fun-Fact <span style={{ color: '#334155' }}>nur für Mod sichtbar — beim Reveal einwerfen</span>
           </label>
           <textarea
             value={q.funFact ?? ''}
             onChange={e => onChange({ ...q, funFact: e.target.value || undefined })}
             style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.35)' }}
             rows={fullWidth ? 3 : 2}
-            placeholder="Witziger oder überraschender Fakt zum Thema — wirft der Moderator bei Bedarf ein."
+            placeholder="Witziger oder überraschender Fakt zum Thema — oder Ablauf-Tipp/Mechanik-Hinweis für dich."
           />
           <label style={{ ...labelStyle, marginTop: 6 }}>
-            Fun Fact (EN) <span style={{ color: '#334155' }}>optional</span>
+            Mod-Note / Fun Fact (EN) <span style={{ color: '#334155' }}>optional</span>
           </label>
           <textarea
             value={q.funFactEn ?? ''}
             onChange={e => onChange({ ...q, funFactEn: e.target.value || undefined })}
             style={{ ...textareaStyle, borderColor: 'rgba(168,85,247,0.2)' }}
             rows={fullWidth ? 3 : 2}
-            placeholder="Fun fact in English…"
+            placeholder="Fun fact or mod-note in English…"
           />
         </div>
       )}

@@ -600,3 +600,97 @@ Vollständig: `~/.claude/.../memory/project_designer_audit_2026_05_09.md`
 **Stand**: Race-Final ist im echten Quiz drin (Backend + Frontend Code). Aber Coolify Backend muss redeployed werden (qqFinalRevealMaxStep changed) + Vercel deploy hängt am 24h-Limit. Test-Page funktioniert ohne Backend-Deploy → Wolf nutzt sie für visuelle Iteration.
 
 **Nächste Iteration**: nach Vercel-Reset / Pro-Upgrade visuell live testen. Restliche Audit-Findings (P0 #2 Thanks-Hero-Hierarchie, P0 #3 Recap-Strip-Monotonie, P1 Award-Flip / Brand-Subs / 0-Bonus / PodiumStep / Summary-Underdog, P2 Crown-Bob / Insta-Footer-Pill) als Picklist offen.
+
+---
+
+## 2026-05-10 — Thanks-Refactor-Marathon + Summary-Audit + cozywolf.de Brand-Refresh
+
+**Tageslauf**: Großer Polish-Tag. Thanks-Page ging durch ~7 Layout-Iterationen (Kreis-schließen, Mock, Setup-Spiegel, finaler PausedView-Mirror), dann Summary-Page-Audit mit allen P0/P1/P2 fertiggestellt, Menu um Test-Pages-Untermenü erweitert, /team Joker-Pragma, Z-Hotkey für Undo-Mark-Correct, Treppchen-Win-Page minimal aufgehübscht, und am Ende cozywolf.de komplett auf Brand-Pink + reduzierte v2-Texte umgebaut.
+
+### ThanksView — 7 Iterationen bis zur Final-Form
+
+**v1 (`193e8293`)**: Lobby-Spiegelung — Wordmark + 2-Col QR-links/Teams-rechts. Wolfs Reaktion: „Setup hatte ich anders gemeint, das war der Mock."
+
+**v2 (`640ef553`)**: 3-Col-Mock zurückgeholt (Events/Sieger/Awards), schöner ausgebaut, Wolf-Schlafen unten links ohne Bubble. Wolfs Reaktion: nicht ganz, ich will mehr Setup-Look.
+
+**v3 (`c80b96a6`)**: Setup-Style-BG außenrum, Wolf top-right wie Setup, DANKE FÜRS SPIELEN ohne BG-Pill, Awards weg, links Events / rechts Insta+QR. Wolfs Reaktion: passt fast, aber pages sollen IDENTISCH sein wie Setup.
+
+**v4 (`d7756f39`)**: Komplett auf PausedView/PreGameView-Struktur umgebaut — Ambient-Ring-Light + Wolf bottom-LEFT in schlafen-Mode + Big-Card mit fixed-height + SVG Star-Border-Trace + Inner-Shimmer-Strip. Wolfs Reaktion: super, jetzt nur noch kleine Anpassungen.
+
+**v5 (`6f923478`)**: Events-Block raus (todo.md als Later), QR-Text neu „Scannt + Insta", Subtitle „Wir hoffen ihr hattet Spaß" zurück.
+
+**v6 (`0a97f9a9`)**: Sieger-Avatar +20%, „Team / Name / hat heute gewonnen" statt „haben gewonnen", Punkte-Pille raus, QR top-right außerhalb Card, PreGame-Atmo-Effekte (BgBreath + Spotlight + Fall-Particles).
+
+**v7-final (`377a43a1`, `6b017c26`, `837ed56c`)**: Wolf-Feedback-Iterationen:
+- COZYQUIZ-Eyebrow all-caps, Title kürzer „Danke für's Spielen!", Subtitle 2-zeilig
+- Spotlight-Sweep raus (Wolf: „1/3 screen, abgeschnitten")
+- Border-Sparkle deutlicher (stroke 2.5→4px, dasharray '24 76', drop-shadow-Glow)
+- 30-Sek-Wir-lesen-Zeile raus
+- **QR Co-Hero-Refactor nach Designer-Recherche** (TED, Google I/O, Eventbrite, B2B MarketingProfs):
+  - 104px Mini-Marker → 280-320px Co-Hero in der Card
+  - Brand-Logo embedded via imageSettings + level='H'
+  - qqThanksQrPulse (scale 1.00→1.03, 2.4s)
+  - Benefit-CTA „Feedback + auf Insta folgen"
+  - Erwartbar: Scan-Rate 5-10% → 30-50%
+
+### Summary-Page Audit-Fixes (`dbc506b6`)
+
+Kompletter P0-P2-Sweep:
+- **P0 Brand-Refresh**: 13× Amber/Gold (#fbbf24/#FBBF24/#FDE68A/#FDE047) → Brand-Pink. Neuer `summaryBrand()`-Helper analog QQBeamerPage.getBrandColors. Refresh in: Shell-BG-Mesh, TopBar-LangToggle-active, Hero-Border + Champion-Color, StammCode-Box, Place-Label, Funny-Answer-Box, Superlatives 'DAS SEID IHR'-Pin, jokersEarned-Stat-Color, UpcomingEvents-Date, PartnerCTA komplett.
+- **P1 Web-Share-Button**: `navigator.share()` mit Fallback Clipboard-Copy, Brand-Gradient-Pill im Team-Detail-Hero (Acquisition-Hebel im Stats-Moment).
+- **P1 RAF-Leak-Fix**: `useCountUp.animateTo` gibt jetzt Cleanup zurück, useEffect callt `cancelAnimationFrame` — keine Zahlen-Glitches bei Team-/Lang-Wechsel.
+- **P2 Eurovision-Mode-Aware**: Backend reicht `eurovisionMode` durch (war seit Commit 4090ee6b in DB persistiert, nur nicht ausgegeben). Frontend rendert ESC-Hot-Pink (#FF2D7B) statt Brand-Pink im ESC-Mode.
+- **P2 lang-stale-closure-Fix**: `error` von `string | null` auf `errorKey: 'notFoundMsg' | 'loadError' | null` — Translation passiert im Render mit aktuellem lang.
+
+### Summary-Test-Page + Menu-Untermenü + /team-Pragma (`3715483d`)
+
+- **QQSummaryPage** akzeptiert jetzt optional `mockSummary`-Prop (skip REST-Fetch).
+- **QQSummaryTestPage** neu unter `/summary-test` mit Sticky-Toolbar (Teams 3/5/8, Awards alle/nur-1/keine, ESC-Mode an/aus).
+- **MenuPage** umstrukturiert: neues 'CozyQuiz · Test-Pages'-Panel (Pink-Akzent #EC4899) mit Thanks-Test, Treppchen-Test, Summary-Test, Avatar-Picker. Aus „Extras" rausgezogen.
+- **/team Joker-Pragma-Patch** (Live-Test-Bug 2026-05-07): zusätzlicher Gate `myJokersThisPhase > 0` auf isJoker. Schließt false-positive aus, blockiert ersten Joker einer Runde NICHT.
+
+### Z-Hotkey + Undo-Mark-Correct (`aa6ebaf6`)
+
+- `KeyZ` im QUESTION_REVEAL macht letzten Mark-Correct rückgängig (nur aktiv wenn `s.correctTeamId` gesetzt). Backend-Event existierte schon, war nur an Maus-Button gebunden.
+- Cheatsheet: „Z — Letzten Mark-Correct rückgängig" in „Team als korrekt markieren"-Gruppe ergänzt.
+
+### Treppchen-Win-Page Polish
+
+Im aktuellen Race-Final am Anfang der Session: Confetti-Storm wurde gewählt nach AskUserQuestion (Option C — Treppchen größer + Confetti-Storm), Recherche aber nicht zu Ende gebracht weil Wolf zur Thanks-Page redirected hat. **Status: nicht umgesetzt, Win-Page bleibt wie sie war.**
+
+### cozywolf.de Brand-Refresh (`2dbbf9e` in cozyquizapp/cozywolf-landing)
+
+Komplette Landing-Page-Überarbeitung in einem separaten Repo:
+- **Pfad**: `c:/Users/hornu/Desktop/desktop/cozywolf-landing` — siehe [COZYWOLF_LANDING.md](COZYWOLF_LANDING.md)
+- **Brand-Refresh**: Amber/Gold → Brand-Pink (#EC4899) + Magenta + Navy + #0A0814 BG. Cross-Hatch-Pattern-Overlay subtle. Pink-Pulse auf Primary-CTA.
+- **Texte v2 reduziert**: Pub-spezifisch raus (offen für alle Locations), 3 Cards statt 4 Features (Bis zu 8 Teams · 5 Kategorien · Punkte wie noch nie), „Für alle, die Lust auf spannende Quiz-Runden und interessante Fakten haben" als Quote, Booking-Disclaimer „Aktuell baue ich CozyQuiz noch auf — wenn du Interesse hast, schreib mir".
+- **Layout**: 4 Sektionen (Hero · 3-Cards · Quote · Booking) statt 6. DE+EN Translations beide updated. Lang-Switcher Pink-Active statt Amber.
+- **Vercel**: Repo `cozyquizapp/cozywolf-landing` → wenn der Branch-Hook auf `master` zeigt, deployt automatisch.
+
+### Wichtige Entscheidungen
+- **Thanks-Page = 1:1 PausedView-Mirror** war der richtige Move — visuelle Konsistenz Setup ↔ Thanks schließt den Kreis ohne dass „Setup-Spiegel-Spielereien" nötig waren.
+- **Brand-Pink ist jetzt voll konsequent**: ThanksView, RulesIntro, BetReveal (frühere Commits) + Summary-Page + cozywolf.de = überall #EC4899. Kein Amber mehr in der gesamten User-Journey.
+- **Designer-Recherche-driven Decisions** zahlen sich aus: QR-Co-Hero-Empfehlung (TED/Google I/O-Pattern) statt mein erster Vorschlag „rechts oben Mini-Marker" → erwartbar 4-5× Scan-Rate.
+- **Memory-Vorsicht ist gerechtfertigt**: 3-Tage-alte Audit-Followup-Memory hatte Zeilen-Nummern verschoben — Polish-Punkte wären wahrscheinlich auf falsche Stellen gegangen. Audit-Followups sollten frisch durchgeführt werden, nicht aus alten Memos.
+
+### Files
+- `frontend/src/pages/QQBeamerPage.tsx` — ThanksView 7 Iterationen
+- `frontend/src/pages/QQSummaryPage.tsx` — kompletter Audit-Fix (+186/-60)
+- `frontend/src/pages/QQSummaryTestPage.tsx` — neu
+- `frontend/src/pages/QQModeratorPage.tsx` — Z-Hotkey + Cheatsheet
+- `frontend/src/pages/QQTeamPage.tsx` — Joker-Pragma
+- `frontend/src/pages/MenuPage.tsx` — Test-Pages-Untermenü
+- `frontend/src/App.tsx` — Route `/summary-test`
+- `backend/src/server.ts` — eurovisionMode im Summary-Endpoint
+- `todo.md` — Events-Block-Slot als „Later"
+- `COZYWOLF_LANDING.md` — neu, Pfad-Doku
+- `c:/Users/hornu/Desktop/desktop/cozywolf-landing/src/App.tsx` — komplett neu (separate Repo)
+- `c:/Users/hornu/Desktop/desktop/cozywolf-landing/index.html` — meta-tags
+
+### Memory-Files Updates
+- Keine neuen Memory-Files in diesem Marathon (Polish-Day, keine architektonischen Erkenntnisse).
+- `MEMORY.md` sollte um `COZYWOLF_LANDING.md`-Verweis ergänzt werden (mache ich jetzt).
+
+**Stand**: Live-ready für Pub-Quiz-Test. ThanksView + Summary + cozywolf.de sind konsistent Brand-Pink. Alle gefährlichen Polish-Punkte (Brand-Bugs, false-positives, RAF-Leak, Lang-Stale-Closure) sind raus. Mod-Page hat Z-Undo-Hotkey für Live-Korrekturen. Test-Pages erreichbar via Menu für Stand-Alone-Visual-Iteration ohne ein echtes Quiz durchziehen zu müssen.
+
+**Offen**: Treppchen-Win-Page Confetti-Storm-Refactor (Wolf-Wahl Option C), 4 spekulative Animation-Easings + 5 Layout-Cap-Bumps aus 3-Tage-altem Audit (Zeilen-Nummern unsicher — bei Live-Repro punktuell fixen), Mod-Page-Refactors aus Post-Eurovision-Backlog (Teams-Compact, Host-Toast, Show-Hide, Settings-Refactor, Shift+Space, Streamdeck-Toast, Comeback-Race-Lock, Question→Reveal-Race), Impressum + Datenschutz-Pages für cozywolf.de (Footer-Links zeigen auf `#`), `hallo@cozywolf.de`-Mail einrichten und Frontend-Konstante updaten.

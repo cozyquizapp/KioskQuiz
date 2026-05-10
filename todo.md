@@ -126,3 +126,71 @@ Termine-Endpoint existiert.
 
 Code-Anker: `frontend/src/pages/QQBeamerPage.tsx` ThanksView, Suchwort
 „LINKS: Platzhalter".
+
+---
+
+## Offen — Stand 2026-05-10 (nach Marathon-Tag)
+
+### 🔴 Wichtig (Live-Risiko)
+
+- **Summary-Link-Stale-Bug** *(siehe SESSION_LOG 2026-05-10)*
+  Bei `SINGLE_SESSION_MODE = MAIN` (= aktueller Default) wird der gleiche
+  RoomCode für jedes Spiel verwendet. Das heißt: wenn ein Spieler den
+  `/summary/MAIN`-Link teilt und Wolf am nächsten Tag wieder spielt, zeigt
+  der alte Link auf das NEUE Spiel — alte Stats für den Spieler weg.
+  **Fix-Optionen:**
+  - (A) Per-Game-ID-basierte Summary: `/summary/by-id/:gameId` zusätzlich
+    zum roomCode-Endpoint. Thanks-Page-QR auf id verlinken. ~30 min.
+  - (B) RoomCode pro Spiel neu generieren (SINGLE_SESSION_MODE-Refactor).
+    Höheres Risiko, mehr Stellen.
+  → Empfehlung: Option A, da risikoarm + behebt das Problem komplett.
+
+### 🟡 Mod-Page Race-Conditions (mid-Risiko, selten)
+
+- **Comeback-Choice Phase-Loop Race-Lock** ([QQModeratorPage.tsx:13513+])
+  Bei zu schnellem Space während Backend-State-Switch ggf. falscher Punkt.
+  Braucht reproducible Test-Szenario.
+- **Question_Active → Reveal Race**: Space kann je nach State zwei Events
+  triggern. ~30 min.
+
+### 🟢 Polish (kein Pitch-Blocker)
+
+- **Treppchen-Win-Page Confetti-Storm** (Wolf-Wahl Option C aus AskUser
+  am Anfang der Session, nicht umgesetzt — Thanks-Refactor übernahm den
+  Vorrang). Treppchen vertikal mehr Mitte ziehen + dauerhafte Konfetti-
+  Cascade von oben + stärkerer Sieger-Glow. ~30 min.
+- **4 Animation-Easings** (`project_qq_audit_followups_2026_05_07`):
+  ComebackHL bounce → ease-out, HotPotato Container revealAnswerBam →
+  langFadeIn, Bluff-Watermark phasePop bounce, Standard-Card opacity-
+  Delay-Konflikt. **Achtung**: Memory-Zeilen-Nummern sind 3 Tage alt,
+  vor Fix re-grep'en.
+- **5 Layout-Cap-Bumps**: Phase-Intro Step-1 maxWidth, Comeback Step-0/1
+  Mechanik-Card, Connections-Intro Pills, TEAMS_REVEAL Disc-Cap, Standard
+  Question-Card horizontal-padding.
+- **2 justifyContent-Lücken**: GameOver Recap rechte Spalte, Comeback
+  Step 0/1 + PausedView preGame Top/Bottom-Streifen.
+
+### 🟢 Mod-Page UI-Backlog (`project_post_eurovision_backlog`)
+
+Alles mid-Risiko, nach erstem echten Live-Quiz priorisieren je nach echtem
+Schmerz:
+
+- Teams-List Compact-View während Spielzeit (~30 min)
+- Host-Notes Toast statt always-visible (~45 min)
+- Show-Controls phasenkontextuelles Hide statt grey-out (~60 min)
+- Settings-Dropdown-Refactor (~2 h)
+- Shift+Space → direkter Sprung zu QUESTION_ACTIVE (~1.5 h, mid-Risiko)
+- Streamdeck-Action-Toast bei Hotkey-Press (~2 h)
+
+### 🟢 cozywolf.de Landing-Page
+
+Siehe [COZYWOLF_LANDING.md](COZYWOLF_LANDING.md):
+- Impressum + Datenschutz-Pages (Footer-Links zeigen auf `#`)
+- `hallo@cozywolf.de` Mail einrichten + Frontend-Konstante `EMAIL` updaten
+
+### 🟢 Live-Test-Bug (braucht Repro)
+
+- **/team Joker-False-Positive**: Pragma-Patch ist drin (`myJokersThisPhase
+  > 0` zusätzliche Gate). Wenn der Bug doch noch auftritt → DevTools
+  Network-Tab `state-update`-Payload mit `pendingAction`,
+  `placementsLeft`, `teamPhaseStats[myTeam].jokersThisPhase` festhalten.

@@ -20231,158 +20231,134 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const winner = winnerEntry?.team;
 
   return (
+    // 2026-05-10 (Wolf 'Variante X = Action-Card-XL Brand-Pattern'):
+    // Komplett-Refactor von 3-Spalten-Layout auf Hero-Action-Card im
+    // App-Card-Pattern (Cross-Hatch + Pink-Border + DANKE-Badge wie NEU-Badge,
+    // Star-Border drumherum). Sieger-Disc + Krone zentral, Wolf-Maskottchen
+    // rechts unten überlappend, QR + cozywolf als Footer-Pills.
+    // Schließt den Kreis zur App-Sprache (statt Polaroid/Magazine fremd).
     <div style={{
-      // 2026-05-09 v9 (Wolf-Layout-Refinement): Hero-Card vertikal in der
-      // Bildschirm-MITTE (mit flex 1 + alignItems center im Top-Bereich), Recap
-      // unten näher am Rand (eigener Bottom-Bereich mit padding-bottom 16).
-      // Vorher: justifyContent center stackte beide zusammen mittig → Card
-      // war oberhalb der echten Mitte, Recap zu hoch/zu weit weg vom Rand.
       flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
       position: 'relative', height: '100%',
+      padding: 'clamp(20px, 2.5vh, 36px)',
     }}>
       <Fireflies color="rgba(236,72,153,0.40)" />
       <style>{`
-        @keyframes qqThanksTickerScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        @keyframes qqThanksXStarSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
-        @keyframes qqThanksWinnerCardIn {
-          0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(6px); }
-          100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
+        @keyframes qqThanksXBadgePulse {
+          0%, 100% { transform: rotate(-4deg) scale(1); }
+          50%      { transform: rotate(-4deg) scale(1.04); }
         }
-        /* 2026-05-10 (Designer-Audit-P2): -6°/+4° asymmetrisch wirkte wie
-           Pendel statt Wackeln. Jetzt 0±3° symmetrisch — natürlicher Bob. */
         @keyframes qqThanksCrownBob {
           0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
           50%      { transform: translate(-50%, -4px) rotate(3deg); }
         }
-        @keyframes qqWolfBreath {
-          0%, 100% { transform: rotate(8deg) translateY(0); }
-          50%      { transform: rotate(8deg) translateY(-3px); }
-        }
       `}</style>
 
-      {/* Top-Bereich (flex 1) — Hero-Card vertikal+horizontal mittig zentriert.
-          Recap-Ticker ist in eigenem Bottom-Bereich (siehe weiter unten) mit
-          minimalem padding zum Bildschirm-Rand. */}
+      {/* Star-Border-Wrapper: rotierender conic-gradient außen, Action-Card innen */}
       <div style={{
-        flex: 1,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(16px, 2vh, 28px) clamp(24px, 3vw, 40px) clamp(8px, 1vh, 16px)',
-        minHeight: 0,
-      }}>
-
-      {/* Hero-Card: Headline + 3-Spalten-Body (Wolf · Sieger · QR) + Brand-Footer.
-          v5 (Wolf-Spec): alle 3 Spalten EXAKT gleich groß + design-konsistent
-          (gleicher Card-Stil mit pinkem Akzent). Card insgesamt weniger hoch. */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(20px, 2.5vh, 32px)',
-        padding: 'clamp(20px, 2.5vh, 32px) clamp(40px, 4.5vw, 80px) clamp(20px, 2.5vh, 32px)',
-        borderRadius: 24,
-        background: 'linear-gradient(135deg, rgba(31,26,46,0.94), rgba(20,16,31,0.96))',
-        border: '2px solid rgba(236,72,153,0.4)',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 120px rgba(236,72,153,0.20), inset 0 1px 0 rgba(236,72,153,0.18)',
-        maxWidth: 'min(96vw, 1500px)',
-        animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
         position: 'relative', zIndex: 5,
+        width: '100%', maxWidth: 'min(96vw, 1500px)',
+        aspectRatio: '16 / 10',
+        padding: 3,
+        borderRadius: 32,
+        overflow: 'hidden',
+        isolation: 'isolate',
       }}>
-        {/* Headline */}
-        <div style={{
-          fontSize: 'clamp(36px, 4.2vw, 64px)', fontWeight: 900,
-          color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
-          textShadow: '0 0 40px rgba(236,72,153,0.42)',
-        }}>
-          🎉 {lang === 'de' ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}
-        </div>
+        {/* Rotierender Conic-Gradient = Star-Border */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: '-50%',
+          zIndex: 0,
+          background: 'conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)',
+          animation: 'qqThanksXStarSpin 6s linear infinite',
+        }} />
 
-        {/* 3-Spalten-Body: Wolf · Sieger · QR — alle gleich groß, gleicher Stil */}
+        {/* Action-Card Hero — Cross-Hatch + dual radial Pink-Glow + Pink-Border */}
         <div style={{
-          display: 'flex', alignItems: 'stretch', justifyContent: 'center',
-          gap: 'clamp(20px, 2.5vw, 40px)', width: '100%',
+          position: 'relative', zIndex: 1,
+          width: '100%', height: '100%',
+          borderRadius: 30,
+          background:
+            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+            'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+          boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: 'clamp(28px, 3vh, 44px) clamp(36px, 4vw, 64px)',
+          overflow: 'hidden',
         }}>
-          <ThanksColumnCard accent="#EC4899" delay={0.05}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              minHeight: 'clamp(180px, 19vw, 260px)',
-              transformOrigin: 'center',
-            }}>
-              <AnimatedCozyWolf widthCss="clamp(150px, 16vw, 220px)" mode="schlafen" />
-            </div>
-            {/* 2026-05-09 v10 (Wolf 'cozywolf bedankt sich abgeschnitten'):
-                2-zeilig — „cozywolf" oben in Brand-Font (Stinger Fit) + Pink,
-                darunter „bedankt sich" / „says thanks" in normaler Font. */}
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 2, lineHeight: 1.05, textAlign: 'center',
-            }}>
-              {/* 2026-05-10 (Wolf Anti-Shaming '#5: COZYWOLF/SCAN MICH konkurrieren
-                  mit Sieger-Name'): Brand-Subtitle eine Typo-Stufe runter
-                  (28-44 → 22-32) + opacity 0.78 → klare Hierarchie: Sieger
-                  bleibt visuell dominant, Brand-Spalten flankieren dezent. */}
-              <div style={{
-                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
-                color: '#EC4899',
-                letterSpacing: '0.04em',
-                textShadow: '0 0 18px rgba(236,72,153,0.35)',
-                whiteSpace: 'nowrap',
-                textTransform: 'uppercase',
-                opacity: 0.78,
-              }}>COZYWOLF</div>
-              <div style={{
-                fontFamily: 'inherit',
-                fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
-                color: '#F1F5F9',
-                whiteSpace: 'nowrap',
-              }}>{lang === 'de' ? 'bedankt sich' : 'says thanks'}</div>
-            </div>
-          </ThanksColumnCard>
+          {/* Cross-Hatch-Overlay (45° / -45°) */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            backgroundImage:
+              'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+              'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+            pointerEvents: 'none',
+          }} />
 
-          <ThanksColumnCard accent={winner?.color ?? '#EC4899'} delay={0.10}>
+          {/* DANKE-Badge oben links — wie NEU-Badge auf Action-Cards */}
+          <div style={{
+            position: 'absolute',
+            top: 'clamp(16px, 2vh, 24px)', left: 'clamp(16px, 2vw, 28px)',
+            padding: 'clamp(8px, 1vh, 12px) clamp(16px, 1.8vw, 24px)',
+            borderRadius: 999,
+            background: 'linear-gradient(135deg, #EC4899, #A21247)',
+            color: '#fff',
+            fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
+            letterSpacing: '0.18em', textTransform: 'uppercase',
+            boxShadow: '0 6px 16px rgba(236,72,153,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
+            border: '1.5px solid rgba(255,255,255,0.18)',
+            animation: 'qqThanksXBadgePulse 2.4s ease-in-out infinite',
+            transformOrigin: 'center',
+            zIndex: 4,
+          }}>★ {lang === 'de' ? 'DANKE' : 'THANKS'} ★</div>
+
+          {/* Sieger-Disc + Krone zentral */}
+          <div style={{
+            position: 'relative', zIndex: 2,
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 'clamp(12px, 1.6vh, 20px)',
+          }}>
             {winner && (
-              <div style={{
-                position: 'relative',
-                width: 'clamp(180px, 19vw, 260px)',
-                height: 'clamp(180px, 19vw, 260px)',
-                borderRadius: '50%',
-                background: winner.color,
-                border: `4px solid ${winner.color}`,
-                boxShadow: `0 0 32px ${winner.color}88, inset 0 -8px 24px rgba(0,0,0,0.22), inset 0 4px 0 rgba(255,255,255,0.18)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto',
-              }}>
-                {/* Krone überlappend oben */}
+              <div style={{ position: 'relative' }}>
                 <span aria-hidden style={{
-                  position: 'absolute', left: '50%', top: '-22%',
+                  position: 'absolute', left: '50%', top: '-32%',
                   fontSize: 'clamp(54px, 6vw, 96px)', lineHeight: 1,
                   pointerEvents: 'none',
-                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 24px rgba(251,191,36,0.85))',
+                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.7)) drop-shadow(0 0 22px rgba(251,191,36,0.85))',
                   animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
                   zIndex: 5,
                 }}>👑</span>
-                <QQTeamAvatar
-                  avatarId={winner.avatarId}
-                  teamEmoji={winner.emoji}
-                  size={'clamp(140px, 15vw, 200px)'}
-                  flat
-                />
+                <div style={{
+                  width: 'clamp(160px, 18vw, 240px)', height: 'clamp(160px, 18vw, 240px)',
+                  borderRadius: '50%',
+                  background: winner.color,
+                  border: `5px solid ${winner.color}`,
+                  boxShadow: `0 0 50px ${winner.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <QQTeamAvatar
+                    avatarId={winner.avatarId}
+                    teamEmoji={winner.emoji}
+                    size={'clamp(120px, 14vw, 180px)'}
+                    flat
+                  />
+                </div>
               </div>
             )}
-            {/* 2026-05-09 v12 (Wolf-Konsistenz): 2-zeilig analog COZYWOLF/
-                SCAN MICH — Team-Name groß einzeilig in Team-Farbe, drunter
-                „haben gewonnen" / „have won" in gleicher Sub-Größe wie
-                „bedankt sich" / „und finde es raus". */}
             {winner && (() => {
-              const isLong = winner.name.length > 10;
+              const isLong = winner.name.length > 12;
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  gap: 2, lineHeight: 1.05, textAlign: 'center',
-                  maxWidth: '100%',
+                  gap: 4, lineHeight: 1.05, textAlign: 'center', maxWidth: '70vw',
                 }}>
                   <div style={{
-                    fontSize: isLong ? 'clamp(22px, 2.4vw, 36px)' : 'clamp(28px, 3vw, 44px)',
+                    fontSize: isLong ? 'clamp(24px, 2.6vw, 38px)' : 'clamp(30px, 3.2vw, 48px)',
                     fontWeight: 900,
                     color: winner.color,
                     letterSpacing: '-0.01em',
@@ -20392,171 +20368,115 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     maxWidth: '100%',
                   }}>{winner.name}</div>
                   <div style={{
-                    fontFamily: 'inherit',
-                    fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
-                    color: '#F1F5F9',
-                    whiteSpace: 'nowrap',
+                    fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                    color: '#94A3B8',
+                    letterSpacing: '0.18em', textTransform: 'uppercase',
                   }}>{lang === 'de' ? 'haben gewonnen' : 'have won'}</div>
                 </div>
               );
             })()}
-          </ThanksColumnCard>
+          </div>
 
-          <ThanksColumnCard accent="#EC4899" delay={0.15}>
+          {/* Footer-Row: cozywolf-Pill links + QR-Mini-Card rechts */}
+          <div style={{
+            position: 'absolute',
+            bottom: 'clamp(20px, 2.5vh, 32px)',
+            left: 'clamp(28px, 3vw, 44px)',
+            right: 'clamp(28px, 3vw, 44px)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+            zIndex: 3,
+            gap: 16,
+          }}>
+            {/* cozywolf-Pill */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: 'clamp(8px, 1vh, 14px) clamp(14px, 1.6vw, 22px)',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
+              border: '1.5px solid rgba(236,72,153,0.55)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.45)',
+            }}>
+              <WolfHeadIcon size={28} />
+              <span style={{
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+                fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
+                color: '#FBCFE8', letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}>cozywolf</span>
+            </div>
+            {/* QR Mini-Card-im-Card */}
             {summaryUrl && (
               <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                minHeight: 'clamp(180px, 19vw, 260px)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
               }}>
                 <div style={{
-                  padding: 14, borderRadius: 14,
-                  background: '#ffffff',
-                  boxShadow: '0 0 24px rgba(236,72,153,0.35), inset 0 0 0 2px rgba(236,72,153,0.42)',
+                  padding: 8, borderRadius: 10,
+                  background: '#fff',
+                  border: '2px solid rgba(236,72,153,0.65)',
+                  boxShadow: '0 0 18px rgba(236,72,153,0.45), 0 4px 10px rgba(0,0,0,0.4)',
                 }}>
                   <QRCodeSVG
                     value={summaryUrl}
-                    size={Math.min(200, 220)}
+                    size={88}
                     bgColor="#ffffff" fgColor="#0A0814" level="M"
                   />
                 </div>
+                <div style={{
+                  fontSize: 10, fontWeight: 900,
+                  color: '#FBCFE8', letterSpacing: '0.18em', textTransform: 'uppercase',
+                }}>{lang === 'de' ? 'scan mich' : 'scan me'}</div>
               </div>
             )}
-            {/* 2026-05-09 v11 (Wolf 'scan me wirkt deplatziert'): 2-zeilig
-                wie COZYWOLF-Spalte — oben SCAN MICH groß in Brand-Font + Pink,
-                drunter „und finde es raus" als auffordernde Sub-Zeile. */}
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 2, lineHeight: 1.05, textAlign: 'center',
-            }}>
-              {/* Brand-Subtitle Hierarchie (siehe COZYWOLF-Comment oben). */}
-              <div style={{
-                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
-                color: '#EC4899',
-                letterSpacing: '0.04em',
-                textShadow: '0 0 18px rgba(236,72,153,0.35)',
-                whiteSpace: 'nowrap',
-                textTransform: 'uppercase',
-                opacity: 0.78,
-              }}>{lang === 'de' ? 'SCAN MICH' : 'SCAN ME'}</div>
-              <div style={{
-                fontFamily: 'inherit',
-                fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 700,
-                color: '#F1F5F9',
-                whiteSpace: 'nowrap',
-              }}>{lang === 'de' ? 'und finde es raus' : 'and find out'}</div>
-            </div>
-          </ThanksColumnCard>
+          </div>
         </div>
 
-        {/* 2026-05-10 (Designer-Audit-P2 'Brand-Footer-Insta als Gradient-Pill
-            wie Summary-TopBar'): Insta-Handle als sichtbare Pill statt Plain-
-            Text mit Punkt-Trenner. Hebt Insta als CTA hervor (Follower-
-            Magnet); play.cozyquiz.app + cozywolf.de bleiben Plain als sekundär. */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 24px)', flexWrap: 'wrap', justifyContent: 'center',
-          fontSize: 'clamp(15px, 1.4vw, 22px)', color: 'rgba(236,72,153,0.85)', fontWeight: 900,
-          letterSpacing: '0.1em', textTransform: 'uppercase',
+        {/* Wolf-Maskottchen rechts unten — über Card-Rand ragend
+            (Action-Card-Overflow-Vibe). AnimatedCozyWolf statt Emoji. */}
+        <div aria-hidden style={{
+          position: 'absolute',
+          right: 'clamp(-12px, -1vw, -4px)',
+          bottom: 'clamp(-8px, -0.8vh, -2px)',
+          width: 'clamp(120px, 13vw, 180px)',
+          zIndex: 6,
+          pointerEvents: 'none',
+          filter: 'drop-shadow(0 6px 16px rgba(236,72,153,0.55))',
         }}>
-          <span>play.cozyquiz.app</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: 'clamp(6px, 0.7vh, 10px) clamp(14px, 1.4vw, 22px)',
-            borderRadius: 999,
-            background: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
-            color: '#fff',
-            boxShadow: '0 6px 18px rgba(236,72,153,0.45), inset 0 1px 0 rgba(255,255,255,0.22)',
-            border: '1.5px solid rgba(255,255,255,0.18)',
-            letterSpacing: '0.06em',
-          }}>📸 @cozywolf.events</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <WolfHeadIcon size={26} /> cozywolf.de
-          </span>
+          <AnimatedCozyWolf widthCss="100%" mode="jubel" speaking={true} />
         </div>
       </div>
 
-      </div> {/* /Top-Bereich (flex 1) */}
-
-      {/* 2026-05-10 (Wolf 'Recap-Strip rentiert sich nicht — Aufbruchstimmung,
-          Leute brauchen QR-Code/Sieger/Brand-Take-away, nicht 3min-Loop'):
-          ThanksNewsTicker entfernt. Thanks-Page jetzt nur 3 Hero-Spalten
-          (Sieger / cozywolf / SCAN MICH) + Footer. Klar, nicht repetitiv. */}
+      {/* Sekundärer Footer unter Card — kleiner, dezent, mit Insta-CTA-Pill */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        gap: 'clamp(12px, 1.4vw, 22px)', flexWrap: 'wrap', justifyContent: 'center',
+        fontSize: 'clamp(13px, 1.2vw, 18px)', color: 'rgba(236,72,153,0.7)', fontWeight: 900,
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+        marginTop: 'clamp(16px, 2vh, 28px)',
+        zIndex: 5,
+      }}>
+        <span>play.cozyquiz.app</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: 'clamp(5px, 0.6vh, 8px) clamp(12px, 1.2vw, 18px)',
+          borderRadius: 999,
+          background: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+          color: '#fff',
+          boxShadow: '0 6px 18px rgba(236,72,153,0.45), inset 0 1px 0 rgba(255,255,255,0.22)',
+          border: '1.5px solid rgba(255,255,255,0.18)',
+          letterSpacing: '0.06em',
+        }}>📸 @cozywolf.events</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>cozywolf.de</span>
+      </div>
     </div>
   );
 }
 
-// 2026-05-09 v5 (Wolf-Spec '3 Cards exakt gleich groß + design-konsistent'):
-// Outer-Container für jede der 3 Spalten in der Thanks-Hero-Card. Action-Card-
-// Stil mit pinkem Akzent (oder Team-Color für Sieger-Spalte). flex 1 1 0 +
-// gemeinsamer min-height-Inner sorgt für 1:1-Größe; alignItems stretch im
-// Parent-Flex matched die Höhen automatisch. Subtitle einheitlich unten.
-function ThanksColumnCard({
-  accent, delay, children,
-}: {
-  accent: string;
-  delay: number;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{
-      flex: '1 1 0',
-      minWidth: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 'clamp(12px, 1.6vh, 20px)',
-      padding: 'clamp(20px, 2.4vh, 32px) clamp(16px, 1.8vw, 28px)',
-      borderRadius: 24,
-      background: `linear-gradient(180deg, ${accent}22, ${accent}0d)`,
-      border: `3px solid ${accent}99`,
-      boxShadow: `0 0 40px ${accent}33, 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10)`,
-      animation: `contentReveal 0.6s var(--qq-ease-pop-fast) ${delay}s both`,
-      position: 'relative',
-    }}>
-      {children}
-    </div>
-  );
-}
-
-// Einheitlicher Subtitle für alle 3 Spalten — gleiche System-Font wie Team-
-// Name (Wolf-Korrektur 2026-05-09: Caveat-Handschrift unter Wolf/QR wirkte
-// inkonsistent zum Team-Namen). emphasized = Sieger (groß, fett, Color),
-// non-emphasized = Wolf-/Scan-Subtitle (kleiner, light).
-function ThanksColumnSubtitle({
-  text, color, emphasized,
-}: {
-  text: string;
-  color?: string;
-  emphasized?: boolean;
-}) {
-  const isLong = text.length > 10;
-  return (
-    <div style={{
-      fontFamily: 'inherit', // einheitlich für alle 3 Subtitles
-      fontSize: emphasized
-        ? (isLong ? 'clamp(22px, 2.4vw, 36px)' : 'clamp(28px, 3vw, 48px)')
-        : 'clamp(18px, 2vw, 28px)',
-      fontWeight: emphasized ? 900 : 800,
-      color: color ?? '#F1F5F9',
-      textAlign: 'center',
-      letterSpacing: emphasized ? '-0.01em' : '0',
-      textShadow: emphasized && color ? `0 0 24px ${color}66` : 'none',
-      // emphasized: Wrap erlauben (max 2 Zeilen) — non-emphasized bleibt nowrap.
-      whiteSpace: emphasized ? 'normal' : 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      display: emphasized ? '-webkit-box' : 'block',
-      WebkitLineClamp: emphasized ? 2 : 1,
-      WebkitBoxOrient: 'vertical',
-      wordBreak: 'break-word',
-      hyphens: 'auto',
-      maxWidth: '100%',
-      lineHeight: 1.1,
-    }}>{text}</div>
-  );
-}
-
+// 2026-05-10 (Wolf 'Variante X — Action-Card-XL Brand-Pattern'):
+// ThanksColumnCard + ThanksColumnSubtitle entfernt — wurden nur vom alten
+// 3-Spalten-ThanksView (Wolf · Sieger · QR) verwendet. Neue Hero-Action-Card
+// hat alles inline (keine wiederverwendbare Spalten-Struktur mehr).
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Sub-components

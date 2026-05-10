@@ -162,43 +162,17 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [x] **L7 — pic3 Comeback rechte „NEW"-Card kleiner als linke** ✅ FIX (`QQBeamerPage.tsx` ActionCardReveal): Outer-Wrapper bekommt explizit `height: 360` matching non-isNew Card, `alignSelf: stretch` raus (zog Outer auf parent-row-Höhe, Inner blieb 360 → wirkte kleiner).
 - [x] **L8 — pic4 Mu-Cho untere Winner-Card abgeschnitten** ✅ FIX (`QQBeamerPage.tsx` Single-Winner-Banner): Banner ~15-20% kompakter — Avatar 8vw→7vw, font 5vw→4.2vw, padding/gap/margin reduziert. Damit Mu-Cho-Reveal mit 4 Optionen den viewport-Bottom (overflow:hidden) nicht mehr verlässt.
 - [x] **L9 — pic5 10v10 unten viel Platz** ✅ FIX (`QQBeamerPage.tsx` ZvZ-Grid): `minHeight: clamp(280px,38vh,460px)` + `alignContent: center` + marginTop dazu. Cards nutzen jetzt den Platz vertikal-mittig statt top-aligned.
-- [ ] **L10 — pic6 „Grösstes Gebiet" final-Lock-View** 🔨 STRATEGIE (Wolf-Vorschlag 2026-05-10):
+- [x] **L10 — „Grösstes Gebiet" final-Lock-View** ✅ FIX (Commit `afd51f82`, QQBeamerPage.tsx GridRevealSlide): PlacementView-Sizing übernommen (clamp 900/78vh/50vw statt 64px-Mini-Grid). Per-Team Frontend-BFS (matched backend qqBfs.ts: 4-Nachbarschaft, stuck=2P) ermittelt die größte verbundene Region; Region-Cells voll deckend + Glow (Sieger-Region mit qqFRClusterPulse), kleinere Inseln gedimmt (opacity 0.35 + grayscale 0.55). Sidebar-Sort: largestConnected primary, totalCells tiebreak (matched GameOverView).
+- [x] **L11 — Autoplay-Fixes 1 + 2** ✅ (Commit `2d56333a`, QQModeratorPage.tsx):
 
-  Den Final-Lock-Renderer (= „bevor gelockt wird, gesamtes Grid wird gezählt") **als Kopie der normalen Placement-Page-Layout** aufbauen statt eigener Komponente. Nur die Cells die zum größten Gebiet jedes Teams gehören erhellen (visuelle Glow/Border), Rest gedimmt.
+  **Fix 1 — FINAL_REVEAL-Step-Mapping aligned** mit `qqFinalRevealMaxStep` (qqRooms.ts:5367+, `betSlotsCount + 5`). Vorher `2N+8`-Schema, Race-Final-Step bekam 3.2s Ranking-Delay und wurde mittendrin abgebrochen. Neue Delays: title 1.5s, grid 5.5s, bet 3s (Zero-Group 4.5s), awards-overview 2.5s, awards-reveal 8.5s, race-final (20+2N+4)s.
 
-  **Was zu kopieren ist**: `PlacementView` in `QQBeamerPage.tsx:14046+` mit Grid + Sidebar-Tabelle.
+  **Fix 2 — Outer-Effect-Cleanup** in 2 zusätzlichen Effects (NICHT als return im Outer-Effect — würde den ref-stabilen Timer bei jedem dep-change platt machen und Wolf-Bug „autoplay langsam" reaktivieren). Reaktiver Effect: Pause/Disable/Stop-Phase cancelt den Timer sofort. Unmount-Effect: clearTimeout + autoplayLastFireKeyRef null.
 
-  **Was anzupassen ist**:
-  - In Final-Lock-Phase: für jedes Team via BFS die größte verbundene Region berechnen (Helper existiert vermutlich schon in `qqBfs.ts`)
-  - Cells dieser Regionen visuell hervorheben (Glow + scale, oder eigene Border-Color)
-  - Rest gedimmt (opacity 0.4)
-  - Sidebar-Tabelle gleiche Sort-Order wie GameOverView: `largestConnected` primary + `totalCells` tiebreak
-
-  **Aufwand**: 30-60 min, isolierter Commit beim Chat-Wechsel.
-- [ ] **L11 — Autoplay-Audit-Ergebnis (2026-05-10)** 🔍
-
-  **Architektur**: Rein client-seitig in `QQModeratorPage.tsx`. Backend hat keinen Auto-Advance außer `scheduleMapAutoAdvance` (qqSocketHandlers.ts:3005 für CozyGuessr-Map).
-  - Toggle: `autoplayEnabled`/`autoplayPaused` in localStorage (`qqAutoplayMode`)
-  - Outer-Effect: `QQModeratorPage.tsx:270-690` mit phase-switch + setTimeout-cascade
-  - Inner-HP-Effect: `QQModeratorPage.tsx:692-718` separat (Multi-Trigger-Bug-Fix history)
-
-  **Warum Events skippen — Top-3**:
-  1. **FINAL_REVEAL-Step-Mapping veraltet** (`QQModeratorPage.tsx:556-594`) — rechnet noch nach altem v2 (`2N+8`), Race-Final-Refactor `559888f0` hat backend auf `betSlotsCount + 5` umgestellt. **Race-Final-Step (12-15s Auto-Choreo) bekommt 3.2s Ranking-Delay und wird mitten reingefeuert** → Race wird geskippt, Wolf sieht nur Sieger-Slide für 1-2s. **Hauptverdacht für „skippt Events".**
-  2. Effect-Deps unvollständig: `state?.finalBetResolution` + `state?.endAwards` + `state?.finalBettingSubmitted` fehlen → server-State-Update ohne fireKey-Change = kein Re-Schedule.
-  3. OnlyConnect-Hard-Floor (`:404-417`): bei Timer<25s wird else-Branch skipped, wartet auf Backend-AutoFinish. Kein Failsafe-Timer → wenn Backend nicht feuert, hängt Autoplay.
-
-  **Warum manchmal gar nicht — Top-3**:
-  A. **Kein `useEffect`-Return-Cleanup** im Outer-Effect (`:663-666` macht Cleanup nur inline beim Effect-Re-Run). Timer überlebt Unmount/Phase-Wechsel. Refs (`autoplayLastFireKeyRef`, `autoplayTimerRef`) bleiben mit stale fireKey besetzt → silent no-op.
-  B. **Dedup-Lock nach Pause/Resume**: laufender Timer feuert während Pause weiter (kein Cleanup), setzt `autoplayLastFireKeyRef = fireKey`. Resume → fireKey-Match → return → nichts passiert.
-  C. **Reconnect/session:restarted** cleart Refs nicht.
-
-  **Fix-Vorschläge**:
-  - **Fix 1 (P0, 30 min)**: FINAL_REVEAL-Mapping mit `decodeFinalStep`-Helper alignieren (oder gleichen Helper aus shared/ nutzen). Race-Final-Step braucht 30-32s Delay (RaceFinalSlide intern: countdown 3.5 + race 5 + N×2 falls 6×2=12 + 4 solo + 1.5 drift + 2 anticipation + 2.5 podium + 1.5 slowmo).
-  - **Fix 2 (P0, 10-20 min)**: Outer-Effect-Return-Cleanup (`clearTimeout` bei unmount + fireKey-change + Pause-Toggle-Off + Refs nullen). VORSICHT: alter Kommentar im Code warnt vor Cleanup-Reset-Bug — saubere Lösung: Cleanup nur bei Unmount, fireKey-Change bleibt inline.
+  **Offene Reste** (nicht heute):
   - **Fix 3 (P1, 15 min)**: Failsafe-Timer 60s für Custom-Pipelines (OnlyConnect/Bluff/HotPotato/Imposter „warte-auf-Backend"-Pfade) → emit revealAnswer fallback.
   - **Fix 4 (P2, 20 min)**: `qqDecodeFinalStep` als shared util exportieren — Mod-Autoplay + Beamer-View teilen sich SoT.
-
-  **Files**: `QQModeratorPage.tsx:50-53, 270-690 (Outer), 556-594 (FINAL_REVEAL switch), 663-672 (Inline-Cleanup), 692-718 (HP-Inner)`, `qqRooms.ts:5367-5395 (qqFinalRevealMaxStep + qqAdvanceFinalReveal)`, `qqSocketHandlers.ts:3005 (Map-AutoAdvance)`.
+  - **Effect-Deps unvollständig** (Top-Verdacht-3): `state?.finalBetResolution` + `state?.endAwards` + `state?.finalBettingSubmitted` fehlen → server-State-Update ohne fireKey-Change = kein Re-Schedule.
 
 ## Offen — Stand 2026-05-10 (nach Marathon-Tag)
 

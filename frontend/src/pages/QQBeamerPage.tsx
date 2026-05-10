@@ -17211,9 +17211,11 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
         ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, rgba(217,119,6,0.18) 35%, rgba(15,8,23,0.95) 80%)'
         : 'radial-gradient(ellipse at 50% 50%, rgba(31,16,46,0.95) 0%, rgba(15,8,23,0.98) 80%)',
       transition: 'background 0.8s ease',
-      // Camera-Push während P1-Solo + Treppchen-Rise + Slow-Mo + Finish
-      transform: phase === 'p1-solo' || phase === 'podium-rises' || isFinishing ? 'scale(1.04)' : 'scale(1)',
-      transformOrigin: 'center 35%',
+      // 2026-05-10 (Wolf 'BG-Größe ändert sich zwischen P3-fall und P1-solo —
+      // soll konstant bleiben'): Camera-Push entfernt. War scale 1.0 → 1.04
+      // beim Phase-Wechsel zu p1-solo, transition aber nur auf 'background'
+      // gesetzt → harter Sprung. Statt Smooth-Transition ganz raus, weil
+      // konsistente Größe wichtiger ist als die Camera-Push-Geste.
     }}>
       {/* 2026-05-10 (Wolf 'Sternenhimmel hinter Race wie GeoGuessr'): Layer
           mit ~80 deterministisch gestreuten Sternen + 2 Shooting-Stars. */}

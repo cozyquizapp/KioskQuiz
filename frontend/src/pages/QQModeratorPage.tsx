@@ -554,40 +554,47 @@ export default function QQModeratorPage() {
         break;
       }
       case 'FINAL_REVEAL': {
-        // 2026-05-09 v2 (Wolf 'autoplay langsam'): Step-aware delays.
-        // Multi-Step End-Reveal hat 2N+8 Steps — bei fixer 7s wären das ~115s
-        // bei 4 Teams. Jetzt pro Step-Typ angepasst:
-        //   title:        1.5s (nur Hero-Hold)
-        //   grid:         5s   (Brett zeigen mit Cluster-Pulse)
-        //   bet (Team):   3s normal, 4s bei 0-Bonus (oooh-Pause)
-        //   award-card:   2s (Trommelwirbel)
-        //   award-reveal: 3s (+1-Animation)
-        //   ranking:      3.2s pro Slide, Sieger 5s (Konfetti)
+        // 2026-05-10 (L11 Fix 1): Mapping ALIGNED mit qqFinalRevealMaxStep
+        // (qqRooms.ts:5367+) — Race-Final-Refactor `559888f0` hatte backend
+        // auf `betSlotsCount + 5` umgestellt, Mod hing noch auf altem `2N+8`.
+        // Folge: Race-Final-Step (~30s Auto-Choreo, RaceFinalSlide intern)
+        // bekam 3.2s Ranking-Delay und wurde mittendrin abgebrochen → Wolf
+        // sah nur Sieger-Slide für 1-2s.
+        //
+        // Schema:
+        //   step 0           → title          (1.5s)
+        //   step 1           → grid           (5.5s, Größtes-Gebiet-Reveal)
+        //   step 2..B+1      → bet            (3s, Zero-Group-Slot 4.5s)
+        //   step B+2         → awards-overview (2.5s)
+        //   step B+3         → awards-reveal  (8.5s, 3-Card-Cascade)
+        //   step B+4         → race-final     (~20+2N s Choreo + 4s Hold)
+        // Wobei B = betSlotsCount (Zero-Group = 1 Slot, sonst pro Positiv-Team).
         const N = s.teams.length;
         const step = (s as any).finalRevealStep ?? 0;
+        const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
+        const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
+        const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
+        const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+
         if (step <= 0) {
           delayMs = 1500;
         } else if (step === 1) {
-          delayMs = 5000;
-        } else if (step <= 1 + N) {
-          // Bet-Reveal — bei 0-Bonus etwas länger für oooh-Pause
-          const teamIdx = step - 2;
-          const sortedTeams = [...s.teams]
-            .map(t => ({ id: t.id, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
-            .sort((a, b) => a.bonus - b.bonus);
-          const bonusForThisTeam = sortedTeams[teamIdx]?.bonus ?? 0;
-          delayMs = bonusForThisTeam === 0 ? 4000 : 3000;
+          delayMs = 5500;
+        } else if (step <= 1 + betSlotsCount) {
+          // Zero-Group ist (falls vorhanden) der erste Bet-Slot.
+          const slotIdx = step - 2;
+          const isZeroSlot = zeroExists && slotIdx === 0;
+          delayMs = isZeroSlot ? 4500 : 3000;
+        } else if (step === 2 + betSlotsCount) {
+          delayMs = 2500; // awards-overview
+        } else if (step === 3 + betSlotsCount) {
+          delayMs = 8500; // awards-reveal (Card-Flip-Cascade ~8s)
         } else {
-          const ab = step - (1 + N);
-          if (ab >= 1 && ab <= 6) {
-            // Award Card / Reveal alternierend
-            delayMs = (ab % 2 === 1) ? 2000 : 3000;
-          } else {
-            // Ranking
-            const rk = ab - 7;
-            const isWinner = rk >= N - 1;
-            delayMs = isWinner ? 5000 : 3200;
-          }
+          // race-final (step === 4 + betSlotsCount). RaceFinalSlide-Choreo:
+          // countdown 3.5s + race-hold 5s + (N-1)×2s falls + p1-solo 4s +
+          // drift 1.5s + anticipation 2s + podium-rises 2.5s + slowmo 1.5s
+          // = 20 + 2N Sekunden bis 'finish'-Phase + 4s Konfetti-Hold.
+          delayMs = (20 + 2 * N + 4) * 1000;
         }
         action = () => emit('qq:nextQuestion', { roomCode });
         break;
@@ -688,6 +695,48 @@ export default function QQModeratorPage() {
     // bei jedem Step-Wechsel sonst hängt Autoplay nach erstem Step.
     (state as any)?.finalRevealStep,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── L11 Fix 2 (2026-05-10): Cleanup für laufenden Autoplay-Timer ──
+  //
+  // Vorher: der große Outer-Effect oben hat KEINEN useEffect-Return-Cleanup
+  // (inline-Cleanup räumt nur bei fireKey-Wechsel auf). Folge — Wolf-Audit-
+  // Findings (todo.md L11):
+  //  A) Timer überlebt Unmount/Phase-Wechsel zu GAME_OVER/THANKS/LOBBY.
+  //  B) Bei Pause läuft der vor-Pause-Timer weiter und feuert während Pause
+  //     den nächsten Step (z.B. unbeabsichtigter qq:nextQuestion).
+  //  C) Bei Reconnect/session:restarted bleibt der Timer-Ref besetzt.
+  //
+  // Lösung in 2 Effekten:
+  //  - Reaktiv: Pause/Disable/Stop-Phase → laufenden Timer SOFORT canceln.
+  //    `autoplayLastFireKeyRef` bleibt unverändert; beim Resume sieht der
+  //    Outer-Effect einen NEUEN fireKey (state hat sich i.d.R. weitergedreht)
+  //    und schedulet sauber neu. Falls fireKey identisch ist und schon
+  //    gefeuert wurde, ist die Aktion ohnehin obsolet — kein Re-Fire wollen.
+  //  - Unmount: vollständig — Timer kill + LastFireKey nullen.
+  //
+  // WICHTIG: NICHT in den Outer-Effect ein generisches `return () => clearTimeout`
+  // bauen — das würde den ref-stabilen Timer bei jedem dep-change platt machen
+  // und den Wolf-Bug „autoplay langsam" wieder reaktivieren (Memory v2-Fix).
+  useEffect(() => {
+    const stopPhase = state?.phase === 'GAME_OVER'
+      || state?.phase === 'THANKS'
+      || state?.phase === 'LOBBY';
+    const inactive = !autoplayEnabled || autoplayPaused || stopPhase;
+    if (inactive && autoplayTimerRef.current) {
+      window.clearTimeout(autoplayTimerRef.current.handle);
+      autoplayTimerRef.current = null;
+    }
+  }, [autoplayEnabled, autoplayPaused, state?.phase]);
+
+  useEffect(() => {
+    return () => {
+      if (autoplayTimerRef.current) {
+        window.clearTimeout(autoplayTimerRef.current.handle);
+        autoplayTimerRef.current = null;
+      }
+      autoplayLastFireKeyRef.current = null;
+    };
+  }, []);
 
   // 2026-05-09 (Wolf-Bug): separater HP-Slot-Autoplay-Effect mit MINIMALEN
   // Deps. Vorher lief HP-Slot-Branch im großen Outer-Autoplay-Effect mit

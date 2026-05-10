@@ -19532,6 +19532,12 @@ function ConnectionsGrid({ state: s }: {
           if (idx < 0) return baseDelay;
           return baseDelay + idx * (teamStepMs / 1000);
         };
+        // 2026-05-10 (Spacing-Audit P1): bei N≥6 Avatar-Size 36-52 → 28-40 px,
+        // damit bis zu 8 Finder pro Gruppe in 1 Reihe statt Wrap+Drop-Animation
+        // aus Cell rausspringen. Trade-off: kleinere Avatare auf 8m, aber
+        // sauberer Grid statt chaotischem Wrap.
+        const dense = s.teams.length >= 6;
+        const avatarSize = dense ? 'clamp(28px, 2.6vw, 40px)' : 'clamp(36px, 3.4vw, 52px)';
         return (
           <div style={{
             gridColumn: '1 / -1',
@@ -19582,7 +19588,7 @@ function ConnectionsGrid({ state: s }: {
                           // damit endlich „dramatic" statt „still".
                           animation: `muchoVoterDrop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) ${teamRevealDelay(tm.id)}s both`,
                         }}>
-                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(36px, 3.4vw, 52px)'} style={{
+                          <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avatarSize} style={{
                             boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,
                           }} />
                         </div>

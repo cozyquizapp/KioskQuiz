@@ -20250,9 +20250,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(6px); }
           100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
         }
+        /* 2026-05-10 (Designer-Audit-P2): -6°/+4° asymmetrisch wirkte wie
+           Pendel statt Wackeln. Jetzt 0±3° symmetrisch — natürlicher Bob. */
         @keyframes qqThanksCrownBob {
-          0%, 100% { transform: translate(-50%, 0) rotate(-6deg); }
-          50%      { transform: translate(-50%, -4px) rotate(4deg); }
+          0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
+          50%      { transform: translate(-50%, -4px) rotate(3deg); }
         }
         @keyframes qqWolfBreath {
           0%, 100% { transform: rotate(8deg) translateY(0); }
@@ -20447,7 +20449,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </ThanksColumnCard>
         </div>
 
-        {/* Brand-Footer — Custom Wolf-Asset statt 🐺 */}
+        {/* 2026-05-10 (Designer-Audit-P2 'Brand-Footer-Insta als Gradient-Pill
+            wie Summary-TopBar'): Insta-Handle als sichtbare Pill statt Plain-
+            Text mit Punkt-Trenner. Hebt Insta als CTA hervor (Follower-
+            Magnet); play.cozyquiz.app + cozywolf.de bleiben Plain als sekundär. */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 24px)', flexWrap: 'wrap', justifyContent: 'center',
           fontSize: 'clamp(15px, 1.4vw, 22px)', color: 'rgba(236,72,153,0.85)', fontWeight: 900,
@@ -20455,7 +20460,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         }}>
           <span>play.cozyquiz.app</span>
           <span style={{ opacity: 0.4 }}>·</span>
-          <span>📸 @cozywolf.events</span>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: 'clamp(6px, 0.7vh, 10px) clamp(14px, 1.4vw, 22px)',
+            borderRadius: 999,
+            background: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+            color: '#fff',
+            boxShadow: '0 6px 18px rgba(236,72,153,0.45), inset 0 1px 0 rgba(255,255,255,0.22)',
+            border: '1.5px solid rgba(255,255,255,0.18)',
+            letterSpacing: '0.06em',
+          }}>📸 @cozywolf.events</span>
           <span style={{ opacity: 0.4 }}>·</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <WolfHeadIcon size={26} /> cozywolf.de

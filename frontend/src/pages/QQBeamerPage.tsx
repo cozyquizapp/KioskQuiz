@@ -20323,6 +20323,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           0%, 100% { box-shadow: 0 0 60px var(--wg, rgba(255,255,255,0.4)), 0 0 120px rgba(251,191,36,0.25), 0 12px 36px rgba(0,0,0,0.55); }
           50%      { box-shadow: 0 0 90px var(--wg, rgba(255,255,255,0.6)), 0 0 160px rgba(251,191,36,0.40), 0 12px 36px rgba(0,0,0,0.55); }
         }
+        /* 2026-05-10 (Designer-Recherche): subtler QR-Pulse signalisiert
+           „interaktiv/scannbar" ohne zu nerven. Scale 1.00→1.03, 2.4s. Kein
+           Blink (zerstört Scan-Erfolg). */
+        @keyframes qqThanksQrPulse {
+          0%, 100% { transform: scale(1.00); }
+          50%      { transform: scale(1.03); }
+        }
         /* Fallback-Defs für PausedView-Keyframes (falls Thanks ohne vorheriges
            PausedView-Mount gerendert wird, z.B. Direkt-Navigation auf /beamer
            im FINAL_THANKS-State). */
@@ -20425,37 +20432,6 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         />
       </div>
 
-      {/* ── QR top-RIGHT außerhalb der Card — Wolf-Wunsch 2026-05-10:
-          QR raus aus der Card, ab in die Page-Ecke oben rechts. Nur noch
-          „scan me" als kleiner Text. Pinke Umrandung wie bisher. ── */}
-      {summaryUrl && (
-        <div style={{
-          position: 'absolute',
-          right: 'clamp(20px, 3vw, 60px)',
-          top: 'clamp(20px, 3vh, 40px)',
-          zIndex: 6,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1s both',
-        }}>
-          <div style={{
-            padding: 8, borderRadius: 12,
-            background: '#fff',
-            border: `2.5px solid rgba(${brand.accentRgb},0.75)`,
-            boxShadow: `0 0 20px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
-          }}>
-            <QRCodeSVG
-              value={summaryUrl}
-              size={104}
-              bgColor="#ffffff" fgColor="#0A0814" level="M"
-            />
-          </div>
-          <div style={{
-            fontSize: 'clamp(11px, 1.1vw, 15px)', fontWeight: 900,
-            color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-            textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
-          }}>{de ? '↗ scan me' : '↗ scan me'}</div>
-        </div>
-      )}
 
       {/* ── HERO: kleines CozyQuiz-Eyebrow + großer „Danke fürs Spielen"-Title
           mit Letter-Cascade + Wave (mirror „Gleich geht's los"-Block). ── */}
@@ -20634,12 +20610,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             pointerEvents: 'none',
           }} />
 
-          {/* Inner content — 3-col grid: Events left · Sieger middle · Insta+QR right */}
+          {/* Inner content — 3-col grid: Events-Platzhalter (schmal) · Sieger
+              · QR-Co-Hero. Nach Designer-Recherche: Sieger + QR gleich-
+              prominent als 2-Co-Heroes in der Card, Events-Spalte
+              hält das Skelett für später (siehe todo.md). */}
           <div style={{
             position: 'relative', zIndex: 2,
             flex: 1, minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: '1fr 1.4fr 1fr',
+            gridTemplateColumns: '0.5fr 1.2fr 1.1fr',
             gap: 'clamp(20px, 2.5vw, 40px)',
             alignItems: 'stretch',
           }}>
@@ -20722,10 +20701,61 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               })()}
             </div>
 
-            {/* RECHTS: Platzhalter — QR ist nach außerhalb der Card oben rechts
-                gewandert (Wolf-Wunsch 2026-05-10). 3-Col-Skelett bleibt erhalten,
-                damit Sieger optisch in der Mitte bleibt. */}
-            <div aria-hidden style={{ minWidth: 0 }} />
+            {/* RECHTS: QR-Co-Hero — Wolf 2026-05-10 nach Designer-Recherche.
+                Statt 104px-Mini-Marker in der Page-Ecke (= Decoration-Footer-
+                Anti-Pattern) jetzt vertikal-zentriert in der rechten Card-
+                Spalte, ~280px, mit subtilem Pulse + Brand-Logo in der Mitte
+                (Branded-QR +30% Scan-Rate laut B2B MarketingProfs 2025) +
+                benefit-driven CTA „Feedback + Insta folgen". */}
+            {summaryUrl && (
+              <div style={{
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 14, minWidth: 0,
+                animation: 'qqThanksColIn 0.7s ease 0.5s both',
+              }}>
+                <div style={{
+                  padding: 'clamp(10px, 1.2vw, 16px)',
+                  borderRadius: 18,
+                  background: '#fff',
+                  border: `3px solid rgba(${brand.accentRgb},0.75)`,
+                  boxShadow: `0 0 28px rgba(${brand.accentRgb},0.55), 0 6px 18px rgba(0,0,0,0.5)`,
+                  animation: 'qqThanksQrPulse 2.4s ease-in-out infinite',
+                }}>
+                  <QRCodeSVG
+                    value={summaryUrl}
+                    size={280}
+                    bgColor="#ffffff" fgColor="#0A0814"
+                    level="H"
+                    imageSettings={{
+                      src: '/logo.png',
+                      height: 56,
+                      width: 56,
+                      excavate: true,
+                    }}
+                    style={{
+                      width: 'clamp(220px, 22vw, 320px)',
+                      height: 'clamp(220px, 22vw, 320px)',
+                    }}
+                  />
+                </div>
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 3, lineHeight: 1.2, textAlign: 'center',
+                  maxWidth: 'clamp(220px, 22vw, 340px)',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.5vw, 22px)', fontWeight: 900,
+                    color: brand.accentHex, letterSpacing: '0.02em',
+                    textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
+                  }}>📱 {de ? 'Feedback + auf Insta folgen' : 'Feedback + follow us on Insta'}</div>
+                  <div style={{
+                    fontSize: 'clamp(11px, 1.15vw, 16px)', fontWeight: 700,
+                    color: '#94A3B8', fontStyle: 'italic',
+                  }}>{de ? '30 Sek — wir lesen jedes Wort' : '30 sec — we read every word'}</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

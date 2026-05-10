@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FinalRevealView } from './QQBeamerPage';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
@@ -74,6 +74,22 @@ export default function QQFinalRevealTestPage() {
   // Replay-Counter: erhöht sich bei „Replay"-Klick → erzwingt Re-Mount
   // damit die Race-Auto-Choreo neu startet ohne Step-Wechsel.
   const [replayKey, setReplayKey] = useState<number>(0);
+  // 2026-05-10 (Wolf 'Panel ausblendbar'): Toggle-Bar einklappbar, damit
+  // der Beamer-Effekt fullscreen sichtbar ist. Default = sichtbar.
+  const [panelVisible, setPanelVisible] = useState<boolean>(true);
+
+  // 2026-05-10 (Wolf 'Test-Page scrollt — abstellen'): body+html overflow
+  // hidden während TestPage gemountet ist. Cleanup bei Unmount.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
 
   const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
   const N = teams.length;
@@ -187,12 +203,32 @@ export default function QQFinalRevealTestPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', width: '100vw',
+      // 2026-05-10 (Wolf 'TestPage scrollt'): height: 100vh statt minHeight
+      // + overflow: hidden auf outer → keine Scrollbar mehr.
+      height: '100vh', width: '100vw',
+      overflow: 'hidden',
       background: '#0A0814',
       display: 'flex', flexDirection: 'column',
       position: 'relative',
     }}>
+      {/* Show-Panel Button — sichtbar wenn Panel ausgeblendet */}
+      {!panelVisible && (
+        <button
+          onClick={() => setPanelVisible(true)}
+          style={{
+            position: 'fixed', top: 12, right: 12, zIndex: 100,
+            padding: '8px 14px', borderRadius: 10,
+            background: 'rgba(15,8,23,0.85)',
+            border: '1.5px solid rgba(236,72,153,0.4)',
+            color: '#F1F5F9', fontWeight: 700, fontSize: 13,
+            cursor: 'pointer', fontFamily: 'system-ui, sans-serif',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >☰ Panel</button>
+      )}
       {/* Toggle-Bar oben */}
+      {panelVisible && (
       <div style={{
         position: 'fixed', top: 12, right: 12, zIndex: 100,
         display: 'flex', flexDirection: 'column', gap: 8,
@@ -204,8 +240,21 @@ export default function QQFinalRevealTestPage() {
         fontFamily: 'system-ui, sans-serif',
         minWidth: 280,
       }}>
-        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          🎬 FinalReveal-Test
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            🎬 FinalReveal-Test
+          </div>
+          <button
+            onClick={() => setPanelVisible(false)}
+            title="Panel ausblenden"
+            style={{
+              padding: '2px 8px', borderRadius: 6,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              color: '#94A3B8', fontSize: 14, lineHeight: 1,
+              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
+            }}
+          >×</button>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button style={lang === 'de' ? btnActive : btnStyle} onClick={() => setLang('de')}>DE</button>
@@ -257,10 +306,11 @@ export default function QQFinalRevealTestPage() {
           >🔁 Replay</button>
         </div>
       </div>
+      )}
 
       {/* FinalRevealView mit aktuellem Step — key includes replayKey damit
           Replay-Button ein force-Re-Mount auslöst (Auto-Choreo fängt von vorn an). */}
-      <div key={`${teamCount}-${step}-${replayKey}`} style={{ flex: 1, display: 'flex' }}>
+      <div key={`${teamCount}-${step}-${replayKey}`} style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <FinalRevealView state={mockState} />
       </div>
     </div>

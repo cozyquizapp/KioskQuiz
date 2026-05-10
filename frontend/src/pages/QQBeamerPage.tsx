@@ -17014,11 +17014,20 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     const initial: Record<string, number> = {};
     const target: Record<string, number> = {};
 
-    // Initial: gemäß shuffledIndices verteilt (random Position 8-92%)
+    // 2026-05-10 (Wolf 'Avatare mittig zentriert starten'): Initial-Range
+    // dynamisch nach N — bei wenig Teams kompakter um die Mitte gruppiert,
+    // bei vielen Teams mehr Slide-Breite genutzt damit Avatare nicht
+    // überlappen. Alle „starten an der Race-Linie" zusammen.
+    //   N=3:  35-65% (30% Range, kompakte Mitte)
+    //   N=5:  25-75% (50% Range)
+    //   N=8:  15-85% (70% Range, voller Platz)
+    const leftEdge = N <= 3 ? 35 : N <= 5 ? 25 : N <= 6 ? 22 : 15;
+    const rightEdge = 100 - leftEdge;
+    const range = rightEdge - leftEdge;
     shuffledIndices.forEach((rankIdx, shufflePos) => {
       const entry = finalRanking[rankIdx];
       if (entry) {
-        initial[entry.team.id] = N === 1 ? 50 : 8 + (84 / (N - 1)) * shufflePos;
+        initial[entry.team.id] = N === 1 ? 50 : leftEdge + (range / (N - 1)) * shufflePos;
       }
     });
 

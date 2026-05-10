@@ -4697,7 +4697,15 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
   // gefundener Gruppe. (User-Wunsch: 'nach finale soll normale aktion sein,
   // nicht joker, 4 oberbegriffe = 4 aktionen'.)
   const isConnectionsPlacement = s.phase === 'CONNECTIONS_4X4';
-  const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement; // Joker bonus placement
+  // 2026-05-10 (Live-Test-Bug Wolf 2026-05-07: '/team zeigt Joker obwohl
+  // keiner gewonnen wurde'): Pragma-Patch — zusätzliche Gate auf
+  // myStats.jokersThisPhase > 0. Schließt false-positive aus (PLACE_1 ohne
+  // legitimen Joker → keine Joker-UI), blockiert aber den ersten Joker einer
+  // Runde NICHT (Backend setzt jokersThisPhase BEFORE pa=PLACE_1, also liest
+  // das Frontend bereits 1 wenn der pa-Switch ankommt). Vorher: rein
+  // pa-basiert, was bei timing-Edge-Cases falsch positiv wurde.
+  const myJokersThisPhase = (myStats as any)?.jokersThisPhase ?? 0;
+  const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement && myJokersThisPhase > 0; // Joker bonus placement
   const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   // 2026-05-05 (Wolf-Konzept): STAPEL_BONUS = Connections-Finale-Stack-Mode.

@@ -356,11 +356,15 @@ function ShareButton({ team, place, lang, brand }: {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────────
-export default function QQSummaryPage() {
-  const { roomCode } = useParams<{ roomCode: string }>();
-  const [summary, setSummary] = useState<Summary | null>(null);
+// 2026-05-10 (Wolf-Wunsch 'summary ins menü'): optionaler `mockSummary`-Prop
+// für QQSummaryTestPage. Wenn gesetzt, überspringen wir den REST-Fetch und
+// nutzen die Mock-Daten direkt.
+export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary } = {}) {
+  const { roomCode: paramRoomCode } = useParams<{ roomCode: string }>();
+  const roomCode = mockSummary?.roomCode ?? paramRoomCode;
+  const [summary, setSummary] = useState<Summary | null>(mockSummary ?? null);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!mockSummary);
   // 2026-05-10 (Audit-P2 lang-stale-closure-Fix): error wird als Translation-
   // Key gespeichert, nicht als gerenderter String. Im Render wird mit dem
   // aktuellen lang uebersetzt — kein Stale-Bug bei Sprach-Switch zur Ladezeit.
@@ -374,6 +378,8 @@ export default function QQSummaryPage() {
   }
 
   useEffect(() => {
+    // Mock-Mode: Fetch komplett überspringen, Summary ist schon im State.
+    if (mockSummary) return;
     if (!roomCode) return;
     let cancelled = false;
     (async () => {
@@ -399,7 +405,7 @@ export default function QQSummaryPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [roomCode]);
+  }, [roomCode, mockSummary]);
 
   // Eurovision-Mode-aware Brand-Tokens (Audit-P2). Default null bei Loading.
   const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode]);

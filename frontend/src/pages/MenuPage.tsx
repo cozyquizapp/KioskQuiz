@@ -18,12 +18,20 @@ const cozyQuizLinks: LinkItem[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
+// CozyQuiz Test-Pages — Standalone-Vorschauen einzelner Quiz-Slides ohne ein
+// echtes Spiel durchzuziehen. Mit Toggle-Toolbars für Sprache/Teams/Awards.
+// ─────────────────────────────────────────────────────────────────────────
+const cozyQuizTestLinks: LinkItem[] = [
+  { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
+  { path: '/finalreveal-test', label: 'Treppchen Test',     emoji: '🎬', note: 'Endgame-Choreografie scrubben — Step-Slider 0..N+8 + Quick-Jumps zu Crescendo-Akten (Stage/Fill/Drop 🏆)' },
+  { path: '/summary-test',     label: 'Summary Test',       emoji: '📊', note: 'Public-Summary-Page nach QR-Scan — 3/5/8 Teams, Awards, ESC-Mode-Toggle' },
+  { path: '/testpage',         label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────
 // Extras — Tools, Admin, Stats (verbliebene Editoren)
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
-  { path: '/thanks-test',         label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
-  { path: '/finalreveal-test',    label: 'FinalReveal Test',   emoji: '🎬', note: 'Endgame-Choreografie scrubben — Step-Slider 0..N+8 + Quick-Jumps zu Crescendo-Akten (Stage/Fill/Drop 🏆)' },
-  { path: '/testpage',            label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
   { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
   { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
@@ -190,6 +198,14 @@ const MenuPage = () => {
           accent="#3B82F6"
           links={cozyQuizLinks}
           defaultOpen
+        />
+
+        <AppPanel
+          label="CozyQuiz · Test-Pages"
+          emoji="🧪"
+          tagline="Standalone-Vorschauen einzelner Quiz-Slides — Thanks, Treppchen, Summary, Avatar-Picker"
+          accent="#EC4899"
+          links={cozyQuizTestLinks}
         />
 
         <AppPanel

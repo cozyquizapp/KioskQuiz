@@ -5353,14 +5353,19 @@ export function qqResolveFinalBets(room: QQRoomState): void {
  *  - Plus 1 final step der zur THANKS-Phase wechselt (2N+8)
  *  Total = 2N + 9 (inkl. Final-Step der Phase wechselt). */
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
-  const N = Object.keys(room.teams).length;
-  // 2026-05-10 (Wolf 'Awards: 2 Steps statt 4'): Awards-Section von 4
-  // Mod-Steps auf 2 reduziert (overview + auto-reveal mit Stagger).
-  // Mapping: 0=title, 1=grid, 2..N+1=bet, N+2=awards-overview,
-  // N+3=awards-reveal (Auto-Choreo 8s), N+4=race-final (Auto-Choreo ~33s),
-  // max = N+5 → THANKS.
-  // Bei N=4: 9 Steps (war 11), bei N=8: 13 Steps (war 15).
-  return N + 5;
+  // 2026-05-10 (Wolf 'BetReveal Variante D — Anti-Shaming'):
+  // betSlotsCount statt N. Teams ohne Bet werden komplett übersprungen,
+  // 0-Bonus-Teams sammeln in 1 Group-Slide. Frontend FinalRevealView muss
+  // dieselbe Logik haben (siehe useMemo betSlots in QQBeamerPage.tsx).
+  const teams = Object.values(room.teams);
+  const res = room.finalBetResolution ?? {};
+  const betted = teams.filter(t => res[t.id]?.targetTeamId);
+  const zeroExists = betted.some(t => (res[t.id]?.totalBonus ?? 0) === 0);
+  const positiveCount = betted.filter(t => (res[t.id]?.totalBonus ?? 0) > 0).length;
+  const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+  // Mapping: 0=title, 1=grid, 2..betSlotsCount+1=bet, +2=awards-overview,
+  // +3=awards-reveal, +4=race-final, max = betSlotsCount+5 → THANKS.
+  return betSlotsCount + 5;
 }
 
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */

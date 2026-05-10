@@ -16042,16 +16042,13 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 type FinalStep =
   | { kind: 'title' }
   | { kind: 'grid' }
-  | { kind: 'bet'; teamIndex: number }
-  | { kind: 'awards-overview' }      // alle 3 BG-Cards mit Erklärung
-  | { kind: 'awards-reveal' }        // Auto-Choreo: 3 Cards gestaffelt flippen
+  | { kind: 'bet'; slotIndex: number } // Index in betSlots-Array
+  | { kind: 'awards-overview' }        // alle 3 BG-Cards mit Erklärung
+  | { kind: 'awards-reveal' }          // Auto-Choreo: 3 Cards gestaffelt flippen
   | { kind: 'race-final' };
 
-// 2026-05-10 (Wolf 'Awards: 2 Steps statt 4 — alle zeigen, dann alle
-// automatisch aufdecken mit Zeit zwischen einzelnen'):
-// 2026-05-10 (Audit-P2): RankingEntry-Type aus Legacy-Block hochgezogen,
-// damit Legacy-Komponenten gefahrlos gelöscht werden können (RaceFinalSlide
-// + PodiumStepFinal nutzen den Type weiterhin).
+// RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
+// wird von RaceFinalSlide + PodiumStepFinal genutzt.
 type RankingEntry = {
   team: QQTeam;
   cells: number;
@@ -16060,11 +16057,15 @@ type RankingEntry = {
   total: number;
 };
 
-function decodeFinalStep(step: number, N: number): FinalStep {
+// 2026-05-10 (Wolf 'BetReveal Variante D — Anti-Shaming'):
+// betSlotsCount statt N. Teams mit 0-Bonus → 1 Group-Slide zuerst,
+// danach einzelne Positiv-Teams aufsteigend. Teams ohne Bet komplett
+// übersprungen. Backend qqFinalRevealMaxStep hat dieselbe Logik.
+function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
   if (step <= 0) return { kind: 'title' };
   if (step === 1) return { kind: 'grid' };
-  if (step <= 1 + N) return { kind: 'bet', teamIndex: step - 2 };
-  const afterBets = step - (1 + N);
+  if (step <= 1 + betSlotsCount) return { kind: 'bet', slotIndex: step - 2 };
+  const afterBets = step - (1 + betSlotsCount);
   if (afterBets === 1) return { kind: 'awards-overview' };
   if (afterBets === 2) return { kind: 'awards-reveal' };
   return { kind: 'race-final' };
@@ -16072,22 +16073,35 @@ function decodeFinalStep(step: number, N: number): FinalStep {
 
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const N = s.teams.length;
   const step = s.finalRevealStep ?? 0;
-  const phase = decodeFinalStep(step, N);
 
   // 2026-05-10 (Audit-P0 Bugfix): finalRanking + Helper-Maps via useMemo
   // stabilisieren. Vorher wurden bei JEDEM Parent-Render neue Arrays/Objects
   // erzeugt — Folge: RaceFinalSlide useEffect [N, finalRanking, p1] feuerte
   // bei jedem Socket-State-Update mid-Choreo neu, ALLE setTimeouts wurden
   // re-scheduled, Phasen-Cursor sprang zurück, Sounds doppelt.
-  const { betSorted, cellsByTeam, awardPoints, finalRanking } = useMemo(() => {
-    const betSorted = [...s.teams]
-      .map(t => ({ team: t, bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0 }))
+  // 2026-05-10 (Wolf 'BetReveal Variante D'): betSlots ersetzt betSorted —
+  // 0-Bonus-Teams als 1 Group-Slide, Positiv-Teams einzeln aufsteigend,
+  // No-Bet-Teams komplett übersprungen.
+  const { betSlots, cellsByTeam, awardPoints, finalRanking } = useMemo(() => {
+    type BetSlot =
+      | { kind: 'zero-group'; teams: QQTeam[] }
+      | { kind: 'positive'; team: QQTeam; bonus: number };
+    const betSlots: BetSlot[] = [];
+    const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
+    const zeroTeams = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
+    const positiveTeams = betted
+      .filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0)
       .sort((a, b) => {
-        if (a.bonus !== b.bonus) return a.bonus - b.bonus;
-        return a.team.name.localeCompare(b.team.name);
+        const ba = s.finalBetResolution![a.id].totalBonus;
+        const bb = s.finalBetResolution![b.id].totalBonus;
+        if (ba !== bb) return ba - bb; // aufsteigend
+        return a.name.localeCompare(b.name);
       });
+    if (zeroTeams.length > 0) betSlots.push({ kind: 'zero-group', teams: zeroTeams });
+    for (const t of positiveTeams) {
+      betSlots.push({ kind: 'positive', team: t, bonus: s.finalBetResolution![t.id].totalBonus });
+    }
 
     const cellsByTeam: Record<string, number> = {};
     for (const t of s.teams) cellsByTeam[t.id] = 0;
@@ -16113,11 +16127,12 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       }))
       .sort((a, b) => b.total - a.total);
 
-    return { betSorted, cellsByTeam, awardPoints, finalRanking };
+    return { betSlots, cellsByTeam, awardPoints, finalRanking };
   }, [s.teams, s.grid, s.finalBetResolution, s.endAwards]);
-  // awardPoints + cellsByTeam aktuell weiter verwendet, awardPoints
-  // currently unused outside useMemo — bleibt drin für Future-Use im Recap.
+  // awardPoints currently unused outside useMemo — bleibt drin für Future-Use
   void awardPoints;
+
+  const phase = decodeFinalStep(step, betSlots.length);
 
   return (
     <div style={{
@@ -16130,16 +16145,21 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
       {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} lang={lang} />}
-      {phase.kind === 'bet' && (
-        <BetRevealSlide
-          team={betSorted[phase.teamIndex]?.team}
-          resolution={betSorted[phase.teamIndex]?.team
-            ? (s.finalBetResolution?.[betSorted[phase.teamIndex].team.id] ?? null)
-            : null}
-          allTeams={s.teams}
-          lang={lang}
-        />
-      )}
+      {phase.kind === 'bet' && (() => {
+        const slot = betSlots[phase.slotIndex];
+        if (!slot) return null;
+        if (slot.kind === 'zero-group') {
+          return <BetZeroGroupSlide teams={slot.teams} lang={lang} />;
+        }
+        return (
+          <BetRevealSlide
+            team={slot.team}
+            resolution={s.finalBetResolution?.[slot.team.id] ?? null}
+            allTeams={s.teams}
+            lang={lang}
+          />
+        );
+      })()}
       {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealMode="closed" state={s} lang={lang} />}
       {phase.kind === 'awards-reveal' && <AwardsOverviewSlide revealMode="auto-reveal" state={s} lang={lang} />}
       {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
@@ -16656,6 +16676,79 @@ function AwardsOverviewSlide({ revealMode, state: s, lang }: {
             />
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// 2026-05-10 (Wolf 'BetReveal Variante D — Anti-Shaming'):
+// Sammel-Slide für alle Teams die ge-bettet haben aber 0 Bonus bekommen.
+// Tonalität: warm-bedauernd, nicht spöttisch — keine großen 🥲-Drama-Avatare,
+// stattdessen mittlere Avatare in Reihe, klein-statt-groß-im-Spotlight.
+// Erscheint VOR den Positiv-Teams (Crescendo: schwach → stark).
+function BetZeroGroupSlide({ teams, lang }: {
+  teams: QQTeam[]; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const N = teams.length;
+  // Avatar-Größe skaliert mit Team-Anzahl
+  const avatarSize = N <= 3
+    ? 'clamp(110px, 11vw, 160px)'
+    : N <= 5
+      ? 'clamp(90px, 9vw, 130px)'
+      : 'clamp(70px, 7vw, 100px)';
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 'clamp(28px, 3.5vh, 48px)',
+      width: '100%',
+      padding: 'clamp(20px, 2vh, 36px) clamp(24px, 3vw, 48px)',
+    }}>
+      <div style={{
+        fontSize: 'clamp(13px, 1.4vw, 22px)', fontWeight: 900,
+        color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+      }}>{de ? '🎯 Tipps abgegeben' : '🎯 Tips placed'}</div>
+      <div style={{
+        fontSize: 'clamp(30px, 3.6vw, 56px)', fontWeight: 900,
+        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        textShadow: '0 0 28px rgba(236,72,153,0.35)',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
+        maxWidth: '92vw',
+      }}>{de
+        ? 'Diese Teams haben mitgetippt'
+        : 'These teams placed their tip'}
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        gap: 'clamp(20px, 2.6vw, 48px)', flexWrap: 'wrap',
+        maxWidth: '92vw',
+      }}>
+        {teams.map((t, i) => (
+          <div key={t.id} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`,
+            opacity: 0,
+          }}>
+            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} flat />
+            <div style={{
+              fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 900,
+              color: t.color,
+              textShadow: `0 0 12px ${t.color}55`,
+              maxWidth: avatarSize, textAlign: 'center',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{t.name}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        fontSize: 'clamp(15px, 1.5vw, 22px)', color: '#94A3B8',
+        fontStyle: 'italic', textAlign: 'center',
+        animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
+        opacity: 0,
+      }}>{de
+        ? 'Heute lief der Tipp nicht ganz auf 🤞'
+        : 'Today’s tip didn’t quite hit 🤞'}
       </div>
     </div>
   );

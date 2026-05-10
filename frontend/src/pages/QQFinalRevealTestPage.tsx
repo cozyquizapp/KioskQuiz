@@ -55,15 +55,18 @@ const STEP_LABELS: Record<number, string> = {
   // Wir labeln die Steps relativ — bei N=5 wäre 0=title, 1=grid, 2..6=bet, 7..10=awards, 11=stage, 12=fill, 13=drop
 };
 
-function getStepLabel(step: number, N: number): string {
+function getStepLabel(step: number, betSlotsCount: number): string {
   if (step <= 0) return '0 · Title';
   if (step === 1) return '1 · Grid-Reveal';
-  if (step <= 1 + N) return `${step} · Bet-Reveal Team ${step - 1}/${N}`;
-  const ab = step - (1 + N);
+  if (step <= 1 + betSlotsCount) {
+    const slotIdx = step - 2;
+    return `${step} · Bet-Slot ${slotIdx + 1}/${betSlotsCount}`;
+  }
+  const ab = step - (1 + betSlotsCount);
   if (ab === 1) return `${step} · Awards: Overview (alle BG)`;
   if (ab === 2) return `${step} · Awards: Auto-Reveal (3× Flip ~8s)`;
   if (ab === 3) return `${step} · 🏁 RACE-FINAL (Auto-Choreo ~33s)`;
-  return `${step} · (max ${N + 4})`;
+  return `${step} · (max ${betSlotsCount + 4})`;
 }
 
 export default function QQFinalRevealTestPage() {
@@ -93,14 +96,7 @@ export default function QQFinalRevealTestPage() {
 
   const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
   const N = teams.length;
-  const maxStep = N + 4; // race-final ist letzter Step (war N+6 vor Awards-Refactor)
   const grid = buildMockGrid(teams);
-
-  // Default: bei Team-Count-Wechsel auf race-final springen
-  const handleTeamCountChange = (n: 3 | 5 | 8) => {
-    setTeamCount(n);
-    setStep(n + 4); // race-final für neuen N
-  };
 
   // Mock endAwards (alle 3 vergeben)
   const endAwards = {
@@ -111,14 +107,33 @@ export default function QQFinalRevealTestPage() {
     speedyAvgMs: -1200,
   };
 
-  // Mock finalBetResolution
+  // Mock finalBetResolution — verschiedene Bonus-Werte für realistic
+  // betSlots-Test (zero-group + positive einzeln)
   const finalBetResolution: QQStateUpdate['finalBetResolution'] = teams.length >= 2 ? {
     [teams[0].id]: { targetTeamId: teams[1].id, mutualWith: teams[1].id, totalBonus: 4, baseBonus: 3, sympathyBonus: 1 } as any,
     [teams[1].id]: { targetTeamId: teams[0].id, mutualWith: teams[0].id, totalBonus: 4, baseBonus: 3, sympathyBonus: 1 } as any,
     ...(teams[2] ? { [teams[2].id]: { targetTeamId: teams[3]?.id ?? teams[0].id, mutualWith: null, totalBonus: 2, baseBonus: 2, sympathyBonus: 0 } as any } : {}),
     ...(teams[3] ? { [teams[3].id]: { targetTeamId: teams[0].id, mutualWith: null, totalBonus: 0, baseBonus: 0, sympathyBonus: 0 } as any } : {}),
     ...(teams[4] ? { [teams[4].id]: { targetTeamId: null, mutualWith: null, totalBonus: 0, baseBonus: 0, sympathyBonus: 0 } as any } : {}),
+    // Bei N=8: auch t5+t6 Bets, t7 ohne Bet
+    ...(teams[5] ? { [teams[5].id]: { targetTeamId: teams[2].id, mutualWith: null, totalBonus: 0, baseBonus: 0, sympathyBonus: 0 } as any } : {}),
+    ...(teams[6] ? { [teams[6].id]: { targetTeamId: teams[1].id, mutualWith: null, totalBonus: 3, baseBonus: 3, sympathyBonus: 0 } as any } : {}),
+    ...(teams[7] ? { [teams[7].id]: { targetTeamId: null, mutualWith: null, totalBonus: 0, baseBonus: 0, sympathyBonus: 0 } as any } : {}),
   } : null;
+
+  // 2026-05-10 (Wolf 'BetReveal Variante D'): betSlotsCount = positive + (zero ? 1 : 0)
+  // No-Bet-Teams (targetTeamId=null) werden komplett übersprungen.
+  const betted = teams.filter(t => finalBetResolution?.[t.id]?.targetTeamId);
+  const zeroExists = betted.some(t => (finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
+  const positiveCount = betted.filter(t => (finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
+  const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+  const maxStep = betSlotsCount + 4; // race-final ist letzter Step
+
+  // Default: bei Team-Count-Wechsel auf race-final springen
+  const handleTeamCountChange = (n: 3 | 5 | 8) => {
+    setTeamCount(n);
+    setStep(maxStep); // wird beim re-render durch neuen betSlotsCount korrigiert
+  };
 
   const mockState = {
     roomCode: 'DEMO',
@@ -278,7 +293,7 @@ export default function QQFinalRevealTestPage() {
             style={{ width: '100%' }}
           />
           <div style={{ fontSize: 11, color: '#FBBF24', fontStyle: 'italic' }}>
-            {getStepLabel(step, N)}
+            {getStepLabel(step, betSlotsCount)}
           </div>
         </div>
 
@@ -288,9 +303,9 @@ export default function QQFinalRevealTestPage() {
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
             <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Grid</button>
-            <button style={step === N + 2 ? btnActive : btnStyle} onClick={() => setStep(N + 2)}>Awards BG</button>
-            <button style={step === N + 3 ? btnActive : btnStyle} onClick={() => setStep(N + 3)}>Awards Reveal</button>
-            <button style={step === N + 4 ? btnActive : btnStyle} onClick={() => setStep(N + 4)}>🏁 Race</button>
+            <button style={step === betSlotsCount + 2 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 2)}>Awards BG</button>
+            <button style={step === betSlotsCount + 3 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 3)}>Awards Reveal</button>
+            <button style={step === betSlotsCount + 4 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 4)}>🏁 Race</button>
           </div>
           {/* Replay Race: gleicher Step + force re-mount via key in render */}
         </div>

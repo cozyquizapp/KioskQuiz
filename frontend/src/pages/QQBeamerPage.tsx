@@ -14514,9 +14514,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
                 const isHigher = dir === 'higher';
-                // 2026-05-08 (Wolf-Bugfix): Lower-Card war rot, alles andere
-                // war grün+pink. Lower jetzt Brand-Pink für Konsistenz.
+                // Higher = Brand-Grün, Lower = Brand-Pink (Default-Farben).
                 const accentCol = isHigher ? '#22C55E' : '#EC4899';
+                // 2026-05-10 (Wolf 'comeback weniger/mehr — eines grün wenn richtig,
+                // eines pink wenn richtig, jeweils in der Anfangs-Textfarbe'):
+                // Vorher waren beide bei isCorrect universal grün. Jetzt behält
+                // jede Pille ihre Anfangs-Farbe — Higher leuchtet grün, Lower
+                // leuchtet pink wenn richtig. Light-Variante für Text-Lesbarkeit.
+                const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
                 const isCorrect = isReveal && correctChoice === dir;
                 const isWrong = isReveal && correctChoice !== dir;
                 return (
@@ -14524,24 +14529,17 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     display: 'inline-flex', alignItems: 'center', gap: 12,
                     padding: 'clamp(10px, 1.4vh, 16px) clamp(20px, 2.4vw, 32px)',
                     borderRadius: 999,
-                    // 2026-05-09 (Wolf 'higher button bei richtig nicht pink
-                    // sondern grün leuchten'): correct = ALWAYS green
-                    // (universelle "richtig"-Farbe), egal ob Higher oder Lower.
                     background: isCorrect
-                      ? 'rgba(34,197,94,0.22)'
+                      ? `${accentCol}33`
                       : `${accentCol}14`,
-                    border: `2.5px solid ${isCorrect ? '#22C55E' : `${accentCol}66`}`,
+                    border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
                     boxShadow: isCorrect
-                      ? '0 0 44px rgba(34,197,94,0.55), 0 0 14px rgba(34,197,94,0.4), inset 0 1px 0 rgba(255,255,255,0.10)'
+                      ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
                       : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
                     transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
                     opacity: isWrong ? 0.4 : 1,
-                    // 2026-05-07 (Audit P2): scale 1→1.08 mit ease-bounce hatte
-                    // leichten Overshoot. Lock-Step braucht keinen Bounce — der
-                    // celebShake auf isCorrect ist die Feier-Anim, die scale soll
-                    // ruhig settle. ease-out-cubic glatt + dezent.
                     transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
                     animation: !isReveal
                       ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
@@ -14550,12 +14548,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   }}>
                     <span style={{
                       fontSize: 'clamp(24px, 2.8vw, 38px)', lineHeight: 1, fontWeight: 900,
-                      color: isCorrect ? '#22C55E' : accentCol,
+                      color: accentCol,
                       transition: 'color 0.4s ease',
                     }}>{isHigher ? '↑' : '↓'}</span>
                     <span style={{
                       fontSize: 'clamp(18px, 2.2vw, 30px)', fontWeight: 900,
-                      color: isCorrect ? '#86EFAC' : accentCol,
+                      color: isCorrect ? correctTextLight : accentCol,
                       letterSpacing: '0.12em', textTransform: 'uppercase',
                       transition: 'color 0.4s ease',
                     }}>

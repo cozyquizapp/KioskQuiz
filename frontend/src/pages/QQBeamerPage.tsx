@@ -16289,21 +16289,27 @@ function FinalRevealSharedKeyframes() {
         50%  { transform: translate(0, 45vh)  scale(0.94) rotate(0); opacity: 1; }
         100% { transform: translate(0, 120vh) scale(0.85) rotate(0); opacity: 1; }
       }
+      /* 2026-05-10 (Wolf 'P1 nicht größer werden, smooth fliegen statt
+         scale-explode'): Slow-Mo-Plateau gesenkt von scale 1.4 auf 1.2 →
+         der nachfolgende Snap braucht keinen großen scale-Drop mehr. */
       @keyframes qqRaceWinnerSlowMo {
-        0%   { transform: translateY(0) scale(1.4); }
-        50%  { transform: translateY(-30px) scale(1.5); }
-        100% { transform: translateY(0) scale(1.4); }
+        0%   { transform: translateY(0) scale(1.2); }
+        50%  { transform: translateY(-22px) scale(1.28); }
+        100% { transform: translateY(0) scale(1.2); }
       }
-      /* 2026-05-10 (Wolf 'Sieger-Snap noch nicht 100% smooth'):
-         Vorher 0.5s mit schnell-bouncy 60% peak (1.15) → leicht zackig.
-         Jetzt: 0.85s Duration, 4 keyframes mit weichen Übergängen. Drop von
-         höher (-110px statt -80px) für mehr „from above"-Eindruck, Settle
-         über 50/80% statt 60% peak — weniger overshoot, mehr glide. */
+      /* 2026-05-10 v2 (Wolf 'P1 wird groß und rutscht unsmooth — soll nicht
+         größer werden, sondern direkt smooth fliegen, erst zur Mitte dann
+         langsam runterlässt'):
+         Refactor: kein scale-explode mehr (1.9→1). Avatar startet bei der
+         winner-slow-mo End-Scale (1.2) und sinkt mit subtle scale-shrink
+         zur 1.0 ab. translate aus -26vh (≈ race-bahn-Mitte-Position) zur
+         Treppchen-Stufe-Position (0). Opacity bleibt 1 → continuity zum
+         race-bahn-P1 der gerade unmounted. Easing ease-out-soft → glide. */
       @keyframes qqRaceWinnerSnap {
-        0%   { transform: scale(1.9) translateY(-110px); opacity: 0; filter: blur(6px); }
-        45%  { transform: scale(1.08) translateY(-6px); opacity: 1; filter: blur(0); }
-        75%  { transform: scale(1.02) translateY(0); }
-        100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+        0%   { transform: scale(1.2) translateY(-26vh); opacity: 1; }
+        60%  { transform: scale(1.08) translateY(-3vh); }
+        85%  { transform: scale(1.02) translateY(0); }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       /* 2026-05-09 v8 (Wolf 'Treppchen steigt von unten mit allen Avataren'):
          Slide-from-bottom mit subtle overshoot — wirkt würdevoll und episch. */
@@ -17194,6 +17200,10 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       transform: phase === 'p1-solo' || phase === 'podium-rises' || isFinishing ? 'scale(1.04)' : 'scale(1)',
       transformOrigin: 'center 35%',
     }}>
+      {/* 2026-05-10 (Wolf 'Sternenhimmel hinter Race wie GeoGuessr'): Layer
+          mit ~80 deterministisch gestreuten Sternen + 2 Shooting-Stars. */}
+      <RaceStarryBackground />
+
       {isFinish && <ConfettiOverlay />}
 
       {/* 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay
@@ -17303,10 +17313,9 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
                         border: `4px solid ${p1.team.color}`,
                         boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        // 2026-05-10 (Wolf 'Snap nicht 100% smooth'): 0.5s →
-                        // 0.85s + cubic-bezier(0.22, 1, 0.36, 1) (ease-out-quart)
-                        // statt back-easing → glide statt zackig.
-                        animation: 'qqRaceWinnerSnap 0.85s cubic-bezier(0.22, 1, 0.36, 1) both',
+                        // 2026-05-10 v2 (Wolf 'fliegt direkt smooth, lässt sich
+                        // langsam runter'): 0.85s → 1.1s, ease-out-soft.
+                        animation: 'qqRaceWinnerSnap 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
                       }}>
                         <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
                           size={config.avatarSize} flat />
@@ -17516,6 +17525,79 @@ function RaceSpeedLines({ color }: { color: string }) {
 // PodiumStep — ~620 Zeilen). Wurden seit v5 Race-Refactor nicht mehr von
 // FinalRevealView referenziert.
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// 2026-05-10 (Wolf 'Sternenhimmel hinter Race wie GeoGuessr'):
+// Geoguessr-Pattern — viele kleine weiße Sterne (1-3px) auf dunklem BG mit
+// async Twinkle-Cycle (opacity 0.2 → 1 → 0.2, 2-5s pro Stern). Plus 2-3
+// Shooting-Stars die alle 8-15s diagonal durchs Bild fliegen.
+// Performance: 80 Sterne deterministisch generiert (kein Math.random pro
+// Render → kein flicker), useMemo cached über Lifetime der Component.
+function RaceStarryBackground() {
+  const stars = useMemo(() => {
+    // Deterministischer pseudo-random Hash für stable star positions.
+    // Math.random nur bei Mount, useMemo[] cached.
+    return Array.from({ length: 80 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 1 + Math.random() * 1.8,
+      twinkleDelay: Math.random() * 4,
+      twinkleDuration: 2 + Math.random() * 3,
+      // 3 Helligkeitsstufen — nicht alle Sterne sind gleich hell
+      maxOpacity: 0.5 + Math.random() * 0.5,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const shootingStars = useMemo(() => [
+    { startX: 10, startY: 15, delay: 4 },
+    { startX: 60, startY: 25, delay: 11 },
+    { startX: 30, startY: 8, delay: 18 },
+  ], []);
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', inset: 0,
+      pointerEvents: 'none', zIndex: 0,
+      overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes raceStarTwinkle {
+          0%, 100% { opacity: var(--max-op, 0.6); }
+          50%      { opacity: 0.15; }
+        }
+        @keyframes raceShootingStar {
+          0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+          5%   { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translate(120vw, 60vh) scale(1.2); opacity: 0; }
+        }
+      `}</style>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          left: `${s.x}%`, top: `${s.y}%`,
+          width: s.size, height: s.size,
+          borderRadius: '50%',
+          background: '#fff',
+          ['--max-op' as string]: s.maxOpacity,
+          opacity: s.maxOpacity,
+          boxShadow: s.size > 2 ? `0 0 ${s.size * 2}px rgba(255,255,255,0.6)` : undefined,
+          animation: `raceStarTwinkle ${s.twinkleDuration}s ease-in-out ${s.twinkleDelay}s infinite`,
+        }} />
+      ))}
+      {shootingStars.map((ss, i) => (
+        <div key={`shoot-${i}`} aria-hidden style={{
+          position: 'absolute',
+          left: `${ss.startX}%`, top: `${ss.startY}%`,
+          width: 2, height: 2,
+          background: '#fff',
+          borderRadius: '50%',
+          boxShadow: '0 0 4px #fff, -20px -10px 30px rgba(255,255,255,0.4)',
+          animation: `raceShootingStar 2s ease-out ${ss.delay}s infinite`,
+          opacity: 0,
+        }} />
+      ))}
+    </div>
+  );
+}
 
 // 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay.
 // Steps: BEREIT? (0.8s) → 3 (0.7s) → 2 (0.7s) → 1 (0.8s) → GO! (0.5s).

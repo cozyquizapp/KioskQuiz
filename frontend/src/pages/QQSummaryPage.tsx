@@ -1438,6 +1438,7 @@ function ctaButton(bg: string, color: string, border?: string): React.CSSPropert
 }
 
 function Footer() {
+  const linkStyle: React.CSSProperties = { color: '#94a3b8', textDecoration: 'none' };
   return (
     <div style={{
       marginTop: 28, paddingTop: 18,
@@ -1446,9 +1447,13 @@ function Footer() {
     }}>
       <div>CozyQuiz by <b style={{ color: '#94a3b8' }}>cozywolf</b></div>
       <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <a href="https://play.cozyquiz.app" style={{ color: '#94a3b8', textDecoration: 'none' }}>play.cozyquiz.app</a>
+        <a href="https://play.cozyquiz.app" style={linkStyle}>play.cozyquiz.app</a>
         <span style={{ opacity: 0.4 }}>·</span>
-        <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={{ color: '#94a3b8', textDecoration: 'none' }}>cozywolf.de</a>
+        <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={linkStyle}>cozywolf.de</a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <a href="/impressum" style={linkStyle}>Impressum</a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <a href="/datenschutz" style={linkStyle}>Datenschutz</a>
       </div>
     </div>
   );

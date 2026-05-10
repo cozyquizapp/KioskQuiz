@@ -33,6 +33,7 @@ const AnimationsLabPage = React.lazy(() => import('./pages/AnimationsLabPage'));
 const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
 const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
+const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -169,6 +170,8 @@ function App() {
               (SINGLE_SESSION_MODE = MAIN) immer das jüngste Spiel mit dem
               Code geliefert — geteilte Links wurden überschrieben. */}
           <Route path="/summary/by-id/:gameId" element={<QQSummaryPage />} />
+          <Route path="/impressum" element={<LegalPage />} />
+          <Route path="/datenschutz" element={<LegalPage />} />
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />

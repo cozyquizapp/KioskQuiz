@@ -2793,6 +2793,192 @@ function ThanksVariantV() {
   );
 }
 
+// ─── Variante X: Action-Card-XL (Wolf-Brand-Pattern) ─────────────────────────
+// 2026-05-10 (Wolf 'das passt zur app — viel grid, cards, raketenrennen,
+// wilder mix, beschreibt mich auch ganz gut'):
+// Hero im App-Card-Pattern: Cross-Hatch-BG + Pink-Border + DANKE-Badge wie
+// NEU-Badge auf Action-Cards. Star-Border drumherum. Sieger-Disc mit Krone
+// zentral. Wolf-Maskottchen rechts unten (Action-Card-Overflow-Vibe). QR
+// als Mini-Card-im-Card mit eigenem Pink-Border. Brand-Sprache 1:1.
+function ThanksVariantX() {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 600,
+      borderRadius: 16, overflow: 'hidden',
+      background: '#0A0814',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 28,
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <style>{`
+        @keyframes thanksXStarSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes thanksXBadgePulse {
+          0%, 100% { transform: rotate(-4deg) scale(1); }
+          50%      { transform: rotate(-4deg) scale(1.04); }
+        }
+        @keyframes thanksXCrownBob {
+          0%, 100% { transform: translateX(-50%) rotate(-3deg); }
+          50%      { transform: translateX(-50%) translateY(-4px) rotate(3deg); }
+        }
+        @keyframes thanksXWolfWave {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50%      { transform: translateY(-6px) rotate(-2deg); }
+        }
+      `}</style>
+
+      {/* Star-Border-Wrapper: außen rotierender conic-gradient, innen Hero-Card */}
+      <div style={{
+        position: 'relative',
+        width: '100%', maxWidth: 980, aspectRatio: '16 / 10',
+        padding: 3,
+        borderRadius: 30,
+        overflow: 'hidden',
+        isolation: 'isolate',
+      }}>
+        {/* Rotating Conic-Gradient = Star-Border */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: '-50%',
+          zIndex: 0,
+          background: 'conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)',
+          animation: 'thanksXStarSpin 6s linear infinite',
+        }} />
+
+        {/* Action-Card Hero — Cross-Hatch-BG, Pink-Border, dual radial-gradient */}
+        <div style={{
+          position: 'relative', zIndex: 1,
+          width: '100%', height: '100%',
+          borderRadius: 28,
+          background:
+            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+            'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+          boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '32px 36px',
+          overflow: 'hidden',
+        }}>
+          {/* Cross-Hatch-Overlay (45° / -45° linien) */}
+          <div aria-hidden style={{
+            position: 'absolute', inset: 0,
+            backgroundImage:
+              'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+              'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+            pointerEvents: 'none',
+          }} />
+
+          {/* DANKE-Badge oben links (wie NEU-Badge auf Action-Cards) */}
+          <div style={{
+            position: 'absolute',
+            top: 18, left: 18,
+            padding: '8px 18px', borderRadius: 999,
+            background: 'linear-gradient(135deg, #EC4899, #A21247)',
+            color: '#fff',
+            fontSize: 18, fontWeight: 900,
+            letterSpacing: '0.18em', textTransform: 'uppercase',
+            boxShadow: '0 6px 16px rgba(236,72,153,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
+            border: '1.5px solid rgba(255,255,255,0.18)',
+            animation: 'thanksXBadgePulse 2.4s ease-in-out infinite',
+            transformOrigin: 'center',
+            zIndex: 4,
+          }}>★ DANKE ★</div>
+
+          {/* Sieger-Disc + Krone zentral */}
+          <div style={{
+            position: 'relative', zIndex: 2,
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 12,
+          }}>
+            <div style={{ position: 'relative' }}>
+              <span aria-hidden style={{
+                position: 'absolute', left: '50%', top: '-32%',
+                fontSize: 64, lineHeight: 1, pointerEvents: 'none',
+                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.7)) drop-shadow(0 0 22px rgba(251,191,36,0.85))',
+                animation: 'thanksXCrownBob 2.4s ease-in-out infinite',
+              }}>👑</span>
+              <div style={{
+                width: 180, height: 180, borderRadius: '50%',
+                background: THANKS_MOCK.winnerColor,
+                border: `5px solid ${THANKS_MOCK.winnerColor}`,
+                boxShadow: `0 0 50px ${THANKS_MOCK.winnerColor}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 96, lineHeight: 1,
+              }}>{THANKS_MOCK.winnerEmoji}</div>
+            </div>
+            <div style={{
+              fontSize: 30, fontWeight: 900,
+              color: THANKS_MOCK.winnerColor,
+              textShadow: `0 0 20px ${THANKS_MOCK.winnerColor}88`,
+              letterSpacing: '-0.01em',
+            }}>{THANKS_MOCK.winnerName}</div>
+            <div style={{
+              fontSize: 13, fontWeight: 800,
+              color: '#94A3B8', letterSpacing: '0.18em', textTransform: 'uppercase',
+            }}>haben gewonnen</div>
+          </div>
+
+          {/* Footer-Row: cozywolf-Pill links + QR-Mini-Card rechts */}
+          <div style={{
+            position: 'absolute', bottom: 22,
+            left: 32, right: 32,
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+            zIndex: 3,
+          }}>
+            {/* cozywolf-Pill */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '10px 18px', borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.20), rgba(162,18,71,0.16))',
+              border: '1.5px solid rgba(236,72,153,0.55)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.45)',
+            }}>
+              <span style={{ fontSize: 22 }}>🐺</span>
+              <span style={{
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
+                fontSize: 17, fontWeight: 900,
+                color: '#FBCFE8', letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}>cozywolf</span>
+            </div>
+            {/* QR Mini-Card-im-Card */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            }}>
+              <div style={{
+                width: 78, height: 78, borderRadius: 8,
+                background: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, color: '#0A0814',
+                border: '2px solid rgba(236,72,153,0.65)',
+                boxShadow: '0 0 18px rgba(236,72,153,0.45), 0 4px 10px rgba(0,0,0,0.4)',
+              }}>📱 QR</div>
+              <div style={{
+                fontSize: 9, fontWeight: 900,
+                color: '#FBCFE8', letterSpacing: '0.18em', textTransform: 'uppercase',
+              }}>scan mich</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Wolf-Maskottchen rechts unten — über Card-Rand ragend (Action-Card-Overflow-Vibe) */}
+        <div aria-hidden style={{
+          position: 'absolute',
+          right: -8, bottom: -4,
+          width: 130, height: 130,
+          zIndex: 5,
+          pointerEvents: 'none',
+          fontSize: 100,
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          filter: 'drop-shadow(0 6px 16px rgba(236,72,153,0.55))',
+          animation: 'thanksXWolfWave 2s ease-in-out infinite',
+        }}>🐺</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Variante W: Magazine-Spread (Cover-Style) ──────────────────────────────
 function ThanksVariantW() {
   return (
@@ -3028,6 +3214,12 @@ export default function AnimationsLabPage() {
       blurb: 'Zeitschriften-Cover-Layout: COZYQUIZ-Header + Edition-Nummer, links 60% Sieger-Foto auf schwarzem Block, rechts 40% Headlines (★ GEWONNEN, ★ NEXT EVENT, ★ TEAM-STATS). Stinger-Fit-Brand-Font. Sehr stylish, social-media-cover-bereit, druckbar.',
       keepAlive: true, minHeight: 640,
       render: (_r) => <ThanksVariantW />,
+    },
+    {
+      label: 'X', title: 'Thanks-X: Action-Card-XL (Wolf-Brand-Pattern) ⭐',
+      blurb: 'NEU 2026-05-10 — Wolf-Wahl: Hero im App-eigenen Card-Pattern. Cross-Hatch-BG + dual radial Pink-Glow + Pink-Border + DANKE-Badge wie NEU-Badge auf Action-Cards. Star-Border drumherum (rotierender conic-gradient). Sieger-Disc mit Krone zentral, Wolf-Maskottchen rechts unten überlappend (Action-Card-Overflow-Vibe), QR + cozywolf als Footer-Pills. Brand-Sprache 1:1 — schließt den Kreis zur App.',
+      keepAlive: true, minHeight: 640,
+      render: (_r) => <ThanksVariantX />,
     },
   ];
 

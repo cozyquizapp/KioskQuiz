@@ -20465,6 +20465,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             </div>
           );
         })()}
+
+        {/* Subtitle „Wir hoffen, ihr hattet Spaß!" — italic, Light-Gray. */}
+        <div style={{
+          marginTop: 6,
+          fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 700,
+          color: '#CBD5E1', fontStyle: 'italic',
+          animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.45s both',
+        }}>🎉 {de ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}</div>
       </div>
 
       {/* ── Big Card (mirror PausedView Hero-Card-Wrapper) — fixe Höhe,
@@ -20543,38 +20551,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             alignItems: 'stretch',
           }}>
 
-            {/* LINKS: Nächstes Event */}
-            <div style={{
-              display: 'flex', flexDirection: 'column', justifyContent: 'center',
-              gap: 12, minWidth: 0,
-              animation: 'qqThanksColIn 0.7s ease 0.5s both',
-            }}>
-              <div style={{
-                alignSelf: 'flex-start',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
-                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                padding: '5px 14px', borderRadius: 999,
-                background: `rgba(${brand.accentRgb},0.12)`,
-                border: `1px solid rgba(${brand.accentRgb},0.35)`,
-                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
-              }}>
-                <span aria-hidden>📅</span>
-                {de ? 'Nächstes Event' : 'Next Event'}
-              </div>
-              <div style={{
-                fontSize: 'clamp(18px, 1.8vw, 28px)', fontWeight: 800,
-                color: '#F1F5F9', lineHeight: 1.3,
-              }}>{de ? 'Pub-Quiz · Firmen-Events · Geburtstage' : 'Pub Quiz · Corporate · Birthdays'}</div>
-              <div style={{
-                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700,
-                color: '#94A3B8', lineHeight: 1.35,
-              }}>{de
-                ? 'Termine + Buchung auf'
-                : 'Dates + booking at'}{' '}
-                <span style={{ color: brand.accentSoft, fontWeight: 900 }}>cozywolf.de</span>
-              </div>
-            </div>
+            {/* LINKS: Platzhalter — Nächstes-Event-Block kommt später (siehe
+                todo.md). Aktuell leer, damit Sieger optisch zentriert bleibt
+                und das 3-col-Skelett für späteren Termine-Block bereitsteht. */}
+            <div aria-hidden style={{ minWidth: 0 }} />
 
             {/* MITTE: Sieger-Hero */}
             <div style={{
@@ -20657,71 +20637,38 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               })()}
             </div>
 
-            {/* RECHTS: Folgt mir + QR drunter */}
+            {/* RECHTS: nur QR-Code mit kurzem Text — rechts unten in der Card.
+                Wolf-Quote: 'Scannt den QR-Code · Lasst euer Feedback da und
+                folgt uns auf Instagram!'. Mehr Text bewusst nicht. */}
             <div style={{
               display: 'flex', flexDirection: 'column',
-              alignItems: 'flex-end', justifyContent: 'space-between',
-              gap: 'clamp(12px, 1.6vh, 22px)',
+              alignItems: 'flex-end', justifyContent: 'flex-end',
               minWidth: 0,
               animation: 'qqThanksColIn 0.7s ease 0.5s both',
             }}>
-              <div style={{
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'flex-end', gap: 10,
-              }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
-                  color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                  padding: '5px 14px', borderRadius: 999,
-                  background: `rgba(${brand.accentRgb},0.12)`,
-                  border: `1px solid rgba(${brand.accentRgb},0.35)`,
-                  textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
-                }}>
-                  <span aria-hidden>📸</span>
-                  {de ? 'Folgt mir' : 'Follow me'}
-                </div>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 10,
-                  padding: 'clamp(8px, 0.9vh, 12px) clamp(16px, 1.6vw, 22px)',
-                  borderRadius: 999,
-                  background: brand.gradientPill,
-                  color: '#fff',
-                  fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
-                  letterSpacing: '0.04em',
-                  boxShadow: `0 6px 18px rgba(${brand.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
-                  border: '1.5px solid rgba(255,255,255,0.18)',
-                }}>
-                  <span aria-hidden style={{ fontSize: 'clamp(16px, 1.6vw, 22px)' }}>📷</span>
-                  @cozywolf.events
-                </div>
-              </div>
-
               {summaryUrl && (
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
+                  display: 'flex', alignItems: 'center', gap: 14,
                 }}>
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-                    gap: 3, lineHeight: 1.15, textAlign: 'right',
+                    gap: 4, lineHeight: 1.2, textAlign: 'right',
+                    maxWidth: 'clamp(180px, 18vw, 260px)',
                   }}>
                     <div style={{
-                      fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                      fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 900,
                       color: '#F1F5F9',
-                    }}>{de ? 'Scannt den Code' : 'Scan the code'}</div>
+                      letterSpacing: '0.01em',
+                    }}>{de ? 'Scannt den QR-Code' : 'Scan the QR code'}</div>
                     <div style={{
-                      fontSize: 'clamp(11px, 1.1vw, 15px)', fontWeight: 700,
-                      color: '#94A3B8',
-                    }}>{de ? 'für eure Team-Stats' : 'for your team stats'}</div>
-                    <div style={{
-                      fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
-                      color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                      marginTop: 4,
-                      textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
-                    }}>{de ? '↗ scan mich' : '↗ scan me'}</div>
+                      fontSize: 'clamp(12px, 1.2vw, 17px)', fontWeight: 700,
+                      color: '#CBD5E1', lineHeight: 1.3,
+                    }}>{de
+                      ? 'Lasst euer Feedback da und folgt uns auf Instagram!'
+                      : 'Leave us feedback and follow us on Instagram!'}</div>
                   </div>
                   <div style={{
-                    padding: 8, borderRadius: 12,
+                    padding: 10, borderRadius: 14,
                     background: '#fff',
                     border: `2.5px solid rgba(${brand.accentRgb},0.7)`,
                     boxShadow: `0 0 22px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
@@ -20729,7 +20676,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   }}>
                     <QRCodeSVG
                       value={summaryUrl}
-                      size={96}
+                      size={120}
                       bgColor="#ffffff" fgColor="#0A0814" level="M"
                     />
                   </div>

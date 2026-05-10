@@ -106,3 +106,23 @@ mit shielded/banned Cells werden weiter visualisiert).
 - 2026-04-25: Spielende-Rankings als vertikale Tabelle
 - 2026-04-25: Phase-Descs + Big-Emoji auf Trinity konsistent
 - 2026-04-25: Dead-Code (alte R3/R4 Card-Blöcke + Buttons) gelöscht
+
+## Later
+
+### ThanksView · „Nächstes Event"-Block links (Stand 2026-05-10)
+
+Linke Card-Spalte in der Thanks-Page wurde leer gelassen — Termine sind aktuell
+nicht buchbar/dokumentiert, also kein Inhalt da. Sobald cozywolf.de + Buchungs-
+Flow stehen, soll der Block zurück:
+
+- **Pill**: 📅 „Nächstes Event"
+- **Headline**: „Pub-Quiz · Firmen-Events · Geburtstage"
+- **Subline**: „Termine + Buchung auf **cozywolf.de**"
+
+Layout-Skelett (3-col-grid in der Hero-Card) ist bereits vorbereitet — nur den
+linken `<div aria-hidden />`-Platzhalter durch das Events-Block-Markup ersetzen.
+Optional: konkrete nächste 1-2 Termine fetch-basiert anzeigen, wenn ein
+Termine-Endpoint existiert.
+
+Code-Anker: `frontend/src/pages/QQBeamerPage.tsx` ThanksView, Suchwort
+„LINKS: Platzhalter".

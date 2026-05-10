@@ -129,6 +129,22 @@ Code-Anker: `frontend/src/pages/QQBeamerPage.tsx` ThanksView, Suchwort
 
 ---
 
+## 🔴 Live-Test 2026-05-10 (Wolf-Findings)
+
+Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
+
+- [ ] **L1 — Welcome doppelt**: „Welcome tonight at Quiznight" vor den Regeln wird gezeigt, obwohl Teams in der Lobby schon welcomed werden. Doppelt-gemoppelt — den Pre-Rules-Welcome rausnehmen.
+- [ ] **L2 — „Saxofon" Spelling-Tolerance**: /team hat "Saxofon" als richtig gezeigt, /beamer aber keinen Punkt vergeben für CHEESE-Frage. Wo wird die Answer-Normalisierung gemacht? Frontend-Vorschau matcht, Backend-Match nicht.
+- [ ] **L3 — „stadium" akzeptiert für Wembley Stadium**: nur generisches Wort, darf NICHT als richtige Antwort durchgehen. Min-Length oder Substring-Schutz.
+- [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.
+- [ ] **L5 — pic1 HotPotato Lucky Bag: Antworten überlappen mit Trivia-Trio-Team-Card**. Oben über den Antworten ist noch Platz — Antwort-Pills nach oben verschieben oder Team-Card nach unten/zur Seite.
+- [ ] **L6 — pic2 Joker-Bug: 4 Joker markiert obwohl 2 der Felder gerade gesetzt wurden**. Joker-Detection darf neu-gesetzte-im-selben-Zug-Felder nicht als „bestehender Block" werten.
+- [ ] **L7 — pic3 Comeback Phase 3: rechte „NEW"-Card kleiner als linke „1x Steal"-Card**. Beide gleich groß rendern.
+- [ ] **L8 — pic4 Mu-Cho: untere Card („Drei Halbe Ne Ganze"-Toast) wird unten abgeschnitten**. Padding/maxHeight oder Position fixen.
+- [ ] **L9 — pic5 10-von-10: viel Platz unten, Cards nach oben gequetscht**. Vertikal verteilen statt top-aligned.
+- [ ] **L10 — pic6 „Grösstes Gebiet"-Final-Page**: anderes Grid-Layout als im Quiz. Soll dasselbe Layout nutzen wie Placement-Phase (Grid + Tabelle daneben), nur der Sieger erhellt.
+- [ ] **L11 — Autoplay-Audit**: skippt Events, funktioniert manchmal gar nicht. Audit der Autoplay-State-Machine + Event-Trigger.
+
 ## Offen — Stand 2026-05-10 (nach Marathon-Tag)
 
 ### 🔴 Wichtig (Live-Risiko)

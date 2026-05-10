@@ -55,7 +55,29 @@ type Summary = {
     speedy?: string | null;
     speedyAvgMs?: number;
   } | null;
+  /** 2026-05-10 (Audit-P2): Eurovision-Mode durchreicht vom Backend, damit
+   *  Summary-Page im ESC-Mode Hot-Pink statt Standard-Brand-Pink rendert. */
+  eurovisionMode?: boolean;
 };
+
+// 2026-05-10 (Audit-P0 Brand-Refresh): brand-themed Farb-Helper analog
+// QQBeamerPage.getBrandColors. Sorgt dafür dass Summary die richtige Pink-
+// Variante (Standard #EC4899 vs ESC #FF2D7B) zieht statt Amber/Gold.
+function summaryBrand(eurovisionMode?: boolean) {
+  return eurovisionMode
+    ? {
+        pink:     '#FF2D7B',
+        pinkRgb:  '255,45,123',
+        pinkSoft: '#fde6f0',
+        magenta:  '#C084FC',
+      }
+    : {
+        pink:     '#EC4899',
+        pinkRgb:  '236,72,153',
+        pinkSoft: '#FBCFE8',
+        magenta:  '#A21247',
+      };
+}
 
 type UpcomingEvent = {
   id: string;
@@ -188,6 +210,12 @@ const T = {
 
   // Footer
   footerBy:      { de: 'CozyQuiz von', en: 'CozyQuiz by' },
+
+  // 2026-05-10 (Audit-P1): Web-Share-Button — Acquisition-Hebel im Moment
+  // wo Spieler gerade ihre Stats offen haben.
+  shareBtn:      { de: '📲 Mit Team teilen', en: '📲 Share with team' },
+  shareCopied:   { de: '✓ Link kopiert!', en: '✓ Link copied!' },
+  shareTitle:    { de: 'Mein CozyQuiz-Ergebnis', en: 'My CozyQuiz result' },
 };
 
 function tr<K extends keyof typeof T>(key: K, lang: Lang): string {
@@ -204,7 +232,12 @@ function detectInitialLang(): Lang {
 
 // 2026-05-03 (Wolf-Wunsch): Stamm-Code mit Copy-Button auf Summary-Page.
 // teamId hat Format `team-abc123` -> Anzeige `T-ABC123`.
-function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
+// 2026-05-10 (Audit-P0 Brand-Refresh): Amber/Gold → Brand-Pink (eurovisionMode-aware).
+function SummaryStammCode({ teamId, lang, brand }: {
+  teamId: string;
+  lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   const code = `T-${(teamId.replace(/^team-/i, '') || teamId).toUpperCase()}`;
   const [copied, setCopied] = useState(false);
   async function copy() {
@@ -227,12 +260,12 @@ function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
   return (
     <div style={{
       marginBottom: 18, padding: '14px 16px', borderRadius: 14,
-      background: 'rgba(251,191,36,0.08)',
-      border: '1px solid rgba(251,191,36,0.3)',
+      background: `rgba(${brand.pinkRgb},0.08)`,
+      border: `1px solid rgba(${brand.pinkRgb},0.30)`,
       textAlign: 'center',
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 900, color: '#fbbf24',
+        fontSize: 11, fontWeight: 900, color: brand.pink,
         letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6,
       }}>
         {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
@@ -242,7 +275,7 @@ function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
         marginBottom: 6,
       }}>
         <div style={{
-          fontSize: 24, fontWeight: 900, color: '#FDE68A',
+          fontSize: 24, fontWeight: 900, color: brand.pinkSoft,
           fontFamily: 'monospace', letterSpacing: 1,
           userSelect: 'all',
         }}>
@@ -252,9 +285,9 @@ function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
           onClick={copy}
           style={{
             padding: '6px 12px', borderRadius: 8,
-            border: `1.5px solid ${copied ? '#22C55E' : '#FBBF24'}66`,
-            background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.10)',
-            color: copied ? '#86efac' : '#FDE68A',
+            border: `1.5px solid ${copied ? '#22C55E' : brand.pink}66`,
+            background: copied ? 'rgba(34,197,94,0.15)' : `rgba(${brand.pinkRgb},0.10)`,
+            color: copied ? '#86efac' : brand.pinkSoft,
             fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
             cursor: 'pointer',
           }}
@@ -271,13 +304,67 @@ function SummaryStammCode({ teamId, lang }: { teamId: string; lang: Lang }) {
   );
 }
 
+// 2026-05-10 (Audit-P1 Acquisition-Hebel): Web-Share-Button. Trigger
+// navigator.share API mit Team-Stats; Fallback Clipboard-Copy. Spieler hat
+// gerade Stats offen — perfekter Moment fuer "Wir wurden 2. mit 47 Punkten"
+// in WhatsApp/Insta-Story.
+function ShareButton({ team, place, lang, brand }: {
+  team: SummaryTeam;
+  place: number;
+  lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== 'undefined' ? window.location.href : '';
+
+  async function share() {
+    const text = lang === 'de'
+      ? `${team.name} wurde ${place}. mit ${team.largestConnected} Punkten bei CozyQuiz! 🎉`
+      : `${team.name} came in ${place} with ${team.largestConnected} points at CozyQuiz! 🎉`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: tr('shareTitle', lang), text, url });
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      // User-Cancel ist kein Fehler — silent ok
+    }
+  }
+
+  return (
+    <button
+      onClick={share}
+      style={{
+        marginTop: 8,
+        padding: '10px 18px', borderRadius: 999,
+        background: `linear-gradient(135deg, ${brand.pink}, ${brand.magenta})`,
+        color: '#fff',
+        border: '1.5px solid rgba(255,255,255,0.18)',
+        boxShadow: `0 6px 18px rgba(${brand.pinkRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
+        fontFamily: 'inherit', fontWeight: 900, fontSize: 13,
+        cursor: 'pointer', letterSpacing: 0.3,
+      }}
+    >
+      {copied ? tr('shareCopied', lang) : tr('shareBtn', lang)}
+    </button>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function QQSummaryPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // 2026-05-10 (Audit-P2 lang-stale-closure-Fix): error wird als Translation-
+  // Key gespeichert, nicht als gerenderter String. Im Render wird mit dem
+  // aktuellen lang uebersetzt — kein Stale-Bug bei Sprach-Switch zur Ladezeit.
+  const [errorKey, setErrorKey] = useState<'notFoundMsg' | 'loadError' | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>(detectInitialLang);
 
@@ -296,7 +383,7 @@ export default function QQSummaryPage() {
           fetch(`${API_BASE}/qq/upcoming`).catch(() => null),
         ]);
         if (!sRes.ok) {
-          if (!cancelled) setError(tr('notFoundMsg', lang));
+          if (!cancelled) setErrorKey('notFoundMsg');
           return;
         }
         const s: Summary = await sRes.json();
@@ -306,14 +393,17 @@ export default function QQSummaryPage() {
           if (!cancelled) setUpcoming(u);
         }
       } catch {
-        if (!cancelled) setError(tr('loadError', lang));
+        if (!cancelled) setErrorKey('loadError');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
+
+  // Eurovision-Mode-aware Brand-Tokens (Audit-P2). Default null bei Loading.
+  const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode]);
+  const error = errorKey ? tr(errorKey, lang) : null;
 
   const selectedTeam = useMemo(
     () => summary?.teams.find(t => t.id === selectedTeamId) ?? null,
@@ -328,12 +418,12 @@ export default function QQSummaryPage() {
   }, [summary]);
 
   if (loading) {
-    return <Shell lang={lang} onLang={changeLang}><Loading lang={lang} /></Shell>;
+    return <Shell lang={lang} onLang={changeLang} brand={brand}><Loading lang={lang} /></Shell>;
   }
 
   if (error || !summary) {
     return (
-      <Shell lang={lang} onLang={changeLang}>
+      <Shell lang={lang} onLang={changeLang} brand={brand}>
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🤷</div>
           <h2 style={{ margin: 0, marginBottom: 8 }}>{tr('notFoundTitle', lang)}</h2>
@@ -347,8 +437,8 @@ export default function QQSummaryPage() {
   if (!selectedTeam) {
     return (
       <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
-      <Shell lang={lang} onLang={changeLang}>
-        <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} />
+      <Shell lang={lang} onLang={changeLang} brand={brand}>
+        <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} brand={brand} />
         <Section title={tr('whichTeam', lang)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
             {ranking.map((t, i) => (
@@ -368,9 +458,9 @@ export default function QQSummaryPage() {
               ))}
           </div>
         </Section>
-        <FeedbackForm roomCode={summary.roomCode} lang={lang} />
-        <PartnerCTA lang={lang} />
-        <UpcomingEvents events={upcoming} lang={lang} />
+        <FeedbackForm roomCode={summary.roomCode} lang={lang} brand={brand} />
+        <PartnerCTA lang={lang} brand={brand} />
+        <UpcomingEvents events={upcoming} lang={lang} brand={brand} />
         <Footer />
       </Shell>
       </AvatarSetProvider>
@@ -385,7 +475,7 @@ export default function QQSummaryPage() {
 
   return (
     <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
-    <Shell lang={lang} onLang={changeLang}>
+    <Shell lang={lang} onLang={changeLang} brand={brand}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
         padding: '28px 20px 22px', borderRadius: 20, marginBottom: 18,
@@ -399,10 +489,11 @@ export default function QQSummaryPage() {
         }}>
           <QQTeamAvatar avatarId={selectedTeam.avatarId} teamEmoji={selectedTeam.emoji} size={112} />
         </div>
-        <div style={{ fontSize: 13, fontWeight: 900, color: '#fbbf24', letterSpacing: 0.3, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: brand.pink, letterSpacing: 0.3, textTransform: 'uppercase' }}>
           {placeLabel}
         </div>
         <div style={{ fontSize: 28, fontWeight: 900, color: '#f8fafc' }}>{selectedTeam.name}</div>
+        <ShareButton team={selectedTeam} place={place} lang={lang} brand={brand} />
         <button onClick={() => setSelectedTeamId(null)}
           style={{
             marginTop: 6, fontSize: 12, color: '#94a3b8', background: 'transparent',
@@ -414,7 +505,7 @@ export default function QQSummaryPage() {
       {/* 2026-05-03 (Wolf-Wunsch): Stamm-Code auch hier auf der Summary-Seite,
           kopierbar — Spieler kommt oft erst hier nochmal her und kann sich
           den Code ohne Game-Over-Screen merken. */}
-      <SummaryStammCode teamId={selectedTeam.id} lang={lang} />
+      <SummaryStammCode teamId={selectedTeam.id} lang={lang} brand={brand} />
 
       <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
@@ -422,7 +513,7 @@ export default function QQSummaryPage() {
           <Stat label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
           <Stat label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
           <Stat label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
-          <Stat label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent="#EAB308" />
+          <Stat label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent={brand.pink} />
           <Stat label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent="#EF4444" />
         </div>
       </Section>
@@ -439,15 +530,16 @@ export default function QQSummaryPage() {
       )}
 
       {/* H3 Superlatives: narrative End-Game-Titel */}
-      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} />
+      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
 
       {myFunny && (
         <Section title={tr('yourMoment', lang)}>
           <div style={{
-            background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)',
+            background: `rgba(${brand.pinkRgb},0.08)`,
+            border: `1px solid rgba(${brand.pinkRgb},0.30)`,
             borderRadius: 12, padding: '12px 14px',
           }}>
-            <div style={{ fontSize: 11, color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: brand.pink, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 }}>
               {tr('funnyAnswer', lang)}
             </div>
             <div style={{ fontSize: 14, color: '#f8fafc', fontWeight: 700, marginBottom: 4 }}>
@@ -483,9 +575,9 @@ export default function QQSummaryPage() {
         </div>
       </Section>
 
-      <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} />
-      <PartnerCTA lang={lang} />
-      <UpcomingEvents events={upcoming} lang={lang} />
+      <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} brand={brand} />
+      <PartnerCTA lang={lang} brand={brand} />
+      <UpcomingEvents events={upcoming} lang={lang} brand={brand} />
       <Footer />
     </Shell>
     </AvatarSetProvider>
@@ -503,14 +595,19 @@ function formatPlaceLabel(place: number, lang: Lang): string {
 
 // ── Helpers & Subcomponents ───────────────────────────────────────────────────
 
-function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: Lang; onLang: (l: Lang) => void }) {
+function Shell({ children, lang, onLang, brand }: {
+  children: React.ReactNode;
+  lang: Lang;
+  onLang: (l: Lang) => void;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   return (
     <div style={{
       minHeight: '100vh',
       // 2026-05-08 (Aurora-Vivid-Refresh): Brand-Pink-Mesh statt blau-grauem
-      // Slate. Konsistenz zum /beamer + /team Look.
+      // Slate. 2026-05-10: brand.pinkRgb statt hardcoded fuer ESC-Awareness.
       background:
-        'radial-gradient(ellipse at 22% 28%, rgba(236,72,153,0.20) 0%, transparent 55%),' +
+        `radial-gradient(ellipse at 22% 28%, rgba(${brand.pinkRgb},0.20) 0%, transparent 55%),` +
         'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.24) 0%, transparent 55%),' +
         'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
       color: '#e2e8f0',
@@ -518,7 +615,7 @@ function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: La
       padding: '20px 16px 40px',
     }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <TopBar lang={lang} onLang={onLang} />
+        <TopBar lang={lang} onLang={onLang} brand={brand} />
         {children}
       </div>
     </div>
@@ -528,7 +625,11 @@ function Shell({ children, lang, onLang }: { children: React.ReactNode; lang: La
 // 2026-05-09 v2 (Wolf): klickbarer Instagram-Pill oben links + LangToggle
 // rechts in einer Top-Bar. Brand-Gradient (Pink → Lila → Orange) wie das
 // Instagram-Logo, kompakt mit 📸 + @cozywolf.events Handle.
-function TopBar({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+function TopBar({ lang, onLang, brand }: {
+  lang: Lang;
+  onLang: (l: Lang) => void;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -565,8 +666,8 @@ function TopBar({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
               style={{
                 padding: '4px 12px', borderRadius: 999,
                 fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
-                background: active ? '#fbbf24' : 'transparent',
-                color: active ? '#1e293b' : '#94a3b8',
+                background: active ? brand.pink : 'transparent',
+                color: active ? '#0A0814' : '#94a3b8',
                 border: 'none', cursor: 'pointer',
                 letterSpacing: 0.4,
               }}>{l.toUpperCase()}</button>
@@ -577,21 +678,24 @@ function TopBar({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
   );
 }
 
-function Hero({ draftTitle, winner, playedAt, lang }: { draftTitle: string; winner: string | null; playedAt: number; lang: Lang }) {
+function Hero({ draftTitle, winner, playedAt, lang, brand }: {
+  draftTitle: string; winner: string | null; playedAt: number; lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
     <div style={{
       padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
-      background: 'radial-gradient(ellipse at top, rgba(251,191,36,0.15), transparent 70%)',
-      border: '1px solid rgba(251,191,36,0.2)',
+      background: `radial-gradient(ellipse at top, rgba(${brand.pinkRgb},0.15), transparent 70%)`,
+      border: `1px solid rgba(${brand.pinkRgb},0.20)`,
     }}>
       <div style={{ fontSize: 11, letterSpacing: 0.3, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
         CozyQuiz · {date}
       </div>
       <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginTop: 4 }}>{draftTitle}</div>
       {winner && (
-        <div style={{ marginTop: 10, fontSize: 14, color: '#fbbf24', fontWeight: 800 }}>
+        <div style={{ marginTop: 10, fontSize: 14, color: brand.pink, fontWeight: 800 }}>
           <QQEmojiIcon emoji="🏆"/> {tr('champion', lang)}: {winner}
         </div>
       )}
@@ -692,6 +796,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // B3 Count-Up Hook: zaehlt von 0 auf targetValue in ~700ms mit ease-out.
 // Akzeptiert nur nummerische Werte. Bei String-Values (z.B. '—') wird
 // direkt gerendert, kein Count-Up. Prozent-Strings werden gesondert behandelt.
+//
+// 2026-05-10 (Audit-P1 RAF-Leak-Fix): animateTo gibt jetzt eine Cleanup-
+// Funktion zurueck. useEffect ruft sie beim Re-Run/Unmount auf — vorher liefen
+// alte RAF-Loops weiter und ueberschrieben den display-State (Zahlen-Glitches
+// bei Team-Wechsel/Sprache-Switch).
 function useCountUp(finalValue: number | string, durationMs = 720): string {
   const [display, setDisplay] = useState<string>(() => {
     if (typeof finalValue === 'string') return finalValue;
@@ -703,23 +812,24 @@ function useCountUp(finalValue: number | string, durationMs = 720): string {
       const pctMatch = finalValue.match(/^(-?\d+(?:\.\d+)?)%$/);
       if (pctMatch) {
         const target = Number(pctMatch[1]);
-        animateTo(target, (v) => setDisplay(`${Math.round(v)}%`), durationMs);
-        return;
+        return animateTo(target, (v) => setDisplay(`${Math.round(v)}%`), durationMs);
       }
       setDisplay(finalValue);
       return;
     }
     const target = finalValue;
-    animateTo(target, (v) => setDisplay(String(Math.round(v))), durationMs);
+    return animateTo(target, (v) => setDisplay(String(Math.round(v))), durationMs);
   }, [finalValue, durationMs]);
   return display;
 }
 
-function animateTo(target: number, onTick: (v: number) => void, durationMs: number): void {
+function animateTo(target: number, onTick: (v: number) => void, durationMs: number): () => void {
   const start = performance.now();
   const ease = (t: number) => 1 - Math.pow(1 - t, 3); // ease-out-cubic
   let rafId = 0;
+  let cancelled = false;
   const tick = (now: number) => {
+    if (cancelled) return;
     const elapsed = now - start;
     const t = Math.min(1, elapsed / durationMs);
     const eased = ease(t);
@@ -730,9 +840,10 @@ function animateTo(target: number, onTick: (v: number) => void, durationMs: numb
     else onTick(target);
   };
   rafId = requestAnimationFrame(tick);
-  // Cleanup falls neuer Effect triggered
-  // (React behandelt das automatisch via useEffect-Cleanup)
-  return undefined as unknown as void;
+  return () => {
+    cancelled = true;
+    if (rafId) cancelAnimationFrame(rafId);
+  };
 }
 
 function Stat({ label, value, suffix, accent }: { label: string; value: number | string; suffix?: string; accent: string }) {
@@ -755,9 +866,10 @@ function Stat({ label, value, suffix, accent }: { label: string; value: number |
 // Thanks-Page. Backend übergibt endAwards (mit Team-IDs + Bonus-Daten).
 // Vorher: 4 abgeleitete Titel (Meister-Klauer, Trefferkönig, Joker-Jäger,
 // Territorium-König) — durch die 3 neuen ersetzt.
-function Superlatives({ teams, selectedId, lang, endAwards }: {
+function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
   teams: SummaryTeam[]; selectedId: string; lang: Lang;
   endAwards: Summary['endAwards'];
+  brand: ReturnType<typeof summaryBrand>;
 }) {
   if (teams.length < 2 || !endAwards) return null;
 
@@ -846,9 +958,9 @@ function Superlatives({ teams, selectedId, lang, endAwards }: {
                 <span style={{
                   position: 'absolute', top: -8, right: -8,
                   padding: '2px 8px', borderRadius: 999,
-                  background: '#FDE047', color: '#1c1304',
+                  background: brand.pink, color: '#0A0814',
                   fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                  boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(${brand.pinkRgb},0.6)`,
                 }}>{lang === 'de' ? 'DAS SEID IHR' : "THAT'S YOU"}</span>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -917,7 +1029,12 @@ const CATEGORY_OPTIONS: Array<{ id: string; emoji: string; labelKey: keyof typeo
   { id: 'CHEESE',        emoji: '📸', labelKey: 'cat_CHEESE' },
 ];
 
-function FeedbackForm({ roomCode, teamName, lang }: { roomCode: string; teamName?: string; lang: Lang }) {
+function FeedbackForm({ roomCode, teamName, lang, brand }: {
+  roomCode: string; teamName?: string; lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
+  void brand; // 2026-05-10: brand-prop fuer zukuenftige FeedbackForm-Akzent-Tweaks
+            // (Submit-Button etc.). Aktuell rein neutral.
   const [type, setType] = useState<FeedbackType>('feedback');
   const [playAgain, setPlayAgain] = useState<PlayAgain | null>(null);
   const [favoriteCategory, setFavoriteCategory] = useState<string | null>(null);
@@ -1217,7 +1334,10 @@ function Caption({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UpcomingEvents({ events, lang }: { events: UpcomingEvent[]; lang: Lang }) {
+function UpcomingEvents({ events, lang, brand }: {
+  events: UpcomingEvent[]; lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   if (!events.length) return null;
   const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   return (
@@ -1237,7 +1357,7 @@ function UpcomingEvents({ events, lang }: { events: UpcomingEvent[]; lang: Lang 
               }}>
               <div style={{
                 width: 52, textAlign: 'center',
-                fontSize: 12, fontWeight: 900, color: '#fbbf24',
+                fontSize: 12, fontWeight: 900, color: brand.pink,
                 lineHeight: 1.2,
               }}>{d}{e.time && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{e.time}</div>}</div>
               <div style={{ flex: 1 }}>
@@ -1257,28 +1377,31 @@ function UpcomingEvents({ events, lang }: { events: UpcomingEvent[]; lang: Lang 
   );
 }
 
-function PartnerCTA({ lang }: { lang: Lang }) {
+function PartnerCTA({ lang, brand }: {
+  lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
   return (
     <Section title={tr('partnerTitle', lang)}>
       <div style={{
-        background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(236,72,153,0.08))',
-        border: '1px solid rgba(251,191,36,0.3)',
+        background: `linear-gradient(135deg, rgba(${brand.pinkRgb},0.18), rgba(${brand.pinkRgb},0.06))`,
+        border: `1px solid rgba(${brand.pinkRgb},0.35)`,
         borderRadius: 14, padding: '16px 16px 14px',
       }}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: '#fbbf24', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 15, fontWeight: 900, color: brand.pink, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
           {tr('partnerHead', lang)}
         </div>
         <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 12 }}>
           {tr('partnerBody', lang)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <a href="mailto:hallo@cozywolf.de" style={ctaButton('#fbbf24', '#1e293b')}>
+          <a href="mailto:hallo@cozywolf.de" style={ctaButton(brand.pink, '#0A0814')}>
             {tr('partnerMail', lang)}
           </a>
-          <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={ctaButton('rgba(251,191,36,0.15)', '#fbbf24', 'rgba(251,191,36,0.4)')}>
+          <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={ctaButton(`rgba(${brand.pinkRgb},0.15)`, brand.pink, `rgba(${brand.pinkRgb},0.40)`)}>
             {tr('partnerWeb', lang)}
           </a>
-          <a href="https://instagram.com/cozywolf.events" target="_blank" rel="noreferrer" style={{ ...ctaButton('rgba(236,72,153,0.15)', '#f0abfc', 'rgba(236,72,153,0.4)'), gridColumn: '1 / -1' }}>
+          <a href="https://instagram.com/cozywolf.events" target="_blank" rel="noreferrer" style={{ ...ctaButton(`rgba(${brand.pinkRgb},0.15)`, brand.pinkSoft, `rgba(${brand.pinkRgb},0.40)`), gridColumn: '1 / -1' }}>
             {tr('partnerInsta', lang)}
           </a>
         </div>

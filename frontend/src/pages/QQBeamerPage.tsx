@@ -17294,16 +17294,23 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
                         <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
                           size={config.avatarSize} flat />
                       </div>
-                      <div style={{
-                        fontSize: 'clamp(18px, 2vw, 30px)', fontWeight: 900,
-                        color: p1.team.color,
-                        textShadow: `0 0 20px ${p1.team.color}88`,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        // 2026-05-10 (Audit-P1): maxWidth von 240 auf clamp →
-                        // skaliert mit Beamer-Auflösung (TV/4K).
-                        maxWidth: 'clamp(180px, 18vw, 320px)',
-                        animation: 'qqFRTitleIn 0.5s ease 0.4s both',
-                      }}>{p1.team.name}</div>
+                      {/* 2026-05-10 (Wolf Anti-Shaming '2-Zeilen-Wrap statt
+                          nowrap-ellipsis'): Sieger-Name nutzt jetzt TeamNameLabel
+                          mit maxLines=2 — konsistent mit PodiumStepFinal. */}
+                      <TeamNameLabel
+                        name={p1.team.name}
+                        maxLines={2}
+                        shrinkAfter={14}
+                        color={p1.team.color}
+                        fontWeight={900}
+                        fontSize="clamp(18px, 2vw, 30px)"
+                        style={{
+                          textShadow: `0 0 20px ${p1.team.color}88`,
+                          maxWidth: 'clamp(180px, 18vw, 320px)',
+                          textAlign: 'center',
+                          animation: 'qqFRTitleIn 0.5s ease 0.4s both',
+                        }}
+                      />
                     </>
                   )}
                   {/* Höchste Stufe — gold */}
@@ -17574,12 +17581,22 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         <QQTeamAvatar avatarId={entry.avatarId} teamEmoji={entry.emoji}
           size={avatarSize} flat />
       </div>
-      <div style={{
-        fontSize: effectiveFontSize, fontWeight: 900,
-        color: entry.color,
-        maxWidth: effectiveSlotWidth,
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      }}>{entry.name}</div>
+      {/* 2026-05-10 (Wolf 'PodiumStep nowrap → 2-Zeilen-Wrap für alle' Anti-Shaming):
+          TeamNameLabel mit maxLines=2 statt nowrap+ellipsis. Lange Team-Namen
+          („Wolfsrudel Nord") werden jetzt umgebrochen statt abgeschnitten,
+          konsistent mit Sieger-Slot. */}
+      <TeamNameLabel
+        name={entry.name}
+        maxLines={2}
+        shrinkAfter={14}
+        color={entry.color}
+        fontWeight={900}
+        fontSize={effectiveFontSize}
+        style={{
+          textAlign: 'center',
+          maxWidth: effectiveSlotWidth,
+        }}
+      />
       <div style={{
         width: effectiveSlotWidth, height: podiumHeight,
         background: `linear-gradient(180deg, ${podiumColor}aa, ${podiumColor}55)`,
@@ -17594,14 +17611,6 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
   );
 }
 
-// ─── Akt 3: WinnerDropSlide ─────────────────────────────────────────────────
-// Multi-Phase-Choreo via internal state:
-//   0-1.5s: Drumroll-Hold — BG dimmt, Spotlight pulsiert auf Mitte-Lücke,
-//           Plätze 2+3 stehen still auf Treppchen
-//   1.5-2.3s: Sieger fällt von oben (slow-mo, scale 2.5→1, ease-bounce),
-//             Crown landet 0.2s nach Avatar mit Wobble
-//   2.3s+: Climax — Konfetti-Burst, BG-Shift gold, Camera-Push (scale 1.05),
-//          Plätze 2+3 bowen ±5° Richtung Sieger, Climax-Sound-Crash
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,
   // gerne auch bei pause wenn es passt'): im ESC-Mode translucent Card-BG aus
@@ -20187,14 +20196,19 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: 2, lineHeight: 1.05, textAlign: 'center',
             }}>
+              {/* 2026-05-10 (Wolf Anti-Shaming '#5: COZYWOLF/SCAN MICH konkurrieren
+                  mit Sieger-Name'): Brand-Subtitle eine Typo-Stufe runter
+                  (28-44 → 22-32) + opacity 0.78 → klare Hierarchie: Sieger
+                  bleibt visuell dominant, Brand-Spalten flankieren dezent. */}
               <div style={{
                 fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
                 color: '#EC4899',
                 letterSpacing: '0.04em',
-                textShadow: '0 0 24px rgba(236,72,153,0.45)',
+                textShadow: '0 0 18px rgba(236,72,153,0.35)',
                 whiteSpace: 'nowrap',
                 textTransform: 'uppercase',
+                opacity: 0.78,
               }}>COZYWOLF</div>
               <div style={{
                 fontFamily: 'inherit',
@@ -20294,14 +20308,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: 2, lineHeight: 1.05, textAlign: 'center',
             }}>
+              {/* Brand-Subtitle Hierarchie (siehe COZYWOLF-Comment oben). */}
               <div style={{
                 fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 900,
+                fontSize: 'clamp(22px, 2.4vw, 32px)', fontWeight: 900,
                 color: '#EC4899',
                 letterSpacing: '0.04em',
-                textShadow: '0 0 24px rgba(236,72,153,0.45)',
+                textShadow: '0 0 18px rgba(236,72,153,0.35)',
                 whiteSpace: 'nowrap',
                 textTransform: 'uppercase',
+                opacity: 0.78,
               }}>{lang === 'de' ? 'SCAN MICH' : 'SCAN ME'}</div>
               <div style={{
                 fontFamily: 'inherit',

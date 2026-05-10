@@ -771,16 +771,20 @@ function Superlatives({ teams, selectedId, lang, endAwards }: {
   };
   const titles: SuperTitle[] = [];
 
-  // 🐢 Underdog-Trostpreis — niedrigster Score
+  // 🐢 Underdog-Trostpreis — Anti-Shaming-Fix (2026-05-10):
+  // Vorher: descDe='Niedrigster Score' + metric='${team.score} Punkte' →
+  // exponierte den niedrigsten Score namentlich. Verstößt gegen
+  // feedback_no_public_shaming: keine öffentliche Bloßstellung von Teams.
+  // Jetzt: warme Trostpreis-Beschreibung, keine Zahl.
   if (endAwards.underdog) {
     const team = teams.find(t => t.id === endAwards.underdog);
     if (team) {
       titles.push({
         emoji: '🐢',
         titleDe: 'Underdog', titleEn: 'Underdog',
-        descDe: 'Niedrigster Score', descEn: 'Lowest score',
+        descDe: 'Trostpreis fürs Mitspielen', descEn: 'Consolation prize',
         winner: team,
-        metric: `${team.score} ${lang === 'de' ? 'Punkte' : 'points'}`,
+        metric: lang === 'de' ? '🏅 Mit Herz dabei' : '🏅 Heart of the game',
         accent: '#10B981',
       });
     }

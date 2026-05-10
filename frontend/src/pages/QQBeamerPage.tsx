@@ -2675,17 +2675,23 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       maxWidth: 'min(94vw, 1500px)',
       gap: 14,
     }}>
-      {/* Used answers list — Chips zentriert auf der Seite spawnen.
+      {/* Used answers list — top-aligned damit unten garantiert Platz fuer
+          Trivia-Trio-Semicircle + Out-Liste bleibt.
           2026-05-07 (Wolf 'genannte Antworten landen direkt ueber dem Footer,
           duerfen aber mittig spawnen'): justify-content flex-end → center.
-          Active-Pill + Eliminated-Reihe bleiben unten dank flex:0 0 auto am
-          Footer-Block, Chips fuellen den Mittel-Bereich. */}
+          2026-05-10 (Wolf-Live-Test L5 'Antworten überlappen mit Team-Card'):
+          justify-content center → flex-start. Bei vielen Antworten wuchs der
+          zentrierte Chips-Block in beide Richtungen — kollidierte unten mit
+          dem Trivia-Trio-Avatar. Jetzt: Chips wachsen nach unten begrenzt
+          durch overflow:hidden, oben sitzen sie unter der Frage-Card. */}
       <div style={{
         flex: '1 1 auto',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
         alignItems: 'center',
         width: '100%',
         minHeight: 0,
+        paddingTop: 8,
+        paddingBottom: 12,
         overflow: 'hidden',
       }}>
         {used.length > 0 && (

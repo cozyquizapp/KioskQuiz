@@ -137,7 +137,7 @@ Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 - [x] **L2 — „Saxofon" Spelling-Tolerance** ✅ FIX (`shared/textNormalization.ts`): `ph→f` phonetische Normalisierung. Saxofon/Saxophone, Telefon/Telephone, Foto/Photo etc. matchen jetzt exakt nach Normalisierung.
 - [x] **L3 — „stadium" akzeptiert für Wembley Stadium** ✅ FIX (`shared/textNormalization.ts`): Substring-Tolerance jetzt mit Min-Ratio 0.5. „stadium" (7) in „wembley stadium" (15) = 0.47 → blockt. „herr der ringe" (14) in „der herr der ringe" (18) = 0.78 → matched weiter.
 - [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.
-- [ ] **L5 — pic1 HotPotato Lucky Bag: Antworten überlappen mit Trivia-Trio-Team-Card**. Oben über den Antworten ist noch Platz — Antwort-Pills nach oben verschieben oder Team-Card nach unten/zur Seite.
+- [x] **L5 — pic1 HotPotato Antworten überlappen mit Trivia-Trio** ✅ FIX (`QQBeamerPage.tsx` HotPotatoBeamerView): Chips-Container von `justifyContent: center` auf `flex-start` umgestellt + paddingTop/Bottom. Chips wachsen jetzt nach unten begrenzt durch overflow:hidden statt in beide Richtungen vom Center aus zu expandieren.
 - [ ] **L6 — pic2 Joker-Bug: 4 Joker markiert obwohl 2 der Felder gerade gesetzt wurden**. Joker-Detection darf neu-gesetzte-im-selben-Zug-Felder nicht als „bestehender Block" werten.
 - [ ] **L7 — pic3 Comeback Phase 3: rechte „NEW"-Card kleiner als linke „1x Steal"-Card**. Beide gleich groß rendern.
 - [ ] **L8 — pic4 Mu-Cho: untere Card („Drei Halbe Ne Ganze"-Toast) wird unten abgeschnitten**. Padding/maxHeight oder Position fixen.

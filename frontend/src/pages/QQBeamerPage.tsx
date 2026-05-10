@@ -20262,28 +20262,48 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     .sort((a, b) => b.total - a.total)[0];
   const winner = winnerEntry?.team;
 
-  // 2026-05-10 v4 (Wolf 'auf den mock bauen, schän ausgebaut'): Zurück zum
-  // 3-Col-Layout (Events/Insta · Sieger · Awards). Wolf-Schlafen unten links
-  // OHNE Bubble (Mock zeigte Bubble, Wolf will explizit ohne — schlafen-Animation
-  // mit Z's reicht). Awards mit kleinen Avatar-Discs + Award-Emoji-Badge.
+  // 2026-05-10 v5 (Wolf 'nimm alles aus setup, awards weg, qr unten rechts'):
+  // Setup-Page-Style außenrum (BG-Gradients, Wordmark, Wolf top-right wie
+  // Lobby), Hero-Card-Mitte mit 3-Col-Grid: links Events · Mitte Sieger ·
+  // rechts Folgt-mir + QR drunter. Awards komplett raus. DANKE-FÜRS-SPIELEN
+  // ohne schwarzen BG-Pill (Wolf-Hinweis: Schwarz im Mock war nur Paint-Ausschnitt).
   const de = lang === 'de';
-  const findTeam = (id: string | null | undefined) =>
-    id ? s.teams.find(t => t.id === id) ?? null : null;
-  const speedyTeam = findTeam(awards?.speedy);
-  const meisterklauerTeam = findTeam(awards?.meisterklauer);
-  const underdogTeam = findTeam(awards?.underdog);
+  const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
+  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
+  const isEsc = !!s.theme?.eurovisionMode;
+  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
   const winnerCells = winner ? (cellsByTeam[winner.id] ?? 0) : 0;
   const winnerBonus = winner ? (s.finalBetResolution?.[winner.id]?.totalBonus ?? 0) : 0;
+  void cardBg;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'space-between',
-      position: 'relative', height: '100%', overflow: 'hidden',
-      padding: 'clamp(14px, 1.8vh, 24px) clamp(20px, 2.5vw, 36px) clamp(16px, 2vh, 28px)',
-      gap: 'clamp(10px, 1.4vh, 18px)',
+      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
+      position: 'relative', overflow: 'hidden',
+      gap: 'clamp(10px, 1.5vh, 20px)',
+      // BG identisch zu LobbyView — schließt visuell zur Setup-Page.
+      background:
+        `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
+        'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
+        `radial-gradient(ellipse at 15% 80%, rgba(${brand.accentRgb},0.05), transparent 50%), ` +
+        '#0A0814',
+      fontFamily: fontFam,
     }}>
-      <Fireflies color={`rgba(${brand.accentRgb},0.35)`} />
+      {lobbyBgUrl && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${lobbyBgUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.7,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+      )}
+      <Fireflies />
+      {isEsc && <EurovisionHearts />}
       <style>{`
         @keyframes qqThanksDanke {
           0%   { opacity: 0; transform: translateY(-8px); }
@@ -20305,49 +20325,153 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           0%, 100% { box-shadow: 0 0 60px var(--wg, rgba(255,255,255,0.4)), 0 0 120px rgba(251,191,36,0.25), 0 12px 36px rgba(0,0,0,0.55); }
           50%      { box-shadow: 0 0 90px var(--wg, rgba(255,255,255,0.6)), 0 0 160px rgba(251,191,36,0.40), 0 12px 36px rgba(0,0,0,0.55); }
         }
-        @keyframes qqThanksAwardIn {
-          0%   { opacity: 0; transform: translateX(20px); }
-          100% { opacity: 1; transform: translateX(0); }
+        /* Fallback-Defs für Lobby-Keyframes (Direkt-Navigation auf /thanks). */
+        @keyframes qqLobbyWordmarkEntry {
+          0%   { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes qqLobbyTitleGlow {
+          0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.96); }
+          50%      { opacity: 0.85; transform: translate(-50%, -50%) scale(1.04); }
         }
       `}</style>
 
-      {/* ── HEADLINE-Block oben (außerhalb Card) ── */}
+      {/* ── Top-right: Wolf in schlafen-Mode — exakt LobbyView-Position. ── */}
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(4px, 0.6vh, 10px)', textAlign: 'center', zIndex: 5,
-        animation: 'qqThanksDanke 0.7s ease both',
-        flexShrink: 0,
+        position: 'absolute',
+        right: 'clamp(20px, 2.5vw, 48px)',
+        top: 'clamp(16px, 2.5vh, 32px)',
+        zIndex: 7,
+        pointerEvents: 'none',
+        animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',
       }}>
+        <AnimatedCozyWolf
+          widthCss="clamp(140px, 13vw, 200px)"
+          mode="schlafen"
+          mirror
+        />
+      </div>
+
+      {/* ── Top: CozyQuiz-Wordmark wie LobbyView (Stinger Fit + Letter-Wave) ── */}
+      <div style={{
+        textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
+        animation: 'qqLobbyWordmarkEntry 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both',
+        paddingTop: 'clamp(6px, 1vh, 14px)',
+      }}>
+        <div aria-hidden style={{
+          position: 'absolute',
+          left: '50%', top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'clamp(420px, 60vw, 900px)',
+          height: 'clamp(180px, 26vh, 320px)',
+          background: `radial-gradient(ellipse at center, rgba(${brand.accentRgb},0.18) 0%, rgba(${brand.accentRgb},0.06) 45%, transparent 70%)`,
+          filter: 'blur(20px)',
+          pointerEvents: 'none',
+          zIndex: -1,
+          animation: 'qqLobbyTitleGlow 6s ease-in-out infinite',
+        }} />
+        {(() => {
+          if (isEsc && s.theme?.logoUrl) {
+            return (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'clamp(18px, 2.2vw, 40px)',
+              }}>
+                <span style={{
+                  fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                  fontSize: 'clamp(38px, 5.2vw, 82px)',
+                  fontWeight: 400,
+                  letterSpacing: '0.04em',
+                  color: brand.accentHex,
+                  textShadow: `0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(${brand.accentRgb},0.55)`,
+                  lineHeight: 0.96,
+                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+                }}>COZYQUIZ</span>
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                  fontWeight: 900,
+                  fontSize: 'clamp(28px, 4vw, 62px)',
+                  lineHeight: 1,
+                  height: '1em',
+                  color: '#fde6f0',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                  animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
+                }}>×</span>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
+                }}>
+                  <img
+                    src={s.theme.logoUrl}
+                    alt="Eurovision Song Contest"
+                    draggable={false}
+                    style={{
+                      height: 'clamp(60px, 8.5vh, 126px)',
+                      width: 'auto',
+                      filter: `drop-shadow(0 0 24px rgba(${brand.accentRgb},0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))`,
+                    }}
+                  />
+                </span>
+              </div>
+            );
+          }
+          const wordmark = 'CozyQuiz';
+          const stagger = 0.07;
+          return (
+            <div
+              className="cq-wordmark"
+              style={{
+                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                fontWeight: 400,
+                letterSpacing: '0.04em',
+                fontSize: 'clamp(56px, 9vw, 140px)',
+                color: brand.accentHex,
+                textShadow: `0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(${brand.accentRgb},0.40)`,
+                display: 'inline-block',
+                lineHeight: 1,
+              }}
+              aria-label={wordmark}
+            >
+              {Array.from(wordmark).map((ch, i) => (
+                <span
+                  key={i}
+                  style={{
+                    display: 'inline-block',
+                    animation: `qqCatNameWave 2.6s ease-in-out ${0.85 + i * stagger}s infinite`,
+                    whiteSpace: ch === ' ' ? 'pre' : undefined,
+                  }}
+                >{ch}</span>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* DANKE FÜRS SPIELEN — ohne BG-Pill (Wolf: Schwarz im Mock war nur
+            Paint-Ausschnitt). Plain Text in Light-Pink mit subtilem Glow. */}
         <div style={{
-          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-          fontSize: 'clamp(38px, 4.4vw, 70px)', fontWeight: 900,
-          color: brand.accentHex, letterSpacing: '-0.01em',
-          textShadow: `0 0 40px rgba(${brand.accentRgb},0.5), 0 3px 14px rgba(0,0,0,0.6)`,
-          lineHeight: 1,
-        }}>CozyQuiz</div>
-        <div style={{
-          display: 'inline-block',
-          padding: 'clamp(6px, 0.8vh, 10px) clamp(20px, 2.2vw, 36px)',
-          background: 'rgba(0,0,0,0.6)',
-          borderRadius: 10,
-          fontSize: 'clamp(24px, 2.8vw, 44px)', fontWeight: 900,
+          marginTop: 'clamp(2px, 0.4vh, 8px)',
+          fontSize: 'clamp(22px, 2.6vw, 40px)', fontWeight: 900,
           color: brand.accentSoft, letterSpacing: '0.14em',
           textTransform: 'uppercase', lineHeight: 1.05,
-          textShadow: `0 2px 12px rgba(${brand.accentRgb},0.5)`,
+          textShadow: `0 2px 14px rgba(${brand.accentRgb},0.55), 0 0 22px rgba(${brand.accentRgb},0.3)`,
           animation: 'qqThanksDanke 0.7s ease 0.15s both',
         }}>{de ? 'Danke fürs Spielen' : 'Thanks for Playing'}</div>
         <div style={{
+          marginTop: 'clamp(4px, 0.5vh, 8px)',
           fontSize: 'clamp(15px, 1.5vw, 22px)', fontWeight: 700,
           color: '#CBD5E1', fontStyle: 'italic',
           animation: 'qqThanksDanke 0.7s ease 0.3s both',
         }}>🎉 {de ? 'Wir hoffen, ihr hattet Spaß!' : 'We hope you had fun!'}</div>
       </div>
 
-      {/* ── HERO-Card 16:9 mit 3-Col-Grid (Events/Insta · Sieger · Awards) ── */}
+      {/* ── HERO-Card: 3-Col-Grid (Events · Sieger · Insta+QR) ── */}
       <div style={{
         position: 'relative', zIndex: 5,
         width: '100%', maxWidth: 'min(96vw, 1500px)',
         flex: 1, minHeight: 0,
+        margin: '0 auto',
         borderRadius: 28,
         background:
           `radial-gradient(ellipse at 50% 30%, rgba(${brand.accentRgb},0.30) 0%, transparent 60%),` +
@@ -20372,77 +20496,45 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           position: 'relative', zIndex: 2,
           width: '100%', height: '100%',
           display: 'grid',
-          gridTemplateColumns: '1fr 1.5fr 1fr',
+          gridTemplateColumns: '1fr 1.4fr 1fr',
           gap: 'clamp(20px, 2.5vw, 40px)',
           padding: 'clamp(24px, 3vh, 40px) clamp(28px, 3vw, 56px)',
         }}>
 
-          {/* ── LINKS: Nächste Events + Instagram ── */}
+          {/* ── LINKS: Nächstes Event ── */}
           <div style={{
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            gap: 18, minWidth: 0,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            gap: 12, minWidth: 0,
             animation: 'qqThanksColIn 0.7s ease 0.5s both',
           }}>
-            <div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
-                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                marginBottom: 10,
-                padding: '4px 12px', borderRadius: 999,
-                background: `rgba(${brand.accentRgb},0.12)`,
-                border: `1px solid rgba(${brand.accentRgb},0.35)`,
-                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
-              }}>
-                <span aria-hidden>📅</span>
-                {de ? 'Nächste Events' : 'Next Events'}
-              </div>
-              <div style={{
-                fontSize: 'clamp(16px, 1.6vw, 24px)', fontWeight: 800,
-                color: '#F1F5F9', lineHeight: 1.3,
-                marginBottom: 6,
-              }}>{de ? 'Pub-Quiz · Firmen-Events · Geburtstage' : 'Pub Quiz · Corporate · Birthdays'}</div>
-              <div style={{
-                fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
-                color: '#94A3B8', lineHeight: 1.35,
-              }}>{de
-                ? 'Termine + Buchung auf'
-                : 'Dates + booking at'}{' '}
-                <span style={{ color: brand.accentSoft, fontWeight: 900 }}>cozywolf.de</span>
-              </div>
+            <div style={{
+              alignSelf: 'flex-start',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
+              color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+              padding: '5px 14px', borderRadius: 999,
+              background: `rgba(${brand.accentRgb},0.12)`,
+              border: `1px solid rgba(${brand.accentRgb},0.35)`,
+              textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
+            }}>
+              <span aria-hidden>📅</span>
+              {de ? 'Nächstes Event' : 'Next Event'}
             </div>
-            <div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
-                color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                marginBottom: 10,
-                padding: '4px 12px', borderRadius: 999,
-                background: `rgba(${brand.accentRgb},0.12)`,
-                border: `1px solid rgba(${brand.accentRgb},0.35)`,
-                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
-              }}>
-                <span aria-hidden>📸</span>
-                {de ? 'Folgt mir' : 'Follow me'}
-              </div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 10,
-                padding: 'clamp(8px, 0.9vh, 12px) clamp(16px, 1.6vw, 22px)',
-                borderRadius: 999,
-                background: brand.gradientPill,
-                color: '#fff',
-                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
-                letterSpacing: '0.04em',
-                boxShadow: `0 6px 18px rgba(${brand.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
-                border: '1.5px solid rgba(255,255,255,0.18)',
-              }}>
-                <span aria-hidden style={{ fontSize: 'clamp(16px, 1.6vw, 22px)' }}>📷</span>
-                @cozywolf.events
-              </div>
+            <div style={{
+              fontSize: 'clamp(18px, 1.8vw, 28px)', fontWeight: 800,
+              color: '#F1F5F9', lineHeight: 1.3,
+            }}>{de ? 'Pub-Quiz · Firmen-Events · Geburtstage' : 'Pub Quiz · Corporate · Birthdays'}</div>
+            <div style={{
+              fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 700,
+              color: '#94A3B8', lineHeight: 1.35,
+            }}>{de
+              ? 'Termine + Buchung auf'
+              : 'Dates + booking at'}{' '}
+              <span style={{ color: brand.accentSoft, fontWeight: 900 }}>cozywolf.de</span>
             </div>
           </div>
 
-          {/* ── MITTE: Sieger-Hero (Avatar groß + Crown + Name) ── */}
+          {/* ── MITTE: Sieger-Hero ── */}
           <div style={{
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
@@ -20523,195 +20615,88 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             })()}
           </div>
 
-          {/* ── RECHTS: 3 Special Awards mit kleinen Avataren ── */}
+          {/* ── RECHTS: Folgt mir auf Insta (top) + QR-Code (bottom) ── */}
           <div style={{
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-around',
-            gap: 'clamp(10px, 1.3vh, 18px)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'flex-end', justifyContent: 'space-between',
+            gap: 'clamp(12px, 1.6vh, 22px)',
             minWidth: 0,
+            animation: 'qqThanksColIn 0.7s ease 0.5s both',
           }}>
-            <div style={{
-              fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
-              color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-              textAlign: 'center',
-              padding: '4px 12px', borderRadius: 999,
-              background: `rgba(${brand.accentRgb},0.12)`,
-              border: `1px solid rgba(${brand.accentRgb},0.35)`,
-              alignSelf: 'center',
-              textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
-              animation: 'qqThanksColIn 0.7s ease 0.55s both',
-            }}>
-              ⭐ {de ? 'Special Awards' : 'Special Awards'}
-            </div>
+            {/* Folgt mir Block */}
             <div style={{
               display: 'flex', flexDirection: 'column',
-              gap: 'clamp(10px, 1.3vh, 16px)',
-            }}>
-              <ThanksAwardRow
-                emoji="🐢"
-                label="Underdog"
-                accent="#10B981"
-                winner={underdogTeam}
-                lang={lang as 'de' | 'en'}
-                delay={0.65}
-              />
-              <ThanksAwardRow
-                emoji="🦝"
-                label={de ? 'Meisterklauer' : 'Master Stealer'}
-                accent="#A855F7"
-                winner={meisterklauerTeam}
-                lang={lang as 'de' | 'en'}
-                delay={0.78}
-              />
-              <ThanksAwardRow
-                emoji="⚡"
-                label="Speedy"
-                accent={brand.accentWarm}
-                winner={speedyTeam}
-                lang={lang as 'de' | 'en'}
-                delay={0.91}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── FOOTER-Row: Wolf-Schlafen links (OHNE Bubble) + QR-Code rechts ── */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-        width: '100%', maxWidth: 'min(96vw, 1500px)',
-        zIndex: 5,
-        gap: 16,
-        padding: '0 clamp(8px, 1vw, 18px)',
-        flexShrink: 0,
-      }}>
-        {/* Wolf-Schlafen links — Disc-Frame, OHNE Speech-Bubble.
-            Wolf-Quote: 'unten links schlafender wolf ohne sprechen'.
-            Schlafen-Mode zeigt Z's via Animation — kein extra Text/Bubble. */}
-        <div style={{
-          width: 'clamp(110px, 12vw, 170px)', height: 'clamp(110px, 12vw, 170px)',
-          borderRadius: '50%',
-          background: 'rgba(15,8,23,0.6)',
-          border: `2.5px solid rgba(${brand.accentRgb},0.55)`,
-          boxShadow: `0 0 28px rgba(${brand.accentRgb},0.4), 0 6px 18px rgba(0,0,0,0.5)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-          flexShrink: 0,
-          animation: 'qqThanksColIn 0.7s ease 0.5s both',
-        }}>
-          <AnimatedCozyWolf widthCss="92%" mode="schlafen" />
-        </div>
-
-        {/* QR-Code rechts mit Text */}
-        {summaryUrl && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 14,
-            animation: 'qqThanksColIn 0.7s ease 0.6s both',
-          }}>
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-              gap: 3, lineHeight: 1.15, textAlign: 'right',
+              alignItems: 'flex-end', gap: 10,
             }}>
               <div style={{
-                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
-                color: '#F1F5F9',
-              }}>{de ? 'Scannt den Code' : 'Scan the code'}</div>
-              <div style={{
-                fontSize: 'clamp(12px, 1.2vw, 16px)', fontWeight: 700,
-                color: '#94A3B8',
-              }}>{de ? 'für eure Team-Stats' : 'for your team stats'}</div>
-              <div style={{
-                fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontSize: 'clamp(11px, 1.1vw, 16px)', fontWeight: 900,
                 color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
-                marginTop: 4,
-                textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
-              }}>{de ? '↗ scan mich' : '↗ scan me'}</div>
+                padding: '5px 14px', borderRadius: 999,
+                background: `rgba(${brand.accentRgb},0.12)`,
+                border: `1px solid rgba(${brand.accentRgb},0.35)`,
+                textShadow: `0 0 12px rgba(${brand.accentRgb},0.4)`,
+              }}>
+                <span aria-hidden>📸</span>
+                {de ? 'Folgt mir' : 'Follow me'}
+              </div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                padding: 'clamp(8px, 0.9vh, 12px) clamp(16px, 1.6vw, 22px)',
+                borderRadius: 999,
+                background: brand.gradientPill,
+                color: '#fff',
+                fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 900,
+                letterSpacing: '0.04em',
+                boxShadow: `0 6px 18px rgba(${brand.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
+                border: '1.5px solid rgba(255,255,255,0.18)',
+              }}>
+                <span aria-hidden style={{ fontSize: 'clamp(16px, 1.6vw, 22px)' }}>📷</span>
+                @cozywolf.events
+              </div>
             </div>
-            <div style={{
-              padding: 10, borderRadius: 14,
-              background: '#fff',
-              border: `2.5px solid rgba(${brand.accentRgb},0.7)`,
-              boxShadow: `0 0 22px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
-              flexShrink: 0,
-            }}>
-              <QRCodeSVG
-                value={summaryUrl}
-                size={108}
-                bgColor="#ffffff" fgColor="#0A0814" level="M"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
-// 2026-05-10 v4 (Wolf '3 Awards mit Avatar in klein'): Award-Row für rechte
-// Spalte. Kleine Avatar-Disc in Award-Akzent-Farbe + Award-Emoji-Badge oben
-// rechts + Label + Team-Name. Disc-Größe bewusst kompakt damit alle 3 Rows
-// nebeneinander Platz haben ohne den Sieger-Hero in der Mitte zu erschlagen.
-function ThanksAwardRow({ emoji, label, accent, winner, lang, delay = 0 }: {
-  emoji: string;
-  label: string;
-  accent: string;
-  winner: QQTeam | null;
-  lang: 'de' | 'en';
-  delay?: number;
-}) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      animation: `qqThanksAwardIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s both`,
-    }}>
-      {/* Award-Disc mit kleinem Avatar */}
-      <div style={{
-        position: 'relative',
-        width: 'clamp(60px, 6.4vw, 92px)', height: 'clamp(60px, 6.4vw, 92px)',
-        flexShrink: 0,
-      }}>
-        <div style={{
-          width: '100%', height: '100%', borderRadius: '50%',
-          background: winner?.color ?? '#1E293B',
-          border: `3px solid ${accent}`,
-          boxShadow: `0 0 20px ${accent}88, 0 4px 12px rgba(0,0,0,0.4), inset 0 -4px 10px rgba(0,0,0,0.25)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
-          {winner ? (
-            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size="100%" flat />
-          ) : (
-            <span style={{ fontSize: 'clamp(22px, 2.4vw, 32px)', opacity: 0.4 }}>—</span>
-          )}
+            {/* QR-Code Block — innerhalb der Card unten rechts */}
+            {summaryUrl && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+                  gap: 3, lineHeight: 1.15, textAlign: 'right',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 800,
+                    color: '#F1F5F9',
+                  }}>{de ? 'Scannt den Code' : 'Scan the code'}</div>
+                  <div style={{
+                    fontSize: 'clamp(11px, 1.1vw, 15px)', fontWeight: 700,
+                    color: '#94A3B8',
+                  }}>{de ? 'für eure Team-Stats' : 'for your team stats'}</div>
+                  <div style={{
+                    fontSize: 'clamp(10px, 1vw, 13px)', fontWeight: 900,
+                    color: brand.accentHex, letterSpacing: '0.18em', textTransform: 'uppercase',
+                    marginTop: 4,
+                    textShadow: `0 0 10px rgba(${brand.accentRgb},0.4)`,
+                  }}>{de ? '↗ scan mich' : '↗ scan me'}</div>
+                </div>
+                <div style={{
+                  padding: 8, borderRadius: 12,
+                  background: '#fff',
+                  border: `2.5px solid rgba(${brand.accentRgb},0.7)`,
+                  boxShadow: `0 0 22px rgba(${brand.accentRgb},0.5), 0 4px 12px rgba(0,0,0,0.4)`,
+                  flexShrink: 0,
+                }}>
+                  <QRCodeSVG
+                    value={summaryUrl}
+                    size={96}
+                    bgColor="#ffffff" fgColor="#0A0814" level="M"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        {/* Award-Emoji-Badge oben rechts */}
-        <span aria-hidden style={{
-          position: 'absolute', right: -4, top: -4,
-          width: 'clamp(28px, 2.8vw, 38px)', height: 'clamp(28px, 2.8vw, 38px)',
-          borderRadius: '50%',
-          background: '#0A0814',
-          border: `2px solid ${accent}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 'clamp(15px, 1.5vw, 22px)', lineHeight: 1,
-          boxShadow: `0 0 10px ${accent}aa`,
-        }}>{emoji}</span>
-      </div>
-      {/* Label + Team-Name */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1,
-        gap: 3, lineHeight: 1.1,
-      }}>
-        <div style={{
-          fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 900,
-          color: accent,
-          letterSpacing: '0.12em', textTransform: 'uppercase',
-          textShadow: `0 0 10px ${accent}55`,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{label}</div>
-        <div style={{
-          fontSize: 'clamp(14px, 1.4vw, 20px)', fontWeight: 800,
-          color: winner?.color ?? '#475569',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{winner ? winner.name : (lang === 'de' ? '— niemand —' : '— nobody —')}</div>
       </div>
     </div>
   );

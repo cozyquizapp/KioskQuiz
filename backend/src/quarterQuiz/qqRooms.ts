@@ -3777,6 +3777,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
+    // 2026-05-10: Wenn das Spiel persistiert wurde (GAME_OVER → THANKS),
+    // liegt die Game-Result-ID hier — ThanksView nutzt sie für den QR-Link
+    // (`/summary/by-id/{id}` statt nur `/summary/{roomCode}`), damit
+    // geteilte Links auch nach dem nächsten Spiel stabil bleiben.
+    lastGameResultId:      (room as any).lastGameResultId ?? null,
     finalWagerEnabled:     room.finalWagerEnabled ?? true,
     // 2026-05-09 v2 (Wolf-Bug 'Thanks-Ticker stuck dreifach'): questionHistory
     // war bisher nur im Summary-Save-Payload, nicht im Live-State. Frontend-

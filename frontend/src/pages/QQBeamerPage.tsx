@@ -20236,9 +20236,19 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const lang = useLangFlip(s.language);
   // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): brand-themed colors via Helper.
   const brand = getBrandColors(!!s.theme?.eurovisionMode);
-  const summaryUrl = typeof window !== 'undefined' && roomCode
-    ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
-    : '';
+  // 2026-05-10 (Wolf-Bug 'geteilter Spieler-Link wird beim nächsten Spiel
+  // überschrieben'): Wenn das Spiel persistiert ist (`s.lastGameResultId`
+  // vom Backend gesetzt nach GAME_OVER → THANKS), bauen wir den QR-Link mit
+  // `/summary/by-id/{id}` — der lookup ist stabil über alle 200 letzten
+  // Spiele hinweg. Fallback auf `/summary/{roomCode}` nur bis lastGameResultId
+  // ankommt (kurzes Fenster bei phase-Wechsel).
+  const summaryUrl = typeof window === 'undefined'
+    ? ''
+    : s.lastGameResultId
+      ? `${window.location.origin}/summary/by-id/${encodeURIComponent(s.lastGameResultId)}`
+      : roomCode
+        ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
+        : '';
 
   // Sieger ermitteln (höchster total = cells + bonus + awards)
   const cellsByTeam: Record<string, number> = {};

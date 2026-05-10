@@ -164,6 +164,11 @@ function App() {
           <Route path="/slides"     element={<PinGate><QQSlideEditorPage /></PinGate>} />
           <Route path="/rules-editor" element={<PinGate><QQRulesEditorPage /></PinGate>} />
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
+          {/* 2026-05-10 (Wolf-Fix stabile Spieler-Links): per-Game-ID-Lookup
+              zusätzlich zum roomCode-Pfad. Vorher hat der RoomCode-Path
+              (SINGLE_SESSION_MODE = MAIN) immer das jüngste Spiel mit dem
+              Code geliefert — geteilte Links wurden überschrieben. */}
+          <Route path="/summary/by-id/:gameId" element={<QQSummaryPage />} />
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />

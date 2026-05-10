@@ -9278,6 +9278,44 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
   }
 });
 
+// 2026-05-10 (Wolf-Bug 'geteilter Spieler-Link wird beim nächsten Spiel
+// überschrieben'): Stabiler Summary-Lookup per game-id. Bei
+// SINGLE_SESSION_MODE = MAIN recycled der RoomCode pro Spiel — der by-id-
+// Endpoint findet auch alte Spiele in der DB stabil (DB hat kein TTL,
+// nur das LIMIT(200) in getQQGameResults begrenzt).
+app.get('/api/qq/summary/by-id/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const results = await getQQGameResults(200);
+    const hit = results.find((r: any) => r.id === gameId);
+    if (!hit) return res.status(404).json({ error: 'Kein Ergebnis für diese Spiel-ID gefunden.' });
+    const grid = (hit as any).grid as Array<Array<{ ownerId: string | null }>> | undefined;
+    const gridSize = grid?.length ?? 0;
+    const cellOwners = grid
+      ? grid.map(row => row.map(c => c?.ownerId ?? null))
+      : null;
+    res.json({
+      id: hit.id,
+      roomCode: hit.roomCode,
+      playedAt: hit.playedAt,
+      draftTitle: hit.draftTitle,
+      winner: hit.winner,
+      phases: hit.phases,
+      teams: hit.teams ?? [],
+      funnyAnswers: hit.funnyAnswers ?? [],
+      avatarSetId: hit.avatarSetId ?? 'all',
+      avatarSetEmojis: hit.avatarSetEmojis ?? null,
+      gridSize,
+      cellOwners,
+      endAwards: (hit as any).endAwards ?? null,
+      eurovisionMode: !!(hit as any).eurovisionMode,
+    });
+  } catch (err) {
+    console.error('QQ summary by-id error:', err);
+    res.status(500).json({ error: 'Fehler beim Laden der Zusammenfassung.' });
+  }
+});
+
 // ── QQ Feedback ───────────────────────────────────────────────────────────────
 // Spieler-Feedback von der Summary-Seite — persistent in MongoDB
 // (Render Free Tier hat kein stabiles Filesystem).

@@ -155,8 +155,16 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // eurovisionMode-Flag aus dem Theme persistieren — Leaderboard-Endpoint
   // filtert es spaeter raus, Summary nutzt es nicht (per-roomCode-Lookup).
   const eurovisionMode = !!(room.theme as any)?.eurovisionMode;
+  // 2026-05-10 (Wolf-Bug 'wenn ein team seinen link teilt, wird der nicht
+  // resettet wenn man wieder spielt?'): GameResult-ID jetzt im Room-State
+  // ablegen, damit ThanksView den QR-Link mit /summary/by-id/{id} statt nur
+  // /summary/{roomCode} bauen kann. SINGLE_SESSION_MODE recycled den
+  // RoomCode pro Spiel — ohne by-id-Lookup zeigte ein geteilter Spieler-
+  // Link nach dem nächsten Spiel auf das NEUE Spiel statt aufs eigene.
+  const gameResultId = `qqr-${room.roomCode}-${Date.now().toString(36)}`;
+  (room as any).lastGameResultId = gameResultId;
   const result = {
-    id: `qqr-${room.roomCode}-${Date.now().toString(36)}`,
+    id: gameResultId,
     draftId: room.draftId ?? null,
     draftTitle: room.draftTitle ?? 'Unbekannt',
     roomCode: room.roomCode,

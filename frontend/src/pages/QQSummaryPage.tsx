@@ -359,9 +359,13 @@ function ShareButton({ team, place, lang, brand }: {
 // 2026-05-10 (Wolf-Wunsch 'summary ins menü'): optionaler `mockSummary`-Prop
 // für QQSummaryTestPage. Wenn gesetzt, überspringen wir den REST-Fetch und
 // nutzen die Mock-Daten direkt.
+// 2026-05-10 (Wolf-Bug 'Link wird beim nächsten Spiel überschrieben'):
+// Beide Routen lesen — `/summary/:roomCode` (legacy, jüngstes Spiel) und
+// `/summary/by-id/:gameId` (stabil per Spiel). gameId hat Vorrang.
 export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary } = {}) {
-  const { roomCode: paramRoomCode } = useParams<{ roomCode: string }>();
+  const { roomCode: paramRoomCode, gameId: paramGameId } = useParams<{ roomCode?: string; gameId?: string }>();
   const roomCode = mockSummary?.roomCode ?? paramRoomCode;
+  const gameId   = paramGameId;
   const [summary, setSummary] = useState<Summary | null>(mockSummary ?? null);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(!mockSummary);
@@ -380,12 +384,18 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   useEffect(() => {
     // Mock-Mode: Fetch komplett überspringen, Summary ist schon im State.
     if (mockSummary) return;
-    if (!roomCode) return;
+    // by-id-Route hat Vorrang (stabiler Lookup), sonst Fallback auf roomCode.
+    const summaryEndpoint = gameId
+      ? `${API_BASE}/qq/summary/by-id/${encodeURIComponent(gameId)}`
+      : roomCode
+        ? `${API_BASE}/qq/summary/${encodeURIComponent(roomCode)}`
+        : null;
+    if (!summaryEndpoint) return;
     let cancelled = false;
     (async () => {
       try {
         const [sRes, uRes] = await Promise.all([
-          fetch(`${API_BASE}/qq/summary/${encodeURIComponent(roomCode)}`),
+          fetch(summaryEndpoint),
           fetch(`${API_BASE}/qq/upcoming`).catch(() => null),
         ]);
         if (!sRes.ok) {
@@ -405,7 +415,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       }
     })();
     return () => { cancelled = true; };
-  }, [roomCode, mockSummary]);
+  }, [roomCode, gameId, mockSummary]);
 
   // Eurovision-Mode-aware Brand-Tokens (Audit-P2). Default null bei Loading.
   const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode]);

@@ -1107,6 +1107,12 @@ export interface QQStateUpdate {
     correctTeamId: string | null;
     correctTeamIds?: string[];
   }>;
+  /** 2026-05-10 (Wolf-Bug 'geteilter Summary-Link wird nach nächstem Spiel
+   *  überschrieben'): Beim GAME_OVER → THANKS gesetzt. ThanksView nutzt diese
+   *  Game-Result-ID für den QR-Link (`/summary/by-id/{id}`) statt nur
+   *  `/summary/{roomCode}`, damit jeder geteilte Link stabil bleibt — auch
+   *  wenn der RoomCode (SINGLE_SESSION_MODE = MAIN) wieder verwendet wird. */
+  lastGameResultId?: string | null;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).

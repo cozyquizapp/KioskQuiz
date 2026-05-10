@@ -16183,8 +16183,11 @@ function FinalRevealSharedKeyframes() {
       @keyframes qqFRSlamFromTop {
         0%   { opacity: 0; transform: translateY(-90vh) scale(0.7); filter: blur(7px); }
         55%  { opacity: 1; transform: translateY(8%)    scale(1.04); filter: blur(0); }
-        75%  { transform: translateY(-2%) scale(0.98); }
-        100% { transform: translateY(0)    scale(1); }
+        75%  { opacity: 1; transform: translateY(-2%) scale(0.98); }
+        /* 2026-05-10 (Wolf 'Group-Slide zeigt keine Avatare'): opacity bei
+           100% explicit setzen — sonst fiel mit fill-mode:both auf inline
+           opacity:0 zurück und Avatare blieben unsichtbar. */
+        100% { opacity: 1; transform: translateY(0) scale(1); }
       }
       @keyframes qqFRDrumroll {
         0%, 100% { transform: rotate(-2deg); }

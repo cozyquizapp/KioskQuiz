@@ -208,11 +208,15 @@ function PngAvatar({
 // Codepoints werden auf Windows-Browsern nativ als Regional-Indicator-Letters
 // gerendert. Twemoji-CountryFlags-Webfont + DOM-Replace-Helper greifen nicht
 // 100% zuverlaessig. Direkt-Render hier als <img> ist robust.
-function isCountryFlagGlyph(glyph: string): boolean {
+//
+// 2026-05-10 (Wolf 'Eurovision-Edition Flaggen inkonsistent'): Helpers
+// exportiert für Inline-Render an anderen Stellen wo Emojis OHNE QQTeamAvatar
+// gerendert werden (Game-Show-Reveal, Grid-Cells im Final-Reveal etc).
+export function isCountryFlagGlyph(glyph: string): boolean {
   const cp = glyph.codePointAt(0);
   return cp != null && cp >= 0x1f1e6 && cp <= 0x1f1ff;
 }
-function getCountryFlagUrl(glyph: string): string {
+export function getCountryFlagUrl(glyph: string): string {
   const codepoints: number[] = [];
   for (const ch of glyph) {
     const cp = ch.codePointAt(0);
@@ -222,6 +226,49 @@ function getCountryFlagUrl(glyph: string): string {
   }
   const key = codepoints.map(cp => cp.toString(16)).join('-');
   return `https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/${key}.svg`;
+}
+
+/**
+ * Render-Helper: zeigt Emoji als Twemoji-Image wenn es ein Country-Flag-Emoji
+ * ist (Windows Edge/Chrome zeigen sonst nur „DE", „GR" etc als Regional-
+ * Indicator-Letters), sonst als normaler `<span>`-Glyph.
+ *
+ * 2026-05-10 (Wolf 'Eurovision Flaggen inkonsistent — am anfang ja, bei
+ * heute spielen weiterhin DE GR etc'): zentraler Render-Pfad statt manueller
+ * Inline-Checks an N Stellen.
+ */
+export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
+  emoji: string;
+  fontSize: string | number;
+  style?: CSSProperties;
+}) {
+  const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
+  if (isCountryFlagGlyph(emoji)) {
+    return (
+      <img
+        src={getCountryFlagUrl(emoji)}
+        alt={emoji}
+        draggable={false}
+        style={{
+          width: '1.3em',
+          height: '1em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
+  return (
+    <span style={{
+      fontSize: fontSizeStr,
+      lineHeight: 1,
+      display: 'inline-block',
+      ...style,
+    }}>{emoji}</span>
+  );
 }
 
 function EmojiAvatar({

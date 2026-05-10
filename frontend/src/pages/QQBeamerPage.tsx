@@ -22,7 +22,7 @@ import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ3DGrid } from '../components/QQ3DGrid';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import QQProgressTree from '../components/QQProgressTree';
-import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { getAvatarDisplay } from '../avatarSets';
@@ -6253,11 +6253,16 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             }}>
                               {t.emoji ? (
                                 // Emoji-Avatar (Standard-Set): Emoji direkt als
-                                // großer Text — wie Slot M Showreel
-                                <span style={{
-                                  fontSize: `calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.54)`,
-                                  lineHeight: 1,
-                                }}>{t.emoji}</span>
+                                // großer Text — wie Slot M Showreel.
+                                // 2026-05-10 (Wolf 'Eurovision-Flaggen inkonsistent —
+                                // bei heute spielen DE/GR als Text'): CountryFlagOrEmoji
+                                // rendert Country-Flag-Codepoints als Twemoji-Image
+                                // statt nativem Glyph (Windows Edge zeigt sonst nur
+                                // Regional-Indicator-Letters DE/GR etc).
+                                <CountryFlagOrEmoji
+                                  emoji={t.emoji}
+                                  fontSize={`calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.54)`}
+                                />
                               ) : (
                                 // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern
                                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="86%" />
@@ -16361,10 +16366,14 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {owner.emoji && (
-                  <span style={{
-                    fontSize: cellSize * 0.5, lineHeight: 1,
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
-                  }}>{owner.emoji}</span>
+                  // 2026-05-10 (Wolf 'Eurovision Flaggen inkonsistent'):
+                  // CountryFlagOrEmoji statt raw <span> für Twemoji-Image-
+                  // Fallback bei Country-Flag-Codepoints.
+                  <CountryFlagOrEmoji
+                    emoji={owner.emoji}
+                    fontSize={cellSize * 0.5}
+                    style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+                  />
                 )}
               </div>
             );

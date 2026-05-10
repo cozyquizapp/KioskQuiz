@@ -3819,6 +3819,13 @@ export function qqStartRules(room: QQRoomState): void {
 /** Advance to next rules slide (wraps at end). */
 export function qqRulesNext(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
+  // 2026-05-10 (Audit-P0 State-Race): Max-Index-Clamp. Vorher unbegrenzt
+  // increment möglich (rulesSlideIndex 99 wenn Frontend bei Max nicht
+  // rulesFinish schickt + Backend-Roundtrip-Lag mehrere rulesNext durchläuft).
+  // 9 Slides bei connectionsEnabled, sonst 8. Frontend-Logic dieselbe.
+  const totalSlides = (room as any).connectionsEnabled !== false ? 9 : 8;
+  const maxIndex = totalSlides - 1;
+  if (room.rulesSlideIndex >= maxIndex) return; // silent no-op statt unendlich
   room.rulesSlideIndex += 1;
   room.lastActivityAt = Date.now();
 }

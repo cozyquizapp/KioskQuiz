@@ -766,7 +766,15 @@ export default function QQModeratorPage() {
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
     if (e.code === 'Space') {
-      e.preventDefault(); playHotkeyFeedback();
+      e.preventDefault();
+      // 2026-05-10 (Audit-P0 State-Race): Globaler 350ms-Lock auf den Space-
+      // Handler. Vorher konnte ein Doppel-Klick (Streamdeck-Bouncing oder
+      // Wolfs Hand) WRONG_PHASE-Errors triggern wenn Backend mid-Phase-Switch
+      // war: HP→Reveal, Comeback-Intro→H/L-Start, PHASE_INTRO→Activate.
+      // Lock blockiert silent (kein Toast) — Wolf merkt's nicht, Backend
+      // bleibt sauber.
+      if (!canFire('space-advance')) return;
+      playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.

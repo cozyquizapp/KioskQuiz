@@ -392,8 +392,23 @@ export default function QQBuilderPage() {
             bt.itemsEn = await Promise.all(bt.items.map((item: string) => item ? tr(item) : Promise.resolve('')));
             if (bt.criteria) bt.criteriaEn = await tr(bt.criteria);
           }
-          if (bt.kind === 'onlyConnect' && bt.hints?.length) {
-            bt.hintsEn = await Promise.all(bt.hints.map((h: string) => h ? tr(h) : Promise.resolve('')));
+          if (bt.kind === 'onlyConnect') {
+            // 2026-05-10 (Wolf-Bug 'EN-Button füllt nicht alle Felder'):
+            // hints war schon dabei, aber answer + acceptedAnswers fehlten.
+            if (bt.hints?.length) {
+              bt.hintsEn = await Promise.all(bt.hints.map((h: string) => h ? tr(h) : Promise.resolve('')));
+            }
+            if (bt.answer) bt.answerEn = await tr(bt.answer);
+            if (bt.acceptedAnswers?.length) {
+              bt.acceptedAnswersEn = await Promise.all(bt.acceptedAnswers.map((a: string) => a ? tr(a) : Promise.resolve('')));
+            }
+          }
+          if (bt.kind === 'bluff' && bt.realAnswer) {
+            // 2026-05-10 (Wolf-Bug 'EN-Button überspringt Bluff'): realAnswer
+            // fehlte im Translation-Sweep. Auch question.answerEn matchen,
+            // weil Bluff-Editor (~Z. 1885) realAnswer + answer parallel hält.
+            bt.realAnswerEn = await tr(bt.realAnswer);
+            if (!updated.answerEn) updated.answerEn = bt.realAnswerEn;
           }
           updated.bunteTuete = bt;
         }

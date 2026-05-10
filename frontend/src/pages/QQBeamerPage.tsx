@@ -12469,11 +12469,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // 2026-05-08 (Wolf-Bug 'HP-feld schiebt sich unten raus'):
           // Bei HotPotato braucht das Layout mehr Vertical-Space (Slot-Machine
           // + Voter-Chips + Winner-Card) — paddingTop reduziert auf 60-90 px.
-          // Card sitzt direkt unter Top-Bar ohne Overlap (Top-Bar endet bei
-          // ~72-100 px), aber ohne den 30-40 px-Gap der bei Standard normal
-          // ist. Spart Vertical-Space nach unten.
+          // 2026-05-10 (Spacing-Audit P0): paddingTop von 60-90 auf 80-110 px
+          // bumpt — Top-Bar (Badge+Timer, top 22-50 + Höhe ~50-60 = endet bei
+          // 72-110 px) konnte mit altem upper-clamp 90 überlappen. Neue 80-110
+          // gibt Min 10-20 px Buffer zur Top-Bar-Bottom-Edge, behält aber
+          // 20 px Vertical-Space-Vorteil gegenüber Standard (90-130).
           padding: isHotPotatoActive
-            ? 'clamp(60px, 7vh, 90px) clamp(28px, 4vw, 64px) clamp(16px, 2.4vh, 36px)'
+            ? 'clamp(80px, 9vh, 110px) clamp(28px, 4vw, 64px) clamp(16px, 2.4vh, 36px)'
             : 'clamp(90px, 11vh, 130px) clamp(28px, 4vw, 64px) clamp(22px, 3.2vh, 50px)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow

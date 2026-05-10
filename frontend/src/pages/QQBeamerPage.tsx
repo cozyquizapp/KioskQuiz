@@ -16294,9 +16294,15 @@ function FinalRevealSharedKeyframes() {
         50%  { transform: translateY(-30px) scale(1.5); }
         100% { transform: translateY(0) scale(1.4); }
       }
+      /* 2026-05-10 (Wolf 'Sieger-Snap noch nicht 100% smooth'):
+         Vorher 0.5s mit schnell-bouncy 60% peak (1.15) → leicht zackig.
+         Jetzt: 0.85s Duration, 4 keyframes mit weichen Übergängen. Drop von
+         höher (-110px statt -80px) für mehr „from above"-Eindruck, Settle
+         über 50/80% statt 60% peak — weniger overshoot, mehr glide. */
       @keyframes qqRaceWinnerSnap {
-        0%   { transform: scale(2.2) translateY(-80px); opacity: 0.7; filter: blur(4px); }
-        60%  { transform: scale(1.15) translateY(0); opacity: 1; filter: blur(0); }
+        0%   { transform: scale(1.9) translateY(-110px); opacity: 0; filter: blur(6px); }
+        45%  { transform: scale(1.08) translateY(-6px); opacity: 1; filter: blur(0); }
+        75%  { transform: scale(1.02) translateY(0); }
         100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
       }
       /* 2026-05-09 v8 (Wolf 'Treppchen steigt von unten mit allen Avataren'):
@@ -17205,7 +17211,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       <div style={{
         flex: 1, position: 'relative', zIndex: 2,
         height: '100%',
-        minHeight: '70vh',
+        // 2026-05-10 (Wolf 'Treppchen wird unten abgeschnitten bei 100%'):
+        // minHeight conditional — nur in Race-Phasen wo Avatare unintendiert
+        // bei top:50%=0 landen würden (race-bahn collapsed). Sobald Treppchen
+        // erscheint (podium-rises / finish), schrumpft race-bahn auf available
+        // space damit Treppchen-Stufen unten voll sichtbar bleiben.
+        minHeight: (phase === 'podium-rises' || isFinishing) ? 'auto' : '70vh',
       }}>
         {finalRanking.map((entry) => {
           const fallen = fallenIds.has(entry.team.id);
@@ -17292,7 +17303,10 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
                         border: `4px solid ${p1.team.color}`,
                         boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        animation: 'qqRaceWinnerSnap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                        // 2026-05-10 (Wolf 'Snap nicht 100% smooth'): 0.5s →
+                        // 0.85s + cubic-bezier(0.22, 1, 0.36, 1) (ease-out-quart)
+                        // statt back-easing → glide statt zackig.
+                        animation: 'qqRaceWinnerSnap 0.85s cubic-bezier(0.22, 1, 0.36, 1) both',
                       }}>
                         <QQTeamAvatar avatarId={p1.team.avatarId} teamEmoji={p1.team.emoji}
                           size={config.avatarSize} flat />

@@ -164,10 +164,10 @@ export default function QQLandingPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
             <ContactRow
-              href="mailto:cozyquiz.app@gmail.com"
+              href="mailto:hallo@cozywolf.de"
               emoji="📧"
               label="E-Mail"
-              value="cozyquiz.app@gmail.com"
+              value="hallo@cozywolf.de"
             />
             <ContactRow
               href="https://instagram.com/cozywolf.events"

@@ -15,7 +15,7 @@ import { Link, useLocation } from 'react-router-dom';
 const PLACEHOLDER_MODE = true;
 const NAME_PLACEHOLDER = '{Vor- und Nachname folgt mit Gewerbe-Anmeldung}';
 const ADDRESS_PLACEHOLDER = '{Straße Hausnummer\nPLZ Stadt — folgt mit Gewerbe-Anmeldung}';
-const EMAIL = 'cozyquiz.app@gmail.com';
+const EMAIL = 'hallo@cozywolf.de';
 
 const BRAND = {
   pink:    '#EC4899',

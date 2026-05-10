@@ -188,7 +188,7 @@ export default function LandingPage() {
               Interessiert? Wir beraten dich gerne und finden den perfekten Quiz-Termin für deinen Space.
             </p>
             <a 
-              href="mailto:cozyquiz.app@gmail.com"
+              href="mailto:hallo@cozywolf.de"
               style={{
                 display: 'inline-block',
                 padding: '16px 48px',
@@ -204,7 +204,7 @@ export default function LandingPage() {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              📧 cozyquiz.app@gmail.com
+              📧 hallo@cozywolf.de
             </a>
           </div>
         </div>

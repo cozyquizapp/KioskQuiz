@@ -23,6 +23,61 @@ import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted,
 } from '../utils/sounds';
 import { haptic } from '../utils/haptics';
+import type { QQAck } from '../../../shared/quarterQuizTypes';
+
+// ── Server-Ack-Error-Toast-System ─────────────────────────────────────────────
+// 2026-05-10 (Audit P0-1): Alle Spieler-Aktionen waren bisher fire-and-forget.
+// Backend wirft WRONG_PHASE / TIMER_EXPIRED / NOT_YOUR_TURN — Frontend hat das
+// ignoriert. Spieler dachte „Submit war OK", Antwort kam aber nie an.
+//
+// Pattern: safeEmit() wrappt emit() und broadcastet ein window-Event bei
+// !ack.ok. AckErrorToast (bottom of file) lauscht und zeigt 3 Sek lang ein
+// Toast. errorMap übersetzt Codes in lesbare Spieler-Sprache.
+type AckErrorEventDetail = { message: string };
+const ACK_ERROR_EVENT = 'qq-team-ack-error';
+
+function broadcastAckError(message: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent<AckErrorEventDetail>(ACK_ERROR_EVENT, { detail: { message } }));
+  }
+}
+
+const ACK_ERROR_MESSAGES_DE: Record<string, string> = {
+  TIMER_EXPIRED:   '⏰ Zu spät — Phase ist gerade vorbei',
+  WRONG_PHASE:     '⏰ Antwort kam nicht durch — Phase wechselt gerade',
+  NOT_YOUR_TURN:   '🚫 Nicht dein Zug',
+  ALREADY_ANSWERED:'✓ Antwort wurde bereits gespeichert',
+  RATE_LIMITED:    '⏳ Zu schnell, kurz Pause',
+  NOT_CONNECTED:   '📡 Keine Verbindung — versuch nochmal',
+  TIMEOUT:         '📡 Server-Antwort dauerte zu lang',
+  '*':             '❌ Aktion fehlgeschlagen',
+};
+const ACK_ERROR_MESSAGES_EN: Record<string, string> = {
+  TIMER_EXPIRED:   '⏰ Too late — phase just ended',
+  WRONG_PHASE:     '⏰ Submit missed — phase is changing',
+  NOT_YOUR_TURN:   '🚫 Not your turn',
+  ALREADY_ANSWERED:'✓ Already submitted',
+  RATE_LIMITED:    '⏳ Slow down — short cooldown',
+  NOT_CONNECTED:   '📡 No connection — try again',
+  TIMEOUT:         '📡 Server took too long',
+  '*':             '❌ Action failed',
+};
+
+async function safeEmit(
+  emitFn: (event: string, payload?: unknown) => Promise<QQAck>,
+  event: string,
+  payload: unknown,
+  lang: 'de' | 'en' = 'de',
+): Promise<QQAck> {
+  const ack = await emitFn(event, payload);
+  if (!ack.ok) {
+    const map = lang === 'de' ? ACK_ERROR_MESSAGES_DE : ACK_ERROR_MESSAGES_EN;
+    const code = ack.code ?? 'UNKNOWN';
+    const msg = map[code] ?? map['*'] ?? ack.error ?? 'Fehler';
+    broadcastAckError(msg);
+  }
+  return ack;
+}
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
 const t = {
@@ -141,6 +196,11 @@ const TEAM_CSS = `
     18%  { opacity: 1; }
     55%  { opacity: 0.85; }
     100% { opacity: 0; }
+  }
+  /* 2026-05-10 (Audit P0-1): AckErrorToast Entry-Animation. */
+  @keyframes tcAckToastIn {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
   @keyframes qqTeamPinDrop {
     0%   { transform: translateY(-40px) scale(0.6); opacity: 0; }
@@ -459,7 +519,7 @@ export default function QQTeamPage() {
     }
     setStammStatus('searching');
     setStammResult(null);
-    const ack: any = await emit('qq:lookupRegularTeam', { roomCode, teamId: candidateTeamId });
+    const ack: any = await safeEmit(emit, 'qq:lookupRegularTeam', { roomCode, teamId: candidateTeamId });
     if (ack?.ok && ack.team) {
       // Match — switch localStorage + UI state auf den Stamm-Team-Code.
       localStorage.setItem('qq_teamId', candidateTeamId);
@@ -540,7 +600,7 @@ export default function QQTeamPage() {
     localStorage.setItem('qq_avatarId', existingTeamInRoom.avatarId);
     setTeamName(existingTeamInRoom.name);
     setAvatarId(existingTeamInRoom.avatarId);
-    const ack = await emit('qq:joinTeam', {
+    const ack = await safeEmit(emit, 'qq:joinTeam', {
       roomCode,
       teamId,
       teamName: existingTeamInRoom.name,
@@ -563,7 +623,7 @@ export default function QQTeamPage() {
     localStorage.setItem('qq_avatarId', avatarId);
     if (chosenEmoji) localStorage.setItem('qq_emoji', chosenEmoji);
     else localStorage.removeItem('qq_emoji');
-    const ack = await emit('qq:joinTeam', {
+    const ack = await safeEmit(emit, 'qq:joinTeam', {
       roomCode, teamId, teamName: teamName.trim(), avatarId, emoji: chosenEmoji,
     });
     if (ack.ok) { setJoined(true); setShowIdentityBanner(true); }
@@ -836,6 +896,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
+      <AckErrorToast />
       {/* ESC-BG-Bild als Atmosphere-Layer */}
       {eurovisionMode && escBgUrl && (
         <div aria-hidden style={{
@@ -1552,6 +1613,7 @@ function TeamGameView({
   return (
     <div style={{ ...darkPage, background: finalPageBg, transition: 'background 0.8s ease' }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
+      <AckErrorToast />
       {/* 2026-05-07 (Wolf-ESC): Optional BG-Bild als zusaetzliche Atmosphaere-
           Layer hinter dem Gradient. object-fit cover macht 16:9-Asset auf
           portrait Phone zoomen — daher mobileBackgroundUrl-Override-Field. */}
@@ -3397,7 +3459,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   async function submitText(text: string) {
     if (!text.trim()) return;
     if (navigator.vibrate) navigator.vibrate(40);
-    await emit('qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
+    await safeEmit(emit, 'qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
   // 2026-05-02 (Wolfs Bug 'Timer abgelaufen ohne Antwort - Phone zeigt nichts'):
@@ -3554,7 +3616,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
       const text = valRef.current.trim();
       if (text.length >= 1) {
         if (navigator.vibrate) navigator.vibrate(40);
-        emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: text });
+        safeEmit(emit, 'qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: text });
         setVal('');
       }
     }
@@ -3573,7 +3635,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
         marginTop: 4, padding: '14px 16px', borderRadius: 12,
         background: 'rgba(236,72,153,0.10)',
         border: `1.5px dashed ${catColor}`,
-        textAlign: 'center', color: '#fde68a', fontSize: 14, fontWeight: 800,
+        textAlign: 'center', color: '#FBCFE8', fontSize: 14, fontWeight: 800,
         animation: 'tcpulse 1.5s ease-in-out infinite',
       }}>
         🎰 {lang === 'de' ? 'Slot dreht — gleich geht es los!' : 'Slot is spinning — get ready!'}
@@ -3584,7 +3646,7 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
   async function submit() {
     if (!val.trim() || expired) return;
     if (navigator.vibrate) navigator.vibrate(40);
-    await emit('qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
+    await safeEmit(emit, 'qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
     setVal('');
     setTimeout(() => ref.current?.focus({ preventScroll: true }), 60);
   }
@@ -3936,7 +3998,7 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       firedRef.current = true;
       const text = valRef.current.trim();
       if (text.length >= 1) {
-        emit('qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
+        safeEmit(emit, 'qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
         setSubmitted(true);
       }
     }
@@ -3946,13 +4008,13 @@ function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (submitted || writeExpired) return;
     const text = val.trim();
     if (text.length < 1) return;
-    emit('qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
+    safeEmit(emit, 'qq:bluffSubmit', { roomCode, teamId: myTeamId, text });
     setSubmitted(true);
   };
 
   const vote = (optId: string) => {
     if (myVote) return;
-    emit('qq:bluffVote', { roomCode, teamId: myTeamId, optionId: optId });
+    safeEmit(emit, 'qq:bluffVote', { roomCode, teamId: myTeamId, optionId: optId });
   };
 
   // ── Write Phase ─────────────────────────────────────────────────────────
@@ -4139,7 +4201,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
       firedRef.current = true;
       const text = valRef.current.trim();
       if (text.length >= 1) {
-        emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
+        safeEmit(emit, 'qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
         setVal('');
       }
     }
@@ -4149,7 +4211,7 @@ function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor, lang }
     if (alreadyAnswered || expired) return;
     const text = val.trim();
     if (text.length < 1) return;
-    emit('qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
+    safeEmit(emit, 'qq:onlyConnectGuess', { roomCode, teamId: myTeamId, text });
     setVal('');
   };
 
@@ -4276,7 +4338,7 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
     if (!current || submitted || !isMyTurn) return;
     if (navigator.vibrate) navigator.vibrate(40);
     setSubmitted(true);
-    await emit('qq:imposterChoose', { roomCode, teamId: myTeamId, statementIndex: current.idx });
+    await safeEmit(emit, 'qq:imposterChoose', { roomCode, teamId: myTeamId, statementIndex: current.idx });
   }
 
   const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
@@ -4796,7 +4858,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
   async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
-    await emit('qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
+    await safeEmit(emit, 'qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
     // SHIELD: frueher Auto-Apply auf groesstes Cluster, jetzt 1-Feld-Pick
     // (analog SANDUHR/STAPEL) — also einfach Grid oeffnen.
     setSelecting(true);
@@ -4825,7 +4887,7 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       if (r === swapFirst.r && c === swapFirst.c) return;
       const firstCell = s.grid[swapFirst.r][swapFirst.c];
       if (firstCell.ownerId === cell.ownerId) return;
-      await emit('qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
+      await safeEmit(emit, 'qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
       if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
       setSelecting(false); setSwapFirst(null); return;
     }
@@ -4835,11 +4897,11 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
       if (!swapFirst) {
         if (cell.ownerId !== myTeamId) return;
         setSwapFirst({ r, c });
-        await emit('qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
+        await safeEmit(emit, 'qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
         return;
       } else {
         if (!cell.ownerId || cell.ownerId === myTeamId) return;
-        await emit('qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
+        await safeEmit(emit, 'qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
         setSelecting(false); setSwapFirst(null); return;
       }
     }
@@ -4886,19 +4948,19 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
     if (!pendingPick) return;
     const { r, c, kind } = pendingPick;
     if (kind === 'ban') {
-      await emit('qq:sandLockCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      await safeEmit(emit, 'qq:sandLockCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60]);
     } else if (kind === 'stapel') {
-      await emit('qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      await safeEmit(emit, 'qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
     } else if (kind === 'shield') {
-      await emit('qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      await safeEmit(emit, 'qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
     } else if (kind === 'steal') {
-      await emit('qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      await safeEmit(emit, 'qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
     } else if (kind === 'place') {
-      await emit('qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
+      await safeEmit(emit, 'qq:placeCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
     }
     // 2026-05-07 (Wolf-Live-Test): Eigene Setz-Geste sichtbar halten — der
@@ -5146,14 +5208,14 @@ function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'd
 
       {showNotFastestHint && (
         <div style={{
-          background: 'rgba(250, 204, 21, 0.12)',
-          border: '1px solid rgba(250, 204, 21, 0.35)',
+          background: 'rgba(236, 72, 153, 0.12)',
+          border: '1px solid rgba(236, 72, 153, 0.35)',
           borderRadius: 8,
           padding: '10px 12px',
           marginBottom: 12,
           fontSize: 13,
           lineHeight: 1.4,
-          color: '#fde68a',
+          color: '#FBCFE8',
           textAlign: 'center',
         }}>
           {lang === 'de'
@@ -5543,7 +5605,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
     const teamColor = myTeam?.color ?? '#EC4899';
     const submit = (choice: 'higher' | 'lower') => {
       if (answered) return;
-      emit('qq:comebackHLAnswer', { roomCode, teamId: myTeamId, choice });
+      safeEmit(emit, 'qq:comebackHLAnswer', { roomCode, teamId: myTeamId, choice });
     };
     return (
       <CozyCard borderColor={isReveal ? (myCorrect ? '#22C55E' : '#EF4444') : teamColor}>
@@ -5817,7 +5879,7 @@ function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' 
               onClick={() => {
                 if (disabled) return;
                 if (navigator.vibrate) navigator.vibrate(30);
-                emit('qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action });
+                safeEmit(emit, 'qq:comebackChoice', { roomCode, teamId: myTeamId, action: opt.action });
               }}
               style={{
                 padding: '14px 16px', borderRadius: 16,
@@ -5855,7 +5917,7 @@ const CONN_GROUP_COLORS = ['#EC4899', '#22C55E', '#60A5FA', '#A78BFA'];
 function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }: {
   state: QQStateUpdate;
   myTeamId: string;
-  emit: (event: string, payload: unknown) => void;
+  emit: (event: string, payload?: unknown) => Promise<QQAck>;
   roomCode: string;
   lang?: 'de' | 'en';
 }) {
@@ -5902,7 +5964,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
           <div style={{ fontSize: 48 }}>🧩</div>
           {/* Synchron mit Beamer-Header: 'Großes Finale' / 'Grand Finale'. */}
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#fde68a', textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#FBCFE8', textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
             {de ? 'Großes Finale' : 'Grand Finale'}
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4 }}>
@@ -6052,7 +6114,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
                   <button
                     key={`${item}-${i}`}
                     disabled={disabled}
-                    onClick={() => emit('qq:connectionsSelectItem', { roomCode, teamId: myTeamId, item })}
+                    onClick={() => safeEmit(emit, 'qq:connectionsSelectItem', { roomCode, teamId: myTeamId, item })}
                     style={{
                       padding: '8px 2px', borderRadius: 8,
                       background: isMyFound && myGroupColor
@@ -6088,7 +6150,7 @@ function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }
             {/* Submit-Button */}
             <button
               disabled={selected.length !== 4}
-              onClick={() => emit('qq:connectionsSubmit', { roomCode, teamId: myTeamId })}
+              onClick={() => safeEmit(emit, 'qq:connectionsSubmit', { roomCode, teamId: myTeamId })}
               style={{
                 padding: '14px 18px', borderRadius: 16,
                 border: 'none',
@@ -6164,9 +6226,9 @@ function FinalBettingCard({
 
   const handleSubmit = () => {
     if (!pickedTargetId) {
-      emit('qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: null });
+      safeEmit(emit, 'qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: null });
     } else {
-      emit('qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: { targetTeamId: pickedTargetId } });
+      safeEmit(emit, 'qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: { targetTeamId: pickedTargetId } });
     }
     if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
   };
@@ -6640,7 +6702,7 @@ function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQ
                   background: 'linear-gradient(135deg, #EC4899, #EC4899)',
                   color: '#0A0814', fontWeight: 900, fontSize: 16,
                   textDecoration: 'none',
-                  boxShadow: '0 4px 0 #B45309, 0 0 24px rgba(236,72,153,0.35)',
+                  boxShadow: '0 4px 0 #A21247, 0 0 24px rgba(236,72,153,0.35)',
                   animation: 'tcreveal 0.5s ease 0.7s both',
                 }}
               >
@@ -6867,7 +6929,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
             border: '1.5px dashed rgba(236,72,153,0.4)',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: 13, color: '#fde68a', fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: '#FBCFE8', fontWeight: 700, marginBottom: 8 }}>
               {lang === 'de'
                 ? 'Dauert lange? Server schlaeft eventuell — bitte warten oder neu laden.'
                 : 'Taking long? Server may be waking up — wait or reload.'}
@@ -6878,7 +6940,7 @@ function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string;
                 padding: '8px 18px', borderRadius: 10,
                 border: '1px solid rgba(236,72,153,0.5)',
                 background: 'rgba(236,72,153,0.15)',
-                color: '#fde68a', fontSize: 13, fontWeight: 800,
+                color: '#FBCFE8', fontSize: 13, fontWeight: 800,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
@@ -7682,3 +7744,53 @@ const cozyInput: React.CSSProperties = {
   // bleibt beim Focus sichtbar (Tab-Navigation lesbar). focusring im /team-CSS
   // (qq-team-input) hat zusaetzlich einen amber-Outline mit offset 2px.
 };
+
+// ── AckErrorToast ────────────────────────────────────────────────────────────
+// 2026-05-10 (Audit P0-1): zentrale Toast-Komponente die auf
+// `qq-team-ack-error`-window-Events lauscht und 3 Sek lang einen Pink-Toast
+// am oberen Rand zeigt. Triggered von safeEmit() bei !ack.ok. Sicheres Render
+// unten am Page-Top mit hohem zIndex damit's über anderen Toasts liegt.
+function AckErrorToast() {
+  const [msg, setMsg] = useState<string | null>(null);
+  const dismissRef = useRef<number | null>(null);
+  useEffect(() => {
+    function onEvt(e: Event) {
+      const detail = (e as CustomEvent<AckErrorEventDetail>).detail;
+      if (!detail?.message) return;
+      setMsg(detail.message);
+      if (dismissRef.current) window.clearTimeout(dismissRef.current);
+      dismissRef.current = window.setTimeout(() => setMsg(null), 3200);
+      try { haptic('wrong'); } catch {}
+    }
+    window.addEventListener(ACK_ERROR_EVENT, onEvt);
+    return () => {
+      window.removeEventListener(ACK_ERROR_EVENT, onEvt);
+      if (dismissRef.current) window.clearTimeout(dismissRef.current);
+    };
+  }, []);
+  if (!msg) return null;
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 'env(safe-area-inset-top, 0px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      marginTop: 12,
+      zIndex: 2000,
+      padding: '12px 18px',
+      borderRadius: 14,
+      background: 'linear-gradient(135deg, rgba(236,72,153,0.95), rgba(162,18,71,0.95))',
+      color: '#fff',
+      fontSize: 14, fontWeight: 800,
+      fontFamily: 'inherit',
+      boxShadow: '0 12px 32px rgba(0,0,0,0.45), 0 0 24px rgba(236,72,153,0.5)',
+      border: '1.5px solid rgba(255,255,255,0.22)',
+      maxWidth: 'calc(100vw - 32px)',
+      textAlign: 'center',
+      animation: 'tcAckToastIn 0.25s ease both',
+      pointerEvents: 'none',
+    }}>
+      {msg}
+    </div>
+  );
+}

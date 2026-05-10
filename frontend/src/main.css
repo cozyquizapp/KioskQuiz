@@ -4347,7 +4347,7 @@ button:active:not(:disabled),
 }
 .qq-team-page button:focus-visible,
 .qq-team-page [role="button"]:focus-visible {
-  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline: 3px solid rgba(236, 72, 153, 0.75);
   outline-offset: 2px;
 }
 
@@ -4368,7 +4368,7 @@ button:active:not(:disabled),
   border-width: 2px;
 }
 .qq-team-input:focus-visible {
-  outline: 3px solid rgba(245, 158, 11, 0.7);
+  outline: 3px solid rgba(236, 72, 153, 0.75);
   outline-offset: 2px;
 }
 .qq-team-input::placeholder {

@@ -2411,11 +2411,16 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
     }
     prevActiveRef.current = cur;
   }, [activeTeam?.id]);
-  // 2026-05-09 v3 (Wolf 'keine teams von ganz rechts nach ganz links durch
-  // den slide fliegen lassen'): Wrap-Detection. Wenn ein Team beim Active-
-  // Wechsel zwischen den extremen Slots wrappt (z.B. -2 → +2 bei kleinen
-  // Lobbys mit modulo-Logik), CSS-Transition für DIESEN Render unterbinden.
-  // Snap statt Fly-Across. Side-Slots die nur ±1 wandern animieren weiterhin.
+  // 2026-05-11 (Wolf-Bug 'nachrutschen ist random, animation nicht smooth'):
+  // Vorher modulo-wrap-Logik → Teams sprangen von Slot +2 zu Slot -2 wenn
+  // Active-Index die aliveIds umlaufen lief. Erzeugte unvorhersehbares
+  // 'random'-Gefühl + Snap-statt-Slide bei jedem Wrap. Jetzt LINEAR: Slots
+  // sind absolute Positionen ggü. activeIdx. Teams ausserhalb ±2 sind komplett
+  // ausgeblendet (unmounted), neue Teams mounten beim Eintreten in den Slot-
+  // Bereich → React kümmert sich um saubere Animationen, da gleiche teamId
+  // = gleicher DIV-Key = Transform-Transition slidet smooth.
+  // Snap-Detection bleibt als Fallback für seltene Active-Wrap-Around-Fälle
+  // (active=last → active=0 nach voller Runde).
   const prevSlotsRef = useRef<Map<string, number>>(new Map());
   if (!activeTeam) {
     return (
@@ -2432,18 +2437,18 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   const activeIdx = aliveIds.indexOf(activeTeam.id);
   if (activeIdx < 0 || aliveIds.length === 0) return null;
 
-  // Pro Team: berechne relativen Slot-Index ggü. Active (zentriert auf 0).
-  // Slot -2/-1 = vorherige, +1/+2 = nächste (modulo aliveIds.length).
-  // Wenn aliveIds < 5, fehlende Slots bleiben leer.
+  // Pro Team: relativer Slot-Index ggü. Active (zentriert auf 0).
+  // Slot -2/-1 = vorherige in aliveIds-Reihenfolge, +1/+2 = nächste.
+  // 2026-05-11 (Wolf-Bug): KEIN modulo-wrap mehr — Slots sind absolut. Teams
+  // ausserhalb ±2 werden nicht gerendert (unmounted). Bei N=8 active=0 sehen
+  // wir nur Slots [0,+1,+2]; bei active=4 [Slots -2..+2]. Beim Active-Wechsel
+  // slidet ein Team raus auf -3 (unmount), neues mountet bei +2.
   const N = aliveIds.length;
   type SlotEntry = { teamId: string; slot: number };
   const slotEntries: SlotEntry[] = [];
   for (let i = 0; i < N; i++) {
-    let rel = i - activeIdx;
-    // Wrap zu kürzestem Distanz (modulo N) — z.B. bei N=4, idx=0, prev=3 ist „rel=-1"
-    while (rel >  Math.floor(N / 2))  rel -= N;
-    while (rel < -Math.floor(N / 2))  rel += N;
-    if (Math.abs(rel) > 2) continue;  // nur ±2 sichtbar
+    const rel = i - activeIdx;
+    if (Math.abs(rel) > 2) continue;  // nur ±2 sichtbar, keine Wraps
     slotEntries.push({ teamId: aliveIds[i], slot: rel });
   }
 

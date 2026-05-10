@@ -14736,8 +14736,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // Pille sitzen, nur leichter Overlap an der Pillen-AUSSENKANTE
               // (nicht auf dem Text). Higher: noch hoeher; Lower: noch tiefer
               // (weniger negativ = naeher am Avatar-Start unter dem VS-Container).
+              // 2026-05-10 (Spacing-Audit P0): Higher-Translate von -510/-38vh/-360
+              // auf -390/-30vh/-300 reduziert. Vorher konnten 3-4 gestapelte Teams
+              // bis IN die Frage-Card oder ganz oben aus dem 1080p-Viewport fliegen.
+              // Endposition liegt jetzt deutlich UNTER der Frage-Card; Flug-Look
+              // bleibt ähnlich, nur ohne Top-Edge-Overshoot.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-510px, -38vh, -360px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-390px, -30vh, -300px)) scale(0.7)`
                 : choice === 'lower'
                   ? `translate(${xCenter}px, clamp(-110px, -8vh, -60px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';

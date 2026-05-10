@@ -78,10 +78,11 @@ export type WizardSubStep = {
   sections: WizardSection[];
 };
 export type WizardSection =
-  | 'text'         // Frage-Text DE + EN
+  | 'text'         // Frage-Text DE + EN + Mod-Notiz
   | 'main'         // Kategorie-spezifische Hauptfelder (Antwort/Optionen/SubMech/...)
-  | 'image'        // Bild-Upload + (CHEESE-Layout-Toggle)
-  | 'imagePosition'// Position/Zoom Canvas + Slider
+  | 'image'        // Bild-Upload + Hintergrund-entfernen
+  | 'imagePosition'// Position/Zoom Canvas + Slider + Visuelle Anpassungen
+  | 'cheeseLayout' // CHEESE-spezifischer Horizontal/Hochkant-Toggle
   | 'funFact'      // Fun-Fact DE + EN
   | 'music';       // Musik-URL + musicMode (selten)
 
@@ -111,11 +112,49 @@ const SUB_STEPS_BY_CATEGORY: Record<QQCategory, WizardSubStep[]> = {
   ],
   CHEESE: [
     { id: 'text',     label: 'Frage',    emoji: '📝', sections: ['text'] },
-    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'imagePosition'] },
+    // 2026-05-11 (Wolf-Bug 'wo wähle ich Layout?'): cheeseLayout-Section gehört
+    // logisch zum Bild-Step, nicht zum Antwort-Step. Vorher war Toggle in
+    // CategoryFields-CHEESE → erschien beim 'main'-Step (Antwort), obwohl die
+    // Validation-Warnung beim 'image'-Step erscheint. Jetzt: Layout-Wahl direkt
+    // beim Bild zusammen mit Position.
+    { id: 'image',    label: 'Bild',     emoji: '🖼️', sections: ['image', 'cheeseLayout', 'imagePosition'] },
     { id: 'main',     label: 'Antwort',  emoji: '✅', sections: ['main'] },
     { id: 'funFact',  label: 'Fact',     emoji: '💡', sections: ['funFact'] },
   ],
 };
+
+// 2026-05-11 Wizard Focus-Mode: Step-Hero-Texte pro (Kategorie, Step-ID).
+// Großer Titel + Mini-Tipp am Editor-Card-Top. Gibt jedem Step einen klaren
+// „Was soll ich hier tun"-Anker statt einem leeren Formular.
+const STEP_HERO: Record<string, { title: string; tip: string }> = {
+  // SCHAETZCHEN
+  'SCHAETZCHEN/text':    { title: '📝 Worüber wird geschätzt?',    tip: 'Frag nach einer Zahl. Kurz, klar, eindeutig beantwortbar.' },
+  'SCHAETZCHEN/main':    { title: '✅ Die Zahl, auf die getippt wird', tip: 'Bei Jahreszahlen den Toggle aktivieren — Beamer zeigt dann „1989" statt „1.989".' },
+  'SCHAETZCHEN/image':   { title: '🖼️ Bild (optional)',            tip: 'Visualisiert das Thema. Drag-Drop oder Strg+V zum Einfügen.' },
+  'SCHAETZCHEN/funFact': { title: '💡 Fun-Fact zur Auflockerung',    tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+  // MUCHO
+  'MUCHO/text':    { title: '📝 Die Quiz-Frage',                    tip: 'Eine Frage mit 4 Antwort-Optionen.' },
+  'MUCHO/main':    { title: '✅ 4 Optionen, eine ist richtig',       tip: 'Plausible Distraktoren machen die Frage spannend.' },
+  'MUCHO/image':   { title: '🖼️ Bild (optional)',                   tip: 'Drag-Drop oder Strg+V — zeigt sich als Hintergrund.' },
+  'MUCHO/funFact': { title: '💡 Fun-Fact zur Auflockerung',          tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+  // ZEHN_VON_ZEHN
+  'ZEHN_VON_ZEHN/text':    { title: '📝 Die Quiz-Frage',                 tip: 'Eine Frage mit 3 Antwort-Optionen.' },
+  'ZEHN_VON_ZEHN/main':    { title: '✅ 3 Optionen, eine ist richtig',    tip: 'Plus oder Minus 10 — alle setzen oder nichts.' },
+  'ZEHN_VON_ZEHN/image':   { title: '🖼️ Bild (optional)',                tip: 'Drag-Drop oder Strg+V — zeigt sich als Hintergrund.' },
+  'ZEHN_VON_ZEHN/funFact': { title: '💡 Fun-Fact zur Auflockerung',       tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+  // BUNTE_TUETE
+  'BUNTE_TUETE/text':    { title: '📝 Die Bunte-Tüte-Frage',          tip: 'Was sollen die Teams machen?' },
+  'BUNTE_TUETE/main':    { title: '🎁 Welche Mechanik?',               tip: 'Hot Potato, Top 5, Order, OnlyConnect, Bluff, Map. Pro Mechanik eigene Felder.' },
+  'BUNTE_TUETE/funFact': { title: '💡 Fun-Fact zur Auflockerung',       tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+  // CHEESE
+  'CHEESE/text':    { title: '📝 Worauf zielt die Frage?',             tip: '„Was ist das?" — die Antwort kommt als Freitext der Teams.' },
+  'CHEESE/image':   { title: '🖼️ Bild + Beamer-Layout',                tip: 'Upload, Layout-Wahl (Horizontal/Hochkant), Position. Layout ist unabhängig vom Bildformat — du croppst per Position.' },
+  'CHEESE/main':    { title: '✅ Die echte Antwort',                    tip: 'Wird beim Reveal eingeblendet. Freitext-Match toleriert Tippfehler.' },
+  'CHEESE/funFact': { title: '💡 Fun-Fact zur Auflockerung',            tip: 'Nur du als Mod siehst ihn — wirf ihn beim Reveal ein.' },
+};
+function getStepHero(category: QQCategory, stepId: string): { title: string; tip: string } {
+  return STEP_HERO[`${category}/${stepId}`] ?? { title: `${stepId}`, tip: '' };
+}
 
 // 2026-05-10 CozyBuilder Audit #19: Smart-Unit-Suggest. Extrahiert
 // das wahrscheinliche Unit-Wort aus einem Schätzchen-Frage-Text.
@@ -1369,21 +1408,26 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
         </div>
       )}
 
-      {/* Category header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
-        <span style={{ fontSize: 20 }}>{catLabel.emoji}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 900, fontSize: 14, color: catColor }}>{catLabel.de} <span style={{ color: '#475569', fontWeight: 400 }}>/ {catLabel.en}</span></div>
-          <div style={{ fontSize: 11, color: '#475569' }}>Phase {q.phaseIndex}</div>
+      {/* Category header — nur im Grid-Mode (im Wizard zeigt Phase-Pille oben
+          schon die Kategorie + es gibt einen Step-Hero mit Titel). */}
+      {!visibleSections && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: catColor + '22', border: `1px solid ${catColor}44` }}>
+          <span style={{ fontSize: 20 }}>{catLabel.emoji}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: 14, color: catColor }}>{catLabel.de} <span style={{ color: '#475569', fontWeight: 400 }}>/ {catLabel.en}</span></div>
+            <div style={{ fontSize: 11, color: '#475569' }}>Phase {q.phaseIndex}</div>
+          </div>
+          <button onClick={() => { if (confirm('Frage löschen?')) onDelete(); }}
+            style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 11, fontFamily: 'inherit', fontWeight: 800 }}>
+            🗑 Löschen
+          </button>
         </div>
-        <button onClick={() => { if (confirm('Frage löschen?')) onDelete(); }}
-          style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', fontSize: 11, fontFamily: 'inherit', fontWeight: 800 }}>
-          🗑 Löschen
-        </button>
-      </div>
+      )}
 
-      {/* Mini live preview */}
-      <MiniPreviewPanel question={q} />
+      {/* Mini live preview — nur sichtbar wenn 'image'-Section sichtbar (oder
+          Grid-Mode wo immer alle Sektionen rendern). MiniPreviewPanel selber
+          rendert nur bei CHEESE etwas. */}
+      {(show('image') || !visibleSections) && <MiniPreviewPanel question={q} />}
 
 
       {/* Question text DE/EN — Section 'text' */}
@@ -1470,6 +1514,11 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
           </button>
         )}
       </div>
+      )}
+
+      {/* ── CHEESE Layout-Picker (Horizontal/Hochkant) — Section 'cheeseLayout' ── */}
+      {show('cheeseLayout') && q.category === 'CHEESE' && (
+        <CheeseLayoutPicker q={q} onChange={onChange} />
       )}
 
       {/* ── Image position canvas + sliders — Section 'imagePosition' ── */}
@@ -1922,76 +1971,14 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
 
   // CHEESE / Picture This ──────────────────────────────────────────────────────
   if (q.category === 'CHEESE') {
-    // 2026-05-10 (Wolf-Wunsch): Layout-Toggle pro CHEESE-Frage. Beamer
-    // respektiert die Wahl, sonst Auto-Detection als Fallback.
-    const currentLayout = q.image?.cheeseLayout;
-    const setCheeseLayout = (layout: 'landscape' | 'portrait') => {
-      onChange({
-        ...q,
-        image: {
-          ...(q.image ?? { url: '', layout: 'fullscreen', animation: 'none' }),
-          cheeseLayout: layout,
-        },
-      });
-    };
+    // 2026-05-11 (Wolf-Bug 'wo wähle ich Layout?'): Layout-Toggle wurde aus
+    // CategoryFields-CHEESE rausgezogen und in eigene Section 'cheeseLayout'
+    // verschoben — wird jetzt von QuestionEditor im Bild-Sub-Step gerendert.
+    // CHEESE-CategoryFields zeigen nur noch die Antwort-Felder.
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 12, color: '#94a3b8' }}>
-          Ein Bild wird gezeigt. Teams tippen die Antwort als Freitext. Bild unten hochladen.
-        </div>
-        {/* Layout-Picker — pflicht für sauberes Beamer-Render (Auto-Fallback wenn ungesetzt).
-            2026-05-10 (Wolf-Reasoning): Layout ist UNABHÄNGIG vom Bild-Format —
-            du kannst ein Querformat-Foto bewusst hochkant zeigen wenn der
-            relevante Bildausschnitt vertikal liegt (Beamer crop'pt dann). */}
-        <div>
-          <label style={labelStyle}>📐 Beamer-Layout (wie wird's auf dem Beamer angeordnet?)</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <button
-              type="button"
-              onClick={() => setCheeseLayout('landscape')}
-              style={{
-                padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
-                border: `2px solid ${currentLayout === 'landscape' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
-                background: currentLayout === 'landscape' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
-                color: currentLayout === 'landscape' ? COZY_PINK : '#CBD5E1',
-                boxShadow: currentLayout === 'landscape' ? `0 0 12px ${COZY_PINK}44` : 'none',
-                transition: 'all 0.15s',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 22, lineHeight: 1 }}>🖼️</span>
-              <span>Horizontal</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild vollflächig,<br/>Card unten</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCheeseLayout('portrait')}
-              style={{
-                padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
-                border: `2px solid ${currentLayout === 'portrait' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
-                background: currentLayout === 'portrait' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
-                color: currentLayout === 'portrait' ? COZY_PINK : '#CBD5E1',
-                boxShadow: currentLayout === 'portrait' ? `0 0 12px ${COZY_PINK}44` : 'none',
-                transition: 'all 0.15s',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 22, lineHeight: 1 }}>📱</span>
-              <span>Hochkant</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild links,<br/>Card rechts</span>
-            </button>
-          </div>
-          {!currentLayout && (
-            <div style={{
-              marginTop: 6, padding: '6px 10px', borderRadius: 8,
-              background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)',
-              fontSize: 11, fontWeight: 700, color: '#FCD34D',
-            }}>
-              ⚠️ Layout nicht gewählt — Beamer rät automatisch nach Bild-Dimension.
-            </div>
-          )}
+          Ein Bild wird gezeigt. Teams tippen die Antwort als Freitext.
         </div>
         <div>
           <label style={labelStyle}>Antwort (DE)</label>
@@ -2577,102 +2564,76 @@ function WizardView({
         @keyframes cozyWizardSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
       `}</style>
 
-      {/* Phase-Header + Counter */}
+      {/* 2026-05-11 Wizard Focus-Mode — Top-Stack auf 1 Zeile komprimiert.
+          Phase-Pille + Frage-Counter + Sub-Stepper-Pills + Schritt-Counter +
+          Tastatur-Hint alles inline. Progress-Bars entfernt (Filmstrip unten
+          + Sub-Step-Pills zeigen Fortschritt schon). */}
       <div style={{
-        padding: '14px 32px 10px',
-        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '12px 24px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: `1px solid ${COZY_PINK}1a`,
         background: `linear-gradient(180deg, ${catColor}10, transparent)`,
+        overflowX: 'auto', flexShrink: 0,
       }}>
+        {/* Phase-Pille (kompakt) */}
         <div style={{
-          padding: '6px 16px', borderRadius: 999,
+          padding: '5px 12px', borderRadius: 999, flexShrink: 0,
           background: `${catColor}22`, border: `1.5px solid ${catColor}66`,
-          fontSize: 13, fontWeight: 900, color: catColor,
+          fontSize: 11, fontWeight: 900, color: catColor,
           letterSpacing: '0.08em', textTransform: 'uppercase',
-          display: 'flex', alignItems: 'center', gap: 8,
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
           <span>{catLabel.emoji}</span>
-          <span>Phase {curQ.phaseIndex} · {catLabel.de}</span>
+          <span>P{curQ.phaseIndex}</span>
         </div>
+        {/* Frage-Counter */}
         <div style={{
-          fontSize: 14, fontWeight: 800, color: '#CBD5E1',
-          background: 'rgba(255,255,255,0.06)',
-          padding: '6px 14px', borderRadius: 999,
-          fontVariantNumeric: 'tabular-nums',
+          fontSize: 12, fontWeight: 800, color: '#CBD5E1', flexShrink: 0,
+          fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
         }}>
-          Frage <span style={{ color: COZY_PINK, fontSize: 16 }}>{safeIdx + 1}</span> <span style={{ opacity: 0.55 }}>/ {qs.length}</span>
+          <span style={{ color: COZY_PINK, fontSize: 14 }}>{safeIdx + 1}</span>
+          <span style={{ opacity: 0.45 }}> / {qs.length}</span>
         </div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textAlign: 'right', lineHeight: 1.5 }}>
-          ← → Schritte · Cmd+Enter nächster leerer Slot
-        </div>
-      </div>
-
-      {/* 2026-05-11 Sub-Stepper — pro Kategorie eigenes Step-Schema.
-          Klick auf einen Step springt direkt, ← → wechselt sequenziell.
-          Visuelle Indikatoren: gefüllter Step = Pink-Solid, leerer = Outline. */}
-      <div style={{
-        padding: '4px 32px 12px',
-        display: 'flex', gap: 6, alignItems: 'center',
-        borderBottom: `1px solid ${COZY_PINK}1a`,
-        overflowX: 'auto',
-      }}>
+        {/* Vertikaler Divider */}
+        <div style={{ width: 1, height: 24, background: `${COZY_PINK}22`, flexShrink: 0 }} />
+        {/* Sub-Stepper-Pills */}
         {curSubSteps.map((step, i) => {
           const isActive = i === curSubStepIdx;
-          const isDone = i < curSubStepIdx;
           return (
             <button
               key={step.id}
               type="button"
               onClick={() => setSubStep(i)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '8px 14px', borderRadius: 999,
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 999,
                 border: `2px solid ${isActive ? COZY_PINK : COZY_PINK + '33'}`,
-                background: isActive ? `${COZY_PINK}22` : (isDone ? `${COZY_PINK}10` : 'transparent'),
-                color: isActive ? '#fff' : (isDone ? COZY_PINK : '#94A3B8'),
+                background: isActive ? `${COZY_PINK}22` : 'transparent',
+                color: isActive ? '#fff' : '#94A3B8',
                 fontFamily: 'inherit', fontWeight: 800, fontSize: 12,
                 cursor: 'pointer',
-                boxShadow: isActive ? `0 0 12px ${COZY_PINK}55` : 'none',
+                boxShadow: isActive ? `0 0 14px ${COZY_PINK}55` : 'none',
                 transition: 'all 0.15s',
                 flexShrink: 0,
               }}
               aria-current={isActive ? 'step' : undefined}
+              title={`Step ${i + 1}: ${step.label}`}
             >
-              <span style={{ fontSize: 14, opacity: isActive ? 1 : 0.7 }}>{step.emoji}</span>
+              <span style={{ fontSize: 14 }}>{step.emoji}</span>
               <span style={{ letterSpacing: '0.02em' }}>{step.label}</span>
-              {isDone && <span style={{ fontSize: 11, marginLeft: 2 }}>✓</span>}
             </button>
           );
         })}
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-          Schritt {curSubStepIdx + 1}/{curSubSteps.length}
+        {/* Tastatur-Hint (rechts) */}
+        <div style={{
+          fontSize: 10, color: '#64748B', fontWeight: 700, flexShrink: 0,
+          textAlign: 'right', lineHeight: 1.4,
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+        }}>
+          <span>← → Schritt</span>
+          <span style={{ opacity: 0.6 }}>Cmd+Enter nächster Slot</span>
         </div>
-      </div>
-
-      {/* Phase-Progress-Strip (4 oder 3 Bänder mit aktueller Position) */}
-      <div style={{ padding: '8px 32px 4px', display: 'flex', gap: 6 }}>
-        {Array.from({ length: phaseCount }, (_, pi) => {
-          const phaseQs = qs.filter(q => q.phaseIndex === pi + 1);
-          const filled = phaseQs.filter(q => q.text?.trim()).length;
-          const isActive = curQ.phaseIndex === pi + 1;
-          return (
-            <div key={pi} style={{
-              flex: 1,
-              height: 4, borderRadius: 4,
-              background: `${COZY_PINK}1a`,
-              position: 'relative', overflow: 'hidden',
-              border: isActive ? `1px solid ${COZY_PINK}88` : '1px solid transparent',
-            }}>
-              <div style={{
-                position: 'absolute', top: 0, left: 0, bottom: 0,
-                width: `${(filled / Math.max(1, phaseQs.length)) * 100}%`,
-                background: COZY_PINK,
-                transition: 'width 0.3s ease',
-              }} />
-            </div>
-          );
-        })}
       </div>
 
       {/* Editor (zentriert, breiter als Grid-Editor).
@@ -2706,7 +2667,7 @@ function WizardView({
         <div
           key={`${curQ.id}-${curSubStepIdx}`}
           style={{
-            flex: 1, maxWidth: 820,
+            flex: 1, maxWidth: 920,
             animation: 'cozyWizardSlideIn 0.3s ease both',
             display: 'flex', flexDirection: 'column', minHeight: 0,
           }}
@@ -2717,21 +2678,104 @@ function WizardView({
             borderRadius: 18,
             border: `1px solid ${COZY_PINK}22`,
             boxShadow: `0 0 0 1px ${COZY_PINK}0d, 0 16px 40px rgba(0,0,0,0.35)`,
+            display: 'flex', flexDirection: 'column',
           }}>
-            <QuestionEditor
-              question={curQ}
-              uploadingFor={uploadingFor}
-              removingBgFor={removingBgFor}
-              fileInputRef={fileInputRef}
-              visibleSections={visibleSections}
-              fullWidth
-              onUpload={onUpload}
-              onRemoveBg={onRemoveBg}
-              onChange={onChange}
-              onDelete={onDelete}
-              onOptionImageUpload={onOptionImageUpload}
-              onFileDrop={onFileDrop}
-            />
+            {/* Step-Hero — großer Titel + Mini-Tipp pro Step. Wolf weiß
+                sofort „was tue ich hier?". Kategorie-Farbe als Akzent. */}
+            {(() => {
+              const hero = getStepHero(curQ.category, curSubStep?.id ?? '');
+              return (
+                <div style={{
+                  padding: '24px 32px 16px',
+                  borderBottom: `1px solid ${catColor}22`,
+                  background: `linear-gradient(180deg, ${catColor}08, transparent)`,
+                }}>
+                  <div style={{
+                    fontSize: 22, fontWeight: 900, color: '#F8FAFC',
+                    letterSpacing: '-0.01em', marginBottom: 6, lineHeight: 1.25,
+                  }}>{hero.title}</div>
+                  {hero.tip && (
+                    <div style={{
+                      fontSize: 13, color: '#94A3B8', fontWeight: 600,
+                      lineHeight: 1.4,
+                    }}>{hero.tip}</div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Editor-Inhalt (filtered nach visibleSections) */}
+            <div style={{ flex: 1, padding: '8px 16px' }}>
+              <QuestionEditor
+                question={curQ}
+                uploadingFor={uploadingFor}
+                removingBgFor={removingBgFor}
+                fileInputRef={fileInputRef}
+                visibleSections={visibleSections}
+                fullWidth
+                onUpload={onUpload}
+                onRemoveBg={onRemoveBg}
+                onChange={onChange}
+                onDelete={onDelete}
+                onOptionImageUpload={onOptionImageUpload}
+                onFileDrop={onFileDrop}
+              />
+            </div>
+
+            {/* Footer-CTA — „weiter zu X" / „nächste Frage" / „fertig" */}
+            {(() => {
+              const isLastStep = curSubStepIdx === curSubSteps.length - 1;
+              const nextStep = curSubSteps[curSubStepIdx + 1];
+              const ctaLabel = isLastStep
+                ? (isLast ? '✓ Letzte Frage — fertig' : '→ Nächste Frage')
+                : `→ Weiter zu ${nextStep.emoji} ${nextStep.label}`;
+              const ctaDisabled = isLastStep && isLast;
+              return (
+                <div style={{
+                  padding: '14px 24px',
+                  borderTop: `1px solid ${COZY_PINK}1a`,
+                  background: 'rgba(0,0,0,0.18)',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  flexShrink: 0,
+                }}>
+                  {/* Löschen-Button links (im Wizard-Card-Footer) */}
+                  <button
+                    type="button"
+                    onClick={() => { if (confirm('Frage löschen?')) onDelete(); }}
+                    style={{
+                      padding: '7px 12px', borderRadius: 8,
+                      border: '1px solid rgba(239,68,68,0.25)',
+                      background: 'rgba(239,68,68,0.06)',
+                      color: '#EF4444', cursor: 'pointer',
+                      fontSize: 12, fontFamily: 'inherit', fontWeight: 700,
+                    }}
+                    title="Diese Frage löschen"
+                  >🗑</button>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isLastStep) {
+                        if (!isLast) goToQuestion(safeIdx + 1, false);
+                      } else {
+                        setSubStep(curSubStepIdx + 1);
+                      }
+                    }}
+                    disabled={ctaDisabled}
+                    style={{
+                      padding: '11px 22px', borderRadius: 12,
+                      border: 'none',
+                      background: ctaDisabled ? 'rgba(255,255,255,0.05)' : COZY_PINK,
+                      color: ctaDisabled ? '#475569' : '#fff',
+                      cursor: ctaDisabled ? 'default' : 'pointer',
+                      fontSize: 14, fontFamily: 'inherit', fontWeight: 900,
+                      boxShadow: ctaDisabled ? 'none' : `0 0 18px ${COZY_PINK}55, 0 4px 12px rgba(0,0,0,0.3)`,
+                      transition: 'all 0.15s',
+                    }}
+                  >{ctaLabel}</button>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -2842,6 +2886,75 @@ function WizardFilmstrip({ questions, activeQId, phaseCount, onJump }: {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ── CheeseLayoutPicker — Horizontal/Hochkant-Toggle für CHEESE ────────────────
+// 2026-05-11 (Wolf-Bug-Fix): aus CategoryFields-CHEESE rausgezogen damit der
+// Toggle im Wizard-Bild-Step erscheint statt im Antwort-Step. Funktional
+// identisch, nur Render-Location ist anders.
+function CheeseLayoutPicker({ q, onChange }: { q: QQQuestion; onChange: (q: QQQuestion) => void }) {
+  const currentLayout = q.image?.cheeseLayout;
+  const setCheeseLayout = (layout: 'landscape' | 'portrait') => {
+    onChange({
+      ...q,
+      image: {
+        ...(q.image ?? { url: '', layout: 'fullscreen', animation: 'none' }),
+        cheeseLayout: layout,
+      },
+    });
+  };
+  return (
+    <div>
+      <label style={labelStyle}>📐 Beamer-Layout (wie wird's auf dem Beamer angeordnet?)</label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => setCheeseLayout('landscape')}
+          style={{
+            padding: '14px 14px', borderRadius: 12, cursor: 'pointer',
+            fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+            border: `2px solid ${currentLayout === 'landscape' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
+            background: currentLayout === 'landscape' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
+            color: currentLayout === 'landscape' ? COZY_PINK : '#CBD5E1',
+            boxShadow: currentLayout === 'landscape' ? `0 0 16px ${COZY_PINK}55` : 'none',
+            transition: 'all 0.15s',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 26, lineHeight: 1 }}>🖼️</span>
+          <span>Horizontal</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild vollflächig,<br/>Card unten</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setCheeseLayout('portrait')}
+          style={{
+            padding: '14px 14px', borderRadius: 12, cursor: 'pointer',
+            fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+            border: `2px solid ${currentLayout === 'portrait' ? COZY_PINK : 'rgba(139,92,246,0.25)'}`,
+            background: currentLayout === 'portrait' ? `${COZY_PINK}22` : 'rgba(255,255,255,0.03)',
+            color: currentLayout === 'portrait' ? COZY_PINK : '#CBD5E1',
+            boxShadow: currentLayout === 'portrait' ? `0 0 16px ${COZY_PINK}55` : 'none',
+            transition: 'all 0.15s',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 26, lineHeight: 1 }}>📱</span>
+          <span>Hochkant</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textAlign: 'center', lineHeight: 1.3 }}>Bild links,<br/>Card rechts</span>
+        </button>
+      </div>
+      {!currentLayout && (
+        <div style={{
+          marginTop: 8, padding: '8px 12px', borderRadius: 8,
+          background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)',
+          fontSize: 12, fontWeight: 700, color: '#FCD34D',
+        }}>
+          ⚠️ Layout nicht gewählt — Beamer rät automatisch nach Bild-Dimension.
+        </div>
+      )}
     </div>
   );
 }

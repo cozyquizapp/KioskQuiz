@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// ── CozyBuilder Brand-Tokens ──────────────────────────────────────────────────
+// 2026-05-10 (CozyBuilder Audit Pack A #1): Brand-Refresh statt Tailwind-Slate-
+// Devtool-Look. Werte = CozyQuiz-Hauptpalette (Pink/Magenta/Navy aus
+// qqDesignTokens + Memory brand_cozywolf_colors.md). Builder fühlt sich jetzt
+// wie /beamer + /team an statt wie ein fremder Editor-Tab.
+const COZY_NAVY      = '#1E2A5A';    // Hauptseiten-BG (Brand-Navy)
+const COZY_NAVY_DARK = '#141B3A';    // tieferer Akzent (Modals/Overlays)
+const COZY_PINK      = '#EC4899';    // Primary-Action, Active-Tab
+const COZY_PINK_SOFT = '#FBCFE8';    // Helle Pink-Variante (Highlights)
+const COZY_MAGENTA   = '#A21247';    // Errors, Magenta-Akzent (Finale-Farbe)
+
 // ── Shared tab bar (Builder ↔ Editor) ─────────────────────────────────────────
 function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
   const navigate = useNavigate();
@@ -9,12 +20,12 @@ function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor
     { id: 'editor',  label: '🎨 Design',  path: `/slides?draft=${draftId}` },
   ] as const;
   return (
-    <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
+    <div style={{ display: 'flex', gap: 2, background: COZY_NAVY_DARK, borderBottom: '1px solid rgba(236,72,153,0.12)', padding: '0 16px', flexShrink: 0 }}>
       {tabs.map(t => {
         const isActive = t.id === active;
         return (
           <button key={t.id} onClick={() => { if (!isActive) { onSave?.(); navigate(t.path); } }}
-            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', background: 'transparent', color: isActive ? '#e2e8f0' : '#475569', fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
+            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? `2px solid ${COZY_PINK}` : '2px solid transparent', background: 'transparent', color: isActive ? '#F8FAFC' : '#94A3B8', fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
             {t.label}
           </button>
         );
@@ -32,6 +43,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { compressImageIfNeeded } from '../utils/imageCompress';
 import { ConnectionsEditorModal } from '../components/ConnectionsEditor';
+import { CozyWolfImage } from '../components/CozyWolfImage';
 import { exportHostCheatsheet } from './qqHostCheatsheet';
 import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
@@ -220,6 +232,10 @@ export default function QQBuilderPage() {
   const [showConnections, setShowConnections] = useState(false);
   const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
   const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
+  // 2026-05-10 CozyBuilder Pack A #4: kurze Save-Success-Cascade nach Save.
+  const [saveCascade, setSaveCascade] = useState<number>(0);
+  // 2026-05-10 CozyBuilder Pack B #7: Auto-Save-Pill (Zeitstempel sichtbar).
+  const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const optionFileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,7 +246,9 @@ export default function QQBuilderPage() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       try {
-        localStorage.setItem(`qq-draft-backup-${activeDraft.id}`, JSON.stringify({ draft: activeDraft, savedAt: Date.now() }));
+        const ts = Date.now();
+        localStorage.setItem(`qq-draft-backup-${activeDraft.id}`, JSON.stringify({ draft: activeDraft, savedAt: ts }));
+        setAutoSavedAt(ts); // Pack B #7
       } catch { /* quota exceeded */ }
     }, 2000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
@@ -331,6 +349,9 @@ export default function QQBuilderPage() {
         setDrafts(prev => prev.map(d => d.id === saved.id ? saved : d));
         setActiveDraft(saved);
         try { localStorage.removeItem(`qq-draft-backup-${draft.id}`); } catch {}
+        // 2026-05-10 CozyBuilder Pack A #4: Save-Cascade triggern (✓-Pop).
+        setSaveCascade(c => c + 1);
+        setAutoSavedAt(Date.now());
       }
     } finally { setSaving(false); }
   }
@@ -502,9 +523,40 @@ export default function QQBuilderPage() {
   if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onDelete={deleteDraft} />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: COZY_NAVY, color: '#F8FAFC', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
+      {/* 2026-05-10 CozyBuilder Pack A #4: Save-Success-Cascade.
+          Kurzes ✓-Pop neben dem Save-Button (1.2s Auto-Fade). */}
+      {saveCascade > 0 && (
+        <div
+          key={`cascade-${saveCascade}`}
+          style={{
+            position: 'fixed', top: 72, right: 28, zIndex: 8000,
+            color: COZY_PINK, fontSize: 36, fontWeight: 900,
+            pointerEvents: 'none',
+            textShadow: `0 0 16px ${COZY_PINK}`,
+            animation: 'cozySaveCheck 1.2s ease-out forwards',
+          }}
+          aria-hidden
+        >✓</div>
+      )}
       <style>{`
         .qq-filmstrip-thumb:hover .qq-filmstrip-design-btn { opacity: 1 !important; }
+        /* 2026-05-10 CozyBuilder Pack A #4: Save-Button Click-Bounce.
+           Wolfs am-häufigsten-gedrückter Button belohnt jetzt sichtbar.
+           Glow pulst sanft wenn ready, beim Klick kurz schrumpfen-bouncen. */
+        .cozy-save-btn:not(:disabled):active { transform: scale(0.96); }
+        .cozy-save-btn:not(:disabled):hover { transform: translateY(-1px); }
+        @keyframes cozySaveCheck {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+          30%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+          70%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+        }
+        @keyframes cozyAutoSaveTick {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
         @media (max-width: 800px) {
           .qq-builder-body { flex-direction: column !important; }
           .qq-builder-grid { min-width: 0 !important; }
@@ -516,7 +568,7 @@ export default function QQBuilderPage() {
       {/* Restore dialog */}
       {showRestore && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#1e293b', borderRadius: 16, padding: '28px 32px', maxWidth: 420, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+          <div style={{ background: COZY_NAVY_DARK, borderRadius: 16, padding: '28px 32px', maxWidth: 420, border: `1px solid ${COZY_PINK}33`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
             <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>💾 Lokale Änderungen gefunden</div>
             <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.5, margin: '0 0 20px' }}>
               Es gibt ungespeicherte Änderungen vom {new Date(showRestore.savedAt).toLocaleString('de-DE')}. Wiederherstellen?
@@ -561,7 +613,7 @@ export default function QQBuilderPage() {
       {showPreview && activeQ && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setShowPreview(false)}>
-          <div style={{ width: '80vw', maxWidth: 960, aspectRatio: '16/9', background: '#0f172a', borderRadius: 16, border: `3px solid ${QQ_CATEGORY_COLORS[activeQ.category]}`, boxShadow: `0 0 80px ${QQ_CATEGORY_COLORS[activeQ.category]}33`, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, position: 'relative' }}
+          <div style={{ width: '80vw', maxWidth: 960, aspectRatio: '16/9', background: COZY_NAVY, borderRadius: 16, border: `3px solid ${QQ_CATEGORY_COLORS[activeQ.category]}`, boxShadow: `0 0 80px ${QQ_CATEGORY_COLORS[activeQ.category]}33`, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, position: 'relative' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ position: 'absolute', top: 12, right: 16, cursor: 'pointer', fontSize: 20, color: '#475569' }} onClick={() => setShowPreview(false)}>✕</div>
             <div style={{ padding: '6px 16px', borderRadius: 20, background: QQ_CATEGORY_COLORS[activeQ.category] + '33', border: `1px solid ${QQ_CATEGORY_COLORS[activeQ.category]}66`, fontSize: 14, fontWeight: 900, color: QQ_CATEGORY_COLORS[activeQ.category] }}>
@@ -735,8 +787,9 @@ export default function QQBuilderPage() {
       {/* Shared tab bar */}
       <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraftRaw(activeDraft)} />
 
-      {/* Header */}
-      <div style={{ padding: '12px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
+      {/* Header — 2026-05-10 CozyBuilder Pack A: Navy + Pink-Tint statt
+          Tailwind-Slate. Subtle Pink-Border-Bottom als Brand-Anker. */}
+      <div style={{ padding: '12px 24px', background: 'rgba(236,72,153,0.06)', borderBottom: `1px solid ${COZY_PINK}22`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
         <button onClick={() => setActiveDraft(null)} style={btnStyle('#475569')}>← Zurück</button>
         <input value={activeDraft.title} onChange={e => setActiveDraft({ ...activeDraft, title: e.target.value, updatedAt: Date.now() })}
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'inherit', minWidth: 220 }} />
@@ -748,7 +801,7 @@ export default function QQBuilderPage() {
               if (!confirm(`Zu ${n} Runden wechseln?`)) return;
               const newDraft: QQDraft = { ...activeDraft, phases: n, questions: makeEmptyDraft(n).questions.map((eq, i) => activeDraft.questions[i] ?? eq), updatedAt: Date.now() };
               setActiveDraft(newDraft);
-            }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13, background: activeDraft.phases === n ? '#3B82F6' : 'rgba(255,255,255,0.07)', color: activeDraft.phases === n ? '#fff' : '#94a3b8' }}>{n}</button>
+            }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13, background: activeDraft.phases === n ? COZY_PINK : 'rgba(255,255,255,0.07)', color: activeDraft.phases === n ? '#fff' : '#94a3b8' }}>{n}</button>
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -790,7 +843,9 @@ export default function QQBuilderPage() {
           {(() => {
             const v = validateDraft(activeDraft);
             const hasIssues = v.totalErrors > 0 || v.totalWarnings > 0;
-            const saveColor = v.totalErrors > 0 ? '#EF4444' : hasIssues ? '#F59E0B' : '#22C55E';
+            // 2026-05-10 CozyBuilder Pack A #1: Errors → Magenta (Brand-
+            // Finale), Warnings → Amber (Semantik), OK → Brand-Pink.
+            const saveColor = v.totalErrors > 0 ? COZY_MAGENTA : hasIssues ? '#F59E0B' : COZY_PINK;
             const label = saving
               ? '…'
               : v.totalErrors > 0
@@ -798,10 +853,18 @@ export default function QQBuilderPage() {
                 : v.totalWarnings > 0
                   ? `⚠️ Speichern (${v.totalWarnings})`
                   : '💾 Speichern';
+            // 2026-05-10 CozyBuilder Pack A #4: Save-Button belohnt jetzt.
+            // Pink-Glow wenn alles OK, Click-Shrink-Bounce via CSS-Klasse.
+            const isReady = !hasIssues && !saving;
             return (
               <button
                 onClick={() => saveDraft(activeDraft)}
-                style={btnStyle(saveColor)}
+                className="cozy-save-btn"
+                style={{
+                  ...btnStyle(saveColor),
+                  boxShadow: isReady ? `0 0 14px ${COZY_PINK}66, 0 2px 8px rgba(0,0,0,0.4)` : undefined,
+                  transition: 'box-shadow 0.3s ease, transform 0.08s ease',
+                }}
                 disabled={saving}
                 title={hasIssues ? `${v.totalErrors} Fehler, ${v.totalWarnings} Warnungen — Klick zum Prüfen` : 'Alles ok'}
               >{label}</button>
@@ -972,11 +1035,7 @@ export default function QQBuilderPage() {
             onOptionImageUpload={(optIdx: number) => { setOptionUploadTarget({ questionId: activeQ.id, optionIndex: optIdx }); setTimeout(() => optionFileInputRef.current?.click(), 0); }}
           />
         )}
-        {!activeQ && (
-          <div className="qq-builder-editor" style={{ width: 480, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.07)', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ color: '#334155', fontSize: 14, textAlign: 'center' }}>← Slot auswählen</div>
-          </div>
-        )}
+        {!activeQ && <EmptyStateWolf />}
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={() => activeQ && uploadImage(activeQ.id)} />
@@ -1944,39 +2003,86 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
 
 // ── Draft list screen ─────────────────────────────────────────────────────────
 function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onDelete: (id: string) => void }) {
+  // 2026-05-10 CozyBuilder Pack A #2: Wolf-Greeting + Random-Spruch.
+  const greetings = [
+    'Was bauen wir heute, Wolf?',
+    'Neue Fragen-Idee dabei?',
+    'Bereit fürs nächste Quiz?',
+    'Cozy-Quiz-Werkstatt 🪄',
+  ];
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", padding: 40, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>CozyQuiz</div>
-        <div style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>Fragensätze</div>
-        <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Erstelle einen neuen leeren Fragensatz oder lade einen Demo-Pack als Startpunkt.</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => onCreate(3)} style={btnStyle('#22C55E')}>+ Leer (3 Runden)</button>
-          <button onClick={() => onCreate(4)} style={btnStyle('#3B82F6')}>+ Leer (4 Runden)</button>
-          <button onClick={onCreateSample} style={{ ...btnStyle('#F59E0B'), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog laden</button>
-          {/* 2026-05-07 (Wolf): Eurovision-Demo direkt — fertige 15 Fragen,
-              Wolf ergaenzt nur Bilder + musicMode pro Frage. */}
-          <button onClick={onCreateEurovision} style={{ ...btnStyle('#EC4899'), display: 'flex', alignItems: 'center', gap: 6 }}>🎤 Eurovision Quiz laden</button>
+    <div style={{ minHeight: '100vh', background: COZY_NAVY, color: '#F8FAFC', fontFamily: "'Nunito', system-ui, sans-serif", padding: 40, maxWidth: 960, margin: '0 auto' }}>
+      {/* Header mit CozyWolf + Sprechblase — 2026-05-10 Pack A #2 */}
+      <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: COZY_PINK, textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: 8 }}>CozyBuilder</div>
+          <div style={{ fontSize: 40, fontWeight: 900, marginBottom: 10, color: '#F8FAFC', letterSpacing: '-0.01em' }}>Fragensätze</div>
+          <div style={{ fontSize: 14, color: '#CBD5E1', marginBottom: 24, opacity: 0.85 }}>Erstelle einen neuen leeren Fragensatz oder lade einen Demo-Pack als Startpunkt.</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => onCreate(3)} style={brandCreateBtn()}>+ Leer (3 Runden)</button>
+            <button onClick={() => onCreate(4)} style={brandCreateBtn()}>+ Leer (4 Runden)</button>
+            <button onClick={onCreateSample} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog</button>
+            <button onClick={onCreateEurovision} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }}>🎤 Eurovision Quiz</button>
+          </div>
+        </div>
+        {/* CozyWolf + Sprechblase rechts oben */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 0, flexShrink: 0 }}>
+          <div style={{
+            background: `linear-gradient(135deg, ${COZY_PINK}, ${COZY_MAGENTA})`,
+            color: '#fff', padding: '14px 20px', borderRadius: '22px 22px 6px 22px',
+            fontSize: 15, fontWeight: 800, maxWidth: 200, lineHeight: 1.35,
+            boxShadow: `0 4px 18px ${COZY_PINK}55`, marginBottom: 24, marginRight: -4,
+            position: 'relative',
+          }}>
+            {greeting}
+            <span style={{
+              position: 'absolute', right: -8, bottom: 8, width: 0, height: 0,
+              borderLeft: `10px solid ${COZY_MAGENTA}`, borderTop: '8px solid transparent', borderBottom: '8px solid transparent',
+            }} />
+          </div>
+          <CozyWolfImage pose="augenauf.mundauf.winken" style={{ width: 130, height: 130, objectFit: 'contain', filter: `drop-shadow(0 4px 14px ${COZY_PINK}44)` }} alt="" />
         </div>
       </div>
       {drafts.length === 0 ? (
-        <div style={{ color: '#334155', fontSize: 16 }}>Noch keine Fragensätze — erstelle deinen ersten!</div>
+        <div style={{ padding: 28, borderRadius: 16, background: `${COZY_PINK}0d`, border: `1px dashed ${COZY_PINK}55`, color: '#CBD5E1', fontSize: 16, textAlign: 'center' }}>
+          Noch keine Fragensätze — bau deinen ersten oben ✨
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {drafts.map(d => (
-            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: '#1e293b', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: COZY_NAVY_DARK, borderRadius: 14, border: `1px solid ${COZY_PINK}1f` }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, fontSize: 17 }}>{d.title}</div>
-                <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>{d.phases} Runden · {d.questions.length} Fragen · {new Date(d.updatedAt).toLocaleDateString('de-DE')}</div>
+                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>{d.phases} Runden · {d.questions.length} Fragen · {new Date(d.updatedAt).toLocaleDateString('de-DE')}</div>
               </div>
-              <button onClick={() => onOpen(d)} style={btnStyle('#3B82F6')}>Bearbeiten</button>
-              <button onClick={() => onDelete(d.id)} style={btnStyle('#EF4444', true)}>✕</button>
+              <button onClick={() => onOpen(d)} style={btnStyle(COZY_PINK)}>Bearbeiten</button>
+              <button onClick={() => onDelete(d.id)} style={btnStyle(COZY_MAGENTA, true)}>✕</button>
             </div>
           ))}
         </div>
       )}
     </div>
   );
+}
+
+// 2026-05-10 CozyBuilder Pack A #2: Brand-Styled Create-Button. Erste Reihe
+// = Brand-Pink (Primary), Sample/Eurovision = Navy-Outline-Variant.
+function brandCreateBtn(secondary?: boolean): React.CSSProperties {
+  if (secondary) return {
+    padding: '10px 18px', borderRadius: 12,
+    border: `1.5px solid ${COZY_PINK}66`,
+    background: 'rgba(236,72,153,0.08)',
+    color: '#F8FAFC', fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+    cursor: 'pointer', transition: 'all 0.15s',
+  };
+  return {
+    padding: '10px 18px', borderRadius: 12, border: 'none',
+    background: COZY_PINK, color: '#fff',
+    fontFamily: 'inherit', fontWeight: 800, fontSize: 14,
+    cursor: 'pointer', transition: 'all 0.15s',
+    boxShadow: `0 4px 14px ${COZY_PINK}55`,
+  };
 }
 
 // ── Mini preview wrapper (kollabierbar, Zustand persistiert) ──────────────────
@@ -2004,6 +2110,54 @@ function MiniPreviewPanel({ question }: { question: QQQuestion }) {
         <span style={{ marginLeft: 'auto', fontSize: 10, color: '#64748b' }}>{collapsed ? '▸' : '▾'}</span>
       </button>
       {!collapsed && <QQMiniPreview question={question} />}
+    </div>
+  );
+}
+
+// ── Empty-State-Wolf ──────────────────────────────────────────────────────────
+// 2026-05-10 CozyBuilder Pack A #5: ersetzt das tristliche „← Slot auswählen"
+// durch den CozyWolf + Random-Spruch. Wolf wackelt sanft (4s sine via CSS-
+// keyframe in der Pack-A-style-Block). Pose: Daumen hoch = einladend.
+function EmptyStateWolf() {
+  const lines = [
+    'Klick eine Zelle, dann basteln wir.',
+    'Welche Frage bauen wir zuerst?',
+    'Phase 2 sieht noch leer aus, hm?',
+    'Eurovision-Quiz ist mein Favorit.',
+    'Ich freu mich auf deine nächste Frage 🐺',
+    'Pick a slot — let\'s craft a Q!',
+  ];
+  const line = lines[Math.floor(Math.random() * lines.length)];
+  return (
+    <div className="qq-builder-editor" style={{
+      width: 480, flexShrink: 0, borderLeft: `1px solid ${COZY_PINK}1f`,
+      background: COZY_NAVY_DARK,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 18, padding: '32px 28px',
+    }}>
+      <CozyWolfImage
+        pose="augenauf.mundzu.daumen"
+        style={{
+          width: 200, height: 200, objectFit: 'contain',
+          filter: `drop-shadow(0 6px 18px ${COZY_PINK}33)`,
+          animation: 'cozyWolfIdleWiggle 4s ease-in-out infinite',
+        }}
+        alt=""
+      />
+      <div style={{
+        maxWidth: 280, textAlign: 'center',
+        padding: '12px 18px', borderRadius: 16,
+        background: `${COZY_PINK}10`,
+        border: `1px solid ${COZY_PINK}33`,
+        fontSize: 14, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.4,
+      }}>{line}</div>
+      <style>{`
+        @keyframes cozyWolfIdleWiggle {
+          0%, 100% { transform: rotate(-1.2deg) translateY(0); }
+          50%      { transform: rotate(1.2deg)  translateY(-3px); }
+        }
+      `}</style>
     </div>
   );
 }

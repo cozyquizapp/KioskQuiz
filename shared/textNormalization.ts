@@ -11,7 +11,12 @@ const sanitizeBasic = (value: string) =>
     .replace(/[äöüß]/g, (char) => UMLAUT_MAP[char] ?? char)
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/&/g, ' und ');
+    .replace(/&/g, ' und ')
+    // 2026-05-10 (Wolf-Live-Test L2): phonetische ph\u2192f-Normalisierung. \u201eSaxofon"
+    // (DE) und \u201eSaxophone" (EN/alt) sollen beide als richtig z\u00e4hlen. similarity
+    // war 0.78 \u2014 unter dem 0.8-Threshold. Mit ph\u2192f matchen beide exakt. Hilft
+    // auch bei telefon/telephone, foto/photo, alphabet/alfabet.
+    .replace(/ph/g, 'f');
 
 export const normalizeText = (input: string | null | undefined): string => {
   if (!input) return '';
@@ -55,10 +60,17 @@ export const similarityScore = (a: string, b: string): number => {
   // 2026-04-28: Substring-Toleranz — wenn die kürzere Eingabe vollständig
   // in der längeren steckt (z.B. 'herr der ringe' in 'der herr der ringe'),
   // werten wir als Match. (User-Bug: 'fast richtige Antworten anerkennen'.)
-  // Mind. 4 Zeichen damit kurze Wörter wie 'er' nicht alles matchen.
+  //
+  // 2026-05-10 (Wolf-Live-Test L3): zusätzlich Min-Ratio 0.5 — sonst akzeptiert
+  // 'stadium' (7) als 'wembley stadium' (15), weil 'stadium' Substring ist.
+  // Generische Wörter dürfen nicht für spezifische Antworten durchgehen.
+  // Mit Min-Ratio 0.5: 'stadium' (7/15=0.47) → blockiert, 'herr der ringe'
+  // (14/18=0.78) → akzeptiert.
   if (normalizedA.length >= 4 && normalizedB.length >= 4) {
     if (normalizedA.includes(normalizedB) || normalizedB.includes(normalizedA)) {
-      return 0.95;
+      const shorter = Math.min(normalizedA.length, normalizedB.length);
+      const longer  = Math.max(normalizedA.length, normalizedB.length);
+      if (shorter / longer >= 0.5) return 0.95;
     }
   }
   // Auch tolerant gegen führende Artikel ('der/die/das/the/a/an' vorne).

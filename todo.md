@@ -134,8 +134,8 @@ Code-Anker: `frontend/src/pages/QQBeamerPage.tsx` ThanksView, Suchwort
 Reihenfolge: Bugs > Layout > Audit. Safety-first wegen tightem Context.
 
 - [x] **L1 — Welcome doppelt** ✅ FIX (QQBeamerPage.tsx): QuizIntroOverlay-Render-Call vor RulesIntro entfernt + welcomeActive-Variable. Component bleibt im File falls später wieder gewünscht.
-- [ ] **L2 — „Saxofon" Spelling-Tolerance**: /team hat "Saxofon" als richtig gezeigt, /beamer aber keinen Punkt vergeben für CHEESE-Frage. Wo wird die Answer-Normalisierung gemacht? Frontend-Vorschau matcht, Backend-Match nicht.
-- [ ] **L3 — „stadium" akzeptiert für Wembley Stadium**: nur generisches Wort, darf NICHT als richtige Antwort durchgehen. Min-Length oder Substring-Schutz.
+- [x] **L2 — „Saxofon" Spelling-Tolerance** ✅ FIX (`shared/textNormalization.ts`): `ph→f` phonetische Normalisierung. Saxofon/Saxophone, Telefon/Telephone, Foto/Photo etc. matchen jetzt exakt nach Normalisierung.
+- [x] **L3 — „stadium" akzeptiert für Wembley Stadium** ✅ FIX (`shared/textNormalization.ts`): Substring-Tolerance jetzt mit Min-Ratio 0.5. „stadium" (7) in „wembley stadium" (15) = 0.47 → blockt. „herr der ringe" (14) in „der herr der ringe" (18) = 0.78 → matched weiter.
 - [ ] **L4 — Endzusammenfassung der Punkte** ❓ — Wolf-Quote unklar, vermutlich Final-Score-Display falsch/fehlend. Bei nächster Gelegenheit präzisieren lassen.
 - [ ] **L5 — pic1 HotPotato Lucky Bag: Antworten überlappen mit Trivia-Trio-Team-Card**. Oben über den Antworten ist noch Platz — Antwort-Pills nach oben verschieben oder Team-Card nach unten/zur Seite.
 - [ ] **L6 — pic2 Joker-Bug: 4 Joker markiert obwohl 2 der Felder gerade gesetzt wurden**. Joker-Detection darf neu-gesetzte-im-selben-Zug-Felder nicht als „bestehender Block" werten.

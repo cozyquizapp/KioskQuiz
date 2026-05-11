@@ -7033,6 +7033,59 @@ function TeamBottomSheetMenu({
   const [helpOpen, setHelpOpen] = React.useState(false);
   const myTeam = state.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? '#EC4899';
+
+  // 2026-05-11 (Wolf-Wunsch 'swipe-down zum Schließen wie iOS Bottom Sheet'):
+  // Drag-Handle bekommt touch-gesture. Sheet bewegt sich mit dem Finger nach
+  // unten, schließt bei threshold (>120px ODER velocity >0.5 px/ms) — sonst
+  // snap-back via CSS-transition.
+  // Touch-Handler werden auch auf den Header-Bereich (über STATS) gelegt, damit
+  // Wolf intuitiv überall im oberen Drittel runter-swipen kann. Body bleibt
+  // scrollbar via overflow:auto, der Drag greift nur am oberen Hotspot.
+  const [dragY, setDragY] = React.useState(0);
+  const dragStateRef = React.useRef<{ startY: number; startT: number; dy: number } | null>(null);
+  const handleDragStart = (clientY: number) => {
+    dragStateRef.current = { startY: clientY, startT: Date.now(), dy: 0 };
+  };
+  const handleDragMove = (clientY: number) => {
+    if (!dragStateRef.current) return;
+    const delta = clientY - dragStateRef.current.startY;
+    const dy = Math.max(0, delta);  // nur nach unten ziehen
+    dragStateRef.current.dy = dy;
+    setDragY(dy);
+  };
+  const handleDragEnd = () => {
+    if (!dragStateRef.current) return;
+    const { startT, dy } = dragStateRef.current;
+    const duration = Math.max(1, Date.now() - startT);
+    const velocity = dy / duration;
+    const shouldClose = dy > 120 || velocity > 0.5;
+    dragStateRef.current = null;
+    if (shouldClose) {
+      // Visuell die letzten Pixel runterrutschen lassen während onClose feuert
+      setDragY(window.innerHeight);
+      window.setTimeout(() => { setDragY(0); onClose(); }, 180);
+    } else {
+      setDragY(0);
+    }
+  };
+  const dragHandleProps = {
+    onTouchStart: (e: React.TouchEvent) => handleDragStart(e.touches[0].clientY),
+    onTouchMove:  (e: React.TouchEvent) => handleDragMove(e.touches[0].clientY),
+    onTouchEnd:   handleDragEnd,
+    onTouchCancel: handleDragEnd,
+    // Pointer-Events für Desktop-Test (Drag mit Maus)
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType === 'touch') return;  // touch wird oben behandelt
+      handleDragStart(e.clientY);
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (e.pointerType === 'touch' || !dragStateRef.current) return;
+      handleDragMove(e.clientY);
+    },
+    onPointerUp:    (e: React.PointerEvent) => { if (e.pointerType !== 'touch') handleDragEnd(); },
+    onPointerCancel:(e: React.PointerEvent) => { if (e.pointerType !== 'touch') handleDragEnd(); },
+  };
   // Compute live stats
   const totalPhases = state.totalPhases ?? 4;
   const currentPhase = (state.gamePhaseIndex ?? 0) + 1;
@@ -7083,7 +7136,7 @@ function TeamBottomSheetMenu({
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom) + 8px))',
-          paddingLeft: 18, paddingRight: 18, paddingTop: 12,
+          paddingLeft: 18, paddingRight: 18, paddingTop: 0,
           borderTopLeftRadius: 28, borderTopRightRadius: 28,
           background: 'rgba(20, 16, 31, 0.85)',
           backdropFilter: 'blur(28px) saturate(180%)',
@@ -7091,59 +7144,67 @@ function TeamBottomSheetMenu({
           borderTop: '1px solid rgba(236,72,153,0.32)',
           boxShadow: '0 -16px 48px rgba(0,0,0,0.55)',
           zIndex: 999,
-          animation: 'tcMenuSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) both',
+          animation: dragY === 0 ? 'tcMenuSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) both' : 'none',
           maxHeight: '85vh',
           overflowY: 'auto',
+          // 2026-05-11 (Wolf): Sheet bewegt sich beim Drag mit Finger; snap-back
+          // wenn losgelassen ohne threshold zu erreichen.
+          transform: `translateY(${dragY}px)`,
+          transition: dragStateRef.current ? 'none' : 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
+          touchAction: 'pan-y',
         }}
       >
-        {/* Drag-Handle — klickbar/tap-bar (schließt das Menü). 2026-05-09 (Wolf-
-            Bug 'ich versuche jedes mal so zu schließen'): Handle als Tap-Target
-            wrapped, plus expliziter X-Button oben rechts als Backup. */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={lang === 'de' ? 'Menü schließen' : 'Close menu'}
+        {/* Drag-Handle + Header-Hotspot — swipe-down schließt das Menü.
+            2026-05-11 (Wolf): X-Button entfernt, Handle ist jetzt die einzige
+            Schließ-Geste (Tap ODER Swipe-down). Plus expliziter Header-Bereich
+            darunter ist auch drag-fähig — so kann Wolf intuitiv im ganzen
+            oberen Drittel runterswipen. */}
+        <div
+          {...dragHandleProps}
+          onClick={(e) => {
+            // Tap-on-Handle schließt (wenn nicht gerade dragging)
+            if (!dragStateRef.current && dragY === 0) onClose();
+            e.stopPropagation();
+          }}
           style={{
-            display: 'block',
-            width: 80, padding: '10px 0',
-            background: 'transparent', border: 'none', cursor: 'pointer',
-            margin: '0 auto 8px', textAlign: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            paddingTop: 12, paddingBottom: 4,
+            cursor: 'grab', touchAction: 'none',
+            userSelect: 'none', WebkitUserSelect: 'none',
           }}
         >
-          <span style={{
-            display: 'inline-block',
-            width: 44, height: 5, background: 'rgba(255,255,255,0.22)',
-            borderRadius: 999,
-          }} />
-        </button>
+          <span aria-label={lang === 'de' ? 'Menü schließen (ziehen oder tippen)' : 'Close menu (drag or tap)'}
+            style={{
+              display: 'inline-block',
+              width: 44, height: 5,
+              background: dragY > 0 ? 'rgba(236,72,153,0.85)' : 'rgba(255,255,255,0.32)',
+              borderRadius: 999,
+              transition: 'background 0.15s',
+            }} />
+        </div>
 
-        {/* Header-Row: Title links + X-Close-Button rechts */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 12, paddingLeft: 4, paddingRight: 4,
-        }}>
+        {/* Header-Row: Title links — kein X-Button mehr, Swipe-Handle reicht. */}
+        <div
+          {...dragHandleProps}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 12, padding: '6px 4px 4px',
+            touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',
+            cursor: 'grab',
+          }}
+        >
           <div style={{
             fontSize: 12, fontWeight: 900, color: '#94A3B8',
             textTransform: 'uppercase', letterSpacing: '0.12em',
           }}>
             {lang === 'de' ? 'Menü' : 'Menu'}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={lang === 'de' ? 'Menü schließen' : 'Close menu'}
-            style={{
-              width: 36, height: 36, borderRadius: '50%',
-              border: '1px solid rgba(255,255,255,0.14)',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#F1F5F9', fontSize: 18, fontWeight: 700, lineHeight: 1,
-              cursor: 'pointer', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.15s, transform 0.12s',
-            }}
-            onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
-            onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-          >✕</button>
+          <div style={{
+            fontSize: 10, fontWeight: 700, color: '#64748b',
+            letterSpacing: '0.08em',
+          }}>
+            {lang === 'de' ? '↓ runterziehen zum schließen' : '↓ swipe down to close'}
+          </div>
         </div>
 
         {/* STATS-Row — Phase, Position, Zellen kompakt */}

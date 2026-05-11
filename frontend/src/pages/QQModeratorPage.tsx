@@ -3338,16 +3338,24 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
         </span>
       )}
       <span style={{ fontSize: 12, color: '#94a3b8' }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
-      {s.pendingAction === 'FREE' && (
-        <>
-          <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
-            <QQEmojiIcon emoji="📍"/> Setzen
-          </Btn>
-          <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
-            <QQEmojiIcon emoji="⚡"/> Klauen
-          </Btn>
-        </>
-      )}
+      {s.pendingAction === 'FREE' && (() => {
+        // 2026-05-11 (Wolf-Bug 'wenn Grid voll, biete Mod kein Setzen-Btn an'):
+        // PLACE fliegt im Backend mit NO_FREE_CELL — Frontend muss den
+        // unmöglichen Button ausblenden, sonst klickt Wolf live ins Leere.
+        const gridFull = Array.isArray(s.grid) && s.grid.every((row: any[]) => row.every((c: any) => c.ownerId !== null));
+        return (
+          <>
+            {!gridFull && (
+              <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
+                <QQEmojiIcon emoji="📍"/> Setzen
+              </Btn>
+            )}
+            <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
+              <QQEmojiIcon emoji="⚡"/> Klauen
+            </Btn>
+          </>
+        );
+      })()}
       {s.gamePhaseIndex === 2 && s.pendingAction === 'PLACE_2' && (
         <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
           → Klauen

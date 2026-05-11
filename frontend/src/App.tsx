@@ -32,6 +32,7 @@ const DesignLabPage = React.lazy(() => import('./pages/DesignLabPage'));
 const AnimationsLabPage = React.lazy(() => import('./pages/AnimationsLabPage'));
 const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
 const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTestPage'));
+const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
@@ -180,6 +181,7 @@ function App() {
           <Route path="/animations" element={<AnimationsLabPage />} />
           <Route path="/thanks-test" element={<PinGate><QQThanksTestPage /></PinGate>} />
           <Route path="/finalreveal-test" element={<PinGate><QQFinalRevealTestPage /></PinGate>} />
+          <Route path="/bet-test" element={<PinGate><QQBetTestPage /></PinGate>} />
           <Route path="/summary-test" element={<PinGate><QQSummaryTestPage /></PinGate>} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}

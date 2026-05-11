@@ -403,7 +403,19 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           return;
         }
         const s: Summary = await sRes.json();
-        if (!cancelled) setSummary(s);
+        if (!cancelled) {
+          setSummary(s);
+          // 2026-05-11 (Wolf-Idee): wenn auf diesem Phone ein qq_teamId im
+          // localStorage liegt UND dieses Team ist in der Summary, direkt zur
+          // Team-Detail-View springen (= „dein Team zuerst, dann optional alle").
+          // Beamer-Geräte ohne lokales Team landen normal beim Team-Picker.
+          try {
+            const localTeamId = window.localStorage.getItem('qq_teamId');
+            if (localTeamId && s.teams.some(t => t.id === localTeamId)) {
+              setSelectedTeamId(localTeamId);
+            }
+          } catch { /* localStorage unzugänglich */ }
+        }
         if (uRes && uRes.ok) {
           const u: UpcomingEvent[] = await uRes.json();
           if (!cancelled) setUpcoming(u);
@@ -451,10 +463,20 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
 
   // Auswahl-Screen
   if (!selectedTeam) {
+    // 2026-05-11 (Audit P0): Sieger-Hero als emotionaler Anker statt nur
+    // sterilem Team-Picker. Erste Begegnung nach QR-Scan muss feiern, nicht
+    // wie Admin-Formular aussehen.
+    const winnerTeam = ranking[0];
     return (
       <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
       <Shell lang={lang} onLang={changeLang} brand={brand}>
-        <Hero draftTitle={summary.draftTitle} winner={summary.winner} playedAt={summary.playedAt} lang={lang} brand={brand} />
+        <WinnerCelebrationHero
+          winner={winnerTeam}
+          draftTitle={summary.draftTitle}
+          playedAt={summary.playedAt}
+          lang={lang}
+          brand={brand}
+        />
         <Section title={tr('whichTeam', lang)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
             {ranking.map((t, i) => (
@@ -690,6 +712,93 @@ function TopBar({ lang, onLang, brand }: {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ── WinnerCelebrationHero — emotionaler Anker für die Auswahl-View ──────────
+// 2026-05-11 (Audit P0): Sieger groß mit Avatar + Crown + Glow statt nur
+// einem 14px-Pink-Text-Hinweis. Erste Begegnung nach QR-Scan = Wow-Moment.
+function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
+  winner: SummaryTeam | undefined;
+  draftTitle: string;
+  playedAt: number;
+  lang: Lang;
+  brand: ReturnType<typeof summaryBrand>;
+}) {
+  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
+  const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  if (!winner) {
+    return <Hero draftTitle={draftTitle} winner={null} playedAt={playedAt} lang={lang} brand={brand} />;
+  }
+  return (
+    <div style={{
+      position: 'relative',
+      padding: '32px 20px 26px', borderRadius: 22, marginBottom: 18, textAlign: 'center',
+      background: `radial-gradient(ellipse at top, ${winner.color}26 0%, rgba(15,23,42,0) 65%), linear-gradient(180deg, rgba(15,23,42,0.4), rgba(15,23,42,0))`,
+      border: `1.5px solid ${winner.color}55`,
+      boxShadow: `0 12px 32px ${winner.color}33, inset 0 1px 0 rgba(255,255,255,0.04)`,
+      overflow: 'hidden',
+    }}>
+      {/* Eyebrow */}
+      <div style={{ fontSize: 11, letterSpacing: 0.3, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
+        CozyQuiz · {date}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#cbd5e1', marginTop: 2 }}>{draftTitle}</div>
+
+      {/* Sieger-Hero */}
+      <div style={{ position: 'relative', display: 'inline-block', marginTop: 18 }}>
+        {/* Crown über Avatar */}
+        <span aria-hidden style={{
+          position: 'absolute', top: -32, left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: 44, lineHeight: 1, pointerEvents: 'none',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(251,191,36,0.7))',
+          animation: 'qqWinnerCrownBob 2.4s ease-in-out infinite',
+          zIndex: 2,
+        }}>👑</span>
+        {/* Avatar-Disc mit Pulse */}
+        <div style={{
+          width: 120, height: 120, borderRadius: '50%',
+          background: winner.color,
+          border: `4px solid ${winner.color}`,
+          boxShadow: `0 0 40px ${winner.color}88, 0 0 0 6px ${winner.color}22`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'qqWinnerGlow 3.2s ease-in-out infinite',
+        }}>
+          <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={108} />
+        </div>
+      </div>
+
+      <div style={{
+        marginTop: 14, fontSize: 12, fontWeight: 900,
+        color: '#FBBF24', letterSpacing: '0.18em', textTransform: 'uppercase',
+        textShadow: '0 0 12px rgba(251,191,36,0.6)',
+      }}>
+        🏆 {tr('champion', lang)}
+      </div>
+      <div style={{
+        marginTop: 4, fontSize: 26, fontWeight: 900, color: winner.color,
+        letterSpacing: '-0.01em',
+        textShadow: `0 0 20px ${winner.color}55, 0 2px 6px rgba(0,0,0,0.5)`,
+        wordBreak: 'break-word',
+      }}>
+        {winner.name}
+      </div>
+      <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>
+        {winner.largestConnected} {lang === 'de' ? 'Punkte · größtes Gebiet' : 'pts · largest area'}
+      </div>
+
+      <style>{`
+        @keyframes qqWinnerCrownBob {
+          0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+          50%      { transform: translateX(-50%) translateY(-4px) rotate(3deg); }
+        }
+        @keyframes qqWinnerGlow {
+          0%, 100% { box-shadow: 0 0 32px ${winner.color}77, 0 0 0 6px ${winner.color}22; }
+          50%      { box-shadow: 0 0 48px ${winner.color}cc, 0 0 0 8px ${winner.color}33; }
+        }
+      `}</style>
     </div>
   );
 }

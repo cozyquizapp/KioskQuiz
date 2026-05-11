@@ -1418,6 +1418,15 @@ export default function QQModeratorPage() {
             );
           })()}
 
+          {/* ══ STICKY ACTIVE-TEAM-STRIP — wer ist dran / wer hat geantwortet ══
+              2026-05-11 (Senior-Audit P0): bei 8 Teams scrollte Wolf 600+px nach
+              unten um zu sehen, wer den Flow blockiert. Jetzt direkt unter Hero
+              sticky, zeigt:
+              - PLACEMENT/COMEBACK_CHOICE: aktives Team groß + Skip-Hotkey-Hint
+              - QUESTION_ACTIVE: 1-Dot pro Team (grün=geantwortet, grau=offen)
+              - sonst: collapsed (nicht sichtbar) */}
+          <ActiveTeamStrip state={s} />
+
           {/* ══ HOST NOTES — suggested talking points per phase ══ */}
           <HostNotes state={s} />
 
@@ -2575,6 +2584,120 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
     text: 'Weise auf den QR-Code hin: Team-Stats, Feedback und nächste Quiz-Termine auf dem Handy. Social-Media-Push und Goodie.',
   },
 };
+
+// ── ActiveTeamStrip — Sticky unter Hero, zeigt wer dran ist / wer geantwortet hat ──
+// 2026-05-11 (Senior-Audit P0): kein Scroll mehr nötig um zu sehen wer Wolfs
+// nächste Aktion blockiert. Hotkeys:
+//   F18 = Skip current pendingFor
+//   1-8 = mark Team N als richtig (während QUESTION_REVEAL)
+function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
+  const phase = state.phase;
+  const isPlacement = phase === 'PLACEMENT' || phase === 'COMEBACK_CHOICE';
+  const isQuestion  = phase === 'QUESTION_ACTIVE';
+  const isReveal    = phase === 'QUESTION_REVEAL';
+
+  // Nur in relevanten Phases rendern — sonst kein Layout-Footprint
+  if (!isPlacement && !isQuestion && !isReveal) return null;
+
+  const teamList = state.teams;
+
+  // PLACEMENT/COMEBACK: einzelnes aktives Team prominent
+  if (isPlacement && state.pendingFor) {
+    const pendingTeam = teamList.find(t => t.id === state.pendingFor);
+    if (!pendingTeam) return null;
+    const offline = !pendingTeam.connected;
+    const action = state.pendingAction ?? '';
+    return (
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '10px 16px', borderRadius: 12,
+        background: `linear-gradient(90deg, ${pendingTeam.color}28, rgba(15,23,42,0.92))`,
+        border: `2px solid ${pendingTeam.color}aa`,
+        boxShadow: `0 0 24px ${pendingTeam.color}55, 0 4px 16px rgba(0,0,0,0.4)`,
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em',
+        }}>Dran:</div>
+        <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={36} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 18, fontWeight: 900, color: pendingTeam.color,
+            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+          }}>{pendingTeam.name}</div>
+          <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 700 }}>
+            {action}{offline ? ' · ⚠ offline' : ''}
+          </div>
+        </div>
+        <div style={{
+          padding: '4px 10px', borderRadius: 8,
+          background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)',
+          fontSize: 11, fontWeight: 900, color: '#fca5a5',
+          letterSpacing: '0.06em',
+        }}>F18 = Skip</div>
+      </div>
+    );
+  }
+
+  // QUESTION_ACTIVE / QUESTION_REVEAL: 1 Dot pro Team — grün = geantwortet, grau = offen
+  if (isQuestion || isReveal) {
+    const answeredIds = new Set(state.answers.map(a => a.teamId));
+    return (
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 16px', borderRadius: 12,
+        background: 'rgba(15,23,42,0.88)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{
+          fontSize: 10, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: 4,
+        }}>{isReveal ? 'Antworten' : 'Status'}:</div>
+        {teamList.map((t, i) => {
+          const answered = answeredIds.has(t.id);
+          const offline = !t.connected;
+          const isCorrect = isReveal && state.correctTeamId === t.id;
+          return (
+            <div key={t.id} title={`${t.name}${offline ? ' (offline)' : ''}${answered ? ' — geantwortet' : ' — wartet'}`} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '4px 8px', borderRadius: 999,
+              background: isCorrect
+                ? `${t.color}55`
+                : answered
+                  ? 'rgba(34,197,94,0.18)'
+                  : 'rgba(255,255,255,0.04)',
+              border: isCorrect
+                ? `2px solid ${t.color}`
+                : answered
+                  ? '1px solid rgba(34,197,94,0.5)'
+                  : '1px solid rgba(255,255,255,0.10)',
+              opacity: offline ? 0.45 : 1,
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={22} />
+              <span style={{
+                fontSize: 11, fontWeight: 800,
+                color: isCorrect ? t.color : answered ? '#86EFAC' : '#94A3B8',
+              }}>{i + 1}</span>
+            </div>
+          );
+        })}
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: '#64748B', fontWeight: 700 }}>
+          {answeredIds.size}/{teamList.length}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
 
 function HostNotes({ state }: { state: QQStateUpdate }) {
   const phase = state.phase;

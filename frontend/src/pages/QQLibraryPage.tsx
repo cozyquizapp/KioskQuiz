@@ -186,7 +186,6 @@ export default function QQLibraryPage() {
         return;
       }
       setToast(`✓ ${data.converted}/${data.scanned} Items zu Schätzchen konvertiert`);
-      // Reload pool
       const poolRes = await fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => null);
       if (poolRes?.items) {
         setPoolItems(poolRes.items);
@@ -194,6 +193,57 @@ export default function QQLibraryPage() {
       }
     } catch {
       setToast('Fehler bei Re-Kategorisierung');
+    }
+  }
+
+  async function testDeepl(pin: string) {
+    try {
+      const res = await fetch('/api/qq/library/test-deepl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setToast(`✓ DeepL (${data.keyType}) OK: „Hello world" → „${data.sample}"`);
+      } else {
+        setToast(`✗ DeepL (${data.keyType}): ${data.status ?? ''} ${data.error?.slice(0, 80) ?? 'Fehler'}`);
+      }
+    } catch {
+      setToast('Fehler beim DeepL-Test');
+    }
+  }
+
+  async function startRetranslate(pin: string) {
+    try {
+      const res = await fetch('/api/qq/library/retranslate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, maxItems: 5000 }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error ?? 'Fehler beim Re-Translate-Start');
+        return;
+      }
+      setToast(`Re-Translate gestartet — läuft im Hintergrund`);
+      // Poll status
+      const poll = setInterval(async () => {
+        try {
+          const sRes = await fetch('/api/qq/library/retranslate-status').then(r => r.json());
+          if (!sRes.running) {
+            clearInterval(poll);
+            setToast(`✓ Re-Translate fertig: ${sRes.translated}/${sRes.scanned} übersetzt`);
+            const poolRes = await fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => null);
+            if (poolRes?.items) {
+              setPoolItems(poolRes.items);
+              setPoolTotal(poolRes.total ?? poolRes.items.length);
+            }
+          }
+        } catch { /* ignore */ }
+      }, 5000);
+    } catch {
+      setToast('Fehler beim Re-Translate-Start');
     }
   }
 
@@ -467,6 +517,8 @@ export default function QQLibraryPage() {
             status={importStatus}
             onStart={startTriviaDbImport}
             onRecategorize={recategorizeTriviaDb}
+            onTestDeepl={testDeepl}
+            onRetranslate={startRetranslate}
           />
         )}
 
@@ -870,11 +922,19 @@ function ImportPanel({
   status,
   onStart,
   onRecategorize,
+  onTestDeepl,
+  onRetranslate,
 }: {
   status: ImportStatus | null;
   onStart: (pin: string, targetCount: number) => void;
   onRecategorize: (pin: string) => void;
+  onTestDeepl: (pin: string) => void;
+  onRetranslate: (pin: string) => void;
 }) {
+  const [translationStats, setTranslationStats] = useState<{ total: number; withDe: number; withoutDe: number; deeplKeyPresent: boolean; deeplKeyType: string } | null>(null);
+  useEffect(() => {
+    fetch('/api/qq/library/translation-stats').then(r => r.json()).then(setTranslationStats).catch(() => {});
+  }, []);
   const [pin, setPin] = useState('');
   const [targetCount, setTargetCount] = useState(500);
   const running = status?.running ?? false;
@@ -885,12 +945,27 @@ function ImportPanel({
       marginTop: 14, padding: '14px 16px', borderRadius: 10,
       background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.25)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 800, color: '#A78BFA' }}>📚 Pool erweitern — OpenTriviaDB-Import</span>
         <span style={{ fontSize: 11, color: '#64748b' }}>
-          Lädt frei lizenzierte Trivia-Fragen (CC BY-SA), übersetzt via DeepL, persistiert mit source=triviadb
+          Lädt frei lizenzierte Trivia-Fragen (CC BY-SA), übersetzt via DeepL
         </span>
       </div>
+
+      {/* Translation-Stats */}
+      {translationStats && translationStats.total > 0 && (
+        <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(0,0,0,0.2)', fontSize: 12, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ color: '#64748b' }}>TriviaDB-Items:</span>
+          <span><b style={{ color: '#A78BFA' }}>{translationStats.total}</b> gesamt</span>
+          <span><b style={{ color: '#22C55E' }}>{translationStats.withDe}</b> DE übersetzt</span>
+          <span><b style={{ color: '#FB923C' }}>{translationStats.withoutDe}</b> 🌐 nur EN</span>
+          <span style={{ marginLeft: 'auto', color: '#64748b' }}>
+            DeepL-Key: {translationStats.deeplKeyPresent
+              ? <b style={{ color: translationStats.deeplKeyType === 'pro' ? '#0EA5E9' : '#A78BFA' }}>{translationStats.deeplKeyType.toUpperCase()}</b>
+              : <b style={{ color: '#EF4444' }}>FEHLT</b>}
+          </span>
+        </div>
+      )}
 
       {!running && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -937,6 +1012,34 @@ function ImportPanel({
             }}
           >
             🔄 Re-kategorisieren (Schätzchen erkennen)
+          </button>
+          <button
+            onClick={() => onTestDeepl(pin)}
+            disabled={!pin}
+            title="Prüft ob DeepL-Key funktioniert (1 Test-Übersetzung)"
+            style={{
+              padding: '7px 16px', borderRadius: 8, border: 'none',
+              cursor: pin ? 'pointer' : 'not-allowed',
+              fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+              background: pin ? 'rgba(14,165,233,0.18)' : 'rgba(255,255,255,0.04)',
+              color: pin ? '#0EA5E9' : '#475569',
+            }}
+          >
+            🩺 DeepL-Test
+          </button>
+          <button
+            onClick={() => onRetranslate(pin)}
+            disabled={!pin}
+            title="Versucht alle EN-only Items via DeepL ins Deutsche zu übersetzen (rate-limited)"
+            style={{
+              padding: '7px 16px', borderRadius: 8, border: 'none',
+              cursor: pin ? 'pointer' : 'not-allowed',
+              fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+              background: pin ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.04)',
+              color: pin ? '#22C55E' : '#475569',
+            }}
+          >
+            🌐 Re-Translate (DeepL)
           </button>
           {status?.finishedAt && (
             <span style={{ fontSize: 11, color: '#64748b' }}>

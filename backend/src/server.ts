@@ -147,7 +147,11 @@ import {
   getQQLibraryTopics,
 } from './db/schemas';
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
-import { runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems } from './data/triviaDbImport';
+import {
+  runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems,
+  getTranslationStats, testDeeplConnection,
+  runRetranslate, getRetranslateStatus,
+} from './data/triviaDbImport';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -9769,6 +9773,35 @@ app.post('/api/qq/library/recategorize-triviadb', async (req, res) => {
   if (!isDBConnected()) return res.status(503).json({ error: 'DB nicht verbunden' });
   const result = await recategorizeTriviaDbItems();
   res.json({ ok: true, ...result });
+});
+
+// Translation-Stats: wieviele Items haben DE-Text, wieviele nur EN.
+app.get('/api/qq/library/translation-stats', async (_req, res) => {
+  if (!isDBConnected()) return res.json({ total: 0, withDe: 0, withoutDe: 0, deeplKeyPresent: false, deeplKeyType: 'none' });
+  const stats = await getTranslationStats();
+  res.json(stats);
+});
+
+// DeepL-Connection-Test: prueft ob der Key tatsaechlich antwortet (Pro/Free).
+app.post('/api/qq/library/test-deepl', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  const result = await testDeeplConnection();
+  res.json(result);
+});
+
+// Re-Translate-Pipeline: laeuft durch alle EN-only triviadb-Items und versucht
+// DeepL nochmal. Idempotent — bereits uebersetzte Items werden geskippt.
+app.post('/api/qq/library/retranslate', async (req, res) => {
+  const { pin, maxItems } = req.body as { pin?: string; maxItems?: number };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  if (!isDBConnected()) return res.status(503).json({ error: 'DB nicht verbunden' });
+  const status = await runRetranslate(typeof maxItems === 'number' ? maxItems : 5000);
+  res.json({ ok: true, status });
+});
+
+app.get('/api/qq/library/retranslate-status', (_req, res) => {
+  res.json(getRetranslateStatus());
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

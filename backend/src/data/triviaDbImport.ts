@@ -66,14 +66,23 @@ function mapCategoryToTopic(cat: string): string {
   return CATEGORY_TO_TOPIC[cat] ?? 'Allgemeinwissen';
 }
 
-// ── Translate-Helper (DeepL Free) ────────────────────────────────────────────
-// Wiederverwendet das gleiche DeepL-Pattern wie in server.ts.
+// ── Translate-Helper mit Pro/Free Auto-Detection ─────────────────────────────
+// DeepL Pro-Keys (api.deepl.com) und Free-Keys (api-free.deepl.com) sind
+// unterschiedlich endpunkt-bound. Free-Keys enden mit ':fx', Pro nicht.
+// Wenn der falsche Endpoint genutzt wird, gibts 403 → Übersetzung schlägt fehl.
+function getDeeplUrl(apiKey: string): string {
+  const isFree = apiKey.endsWith(':fx');
+  return isFree
+    ? 'https://api-free.deepl.com/v2/translate'
+    : 'https://api.deepl.com/v2/translate';
+}
+
 async function translateOrFallback(text: string, src = 'EN', tgt = 'DE'): Promise<string> {
   if (!text?.trim()) return '';
   const apiKey = process.env.DEEPL_API_KEY;
   if (!apiKey) return '';  // keine DeepL → leer lassen, Wolf übersetzt später
   try {
-    const res = await fetch('https://api-free.deepl.com/v2/translate', {
+    const res = await fetch(getDeeplUrl(apiKey), {
       method: 'POST',
       headers: {
         'Authorization': `DeepL-Auth-Key ${apiKey}`,
@@ -216,6 +225,143 @@ function convertToLibraryItem(tdb: TdbQuestion, deText: string, deAnswer: string
     optionsEn: allEn,
     correctOptionIndex: correctIdx,
   };
+}
+
+// ── Translation-Stats + DeepL-Health-Check ───────────────────────────────────
+export async function getTranslationStats(): Promise<{
+  total: number;
+  withDe: number;
+  withoutDe: number;
+  deeplKeyPresent: boolean;
+  deeplKeyType: 'pro' | 'free' | 'none';
+}> {
+  const apiKey = process.env.DEEPL_API_KEY;
+  const deeplKeyType = !apiKey ? 'none' : apiKey.endsWith(':fx') ? 'free' : 'pro';
+  try {
+    const total   = await QQLibraryItemModel.countDocuments({ source: 'triviadb' });
+    const withDe  = await QQLibraryItemModel.countDocuments({
+      source: 'triviadb',
+      text: { $exists: true, $ne: '' as any },
+    });
+    return {
+      total,
+      withDe,
+      withoutDe: total - withDe,
+      deeplKeyPresent: !!apiKey,
+      deeplKeyType,
+    };
+  } catch {
+    return { total: 0, withDe: 0, withoutDe: 0, deeplKeyPresent: !!apiKey, deeplKeyType };
+  }
+}
+
+/** DeepL-Connection-Test: 1 winzige Test-Übersetzung, gibt detaillierten
+ *  Status zurück damit Wolf sieht ob der Key überhaupt funktioniert. */
+export async function testDeeplConnection(): Promise<{
+  ok: boolean;
+  keyType: 'pro' | 'free' | 'none';
+  endpoint: string;
+  status?: number;
+  error?: string;
+  sample?: string;
+}> {
+  const apiKey = process.env.DEEPL_API_KEY;
+  if (!apiKey) return { ok: false, keyType: 'none', endpoint: '', error: 'DEEPL_API_KEY env var not set' };
+  const keyType = apiKey.endsWith(':fx') ? 'free' : 'pro';
+  const endpoint = getDeeplUrl(apiKey);
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: ['Hello world'], source_lang: 'EN', target_lang: 'DE' }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { ok: false, keyType, endpoint, status: res.status, error: errText.slice(0, 300) };
+    }
+    const data = await res.json() as any;
+    return { ok: true, keyType, endpoint, status: res.status, sample: data?.translations?.[0]?.text };
+  } catch (err) {
+    return { ok: false, keyType, endpoint, error: String(err).slice(0, 300) };
+  }
+}
+
+// ── Re-Translate-Pipeline für bestehende EN-only Items ──────────────────────
+export type RetranslateStatus = {
+  running: boolean;
+  startedAt: number;
+  finishedAt: number | null;
+  scanned: number;
+  translated: number;
+  skipped: number;
+  errors: string[];
+  total: number;
+};
+
+let _retranslateStatus: RetranslateStatus = {
+  running: false, startedAt: 0, finishedAt: null,
+  scanned: 0, translated: 0, skipped: 0, errors: [], total: 0,
+};
+
+export function getRetranslateStatus(): RetranslateStatus {
+  return { ..._retranslateStatus };
+}
+
+export async function runRetranslate(maxItems: number = 5000): Promise<RetranslateStatus> {
+  if (_retranslateStatus.running) return getRetranslateStatus();
+  _retranslateStatus = {
+    running: true, startedAt: Date.now(), finishedAt: null,
+    scanned: 0, translated: 0, skipped: 0, errors: [], total: 0,
+  };
+
+  (async () => {
+    try {
+      const items = await QQLibraryItemModel.find({
+        source: 'triviadb',
+        $or: [{ text: '' }, { text: { $exists: false } }],
+      }).lean().limit(maxItems);
+      _retranslateStatus.total = items.length;
+      for (const it of items) {
+        _retranslateStatus.scanned++;
+        const textEn = (it as any).textEn ?? '';
+        const answerEn = (it as any).answerEn ?? '';
+        if (!textEn) { _retranslateStatus.skipped++; continue; }
+        try {
+          const deText = await translateOrFallback(textEn, 'EN', 'DE');
+          const deAnswer = answerEn ? await translateOrFallback(answerEn, 'EN', 'DE') : '';
+          if (deText) {
+            await QQLibraryItemModel.updateOne(
+              { id: (it as any).id },
+              { $set: { text: deText, answer: deAnswer || '' } },
+            );
+            _retranslateStatus.translated++;
+          } else {
+            _retranslateStatus.skipped++;
+          }
+          // Throttle (DeepL Free: 50 req/sec hard limit, wir bleiben unter 20)
+          await new Promise(r => setTimeout(r, 60));
+        } catch (err) {
+          _retranslateStatus.errors.push(String(err).slice(0, 200));
+          if (_retranslateStatus.errors.length > 50) _retranslateStatus.errors = _retranslateStatus.errors.slice(-50);
+        }
+      }
+    } catch (err) {
+      _retranslateStatus.errors.push(`Pipeline-Fehler: ${String(err).slice(0, 300)}`);
+    } finally {
+      _retranslateStatus.running = false;
+      _retranslateStatus.finishedAt = Date.now();
+      console.log(`[retranslate] ${_retranslateStatus.translated}/${_retranslateStatus.scanned} uebersetzt, ${_retranslateStatus.errors.length} Fehler`);
+    }
+  })().catch(err => {
+    _retranslateStatus.running = false;
+    _retranslateStatus.finishedAt = Date.now();
+    _retranslateStatus.errors.push(`Background-Fehler: ${String(err).slice(0, 300)}`);
+  });
+
+  return getRetranslateStatus();
 }
 
 // ── Migration: bestehende triviadb-Items re-kategorisieren ──────────────────

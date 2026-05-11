@@ -173,6 +173,30 @@ export default function QQLibraryPage() {
     }
   }
 
+  async function recategorizeTriviaDb(pin: string) {
+    try {
+      const res = await fetch('/api/qq/library/recategorize-triviadb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error ?? 'Fehler bei Re-Kategorisierung');
+        return;
+      }
+      setToast(`✓ ${data.converted}/${data.scanned} Items zu Schätzchen konvertiert`);
+      // Reload pool
+      const poolRes = await fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => null);
+      if (poolRes?.items) {
+        setPoolItems(poolRes.items);
+        setPoolTotal(poolRes.total ?? poolRes.items.length);
+      }
+    } catch {
+      setToast('Fehler bei Re-Kategorisierung');
+    }
+  }
+
   // Reset Pagination when filter changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -220,17 +244,28 @@ export default function QQLibraryPage() {
         }
       }
     }
-    // 2. Pool-Library-Items
+    // 2. Pool-Library-Items — Fallback auf textEn wenn DE leer (TriviaDB hat
+    //    oft keine DE-Übersetzung, wenn DeepL-Quota erschöpft war).
     if (sourceFilter !== 'mine') {
       for (const it of poolItems) {
-        if (!it.text || !it.text.trim()) continue;
-        const label = it.source === 'seed' ? '📚 CozyLibrary Pool' : it.source === 'ai' ? '✨ AI-generiert' : '📚 Pool';
+        const hasText = (it.text && it.text.trim()) || (it.textEn && it.textEn.trim());
+        if (!hasText) continue;
+        const label = it.source === 'triviadb' ? '🌐 TriviaDB Pool'
+                    : it.source === 'seed' ? '📚 CozyLibrary Pool'
+                    : it.source === 'ai' ? '✨ AI-generiert'
+                    : '📚 Pool';
+        const hasDe = (it.text && it.text.trim().length > 0);
+        const displayText = hasDe ? it.text : (it.textEn ?? '');
+        const displayAnswer = (it.answer && it.answer.trim()) ? it.answer : (it.answerEn ?? '');
         all.push({
           ...it,
+          text: displayText,
+          answer: displayAnswer,
           draftTitle: label,
           draftId: `__pool__${it.id}`,
           usage: usageMap[it.id] ?? emptyUsage,
           source: 'pool',
+          _onlyEn: !hasDe,
         });
       }
     }
@@ -431,6 +466,7 @@ export default function QQLibraryPage() {
           <ImportPanel
             status={importStatus}
             onStart={startTriviaDbImport}
+            onRecategorize={recategorizeTriviaDb}
           />
         )}
 
@@ -764,6 +800,10 @@ export default function QQLibraryPage() {
                   {q.source === 'pool' && (
                     <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,139,250,0.15)', fontSize: 10, fontWeight: 800, color: '#A78BFA' }}>📚 Pool</span>
                   )}
+                  {/* EN-Badge wenn Frage nur englischen Text hat (TriviaDB ohne DeepL-Quota) */}
+                  {(q as any)._onlyEn && (
+                    <span title="Nur Englisch — beim Import in deinen Quiz mit Translate-Button übersetzen" style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(251,146,60,0.15)', fontSize: 10, fontWeight: 800, color: '#FB923C' }}>🌐 EN</span>
+                  )}
                   {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind && (
                     <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,85,247,0.15)', fontSize: 10, fontWeight: 800, color: '#a855f7' }}>
                       {QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind]?.emoji}
@@ -829,9 +869,11 @@ export default function QQLibraryPage() {
 function ImportPanel({
   status,
   onStart,
+  onRecategorize,
 }: {
   status: ImportStatus | null;
   onStart: (pin: string, targetCount: number) => void;
+  onRecategorize: (pin: string) => void;
 }) {
   const [pin, setPin] = useState('');
   const [targetCount, setTargetCount] = useState(500);
@@ -881,6 +923,20 @@ function ImportPanel({
             }}
           >
             ⬇️ Import starten
+          </button>
+          <button
+            onClick={() => onRecategorize(pin)}
+            disabled={!pin}
+            title="Bestehende TriviaDB-Items mit Zahlen-Antworten zu Schätzchen-Fragen konvertieren"
+            style={{
+              padding: '7px 16px', borderRadius: 8, border: 'none',
+              cursor: pin ? 'pointer' : 'not-allowed',
+              fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+              background: pin ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
+              color: pin ? '#F59E0B' : '#475569',
+            }}
+          >
+            🔄 Re-kategorisieren (Schätzchen erkennen)
           </button>
           {status?.finishedAt && (
             <span style={{ fontSize: 11, color: '#64748b' }}>

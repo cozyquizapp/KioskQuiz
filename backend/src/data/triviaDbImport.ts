@@ -138,33 +138,114 @@ function makeItemId(textEn: string, answerEn: string): string {
   return `lib-tdb-${hash}`;
 }
 
+// ── Smart-Detection: numerische Antworten → SCHAETZCHEN ─────────────────────
+// Bringt Mechanik-Varianz in den Pool — Wolf hatte beklagt dass „fast alle
+// MUCHO" sind. TriviaDB liefert nur multiple/boolean → wir splitten auf:
+//   - Antwort = nur Zahl (1989 / 42)            → SCHAETZCHEN, targetValue gesetzt
+//   - Antwort = '5 km' / '100 years' / '42 cm'  → SCHAETZCHEN, value + unit
+//   - Antwort = 1-4 stellige Jahreszahl         → SCHAETZCHEN, isYearAnswer
+//   - Rest                                       → MUCHO (multiple) bzw. 2-Opt-MUCHO (boolean)
+function detectSchaetzchen(answerEn: string): {
+  yes: boolean;
+  value?: number;
+  unit?: string;
+  isYearAnswer?: boolean;
+} {
+  const trimmed = answerEn.trim();
+  if (!trimmed) return { yes: false };
+
+  // Pure 4-stellige Jahreszahl
+  if (/^\d{4}$/.test(trimmed)) {
+    const y = parseInt(trimmed, 10);
+    if (y >= 1000 && y <= 2100) {
+      return { yes: true, value: y, isYearAnswer: true };
+    }
+  }
+  // Pure integer (z.B. '42', '1000')
+  if (/^\d+$/.test(trimmed)) {
+    return { yes: true, value: parseInt(trimmed, 10) };
+  }
+  // Komma/Punkt-Dezimal (z.B. '3.14', '1,5')
+  if (/^\d+[.,]\d+$/.test(trimmed)) {
+    return { yes: true, value: parseFloat(trimmed.replace(',', '.')) };
+  }
+  // Zahl + Einheit (z.B. '5 km', '42 years', '100 dollars')
+  const m = trimmed.match(/^(\d+(?:[.,]\d+)?)\s+([A-Za-zÄÖÜäöüß%°][A-Za-zÄÖÜäöüß%°\s.]{0,30})$/);
+  if (m) {
+    return { yes: true, value: parseFloat(m[1].replace(',', '.')), unit: m[2].trim() };
+  }
+  return { yes: false };
+}
+
 function convertToLibraryItem(tdb: TdbQuestion, deText: string, deAnswer: string): any {
   const textEn      = decodeHtmlEntities(tdb.question);
   const answerEn    = decodeHtmlEntities(tdb.correct_answer);
   const wrongEn     = tdb.incorrect_answers.map(decodeHtmlEntities);
 
-  // 'multiple' → MUCHO (4 Optionen), 'boolean' → ZEHN_VON_ZEHN (2 Optionen,
-  // wir fügen kein Drittes hinzu — bei 10v10 sind das 'pro/kontra/nichts'-
-  // Antworten. Da es nur 'True/False' gibt, mappen wir es ebenfalls auf MUCHO
-  // mit nur 2 Optionen, das Game-Engine kommt damit klar).
-  const isMultiple = tdb.type === 'multiple';
-  const category   = isMultiple ? 'MUCHO' : 'ZEHN_VON_ZEHN';
-  const allEn      = shuffle([answerEn, ...wrongEn]);
-  const correctIdx = allEn.indexOf(answerEn);
-
-  return {
+  const baseItem = {
     id: makeItemId(textEn, answerEn),
-    category,
     topic: mapCategoryToTopic(tdb.category),
     text:    deText || '',
     textEn,
     answer:  deAnswer || '',
     answerEn,
+    source: 'triviadb',
+  };
+
+  // Schätzchen-Branch — Antwort ist Zahl/Jahr/Zahl+Einheit
+  const sch = detectSchaetzchen(answerEn);
+  if (sch.yes && sch.value !== undefined) {
+    return {
+      ...baseItem,
+      category: 'SCHAETZCHEN',
+      targetValue: sch.value,
+      ...(sch.unit ? { unit: sch.unit, unitEn: sch.unit } : {}),
+      ...(sch.isYearAnswer ? { isYearAnswer: true } : {}),
+    };
+  }
+
+  // MUCHO-Branch (Default für multiple + boolean)
+  const isMultiple = tdb.type === 'multiple';
+  const category   = isMultiple ? 'MUCHO' : 'ZEHN_VON_ZEHN';
+  const allEn      = shuffle([answerEn, ...wrongEn]);
+  const correctIdx = allEn.indexOf(answerEn);
+  return {
+    ...baseItem,
+    category,
     options: [],         // DE leer — Wolf übersetzt beim Import in Quiz
     optionsEn: allEn,
     correctOptionIndex: correctIdx,
-    source: 'triviadb',
   };
+}
+
+// ── Migration: bestehende triviadb-Items re-kategorisieren ──────────────────
+// Wolf-Bug: erste 835 Items wurden alle als MUCHO importiert. Diese Funktion
+// läuft durch alle source='triviadb'-Items und prüft die SCHAETZCHEN-Heuristik
+// nachträglich — bei Match wird category geupdatet + Schätzchen-Felder gesetzt.
+export async function recategorizeTriviaDbItems(): Promise<{ scanned: number; converted: number }> {
+  let scanned = 0;
+  let converted = 0;
+  try {
+    const items = await QQLibraryItemModel.find({ source: 'triviadb' }).lean();
+    for (const it of items) {
+      scanned++;
+      const sch = detectSchaetzchen((it as any).answerEn ?? '');
+      if (!sch.yes || sch.value === undefined) continue;
+      if ((it as any).category === 'SCHAETZCHEN') continue;  // schon konvertiert
+      const update: any = {
+        category: 'SCHAETZCHEN',
+        targetValue: sch.value,
+        $unset: { options: 1, optionsEn: 1, correctOptionIndex: 1 },
+      };
+      if (sch.unit) { update.unit = sch.unit; update.unitEn = sch.unit; }
+      if (sch.isYearAnswer) update.isYearAnswer = true;
+      await QQLibraryItemModel.updateOne({ id: (it as any).id }, update);
+      converted++;
+    }
+  } catch (err) {
+    console.error('Fehler beim Re-Kategorisieren triviadb-Items:', err);
+  }
+  return { scanned, converted };
 }
 
 // ── Import-State (in-memory progress tracker) ───────────────────────────────

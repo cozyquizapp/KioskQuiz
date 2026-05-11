@@ -147,7 +147,7 @@ import {
   getQQLibraryTopics,
 } from './db/schemas';
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
-import { runTriviaDbImport, getImportStatus } from './data/triviaDbImport';
+import { runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems } from './data/triviaDbImport';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -9759,6 +9759,16 @@ app.post('/api/qq/library/import-triviadb', async (req, res) => {
 
 app.get('/api/qq/library/import-status', (_req, res) => {
   res.json(getImportStatus());
+});
+
+// Re-Migration: existierende triviadb-Items nachträglich re-kategorisieren
+// (SCHAETZCHEN-Detection für numerische Antworten).
+app.post('/api/qq/library/recategorize-triviadb', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  if (!isDBConnected()) return res.status(503).json({ error: 'DB nicht verbunden' });
+  const result = await recategorizeTriviaDbItems();
+  res.json({ ok: true, ...result });
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

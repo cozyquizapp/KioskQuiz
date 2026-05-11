@@ -139,7 +139,14 @@ import {
   deleteQQFeedbackFromDB,
   getQQUsageMap,
   clearQQQuestionUsage,
+  getQQLibraryItems,
+  getQQLibraryItem,
+  upsertQQLibraryItem,
+  deleteQQLibraryItem,
+  bulkUpsertQQLibrarySeed,
+  getQQLibraryTopics,
 } from './db/schemas';
+import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -7694,6 +7701,16 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
         const connected = await connectDB();
         if (connected) {
           await initializeDefaultQuestions(questions);
+          // 2026-05-11: CozyLibrary-Seed bei erstem Start. Idempotent — bulkUpsert
+          // mit source='seed' überschreibt bestehende seed-Items, lässt Wolfs
+          // eigene Items unangetastet. Pre-existing Wolf-Items mit gleicher ID
+          // werden überschrieben — unwahrscheinlich, da seed-IDs 'lib-*' Prefix.
+          try {
+            const seedCount = await bulkUpsertQQLibrarySeed(COZY_LIBRARY_SEED);
+            if (seedCount > 0) console.log(`✓ CozyLibrary Seed: ${seedCount} Items upserted`);
+          } catch (err) {
+            console.warn('CozyLibrary Seed fehlgeschlagen:', err);
+          }
           console.log('✓ MongoDB bereit');
         } else {
           console.warn('⚠️ MongoDB nicht verfügbar, nutze In-Memory Fallback');
@@ -9674,6 +9691,54 @@ app.delete('/api/qq/library/usage', async (req, res) => {
   if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
   const deleted = await clearQQQuestionUsage();
   res.json({ ok: true, deleted });
+});
+
+// ── CozyLibrary: Pool-Items ───────────────────────────────────────────────────
+// 2026-05-11: Lose Library-Items als Quelle für CozyBuilder-Import.
+// GET liefert paginiert + filterbar, POST/PUT/DELETE für Wolf-eigene Items.
+app.get('/api/qq/library/items', async (req, res) => {
+  if (!isDBConnected()) return res.json({ items: [], total: 0 });
+  const { search, category, topic, source, limit, offset } = req.query as Record<string, string>;
+  const result = await getQQLibraryItems({
+    search, category, topic, source,
+    limit: limit ? parseInt(limit, 10) : undefined,
+    offset: offset ? parseInt(offset, 10) : undefined,
+  });
+  res.json(result);
+});
+
+app.get('/api/qq/library/items/:id', async (req, res) => {
+  const item = await getQQLibraryItem(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json(item);
+});
+
+app.get('/api/qq/library/topics', async (_req, res) => {
+  if (!isDBConnected()) return res.json([]);
+  const topics = await getQQLibraryTopics();
+  res.json(topics);
+});
+
+app.post('/api/qq/library/items', async (req, res) => {
+  const item = req.body;
+  if (!item?.id || !item?.category) return res.status(400).json({ error: 'id + category erforderlich' });
+  await upsertQQLibraryItem({ ...item, source: item.source || 'wolf' });
+  res.json({ ok: true });
+});
+
+app.delete('/api/qq/library/items/:id', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  const ok = await deleteQQLibraryItem(req.params.id);
+  res.json({ ok });
+});
+
+// Re-Seed (admin): überschreibt nur 'seed'-Items, lässt Wolf-eigene unangetastet
+app.post('/api/qq/library/reseed', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  const count = await bulkUpsertQQLibrarySeed(COZY_LIBRARY_SEED);
+  res.json({ ok: true, count });
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

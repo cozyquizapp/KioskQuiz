@@ -11,6 +11,7 @@ import {
 type DraftStatus = 'all' | 'draft' | 'complete' | 'incomplete';
 type ViewMode = 'drafts' | 'questions';
 type UseFilter = 'all' | 'unused' | 'rare' | 'recent';
+type SourceFilter = 'all' | 'mine' | 'pool';
 
 type UsageEntry = {
   usageCount: number;
@@ -72,6 +73,8 @@ const PAGE_SIZE = 200;
 export default function QQLibraryPage() {
   const navigate = useNavigate();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
+  const [poolItems, setPoolItems] = useState<any[]>([]);
+  const [poolTotal, setPoolTotal] = useState(0);
   const [usageMap, setUsageMap] = useState<UsageMap>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -84,6 +87,7 @@ export default function QQLibraryPage() {
   const [mechFilter, setMechFilter] = useState<QQBunteTueteKind | 'all'>('all');
   const [topicFilter, setTopicFilter] = useState<string | 'all'>('all');
   const [useFilter, setUseFilter] = useState<UseFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [qSortBy, setQSortBy] = useState<QSortKey>('unused');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
@@ -92,14 +96,19 @@ export default function QQLibraryPage() {
   const [targetDraftId, setTargetDraftId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Initial load: drafts + usage parallel
+  // Initial load: drafts + usage + pool parallel
   useEffect(() => {
     Promise.all([
       fetch('/api/qq/drafts').then(r => r.json()).catch(() => []),
       fetch('/api/qq/library/usage').then(r => r.json()).catch(() => ({})),
-    ]).then(([draftsData, usageData]) => {
+      fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => ({ items: [], total: 0 })),
+    ]).then(([draftsData, usageData, poolData]) => {
       if (Array.isArray(draftsData)) setDrafts(draftsData);
       if (usageData && typeof usageData === 'object') setUsageMap(usageData);
+      if (poolData && Array.isArray(poolData.items)) {
+        setPoolItems(poolData.items);
+        setPoolTotal(poolData.total ?? poolData.items.length);
+      }
     }).finally(() => setLoading(false));
   }, []);
 
@@ -112,7 +121,7 @@ export default function QQLibraryPage() {
   // Reset Pagination when filter changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, qSortBy, viewMode]);
+  }, [search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, qSortBy, viewMode]);
 
   // Drafts-View filter+sort
   const filtered = useMemo(() => {
@@ -142,15 +151,32 @@ export default function QQLibraryPage() {
     return list;
   }, [drafts, search, statusFilter, sortBy]);
 
-  // Flat-Questions-View
-  type FlatQ = QQQuestion & { draftTitle: string; draftId: string; usage: UsageEntry };
+  // Flat-Questions-View — vereint Draft-Fragen + Pool-Library-Items
+  type FlatQ = QQQuestion & { draftTitle: string; draftId: string; usage: UsageEntry; source: 'mine' | 'pool' };
   const flatQuestions = useMemo<FlatQ[]>(() => {
     const all: FlatQ[] = [];
     const emptyUsage: UsageEntry = { usageCount: 0, firstUsedAt: 0, lastUsedAt: 0, recentUses: [] };
-    for (const d of drafts) {
-      for (const q of d.questions) {
-        if (!q.text.trim()) continue;
-        all.push({ ...q, draftTitle: d.title, draftId: d.id, usage: usageMap[q.id] ?? emptyUsage });
+    // 1. Eigene Fragen aus allen Drafts
+    if (sourceFilter !== 'pool') {
+      for (const d of drafts) {
+        for (const q of d.questions) {
+          if (!q.text.trim()) continue;
+          all.push({ ...q, draftTitle: d.title, draftId: d.id, usage: usageMap[q.id] ?? emptyUsage, source: 'mine' });
+        }
+      }
+    }
+    // 2. Pool-Library-Items
+    if (sourceFilter !== 'mine') {
+      for (const it of poolItems) {
+        if (!it.text || !it.text.trim()) continue;
+        const label = it.source === 'seed' ? '📚 CozyLibrary Pool' : it.source === 'ai' ? '✨ AI-generiert' : '📚 Pool';
+        all.push({
+          ...it,
+          draftTitle: label,
+          draftId: `__pool__${it.id}`,
+          usage: usageMap[it.id] ?? emptyUsage,
+          source: 'pool',
+        });
       }
     }
     let list = all;
@@ -160,11 +186,12 @@ export default function QQLibraryPage() {
         q.text.toLowerCase().includes(s) ||
         q.answer.toLowerCase().includes(s) ||
         q.draftTitle.toLowerCase().includes(s) ||
-        (q.topic ?? '').toLowerCase().includes(s)
+        (q.topic ?? '').toLowerCase().includes(s) ||
+        ((q as any).funFact ?? '').toLowerCase().includes(s)
       );
     }
     if (catFilter !== 'all') list = list.filter(q => q.category === catFilter);
-    if (phaseFilter !== 'all') list = list.filter(q => q.phaseIndex === phaseFilter);
+    if (phaseFilter !== 'all') list = list.filter(q => q.phaseIndex === phaseFilter && q.source === 'mine');
     if (mechFilter !== 'all') list = list.filter(q => q.bunteTuete?.kind === mechFilter);
     if (topicFilter !== 'all') {
       list = list.filter(q => (q.topic ?? '').trim().toLowerCase() === topicFilter.toLowerCase());
@@ -192,7 +219,7 @@ export default function QQLibraryPage() {
       }
     });
     return list;
-  }, [drafts, usageMap, search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, qSortBy]);
+  }, [drafts, poolItems, usageMap, search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, qSortBy]);
 
   // Topic-Liste aus allen vorhandenen Fragen aggregieren (Custom-Topics behalten)
   const availableTopics = useMemo(() => {
@@ -201,10 +228,14 @@ export default function QQLibraryPage() {
       const t = (q.topic ?? '').trim();
       if (t) set.add(t);
     }
+    for (const it of poolItems) {
+      const t = (it.topic ?? '').trim();
+      if (t) set.add(t);
+    }
     // QQ_TOPICS-Defaults dazu — egal ob vorhanden, damit Wolf sie zum Erst-Tag-en kann
     for (const t of QQ_TOPICS) set.add(t);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [drafts]);
+  }, [drafts, poolItems]);
 
   async function deleteDraft(id: string) {
     if (!confirm('Fragensatz endgültig löschen?')) return;
@@ -305,6 +336,7 @@ export default function QQLibraryPage() {
   const totalQuestions = drafts.reduce((sum, d) => sum + d.questions.filter(q => q.text.trim()).length, 0);
   const playedQuestions = Object.keys(usageMap).length;
   const unusedQuestions = totalQuestions - playedQuestions;
+  const poolCount = poolTotal || poolItems.length;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif" }}>
@@ -335,7 +367,8 @@ export default function QQLibraryPage() {
         <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#e2e8f0', fontSize: 18 }}>{totalDrafts}</span> Fragensätze</div>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#22C55E', fontSize: 18 }}>{completeDrafts}</span> komplett</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#3B82F6', fontSize: 18 }}>{totalQuestions}</span> Fragen gesamt</div>
+          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#3B82F6', fontSize: 18 }}>{totalQuestions}</span> in meinen Quizzen</div>
+          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#A78BFA', fontSize: 18 }}>{poolCount}</span> 📚 Pool-Fragen</div>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#EC4899', fontSize: 18 }}>{playedQuestions}</span> schon gespielt</div>
           <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#F59E0B', fontSize: 18 }}>{unusedQuestions}</span> noch frisch</div>
         </div>
@@ -402,6 +435,26 @@ export default function QQLibraryPage() {
         {/* Question-level filters */}
         {viewMode === 'questions' && (
           <>
+            {/* Source-Filter (Hauptdimension für Wolf "meine Fragen vs. Pool") */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Quelle:</span>
+              {([
+                ['all',  'Alle',                '#475569'],
+                ['mine', '📋 Meine Quizze',     '#3B82F6'],
+                ['pool', '📚 CozyLibrary Pool', '#A78BFA'],
+              ] as const).map(([v, label, color]) => {
+                const active = sourceFilter === v;
+                return (
+                  <button key={v} onClick={() => setSourceFilter(v as SourceFilter)} style={{
+                    padding: '4px 12px', borderRadius: 6, border: `1px solid ${active ? color : 'transparent'}`,
+                    cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+                    background: active ? color + '22' : 'rgba(255,255,255,0.05)',
+                    color: active ? color : '#94a3b8',
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+
             {/* Use-Filter (Hauptdimension für Wolf "was hab ich noch nicht gespielt") */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Häufigkeit:</span>
@@ -634,7 +687,12 @@ export default function QQLibraryPage() {
                   {q.usage.lastUsedAt > 0 && (
                     <span style={{ fontSize: 10, color: '#64748b', minWidth: 60 }}>{formatRelative(q.usage.lastUsedAt)}</span>
                   )}
-                  <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 800, color: '#64748b' }}>R{q.phaseIndex}</span>
+                  {q.source === 'mine' && (
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 800, color: '#64748b' }}>R{q.phaseIndex}</span>
+                  )}
+                  {q.source === 'pool' && (
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,139,250,0.15)', fontSize: 10, fontWeight: 800, color: '#A78BFA' }}>📚 Pool</span>
+                  )}
                   {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind && (
                     <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,85,247,0.15)', fontSize: 10, fontWeight: 800, color: '#a855f7' }}>
                       {QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind]?.emoji}
@@ -652,19 +710,29 @@ export default function QQLibraryPage() {
                 </div>
               </div>
 
-              {/* Expanded: recent-uses Liste */}
-              {isExp && q.usage.recentUses.length > 0 && (
-                <div style={{ paddingLeft: 32, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Letzte {Math.min(q.usage.recentUses.length, 10)} Einsätze:
-                  </div>
-                  {q.usage.recentUses.slice(-10).reverse().map((u, idx) => (
-                    <div key={idx} style={{ fontSize: 11, color: '#64748b', display: 'flex', gap: 8 }}>
-                      <span style={{ minWidth: 80 }}>{new Date(u.playedAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      <span style={{ color: '#94a3b8' }}>{u.draftTitle || '(unbekanntes Quiz)'}</span>
-                      {u.roomCode && <span style={{ color: '#475569' }}>· Room {u.roomCode}</span>}
+              {/* Expanded: Fun-Fact + recent-uses Liste */}
+              {isExp && (
+                <div style={{ paddingLeft: 32, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {(q as any).funFact && (
+                    <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5, padding: '8px 12px', borderRadius: 6, background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.2)' }}>
+                      <span style={{ fontWeight: 800, color: '#A78BFA', marginRight: 6 }}>💡 Fun-Fact:</span>
+                      {(q as any).funFact}
                     </div>
-                  ))}
+                  )}
+                  {q.usage.recentUses.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
+                        Letzte {Math.min(q.usage.recentUses.length, 10)} Einsätze:
+                      </div>
+                      {q.usage.recentUses.slice(-10).reverse().map((u, idx) => (
+                        <div key={idx} style={{ fontSize: 11, color: '#64748b', display: 'flex', gap: 8 }}>
+                          <span style={{ minWidth: 80 }}>{new Date(u.playedAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                          <span style={{ color: '#94a3b8' }}>{u.draftTitle || '(unbekanntes Quiz)'}</span>
+                          {u.roomCode && <span style={{ color: '#475569' }}>· Room {u.roomCode}</span>}
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>

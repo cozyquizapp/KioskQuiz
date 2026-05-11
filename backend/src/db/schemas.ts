@@ -388,6 +388,132 @@ export async function getQQRegularTeam(teamId: string, pubCode: string): Promise
   }
 }
 
+// ============= COZY LIBRARY ITEMS =============
+// 2026-05-11: Pool von losen Einzel-Fragen — keine Drafts. Wolf zieht sie im
+// CozyBuilder via „📚 Aus Library importieren" in seine aktuellen Quizze.
+// Skalierbar auf 10k+ Items dank Indizes + Pagination + Topic-Filter.
+
+const QQLibraryItemSchema = new mongoose.Schema({
+  id:        { type: String, required: true, unique: true, index: true },
+  category:  { type: String, required: true, index: true },
+  topic:     { type: String, default: '', index: true },
+  text:      { type: String, default: '' },
+  textEn:    { type: String, default: '' },
+  answer:    { type: String, default: '' },
+  answerEn:  { type: String, default: '' },
+  funFact:   { type: String, default: '' },
+  funFactEn: { type: String, default: '' },
+  // Mechanik-spezifisch:
+  targetValue:        Number,
+  unit:               String,
+  unitEn:             String,
+  isYearAnswer:       Boolean,
+  options:            [String],
+  optionsEn:          [String],
+  correctOptionIndex: Number,
+  bunteTuete:         mongoose.Schema.Types.Mixed,
+  image:              mongoose.Schema.Types.Mixed,
+  hostNote:           String,
+  // Meta:
+  source:    { type: String, default: 'seed', index: true },  // 'seed' | 'wolf' | 'ai'
+  createdAt: { type: Number, default: Date.now, index: true },
+  updatedAt: { type: Number, default: Date.now },
+}, { strict: false });
+
+export const QQLibraryItemModel = mongoose.model('QQLibraryItem', QQLibraryItemSchema);
+
+export async function getQQLibraryItems(opts: {
+  search?: string;
+  category?: string;
+  topic?: string;
+  source?: string;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ items: any[]; total: number }> {
+  try {
+    const filter: any = {};
+    if (opts.category) filter.category = opts.category;
+    if (opts.topic)    filter.topic    = opts.topic;
+    if (opts.source)   filter.source   = opts.source;
+    if (opts.search && opts.search.trim()) {
+      const re = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [{ text: re }, { answer: re }, { topic: re }, { funFact: re }];
+    }
+    const limit  = Math.min(opts.limit ?? 200, 500);
+    const offset = Math.max(opts.offset ?? 0, 0);
+    const [items, total] = await Promise.all([
+      QQLibraryItemModel.find(filter).lean().sort({ createdAt: -1 }).skip(offset).limit(limit),
+      QQLibraryItemModel.countDocuments(filter),
+    ]);
+    return { items, total };
+  } catch (err) {
+    console.error('Fehler beim Laden der Library-Items:', err);
+    return { items: [], total: 0 };
+  }
+}
+
+export async function getQQLibraryItem(id: string): Promise<any | null> {
+  try { return await QQLibraryItemModel.findOne({ id }).lean(); }
+  catch { return null; }
+}
+
+export async function upsertQQLibraryItem(item: any): Promise<void> {
+  if (!item?.id) return;
+  try {
+    await QQLibraryItemModel.updateOne(
+      { id: item.id },
+      { $set: { ...item, updatedAt: Date.now() }, $setOnInsert: { createdAt: Date.now() } },
+      { upsert: true },
+    );
+  } catch (err) {
+    console.error('Fehler beim Upsert Library-Item:', err);
+  }
+}
+
+export async function deleteQQLibraryItem(id: string): Promise<boolean> {
+  try { return (await QQLibraryItemModel.deleteOne({ id })).deletedCount > 0; }
+  catch { return false; }
+}
+
+/** Seed-Helper: Bulk-Upsert mit source='seed'. Idempotent — bestehende Items
+ *  mit gleicher id werden überschrieben. */
+export async function bulkUpsertQQLibrarySeed(items: any[]): Promise<number> {
+  if (!Array.isArray(items) || items.length === 0) return 0;
+  const now = Date.now();
+  try {
+    const operations = items.map(it => ({
+      updateOne: {
+        filter: { id: it.id },
+        update: {
+          $set: { ...it, source: 'seed', updatedAt: now },
+          $setOnInsert: { createdAt: now },
+        },
+        upsert: true,
+      },
+    }));
+    const result = await QQLibraryItemModel.bulkWrite(operations);
+    return (result.upsertedCount ?? 0) + (result.modifiedCount ?? 0);
+  } catch (err) {
+    console.error('Fehler beim Seed-Bulk-Upsert Library:', err);
+    return 0;
+  }
+}
+
+/** Topic-Aggregation: Liste aller verwendeten Topics + Anzahl. */
+export async function getQQLibraryTopics(): Promise<Array<{ topic: string; count: number }>> {
+  try {
+    const result = await QQLibraryItemModel.aggregate([
+      { $match: { topic: { $ne: '' } } },
+      { $group: { _id: '$topic', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+    return result.map((r: any) => ({ topic: r._id as string, count: r.count as number }));
+  } catch (err) {
+    console.error('Fehler beim Aggregieren der Library-Topics:', err);
+    return [];
+  }
+}
+
 // ============= QUARTER QUIZ QUESTION USAGE =============
 // 2026-05-11: pro QQQuestion wird gezaehlt wie oft + wann + in welchem
 // Room/Draft sie aktiviert wurde. Backbone fuer die CozyLibrary, damit Wolf

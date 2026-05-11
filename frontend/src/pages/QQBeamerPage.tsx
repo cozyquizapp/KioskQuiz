@@ -17612,38 +17612,49 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
           2026-05-09 v8.1 (Wolf 'spiegeln, nur Tröte, Augen auf+zu, TRÖÖT'):
           mirror=true → Wolf schaut nach links zur Mitte (zum Sieger).
           mode='troete' → konstante Tröte-Pose mit periodischem Blink.
-          TRÖÖT!-Text links neben dem Wolf, periodisch animiert. */}
-      {isFinish && (
-        <div style={{
-          position: 'absolute', right: 'clamp(20px, 3vw, 60px)',
-          bottom: 'clamp(20px, 3vh, 60px)',
-          zIndex: 4, pointerEvents: 'none',
-          animation: 'qqFRTitleIn 0.7s ease 0.6s both',
-        }}>
-          <div style={{ position: 'relative' }}>
-            <AnimatedCozyWolf
-              widthCss="clamp(100px, 11vw, 170px)"
-              mode="troete"
-              mirror={true}
-            />
-            {/* TRÖÖT! Sprachtext — keine Bubble, einfach Wort als Floating-Element */}
-            <div style={{
-              position: 'absolute',
-              top: '8%',
-              left: '-28%',
-              fontSize: 'clamp(20px, 2.6vw, 44px)',
-              fontWeight: 900,
-              color: '#FBBF24',
-              textShadow: '0 0 14px rgba(251,191,36,0.85), 0 4px 10px rgba(0,0,0,0.7), 0 0 2px #0A0814',
-              letterSpacing: '0.04em',
-              fontFamily: 'var(--font-game, system-ui)',
-              animation: 'qqWolfTroeet 2.8s ease-in-out infinite',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-            }}>TRÖÖT!</div>
+          TRÖÖT!-Text links neben dem Wolf, periodisch animiert.
+          2026-05-11 (Wolf-Bug 'Wolf steht bei 8 Teams in den Treppchen'):
+          N-abhängige Größe + Position. Bei breitem Treppchen (N>=6) nimmt
+          das Podium fast die volle Breite — Wolf wird kleiner + bündig in
+          die Ecke geschoben, damit er auf keinen Slot rüberlappt. Bei
+          N≤4 (Podium kompakt links/mitte/rechts) bleibt der Wolf größer
+          und mit Innen-Padding (wie vorher). */}
+      {isFinish && (() => {
+        const N = finalRanking.length;
+        const compactWolf = N >= 6;
+        return (
+          <div style={{
+            position: 'absolute',
+            right: compactWolf ? 0 : 'clamp(20px, 3vw, 60px)',
+            bottom: compactWolf ? 0 : 'clamp(20px, 3vh, 60px)',
+            zIndex: 4, pointerEvents: 'none',
+            animation: 'qqFRTitleIn 0.7s ease 0.6s both',
+          }}>
+            <div style={{ position: 'relative' }}>
+              <AnimatedCozyWolf
+                widthCss={compactWolf ? 'clamp(70px, 7vw, 110px)' : 'clamp(100px, 11vw, 170px)'}
+                mode="troete"
+                mirror={true}
+              />
+              {/* TRÖÖT! Sprachtext — keine Bubble, einfach Wort als Floating-Element */}
+              <div style={{
+                position: 'absolute',
+                top: '8%',
+                left: '-28%',
+                fontSize: compactWolf ? 'clamp(14px, 1.6vw, 26px)' : 'clamp(20px, 2.6vw, 44px)',
+                fontWeight: 900,
+                color: '#FBBF24',
+                textShadow: '0 0 14px rgba(251,191,36,0.85), 0 4px 10px rgba(0,0,0,0.7), 0 0 2px #0A0814',
+                letterSpacing: '0.04em',
+                fontFamily: 'var(--font-game, system-ui)',
+                animation: 'qqWolfTroeet 2.8s ease-in-out infinite',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+              }}>TRÖÖT!</div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

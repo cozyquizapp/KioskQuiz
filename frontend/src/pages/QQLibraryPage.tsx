@@ -108,16 +108,44 @@ export default function QQLibraryPage() {
   const [targetDraftId, setTargetDraftId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // 2026-05-11 (Audit P0): Multi-Select für Mass-Copy. Quiz-Aufbau = oft
+  // 15-30 Fragen ziehen. Checkbox pro Row + Floating-Action-Bar unten.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+
   // TriviaDB-Import (Admin)
   const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
   const [showImportPanel, setShowImportPanel] = useState(false);
+
+  // ── Server-Pagination für Pool-Items (Audit P0): bei 10k+ Items reicht
+  // client-cap=500 nicht mehr. Backend unterstützt source/topic/category/
+  // search/limit/offset — wir fetchen filter-aware in 500er-Chunks und
+  // laden nach wenn Wolf scrollt.
+  const POOL_BATCH = 500;
+  const buildPoolUrl = (offset: number, limit: number) => {
+    const p = new URLSearchParams();
+    p.set('limit', String(limit));
+    p.set('offset', String(offset));
+    if (search.trim())       p.set('search', search.trim());
+    if (catFilter !== 'all') p.set('category', catFilter);
+    if (topicFilter !== 'all') p.set('topic', topicFilter);
+    // sourceFilter: 'mine' = nur drafts → poolFetch komplett skippen,
+    // 'pool' = nur Pool → kein category-Filter via source nötig
+    // 'all'  = beide → Pool laden ohne source-Param
+    return `/api/qq/library/items?${p.toString()}`;
+  };
 
   // Initial load: drafts + usage + pool parallel
   useEffect(() => {
     Promise.all([
       fetch('/api/qq/drafts').then(r => r.json()).catch(() => []),
       fetch('/api/qq/library/usage').then(r => r.json()).catch(() => ({})),
-      fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => ({ items: [], total: 0 })),
+      fetch(buildPoolUrl(0, POOL_BATCH)).then(r => r.json()).catch(() => ({ items: [], total: 0 })),
     ]).then(([draftsData, usageData, poolData]) => {
       if (Array.isArray(draftsData)) setDrafts(draftsData);
       if (usageData && typeof usageData === 'object') setUsageMap(usageData);
@@ -126,7 +154,35 @@ export default function QQLibraryPage() {
         setPoolTotal(poolData.total ?? poolData.items.length);
       }
     }).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-fetch wenn filter-relevante Inputs ändern (search/category/topic).
+  // Andere Filter (useFilter/phaseFilter/mechFilter/sourceFilter) sind
+  // client-side auf das aktuell-geladene Set.
+  // Debounce 250ms für search damit nicht bei jedem Tastenanschlag fetchen.
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      fetch(buildPoolUrl(0, POOL_BATCH)).then(r => r.json()).then(poolData => {
+        if (poolData && Array.isArray(poolData.items)) {
+          setPoolItems(poolData.items);
+          setPoolTotal(poolData.total ?? poolData.items.length);
+        }
+      }).catch(() => {});
+    }, 250);
+    return () => clearTimeout(debounce);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, catFilter, topicFilter]);
+
+  async function loadMorePool() {
+    try {
+      const data = await fetch(buildPoolUrl(poolItems.length, POOL_BATCH)).then(r => r.json());
+      if (data && Array.isArray(data.items)) {
+        setPoolItems(prev => [...prev, ...data.items]);
+        setPoolTotal(data.total ?? poolItems.length + data.items.length);
+      }
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!toast) return;
@@ -470,6 +526,58 @@ export default function QQLibraryPage() {
     }
   }
 
+  // 2026-05-11 (Audit P0): Bulk-Copy aller selectedIds in den Ziel-Draft.
+  // Macht 2 Roundtrips total (GET + PUT) statt 2N. Bei Slot-Mangel füllt sich
+  // bis voll, gibt Status zurück wie viele eingefügt wurden.
+  async function bulkCopyToDraft() {
+    if (!targetDraftId || selectedIds.size === 0) return;
+    try {
+      const res = await fetch(`/api/qq/drafts/${targetDraftId}`);
+      if (!res.ok) { setToast('Fehler: Draft nicht gefunden'); return; }
+      const draft: QQDraft = await res.json();
+      // Alle ausgewählten Fragen aus poolItems/Draft-Fragen sammeln
+      const questionsToInsert: QQQuestion[] = [];
+      for (const id of selectedIds) {
+        const fromPool = poolItems.find(p => p.id === id);
+        if (fromPool) { questionsToInsert.push(fromPool as any); continue; }
+        for (const d of drafts) {
+          const q = d.questions.find(qq => qq.id === id);
+          if (q) { questionsToInsert.push(q); break; }
+        }
+      }
+      const updatedQuestions = [...draft.questions];
+      let inserted = 0;
+      let nextSlot = 0;
+      for (const q of questionsToInsert) {
+        // Nächster freier Slot
+        while (nextSlot < updatedQuestions.length && updatedQuestions[nextSlot].text.trim() !== '') nextSlot++;
+        if (nextSlot >= updatedQuestions.length) break;
+        updatedQuestions[nextSlot] = {
+          ...q,
+          id: `${q.id}-copy-${Date.now().toString(36)}-${inserted}`,
+        };
+        inserted++;
+        nextSlot++;
+      }
+      const putRes = await fetch(`/api/qq/drafts/${targetDraftId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...draft, questions: updatedQuestions, updatedAt: Date.now() }),
+      });
+      if (putRes.ok) {
+        if (inserted < selectedIds.size) {
+          setToast(`✓ ${inserted}/${selectedIds.size} eingefügt — Draft voll`);
+        } else {
+          setToast(`✓ ${inserted} Fragen eingefügt`);
+        }
+        setSelectedIds(new Set());
+      } else {
+        setToast('Fehler beim Speichern');
+      }
+    } catch {
+      setToast('Fehler beim Bulk-Kopieren');
+    }
+  }
+
   // Stats
   const totalDrafts = drafts.length;
   const completeDrafts = drafts.filter(d => getDraftStatus(d) === 'complete').length;
@@ -480,6 +588,46 @@ export default function QQLibraryPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif" }}>
+      {/* 2026-05-11 (Audit P0): Floating Action Bar bei Multi-Select aktiv.
+          Bottom-zentriert, zeigt Anzahl + Bulk-Copy + Auswahl-Reset. */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 20px', borderRadius: 999,
+          background: 'rgba(15,23,42,0.95)',
+          border: '1.5px solid rgba(59,130,246,0.5)',
+          boxShadow: '0 12px 36px rgba(0,0,0,0.55), 0 0 24px rgba(59,130,246,0.35)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          zIndex: 1000,
+          fontSize: 13, fontWeight: 800, color: '#F1F5F9', fontFamily: 'inherit',
+        }}>
+          <span style={{ color: '#60a5fa' }}>✓ {selectedIds.size} Fragen ausgewählt</span>
+          <button
+            onClick={bulkCopyToDraft}
+            disabled={!targetDraftId}
+            title={targetDraftId ? `In Ziel-Draft kopieren` : 'Erst Ziel-Draft oben auswählen'}
+            style={{
+              padding: '8px 16px', borderRadius: 8, border: 'none',
+              cursor: targetDraftId ? 'pointer' : 'not-allowed',
+              fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
+              background: targetDraftId ? '#3B82F6' : 'rgba(255,255,255,0.06)',
+              color: targetDraftId ? '#fff' : '#475569',
+            }}
+          >📋 In Draft kopieren</button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{
+              padding: '8px 12px', borderRadius: 8, border: 'none',
+              cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+              background: 'rgba(255,255,255,0.06)', color: '#94a3b8',
+            }}
+          >✕ Auswahl löschen</button>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{
@@ -808,14 +956,24 @@ export default function QQLibraryPage() {
           const isExp = expandedQuestionId === q.id;
           const uc = q.usage.usageCount;
           const usedColor = uc === 0 ? '#F59E0B' : uc <= 2 ? '#A78BFA' : uc <= 5 ? '#EC4899' : '#EF4444';
+          const isSelected = selectedIds.has(q.id);
           return (
             <div key={`${q.draftId}-${q.id}`} style={{
-              background: i % 2 === 0 ? '#1e293b' : '#1a2332',
+              background: isSelected ? 'rgba(59,130,246,0.15)' : i % 2 === 0 ? '#1e293b' : '#1a2332',
               borderRadius: 8, padding: '8px 14px',
               display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12,
-              border: '1px solid rgba(255,255,255,0.04)',
+              border: isSelected ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.04)',
+              transition: 'background 0.15s, border-color 0.15s',
             }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {/* 2026-05-11: Multi-Select-Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleSelect(q.id)}
+                  title="Auswählen für Bulk-Kopie"
+                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#3B82F6', flexShrink: 0 }}
+                />
                 <span style={{ color: QQ_CATEGORY_COLORS[q.category], fontWeight: 800, fontSize: 16, minWidth: 22 }}>
                   {QQ_CATEGORY_LABELS[q.category].emoji}
                 </span>
@@ -902,13 +1060,25 @@ export default function QQLibraryPage() {
           );
         })}
 
+        {/* Mehr-Laden-Buttons: client-side (mehr aus geladenem Set rendern) +
+            server-side (nächsten 500er-Chunk vom Backend holen). 2 separate
+            Buttons damit Wolf sieht WAS passiert. */}
         {!loading && flatQuestions.length > visibleCount && (
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} style={{
-            margin: '12px auto', padding: '8px 24px', borderRadius: 8, border: 'none',
+            margin: '12px auto 0', padding: '8px 24px', borderRadius: 8, border: 'none',
             background: '#3B82F6', color: '#fff', fontWeight: 800, fontSize: 13,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            +{Math.min(PAGE_SIZE, flatQuestions.length - visibleCount)} weitere Fragen laden
+            +{Math.min(PAGE_SIZE, flatQuestions.length - visibleCount)} weitere Fragen anzeigen
+          </button>
+        )}
+        {!loading && poolItems.length < poolTotal && sourceFilter !== 'mine' && (
+          <button onClick={loadMorePool} style={{
+            margin: '6px auto', padding: '8px 24px', borderRadius: 8, border: 'none',
+            background: 'rgba(168,139,250,0.18)', color: '#A78BFA',
+            fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            📚 {poolTotal - poolItems.length} Pool-Fragen vom Server nachladen
           </button>
         )}
       </div>

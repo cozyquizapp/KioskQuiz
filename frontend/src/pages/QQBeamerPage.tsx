@@ -2437,19 +2437,24 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   const activeIdx = aliveIds.indexOf(activeTeam.id);
   if (activeIdx < 0 || aliveIds.length === 0) return null;
 
-  // Pro Team: relativer Slot-Index ggü. Active (zentriert auf 0).
-  // Slot -2/-1 = vorherige in aliveIds-Reihenfolge, +1/+2 = nächste.
-  // 2026-05-11 (Wolf-Bug): KEIN modulo-wrap mehr — Slots sind absolut. Teams
-  // ausserhalb ±2 werden nicht gerendert (unmounted). Bei N=8 active=0 sehen
-  // wir nur Slots [0,+1,+2]; bei active=4 [Slots -2..+2]. Beim Active-Wechsel
-  // slidet ein Team raus auf -3 (unmount), neues mountet bei +2.
+  // 2026-05-11 v2 (Wolf-Wunsch): nur noch ±1 sichtbar, zirkulär. Slot -1 =
+  // vorheriges Team (war dran), Slot 0 = aktiv, Slot +1 = nächstes Team
+  // (kommt dran). Bei N=2 wird nur Slot 0 + Slot +1 gezeigt (das andere
+  // Team wäre prev UND next, also nur einmal als next anzeigen). Bei N=1
+  // nur active. Sauberer Fokus auf die nächsten Wechsel statt verwirrenden
+  // ±2-Halbkreis.
   const N = aliveIds.length;
   type SlotEntry = { teamId: string; slot: number };
-  const slotEntries: SlotEntry[] = [];
-  for (let i = 0; i < N; i++) {
-    const rel = i - activeIdx;
-    if (Math.abs(rel) > 2) continue;  // nur ±2 sichtbar, keine Wraps
-    slotEntries.push({ teamId: aliveIds[i], slot: rel });
+  const slotEntries: SlotEntry[] = [
+    { teamId: aliveIds[activeIdx], slot: 0 },
+  ];
+  if (N >= 2) {
+    const nextIdx = (activeIdx + 1) % N;
+    slotEntries.push({ teamId: aliveIds[nextIdx], slot: 1 });
+  }
+  if (N >= 3) {
+    const prevIdx = (activeIdx - 1 + N) % N;
+    slotEntries.push({ teamId: aliveIds[prevIdx], slot: -1 });
   }
 
   // 2026-05-09 v3 (Wrap-Anti-Fly-Across): nach jedem Render prevSlots updaten.
@@ -2462,22 +2467,26 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   });
 
   // Slot-Konfiguration (X-Offset, Y-Offset für Halbkreis-Bogen, Scale, Z-Index, Opacity)
-  // ACTIVE = vorne unten (Slot 0). Slot ±1/±2 sind im Bogen nach hinten oben.
-  // 2026-05-09 (Wolf 'side-teams etwas größer + leicht transparent — klar dass
-  // sie nicht spielen'): scales hoch (0.72→0.85, 0.48→0.62), opacities runter
-  // (0.88→0.55, 0.65→0.38) damit Side-Teams präsent aber visuell sekundär sind.
+  // ACTIVE = vorne unten (Slot 0). Slot ±1 stehen leicht zurückgesetzt im Bogen.
+  // 2026-05-11 v2 (Wolf): nur noch ±1, also gibt's keine ±2-Config mehr. Side-
+  // Slots etwas weiter raus (320 statt 300) damit sie nicht mit der Active-Card
+  // kollidieren — wir haben jetzt mehr horizontalen Platz.
   const slotConfig = (slot: number) => {
     const abs = Math.abs(slot);
-    if (abs === 0) return { x: 0,    y: 0,    scale: 1,    z: 5, opacity: 1    };
-    if (abs === 1) return { x: 300,  y: -70,  scale: 0.85, z: 3, opacity: 0.55 };
-    return                  { x: 540,  y: -120, scale: 0.62, z: 1, opacity: 0.38 };
+    if (abs === 0) return { x: 0,   y: 0,   scale: 1,    z: 5, opacity: 1    };
+    return                  { x: 320, y: -70, scale: 0.85, z: 3, opacity: 0.55 };
   };
 
   return (
     <div style={{
       flex: '0 0 auto',
       position: 'relative',
-      width: '100%', height: 'clamp(180px, 22vh, 260px)',
+      // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Container-Höhe
+      // von 22vh auf 30vh erhöht. Active-Card ist ~280px hoch (Avatar 120 +
+      // Padding + Name + Timer) — passte vorher nicht in 22vh × 1080 = 237px,
+      // also ragte die Card nach OBEN in den Chips-Bereich. 30vh × 1080 = 324
+      // → Card fits, Chips bleiben getrennt.
+      width: '100%', height: 'clamp(260px, 30vh, 360px)',
       pointerEvents: 'none',
     }}>
       {/* Backdrop-Glow hinter dem Active-Team — Spotlight-Effekt */}
@@ -2678,7 +2687,11 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
       pointerEvents: 'none',
       width: '100%', height: '100%',
       maxWidth: 'min(94vw, 1500px)',
-      gap: 14,
+      // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Gap zwischen
+      // Chips-Block und Semicircle größer. War 14px, jetzt clamp(20,3vh,40).
+      // Schafft visuelle Trennung damit Chips nicht direkt an die Active-Card
+      // anstoßen, plus puffert gegen 1-2px Layout-Rundungsfehler.
+      gap: 'clamp(20px, 3vh, 40px)',
     }}>
       {/* Used answers list — top-aligned damit unten garantiert Platz fuer
           Trivia-Trio-Semicircle + Out-Liste bleibt.
@@ -2688,7 +2701,12 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           justify-content center → flex-start. Bei vielen Antworten wuchs der
           zentrierte Chips-Block in beide Richtungen — kollidierte unten mit
           dem Trivia-Trio-Avatar. Jetzt: Chips wachsen nach unten begrenzt
-          durch overflow:hidden, oben sitzen sie unter der Frage-Card. */}
+          durch overflow:hidden, oben sitzen sie unter der Frage-Card.
+          2026-05-11 (Wolf 'Antworten hängen IMMER NOCH in Team-Cards' — der
+          Bug war Container-Höhe von Semicircle zu klein, ist jetzt oben in
+          HotPotatoSemicircle gefixt auf 30vh. Extra paddingBottom hier als
+          zweite Sicherung: Chips können maximal X px über der Block-Unterkante
+          enden, darunter ist Safe-Zone für die Active-Card-Border + Spotlight). */}
       <div style={{
         flex: '1 1 auto',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
@@ -2696,7 +2714,7 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
         width: '100%',
         minHeight: 0,
         paddingTop: 8,
-        paddingBottom: 12,
+        paddingBottom: 'clamp(16px, 2vh, 28px)',
         overflow: 'hidden',
       }}>
         {used.length > 0 && (
@@ -13150,24 +13168,32 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // neue 'xxl'-Stufe für ≤4 Antworten + xl/lg deutlich vergrößert.
             // Schwellen großzügiger: xl bis 8 (war 6), lg bis 16 (war 12).
             const N = allAnswers.length;
+            // 2026-05-11 (Wolf-Bug 'Antworten zu klein, Platz oben/unten frei'):
+            // Tier-Schwellen erweitert damit mehr Antworten in größere Tiers
+            // fallen. Sprung md→lg war besonders steil (13→22px), war Bug-
+            // Ursache. Neue Schwellen: ≤4 xxl, ≤12 xl (war 8), ≤24 lg (war 16),
+            // ≤40 md (war 30), ≤80 sm (war 60).
             const tier =
               N <= 4  ? 'xxl'
-              : N <= 8  ? 'xl'
-              : N <= 16 ? 'lg'
-              : N <= 30 ? 'md'
-              : N <= 60 ? 'sm'
+              : N <= 12 ? 'xl'
+              : N <= 24 ? 'lg'
+              : N <= 40 ? 'md'
+              : N <= 80 ? 'sm'
               : 'xs';
             // 2026-05-06 (Wolf 'keine Cascade-Animation bei Hot Potato, aber
             // Cascade-Sound schon — Animation anpassen'): Stagger deutlich
             // langsamer (war 50/25/12/8ms), jetzt sichtbar als Cascade-Effekt.
             // Sync zur Sound-Cascade (Pentatonik-Notes pro qualified Team).
+            // 2026-05-11 (Wolf 'lesbar von weiten, Platz nutzen'): font-sizes
+            // ausgewogener — kein steiler Drop mehr von lg auf md. md geht von
+            // 13/1.4/18 → 17/1.85/26, sm von 11/1.2/15 → 14/1.5/20, xs 10/1/13 → 12/1.2/16.
             const tierStyles = {
-              xxl: { fontSize: 'clamp(36px, 4vw, 64px)', pad: '18px 36px', padAvatar: '10px 32px 10px 10px', avatarSize: 'clamp(56px, 5.6vw, 80px)', gap: 22, headerFs: 'clamp(34px, 3.8vw, 56px)', containerPad: '36px 40px', stagger: 0.28 },
-              xl:  { fontSize: 'clamp(28px, 3.2vw, 48px)', pad: '14px 30px', padAvatar: '8px 28px 8px 8px',   avatarSize: 'clamp(46px, 4.6vw, 64px)', gap: 16, headerFs: 'clamp(28px, 3.2vw, 48px)', containerPad: '28px 32px', stagger: 0.24 },
-              lg:  { fontSize: 'clamp(22px, 2.4vw, 34px)', pad: '11px 24px', padAvatar: '6px 22px 6px 6px',   avatarSize: 'clamp(38px, 3.8vw, 52px)', gap: 13, headerFs: 'clamp(24px, 2.8vw, 40px)', containerPad: '22px 26px', stagger: 0.18 },
-              md:  { fontSize: 'clamp(13px, 1.4vw, 18px)', pad: '5px 12px',  padAvatar: '3px 12px 3px 3px',   avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6,  headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.09 },
-              sm:  { fontSize: 'clamp(11px, 1.2vw, 15px)', pad: '3px 9px',   padAvatar: '2px 9px 2px 2px',    avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4,  headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.045 },
-              xs:  { fontSize: 'clamp(10px, 1vw, 13px)',   pad: '2px 7px',   padAvatar: '2px 7px 2px 2px',    avatarSize: 'clamp(14px, 1.4vw, 18px)', gap: 3,  headerFs: 'clamp(13px, 1.4vw, 18px)', containerPad: '8px 12px',  stagger: 0.025 },
+              xxl: { fontSize: 'clamp(40px, 4.4vw, 72px)', pad: '20px 40px', padAvatar: '12px 36px 12px 12px', avatarSize: 'clamp(60px, 6vw, 88px)',   gap: 22, headerFs: 'clamp(36px, 4vw, 60px)', containerPad: '40px 44px', stagger: 0.28 },
+              xl:  { fontSize: 'clamp(30px, 3.4vw, 52px)', pad: '15px 32px', padAvatar: '9px 30px 9px 9px',    avatarSize: 'clamp(48px, 4.8vw, 68px)', gap: 18, headerFs: 'clamp(30px, 3.4vw, 50px)', containerPad: '30px 34px', stagger: 0.22 },
+              lg:  { fontSize: 'clamp(24px, 2.6vw, 38px)', pad: '12px 26px', padAvatar: '7px 24px 7px 7px',    avatarSize: 'clamp(40px, 4vw, 56px)',   gap: 14, headerFs: 'clamp(26px, 3vw, 42px)',  containerPad: '24px 28px', stagger: 0.16 },
+              md:  { fontSize: 'clamp(17px, 1.85vw, 26px)', pad: '9px 18px', padAvatar: '5px 16px 5px 5px',    avatarSize: 'clamp(28px, 2.8vw, 38px)', gap: 9,  headerFs: 'clamp(20px, 2.2vw, 30px)', containerPad: '16px 20px', stagger: 0.09 },
+              sm:  { fontSize: 'clamp(14px, 1.5vw, 20px)', pad: '6px 14px',  padAvatar: '4px 12px 4px 4px',    avatarSize: 'clamp(22px, 2.2vw, 30px)', gap: 6,  headerFs: 'clamp(16px, 1.8vw, 24px)', containerPad: '12px 16px', stagger: 0.05 },
+              xs:  { fontSize: 'clamp(12px, 1.2vw, 16px)', pad: '4px 10px',  padAvatar: '3px 10px 3px 3px',    avatarSize: 'clamp(18px, 1.8vw, 24px)', gap: 4,  headerFs: 'clamp(14px, 1.5vw, 20px)', containerPad: '10px 14px', stagger: 0.03 },
             }[tier];
             return (
               <div style={{
@@ -13195,13 +13221,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   padding: tierStyles.containerPad, borderRadius: 24,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
-                  // 2026-05-07 (Audit Layout #1, Wolf-Screenshot): cap 220-380
-                  // → 380-760. Vorher clipte der Container bei vielen Antworten
-                  // → Card schwebte mittig + ~25 % Vertikal-Luecke unten.
-                  // 2026-05-09 v3 (Wolf 'noch platz oben und unten'): max-
-                  // height auf 78vh hochgezogen damit größere Tiers (xxl/xl)
-                  // den verfügbaren Platz nutzen können.
-                  maxHeight: 'clamp(420px, 78vh, 920px)', overflow: 'hidden',
+                  // 2026-05-11 (Wolf 'Antworten zu klein, Platz oben/unten frei'):
+                  // maxHeight von 78vh → 86vh + cap von 920 → 1000. Container
+                  // streckt sich jetzt in den freien Slide-Space rein damit die
+                  // neuen größeren Tier-Fonts (xxl 40-72px, xl 30-52px) Platz
+                  // haben. Q-Card und Trivia-Trio bleiben darüber/darunter.
+                  maxHeight: 'clamp(520px, 86vh, 1000px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);

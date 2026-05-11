@@ -521,6 +521,16 @@ export default function QQModeratorPage() {
               delayMs = isComeback ? 8000 : 12000;
               action = () => emit('qq:skipCurrentTeam', { roomCode });
             }
+          } else if (pendingTeam && pendingTeam.connected && s.pendingAction === 'FREE') {
+            // 2026-05-11 (Audit P0): bei online-Team mit FREE-Auswahl hängt
+            // Autoplay stumm. Nach 25s pushToast als visuelles Warning —
+            // Wolf weiß sofort dass das Team zögert und kann mit F18-Skip
+            // eingreifen. Kein Auto-Choose (sonst nehmen wir dem Spieler die
+            // Entscheidung).
+            delayMs = 25000;
+            action = () => {
+              try { pushToast(`${pendingTeam.name}: wartet auf Setzen/Klauen — F18 = Skip`, '⏳', '#F59E0B'); } catch {}
+            };
           }
         }
         break;
@@ -979,8 +989,10 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // Number keys 1–5 → mark team correct (same as CozyQuiz)
-    if (['Digit1','Digit2','Digit3','Digit4','Digit5'].includes(e.code)) {
+    // Number keys 1–8 → mark team correct. 2026-05-11 (Audit P0): von 1-5 auf
+    // 1-8 erweitert. Wolf moderiert bis zu 8 Teams; Slot 6-8 brauchten vorher
+    // Mausgriff. Streamdeck-Pad jetzt komplett abgedeckt.
+    if (['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8'].includes(e.code)) {
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
         const idx = parseInt(e.code.replace('Digit', '')) - 1;
         const team = s.teams[idx];
@@ -3526,11 +3538,12 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
           small
           color={offline ? '#EF4444' : '#64748b'}
           onClick={() => {
-            if (offline) {
-              emit('qq:skipCurrentTeam', { roomCode });
-            } else if (confirm(`${team.name} überspringen? Der Zug wird verworfen.`)) {
-              emit('qq:skipCurrentTeam', { roomCode });
-            }
+            // 2026-05-11 (Audit P0): kein Browser-confirm-Dialog mehr —
+            // blockt Live-Flow im lauten Pub. Stattdessen sofort skippen
+            // und Toast als visuelles Feedback. Wolf-Vorgabe: 3-Sek-
+            // Entscheidung im Pub muss flüssig sein, Mod kann gegebenenfalls
+            // im UI sehen was passiert ist via Active-Strip + Toast.
+            emit('qq:skipCurrentTeam', { roomCode });
           }}
         >
           ⏭ {offline ? 'Skip (offline)' : 'Skip'}

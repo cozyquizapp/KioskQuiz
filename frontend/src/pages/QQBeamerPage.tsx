@@ -13359,6 +13359,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const sorted = [...parsed].sort((a, b) =>
               Math.abs(b.num - target) - Math.abs(a.num - target)
             );
+            // 2026-05-11 (Wolf-Bug: bei Target 14, Antworten 13 + 15 wurde nur
+            // EIN Team als Winner highlighted obwohl beide distance=1 haben.
+            // Root-Cause: isWinner verglich nur mit sorted[length-1].teamId.
+            // Fix: alle Teams mit minimaler Distanz sind Winner.
+            const minDistance = Math.min(...parsed.map(p => Math.abs(p.num - target)));
+            const isWinnerTeam = (teamId: string) => {
+              const p = parsed.find(x => x.teamId === teamId);
+              return p ? Math.abs(p.num - target) === minDistance : false;
+            };
             // 4-Slot-Kollisionssystem: Avatare werden auf die erste freie Reihe
             // gelegt, die genug horizontalen Abstand hat. Reihenfolge der Reihen:
             // 0=oben nah, 1=unten nah, 2=oben weit, 3=unten weit.
@@ -13408,7 +13417,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Alle Pin-Avatare als Rects für Kollision vormerken.
             parsed.forEach((p) => {
               const r = pinRows.get(p.teamId) ?? 0;
-              const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+              const isWinner = isWinnerTeam(p.teamId);
               const isTop = r === 0 || r === 2;
               const gap = r === 0 || r === 1 ? 110 : 180;
               const wrapperY = isTop ? -gap : gap;
@@ -13427,7 +13436,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // durchgehen — wir gehen links→rechts, das klappt in der Praxis.
             [...parsed].sort((a, b) => a.num - b.num).forEach((p) => {
               const r = pinRows.get(p.teamId) ?? 0;
-              const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+              const isWinner = isWinnerTeam(p.teamId);
               const isTop = r === 0 || r === 2;
               const gap = r === 0 || r === 1 ? 110 : 180;
               const wrapperY = isTop ? -gap : gap;
@@ -13567,7 +13576,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     const pct = pctOf(p.num);
                     const r = pinRows.get(p.teamId) ?? 0;
                     const xNudge = pinXNudge.get(p.teamId) ?? 0;
-                    const isWinner = p.teamId === sorted[sorted.length - 1].teamId;
+                    const isWinner = isWinnerTeam(p.teamId);
                     const orderIdx = sorted.findIndex(x => x.teamId === p.teamId);
                     const delay = 0.7 + orderIdx * 0.18;
                     const tColor = p.team!.color;
@@ -15746,71 +15755,20 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       }}>{de ? 'Tippt jetzt!' : 'Place your tip!'}</div>
 
       <div style={{
-        fontSize: 'clamp(20px, 2.2vw, 36px)', color: '#CBD5E1', fontWeight: 700,
-        textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 28,
+        fontSize: 'clamp(22px, 2.4vw, 38px)', color: '#CBD5E1', fontWeight: 700,
+        textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 40,
       }}>
         {de
-          ? 'Welches Team holt die Final-Runde am stärksten ab? Schaut auf euer Handy und wählt 1 Team.'
-          : 'Which team will dominate the final round? Check your phone and pick 1 team.'}
+          ? 'Welches Team holt in der Final-Runde am meisten Punkte?'
+          : 'Which team will score the most in the final round?'}
       </div>
 
-      {/* Erklärungs-Bullets */}
+      {/* Submit-Status — kompakter, ohne Häkchen, ohne Team-Namen.
+          2026-05-11 (Wolf 'super inkonsistent'): grüner Glow-Circle wie sonst
+          überall in der App, kein ✓-Häkchen, kein Team-Name unter dem Avatar. */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: 'clamp(14px, 1.6vw, 24px)',
-        maxWidth: 1200, width: '100%',
-        marginBottom: 36,
-      }}>
-        {(de
-          // 2026-05-09 (Wolf): Mutual/Sympathie-Bonus-Bullet entfernt — bleibt
-          // Überraschung beim End-Reveal (FinalRevealView zeigt die +1
-          // automatisch wenn mutual erkannt).
-          ? [
-              { icon: '🎯', title: '1 Tipp pro Team', sub: '(Eigenes Team erlaubt)' },
-              { icon: '🏆', title: '+1 Bonus pro Win', sub: 'Eures getippten Teams in den 5 Final-Kats' },
-            ]
-          : [
-              { icon: '🎯', title: '1 tip per team', sub: '(own team allowed)' },
-              { icon: '🏆', title: '+1 bonus per win', sub: 'of your tipped team in the 5 final cats' },
-            ]
-        ).map((b, i) => (
-          <div key={i} style={{
-            padding: '18px 22px', borderRadius: 18,
-            background: 'rgba(236,72,153,0.10)',
-            border: '1.5px solid rgba(236,72,153,0.42)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            textAlign: 'center',
-            animation: `qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) ${0.15 + i * 0.18}s both`,
-            opacity: 0,
-          }}>
-            <span style={{ fontSize: 'clamp(40px, 4.6vw, 64px)', lineHeight: 1 }}>{b.icon}</span>
-            <span style={{
-              fontSize: 'clamp(20px, 2.2vw, 30px)', fontWeight: 900,
-              color: '#F1F5F9', letterSpacing: '-0.01em',
-            }}>{b.title}</span>
-            <span style={{
-              fontSize: 'clamp(13px, 1.3vw, 18px)', fontWeight: 700,
-              color: '#94A3B8',
-            }}>{b.sub}</span>
-          </div>
-        ))}
-      </div>
-
-      <div style={{
-        fontSize: 'clamp(15px, 1.4vw, 22px)', color: '#86EFAC', fontWeight: 800,
-        textAlign: 'center', marginBottom: 32, fontStyle: 'italic',
-      }}>
-        {de
-          ? '✨ Kein Verlust, kein Cell-Risiko — niedrigster Bonus = 0'
-          : '✨ No loss, no cell risk — lowest bonus = 0'}
-      </div>
-
-      {/* Submit-Status */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
-        padding: '32px 56px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+        padding: 'clamp(28px, 4vh, 48px) clamp(40px, 5vw, 72px)',
         borderRadius: 32,
         background: 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(162,18,71,0.06))',
         border: '2px solid rgba(236,72,153,0.32)',
@@ -15821,26 +15779,31 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           textTransform: 'uppercase', letterSpacing: '0.15em',
         }}>{de ? 'Tipps abgegeben' : 'Tips submitted'}</div>
         <div style={{
-          fontSize: 'clamp(56px, 7vw, 130px)', fontWeight: 900,
+          fontSize: 'clamp(64px, 8vw, 150px)', fontWeight: 900,
           color: submittedCount === totalTeams ? '#22C55E' : '#F472B6',
           letterSpacing: '-0.04em', lineHeight: 1,
           textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(236,72,153,0.45)'}`,
         }}>
           {submittedCount} / {totalTeams}
         </div>
-        {/* Avatar-Reihe der Teams: opaque wenn submitted, dim wenn nicht */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
+        {/* Avatar-Reihe ohne Namen, mit grünem Glow für submitted Teams.
+            Identisch zum „submitted"-Pattern im restlichen Quiz. */}
+        <div style={{ display: 'flex', gap: 'clamp(16px, 2vw, 28px)', flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
           {s.teams.map(t => {
             const done = !!s.finalBettingSubmitted?.[t.id];
+            const avatarSize: number = Math.max(64, Math.min(96, Math.round(700 / totalTeams)));
             return (
               <div key={t.id} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                opacity: done ? 1 : 0.35,
-                transition: 'opacity 0.5s ease',
+                width: avatarSize + 12, height: avatarSize + 12,
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
+                border: done ? '3px solid #22C55E' : '3px solid rgba(255,255,255,0.10)',
+                boxShadow: done ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : 'none',
+                opacity: done ? 1 : 0.45,
+                transition: 'all 0.45s ease',
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={64} />
-                <div style={{ fontSize: 'clamp(11px, 0.9vw, 16px)', fontWeight: 800, color: t.color }}>{t.name}</div>
-                {done && <div style={{ fontSize: 14, color: '#22C55E' }}>✓</div>}
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
               </div>
             );
           })}
@@ -17208,34 +17171,39 @@ function getSlotConfig(rank: number): {
   podiumHeight: string; avatarSize: string; slotWidth: string;
   fontSize: string; rankFontSize: string;
 } {
+  // 2026-05-11 (Wolf 'Treppchen viel zu mini, riesig Leerraum oben'): alle
+  // Slot-Sizes ~35% nach oben gezogen damit das Podium den verfügbaren Slide-
+  // Space ausfüllt. Vorher schwebte ein mini-Podium in der Mitte mit ~40 vh
+  // Leerraum darüber. Jetzt: P1 avatar bis 230px, podium bis 230px, Rang4+
+  // Slot deutlich präsenter.
   if (rank === 1) return {
-    podiumHeight: 'clamp(110px, 13vh, 170px)',
-    avatarSize: 'clamp(110px, 12vw, 170px)',
-    slotWidth: 'clamp(140px, 14vw, 200px)',
-    fontSize: 'clamp(16px, 1.7vw, 26px)',
-    rankFontSize: 'clamp(36px, 3.8vw, 60px)',
+    podiumHeight: 'clamp(150px, 18vh, 230px)',
+    avatarSize: 'clamp(150px, 16vw, 230px)',
+    slotWidth: 'clamp(190px, 18vw, 270px)',
+    fontSize: 'clamp(20px, 2.2vw, 34px)',
+    rankFontSize: 'clamp(48px, 5vw, 80px)',
   };
   if (rank === 2) return {
-    podiumHeight: 'clamp(78px, 9vh, 124px)',
-    avatarSize: 'clamp(85px, 9vw, 130px)',
-    slotWidth: 'clamp(115px, 12vw, 165px)',
-    fontSize: 'clamp(13px, 1.3vw, 19px)',
-    rankFontSize: 'clamp(22px, 2.4vw, 38px)',
+    podiumHeight: 'clamp(108px, 13vh, 170px)',
+    avatarSize: 'clamp(115px, 12vw, 175px)',
+    slotWidth: 'clamp(155px, 15vw, 220px)',
+    fontSize: 'clamp(16px, 1.7vw, 26px)',
+    rankFontSize: 'clamp(30px, 3.2vw, 52px)',
   };
   if (rank === 3) return {
-    podiumHeight: 'clamp(50px, 6vh, 80px)',
-    avatarSize: 'clamp(75px, 8vw, 110px)',
-    slotWidth: 'clamp(115px, 12vw, 165px)',
-    fontSize: 'clamp(12px, 1.2vw, 18px)',
-    rankFontSize: 'clamp(20px, 2.2vw, 32px)',
+    podiumHeight: 'clamp(72px, 8.5vh, 112px)',
+    avatarSize: 'clamp(100px, 10.5vw, 150px)',
+    slotWidth: 'clamp(155px, 15vw, 220px)',
+    fontSize: 'clamp(15px, 1.6vw, 24px)',
+    rankFontSize: 'clamp(28px, 3vw, 44px)',
   };
-  // Rang 4+: minimal — kleinere Avatare, sehr niedrige Stufe, kompakter Slot
+  // Rang 4+: deutlich präsenter als vorher (Wolf wollte alle gut sichtbar)
   return {
-    podiumHeight: 'clamp(20px, 2.5vh, 32px)',
-    avatarSize: 'clamp(55px, 6vw, 88px)',
-    slotWidth: 'clamp(78px, 8.5vw, 120px)',
-    fontSize: 'clamp(10px, 1vw, 14px)',
-    rankFontSize: 'clamp(13px, 1.3vw, 18px)',
+    podiumHeight: 'clamp(34px, 4vh, 52px)',
+    avatarSize: 'clamp(76px, 8vw, 118px)',
+    slotWidth: 'clamp(108px, 11.5vw, 165px)',
+    fontSize: 'clamp(13px, 1.3vw, 18px)',
+    rankFontSize: 'clamp(18px, 1.8vw, 26px)',
   };
 }
 
@@ -20652,18 +20620,22 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         );
       })}
 
-      {/* ── Wolf bottom-LEFT in schlafen-Mode — exakte PreGame-Position,
-          ohne Sprechblase (Wolf-Quote: Schlafen-Animation zeigt nur Z's). ── */}
+      {/* ── Wolf bottom-LEFT in schlafen-Mode — 2026-05-11 (Wolf-Bug 'wolf
+          kollidiert mit Sieger-Team'): weiter nach links + unten, kleiner.
+          Sitzt jetzt bündig in der Ecke (links 0, bottom 0) statt mit Innen-
+          Padding — damit max-Abstand zum mittig sitzenden Winner-Hero. Plus
+          width-Cap leicht runter (300→240) damit der Wolf nicht ins Sieger-
+          Card-Layout reinragt. */}
       <div style={{
         position: 'absolute',
-        left: 'clamp(20px, 3vw, 60px)',
-        bottom: 'clamp(20px, 3vh, 50px)',
+        left: 0,
+        bottom: 0,
         zIndex: 6,
         pointerEvents: 'none',
         animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
       }}>
         <AnimatedCozyWolf
-          widthCss="clamp(190px, 19vw, 300px)"
+          widthCss="clamp(160px, 15vw, 240px)"
           mode="schlafen"
         />
       </div>

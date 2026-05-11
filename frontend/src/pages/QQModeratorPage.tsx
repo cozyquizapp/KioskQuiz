@@ -509,8 +509,18 @@ export default function QQModeratorPage() {
           const pendingTeam = s.teams.find(t => t.id === s.pendingFor);
           const isComeback = s.pendingAction === 'COMEBACK' || s.comebackTeamId === s.pendingFor;
           if (pendingTeam && !pendingTeam.connected) {
-            delayMs = isComeback ? 8000 : 12000;
-            action = () => emit('qq:skipCurrentTeam', { roomCode });
+            // 2026-05-11 (Wolf-Bug 'Bot-Team hängt bei FREE-Auswahl nach
+            // Stack'): bei pendingAction='FREE' UND offline-Team auto-choose
+            // statt skip. Default = STEAL (Grid evtl. voll, PLACE würde
+            // NO_FREE_CELL throwen). 4s Delay damit Wolf manuell eingreifen
+            // kann wenn er will.
+            if (s.pendingAction === 'FREE') {
+              delayMs = 4000;
+              action = () => emit('qq:chooseFreeAction', { roomCode, teamId: pendingTeam.id, action: 'STEAL' });
+            } else {
+              delayMs = isComeback ? 8000 : 12000;
+              action = () => emit('qq:skipCurrentTeam', { roomCode });
+            }
           }
         }
         break;

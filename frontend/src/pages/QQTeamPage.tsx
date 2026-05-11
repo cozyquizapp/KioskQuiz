@@ -652,6 +652,30 @@ export default function QQTeamPage() {
   // Rejoin behalten ihre eigene Flag-Toggle (eigenes UX-Pattern dort).
   const [menuOpen, setMenuOpen] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+
+  // 2026-05-11 (Audit P0): Wake-Lock damit Phone-Screen während 3h-Show
+  // nicht in den Sleep-Modus geht. Browser-Support: Chrome/Edge/Safari 16.4+.
+  // Re-Request bei visibilitychange falls Lock vom OS gelöst wurde.
+  useEffect(() => {
+    let wakeLock: any = null;
+    const wakeLockApi: any = (navigator as any).wakeLock;
+    if (!wakeLockApi || typeof wakeLockApi.request !== 'function') return;
+    const requestLock = async () => {
+      try {
+        if (document.visibilityState !== 'visible') return;
+        wakeLock = await wakeLockApi.request('screen');
+        wakeLock?.addEventListener?.('release', () => { wakeLock = null; });
+      } catch { /* Berechtigung verweigert oder OS blockt — silent */ }
+    };
+    requestLock();
+    const onVisibility = () => { if (document.visibilityState === 'visible' && !wakeLock) requestLock(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      try { wakeLock?.release?.(); } catch { /* ignore */ }
+      wakeLock = null;
+    };
+  }, []);
   const handleLeaveQuiz = () => {
     localStorage.removeItem('qq_teamName');
     localStorage.removeItem('qq_avatarId');
@@ -1804,8 +1828,12 @@ function TeamGameView({
           </div>
         )}
 
-        {/* Phase content */}
-        <div aria-live="polite" aria-atomic="false">
+        {/* Phase content — 2026-05-11 (Audit P0): Cross-Fade pro Phase via
+            key-basierter Re-Mount + tcreveal-Animation. Vorher hartes Unmount/
+            Mount zwischen 11 Phase-Cards = ruckiger Wechsel ohne Übergang. */}
+        <div aria-live="polite" aria-atomic="false"
+          key={`phase-${s.phase}`}
+          style={{ animation: 'tcreveal 0.32s ease both' }}>
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
         {s.phase === 'RULES'           && <RulesCard lang={lang} />}
         {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealCard myTeam={myTeam} lang={lang} />}
@@ -3475,7 +3503,10 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
 
   async function submitText(text: string) {
     if (!text.trim()) return;
-    if (navigator.vibrate) navigator.vibrate(40);
+    // 2026-05-11 (Audit P0): Submit-Vibe verstärkt von 40ms-Single auf
+    // Burst [30,40,80] — kurz-pause-langer Confirm-Buzz. Spieler im lauten
+    // Pub merkt jetzt klar dass der Tap gelandet ist.
+    if (navigator.vibrate) navigator.vibrate([30, 40, 80]);
     await safeEmit(emit, 'qq:submitAnswer', { roomCode, teamId: myTeamId, answer: text.trim() });
   }
 
@@ -3632,7 +3663,10 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
       firedRef.current = true;
       const text = valRef.current.trim();
       if (text.length >= 1) {
-        if (navigator.vibrate) navigator.vibrate(40);
+        // 2026-05-11 (Audit P0): Submit-Vibe verstärkt von 40ms-Single auf
+    // Burst [30,40,80] — kurz-pause-langer Confirm-Buzz. Spieler im lauten
+    // Pub merkt jetzt klar dass der Tap gelandet ist.
+    if (navigator.vibrate) navigator.vibrate([30, 40, 80]);
         safeEmit(emit, 'qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: text });
         setVal('');
       }
@@ -3662,7 +3696,10 @@ function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = '
 
   async function submit() {
     if (!val.trim() || expired) return;
-    if (navigator.vibrate) navigator.vibrate(40);
+    // 2026-05-11 (Audit P0): Submit-Vibe verstärkt von 40ms-Single auf
+    // Burst [30,40,80] — kurz-pause-langer Confirm-Buzz. Spieler im lauten
+    // Pub merkt jetzt klar dass der Tap gelandet ist.
+    if (navigator.vibrate) navigator.vibrate([30, 40, 80]);
     await safeEmit(emit, 'qq:hotPotatoAnswer', { roomCode, teamId: myTeamId, answer: val.trim() });
     setVal('');
     setTimeout(() => ref.current?.focus({ preventScroll: true }), 60);
@@ -4353,7 +4390,10 @@ function ImposterInput({ question: q, catColor, state: s, myTeamId, emit, roomCo
 
   async function handleConfirm() {
     if (!current || submitted || !isMyTurn) return;
-    if (navigator.vibrate) navigator.vibrate(40);
+    // 2026-05-11 (Audit P0): Submit-Vibe verstärkt von 40ms-Single auf
+    // Burst [30,40,80] — kurz-pause-langer Confirm-Buzz. Spieler im lauten
+    // Pub merkt jetzt klar dass der Tap gelandet ist.
+    if (navigator.vibrate) navigator.vibrate([30, 40, 80]);
     setSubmitted(true);
     await safeEmit(emit, 'qq:imposterChoose', { roomCode, teamId: myTeamId, statementIndex: current.idx });
   }

@@ -6585,7 +6585,14 @@ function ActionCardReveal({
             position: 'relative',
           }}>✨</div>
         </div>
-        {/* Vorderseite — die normale Action-Card */}
+        {/* Vorderseite — die normale Action-Card.
+            2026-05-11 (Wolf 'Cards einheitlich groß UND breit, deckungsgleich'):
+            Layout-Refactor zu 3-Reihen-Grid (Top-Spacer, Hauptinhalt-Block,
+            Limit-Slot-mit-Fixed-Höhe). Der Limit-Slot wird IMMER gerendert,
+            auch ohne Pill — als unsichtbarer Spacer mit identischer Höhe.
+            Damit sitzt der zentrale Inhalt (Icon + Count+Label + Sub-Line) bei
+            allen Cards auf exakt der gleichen vertikalen Position, unabhängig
+            davon ob Pill da ist oder nicht. */}
         <div style={{
           position: 'absolute', inset: 0,
           backfaceVisibility: 'hidden',
@@ -6595,46 +6602,61 @@ function ActionCardReveal({
           background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
           border: `3px solid ${c.accent}aa`,
           boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 'clamp(8px, 1.2vh, 16px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
           padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
+          boxSizing: 'border-box',
         }}>
+          {/* Hauptinhalt-Block — zentriert sich vertikal via flex:1 */}
           <div style={{
-            fontSize: iconSize, lineHeight: 1,
-            filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
-          }}>{iconNode}</div>
-          <div style={{
-            display: 'flex', alignItems: 'baseline',
-            gap: 'clamp(6px, 0.8vw, 12px)',
-            fontWeight: 900, lineHeight: 1,
-            flexWrap: 'wrap', justifyContent: 'center',
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 'clamp(8px, 1.2vh, 16px)', width: '100%',
           }}>
-            <span style={{
-              fontSize: 'clamp(36px, 4.2vw, 64px)',
-              color: c.accent, fontVariantNumeric: 'tabular-nums',
-              textShadow: `0 0 22px ${c.accent}88`,
-            }}>{c.count}x</span>
-            <span style={{
-              fontSize: 'clamp(28px, 3.2vw, 48px)',
-              color: '#F1F5F9', letterSpacing: '0.01em',
-            }}>{c.label}</span>
-          </div>
-          <div style={{
-            fontSize: 'clamp(13px, 1.4vw, 19px)',
-            fontWeight: 700, color: '#cbd5e1',
-            textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
-          }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>
-          {c.limit && (
             <div style={{
-              marginTop: 4, padding: '5px 14px', borderRadius: 999,
-              background: 'rgba(15,23,42,0.6)',
-              border: `1.5px solid ${c.accent}55`,
-              fontSize: 'clamp(11px, 1.15vw, 15px)',
-              fontWeight: 900, color: '#e2e8f0',
-              whiteSpace: 'nowrap',
-              boxShadow: `0 2px 8px ${c.accent}22`,
-            }}>{c.limit}</div>
-          )}
+              fontSize: iconSize, lineHeight: 1,
+              filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
+            }}>{iconNode}</div>
+            <div style={{
+              display: 'flex', alignItems: 'baseline',
+              gap: 'clamp(6px, 0.8vw, 12px)',
+              fontWeight: 900, lineHeight: 1,
+              flexWrap: 'wrap', justifyContent: 'center',
+            }}>
+              <span style={{
+                fontSize: 'clamp(36px, 4.2vw, 64px)',
+                color: c.accent, fontVariantNumeric: 'tabular-nums',
+                textShadow: `0 0 22px ${c.accent}88`,
+              }}>{c.count}x</span>
+              <span style={{
+                fontSize: 'clamp(28px, 3.2vw, 48px)',
+                color: '#F1F5F9', letterSpacing: '0.01em',
+              }}>{c.label}</span>
+            </div>
+            <div style={{
+              fontSize: 'clamp(13px, 1.4vw, 19px)',
+              fontWeight: 700, color: '#cbd5e1',
+              textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
+            }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>
+          </div>
+          {/* Limit-Slot — fixed Höhe, immer gerendert (auch ohne Inhalt).
+              Damit sitzen Cards mit/ohne Pill auf identischer Achse. */}
+          <div style={{
+            flex: '0 0 auto', minHeight: 'clamp(28px, 2.6vh, 36px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginTop: 4,
+          }}>
+            {c.limit && (
+              <div style={{
+                padding: '5px 14px', borderRadius: 999,
+                background: 'rgba(15,23,42,0.6)',
+                border: `1.5px solid ${c.accent}55`,
+                fontSize: 'clamp(11px, 1.15vw, 15px)',
+                fontWeight: 900, color: '#e2e8f0',
+                whiteSpace: 'nowrap',
+                boxShadow: `0 2px 8px ${c.accent}22`,
+              }}>{c.limit}</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -7398,26 +7420,23 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           />
                         ) : (
                         <div style={{
+                          // 2026-05-11 (Wolf 'Cards einheitlich groß UND breit,
+                          // deckungsgleich'): Outer-Props matchen ActionCard-
+                          // Reveal exakt. minWidth bei multi-card auf 200 lassen
+                          // (Cards können dann gleichmäßig schmaler werden bei
+                          // 3-Card-Layouts), maxWidth 480.
                           flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
                           minWidth: cardCount === 1 ? 280 : 200,
                           maxWidth: cardCount === 1 ? 480 : 480,
-                          // 2026-05-09 v3 (Wolf 'stack card nicht gleich groß'):
-                          // FIXED height (statt minHeight) — bei alignItems:
-                          // stretch konnte non-isNew Card über 360 wachsen wenn
-                          // Inhalt mehr brauchte, isNew (absolute Front/Back)
-                          // blieb fest auf 360 → Drift. Jetzt alle hart 360.
-                          // 2026-05-10 (Spacing-Audit P1 #9, Wolf-Idee 'wenn
-                          // eine Card wächst alle mit'): zurück auf minHeight.
-                          // Damit isNew nicht driftet wurde unten in ActionCard-
-                          // Reveal die Outer-Höhe ebenfalls auf minHeight + die
-                          // innere perspective-Wrapper-Höhe auf 100% gestellt.
-                          // alignItems:stretch im Parent (Z. 7341) synct dann
-                          // alle Cards der Row auf die natürliche Maximum-Höhe.
                           minHeight: 360,
                           boxSizing: 'border-box',
+                          // 2026-05-11: justifyContent center → space-between.
+                          // Plus 3-Reihen-Grid mit Limit-Slot-Spacer wie
+                          // ActionCardReveal-Front. Stellt sicher: Hauptinhalt
+                          // sitzt bei Cards mit und ohne Pill auf gleicher
+                          // vertikaler Achse, Pill (falls vorhanden) am Boden.
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 'clamp(8px, 1.2vh, 16px)',
+                          justifyContent: 'space-between',
                           padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
                           borderRadius: 24,
                           background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
@@ -7426,54 +7445,69 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           animation: `phasePop 0.6s var(--qq-ease-bounce) ${cardDelayMs / 1000}s both`,
                           overflow: 'hidden',
                         }}>
-                          {/* Icon — gross + drop-shadow als Fokus-Element */}
+                          {/* Hauptinhalt-Block — zentriert sich vertikal */}
                           <div style={{
-                            fontSize: iconSize,
-                            lineHeight: 1,
-                            filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
-                          }}>{iconNode}</div>
-                          {/* Counter + Label kombiniert — das Hauptinfo-Token */}
-                          <div style={{
-                            display: 'flex', alignItems: 'baseline',
-                            gap: 'clamp(6px, 0.8vw, 12px)',
-                            fontWeight: 900, lineHeight: 1,
-                            flexWrap: 'wrap', justifyContent: 'center',
+                            flex: 1, display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: 'clamp(8px, 1.2vh, 16px)', width: '100%',
                           }}>
-                            <span style={{
-                              fontSize: 'clamp(36px, 4.2vw, 64px)',
-                              color: c.accent,
-                              fontVariantNumeric: 'tabular-nums',
-                              textShadow: `0 0 22px ${c.accent}88`,
-                            }}>{c.count}x</span>
-                            <span style={{
-                              fontSize: 'clamp(28px, 3.2vw, 48px)',
-                              color: '#F1F5F9',
-                              letterSpacing: '0.01em',
-                            }}>{c.label}</span>
-                          </div>
-                          {/* Sub-Zeile */}
-                          <div style={{
-                            fontSize: 'clamp(13px, 1.4vw, 19px)',
-                            fontWeight: 700, color: '#cbd5e1',
-                            textAlign: 'center', lineHeight: 1.25,
-                            opacity: 0.85,
-                          }}>
-                            {lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}
-                          </div>
-                          {c.limit && (
+                            {/* Icon — gross + drop-shadow als Fokus-Element */}
                             <div style={{
-                              marginTop: 4,
-                              padding: '5px 14px', borderRadius: 999,
-                              background: 'rgba(15,23,42,0.6)',
-                              border: `1.5px solid ${c.accent}55`,
-                              fontSize: 'clamp(11px, 1.15vw, 15px)',
-                              fontWeight: 900, color: '#e2e8f0',
-                              whiteSpace: 'nowrap',
-                              boxShadow: `0 2px 8px ${c.accent}22`,
+                              fontSize: iconSize,
+                              lineHeight: 1,
+                              filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
+                            }}>{iconNode}</div>
+                            {/* Counter + Label kombiniert — das Hauptinfo-Token */}
+                            <div style={{
+                              display: 'flex', alignItems: 'baseline',
+                              gap: 'clamp(6px, 0.8vw, 12px)',
+                              fontWeight: 900, lineHeight: 1,
+                              flexWrap: 'wrap', justifyContent: 'center',
                             }}>
-                              {c.limit}
+                              <span style={{
+                                fontSize: 'clamp(36px, 4.2vw, 64px)',
+                                color: c.accent,
+                                fontVariantNumeric: 'tabular-nums',
+                                textShadow: `0 0 22px ${c.accent}88`,
+                              }}>{c.count}x</span>
+                              <span style={{
+                                fontSize: 'clamp(28px, 3.2vw, 48px)',
+                                color: '#F1F5F9',
+                                letterSpacing: '0.01em',
+                              }}>{c.label}</span>
                             </div>
-                          )}
+                            {/* Sub-Zeile */}
+                            <div style={{
+                              fontSize: 'clamp(13px, 1.4vw, 19px)',
+                              fontWeight: 700, color: '#cbd5e1',
+                              textAlign: 'center', lineHeight: 1.25,
+                              opacity: 0.85,
+                            }}>
+                              {lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}
+                            </div>
+                          </div>
+                          {/* Limit-Slot — fixed Höhe, immer gerendert (auch
+                              ohne Inhalt). Stellt sicher dass Cards mit/ohne
+                              Pill exakt gleich aussehen. */}
+                          <div style={{
+                            flex: '0 0 auto', minHeight: 'clamp(28px, 2.6vh, 36px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            marginTop: 4,
+                          }}>
+                            {c.limit && (
+                              <div style={{
+                                padding: '5px 14px', borderRadius: 999,
+                                background: 'rgba(15,23,42,0.6)',
+                                border: `1.5px solid ${c.accent}55`,
+                                fontSize: 'clamp(11px, 1.15vw, 15px)',
+                                fontWeight: 900, color: '#e2e8f0',
+                                whiteSpace: 'nowrap',
+                                boxShadow: `0 2px 8px ${c.accent}22`,
+                              }}>
+                                {c.limit}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         )}
                       </Fragment>

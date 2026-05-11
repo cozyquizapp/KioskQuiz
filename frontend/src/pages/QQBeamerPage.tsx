@@ -16322,6 +16322,24 @@ function FinalRevealSharedKeyframes() {
         0%, 100% { box-shadow: 0 0 16px var(--c-color); transform: scale(1); }
         50%      { box-shadow: 0 0 32px var(--c-color); transform: scale(1.04); }
       }
+      /* 2026-05-11 Top-3-Pack — RaceFinishHero */
+      @keyframes qqFRBannerDrop {
+        0%   { opacity: 0; transform: translate(-50%, -120%) scale(0.85); filter: blur(8px); }
+        70%  { opacity: 1; transform: translate(-50%, 8%) scale(1.04); filter: blur(0); }
+        100% { opacity: 1; transform: translate(-50%, 0)   scale(1);    filter: blur(0); }
+      }
+      @keyframes qqFRSpotlight {
+        0%, 100% { opacity: 0.7; }
+        50%      { opacity: 1;   }
+      }
+      @keyframes qqFRPennantWave {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-4px); }
+      }
+      @keyframes qqFRPennantFlap {
+        0%, 100% { transform: rotate(-3deg); }
+        50%      { transform: rotate(3deg); }
+      }
       @keyframes qqFRBoundingSparkle {
         0%   { offset-distance: 0%; }
         100% { offset-distance: 100%; }
@@ -17223,6 +17241,98 @@ function getOrderedRanks(N: number): number[] {
   return [...left, 1, ...right];
 }
 
+// ── RaceFinishHero — Top-3-Pack aus Design-Audit 2026-05-11 ────────────────
+// Drei Layer für die tote Top-Zone bei phase==='finish':
+//   1. Wimpelketten oben (SVG-Bogen mit pink/gold Wimpeln, sanft wackelnd)
+//   2. Spotlight-Cone (goldener Lichtkegel von oben auf P1)
+//   3. Headline-Banner („SIEGER: {Name}") gold/pink, slide-down
+// Greift NUR bei isFinish — kein Conflict mit der Race-Choreo davor.
+function RaceFinishHero({ winner }: { winner: QQTeam }) {
+  const pennantColors = ['#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899'];
+  return (
+    <>
+      {/* Layer 1 — Spotlight-Cone (z hinter Banner, vor BG) */}
+      <div aria-hidden style={{
+        position: 'absolute', top: 0, left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(800px, 60vw)', height: '100%',
+        background: `conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(251,191,36,0.18) 6deg, rgba(251,191,36,0.32) 10deg, rgba(236,72,153,0.22) 14deg, transparent 20deg)`,
+        opacity: 0.85,
+        pointerEvents: 'none',
+        zIndex: 1,
+        animation: 'qqFRSpotlight 4.5s ease-in-out infinite',
+        mixBlendMode: 'screen',
+      }} />
+
+      {/* Layer 2 — Wimpelketten oben */}
+      <svg aria-hidden style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        width: '100%', height: 'clamp(80px, 9vh, 130px)',
+        pointerEvents: 'none',
+        zIndex: 2,
+        animation: 'qqFRPennantWave 4s ease-in-out infinite',
+      }} viewBox="0 0 1200 130" preserveAspectRatio="none">
+        {/* String (Bogen) */}
+        <path d="M 0,8 Q 600,80 1200,8" stroke="rgba(251,191,36,0.55)" strokeWidth="2" fill="none" />
+        {/* Wimpel pro Position entlang der Bogen-Kurve */}
+        {Array.from({ length: 11 }).map((_, i) => {
+          const t = i / 10;
+          // Bezier-Punkt: P(t) = (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+          const x = (1 - t) * (1 - t) * 0 + 2 * (1 - t) * t * 600 + t * t * 1200;
+          const y = (1 - t) * (1 - t) * 8 + 2 * (1 - t) * t * 80 + t * t * 8;
+          const color = pennantColors[i % pennantColors.length];
+          return (
+            <g key={i} transform={`translate(${x}, ${y})`}>
+              <line x1="0" y1="0" x2="0" y2="6" stroke={color} strokeWidth="1.5" />
+              <path d="M -14,6 L 0,42 L 14,6 Z" fill={color} opacity="0.92"
+                style={{ animation: `qqFRPennantFlap ${2 + (i % 3) * 0.4}s ease-in-out ${i * 0.15}s infinite`, transformOrigin: 'center top' }} />
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Layer 3 — Headline-Banner (Sieger-Name) */}
+      <div style={{
+        position: 'absolute',
+        top: 'clamp(80px, 11vh, 150px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 4,
+        pointerEvents: 'none',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 6,
+        animation: 'qqFRBannerDrop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
+      }}>
+        <div style={{
+          fontSize: 'clamp(14px, 1.4vw, 22px)',
+          fontWeight: 900,
+          color: '#FBBF24',
+          letterSpacing: '0.25em',
+          textTransform: 'uppercase',
+          textShadow: '0 0 14px rgba(251,191,36,0.8), 0 2px 6px rgba(0,0,0,0.7)',
+        }}>
+          🏆 Sieger
+        </div>
+        <div style={{
+          fontSize: 'clamp(38px, 4.6vw, 76px)',
+          fontWeight: 900,
+          color: winner.color,
+          letterSpacing: '-0.02em',
+          lineHeight: 1.05,
+          maxWidth: '80vw',
+          textAlign: 'center',
+          textShadow: `0 0 32px ${winner.color}cc, 0 0 64px ${winner.color}66, 0 4px 12px rgba(0,0,0,0.85)`,
+          fontFamily: 'var(--font-game, system-ui)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {winner.name}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function RaceFinalSlide({ finalRanking, lang: _lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
@@ -17440,6 +17550,10 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       <RaceStarryBackground />
 
       {isFinish && <ConfettiOverlay />}
+
+      {/* 2026-05-11 Design-Audit Top-3-Pack — füllt die tote Top-Zone bei Finish.
+          Greift NUR bei isFinish, damit Race-Choreo unverändert bleibt. */}
+      {isFinish && p1 && <RaceFinishHero winner={p1.team} />}
 
       {/* 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay
           während phase==='countdown'. Avatare schweben im Hintergrund, der

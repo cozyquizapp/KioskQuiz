@@ -44,24 +44,47 @@ export default function QQProgressTree({
   const phaseLabels = lang === 'en' ? PHASE_LABELS_EN : PHASE_LABELS_DE;
   const totalPhases = state.totalPhases || 4;
 
-  // Showcase-Sweep: cycelt durch alle Phasen + Finale, hebt jede ~2.2s lang
-  // hervor. Index -1 = Pause, 0..totalPhases-1 = Quiz-Phase, totalPhases =
-  // Großes Finale (falls connectionsEnabled).
-  const showcaseHasFinale = state.connectionsEnabled !== false;
-  const showcaseStepCount = totalPhases + (showcaseHasFinale ? 1 : 0);
+  // Showcase-Sweep: cycelt durch alle Phasen + Bieten + Finale, hebt jede
+  // ~2.2s hervor. Wolf-Wunsch 2026-05-11: NACH komplettem Durchgang bleibt
+  // der Wolf am letzten Step (Finale) stehen — kein Reset zurück auf Pause.
+  // Step-Indizes:
+  //   -1                                                 = initial Pause
+  //   0..totalPhases-1                                   = Quiz-Phase
+  //   totalPhases                  (wenn finalWager)     = Bieten-Knoten
+  //   totalPhases + ?              (wenn Finale)         = 4×4 Finale
+  // Wolf-Wunsch 2026-05-11: 4×4 muss in JEDEM Tree der App ausgeblendet sein
+  // wenn der Mod-Toggle aus ist. `=== true` statt `!== false`, sonst leakt
+  // ein undefined-State (vor erstem State-Update) als „sichtbar".
+  const showcaseHasBidding = state.finalWagerEnabled === true;
+  const showcaseHasFinale  = state.connectionsEnabled === true;
+  const biddingStepIdx     = showcaseHasBidding ? totalPhases : -1;
+  const finaleStepIdx      = showcaseHasFinale
+    ? totalPhases + (showcaseHasBidding ? 1 : 0)
+    : -1;
+  const showcaseStepCount  = totalPhases
+    + (showcaseHasBidding ? 1 : 0)
+    + (showcaseHasFinale ? 1 : 0);
   const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
   useEffect(() => {
     if (!showcaseMode) return;
-    let i = -1;
+    setShowcasePhaseIdx(-1);
+    let step = -1;
+    let id: ReturnType<typeof setTimeout> | null = null;
     const tick = () => {
-      i = (i + 1) % (showcaseStepCount + 1); // +1 für initialen Pause-Step
-      setShowcasePhaseIdx(i - 1); // -1 = Pause, 0..n-1 = Phase / Finale
+      step += 1;
+      if (step >= showcaseStepCount) {
+        // Letzter Step erreicht — Wolf bleibt am Finale stehen, kein Loop-Reset.
+        setShowcasePhaseIdx(showcaseStepCount - 1);
+        return;
+      }
+      setShowcasePhaseIdx(step);
+      id = setTimeout(tick, showcaseStepMs);
     };
-    tick();
-    const id = setInterval(tick, showcaseStepMs);
-    return () => clearInterval(id);
-  }, [showcaseMode, totalPhases, showcaseHasFinale, showcaseStepCount, showcaseStepMs]);
-  const showcaseOnFinale = showcaseMode && showcaseHasFinale && showcasePhaseIdx === totalPhases;
+    id = setTimeout(tick, showcaseStepMs);
+    return () => { if (id !== null) clearTimeout(id); };
+  }, [showcaseMode, showcaseStepCount, showcaseStepMs]);
+  const showcaseOnBidding = showcaseMode && showcaseHasBidding && showcasePhaseIdx === biddingStepIdx;
+  const showcaseOnFinale  = showcaseMode && showcaseHasFinale  && showcasePhaseIdx === finaleStepIdx;
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -126,10 +149,22 @@ export default function QQProgressTree({
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
+  // Bieten-Knoten (Final-Wager-Tipp-Phase) zwischen Quiz-Phasen und 4×4 Finale.
+  // Wolf-Wunsch 2026-05-11: deutsche Bezeichnung „Bieten", englisch „Bid".
+  // Slightly kleiner als Finale-Dot (Finale ist DAS Highlight), aber größer
+  // als reguläre Quiz-Dots damit klar: separate Phase mit eigener Mechanik.
+  const showBidding = state.finalWagerEnabled === true;
+  const biddingDotSize = Math.round(dotSize * 1.2);
+  let biddingCenter = 0;
+  if (showBidding) {
+    cursor += phaseGap;
+    biddingCenter = cursor + biddingDotSize / 2;
+    cursor += biddingDotSize;
+  }
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
   // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
   // unter dem FINALE-Label.
-  const showFinale = state.connectionsEnabled !== false;
+  const showFinale = state.connectionsEnabled === true;
   const finaleDotSize = Math.round(dotSize * 1.35);
   let finaleCenter = 0;
   if (showFinale) {
@@ -140,13 +175,15 @@ export default function QQProgressTree({
   const totalWidth = cursor;
   const treeCenter = totalWidth / 2;
 
-  // Showcase-Pan: bringt die hervorgehobene Phase (oder Finale) ins Viewport-
-  // Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
+  // Showcase-Pan: bringt die hervorgehobene Phase (oder Bieten/Finale) ins
+  // Viewport-Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
   const showcaseTargetPhase = showcaseMode
-    ? (showcasePhaseIdx >= 0 ? showcasePhaseIdx : 0)
+    ? (showcasePhaseIdx >= 0 && showcasePhaseIdx < totalPhases ? showcasePhaseIdx : 0)
     : -1;
   const showcaseTargetCenter = isShowcase
-    ? (showcaseOnFinale ? finaleCenter : phaseCenters[showcaseTargetPhase] ?? null)
+    ? (showcaseOnFinale ? finaleCenter
+        : showcaseOnBidding ? biddingCenter
+        : phaseCenters[showcaseTargetPhase] ?? null)
     : null;
   const panOffset = (showcaseTargetCenter != null)
     ? treeCenter - showcaseTargetCenter
@@ -169,14 +206,21 @@ export default function QQProgressTree({
   })();
   const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
   const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
-  // Wolf-Position: bei CONNECTIONS_4X4 (oder GAME_OVER nach Finale) UND im
-  // Showcase-Last-Step sitzt der Wolf auf dem Finale-Knoten. Sonst auf
-  // dem aktuellen Quiz-Dot.
+  // Wolf-Position: Hierarchie für currentCenter:
+  //   1. wolfOnFinale  → finaleCenter (4×4 Connections oder GAME_OVER)
+  //   2. wolfOnBidding → biddingCenter (Final-Wager-Phase aktiv)
+  //   3. sonst         → aktueller Quiz-Dot
   const wolfOnFinale = showFinale && (showcaseOnFinale
     || state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS');
-  const currentCenter = wolfOnFinale ? finaleCenter : (dotCenters[wolfDotIdx] ?? firstCenter);
+  const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding
+    || state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL');
+  const currentCenter = wolfOnFinale ? finaleCenter
+    : wolfOnBidding ? biddingCenter
+    : (dotCenters[wolfDotIdx] ?? firstCenter);
   const trackStart = firstCenter;
-  const trackEnd = wolfOnFinale ? finaleCenter : lastCenter;
+  const trackEnd = wolfOnFinale ? finaleCenter
+    : wolfOnBidding ? biddingCenter
+    : lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
@@ -298,6 +342,32 @@ export default function QQProgressTree({
               </div>
             );
           })}
+          {/* Bieten-Label — über dem Bidding-Knoten (Wolf-Wunsch 2026-05-11:
+              deutsch „Bieten", englisch „Bid"). */}
+          {showBidding && (() => {
+            const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
+            const biddingLabelColor = isBiddingActive
+              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
+              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
+            return (
+              <div style={{
+                width: biddingDotSize,
+                textAlign: 'center',
+                fontSize: phaseNameSize,
+                fontWeight: 900,
+                color: biddingLabelColor,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+                flexShrink: 0,
+                textShadow: (isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                transform: (isShowcase && isBiddingActive) ? 'translateY(-2px)' : 'translateY(0)',
+                transition: 'all 0.4s var(--qq-ease-out-cubic)',
+              }}>
+                {lang === 'de' ? 'Bieten' : 'Bid'}
+              </div>
+            );
+          })()}
+
           {/* Finale-Label — über dem Finale-Knoten. Spalten-Breite muss exakt
               der Finale-Block-Breite (Trenner + gap + Dot) entsprechen, damit
               der Text mittig über dem Dot landet. (User-Wunsch 2026-04-28:
@@ -435,12 +505,55 @@ export default function QQProgressTree({
             );
           })}
 
+          {/* Bieten-Knoten (Final-Wager) zwischen Quiz-Phasen und 4×4 Finale.
+              Wolf-Wunsch 2026-05-11: 1 Knoten der signalisiert „hier wird auf
+              ein anderes Team gesetzt". Pink-Coin-Look, mittlere Größe (klein
+              ggü. Finale-Dot, groß ggü. Quiz-Dots). */}
+          {showBidding && (() => {
+            const biddingSize = biddingDotSize;
+            const biddingColor = '#EC4899';
+            const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
+            const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+              }}>
+                <div
+                  title={lang === 'de' ? 'Bieten — Tipp auf anderes Team' : 'Bid — guess another team'}
+                  style={{
+                    width: biddingSize,
+                    height: biddingSize,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: Math.round(biddingSize * 0.55),
+                    background: isBiddingActive
+                      ? biddingColor
+                      : isBiddingPast
+                        ? 'rgba(236,72,153,0.22)'
+                        : `linear-gradient(135deg, ${biddingColor}33, ${biddingColor}11)`,
+                    border: `2.5px solid ${isBiddingActive ? '#fff' : biddingColor}`,
+                    boxShadow: isBiddingActive
+                      ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
+                      : isBiddingPast
+                        ? 'none'
+                        : `0 0 12px ${biddingColor}44`,
+                    opacity: isBiddingPast ? 0.55 : 1,
+                    filter: isBiddingPast ? 'grayscale(1)' : 'none',
+                    animation: isBiddingActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
+                    transition: 'all 0.45s var(--qq-ease-out-cubic)',
+                  }}
+                >🪙</div>
+              </div>
+            );
+          })()}
+
           {/* Großes Finale (4×4 Connections) — separater Bonus-Knoten am
               Tree-Ende. Goldenes 🧩-Dot mit Glow, größer als Quiz-Dots
               (klare Hierarchie: das ist DAS Highlight).
               User-Wunsch 2026-04-28-v2: Trenner-Strich raus, Dot mittig
               unter dem 'FINALE'-Label. */}
-          {state.connectionsEnabled !== false && (() => {
+          {state.connectionsEnabled === true && (() => {
             const finaleSize = Math.round(dotSize * 1.35);
             const finaleColor = '#A78BFA';
             // Aktiv = real während CONNECTIONS_4X4 ODER Showcase-Last-Step.

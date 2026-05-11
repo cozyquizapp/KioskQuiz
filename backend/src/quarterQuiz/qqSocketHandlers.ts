@@ -171,14 +171,13 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     playedAt: Date.now(),
     eurovisionMode,
     teams: teamList.map((t: any) => ({
-      id: t.id,
-      name: t.name,
-      color: t.color,
-      avatarId: t.avatarId,
-      // 2026-05-07 (Wolf-Bug 'summary emojis kommen nicht aus dem spiel an'):
-      // emoji-Feld war nie im Save-Snapshot — Summary-Avatare zeigten nur den
-      // Default-Slot-Emoji statt der Spieler-Wahl (z.B. 🐙 statt 🐭).
-      emoji: t.emoji,
+      // 2026-05-11 (Wolf-Bug 'summary zeigt andere avatare als Quiz'): ALLE
+      // Team-Felder spreaden statt cherrypicking. Wolf-Frage: 'kannst du in
+      // der summary nicht einfach die gepickten teams verlinken?' — ja, jetzt
+      // wird der komplette Team-State zur GAME_OVER-Zeit eingefroren, nicht
+      // nur eine subset. Damit wandern auch avatarSetIdOverride / gamesPlayed /
+      // wins / connected etc. mit.
+      ...t,
       score: scores[t.id] ?? 0,
       totalCells: t.totalCells ?? 0,
       largestConnected: t.largestConnected ?? 0,

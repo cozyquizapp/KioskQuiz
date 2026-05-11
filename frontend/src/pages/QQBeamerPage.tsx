@@ -16600,34 +16600,33 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
             }
             const owner = s.teams.find(t => t.id === cell.ownerId);
             if (!owner) return null;
-            const inRegion = !!largestRegionCells[owner.id]?.has(key);
-            const isLeaderRegion = inRegion && owner.id === leaderId;
+            // 2026-05-11 (Wolf-Wunsch): NUR die Region des LEADER-Teams leuchtet.
+            // Andere Teams + Leader's kleinere Inseln sind dim aber farblich
+            // klar erkennbar (KEIN grayscale, nur leicht entsättigt + niedrigere
+            // Opacity). Spieler kann immer noch sehen welche Cells welchem Team
+            // gehören, aber der Fokus liegt klar auf dem Siegerteam.
+            const isLeaderLargestRegion = owner.id === leaderId && !!largestRegionCells[leaderId]?.has(key);
             const color = owner.color;
-            // In-Region: voll deckend + Glow. Off-Region: stark gedimmt,
-            // gray-saturate, kein Glow — Spieler sieht „die kleinen Inseln
-            // zählen nicht für's größte Gebiet".
-            const bgA = inRegion ? 'ff' : '55';
-            const bgB = inRegion ? 'cc' : '33';
-            const borderAlpha = inRegion ? 'ff' : '33';
-            const borderWidth = inRegion ? 2 : 1;
+            const bgA = isLeaderLargestRegion ? 'ff' : 'aa';
+            const bgB = isLeaderLargestRegion ? 'cc' : '55';
+            const borderAlpha = isLeaderLargestRegion ? 'ff' : '66';
+            const borderWidth = isLeaderLargestRegion ? 2 : 1;
             return (
               <div key={key} style={{
                 width: cellSize, height: cellSize, borderRadius: cellRadius,
                 background: `linear-gradient(135deg, ${color}${bgA}, ${color}${bgB})`,
                 border: `${borderWidth}px solid ${color}${borderAlpha}`,
                 ['--c-color' as any]: `${color}aa`,
-                animation: isLeaderRegion
+                animation: isLeaderLargestRegion
                   ? 'qqFRClusterPulse 2.4s ease-in-out infinite'
-                  : (inRegion ? 'qqFRTitleIn 0.5s ease both' : undefined),
-                boxShadow: inRegion
-                  ? (isLeaderRegion
-                      ? `0 0 24px ${color}cc, inset 0 0 14px ${color}55`
-                      : `0 0 12px ${color}88, inset 0 1px 0 rgba(255,255,255,0.18)`)
-                  : 'inset 0 0 8px rgba(0,0,0,0.5)',
-                opacity: inRegion ? 1 : 0.35,
-                filter: inRegion ? 'none' : 'grayscale(0.55) saturate(0.65)',
+                  : 'qqFRTitleIn 0.5s ease both',
+                boxShadow: isLeaderLargestRegion
+                  ? `0 0 28px ${color}dd, 0 0 56px ${color}88, inset 0 0 14px ${color}55`
+                  : 'inset 0 0 4px rgba(0,0,0,0.25)',
+                opacity: isLeaderLargestRegion ? 1 : 0.62,
+                filter: isLeaderLargestRegion ? 'none' : 'saturate(0.85)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'opacity 0.4s ease, filter 0.4s ease',
+                transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
               }}>
                 {owner.emoji && (
                   <CountryFlagOrEmoji
@@ -17869,14 +17868,36 @@ function RaceCountdownOverlay() {
       zIndex: 10,
       pointerEvents: 'none',
     }}>
+      {/* 2026-05-11 (Wolf-Bug 'BEREIT 3-2-1 GO verschwimmt mit Hintergrund'):
+          dunkler radial-Backdrop hinter dem Text damit er klar gegen den
+          Sternenhimmel/Avatar-Layer absticht. Plus opaker Pill-Background um
+          den Text selbst — keine Lesbarkeits-Konkurrenz mehr mit BG-Stars. */}
+      <div aria-hidden style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 'min(900px, 80vw)', height: 'min(600px, 60vh)',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.55) 35%, transparent 70%)`,
+        filter: 'blur(8px)',
+        animation: 'qqRaceCountdownPop 0.5s ease both',
+      }} />
       <div key={step} style={{
+        position: 'relative',
+        padding: 'clamp(18px, 2.2vh, 36px) clamp(36px, 4vw, 80px)',
+        borderRadius: 'clamp(28px, 3vw, 52px)',
+        background: 'rgba(10, 8, 20, 0.78)',
+        border: `3px solid ${current.color}`,
+        backdropFilter: 'blur(14px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(14px) saturate(160%)',
+        boxShadow: `0 0 40px ${current.glow}, 0 0 96px ${current.glow}, 0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)`,
         fontSize: current.size,
         fontWeight: 900,
         color: current.color,
-        textShadow: `0 0 60px ${current.glow}, 0 0 120px ${current.glow}, 0 8px 28px rgba(0,0,0,0.7)`,
+        textShadow: `0 0 24px ${current.glow}, 0 3px 8px rgba(0,0,0,0.9)`,
         letterSpacing: '-0.02em',
         animation: 'qqRaceCountdownPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         fontFamily: 'var(--font-game, system-ui)',
+        lineHeight: 1,
       }}>{current.text}</div>
     </div>
   );

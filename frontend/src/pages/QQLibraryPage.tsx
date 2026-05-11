@@ -712,12 +712,39 @@ export default function QQLibraryPage() {
           ))}
         </div>
 
+        {/* 2026-05-11 (Audit P0): Active-Filter-Bar — zeigt aktive Filter
+            kompakt + Reset-Button. Vorher musste Wolf bei 5 aktiven Filtern
+            jede Filter-Reihe einzeln zurücksetzen. */}
+        {viewMode === 'questions' && (sourceFilter !== 'all' || useFilter !== 'all' || topicFilter !== 'all' || catFilter !== 'all' || phaseFilter !== 'all' || mechFilter !== 'all' || search.trim() !== '') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '6px 10px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#60A5FA', letterSpacing: '0.05em' }}>AKTIV:</span>
+            {search.trim() && <span style={{ fontSize: 11, color: '#cbd5e1' }}>„{search.trim()}"</span>}
+            {sourceFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{sourceFilter === 'mine' ? '📋 Meine' : '📚 Pool'}</span>}
+            {useFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{useFilter}</span>}
+            {topicFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{topicFilter}</span>}
+            {catFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{catFilter}</span>}
+            {phaseFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>R{phaseFilter}</span>}
+            {mechFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{mechFilter}</span>}
+            <button
+              onClick={() => {
+                setSearch(''); setSourceFilter('all'); setUseFilter('all');
+                setTopicFilter('all'); setCatFilter('all'); setPhaseFilter('all'); setMechFilter('all');
+              }}
+              style={{
+                marginLeft: 'auto', padding: '4px 10px', borderRadius: 6, border: 'none',
+                background: 'rgba(239,68,68,0.18)', color: '#fca5a5',
+                fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >✕ Filter zurücksetzen</button>
+          </div>
+        )}
+
         {/* Search + draft-level filters */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={viewMode === 'drafts' ? '🔍 Suchen (Titel, Frage, Antwort)…' : '🔍 Frage, Antwort, Topic, Quiz-Titel…'}
+            placeholder={viewMode === 'drafts' ? '🔍 Suchen (Titel, Frage, Antwort)…' : '🔍 Frage, Antwort, Topic, Quiz-Titel (auch EN)…'}
             style={{ flex: 1, minWidth: 200, padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 14 }}
           />
           {viewMode === 'drafts' && (
@@ -978,7 +1005,18 @@ export default function QQLibraryPage() {
                   {QQ_CATEGORY_LABELS[q.category].emoji}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: '#e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 600 }}>{q.text}</div>
+                  {/* 2026-05-11 (Audit P0): 2-Zeilen-Layout statt nowrap-ellipsis.
+                      Vorher wurden Fragen auf 40% Breite gestaucht weil 9 Badges
+                      rechts Platz fraßen. Jetzt darf Frage 2 Zeilen brechen — Wolf
+                      kann tatsächlich lesen was er ranzieht. */}
+                  <div style={{
+                    color: '#e2e8f0', fontWeight: 600,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: 'hidden',
+                    lineHeight: 1.3,
+                  }}>{q.text}</div>
                   <div style={{ color: '#22C55E', fontSize: 11, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginTop: 2 }}>✓ {q.answer}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>

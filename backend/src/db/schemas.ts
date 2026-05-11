@@ -437,7 +437,14 @@ export async function getQQLibraryItems(opts: {
     if (opts.source)   filter.source   = opts.source;
     if (opts.search && opts.search.trim()) {
       const re = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filter.$or = [{ text: re }, { answer: re }, { topic: re }, { funFact: re }];
+      // 2026-05-11 (Audit P0): EN-Felder mitsuchen — TriviaDB-Import-Items
+      // haben oft nur textEn/answerEn ohne DE-Übersetzung. Vorher waren die
+      // bei DE-Suchbegriffen unsichtbar. Jetzt findet 'eiffel' auch 'Eiffel Tower'.
+      filter.$or = [
+        { text: re }, { textEn: re },
+        { answer: re }, { answerEn: re },
+        { topic: re }, { funFact: re }, { funFactEn: re },
+      ];
     }
     const limit  = Math.min(opts.limit ?? 200, 500);
     const offset = Math.max(opts.offset ?? 0, 0);

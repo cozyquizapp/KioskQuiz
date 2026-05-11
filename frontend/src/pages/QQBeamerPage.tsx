@@ -6419,7 +6419,12 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
         const label = QQ_CATEGORY_LABELS[e.category];
         const subSlug = e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : null;
         const catSlug = qqCatSlug(e.category);
-        const iconSlug = subSlug ?? catSlug;
+        // 2026-05-11 (Wolf-Bug 'onlyConnect zeigt 🎁 statt 🧩'): bei Bunte-
+        // Tüte-Subs OHNE eigenes PNG (onlyConnect, bluff, oneOfEight) NICHT
+        // auf cat-bunte-tuete (= 🎁) fallback. Stattdessen Sub-Emoji nehmen
+        // (passend zum Badge: 🧩 / 🎭 / 🕵️). Nur Quiz-Kategorien ohne Sub
+        // dürfen catSlug nutzen.
+        const iconSlug = e.bunteTueteKind ? subSlug : catSlug;
         const emojiFallback = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
         const isPast = i < displayIdx;
         const isCurrent = i === displayIdx;
@@ -7652,7 +7657,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {(() => {
                   const subSlug = btKind ? qqSubSlug(btKind) : null;
                   const catSlug = cat ? qqCatSlug(cat as string) : null;
-                  const slug = subSlug ?? catSlug;
+                  // 2026-05-11 (Wolf): bei Bunte-Tüte-Subs ohne PNG NICHT auf
+                  // cat-bunte-tuete-PNG fallback (wäre 🎁), sondern Sub-Emoji
+                  // aus info.emoji rendern.
+                  const slug = btKind ? subSlug : catSlug;
                   return slug
                     ? <QQIcon slug={slug} size={'clamp(110px, 16vw, 200px)'} alt={info.title.de} />
                     : info.emoji;
@@ -7761,7 +7769,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 {(() => {
                   const subSlug = bunteKind ? qqSubSlug(bunteKind) : null;
-                  const slug = subSlug ?? qqCatSlug(cat as string);
+                  // 2026-05-11 (Wolf): bei Bunte-Tüte-Subs ohne PNG NICHT auf
+                  // cat-bunte-tuete-PNG fallback. catEmoji ist hier bereits
+                  // korrekt das Sub-Emoji (🧩/🎭/🕵️) via bunteSub.emoji.
+                  const slug = bunteKind ? subSlug : qqCatSlug(cat as string);
                   if (slug) return <QQIcon slug={slug} size={'clamp(120px, 18vw, 240px)'} alt={catLabel} />;
                   return catEmoji;
                 })()}
@@ -12574,17 +12585,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   inline-block, damit transform greift. */}
               <span style={{ display: 'inline-block', animation: 'qqBadgeIconBob 3.4s ease-in-out infinite' }}>
                 {(() => {
-                  const slug = qqCatSlug(cat as string);
+                  // 2026-05-11 (Wolf 'Badge soll Sub-Mechanik-Emoji zeigen,
+                  // nicht generisches 🎁 für Bunte-Tüte'): bei BUNTE_TUETE
+                  // mit Sub-Kind das Sub-Icon nehmen, sonst Cat-Icon.
+                  const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
+                  const subSlug = btKind ? qqSubSlug(btKind) : null;
+                  const slug = btKind ? subSlug : qqCatSlug(cat as string);
+                  const fallbackEmoji = btKind
+                    ? QQ_BUNTE_TUETE_LABELS[btKind].emoji
+                    : catLabel.emoji;
                   return slug
                     ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
+                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{fallbackEmoji}</span>;
                 })()}
               </span>
               <span style={{
                 fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
                 color: accent, letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>
-                {lang === 'en' ? catLabel.en : catLabel.de}
+                {(() => {
+                  const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
+                  if (btKind) {
+                    return lang === 'en'
+                      ? QQ_BUNTE_TUETE_LABELS[btKind].en
+                      : QQ_BUNTE_TUETE_LABELS[btKind].de;
+                  }
+                  return lang === 'en' ? catLabel.en : catLabel.de;
+                })()}
               </span>
             </div>
             {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener

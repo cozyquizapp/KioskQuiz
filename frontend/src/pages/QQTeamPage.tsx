@@ -18,7 +18,7 @@ import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
 import { JokerIcon } from '../components/JokerIcon';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
-import { QQIcon, QQEmojiIcon, qqCatSlug } from '../components/QQIcon';
+import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted,
 } from '../utils/sounds';
@@ -2494,10 +2494,17 @@ function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' |
               <>
                 <div style={{ fontSize: 44, marginBottom: 4, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite' }}>
                   {(() => {
-                    const slug = cat ? qqCatSlug(cat as string) : null;
+                    // 2026-05-11 (Wolf): bei Bunte-Tüte-Sub-Mechanik das
+                    // spezifische Sub-Icon/Emoji nutzen statt generisches 🎁.
+                    const btKind = s.currentQuestion?.category === 'BUNTE_TUETE'
+                      ? s.currentQuestion?.bunteTuete?.kind
+                      : undefined;
+                    const subSlug = btKind ? qqSubSlug(btKind) : null;
+                    const slug = btKind ? subSlug : (cat ? qqCatSlug(cat as string) : null);
+                    const fallback = btKind ? QQ_BUNTE_TUETE_LABELS[btKind].emoji : catInfo.emoji;
                     return slug
                       ? <QQIcon slug={slug} size={56} alt={catInfo[lang]} />
-                      : catInfo.emoji;
+                      : fallback;
                   })()}
                 </div>
                 <div style={{
@@ -2637,12 +2644,22 @@ function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         boxShadow: `0 0 16px ${catAccent}22`,
       }}>
         {(() => {
-          const slug = qqCatSlug(q.category as string);
+          // 2026-05-11 (Wolf): Bunte-Tüte-Sub-Icon statt 🎁.
+          const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
+          const subSlug = btKind ? qqSubSlug(btKind) : null;
+          const slug = btKind ? subSlug : qqCatSlug(q.category as string);
+          const fallback = btKind ? QQ_BUNTE_TUETE_LABELS[btKind].emoji : catLabel.emoji;
           return slug
             ? <QQIcon slug={slug} size={20} alt={catLabel.de} />
-            : <span style={{ fontSize: 16 }}><QQEmojiIcon emoji={catLabel.emoji}/></span>;
+            : <span style={{ fontSize: 16 }}><QQEmojiIcon emoji={fallback}/></span>;
         })()}
-        {lang === 'en' ? catLabel.en : catLabel.de}
+        {(() => {
+          const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
+          if (btKind) {
+            return lang === 'en' ? QQ_BUNTE_TUETE_LABELS[btKind].en : QQ_BUNTE_TUETE_LABELS[btKind].de;
+          }
+          return lang === 'en' ? catLabel.en : catLabel.de;
+        })()}
       </div>
 
       {/* Timer bar */}

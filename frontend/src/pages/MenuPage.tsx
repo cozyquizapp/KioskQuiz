@@ -12,7 +12,7 @@ const cozyQuizLinks: LinkItem[] = [
   { path: '/beamer',      label: 'Beamer',             emoji: '📽️', note: 'Grid live anzeigen' },
   { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
   { path: '/builder',     label: 'CozyBuilder',        emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
-  { path: '/library',     label: 'Fragenbibliothek',   emoji: '📚', note: 'QQ Drafts durchsuchen & verwalten' },
+  { path: '/library',     label: 'CozyLibrary',        emoji: '📚', note: 'Alle Fragen + Topic-Filter + wie oft schon gespielt' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
   { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
 ];

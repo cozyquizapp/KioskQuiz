@@ -19,6 +19,7 @@ import {
 } from './qqBfs';
 import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
+import { recordQQQuestionUsage } from '../db/schemas';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -977,6 +978,22 @@ export function qqActivateQuestion(
   // Accumulate previous question's answers into history before clearing
   qqFlushQuestionToHistory(room);
   room.phase          = 'QUESTION_ACTIVE';
+  // 2026-05-11: CozyLibrary-Usage-Tracking. Fire-and-forget — Doppelaktivierung
+  // wird im Schema-Helper innerhalb von 5min dedupliziert (Mod-Doppelklick etc.).
+  {
+    const q = room.currentQuestion;
+    if (q?.id) {
+      recordQQQuestionUsage({
+        questionId: q.id,
+        text:       q.text ?? '',
+        category:   q.category ?? '',
+        topic:      q.topic ?? '',
+        roomCode:   room.roomCode,
+        draftId:    room.draftId,
+        draftTitle: room.draftTitle,
+      }).catch(() => {});
+    }
+  }
   room.revealedAnswer = null;
   room.correctTeamId  = null;
   room._currentQuestionWinners = [];

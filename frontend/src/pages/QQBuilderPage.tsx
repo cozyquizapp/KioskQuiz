@@ -40,6 +40,7 @@ import {
   QQBunteTueteKind, QQ_BUNTE_TUETE_LABELS,
   QQBunteTuetePayload, QQOptionImage,
   QQThemePreset, QQ_THEME_PRESETS,
+  QQ_TOPICS,
 } from '../../../shared/quarterQuizTypes';
 import { compressImageIfNeeded } from '../utils/imageCompress';
 import { ConnectionsEditorModal } from '../components/ConnectionsEditor';
@@ -1499,6 +1500,58 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
               rows={fullWidth ? 3 : 2}
               placeholder="Question text in English…"
             />
+          </div>
+          {/* 2026-05-11: Topic-Tag (Wissensgebiet). Vorschläge aus QQ_TOPICS,
+              Custom-Eingabe via Input möglich. Topic ist orthogonal zur
+              Mechanik — ermöglicht in CozyLibrary Mix-Filter (z.B. „alle
+              Mathe-Fragen unabhängig von SCHAETZCHEN/MUCHO/CHEESE"). */}
+          <div>
+            <label style={labelStyle}>
+              🏷️ Topic / Wissensgebiet <span style={{ color: '#334155' }}>optional — hilft beim Mischen in CozyLibrary</span>
+            </label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                className="cozy-input"
+                list="cozy-topic-suggestions"
+                value={q.topic ?? ''}
+                onChange={e => onChange({ ...q, topic: e.target.value || undefined })}
+                placeholder="z.B. Musik, Geographie, Promis…"
+                style={{ flex: 1, minWidth: 180, padding: '8px 12px', borderRadius: 8, border: `1px solid ${catColor}33`, background: 'rgba(255,255,255,0.04)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, ['--cozy-focus-color' as any]: catColor }}
+              />
+              <datalist id="cozy-topic-suggestions">
+                {QQ_TOPICS.map(t => <option key={t} value={t} />)}
+              </datalist>
+              {q.topic && (
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...q, topic: undefined })}
+                  style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.06)', color: '#64748b', fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  ✕ Topic entfernen
+                </button>
+              )}
+            </div>
+            {/* Quick-Chips für die häufigsten Topics */}
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
+              {QQ_TOPICS.slice(0, 10).map(t => {
+                const active = q.topic === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => onChange({ ...q, topic: active ? undefined : t })}
+                    style={{
+                      padding: '3px 9px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                      fontWeight: 700, fontSize: 11, fontFamily: 'inherit',
+                      background: active ? `${catColor}22` : 'rgba(255,255,255,0.04)',
+                      color: active ? catColor : '#64748b',
+                    }}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </>
       )}

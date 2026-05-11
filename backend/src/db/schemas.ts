@@ -388,6 +388,123 @@ export async function getQQRegularTeam(teamId: string, pubCode: string): Promise
   }
 }
 
+// ============= QUARTER QUIZ QUESTION USAGE =============
+// 2026-05-11: pro QQQuestion wird gezaehlt wie oft + wann + in welchem
+// Room/Draft sie aktiviert wurde. Backbone fuer die CozyLibrary, damit Wolf
+// nach 10 Monaten Pub-Quiz sieht welche Fragen schon (zu oft) gelaufen sind
+// und nicht versehentlich Wiederholungen bei Stammgaesten serviert.
+const QQQuestionUsageSchema = new mongoose.Schema({
+  questionId: { type: String, required: true, unique: true, index: true },
+  // letzter bekannter Text — fuer Backfill / Diagnose, falls die Frage aus
+  // ihrem Draft geloescht oder umbenannt wurde.
+  lastText:   { type: String, default: '' },
+  category:   { type: String, default: '' },
+  topic:      { type: String, default: '' },
+  usageCount: { type: Number, default: 0, index: true },
+  firstUsedAt:{ type: Number, default: 0 },
+  lastUsedAt: { type: Number, default: 0, index: true },
+  // Letzte N Spielsessions in denen die Frage lief — fuer "wo schon mal".
+  // Wir limitieren auf 50 Eintraege, sonst waechst das Doc ungebremst.
+  recentUses: [{
+    roomCode:   String,
+    draftId:    String,
+    draftTitle: String,
+    playedAt:   Number,
+  }],
+}, { strict: false });
+
+export const QQQuestionUsageModel = mongoose.model('QQQuestionUsage', QQQuestionUsageSchema);
+
+/** Idempotenter Hook: zaehlt eine Frage-Aktivierung. Wenn dieselbe Frage in
+ *  derselben Session bereits gezaehlt wurde (gleiche roomCode + questionId in
+ *  recentUses innerhalb von 5 Minuten), wird nichts gemacht — damit Reconnects /
+ *  Re-Renders nicht doppelt zaehlen. */
+export async function recordQQQuestionUsage(args: {
+  questionId: string;
+  text?: string;
+  category?: string;
+  topic?: string;
+  roomCode?: string;
+  draftId?: string;
+  draftTitle?: string;
+}): Promise<void> {
+  const now = Date.now();
+  const dedupeWindow = 5 * 60 * 1000;
+  try {
+    const existing = await QQQuestionUsageModel.findOne({ questionId: args.questionId }).lean();
+    if (existing) {
+      const recent = (existing.recentUses ?? []) as any[];
+      const dup = recent.find((r: any) =>
+        r?.roomCode === (args.roomCode ?? '') &&
+        typeof r?.playedAt === 'number' &&
+        (now - r.playedAt) < dedupeWindow
+      );
+      if (dup) return;
+    }
+    const newUse = {
+      roomCode:   args.roomCode ?? '',
+      draftId:    args.draftId ?? '',
+      draftTitle: args.draftTitle ?? '',
+      playedAt:   now,
+    };
+    await QQQuestionUsageModel.updateOne(
+      { questionId: args.questionId },
+      {
+        $set: {
+          lastText:   args.text ?? '',
+          category:   args.category ?? '',
+          topic:      args.topic ?? '',
+          lastUsedAt: now,
+        },
+        $setOnInsert: { firstUsedAt: now },
+        $inc: { usageCount: 1 },
+        $push: { recentUses: { $each: [newUse], $slice: -50 } },
+      },
+      { upsert: true },
+    );
+  } catch (err) {
+    console.error('Fehler beim Tracken der QQ Question Usage:', err);
+  }
+}
+
+/** Map questionId → { usageCount, lastUsedAt, recentUses[] } für die Library. */
+export async function getQQUsageMap(): Promise<Record<string, {
+  usageCount: number;
+  firstUsedAt: number;
+  lastUsedAt: number;
+  recentUses: Array<{ roomCode: string; draftId: string; draftTitle: string; playedAt: number }>;
+}>> {
+  try {
+    const docs = await QQQuestionUsageModel.find({}).lean();
+    const map: Record<string, any> = {};
+    for (const d of docs) {
+      const id = (d as any).questionId;
+      if (!id) continue;
+      map[id] = {
+        usageCount:  (d as any).usageCount ?? 0,
+        firstUsedAt: (d as any).firstUsedAt ?? 0,
+        lastUsedAt:  (d as any).lastUsedAt ?? 0,
+        recentUses:  (d as any).recentUses ?? [],
+      };
+    }
+    return map;
+  } catch (err) {
+    console.error('Fehler beim Laden der QQ Usage Map:', err);
+    return {};
+  }
+}
+
+/** Wipe-All — Admin-Reset, falls Wolf bei 0 starten will. */
+export async function clearQQQuestionUsage(): Promise<number> {
+  try {
+    const res = await QQQuestionUsageModel.deleteMany({});
+    return res.deletedCount ?? 0;
+  } catch (err) {
+    console.error('Fehler beim Loeschen der QQ Question Usage:', err);
+    return 0;
+  }
+}
+
 /** Upsert nach Game-Over: pro Team gamesPlayed +1, fuer Sieger zusaetzlich wins +1. */
 export async function upsertQQRegularTeams(
   pubCode: string,

@@ -137,6 +137,8 @@ import {
   saveQQFeedbackToDB,
   getQQFeedbackFromDB,
   deleteQQFeedbackFromDB,
+  getQQUsageMap,
+  clearQQQuestionUsage,
 } from './db/schemas';
 
 // --- Server setup ----------------------------------------------------------
@@ -9650,6 +9652,28 @@ app.delete('/api/qq/feedback/:id', async (req, res) => {
   if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
   const ok = await deleteQQFeedbackFromDB(req.params.id);
   res.json({ ok });
+});
+
+// ── CozyLibrary: Question Usage ───────────────────────────────────────────────
+// 2026-05-11: Map questionId → { usageCount, lastUsedAt, recentUses[] }.
+// CozyLibrary nutzt das um pro Frage eine "schon X mal gespielt" Badge + die
+// letzten Pubs/Drafts zu zeigen. Bei DB-Down: leeres Objekt (kein 500).
+app.get('/api/qq/library/usage', async (_req, res) => {
+  if (!isDBConnected()) return res.json({});
+  try {
+    const map = await getQQUsageMap();
+    res.json(map);
+  } catch (err) {
+    console.error('[/api/qq/library/usage] error:', err);
+    res.json({});
+  }
+});
+
+app.delete('/api/qq/library/usage', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  const deleted = await clearQQQuestionUsage();
+  res.json({ ok: true, deleted });
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

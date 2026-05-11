@@ -47,6 +47,18 @@ export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
   CHEESE:        '#8B5CF6',
 };
 
+// ── Topics (Wissensgebiete) ───────────────────────────────────────────────────
+// Cross-category Thema-Tag: orthogonal zur Mechanik (SCHAETZCHEN/MUCHO/...).
+// Free-text-Feld an QQQuestion, diese Liste dient als Vorschläge/Filter im
+// CozyLibrary-UI. Wolf kann eigene Topics setzen — die Konstante ist nur Default.
+export const QQ_TOPICS = [
+  'Musik', 'Film & TV', 'Sport', 'Geschichte', 'Geographie',
+  'Wissenschaft', 'Mathematik', 'Kultur', 'Promis', 'Literatur',
+  'Essen & Trinken', 'Spiele', 'Technologie', 'Natur & Tiere',
+  'Allgemeinwissen', 'Politik', 'Sprache', 'Kunst', 'Religion', 'Wirtschaft',
+] as const;
+export type QQTopic = typeof QQ_TOPICS[number];
+
 // ── Team palette (derived from QQ_AVATARS, kept for legacy reference) ────────
 // Each avatar has its own signature color — teams pick an avatar+color pair.
 // Order matches QQ_AVATARS so fallback indexing stays in sync with avatar rings.
@@ -245,6 +257,10 @@ export interface QQQuestion {
   // Private, shown only in /moderator + host cheatsheet, never on beamer or team.
   funFact?: string;
   funFactEn?: string;
+  /** 2026-05-11: Wissensgebiet-Tag (Musik/Geo/Promis/...) für CozyLibrary-Filter.
+   *  Orthogonal zur Mechanik — ermöglicht Mix-Quizze mit Varianz über Themen.
+   *  Free-text, Vorschläge siehe QQ_TOPICS. */
+  topic?: string;
 }
 
 // ── Per-team per-phase stats ──────────────────────────────────────────────────

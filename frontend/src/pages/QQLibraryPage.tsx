@@ -13,6 +13,18 @@ type ViewMode = 'drafts' | 'questions';
 type UseFilter = 'all' | 'unused' | 'rare' | 'recent';
 type SourceFilter = 'all' | 'mine' | 'pool';
 
+type ImportStatus = {
+  running: boolean;
+  startedAt: number;
+  finishedAt: number | null;
+  fetchedTotal: number;
+  importedTotal: number;
+  translatedTotal: number;
+  errors: string[];
+  lastBatch: number;
+  targetTotal: number;
+};
+
 type UsageEntry = {
   usageCount: number;
   firstUsedAt: number;
@@ -96,6 +108,10 @@ export default function QQLibraryPage() {
   const [targetDraftId, setTargetDraftId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // TriviaDB-Import (Admin)
+  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+  const [showImportPanel, setShowImportPanel] = useState(false);
+
   // Initial load: drafts + usage + pool parallel
   useEffect(() => {
     Promise.all([
@@ -117,6 +133,45 @@ export default function QQLibraryPage() {
     const t = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Poll Import-Status während Lauf
+  useEffect(() => {
+    if (!importStatus?.running) return;
+    const t = setInterval(async () => {
+      try {
+        const r = await fetch('/api/qq/library/import-status');
+        const data = await r.json();
+        setImportStatus(data);
+        // Re-fetch Pool wenn Import läuft (alle 5s sehen wir neue Items)
+        const poolRes = await fetch('/api/qq/library/items?limit=500').then(r => r.json()).catch(() => null);
+        if (poolRes?.items) {
+          setPoolItems(poolRes.items);
+          setPoolTotal(poolRes.total ?? poolRes.items.length);
+        }
+        if (!data.running) clearInterval(t);
+      } catch { /* ignore */ }
+    }, 5000);
+    return () => clearInterval(t);
+  }, [importStatus?.running]);
+
+  async function startTriviaDbImport(pin: string, targetCount: number) {
+    try {
+      const res = await fetch('/api/qq/library/import-triviadb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, targetCount, translate: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error ?? 'Fehler beim Import-Start');
+        return;
+      }
+      setImportStatus(data.status);
+      setToast(`Import gestartet — Ziel: ${targetCount} Fragen`);
+    } catch {
+      setToast('Fehler beim Import-Start');
+    }
+  }
 
   // Reset Pagination when filter changes
   useEffect(() => {
@@ -357,11 +412,27 @@ export default function QQLibraryPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/menu')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>← Menü</button>
           <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📚 CozyLibrary</h1>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#3B82F6', color: '#fff' }}>📥 Importieren</button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => setShowImportPanel(p => !p)} style={{
+              padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              fontWeight: 700, fontSize: 13,
+              background: showImportPanel ? '#A78BFA' : 'rgba(168,139,250,0.18)',
+              color: showImportPanel ? '#fff' : '#A78BFA',
+            }}>
+              ⬇️ Pool erweitern (TriviaDB)
+            </button>
+            <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#3B82F6', color: '#fff' }}>📥 Draft importieren</button>
             <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#22C55E', color: '#fff' }}>+ Neuer Fragensatz</button>
           </div>
         </div>
+
+        {/* TriviaDB-Import-Panel */}
+        {showImportPanel && (
+          <ImportPanel
+            status={importStatus}
+            onStart={startTriviaDbImport}
+          />
+        )}
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
@@ -749,6 +820,96 @@ export default function QQLibraryPage() {
           </button>
         )}
       </div>
+      )}
+    </div>
+  );
+}
+
+// ── ImportPanel — Admin TriviaDB-Import ─────────────────────────────────────
+function ImportPanel({
+  status,
+  onStart,
+}: {
+  status: ImportStatus | null;
+  onStart: (pin: string, targetCount: number) => void;
+}) {
+  const [pin, setPin] = useState('');
+  const [targetCount, setTargetCount] = useState(500);
+  const running = status?.running ?? false;
+  const progressPct = status?.targetTotal ? Math.min(100, Math.round((status.importedTotal / status.targetTotal) * 100)) : 0;
+
+  return (
+    <div style={{
+      marginTop: 14, padding: '14px 16px', borderRadius: 10,
+      background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.25)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: '#A78BFA' }}>📚 Pool erweitern — OpenTriviaDB-Import</span>
+        <span style={{ fontSize: 11, color: '#64748b' }}>
+          Lädt frei lizenzierte Trivia-Fragen (CC BY-SA), übersetzt via DeepL, persistiert mit source=triviadb
+        </span>
+      </div>
+
+      {!running && (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="password"
+            value={pin}
+            onChange={e => setPin(e.target.value)}
+            placeholder="Admin-PIN"
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, width: 140 }}
+          />
+          <select
+            value={targetCount}
+            onChange={e => setTargetCount(parseInt(e.target.value, 10))}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}
+          >
+            <option value={500}>500 Fragen (~5 Min)</option>
+            <option value={1000}>1.000 Fragen (~10 Min)</option>
+            <option value={2500}>2.500 Fragen (~25 Min)</option>
+            <option value={5000}>5.000 Fragen (~50 Min)</option>
+          </select>
+          <button
+            onClick={() => onStart(pin, targetCount)}
+            disabled={!pin}
+            style={{
+              padding: '7px 16px', borderRadius: 8, border: 'none',
+              cursor: pin ? 'pointer' : 'not-allowed',
+              fontWeight: 800, fontSize: 13, fontFamily: 'inherit',
+              background: pin ? '#A78BFA' : 'rgba(255,255,255,0.04)',
+              color: pin ? '#fff' : '#475569',
+            }}
+          >
+            ⬇️ Import starten
+          </button>
+          {status?.finishedAt && (
+            <span style={{ fontSize: 11, color: '#64748b' }}>
+              Letzter Lauf: {status.importedTotal} importiert, {status.translatedTotal} übersetzt
+              {status.errors.length > 0 && ` · ${status.errors.length} Fehler`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {running && status && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+            <span style={{ fontWeight: 800, color: '#A78BFA' }}>
+              ⏳ Läuft… {status.importedTotal} / {status.targetTotal} importiert ({progressPct}%)
+            </span>
+            <span style={{ color: '#64748b' }}>
+              {status.translatedTotal} übersetzt · Batch: {status.lastBatch} · seit {Math.round((Date.now() - status.startedAt) / 1000)}s
+            </span>
+          </div>
+          <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }}>
+            <div style={{ width: `${progressPct}%`, height: '100%', borderRadius: 4, background: '#A78BFA', transition: 'width 0.5s' }} />
+          </div>
+          {status.errors.length > 0 && (
+            <div style={{ fontSize: 11, color: '#F87171' }}>
+              ⚠ {status.errors.length} Fehler — letzter: {status.errors[status.errors.length - 1]?.slice(0, 100)}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -147,6 +147,7 @@ import {
   getQQLibraryTopics,
 } from './db/schemas';
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
+import { runTriviaDbImport, getImportStatus } from './data/triviaDbImport';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -9739,6 +9740,25 @@ app.post('/api/qq/library/reseed', async (req, res) => {
   if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
   const count = await bulkUpsertQQLibrarySeed(COZY_LIBRARY_SEED);
   res.json({ ok: true, count });
+});
+
+// ── TriviaDB-Import (Massen-Pool für 10k+) ────────────────────────────────────
+// 2026-05-11: Admin-getriggerter Background-Import. ~5–6k frei lizenzierte
+// Trivia-Fragen aus opentdb.com → DeepL-Übersetzung von text+answer → DB.
+// Läuft async — Status pollen via GET /api/qq/library/import-status.
+app.post('/api/qq/library/import-triviadb', async (req, res) => {
+  const { pin, targetCount, translate } = req.body as { pin?: string; targetCount?: number; translate?: boolean };
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  if (!isDBConnected()) return res.status(503).json({ error: 'DB nicht verbunden' });
+  const status = await runTriviaDbImport({
+    targetCount: typeof targetCount === 'number' ? targetCount : 5000,
+    translate: translate !== false,
+  });
+  res.json({ ok: true, status });
+});
+
+app.get('/api/qq/library/import-status', (_req, res) => {
+  res.json(getImportStatus());
 });
 
 // ── QQ Upcoming Events ────────────────────────────────────────────────────────

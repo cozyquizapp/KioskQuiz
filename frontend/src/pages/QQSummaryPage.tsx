@@ -2,7 +2,7 @@
 // auf dem Beamer, landen hier, wählen ihr Team, sehen eigene Stats + Feedback-
 // Formular + nächste Quiz-Termine.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
@@ -547,12 +547,12 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
 
       <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          <Stat label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
-          <Stat label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
-          <Stat label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
-          <Stat label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
-          <Stat label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent={brand.pink} />
-          <Stat label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent="#EF4444" />
+          <Stat staggerIdx={0} label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
+          <Stat staggerIdx={1} label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
+          <Stat staggerIdx={2} label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent="#22C55E" />
+          <Stat staggerIdx={3} label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent="#22C55E" />
+          <Stat staggerIdx={4} label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent={brand.pink} />
+          <Stat staggerIdx={5} label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent="#EF4444" />
         </div>
       </Section>
 
@@ -926,25 +926,39 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // Funktion zurueck. useEffect ruft sie beim Re-Run/Unmount auf — vorher liefen
 // alte RAF-Loops weiter und ueberschrieben den display-State (Zahlen-Glitches
 // bei Team-Wechsel/Sprache-Switch).
-function useCountUp(finalValue: number | string, durationMs = 720): string {
+function useCountUp(finalValue: number | string, durationMs = 720, delayMs = 0): string {
   const [display, setDisplay] = useState<string>(() => {
     if (typeof finalValue === 'string') return finalValue;
     return '0';
   });
+  // 2026-05-11 (Audit P0): nur einmal pro Mount animieren. Vorher startete
+  // jedes Re-Render (z.B. bei Sprache-Wechsel) die Animation von 0 → Stats
+  // sprangen visuell zurück. Mit hasAnimated-Ref triggert die Anim nur beim
+  // ersten Mount mit gültigem Wert. Plus delayMs für Stagger (i * 80ms).
+  const hasAnimatedRef = useRef(false);
   useEffect(() => {
-    if (typeof finalValue === 'string') {
-      // Prozent-String wie "53%" → anzaehlen auf Zahl, dann % anhaengen
-      const pctMatch = finalValue.match(/^(-?\d+(?:\.\d+)?)%$/);
-      if (pctMatch) {
-        const target = Number(pctMatch[1]);
-        return animateTo(target, (v) => setDisplay(`${Math.round(v)}%`), durationMs);
-      }
-      setDisplay(finalValue);
+    if (hasAnimatedRef.current) {
+      // Bereits animiert → direkt finalValue setzen ohne Re-Animation
+      setDisplay(typeof finalValue === 'string' ? finalValue : String(finalValue));
       return;
     }
-    const target = finalValue;
-    return animateTo(target, (v) => setDisplay(String(Math.round(v))), durationMs);
-  }, [finalValue, durationMs]);
+    hasAnimatedRef.current = true;
+    const startTimer = window.setTimeout(() => {
+      if (typeof finalValue === 'string') {
+        const pctMatch = finalValue.match(/^(-?\d+(?:\.\d+)?)%$/);
+        if (pctMatch) {
+          const target = Number(pctMatch[1]);
+          animateTo(target, (v) => setDisplay(`${Math.round(v)}%`), durationMs);
+        } else {
+          setDisplay(finalValue);
+        }
+        return;
+      }
+      const target = finalValue;
+      animateTo(target, (v) => setDisplay(String(Math.round(v))), durationMs);
+    }, delayMs);
+    return () => window.clearTimeout(startTimer);
+  }, [finalValue, durationMs, delayMs]);
   return display;
 }
 
@@ -971,8 +985,10 @@ function animateTo(target: number, onTick: (v: number) => void, durationMs: numb
   };
 }
 
-function Stat({ label, value, suffix, accent }: { label: string; value: number | string; suffix?: string; accent: string }) {
-  const animated = useCountUp(value);
+function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string; value: number | string; suffix?: string; accent: string; staggerIdx?: number }) {
+  // 2026-05-11 (Audit P0): Stagger 80ms pro Stat-Index, statt alle 6 Stats
+  // synchron bei 0 starten zu lassen. Eleganter Reveal.
+  const animated = useCountUp(value, 720, staggerIdx * 80);
   return (
     <div style={{
       background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
@@ -1126,11 +1142,43 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
 }
 
 function Loading({ lang }: { lang: Lang }) {
+  // 2026-05-11 (Audit P0): Skeleton statt Spinner. Vorher leerer 🎲 +
+  // 'Lade eure Stats…' wirkte bei Coolify-Cold-Start (~2-3s DB-Reconnect)
+  // wie '404 nicht gefunden'. Jetzt: gefakter Layout-Frame mit Pulse-Anim
+  // → User sieht 'da kommt was', kein Vertrauens-Knick.
   return (
-    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>🎲</div>
-      <div style={{ color: '#94a3b8' }}>{tr('loading', lang)}</div>
-    </div>
+    <>
+      {/* Hero-Skeleton */}
+      <div style={{
+        padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+        animation: 'qqSkPulse 1.4s ease-in-out infinite',
+      }}>
+        <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', margin: '0 auto 12px' }} />
+        <div style={{ width: '40%', height: 16, borderRadius: 6, background: 'rgba(255,255,255,0.06)', margin: '6px auto' }} />
+        <div style={{ width: '60%', height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.08)', margin: '6px auto' }} />
+      </div>
+      {/* Stats-Skeleton */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 18 }}>
+        {[0, 1, 2, 3, 4, 5].map(i => (
+          <div key={i} style={{
+            height: 64, borderRadius: 12,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            animation: `qqSkPulse 1.4s ease-in-out ${i * 0.1}s infinite`,
+          }} />
+        ))}
+      </div>
+      <div style={{ textAlign: 'center', color: '#475569', fontSize: 13, fontWeight: 700 }}>
+        {tr('loading', lang)}
+      </div>
+      <style>{`
+        @keyframes qqSkPulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 0.95; }
+        }
+      `}</style>
+    </>
   );
 }
 
@@ -1186,7 +1234,11 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         : tr('fbPhGen', lang);
 
   async function submit() {
-    if (!text.trim()) { setErr(tr('fbErrEmpty', lang)); return; }
+    // 2026-05-11 (Audit P0-3 Light): Pflicht-Text aufgeweicht. Bei Praise
+    // oder Rating ≥ 4 reicht ein Quick-Submit ohne Freitext — die Sterne
+    // sind die Aussage. Bug/Idee/negativ-Feedback brauchen weiterhin Text.
+    const allowEmpty = type === 'praise' || (rating !== null && rating >= 4);
+    if (!text.trim() && !allowEmpty) { setErr(tr('fbErrEmpty', lang)); return; }
     setSending(true); setErr(null);
     try {
       const res = await fetch(`${API_BASE}/qq/feedback`, {

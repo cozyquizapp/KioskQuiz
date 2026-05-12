@@ -4856,6 +4856,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden', fontFamily: fontFam,
+      minHeight: 0,
     }}>
       <Fireflies />
 
@@ -5314,6 +5315,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
       position: 'relative', overflow: 'hidden',
       gap: 'clamp(10px, 1.5vh, 20px)',
+      minHeight: 0,
       // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: nicht so schwarz, an
       // Setup-Look angleichen). Doppelter Radial-Gradient: oben-mitte amber-Glow,
       // unten-rechts indigo-Glow auf #0A0814-Base — exakt wie QQModeratorPage.
@@ -5964,6 +5966,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         : 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 55%, #020617 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: fontFam, overflow: 'hidden',
+      minHeight: 0,
     }}>
       {escBgUrl && (
         <div aria-hidden style={{
@@ -14353,7 +14356,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   // Key bindet an questionIndex, damit React beim Phase-Re-Mount die
   // Animation neu triggert.
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: 0 }}>
       <Fireflies color={`${teamColor}88`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
@@ -15808,6 +15811,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       padding: '8vh 6vw',
       background: COZY_CARD_BG,
       position: 'relative',
+      minHeight: 0, overflow: 'hidden',
     }}>
       {/* 2026-05-09 (Wolf): FinalBettingView komplett refactored auf
           Tipp-Variante. Vorher: alte Cell-Picker-Beschreibung (irreführend).
@@ -15944,6 +15948,7 @@ function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 'clamp(40px, 5vh, 80px) clamp(48px, 6vw, 120px)',
       animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+      minHeight: 0,
       overflow: 'hidden',
       position: 'relative',
     }}>
@@ -16400,6 +16405,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       padding: '4vh 4vw',
       background: COZY_CARD_BG,
       position: 'relative', overflow: 'hidden',
+      minHeight: 0,
     }}>
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
@@ -20158,6 +20164,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         position: 'relative', overflow: 'hidden',
         padding: 'clamp(16px, 2.5vh, 36px) clamp(20px, 3vw, 48px)',
         gap: 'clamp(14px, 2vh, 28px)',
+        minHeight: 0,
       }}>
         {/* Ambient glow in Team-Farbe */}
         <div aria-hidden style={{
@@ -20784,6 +20791,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 64px 56px', position: 'relative', overflow: 'hidden',
       gap: 28,
+      minHeight: 0,
       // BG identisch zu PausedView/PreGameView (Setup-Look).
       background:
         `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +

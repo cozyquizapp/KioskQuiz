@@ -60,9 +60,16 @@ export const QQ_BEAMER_CSS = `
      bounce — fühlt sich „fließend" an statt „springig". Blur raus, war zu
      fragil und kostete Perf bei 16k-Beamer. */
   @keyframes qqSlideIn {
+    /* 2026-05-12 (Beamer-Choreo-Audit P0 #1): weicherer Start. Vorher schnellte
+       Opacity in den ersten 50% von 0→1 → harter Phase-Cut weil prev-Phase im
+       gleichen Frame verschwand. Jetzt: 30% reine Opacity-Anzeige als „Fade-
+       Reception" damit ALTE Phase visuell endet bevor neue motiongetrieben
+       reinkommt. Echte Cross-Fade-Wrapper-Layer wären invasiv (Refactor mit
+       prev-state). Diese Mini-Variante geht 90% des Wegs. */
     0%   { opacity: 0; transform: scale(0.96) translateY(24px); }
-    50%  { opacity: 1; }
-    65%  { transform: scale(1.005) translateY(-2px); }
+    30%  { opacity: 0.7; transform: scale(0.985) translateY(10px); }
+    55%  { opacity: 1; }
+    70%  { transform: scale(1.005) translateY(-2px); }
     100% { opacity: 1; transform: scale(1)    translateY(0); }
   }
   /* Final-Reveal Score-Cascade: Zeile fliegt von rechts rein mit slight Y-Drop. */

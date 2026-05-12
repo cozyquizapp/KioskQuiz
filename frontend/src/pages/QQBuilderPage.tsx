@@ -1514,6 +1514,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 className="cozy-input"
                 list="cozy-topic-suggestions"
                 value={q.topic ?? ''}
+                maxLength={32}
                 onChange={e => onChange({ ...q, topic: e.target.value || undefined })}
                 placeholder="z.B. Musik, Geographie, Promis…"
                 style={{ flex: 1, minWidth: 180, padding: '8px 12px', borderRadius: 8, border: `1px solid ${catColor}33`, background: 'rgba(255,255,255,0.04)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, ['--cozy-focus-color' as any]: catColor }}
@@ -2151,6 +2152,21 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
               const active = kind === k;
               return (
                 <button key={k} onClick={() => {
+                  // 2026-05-12 (Builder-Audit P0 #1+#2): Sub-Wechsel hatte zwei
+                  // gefährliche Bugs:
+                  //   #1 Stale q.answer: top5/order schrieben in q.answer einen
+                  //      Komma-String der bei Wechsel zu onlyConnect/bluff/...
+                  //      stehen blieb → Host-Sheet zeigte falsche Antwort live.
+                  //   #2 Kein Confirm: Wolf-1-Klick = 10 Min Arbeit verloren
+                  //      (8 Imposter-Statements → Klick auf top5 → alles weg).
+                  // Fix: bei nicht-leerem Inhalt confirm-Dialog, plus q.answer
+                  // beim Wechsel auf '' resetten.
+                  if (active) return;  // schon aktiv → no-op
+                  const hasContent = q.bunteTuete && hasBunteTueteContent(q.bunteTuete);
+                  if (hasContent) {
+                    const msg = 'Andere Mechanik wählen?\n\nDie bisherigen Felder dieser Bunte-Tüte-Variante werden gelöscht.';
+                    if (!window.confirm(msg)) return;
+                  }
                   let bt: QQBunteTuetePayload;
                   if (k === 'hotPotato') bt = { kind: 'hotPotato' };
                   else if (k === 'top5') bt = { kind: 'top5', answers: ['', '', '', '', ''] };
@@ -2160,7 +2176,9 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
                   else if (k === 'onlyConnect') bt = { kind: 'onlyConnect', hints: ['', '', '', ''], answer: '' };
                   else if (k === 'bluff') bt = { kind: 'bluff', realAnswer: '' };
                   else bt = { kind: 'hotPotato' };
-                  onChange({ ...q, bunteTuete: bt });
+                  // Reset q.answer + answerEn beim Wechsel — sonst leakt der
+                  // alte Top5-Join-String / Order-Pfeil-String in die neue Mech.
+                  onChange({ ...q, bunteTuete: bt, answer: '', answerEn: '' });
                 }} style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${active ? catColor + '66' : 'rgba(255,255,255,0.08)'}`, background: active ? catColor + '22' : 'rgba(255,255,255,0.03)', color: active ? catColor : '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, textAlign: 'left' }}>
                   {lbl.emoji} {lbl.de}
                 </button>
@@ -2179,6 +2197,27 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
 }
 
 // ── Bunte Tüte sub-mechanic editors ───────────────────────────────────────────
+// 2026-05-12 (Builder-Audit P0 #2): Helper für Confirm-Dialog beim Sub-Wechsel.
+// Prüft ob das aktuelle Bunte-Tüte-Payload nicht-trivialen Inhalt hat — falls ja
+// warnen wir bevor wir es überschreiben.
+function hasBunteTueteContent(bt: QQBunteTuetePayload | undefined): boolean {
+  if (!bt) return false;
+  switch (bt.kind) {
+    case 'hotPotato': return false;  // keine eigenen Felder
+    case 'top5':       return (bt.answers ?? []).some(a => a && a.trim().length > 0);
+    case 'oneOfEight': return (bt.statements ?? []).some(s => s && s.trim().length > 0);
+    case 'order':      return (bt.items ?? []).some(i => i && i.trim().length > 0);
+    case 'map':        return !!(bt.targetLabel && bt.targetLabel.trim().length > 0);
+    case 'onlyConnect': {
+      const hasHints = (bt.hints ?? []).some(h => h && h.trim().length > 0);
+      const hasAnswer = !!(bt.answer && bt.answer.trim().length > 0);
+      return hasHints || hasAnswer;
+    }
+    case 'bluff':      return !!(bt.realAnswer && bt.realAnswer.trim().length > 0);
+    default: return false;
+  }
+}
+
 function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onChange: (q: QQQuestion) => void }) {
   const bt = q.bunteTuete;
   if (!bt) return null;

@@ -19380,17 +19380,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       )}
 
       {/* Hero — Big Title nur (Wave-Cascade per Buchstabe).
-          2026-05-06 (Wolf 'starting soon mit wave effekt statt zoom, "bereit
-          zum start" oben wegnehmen'):
-          - Eyebrow-Pille ('Bereit zum Start' / 'Atempause') komplett entfernt
-            fuer preGame-Modus (keine Doppelung mit dem Title).
-          - Title-Breathe-Animation (qqPauseTitleBreathe = Zoom) ersetzt durch
-            qqCatNameWave per Buchstabe (analog CozyQuiz-Lobby-Wordmark) plus
-            initiale Letter-Cascade. */}
+          2026-05-12 (Wolf 'card noch nicht ganz mittig'): Hero aus dem
+          Flex-Flow raus → position:absolute oben. Damit ist das Records-
+          Panel das einzige Flex-Child im Container und sitzt visuell
+          mittig (justifyContent:center wirkt auf nur ein Element). */}
       <div style={{
-        position: 'relative', zIndex: 5,
+        position: 'absolute',
+        top: 'var(--qq-safe-margin)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
+        pointerEvents: 'none',
       }}>
         {/* 2026-05-07 (Wolf-ESC): Edition-Eyebrow nur wenn Eurovision-Mode aktiv
             UND PreGame. Bei vorhandenem logoUrl → Logo-Bild, sonst Text-Pille. */}

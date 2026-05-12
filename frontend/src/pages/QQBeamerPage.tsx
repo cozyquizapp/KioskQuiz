@@ -604,6 +604,14 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       // ueberall benutzten Pink/Cyan-Glows nicht mehr am Slide-Rand abgeschnitten.
       overflow: 'clip',
       overflowClipMargin: '120px',
+      // 2026-05-12 v2 (Wolf-Bug 'komischer sichtbarer rand'): bei Beamern mit
+      // anderem Aspect-Ratio als 16:9 (z.B. 16:10) wird die Stage centered
+      // gescaled und drumherum (oben+unten oder links+rechts) ist body-bg
+      // sichtbar (#050505). Race-View und andere Phasen nutzen #0A0814 als
+      // dark-base — Differenz war als "Rand" wahrnehmbar. Stage-Outer kriegt
+      // jetzt das gleiche dark-base, dadurch ist der Letterbox-Bereich
+      // farblich konsistent mit der Stage-Innenflaeche.
+      background: '#0A0814',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>

@@ -4225,7 +4225,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           background: i % 3 === 0 ? accentSoftHex : i % 3 === 1 ? accentHex : accentWarmHex,
           boxShadow: `0 0 24px rgba(${accentRgb},0.85), 0 0 6px rgba(255,255,255,0.7)`,
           opacity: 0,
-          animation: `qqIntroFireflyBurst 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) ${1.5 + (i % 6) * 0.04}s both`,
+          animation: `qqIntroFireflyBurst 1.4s var(--qq-ease-pop-fast) ${1.5 + (i % 6) * 0.04}s both`,
           pointerEvents: 'none',
           transform: 'translate(-50%, -50%)',
         }} />
@@ -4303,7 +4303,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             <span key={i} style={{
               display: 'inline-block',
               opacity: 0,
-              animation: `qqIntroSubLetter 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) ${i * 0.04}s both`,
+              animation: `qqIntroSubLetter 0.55s var(--qq-ease-pop-fast) ${i * 0.04}s both`,
               whiteSpace: 'pre',
             }}>{ch === ' ' ? ' ' : ch}</span>
           ))}
@@ -4415,7 +4415,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                   color: '#fde6f0',
                   opacity: 0,
                   // qqStingerXShine: Tilt + Multi-Layer-Glow-Pulse, 3.5s cycle.
-                  animation: 'qqIntroEurovisionPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s both, qqStingerXShine 3.5s ease-in-out 3.0s infinite',
+                  animation: 'qqIntroEurovisionPop 0.5s var(--qq-ease-bounce) 2.4s both, qqStingerXShine 3.5s ease-in-out 3.0s infinite',
                   textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                 }}>×</span>
                 {logoUrl && (
@@ -4440,7 +4440,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
                         height: '1.7em',
                         width: 'auto',
                         filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6)) drop-shadow(0 6px 18px rgba(0,0,0,0.55))',
-                        animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+                        animation: 'qqIntroEurovisionPop 0.7s var(--qq-ease-bounce) 2.6s both',
                         opacity: 0,
                       }}
                     />
@@ -4474,7 +4474,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               fontSize: 'clamp(16px, 1.7vw, 24px)', fontWeight: 900,
               color: '#fde68a', letterSpacing: '0.22em', textTransform: 'uppercase',
               boxShadow: '0 0 30px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.4)',
-              animation: 'qqIntroEurovisionPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.6s both',
+              animation: 'qqIntroEurovisionPop 0.7s var(--qq-ease-bounce) 2.6s both',
               opacity: 0,
             }}>
               🎤 Eurovision Edition
@@ -14817,7 +14817,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                   textShadow: '0 0 32px rgba(236,72,153,0.55)',
                   animation: isReveal
-                    ? 'hlSlotIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s both'
+                    ? 'hlSlotIn 0.55s var(--qq-ease-bounce) 0.28s both'
                     : undefined,
                   opacity: isReveal ? undefined : 0,
                   whiteSpace: 'nowrap',
@@ -17325,7 +17325,7 @@ function RaceFinishHero({ winner }: { winner: QQTeam }) {
         pointerEvents: 'none',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: 6,
-        animation: 'qqFRBannerDrop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
+        animation: 'qqFRBannerDrop 0.9s var(--qq-ease-bounce) 0.2s both',
       }}>
         <div style={{
           fontSize: 'clamp(14px, 1.4vw, 22px)',
@@ -17676,7 +17676,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
                         fontSize: 'clamp(56px, 6.5vw, 100px)', lineHeight: 1,
                         pointerEvents: 'none',
                         filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
-                        animation: 'qqFRCrownDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
+                        animation: 'qqFRCrownDrop 0.6s var(--qq-ease-bounce) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
                         zIndex: 30,
                       }}>👑</span>
                       <div style={{
@@ -18044,7 +18044,7 @@ function RaceCountdownOverlay() {
         color: current.color,
         textShadow: `0 0 24px ${current.glow}, 0 3px 8px rgba(0,0,0,0.9)`,
         letterSpacing: '-0.02em',
-        animation: 'qqRaceCountdownPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        animation: 'qqRaceCountdownPop 0.7s var(--qq-ease-bounce) both',
         fontFamily: 'var(--font-game, system-ui)',
         lineHeight: 1,
       }}>{current.text}</div>
@@ -19823,7 +19823,7 @@ function ConnectionsGrid({ state: s }: {
                           // muchoVoterDrop — Avatar dropt von oben mit Bounce
                           // + Brightness-Spike. Connections-Finale wirkt
                           // damit endlich „dramatic" statt „still".
-                          animation: `muchoVoterDrop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) ${teamRevealDelay(tm.id)}s both`,
+                          animation: `muchoVoterDrop 0.65s var(--qq-ease-bounce) ${teamRevealDelay(tm.id)}s both`,
                         }}>
                           <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avatarSize} style={{
                             boxShadow: `0 0 0 2px ${tm.color}, 0 0 14px ${color}88`,

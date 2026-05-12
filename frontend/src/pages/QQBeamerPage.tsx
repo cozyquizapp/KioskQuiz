@@ -12114,54 +12114,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           transition: 'padding 0.55s var(--qq-ease-bounce), left 0.5s ease',
           pointerEvents: 'none',
         }}>
-          {/* Konsistente Kategorie-Pill oben links — bleibt im Reveal sichtbar
-              (User-Wunsch 2026-04-28: Kategorie-Identität nicht verlieren).
-              v3 round 5 (User-Bug 'Badge nicht left wie andere Kategorien'):
-              position:absolute relativ zum cheese-overlay-Container war bei
-              Portrait bei viewport-x:50%+48 (= rechts der Bildhälfte). Jetzt
-              position:fixed = viewport-top-left, stimmt mit anderen Kategorien
-              überein. zIndex 70 ueber alle Cheese-Layer (49-52) und Top-Bar (60). */}
-          <div style={{
-            position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', left: 'clamp(28px, 4vw, 64px)', zIndex: 70,
-            pointerEvents: 'auto',
-            animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
-          }}>
-            {/* v3 round 8 (User-Bug 'badge braucht dunklen bg bei hellem
-                untergrund'): Cozy-Dark-Backdrop (rgba 13,10,6 / 82% opacity)
-                + accent-color Border. Vorher war background nur accent22 =
-                ~13% opacity, was auf hellem Foto kaum lesbar war. */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '8px 22px', borderRadius: 999,
-              background: 'rgba(13,10,6,0.82)', border: `2px solid ${accent}aa`,
-              boxShadow: `0 4px 18px rgba(0,0,0,0.45), 0 0 18px ${accent}33`,
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-            }}>
-              {/* 2026-05-04 (Wolf): Icon im Kategorie-Badge bobbt subtil hoch/runter
-                  — selbe Sprache wie im Cat-Intro, nur leiser. Wrapper-Span mit
-                  inline-block, damit transform greift. */}
-              <span style={{ display: 'inline-block', animation: 'qqBadgeIconBob 3.4s ease-in-out infinite' }}>
-                {(() => {
-                  const slug = qqCatSlug(cat as string);
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{catLabel.emoji}</span>;
-                })()}
-              </span>
-              <span style={{
-                fontSize: 'clamp(14px, 1.5vw, 20px)', fontWeight: 900,
-                color: accent, letterSpacing: '0.1em', textTransform: 'uppercase',
-              }}>{lang === 'en' ? catLabel.en : catLabel.de}</span>
-            </div>
-          </div>
+          {/* 2026-05-12 (Slide-Boundary-System): Doppel-Badge weg. Das CHEESE-
+              spezifische top-left-Badge ist entfernt — das globale Bottom-Left-
+              Badge des QuestionView-Wrappers rendert sich auch im CHEESE-
+              Kontext darueber (zIndex 60, sichtbar ueber Cheese-Overlay zIndex
+              52). Konsistente Position auf allen Slides. */}
           {/* Timer ring — top right (matches non-CHEESE layout), fade out on reveal.
               v3 round 8 (User-Bug 'timer auch bei hellem hintergrund schwer
               sichtbar'): zusaetzlicher dunkler Kreis-Backdrop hinter dem
               Timer-Ring fuer Kontrast auf hellen Fotos. */}
           {stickyTimer && (
             <div style={{
-              position: 'fixed', top: 'clamp(22px, 3.2vh, 50px)', right: 'clamp(28px, 4vw, 64px)', zIndex: 70,
+              // 2026-05-12 (Slide-Boundary-System): clamps → --qq-safe-margin Token.
+              position: 'fixed', top: 'var(--qq-safe-margin)', right: 'var(--qq-safe-margin)', zIndex: 70,
               animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.3s both',
               pointerEvents: revealed ? 'none' : 'auto',
               padding: 12, borderRadius: '50%',
@@ -12621,9 +12586,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Diese Wrapper-Div haelt jetzt nur noch den Top-Right Timer. */}
           <div style={{
             position: 'absolute',
-            top: 'clamp(22px, 3.2vh, 50px)',
-            left: 'clamp(28px, 4vw, 64px)',
-            right: 'clamp(28px, 4vw, 64px)',
+            // 2026-05-12 (Slide-Boundary-System): Top/Left/Right nutzen jetzt
+            // den globalen --qq-safe-margin Token statt eigener clamp-Werte.
+            top: 'var(--qq-safe-margin)',
+            left: 'var(--qq-safe-margin)',
+            right: 'var(--qq-safe-margin)',
             display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
             gap: 16,
             zIndex: 60,
@@ -12654,8 +12621,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               werden im CHEESE-Block dafuer angepasst (siehe CHEESE-Render). */}
           <div style={{
             position: 'absolute',
-            bottom: 'clamp(20px, 2.4vh, 40px)',
-            left: 'clamp(28px, 4vw, 64px)',
+            // 2026-05-12 (Slide-Boundary-System): Bottom/Left nutzen jetzt
+            // den globalen --qq-safe-margin Token statt eigener clamp-Werte.
+            bottom: 'var(--qq-safe-margin)',
+            left: 'var(--qq-safe-margin)',
             zIndex: 60,
             pointerEvents: 'none',
           }}>

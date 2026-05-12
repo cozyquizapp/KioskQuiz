@@ -16289,20 +16289,31 @@ function AutoFitContent({
       raf = 0;
       const availH = outer.clientHeight;
       const availW = outer.clientWidth;
-      // Reset zoom so we read true natural size
+      // 2026-05-12 v3 (Wolf 'survivor card immer noch nicht sichtbar'):
+      // Force-Reflow vor scrollHeight read. Vorher: zoom=1 reset gefolgt
+      // von sofortigem scrollHeight read → Browser hat noch nicht repainted,
+      // cached scrollHeight kommt vom letzten zoom-Wert → fit-Berechnung
+      // basiert auf zoom-skaliertem Wert statt natural-Wert → scale nicht
+      // aggressiv genug → Survivor-Card weiter clipped.
+      // Fix: zoom=1 + force reflow via offsetHeight read, DANN scrollHeight.
       (inner.style as any).zoom = 1;
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      void inner.offsetHeight; // force synchronous reflow
       const natH = inner.scrollHeight;
       const natW = inner.scrollWidth;
       if (natH <= 0 || availH <= 0) return;
       // Wenn alles reinpasst → scale 1, sofortiges return.
       if (natH <= availH && natW <= availW) {
-        setScale(1);
+        setScale(prev => prev === 1 ? prev : 1);
         return;
       }
       const fitH = availH / natH;
       const fitW = availW / natW;
       const fit = Math.min(fitH, fitW, 1);
-      setScale(Math.max(minScale, fit));
+      const next = Math.max(minScale, fit);
+      // Nur setState wenn signifikante Aenderung (>1% drift) — verhindert
+      // Oszillations-Loop wenn measurements zwischen zoom-States schwanken.
+      setScale(prev => Math.abs(prev - next) > 0.01 ? next : prev);
     };
     const schedule = () => {
       if (raf) cancelAnimationFrame(raf);

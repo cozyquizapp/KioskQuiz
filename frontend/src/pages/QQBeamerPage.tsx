@@ -4863,6 +4863,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden', fontFamily: fontFam,
       minHeight: 0,
+      // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): RulesView Root-Padding
+      // mit Safe-Margin Token. BG-Layer (Fireflies) sind position:absolute
+      // inset:0 → fuellen padding-box (= visible area), bleiben full-bleed.
+      padding: 'var(--qq-safe-margin)',
+      boxSizing: 'border-box',
     }}>
       <Fireflies />
 
@@ -5318,7 +5323,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: 'clamp(16px, 2.5vh, 32px) clamp(24px, 3vw, 56px)',
+      // 2026-05-12 (Wolf 'safe-margin sollte ja im ganzen quiz drin sein'):
+      // padding-vertikal jetzt floor auf var(--qq-safe-margin). horiz bleibt
+      // groesser (Cards in der Lobby brauchen mehr Atem).
+      padding: 'max(var(--qq-safe-margin), clamp(16px, 2.5vh, 32px)) clamp(24px, 3vw, 56px)',
       position: 'relative', overflow: 'hidden',
       gap: 'clamp(10px, 1.5vh, 20px)',
       minHeight: 0,
@@ -5973,6 +5981,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: fontFam, overflow: 'hidden',
       minHeight: 0,
+      padding: 'var(--qq-safe-margin)',
+      boxSizing: 'border-box',
     }}>
       {escBgUrl && (
         <div aria-hidden style={{
@@ -12600,14 +12610,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard
-          // oben, kein collapse mehr'): Badge wandert von top-left nach
-          // bottom-left. Padding deshalb: oben reduziert (nur Timer rechts,
-          // Card kann hoeher sitzen), unten genug Platz fuer das Bottom-Badge.
-          // Horizontal- und HotPotato-Sonderpadding bleiben unveraendert.
+          // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard oben');
+          // 2026-05-12 v2 (Wolf 'safe-margin im ganzen quiz'): jede Achse
+          // floor() auf var(--qq-safe-margin) um Mindest-Rand zu garantieren.
           padding: isHotPotatoActive
-            ? 'clamp(36px, 5vh, 64px) clamp(28px, 4vw, 64px) clamp(70px, 8vh, 100px)'
-            : 'clamp(40px, 5.5vh, 70px) clamp(28px, 4vw, 64px) clamp(70px, 8vh, 100px)',
+            ? 'max(var(--qq-safe-margin), clamp(36px, 5vh, 64px)) max(var(--qq-safe-margin), clamp(28px, 4vw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8vh, 100px))'
+            : 'max(var(--qq-safe-margin), clamp(40px, 5.5vh, 70px)) max(var(--qq-safe-margin), clamp(28px, 4vw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8vh, 100px))',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen
@@ -14353,7 +14361,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   // Key bindet an questionIndex, damit React beim Phase-Re-Mount die
   // Animation neu triggert.
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: 0 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: 0, padding: 'var(--qq-safe-margin)', boxSizing: 'border-box' }}>
       <Fireflies color={`${teamColor}88`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
@@ -14598,7 +14606,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(16px, 2.4vh, 36px) clamp(28px, 3.5vw, 56px)',
+        // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
+        padding: 'max(var(--qq-safe-margin), clamp(16px, 2.4vh, 36px)) max(var(--qq-safe-margin), clamp(28px, 3.5vw, 56px))',
         gap: 'clamp(14px, 2vh, 28px)',
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
@@ -15805,7 +15814,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
     <div style={{
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '8vh 6vw',
+      // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
+      padding: 'max(var(--qq-safe-margin), 8vh) max(var(--qq-safe-margin), 6vw)',
       background: COZY_CARD_BG,
       position: 'relative',
       minHeight: 0, overflow: 'hidden',
@@ -16535,7 +16545,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     <div style={{
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '4vh 4vw',
+      // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
+      padding: 'max(var(--qq-safe-margin), 4vh) max(var(--qq-safe-margin), 4vw)',
       background: COZY_CARD_BG,
       position: 'relative', overflow: 'hidden',
       minHeight: 0,
@@ -20295,7 +20306,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', overflow: 'hidden',
-        padding: 'clamp(16px, 2.5vh, 36px) clamp(20px, 3vw, 48px)',
+        // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
+        padding: 'max(var(--qq-safe-margin), clamp(16px, 2.5vh, 36px)) max(var(--qq-safe-margin), clamp(20px, 3vw, 48px))',
         gap: 'clamp(14px, 2vh, 28px)',
         minHeight: 0,
       }}>
@@ -20922,7 +20934,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '40px 64px 56px', position: 'relative', overflow: 'hidden',
+      // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
+      padding: 'max(var(--qq-safe-margin), 40px) max(var(--qq-safe-margin), 64px) max(var(--qq-safe-margin), 56px)',
+      position: 'relative', overflow: 'hidden',
       gap: 28,
       minHeight: 0,
       // BG identisch zu PausedView/PreGameView (Setup-Look).

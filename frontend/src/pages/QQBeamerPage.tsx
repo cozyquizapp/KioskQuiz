@@ -18720,7 +18720,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             </span>
             {avatarId
               ? <QQTeamAvatar avatarId={avatarId} size={'clamp(38px, 4vw, 54px)'} style={{ flexShrink: 0, boxShadow: `0 0 14px ${teamColor}44` }} />
-              : <span style={{ width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)', borderRadius: '50%', background: '#241a10', flexShrink: 0 }} />
+              : <div style={{
+                  width: 'clamp(38px, 4vw, 54px)', height: 'clamp(38px, 4vw, 54px)',
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${teamColor}22, ${teamColor}10)`,
+                  border: `2px solid ${teamColor}55`,
+                  boxShadow: `0 0 14px ${teamColor}33`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  color: `${teamColor}aa`,
+                  fontSize: 'clamp(18px, 2vw, 26px)',
+                  fontWeight: 900,
+                }}>?</div>
             }
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TeamNameLabel
@@ -18783,6 +18794,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (leader?.avatarId) return { avatarId: leader.avatarId };
     return {};
   };
+  // 2026-05-12 (Wolf 'avatar manchmal da, manchmal nicht, inkonsistent —
+  // immer bei allen stats auf pause und setup avatare zu den teams'):
+  // Avatar wird IMMER gerendert, auch wenn avatarId unbekannt. Fallback ist
+  // ein farbiger Kreis mit ❓ Glyph — gleicher visueller Footprint wie ein
+  // echtes Avatar, garantiert konsistentes Layout aller Stats-Zeilen.
+  const fallbackAvatarCircle = (sizeCss: string, c: string) => (
+    <div style={{
+      width: sizeCss, height: sizeCss, borderRadius: '50%',
+      background: `linear-gradient(135deg, ${c}22, ${c}10)`,
+      border: `2px solid ${c}55`,
+      boxShadow: `0 0 14px ${c}33`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0,
+      color: `${c}aa`,
+      fontSize: `calc(${sizeCss} * 0.5)`,
+      fontWeight: 900,
+    }}>?</div>
+  );
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
     const c = color ?? meta.color ?? '#EC4899';
@@ -18790,7 +18819,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     return (
       // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
-        {av && <QQTeamAvatar avatarId={av} size={'clamp(64px, 7vw, 100px)'} style={{ flexShrink: 0, boxShadow: `0 0 28px ${c}55` }} />}
+        {av
+          ? <QQTeamAvatar avatarId={av} size={'clamp(64px, 7vw, 100px)'} style={{ flexShrink: 0, boxShadow: `0 0 28px ${c}55` }} />
+          : fallbackAvatarCircle('clamp(64px, 7vw, 100px)', c)}
         <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2vw, 64px)', color: c, textShadow: `0 0 22px ${c}44` }}>{name}</span>
       </div>
     );
@@ -18801,9 +18832,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const c = meta.color ?? accentFallback;
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, verticalAlign: 'middle' }}>
-        {meta.avatarId && (
-          <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8vw, 36px)'} style={{ flexShrink: 0, boxShadow: `0 0 10px ${c}55` }} />
-        )}
+        {meta.avatarId
+          ? <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8vw, 36px)'} style={{ flexShrink: 0, boxShadow: `0 0 10px ${c}55` }} />
+          : fallbackAvatarCircle('clamp(28px, 2.8vw, 36px)', c)}
         <strong style={{ color: c }}>{name}</strong>
       </span>
     );

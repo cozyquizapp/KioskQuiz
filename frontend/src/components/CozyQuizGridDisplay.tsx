@@ -553,24 +553,33 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     //  stackCount 1 → 2 Avatare diagonal, getrennt
                     //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    const avFactor = copies === 3 ? 0.36 : copies === 2 ? 0.42 : 0.86;
+                    // 2026-05-13 (Wolf 'bei 2 + 3 Stack diagonal, gleicher Abstand
+                    // zur Mitte und zum Rand, ruhig groesser'):
+                    // - 2-Stack: Avatare auf Diagonale, gleicher Abstand
+                    //   center↔avatarCenter wie avatarCenter↔cellCorner.
+                    //   Offset ±25% → avatarCenter genau zwischen cellCenter
+                    //   und cellCorner. avFactor 0.48 (war 0.42) — groesser.
+                    // - 3-Stack: diagonale 3-Reihe (TL → center → BR) mit
+                    //   gleichem Abstand zwischen allen drei. Offset ±28%.
+                    //   avFactor 0.38 (war 0.36) — leicht groesser.
+                    const avFactor = copies === 3 ? 0.38 : copies === 2 ? 0.48 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
-                    // Offsets in % cellSize. Geometrie: avFactor/2 = Avatar-Radius
-                    // in % cellSize. Damit zwei Avatare sich nicht beruehren,
-                    // muss center-to-center-distance > 2 * Radius.
-                    // - 2 Diagonal: Avatar-Radius = 21%. Offsets ±28% beide Achsen →
-                    //   center-distance = √((2*28)² + (2*28)²) ≈ 79% > 42% ✓
-                    // - 3 Triangle: Avatar-Radius = 18%. Apex (0,-28), Basis (±26, 22).
-                    //   Apex↔Basis-L dist = √(26² + 50²) ≈ 56% > 36% ✓
-                    //   Basis-L↔Basis-R dist = 52% > 36% ✓
+                    // Offsets in % cellSize.
+                    // - 2 Diagonal: ±25% → center-distance = 50√2 ≈ 70.7% >
+                    //   combined-radii 48% ✓. Avatar-Rand bei 25+24=49% → 1%
+                    //   Puffer zur Cell-Kante.
+                    // - 3 Diagonal-Linie: TL (-28,-28), center (0,0), BR (28,28).
+                    //   center↔Nachbar = 28√2 ≈ 39.6% > combined-radii 38% ✓
+                    //   (knapp, aber sichtbar getrennt). Avatar-Rand bei
+                    //   28+19=47% → 3% Puffer zur Cell-Kante.
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx:  0,  ty: -28 },
-                          { tx: -26, ty:  22 },
-                          { tx:  26, ty:  22 },
+                          { tx: -28, ty: -28 },
+                          { tx:   0, ty:   0 },
+                          { tx:  28, ty:  28 },
                         ]
                       : copies === 2
-                        ? [{ tx: -28, ty: -28 }, { tx: 28, ty: 28 }]
+                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

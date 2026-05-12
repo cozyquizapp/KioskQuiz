@@ -929,11 +929,21 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   }
 
   const [panelIdx, setPanelIdx] = useState(0);
+  // 2026-05-13 (Wolf-Bug 'autoplay funktioniert nicht mehr, bei standings +
+  // teams-heute kein switch danach'): vorher useEffect mit deps
+  // `[panels.length]` — beim asynchronen funStats-Load (Z. 148-155) wuchs
+  // die panels-Anzahl mehrfach von ~5 auf 12+, jedes Mal wurde setInterval
+  // gecleart und neu gestartet → counter erreichte nie 8s, kein Tick.
+  // Fix: setInterval einmalig bei Mount, panels-Laenge ueber Ref auslesen.
+  const panelsLenRef = useRef(panels.length);
+  panelsLenRef.current = panels.length;
   useEffect(() => {
-    if (panels.length <= 1) return;
-    const id = setInterval(() => setPanelIdx(p => (p + 1) % panels.length), 8000);
+    const id = setInterval(() => {
+      const len = panelsLenRef.current;
+      if (len > 1) setPanelIdx(p => (p + 1) % len);
+    }, 8000);
     return () => clearInterval(id);
-  }, [panels.length]);
+  }, []);
 
   const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
 

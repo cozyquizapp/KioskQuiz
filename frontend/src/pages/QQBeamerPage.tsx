@@ -2474,24 +2474,27 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   remaining: number | null;
   urgent: boolean;
 }) {
-  // 2026-05-09 v2 (Wolf-Bug 'kein aktives Team / keine Kartoffel sichtbar'):
-  // _hotPotatoOrder und joinOrder werden nicht im State broadcast (Backend-
-  // internal). Fallback: aus s.teams selbst sortieren — gleiche Sort-Logik
-  // wie im Backend (largestConnected desc → totalCells desc → name).
+  // 2026-05-12 (Wolf-Bug 'links nächstes / rechts gerade-dran stimmt nicht'):
+  // Backend broadcastet jetzt hotPotatoOrder (score-sortierte Rotations-Order).
+  // Frontend liest die direkt — kein Fallback auf Name-Sort mehr noetig, da
+  // dieser Fallback in der Praxis IMMER alphabetisch endete und mit der
+  // Backend-Rotation kollidierte. Legacy-Pfade fuer alte Rooms ohne Field bleiben.
   const eliminated: string[] = s.hotPotatoEliminated ?? [];
-  const order: string[] = (s as any)._hotPotatoOrder && (s as any)._hotPotatoOrder.length > 0
-    ? (s as any)._hotPotatoOrder
-    : (s.joinOrder && s.joinOrder.length > 0)
-      ? s.joinOrder
-      : [...s.teams]
-          .sort((a: any, b: any) => {
-            const lA = a.largestConnected ?? 0; const lB = b.largestConnected ?? 0;
-            if (lB !== lA) return lB - lA;
-            const cA = a.totalCells ?? 0; const cB = b.totalCells ?? 0;
-            if (cB !== cA) return cB - cA;
-            return (a.name ?? '').localeCompare(b.name ?? '');
-          })
-          .map((t: any) => t.id);
+  const order: string[] = (s.hotPotatoOrder && s.hotPotatoOrder.length > 0)
+    ? s.hotPotatoOrder
+    : (s as any)._hotPotatoOrder && (s as any)._hotPotatoOrder.length > 0
+      ? (s as any)._hotPotatoOrder
+      : (s.joinOrder && s.joinOrder.length > 0)
+        ? s.joinOrder
+        : [...s.teams]
+            .sort((a: any, b: any) => {
+              const lA = a.largestConnected ?? 0; const lB = b.largestConnected ?? 0;
+              if (lB !== lA) return lB - lA;
+              const cA = a.totalCells ?? 0; const cB = b.totalCells ?? 0;
+              if (cB !== cA) return cB - cA;
+              return (a.name ?? '').localeCompare(b.name ?? '');
+            })
+            .map((t: any) => t.id);
   // Alive-Teams in der Halbkreis-Reihenfolge (eliminierte raus)
   const aliveIds = order.filter((id: string) => !eliminated.includes(id));
 
@@ -2583,12 +2586,14 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
       // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Container-Höhe
       // von 22cqh auf 30cqh erhöht.
       // 2026-05-12 (Wolf-Screenshot 'chips ueberlappen mit active-card'):
-      // 30cqh → 24cqh reduziert. Der vorherige Wert reservierte zu viel
-      // vertikalen Platz fuer den (oben mostly leeren) Semicircle-Container
-      // — Chips-Wrapper bekam zu wenig und musste in eine 3. Reihe brechen
-      // die dann visuell mit der Active-Card kollidierte. Active-Card sitzt
-      // unten im Container, braucht nur ~210-260px.
-      width: '100%', height: 'clamp(210px, 24cqh, 290px)',
+      // 30cqh → 24cqh reduziert.
+      // 2026-05-12 v3 (Wolf-Bug 'chips uberlappen IMMER NOCH bei kleinem
+      // screen'): min von 210 → 260px erhöht. Die Active-Card mit Avatar
+      // (clamp 72-120px) + Name + Timer-Pill braucht ~230-250px PLUS 48px
+      // Glow-Spillover oben. Wenn Container nur 210px hoch ist, ragt der
+      // Glow-Halo in den Chips-Bereich → optischer Overlap. 260px puffert
+      // den Glow + Card-Border-Shadow sauber.
+      width: '100%', height: 'clamp(260px, 24cqh, 290px)',
       pointerEvents: 'none',
     }}>
       {/* Backdrop-Glow hinter dem Active-Team — Spotlight-Effekt */}
@@ -2772,10 +2777,13 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // bei vielen Antworten → mehr Vertikal-Raum unten → Tier-Schwellen koennen
   // weiter nach oben rutschen (lg statt md, md statt sm). xl bleibt fuer ≤8.
   const n = used.length;
-  // 2026-05-12 (Wolf-Screenshot 'chips uebrlappen mit active-card'): Tier-
-  // Schwellen senken — Chips werden frueher kleiner, mehr passen pro Reihe,
-  // weniger Gesamtzeilen, kein Overflow in den Semicircle-Bereich.
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 6 ? 'xl' : n <= 16 ? 'lg' : n <= 30 ? 'md' : 'sm';
+  // 2026-05-12 v2 (Wolf-Screenshot 'chips ueberlappen mit active-card bei
+  // kleinem screen'): Tier-Schwellen NOCHMAL aggressiver gesenkt. Bei 11 Chips
+  // (Screenshot-Fall) war Tier 'lg' (≤16) → 2 Reihen, kollidierte unten mit
+  // der Active-Card-Glow. Jetzt: ≤4 xl, ≤10 lg, ≤20 md, sonst sm — bei 11
+  // Chips greift 'md' (kleiner, mehr passen in 2 Reihen). Schafft mehr
+  // vertikalen Headroom zur Semicircle-Card.
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 4 ? 'xl' : n <= 10 ? 'lg' : n <= 20 ? 'md' : 'sm';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6cqw, 38px)', padding: 'clamp(10px, 1.2cqh, 16px) clamp(18px, 1.8cqw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2cqw, 32px)', padding: 'clamp(8px, 1cqh, 14px) clamp(16px, 1.6cqw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },

@@ -962,6 +962,12 @@ export interface QQStateUpdate {
   hotPotatoUsedAnswers: string[];       // accepted answers shown on beamer
   hotPotatoAnswerAuthors?: string[];    // teamId per index in hotPotatoUsedAnswers (parallel array)
   hotPotatoQualified?: string[];        // teams that have given >=1 accepted answer; only they can win the round
+  // 2026-05-12 (Wolf-Bug 'Reihenfolge im Halbkreis stimmt nicht'):
+  // Backend-Score-Sortierung muss ins Frontend, damit die Semicircle-Slots
+  // (links=next, rechts=prev) zur Backend-Rotation passen. Ohne diese Order
+  // fiel das Frontend auf alphabetische Name-Sortierung zurueck — die
+  // mismatchte mit nextRoundRobinTeam().
+  hotPotatoOrder?: string[];            // team-ids in Backend-Rotation-Reihenfolge
   // 2026-05-06: Slot-Machine Intro vor dem ersten Hot-Potato-Zug.
   // 'rolling' = Slot dreht (visualisiert das schon-bekannte Random-Team auf
   //             dem Beamer als Slot-Roll); Timer steht still, /team noch

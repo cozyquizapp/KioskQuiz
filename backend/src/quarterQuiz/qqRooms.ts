@@ -3846,6 +3846,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     hotPotatoAnswerAuthors: room.hotPotatoAnswerAuthors,
     hotPotatoQualified:    room.hotPotatoQualified,
     hotPotatoSlotState:    room.hotPotatoSlotState ?? null,
+    // 2026-05-12 (Wolf-Bug 'links/rechts-Reihenfolge im Halbkreis falsch'):
+    // Score-sortierte Rotations-Order ins Frontend mit-broadcasten. Frontend
+    // brauchte die exakt gleiche Reihenfolge wie nextRoundRobinTeam(), sonst
+    // mismatcht das Slot-Mapping.
+    hotPotatoOrder:        ((room as any)._hotPotatoOrder as string[] | undefined) ?? room.joinOrder,
     imposterActiveTeamId:  room.imposterActiveTeamId,
     imposterChosenIndices: room.imposterChosenIndices,
     imposterEliminated:    room.imposterEliminated,

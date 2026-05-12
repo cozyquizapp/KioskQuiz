@@ -695,6 +695,85 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SlideStage — Fixed-Canvas Skalierung (Option A, 2026-05-12)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Wrappt Slide-Content in einem festen 1920×1080 Canvas und skaliert es per
+// transform:scale auf die echte Viewport-Groesse. Vorteil: jede Slide hat
+// einen bekannten Design-Raum, kein vh/vw-Geraetsel mehr fuer Layout-Mathe.
+//
+// SAFETY-FLAG: standardmaessig OFF. Aktivierung via URL-Param `?stage=1`
+// (oder ?stage=on/true). Wolf kann live testen und bei Problem URL ohne
+// Param oeffnen → exakt vorheriger Zustand. Kein Risiko fuer bestehendes
+// Verhalten.
+//
+// Phase-1-Scope: nur der Phase-Render-Bereich wird gewrappt. Globale
+// Overlays (Grain, Confetti, Toasts) bleiben ausserhalb damit position:fixed
+// nicht mit dem transform:scale-Container kollidiert.
+const STAGE_DESIGN_WIDTH = 1920;
+const STAGE_DESIGN_HEIGHT = 1080;
+function isStageEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const url = new URLSearchParams(window.location.search);
+    const v = url.get('stage');
+    if (v === '1' || v === 'on' || v === 'true') return true;
+    if (v === '0' || v === 'off' || v === 'false') return false;
+    return localStorage.getItem('qq_useStage') === '1';
+  } catch {
+    return false;
+  }
+}
+function SlideStage({ children }: { children: React.ReactNode }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    if (!outer) return;
+    const measure = () => {
+      const w = outer.clientWidth;
+      const h = outer.clientHeight;
+      if (w <= 0 || h <= 0) return;
+      const sx = w / STAGE_DESIGN_WIDTH;
+      const sy = h / STAGE_DESIGN_HEIGHT;
+      const s = Math.min(sx, sy);
+      setScale(prev => Math.abs(prev - s) > 0.005 ? s : prev);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(outer);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+  return (
+    <div ref={outerRef} style={{
+      flex: 1,
+      width: '100%',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: 0,
+    }}>
+      <div style={{
+        width: STAGE_DESIGN_WIDTH,
+        height: STAGE_DESIGN_HEIGHT,
+        transform: `scale(${scale})`,
+        transformOrigin: 'center center',
+        flexShrink: 0,
+        position: 'relative',
+        // Phase-Render-Box muss flex-column sein damit existing views mit
+        // flex:1 weiterhin korrekt fuellen.
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Beamer view — top-level router
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1934,7 +2013,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         const wrapperAnim = isQuestionToQuestion
           ? 'qqStageSlideInRight 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both'
           : 'qqSlideIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both';
-        return (
+        // 2026-05-12 (Wolf 'Option A — Fixed Canvas Stage'): wenn ?stage=1
+        // gesetzt, wird der Phase-Render-Bereich in einem 1920×1080 Canvas
+        // gerendert und per transform:scale auf die echte Viewport-Groesse
+        // skaliert. Standardmaessig AUS — bestehender Code-Pfad unveraendert.
+        const useStage = isStageEnabled();
+        const phaseRender = (
         <div
           key={phaseGroup}
           style={{
@@ -1999,6 +2083,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           )}
         </div>
         );
+        // 2026-05-12 (Wolf 'Option A Fixed Canvas'): wenn Flag aktiv,
+        // wrap'd den Phase-Render in SlideStage (1920×1080 transform:scale).
+        return useStage ? <SlideStage>{phaseRender}</SlideStage> : phaseRender;
       })()}
 
       {/* 2026-05-07: TwelvePoints-Sticker entfernt (Wolf-Feedback 'wirkt

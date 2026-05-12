@@ -1596,6 +1596,12 @@ export function qqHotPotatoFinishSlot(room: QQRoomState, onTurnExpire: () => voi
     return;
   }
   if (room.hotPotatoSlotState === 'landed') {
+    // 2026-05-12 (Backend-Audit P0 #3): Time-Gate gegen Streamdeck-Doppelfeuer.
+    // Vorher konnte ein Doppelklick zwischen rolling→landed→finished durch-
+    // rauschen ohne Mod-Mündliche-Ansage-Pause. Jetzt: nach rolling→landed
+    // muss mindestens 800ms vergehen bevor finished→Turn-Start triggert.
+    // Pattern wie qqActivateQuestion ghost-protection Z. 932.
+    if (Date.now() - room.lastActivityAt < 800) return;
     room.hotPotatoSlotState = 'finished';
     room.lastActivityAt = Date.now();
     qqStartHotPotatoTurn(room, onTurnExpire);
@@ -1973,8 +1979,26 @@ export function qqMarkCorrect(room: QQRoomState, teamIdOrList: string | string[]
       const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
       return aAt - bAt;
     });
+    // 2026-05-12 (Backend-Audit P0 #5): Array-Idempotency-Guard. Vorher würde
+    // ein Doppelklick auf hotPotatoCorrect (Multi-Winner-Path) die schon
+    // verarbeitete _placementQueue überschreiben → falls erstes Queue-Team
+    // schon gesetzt hatte, würde es nochmal setzen können → doppeltes Placement.
+    // Jetzt: wenn correctTeamId === sortedFirst UND Queue strukturell gleich,
+    // no-op statt re-init.
+    const expectedRest = sorted.slice(1);
+    const currentQueue = (room['_placementQueue'] as string[] | undefined) ?? [];
+    if (room.correctTeamId === sorted[0]
+        && currentQueue.length === expectedRest.length
+        && currentQueue.every((id, i) => id === expectedRest[i])) {
+      return;
+    }
+    // Zusätzlich: wenn bereits Placement läuft (pendingFor gesetzt oder Phase
+    // PLACEMENT), heißt das Queue wurde schon konsumiert → no-op statt reset.
+    if (room.pendingFor || (room.phase as string) === 'PLACEMENT') {
+      return;
+    }
     room.correctTeamId = sorted[0];
-    room['_placementQueue'] = sorted.slice(1);
+    room['_placementQueue'] = expectedRest;
   } else {
     assertTeam(room, teamIdOrList);
     room.correctTeamId = teamIdOrList;
@@ -4026,6 +4050,35 @@ export function qqResume(room: QQRoomState): void {
     }, remainMs);
   }
   delete room._connectionsRemainingMs;
+  // 2026-05-12 (Backend-Audit P0 #1): Comeback-Higher/Lower-Timer wurde in
+  // qqPause persisted, aber in qqResume nie wieder gestartet → Spiel hängt
+  // nach Pause mid-Comeback. Pattern identisch zu Bluff-Vote-Timer oben.
+  if ((room as any)._comebackHLTimerRemainingMs != null && (room as any)._comebackHLTimerRemainingMs > 0
+      && (room as any)._comebackHLOnExpire && room.comebackHL) {
+    const remainMs = (room as any)._comebackHLTimerRemainingMs;
+    room.comebackHL.timerEndsAt = Date.now() + remainMs;
+    const onExpire = (room as any)._comebackHLOnExpire;
+    (room as any)._comebackHLTimerHandle = setTimeout(() => {
+      (room as any)._comebackHLTimerHandle = null;
+      (room as any)._comebackHLOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete (room as any)._comebackHLTimerRemainingMs;
+  // Map-Reveal-Cascade-Timer ebenfalls resumen falls Pause mid-Cascade.
+  // qqPause stoppt _mapRevealTimerHandle, hier wird er ggf. neu gestartet
+  // via stored _mapRevealOnExpire (wenn vorhanden).
+  if ((room as any)._mapRevealRemainingMs != null && (room as any)._mapRevealRemainingMs > 0
+      && (room as any)._mapRevealOnExpire) {
+    const remainMs = (room as any)._mapRevealRemainingMs;
+    const onExpire = (room as any)._mapRevealOnExpire;
+    (room as any)._mapRevealTimerHandle = setTimeout(() => {
+      (room as any)._mapRevealTimerHandle = null;
+      (room as any)._mapRevealOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete (room as any)._mapRevealRemainingMs;
   room.lastActivityAt = Date.now();
 }
 

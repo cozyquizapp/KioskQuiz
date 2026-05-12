@@ -1922,6 +1922,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:revealAnswer', (payload: QQRevealAnswerPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-05-12 (Backend-Audit P0 #2): Idempotency-Guard — Doppelklick auf
+        // Mod-Space (Streamdeck-Bounce / Audio-Lag) feuerte 2× qq:revealAnswer.
+        // Erster Call OK, zweiter Call warf WRONG_PHASE-Error → Mod-Toast
+        // verunsicherte Wolf live. Silent no-op wenn schon im REVEAL-State und
+        // kein Sub-Kind mit eigener Multi-Step-Reveal-Logik (onlyConnect/bluff).
+        const subKindForGuard = room.currentQuestion?.bunteTuete?.kind;
+        if (room.phase === 'QUESTION_REVEAL'
+            && subKindForGuard !== 'onlyConnect'
+            && subKindForGuard !== 'bluff') {
+          ok(ack);
+          return;
+        }
         // Sub-Mechaniken mit eigener Reveal-Pipeline routen — Standard-Reveal
         // würde sonst den Auto-Finish-Pfad umgehen + Phase nicht korrekt setzen.
         const subKind = room.currentQuestion?.bunteTuete?.kind;
@@ -3730,6 +3742,31 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // niemand qualifiziert).
           if (qqHotPotatoIsAllAliveDisconnected(room)) {
             qqHotPotatoForceFinishAllDisconnected(room);
+          }
+          // 2026-05-12 (Backend-Audit P0 #6): Watchdog falls disconnect-Team
+          // gerade pendingFor ist. Vorher hing das Spiel bis Wolf manuell
+          // F18-Skip drückte. Backend-Watchdog feuert nach 15s wenn:
+          // - Team weiterhin disconnected
+          // - room.pendingFor === qqTeamId (immer noch dran)
+          // - Phase ist PLACEMENT (sonst greift andere Logik)
+          // Reconnect cancelt den Watchdog implizit via teamId-Check.
+          if (room.phase === 'PLACEMENT' && room.pendingFor === qqTeamId) {
+            const watchdogTeamId = qqTeamId;
+            setTimeout(() => {
+              const currentRoom = getQQRoom(qqRoomCode);
+              if (!currentRoom) return;
+              if (currentRoom.phase !== 'PLACEMENT') return;
+              if (currentRoom.pendingFor !== watchdogTeamId) return;
+              const stillDisconnectedTeam = currentRoom.teams[watchdogTeamId];
+              if (!stillDisconnectedTeam || stillDisconnectedTeam.connected) return;
+              console.log('[disconnect-watchdog] auto-skipping placement of offline team:', watchdogTeamId);
+              try {
+                qqSkipCurrentPlacement(currentRoom);
+                broadcast(io, qqRoomCode);
+              } catch (err) {
+                console.warn('[disconnect-watchdog] skip failed:', err);
+              }
+            }, 15000);
           }
           broadcast(io, qqRoomCode);
         }

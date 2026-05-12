@@ -9263,8 +9263,28 @@ app.delete('/api/qq/gameresults', async (_req, res) => {
 app.get('/api/qq/summary/:roomCode', async (req, res) => {
   try {
     const { roomCode } = req.params;
+    // 2026-05-12 (Wolf-Bug 'Summary zeigt falsche Teams'): wenn aktuell ein
+    // Spiel im Room laeuft (nicht in GAME_OVER/THANKS), das NEUER ist als der
+    // letzte gespeicherte Game-Result fuer diesen RoomCode, lieferten wir
+    // sonst stale-Data aus dem vorherigen Spiel. Jetzt: 404 mit Hinweis dass
+    // ein Spiel laeuft. Der by-id-Endpoint bleibt der stabile Lookup fuer
+    // einzelne Spiele.
+    const liveRoom = getQQRoom(roomCode);
     const results = await getQQGameResults(200);
     const hit = results.find((r: any) => r.roomCode === roomCode);
+    if (liveRoom && liveRoom.phase !== 'GAME_OVER' && liveRoom.phase !== 'THANKS') {
+      const lastActivityAt = (liveRoom as any).lastActivityAt ?? 0;
+      const hitPlayedAt = (hit as any)?.playedAt ?? 0;
+      // Wenn live-Aktivitaet neuer als das gespeicherte Ergebnis: stale-Antwort
+      // verhindern. Spieler-Hinweis: 'Quiz laeuft noch, scan nochmal am Ende'.
+      if (lastActivityAt > hitPlayedAt) {
+        return res.status(409).json({
+          error: 'Quiz läuft noch',
+          message: 'Das Spiel ist noch nicht zu Ende. Scan den QR-Code nochmal am Schluss.',
+          gameRunning: true,
+        });
+      }
+    }
     if (!hit) return res.status(404).json({ error: 'Kein Ergebnis für diesen Raum gefunden.' });
     // 2026-05-09 (Wolf): Brett wird jetzt auf der Summary-Page angezeigt —
     // Owner-IDs reichen (cellOwners statt full grid), kompakter im Payload.

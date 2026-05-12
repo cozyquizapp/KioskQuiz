@@ -94,6 +94,9 @@ const T = {
   notFoundTitle: { de: 'Kein Ergebnis gefunden', en: 'No result found' },
   notFoundMsg:   { de: 'Dieses Spiel konnten wir nicht finden. Vielleicht war es zu lange her?',
                    en: 'We couldn\u2019t find this game. Maybe it was too long ago?' },
+  gameRunningTitle: { de: 'Quiz l\u00e4uft noch', en: 'Quiz still running' },
+  gameRunningMsg:   { de: 'Das Spiel ist noch nicht zu Ende. Scan den QR-Code nochmal am Schluss!',
+                      en: 'The game isn\u2019t over yet. Scan the QR code again at the end!' },
   loadError:     { de: 'Oha, da ist was beim Laden schiefgegangen. Versuch es nochmal in ein paar Minuten.',
                    en: 'Oops, something went wrong loading. Try again in a few minutes.' },
   unknownError:  { de: 'Unbekannter Fehler.', en: 'Unknown error.' },
@@ -372,7 +375,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   // 2026-05-10 (Audit-P2 lang-stale-closure-Fix): error wird als Translation-
   // Key gespeichert, nicht als gerenderter String. Im Render wird mit dem
   // aktuellen lang uebersetzt — kein Stale-Bug bei Sprach-Switch zur Ladezeit.
-  const [errorKey, setErrorKey] = useState<'notFoundMsg' | 'loadError' | null>(null);
+  const [errorKey, setErrorKey] = useState<'notFoundMsg' | 'loadError' | 'gameRunningMsg' | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>(detectInitialLang);
 
@@ -399,6 +402,19 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           fetch(`${API_BASE}/qq/upcoming`).catch(() => null),
         ]);
         if (!sRes.ok) {
+          // 2026-05-12 (Wolf-Bug 'summary zeigt falsche teams'): Backend
+          // antwortet 409 mit gameRunning=true wenn das aktuelle Spiel
+          // noch laeuft (kein stale-data servieren). Eigene Fehlermeldung
+          // dafuer, damit Spieler weiss: 'scan nochmal am Ende'.
+          if (sRes.status === 409) {
+            try {
+              const body = await sRes.json();
+              if (body?.gameRunning && !cancelled) {
+                setErrorKey('gameRunningMsg');
+                return;
+              }
+            } catch { /* fall through */ }
+          }
           if (!cancelled) setErrorKey('notFoundMsg');
           return;
         }

@@ -766,6 +766,11 @@ function SlideStage({ children }: { children: React.ReactNode }) {
         // Phase-Render-Box muss flex-column sein damit existing views mit
         // flex:1 weiterhin korrekt fuellen.
         display: 'flex', flexDirection: 'column',
+        // 2026-05-12 Phase 2: CSS Container Query Unit Anchor. cqh/cqw
+        // innerhalb der Stage beziehen sich auf 1080px/1920px Canvas
+        // statt auf den echten Viewport. Bei Stage AUS faellt cqh/cqw
+        // auf vh/vw zurueck (Browser-Default ohne sized container).
+        containerType: 'size',
       }}>
         {children}
       </div>

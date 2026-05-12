@@ -21,6 +21,7 @@ import { AVATAR_SETS, getSet } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   CozyCard, CozyBtn, StepLabel, StatChip,
+  AnimatedDots, CopyButton, MobileFireflies, TeamTimerBar,
 } from '../components/CozyQuizTeamPrimitives';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted,
@@ -415,61 +416,7 @@ function useExpiry(endsAt: number | null | undefined): boolean {
   return expired;
 }
 
-function AnimatedDots() {
-  return (
-    <span aria-hidden>
-      {[0, 1, 2].map(i => (
-        <span key={i} style={{
-          animation: `tcdotPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
-          fontSize: 'inherit',
-        }}>.</span>
-      ))}
-    </span>
-  );
-}
-
 type SetupStep = 'COLOR' | 'AVATAR' | 'NAME';
-
-// 2026-05-03 (Wolf-Wunsch): kleiner Copy-Button fuer den Stamm-Code.
-// Funktioniert mit navigator.clipboard, Fallback auf execCommand fuer alte
-// Browser. Visuelles Feedback per "Copied!"-State 1.5s.
-function CopyButton({ text, lang }: { text: string; lang: 'de' | 'en' }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const el = document.createElement('textarea');
-        el.value = text;
-        el.style.position = 'fixed'; el.style.opacity = '0';
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch { /* silently fail — user can long-press to copy */ }
-  }
-  return (
-    <button
-      onClick={copy}
-      style={{
-        padding: '4px 10px', borderRadius: 8,
-        border: `1.5px solid ${copied ? '#22C55E' : '#EC4899'}55`,
-        background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(236,72,153,0.10)',
-        color: copied ? '#86efac' : '#FBCFE8',
-        fontFamily: 'inherit', fontWeight: 900, fontSize: 11,
-        cursor: 'pointer',
-        letterSpacing: 0.4,
-      }}
-      title={lang === 'de' ? 'Code kopieren' : 'Copy code'}
-    >
-      {copied ? (lang === 'de' ? '✓ Kopiert' : '✓ Copied') : (lang === 'de' ? '📋 Kopieren' : '📋 Copy')}
-    </button>
-  );
-}
 
 function getOrCreateTeamId(): string {
   const key = 'qq_teamId';
@@ -2176,35 +2123,6 @@ function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'imposter'; t
         </div>
       </div>
     </div>
-  );
-}
-
-// ── Mobile Fireflies (lighter version for phones) ────────────────────────────
-const MOBILE_FF = [
-  { x:10, y:25, dx: 30,  dy:-40,  dur:6.0, del:0   },
-  { x:85, y:60, dx:-25,  dy:-35,  dur:7.2, del:1.2 },
-  { x:45, y:80, dx: 35,  dy:-45,  dur:5.5, del:0.6 },
-  { x:70, y:15, dx:-30,  dy:-25,  dur:8.0, del:2.0 },
-  { x:25, y:55, dx: 20,  dy:-50,  dur:6.8, del:1.5 },
-];
-
-function MobileFireflies({ color }: { color?: string }) {
-  const c = color ?? '#F9A8D488';
-  return (
-    <>
-      {MOBILE_FF.map((f, i) => (
-        <div key={i} style={{
-          position: 'fixed', pointerEvents: 'none', zIndex: 1,
-          left: `${f.x}%`, top: `${f.y}%`,
-          width: 4, height: 4, borderRadius: '50%',
-          background: c,
-          boxShadow: `0 0 5px 1px ${c}`,
-          ['--dx' as string]: `${f.dx}px`,
-          ['--dy' as string]: `${f.dy}px`,
-          animation: `tcffmove ${f.dur}s ease-in-out ${f.del}s infinite`,
-        }} />
-      ))}
-    </>
   );
 }
 
@@ -4841,63 +4759,6 @@ function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt,
         : <div style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>{t.pinIt.noPin[lang]}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
-    </div>
-  );
-}
-
-function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; durationSec: number; accentColor: string }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
-  // Track last whole-second to fire exactly one vibration per new second in 1..3.
-  const lastBuzzSecRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
-      setRemaining(r);
-      const secs = Math.ceil(r);
-      if (secs >= 1 && secs <= 3 && lastBuzzSecRef.current !== secs) {
-        lastBuzzSecRef.current = secs;
-        if (navigator.vibrate) navigator.vibrate(70);
-      }
-      if (r === 0) clearInterval(iv);
-    }, 100);
-    return () => clearInterval(iv);
-  }, [endsAt]);
-
-  const pct = Math.min(100, (remaining / durationSec) * 100);
-  const secs = Math.ceil(remaining);
-
-  // Dynamic urgency levels
-  const isCritical = secs <= 5;
-  const isWarning = secs <= 10 && !isCritical;
-  const isAlert = secs <= 15 && !isWarning && !isCritical;
-  const color = isCritical ? '#EF4444' : isWarning ? '#F97316' : isAlert ? '#EC4899' : accentColor;
-  const timerFontSize = isCritical ? 22 : isWarning ? 18 : 15;
-
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Timer</span>
-        <span style={{
-          fontSize: timerFontSize, fontWeight: 900, color,
-          textShadow: isCritical ? '0 0 14px rgba(239,68,68,0.7)' : isWarning ? '0 0 10px rgba(249,115,22,0.5)' : 'none',
-          animation: isCritical ? 'tcTimerPulse 0.6s ease-in-out infinite' : isWarning ? 'tcTimerPulse 1.2s ease-in-out infinite' : 'none',
-          transition: 'font-size 0.2s, color 0.3s',
-        }}>
-          {secs}s
-        </span>
-      </div>
-      <div style={{
-        height: isCritical ? 10 : 8, borderRadius: 5,
-        background: 'rgba(255,255,255,0.07)', overflow: 'hidden',
-        transition: 'height 0.3s',
-      }}>
-        <div style={{
-          height: '100%', borderRadius: 5, background: color,
-          width: `${pct}%`, transition: 'width 0.1s linear, background 0.3s',
-          boxShadow: isCritical ? `0 0 14px ${color}aa` : `0 0 8px ${color}55`,
-        }} />
-      </div>
     </div>
   );
 }

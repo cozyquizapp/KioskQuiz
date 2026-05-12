@@ -21924,17 +21924,17 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
-                    // 2026-05-12 (Wolf 'neue idee' + Followup '3x im dreieck'):
+                    // 2026-05-12 (Wolf 'neue idee' + Followup '3x im dreieck'
+                    // + Followup '1x gestapelt = 2 avatare, 2x = 3 avatare'):
                     // Stack-Indikator via Avatar-Mehrfach-Platzierung statt
-                    // Feld-im-Feld.
-                    //  stackCount 0/1 → 1 Avatar zentriert
-                    //  stackCount 2 → 2 Avatare diagonal (TL + BR)
-                    //  stackCount 3 → 3 Avatare im Dreieck (Spitze oben mittig,
-                    //    Basis unten-links + unten-rechts) — gleichmaessig
-                    //    verteilt auf dem quadratischen Feld.
+                    // Feld-im-Feld. Mapping ist Stack-Aktionen → Avatar-Anzahl:
+                    //  stackCount 0 → 1 Avatar zentriert (normales Feld, kein Stapel)
+                    //  stackCount 1 → 2 Avatare diagonal (1× gestapelt: stuck=true)
+                    //  stackCount 2+ → 3 Avatare im Dreieck (2× gestapelt oder mehr,
+                    //    z.B. stuck=true + Connections-Bonus)
                     // Avatar-Groesse passt sich an: je mehr Kopien, desto
                     // kleiner pro Kopie, damit sie alle aufs Feld passen.
-                    const copies = stackCount >= 3 ? 3 : stackCount === 2 ? 2 : 1;
+                    const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
                     const avFactor = copies === 3 ? 0.46 : copies === 2 ? 0.52 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     // Offsets in % vom Cell-Center (positiv = nach unten-rechts).

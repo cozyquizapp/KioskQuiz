@@ -752,7 +752,13 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       flex: 1,
       width: '100%',
       position: 'relative',
-      overflow: 'hidden',
+      // 2026-05-12 (Glow-Audit): overflow 'hidden' -> 'clip' + overflowClipMargin.
+      // 'clip' verhindert weiterhin Body-Scroll wenn die skalierte Stage groesser
+      // als die Viewport wird, aber laesst Box-Shadows/Glows von Cards INNERHALB
+      // der Stage bis zu 120px ueber die Stage-Kante bluten. Damit werden die
+      // ueberall benutzten Pink/Cyan-Glows nicht mehr am Slide-Rand abgeschnitten.
+      overflow: 'clip',
+      overflowClipMargin: '120px',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>
@@ -1959,7 +1965,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       background: activeTemplate ? (activeTemplate.background || bg) : bg,
       fontFamily: fontFam,
       color: textCol, display: 'flex', flexDirection: 'column',
-      overflow: 'hidden', position: 'relative',
+      // 2026-05-12 (Glow-Audit): overflow 'hidden' → 'visible'. Body-Scroll
+      // ist bereits durch SlideStage outer (overflow:clip + 120px clipMargin)
+      // UND html/body in main.css (overflow:hidden) doppelt verhindert. Dieser
+      // Phase-Root hatte `overflow:hidden` als historische Sicherung — die war
+      // aber der GROSSE Glow-Killer: jeder Card-Glow (Question-Card, Options,
+      // Active-Pill) wurde am Phase-Rand abgeschnitten. Visible heisst Glows
+      // bluten frei bis zum SlideStage-Clip (120px Toleranz-Ring).
+      overflow: 'visible', position: 'relative',
       // Kein Wrapper-Padding — der eingebaute Sicherheitsrand zeichnete
       // sich optisch sichtbar ab. Inneres Padding handhaben die Views selber.
       transition: 'background 0.8s ease',
@@ -12028,7 +12041,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+    <div style={{
+      flex: 1, display: 'flex', position: 'relative',
+      // 2026-05-12 (Glow-Audit): hidden → visible. Frage-Card + Option-Cards
+      // haben dicke Glows (boxShadow 0 0 36-48px) — die wurden hier am
+      // QuestionView-Rand abgeschnitten. SlideStage outer clipMargin (120px)
+      // faengt sie sauber am echten Bildschirmrand.
+      overflow: 'visible',
+    }}>
       {/* I1 Kategorie-Partikel (fliegende Zahlen/Buchstaben) entfernt —
           lenkten vom Fragentext ab. Stattdessen faerben wir die Fireflies
           weiter unten in der Kategorie-Farbe. */}

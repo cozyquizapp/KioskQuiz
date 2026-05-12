@@ -5696,7 +5696,6 @@ const revealAnswersForRoom = (room: RoomState) => {
     room.nextStage = null;
   }
   broadcastState(room);
-  io.to(room.roomCode).emit('scoreUpdated'); // TODO(LEGACY): scoreboard now via stateUpdate
   io.to(room.roomCode).emit('evaluation:revealed');
   return { answers: room.answers, teams: room.teams };
 };
@@ -5867,7 +5866,6 @@ app.post('/api/rooms/:roomCode/answer', (req, res) => {
   }
 
   io.to(roomCode).emit('answerReceived', { teamId: teamIdValidation.value });
-  io.to(roomCode).emit('beamer:team-answer-update', { teamId, hasAnswered: true }); // TODO(LEGACY)
 
   const connectedTeamIds = getConnectedTeamIds(room);
   const activeTeamIds = connectedTeamIds.length ? connectedTeamIds : Object.keys(room.teams);
@@ -6004,7 +6002,6 @@ app.post('/api/rooms/:roomCode/answers/override', (req, res) => {
     }
 
     io.to(roomCode).emit('teamResult', { teamId, isCorrect });
-    io.to(roomCode).emit('scoreUpdated'); // TODO(LEGACY)
     broadcastState(room);
     return res.json({ ok: true });
   }
@@ -6035,7 +6032,6 @@ app.post('/api/rooms/:roomCode/bingo/mark', (req, res) => {
   }
 
   board[cellIndex].marked = true;
-  io.to(roomCode).emit('bingoUpdated', { teamId, board }); // TODO(LEGACY)
   broadcastState(room);
   return res.json({ ok: true, board });
 });

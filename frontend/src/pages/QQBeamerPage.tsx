@@ -21830,25 +21830,30 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
-                    // 2026-05-12 (Wolf neue Idee): Stack-Indikator via Avatar-
-                    // Mehrfach-Platzierung diagonal statt Feld-im-Feld.
-                    //  stackCount 0 → 1 Avatar zentriert (normales Feld)
-                    //  stackCount 1 → 1 Avatar zentriert (gestapelt, kein Visual
-                    //    da Stack 1 = Base; Punkte zaehlen ueber Goldglow)
+                    // 2026-05-12 (Wolf 'neue idee' + Followup '3x im dreieck'):
+                    // Stack-Indikator via Avatar-Mehrfach-Platzierung statt
+                    // Feld-im-Feld.
+                    //  stackCount 0/1 → 1 Avatar zentriert
                     //  stackCount 2 → 2 Avatare diagonal (TL + BR)
-                    //  stackCount 3 → 3 Avatare diagonal (TL + center + BR)
+                    //  stackCount 3 → 3 Avatare im Dreieck (Spitze oben mittig,
+                    //    Basis unten-links + unten-rechts) — gleichmaessig
+                    //    verteilt auf dem quadratischen Feld.
                     // Avatar-Groesse passt sich an: je mehr Kopien, desto
                     // kleiner pro Kopie, damit sie alle aufs Feld passen.
                     const copies = stackCount >= 3 ? 3 : stackCount === 2 ? 2 : 1;
-                    const avFactor = copies === 3 ? 0.42 : copies === 2 ? 0.52 : 0.86;
+                    const avFactor = copies === 3 ? 0.46 : copies === 2 ? 0.52 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
-                    // Diagonal-Offsets in % vom Cell-Center (positiv = nach
-                    // unten-rechts). Bei copies===1 ist offset 0 (zentriert).
-                    const diag = copies === 3 ? 22 : copies === 2 ? 20 : 0; // % vom cellSize
+                    // Offsets in % vom Cell-Center (positiv = nach unten-rechts).
+                    // Triangle: Apex oben mittig (-25%), Basis bei +22% horizontal
+                    // und +18% vertikal. Diagonal-2: TL/BR mit ±20% beide Achsen.
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
-                      ? [{ tx: -diag, ty: -diag }, { tx: 0, ty: 0 }, { tx: diag, ty: diag }]
+                      ? [
+                          { tx:  0,  ty: -25 },  // top center (apex)
+                          { tx: -23, ty:  18 },  // bottom-left
+                          { tx:  23, ty:  18 },  // bottom-right
+                        ]
                       : copies === 2
-                        ? [{ tx: -diag, ty: -diag }, { tx: diag, ty: diag }]
+                        ? [{ tx: -20, ty: -20 }, { tx: 20, ty: 20 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

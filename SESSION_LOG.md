@@ -1353,3 +1353,27 @@ Push. Chat-Wechsel naht (Wolf-Hinweis).
 
 **Open**: QQTeamPage-Refactor weiter (Phase 1.2: AnimatedDots + CopyButton
 + MobileFireflies + TeamTimerBar + Input-Primitives).
+
+---
+
+## 2026-05-13 (allerletzter Nachtrag) — Rand-Fix Versuch #4: toter CSS-Selektor entlarvt
+
+Wolfs „Rand ist immer noch da" zum 4. Mal — Versuche #1 (Stage-Outer
+#0A0814 → #0F0817), #2 (.cozy-beamer-shell → #0F0817) hatten alle 0 Effekt.
+
+Root Cause: `.cozy-beamer-shell` ist ein **toter Selektor**. In main.css
+mehrfach gestylt, aber `grep -rn "cozy-beamer-shell" --include="*.tsx"`
+ergibt NULL Treffer. Die Klasse wird nirgendwo im JSX gesetzt — nur in
+CSS angesprochen. Vermutlich Legacy-Rest aus einer alten Beamer-Wrapper-
+Architektur.
+
+Der echte Hook: `document.body.classList.add('qq-active')` in QQBeamerPage,
+QQModeratorPage, QQModPortablePage beim Mount (`grep qq-active` zeigt's
+sofort). `body.qq-active { background: #0F0817 }` matched jetzt
+Letterbox-Streifen mit Stage-Innenflaeche. Commit `a040d057`.
+
+**Lesson:** Bei „CSS-Fix hat keinen Effekt"-Bug erst grep'pen ob der
+Selektor ueberhaupt im DOM gesetzt wird, bevor man am Style schraubt.
+
+**Open**: QQTeamPage-Refactor Phase 1 weiter (AnimatedDots, CopyButton,
+MobileFireflies, TeamTimerBar, Input-Primitives).

@@ -183,7 +183,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
-        padding: 'max(var(--qq-safe-margin), clamp(16px, 2.4cqh, 36px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px))',
+        // 2026-05-13 (Wolf 'cards mittig zentrierter, mehr platz ueber MEHR'):
+        // padding-top deutlich erhoeht (clamp 16-36 → 80-140) damit der ganze
+        // Card-Block tiefer im Slot sitzt → Avatar-Plaetze oben haben Luft.
+        padding: 'max(var(--qq-safe-margin), clamp(80px, 11cqh, 140px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(16px, 2.4cqh, 36px))',
         gap: 'clamp(14px, 2cqh, 28px)',
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
@@ -507,8 +510,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // v1 hatte Higher zu klein (-210 bis -260) → Avatar landete auf
               // der WENIGER-Pille statt oben an der MEHR-Pille. Jetzt zurueck
               // auf groessere Negativ-Werte fuer Higher, Lower stay-similar.
+              // 2026-05-13 (Wolf 'avatar bei higher mitten ueber MEHR-Schrift,
+              // mehr platz drueber'): Higher-Y nochmal deutlich nach oben —
+              // -440/-32cqh/-350 → -550/-40cqh/-460. Plus Card-Row rutscht
+              // durch erhoehten Parent-padding-top auch ein Stueck tiefer,
+              // sodass der Avatar oberhalb der MEHR-Pille statt mittendrauf
+              // landet.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-440px, -32cqh, -350px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-550px, -40cqh, -460px)) scale(0.7)`
                 : choice === 'lower'
                   ? `translate(${xCenter}px, clamp(-90px, -6cqh, -40px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';
@@ -549,10 +558,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Timer-Pill unten rechts — nur in question phase */}
+        {/* 2026-05-13 (Wolf 'Timer oben rechts statt unten rechts, mehr
+            Platz unten fuer Avatar-Flug zur MEHR-Pille'): bottom 32 → top 32. */}
         {!isReveal && hl.timerEndsAt != null && (
           <div style={{
-            position: 'absolute', bottom: 32, right: 48, zIndex: 8,
+            position: 'absolute', top: 32, right: 48, zIndex: 8,
           }}>
             <BeamerTimer endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent="#EC4899" />
           </div>

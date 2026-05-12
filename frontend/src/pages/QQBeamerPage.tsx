@@ -19379,16 +19379,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       )}
 
-      {/* Hero — Big Title nur (Wave-Cascade per Buchstabe).
-          2026-05-12 (Wolf 'card noch nicht ganz mittig'): Hero aus dem
-          Flex-Flow raus → position:absolute oben. Damit ist das Records-
-          Panel das einzige Flex-Child im Container und sitzt visuell
-          mittig (justifyContent:center wirkt auf nur ein Element). */}
+      {/* 2026-05-12 v2 (Wolf 'mach cozyquiz ueber die card und gleich gehts
+          los unter die card beides mittig'): Hero ist jetzt in zwei Container
+          aufgesplittet — CozyQuiz/Eyebrow OBEN ueber der Card (absolute top),
+          Title 'Gleich gehts los' UNTEN unter der Card (absolute bottom).
+          Beide mit left:0 right:0 + justifyContent:center fuer harte
+          horizontale Zentrierung. Records-Card bleibt zwischen den beiden
+          und wird via Parent's justifyContent:center vertikal mittig. */}
       <div style={{
         position: 'absolute',
         top: 'var(--qq-safe-margin)',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        left: 0,
+        right: 0,
         zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
@@ -19496,13 +19498,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             🎤 Eurovision Edition
           </div>
         ))}
+      </div>
 
-        {/* 2026-05-06 v5 (Wolf 'pause konsistent zu intro: kein Eyebrow,
-            gleiche Wave-Animation'): Eyebrow-Pille jetzt fuer beide Modes
-            aus, Title in beiden Modes mit per-Buchstaben Wave. */}
-
-        {/* Big Title — beide Modes mit per-Buchstaben-Wave + Letter-Cascade
-            (analog Lobby-Wordmark). */}
+      {/* Bottom-Hero — Title 'Gleich gehts los' / 'Kurze Pause' UNTER der
+          Card (absolute bottom). Separater Container von der oben absoluten
+          Eyebrow-Zone damit beide Texte unabhaengig mittig zentriert sind
+          und die Card visuell dazwischen sitzt. */}
+      <div style={{
+        position: 'absolute',
+        bottom: 'var(--qq-safe-margin)',
+        left: 0,
+        right: 0,
+        zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.1s both',
+        pointerEvents: 'none',
+      }}>
         {(() => {
           const titleText = mode === 'preGame'
             ? (de ? "Gleich geht's los" : 'Starting soon')
@@ -19511,16 +19522,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div
               aria-label={titleText}
               style={{
-                // 2026-05-12 (Wolf 'gleich gehts los dafuer kleiner'):
-                // Hero-Title geshrinkt damit das Rotation-Card-Panel
-                // visueller Hauptanker bleibt. 48-96 → 28-52.
                 fontSize: 'clamp(28px, 3.8vw, 52px)', fontWeight: 900,
                 color: modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
-                // 2026-05-07 v12 (Wolf 'kontrast teilweise unleserlich'): im
-                // ESC-Mode Pink-Title auf Pink/Lila-BG → dunkler Halo dazu fuer
-                // Lesbarkeit. Pink-Glow bleibt fuer Atmosphaere.
                 textShadow: isEsc
                   ? `0 2px 14px rgba(0,0,0,0.65), 0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`
                   : `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,

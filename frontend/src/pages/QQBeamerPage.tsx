@@ -13270,17 +13270,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // neue 'xxl'-Stufe für ≤4 Antworten + xl/lg deutlich vergrößert.
             // Schwellen großzügiger: xl bis 8 (war 6), lg bis 16 (war 12).
             const N = allAnswers.length;
-            // 2026-05-11 (Wolf-Bug 'Antworten zu klein, Platz oben/unten frei'):
-            // Tier-Schwellen erweitert damit mehr Antworten in größere Tiers
-            // fallen. Sprung md→lg war besonders steil (13→22px), war Bug-
-            // Ursache. Neue Schwellen: ≤4 xxl, ≤12 xl (war 8), ≤24 lg (war 16),
-            // ≤40 md (war 30), ≤80 sm (war 60).
+            // 2026-05-12 (Wolf 'gewinnercard aus dem slide draußen, lösungen
+            // zu groß'): Tier-Schwellen DEUTLICH zurueck. Bei 19 Antworten
+            // war vorher lg (38px Font, 5 Reihen, ~485px Grid) → klemmt
+            // Survivor-Card unter den Slide. Neue Schwellen drücken 19 in
+            // tier=md (26px Font, ~290px Grid) → Survivor-Card hat wieder
+            // Platz unten. Gewinn pro Stufe: ~60% Grid-Hoehe.
             const tier =
               N <= 4  ? 'xxl'
-              : N <= 12 ? 'xl'
-              : N <= 24 ? 'lg'
-              : N <= 40 ? 'md'
-              : N <= 80 ? 'sm'
+              : N <= 8  ? 'xl'   // war ≤12
+              : N <= 16 ? 'lg'   // war ≤24
+              : N <= 28 ? 'md'   // war ≤40
+              : N <= 50 ? 'sm'   // war ≤80
               : 'xs';
             // 2026-05-06 (Wolf 'keine Cascade-Animation bei Hot Potato, aber
             // Cascade-Sound schon — Animation anpassen'): Stagger deutlich
@@ -13909,9 +13910,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  gap: 'clamp(10px, 1.4vh, 18px)',
-                  padding: 'clamp(16px, 2vh, 26px) clamp(22px, 3vw, 42px)',
-                  borderRadius: 24,
+                  // 2026-05-12 (Wolf 'gewinnercard ausserhalb slide'): Survivor-
+                  // Card kompakter — gap/padding/Avatar/Font alle runter, dann
+                  // passt sie auch wenn Answer-Grid voll ist.
+                  gap: 'clamp(6px, 0.8vh, 12px)',
+                  padding: 'clamp(10px, 1.2vh, 18px) clamp(18px, 2.4vw, 36px)',
+                  borderRadius: 20,
                   width: '100%', maxWidth: 1400,
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
@@ -13921,33 +13925,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: 'clamp(12px, 1.5vw, 20px)', flexWrap: 'wrap',
+                    gap: 'clamp(10px, 1.2vw, 16px)', flexWrap: 'wrap',
                   }}>
-                    <span style={{ fontSize: 'clamp(34px, 4.2vw, 56px)', lineHeight: 1 }}><QQEmojiIcon emoji="🥔"/></span>
+                    <span style={{ fontSize: 'clamp(26px, 3.2vw, 44px)', lineHeight: 1 }}><QQEmojiIcon emoji="🥔"/></span>
                     {hpCoWinners.map((tm, i) => (
-                      <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(52px, 5.6vw, 78px)'} style={{
-                          flexShrink: 0, boxShadow: `0 0 22px ${tm.color}55`,
+                      <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(40px, 4.4vw, 62px)'} style={{
+                          flexShrink: 0, boxShadow: `0 0 18px ${tm.color}55`,
                           animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
                         }} />
                         <TeamNameLabel
                           name={tm.name}
-                          maxLines={2}
-                          shrinkAfter={18}
+                          maxLines={1}
+                          shrinkAfter={16}
                           color={tm.color}
                           fontWeight={900}
-                          fontSize="clamp(20px, 2.6vw, 34px)"
+                          fontSize="clamp(16px, 2vw, 26px)"
                           style={{
                             textShadow: `0 0 24px ${tm.color}44`,
-                            maxWidth: 240,
+                            maxWidth: 200,
                           }}
                         />
                       </div>
                     ))}
                   </div>
-                  {/* Zeile 2: Message — eigene Zeile, immer zentriert, nie geclippt */}
+                  {/* Zeile 2: Message — eigene Zeile, immer zentriert */}
                   <div style={{
-                    color: '#86efac', fontSize: 'clamp(18px, 2.3vw, 30px)', fontWeight: 900, lineHeight: 1.2,
+                    color: '#86efac', fontSize: 'clamp(14px, 1.7vw, 22px)', fontWeight: 900, lineHeight: 1.2,
                     textAlign: 'center',
                   }}>
                     {hpMsg}

@@ -12764,18 +12764,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               zusaetzlich in Kategorie-Farbe. Kein redundantes Badge im
               QuestionView mehr. */}
 
-          {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
-              Frage-Card + alle Reveal-Inhalte.
-              2026-05-12 (Wolf 'cards zu nah am rand, schrift dynamisch
-              anpassen, automatisiert'): AutoFitContent als Wrapper. Wenn
-              Content (Frage-Card + Reveal-Panels + Survivor-Card etc.)
-              insgesamt zu hoch fuer den verfuegbaren Slide-Raum ist,
-              schrumpft die ganze Gruppe via transform:scale auf min 0.7.
-              Bei normalem Fit scale=1 → kein visueller Effekt. */}
-          <AutoFitContent innerStyle={{
+          {/* 2026-04-30: Inner-Content-Wrapper mit flex:1.
+              2026-05-12 (Audit-C 'AutoFit entsorgt'): AutoFitContent war
+              eine fragile Zwischenloesung — CSS zoom-Property liest
+              scrollHeight bereits skaliert zurueck, Force-Reflow half nicht
+              zuverlaessig, nested zoom+SlideStage transform produzierte
+              Browser-Quirks. Single-Source-of-Truth ist jetzt SlideStage
+              (Phase 1 Option A, ?stage=1). Bei Stage AUS: Layout-Content
+              im Standard-Flex-Flow mit min-height:0 + overflow:hidden.
+              Bei Stage AN: SlideStage haelt Layout immer in 1080px Canvas. */}
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
             justifyContent: innerJustify,
             gap: innerGap,
-            alignItems: 'center',
+            alignItems: 'center', width: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
           }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
@@ -14222,7 +14226,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (
             <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
-          </AutoFitContent>{/* /Inner-Content-Wrapper (AutoFitContent) */}
+          </div>{/* /Inner-Content-Wrapper */}
         </div>
           );
         })()}
@@ -16342,118 +16346,20 @@ function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
 //     {currentContentJsx}
 //   </SlotTransition>
 // ════════════════════════════════════════════════════════════════════════════
-// AutoFitContent — automatischer Schrumpf bei Overflow (Slide-Boundary #8)
+// AutoFitContent — ENTFERNT 2026-05-12 (Audit-C)
 // ════════════════════════════════════════════════════════════════════════════
-// 2026-05-12 (Wolf 'cards zu nah am rand, schrift dynamisch anpassen,
-// automatisiert, nicht jeden slide nachbessern'). Misst per ResizeObserver
-// die natuerliche Content-Hoehe vs. die verfuegbare Container-Hoehe. Wenn
-// Content zu hoch fuer Container, wird der Inhalt via `transform: scale(...)`
-// auf eine passende Skala (max bis minScale) runtergesetzt. Bei passendem
-// Content scale=1 (kein visueller Effekt).
+// War eine fragile Zwischenloesung mit CSS zoom-Property + ResizeObserver.
+// Probleme: scrollHeight returned zoom-skalierte Werte (zoom ist layout-
+// affecting), Force-Reflow-Trick half nicht zuverlaessig, nested zoom+
+// SlideStage transform produzierte Browser-Quirks. ResizeObserver-Re-
+// Registrierungen verursachten Repaint-Cascades die Chip-Cascade-
+// Animationen in Dauerschleife restarteten.
 //
-// Wichtig:
-// - transform:scale aendert NICHT die Layout-Box des Containers, daher
-//   bleibt das Slide-Layout drumherum stabil. Der Inhalt selber wirkt
-//   nur kleiner.
-// - Children muessen ihre natuerliche Hoehe rendern koennen (overflow nicht
-//   selbst clippen), sonst kann measure() die natural-height nicht lesen.
-// - transformOrigin: 'center top' damit der Inhalt nicht hochrutscht wenn
-//   er schrumpft — der Top-Anker bleibt fix, nur unten wird Platz frei.
-//
-// Verwendung: <AutoFitContent>{...slide content...}</AutoFitContent>
-// im Slot wo sonst die Cards einfach in einen flex-Container rendern.
-function AutoFitContent({
-  children,
-  minScale = 0.6,
-  innerStyle,
-}: {
-  children: React.ReactNode;
-  minScale?: number;
-  innerStyle?: React.CSSProperties;
-}) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  useLayoutEffect(() => {
-    const outer = outerRef.current;
-    const inner = innerRef.current;
-    if (!outer || !inner) return;
-    let raf = 0;
-    const measure = () => {
-      raf = 0;
-      const availH = outer.clientHeight;
-      const availW = outer.clientWidth;
-      // 2026-05-12 v3 (Wolf 'survivor card immer noch nicht sichtbar'):
-      // Force-Reflow vor scrollHeight read. Vorher: zoom=1 reset gefolgt
-      // von sofortigem scrollHeight read → Browser hat noch nicht repainted,
-      // cached scrollHeight kommt vom letzten zoom-Wert → fit-Berechnung
-      // basiert auf zoom-skaliertem Wert statt natural-Wert → scale nicht
-      // aggressiv genug → Survivor-Card weiter clipped.
-      // Fix: zoom=1 + force reflow via offsetHeight read, DANN scrollHeight.
-      (inner.style as any).zoom = 1;
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      void inner.offsetHeight; // force synchronous reflow
-      const natH = inner.scrollHeight;
-      const natW = inner.scrollWidth;
-      if (natH <= 0 || availH <= 0) return;
-      // Wenn alles reinpasst → scale 1, sofortiges return.
-      if (natH <= availH && natW <= availW) {
-        setScale(prev => prev === 1 ? prev : 1);
-        return;
-      }
-      const fitH = availH / natH;
-      const fitW = availW / natW;
-      const fit = Math.min(fitH, fitW, 1);
-      const next = Math.max(minScale, fit);
-      // Nur setState wenn signifikante Aenderung (>1% drift) — verhindert
-      // Oszillations-Loop wenn measurements zwischen zoom-States schwanken.
-      setScale(prev => Math.abs(prev - next) > 0.01 ? next : prev);
-    };
-    const schedule = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-    schedule();
-    const ro = new ResizeObserver(schedule);
-    ro.observe(outer);
-    ro.observe(inner);
-    return () => {
-      ro.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-    };
-    // 2026-05-12 (Audit-B 'Loesungs-Dauerschleife'): deps [children, minScale]
-    // → [minScale]. Vorher feuerte useLayoutEffect bei JEDEM Backend-Broadcast
-    // (children-Object war neu pro Render) → ResizeObserver-Re-registrierung
-    // → zoom-Updates → Repaint → Chip-Animationen restart in Dauerschleife.
-    // ResizeObserver allein deckt Window-Resize ab, kein React-Render-Trigger
-    // noetig.
-  }, [minScale]);
-  // 2026-05-12 v2 (Wolf 'die untere card ist komplett weg... das automatische
-  // dynamische funktioniert hier nicht'): transform:scale war nur VISUELL —
-  // Layout-Box blieb identisch, untere Cards wurden weiter clipped. Jetzt
-  // CSS zoom-Property: skaliert das Layout MIT, Container-Hoehe matched
-  // tatsaechlich. zoom ist in Chrome/Edge/Safari/Firefox126+ supported und
-  // damit auf Beamer-Browsern sicher.
-  return (
-    <div ref={outerRef} style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'flex-start',
-      width: '100%', minHeight: 0,
-      overflow: 'hidden',
-    }}>
-      <div ref={innerRef} style={{
-        zoom: scale,
-        transition: 'zoom 0.25s ease',
-        width: '100%',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center',
-        ...innerStyle,
-      }}>
-        {children}
-      </div>
-    </div>
-  );
-}
+// Single-Source-of-Truth ist jetzt SlideStage (Option A Phase 1) — bei
+// ?stage=1 wird der gesamte Slide-Content auf einem festen 1920x1080
+// Canvas gerendert und proportional zur Viewport-Groesse skaliert.
+// Standard-Layout (Stage AUS) nutzt Flex-Flow mit min-height:0 +
+// overflow:hidden — saubere CSS-only Containment ohne JS-Measurement.
 
 function SlotTransition({
   slotKey,

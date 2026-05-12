@@ -12697,19 +12697,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           </div>
 
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
-              Frage-Card + alle Reveal-Inhalte. Bekommt das vertikale
-              Centering / space-between, die Top-Bar bleibt davon unbetroffen
-              an ihrem Platz oben. */}
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
+              Frage-Card + alle Reveal-Inhalte.
+              2026-05-12 (Wolf 'cards zu nah am rand, schrift dynamisch
+              anpassen, automatisiert'): AutoFitContent als Wrapper. Wenn
+              Content (Frage-Card + Reveal-Panels + Survivor-Card etc.)
+              insgesamt zu hoch fuer den verfuegbaren Slide-Raum ist,
+              schrumpft die ganze Gruppe via transform:scale auf min 0.7.
+              Bei normalem Fit scale=1 → kein visueller Effekt. */}
+          <AutoFitContent innerStyle={{
             justifyContent: innerJustify,
             gap: innerGap,
-            alignItems: 'center', width: '100%',
-            // 2026-05-12 (Wolf 'felder stehen unten aus slide raus'):
-            // min-height:0 erlaubt Flex-Shrink wenn Content zu viel Platz
-            // moechte. Ohne das kann der innere Block ueber den Container
-            // wachsen und das letzte Element unten rauskippen.
-            minHeight: 0,
+            alignItems: 'center',
           }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal
@@ -14162,7 +14160,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (
             <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
-          </div>{/* /Inner-Content-Wrapper */}
+          </AutoFitContent>{/* /Inner-Content-Wrapper (AutoFitContent) */}
         </div>
           );
         })()}
@@ -16279,6 +16277,100 @@ function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
 //   >
 //     {currentContentJsx}
 //   </SlotTransition>
+// ════════════════════════════════════════════════════════════════════════════
+// AutoFitContent — automatischer Schrumpf bei Overflow (Slide-Boundary #8)
+// ════════════════════════════════════════════════════════════════════════════
+// 2026-05-12 (Wolf 'cards zu nah am rand, schrift dynamisch anpassen,
+// automatisiert, nicht jeden slide nachbessern'). Misst per ResizeObserver
+// die natuerliche Content-Hoehe vs. die verfuegbare Container-Hoehe. Wenn
+// Content zu hoch fuer Container, wird der Inhalt via `transform: scale(...)`
+// auf eine passende Skala (max bis minScale) runtergesetzt. Bei passendem
+// Content scale=1 (kein visueller Effekt).
+//
+// Wichtig:
+// - transform:scale aendert NICHT die Layout-Box des Containers, daher
+//   bleibt das Slide-Layout drumherum stabil. Der Inhalt selber wirkt
+//   nur kleiner.
+// - Children muessen ihre natuerliche Hoehe rendern koennen (overflow nicht
+//   selbst clippen), sonst kann measure() die natural-height nicht lesen.
+// - transformOrigin: 'center top' damit der Inhalt nicht hochrutscht wenn
+//   er schrumpft — der Top-Anker bleibt fix, nur unten wird Platz frei.
+//
+// Verwendung: <AutoFitContent>{...slide content...}</AutoFitContent>
+// im Slot wo sonst die Cards einfach in einen flex-Container rendern.
+function AutoFitContent({
+  children,
+  minScale = 0.7,
+  /** Optional override for the wrapper flex/layout. Default: column-flex,
+   *  full width, content centered. */
+  innerStyle,
+}: {
+  children: React.ReactNode;
+  minScale?: number;
+  innerStyle?: React.CSSProperties;
+}) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      const availH = outer.clientHeight;
+      const availW = outer.clientWidth;
+      // Reset transform so we read true natural size
+      inner.style.transform = 'scale(1)';
+      const natH = inner.scrollHeight;
+      const natW = inner.scrollWidth;
+      if (natH <= 0 || availH <= 0) return;
+      // Wenn alles reinpasst → scale 1, sofortiges return.
+      if (natH <= availH && natW <= availW) {
+        setScale(1);
+        return;
+      }
+      const fitH = availH / natH;
+      const fitW = availW / natW;
+      const fit = Math.min(fitH, fitW, 1);
+      setScale(Math.max(minScale, fit));
+    };
+    const schedule = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(outer);
+    ro.observe(inner);
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [children, minScale]);
+  return (
+    <div ref={outerRef} style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'flex-start',
+      width: '100%', minHeight: 0,
+      overflow: 'hidden',
+    }}>
+      <div ref={innerRef} style={{
+        transform: `scale(${scale})`,
+        transformOrigin: 'center top',
+        transition: 'transform 0.25s ease',
+        width: '100%',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center',
+        ...innerStyle,
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function SlotTransition({
   slotKey,
   exitAnimation,

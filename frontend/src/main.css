@@ -64,8 +64,11 @@
      thanks-recap). BG-Layer (Fireflies, Grain, BG-Image) duerfen full-bleed
      bleiben — nur die Content-Wrapper konsumieren die Var.
      Verwendung: `padding: var(--qq-safe-margin)` auf dem inneren
-     Content-Container, NICHT auf dem View-Root (sonst BG-Layer geclippt). */
-  --qq-safe-margin: clamp(20px, 2.2vh, 32px);
+     Content-Container, NICHT auf dem View-Root (sonst BG-Layer geclippt).
+     2026-05-12 v2 (Wolf 'zu nah am rand oben und unten'): min 20→32,
+     max 32→52. Mehr Atem zur Slide-Kante. Cards die das Token konsumieren
+     bekommen sofort mehr Rand. */
+  --qq-safe-margin: clamp(32px, 3vh, 52px);
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
   --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);

@@ -747,6 +747,79 @@ export function qqStartGame(
   // das neue Spiel gespeichert wird.
   (room as any)._gameResultPersisted = false;
 
+  // 2026-05-12 (Wolf Audit-E 'state-leak-sweep'): SINGLE_SESSION_MODE recycelt
+  // das Room-Objekt zwischen Spielen. Vorher leakten ~30 Felder vom alten ins
+  // neue Spiel — Symptome u.a.: falsche Bid-Anzeigen aus letztem Spiel, alte
+  // HP-Eliminated-Liste, Spoiler bei CHEESE-Q1 (image bereits revealed), alte
+  // bluffSubmissions, alte finalBets, etc. Jetzt: vollstaendiger State-Reset.
+  // ── Answer collection ──
+  room.answers = [];
+  room.allAnswered = false;
+  (room as any)._recentlyDisconnected = {};
+  room.top5HitsByTeam = {};
+  room.orderHitsByTeam = {};
+  // ── Placement & Winners ──
+  (room as any)._placementQueue = [];
+  (room as any)._currentQuestionWinners = [];
+  (room as any).tieBreakerCandidates = [];
+  (room as any).tieBreakerWinnerId = null;
+  // ── Hot Potato ──
+  room.hotPotatoActiveTeamId = null;
+  room.hotPotatoEliminated = [];
+  (room as any).hotPotatoLastAnswer = null;
+  room.hotPotatoTurnEndsAt = null;
+  room.hotPotatoUsedAnswers = [];
+  room.hotPotatoAnswerAuthors = [];
+  (room as any).hotPotatoQualified = [];
+  (room as any).hotPotatoSlotState = null;
+  // ── Imposter (deaktiviert aber State trotzdem clean halten) ──
+  (room as any).imposterActiveTeamId = null;
+  (room as any).imposterQueue = [];
+  (room as any).imposterChosenIndices = [];
+  (room as any).imposterEliminated = [];
+  // ── OnlyConnect (4-gewinnt) ──
+  (room as any).onlyConnectWinnerTeamId = null;
+  (room as any).onlyConnectWinnerHintIdx = null;
+  (room as any).onlyConnectGuesses = [];
+  (room as any).onlyConnectLockedTeams = [];
+  (room as any).onlyConnectStrikes = {};
+  // ── Bluff ──
+  (room as any).bluffPhase = null;
+  (room as any).bluffWriteEndsAt = null;
+  (room as any).bluffVoteEndsAt = null;
+  room.bluffSubmissions = {};
+  (room as any).bluffOptions = [];
+  (room as any).bluffOptionsByTeam = {};
+  (room as any).bluffVotes = {};
+  (room as any).bluffPoints = {};
+  (room as any).bluffRejected = [];
+  // ── Final Betting (kritisch fuer Summary + Final-Reveal) ──
+  room.finalBets = {};
+  room.finalBettingSubmitted = {};
+  room.finalPhaseWins = {};
+  room.finalLastSnapshot = null;
+  room.finalRecapStep = 0;
+  (room as any).finalRecapJustWon = null;
+  room.finalRevealStep = 0;
+  room.finalRoundWinners = null;
+  room.finalRoundScoreSnapshot = null;
+  room.finalBetResolution = null;
+  room.endAwards = null;
+  // ── Media/UI State (Spoiler-Prevention) ──
+  (room as any).imageRevealed = false;
+  (room as any).mapRevealStep = 0;
+  room.lastPlacedCell = null;
+  (room as any).frozenCells = [];
+  (room as any).shieldedCells = [];
+  // ── Reveal Steps ──
+  room.muchoRevealStep = 0;
+  (room as any).zvzRevealStep = 0;
+  (room as any).cheeseRevealStep = 0;
+  (room as any).comebackIntroStep = 0;
+  // ── Accumulators ──
+  room.questionHistory = [];
+  room.funnyAnswers = [];
+
   // Reset all phase stats
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id] = emptyPhaseStats();

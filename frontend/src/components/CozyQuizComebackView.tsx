@@ -183,10 +183,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
-        // 2026-05-13 (Wolf 'cards mittig zentrierter, mehr platz ueber MEHR'):
-        // padding-top deutlich erhoeht (clamp 16-36 → 80-140) damit der ganze
-        // Card-Block tiefer im Slot sitzt → Avatar-Plaetze oben haben Luft.
-        padding: 'max(var(--qq-safe-margin), clamp(80px, 11cqh, 140px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(16px, 2.4cqh, 36px))',
+        // 2026-05-13 v2 (Wolf 'avatar fliegt jetzt auf Frage-Card-Text, alles
+        // noch weiter runter'): padding-top nochmal hochgezogen (80-140 →
+        // 160-240) — Frage-Card + Anchor/VS/Subject rutschen deutlich tiefer
+        // im 1080px-Slot. Plus Y-Higher-Translate moderater (siehe unten).
+        padding: 'max(var(--qq-safe-margin), clamp(160px, 19cqh, 240px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(16px, 2.4cqh, 36px))',
         gap: 'clamp(14px, 2cqh, 28px)',
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
@@ -510,14 +511,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // v1 hatte Higher zu klein (-210 bis -260) → Avatar landete auf
               // der WENIGER-Pille statt oben an der MEHR-Pille. Jetzt zurueck
               // auf groessere Negativ-Werte fuer Higher, Lower stay-similar.
-              // 2026-05-13 (Wolf 'avatar bei higher mitten ueber MEHR-Schrift,
-              // mehr platz drueber'): Higher-Y nochmal deutlich nach oben —
-              // -440/-32cqh/-350 → -550/-40cqh/-460. Plus Card-Row rutscht
-              // durch erhoehten Parent-padding-top auch ein Stueck tiefer,
-              // sodass der Avatar oberhalb der MEHR-Pille statt mittendrauf
-              // landet.
+              // 2026-05-13 v2 (Wolf 'avatar fliegt JETZT auf Frage-Card-Text'):
+              // -550 war zu weit, Avatar landete IN der Frage-Card. Jetzt
+              // moderater (-380 to -300), aber Cards-Block sitzt durch
+              // erhoehten Parent-padding-top (160-240) deutlich tiefer →
+              // Avatar landet in der LUECKE zwischen Frage-Card und MEHR-
+              // Pille, nicht mehr in einer der beiden Cards.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-550px, -40cqh, -460px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-380px, -28cqh, -300px)) scale(0.7)`
                 : choice === 'lower'
                   ? `translate(${xCenter}px, clamp(-90px, -6cqh, -40px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';

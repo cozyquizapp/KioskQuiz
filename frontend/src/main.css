@@ -461,9 +461,12 @@ select:hover:not(:focus) {
    BEAMER — LIGHT, PROJECTOR-OPTIMIZED
    ======================================== */
 
-/* Override dark body background for beamer */
+/* Override dark body background for beamer.
+   2026-05-13 (Wolf-Bug 'sichtbarer Rand bleibt'): #0d1117 war heller als
+   Stage-Outer-bg (#0F0817 in SlideStage), Differenz war als subtiler
+   Saum zwischen Letterbox-Bereich und Stage sichtbar. Jetzt matched. */
 .cozy-beamer-shell {
-  background: #0d1117 !important;
+  background: #0F0817 !important;
   min-height: 100vh;
   position: relative;
   z-index: 0;
@@ -479,6 +482,11 @@ select:hover:not(:focus) {
 body:has(.cozy-beamer-shell)::before,
 body:has(.cozy-beamer-shell)::after {
   display: none;
+}
+/* 2026-05-13: Body-bg ebenfalls auf Stage-Outer-Farbe setzen, falls die
+   .cozy-beamer-shell nicht ganz bis an die Viewport-Edge reicht. */
+body:has(.cozy-beamer-shell) {
+  background: #0F0817;
 }
 
 /* Dark background for team view — suppress body gradients */

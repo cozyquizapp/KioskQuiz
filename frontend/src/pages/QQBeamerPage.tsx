@@ -16270,9 +16270,7 @@ function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
 // im Slot wo sonst die Cards einfach in einen flex-Container rendern.
 function AutoFitContent({
   children,
-  minScale = 0.7,
-  /** Optional override for the wrapper flex/layout. Default: column-flex,
-   *  full width, content centered. */
+  minScale = 0.6,
   innerStyle,
 }: {
   children: React.ReactNode;
@@ -16291,8 +16289,8 @@ function AutoFitContent({
       raf = 0;
       const availH = outer.clientHeight;
       const availW = outer.clientWidth;
-      // Reset transform so we read true natural size
-      inner.style.transform = 'scale(1)';
+      // Reset zoom so we read true natural size
+      (inner.style as any).zoom = 1;
       const natH = inner.scrollHeight;
       const natW = inner.scrollWidth;
       if (natH <= 0 || availH <= 0) return;
@@ -16319,6 +16317,12 @@ function AutoFitContent({
       if (raf) cancelAnimationFrame(raf);
     };
   }, [children, minScale]);
+  // 2026-05-12 v2 (Wolf 'die untere card ist komplett weg... das automatische
+  // dynamische funktioniert hier nicht'): transform:scale war nur VISUELL —
+  // Layout-Box blieb identisch, untere Cards wurden weiter clipped. Jetzt
+  // CSS zoom-Property: skaliert das Layout MIT, Container-Hoehe matched
+  // tatsaechlich. zoom ist in Chrome/Edge/Safari/Firefox126+ supported und
+  // damit auf Beamer-Browsern sicher.
   return (
     <div ref={outerRef} style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -16327,9 +16331,8 @@ function AutoFitContent({
       overflow: 'hidden',
     }}>
       <div ref={innerRef} style={{
-        transform: `scale(${scale})`,
-        transformOrigin: 'center top',
-        transition: 'transform 0.25s ease',
+        zoom: scale,
+        transition: 'zoom 0.25s ease',
         width: '100%',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center',

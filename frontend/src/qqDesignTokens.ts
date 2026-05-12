@@ -166,6 +166,114 @@ export const SHADOW = {
   lift:    '0 12px 24px rgba(0,0,0,0.45)',
 } as const;
 
+// ════════════════════════════════════════════════════════════════════════════
+// Z-INDEX-ZONEN (2026-05-12 Slide-Boundary-System Regel #6)
+// ════════════════════════════════════════════════════════════════════════════
+// Konvention fuer alle z-index-Werte: semantische Zonen statt wilder
+// Magic-Numbers. Vorher (vor 2026-05-12) hatten wir wild verstreut
+// 0/1/2/4/5/6/8/10/50/52/60/70/9000/9990/9995/9998/99999 — mit Kollisionen
+// die schwer zu debuggen sind (Heute: Cheese-Overlay-Badge auf z70 verdeckt
+// Bottom-Left-Badge auf z60 — bewusste z-Order, aber so nur durchgaengig
+// nachvollziehbar wenn man beide Werte parallel kennt).
+//
+// **NEUER Code soll diese Tokens nutzen statt Inline-Zahlen.** Bestehende
+// z-index-Werte in QQBeamerPage werden NICHT auf einen Schwung migriert
+// (Risiko, viele Subtle-Stacking-Order-Effekte) — beim naechsten Touch der
+// jeweiligen View-Datei kann der Wert auf das passende Token gezogen werden.
+//
+// Numerische Bereiche entsprechen den HEUTIGEN tatsaechlichen Werten im
+// Code — neue Sites nutzen die Tokens, alte Werte bleiben kompatibel.
+export const Z_INDEX = {
+  /** Hintergrund-Layer (BG-Image, Tinted-Backdrop). 0-4. */
+  background:     0,
+  /** Dekorations-Effekte (Fireflies, Grain, Sweep-Light). 5-9. */
+  decoration:     5,
+  /** View-Content (Cards, Buttons, normaler Slide-Inhalt). 10-19. */
+  content:       10,
+  /** Inset-Content (Cell-Overlay, Tile-Inner-Layer). 20-49. */
+  insetOverlay:  20,
+  /** Slide-Overlay (Cheese-Picture-Frosted-Card, Frosted-Reveal-Layer). 50-59. */
+  slideOverlay:  52,
+  /** Top-Bar Items (Kategorie-Badge, Timer-Wrapper). 60-69. */
+  topBar:        60,
+  /** Cheese-Top-Bar (auf Cheese-Picture, ueber slideOverlay). 70-79. */
+  cheeseTopBar:  70,
+  /** Modal-Layer (Confetti-Overlay, Spotlight, Race-Hero). 8000-8999. */
+  modal:       8500,
+  /** Global Overlays (Grain-Texture, Eurovision-Hearts). 9000-9994. */
+  globalOverlay: 9000,
+  /** Toast / AckError / Notifications. 9995-9999. */
+  toast:       9995,
+  /** Top-most (System-Modals, Quit-Confirms, Connection-Warnings). 99999+. */
+  topMost:    99999,
+} as const;
+//
+// REGEL bei z-index-Kollisionen (z.B. zwei Overlays auf gleicher Zone):
+//   - Statt einen z-index zu erhoehen: pruefen, ob die Elements sich
+//     ueberhaupt im DOM gleichzeitig befinden duerfen.
+//   - Wenn ja: explizit innerhalb der Zone abstufen (slideOverlay 52, 53, 54).
+//   - Konvention: kein Sprung ueber Zonen-Grenzen ohne Doku-Kommentar.
+//
+// ════════════════════════════════════════════════════════════════════════════
+// SLIDE-LAYOUT-REGELN (2026-05-12, Wolf 'zentrale regeln fuer slide-boundary')
+// ════════════════════════════════════════════════════════════════════════════
+// Konventions-Doku, keine Tokens — diese Patterns muessen beim Schreiben
+// neuer View-Code gefolgt werden. Begruendung jeweils aus konkretem Bug.
+//
+// REGEL #1 — min-height:0 Chain
+//   Jeder Flex-Column-Container (`display:flex flexDirection:column`) bekommt
+//   `minHeight: 0`. Sonst koennen Children ueber den Container wachsen und
+//   nachfolgende Sibling-Items aus dem Viewport draengen.
+//   Bug-Quelle: MUCHO R1 Felder rutschen unten raus, Hot Potato eliminated
+//   row push (2026-05-12).
+//
+// REGEL #2 — Safe-Margin Token
+//   Top/Right/Bottom/Left-Positionen relativ zum Slide-Edge nutzen die CSS-
+//   Var `--qq-safe-margin` (clamp(20px, 2.2vh, 32px)) statt eigener clamp-
+//   Werte. Token wird in main.css :root definiert. Vorteil: zentrale Tweak-
+//   Stelle, garantiert konsistenter Rand auf allen Slides.
+//
+// REGEL #3 — SlotTransition fuer Multi-Step-Choreos
+//   Wenn eine View mehrere "Slot-Zustaende" durchlaeuft (z.B. Bet-Reveal
+//   slot 0 → slot 1 → slot 2), den vorherigen Slot ueber `<SlotTransition>`
+//   mit Exit-Animation auslaufen lassen — kein harter Frame-Cut. Component
+//   liegt in QQBeamerPage.tsx (Z. ~16240). Signature:
+//     <SlotTransition slotKey=... exitAnimation=... exitMs=...>{...}</SlotTransition>
+//
+// REGEL #4 — Animation-Scale-Safety in Sibling-Rows
+//   Wenn N Elemente in einer Reihe "gleich gross" sein sollen, sind
+//   `scale(...)`-Aenderungen in der Entry-Animation VERBOTEN auf dem
+//   Layout-Box-aussersten Wrapper. Slam-Effekte nutzen translateY + rotate
+//   + blur + opacity (= scale-frei), nicht scale.
+//   Bug-Quelle (6 mal!): ActionCardReveal mit qqGsTeamSlam skalierte 2→
+//   1.18→0.96→1 ueber 1.4s — die isNew Card war waehrend dieser Zeit
+//   visuell bis zu 18% groesser als ihre nebenan settled non-isNew
+//   Geschwister. Fix: dediziertes qqActionCardSlam-Keyframe ohne scale.
+//   Anwenden: wenn du eine neue "N gleich grosse Cards"-Reihe baust und
+//   eine Slam-Entry-Animation willst, KOPIERE qqActionCardSlam (nicht
+//   qqGsTeamSlam). qqGsTeamSlam bleibt ok wenn das Element ALLEIN steht
+//   (z.B. Teams-Reveal-Hero).
+//
+// REGEL #5 — Sibling-Width-Consistency Pattern
+//   Cards in einer Row die "gleich gross" sein sollen:
+//   1. ALLE visuellen Props (border, padding, background, boxShadow,
+//      borderRadius) am SELBEN DOM-Layer. Wenn eine Card via 3D-Flip-
+//      Wrapper geht, muessen die visuellen Props auf den absolute-positioned
+//      Card-Front/Back gehen (NICHT auf den Outer-Wrapper) — siehe
+//      ActionCardReveal.
+//   2. ALLE Outer-Wrapper haben `flex: '1 1 0'` (basis 0 → wirklich gleich
+//      verteilt, nicht auto-content-size). Plus `minWidth` und `maxWidth`
+//      als harte Constraints + `boxSizing: 'border-box'`.
+//   3. ALLE Inner-Boxes mit `position:absolute, inset:0` haben EXPLIZIT
+//      `boxSizing: 'border-box'` — Default content-box driftet bei 3px+
+//      Border um 6-12 px gegen border-box-Geschwister.
+//   4. KEINE `filter: drop-shadow(...)` auf einzelnen Geschwistern — die
+//      erweitern die visuelle Bounding-Box. boxShadow ist ok (rendert
+//      ausserhalb der Layout-Box ohne sie zu vergroessern).
+//   5. Regel #4 (no-scale-animation) gilt zwingend mit.
+//
+// ════════════════════════════════════════════════════════════════════════════
+
 /** Helper: pickt EINEN Glow je State-Priorität — vermeidet Stack-Akkumulation
  *  wenn z.B. Cell gleichzeitig accent + highlighted + star ist. */
 export function pickGlow(opts: {

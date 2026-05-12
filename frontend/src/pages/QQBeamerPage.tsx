@@ -613,10 +613,14 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       // 2026-05-12 (Glow-Audit): overflow 'hidden' -> 'clip' + overflowClipMargin.
       // 'clip' verhindert weiterhin Body-Scroll wenn die skalierte Stage groesser
       // als die Viewport wird, aber laesst Box-Shadows/Glows von Cards INNERHALB
-      // der Stage bis zu 120px ueber die Stage-Kante bluten. Damit werden die
-      // ueberall benutzten Pink/Cyan-Glows nicht mehr am Slide-Rand abgeschnitten.
+      // der Stage ueber die Stage-Kante bluten.
+      // 2026-05-13 (Wolf-Bug 'harte glow-kanten auf allen slides'): 120px war
+      // zu eng — bei dicken Glows (200-400px) wurde der Glow hart bei 120px
+      // gecuttet → sichtbare rechteckige Kante um die Stage. Jetzt 1000px =
+      // praktisch unsichtbar (kein Glow reicht so weit), aber overflow:clip
+      // bleibt fuer Body-Scroll-Sicherheit.
       overflow: 'clip',
-      overflowClipMargin: '120px',
+      overflowClipMargin: '1000px',
       // 2026-05-12 v2 (Wolf-Bug 'komischer sichtbarer rand'): bei Beamern mit
       // anderem Aspect-Ratio als 16:9 (z.B. 16:10) wird die Stage centered
       // gescaled und drumherum (oben+unten oder links+rechts) ist body-bg

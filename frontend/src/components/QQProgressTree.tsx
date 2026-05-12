@@ -492,17 +492,24 @@ export default function QQProgressTree({
                     borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.round(biddingDotSize * 0.55),
+                    // 2026-05-13 (Wolf-Bug 'pinke Umrandung dauerhaft auf Bieten'):
+                    // Bieten-Dot hatte selbst im default-state pinken Border +
+                    // pink Glow → wirkte permanent "active". Jetzt: neutraler
+                    // Ring wie bei den anderen Phase-Dots im default-state,
+                    // pink wird nur waehrend isBiddingActive ausgespielt.
                     background: isBiddingActive
                       ? biddingColor
                       : isBiddingPast
-                        ? 'rgba(236,72,153,0.22)'
-                        : `linear-gradient(135deg, ${biddingColor}33, ${biddingColor}11)`,
-                    border: `2.5px solid ${isBiddingActive ? '#fff' : biddingColor}`,
-                    boxShadow: isBiddingActive
-                      ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
+                        ? 'rgba(148,163,184,0.18)'
+                        : 'rgba(30,41,59,0.85)',
+                    border: isBiddingActive
+                      ? '2.5px solid #fff'
                       : isBiddingPast
                         ? 'none'
-                        : `0 0 12px ${biddingColor}44`,
+                        : '1.5px solid rgba(148,163,184,0.35)',
+                    boxShadow: isBiddingActive
+                      ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
+                      : 'none',
                     opacity: isBiddingPast ? 0.55 : 1,
                     filter: isBiddingPast ? 'grayscale(1)' : 'none',
                     animation: isBiddingActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,

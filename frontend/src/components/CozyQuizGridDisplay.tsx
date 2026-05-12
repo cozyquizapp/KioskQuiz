@@ -524,7 +524,17 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {/* 2026-05-05 (Wolf-Skizze Stack): zIndex 8 damit Avatar ueber
                     allen Inner-Stack-Layern (zIndex 2..N) liegt. */}
                 <div style={{
-                  position: 'relative', zIndex: 8,
+                  // 2026-05-13 (Wolf-Bug 'emojis auf feldern falsch platziert'):
+                  // Outer-Wrapper war `position: relative` ohne explizite Groesse —
+                  // alle children waren position:absolute → Outer collapsed auf
+                  // 0x0. Das inner avatar-positioning (inset:0 + margin:auto)
+                  // referenzierte dann einen 0x0-containingblock statt der vollen
+                  // Cell → avatar landete an der falschen Stelle (sichtbar
+                  // verschoben nach unten-rechts ausserhalb der Cell).
+                  // Fix: absolute inset:0 macht Outer = Cell-Groesse → margin:auto
+                  // centering klappt wieder.
+                  position: 'absolute', inset: 0, zIndex: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                   animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s var(--qq-ease-bounce) 0.3s both' : undefined,
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,

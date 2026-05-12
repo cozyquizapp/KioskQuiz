@@ -12203,9 +12203,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // nichts)'. Vor-Reveal weiter full-width fuer die Frage.
             // 2026-04-30 v3: Portrait-Mode → Card sitzt im rechten 50%-Streifen,
             // also schon eingeschraenkt im Container. width:100% reicht dort.
+            // 2026-05-12 (Wolf 'in cheese mit horizont bild, wo fragecard
+            // unten ist, mach die fragecard schmaler dass sie nicht mit badge
+            // überlappt'): Bei Cheese-Landscape sitzt das Badge jetzt bottom-
+            // left und die Frage-Card sitzt direkt darueber/daneben unten in
+            // der Slide. maxWidth reduziert auf 1200 (war 1600) damit links
+            // und rechts genug Platz fuer das Badge bleibt; marginInline:auto
+            // haelt die Card horizontal zentriert wie bisher.
             width: isCheesePortrait ? '100%' : (isCheeseReveal ? 'auto' : 'calc(100% - clamp(40px, 6vw, 96px))'),
             minWidth: isCheeseReveal && !isCheesePortrait ? 'clamp(360px, 50vw, 720px)' : undefined,
-            maxWidth: isCheesePortrait ? '100%' : (isCheeseReveal ? 'min(calc(100% - clamp(40px, 6vw, 96px)), 1100px)' : 1600),
+            maxWidth: isCheesePortrait ? '100%' : (isCheeseReveal ? 'min(calc(100% - clamp(40px, 6vw, 96px)), 1100px)' : 1200),
             marginInline: 'auto',
             // 2026-04-29 (User-Feedback): Reveal-Card ~25% flacher — vorher
             // verdeckte sie ~60% der Bildflaeche bei Picture-This-Bildern.
@@ -12586,22 +12593,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          // 2026-05-08 (Wolf-Bug 'kategorie badge ueberdeckt frage card'):
-          // paddingTop vergroessert (22-50px → 90-130px) damit die absolute
-          // Top-Bar (Badge + Timer auf top:22-50px, ~50px hoch) nicht in die
-          // Card hineinragt. Die Card sitzt jetzt klar UNTER der Top-Bar mit
-          // ~30-40px Gap. Horizontal- und Bottom-Padding bleiben.
-          // 2026-05-08 (Wolf-Bug 'HP-feld schiebt sich unten raus'):
-          // Bei HotPotato braucht das Layout mehr Vertical-Space (Slot-Machine
-          // + Voter-Chips + Winner-Card) — paddingTop reduziert auf 60-90 px.
-          // 2026-05-10 (Spacing-Audit P0): paddingTop von 60-90 auf 80-110 px
-          // bumpt — Top-Bar (Badge+Timer, top 22-50 + Höhe ~50-60 = endet bei
-          // 72-110 px) konnte mit altem upper-clamp 90 überlappen. Neue 80-110
-          // gibt Min 10-20 px Buffer zur Top-Bar-Bottom-Edge, behält aber
-          // 20 px Vertical-Space-Vorteil gegenüber Standard (90-130).
+          // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard
+          // oben, kein collapse mehr'): Badge wandert von top-left nach
+          // bottom-left. Padding deshalb: oben reduziert (nur Timer rechts,
+          // Card kann hoeher sitzen), unten genug Platz fuer das Bottom-Badge.
+          // Horizontal- und HotPotato-Sonderpadding bleiben unveraendert.
           padding: isHotPotatoActive
-            ? 'clamp(80px, 9vh, 110px) clamp(28px, 4vw, 64px) clamp(16px, 2.4vh, 36px)'
-            : 'clamp(90px, 11vh, 130px) clamp(28px, 4vw, 64px) clamp(22px, 3.2vh, 50px)',
+            ? 'clamp(36px, 5vh, 64px) clamp(28px, 4vw, 64px) clamp(70px, 8vh, 100px)'
+            : 'clamp(40px, 5.5vh, 70px) clamp(28px, 4vw, 64px) clamp(70px, 8vh, 100px)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen
@@ -12610,27 +12609,51 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           overflow: 'hidden',
         }}>
 
-          {/* 2026-04-30 v3: Top-Bar position:absolute damit der Inner-Wrapper
-              die volle Höhe nutzt — Card im Inner-Wrapper-Center == Viewport-
-              Center (User-Feedback: Card wirkte zu tief, weil Top-Bar in der
-              Flex-Höhe Platz fraß und Card-Center darunter rutschte).
-              Card ueberlappt das Badge nicht, weil Card-Maxima (Glow/Padding)
-              klein genug sind und Top-Bar oben bleibt.
-              v3 round 5 (User-Bug 'CHEESE Kategorie-Badge soll top-left'):
-              zIndex 10 → 60, damit das Badge ueber dem Cheese-Overlay (z=52)
-              sichtbar bleibt. Sonst verdeckte Cheese den Badge. */}
+          {/* 2026-05-12 (Wolf 'kategorie badge nach links unten, fragecard
+              oben'): Top-Bar getrennt — Timer oben-rechts (unveraendert),
+              Badge in eigene Bottom-Left-Container (siehe unten am Ende von
+              dem Wrapper). Vorher saßen beide in einer absoluten Top-Bar.
+              Diese Wrapper-Div haelt jetzt nur noch den Top-Right Timer. */}
           <div style={{
             position: 'absolute',
             top: 'clamp(22px, 3.2vh, 50px)',
             left: 'clamp(28px, 4vw, 64px)',
             right: 'clamp(28px, 4vw, 64px)',
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
             gap: 16,
             zIndex: 60,
+            pointerEvents: 'none',
           }}>
-            {/* 2026-05-03 (App-Designer-Audit B3): Pill jetzt opak (solid bg)
-                statt accent-18%-tinted — accent-Text auf accent-tinted-bg verschwamm
-                aus 10m. */}
+            {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
+                per-Turn-Timer in HotPotatoBeamerView).
+                2026-05-12: Badge ist aus dieser Top-Bar raus (jetzt unten links). */}
+            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
+              <div style={{
+                pointerEvents: revealed ? 'none' : 'auto',
+                flexShrink: 0,
+              }}>
+                {/* 2026-05-04 v3 (Wolf): stickyTimer haelt das letzte gueltige
+                    endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
+                    unmountet die Component bevor qqTimerOutro durchlaeuft.
+                    timerExpiring=true sobald Original-Prop weg ODER revealed. */}
+                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
+              </div>
+            )}
+          </div>
+          {/* 2026-05-12 (Wolf 'kategorie badge nach links unten, kein collapse
+              mehr mit fragecard'): Eigener Bottom-Left-Container fuer das
+              Kategorie-Badge. Hat keinen visuellen Konflikt mehr mit der
+              Frage-Card (die jetzt oben sitzt). Bei CHEESE-Slide mit
+              Horizont-Bild (Frage-Card faellt nach unten) muss die Card
+              entsprechend schmaler werden — Padding-Left und maxWidth
+              werden im CHEESE-Block dafuer angepasst (siehe CHEESE-Render). */}
+          <div style={{
+            position: 'absolute',
+            bottom: 'clamp(20px, 2.4vh, 40px)',
+            left: 'clamp(28px, 4vw, 64px)',
+            zIndex: 60,
+            pointerEvents: 'none',
+          }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '10px 22px', borderRadius: 999,
@@ -12639,14 +12662,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
               flexShrink: 0,
             }}>
-              {/* 2026-05-04 (Wolf): Icon im Kategorie-Badge bobbt subtil hoch/runter
-                  — selbe Sprache wie im Cat-Intro, nur leiser. Wrapper-Span mit
-                  inline-block, damit transform greift. */}
               <span style={{ display: 'inline-block', animation: 'qqBadgeIconBob 3.4s ease-in-out infinite' }}>
                 {(() => {
-                  // 2026-05-11 (Wolf 'Badge soll Sub-Mechanik-Emoji zeigen,
-                  // nicht generisches 🎁 für Bunte-Tüte'): bei BUNTE_TUETE
-                  // mit Sub-Kind das Sub-Icon nehmen, sonst Cat-Icon.
                   const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
                   const subSlug = btKind ? qqSubSlug(btKind) : null;
                   const slug = btKind ? subSlug : qqCatSlug(cat as string);
@@ -12673,24 +12690,6 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 })()}
               </span>
             </div>
-            {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
-                per-Turn-Timer in HotPotatoBeamerView).
-                2026-05-03: Round/Frage-Counter wieder entfernt — Wolf-Entscheidung:
-                "brauchen wir das überhaupt?" PhaseIntro vor jeder Runde sagt das
-                schon, Pub-Publikum spielt zum Spass + Counter frass Horizontal-
-                Platz mit Kollisionen in manchen Kategorien. */}
-            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
-              <div style={{
-                pointerEvents: revealed ? 'none' : 'auto',
-                flexShrink: 0,
-              }}>
-                {/* 2026-05-04 v3 (Wolf): stickyTimer haelt das letzte gueltige
-                    endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
-                    unmountet die Component bevor qqTimerOutro durchlaeuft.
-                    timerExpiring=true sobald Original-Prop weg ODER revealed. */}
-                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
-              </div>
-            )}
           </div>
 
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die

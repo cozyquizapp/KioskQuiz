@@ -181,13 +181,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
-        // 2026-05-13 v2 (Wolf 'avatar fliegt jetzt auf Frage-Card-Text, alles
-        // noch weiter runter'): padding-top nochmal hochgezogen (80-140 →
-        // 160-240) — Frage-Card + Anchor/VS/Subject rutschen deutlich tiefer
-        // im 1080px-Slot. Plus Y-Higher-Translate moderater (siehe unten).
-        padding: 'max(var(--qq-safe-margin), clamp(160px, 19cqh, 240px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(16px, 2.4cqh, 36px))',
+        alignItems: 'center',
+        // 2026-05-13 v3 (Wolf 'Frage-Card hoch, andere unten, Avatar hat
+        // Platz dazwischen'): justifyContent center → flex-start. Frage-Card
+        // kriegt marginBottom:auto → schubst Card-Row + Team-Progress an den
+        // parent-bottom. Dadurch entsteht ein grosser Spalt zwischen Frage-
+        // Card und MEHR-Pille, in dem der hochfliegende Avatar landet ohne
+        // jemals zu ueberlappen.
+        justifyContent: 'flex-start',
+        padding: 'max(var(--qq-safe-margin), clamp(100px, 13cqh, 160px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(20px, 3cqh, 40px))',
         gap: 'clamp(14px, 2cqh, 28px)',
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
@@ -225,6 +227,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             Rundenwechsel, Card selbst bleibt stabil. */}
         <div style={{
           maxWidth: 1400, width: '94%',
+          // 2026-05-13 v3 (Wolf 'Frage-Card oben, andere Cards unten'):
+          // marginBottom:auto schubst alle folgenden Geschwister (Card-Row,
+          // Team-Progress) an den parent-bottom. Frage-Card sitzt fest oben.
+          marginBottom: 'auto',
           padding: 'clamp(18px, 2.6cqh, 36px) clamp(28px, 3.5cqw, 56px)',
           borderRadius: 24,
           background: 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
@@ -511,14 +517,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // v1 hatte Higher zu klein (-210 bis -260) → Avatar landete auf
               // der WENIGER-Pille statt oben an der MEHR-Pille. Jetzt zurueck
               // auf groessere Negativ-Werte fuer Higher, Lower stay-similar.
-              // 2026-05-13 v2 (Wolf 'avatar fliegt JETZT auf Frage-Card-Text'):
-              // -550 war zu weit, Avatar landete IN der Frage-Card. Jetzt
-              // moderater (-380 to -300), aber Cards-Block sitzt durch
-              // erhoehten Parent-padding-top (160-240) deutlich tiefer →
-              // Avatar landet in der LUECKE zwischen Frage-Card und MEHR-
-              // Pille, nicht mehr in einer der beiden Cards.
+              // 2026-05-13 v3 (Wolf 'Frage-Card hoch, andere Cards unten'):
+              // Parent hat jetzt justifyContent flex-start + Frage-Card
+              // marginBottom:auto → Card-Row + Team-Progress sitzen am
+              // parent-bottom. Avatar fliegt von Team-Progress (am Boden)
+              // nur eine moderate Distanz nach oben zur MEHR-Pille → -250/-200
+               // statt -380/-300.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-380px, -28cqh, -300px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-260px, -19cqh, -200px)) scale(0.7)`
                 : choice === 'lower'
                   ? `translate(${xCenter}px, clamp(-90px, -6cqh, -40px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';

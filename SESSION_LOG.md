@@ -1323,3 +1323,33 @@ der erste Schritt am naechsten Monolithen (QQTeamPage 8.072 Z.).
 
 **Memory-Note**: Wolf-Trigger 'du darfst loggen' = SESSION_LOG-Append + Push.
 Chat-Voll-Hinweis von Wolf — Session-End naht.
+
+---
+
+## 2026-05-13 (ganz spaet) — HL-Layout v3 + Beamer-Rand finaler Fix
+
+### HL-Layout v3 — Frage-Card oben festgepinnt
+Vorherige v1/v2 Tuning-Versuche (Y-Higher von -440 → -550 → -380) griffen
+nicht — Avatar landete immer wieder auf irgendwas. Strukturelle Loesung:
+parent justifyContent center → flex-start + Frage-Card `marginBottom:auto`.
+Damit sitzt Frage-Card oben fest, Anchor/VS/Subject + Team-Progress werden
+an den parent-bottom geschubst. Grosser Spalt zwischen Frage-Card und
+MEHR-Pille — Avatar landet darin ohne jemals zu ueberlappen.
+Y-Higher auf moderat -250/-200 reduziert (Card-Row ist jetzt naeher am
+Team-Progress-Block).
+File: `components/CozyQuizComebackView.tsx`
+
+### Beamer-Rand finaler Fix
+Dritter Versuch (`87254c00`): `.cozy-beamer-shell` in main.css hatte
+`background: #0d1117 !important`, Stage-Outer im SlideStage hatte
+`#0F0817`. Die 2/9/0 RGB-Differenz war als duenner Saum zwischen Letterbox-
+Bereich und Stage-Innenflaeche sichtbar. Jetzt alle drei Layer auf
+`#0F0817`: body:has(.cozy-beamer-shell), .cozy-beamer-shell, SlideStage
+outer-bg. Kein Uebergang mehr sichtbar.
+File: `main.css`
+
+**Memory-Note**: Trigger 'log das noch nach fix' = SESSION_LOG-Append +
+Push. Chat-Wechsel naht (Wolf-Hinweis).
+
+**Open**: QQTeamPage-Refactor weiter (Phase 1.2: AnimatedDots + CopyButton
++ MobileFireflies + TeamTimerBar + Input-Primitives).

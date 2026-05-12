@@ -9200,37 +9200,43 @@ function BluffWriteScreen({ state: s, accent, lang }: {
           ? 'Erfindet eine plausible Falsch-Antwort auf eurem Handy!'
           : 'Make up a plausible wrong answer on your phone!'}
       </div>
-      {/* Avatar-Reihe — wer hat schon submitted? */}
-      <div style={{
-        display: 'flex', gap: 'clamp(12px, 1.6vw, 22px)', flexWrap: 'wrap',
-        justifyContent: 'center', marginTop: 12,
-      }}>
-        {s.teams.map(tm => {
-          const submitted = !!(s.bluffSubmissions ?? {})[tm.id]?.trim();
-          return (
-            <div key={tm.id} title={tm.name} style={{
-              position: 'relative',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              opacity: submitted ? 1 : 0.55,
-              // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow,
-              // nicht ✓-Haekchen' fuer Submit-Status): drop-shadow gruen
-              // wenn submitted, sonst grayscale.
-              filter: submitted
-                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
-                : 'grayscale(0.4)',
-              transition: 'opacity 0.4s ease, filter 0.4s ease',
-            }}>
-              <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6vw, 84px)'} style={{
-                background: '#0A0814',
-                boxShadow: submitted
-                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
-                  : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
-                transition: 'box-shadow 0.45s ease',
-              }} />
-            </div>
-          );
-        })}
-      </div>
+      {/* Avatar-Reihe — wer hat schon submitted?
+          2026-05-12 (Wolf 'footer-avatare einheitlich, glow weg, etwas
+          groesser'): Sizes auf 80/88/96 wie der generische BT-Footer
+          gehoben, drop-shadow-Glow raus — gruener Ring via boxShadow
+          zeigt 'submitted' eindeutig. */}
+      {(() => {
+        const tc = s.teams.length;
+        const av = tc > 6 ? 80 : tc > 4 ? 88 : 96;
+        const gap = tc > 6 ? 12 : tc > 4 ? 15 : 18;
+        return (
+          <div style={{
+            display: 'flex', gap, flexWrap: 'wrap',
+            justifyContent: 'center', marginTop: 12,
+          }}>
+            {s.teams.map(tm => {
+              const submitted = !!(s.bluffSubmissions ?? {})[tm.id]?.trim();
+              return (
+                <div key={tm.id} title={tm.name} style={{
+                  position: 'relative',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: submitted ? 1 : 0.55,
+                  filter: submitted ? 'none' : 'grayscale(0.4)',
+                  transition: 'opacity 0.4s ease, filter 0.4s ease',
+                }}>
+                  <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} style={{
+                    background: '#0A0814',
+                    boxShadow: submitted
+                      ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
+                      : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                    transition: 'box-shadow 0.45s ease',
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -14090,11 +14096,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {`${s.answers.length}/${s.teams.length} Teams`}
                 </div>
               )}
-              {/* Avatar row */}
+              {/* Avatar row.
+                  2026-05-12 (Wolf 'footer-avatare vereinheitlichen, Glow weg
+                  damit sie sich nicht ueberlappen, etwas groesser'): von
+                  68/76/84 auf 80/88/96 hochgezogen (Platz haben wir, footer
+                  ist full-width). drop-shadow-Glow entfernt — der gruene Ring
+                  via boxShadow zeigt 'submitted' eindeutig, der Glow erzeugte
+                  Bleed der bei dicht stehenden Avataren ueberlappte. */}
               {(() => {
                 const tc = s.teams.length;
-                const av = tc > 6 ? 68 : tc > 4 ? 76 : 84;
-                const gap = tc > 6 ? 10 : tc > 4 ? 13 : 16;
+                const av = tc > 6 ? 80 : tc > 4 ? 88 : 96;
+                const gap = tc > 6 ? 12 : tc > 4 ? 15 : 18;
                 return (
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap,
@@ -14109,15 +14121,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           flexShrink: 0,
                           transition: 'opacity 0.4s ease, filter 0.4s ease',
                           opacity: answered ? 1 : 0.4,
-                          // 2026-05-04 (Wolf): Submit-Status durch gruenen Glow am Avatar
-                          // statt Haekchen-Badge. Filter dropshadow + Avatar-Ring kombiniert.
-                          filter: answered
-                            ? 'drop-shadow(0 0 16px rgba(34,197,94,0.7)) drop-shadow(0 0 6px rgba(34,197,94,0.5))'
-                            : 'grayscale(0.5)',
+                          filter: answered ? 'none' : 'grayscale(0.5)',
                         }}>
-                          {/* Green-Ring via Wrapper-Div — Avatar.style.boxShadow
-                              wuerde im Emoji-Mode durch internen flatStyle
-                              ueberschrieben. */}
                           <div style={{
                             borderRadius: '50%',
                             boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',

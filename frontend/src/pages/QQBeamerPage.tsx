@@ -6022,6 +6022,21 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           75%  {            transform: translateY(-2%)    scale(0.96) rotate(-1deg); }
           100% { opacity: 1; transform: translateY(0)     scale(1)    rotate(0);     filter: blur(0); }
         }
+        /* 2026-05-12 (Wolf '6. mal action cards nicht gleich gross'): scale-freie
+           Variante fuer ActionCardReveal. Vorher animierte qqGsTeamSlam scale 2→
+           1.18→0.96→1 ueber 1.4s — waehrend dieser Zeit war die isNew Card
+           bis zu 18% groesser als die nebenan settled non-isNew Cards
+           (phasePop schon bei scale 1 nach 0.6s). Wolf sah die Cards mid-
+           Choreo als 'nicht gleich gross' — strukturell sind sie's, nur die
+           Slam-Scale-Animation drift'te ihre VISUAL-Width temporaer auseinander.
+           Diese Variante macht Drop + Rotate + Blur ohne Scale → Layout-Box-
+           Width bleibt durchgehend konstant. */
+        @keyframes qqActionCardSlam {
+          0%   { opacity: 0; transform: translateY(-90vh) rotate(-18deg); filter: blur(7px); }
+          55%  { opacity: 1; transform: translateY(8%)    rotate(3deg);   filter: blur(0); }
+          75%  {            transform: translateY(-2%)    rotate(-1deg); }
+          100% { opacity: 1; transform: translateY(0)     rotate(0);     filter: blur(0); }
+        }
         @keyframes qqTrFlash {
           0%   { opacity: 0; }
           10%  { opacity: 0.9; }
@@ -6553,7 +6568,13 @@ function ActionCardReveal({
       boxSizing: 'border-box',
       perspective: '1400px',
       opacity: isVisible ? 1 : 0,
-      animation: isVisible ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
+      // 2026-05-12 (Wolf '6. mal cards nicht gleich gross'): qqGsTeamSlam →
+      // qqActionCardSlam (scale-frei). Vorher skalierte die Slam-Animation
+      // die isNew Card waehrend 1.4s zwischen scale 2 → 1.18 → 0.96 → 1 — in
+      // dieser Phase sah die Card 18% groesser aus als die non-isNew Geschwister.
+      // Die scale-freie Variante macht den gleichen Drop+Rotate+Blur, aber
+      // die Layout-Box-Breite bleibt durchgehend bei den finalen Maxima.
+      animation: isVisible ? `qqActionCardSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
       // 2026-05-12 (Wolf '5. mal'): filter:drop-shadow entfernt — gab isNew
       // Cards einen extra Halo um die Card-Border + visuelle Groessen-
       // Wahrnehmung als „groesser". Der boxShadow auf Card-Back+Card-Front

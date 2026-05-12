@@ -1108,3 +1108,80 @@ Komplette Landing-Page-Überarbeitung in einem separaten Repo:
 **Stand bei Chat-Wechsel**: Live-ready für nächsten Pub-Test. ⚠️ Coolify-Backend muss redeployed werden (Backend-Änderungen in qqRooms.ts, qqSocketHandlers.ts, server.ts, textNormalization.ts). 4 offene Live-Test-Findings (L4=L10, L6, L11) sind in todo.md mit ausführlichen Audit-Ergebnissen + Debug-Schritten dokumentiert.
 
 **Nächste Session-Empfehlung**: L11 Autoplay-Fix-1 (FINAL_REVEAL-Mapping, ~30min, P0) + Fix-2 (Cleanup, 10-20min, P0) zuerst angehen — fixt das spürbare „Race wird geskippt"-Symptom. Dann L10 (Grösstes-Gebiet-Layout, 30-60min). L6 erst wenn Wolf das Joker-Symptom wieder live einfangen kann mit DevTools-Snapshot.
+
+
+---
+
+## 2026-05-12 — Massive Layout-/State-Audit-Session (38 Commits)
+
+**Was passiert** — Marathon-Tag mit ~38 Commits. Drei zusammenhängende Threads:
+
+### 1. Pre-Audit-Fixes (Wolf-Live-Feedback während des Tages)
+
+Kategorien-Cluster:
+- **Per-Draft-Drift Root Cause (75e800e)** — `finalWagerEnabled` + `connectionsEnabled` wurden nicht in `qqStartGame` resetted. Wolf's „manche drafts haben kein bid/race" war kein Draft-Problem sondern Room-State-Leak im SINGLE_SESSION_MODE.
+- **Action-Card 6. Anfrage (8cd33b3)** — `qqGsTeamSlam` animierte scale 2→1.18→0.96→1 über 1.4s. Sibling-Width-Drift bis 18 %. Fix: scale-freies `qqActionCardSlam` Keyframe.
+- **Stack-Indicator Avatare nicht-überlappend (af5bce6)** — kleinere Avatare + Offsets ±28%/±26% diagonal/triangle.
+- **Lobby preGame Layout (mehrere Commits)** — CozyQuiz oben absolute, „Gleich geht's los" unten absolute, Records-Card mittig im Flex.
+- **Bid-Emoji konsistent 🪙 (af16e29)** — kein 🎰 mehr in Bid-Context.
+- **Team-Namen einzeilig mit Ellipsis (6ca4e37)** — kein „Pubqua tscher"-Wrap mehr.
+- **Wolf-Sprung Progress-Tree (28b5c26)** — Sweep endet auf `totalPhases - 1` statt `showcaseStepCount - 1` (= Bieten).
+- **Hot Potato Layout (multiple Iterations)** — innerJustify flex-start statt center, Tier-Schwellen tightened, chips-block flex-basis 0.
+- **Bottom-Left Kategorie-Badge ganz entfernt (b27e26d)** — Kategorie erkennbar via Question-Card-Border + PhaseIntro.
+
+### 2. SlideStage Option A — Fixed-Canvas-System (Feature-Flag)
+
+Wolf wollte „echte" zentrale Lösung gegen Card-Rausstehen. Phase 1 + 2 in einem Schwung:
+- **Phase 1 (ec93c5a)** — SlideStage Component wrappt Phase-Render im fixen 1920×1080 Canvas mit transform:scale. Feature-Flag `?stage=1` ODER localStorage `qq_useStage='1'`. Default AUS → exakter vorheriger Zustand.
+- **containerType:size auf SlideStage Inner (998acf2)** — Vorbereitung für Phase 2.
+- **Phase 2 (3a22d72)** — sed-Migration `1040× vh/vw → cqh/cqw` in QQBeamerPage.tsx. Browser-Fallback (cqh ohne sized container = svh = vh auf Desktop) garantiert kein Verhaltens-Bruch bei Stage AUS.
+
+**Doku in qqDesignTokens.ts**: 7 Slide-Layout-Regeln (min-height:0 Chain, --qq-safe-margin Token, SlotTransition, Animation-Scale-Safety, Sibling-Width-Consistency, Z_INDEX-Zonen).
+
+### 3. 5-Parallel-Audit Sweep (Wolf: „schick alle audits durch")
+
+Wolf wollte Wurzel-Ursachen statt iteratives Raten. Spawn 5 Explore-Agents parallel:
+
+| Audit | Befund | Fix |
+|---|---|---|
+| **E (557ce8f)** | ~30 Felder im Room leakten zwischen Spielen (SINGLE_SESSION_MODE) | Massiver Reset-Sweep in qqStartGame |
+| **B (90c1b94)** | AutoFitContent useLayoutEffect-deps `[children]` → infinite Re-Cascade. Chip-Keys mit Index instabil | Deps `[minScale]`, Keys reiner Text |
+| **A (95fb79e)** | HP-Reveal Answer-Container 58cqh zu groß für 1080p + chipShiftVh Dead-Code (Legacy vh) | 52cqh + Dead-Code raus |
+| **D (9ef8e6d)** | `revealCorrectPop` Keyframe hatte scale(1.06) Peak → MUCHO/ZvZ/CustomSlide Width-Drift | scale-frei, nur box-shadow pulse |
+| **C (9e6578e)** | AutoFitContent fundamental fragil (zoom layout-affecting, scrollHeight returned skalierte Werte) | AutoFit komplett entsorgt, SlideStage als Single-Source |
+
+### Entscheidungen
+- **SlideStage statt AutoFit als Skalierungs-Architektur** — Single-Source-of-Truth statt zwei konkurrierender Systeme. SlideStage deterministischer (1920×1080 fixed Canvas), AutoFit hatte Browser-Quirks die nicht zuverlässig gefixt werden konnten.
+- **Phase 2 cqh-Migration via sed statt incremental** — 1040 Stellen auf einen Schwung, weil cqh→vh-Fallback transparent ist und kein Verhaltens-Bruch entsteht.
+- **revealCorrectPop globaler Fix statt Variant** — alle 4 Use-Sites profitieren ohne Code-Änderung der Sites selbst.
+- **5 parallele Audits via Explore-Agents** — statt Wolf-im-Dialog: konkrete Wurzel-Ursachen-Reports zurück, dann sequenzielle Fixes mit klarer Reihenfolge (E zuerst wegen höchstem Impact).
+
+### Open
+- ⚠️ **Coolify Backend Redeploy nötig** für Fix E (State-Reset) und Fix vom Vormittag (per-draft-drift in qqStartGame). Frontend (Vercel) deployed automatisch.
+- ⚠️ **Wolf testet live** mit allen 5 Audit-Fixes — observation outstanding ob Symptome (Loop-Cascade, Survivor-Card-Clipping, Bid-Drift, HP-Eliminated-Leak) wirklich weg sind.
+- **?stage=1 Feature-Flag** noch unter-getestet. Wenn live OK, könnte das der dauerhafte Mode werden (= deterministische Beamer-Skalierung).
+- **Future incremental**: andere Views (FinalRevealView, GameOverView, ThanksView) gelegentlich auf min-height:0 + cqh-Math prüfen wenn Layout-Bugs auftauchen.
+
+### Files
+**Backend:**
+- `backend/src/quarterQuiz/qqRooms.ts` — qqStartGame State-Reset (Fix E), finalWagerEnabled/connectionsEnabled Reset
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` — persistGameResult Idempotenz-Guard (5e05437)
+- `backend/src/server.ts` — Summary 409 gameRunning (296dfff)
+
+**Frontend:**
+- `frontend/src/pages/QQBeamerPage.tsx` — Major refactors: SlideStage, vh/vw→cqh/cqw, AutoFit raus, HP-Layout, Lobby-Hero, Kategorie-Badge weg, Stack-Avatar, etc.
+- `frontend/src/pages/QQTeamPage.tsx` — Lobby-Sweep + Sticky-Submit (vorherige Sessions, hier nicht-touched)
+- `frontend/src/components/QQProgressTree.tsx` — Wolf-Sprung Bid→Phase N Fix
+- `frontend/src/qqShared.ts` — revealCorrectPop scale-frei (Fix D)
+- `frontend/src/qqDesignTokens.ts` — Z_INDEX-Zonen + 7 Slide-Layout-Regeln Doku
+- `frontend/src/main.css` — --qq-safe-margin Token, Easing-Vars
+
+### Memory
+- Memory-Files unverändert — die heutigen Audit-Findings sind primär code-dokumentiert (Kommentare in qqDesignTokens) statt memory-pflichtig. Wenn nach Live-Test ein neues Pattern offensichtlich wird, dann memory.
+
+**Stand bei Chat-Wechsel**: Frontend gepusht (Vercel deployed auto). Backend wartet auf Wolf's Coolify-Redeploy. Wolf hat angekündigt „teste gleich mal alles" — Live-Findings outstanding.
+
+**Nächste Session-Empfehlung**: 
+1. Coolify-Redeploy verifizieren bevor Wolf live testet (State-Reset von Fix E)
+2. Bei Live-Test Reproduktions-Steps für verbleibende Bugs sammeln
+3. Wenn Stage-Flag stable: localStorage default-AN setzen für Beamer-Geräte

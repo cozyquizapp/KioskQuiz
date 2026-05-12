@@ -1273,3 +1273,53 @@ Strategie aus 3 parallel laufenden Audits (Web-Recherche, Component-Inventar, Su
 **Files**: 20 neue CozyQuiz*.tsx + cozyQuizShared.ts + QQBeamerPage.tsx (Facade) + QQHigherLowerTestPage.tsx + MenuPage.tsx + App.tsx + main.css + QQProgressTree.tsx + CozyQuizGridDisplay.tsx + shared/quarterQuizTypes.ts + backend/qqRooms.ts + backend/server.ts.
 
 **Memory-Note**: `feedback_log_das_trigger.md` ausgefuehrt; Commit + Push folgt direkt nach diesem Append.
+
+---
+
+## 2026-05-13 (spaet) — Polish-Nachschlag + QQTeamPage Refactor-Start
+
+Nach dem grossen Beamer-Refactor heute morgen folgte ein Polish-Block plus
+der erste Schritt am naechsten Monolithen (QQTeamPage 8.072 Z.).
+
+### Polish nach Beamer-Refactor
+- **/hl-test Standalone-Page** (`9366314e`): Comeback-Higher/Lower live im
+  /menu testbar. Toggle: 1/2/3/5 Teams, Frage/Reveal-Phasen, Higher/Lower-
+  Choice, Submitted-Counter, 4 Pair-Beispiele, DE/EN.
+- **HL-Layout v2** (`31cbba46`): Vorheriger Avatar-Y-Higher (-550) zu weit,
+  Avatar landete IN Frage-Card. Jetzt parent-padding-top 160-240px (Cards-
+  Block rutscht tiefer) + Y-Higher moderat (-380 to -300). Avatar landet
+  in der LUECKE zwischen Frage-Card und MEHR-Pille.
+- **SESSION_LOG-Eintrag** (`6b8c7f77`) fuer den Refactor-Tag.
+
+### App-Inventar (Wolf-Frage 'was groesste Files')
+- QQTeamPage.tsx: 8.072 Z. — 🔴 live-kritisch (Spieler-Phone)
+- QQModeratorPage.tsx: 5.428 Z. — 🟡 Wolf taeglich
+- QQBuilderPage.tsx: 3.292 Z. — 🟡 wichtig
+- AnimationsLabPage.tsx: 3.500 Z. — 🟢 nur Dev
+- Refactored Files (CozyQuiz*) zwischen 57-2.435 Z., schon klein-genug.
+
+### QQTeamPage Phase 1.1 — Mini-Primitives extrahiert
+- **CozyQuizTeamPrimitives.tsx** (`377862ee`): CozyCard + CozyBtn + StepLabel
+  + StatChip raus. 90 Z. neue Datei. QQTeamPage 8.072 → 8.014 (-58).
+  Generische, presentation-only Components ohne Game-State.
+
+### FinalRevealView 3 Bugs (`50d64635`)
+- **Wolf im Weg**: TRÖÖT-Wolf-Decoration `bottom-right` → `top-right`
+  (clamp 70-120px top). Sitzt jetzt oben rechts neben Test-Panel, blockiert
+  das Podium nicht mehr.
+- **Sichtbarer Rand der Stage**: SlideStage outer-bg `#0A0814` → `#0F0817`,
+  matched RaceFinalSlide-Aussenring (rgba(15,8,23,0.98)) exakt. Die 5/4/3
+  RGB-Differenz war als duenne Rahmen-Linie sichtbar.
+- **Wimpel verlassen das Band**: Individuelle qqFRPennantFlap-Animation pro
+  `<path>` rotierte Wimpel sichtbar weg vom Bogen-String. Entfernt — jetzt
+  schwingt nur das gesamte SVG-Banner via qqFRPennantWave. Faehnchen + Band
+  bewegen sich gemeinsam.
+
+**Open**:
+- QQTeamPage Phase 1 weiter: AnimatedDots, CopyButton, MobileFireflies,
+  TeamTimerBar, Input-Primitives (StandardInput, SubmitBtn, SubmittedBadge)
+- Phase 2-5 fuer QQTeamPage steht noch (~50+ inline Components total).
+- Backend Coolify-Redeploy noch immer offen (hotPotatoOrder-broadcast).
+
+**Memory-Note**: Wolf-Trigger 'du darfst loggen' = SESSION_LOG-Append + Push.
+Chat-Voll-Hinweis von Wolf — Session-End naht.

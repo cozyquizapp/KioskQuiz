@@ -12605,8 +12605,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // (HotPotatoBeamerView ohne position:absolute). Card + Chip-Block
           // werden als 1 Block vertikal mittig zentriert, mit definiertem Gap
           // dazwischen. Keine Luecke mehr, kein Snap, kein paddingBottom-Hack.
-          const innerJustify = 'center';
-          const innerGap = isHotPotatoActive ? 'clamp(16px, 2.5vh, 32px)' : 0;
+          // 2026-05-12 (Wolf 'komisch ueberlappend' in HP-Active):
+          // innerJustify center erzeugte symmetrischen Overflow wenn HP-
+          // Content zu hoch war — Q-Card oben + Chips + Active-Card-Slot +
+          // Eliminated wuchsen in beide Richtungen, Chips klebten an Q-Card-
+          // Bottom. Bei HotPotato Active jetzt flex-start: Q-Card pinned oben,
+          // Chips folgen mit gap, Active-Card-Slot weiter unten. Kein
+          // symmetrisches Overspill mehr. Andere Kategorien bleiben bei
+          // center weil sie weniger vertikale Stacks haben.
+          const innerJustify = isHotPotatoActive ? 'flex-start' : 'center';
+          const innerGap = isHotPotatoActive ? 'clamp(24px, 3.2vh, 44px)' : 0;
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',

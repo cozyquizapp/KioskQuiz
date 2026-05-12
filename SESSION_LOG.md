@@ -1185,3 +1185,91 @@ Wolf wollte Wurzel-Ursachen statt iteratives Raten. Spawn 5 Explore-Agents paral
 1. Coolify-Redeploy verifizieren bevor Wolf live testet (State-Reset von Fix E)
 2. Bei Live-Test Reproduktions-Steps für verbleibende Bugs sammeln
 3. Wenn Stage-Flag stable: localStorage default-AN setzen für Beamer-Geräte
+
+---
+
+## 2026-05-13 — Beamer-Refactor Phase 1–6 (KOMPLETT) + Live-Test-Fixes + neue Test-Page
+
+**Tageslauf**: Marathon-Session ~30 Commits. Drei thematische Bloecke:
+
+### 1. Beamer-Refactor Phase 1–6 — 20 Extraktionen, QQBeamerPage 22.728 → 5.016 Z. (−78%)
+
+Strategie aus 3 parallel laufenden Audits (Web-Recherche, Component-Inventar, Sub-Components-Dependency-Audit):
+**Strangler-Fig + Internal-Module-Pattern** — QQBeamerPage bleibt API-stabile Facade, alle 22 grossen Components leben jetzt in `components/CozyQuiz*.tsx`. Externe Importer (QQBuiltinSlide, 4 Test-Pages, QQModeratorPage) brechen nicht. BEAMER_CSS-Keyframes zentral in qqShared (Single-Source).
+
+**Phase 1 (Pure Leaves, 4 Commits)** — `601fbc0a`–`548bf627`:
+- CozyQuizBeamerTimer.tsx (130 Z.)
+- CozyQuizAmbient.tsx (Fireflies + EurovisionHearts + FF + ESC_HEART_NODES, 112 Z.)
+- CozyQuizCategoryParticles.tsx (57 Z.)
+- CozyQuizUrgencyVignette.tsx (59 Z.)
+
+**Phase 2 (Mid-Risk, 3 Commits)** — `751c9c08`–`5722e85d`:
+- CozyQuizConfettiOverlay.tsx (59 Z., mit CONFETTI_COLORS-Const)
+- CozyQuizGridDisplay.tsx (597 Z., + MiniGrid Dead-Code in QQBeamerPage geloescht)
+- CozyQuizScoreBar.tsx (366 Z., FLIP-Reorder-Animation inkl.)
+
+**Phase 3 (Smaller Views, 3 Commits)** — `4ede3656`–`92cf0c24`:
+- CozyQuizRulesView.tsx (615 Z., + buildRulesSlidesDe/En + RulesMiniGrid)
+- CozyQuizPlacementView.tsx (228 Z.)
+- CozyQuizComebackView.tsx (911 Z., + SlotMachineNumber, WolfUeberraschtWithBubble re-imported)
+
+**Phase 4 (Mittlere Views, 4 Commits)** — `3ae4fe6c`–`bbc95588`:
+- CozyQuizThanksView.tsx (564 Z., AnimatedCozyWolf/WolfCoModerator exportiert)
+- CozyQuizGameOverView.tsx (680 Z., + WolfJubelWithBubble; SpeechBubble + Slogan type exportiert)
+- CozyQuizConnectionsBeamerView.tsx (515 Z., + 6 Sub-Helpers)
+- CozyQuizFinalBettingView.tsx (107 Z.)
+
+**Phase 5 (Bigger Views, 3 Commits)** — `cc1c8003`–`4395e68e`:
+- CozyQuizLobbyView.tsx (800 Z., + WolfLobbyGreeter)
+- CozyQuizTeamsRevealView.tsx (543 Z.)
+- CozyQuizPausedView.tsx (1.500 Z., + BrandLoopPanel + PAUSE_CAT_ACCENT; LeaderEntry/FunStats Types + RoundMiniTree exportiert)
+
+**Phase 6 (Bug-Hot-Spots, 3 Commits)** — `9b1c3e6c`–`ff25db5f`:
+- CozyQuizFinalRevealView.tsx (2.435 Z., + 20 Final-Helpers — FinalRoundRecapSlide, RecapScoreTickup, FinalWinsTracker, decodeFinalStep, SlotTransition, BetSlotTransition, FinalRevealSharedKeyframes, TitleHoldSlide, GridRevealSlide, BetRevealSlide, AwardsOverviewSlide, BetZeroGroupSlide, AwardFlipCard, RaceFinishHero, RaceFinalSlide, RaceTeamUnit, RaceSpeedLines, RaceStarryBackground, RaceCountdownOverlay, PodiumStepFinal + AWARD_DEFS + Types)
+- CozyQuizQuestionView.tsx (6.321 Z., DER GROESSTE — + 14 Reveal-Sub-Components: TeamAnswerReveal, BluffBeamerView, BluffRevealHero, BluffTimer, BluffWriteScreen, BluffReviewScreen, BluffVoteWaitingScreen, BluffVoteScreen, OnlyConnectBeamerView, Top5Reveal, OrderReveal, SchaetzchenReveal, CozyGuessrReveal + Map-Wrapper; HotPotato* + MuchoOptionsReveal re-imported)
+- CozyQuizPhaseIntroView.tsx (1.231 Z., + RoundMiniTree + PHASE_INTRO_TIMING)
+
+### 2. Live-Test-Bugs während des Refactors gefixt
+
+- **HP Reihenfolge im Halbkreis falsch** (`3dae033f`): Backend broadcastete `_hotPotatoOrder` nicht ins Frontend → Frontend fiel auf alphabetische Name-Sortierung zurueck, mismatcht mit Backend-Rotation. Fix: `hotPotatoOrder` ins QQStateUpdate. Plus HP-Chip-Overlap bei kleinem Screen: Tier-Schwellen aggressiver gesenkt, Active-Card-Container min-Hoehe 210→260px.
+- **Glow-Cutoff am Slide-Rand** (`c25832bb`): Audit ergab `overflow:'hidden'` auf 7 Phase-Wrappers war doppelt-gemoppelt — body-scroll wird bereits durch html/body in main.css verhindert. Fix: SlideStage outer overflow:clip + 120px clipMargin, BeamerView root + QuestionView outer auf visible.
+- **ZvZ Chip-Crop + Stack-Avatar Math-Bug** (`3e41cf78`): Voter-Chip Padding 2px→6px + lineHeight:1 (low-number bets nicht mehr unten gecuttet). Stapel-Avatar transform-translate(%) war prozentual zur Avatar-Eigengroesse, nicht cellSize → Fix mit Pixel-Translates basierend auf cellSize.
+- **Slide-Rand sichtbar bei 16:10-Beamern** (`50346209`): bei Aspect-Ratio !== 16:9 war body-bg (#050505) am Letterbox-Rand sichtbar — SlideStage outer kriegt jetzt selbst `#0A0814` als Background.
+
+### 3. Bugs nach Refactor-Test + Polish-Runde
+
+- **3 Bugs nach Phase 1–3** (`fe37ddec`):
+  - Bieten-Dot pink dauerhaft im Progress-Tree → default-state neutral, pink nur waehrend isBiddingActive
+  - Emojis auf Grid-Cells falsch platziert (sichtbar nach unten-rechts verschoben) → Avatar-Outer-Wrapper auf `position: absolute, inset: 0` + flex-centering (war `position: relative` mit 0×0 collapse)
+  - Glow hart geclippt am Stage-Rand → overflowClipMargin 120 → 1000px
+- **Cheese-Avatar-Groesse + globaler Text-Shadow-Kill** (`44bfcc93`):
+  - Cheese-Landscape Avatare 48/54/60 → 80/88/96 (= gleich wie Question-Footer)
+  - GLOBAL Text-Shadow-Halo-Bug: `*:not([style*="rgba(0,0"]):not([style*="0,0,0"]) { text-shadow: none !important; }` in main.css — killt 130+ farbige Glow-textShadows, schwarze Lesbarkeits-Shadows bleiben. Recherche-Audit fand Smoking-Gun: Wolf hatte das Problem vor 8 Tagen schon mal gemeldet, Fix war damals nur in GameOverView punktuell.
+- **Higher/Lower Layout** (`5ed5e10e`): Timer von bottom-right → top-right, Parent-padding-top 16→80-140px (Cards rutschen tiefer), Higher-Avatar Y-Translate −440 → −550 (Avatar oberhalb der MEHR-Pille statt auf dem Text).
+- **Stack-Avatar diagonal + PausedView Autoplay** (`b75329e1`):
+  - 2-Stack: Offsets ±25 (avatarCenter genau zwischen cellCenter und cellCorner), avFactor 0.42→0.48 (groesser)
+  - 3-Stack: Dreieck → DIAGONALE Linie (TL, center, BR), avFactor 0.36→0.38
+  - PausedView Autoplay-Bug: useEffect-deps `[panels.length]` triggerte beim async funStats-Load multiple setInterval-Resets → Counter erreichte nie 8s. Fix: setInterval einmal bei Mount, panels.length ueber useRef.
+- **/hl-test Standalone-Test-Page** (`9366314e`): Comeback Higher/Lower live testbar im /menu. Toggle: 1/2/3/5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, Submitted-Counter, 4 Pair-Beispiele, DE/EN.
+
+**Entscheidungen**:
+- Strangler-Fig + Internal-Module-Pattern als Architektur (aus Web-Recherche-Audit, statt Big-Bang-Rewrite)
+- Bottom-up Extraktion: kleinste Leaves zuerst → Bug-Hot-Spots zuletzt (Vertrauen aufbauen)
+- Naming: `components/CozyQuiz*.tsx` (Wolf-Branding statt QQ-Prefix bei neuen Files)
+- ESM-circular bei function-exports konsequent genutzt (AnimatedCozyWolf, WolfCoModerator, SpeechBubble, HotPotato*, MuchoOptionsReveal, RoundMiniTree, FinalRoundRecapSlide, WolfUeberraschtWithBubble exportiert aus QQBeamerPage)
+- Globaler Text-Shadow-Kill via CSS-Selector statt 130 Inline-Edits
+
+**Bilanz**:
+- QQBeamerPage.tsx: 22.728 → 5.016 Zeilen (−17.712, −78%)
+- 20 neue Files in `components/CozyQuiz*.tsx`
+- TS-Checks durchgehend gruen, kein Live-Bug durch Refactor verursacht
+- Bug-Fix-Speed jetzt sichtbar besser: 2-5 Tool-Calls statt 15-20
+
+**Open**:
+- Andere grosse Pages noch nicht refactored: QQTeamPage (8.072 Z.), QQModeratorPage (5.428 Z.), QQBuilderPage (3.292 Z.), AnimationsLabPage (3.500 Z.)
+- ESLint `import/no-cycle` als CI-Gate noch nicht aktiviert (war im Audit-Plan)
+- Backend Coolify-Redeploy noetig fuer hotPotatoOrder-broadcast (siehe `3dae033f`)
+
+**Files**: 20 neue CozyQuiz*.tsx + cozyQuizShared.ts + QQBeamerPage.tsx (Facade) + QQHigherLowerTestPage.tsx + MenuPage.tsx + App.tsx + main.css + QQProgressTree.tsx + CozyQuizGridDisplay.tsx + shared/quarterQuizTypes.ts + backend/qqRooms.ts + backend/server.ts.
+
+**Memory-Note**: `feedback_log_das_trigger.md` ausgefuehrt; Commit + Push folgt direkt nach diesem Append.

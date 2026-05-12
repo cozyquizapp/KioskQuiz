@@ -598,10 +598,15 @@ export const QQ_BEAMER_CSS = `
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes revealCorrectPop {
-    0%   { transform: scale(1); box-shadow: 0 0 0 rgba(34,197,94,0); }
-    30%  { transform: scale(1.06); box-shadow: 0 0 40px rgba(34,197,94,0.5); }
-    60%  { transform: scale(0.98); }
-    100% { transform: scale(1); box-shadow: 0 0 24px rgba(34,197,94,0.3); }
+    /* 2026-05-12 (Audit-D 'scale-Drift in Sibling-Rows'): scale-Komponente
+       komplett raus. Vorher 1.06 Peak waehrend Wrong-Cards bei scale(1)
+       statisch → 6% Width-Drift in MUCHO/ZvZ/CustomSlide Reveal-Rows
+       (gleiche Bug-Klasse wie ActionCard). Pulse-Feedback via box-shadow
+       only — bleibt prominent, Cards in der Row bleiben pixel-stabil. */
+    0%   { box-shadow: 0 0 0 rgba(34,197,94,0); }
+    30%  { box-shadow: 0 0 48px rgba(34,197,94,0.6); }
+    60%  { box-shadow: 0 0 32px rgba(34,197,94,0.45); }
+    100% { box-shadow: 0 0 24px rgba(34,197,94,0.3); }
   }
   @keyframes revealWrongDim {
     from { opacity: 1; filter: brightness(1) saturate(1); }

@@ -12657,52 +12657,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             )}
           </div>
-          {/* 2026-05-12 v2 (Wolf 'badge muss raus aus bereichen die wir fuer
-              die grossen cards brauchen'): Badge geschrumpft auf NUR-Icon
-              im kleinen Kreis (ca. 48px), kein Text-Pill mehr. Minimaler
-              Footprint, Kategorie weiter via Icon erkennbar, kein Konflikt
-              mit Card-Layouts. Volle Beschriftung der Kategorie kommt eh
-              im PhaseIntro-Slide direkt vor jeder Frage (Title + Sub-Line).
-              Question-Card-Border ist zusaetzlich in Kategorie-Farbe. */}
-          <div style={{
-            position: 'absolute',
-            bottom: 'var(--qq-safe-margin)',
-            left: 'var(--qq-safe-margin)',
-            zIndex: 60,
-            pointerEvents: 'none',
-          }}>
-            <div
-              title={(() => {
-                const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
-                if (btKind) return lang === 'en' ? QQ_BUNTE_TUETE_LABELS[btKind].en : QQ_BUNTE_TUETE_LABELS[btKind].de;
-                return lang === 'en' ? catLabel.en : catLabel.de;
-              })()}
-              style={{
-                width: 'clamp(40px, 4vw, 56px)',
-                height: 'clamp(40px, 4vw, 56px)',
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: '#0A0814',
-                border: `2px solid ${accent}`,
-                boxShadow: `0 0 18px ${accent}33`,
-                animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
-                flexShrink: 0,
-              }}>
-              <span style={{ display: 'inline-block', animation: 'qqBadgeIconBob 3.4s ease-in-out infinite' }}>
-                {(() => {
-                  const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
-                  const subSlug = btKind ? qqSubSlug(btKind) : null;
-                  const slug = btKind ? subSlug : qqCatSlug(cat as string);
-                  const fallbackEmoji = btKind
-                    ? QQ_BUNTE_TUETE_LABELS[btKind].emoji
-                    : catLabel.emoji;
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(20px, 2.2vw, 28px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(18px, 2vw, 24px)' }}>{fallbackEmoji}</span>;
-                })()}
-              </span>
-            </div>
-          </div>
+          {/* 2026-05-12 v3 (Wolf 'kartoffel unten links — ganz weglassen die
+              badge'): Kategorie-Badge in QuestionView komplett entfernt.
+              Kategorie wird via PhaseIntro vor jeder Frage prominent
+              gezeigt (Title + Sub-Line). Question-Card-Border ist
+              zusaetzlich in Kategorie-Farbe. Kein redundantes Badge im
+              QuestionView mehr. */}
 
           {/* 2026-04-30: Inner-Content-Wrapper mit flex:1 — hier sitzt die
               Frage-Card + alle Reveal-Inhalte.

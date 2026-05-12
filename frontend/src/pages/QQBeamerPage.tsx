@@ -6175,8 +6175,13 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         const many = n > 5;
         const multiRow = rowSizes.length > 1;
         // Card-Width — Avatar ist ~55% der Card-Width
+        // 2026-05-12 (Wolf 'pubquatscher macht 2. Reihe fuers r'): multi-row
+        // Card-Min von 140 → 165 px hochgezogen. Bei 12-char Namen wie
+        // 'Pubquatscher' war 140px-Card zu eng → das letzte 'r' brach in die
+        // 2. Zeile. 165 + leicht aggressiveres TeamNameLabel.shrinkAfter (s.u.)
+        // verhindert das ohne dass andere Cards merklich groesser werden.
         const cardWidth = multiRow
-          ? 'clamp(140px, 13vw, 220px)'
+          ? 'clamp(165px, 13vw, 220px)'
           : many ? 'clamp(160px, 15vw, 240px)' : 'clamp(190px, 18vw, 280px)';
         const avatarSize = multiRow
           ? 'clamp(82px, 8vw, 130px)'
@@ -6330,11 +6335,16 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="86%" />
                               )}
                             </div>
-                            {/* Name als Text in Team-Color — Showreel-style */}
+                            {/* Name als Text in Team-Color — Showreel-style.
+                                2026-05-12 (Wolf 'pubquatscher 2. Reihe fuers r'):
+                                shrinkAfter 14 → 11. 12-char Namen wie
+                                'Pubquatscher' fallen jetzt rechtzeitig auf die
+                                kleinere Long-Font-Variante (~85%) — vermeidet
+                                den Single-Letter-Wrap. */}
                             <TeamNameLabel
                               name={t.name}
                               maxLines={2}
-                              shrinkAfter={14}
+                              shrinkAfter={11}
                               color={t.color}
                               fontWeight={900}
                               fontSize={nameFont}

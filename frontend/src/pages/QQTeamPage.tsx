@@ -202,6 +202,12 @@ const TEAM_CSS = `
     0%   { opacity: 0; transform: translateX(-50%) translateY(-16px); }
     100% { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
+  /* 2026-05-12 (Lobby-Audit P0 #3): Auto-Switch-Toast Entry-Animation. */
+  @keyframes qqToastIn {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.96); }
+    60%  { opacity: 1; transform: translateX(-50%) translateY(2px) scale(1.02); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  }
   @keyframes qqTeamPinDrop {
     0%   { transform: translateY(-40px) scale(0.6); opacity: 0; }
     60%  { transform: translateY(4px) scale(1.08); opacity: 1; }
@@ -626,7 +632,12 @@ export default function QQTeamPage() {
     const ack = await safeEmit(emit, 'qq:joinTeam', {
       roomCode, teamId, teamName: teamName.trim(), avatarId, emoji: chosenEmoji,
     });
-    if (ack.ok) { setJoined(true); setShowIdentityBanner(true); }
+    if (ack.ok) {
+      setJoined(true); setShowIdentityBanner(true);
+      // 2026-05-12 (Lobby-Audit P0 #2): Flag setzen damit beim nächsten Visit
+      // die Stamm-Code-Card prominent angezeigt wird (statt als Mini-Text-Link).
+      try { localStorage.setItem('qq_hasJoinedBefore', '1'); } catch { /* ignore */ }
+    }
     else setError(ack.error ?? 'error');
   }
 
@@ -693,11 +704,30 @@ export default function QQTeamPage() {
   // selbst) nicht mehr unterscheiden wer gemeint ist.
   const takenTeamNamesLower = (state?.teams ?? []).map(t => (t.name ?? '').trim().toLowerCase());
 
+  // 2026-05-12 (Lobby-Audit P0 #3): Auto-Switch-Feedback. Vorher silent
+  // gewechselt → Spieler dachte „ich bin pink" und war plötzlich lila ohne
+  // Hinweis. Jetzt: kurzer Toast + Vibration bei Auto-Switch.
+  const [autoSwitchToast, setAutoSwitchToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!autoSwitchToast) return;
+    const t = window.setTimeout(() => setAutoSwitchToast(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [autoSwitchToast]);
+
   // Auto-switch to a free avatar if current selection gets taken
   useEffect(() => {
     if (!joined && takenAvatarIds.includes(avatarId)) {
       const free = QQ_AVATARS.find(a => !takenAvatarIds.includes(a.id));
-      if (free) setAvatarId(free.id);
+      if (free) {
+        setAvatarId(free.id);
+        // User-Feedback: Vibration + Toast (nur wenn nicht initial-random)
+        if (didRandomInit.current) {
+          if (navigator.vibrate) navigator.vibrate(40);
+          setAutoSwitchToast(lang === 'de'
+            ? '⚡ Farbe war weg — du hast jetzt eine neue!'
+            : '⚡ Color was taken — picked a new one!');
+        }
+      }
     }
   }, [takenAvatarIds.join(',')]);
 
@@ -798,6 +828,7 @@ export default function QQTeamPage() {
           escBgUrl={state?.theme?.eurovisionMode
             ? (state.theme.mobileBackgroundUrl ?? state.theme.lobbyBackgroundUrl)
             : null}
+          autoSwitchToast={autoSwitchToast}
         />
       </AvatarSetProvider>
     );
@@ -836,7 +867,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip,
   takenAvatarIds, takenEmojis, takenTeamNamesLower, serverEmojis,
   resumeTeam, onResume, onStammLookup, stammResult, stammStatus,
-  eurovisionMode, escBgUrl }: {
+  eurovisionMode, escBgUrl, autoSwitchToast }: {
   step: string; setStep: (s: any) => void; avatarId: string; setAvatarId: (a: string) => void;
   chosenEmoji: string | undefined; setChosenEmoji: (e: string | undefined) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
@@ -854,6 +885,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
    *  bekommt jetzt auch ESC-Theming, war vorher nur in TeamGameView (post-join). */
   eurovisionMode?: boolean;
   escBgUrl?: string | null;
+  /** 2026-05-12 (Lobby-Audit P0 #3): Toast wenn Auto-Switch passierte. */
+  autoSwitchToast?: string | null;
 }) {
   const [stammInput, setStammInput] = useState('');
   const [stammExpanded, setStammExpanded] = useState(false);
@@ -996,6 +1029,64 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             </span>
           </button>
         </div>
+        {/* 2026-05-12 (Lobby-Audit P0 #1): Mini Step-Indicator. Spieler sehen
+            in einem Blick wo sie stehen — Avatar → Name → Beitreten. Aktueller
+            Step pink, abgeschlossener pink+✓, kommender grau. Nur ohne Resume. */}
+        {!resumeTeam && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 10, marginBottom: 18, fontSize: 11, fontWeight: 800,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+          }}>
+            {(() => {
+              const isAvatarStep = step === 'COLOR' || step === 'AVATAR';
+              const isNameStep = step === 'NAME';
+              const items = [
+                { label: lang === 'de' ? '1. Avatar' : '1. Avatar', active: isAvatarStep, past: isNameStep },
+                { label: lang === 'de' ? '2. Name'   : '2. Name',   active: isNameStep,   past: false      },
+                { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
+              ];
+              return items.map((s, i) => {
+                const color = s.active ? '#EC4899' : (s.past ? '#A78BFA' : '#475569');
+                return (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <div style={{ width: 18, height: 2, background: '#334155', borderRadius: 1 }} />
+                    )}
+                    <span style={{ color, transition: 'color 200ms ease' }}>{s.label}</span>
+                  </React.Fragment>
+                );
+              });
+            })()}
+          </div>
+        )}
+        {/* 2026-05-12 (Lobby-Audit P0 #3): Auto-Switch-Toast — Spieler bemerkt
+            sofort wenn Farbe weg war + automatisch neue zugeteilt wurde. */}
+        {autoSwitchToast && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              position: 'fixed', top: 12, left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 999,
+              background: 'rgba(20, 12, 38, 0.92)',
+              color: '#FEF3C7',
+              border: '1.5px solid #EC4899',
+              borderRadius: 14,
+              padding: '10px 16px',
+              fontSize: 13, fontWeight: 700,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45), 0 0 16px rgba(236,72,153,0.35)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              animation: 'qqToastIn 280ms ease-out',
+              maxWidth: 'calc(100vw - 32px)',
+              textAlign: 'center',
+            }}
+          >
+            {autoSwitchToast}
+          </div>
+        )}
         {/* 2026-05-04 (Wolf): Stammcode-Block ist nach UNTER den Avatar-Editor
             verschoben (war vorher zu prominent oben). Siehe weiter unten. */}
         {resumeTeam && (
@@ -1105,9 +1196,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>
+                {/* 2026-05-12 (Lobby-Audit P0 #5): expliziter Hinweis auf 🎲-Btn.
+                    Vorher saß der Würfel daneben, Verbindung 'Würfel = Lösung'
+                    war im lauten Pub nicht offensichtlich. */}
                 {lang === 'de'
-                  ? '⚠ Dieser Name ist schon vergeben — bitte anderen wählen.'
-                  : '⚠ Name already taken — please choose another.'}
+                  ? '⚠ Dieser Name ist schon vergeben — tippe 🎲 für freien Namen.'
+                  : '⚠ Name already taken — tap 🎲 for a free name.'}
               </div>
             )}
             {error && !nameTaken && (
@@ -1135,8 +1229,40 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           </CozyCard>
         )}
         {/* Stammcode-Block — 2026-05-04 verschoben von oberhalb der Editor-
-            Card (zu prominent) auf unter die Card (Wolf-Wunsch). */}
-        {!resumeTeam && step === 'COLOR' && (
+            Card (zu prominent) auf unter die Card (Wolf-Wunsch).
+            2026-05-12 (Lobby-Audit P0 #2): bei Erstgästen Pink-Dashed-Card
+            zu prominent → Pub-Erstbesucher klickten verloren rum. Jetzt:
+            - Wenn `qq_hasJoinedBefore` Flag nicht in localStorage (= Erstgast)
+              → Stamm-Code als kleiner Text-Link unter dem Beitreten-Btn,
+              NICHT als eigene CozyCard.
+            - Wenn schon mal gejoined → expandierte Card wie vorher (Stammgäste
+              brauchen den Code-Eingabe leichter erreichbar). */}
+        {!resumeTeam && step === 'COLOR' && (() => {
+          const hasJoinedBefore = (() => {
+            try { return localStorage.getItem('qq_hasJoinedBefore') === '1'; } catch { return false; }
+          })();
+          // Erstgast → mini Text-Link statt prominent Card
+          if (!hasJoinedBefore && !stammExpanded && !stammResult) {
+            return (
+              <div style={{ textAlign: 'center', marginTop: -8, marginBottom: 4 }}>
+                <button
+                  onClick={() => setStammExpanded(true)}
+                  style={{
+                    background: 'transparent', border: 'none',
+                    color: '#94a3b8', fontSize: 12, fontWeight: 700,
+                    textDecoration: 'underline', textDecorationStyle: 'dotted',
+                    textDecorationColor: 'rgba(236,72,153,0.4)',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    padding: '4px 8px',
+                  }}
+                >
+                  {lang === 'de' ? '🔖 Schon mal hier gewesen? Stamm-Code →' : '🔖 Been here before? Regular code →'}
+                </button>
+              </div>
+            );
+          }
+          // Wiederkehrer ODER Erstgast hat „expandiert" geklickt → CozyCard rendern
+          return (
           <CozyCard borderColor="#EC4899">
             {!stammExpanded && !stammResult && (
               <button
@@ -1233,7 +1359,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               </div>
             )}
           </CozyCard>
-        )}
+          );
+        })()}
         {step === 'AVATAR' && (() => {
           // 2026-05-04 (Wolf): Pool aller Set-Emojis, taken-Filter, Random-Pick
           // wenn nichts gewaehlt. Bei 'all' nutzen wir die server-gewuerfelten

@@ -1488,7 +1488,11 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
         qqStuckCell(live, teamId, choice.target!.row, choice.target!.col);
         broadcastQQ(io, roomCode);
         if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      } catch { /* skip */ }
+      } catch {
+        // 2026-05-12 (Wolf-Screenshot-1): bei Fehler den Dummy sauber
+        // skippen statt im STAPEL_1-State haengen zu lassen.
+        skipStuckDummy();
+      }
       return;
     }
     if (action === 'SWAP_1') {
@@ -1689,7 +1693,16 @@ function dispatchFreeChoice(
           qqStuckCell(live2, teamId, choice.target!.row, choice.target!.col);
           broadcastQQ(io, roomCode);
           afterDispatchTick(io, roomCode);
-        } catch { /* skip */ }
+        } catch {
+          // 2026-05-12 (Wolf-Screenshot-1 'nach stack kein auto-place/steal'):
+          // Wenn qqStuckCell throwt (Target wurde zwischenzeitlich von einem
+          // anderen Team modifiziert: stolen / shielded / bereits stuck), war
+          // der Dummy vorher fuer immer in STAPEL_1 gestuckt. Jetzt: nochmal
+          // ticken — STAPEL_1-Handler in maybeAutoPlace versucht andere
+          // Targets oder skippt das Team sauber, statt das Spiel haengen
+          // zu lassen.
+          maybeAutoPlace(io, roomCode);
+        }
       }, 900);
       return;
     }

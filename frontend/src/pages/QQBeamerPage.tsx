@@ -18589,6 +18589,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             justifyContent: 'center',
           };
           const splitMode = sortedByCells.length >= 7;
+          // 2026-05-12 (Wolf 'nimm auf den pausencards das normale grid'):
+          // MiniGrid → GridDisplay. Die normale Brett-Komponente mit
+          // Avatar-Cells, fused borders, joker-glow etc. — gleicher Look wie
+          // in PlacementView/QuestionView. Pause-Slide zeigt das Spiel-Brett
+          // jetzt so wie es waehrend des Spiels aussieht.
           if (splitMode) {
             const half = Math.ceil(sortedByCells.length / 2);
             const left = sortedByCells.slice(0, half);
@@ -18600,7 +18605,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 padding: 'clamp(14px, 2vw, 28px)',
               }}>
                 <div style={colStyle}>{left.map(renderPill)}</div>
-                <MiniGrid state={s} size={420} />
+                <GridDisplay state={s} maxSize={420} showJoker={false} />
                 <div style={colStyle}>{right.map(renderPill)}</div>
               </div>
             );
@@ -18611,7 +18616,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               gap: 'clamp(16px, 2.2vw, 32px)',
               padding: 'clamp(14px, 2vw, 28px)',
             }}>
-              <MiniGrid state={s} size={420} />
+              <GridDisplay state={s} maxSize={420} showJoker={false} />
               <div style={colStyle}>{sortedByCells.map(renderPill)}</div>
             </div>
           );
@@ -19372,12 +19377,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             in Brand-Pink statt ESC-Hot-Pink. Ohne × + ESC-Logo daneben. */}
         {(mode === 'preGame' || mode === 'pause') && !s.theme?.eurovisionMode && (
           <div style={{
-            marginBottom: 12,
+            marginBottom: 8,
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
               fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-              fontSize: 'clamp(48px, 6vw, 96px)',
+              // 2026-05-12 (Wolf 'card mittig zentriert, gleich gehts los
+              // dafuer kleiner'): Stinger und Title geshrinkt — Hero-Block
+              // wird kompakter, das Rotation-Card-Panel ist dann visueller
+              // Mittelpunkt der Slide.
+              fontSize: 'clamp(34px, 4.2vw, 64px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: '#EC4899',
@@ -19469,7 +19478,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div
               aria-label={titleText}
               style={{
-                fontSize: 'clamp(48px, 6.4vw, 96px)', fontWeight: 900,
+                // 2026-05-12 (Wolf 'gleich gehts los dafuer kleiner'):
+                // Hero-Title geshrinkt damit das Rotation-Card-Panel
+                // visueller Hauptanker bleibt. 48-96 → 28-52.
+                fontSize: 'clamp(28px, 3.8vw, 52px)', fontWeight: 900,
                 color: modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,

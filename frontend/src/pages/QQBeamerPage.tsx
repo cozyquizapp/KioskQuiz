@@ -16234,10 +16234,82 @@ function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
   return { kind: 'race-final' };
 }
 
-// 2026-05-12 (Wolf 'Bet-Reveal: ablöse-animation, neues team kommt von oben,
-// vorheriges geht nach unten raus, smooth'): Transition-Wrapper haelt
-// kurzzeitig den vorherigen Slot mit Slide-Out-Animation parallel zum neuen
-// Slot der mit qqFRSlamDown reinslammt. Nach ~700ms wird der alte unmounted.
+// 2026-05-12 (Slide-Boundary-System Regel #3): generischer Slot-Transition-
+// Wrapper. Wenn `slotKey` wechselt, rendert er den vorherigen Slot kurz mit
+// `exitAnimation` (position:absolute Overlay), wahrend der neue Slot mit
+// seiner natuerlichen Mount-Animation reinkommt. Nach `exitMs` wird der
+// vorherige unmounted. Verhindert harte Frame-Cuts zwischen Slots in Multi-
+// Step-Choreos (Bet-Reveal, Awards-Reveal etc.).
+//
+// Usage:
+//   <SlotTransition
+//     slotKey={String(currentIndex)}
+//     exitAnimation="qqFRSlamOutDown 0.55s cubic-bezier(0.55,0,0.7,0.4) both"
+//     exitMs={550}
+//   >
+//     {currentContentJsx}
+//   </SlotTransition>
+function SlotTransition({
+  slotKey,
+  exitAnimation,
+  exitMs = 550,
+  containerStyle,
+  children,
+}: {
+  /** Key that identifies the current slot. Change triggers the transition. */
+  slotKey: string;
+  /** CSS animation shorthand applied to the exiting slot wrapper. */
+  exitAnimation: string;
+  /** Duration the previous slot stays mounted (must match exitAnimation dur). */
+  exitMs?: number;
+  /** Optional container style overrides. Default: flex:1 width:100% position:relative. */
+  containerStyle?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const [exitingNode, setExitingNode] = useState<React.ReactNode | null>(null);
+  const prevKeyRef = useRef(slotKey);
+  const prevChildrenRef = useRef(children);
+  useEffect(() => {
+    if (slotKey !== prevKeyRef.current) {
+      setExitingNode(prevChildrenRef.current);
+      prevKeyRef.current = slotKey;
+      prevChildrenRef.current = children;
+      const t = window.setTimeout(() => setExitingNode(null), exitMs);
+      return () => window.clearTimeout(t);
+    }
+    prevChildrenRef.current = children;
+    return;
+  }, [slotKey, children, exitMs]);
+
+  return (
+    <div style={{
+      position: 'relative', flex: 1, width: '100%', display: 'flex',
+      ...containerStyle,
+    }}>
+      {exitingNode && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          animation: exitAnimation,
+          pointerEvents: 'none',
+          willChange: 'transform, opacity',
+        }}>
+          {exitingNode}
+        </div>
+      )}
+      <div style={{
+        position: 'relative', flex: 1,
+        display: 'flex', flexDirection: 'column',
+        willChange: 'transform, opacity',
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// 2026-05-12 (Wolf 'Bet-Reveal: ablöse-animation'): nutzt jetzt die generische
+// SlotTransition-Komponente fuer den top-in/bottom-out-Wechsel zwischen
+// aufeinanderfolgenden Bet-Slot-Slides.
 type BetSlotType =
   | { kind: 'zero-group'; teams: QQTeam[] }
   | { kind: 'positive'; team: QQTeam; bonus: number }
@@ -16248,59 +16320,29 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
   state: QQStateUpdate;
   lang: 'de' | 'en';
 }) {
-  const [exiting, setExiting] = useState<{ idx: number; slot: BetSlotType } | null>(null);
-  const prevIdxRef = useRef(slotIndex);
-  const prevSlotRef = useRef(slot);
-  useEffect(() => {
-    if (slotIndex !== prevIdxRef.current) {
-      // Vorheriger Slot exitiert. Wir behalten ihn ~650ms, dann unmount.
-      // Achtung: slot snapshot wird vom letzten render gehalten via ref.
-      const prevSlot = prevSlotRef.current;
-      setExiting({ idx: prevIdxRef.current, slot: prevSlot });
-      prevIdxRef.current = slotIndex;
-      prevSlotRef.current = slot;
-      const t = window.setTimeout(() => setExiting(null), 650);
-      return () => window.clearTimeout(t);
-    }
-    prevSlotRef.current = slot;
-    return;
-  }, [slotIndex, slot]);
-
-  const renderSlot = (sl: BetSlotType, mode: 'enter' | 'exit') => {
+  const renderSlot = (sl: BetSlotType) => {
     if (!sl) return null;
-    const wrapperStyle: React.CSSProperties = mode === 'exit'
-      ? {
-          position: 'absolute', inset: 0,
-          animation: 'qqFRSlamOutDown 0.55s cubic-bezier(0.55, 0, 0.7, 0.4) both',
-          pointerEvents: 'none',
-          willChange: 'transform, opacity',
-        }
-      : {
-          position: 'relative', flex: 1,
-          display: 'flex', flexDirection: 'column',
-          willChange: 'transform, opacity',
-        };
     if (sl.kind === 'zero-group') {
-      return <div style={wrapperStyle}><BetZeroGroupSlide teams={sl.teams} lang={lang} /></div>;
+      return <BetZeroGroupSlide teams={sl.teams} lang={lang} />;
     }
     return (
-      <div style={wrapperStyle}>
-        <BetRevealSlide
-          team={sl.team}
-          resolution={s.finalBetResolution?.[sl.team.id] ?? null}
-          allTeams={s.teams}
-          lang={lang}
-          eurovisionMode={s.theme?.eurovisionMode}
-        />
-      </div>
+      <BetRevealSlide
+        team={sl.team}
+        resolution={s.finalBetResolution?.[sl.team.id] ?? null}
+        allTeams={s.teams}
+        lang={lang}
+        eurovisionMode={s.theme?.eurovisionMode}
+      />
     );
   };
-
   return (
-    <div style={{ position: 'relative', flex: 1, width: '100%', display: 'flex' }}>
-      {exiting && renderSlot(exiting.slot, 'exit')}
-      {renderSlot(slot, 'enter')}
-    </div>
+    <SlotTransition
+      slotKey={String(slotIndex)}
+      exitAnimation="qqFRSlamOutDown 0.55s cubic-bezier(0.55, 0, 0.7, 0.4) both"
+      exitMs={550}
+    >
+      {renderSlot(slot)}
+    </SlotTransition>
   );
 }
 

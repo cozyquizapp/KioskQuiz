@@ -5779,20 +5779,22 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
-                        // 2026-05-04: Bei langen Namen automatisch kleiner +
-                        // 2-Zeilen-Wrap statt harte 12-Zeichen-Truncation,
-                        // damit Witznamen wie "Schon Wieder Falsch" nicht
-                        // auf "Schon Wiede..." verstuemmelt werden.
+                        // 2026-05-12 (Wolf 'teamnamen die mit einem buchstaben
+                        // in die 2. reihe gehen vermeiden'): EINZEILIG mit
+                        // Ellipsis statt 2-Zeilen-Wrap. Lange Namen werden
+                        // entweder bei >16 chars kleiner geschrieben oder am
+                        // Ende mit „…" abgeschnitten. Vermeidet die haessliche
+                        // 1-Buchstaben-Umbruch-Situation. Font fuer lange
+                        // Namen wieder etwas hochgezogen (16-24 → 17-25) damit
+                        // die Karten gleichmaessiger gross wirken.
                         fontSize: t.name.length > 16
-                          ? (compact ? 'clamp(15px, 1.55vw, 21px)' : 'clamp(16px, 1.7vw, 24px)')
+                          ? (compact ? 'clamp(16px, 1.65vw, 22px)' : 'clamp(17px, 1.8vw, 25px)')
                           : (compact ? 'clamp(18px, 1.9vw, 26px)' : 'clamp(20px, 2.1vw, 30px)'),
                         color: t.color,
-                        lineHeight: 1.1,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
+                        lineHeight: 1.15,
+                        whiteSpace: 'nowrap',
                         overflow: 'hidden',
-                        wordBreak: 'break-word',
+                        textOverflow: 'ellipsis',
                       }} title={t.name}>
                         {t.name}
                       </div>

@@ -16239,6 +16239,76 @@ function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
   return { kind: 'race-final' };
 }
 
+// 2026-05-12 (Wolf 'Bet-Reveal: ablöse-animation, neues team kommt von oben,
+// vorheriges geht nach unten raus, smooth'): Transition-Wrapper haelt
+// kurzzeitig den vorherigen Slot mit Slide-Out-Animation parallel zum neuen
+// Slot der mit qqFRSlamDown reinslammt. Nach ~700ms wird der alte unmounted.
+type BetSlotType =
+  | { kind: 'zero-group'; teams: QQTeam[] }
+  | { kind: 'positive'; team: QQTeam; bonus: number }
+  | undefined;
+function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
+  slotIndex: number;
+  slot: BetSlotType;
+  state: QQStateUpdate;
+  lang: 'de' | 'en';
+}) {
+  const [exiting, setExiting] = useState<{ idx: number; slot: BetSlotType } | null>(null);
+  const prevIdxRef = useRef(slotIndex);
+  const prevSlotRef = useRef(slot);
+  useEffect(() => {
+    if (slotIndex !== prevIdxRef.current) {
+      // Vorheriger Slot exitiert. Wir behalten ihn ~650ms, dann unmount.
+      // Achtung: slot snapshot wird vom letzten render gehalten via ref.
+      const prevSlot = prevSlotRef.current;
+      setExiting({ idx: prevIdxRef.current, slot: prevSlot });
+      prevIdxRef.current = slotIndex;
+      prevSlotRef.current = slot;
+      const t = window.setTimeout(() => setExiting(null), 650);
+      return () => window.clearTimeout(t);
+    }
+    prevSlotRef.current = slot;
+    return;
+  }, [slotIndex, slot]);
+
+  const renderSlot = (sl: BetSlotType, mode: 'enter' | 'exit') => {
+    if (!sl) return null;
+    const wrapperStyle: React.CSSProperties = mode === 'exit'
+      ? {
+          position: 'absolute', inset: 0,
+          animation: 'qqFRSlamOutDown 0.55s cubic-bezier(0.55, 0, 0.7, 0.4) both',
+          pointerEvents: 'none',
+          willChange: 'transform, opacity',
+        }
+      : {
+          position: 'relative', flex: 1,
+          display: 'flex', flexDirection: 'column',
+          willChange: 'transform, opacity',
+        };
+    if (sl.kind === 'zero-group') {
+      return <div style={wrapperStyle}><BetZeroGroupSlide teams={sl.teams} lang={lang} /></div>;
+    }
+    return (
+      <div style={wrapperStyle}>
+        <BetRevealSlide
+          team={sl.team}
+          resolution={s.finalBetResolution?.[sl.team.id] ?? null}
+          allTeams={s.teams}
+          lang={lang}
+          eurovisionMode={s.theme?.eurovisionMode}
+        />
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ position: 'relative', flex: 1, width: '100%', display: 'flex' }}>
+      {exiting && renderSlot(exiting.slot, 'exit')}
+      {renderSlot(slot, 'enter')}
+    </div>
+  );
+}
+
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const step = s.finalRevealStep ?? 0;
@@ -16313,22 +16383,14 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
       {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} lang={lang} />}
-      {phase.kind === 'bet' && (() => {
-        const slot = betSlots[phase.slotIndex];
-        if (!slot) return null;
-        if (slot.kind === 'zero-group') {
-          return <BetZeroGroupSlide teams={slot.teams} lang={lang} />;
-        }
-        return (
-          <BetRevealSlide
-            team={slot.team}
-            resolution={s.finalBetResolution?.[slot.team.id] ?? null}
-            allTeams={s.teams}
-            lang={lang}
-            eurovisionMode={s.theme?.eurovisionMode}
-          />
-        );
-      })()}
+      {phase.kind === 'bet' && (
+        <BetSlotTransition
+          slotIndex={phase.slotIndex}
+          slot={betSlots[phase.slotIndex]}
+          state={s}
+          lang={lang}
+        />
+      )}
       {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealMode="closed" state={s} lang={lang} />}
       {phase.kind === 'awards-reveal' && <AwardsOverviewSlide revealMode="auto-reveal" state={s} lang={lang} />}
       {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
@@ -16348,6 +16410,12 @@ function FinalRevealSharedKeyframes() {
         55%  { opacity: 1; transform: translateY(8%)    scale(1.06) rotate(1deg);  filter: blur(0); }
         75%  { transform: translateY(-2%) scale(0.98) rotate(0deg); }
         100% { transform: translateY(0)    scale(1)    rotate(0deg); }
+      }
+      /* 2026-05-12 (Wolf 'Bet-Reveal Abloese-Anim'): vorheriger Slot rauschiebt
+         nach unten waehrend der neue oben reinslammt. */
+      @keyframes qqFRSlamOutDown {
+        0%   { opacity: 1; transform: translateY(0)    scale(1)    rotate(0deg); filter: blur(0); }
+        100% { opacity: 0; transform: translateY(110vh) scale(0.85) rotate(2deg); filter: blur(4px); }
       }
       @keyframes qqFRSlamFromTop {
         0%   { opacity: 0; transform: translateY(-90vh) scale(0.7); filter: blur(7px); }

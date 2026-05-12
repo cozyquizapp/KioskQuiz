@@ -58,6 +58,14 @@
   --space-2: 10px;
   --space-3: 16px;
   --space-4: 24px;
+  /* 2026-05-12 (Wolf 'mind-abstand auf jedem Slide'): Safe-Margin-Token.
+     Mindestabstand fuer Content vom Beamer-Rand. Views haben Card-Layouts
+     die sonst zu nah an die Screen-Kante kleben (action-cards, brett,
+     thanks-recap). BG-Layer (Fireflies, Grain, BG-Image) duerfen full-bleed
+     bleiben — nur die Content-Wrapper konsumieren die Var.
+     Verwendung: `padding: var(--qq-safe-margin)` auf dem inneren
+     Content-Container, NICHT auf dem View-Root (sonst BG-Layer geclippt). */
+  --qq-safe-margin: clamp(20px, 2.2vh, 32px);
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
   --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);

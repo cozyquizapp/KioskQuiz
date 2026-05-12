@@ -7401,6 +7401,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   alignItems: 'stretch', justifyContent: 'center',
                   gap: 'clamp(10px, 1.6vw, 24px)',
                   width: '100%', maxWidth: 1700,
+                  // 2026-05-12 (Wolf 'mind-abstand zum Rand auf jedem slide'):
+                  // Action-Card-Row bekommt horizontalen Safe-Margin. Bei 3
+                  // Cards a 480px + 2x oder-Separatoren konnten Cards bei
+                  // schmaleren Beamer-Aufloesungen (1366x768) bis an die
+                  // Screen-Kante reichen. Mit padding-x var(--qq-safe-margin)
+                  // garantiert min 20-32px Abstand. BG-Layer (Fireflies,
+                  // BG-image) stehen daneben auf View-Root-Level full-bleed.
+                  paddingInline: 'var(--qq-safe-margin)',
+                  boxSizing: 'border-box',
                 }}>
                   {cards.map((c, i) => {
                     const iconSize = 'clamp(72px, 8.5vw, 132px)';

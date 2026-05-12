@@ -741,6 +741,11 @@ export function qqStartGame(
   // Spiel startet mit dem Standard-Flow (Bid+Race ON, Connections-4x4 OFF).
   room.finalWagerEnabled = true;
   room.connectionsEnabled = false;
+  // 2026-05-12 (Wolf 'summary zeigt falsche teams + avatare'): persistGame-
+  // Result-Guard zurueck auf false damit dieses neue Spiel einen sauberen
+  // Save bekommt. Sonst wuerde der Guard vom letzten Spiel verhindern dass
+  // das neue Spiel gespeichert wird.
+  (room as any)._gameResultPersisted = false;
 
   // Reset all phase stats
   for (const id of room.joinOrder) {

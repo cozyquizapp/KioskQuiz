@@ -104,6 +104,17 @@ const ALLOWED_REACTION_EMOJIS = new Set(['👏', '🔥', '😱', '😢', '🎉',
 
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   if (!room) return;
+  // 2026-05-12 (Wolf 'summary zeigt falsche teams + falsche avatare'):
+  // Idempotenz-Guard. Vorher fired persistGameResult auf JEDEN broadcast
+  // mit phase=GAME_OVER → mehrere DB-Eintraege pro Spiel, jeder mit eigener
+  // ID, und room.lastGameResultId wurde bei jedem Save ueberschrieben.
+  // Wenn zwischen Broadcasts das room.teams-State irgendwie verschoben
+  // wurde (z.B. team kick, rename mid-recap), konnten spaetere Saves
+  // schlechtere Daten enthalten — der QR-Link zeigte dann auf eine
+  // schlechtere Version. Jetzt: pro Spiel-Cycle nur EIN Save. Guard wird
+  // bei qqStartGame zurueckgesetzt damit das naechste Spiel sauber laeuft.
+  if ((room as any)._gameResultPersisted) return;
+  (room as any)._gameResultPersisted = true;
   const teamList = Object.values(room.teams);
   // QQ-Score = largestConnected (verbundene Felder). teamPhaseStats hat KEIN
   // totalScore-Feld — die alte Variante hat deshalb immer 0 gespeichert und

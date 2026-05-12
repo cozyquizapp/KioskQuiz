@@ -19417,11 +19417,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           }}>
             <span style={{
               fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
-              // 2026-05-12 (Wolf 'card mittig zentriert, gleich gehts los
-              // dafuer kleiner'): Stinger und Title geshrinkt — Hero-Block
-              // wird kompakter, das Rotation-Card-Panel ist dann visueller
-              // Mittelpunkt der Slide.
-              fontSize: 'clamp(34px, 4.2vw, 64px)',
+              // 2026-05-12 v3 (Wolf 'beides wieder dynamisch groesser, cozyquiz
+              // etwas groesser'): CozyQuiz dominant ueber der Card. fontSize
+              // wieder hochgezogen auf clamp(56px, 7vw, 112px) — bei 1080p
+              // greift 7vw → ~134→112 (cap). Bei kleineren Beamern shrinkt's
+              // proportional, safe-margin oben+unten bleibt erhalten.
+              fontSize: 'clamp(56px, 7vw, 112px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: '#EC4899',
@@ -19522,7 +19523,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div
               aria-label={titleText}
               style={{
-                fontSize: 'clamp(28px, 3.8vw, 52px)', fontWeight: 900,
+                // 2026-05-12 v3 (Wolf 'beides wieder dynamisch groesser,
+                // cozyquiz etwas groesser'): Title hochgezogen, aber
+                // clamp-Max bewusst kleiner als CozyQuiz (88 vs 112) damit
+                // CozyQuiz visuell dominant bleibt.
+                fontSize: 'clamp(42px, 5.5vw, 88px)', fontWeight: 900,
                 color: modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,

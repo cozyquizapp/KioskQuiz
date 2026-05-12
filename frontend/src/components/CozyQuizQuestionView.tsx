@@ -4619,15 +4619,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // ganze Frage-Card passen lassen'): Portrait-Sizes fast verdoppelt
             // (40/46/52 → 60/72/84) damit sie aus Beamer-Distanz erkennbar
             // sind und die rechte Halbflaeche unter der Frage-Card sinnvoll
-            // ausnutzen. Gap entsprechend vergroessert.
+            // ausnutzen.
+            // 2026-05-13 (Wolf 'Cheese horizontal: avatare gleich gross wie
+            // bei normalen Questions, nur Position bleibt'): Landscape-Sizes
+            // (48/54/60) waren kleiner als Question-Footer (80/88/96) →
+            // angeglichen. Cheese-Portrait bleibt anders, weil Card+Avatare
+            // dort einen rechten Bildschirmstreifen teilen.
             const av = isCheesePortrait
               ? (tc > 6 ? 60 : tc > 4 ? 72 : 84)
-              : (tc > 6 ? 48 : tc > 4 ? 54 : 60);
+              : (tc > 6 ? 80 : tc > 4 ? 88 : 96);
             // 2026-05-09 (Wolf 'Footer-Avatare zu eng'): Gap vergrössert
             // damit grüner Glow sichtbar atmet, nicht ineinander fließt.
             const gap = isCheesePortrait
               ? (tc > 6 ? 14 : tc > 4 ? 18 : 22)
-              : (tc > 6 ? 14 : tc > 4 ? 18 : 22);
+              : (tc > 6 ? 12 : tc > 4 ? 15 : 18);
             const portraitFlow = {
               marginTop: 'clamp(10px, 1.6cqh, 22px)' as const,
             };

@@ -4427,3 +4427,18 @@ body[data-cinematic="true"] *[style*="cfloat "],
 body[data-cinematic="true"] *[style*="cfloat,"] {
   animation-play-state: paused !important;
 }
+
+/* 2026-05-13 (Wolf 'rechteckige farbige Schatten hinter Texten weg, global'):
+   Audit-Erkenntnis — 130+ inline `textShadow` mit farbigen Glow-Werten
+   (z.B. `0 0 32px ${color}cc`) erzeugten rechteckige Halo-Boxen hinter Text,
+   weil bei großem Blur + hoher Alpha + dichter Glyph-Folge die Wolken zu
+   einem einheitlichen Block verschmelzen. Wolf hatte das schon 2026-05-05
+   einmal punktuell in GameOverView gemeldet — jetzt der globale Hammer:
+   alle text-shadows ausser den SCHWARZEN Lesbarkeits-Shadows werden gekillt.
+   Selektor matched Elemente mit inline-textShadow das NICHT 'rgba(0,0' oder
+   '0,0,0' enthaelt (= nicht-schwarze Shadows).
+   Schwarze Shadows fuer Kontrast (z.B. Option-Bilder mit Overlay-Text)
+   bleiben erhalten. */
+*:not([style*="rgba(0,0"]):not([style*="0,0,0"]) {
+  text-shadow: none !important;
+}

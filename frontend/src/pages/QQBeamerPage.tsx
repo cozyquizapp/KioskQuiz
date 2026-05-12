@@ -12801,32 +12801,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // werden im hpCompact-Modus kleiner. Card-Shift uebernimmt das
             // Platzproblem.
             const cardFontSize = qFontSize;
-            // 2026-05-07 v2 (Wolf-Bug 'Frage-Card faellt bei HotPotato BunteTüte
-            // immernoch nach oben raus, hatte den auftrag schon mal'):
-            // chipShiftVh war Legacy-Code aus 2026-04-29 als die Chips noch
-            // position:absolute waren. Seit 2026-05-05 v3 sitzen Card + Chips
-            // im gleichen Flex-Column-Container (innerJustify=center, gap
-            // dazwischen) — Card+Chips werden als ein Block zentriert. Der
-            // shift bewegt aber NUR die Card-Wrapper-translateY, NICHT die
-            // Chips → Card knallt aus dem Viewport waehrend Chips stabil
-            // bleiben. Loesung: Shift komplett deaktivieren. Centering
-            // erledigt das jetzt natuerlich.
-            const chipShiftVh = 0;
+            // 2026-05-12 (Audit-A 'Dead-Code chipShiftVh entfernt'): die
+            // chipShiftVh-Variable war seit 2026-05-07 immer 0 (Comment
+            // beschrieb Legacy aus 2026-04-29 als Chips position:absolute
+            // waren). Plus 'vh'-Einheit nach cqh-Migration uebersehen.
+            // Komplett raus — kein conditional transform, keine Transition,
+            // keine willChange. Vereinfacht den Wrapper.
             return (
-              // 2026-05-07 (Audit P0): bQuestionIn × transform-shift Konflikt.
-              // Vorher: Card hatte parallel `animation: bQuestionIn` + inline
-              // `transform: translateY(...)` + `transition: transform 0.9s`.
-              // CSS-`animation` overrided transform → bei Reveal-Klick (akut
-              // bei HotPotato wenn chipShiftVh kippt) Mikro-Sprung.
-              // Fix: Outer-Wrapper traegt den translateY-Shift (mit transform-
-              // Transition), Inner-Card traegt die bQuestionIn-Mount-Animation.
-              // Beide kollidieren nicht mehr.
               <div style={{
                 width: '100%', maxWidth: 1400,
                 flexShrink: 0,
-                transform: chipShiftVh !== 0 ? `translateY(${chipShiftVh}vh)` : undefined,
-                transition: 'transform 0.9s var(--qq-ease-smooth)',
-                willChange: 'transform',
               }}>
                 <div style={{
                   background: cardBg,
@@ -13416,13 +13400,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   padding: tierStyles.containerPad, borderRadius: 24,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
-                  // 2026-05-12 (Wolf 'survivor card keinen platz unten —
-                  // antworten kleiner machen'): maxHeight von 86cqh → 58cqh
-                  // reduziert. Antworten-Card claimed jetzt nur noch ~60%
-                  // der Slide-Hoehe, Survivor-Card unten hat ~25-30%
-                  // garantierten Platz + 15% fuer Question-Card oben. Plus
-                  // AutoFit zoomt zusaetzlich wenn noetig.
-                  maxHeight: 'clamp(380px, 58cqh, 680px)', overflow: 'hidden',
+                  // 2026-05-12 v2 (Audit-A): 58cqh → 52cqh. Survivor-Card
+                  // hatte rechnerisch Platz (~897px bei 1080p, 934px verfuegbar),
+                  // aber Edge-Cases (groesseres Question-Card, kleinere Beamer)
+                  // druckten sie raus. 52cqh gibt 30-35% garantierten Bottom-
+                  // Platz fuer Survivor-Card.
+                  maxHeight: 'clamp(340px, 52cqh, 620px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);

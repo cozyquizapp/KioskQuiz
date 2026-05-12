@@ -2444,12 +2444,12 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
   const activeIdx = aliveIds.indexOf(activeTeam.id);
   if (activeIdx < 0 || aliveIds.length === 0) return null;
 
-  // 2026-05-11 v2 (Wolf-Wunsch): nur noch ±1 sichtbar, zirkulär. Slot -1 =
-  // vorheriges Team (war dran), Slot 0 = aktiv, Slot +1 = nächstes Team
-  // (kommt dran). Bei N=2 wird nur Slot 0 + Slot +1 gezeigt (das andere
-  // Team wäre prev UND next, also nur einmal als next anzeigen). Bei N=1
-  // nur active. Sauberer Fokus auf die nächsten Wechsel statt verwirrenden
-  // ±2-Halbkreis.
+  // 2026-05-11 v2: nur ±1 sichtbar, zirkulär.
+  // 2026-05-12 (Wolf 'L→R nachrutschen, links = naechstes, rechts = vorher'):
+  // Mapping invertiert. Slot +1 (next) → LEFT (negative xSign).
+  // Slot -1 (prev) → RIGHT (positive xSign). Teams rutschen also L→R durchs
+  // Bild: neues Team rein von links, altes Team raus nach rechts.
+  // Bei N=2: nur Slot 0 + Slot +1 (next, links). Bei N=1 nur active.
   const N = aliveIds.length;
   type SlotEntry = { teamId: string; slot: number };
   const slotEntries: SlotEntry[] = [
@@ -2520,7 +2520,10 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
           const t = s.teams.find((x: any) => x.id === teamId);
           if (!t) return null;
           const cfg = slotConfig(slot);
-          const xSign = slot > 0 ? 1 : slot < 0 ? -1 : 0;
+          // 2026-05-12 (Wolf 'links = naechstes, rechts = war gerade'):
+          // xSign invertiert ggue. Slot-Sign. Slot +1 (next) bekommt
+          // xSign -1 (links), Slot -1 (prev) bekommt xSign +1 (rechts).
+          const xSign = slot > 0 ? -1 : slot < 0 ? 1 : 0;
           const isActive = slot === 0;
           // 2026-05-09 v3: Wrap-Detection — wenn Team-Slot um >1 sprang
           // (modulo-wrap zwischen extremen Slots) → kein transform-transition,
@@ -2715,7 +2718,13 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
           zweite Sicherung: Chips können maximal X px über der Block-Unterkante
           enden, darunter ist Safe-Zone für die Active-Card-Border + Spotlight). */}
       <div style={{
-        flex: '1 1 auto',
+        // 2026-05-12 (Wolf 'hot potato: bei mehr antworten rutschen
+        // disqualifizierte unten aus der slide'): flex-basis von auto → 0
+        // damit der Chips-Block AGGRESSIV shrinkt bevor die eliminated-row
+        // unten aus dem Slide gedrueckt wird. overflow:hidden cuttet die
+        // hinteren Chip-Zeilen sauber statt sie auf folgende Sibling-Items
+        // zu schieben.
+        flex: '1 1 0',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
         alignItems: 'center',
         width: '100%',
@@ -3850,13 +3859,14 @@ function MuchoOptionsReveal({
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
       columnGap: 18,
-      rowGap: expandedLayout ? 'clamp(80px, 10vh, 120px)' : 18,
-      // 2026-05-09 (Wolf 'gewinnercard stand unten raus'): paddingBottom
-      // hochgezogen damit Voter-Reihe (translateY 80%) + Card-Pop-Scale
-      // 1.06 + Time-Pill in der unteren Reihe nicht aus dem Container
-      // hängen. 110 → 160 max, 70 → 100 min.
-      paddingBottom: expandedLayout ? 'clamp(100px, 12vh, 160px)' : 0,
-      marginBottom: 'clamp(14px, 1.8vh, 28px)',
+      // 2026-05-12 (Wolf 'mucho runde 1 felder stehen unten aus slide raus'):
+      // rowGap-Max von 120 → 90, paddingBottom-Max von 160 → 110 reduziert.
+      // Zwei-Spalten-Layout mit 4 Optionen + Voter-Reihen + Footer-Avatar-Row
+      // war bei kleinen Beamer-Aufloesungen + grosser Frage-Card knapp am
+      // Bottom-Edge. Kompaktere Bottom-Spaces verhindern Clipping.
+      rowGap: expandedLayout ? 'clamp(60px, 8vh, 90px)' : 18,
+      paddingBottom: expandedLayout ? 'clamp(70px, 9vh, 110px)' : 0,
+      marginBottom: 'clamp(10px, 1.4vh, 22px)',
       width: '100%', maxWidth: 1400,
       animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
       // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing — User-Feedback
@@ -12692,6 +12702,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             justifyContent: innerJustify,
             gap: innerGap,
             alignItems: 'center', width: '100%',
+            // 2026-05-12 (Wolf 'felder stehen unten aus slide raus'):
+            // min-height:0 erlaubt Flex-Shrink wenn Content zu viel Platz
+            // moechte. Ohne das kann der innere Block ueber den Container
+            // wachsen und das letzte Element unten rauskippen.
+            minHeight: 0,
           }}>
 
           {/* Question card — KEIN Resize mehr zwischen Question und Reveal

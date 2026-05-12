@@ -13315,12 +13315,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   padding: tierStyles.containerPad, borderRadius: 24,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
-                  // 2026-05-11 (Wolf 'Antworten zu klein, Platz oben/unten frei'):
-                  // maxHeight von 78vh → 86vh + cap von 920 → 1000. Container
-                  // streckt sich jetzt in den freien Slide-Space rein damit die
-                  // neuen größeren Tier-Fonts (xxl 40-72px, xl 30-52px) Platz
-                  // haben. Q-Card und Trivia-Trio bleiben darüber/darunter.
-                  maxHeight: 'clamp(520px, 86vh, 1000px)', overflow: 'hidden',
+                  // 2026-05-12 (Wolf 'survivor card keinen platz unten —
+                  // antworten kleiner machen'): maxHeight von 86vh → 58vh
+                  // reduziert. Antworten-Card claimed jetzt nur noch ~60%
+                  // der Slide-Hoehe, Survivor-Card unten hat ~25-30%
+                  // garantierten Platz + 15% fuer Question-Card oben. Plus
+                  // AutoFit zoomt zusaetzlich wenn noetig.
+                  maxHeight: 'clamp(380px, 58vh, 680px)', overflow: 'hidden',
                 }}>
                   {allAnswers.map((a, i) => {
                     const authorId = findAuthor(a);

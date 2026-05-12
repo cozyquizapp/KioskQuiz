@@ -29,6 +29,7 @@ import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
 import { WolfHeadIcon } from '../components/WolfHeadIcon';
+import { ActionCard, type ActionCardData } from '../components/QQActionCard';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
@@ -6663,202 +6664,10 @@ function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor:
 // PHASE INTRO
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// 2026-05-09 (Wolf-Vision): 3D-Card-Reveal für neue Aktionen pro Runde —
-// Klauen (R2) und Stapeln (R3) werden mit derselben Slam+Flip-Choreo wie
-// TeamsRevealView (Slot M) aufgedeckt. Card-Back zeigt Pink-Hatch-Pattern
-// + „NEU"-Wordmark; Vorderseite ist die normale Action-Card.
-function ActionCardReveal({
-  cardData: c, iconNode, iconSize, cardCount, lang, startDelayMs,
-}: {
-  cardData: { count: number; label: string; limit?: string; accent: string; emoji?: string };
-  iconNode: React.ReactNode;
-  iconSize: string;
-  cardCount: number;
-  lang: 'de' | 'en';
-  startDelayMs: number;
-}) {
-  const SLAM_DUR = 1400;
-  const SETTLE = 500;
-  const FLIP_DUR = 1000;
-  const [phase, setPhase] = useState<'hidden' | 'slamming' | 'flipping' | 'done'>('hidden');
-  useEffect(() => {
-    const t1 = window.setTimeout(() => setPhase('slamming'), startDelayMs);
-    const t2 = window.setTimeout(() => setPhase('flipping'), startDelayMs + SLAM_DUR + SETTLE);
-    const t3 = window.setTimeout(() => setPhase('done'), startDelayMs + SLAM_DUR + SETTLE + FLIP_DUR);
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); window.clearTimeout(t3); };
-  }, [startDelayMs]);
-  const isFlipped = phase === 'flipping' || phase === 'done';
-  const isVisible = phase !== 'hidden';
-  return (
-    <div style={{
-      flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
-      minWidth: cardCount === 1 ? 280 : 200,
-      maxWidth: cardCount === 1 ? 480 : 480,
-      // 2026-05-10 (Wolf-Live-Test L7 'rechte Card kleiner als linke'):
-      // `height: 360` matched non-isNew Card exakt. `alignSelf: stretch` raus
-      // (zog Outer auf parent-row-Höhe — Inner blieb bei 360 und wirkte dann
-      // kleiner). Plus boxSizing für saubere Box-Berechnung.
-      // 2026-05-10 (Spacing-Audit P1 #9): height → minHeight. Zusammen mit
-      // Inner perspective height: '100%' unten und alignItems:stretch im
-      // Parent (PhaseIntroView Z. 7341) wachsen jetzt isNew + non-isNew
-      // Cards SYNCHRON zur natürlichen Maximum-Höhe der Row. Bei langen
-      // DE-Labels wird die ganze Row höher, alle Cards bleiben gleich groß.
-      minHeight: 360,
-      boxSizing: 'border-box',
-      perspective: '1400px',
-      opacity: isVisible ? 1 : 0,
-      // 2026-05-12 (Wolf '6. mal cards nicht gleich gross'): qqGsTeamSlam →
-      // qqActionCardSlam (scale-frei). Vorher skalierte die Slam-Animation
-      // die isNew Card waehrend 1.4s zwischen scale 2 → 1.18 → 0.96 → 1 — in
-      // dieser Phase sah die Card 18% groesser aus als die non-isNew Geschwister.
-      // Die scale-freie Variante macht den gleichen Drop+Rotate+Blur, aber
-      // die Layout-Box-Breite bleibt durchgehend bei den finalen Maxima.
-      animation: isVisible ? `qqActionCardSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
-      // 2026-05-12 (Wolf '5. mal'): filter:drop-shadow entfernt — gab isNew
-      // Cards einen extra Halo um die Card-Border + visuelle Groessen-
-      // Wahrnehmung als „groesser". Der boxShadow auf Card-Back+Card-Front
-      // matched bereits den non-isNew Outer-Glow.
-      transition: 'filter 0.6s ease',
-      display: 'flex',
-    }}>
-      <div style={{
-        // 2026-05-09 v3 (Wolf 'stack card nicht gleich groß wie steal/place'):
-        // FIXED height statt minHeight — non-isNew Cards können bei mehr
-        // Inhalt höher werden und stretchten via alignItems:stretch über 360,
-        // isNew Card mit absolute-positionierten Front/Back blieb auf 360
-        // gepinnt → Größen-Drift. Jetzt alle hart auf 360.
-        // 2026-05-10 (Spacing-Audit P1 #9): height: 360 → '100%'. Outer
-        // ActionCardReveal hat jetzt minHeight:360, Parent-Row stretcht via
-        // alignItems:stretch. Inner perspective-Wrapper nimmt 100% der Outer-
-        // Höhe → Front/Back (inset:0) füllen automatisch mit. Bei wachsenden
-        // Sibling-Cards bleiben Outer + Inner + Front/Back synchron.
-        // 2026-05-12 (Wolf '5. mal, cards nicht gleich groß'): boxSizing
-        // explizit auf border-box. Defensiv — falls Inner's content-box vs
-        // border-box vom non-isNew Outer (das border-box ist) abweicht,
-        // entstanden 6-12 px Drift bei 3px Border.
-        position: 'relative', width: '100%', height: '100%',
-        boxSizing: 'border-box',
-        transformStyle: 'preserve-3d',
-        transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
-        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-      }}>
-        {/* Card-Back — Cross-Hatch + großes „NEU".
-            2026-05-09 v2 (Wolf): Pink-Glow-Halo (0 0 40px accent44) hinzu —
-            matcht Card-Front, sodass beim Flip kein "Größen-Shift" wahrnehmbar
-            ist. Vorher hatte nur die Vorderseite den Halo. */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          boxSizing: 'border-box',
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-          borderRadius: 24,
-          background:
-            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
-            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
-            'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-          border: '3px solid rgba(236,72,153,0.65)',
-          boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 14,
-          overflow: 'hidden',
-        }}>
-          <div aria-hidden style={{
-            position: 'absolute', inset: 0,
-            backgroundImage:
-              'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
-              'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
-            pointerEvents: 'none',
-          }} />
-          <div style={{
-            fontSize: 'clamp(32px, 3.6cqw, 56px)', fontWeight: 900,
-            color: '#FBCFE8', letterSpacing: '0.18em',
-            textShadow: '0 0 24px rgba(236,72,153,0.7)',
-            position: 'relative',
-          }}>{lang === 'en' ? 'NEW' : 'NEU'}</div>
-          <div style={{
-            fontSize: 'clamp(56px, 6.5cqw, 96px)', lineHeight: 1,
-            filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
-            position: 'relative',
-          }}>✨</div>
-        </div>
-        {/* Vorderseite — die normale Action-Card.
-            2026-05-11 (Wolf 'Cards einheitlich groß UND breit, deckungsgleich'):
-            Layout-Refactor zu 3-Reihen-Grid (Top-Spacer, Hauptinhalt-Block,
-            Limit-Slot-mit-Fixed-Höhe). Der Limit-Slot wird IMMER gerendert,
-            auch ohne Pill — als unsichtbarer Spacer mit identischer Höhe.
-            Damit sitzt der zentrale Inhalt (Icon + Count+Label + Sub-Line) bei
-            allen Cards auf exakt der gleichen vertikalen Position, unabhängig
-            davon ob Pill da ist oder nicht. */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          boxSizing: 'border-box',
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-          transform: 'rotateY(180deg)',
-          borderRadius: 24,
-          background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
-          border: `3px solid ${c.accent}aa`,
-          boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-          padding: 'clamp(20px, 2.4cqh, 36px) clamp(20px, 2cqw, 32px)',
-          overflow: 'hidden',
-        }}>
-          {/* Hauptinhalt-Block — zentriert sich vertikal via flex:1 */}
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            gap: 'clamp(8px, 1.2cqh, 16px)', width: '100%',
-          }}>
-            <div style={{
-              fontSize: iconSize, lineHeight: 1,
-              filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
-            }}>{iconNode}</div>
-            <div style={{
-              display: 'flex', alignItems: 'baseline',
-              gap: 'clamp(6px, 0.8cqw, 12px)',
-              fontWeight: 900, lineHeight: 1,
-              flexWrap: 'wrap', justifyContent: 'center',
-            }}>
-              <span style={{
-                fontSize: 'clamp(36px, 4.2cqw, 64px)',
-                color: c.accent, fontVariantNumeric: 'tabular-nums',
-                textShadow: `0 0 22px ${c.accent}88`,
-              }}>{c.count}x</span>
-              <span style={{
-                fontSize: 'clamp(28px, 3.2cqw, 48px)',
-                color: '#F1F5F9', letterSpacing: '0.01em',
-              }}>{c.label}</span>
-            </div>
-            <div style={{
-              fontSize: 'clamp(13px, 1.4cqw, 19px)',
-              fontWeight: 700, color: '#cbd5e1',
-              textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
-            }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>
-          </div>
-          {/* Limit-Slot — fixed Höhe, immer gerendert (auch ohne Inhalt).
-              Damit sitzen Cards mit/ohne Pill auf identischer Achse. */}
-          <div style={{
-            flex: '0 0 auto', minHeight: 'clamp(28px, 2.6cqh, 36px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginTop: 4,
-          }}>
-            {c.limit && (
-              <div style={{
-                padding: '5px 14px', borderRadius: 999,
-                background: 'rgba(15,23,42,0.6)',
-                border: `1.5px solid ${c.accent}55`,
-                fontSize: 'clamp(11px, 1.15cqw, 15px)',
-                fontWeight: 900, color: '#e2e8f0',
-                whiteSpace: 'nowrap',
-                boxShadow: `0 2px 8px ${c.accent}22`,
-              }}>{c.limit}</div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// 2026-05-12 (Bug-Fix nach 20 Iterationen): ActionCardReveal + plain-Card
+// vollstaendig extrahiert nach ../components/QQActionCard.tsx. Single source
+// of truth fuer Outer-Box-Geometrie — Drift zwischen "isNew Flip-Card" und
+// plain Card ist jetzt strukturell unmoeglich. Aufrufstelle nutzt <ActionCard>.
 
 // 2026-05-12 (Audit P0 #4 — Timeline-Sync): zentrale Timing-Tabelle fuer die
 // PhaseIntro-Round-Transition. JS-Timer hier definiert, CSS-animation-delays
@@ -7501,18 +7310,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 nach Runde dynamisch zusammengestellt — eine Wahl pro richtige
                 Antwort. Limits (max X pro Runde / Spiel) als Footer-Pill je Card. */}
             {(() => {
-              type ActionCardData = {
-                count: number;
-                emoji?: string;
-                slug?: 'marker-sanduhr' | 'marker-shield' | 'marker-swap';
-                label: string;
-                limit?: string;
-                accent: string;
-                /** 2026-05-09 (Wolf): in dieser Runde NEU verfügbar — kriegt
-                 *  einen 3D-Card-Reveal (Slam face-down → Flip), damit der
-                 *  Moment „neue Fähigkeit ist da" episch wirkt. */
-                isNew?: boolean;
-              };
+              // ActionCardData-Typ aus '../components/QQActionCard' (s. Import oben).
               const ph = s.gamePhaseIndex;
               // 2026-04-28 (User-Wunsch): 'Platzieren'-Card nur anzeigen wenn
               // noch freie Felder im Grid existieren (sonst irreführend in
@@ -7591,31 +7389,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     const iconNode = c.slug
                       ? <QQIcon slug={c.slug} size={iconSize} alt={c.label} />
                       : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
-                    // Bei isNew: längerer Delay für die epische 3D-Slam+Flip
-                    // Choreo. Sonst Standard-Stagger.
-                    const cardDelayMs = c.isNew
-                      ? cardBaseMs + i * cardStaggerMs + 600  // extra Build-up
-                      : cardBaseMs + i * cardStaggerMs;
-                    const sepDelayMs = cardDelayMs - 100; // separator kurz vor card
-                    // Card-Inhalt (Front-Side bei isNew, sonst direkter Render)
-                    const cardInner = (
-                      <div style={{
-                        width: '100%', height: '100%',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 'clamp(8px, 1.2cqh, 16px)',
-                        padding: 'clamp(20px, 2.4cqh, 36px) clamp(20px, 2cqw, 32px)',
-                        borderRadius: 24,
-                        background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
-                        border: `3px solid ${c.accent}aa`,
-                        boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
-                        boxSizing: 'border-box',
-                      }}>
-                        {/* Card-Inhalt — wird gleich unten als Children eingefügt */}
-                      </div>
-                    );
-                    void cardInner;
-
+                    // Base-Delay pro Card-Position. Build-up fuer isNew (+600ms)
+                    // wird intern in ActionCardReveal addiert.
+                    const cardDelayMs = cardBaseMs + i * cardStaggerMs;
+                    const sepDelayMs = cardDelayMs - 100;
                     return (
                       <Fragment key={i}>
                         {i > 0 && (
@@ -7628,111 +7405,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                             animation: `phasePop 0.4s var(--qq-ease-bounce) ${sepDelayMs / 1000}s both`,
                           }}>{oder}</div>
                         )}
-                        {c.isNew ? (
-                          // 2026-05-09 (Wolf-Vision): NEUE Aktion mit 3D-Slam+Flip-
-                          // Reveal — Card slammt face-down rein (Card-Back mit Cross-
-                          // Hatch + NEU-Pattern), settled, flippt zur Vorderseite.
-                          // Dieselbe Choreo wie TeamsRevealView (Slot M).
-                          <ActionCardReveal
-                            cardData={c}
-                            iconNode={iconNode}
-                            iconSize={iconSize}
-                            cardCount={cardCount}
-                            lang={lang}
-                            startDelayMs={cardDelayMs}
-                          />
-                        ) : (
-                        <div style={{
-                          // 2026-05-11 (Wolf 'Cards einheitlich groß UND breit,
-                          // deckungsgleich'): Outer-Props matchen ActionCard-
-                          // Reveal exakt. minWidth bei multi-card auf 200 lassen
-                          // (Cards können dann gleichmäßig schmaler werden bei
-                          // 3-Card-Layouts), maxWidth 480.
-                          flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
-                          minWidth: cardCount === 1 ? 280 : 200,
-                          maxWidth: cardCount === 1 ? 480 : 480,
-                          minHeight: 360,
-                          boxSizing: 'border-box',
-                          // 2026-05-11: justifyContent center → space-between.
-                          // Plus 3-Reihen-Grid mit Limit-Slot-Spacer wie
-                          // ActionCardReveal-Front. Stellt sicher: Hauptinhalt
-                          // sitzt bei Cards mit und ohne Pill auf gleicher
-                          // vertikaler Achse, Pill (falls vorhanden) am Boden.
-                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: 'clamp(20px, 2.4cqh, 36px) clamp(20px, 2cqw, 32px)',
-                          borderRadius: 24,
-                          background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
-                          border: `3px solid ${c.accent}aa`,
-                          boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
-                          animation: `phasePop 0.6s var(--qq-ease-bounce) ${cardDelayMs / 1000}s both`,
-                          overflow: 'hidden',
-                        }}>
-                          {/* Hauptinhalt-Block — zentriert sich vertikal */}
-                          <div style={{
-                            flex: 1, display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', justifyContent: 'center',
-                            gap: 'clamp(8px, 1.2cqh, 16px)', width: '100%',
-                          }}>
-                            {/* Icon — gross + drop-shadow als Fokus-Element */}
-                            <div style={{
-                              fontSize: iconSize,
-                              lineHeight: 1,
-                              filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
-                            }}>{iconNode}</div>
-                            {/* Counter + Label kombiniert — das Hauptinfo-Token */}
-                            <div style={{
-                              display: 'flex', alignItems: 'baseline',
-                              gap: 'clamp(6px, 0.8cqw, 12px)',
-                              fontWeight: 900, lineHeight: 1,
-                              flexWrap: 'wrap', justifyContent: 'center',
-                            }}>
-                              <span style={{
-                                fontSize: 'clamp(36px, 4.2cqw, 64px)',
-                                color: c.accent,
-                                fontVariantNumeric: 'tabular-nums',
-                                textShadow: `0 0 22px ${c.accent}88`,
-                              }}>{c.count}x</span>
-                              <span style={{
-                                fontSize: 'clamp(28px, 3.2cqw, 48px)',
-                                color: '#F1F5F9',
-                                letterSpacing: '0.01em',
-                              }}>{c.label}</span>
-                            </div>
-                            {/* Sub-Zeile */}
-                            <div style={{
-                              fontSize: 'clamp(13px, 1.4cqw, 19px)',
-                              fontWeight: 700, color: '#cbd5e1',
-                              textAlign: 'center', lineHeight: 1.25,
-                              opacity: 0.85,
-                            }}>
-                              {lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}
-                            </div>
-                          </div>
-                          {/* Limit-Slot — fixed Höhe, immer gerendert (auch
-                              ohne Inhalt). Stellt sicher dass Cards mit/ohne
-                              Pill exakt gleich aussehen. */}
-                          <div style={{
-                            flex: '0 0 auto', minHeight: 'clamp(28px, 2.6cqh, 36px)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            marginTop: 4,
-                          }}>
-                            {c.limit && (
-                              <div style={{
-                                padding: '5px 14px', borderRadius: 999,
-                                background: 'rgba(15,23,42,0.6)',
-                                border: `1.5px solid ${c.accent}55`,
-                                fontSize: 'clamp(11px, 1.15cqw, 15px)',
-                                fontWeight: 900, color: '#e2e8f0',
-                                whiteSpace: 'nowrap',
-                                boxShadow: `0 2px 8px ${c.accent}22`,
-                              }}>
-                                {c.limit}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        )}
+                        <ActionCard
+                          cardData={c}
+                          iconNode={iconNode}
+                          iconSize={iconSize}
+                          cardCount={cardCount}
+                          lang={lang}
+                          delayMs={cardDelayMs}
+                        />
                       </Fragment>
                     );
                   })}

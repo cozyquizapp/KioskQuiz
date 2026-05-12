@@ -13433,7 +13433,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     // Bei xs/sm-Density: Avatare nur bei genannten Antworten anzeigen
                     const showAvatar = !!authorTeam && (tier !== 'xs');
                     return (
-                      <div key={`${a}-${i}`} style={{
+                      // 2026-05-12 (Audit-B 'Chip-Cascade Dauerschleife'):
+                      // Key auf reinen Answer-Text reduziert (war ${a}-${i}).
+                      // Mit Index drift bei IIFE-Re-Eval konnten gleiche Texte
+                      // andere Keys bekommen → React-Remount → Animation neu.
+                      // Reiner Text ist stabil (allAnswers ist deterministisch
+                      // aus q.answer abgeleitet, keine Duplikate erwartet).
+                      <div key={a} style={{
                         display: 'inline-flex', alignItems: 'center', gap: tier === 'xxl' ? 14 : tier === 'xl' ? 12 : tier === 'lg' ? 8 : 4,
                         padding: showAvatar ? tierStyles.padAvatar : tierStyles.pad,
                         borderRadius: 999,
@@ -16432,7 +16438,13 @@ function AutoFitContent({
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [children, minScale]);
+    // 2026-05-12 (Audit-B 'Loesungs-Dauerschleife'): deps [children, minScale]
+    // → [minScale]. Vorher feuerte useLayoutEffect bei JEDEM Backend-Broadcast
+    // (children-Object war neu pro Render) → ResizeObserver-Re-registrierung
+    // → zoom-Updates → Repaint → Chip-Animationen restart in Dauerschleife.
+    // ResizeObserver allein deckt Window-Resize ab, kein React-Render-Trigger
+    // noetig.
+  }, [minScale]);
   // 2026-05-12 v2 (Wolf 'die untere card ist komplett weg... das automatische
   // dynamische funktioniert hier nicht'): transform:scale war nur VISUELL —
   // Layout-Box blieb identisch, untere Cards wurden weiter clipped. Jetzt

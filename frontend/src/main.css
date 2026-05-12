@@ -483,9 +483,16 @@ body:has(.cozy-beamer-shell)::before,
 body:has(.cozy-beamer-shell)::after {
   display: none;
 }
-/* 2026-05-13: Body-bg ebenfalls auf Stage-Outer-Farbe setzen, falls die
-   .cozy-beamer-shell nicht ganz bis an die Viewport-Edge reicht. */
-body:has(.cozy-beamer-shell) {
+
+/* 2026-05-13 (Wolf-Bug 'Rand ist immer NOCH da' — 4. Versuch):
+   Der vorherige Fix war auf .cozy-beamer-shell — die Klasse existiert
+   aber NICHT im DOM (nur als CSS-Geist aus Legacy-Zeit).
+   QQBeamerPage/QQModeratorPage/QQModPortablePage setzen jedoch
+   document.body.classList.add('qq-active') beim Mount. DAS ist der echte
+   Hook. Body-bg auf Stage-Outer-Farbe (#0F0817) matched die Letterbox-
+   Streifen oben/unten mit der Stage-Innenflaeche. Team-View hat eigenen
+   `body:has(#team-root)` Override (#0d1117) — bleibt unbeeinflusst. */
+body.qq-active {
   background: #0F0817;
 }
 

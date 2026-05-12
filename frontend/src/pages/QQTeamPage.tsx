@@ -6496,7 +6496,7 @@ function FinalBettingCard({
     <CozyCard borderColor={myColor} pulse>
       <div style={{ textAlign: 'center', padding: '4px 0 8px' }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
-          {de ? '🎰 Final-Tipp' : '🎰 Final tip'}
+          {de ? '🪙 Final-Tipp' : '🪙 Final tip'}
         </div>
         <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 4, letterSpacing: '-0.01em' }}>
           {de ? 'Auf wen tippst du?' : 'Who do you bet on?'}
@@ -6592,7 +6592,7 @@ function FinalRecapHintCard({
           fontSize: 11, fontWeight: 900, color: '#94A3B8',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8,
         }}>
-          {de ? '🎰 Zwischenstand' : '🎰 Standings'}
+          {de ? '🪙 Zwischenstand' : '🪙 Standings'}
         </div>
         <div style={{ fontSize: 17, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.4, marginBottom: 14 }}>
           {de ? 'Schau auf den Beamer — wie steht dein Tipp?' : 'Check the screen — how\'s your tip doing?'}

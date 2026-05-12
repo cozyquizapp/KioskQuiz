@@ -263,7 +263,7 @@ function PhaseHeader({ state: s }: { state: QQStateUpdate }) {
     PAUSED: '⏸ Pause',
     COMEBACK_CHOICE: '🔄 Comeback',
     CONNECTIONS_4X4: '🧩 4×4 Finale',
-    FINAL_BETTING: '🎰 Final-Tipp',
+    FINAL_BETTING: '🪙 Final-Tipp',
     FINAL_REVEAL: '🏆 Final-Reveal',
     GAME_OVER: '🏆 Game-Over',
     THANKS: '👋 Thanks',

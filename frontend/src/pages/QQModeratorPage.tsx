@@ -1177,7 +1177,7 @@ export default function QQModeratorPage() {
       case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#EC4899', sub: s.connections?.phase ?? '' };
       case 'FINAL_BETTING': {
         const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
-        return { text: '🎰 FINAL-WETTEN', color: '#F472B6', sub: `${submitted}/${s.teams.length} Teams gesetzt` };
+        return { text: '🪙 FINAL-WETTEN', color: '#F472B6', sub: `${submitted}/${s.teams.length} Teams gesetzt` };
       }
       case 'FINAL_REVEAL': return { text: '🏆 FINAL-AUFLÖSUNG', color: '#FBBF24', sub: 'Score-Cascade am Beamer' };
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#EC4899' };
@@ -3062,7 +3062,7 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         fontSize: 11, fontWeight: 900, color: '#F472B6',
         textTransform: 'uppercase', letterSpacing: '0.12em',
         marginBottom: 10,
-      }}>🎰 Final-Wetten {s.phase === 'FINAL_BETTING' ? '· Bet-Phase' : '· Auflösung'}</div>
+      }}>🪙 Final-Wetten {s.phase === 'FINAL_BETTING' ? '· Bet-Phase' : '· Auflösung'}</div>
 
       {s.phase === 'FINAL_BETTING' && (
         <>
@@ -3784,7 +3784,7 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
     '⭐ Joker-Bonus',
     '🎁 Bunte Tüte',
     '🔄 Comeback',
-    '🎰 Final-Tipp',
+    '🪙 Final-Tipp',
     '🤝 Fair Play',
     ...(hasFinale ? ['🧩 Großes Finale'] : []),
   ];
@@ -4564,7 +4564,7 @@ function SetupView({
             auf andere Teams. Bonus-Coins beim Final-Reveal. Toggle live nur im
             Setup änderbar — danach läuft Backend automatisch via Space. */}
         <div style={settingRow}>
-          <span style={settingLabel}>🎰 Final-Wetten</span>
+          <span style={settingLabel}>🪙 Final-Wetten</span>
           <div style={segGroup}>
             <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: true })} style={segPill(!!s.finalWagerEnabled, '#F472B6')}>An</button>
             <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: false })} style={segPill(!s.finalWagerEnabled)}>Aus</button>

@@ -15814,7 +15814,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(14px, 1.3vw, 22px)', fontWeight: 900, color: '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
-      }}>{de ? '🎰 Final-Tipp' : '🎰 Final tip'}</div>
+      }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
 
       <div style={{
         fontSize: 'clamp(48px, 6.5vw, 110px)', fontWeight: 900, color: '#F1F5F9',

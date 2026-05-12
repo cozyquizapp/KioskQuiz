@@ -21677,38 +21677,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     pointerEvents: 'none', zIndex: 3,
                   }} />
                 )}
-                {/* 2026-05-05 v4 (Wolf 'gelb sieht 3D aus, alle so machen +
-                    bei gelb mehr kontrast'): Inner-Layers nutzen jetzt einen
-                    dual-Layer-Background (tColor + semi-transparenter schwarzer
-                    Darken-Tint). Funktioniert farbunabhaengig — auch bei hellen
-                    Farben (Gelb/Pink/Tuerkis) entsteht echter Step-Down-Effekt.
-                    Plus staerkerer Inner-Inset-Schatten + zusaetzlicher Hard-
-                    Drop unten-rechts pro Layer fuer den 'wirklich 3D'-Look. */}
-                {team && stackCount >= 1 && Array.from({ length: Math.min(stackCount, 2) }).map((_, layerIdx) => {
-                  const layerNum = layerIdx + 1; // 1..2
-                  const insetPx = Math.max(4, cellSize * (0.10 * layerNum));
-                  const layerRadius = Math.max(2, cellRadius - insetPx * 0.5);
-                  const tColor = bc(team.id);
-                  // Darken pro Layer: ~20% / ~32% schwarzer Tint ueber tColor.
-                  const darkenAlpha = 0.20 + layerIdx * 0.12;
-                  return (
-                    <div key={`stack-${layerIdx}`} style={{
-                      position: 'absolute',
-                      inset: insetPx, borderRadius: layerRadius,
-                      background: `linear-gradient(rgba(0,0,0,${darkenAlpha}), rgba(0,0,0,${darkenAlpha})), linear-gradient(135deg, ${tColor}ff, ${tColor}d0)`,
-                      border: '2.5px solid rgba(236,72,153,0.9)',
-                      boxShadow: [
-                        `inset 0 1.5px 0 rgba(255,255,255,${0.26 - layerIdx * 0.05})`, // top highlight
-                        `inset 0 -2.5px 0 rgba(0,0,0,${0.28 - layerIdx * 0.04})`,      // bottom inner shadow
-                        `2px 2px 0 rgba(0,0,0,0.40)`,                                    // hard drop unten/rechts
-                        `0 2px 4px rgba(0,0,0,0.35)`,                                    // soft drop
-                      ].join(', '),
-                      pointerEvents: 'none',
-                      zIndex: 2 + layerIdx,
-                      animation: 'phasePop 0.45s var(--qq-ease-bounce) both',
-                    }} />
-                  );
-                })}
+                {/* 2026-05-12 (Wolf 'neue Idee Stack-Indicator'): die alte
+                    Feld-im-Feld-Indikation (konzentrische Inner-Layers) ist
+                    raus. Stattdessen werden mehrere Avatar-Kopien diagonal auf
+                    dem normalen Feld plaziert: 2 Avatare = 2 Stack, 3 Avatare
+                    = 3 Stack. Cellrand bleibt sauber, kein nested Frame mehr.
+                    Render-Pfad unten (Avatar-Block) macht die Mehrfach-
+                    Platzierung; hier wird nur der frueher noetige Layer-Render
+                    geloescht. */}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.
                     C7: Sanduhr droppt rein + tickt kontinuierlich. */}
                 {isSandLocked && (
@@ -21854,38 +21830,45 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
-                    // 2026-05-04 (Wolf): Avatar etwas kleiner (0.86→0.74) damit
-                    // ein klarer Spalt zwischen Tile-Rand und Avatar-Rand
-                    // bleibt — verstaerkt den 3D-Plaettchen-Look.
-                    // 2026-05-05 (Wolf 'emojis koennten groesser sein'):
-                    // 0.74 → 0.86. Klar groesser, Spalt zur Cell-Kante bleibt.
-                    // 2026-05-05 v4 (Wolf 'max 2 stapeln'): Avatar-Faktor
-                    // jetzt nur noch 3 Stufen — 0/1/2-Stack. Inset pro Layer
-                    // auf 10% erhoeht (war 8%) damit Inner-Tiles deutlicher
-                    // wirken; Avatar-Faktor entsprechend tighter.
-                    const avFactor = stackCount >= 2 ? 0.50
-                      : stackCount === 1 ? 0.66
-                      : 0.86;
+                    // 2026-05-12 (Wolf neue Idee): Stack-Indikator via Avatar-
+                    // Mehrfach-Platzierung diagonal statt Feld-im-Feld.
+                    //  stackCount 0 → 1 Avatar zentriert (normales Feld)
+                    //  stackCount 1 → 1 Avatar zentriert (gestapelt, kein Visual
+                    //    da Stack 1 = Base; Punkte zaehlen ueber Goldglow)
+                    //  stackCount 2 → 2 Avatare diagonal (TL + BR)
+                    //  stackCount 3 → 3 Avatare diagonal (TL + center + BR)
+                    // Avatar-Groesse passt sich an: je mehr Kopien, desto
+                    // kleiner pro Kopie, damit sie alle aufs Feld passen.
+                    const copies = stackCount >= 3 ? 3 : stackCount === 2 ? 2 : 1;
+                    const avFactor = copies === 3 ? 0.42 : copies === 2 ? 0.52 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
-                    // 2026-05-05 v3 (Wolf-Bug 'gestapelte felder ueberladen,
-                    // 3D aussen + kreis innen'): Inner-Avatar-Goldring auf
-                    // Stapel-Tiles entfernt. Die Cell selbst traegt schon
-                    // Goldborder + Goldglow + Hard-Drop — der zusaetzliche
-                    // 3-Layer-Ring um den Avatar war redundant.
-                    // 2026-05-07: Cell-Flag-Fill (eurovisionMode) wieder raus —
-                    // Wolf will den countryflags.com-3D-Look, der ist mit
-                    // generischem cover-fill nicht zu erreichen. Ehrliche
-                    // Einschaetzung: flat-Cell mit Avatar-Disc in der Mitte
-                    // ist konsistenter zum Rest der App.
+                    // Diagonal-Offsets in % vom Cell-Center (positiv = nach
+                    // unten-rechts). Bei copies===1 ist offset 0 (zentriert).
+                    const diag = copies === 3 ? 22 : copies === 2 ? 20 : 0; // % vom cellSize
+                    const offsets: Array<{ tx: number; ty: number }> = copies === 3
+                      ? [{ tx: -diag, ty: -diag }, { tx: 0, ty: 0 }, { tx: diag, ty: diag }]
+                      : copies === 2
+                        ? [{ tx: -diag, ty: -diag }, { tx: diag, ty: diag }]
+                        : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{
-                        width: avSize, height: avSize, borderRadius: '50%',
+                        position: 'absolute', inset: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        {/* 2026-05-04 (Wolf): flat-Avatar auf der Grid-Cell —
-                            die Cell traegt schon Slot-Farbe als BG, eine
-                            zweite Glow-Disc darunter ist redundant. */}
-                        <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                        {offsets.map((off, i) => (
+                          <div key={i} style={{
+                            position: 'absolute',
+                            transform: `translate(${off.tx}%, ${off.ty}%)`,
+                            width: avSize, height: avSize, borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            // Z-Order: BR oben (vorne), TL hinten. Macht den
+                            // Stapel-Look (Avatar liegt auf vorherigem drauf).
+                            zIndex: i + 1,
+                            animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
+                          }}>
+                            <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                          </div>
+                        ))}
                       </div>
                     );
                   })())}

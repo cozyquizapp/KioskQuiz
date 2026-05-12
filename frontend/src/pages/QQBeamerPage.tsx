@@ -622,13 +622,15 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       overflow: 'clip',
       overflowClipMargin: '1000px',
       // 2026-05-12 v2 (Wolf-Bug 'komischer sichtbarer rand'): bei Beamern mit
-      // anderem Aspect-Ratio als 16:9 (z.B. 16:10) wird die Stage centered
-      // gescaled und drumherum (oben+unten oder links+rechts) ist body-bg
-      // sichtbar (#050505). Race-View und andere Phasen nutzen #0A0814 als
-      // dark-base — Differenz war als "Rand" wahrnehmbar. Stage-Outer kriegt
-      // jetzt das gleiche dark-base, dadurch ist der Letterbox-Bereich
-      // farblich konsistent mit der Stage-Innenflaeche.
-      background: '#0A0814',
+      // anderem Aspect-Ratio als 16:9 wird die Stage centered gescaled und
+      // drumherum ist body-bg sichtbar.
+      // 2026-05-13 v3 (Wolf 'rand ist immer noch da'): FinalRevealView nutzt
+      // `rgba(15,8,23,0.98)` (= #0F0817) als Aussenring, vorheriger
+      // Stage-Outer war #0A0814 (5/4/3 RGB heller). Die Differenz war als
+      // duenne Rahmen-Linie sichtbar. Jetzt auf #0F0817 angeglichen — matched
+      // den RaceFinalSlide-Aussenring + bleibt fuer andere Views (BG dort
+      // i.d.R. auch sehr dunkles Lila) praktisch unsichtbar.
+      background: '#0F0817',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>

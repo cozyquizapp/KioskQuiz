@@ -1621,11 +1621,16 @@ function RaceFinishHero({ winner }: { winner: QQTeam }) {
           const x = (1 - t) * (1 - t) * 0 + 2 * (1 - t) * t * 600 + t * t * 1200;
           const y = (1 - t) * (1 - t) * 8 + 2 * (1 - t) * t * 80 + t * t * 8;
           const color = pennantColors[i % pennantColors.length];
+          // 2026-05-13 (Wolf-Bug 'fähnchen verlassen das band'): individuelle
+          // qqFRPennantFlap-Animation entfernt — sie verschob die Wimpel
+          // sichtbar weg vom Bogen-String. Jetzt haengen alle Wimpel STILL
+          // am Band, nur das gesamte SVG-Banner schwingt via qqFRPennantWave
+          // (siehe Outer-svg-Animation). So bewegen sich Fähnchen + Band
+          // gemeinsam, die Fähnchen bleiben immer auf dem Band.
           return (
             <g key={i} transform={`translate(${x}, ${y})`}>
               <line x1="0" y1="0" x2="0" y2="6" stroke={color} strokeWidth="1.5" />
-              <path d="M -14,6 L 0,42 L 14,6 Z" fill={color} opacity="0.92"
-                style={{ animation: `qqFRPennantFlap ${2 + (i % 3) * 0.4}s ease-in-out ${i * 0.15}s infinite`, transformOrigin: 'center top' }} />
+              <path d="M -14,6 L 0,42 L 14,6 Z" fill={color} opacity="0.92" />
             </g>
           );
         })}
@@ -2076,11 +2081,14 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       {isFinish && (() => {
         const N = finalRanking.length;
         const compactWolf = N >= 6;
+        // 2026-05-13 (Wolf 'Wolf im Weg, mach ihn nach rechts oben'):
+        // bottom → top. Wolf sitzt jetzt oben rechts neben dem "Panel"-
+        // Toggle-Button und blockiert das Podium nicht mehr.
         return (
           <div style={{
             position: 'absolute',
             right: compactWolf ? 0 : 'clamp(20px, 3cqw, 60px)',
-            bottom: compactWolf ? 0 : 'clamp(20px, 3cqh, 60px)',
+            top: compactWolf ? 'clamp(60px, 7cqh, 100px)' : 'clamp(70px, 8cqh, 120px)',
             zIndex: 4, pointerEvents: 'none',
             animation: 'qqFRTitleIn 0.7s ease 0.6s both',
           }}>

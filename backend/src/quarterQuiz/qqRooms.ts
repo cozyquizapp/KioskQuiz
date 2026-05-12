@@ -730,6 +730,18 @@ export function qqStartGame(
   if (connectionsDurationSec && connectionsDurationSec > 0) room.connectionsTimerSec = connectionsDurationSec;
   if (connectionsMaxFails && connectionsMaxFails > 0) room.connectionsMaxFails = connectionsMaxFails;
 
+  // 2026-05-12 (Wolf 'manche drafts haben kein race / kein bid'):
+  // SINGLE_SESSION_MODE=MAIN recycled das Room-Objekt zwischen Drafts.
+  // finalWagerEnabled/connectionsEnabled bleiben sonst von der vorherigen
+  // Session haengen. Wenn Wolf in einem Test-Quiz finalWagerEnabled mal
+  // ausgeschaltet hat, war Bid+Race danach bei ALLEN Quizzen weg, obwohl
+  // die Drafts selber nichts dagegen haben → wirkte wie "Per-Draft-Drift".
+  // Jetzt: bei jedem Game-Start auf die Standard-Defaults zuruecksetzen.
+  // Mod kann nach Start weiterhin via Toggle aendern; aber jedes neue
+  // Spiel startet mit dem Standard-Flow (Bid+Race ON, Connections-4x4 OFF).
+  room.finalWagerEnabled = true;
+  room.connectionsEnabled = false;
+
   // Reset all phase stats
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id] = emptyPhaseStats();

@@ -145,8 +145,22 @@ export default function QQProgressTree({
   const dotCenters: number[] = [];
   const phaseWidths: number[] = [];
   const phaseCenters: number[] = [];
+  // Bieten-Knoten (Final-Wager-Tipp-Phase): wird VOR der letzten Quiz-Runde
+  // eingefuegt (nicht nach), weil das Bid-Phase BEFORE Phase N stattfindet
+  // (qqBeginPhase line 3239: phaseIndex===totalPhases triggert FINAL_BETTING).
+  // Wolf 2026-05-12 'bid muss auf progress tree genau vor finalrunde
+  // angezeigt werden'.
+  const showBidding = state.finalWagerEnabled === true;
+  const biddingDotSize = Math.round(dotSize * 1.2);
+  let biddingCenter = 0;
   let cursor = 0;
   phases.forEach((p, pIdx) => {
+    // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
+    if (showBidding && pIdx === phases.length - 1 && pIdx > 0) {
+      cursor += phaseGap;
+      biddingCenter = cursor + biddingDotSize / 2;
+      cursor += biddingDotSize;
+    }
     if (pIdx > 0) cursor += phaseGap;
     const entries = byPhase.get(p) ?? [];
     const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
@@ -159,18 +173,6 @@ export default function QQProgressTree({
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
-  // Bieten-Knoten (Final-Wager-Tipp-Phase) zwischen Quiz-Phasen und 4×4 Finale.
-  // Wolf-Wunsch 2026-05-11: deutsche Bezeichnung „Bieten", englisch „Bid".
-  // Slightly kleiner als Finale-Dot (Finale ist DAS Highlight), aber größer
-  // als reguläre Quiz-Dots damit klar: separate Phase mit eigener Mechanik.
-  const showBidding = state.finalWagerEnabled === true;
-  const biddingDotSize = Math.round(dotSize * 1.2);
-  let biddingCenter = 0;
-  if (showBidding) {
-    cursor += phaseGap;
-    biddingCenter = cursor + biddingDotSize / 2;
-    cursor += biddingDotSize;
-  }
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
   // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
   // unter dem FINALE-Label.
@@ -322,60 +324,65 @@ export default function QQProgressTree({
         transition: isShowcase ? 'transform 1.4s cubic-bezier(0.65, 0, 0.35, 1)' : undefined,
         willChange: isShowcase ? 'transform' : undefined,
       }}>
-        {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert (nicht im mini-Mode) */}
+        {/* Phasen-Labels — jeweils über ihrer Dot-Gruppe zentriert (nicht im mini-Mode).
+            2026-05-12 (Wolf 'bid vor finalrunde'): Bieten-Label wird zwischen
+            den letzten zwei Phase-Labels eingeschoben statt am Ende. */}
         {showLabels && (
         <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>
-          {phases.map((p, pi) => {
-            const isCurrentPhase = showcaseMode
-              ? pi === showcasePhaseIdx
-              : state.gamePhaseIndex === p;
-            return (
-              <div
-                key={p}
-                style={{
-                  width: phaseWidths[pi],
-                  textAlign: 'center',
-                  fontSize: phaseNameSize,
-                  fontWeight: 900,
-                  color: isCurrentPhase
-                    ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
-                    : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b'),
-                  letterSpacing: 0.4,
-                  textTransform: 'uppercase',
-                  flexShrink: 0,
-                  textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
-                  transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
-                  transition: 'all 0.4s var(--qq-ease-out-cubic)',
-                }}
-              >
-                {phaseLabels[p]}
-              </div>
-            );
-          })}
-          {/* Bieten-Label — über dem Bidding-Knoten (Wolf-Wunsch 2026-05-11:
-              deutsch „Bieten", englisch „Bid"). */}
-          {showBidding && (() => {
+          {(() => {
+            const items: React.ReactNode[] = [];
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const biddingLabelColor = isBiddingActive
               ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
-            return (
-              <div style={{
-                width: biddingDotSize,
-                textAlign: 'center',
-                fontSize: phaseNameSize,
-                fontWeight: 900,
-                color: biddingLabelColor,
-                letterSpacing: 0.4,
-                textTransform: 'uppercase',
-                flexShrink: 0,
-                textShadow: (isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
-                transform: (isShowcase && isBiddingActive) ? 'translateY(-2px)' : 'translateY(0)',
-                transition: 'all 0.4s var(--qq-ease-out-cubic)',
-              }}>
-                {lang === 'de' ? 'Bieten' : 'Bid'}
-              </div>
-            );
+            phases.forEach((p, pi) => {
+              // Vor letzter Phase: Bieten-Label einfuegen.
+              if (showBidding && pi === phases.length - 1 && pi > 0) {
+                items.push(
+                  <div key="bieten" style={{
+                    width: biddingDotSize,
+                    textAlign: 'center',
+                    fontSize: phaseNameSize,
+                    fontWeight: 900,
+                    color: biddingLabelColor,
+                    letterSpacing: 0.4,
+                    textTransform: 'uppercase',
+                    flexShrink: 0,
+                    textShadow: (isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                    transform: (isShowcase && isBiddingActive) ? 'translateY(-2px)' : 'translateY(0)',
+                    transition: 'all 0.4s var(--qq-ease-out-cubic)',
+                  }}>
+                    {lang === 'de' ? 'Bieten' : 'Bid'}
+                  </div>
+                );
+              }
+              const isCurrentPhase = showcaseMode
+                ? pi === showcasePhaseIdx
+                : state.gamePhaseIndex === p;
+              items.push(
+                <div
+                  key={p}
+                  style={{
+                    width: phaseWidths[pi],
+                    textAlign: 'center',
+                    fontSize: phaseNameSize,
+                    fontWeight: 900,
+                    color: isCurrentPhase
+                      ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
+                      : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b'),
+                    letterSpacing: 0.4,
+                    textTransform: 'uppercase',
+                    flexShrink: 0,
+                    textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                    transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
+                    transition: 'all 0.4s var(--qq-ease-out-cubic)',
+                  }}
+                >
+                  {phaseLabels[p]}
+                </div>
+              );
+            });
+            return items;
           })()}
 
           {/* Finale-Label — über dem Finale-Knoten. Spalten-Breite muss exakt
@@ -449,8 +456,10 @@ export default function QQProgressTree({
           {/* Dots — Flex-Layout, genau mit Berechnung oben synchron.
               Current = unsichtbarer Platzhalter (Wolf sitzt drauf).
               Past = ausgegrautes Kategorie-Emoji (kein altbackenes ✓ mehr).
-              Future = dunkler Slot mit Kategorie-Emoji. */}
-          {phases.map((p, pi) => {
+              Future = dunkler Slot mit Kategorie-Emoji.
+              2026-05-12 (Wolf 'bid vor finalrunde'): Bieten-Knoten wird zwischen
+              den letzten zwei Phasen-Groups eingeschoben statt am Ende. */}
+          {phases.flatMap((p, pi) => {
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
             const isShowcasedPhase = showcaseMode && pi === showcasePhaseIdx;
@@ -459,7 +468,44 @@ export default function QQProgressTree({
             const renderEntries: Array<QQScheduleEntry | null> = entries.length > 0
               ? entries
               : Array(DEFAULT_DOTS_PER_PHASE).fill(null);
-            return (
+            // Vor letzter Phase: Bieten-Knoten einschieben.
+            const insertBiddingHere = showBidding && pi === phases.length - 1 && pi > 0;
+            const biddingColor = '#EC4899';
+            const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
+            const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
+            const biddingNode = insertBiddingHere ? (
+              <div key="bid-knoten" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+              }}>
+                <div
+                  title={lang === 'de' ? 'Bieten — Tipp auf anderes Team' : 'Bid — guess another team'}
+                  style={{
+                    width: biddingDotSize,
+                    height: biddingDotSize,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: Math.round(biddingDotSize * 0.55),
+                    background: isBiddingActive
+                      ? biddingColor
+                      : isBiddingPast
+                        ? 'rgba(236,72,153,0.22)'
+                        : `linear-gradient(135deg, ${biddingColor}33, ${biddingColor}11)`,
+                    border: `2.5px solid ${isBiddingActive ? '#fff' : biddingColor}`,
+                    boxShadow: isBiddingActive
+                      ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
+                      : isBiddingPast
+                        ? 'none'
+                        : `0 0 12px ${biddingColor}44`,
+                    opacity: isBiddingPast ? 0.55 : 1,
+                    filter: isBiddingPast ? 'grayscale(1)' : 'none',
+                    animation: isBiddingActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
+                    transition: 'all 0.45s var(--qq-ease-out-cubic)',
+                  }}
+                >🪙</div>
+              </div>
+            ) : null;
+            const phaseElem = (
               <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
                 {renderEntries.map((e, i) => {
                   const globalIdx = phaseStartIdx >= 0 ? phaseStartIdx + i : -1;
@@ -520,50 +566,9 @@ export default function QQProgressTree({
                 })}
               </div>
             );
+            // Bieten-Node VOR der Phase einfuegen wenn diese die letzte ist
+            return biddingNode ? [biddingNode, phaseElem] : [phaseElem];
           })}
-
-          {/* Bieten-Knoten (Final-Wager) zwischen Quiz-Phasen und 4×4 Finale.
-              Wolf-Wunsch 2026-05-11: 1 Knoten der signalisiert „hier wird auf
-              ein anderes Team gesetzt". Pink-Coin-Look, mittlere Größe (klein
-              ggü. Finale-Dot, groß ggü. Quiz-Dots). */}
-          {showBidding && (() => {
-            const biddingSize = biddingDotSize;
-            const biddingColor = '#EC4899';
-            const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
-            const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
-            return (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                position: 'relative', zIndex: 2,
-              }}>
-                <div
-                  title={lang === 'de' ? 'Bieten — Tipp auf anderes Team' : 'Bid — guess another team'}
-                  style={{
-                    width: biddingSize,
-                    height: biddingSize,
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: Math.round(biddingSize * 0.55),
-                    background: isBiddingActive
-                      ? biddingColor
-                      : isBiddingPast
-                        ? 'rgba(236,72,153,0.22)'
-                        : `linear-gradient(135deg, ${biddingColor}33, ${biddingColor}11)`,
-                    border: `2.5px solid ${isBiddingActive ? '#fff' : biddingColor}`,
-                    boxShadow: isBiddingActive
-                      ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
-                      : isBiddingPast
-                        ? 'none'
-                        : `0 0 12px ${biddingColor}44`,
-                    opacity: isBiddingPast ? 0.55 : 1,
-                    filter: isBiddingPast ? 'grayscale(1)' : 'none',
-                    animation: isBiddingActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
-                    transition: 'all 0.45s var(--qq-ease-out-cubic)',
-                  }}
-                >🪙</div>
-              </div>
-            );
-          })()}
 
           {/* Großes Finale (4×4 Connections) — separater Bonus-Knoten am
               Tree-Ende. Goldenes 🧩-Dot mit Glow, größer als Quiz-Dots

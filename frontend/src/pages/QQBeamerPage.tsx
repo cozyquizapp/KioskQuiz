@@ -14895,16 +14895,21 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // Pille sitzen, nur leichter Overlap an der Pillen-AUSSENKANTE
               // (nicht auf dem Text). Higher: noch hoeher; Lower: noch tiefer
               // (weniger negativ = naeher am Avatar-Start unter dem VS-Container).
-              // 2026-05-12 (Wolf 'higher avatar mitten auf der card, lower liegt
-              // korrekt darunter'): Higher-Translate weiter reduziert von
-              // -390/-30vh/-300 auf -260/-20vh/-210. Avatar parkt jetzt KNAPP
-              // UNTER der Higher-Card (zwischen Higher-Card und Subject), NICHT
-              // MEHR im Card-Mittelpunkt. Lower bleibt unveraendert weil dort
-              // schon korrekt unter der Lower-Card.
+              // 2026-05-12 v2 (Wolf 'avatar bei higher leicht ueber den text, bei
+              // lower leicht unter den text — jeweils die Card leicht
+              // ueberschneidend NICHT die Schrift'):
+              // - Higher: Avatar fliegt UEBER die MEHR-Pille von oben → grosser
+              //   Negativ-Translate damit Avatar oberhalb der Pille landet
+              //   und nur die Oberkante leicht ueberlappt (nicht den Text).
+              // - Lower: Avatar fliegt UNTER die WENIGER-Pille → kleinerer
+              //   Negativ-Translate damit Avatar unterhalb der Pille landet.
+              // v1 hatte Higher zu klein (-210 bis -260) → Avatar landete auf
+              // der WENIGER-Pille statt oben an der MEHR-Pille. Jetzt zurueck
+              // auf groessere Negativ-Werte fuer Higher, Lower stay-similar.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-260px, -20vh, -210px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-440px, -32vh, -350px)) scale(0.7)`
                 : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-110px, -8vh, -60px)) scale(0.7)`
+                  ? `translate(${xCenter}px, clamp(-90px, -6vh, -40px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';
               return (
                 <div key={tm.id} style={{

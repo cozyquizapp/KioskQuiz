@@ -133,6 +133,15 @@ export default function QQProgressTree({
 
   // Berechne exakte x-Positionen aller Dots (für Progress-Track)
   // + phaseCenters für die Showcase-Pan-Animation (Camera fliegt zu Phase).
+  // 2026-05-12 (Wolf-Bug 'Runde 4 fehlt im Tree, nur Bieten zu sehen'):
+  // Wenn schedule keine Entries für eine Phase hat (z.B. weil Backend
+  // noch nicht alle Fragen geladen, oder schedule kaputt), war phaseWidth=0
+  // → Label unsichtbar → Phase fiel komplett raus aus dem Tree.
+  // Fix: bei leerer Phase 5 Placeholder-Dots simulieren (= Default
+  // QQ_QUESTIONS_PER_PHASE), damit Label + Layout-Slot erhalten bleiben.
+  // Placeholder-Dots werden später als graue Slots ohne Schedule-Entry
+  // gerendert (siehe entries-Loop unten).
+  const DEFAULT_DOTS_PER_PHASE = 5;
   const dotCenters: number[] = [];
   const phaseWidths: number[] = [];
   const phaseCenters: number[] = [];
@@ -140,12 +149,13 @@ export default function QQProgressTree({
   phases.forEach((p, pIdx) => {
     if (pIdx > 0) cursor += phaseGap;
     const entries = byPhase.get(p) ?? [];
+    const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
     const phaseStart = cursor;
-    entries.forEach((_e, i) => {
+    for (let i = 0; i < renderCount; i++) {
       if (i > 0) cursor += dotGap;
       dotCenters.push(cursor + dotSize / 2);
       cursor += dotSize;
-    });
+    }
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
   });
@@ -444,22 +454,29 @@ export default function QQProgressTree({
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
             const isShowcasedPhase = showcaseMode && pi === showcasePhaseIdx;
+            // 2026-05-12: Placeholder-Dots wenn keine Schedule-Entries für
+            // diese Phase (siehe Comment oben bei cursor-Berechnung).
+            const renderEntries: Array<QQScheduleEntry | null> = entries.length > 0
+              ? entries
+              : Array(DEFAULT_DOTS_PER_PHASE).fill(null);
             return (
               <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                {entries.map((e, i) => {
-                  const globalIdx = phaseStartIdx + i;
-                  const isPast = !showcaseMode && globalIdx < displayIdx;
-                  const isCurrent = globalIdx === effectiveDisplayIdx;
+                {renderEntries.map((e, i) => {
+                  const globalIdx = phaseStartIdx >= 0 ? phaseStartIdx + i : -1;
+                  const isPast = !showcaseMode && globalIdx >= 0 && globalIdx < displayIdx;
+                  const isCurrent = globalIdx >= 0 && globalIdx === effectiveDisplayIdx;
                   // 2026-05-09 (Wolf 'tree noch bunt'): Phasen-Farbe statt Kategorie-Farbe
-                  const color = getRoundColor(e.phase, totalPhases);
-                  const label = QQ_CATEGORY_LABELS[e.category];
-                  const emoji = e.bunteTueteKind
-                    ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji
-                    : label.emoji;
+                  const color = getRoundColor(p, totalPhases);
+                  // Bei Placeholder (e=null): graues Dot ohne Emoji
+                  const label = e ? QQ_CATEGORY_LABELS[e.category] : null;
+                  const emoji = e
+                    ? (e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label!.emoji)
+                    : '';
+                  const isPlaceholder = e === null;
                   return (
                     <div
                       key={i}
-                      title={`${phaseLabels[p]} · ${label[lang]}`}
+                      title={e ? `${phaseLabels[p]} · ${label![lang]}` : `${phaseLabels[p]} · (wird noch geladen)`}
                       style={{
                         width: dotSize,
                         height: dotSize,
@@ -491,7 +508,7 @@ export default function QQProgressTree({
                         boxShadow: isShowcasedPhase
                           ? `0 0 18px ${color}88, 0 0 36px ${color}44`
                           : 'none',
-                        opacity: isCurrent ? 0 : isPast ? 0.55 : 1,
+                        opacity: isCurrent ? 0 : isPast ? 0.55 : isPlaceholder ? 0.5 : 1,
                         filter: isPast ? 'grayscale(1)' : 'none',
                         transform: isShowcasedPhase ? 'scale(1.18)' : 'scale(1)',
                         transition: 'all 0.45s var(--qq-ease-out-cubic)',

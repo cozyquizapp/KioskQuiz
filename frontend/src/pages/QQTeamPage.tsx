@@ -3481,31 +3481,47 @@ function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedL
   const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}30` : 'rgba(255,255,255,0.04)';
   const border = submitted ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
   const color = submitted ? '#fff' : canSubmit ? '#F1F5F9' : '#334155';
+  // 2026-05-12 (Audit P0 #11): Sticky-Submit. Bei langen Input-Layouts (Top5,
+  // Order, Bluff mit 4+ Optionen) konnte der Submit-Button unter den Fold
+  // rutschen → Spieler scrollten in den letzten Sekunden, knapp vor Auto-
+  // Submit. Jetzt: Button bleibt am unteren Viewport-Rand sichtbar, wenn das
+  // Eingabefeld scrollt. Sticky funktioniert auch in Layouts wo der Body
+  // scrollt (kein extra scroll container noetig).
   return (
-    <button
-      className="qq-team-submit-btn"
-      onClick={onSubmit}
-      disabled={!canSubmit || submitted}
-      style={{
-        // 2026-05-02 (App-Designer-Audit P2): Padding+Schrift fix halten —
-        // sonst ruckelt der Button-Layout 4-6px hoch wenn canSubmit togglet,
-        // genau in dem Moment wo der Daumen Richtung Submit streicht. Visueller
-        // Unterschied weiterhin via opacity/glow/border, keine Layout-Bewegung.
-        padding: '16px',
-        borderColor: border,
-        background: bg,
-        color,
-        cursor: canSubmit && !submitted ? 'pointer' : 'default',
-        fontSize: 18,
-        opacity: canSubmit || submitted ? 1 : 0.6,
-        boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
-        animation: submitted ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : canSubmit ? 'tcbtnpop 0.35s var(--qq-ease-bounce) both' : 'none',
-      }}
-    >
-      {submitted
-        ? <><span style={{ animation: 'tccheckpop 0.4s var(--qq-ease-bounce) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
-        : label ?? defaultLabel}
-    </button>
+    <div style={{
+      position: 'sticky',
+      bottom: 'max(12px, env(safe-area-inset-bottom, 0px))',
+      zIndex: 5,
+      // marginTop kommt vom Button selbst (CSS-Klasse qq-team-submit-btn:
+      // margin-top: 10px). Sticky-Wrapper bleibt im Flow, schiebt also nichts.
+      pointerEvents: 'auto',
+    }}>
+      <button
+        className="qq-team-submit-btn"
+        onClick={onSubmit}
+        disabled={!canSubmit || submitted}
+        style={{
+          // 2026-05-02 (App-Designer-Audit P2): Padding+Schrift fix halten —
+          // sonst ruckelt der Button-Layout 4-6px hoch wenn canSubmit togglet,
+          // genau in dem Moment wo der Daumen Richtung Submit streicht. Visueller
+          // Unterschied weiterhin via opacity/glow/border, keine Layout-Bewegung.
+          padding: '16px',
+          borderColor: border,
+          background: bg,
+          color,
+          cursor: canSubmit && !submitted ? 'pointer' : 'default',
+          fontSize: 18,
+          width: '100%',
+          opacity: canSubmit || submitted ? 1 : 0.6,
+          boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
+          animation: submitted ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : canSubmit ? 'tcbtnpop 0.35s var(--qq-ease-bounce) both' : 'none',
+        }}
+      >
+        {submitted
+          ? <><span style={{ animation: 'tccheckpop 0.4s var(--qq-ease-bounce) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? t.answer.submitted[lang]}</>
+          : label ?? defaultLabel}
+      </button>
+    </div>
   );
 }
 

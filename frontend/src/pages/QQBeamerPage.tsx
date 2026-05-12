@@ -6539,7 +6539,10 @@ function ActionCardReveal({
       perspective: '1400px',
       opacity: isVisible ? 1 : 0,
       animation: isVisible ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both` : 'none',
-      filter: isVisible ? `drop-shadow(0 0 28px ${c.accent}88)` : 'none',
+      // 2026-05-12 (Wolf '5. mal'): filter:drop-shadow entfernt — gab isNew
+      // Cards einen extra Halo um die Card-Border + visuelle Groessen-
+      // Wahrnehmung als „groesser". Der boxShadow auf Card-Back+Card-Front
+      // matched bereits den non-isNew Outer-Glow.
       transition: 'filter 0.6s ease',
       display: 'flex',
     }}>
@@ -6554,7 +6557,12 @@ function ActionCardReveal({
         // alignItems:stretch. Inner perspective-Wrapper nimmt 100% der Outer-
         // Höhe → Front/Back (inset:0) füllen automatisch mit. Bei wachsenden
         // Sibling-Cards bleiben Outer + Inner + Front/Back synchron.
+        // 2026-05-12 (Wolf '5. mal, cards nicht gleich groß'): boxSizing
+        // explizit auf border-box. Defensiv — falls Inner's content-box vs
+        // border-box vom non-isNew Outer (das border-box ist) abweicht,
+        // entstanden 6-12 px Drift bei 3px Border.
         position: 'relative', width: '100%', height: '100%',
+        boxSizing: 'border-box',
         transformStyle: 'preserve-3d',
         transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -6565,6 +6573,7 @@ function ActionCardReveal({
             ist. Vorher hatte nur die Vorderseite den Halo. */}
         <div style={{
           position: 'absolute', inset: 0,
+          boxSizing: 'border-box',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
           borderRadius: 24,
@@ -6607,6 +6616,7 @@ function ActionCardReveal({
             davon ob Pill da ist oder nicht. */}
         <div style={{
           position: 'absolute', inset: 0,
+          boxSizing: 'border-box',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)',
@@ -6616,7 +6626,7 @@ function ActionCardReveal({
           boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
           padding: 'clamp(20px, 2.4vh, 36px) clamp(20px, 2vw, 32px)',
-          boxSizing: 'border-box',
+          overflow: 'hidden',
         }}>
           {/* Hauptinhalt-Block — zentriert sich vertikal via flex:1 */}
           <div style={{
@@ -14871,13 +14881,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               // Pille sitzen, nur leichter Overlap an der Pillen-AUSSENKANTE
               // (nicht auf dem Text). Higher: noch hoeher; Lower: noch tiefer
               // (weniger negativ = naeher am Avatar-Start unter dem VS-Container).
-              // 2026-05-10 (Spacing-Audit P0): Higher-Translate von -510/-38vh/-360
-              // auf -390/-30vh/-300 reduziert. Vorher konnten 3-4 gestapelte Teams
-              // bis IN die Frage-Card oder ganz oben aus dem 1080p-Viewport fliegen.
-              // Endposition liegt jetzt deutlich UNTER der Frage-Card; Flug-Look
-              // bleibt ähnlich, nur ohne Top-Edge-Overshoot.
+              // 2026-05-12 (Wolf 'higher avatar mitten auf der card, lower liegt
+              // korrekt darunter'): Higher-Translate weiter reduziert von
+              // -390/-30vh/-300 auf -260/-20vh/-210. Avatar parkt jetzt KNAPP
+              // UNTER der Higher-Card (zwischen Higher-Card und Subject), NICHT
+              // MEHR im Card-Mittelpunkt. Lower bleibt unveraendert weil dort
+              // schon korrekt unter der Lower-Card.
               const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-390px, -30vh, -300px)) scale(0.7)`
+                ? `translate(${xCenter}px, clamp(-260px, -20vh, -210px)) scale(0.7)`
                 : choice === 'lower'
                   ? `translate(${xCenter}px, clamp(-110px, -8vh, -60px)) scale(0.7)`
                   : 'translate(0, 0) scale(1)';

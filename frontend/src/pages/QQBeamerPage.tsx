@@ -29,7 +29,7 @@ import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
 import { WolfHeadIcon } from '../components/WolfHeadIcon';
-import { ActionCard, type ActionCardData } from '../components/QQActionCard';
+import { ActionCard, type ActionCardData } from '../components/CozyQuizActionCard';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
@@ -12803,7 +12803,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                               position: 'relative',
                               display: 'flex', alignItems: 'center', gap: innerGap,
-                              padding: `2px ${padR}px 2px 2px`,
+                              // 2026-05-12 (Wolf-Bug 'low-number bets cropped'):
+                              // vertikales Padding 2px → 6px. Mit nur 2px Top/Bottom
+                              // konnte die Bet-Zahl (font-descender + ascender bei
+                              // line-height normal ~1.2) unten in den Pill-Rand
+                              // ragen — visuell "abgeschnitten" am border-radius:999.
+                              padding: `6px ${padR}px 6px 2px`,
                               borderRadius: 999,
                               background: 'rgba(0,0,0,0.7)',
                               border: isFastest ? '3px solid #EC4899' : `2px solid ${tm.color}`,
@@ -12816,8 +12821,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               <span style={{
                                 fontSize: ptsFs,
                                 fontWeight: 900,
-                                // Bet-Zahl in Team-Farbe (sofort erkennbar wer wo gesetzt
-                                // hat) + Gold-Text-Shadow als gemeinsamer Akzent.
+                                // 2026-05-12 (Wolf-Bug 'low-number bets cropped'):
+                                // lineHeight 1 statt browser-default. Verhindert
+                                // dass font-ascent/descent die Pill-Hoehe sprengt.
+                                lineHeight: 1,
                                 color: tm.color, fontVariantNumeric: 'tabular-nums',
                                 textShadow: '0 0 12px rgba(236,72,153,0.45), 0 1px 2px rgba(0,0,0,0.6)',
                               }}>{pts}</span>
@@ -21822,31 +21829,34 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
-                    // 2026-05-12 (Wolf 'avatare beim stapeln sollen sich NICHT
-                    // ueberlappen'): Avatare jetzt kleiner und Offsets weiter
-                    // gespreizt, damit sie sich auf dem Feld klar voneinander
-                    // trennen — kein Overlap-Stack-Look mehr.
+                    // 2026-05-12 v2 (Wolf 'avatare ueberdecken sich STILL'):
+                    // Vorheriger Fix war Math-Bug: `transform: translate(28%, 28%)`
+                    // ist 28% von Avatar-Eigengroesse, NICHT von cellSize. Mit
+                    // avFactor 0.42 wurde Offset effektiv nur 11.76% cellSize —
+                    // die behaupteten 79% Center-Distance waren in Wahrheit
+                    // ~23.5%. Bei 42% combined-radii → klares overlap.
+                    // Jetzt: inset:0 + margin:auto zum Zentrieren, transform mit
+                    // PIXELN basierend auf cellSize. Damit ist Offset wirklich
+                    // cellSize-relativ.
                     //  stackCount 0 → 1 Avatar zentriert (normales Feld)
-                    //  stackCount 1 → 2 Avatare diagonal, getrennt (TL + BR)
-                    //  stackCount 2+ → 3 Avatare im Dreieck, getrennt (Apex + Basis-L + Basis-R)
+                    //  stackCount 1 → 2 Avatare diagonal, getrennt
+                    //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    // Kleinere Avatare bei mehr Kopien, damit alle plus
-                    // Spacing aufs quadratische Feld passen.
                     const avFactor = copies === 3 ? 0.36 : copies === 2 ? 0.42 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
-                    // Offsets in % vom Cell-Center. Geometrie: avFactor/2 = Avatar-Radius
-                    // in % cellSize. Damit zwei Avatare sich gerade NICHT beruehren,
-                    // muss center-to-center > 2 * Radius sein.
+                    // Offsets in % cellSize. Geometrie: avFactor/2 = Avatar-Radius
+                    // in % cellSize. Damit zwei Avatare sich nicht beruehren,
+                    // muss center-to-center-distance > 2 * Radius.
                     // - 2 Diagonal: Avatar-Radius = 21%. Offsets ±28% beide Achsen →
-                    //   Diagonal-Center-Distance = √(56²+56²) ≈ 79% > 42% ✓
-                    // - 3 Triangle: Avatar-Radius = 18%. Apex (0,-28), Basis ±26 h, +22 v.
-                    //   Apex↔Basis-L Distance = √(26²+50²) ≈ 56% > 36% ✓
-                    //   Basis-L↔Basis-R Distance = 52% > 36% ✓
+                    //   center-distance = √((2*28)² + (2*28)²) ≈ 79% > 42% ✓
+                    // - 3 Triangle: Avatar-Radius = 18%. Apex (0,-28), Basis (±26, 22).
+                    //   Apex↔Basis-L dist = √(26² + 50²) ≈ 56% > 36% ✓
+                    //   Basis-L↔Basis-R dist = 52% > 36% ✓
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx:  0,  ty: -28 },  // top center (apex)
-                          { tx: -26, ty:  22 },  // bottom-left
-                          { tx:  26, ty:  22 },  // bottom-right
+                          { tx:  0,  ty: -28 },
+                          { tx: -26, ty:  22 },
+                          { tx:  26, ty:  22 },
                         ]
                       : copies === 2
                         ? [{ tx: -28, ty: -28 }, { tx: 28, ty: 28 }]
@@ -21854,16 +21864,18 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         {offsets.map((off, i) => (
                           <div key={i} style={{
-                            position: 'absolute',
-                            transform: `translate(${off.tx}%, ${off.ty}%)`,
+                            position: 'absolute', inset: 0,
+                            margin: 'auto',
                             width: avSize, height: avSize, borderRadius: '50%',
+                            // cellSize-relative Pixel-Offset. Default ist
+                            // zentriert via inset:0+margin:auto, transform
+                            // verschiebt um cellSize * percent / 100.
+                            transform: `translate(${off.tx * cellSize / 100}px, ${off.ty * cellSize / 100}px)`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            // Z-Order: BR oben (vorne), TL hinten. Macht den
-                            // Stapel-Look (Avatar liegt auf vorherigem drauf).
+                            // Z-Order: spaeter gerendert = vorne (Stapel-Look).
                             zIndex: i + 1,
                             animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
                           }}>

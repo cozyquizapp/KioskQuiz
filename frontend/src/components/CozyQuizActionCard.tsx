@@ -1,5 +1,5 @@
 /**
- * QQActionCard — Phase-Intro Action-Card mit Single-Source-of-Truth Layout.
+ * CozyQuizActionCard — Phase-Intro Action-Card mit Single-Source-of-Truth Layout.
  *
  * Vorher: ActionCardReveal (für isNew=true, mit 3D-Slam+Flip) und die plain
  * Card (für isNew=false) waren ZWEI verschiedene Inline-Layouts in

@@ -6675,6 +6675,26 @@ function ActionCardReveal({
   );
 }
 
+// 2026-05-12 (Audit P0 #4 — Timeline-Sync): zentrale Timing-Tabelle fuer die
+// PhaseIntro-Round-Transition. JS-Timer hier definiert, CSS-animation-delays
+// in den Inline-Styles weiter unten muessen mit diesen Werten synchron bleiben
+// (Querverweise jeweils per Inline-Kommentar). Vorher 7+ magic numbers
+// verstreut.
+const PHASE_INTRO_TIMING = {
+  /** Tree-State swappt von prev auf neue Runde (triggert Wolf-Hop). */
+  treeSwapMs: 220,
+  /** Title-Farbe wechselt synchron mit Digit-Roll-In. */
+  colorFlipMs: 1650,
+  /** Endgueltig auf neue Runde umgeschaltet. */
+  transitionEndMs: 2500,
+  /** New-Digit faellt von oben rein. CSS: roundDigitFall 760ms ... 1150ms. */
+  digitFallStartMs: 1150,
+  digitFallDurMs: 760,
+  /** Sub-Title slidet rein. */
+  subtitleSlideStartMs: 700,
+  subtitleSlideDurMs: 550,
+} as const;
+
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
   const lang = useLangFlip(s.language);
@@ -6845,24 +6865,24 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
 
   // ── Round Self-Transition ──
-  // Beim Mount der Slide (ab Runde 2) zeigen wir kurz den Look der vorherigen
-  // Runde, dann faden wir Farben, Label & Tree auf die neue Runde. Der
-  // Ziffer-Flip im Titel ist die zentrale Geste.
+  // 2026-05-12 (Audit P0 #4 — Timeline-Sync): Alle Timing-Konstanten dieser
+  // Choreografie sind jetzt in PHASE_INTRO_TIMING zentral definiert. Vorher
+  // mehrere magic numbers verstreut (220/1650/2500ms hier, CSS-animation-
+  // delays in 6+ Inline-Styles unten). Wer Timing tweaked muss nur EINMAL
+  // anfassen.
+  //
+  // Choreografie: Wolf hüpft ZUERST, danach rollt die Ziffer.
+  // - treeSwapMs: hält den Tree kurz auf Runde N-1, swappt dann auf Runde N
+  //   → QQProgressTree triggert internen Hop (220ms Delay + 620ms Anim).
+  //   Wolf landet ca. bei 1100ms (220 + 220 + 620 + Puffer).
+  // - colorFlipMs: Farb-Übergang im Title synchron mit New-Digit-Roll-In
+  //   (1650ms), nicht mit Wolf-Hop. Verhindert Mismatch-Phase „neue
+  //   Wort-Farbe + alter Digit-Farbe".
+  // - digitFallStartMs/digitFallDurMs: New-Digit faellt von oben rein.
+  //   Start ~1150ms, Dauer 760ms.
+  // - transitionEndMs: Endgueltig auf neue Runde gewechselt (2500ms).
   const hasRoundTransition = isFirstOfRound && s.introStep === 0 && s.gamePhaseIndex > 1;
   const [transitioning, setTransitioning] = useState(hasRoundTransition);
-  // Choreografie: Wolf hüpft ZUERST, danach rollt die Ziffer.
-  // - treeShowsPrev: hält den Tree kurz auf Runde N-1, swappt nach 220ms auf
-  //   Runde N → QQProgressTree triggert internen Hop (220ms Delay + 620ms Anim).
-  // - Wolf landet ca. bei 1100ms (220 + 220 + 620 + Puffer).
-  // - colorTransitioning: 2026-05-04 v4 (Wolf 'Runde-Farbe weird beim Wechsel,
-  //   blaue Runde + rote 3 + dann blaue 4'): jetzt synchron mit dem
-  //   New-Digit-Roll (1650ms) statt mit dem Wolf-Hop (1100ms). Word "Runde"
-  //   und neuer Digit haben jetzt IMMER dieselbe Farbe (vorher: Word
-  //   sweepte ueber Grau, Outer-Span fadete separat → kurze Mismatch-Phase
-  //   wo Word schon neue Farbe zeigte aber alter Digit noch alter Farbe).
-  //   transition 820ms = sync mit roundDigitRoll-Dauer.
-  // - Digit-Fall startet 1150ms, Roll 1650ms — alles NACH dem Hop.
-  // - transitioning endet bei 2500ms.
   const [treeShowsPrev, setTreeShowsPrev] = useState(hasRoundTransition);
   const [colorTransitioning, setColorTransitioning] = useState(hasRoundTransition);
   useEffect(() => {
@@ -6875,12 +6895,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     setTransitioning(true);
     setTreeShowsPrev(true);
     setColorTransitioning(true);
-    const tTree  = setTimeout(() => setTreeShowsPrev(false), 220);
-    // 2026-05-04 v4 (Wolf): 1100 → 1650 — Color-Flip synchron mit New-Digit-
-    // Roll-In statt mit Wolf-Hop. Verhindert Mismatch-Phase „neue Wort-Farbe
-    // + alter Digit-Farbe".
-    const tColor = setTimeout(() => setColorTransitioning(false), 1650);
-    const tEnd   = setTimeout(() => setTransitioning(false), 2500);
+    const tTree  = setTimeout(() => setTreeShowsPrev(false),    PHASE_INTRO_TIMING.treeSwapMs);
+    const tColor = setTimeout(() => setColorTransitioning(false), PHASE_INTRO_TIMING.colorFlipMs);
+    const tEnd   = setTimeout(() => setTransitioning(false),      PHASE_INTRO_TIMING.transitionEndMs);
     return () => { clearTimeout(tTree); clearTimeout(tColor); clearTimeout(tEnd); };
   }, [s.gamePhaseIndex, hasRoundTransition]);
 

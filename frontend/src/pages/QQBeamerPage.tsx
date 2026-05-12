@@ -41,6 +41,7 @@ import {
   playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
   playWoodKnock, playWinnerCardReveal,
+  preloadSoundDefaults,
 } from '../utils/sounds';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
@@ -330,6 +331,12 @@ export default function QQBeamerPage() {
   useEffect(() => {
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
+  }, []);
+
+  // 2026-05-12 (Sound-Audit P0 #4): Preload aller Default-SFX-URLs beim Mount
+  // damit der erste Sound der Session keine 150-400ms Lade-Latenz hat.
+  useEffect(() => {
+    try { preloadSoundDefaults(); } catch { /* ignore */ }
   }, []);
 
   // 2026-05-05 (Wolf-Bug 'Scrollbar darf NIE auf /beamer'): body + html overflow

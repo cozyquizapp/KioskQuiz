@@ -3095,6 +3095,12 @@ export function qqComebackFinishAllAndGoToFinale(room: QQRoomState): void {
   room.comebackAction    = null;
   room.comebackStealTargets = [];
   room.comebackStealsDone   = [];
+  // 2026-05-12 (Connections-Audit P0 #5): zusätzlich pausen-Flag + Snapshot
+  // cleanen — sonst leakten die in den Folge-Connections-Placement-Flow
+  // (assertPhase-Sondercase würde silent-skip auslösen).
+  delete (room as any)._comebackStealPaused;
+  delete (room as any)._comebackGridSnapshot;
+  delete (room as any)._comebackStatsSnapshot;
   room.pendingFor        = null;
   room.pendingAction     = null;
   delete room._comebackStealPaused;
@@ -3304,6 +3310,13 @@ export function qqNextQuestion(room: QQRoomState): void {
   // 4×4-Finale: wenn die Sub-Phase 'done' ist (alle Aktionen platziert), führt
   // Moderator-Space zu GAME_OVER über. Connections-State wird dabei aufgeräumt.
   if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'done') {
+    // 2026-05-12 (Connections-Audit P0 #4): 700ms-Debounce nach letztem
+    // Placement damit der Climax-Sound nicht durch Phase-Wechsel zu GAME_OVER
+    // abgeschnitten wird. Vorher feuerte playClimaxFinish() mit 700ms-Delay
+    // nach Placement → Wolf-Space davor → Sound spielte während Treppchen
+    // schon sichtbar war = misaligned.
+    const lastPlacedAt = (room as any)._lastConnectionsPlacementAt ?? 0;
+    if (Date.now() - lastPlacedAt < 700) return;  // no-op, Wolf muss nochmal drücken
     updateTerritories(room);
     room.connections = null;
     clearAllJokerVisuals(room);
@@ -4498,6 +4511,9 @@ export function qqConnectionsAfterPlacement(room: QQRoomState): boolean {
       c.phase = 'done';
       room.pendingFor = null;
       room.pendingAction = null;
+      // 2026-05-12 (Connections-Audit P0 #4): Timestamp speichern damit
+      // qqNextQuestion-Debounce den Climax-Sound nicht abbrechen kann.
+      (room as any)._lastConnectionsPlacementAt = Date.now();
       return true;
     }
     const nextTeam = c.placementOrder[c.placementCursor];

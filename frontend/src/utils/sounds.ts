@@ -136,6 +136,21 @@ function getOrCreateAudio(url: string): HTMLAudioElement {
 const lastPlayAt: Map<string, number> = new Map();
 const PLAY_COOLDOWN_MS = 200;
 
+/**
+ * 2026-05-12 (Sound-Audit P0 #4): Preload aller Default-Sound-URLs in den
+ * audioCache. Vorher hatte der erste Sound der Session 150-400ms Latenz
+ * (Browser musste WAV synchron laden) → SFX ploppte deutlich NACH dem
+ * Visual-Cue beim Phase-Wechsel LOBBY→PHASE_INTRO.
+ * Call this once beim Mount der Beamer-Page (Lobby-Phase).
+ */
+export function preloadSoundDefaults() {
+  for (const url of Object.values(QQ_SOUND_DEFAULT_URLS)) {
+    if (typeof url === 'string' && url.length > 0) {
+      getOrCreateAudio(url);  // populates audioCache + triggers preload='auto'
+    }
+  }
+}
+
 /** Play a one-shot audio file. Resets to start if already playing. */
 function playAudioFile(url: string) {
   const now = Date.now();
@@ -280,6 +295,27 @@ export function setMusicDucked(ducked: boolean) {
     duckRafHandle = window.setTimeout(tick, stepMs);
   };
   duckRafHandle = window.setTimeout(tick, stepMs);
+}
+
+// 2026-05-12 (Sound-Audit P0 #2): Refcount-Duck. Vorher konkurrierten
+// mehrere Klimax-Sounds um setMusicDucked(true/false) — kürzester Timeout
+// gewann und schaltete Music wieder hoch obwohl länger laufender Sound noch
+// im Climax war (z.B. fanfare 2000ms + climaxFinish 3000ms simultan).
+// Refcount: pushDuck(N) schiebt Release-Zeitpunkt auf max(currentRelease, now+N).
+// Music geht erst hoch wenn ALLE pushed-Durations abgelaufen sind.
+let _duckReleaseAt = 0;
+let _duckReleaseTimer: number | null = null;
+export function pushDuck(durationMs: number) {
+  const newRelease = Date.now() + durationMs;
+  _duckReleaseAt = Math.max(_duckReleaseAt, newRelease);
+  setMusicDucked(true);
+  if (_duckReleaseTimer !== null) clearTimeout(_duckReleaseTimer);
+  const wait = _duckReleaseAt - Date.now();
+  _duckReleaseTimer = window.setTimeout(() => {
+    _duckReleaseTimer = null;
+    _duckReleaseAt = 0;
+    setMusicDucked(false);
+  }, wait);
 }
 
 /** Aktueller Duck-Faktor, nützlich für externe Audio-Elemente (question musicUrl). */
@@ -851,9 +887,11 @@ export function playLobbyWelcome() { playSlotOneShot('lobbyWelcome'); }
  *  grossen SFX-Momenten (Fanfare/Reveal/GridReveal/ClimaxFinish/GameOver) —
  *  fuehrte zu Kakophonie. Ducking dimmt Music auf 20% waehrend des SFX. */
 function playWithDuck(slot: QQSoundSlot, durationMs: number) {
-  setMusicDucked(true);
+  // 2026-05-12 (Sound-Audit P0 #2): pushDuck statt direkter setMusicDucked.
+  // Verhindert dass kürzerer Klimax-Sound die Music wieder hochschiebt
+  // während längerer Climax noch läuft.
+  pushDuck(durationMs);
   playSlotOneShot(slot);
-  window.setTimeout(() => setMusicDucked(false), durationMs);
 }
 
 // Kategorie-aware Wrapper: wenn ein kategorie-spezifischer Slot eine URL hat,
@@ -1180,8 +1218,8 @@ export function playWinnerCardReveal() {
 export function playGridReveal() {
   if (!isSlotEnabled('gridReveal')) return;
   // BC-2: Music-Ducking fuer den 9-Grid-Slam.
-  setMusicDucked(true);
-  window.setTimeout(() => setMusicDucked(false), 1500);
+  // 2026-05-12 (Sound-Audit P0 #2): pushDuck statt direkter setMusicDucked.
+  pushDuck(1500);
   const url = resolveSlotUrl('gridReveal');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
@@ -1203,8 +1241,7 @@ export function playGridReveal() {
 export function playGoodLuckFanfare() {
   if (!isSlotEnabled('goodLuckFanfare')) return;
   // BC-2: Music-Ducking fuer Wettkampf-Beginn-Fanfare.
-  setMusicDucked(true);
-  window.setTimeout(() => setMusicDucked(false), 2500);
+  pushDuck(2500);
   const url = resolveSlotUrl('goodLuckFanfare');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
@@ -1256,8 +1293,7 @@ export function playRevealHighlight() {
 export function playClimaxFinish() {
   if (!isSlotEnabled('climaxFinish')) return;
   // BC-2: Music-Ducking fuer den Kroenungs-Akkord (~2.5s sustain).
-  setMusicDucked(true);
-  window.setTimeout(() => setMusicDucked(false), 3000);
+  pushDuck(3000);
   const url = resolveSlotUrl('climaxFinish');
   if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
@@ -1294,11 +1330,16 @@ export function playActionMenuReveal() {
   tone(2349.32,'sine',     t + 0.24,  0.16, 0.55, 0.005, 0.18, ac);
 }
 
-/** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden. */
+/** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden.
+ *  2026-05-12 (Sound-Audit P0 #1+#3): vorher `new Audio(url)` jedes Mal frisch
+ *  → Memory-Leak (Audio-Elemente sammelten sich, bei rem≤5s/playUrgentTick
+ *  pro Sekunde +1 Element ungefreed). Plus: ignorierte `_sfxMuted` → Custom-
+ *  Uploads spielten weiter trotz Mod-Mute.
+ *  Fix: Delegation an `playAudioFile` (nutzt audioCache + Cooldown +
+ *  masterVolume — masterVolume=0 bei Mute via setVolume). */
 function playUrlOneShot(url: string): void {
-  const el = new Audio(url);
-  el.volume = masterVolume;
-  el.play().catch(() => {});
+  if (_sfxMuted) return;
+  playAudioFile(url);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -2489,11 +2489,14 @@ function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urgent }: 
       flex: '0 0 auto',
       position: 'relative',
       // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Container-Höhe
-      // von 22vh auf 30vh erhöht. Active-Card ist ~280px hoch (Avatar 120 +
-      // Padding + Name + Timer) — passte vorher nicht in 22vh × 1080 = 237px,
-      // also ragte die Card nach OBEN in den Chips-Bereich. 30vh × 1080 = 324
-      // → Card fits, Chips bleiben getrennt.
-      width: '100%', height: 'clamp(260px, 30vh, 360px)',
+      // von 22vh auf 30vh erhöht.
+      // 2026-05-12 (Wolf-Screenshot 'chips ueberlappen mit active-card'):
+      // 30vh → 24vh reduziert. Der vorherige Wert reservierte zu viel
+      // vertikalen Platz fuer den (oben mostly leeren) Semicircle-Container
+      // — Chips-Wrapper bekam zu wenig und musste in eine 3. Reihe brechen
+      // die dann visuell mit der Active-Card kollidierte. Active-Card sitzt
+      // unten im Container, braucht nur ~210-260px.
+      width: '100%', height: 'clamp(210px, 24vh, 290px)',
       pointerEvents: 'none',
     }}>
       {/* Backdrop-Glow hinter dem Active-Team — Spotlight-Effekt */}
@@ -2677,7 +2680,10 @@ function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // bei vielen Antworten → mehr Vertikal-Raum unten → Tier-Schwellen koennen
   // weiter nach oben rutschen (lg statt md, md statt sm). xl bleibt fuer ≤8.
   const n = used.length;
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 8 ? 'xl' : n <= 22 ? 'lg' : n <= 40 ? 'md' : 'sm';
+  // 2026-05-12 (Wolf-Screenshot 'chips uebrlappen mit active-card'): Tier-
+  // Schwellen senken — Chips werden frueher kleiner, mehr passen pro Reihe,
+  // weniger Gesamtzeilen, kein Overflow in den Semicircle-Bereich.
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 6 ? 'xl' : n <= 16 ? 'lg' : n <= 30 ? 'md' : 'sm';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6vw, 38px)', padding: 'clamp(10px, 1.2vh, 16px) clamp(18px, 1.8vw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2vw, 32px)', padding: 'clamp(8px, 1vh, 14px) clamp(16px, 1.6vw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
@@ -12643,30 +12649,37 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             )}
           </div>
-          {/* 2026-05-12 (Wolf 'kategorie badge nach links unten, kein collapse
-              mehr mit fragecard'): Eigener Bottom-Left-Container fuer das
-              Kategorie-Badge. Hat keinen visuellen Konflikt mehr mit der
-              Frage-Card (die jetzt oben sitzt). Bei CHEESE-Slide mit
-              Horizont-Bild (Frage-Card faellt nach unten) muss die Card
-              entsprechend schmaler werden — Padding-Left und maxWidth
-              werden im CHEESE-Block dafuer angepasst (siehe CHEESE-Render). */}
+          {/* 2026-05-12 v2 (Wolf 'badge muss raus aus bereichen die wir fuer
+              die grossen cards brauchen'): Badge geschrumpft auf NUR-Icon
+              im kleinen Kreis (ca. 48px), kein Text-Pill mehr. Minimaler
+              Footprint, Kategorie weiter via Icon erkennbar, kein Konflikt
+              mit Card-Layouts. Volle Beschriftung der Kategorie kommt eh
+              im PhaseIntro-Slide direkt vor jeder Frage (Title + Sub-Line).
+              Question-Card-Border ist zusaetzlich in Kategorie-Farbe. */}
           <div style={{
             position: 'absolute',
-            // 2026-05-12 (Slide-Boundary-System): Bottom/Left nutzen jetzt
-            // den globalen --qq-safe-margin Token statt eigener clamp-Werte.
             bottom: 'var(--qq-safe-margin)',
             left: 'var(--qq-safe-margin)',
             zIndex: 60,
             pointerEvents: 'none',
           }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '10px 22px', borderRadius: 999,
-              background: '#0A0814', border: `2px solid ${accent}`,
-              boxShadow: `0 0 24px ${accent}33`,
-              animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
-              flexShrink: 0,
-            }}>
+            <div
+              title={(() => {
+                const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
+                if (btKind) return lang === 'en' ? QQ_BUNTE_TUETE_LABELS[btKind].en : QQ_BUNTE_TUETE_LABELS[btKind].de;
+                return lang === 'en' ? catLabel.en : catLabel.de;
+              })()}
+              style={{
+                width: 'clamp(40px, 4vw, 56px)',
+                height: 'clamp(40px, 4vw, 56px)',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#0A0814',
+                border: `2px solid ${accent}`,
+                boxShadow: `0 0 18px ${accent}33`,
+                animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
+                flexShrink: 0,
+              }}>
               <span style={{ display: 'inline-block', animation: 'qqBadgeIconBob 3.4s ease-in-out infinite' }}>
                 {(() => {
                   const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
@@ -12676,22 +12689,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ? QQ_BUNTE_TUETE_LABELS[btKind].emoji
                     : catLabel.emoji;
                   return slug
-                    ? <QQIcon slug={slug} size={'clamp(22px, 2.4vw, 32px)'} alt={catLabel.de} />
-                    : <span style={{ fontSize: 'clamp(18px, 2vw, 26px)' }}>{fallbackEmoji}</span>;
-                })()}
-              </span>
-              <span style={{
-                fontSize: 'clamp(18px, 1.8vw, 26px)', fontWeight: 900,
-                color: accent, letterSpacing: '0.1em', textTransform: 'uppercase',
-              }}>
-                {(() => {
-                  const btKind = q.category === 'BUNTE_TUETE' ? q.bunteTuete?.kind : undefined;
-                  if (btKind) {
-                    return lang === 'en'
-                      ? QQ_BUNTE_TUETE_LABELS[btKind].en
-                      : QQ_BUNTE_TUETE_LABELS[btKind].de;
-                  }
-                  return lang === 'en' ? catLabel.en : catLabel.de;
+                    ? <QQIcon slug={slug} size={'clamp(20px, 2.2vw, 28px)'} alt={catLabel.de} />
+                    : <span style={{ fontSize: 'clamp(18px, 2vw, 24px)' }}>{fallbackEmoji}</span>;
                 })()}
               </span>
             </div>
@@ -21974,30 +21973,34 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
-                    // 2026-05-12 (Wolf 'neue idee' + Followup '3x im dreieck'
-                    // + Followup '1x gestapelt = 2 avatare, 2x = 3 avatare'):
-                    // Stack-Indikator via Avatar-Mehrfach-Platzierung statt
-                    // Feld-im-Feld. Mapping ist Stack-Aktionen → Avatar-Anzahl:
-                    //  stackCount 0 → 1 Avatar zentriert (normales Feld, kein Stapel)
-                    //  stackCount 1 → 2 Avatare diagonal (1× gestapelt: stuck=true)
-                    //  stackCount 2+ → 3 Avatare im Dreieck (2× gestapelt oder mehr,
-                    //    z.B. stuck=true + Connections-Bonus)
-                    // Avatar-Groesse passt sich an: je mehr Kopien, desto
-                    // kleiner pro Kopie, damit sie alle aufs Feld passen.
+                    // 2026-05-12 (Wolf 'avatare beim stapeln sollen sich NICHT
+                    // ueberlappen'): Avatare jetzt kleiner und Offsets weiter
+                    // gespreizt, damit sie sich auf dem Feld klar voneinander
+                    // trennen — kein Overlap-Stack-Look mehr.
+                    //  stackCount 0 → 1 Avatar zentriert (normales Feld)
+                    //  stackCount 1 → 2 Avatare diagonal, getrennt (TL + BR)
+                    //  stackCount 2+ → 3 Avatare im Dreieck, getrennt (Apex + Basis-L + Basis-R)
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    const avFactor = copies === 3 ? 0.46 : copies === 2 ? 0.52 : 0.86;
+                    // Kleinere Avatare bei mehr Kopien, damit alle plus
+                    // Spacing aufs quadratische Feld passen.
+                    const avFactor = copies === 3 ? 0.36 : copies === 2 ? 0.42 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
-                    // Offsets in % vom Cell-Center (positiv = nach unten-rechts).
-                    // Triangle: Apex oben mittig (-25%), Basis bei +22% horizontal
-                    // und +18% vertikal. Diagonal-2: TL/BR mit ±20% beide Achsen.
+                    // Offsets in % vom Cell-Center. Geometrie: avFactor/2 = Avatar-Radius
+                    // in % cellSize. Damit zwei Avatare sich gerade NICHT beruehren,
+                    // muss center-to-center > 2 * Radius sein.
+                    // - 2 Diagonal: Avatar-Radius = 21%. Offsets ±28% beide Achsen →
+                    //   Diagonal-Center-Distance = √(56²+56²) ≈ 79% > 42% ✓
+                    // - 3 Triangle: Avatar-Radius = 18%. Apex (0,-28), Basis ±26 h, +22 v.
+                    //   Apex↔Basis-L Distance = √(26²+50²) ≈ 56% > 36% ✓
+                    //   Basis-L↔Basis-R Distance = 52% > 36% ✓
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx:  0,  ty: -25 },  // top center (apex)
-                          { tx: -23, ty:  18 },  // bottom-left
-                          { tx:  23, ty:  18 },  // bottom-right
+                          { tx:  0,  ty: -28 },  // top center (apex)
+                          { tx: -26, ty:  22 },  // bottom-left
+                          { tx:  26, ty:  22 },  // bottom-right
                         ]
                       : copies === 2
-                        ? [{ tx: -20, ty: -20 }, { tx: 20, ty: 20 }]
+                        ? [{ tx: -28, ty: -28 }, { tx: 28, ty: 28 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

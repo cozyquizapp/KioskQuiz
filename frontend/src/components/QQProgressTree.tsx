@@ -73,8 +73,14 @@ export default function QQProgressTree({
     const tick = () => {
       step += 1;
       if (step >= showcaseStepCount) {
-        // Letzter Step erreicht — Wolf bleibt am Finale stehen, kein Loop-Reset.
-        setShowcasePhaseIdx(showcaseStepCount - 1);
+        // 2026-05-12 (Wolf 'wolf springt im rules nach ende nochmal zu bieten'):
+        // Vorher: showcaseStepCount - 1 = letzter Step = Bieten oder Finale
+        // je nach Toggles. Bei finalWager=true + connections=false landete
+        // Wolf am Bieten-Knoten → wirkte wie 'noch ein Sprung auf Bieten'.
+        // Jetzt: Wolf bleibt immer an der letzten echten Quiz-Phase stehen
+        // (totalPhases - 1), egal welche Sub-Knoten (Bid/Finale) im Sweep
+        // dabei waren.
+        setShowcasePhaseIdx(totalPhases - 1);
         return;
       }
       setShowcasePhaseIdx(step);

@@ -224,14 +224,38 @@ export default function QQProgressTree({
   })();
   const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
   const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
-  // Wolf-Position: Hierarchie für currentCenter:
-  //   1. wolfOnFinale  → finaleCenter (4×4 Connections oder GAME_OVER)
-  //   2. wolfOnBidding → biddingCenter (Final-Wager-Phase aktiv)
-  //   3. sonst         → aktueller Quiz-Dot
-  const wolfOnFinale = showFinale && (showcaseOnFinale
-    || state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS');
-  const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding
-    || state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL');
+  // Wolf-Position: explizite Phase→Target-Map (statt Fallthrough-Hierarchie),
+  // damit Endphasen NIE auf einen frueheren Step zuruecksacken.
+  //
+  // 2026-05-13 (Wolf 'progress treee wolf springt immernoch nach runde 3 auf
+  // bieten zurueck dann wieder auf ende runde 3 in einem quiz mit nur 3
+  // runden'): Bei (Bid=on, Finale=off) Quiz lief der Sprung:
+  //   - State=FINAL_BETTING/_REVEAL  → wolfOnBidding=true  → Bid-Knoten
+  //   - State=GAME_OVER/THANKS       → wolfOnFinale=false (kein 4×4) und
+  //                                    wolfOnBidding=false (Phase nicht in
+  //                                    Liste) → Fallback auf currentIdx
+  //                                    = letzter Quiz-Dot → wirkte wie Rueck-
+  //                                    sprung auf "ende runde N".
+  // Fix: wolfPhaseTarget definiert pro Phase explizit, wo der Wolf hingehoert.
+  // Bei Spielende ohne 4×4 bleibt er strukturell am Bid (letzter erreichter
+  // Step). Bei Spielende ohne Bid UND ohne 4×4 am letzten Quiz-Dot (kein
+  // Sprung moeglich, da nichts dahinter).
+  const wolfPhaseTarget: 'quiz' | 'bidding' | 'finale' = (() => {
+    if (state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL') {
+      return showBidding ? 'bidding' : 'quiz';
+    }
+    if (state.phase === 'CONNECTIONS_4X4') {
+      return showFinale ? 'finale' : 'quiz';
+    }
+    if (state.phase === 'GAME_OVER' || state.phase === 'THANKS') {
+      if (showFinale) return 'finale';
+      if (showBidding) return 'bidding';
+      return 'quiz';
+    }
+    return 'quiz';
+  })();
+  const wolfOnFinale = showFinale && (showcaseOnFinale || wolfPhaseTarget === 'finale');
+  const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding || wolfPhaseTarget === 'bidding');
   const currentCenter = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
     : (dotCenters[wolfDotIdx] ?? firstCenter);

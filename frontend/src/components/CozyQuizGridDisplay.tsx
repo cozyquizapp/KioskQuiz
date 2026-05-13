@@ -170,11 +170,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const sandTtl = cell.sandLockTtl ?? 0;
             const isSandLocked = sandTtl > 0;
             const cellRadius = Math.max(4, cellSize * 0.16);
-            // 2026-05-05 (Wolf-Skizze 'stapeln so stacken — 1 stack und 2 stack'):
-            // Stack-Count = Standard-Stuck (1) + Connections-Finale-StackBonus (N).
-            // Pro Layer ueber 1 wird ein konzentrisches Inner-Tile gerendert,
-            // Avatar schrumpft entsprechend in die Mitte.
-            const stackCount = (cell.stuck ? 1 : 0) + (cell.stackBonus ?? 0);
+            // 2026-05-13 (Wolf 'gestapelte emojis sehen nicht aus wie skizziert,
+            // 8. Anfrage' + 'oben 1x stapeln unten 2x stapeln'): Root-Cause der
+            // wiederholten Beschwerde. Connections-Stapel (qqStapelBonusCell)
+            // setzt BEIDES — cell.stuck=true UND cell.stackBonus+=1 ("optisch
+            // konsistent mit regulaerem Stapel"). Die alte Summen-Formel
+            // (stuck?1:0) + (stackBonus??0) zaehlte einen Connections-Stack
+            // als 2 → Renderer zeigte bei 1x stapeln schon 3 Avatare.
+            //
+            // stackBonus ist die kanonische Stapel-Zaehlweise wenn vorhanden
+            // (Connections-Mechanik), sonst stuck=1 als Fallback (Phase-3
+            // STAPEL_1, das kein stackBonus setzt). Math.max statt + verhindert
+            // Double-Counting wenn Connections beides setzt.
+            //   1x stapeln (Phase-3):       stuck=t, sb=undef → 1 → 2 Avatare ✓
+            //   1x stapeln (Connections):   stuck=t, sb=1     → 1 → 2 Avatare ✓
+            //   2x stapeln (Connections):   stuck=t, sb=2     → 2 → 3 Avatare ✓
+            const stackCount = Math.max(cell.stackBonus ?? 0, cell.stuck ? 1 : 0);
             return (
               <div key={`${r}-${c}`} style={{
                 position: 'relative', overflow: 'visible',

@@ -1621,13 +1621,21 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
 
     // HotPotato: neues Team eliminiert → playWrong.
     const hpElim = (s.hotPotatoEliminated ?? []).length;
-    if (hpElim > prevHpEliminatedRef.current) {
+    const hpElimGrew = hpElim > prevHpEliminatedRef.current;
+    if (hpElimGrew) {
       try { playWrong(); } catch {}
     }
     prevHpEliminatedRef.current = hpElim;
     // HotPotato: aktives Team wechselt → playTick (Zug weitergegeben).
+    // 2026-05-13 (Wolf 'bei hot potato spielt er mehrere sounds random ab'):
+    // playTick NUR wenn der Active-Wechsel NICHT durch ein gleichzeitiges
+    // Eliminate verursacht wurde. Beim Eliminate-Event sendet Backend hpElim++
+    // UND hpActive=nextTeam im selben State-Update — Frontend sah beide
+    // Changes im selben useEffect-Frame und spielte playWrong + playTick
+    // zusammen. Doppel-Cue klang chaotisch. Jetzt: bei Eliminate nur playWrong,
+    // bei "sauberem" Turn-Switch (korrekte Antwort, kein Eliminate) playTick.
     const hpActive = s.hotPotatoActiveTeamId ?? null;
-    if (hpActive && hpActive !== prevHpActiveTeamRef.current && prevHpActiveTeamRef.current != null) {
+    if (hpActive && hpActive !== prevHpActiveTeamRef.current && prevHpActiveTeamRef.current != null && !hpElimGrew) {
       try { playTick(); } catch {}
     }
     prevHpActiveTeamRef.current = hpActive;

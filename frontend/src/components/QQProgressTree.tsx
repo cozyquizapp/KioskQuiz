@@ -351,9 +351,12 @@ export default function QQProgressTree({
                     fontSize: phaseNameSize,
                     fontWeight: 900,
                     color: biddingLabelColor,
-                    letterSpacing: 0.4,
+                    // 2026-05-13 (Wolf 'BIETEN nicht mittig ueber Dot'): letterSpacing
+                    // entfernt — wirkt auch trailing nach dem letzten Buchstaben und
+                    // shiftet textAlign:center-Text leicht nach rechts.
                     textTransform: 'uppercase',
                     flexShrink: 0,
+                    padding: 0,
                     textShadow: (isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                     transform: (isShowcase && isBiddingActive) ? 'translateY(-2px)' : 'translateY(0)',
                     transition: 'all 0.4s var(--qq-ease-out-cubic)',
@@ -481,6 +484,11 @@ export default function QQProgressTree({
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
             const biddingNode = insertBiddingHere ? (
               <div key="bid-knoten" style={{
+                // 2026-05-13 (Wolf 'BIETEN nicht mittig ueber Dot'): explizite
+                // width matcht Labels-Row-Spalte (gleicher biddingDotSize) damit
+                // beide Rows exakt dieselbe Spalten-Mid-X-Position haben.
+                width: biddingDotSize,
+                flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative', zIndex: 2,
               }}>

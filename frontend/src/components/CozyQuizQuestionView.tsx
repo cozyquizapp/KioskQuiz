@@ -4029,9 +4029,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // shrink mehr → kein zappeln. Sizing knapp aber lesbar; Reveal-Phase
   // dimmt nur opacity statt zu shrinken.
   // 2026-05-04 (Wolf #3): Beamer-Schrift +15-20% damit aus 8m Distanz lesbar.
+  // 2026-05-13 (Wolf 'esc-host-venue-by-audience-capacity-Frage, 66 chars,
+  // 4 Zeilen, Winner-Card fiel unten raus'): zusaetzlicher Bucket bei >55
+  // chars. Vorher fielen 41-80 char-Fragen alle in einen Bucket mit max 76px
+  // — bei breiter Card (~1160px) reichte das fuer 14-15 chars/line, 66 chars
+  // = 5 Zeilen. Neuer 56-80er Bucket mit max 60px = ~18 chars/line, 66 chars
+  // in 3 Zeilen → Winner-Card unten hat wieder Platz.
   const qFontSize = qText.length > 200 ? 'clamp(26px, min(3cqw, 4.6cqh), 44px)'
     : qText.length > 120 ? 'clamp(32px, min(3.7cqw, 5.8cqh), 56px)'
     : qText.length > 80  ? 'clamp(38px, min(4.4cqw, 6.5cqh), 68px)'
+    : qText.length > 55  ? 'clamp(36px, min(4cqw, 6cqh), 60px)'
     : qText.length > 40  ? 'clamp(42px, min(4.8cqw, 7cqh), 76px)'
     : 'clamp(46px, min(5.5cqw, 7.5cqh), 88px)';
 

@@ -553,32 +553,28 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     //  stackCount 1 → 2 Avatare diagonal, getrennt
                     //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    // 2026-05-13 v2 (Wolf 'in der Ecke stehen, gleicher Abstand
-                    // zur Mitte und zum Rand diagonal'):
-                    // Math-Constraint fuer "avatar-Rand-zur-Mitte = avatar-
-                    // Rand-zur-Corner" bei 2-Stack ist tx=±25 (FEST), unabhaengig
-                    // von avFactor. Bei avFactor=0.48 waren die Luftspalten nur
-                    // ~11% — Avatare wirkten zentriert statt in der Ecke. Fix:
-                    // avFactor auf 0.44 → Luftspalten ~13% beidseits, optisch
-                    // "in der Ecke", Symmetrie bleibt mathematisch erhalten.
-                    //
-                    // 3-Stack: gleichmaessige Spalten Avatar-Avatar = Avatar-
-                    // Corner. Mit avFactor 0.38 (Durchmesser 38%) und 3 Avataren
-                    // auf einer Achse Laenge 100√2 ≈ 141.4% loest:
-                    //   3*38 + 4*gap = 141.4 → gap ≈ 6.85%
-                    //   → TL-Avatar Center bei diagonale-Pos -45.25 → tx ≈ -32.
-                    // Vorher tx=±28 → Avatar-Avatar-Spalte nur ~1.6% (touch),
-                    // jetzt ~7% gleichmaessig.
-                    const avFactor = copies === 3 ? 0.38 : copies === 2 ? 0.44 : 0.86;
+                    // 2026-05-13 v3 (Wolf-Screenshots fuer +1 und +2):
+                    // - 2-Stack: 2 Avatare diagonal in oberer-linker + unterer-
+                    //   rechter "Haelfte" der Card, klare Luecke zwischen ihnen.
+                    //   Centers bei (±20, ±20), avFactor 0.42 (avRadius 21).
+                    //   Avatar-zu-Avatar-Diagonal-Distance: 20√2 + 20√2 = 56.6%,
+                    //   minus 2 Radii = 56.6 - 42 = 14.6% Luftspalt zwischen ihnen.
+                    //   TL-Edge-Puffer: 50 - 20 - 21 = 9% — sichtbar in der Ecke.
+                    // - 3-Stack: TRIANGLE-Layout (war diagonale Linie). Wolf-
+                    //   Screenshot zeigt Apex oben-mitte + 2 Basis unten.
+                    //   Apex bei (0, -28), Basis bei (±22, +15). avFactor 0.34.
+                    //   Approx. equilateral: Apex-zu-Basis ≈ 50%, Basis-zu-Basis
+                    //   = 44%. avRadius=17 → Rand-zu-Rand ~16% (gut getrennt).
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.42 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx: -32, ty: -32 },
-                          { tx:   0, ty:   0 },
-                          { tx:  32, ty:  32 },
+                          { tx:   0, ty: -28 },  // Apex oben-mitte
+                          { tx: -22, ty:  15 },  // Basis-Left
+                          { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
+                        ? [{ tx: -20, ty: -20 }, { tx: 20, ty: 20 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

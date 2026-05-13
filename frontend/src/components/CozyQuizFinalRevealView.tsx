@@ -522,8 +522,8 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
   return (
     <SlotTransition
       slotKey={String(slotIndex)}
-      exitAnimation="qqFRSlamOutDown 0.55s cubic-bezier(0.55, 0, 0.7, 0.4) both"
-      exitMs={550}
+      exitAnimation="qqFRSlamOutDown 0.35s ease both"
+      exitMs={350}
     >
       {renderSlot(slot)}
     </SlotTransition>
@@ -593,13 +593,24 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
   const phase = decodeFinalStep(step, betSlots.length);
 
+  // 2026-05-13 (Wolf '7. Rahmen-Fix + End-Page-Cutoff'): Outer-padding +
+  // COZY_CARD_BG-Gradient erzeugten einen sichtbaren lila „Rahmen" um Race-
+  // Slide und schnitten gleichzeitig das Sieger-Treppchen seitlich ab (8%
+  // weniger Width = Side-Teams overflow → clipped).
+  // Phasen die die volle Stage brauchen (race-final, awards-overview, grid)
+  // bekommen padding:0 + transparente BG (Inner-Slide rendert eigene BG).
+  // Phasen mit Card-Layouts (title, bet) behalten die safe-margin.
+  const fullBleed = phase.kind === 'race-final'
+    || phase.kind === 'awards-overview'
+    || phase.kind === 'awards-reveal'
+    || phase.kind === 'grid';
+
   return (
     <div style={{
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
-      padding: 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
-      background: COZY_CARD_BG,
+      padding: fullBleed ? 0 : 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
+      background: fullBleed ? 'transparent' : COZY_CARD_BG,
       position: 'relative', overflow: 'hidden',
       minHeight: 0,
     }}>
@@ -634,11 +645,13 @@ function FinalRevealSharedKeyframes() {
         75%  { transform: translateY(-2%) scale(0.98) rotate(0deg); }
         100% { transform: translateY(0)    scale(1)    rotate(0deg); }
       }
-      /* 2026-05-12 (Wolf 'Bet-Reveal Abloese-Anim'): vorheriger Slot rauschiebt
-         nach unten waehrend der neue oben reinslammt. */
+      /* 2026-05-13 (Wolf 'Bet-Card-Aufloese-Anim nach unten rausschieben sieht
+         nicht nice'): sanfter Fade + leichter Scale-Down, kein translateY/
+         rotate/blur mehr. Name aus Kompatibilitaet beibehalten — das in/out-
+         Pattern bleibt logisch gleich, nur visuell entspannter. */
       @keyframes qqFRSlamOutDown {
-        0%   { opacity: 1; transform: translateY(0)    scale(1)    rotate(0deg); filter: blur(0); }
-        100% { opacity: 0; transform: translateY(110cqh) scale(0.85) rotate(2deg); filter: blur(4px); }
+        0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+        100% { opacity: 0; transform: scale(0.94); filter: blur(0); }
       }
       @keyframes qqFRSlamFromTop {
         0%   { opacity: 0; transform: translateY(-90cqh) scale(0.7); filter: blur(7px); }

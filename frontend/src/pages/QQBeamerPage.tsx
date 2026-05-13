@@ -3984,8 +3984,10 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               letterSpacing: '0.04em',
               lineHeight: 0.96,
               color: eurovisionMode ? accentHex : '#EC4899',
+              // 2026-05-13 Kontrast-Audit ESC: Dark-Halo davor, Pink-Glow
+              // reduziert (Welcome-Video-BG kann hellpink-Frames haben).
               textShadow: eurovisionMode
-                ? `0 0 28px rgba(${accentRgb},0.65), 0 0 72px rgba(${accentRgb},0.28)`
+                ? `0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7), 0 0 32px rgba(${accentRgb},0.35)`
                 : '0 0 28px rgba(236,72,153,0.65), 0 0 72px rgba(236,72,153,0.28)',
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',

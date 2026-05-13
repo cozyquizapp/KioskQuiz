@@ -455,7 +455,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   fontWeight: 400,
                   letterSpacing: '0.04em',
                   color: '#FF2D7B',
-                  textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(255,45,123,0.55)',
+                  // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + dezente
+                  // Outline (Stinger Fit weight 400 verliert sonst auf Pink-BG).
+                  textShadow: '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+                  WebkitTextStroke: '1px rgba(0,0,0,0.4)',
                   lineHeight: 0.96,
                   animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
                 }}>COZYQUIZ</span>
@@ -518,8 +521,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 letterSpacing: '0.04em',
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5cqw, 100px)' : 'clamp(56px, 9cqw, 140px)',
                 color: s.theme?.eurovisionMode ? '#FF2D7B' : '#EC4899',
+                // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg ueber 5.png-BG.
                 textShadow: s.theme?.eurovisionMode
-                  ? '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(255,45,123,0.35)'
+                  ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
                   : '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.40)',
               }}
               aria-label={wordmark}

@@ -101,12 +101,13 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const escBgUrl = isEsc ? s.theme?.lobbyBackgroundUrl : null;
   const escLogoUrl = isEsc ? s.theme?.logoUrl : null;
   const titleColor = isEsc ? '#FF2D7B' : '#f8fafc';
+  // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg, Dark-Halo first auf BG-Image.
   const titleShadow = isEsc
-    ? '0 3px 18px rgba(0,0,0,0.6), 0 0 28px rgba(255,45,123,0.45)'
+    ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
     : '0 4px 20px rgba(236,72,153,0.25)';
   const goodLuckColor = isEsc ? '#FF2D7B' : '#EC4899';
   const goodLuckShadow = isEsc
-    ? '0 3px 18px rgba(0,0,0,0.6), 0 0 24px rgba(255,45,123,0.55)'
+    ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
     : '0 4px 24px rgba(236,72,153,0.5)';
   return (
     <div style={{

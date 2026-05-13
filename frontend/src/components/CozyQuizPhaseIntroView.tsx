@@ -518,7 +518,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               ? '2px solid rgba(255,45,123,0.55)'
               : `2px solid ${displayColor}44`,
             fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900,
-            color: isEsc ? '#fde6f0' : `${displayColor}cc`,
+            // 2026-05-13 Kontrast-Audit: #fde6f0 auf der hellen Seite des
+            // Pink/Blau-Gradient-Pill-BG matschte. #FFFFFF + Dark-Halo trennt
+            // den Round-Counter klar vom Pill-BG ohne den Look zu opfern.
+            color: isEsc ? '#FFFFFF' : `${displayColor}cc`,
+            textShadow: isEsc ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
             letterSpacing: '0.1em',
             marginBottom: 28,
             animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',

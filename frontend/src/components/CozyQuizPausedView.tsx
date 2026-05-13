@@ -1194,7 +1194,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: '#FF2D7B',
-              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 28px rgba(255,45,123,0.55)',
+              // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + dezente
+              // Outline (Stinger Fit weight 400 verliert sonst auf Pink-BG).
+              textShadow: '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+              WebkitTextStroke: '1px rgba(0,0,0,0.4)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
             }}>COZYQUIZ</span>
@@ -1277,8 +1280,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 color: modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
+                // 2026-05-13 (Wolf 'NUR EUROVISION EDITION: hintergrund und text
+                // sind manchmal nicht kontrastreich'): Im ESC-Mode Dark-Halo
+                // first (Pink-Glow konkurrierte mit Pink-BG). WCAG-fix:
+                // #FF2D7B auf 5.png/3.png Pink-Gradient war 3.0:1 (AA-Fail).
                 textShadow: isEsc
-                  ? `0 2px 14px rgba(0,0,0,0.65), 0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`
+                  ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
                   : `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
                 whiteSpace: 'nowrap',
                 display: 'inline-block',

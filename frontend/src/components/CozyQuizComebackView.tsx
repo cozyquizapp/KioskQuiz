@@ -319,12 +319,14 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 up, falsche fadet — Avatare landen direkt an der gewählten Pille
                 und feiern dort. Direction-Big-Text-Indikator entfaellt
                 (Pille-Label zeigt's schon). */}
+            {/* 2026-05-13 v4 (Wolf 8.-Fix): Avatare strukturell ueber/unter den
+                Pillen anchorn statt translate-Distance "fly". MEHR-Gruppe rendert
+                Avatar-Higher-Row UEBER der MEHR-Pille, WENIGER-Gruppe rendert
+                WENIGER-Pille UEBER der Avatar-Lower-Row. Negative-margin erlaubt
+                leichte Pillen-Card-Ueberlappung, nie Text-Ueberlappung. Position
+                ist im DOM codiert — kein translate-Raten mehr. */}
             <div style={{
               position: 'absolute', inset: 0,
-              // 2026-05-06 (Wolf 'higher und lower wieder zentriert mit Cards
-              // horizontal angeordnet'): Pillen-Stack vertikal MITTIG (was
-              // flex-end). Avatare landen oben/unten an der Pille leicht
-              // ueberlappend — siehe flyTransform unten.
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center',
               gap: 'clamp(50px, 6.5cqh, 90px)',
@@ -332,18 +334,54 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {(['higher', 'lower'] as const).map((dir, idx) => {
                 const isHigher = dir === 'higher';
-                // Higher = Brand-Grün, Lower = Brand-Pink (Default-Farben).
                 const accentCol = isHigher ? '#22C55E' : '#EC4899';
-                // 2026-05-10 (Wolf 'comeback weniger/mehr — eines grün wenn richtig,
-                // eines pink wenn richtig, jeweils in der Anfangs-Textfarbe'):
-                // Vorher waren beide bei isCorrect universal grün. Jetzt behält
-                // jede Pille ihre Anfangs-Farbe — Higher leuchtet grün, Lower
-                // leuchtet pink wenn richtig. Light-Variante für Text-Lesbarkeit.
                 const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
                 const isCorrect = isReveal && correctChoice === dir;
                 const isWrong = isReveal && correctChoice !== dir;
-                return (
-                  <div key={dir} style={{
+                // Teams die DIESE Richtung gewaehlt haben.
+                const teamsAtThisPille = hlTeams.filter(tm => hl.answers[tm.id] === dir);
+                const avatarRow = teamsAtThisPille.length > 0 ? (
+                  <div style={{
+                    display: 'flex', gap: 'clamp(6px, 0.8cqw, 14px)',
+                    flexWrap: 'wrap', justifyContent: 'center',
+                    // Negative margin → Avatar uebersteht die Pille leicht
+                    // (Card-Ueberlap erlaubt, Text-Ueberlap NICHT). Wert < Avatar-Radius.
+                    ...(isHigher
+                      ? { marginBottom: 'clamp(-22px, -1.6cqh, -10px)' }
+                      : { marginTop: 'clamp(-22px, -1.6cqh, -10px)' }),
+                    zIndex: 5,
+                    animation: 'contentReveal 0.4s var(--qq-ease-pop-fast) both',
+                  }}>
+                    {teamsAtThisPille.map(tm => {
+                      const correct = correctIds.has(tm.id);
+                      const dim = isReveal && !correct;
+                      return (
+                        <QQTeamAvatar
+                          key={tm.id}
+                          avatarId={tm.avatarId}
+                          teamEmoji={tm.emoji}
+                          size={'clamp(70px, 7.5cqw, 110px)'}
+                          style={{
+                            opacity: dim ? 0.45 : 1,
+                            filter: dim
+                              ? 'grayscale(0.6)'
+                              : correct
+                                ? 'drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))'
+                                : `drop-shadow(0 0 14px ${tm.color}88)`,
+                            boxShadow: !isReveal
+                              ? `0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.55)`
+                              : correct
+                                ? `0 0 22px ${tm.color}88`
+                                : '0 0 14px rgba(148,163,184,0.18)',
+                            transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : null;
+                const pille = (
+                  <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 12,
                     padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
                     borderRadius: 999,
@@ -379,6 +417,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                         ? (lang === 'en' ? 'Higher' : 'Mehr')
                         : (lang === 'en' ? 'Lower' : 'Weniger')}
                     </span>
+                  </div>
+                );
+                return (
+                  <div key={dir} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  }}>
+                    {isHigher ? avatarRow : null}
+                    {pille}
+                    {isHigher ? null : avatarRow}
                   </div>
                 );
               })}
@@ -466,104 +513,39 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Team-Progress: gleiche Avatare-Reihe in beiden Phasen.
-            Nur das Status-Badge (✓ answered → ✓ correct / ✕ wrong) und
-            die optionale Winnings-Pill ergaenzen sich beim Reveal. */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-          animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.25s both',
-        }}>
-          {/* 2026-05-06 (Wolf 'who got it right weg, in den meisten Faellen
-              spielt nur 1 Team'): Header-Label entfernt. Avatar-Position +
-              Pillen-Glow zeigen das Ergebnis schon — der Text war redundant. */}
-          {/* 2026-05-05 v3 (Wolf-Bug 'avatar overlappt pillen extrem'): Avatar
-              schrumpft beim Flug auf scale(0.55) (visual ~40-60px) + landet
-              IM Pillen-Gap dicht an seiner Pille — nicht darauf. 'higher'
-              parkt direkt UNTER MEHR-Pille (oberer Gap-Bereich), 'lower'
-              parkt direkt ÜBER WENIGER-Pille (unterer Gap-Bereich). Pillen
-              bleiben sichtbar + Label lesbar. Stack-Pile mit kleinem 14px-
-              Spread für mehrere Avatare auf gleicher Pille. */}
-          <div style={{ display: 'flex', gap: 'clamp(14px, 1.8cqw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {hlTeams.map(tm => {
-              const choice = hl.answers[tm.id];  // 'higher' | 'lower' | undefined
-              const answered = !!choice || hl.answeredThisRound.includes(tm.id);
-              const correct = correctIds.has(tm.id);
-              const teamWin = hl.winnings[tm.id] ?? 0;
-              // Im Reveal: dim if wrong; Glow if correct.
-              const dim = isReveal && !correct;
-              const sameChoiceTeams = choice
-                ? hlTeams.filter(t => hl.answers[t.id] === choice)
-                : [];
-              const stackIdx = choice ? sameChoiceTeams.findIndex(t => t.id === tm.id) : 0;
-              const groupSize = sameChoiceTeams.length;
-              const xCenter = groupSize > 0 ? (stackIdx - (groupSize - 1) / 2) * 14 : 0;
-              // Y-Werte zielen mit visual-center auf den Gap-Slot direkt
-              // angrenzend an die jeweilige Pille (nicht IN die Pille).
-              // Plus scale(0.55) macht den Avatar klein genug damit Pillen-
-              // Label lesbar bleibt.
-              // 2026-05-06 v2 (Wolf-Screenshot 'Avatar verdeckt WENIGER-Text'):
-              // Y-Translates groesser — Avatar muss DEUTLICH ueber/unter der
-              // Pille sitzen, nur leichter Overlap an der Pillen-AUSSENKANTE
-              // (nicht auf dem Text). Higher: noch hoeher; Lower: noch tiefer
-              // (weniger negativ = naeher am Avatar-Start unter dem VS-Container).
-              // 2026-05-12 v2 (Wolf 'avatar bei higher leicht ueber den text, bei
-              // lower leicht unter den text — jeweils die Card leicht
-              // ueberschneidend NICHT die Schrift'):
-              // - Higher: Avatar fliegt UEBER die MEHR-Pille von oben → grosser
-              //   Negativ-Translate damit Avatar oberhalb der Pille landet
-              //   und nur die Oberkante leicht ueberlappt (nicht den Text).
-              // - Lower: Avatar fliegt UNTER die WENIGER-Pille → kleinerer
-              //   Negativ-Translate damit Avatar unterhalb der Pille landet.
-              // v1 hatte Higher zu klein (-210 bis -260) → Avatar landete auf
-              // der WENIGER-Pille statt oben an der MEHR-Pille. Jetzt zurueck
-              // auf groessere Negativ-Werte fuer Higher, Lower stay-similar.
-              // 2026-05-13 v3 (Wolf 'Frage-Card hoch, andere Cards unten'):
-              // Parent hat jetzt justifyContent flex-start + Frage-Card
-              // marginBottom:auto → Card-Row + Team-Progress sitzen am
-              // parent-bottom. Avatar fliegt von Team-Progress (am Boden)
-              // nur eine moderate Distanz nach oben zur MEHR-Pille → -250/-200
-               // statt -380/-300.
-              const flyTransform = choice === 'higher'
-                ? `translate(${xCenter}px, clamp(-260px, -19cqh, -200px)) scale(0.7)`
-                : choice === 'lower'
-                  ? `translate(${xCenter}px, clamp(-90px, -6cqh, -40px)) scale(0.7)`
-                  : 'translate(0, 0) scale(1)';
-              return (
-                <div key={tm.id} style={{
-                  position: 'relative',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  opacity: dim ? 0.45 : (answered || isReveal ? 1 : 0.55),
-                  filter: dim
-                    ? 'grayscale(0.6)'
-                    : correct
-                      ? `drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))`
-                      : (answered || isReveal ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)'),
-                  transform: flyTransform,
-                  transition: 'opacity 0.4s ease, filter 0.4s ease, transform 0.65s var(--qq-ease-bounce)',
-                  zIndex: stackIdx + 1,
-                }}>
-                  <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7.5cqw, 110px)'} style={{
-                    // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow
-                    // fuer Submit-Status'): in Question-Phase answered=true →
-                    // gruener Ring + Glow. Reveal-Phase: Team-Color-Glow bleibt
-                    // (Ring kommt vom unten Status-Badge ✓/✕).
-                    boxShadow: !isReveal && answered
-                      ? `0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.55)`
-                      : (correct || (answered && !isReveal))
+        {/* Team-Progress (UNTEN): zeigt NUR Teams ohne Tipp.
+            2026-05-13 v4 (Wolf 8.-Fix): Teams mit choice sind jetzt direkt an
+            ihrer Pille gerendert (siehe Pillen-Stack oben). Untere Row zeigt
+            damit nur noch „wer hat noch nicht entschieden" — und ist leer
+            sobald alle gewaehlt haben. */}
+        {hlTeams.some(tm => !hl.answers[tm.id]) && (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.25s both',
+          }}>
+            <div style={{ display: 'flex', gap: 'clamp(14px, 1.8cqw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {hlTeams.filter(tm => !hl.answers[tm.id]).map(tm => {
+                const answered = hl.answeredThisRound.includes(tm.id);
+                return (
+                  <div key={tm.id} style={{
+                    position: 'relative',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    opacity: answered ? 1 : 0.55,
+                    filter: answered ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)',
+                    transition: 'opacity 0.4s ease, filter 0.4s ease',
+                  }}>
+                    <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7.5cqw, 110px)'} style={{
+                      boxShadow: answered
                         ? `0 0 22px ${tm.color}88`
                         : '0 0 14px rgba(148,163,184,0.18)',
-                    transition: 'box-shadow 0.4s ease',
-                  }} />
-                  {/* 2026-05-06 (Wolf 'rotes X weg weil aufgeloest wird, +1 cell
-                      weg, who got it right weg'): ✓/✕ Status-Badge UND
-                      Winnings-Pille entfernt. Avatar-Position (an gold-pulsender
-                      MEHR/WENIGER-Pille) zeigt das Ergebnis bereits visuell —
-                      die zusaetzlichen Labels waren redundant. */}
-                </div>
-              );
-            })}
+                      transition: 'box-shadow 0.4s ease',
+                    }} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 2026-05-13 (Wolf 'Timer oben rechts statt unten rechts, mehr
             Platz unten fuer Avatar-Flug zur MEHR-Pille'): bottom 32 → top 32. */}

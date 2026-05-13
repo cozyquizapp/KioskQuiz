@@ -581,18 +581,19 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Damit liegen TL und BR strukturell am Ecken-Rand, nicht
                     // mittig-versetzt.
                     //
-                    // - 2-Stack: avFactor 0.50, offset ±25.
-                    //   Avatar 1 Center (25, 25), Radius 25 → reicht (0,0)-(50,50)
-                    //     → TL-Edge-Puffer 0% (genau in der Ecke).
-                    //   Avatar 2 Center (75, 75) → reicht (50,50)-(100,100)
-                    //     → BR-Edge-Puffer 0%.
-                    //   Avatare beruehren sich diagonal exakt im Cell-Center —
-                    //   maximaler Stack-Effekt ohne Overlap.
+                    // - 2-Stack v6: avFactor 0.45, offset ±27.
+                    //   Avatar 1 Center (23, 23), Radius 22.5
+                    //     → reicht (0.5, 0.5) bis (45.5, 45.5) — TL-Edge-Puffer 0.5%
+                    //   Avatar 2 Center (77, 77)
+                    //     → reicht (54.5, 54.5) bis (99.5, 99.5) — BR-Edge-Puffer 0.5%
+                    //   Diagonal-Center-Distance: √(54² + 54²) = 76.4%
+                    //   Avatar-Avatar-Luftspalt: 76.4 - 45 = 31.4% (klare Trennung,
+                    //   keine Beruehrung im Center).
                     //
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.50 : 0.86;
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.45 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
@@ -601,29 +602,42 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
+                        ? [{ tx: -27, ty: -27 }, { tx: 27, ty: 27 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,
                       }}>
-                        {offsets.map((off, i) => (
-                          <div key={i} style={{
-                            position: 'absolute', inset: 0,
-                            margin: 'auto',
-                            width: avSize, height: avSize, borderRadius: '50%',
-                            // cellSize-relative Pixel-Offset. Default ist
-                            // zentriert via inset:0+margin:auto, transform
-                            // verschiebt um cellSize * percent / 100.
-                            transform: `translate(${off.tx * cellSize / 100}px, ${off.ty * cellSize / 100}px)`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            // Z-Order: spaeter gerendert = vorne (Stapel-Look).
-                            zIndex: i + 1,
-                            animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
-                          }}>
-                            <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
-                          </div>
-                        ))}
+                        {offsets.map((off, i) => {
+                          // 2026-05-13 v6 (Wolf 15. Versuch): inset:0 + margin:auto
+                          // funktioniert NICHT zuverlaessig wenn der parent flex-
+                          // Container mit alignItems:center ist (Outer-Wrapper
+                          // Z.537 hat genau das). Browser-Quirk: abs-positioned
+                          // children sollten zwar aus flex-flow raus, aber das
+                          // margin-auto-centering kollidierte. Jetzt: hyperexplizit
+                          // via top:50% + left:50% + translate(-50%, -50%) — der
+                          // Wrapper-Center sitzt 100% sicher beim Cell-Center,
+                          // dann offset-translate vom Center weg.
+                          const txPx = off.tx * cellSize / 100;
+                          const tyPx = off.ty * cellSize / 100;
+                          return (
+                            <div key={i} style={{
+                              position: 'absolute',
+                              top: '50%', left: '50%',
+                              width: avSize, height: avSize, borderRadius: '50%',
+                              // translate(-50%,-50%) zentriert den Wrapper auf
+                              // seinen eigenen Mittelpunkt (Cell-Center). Dann
+                              // verschiebt translate(txPx,tyPx) zum Stack-Slot.
+                              transform: `translate(-50%, -50%) translate(${txPx}px, ${tyPx}px)`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              // Z-Order: spaeter gerendert = vorne (Stapel-Look).
+                              zIndex: i + 1,
+                              animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
+                            }}>
+                              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })())}

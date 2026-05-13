@@ -1377,3 +1377,141 @@ Selektor ueberhaupt im DOM gesetzt wird, bevor man am Style schraubt.
 
 **Open**: QQTeamPage-Refactor Phase 1 weiter (AnimatedDots, CopyButton,
 MobileFireflies, TeamTimerBar, Input-Primitives).
+
+---
+
+## 2026-05-13 (Marathon-Session bis spät) — QQTeamPage 8k → 2.3k + 9 Bug-Fixes + Eurovision-Spec
+
+Längste produktive Session bisher. Ein einziger Refactor-Strang (QQTeamPage Phase 1.2 → 3.4) **plus** 9 Bug-Fixes (3 davon strukturell statt Stochern), **plus** eine Eurovision-Quiz-Spec für externe KI am Ende.
+
+### QQTeamPage-Refactor — 10 Phasen in einer Session
+
+8.072 → 2.282 Zeilen (**−5.790 / −72 %**) über 10 saubere Strangler-Fig-Cuts. 12 neue Files, alle <500 Z., presentation-fokussiert, tsc durchgehend grün.
+
+| Phase | Cut | −Zeilen | Files |
+|---|---|---|---|
+| 1.2 | AnimatedDots / CopyButton / MobileFireflies / TeamTimerBar | −439 | erweitert `CozyQuizTeamPrimitives.tsx` |
+| 1.3 | StandardInput / SubmitBtn / SubmittedBadge | −205 | neu `CozyQuizTeamInputs.tsx` |
+| 1.4 | HelpModal / LeaveQuizConfirm / ReactionPad / MobileEurovisionHearts / AckErrorToast | −358 | neu `CozyQuizTeamOverlays.tsx`, `utils/qqTeamAckBus.ts` |
+| 2.1 | callback-Inputs: TextInput / MuchoInput / AllInInput / Top5Input / FixItInput + `useExpiry`-Hook | −320 | neu `CozyQuizTeamQuestionInputs.tsx`, `hooks/useExpiry.ts` |
+| 2.2 | emit-Inputs: HotPotato / Bluff / OnlyConnect / Imposter / PinIt + safeEmit ausgegliedert | −743 | neu `CozyQuizTeamEmitInputs.tsx`, `qqTeamAckBus.ts` ergänzt |
+| 3.1 | 8 Phase-Cards (Lobby / Rules / TeamsReveal / PhaseIntro / Paused / FinalBetting / FinalRecapHint / FinalReveal / GameOver) + Stamm-Code-Helper | −953 | neu `CozyQuizTeamPhaseCards.tsx`, `utils/qqStammCode.ts` |
+| 3.2 | QuestionCard + AnswerInput-Router + hashString | −830 | neu `CozyQuizTeamQuestionCard.tsx` |
+| 3.3 | Action-Cards: PlacementCard / ComebackCard / ConnectionsTeamCard / Timer | −1.441 | neu `CozyQuizTeamActionCards.tsx` |
+| 3.4 | TeamBottomSheetMenu | −443 | neu `CozyQuizTeamBottomSheet.tsx` |
+
+Pattern in jeder Phase: 1) extern referenzierte Dependencies grep'pen, 2) self-contained Block kopieren mit PowerShell, 3) function → export function, 4) Translation-strings inline (kein t-Dependency-Drift), 5) tsc clean, 6) commit + push.
+
+### 3 strukturelle Bug-Fixes — statt Stochern
+
+#### a) HL-Avatar 8.-Fix — strukturelle Anker statt translate-Distance
+Vorher: Avatare in Team-Progress-Row unten, mit `translate(0, clamp(-260px, -19cqh, -200px))` für `higher`-Choice — versuchte "blind" die MEHR-Pille zu treffen. Bei minHeight clamp(280-400px) Container war -260px zu wenig → Avatar landete auf WENIGER. Wolf hatte das 7× gefixt durch translate-Justierung — typisches Stocher-Pattern.
+
+Fix: Avatare strukturell an den Pillen geanchored im selben flex-column-Stack. MEHR-Gruppe: Avatar-Higher-Row über MEHR-Pille (negative margin-bottom für leichte Card-Überlappung). WENIGER-Gruppe: WENIGER-Pille über Avatar-Lower-Row. Geometrie im DOM codiert, kein Pixel-Raten.
+
+v5 danach (Wolf-Designspec via Screenshot): 3-Slot-Säule — Unentschiedene zwischen den Pillen (Team-Color-Glow), Higher oben grün, Lower unten pink.
+
+v6 (FLIP-Animation): Säule auf CSS-Grid umgebaut (5 rows, alle Avatare als direkte Children) + `useLayoutEffect`-Hook misst boundingRect-Diff + applied invertierten Transform + animiert 600ms zurück zu 0. Smooth Glide statt Snap.
+
+File: `CozyQuizComebackView.tsx`.
+
+#### b) Joker-Bug — Pattern-Selection nach just-placed-Cell
+Vorher: `detectNewJokers` liefert alle qualifizierten Patterns geometrisch oben-links → unten-rechts. `handleJokerDetection` nimmt das erste Pattern. Wenn ein älteres Pattern durch Steal/Re-Steal wieder `jokerCounted=false` bekam, schnappte es sich den Joker vor dem gerade gewonnenen Pattern. Live-Test: Wolf schließt 2×2 oben rechts, Sterne erscheinen auf altem 2×2 mittig.
+
+Fix: Vor der Selektion sortieren — Patterns die `room.lastPlacedCell` enthalten kommen zuerst. Stable-Sort, geometrische Reihenfolge nur als Fallback. 5-Zeilen-Fix im Backend.
+
+File: `backend/src/quarterQuiz/qqRooms.ts`.
+
+#### c) Race-Rahmen + End-Page-Treppchen-Cutoff — 1 Ursache, 2 Symptome
+Wolf hatte den "Rand"-Bug 6× gefixt durch CSS-Selektor-Justierung. Heute Versuch #7: root cause im FinalRevealView Outer-Container gefunden.
+
+```
+padding: 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
+background: COZY_CARD_BG,  // lila gradient #1F1A2E
+```
+
+Race-Slide hat eigene radial-gradient-BG. Die 4 % Padding-Zone zeigte den lila Gradient als sichtbarer Rahmen. Plus: Treppchen-Container verlor 8 % Width → seitliche Teams overflow:hidden = abgeschnitten.
+
+Fix: `fullBleed`-Flag in FinalRevealView. Bei race-final / awards-overview / awards-reveal / grid → `padding: 0` + `background: transparent` (Inner-Slide rendert eigene BG). Bei title / bet bleibt die safe-margin.
+
+File: `CozyQuizFinalRevealView.tsx`.
+
+### Drift-Bug eliminiert — Sieger-Tiebreaker zentral
+
+Vorher: `[...teams].sort((a, b) => b.largestConnected - a.largestConnected)` an 8 Stellen im Code dupliziert ohne Tiebreaker. Bei tie blieb JavaScript-stable-sort bei zufälliger Insertion-Order. Wolf-Live-Test: Wolfsrudel 12-verbunden / 10-gesamt schlug Glühbirnen 12-verbunden / 16-gesamt. Falscher Sieger.
+
+Fix: Single-source-of-truth `compareTeamsForRanking` in `utils/qqTeamRanking.ts`. Regel: largestConnected DESC → totalCells DESC → stable. Alle 8 Aufrufer umgestellt.
+
+### Weitere Polish-Fixes
+
+- **Bet-Card-Auflöse-Animation** (`qqFRSlamOutDown`): vorher 0.55s translateY(110cqh) + rotate(2deg) + blur(4px) "Slam-Out". Jetzt 0.35s sanfter Fade + leichter Scale-Down.
+- **Stack-Avatar +1 (2-Stack)**: Wolf-Screenshot zeigt Avatare diagonal in den Ecken. tx=±20, avFactor 0.42 → 14.6 % Luftspalt, 9 % Edge-Puffer.
+- **Stack-Avatar +2 (3-Stack)**: Wolf-Screenshot zeigt Triangle (war diagonale Linie). Apex (0, -28), Basis ±(22, +15), avFactor 0.34.
+- **BIETEN-Label** im Progress-Tree: defensiv letterSpacing entfernt + Wrapper explicit width gesetzt.
+
+### Eurovision-Quiz-Spec für externe KI
+
+Wolf will Eurovision-Quiz mit 3 Runden × 5 Fragen aufpeppen. Self-contained Markdown-Spec geschrieben (im Chat), die Wolf an eine KI weiterleitet:
+- alle 5 Kategorien (SCHAETZCHEN, MUCHO, ZEHN_VON_ZEHN, CHEESE, BUNTE_TUETE) mit Feldern
+- 6 BUNTE_TUETE-Sub-Mechaniken
+- Verteilungs-Vorschlag pro Runde (Warm-up → Mittel → Klimax)
+- Output-Format JSON
+- Tonalität (warm-pubby, kein TV-Studio, Camp-Faktor erlaubt)
+
+### Patterns die heute gefestigt wurden
+
+1. **"1 Ursache, mehrere Symptome"**: Race-Rahmen + Treppchen-Cutoff hatten dieselbe Wurzel. 6 Symptom-Fixes ohne Erfolg, 1 strukturelle Lösung.
+2. **Drift-Bug-Elimination**: Wenn dieselbe Logik 8× inline kopiert ist, ist das aktive Bug-Erzeugung. Zentraler Helper > 8 Inline-Stellen.
+3. **Strukturell > Stochern**: Bei translate-Distanz-Bugs nicht Pixel-Werte raten, sondern Position im DOM codieren (HL-Avatare an Pillen, Joker mit just-placed-Anker).
+4. **FLIP für DOM-move-Animation**: smooth Slot-Wechsel via useLayoutEffect + boundingRect-Diff + invertiertem Transform — library-frei, ~40 LoC. Voraussetzung: Avatare als direkte Children desselben Parents (CSS-Grid).
+
+### Cumulative Bilanz
+
+- 30+ Commits in der Session (Refactor-Phasen + Bug-Fixes + Spec)
+- QQTeamPage: 8.072 → 2.282 Zeilen (-72 %)
+- 12 neue Component/Utility-Files (alle <500 Z. presentation-fokussiert)
+- 9 Bug-Fixes (3 strukturell, 6 polish)
+- 0 Live-Test heute — alle Refactor-Cuts strikte Strangler-Fig 1:1-Moves mit tsc-clean
+- Backend-Redeploy nötig (Coolify-UI manuell) — Joker-Fix ist in qqRooms.ts
+
+### Open
+
+- **Live-Check der 9 Bug-Fixes** nach Vercel-Deploy (HL-FLIP, Sieger-Tiebreaker, Race-Rahmen, Stack-Avatar, Bet-Anim, BIETEN-Label, Joker)
+- **Coolify-Backend-Redeploy** für Joker-Fix manuell
+- **QQTeamPage Phase 3.5** weiter: kleine Helper-Components (IdentityBanner + YourTurnAlert + MidGameRejoinView + WaitingScreen, ~340 Z. Cut)
+- Verbleibender QQTeamPage-Inhalt (2.282 Z.): SetupFlow (~650 Z.), TeamGameView (~570 Z., Main-Renderer), t-Translations-Object (~270 Z.), Header / Bootstrap (~450 Z.)
+- **Eurovision-Fragen**: Wolf schickt Spec an KI, wartet auf JSON-Array zurück. Builder-Mapping wenn vorhanden.
+- **Designer-Audit-Empfehlungen** (Top-3) noch offen: CozyQuizQuestionView 6.144 Z. (Reveals splitten), backend/server.ts 9.270 Z. (Blitz/Rundlauf/Cozy60), QQModeratorPage Hotkeys-Hook.
+
+### Files (massiv berührt)
+
+Neue Files (13):
+- `frontend/src/components/CozyQuizTeamPrimitives.tsx` (erweitert)
+- `frontend/src/components/CozyQuizTeamInputs.tsx`
+- `frontend/src/components/CozyQuizTeamOverlays.tsx`
+- `frontend/src/components/CozyQuizTeamQuestionInputs.tsx`
+- `frontend/src/components/CozyQuizTeamEmitInputs.tsx`
+- `frontend/src/components/CozyQuizTeamPhaseCards.tsx`
+- `frontend/src/components/CozyQuizTeamQuestionCard.tsx`
+- `frontend/src/components/CozyQuizTeamActionCards.tsx`
+- `frontend/src/components/CozyQuizTeamBottomSheet.tsx`
+- `frontend/src/hooks/useExpiry.ts`
+- `frontend/src/utils/qqTeamAckBus.ts`
+- `frontend/src/utils/qqStammCode.ts`
+- `frontend/src/utils/qqTeamRanking.ts`
+
+Refactored:
+- `frontend/src/pages/QQTeamPage.tsx` (Hauptfile, 8.072 → 2.282)
+- `frontend/src/components/CozyQuizComebackView.tsx` (HL-Avatar strukturell + FLIP)
+- `frontend/src/components/CozyQuizFinalRevealView.tsx` (Race-Rahmen + Bet-Animation)
+- `frontend/src/components/CozyQuizGridDisplay.tsx` (Stack-Avatar 2/3 diagonal)
+- `frontend/src/components/CozyQuizScoreBar.tsx` (Tiebreaker)
+- `frontend/src/components/QQCustomSlide.tsx` (Tiebreaker × 3)
+- `frontend/src/components/QQProgressTree.tsx` (BIETEN-Label mittig)
+- `frontend/src/pages/QQModeratorPage.tsx` (Tiebreaker)
+- `frontend/src/pages/QQSummaryPage.tsx` (Tiebreaker)
+- `backend/src/quarterQuiz/qqRooms.ts` (Joker-just-placed-Anker)
+
+### Memory-Note
+
+Trigger 'log das' = SESSION_LOG-Append + commit + push. Chat-Wechsel danach geplant. 🦖❣️

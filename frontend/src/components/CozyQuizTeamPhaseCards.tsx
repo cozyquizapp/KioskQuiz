@@ -1,0 +1,968 @@
+/**
+ * CozyQuizTeamPhaseCards — kompakte Phase-Cards fuer Pre-Game + End-Game.
+ *
+ * Im Gegensatz zu QuestionCard/PlacementCard/ComebackCard/ConnectionsTeamCard
+ * (komplexe Game-Mid-State-Maschinen) sind das hier alles relativ kompakte
+ * display-only oder simple-state Cards, die fuer eine konkrete Phase rendern.
+ *
+ * Components:
+ * - LobbyCard — Hero-Card mit eigenem Team + Gegner-Liste + READY-Pulse
+ * - RulesCard — animiertes Listen-Indikator (Wolf erklaert)
+ * - TeamsRevealCard — Big-Avatar-Reveal mit Sparkles + Glow
+ * - PhaseIntroCard — Runde + Regel-Reminder + Kategorie-Intro (3 Render-Modi)
+ * - PausedCard — Standings-Mini mit eigenem Rank
+ * - FinalBettingCard — Tipp-Picker fuer Final-Bet (emit-based)
+ * - FinalRecapHintCard — Zwischenstand-Hint mit Beamer-Verweis
+ * - FinalRevealCard — Tipp-Aufloesung mit Sympathie-Bonus + Total
+ * - GameOverCard — Sieger + Rankings + Stamm-Code-Copy
+ *
+ * Extrahiert aus QQTeamPage.tsx 2026-05-13 (Refactor Phase 3.1).
+ */
+import React, { useEffect, useState } from 'react';
+import {
+  QQStateUpdate, QQTeam, qqGetAvatar,
+  QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
+} from '../../../shared/quarterQuizTypes';
+import { QQ_CAT_ACCENT } from '../qqShared';
+import { getRoundColor } from '../qqDesignTokens';
+import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
+import { CozyCard, CozyBtn, CopyButton } from './CozyQuizTeamPrimitives';
+import { safeEmit } from '../utils/qqTeamAckBus';
+import { formatStammCode } from '../utils/qqStammCode';
+
+// ── LobbyCard ────────────────────────────────────────────────────────────────
+export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
+  const de = lang === 'de';
+  const opponents = s.teams.filter(t => t.id !== myTeam?.id);
+
+  // Pulsing ready dot
+  const [pulse, setPulse] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setPulse(p => !p), 1200);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!myTeam) {
+    // Not yet joined — simple waiting view
+    return (
+      <CozyCard>
+        <div style={{ textAlign: 'center', padding: '12px 0' }}>
+          <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 6 }}>
+            {de ? 'Warteraum' : 'Waiting room'}
+          </div>
+          <div style={{ fontSize: 14, color: '#64748b' }}>
+            {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} Teams`}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
+  return (
+    <CozyCard borderColor="#EC4899" pulse>
+      <div style={{ textAlign: 'center', padding: '4px 0' }}>
+        {/* Own team — hero display */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginBottom: 8,
+        }}>
+          <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={56} style={{
+            margin: '0 auto',
+            animation: 'tcfloat 3s ease-in-out infinite',
+            filter: `drop-shadow(0 0 12px ${myTeam.color}44)`,
+          }} />
+          <div style={{ fontWeight: 900, fontSize: 22, color: myTeam.color, marginTop: 4 }}>
+            {myTeam.name}
+          </div>
+          {/* Pulsing ready indicator */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 16px', borderRadius: 999, marginTop: 4,
+            background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
+          }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#22C55E',
+              boxShadow: pulse ? '0 0 8px #22C55E' : '0 0 2px #22C55E',
+              transition: 'box-shadow 0.6s ease',
+            }} />
+            <span style={{ fontSize: 13, fontWeight: 900, color: '#4ade80', letterSpacing: '0.04em' }}>
+              {de ? 'BEREIT' : 'READY'}
+            </span>
+          </div>
+        </div>
+
+        {/* VS separator */}
+        {opponents.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0',
+          }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{
+              fontWeight: 900, fontSize: 20, color: '#EF4444',
+              textShadow: '0 0 14px rgba(239,68,68,0.4)',
+              letterSpacing: '0.15em',
+            }}>VS</div>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+        )}
+
+        {/* Opponents */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {opponents.map(t => (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 14px', borderRadius: 16,
+              background: `${t.color}08`,
+              border: `1px solid ${t.color}22`,
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
+              <span style={{ fontWeight: 900, fontSize: 16, color: t.color }}>{t.name}</span>
+            </div>
+          ))}
+          {opponents.length === 0 && (
+            <div style={{ fontSize: 14, color: '#64748b', fontStyle: 'italic', padding: '8px 0' }}>
+              {de ? 'Warte auf Gegner…' : 'Waiting for opponents…'}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── RulesCard ────────────────────────────────────────────────────────────────
+export function RulesCard({ lang }: { lang: 'de' | 'en' }) {
+  const [dot, setDot] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setDot(d => (d + 1) % 4), 500);
+    return () => clearInterval(id);
+  }, []);
+  const dots = '.'.repeat(dot);
+
+  return (
+    <CozyCard>
+      <div style={{ textAlign: 'center', padding: '12px 4px', animation: 'tcreveal 0.5s ease both' }}>
+        <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcwobble 1.4s ease-in-out infinite' }}>👂</div>
+        <div style={{ fontWeight: 900, fontSize: 20, color: '#F1F5F9', marginBottom: 8 }}>
+          {lang === 'de' ? 'Gut zuhören!' : 'Listen up!'}
+        </div>
+        <div style={{ fontSize: 15, color: '#94A3B8', lineHeight: 1.5 }}>
+          {lang === 'de'
+            ? 'Jetzt erklären wir die Regeln'
+            : 'We are explaining the rules now'}
+          <span style={{ display: 'inline-block', width: 24, textAlign: 'left' }}>{dots}</span>
+        </div>
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8 }}>
+          {['📖', '🗺️', '⭐'].map((e, i) => (
+            <div key={i} style={{
+              fontSize: 22,
+              animation: `tcwobble 2s ease-in-out ${i * 0.35}s infinite`,
+            }}>{e}</div>
+          ))}
+        </div>
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── TeamsRevealCard ──────────────────────────────────────────────────────────
+export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang: 'de' | 'en' }) {
+  if (!myTeam) return null;
+  // av wird aktuell nicht im Body genutzt, gehoert aber zur Reveal-Phase
+  // (placeholder fuer kuenftige Avatar-Effekte). Strangler-Fig 1:1.
+  qqGetAvatar(myTeam.avatarId);
+  const color = myTeam.color;
+  return (
+    <CozyCard borderColor={`${color}cc`} pulse>
+      <style>{`
+        @keyframes tcTeamPop {
+          0% { opacity: 0; transform: scale(0.5) rotate(-12deg); }
+          55% { opacity: 1; transform: scale(1.1) rotate(4deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes tcFloat {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes tcGlow {
+          0%,100% { box-shadow: 0 0 0 0 ${color}55, 0 10px 36px ${color}44; }
+          50%     { box-shadow: 0 0 0 14px ${color}00, 0 10px 36px ${color}88; }
+        }
+        @keyframes tcSparkle {
+          0%,100% { opacity: 0.5; transform: scale(1); }
+          50%     { opacity: 1;   transform: scale(1.2); }
+        }
+      `}</style>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 22, padding: '18px 8px 10px', position: 'relative',
+      }}>
+        {/* Top label */}
+        <div style={{
+          fontSize: 12, fontWeight: 900, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: '#F9A8D4',
+          animation: 'tcreveal 0.4s ease both',
+        }}>
+          🎬 {lang === 'en' ? "Today's players" : 'Heute spielen'}
+        </div>
+
+        {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring */}
+        <QQTeamAvatar avatarId={myTeam.avatarId} teamEmoji={myTeam.emoji} size={160} style={{
+          animation: 'tcTeamPop 0.7s var(--qq-ease-bounce) both, tcFloat 3s ease-in-out 0.9s infinite, tcGlow 2.4s ease-in-out 0.9s infinite',
+          boxShadow: `0 0 32px ${color}55`,
+        }} />
+
+        {/* Team name banner */}
+        <div style={{
+          padding: '10px 22px', borderRadius: 16,
+          background: color, color: '#fff',
+          fontSize: 26, fontWeight: 900, letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          boxShadow: `0 6px 20px ${color}88`,
+          animation: 'tcTeamPop 0.6s var(--qq-ease-bounce) 0.15s both',
+        }}>
+          {myTeam.name}
+        </div>
+
+        {/* Motivational line */}
+        <div style={{
+          fontSize: 22, fontWeight: 900,
+          color: '#EC4899', textAlign: 'center',
+          letterSpacing: '0.04em',
+          textShadow: '0 2px 14px rgba(236,72,153,0.4)',
+          animation: 'tcreveal 0.5s ease 0.4s both',
+        }}>
+          <QQEmojiIcon emoji="✨"/> {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} <QQEmojiIcon emoji="✨"/>
+        </div>
+
+        {/* Tagline */}
+        <div style={{
+          fontSize: 14, fontWeight: 700, color: '#94a3b8', textAlign: 'center',
+          fontStyle: 'italic', lineHeight: 1.5, maxWidth: 280,
+          animation: 'tcreveal 0.5s ease 0.55s both',
+        }}>
+          {lang === 'en'
+            ? 'Phones at the ready — here we go!'
+            : 'Handy bereithalten — gleich geht\'s los!'}
+        </div>
+
+        {/* Sparkles */}
+        <div style={{
+          position: 'absolute', top: 12, left: 16, fontSize: 20,
+          animation: 'tcSparkle 1.8s ease-in-out infinite',
+        }}><QQEmojiIcon emoji="✨"/></div>
+        <div style={{
+          position: 'absolute', top: 40, right: 18, fontSize: 16,
+          animation: 'tcSparkle 2.2s ease-in-out 0.4s infinite',
+        }}><QQEmojiIcon emoji="⭐"/></div>
+        <div style={{
+          position: 'absolute', bottom: 30, left: 22, fontSize: 16,
+          animation: 'tcSparkle 2s ease-in-out 0.8s infinite',
+        }}><QQEmojiIcon emoji="⭐"/></div>
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── PhaseIntroCard ───────────────────────────────────────────────────────────
+export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
+  // 2026-05-09 (Wolf 'team-Farben noch alt'): nutzt Brand-Pink-Eskalation
+  // (QQ_PHASE_COLORS via getRoundColor) statt buntes Blue/Pink/Red/Purple-
+  // Mapping. Letzte Phase = Magenta (#A21247).
+  const totalPhases = (s.totalPhases ?? 4) as number;
+  const color = getRoundColor(s.gamePhaseIndex, totalPhases);
+  // Quiz-Runden heissen immer „Runde N". Das echte „Finale" ist seit
+  // Connections-Einfuehrung das 4×4-Mini-Game.
+  const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
+  // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
+  // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!'],
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Collect quiz buddy points — stack-bonus finale follows!'] };
+
+  const questionInPhase = (s.questionIndex % 5) + 1;
+  const isFirstOfRound = questionInPhase === 1;
+  const showRules    = isFirstOfRound && s.introStep === 1;
+  const showCategory = !isFirstOfRound || s.introStep >= 2;
+  const phaseName = names[lang][s.gamePhaseIndex];
+  const phaseDesc = descs[lang][s.gamePhaseIndex];
+
+  const cat = s.currentQuestion?.category;
+  const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
+  const catColor = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat]) : color;
+  // Synchron mit Beamer (QQBeamerPage CAT_EXPLAIN + BUNTE_SUB_INTRO).
+  const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
+    SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
+    MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
+    BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
+    ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
+    CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
+  };
+  // Card border — round color for round intro, category color for category steps
+  const introBorder = showCategory ? catColor : color;
+
+  return (
+    <CozyCard borderColor={introBorder}>
+      <div style={{ textAlign: 'center', padding: '8px 0', animation: 'tcreveal 0.5s ease both' }}>
+        {!showCategory && !showRules ? (
+          /* Round announcement */
+          <>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 6 }}>
+              {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
+            </div>
+            <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
+              animation: 'tcfloat 3s ease-in-out infinite' }}>
+              {phaseName ?? `${lang === 'de' ? 'Runde' : 'Round'} ${s.gamePhaseIndex}`}
+            </div>
+            <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
+              {phaseDesc ?? ''}
+            </div>
+          </>
+        ) : showRules ? (
+          /* Rule reminder */
+          (() => {
+            // Synchron mit Beamer ROUND_RULES. Bann/Schild/Tauschen sind raus,
+            // aktuelle Trinity ist Setzen/Klauen/Stapeln.
+            const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
+              1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
+              2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 tiles or steal', 'Per correct answer'] },
+              3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
+              4: { emoji: '🏯', de: ['Quiz-Buddy-Punkte', 'danach Stapel-Bonus im Finale'], en: ['Quiz buddy points', 'stack-bonus finale follows'] },
+            };
+            const r = RULES[s.gamePhaseIndex] ?? RULES[3];
+            return (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '0.04em', marginBottom: 6 }}>
+                  {phaseName}
+                </div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44 }}>
+                  {s.gamePhaseIndex === 3 ? (
+                    <QQIcon slug="marker-sanduhr" size={44} alt="Bann" />
+                  ) : s.gamePhaseIndex === 4 ? (
+                    <QQIcon slug="marker-swap" size={44} alt="Swap" />
+                  ) : (
+                    r.emoji
+                  )}
+                </div>
+                {s.gamePhaseIndex > 1 && (
+                  <div style={{
+                    display: 'inline-block', padding: '3px 14px', borderRadius: 999,
+                    background: `${color}22`, border: `1px solid ${color}44`,
+                    fontSize: 13, fontWeight: 900, color, letterSpacing: '0.1em',
+                    marginBottom: 6,
+                  }}>
+                    {lang === 'de' ? '✨ NEU' : '✨ NEW'}
+                  </div>
+                )}
+                {(lang === 'en' ? r.en : r.de).map((line, i) => (
+                  <div key={i} style={{
+                    fontSize: i === 0 ? 22 : 16, fontWeight: i === 0 ? 900 : 700,
+                    color: i === 0 ? '#F1F5F9' : `${color}aa`,
+                    marginTop: i === 0 ? 4 : 2,
+                  }}>{line}</div>
+                ))}
+              </>
+            );
+          })()
+        ) : s.categoryIsNew ? (
+          /* Category explanation — first time this category/mechanic appears */
+          (() => {
+            const btKind = s.currentQuestion?.bunteTuete?.kind;
+            const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
+              SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Close Call' }, lines: { de: ['Wer am nächsten dran liegt, gewinnt', 'Knapp dran zählt auch'], en: ['Closest guess wins', 'Near misses also count'] } },
+              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
+              ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
+              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Erkennt das Bild — tippt die Antwort ins Handy.'], en: ['Spot the image — type your answer.'] } },
+              'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Bis zu 5 Antworten', 'Meiste Treffer gewinnt'], en: ['Up to 5 answers', 'Most hits wins'] } },
+              'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['Findet die EINE falsche Aussage', 'unter 7 wahren'], en: ['Spot the ONE false statement', 'among 7 true ones'] } },
+              'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
+              'BUNTE_TUETE:map':        { emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' }, lines: { de: ['Errate den Ort auf der Karte', 'Nächstes Team gewinnt'], en: ['Guess the location on the map', 'Closest team wins'] } },
+              'BUNTE_TUETE:hotPotato':  { emoji: '🔥', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' }, lines: { de: ['Reihum antworten', 'Keine Antwort vor Zeitende = raus'], en: ['Take turns', 'No answer before time runs out = out'] } },
+              'BUNTE_TUETE:onlyConnect':{ emoji: '🧩', title: { de: '4 gewinnt', en: 'Only Connect' }, lines: { de: ['4 Begriffe — was verbindet sie?', '1 Tipp · schnellste richtig zuerst'], en: ['4 terms — what connects them?', '1 guess · fastest correct first'] } },
+              'BUNTE_TUETE:bluff':      { emoji: '🎭', title: { de: 'Bluff', en: 'Bluff' }, lines: { de: ['Erfindet plausible Falsch-Antworten', 'und ratet die echte'], en: ['Make up plausible fake answers', 'and find the real one'] } },
+            };
+            const key = cat === 'BUNTE_TUETE' && btKind ? `BUNTE_TUETE:${btKind}` : (cat ?? '');
+            const info = TC_INTRO[key] ?? TC_INTRO[cat ?? ''];
+            if (!info) return null;
+            return (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 900, color: catColor, letterSpacing: '0.04em', marginBottom: 8 }}>
+                  {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                </div>
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}><QQEmojiIcon emoji={info.emoji}/></div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: catColor, textShadow: `0 0 20px ${catColor}44` }}>
+                  {info.title[lang]}
+                </div>
+                {info.lines[lang].map((line, i) => (
+                  <div key={i} style={{
+                    fontSize: 15, fontWeight: 700, color: i === 0 ? '#F1F5F9' : `${catColor}88`,
+                    marginTop: i === 0 ? 8 : 2,
+                  }}>{line}</div>
+                ))}
+                {/* User-Wunsch 2026-04-28: 'Antwort auf dem Handy' war redundant
+                    auf dem Handy selbst. Komplett raus. */}
+              </>
+            );
+          })()
+        ) : (
+          /* Category reveal — already seen, compact */
+          <>
+            <div style={{ fontSize: 13, fontWeight: 900, color: catColor, letterSpacing: '0.04em', marginBottom: 6 }}>
+              {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 12 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <div key={n} style={{
+                  width: n === questionInPhase ? 18 : 8,
+                  height: 8, borderRadius: 4,
+                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(255,255,255,0.1)',
+                  transition: 'all 0.3s ease',
+                }} />
+              ))}
+            </div>
+            {catInfo && (
+              <>
+                <div style={{ fontSize: 44, marginBottom: 4, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite' }}>
+                  {(() => {
+                    // 2026-05-11 (Wolf): bei Bunte-Tuete-Sub-Mechanik das
+                    // spezifische Sub-Icon/Emoji nutzen statt generisches 🎁.
+                    const btKind = s.currentQuestion?.category === 'BUNTE_TUETE'
+                      ? s.currentQuestion?.bunteTuete?.kind
+                      : undefined;
+                    const subSlug = btKind ? qqSubSlug(btKind) : null;
+                    const slug = btKind ? subSlug : (cat ? qqCatSlug(cat as string) : null);
+                    const fallback = btKind ? QQ_BUNTE_TUETE_LABELS[btKind].emoji : catInfo.emoji;
+                    return slug
+                      ? <QQIcon slug={slug} size={56} alt={catInfo[lang]} />
+                      : fallback;
+                  })()}
+                </div>
+                <div style={{
+                  fontSize: 32, fontWeight: 900, color: catColor,
+                  textShadow: `0 0 20px ${catColor}44`,
+                }}>
+                  {catInfo[lang]}
+                </div>
+                {cat && CAT_EXPLAIN[cat] && (
+                  <div style={{ fontSize: 15, color: `${catColor}88`, marginTop: 6, fontWeight: 700 }}>
+                    {CAT_EXPLAIN[cat][lang]}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── PausedCard ───────────────────────────────────────────────────────────────
+export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
+  const de = lang === 'de';
+  const sorted = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myRank = sorted.findIndex(t => t.id === myTeamId) + 1;
+
+  return (
+    <CozyCard>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#94a3b8' }}>
+          ⏸ {de ? 'Kurze Pause' : 'Short Break'}
+        </div>
+
+        {myTeam && (
+          <div style={{
+            background: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: '14px 18px',
+            border: `2px solid ${myTeam.color}44`,
+          }}>
+            <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700, marginBottom: 6 }}>
+              {de ? 'Dein Stand' : 'Your Position'}
+            </div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: myTeam.color }}>
+              #{myRank}
+            </div>
+            <div style={{ fontSize: 16, color: '#94a3b8', fontWeight: 700 }}>
+              {myTeam.totalCells} {de ? (myTeam.totalCells === 1 ? 'Feld' : 'Felder') : (myTeam.totalCells === 1 ? 'cell' : 'cells')}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sorted.map((t, i) => (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+              borderRadius: 8,
+              background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
+            }}>
+              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: '#64748b', fontWeight: 900 }}>
+                {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
+              </span>
+              <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#EC4899' }}>{t.totalCells}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 14, color: '#475569', fontWeight: 700 }}>
+          {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
+        </div>
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── FinalBettingCard ─────────────────────────────────────────────────────────
+export function FinalBettingCard({
+  state: s, myTeamId, emit, roomCode, lang,
+}: {
+  state: QQStateUpdate; myTeamId: string;
+  emit: any; roomCode: string; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  const [pickedTargetId, setPickedTargetId] = useState<string | null>(null);
+  const submitted = !!s.finalBettingSubmitted?.[myTeamId];
+  const totalSubmitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
+  const totalTeams = s.teams.length;
+
+  const handleSubmit = () => {
+    if (!pickedTargetId) {
+      safeEmit(emit, 'qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: null });
+    } else {
+      safeEmit(emit, 'qq:submitFinalBet', { roomCode, teamId: myTeamId, bet: { targetTeamId: pickedTargetId } });
+    }
+    if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
+  };
+
+  if (submitted) {
+    const myBet = s.finalBets?.[myTeamId];
+    const targetTeam = myBet ? s.teams.find(t => t.id === myBet.targetTeamId) : null;
+    return (
+      <CozyCard borderColor={myColor}>
+        <div style={{ textAlign: 'center', padding: '8px 0' }}>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>🎲</div>
+          <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
+            {de ? 'Tipp abgegeben!' : 'Tip placed!'}
+          </div>
+          {targetTeam && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 999,
+              background: `${targetTeam.color}1a`,
+              border: `1.5px solid ${targetTeam.color}66`,
+              marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 12, color: '#94A3B8' }}>{de ? 'Du tippst auf' : 'You tip'}</span>
+              <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={24} />
+              <span style={{ fontWeight: 900, color: targetTeam.color }}>{targetTeam.name}</span>
+            </div>
+          )}
+          {!targetTeam && (
+            <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 12, fontStyle: 'italic' }}>
+              {de ? 'Kein Tipp abgegeben (0 Bonus möglich)' : 'No tip placed (0 bonus possible)'}
+            </div>
+          )}
+          <div style={{ fontSize: 14, color: '#94A3B8', marginBottom: 12 }}>
+            {de
+              ? `${totalSubmitted} von ${totalTeams} Teams haben getippt`
+              : `${totalSubmitted} of ${totalTeams} teams tipped`}
+          </div>
+          <div style={{
+            padding: '12px 14px', borderRadius: 12,
+            background: `${myColor}14`, border: `1px solid ${myColor}33`,
+            fontSize: 13, color: '#CBD5E1', lineHeight: 1.4,
+          }}>
+            {de
+              ? 'Schau jetzt auf den Beamer — die Final-Runde startet gleich.'
+              : 'Watch the beamer — the final round starts soon.'}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
+  return (
+    <CozyCard borderColor={myColor} pulse>
+      <div style={{ textAlign: 'center', padding: '4px 0 8px' }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+          {de ? '🪙 Final-Tipp' : '🪙 Final tip'}
+        </div>
+        <div style={{ fontWeight: 900, fontSize: 22, color: '#F1F5F9', marginBottom: 4, letterSpacing: '-0.01em' }}>
+          {de ? 'Auf wen tippst du?' : 'Who do you bet on?'}
+        </div>
+        <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 14, lineHeight: 1.45 }}>
+          {/* 2026-05-09 (Wolf): Sympathie-Bonus bewusst nicht erwaehnt — bleibt
+              Ueberraschung beim End-Reveal. */}
+          {de
+            ? 'Pro gewonnene Final-Kategorie deines Tipps = +1 Bonus. Kein Verlust!'
+            : 'For each final-category win of your tip = +1 bonus. No loss!'}
+        </div>
+      </div>
+
+      {/* Team-Liste als Picker. Tap = pick (toggle off bei zweitem Tap). */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        {s.teams.map(t => {
+          const isMe = t.id === myTeamId;
+          const isPicked = pickedTargetId === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => {
+                setPickedTargetId(isPicked ? null : t.id);
+                if (navigator.vibrate) navigator.vibrate(isPicked ? 8 : 15);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: isPicked ? `${t.color}33` : `${t.color}14`,
+                border: isPicked ? `2.5px solid ${t.color}` : `1.5px solid ${t.color}55`,
+                color: '#F1F5F9', cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 15, fontWeight: 800,
+                textAlign: 'left',
+                transition: 'transform 0.14s, background 0.18s, border 0.18s, box-shadow 0.18s',
+                boxShadow: isPicked ? `0 0 24px ${t.color}88, 0 4px 12px rgba(0,0,0,0.3)` : 'none',
+                transform: isPicked ? 'scale(1.02)' : 'scale(1)',
+              }}
+              onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onTouchEnd={(e) => { e.currentTarget.style.transform = isPicked ? 'scale(1.02)' : 'scale(1)'; }}
+            >
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={42} />
+              <span style={{ flex: 1, color: t.color, fontSize: 17 }}>{t.name}</span>
+              {isMe && (
+                <span style={{
+                  fontSize: 10, fontWeight: 900,
+                  padding: '3px 8px', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.10)', color: '#F1F5F9',
+                  letterSpacing: 0.4,
+                }}>{de ? 'ICH' : 'ME'}</span>
+              )}
+              {isPicked && (
+                <span style={{
+                  fontSize: 18, lineHeight: 1,
+                }}>✓</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Submit-Btn */}
+      <CozyBtn color={pickedTargetId ? myColor : '#64748B'} onClick={handleSubmit}>
+        {pickedTargetId
+          ? (de ? 'Tipp bestätigen' : 'Confirm tip')
+          : (de ? 'Ohne Tipp abgeben (0 Bonus)' : 'Submit no tip (0 bonus)')}
+      </CozyBtn>
+    </CozyCard>
+  );
+}
+
+// ── FinalRecapHintCard ───────────────────────────────────────────────────────
+// 2026-05-09 v3 (Wolf 'waehrend recap auf /team einen hinweis statt voller
+// tabelle'): kompakte Card die zwischen Final-Fragen erscheint.
+export function FinalRecapHintCard({
+  state: s, myTeamId, lang,
+}: {
+  state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const myBet = (s.finalBets ?? {})[myTeamId];
+  const targetTeam = myBet?.targetTeamId ? s.teams.find(t => t.id === myBet.targetTeamId) : null;
+  const targetWins = targetTeam ? ((s.finalPhaseWins ?? {})[targetTeam.id] ?? 0) : 0;
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  return (
+    <CozyCard borderColor={myColor}>
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 36, marginBottom: 6 }}>📊</div>
+        <div style={{
+          fontSize: 11, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8,
+        }}>
+          {de ? '🪙 Zwischenstand' : '🪙 Standings'}
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: '#F1F5F9', lineHeight: 1.4, marginBottom: 14 }}>
+          {de ? 'Schau auf den Beamer — wie steht dein Tipp?' : 'Check the screen — how\'s your tip doing?'}
+        </div>
+        {targetTeam ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: 16,
+            background: `${targetTeam.color}1a`,
+            border: `1.5px solid ${targetTeam.color}66`,
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {de ? 'Dein Tipp' : 'Your tip'}
+            </span>
+            <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={36} />
+            <span style={{ fontWeight: 900, color: targetTeam.color, fontSize: 16, flex: 1, textAlign: 'left' }}>
+              {targetTeam.name}
+            </span>
+            <span style={{
+              fontSize: 22, fontWeight: 900, color: '#FBBF24',
+              fontVariantNumeric: 'tabular-nums',
+              textShadow: '0 0 12px rgba(251,191,36,0.5)',
+            }}>{targetWins} 🏆</span>
+          </div>
+        ) : (
+          <div style={{
+            fontSize: 13, color: '#94A3B8', fontStyle: 'italic',
+            padding: '10px 14px', borderRadius: 12,
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            {de ? 'Du hattest keinen Tipp abgegeben.' : 'You placed no tip.'}
+          </div>
+        )}
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── FinalRevealCard ──────────────────────────────────────────────────────────
+// 2026-05-09 (Final-Wager Refactor): Tipp-Variante. Zeigt mein Tipp-Ergebnis:
+// targetTeam · N Wins · Sympathie-Bonus · Total-Bonus.
+export function FinalRevealCard({
+  state: s, myTeamId, lang,
+}: {
+  state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  const myResolution = s.finalBetResolution?.[myTeamId];
+  const targetTeam = myResolution?.targetTeamId ? s.teams.find(t => t.id === myResolution.targetTeamId) : null;
+  const mutualPartner = myResolution?.mutualWith ? s.teams.find(t => t.id === myResolution.mutualWith) : null;
+
+  return (
+    <CozyCard borderColor={myColor}>
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 38, marginBottom: 8 }}>🏆</div>
+        <div style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+          {de ? 'Final-Auflösung' : 'Final reveal'}
+        </div>
+        {!myResolution || !targetTeam ? (
+          <div style={{ fontSize: 14, color: '#94A3B8', fontStyle: 'italic', padding: '14px 0' }}>
+            {de ? 'Du hattest keinen Tipp abgegeben — kein Bonus.' : 'You placed no tip — no bonus.'}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            {/* Mein Tipp */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 14px', borderRadius: 14,
+              background: `${targetTeam.color}1a`,
+              border: `1.5px solid ${targetTeam.color}66`,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>
+                {de ? 'Tipp' : 'Tip'}
+              </span>
+              <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={32} />
+              <span style={{ flex: 1, fontWeight: 900, color: targetTeam.color, fontSize: 15, textAlign: 'left' }}>{targetTeam.name}</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: targetTeam.color }}>
+                {myResolution.targetWins}× 🏆
+              </span>
+            </div>
+            {/* Sympathie-Bonus 💞 wenn mutual */}
+            {mutualPartner && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px', borderRadius: 14,
+                background: 'linear-gradient(135deg, rgba(244,114,182,0.18), rgba(236,72,153,0.10))',
+                border: '1.5px solid rgba(244,114,182,0.55)',
+                boxShadow: '0 0 18px rgba(244,114,182,0.35)',
+              }}>
+                <span style={{ fontSize: 22 }}>💞</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#FBCFE8', textAlign: 'left' }}>
+                  {de
+                    ? `Sympathie-Bonus mit ${mutualPartner.name}`
+                    : `Sympathy bonus with ${mutualPartner.name}`}
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#FBCFE8' }}>+1</span>
+              </div>
+            )}
+            {/* Total */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '14px 16px', borderRadius: 14,
+              background: 'rgba(34,197,94,0.12)',
+              border: '2px solid rgba(34,197,94,0.45)',
+              marginTop: 4,
+            }}>
+              <span style={{ fontSize: 14, color: '#86EFAC', fontWeight: 800 }}>
+                {de ? '✨ Dein Bonus' : '✨ Your bonus'}
+              </span>
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#22C55E' }}>
+                +{myResolution.totalBonus}
+              </span>
+            </div>
+          </div>
+        )}
+        <div style={{ marginTop: 14, fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
+          {de ? 'Schau auf den Beamer für die End-Awards!' : 'Watch the beamer for the end-awards!'}
+        </div>
+      </div>
+    </CozyCard>
+  );
+}
+
+// ── GameOverCard ─────────────────────────────────────────────────────────────
+export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
+  const sorted  = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
+  const myTeam  = sorted.find(t => t.id === myTeamId);
+  const winner  = sorted[0];
+  const iWon = myRank === 1;
+  // 2026-05-02 (Stamm-Team-Code): teamId als lesbarer Code formatiert.
+  // Wird beim naechsten Pub-Besuch im Setup eingegeben → Win-Streak.
+  const stammCode = formatStammCode(myTeamId);
+  const wonLabel = lang === 'de' ? 'Gewonnen! 🎉' : 'You won! 🎉';
+  const winsLabelTpl = lang === 'de' ? '{name} gewinnt!' : '{name} wins!';
+  const connectedLabel = lang === 'de' ? 'verbunden' : 'connected';
+
+  return (
+    <CozyCard borderColor={iWon ? '#EC4899' : undefined}>
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        {/* Hero section */}
+        <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>
+          {iWon ? (
+            <div style={{ fontSize: 52, marginBottom: 4 }}><QQEmojiIcon emoji="🏆"/></div>
+          ) : (
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={52} style={{ margin: '0 auto 4px' }} />
+          )}
+          {iWon ? (
+            <div style={{ fontSize: 26, fontWeight: 900, color: myTeam?.color, marginBottom: 4 }}>
+              {wonLabel}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontWeight: 900, color: winner.color, fontSize: 22, marginBottom: 2 }}>
+                {winsLabelTpl.replace('{name}', winner.name)}
+              </div>
+              <div style={{
+                display: 'inline-block', padding: '4px 14px', borderRadius: 999,
+                background: `${myTeam?.color ?? '#64748b'}18`,
+                border: `1px solid ${myTeam?.color ?? '#64748b'}44`,
+                fontSize: 14, fontWeight: 900, color: myTeam?.color ?? '#94a3b8',
+              }}>
+                {lang === 'de' ? `Ihr: Platz ${myRank}` : `You: #${myRank}`}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Rankings */}
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sorted.map((tm, i) => {
+            const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+            // 2026-05-05 (Wolf 'team color = team id'): tm.color ist seit
+            // Backend-Fix automatisch die Brett-Palette-Farbe.
+            const tmColor = tm.color;
+            return (
+              <div key={tm.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,
+                background: tm.id === myTeamId ? `${tmColor}18` : 'rgba(255,255,255,0.03)',
+                border: tm.id === myTeamId ? `2px solid ${tmColor}44` : '1px solid rgba(255,255,255,0.06)',
+                animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
+              }}>
+                <span style={{ fontSize: 16, width: 24, fontWeight: 900,
+                  color: i === 0 ? '#EAB308' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#475569',
+                }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
+                <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
+                <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? '#EAB308' : '#94a3b8' }}>
+                    {tm.largestConnected} {connectedLabel}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#475569' }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 2026-05-02 (Stamm-Team-Code): zeige meinen Code als Wiederkommer-Anker.
+            Sichtbar in GAME_OVER und THANKS — Spieler kann ihn abfotografieren. */}
+        <div style={{
+          marginTop: 14, padding: '10px 14px', borderRadius: 16,
+          background: 'rgba(236,72,153,0.08)',
+          border: '1px solid rgba(236,72,153,0.30)',
+          textAlign: 'center',
+          animation: 'tcreveal 0.5s ease 0.4s both',
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 900, color: '#EC4899',
+            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4,
+          }}>
+            {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            marginTop: 2, marginBottom: 4,
+          }}>
+            <div style={{
+              fontSize: 22, fontWeight: 900, color: '#FBCFE8',
+              fontFamily: 'monospace', letterSpacing: '0.04em',
+              userSelect: 'all',
+            }}>
+              {stammCode}
+            </div>
+            <CopyButton text={stammCode} lang={lang} />
+          </div>
+          <div style={{
+            fontSize: 11, color: '#94a3b8', fontWeight: 700,
+            marginTop: 4, lineHeight: 1.35,
+          }}>
+            {lang === 'de'
+              ? 'Beim nächsten Mal eingeben — deine Sieg-Streak zählt mit.'
+              : 'Enter it next time — your win streak carries over.'}
+          </div>
+        </div>
+
+        {/* Thanks message + summary link — only on THANKS phase */}
+        {s.phase === 'THANKS' && (
+          <div style={{
+            marginTop: 18,
+            animation: 'tcreveal 0.5s ease 0.5s both',
+          }}>
+            <div style={{
+              fontSize: 17, fontWeight: 900, color: '#FBCFE8',
+              textAlign: 'center', marginBottom: 4, lineHeight: 1.35,
+            }}>
+              {lang === 'en' ? '✨ Thanks for playing! ✨' : '✨ Danke fürs Mitspielen! ✨'}
+            </div>
+            <div style={{
+              fontSize: 14, fontWeight: 700, color: '#94a3b8',
+              textAlign: 'center', marginBottom: 14,
+            }}>
+              {lang === 'en' ? 'We hope you had fun — see you next round!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
+            </div>
+            {roomCode && (
+              <a
+                href={`/summary/${encodeURIComponent(roomCode)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block', padding: '14px 16px',
+                  borderRadius: 16, textAlign: 'center',
+                  background: 'linear-gradient(135deg, #EC4899, #EC4899)',
+                  color: '#0A0814', fontWeight: 900, fontSize: 16,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 0 #A21247, 0 0 24px rgba(236,72,153,0.35)',
+                  animation: 'tcreveal 0.5s ease 0.7s both',
+                }}
+              >
+                {lang === 'en' ? '📊 View full results' : '📊 Zur Ergebnisseite'}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </CozyCard>
+  );
+}

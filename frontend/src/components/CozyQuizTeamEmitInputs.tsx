@@ -25,6 +25,7 @@ import { safeEmit } from '../utils/qqTeamAckBus';
 import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
 import { AnimatedDots } from './CozyQuizTeamPrimitives';
 import { QQEmojiIcon } from './QQIcon';
+import { isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
 export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = 'de' }: {
@@ -674,40 +675,87 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
   const [submitted, setSubmitted] = useState(false);
 
   // 2026-05-07 (Wolf 'map+pin etwas haesslich'): Custom-Pin im Beamer-Stil.
+  // 2026-05-13 (Wolf 'cozy guessr statt der pins ein DE in den kreis,
+  // kannst du da auch die flaggen nehmen? der pin muss auch nichts zwangsweise
+  // rund sein, kann auch flaggenform haben und dann unten die spitze (nadel)
+  // wie bisher'): Bei Country-Flag-Emojis (Eurovision-Edition) rendern wir
+  // den Body als Rechteck mit Twemoji-Flag-<img> statt nativem Glyph (Windows
+  // Edge/Chrome zeigt 🇩🇪 sonst als "DE"-Text), und passen die Form an die
+  // Flaggen-Proportionen 4:3 an. Bei Nicht-Flag-Emojis bleibt der Kreis.
   const teamColor = myTeam?.color ?? catColor;
   const teamEmoji = (myTeam as any)?.emoji ?? '📍';
-  const customPinIcon = useMemo(() => L.divIcon({
-    className: 'qq-team-pin-mobile',
-    html: `<div style="
-      position: relative; width: 48px; height: 64px;
-      animation: qqTeamPinDrop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
-      transform-origin: 50% 100%;
-      filter: drop-shadow(0 5px 7px rgba(0,0,0,0.55));
-    ">
-      <div style="
-        position: absolute; left: 50%; top: 32px;
-        transform: translateX(-50%);
-        width: 0; height: 0;
-        border-left: 7px solid transparent;
-        border-right: 7px solid transparent;
-        border-top: 32px solid #1A1A1A;
-        z-index: 1;
-      "></div>
-      <div style="
-        position: absolute; left: 4px; top: 0;
-        width: 40px; height: 40px; border-radius: 50%;
-        background: ${teamColor};
-        border: 2px solid #1A1A1A;
-        box-shadow: 0 0 18px ${teamColor}66, inset 0 -3px 5px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.22);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 2;
-        font-size: 24px; line-height: 1;
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-      ">${teamEmoji}</div>
-    </div>`,
-    iconSize: [48, 64] as any,
-    iconAnchor: [24, 60] as any,
-  }), [teamColor, teamEmoji]);
+  const isFlag = isCountryFlagGlyph(teamEmoji);
+  const customPinIcon = useMemo(() => {
+    if (isFlag) {
+      // Flaggen-Pin: 44×33 Rechteck (4:3) + Nadel-Spitze drunter. Total 44×64.
+      const flagUrl = getCountryFlagUrl(teamEmoji);
+      return L.divIcon({
+        className: 'qq-team-pin-mobile',
+        html: `<div style="
+          position: relative; width: 44px; height: 64px;
+          animation: qqTeamPinDrop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+          transform-origin: 50% 100%;
+          filter: drop-shadow(0 5px 7px rgba(0,0,0,0.55));
+        ">
+          <div style="
+            position: absolute; left: 50%; top: 32px;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 32px solid #1A1A1A;
+            z-index: 1;
+          "></div>
+          <div style="
+            position: absolute; left: 0; top: 0;
+            width: 44px; height: 33px; border-radius: 4px;
+            background: ${teamColor};
+            border: 2px solid #1A1A1A;
+            box-shadow: 0 0 18px ${teamColor}66, inset 0 -3px 5px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.22);
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2;
+            box-sizing: border-box;
+          "><img src="${flagUrl}" alt="" style="width: 36px; height: 27px; object-fit: cover; border-radius: 2px; display: block;" /></div>
+        </div>`,
+        iconSize: [44, 64] as any,
+        iconAnchor: [22, 60] as any,
+      });
+    }
+    // Normaler Emoji-Pin: Kreis mit Glyph (wie bisher).
+    return L.divIcon({
+      className: 'qq-team-pin-mobile',
+      html: `<div style="
+        position: relative; width: 48px; height: 64px;
+        animation: qqTeamPinDrop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+        transform-origin: 50% 100%;
+        filter: drop-shadow(0 5px 7px rgba(0,0,0,0.55));
+      ">
+        <div style="
+          position: absolute; left: 50%; top: 32px;
+          transform: translateX(-50%);
+          width: 0; height: 0;
+          border-left: 7px solid transparent;
+          border-right: 7px solid transparent;
+          border-top: 32px solid #1A1A1A;
+          z-index: 1;
+        "></div>
+        <div style="
+          position: absolute; left: 4px; top: 0;
+          width: 40px; height: 40px; border-radius: 50%;
+          background: ${teamColor};
+          border: 2px solid #1A1A1A;
+          box-shadow: 0 0 18px ${teamColor}66, inset 0 -3px 5px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.22);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 2;
+          font-size: 24px; line-height: 1;
+          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        ">${teamEmoji}</div>
+      </div>`,
+      iconSize: [48, 64] as any,
+      iconAnchor: [24, 60] as any,
+    });
+  }, [teamColor, teamEmoji, isFlag]);
 
   // B7: Auto-Submit on Timer-End wenn Pin gesetzt; sonst nur Lock.
   const expired = useExpiry(timerEndsAt ?? null);

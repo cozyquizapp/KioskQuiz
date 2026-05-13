@@ -47,23 +47,48 @@ export default function QQProgressTree({
   // Showcase-Sweep: cycelt durch alle Phasen + Bieten + Finale, hebt jede
   // ~2.2s hervor. Wolf-Wunsch 2026-05-11: NACH komplettem Durchgang bleibt
   // der Wolf am letzten Step (Finale) stehen — kein Reset zurück auf Pause.
-  // Step-Indizes:
-  //   -1                                                 = initial Pause
-  //   0..totalPhases-1                                   = Quiz-Phase
-  //   totalPhases                  (wenn finalWager)     = Bieten-Knoten
-  //   totalPhases + ?              (wenn Finale)         = 4×4 Finale
+  //
+  // 2026-05-13 (Wolf 'wolf ueberspringt in der rules slide das bid-feld,
+  // laeuft ans ende der letzten runde, springt zurueck aufs bid-feld, dann
+  // wieder ans ende der letzten runde'): Sweep-Step-Reihenfolge an Visual-
+  // Reihenfolge angepasst. Bid sitzt visuell ZWISCHEN Runde N-1 und Runde N
+  // (siehe pIdx === phases.length - 1 Branch in dotCenters-Berechnung).
+  // Vorher: Sweep ging Quiz 0..N-1 → Bid → Finale (Wolf hopt rueckwaerts auf
+  // Bid nach letzter Quiz-Runde). Jetzt: Quiz 0..N-2 → Bid → Last Quiz → Finale.
+  //
+  // Step-Indizes (showBidding=true):
+  //   -1                  = initial Pause
+  //   0..totalPhases-2    = Quiz-Phasen 0..N-2
+  //   totalPhases-1       = Bieten-Knoten
+  //   totalPhases         = letzte Quiz-Phase (phases[N-1])
+  //   totalPhases+1       = 4×4 Finale (wenn aktiv)
+  // Step-Indizes (showBidding=false):
+  //   0..totalPhases-1    = Quiz-Phasen
+  //   totalPhases         = 4×4 Finale (wenn aktiv)
+  //
   // Wolf-Wunsch 2026-05-11: 4×4 muss in JEDEM Tree der App ausgeblendet sein
   // wenn der Mod-Toggle aus ist. `=== true` statt `!== false`, sonst leakt
   // ein undefined-State (vor erstem State-Update) als „sichtbar".
   const showcaseHasBidding = state.finalWagerEnabled === true;
   const showcaseHasFinale  = state.connectionsEnabled === true;
-  const biddingStepIdx     = showcaseHasBidding ? totalPhases : -1;
+  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 : -1;
+  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases : totalPhases - 1;
   const finaleStepIdx      = showcaseHasFinale
-    ? totalPhases + (showcaseHasBidding ? 1 : 0)
+    ? (showcaseHasBidding ? totalPhases + 1 : totalPhases)
     : -1;
   const showcaseStepCount  = totalPhases
     + (showcaseHasBidding ? 1 : 0)
     + (showcaseHasFinale ? 1 : 0);
+  // Mapping Sweep-Step → Quiz-Phase-Idx (-1 wenn Bid/Finale/out-of-range).
+  // Verwendet weiter unten in showcaseTargetPhase + showcaseWolfIdx.
+  const stepToPhaseIdx = (step: number): number => {
+    if (step < 0) return -1;
+    if (!showcaseHasBidding) return step < totalPhases ? step : -1;
+    if (step < totalPhases - 1) return step;              // Quiz-Phasen 0..N-2
+    if (step === biddingStepIdx) return -1;               // Bid
+    if (step === lastQuizStepIdx) return totalPhases - 1; // letzte Quiz-Phase
+    return -1;                                            // Finale o.a.
+  };
   const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
   useEffect(() => {
     if (!showcaseMode) return;
@@ -73,14 +98,11 @@ export default function QQProgressTree({
     const tick = () => {
       step += 1;
       if (step >= showcaseStepCount) {
-        // 2026-05-12 (Wolf 'wolf springt im rules nach ende nochmal zu bieten'):
-        // Vorher: showcaseStepCount - 1 = letzter Step = Bieten oder Finale
-        // je nach Toggles. Bei finalWager=true + connections=false landete
-        // Wolf am Bieten-Knoten → wirkte wie 'noch ein Sprung auf Bieten'.
-        // Jetzt: Wolf bleibt immer an der letzten echten Quiz-Phase stehen
-        // (totalPhases - 1), egal welche Sub-Knoten (Bid/Finale) im Sweep
-        // dabei waren.
-        setShowcasePhaseIdx(totalPhases - 1);
+        // 2026-05-12/13: Nach komplettem Durchgang bleibt Wolf strukturell am
+        // letzten Quiz-Step (= lastQuizStepIdx) stehen — bei Bid-aktivem Quiz
+        // ist das totalPhases (nicht totalPhases-1!), weil die letzte Quiz-
+        // Phase im Sweep jetzt NACH Bid kommt.
+        setShowcasePhaseIdx(lastQuizStepIdx);
         return;
       }
       setShowcasePhaseIdx(step);
@@ -195,8 +217,13 @@ export default function QQProgressTree({
 
   // Showcase-Pan: bringt die hervorgehobene Phase (oder Bieten/Finale) ins
   // Viewport-Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
+  // 2026-05-13 (Wolf-Bid-Bug-Fix): nutzt stepToPhaseIdx (Bid hat Step !=
+  // Phase-Idx seit dem Sweep-Reorder).
   const showcaseTargetPhase = showcaseMode
-    ? (showcasePhaseIdx >= 0 && showcasePhaseIdx < totalPhases ? showcasePhaseIdx : 0)
+    ? (() => {
+        const p = stepToPhaseIdx(showcasePhaseIdx);
+        return p >= 0 ? p : 0; // Bid/Finale → fallback auf Phase 0 fuer Pan-Default
+      })()
     : -1;
   const showcaseTargetCenter = isShowcase
     ? (showcaseOnFinale ? finaleCenter
@@ -213,10 +240,23 @@ export default function QQProgressTree({
 
   // Im Showcase-Mode wandert der Wolf MIT der Phasen-Highlight-Sweep mit:
   // pro highlighteter Phase steht er am LETZTEN Dot dieser Phase.
+  // 2026-05-13: bei Bid- oder Finale-Step bleibt der Dot-Idx beim letzten
+  // davor stehen (Wolf wird visuell via wolfOnBidding/Finale auf
+  // biddingCenter/finaleCenter gesetzt — der Dot-Idx ist nur fuer Progress-
+  // Color-Picking wichtig).
   const showcaseWolfIdx = (() => {
     if (!showcaseMode || showcasePhaseIdx < 0) return 0;
+    let phaseIdx = stepToPhaseIdx(showcasePhaseIdx);
+    if (phaseIdx < 0) {
+      // Bid → letzter Quiz-Phase-Idx vor Bid (totalPhases - 2 bei show-
+      // Bidding). Finale → letzter Quiz-Phase-Idx vor Finale (totalPhases-1).
+      if (showcasePhaseIdx === biddingStepIdx) phaseIdx = totalPhases - 2;
+      else if (showcasePhaseIdx === finaleStepIdx) phaseIdx = totalPhases - 1;
+      else return 0;
+    }
+    if (phaseIdx < 0) return 0;
     let cum = 0;
-    for (let pi = 0; pi <= showcasePhaseIdx; pi++) {
+    for (let pi = 0; pi <= phaseIdx; pi++) {
       const phaseEntries = byPhase.get(phases[pi]) ?? [];
       cum += phaseEntries.length;
     }
@@ -390,7 +430,7 @@ export default function QQProgressTree({
                 );
               }
               const isCurrentPhase = showcaseMode
-                ? pi === showcasePhaseIdx
+                ? pi === stepToPhaseIdx(showcasePhaseIdx)
                 : state.gamePhaseIndex === p;
               items.push(
                 <div
@@ -495,7 +535,7 @@ export default function QQProgressTree({
           {phases.flatMap((p, pi) => {
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
-            const isShowcasedPhase = showcaseMode && pi === showcasePhaseIdx;
+            const isShowcasedPhase = showcaseMode && pi === stepToPhaseIdx(showcasePhaseIdx);
             // 2026-05-12: Placeholder-Dots wenn keine Schedule-Entries für
             // diese Phase (siehe Comment oben bei cursor-Berechnung).
             const renderEntries: Array<QQScheduleEntry | null> = entries.length > 0

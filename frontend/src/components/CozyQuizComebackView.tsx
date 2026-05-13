@@ -319,116 +319,133 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 up, falsche fadet — Avatare landen direkt an der gewählten Pille
                 und feiern dort. Direction-Big-Text-Indikator entfaellt
                 (Pille-Label zeigt's schon). */}
-            {/* 2026-05-13 v4 (Wolf 8.-Fix): Avatare strukturell ueber/unter den
-                Pillen anchorn statt translate-Distance "fly". MEHR-Gruppe rendert
-                Avatar-Higher-Row UEBER der MEHR-Pille, WENIGER-Gruppe rendert
-                WENIGER-Pille UEBER der Avatar-Lower-Row. Negative-margin erlaubt
-                leichte Pillen-Card-Ueberlappung, nie Text-Ueberlappung. Position
-                ist im DOM codiert — kein translate-Raten mehr. */}
+            {/* 2026-05-13 v5 (Wolf-Designspec mit Screenshot-Beispiel):
+                Pillen-Stack jetzt mit DREI Avatar-Slots im linearen flex-column
+                Layout — oben (Teams mit 'higher'), mittig (Teams ohne Wahl =
+                "spielen mit"), unten (Teams mit 'lower'). Untere Team-Progress-
+                Row entfaellt — alle Avatare sind jetzt in der mittigen Saeule
+                je nach State.
+                Glow-Color je Slot:
+                  - higher → grün (#22C55E)
+                  - middle (unentschieden) → Team-Farbe
+                  - lower → pink (#EC4899)
+                Im Reveal: korrekte behalten Glow, falsche werden dim'd. */}
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center',
-              gap: 'clamp(50px, 6.5cqh, 90px)',
+              gap: 'clamp(8px, 1cqh, 16px)',
               pointerEvents: 'none',
             }}>
-              {(['higher', 'lower'] as const).map((dir, idx) => {
-                const isHigher = dir === 'higher';
-                const accentCol = isHigher ? '#22C55E' : '#EC4899';
-                const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
-                const isCorrect = isReveal && correctChoice === dir;
-                const isWrong = isReveal && correctChoice !== dir;
-                // Teams die DIESE Richtung gewaehlt haben.
-                const teamsAtThisPille = hlTeams.filter(tm => hl.answers[tm.id] === dir);
-                const avatarRow = teamsAtThisPille.length > 0 ? (
-                  <div style={{
-                    display: 'flex', gap: 'clamp(6px, 0.8cqw, 14px)',
-                    flexWrap: 'wrap', justifyContent: 'center',
-                    // Negative margin → Avatar uebersteht die Pille leicht
-                    // (Card-Ueberlap erlaubt, Text-Ueberlap NICHT). Wert < Avatar-Radius.
-                    ...(isHigher
-                      ? { marginBottom: 'clamp(-22px, -1.6cqh, -10px)' }
-                      : { marginTop: 'clamp(-22px, -1.6cqh, -10px)' }),
-                    zIndex: 5,
-                    animation: 'contentReveal 0.4s var(--qq-ease-pop-fast) both',
-                  }}>
-                    {teamsAtThisPille.map(tm => {
-                      const correct = correctIds.has(tm.id);
-                      const dim = isReveal && !correct;
-                      return (
-                        <QQTeamAvatar
-                          key={tm.id}
-                          avatarId={tm.avatarId}
-                          teamEmoji={tm.emoji}
-                          size={'clamp(70px, 7.5cqw, 110px)'}
-                          style={{
-                            opacity: dim ? 0.45 : 1,
-                            filter: dim
-                              ? 'grayscale(0.6)'
-                              : correct
-                                ? 'drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))'
-                                : `drop-shadow(0 0 14px ${tm.color}88)`,
-                            boxShadow: !isReveal
-                              ? `0 0 0 3px #22C55E, 0 0 22px rgba(34,197,94,0.55)`
-                              : correct
-                                ? `0 0 22px ${tm.color}88`
-                                : '0 0 14px rgba(148,163,184,0.18)',
-                            transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : null;
-                const pille = (
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 12,
-                    padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
-                    borderRadius: 999,
-                    background: isCorrect
-                      ? `${accentCol}33`
-                      : `${accentCol}14`,
-                    border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
-                    boxShadow: isCorrect
-                      ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
-                      : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
-                    opacity: isWrong ? 0.4 : 1,
-                    transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
-                    animation: !isReveal
-                      ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
-                      : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),
-                    whiteSpace: 'nowrap',
-                  }}>
-                    <span style={{
-                      fontSize: 'clamp(24px, 2.8cqw, 38px)', lineHeight: 1, fontWeight: 900,
-                      color: accentCol,
-                      transition: 'color 0.4s ease',
-                    }}>{isHigher ? '↑' : '↓'}</span>
-                    <span style={{
-                      fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
-                      color: isCorrect ? correctTextLight : accentCol,
-                      letterSpacing: '0.12em', textTransform: 'uppercase',
-                      transition: 'color 0.4s ease',
+              {(() => {
+                const higherTeams = hlTeams.filter(tm => hl.answers[tm.id] === 'higher');
+                const lowerTeams = hlTeams.filter(tm => hl.answers[tm.id] === 'lower');
+                const undecidedTeams = hlTeams.filter(tm => !hl.answers[tm.id]);
+                const avatarSize = 'clamp(54px, 5.8cqw, 88px)';
+
+                const renderAvatarSlot = (
+                  teams: typeof hlTeams,
+                  slotKind: 'higher' | 'middle' | 'lower',
+                ) => {
+                  if (teams.length === 0) return null;
+                  const slotGlow = slotKind === 'higher'
+                    ? '#22C55E'
+                    : slotKind === 'lower'
+                      ? '#EC4899'
+                      : null;  // middle: use team color
+                  return (
+                    <div style={{
+                      display: 'flex', gap: 'clamp(6px, 0.8cqw, 14px)',
+                      flexWrap: 'wrap', justifyContent: 'center',
+                      zIndex: 5,
+                      animation: 'contentReveal 0.4s var(--qq-ease-pop-fast) both',
                     }}>
-                      {isHigher
-                        ? (lang === 'en' ? 'Higher' : 'Mehr')
-                        : (lang === 'en' ? 'Lower' : 'Weniger')}
-                    </span>
-                  </div>
-                );
+                      {teams.map(tm => {
+                        const correct = correctIds.has(tm.id);
+                        const dim = isReveal && !correct;
+                        const glowCol = slotGlow ?? tm.color;
+                        return (
+                          <QQTeamAvatar
+                            key={tm.id}
+                            avatarId={tm.avatarId}
+                            teamEmoji={tm.emoji}
+                            size={avatarSize}
+                            style={{
+                              opacity: dim ? 0.45 : 1,
+                              filter: dim
+                                ? 'grayscale(0.6)'
+                                : correct
+                                  ? 'drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))'
+                                  : `drop-shadow(0 0 14px ${glowCol}aa)`,
+                              boxShadow: dim
+                                ? '0 0 14px rgba(148,163,184,0.18)'
+                                : `0 0 0 3px ${glowCol}, 0 0 22px ${glowCol}88`,
+                              transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                };
+
+                const renderPille = (dir: 'higher' | 'lower', idx: number) => {
+                  const isHigher = dir === 'higher';
+                  const accentCol = isHigher ? '#22C55E' : '#EC4899';
+                  const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
+                  const isCorrect = isReveal && correctChoice === dir;
+                  const isWrong = isReveal && correctChoice !== dir;
+                  return (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 12,
+                      padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
+                      borderRadius: 999,
+                      background: isCorrect
+                        ? `${accentCol}33`
+                        : `${accentCol}14`,
+                      border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
+                      boxShadow: isCorrect
+                        ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
+                        : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                      backdropFilter: 'blur(10px)',
+                      WebkitBackdropFilter: 'blur(10px)',
+                      transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
+                      opacity: isWrong ? 0.4 : 1,
+                      transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
+                      animation: !isReveal
+                        ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
+                        : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),
+                      whiteSpace: 'nowrap',
+                    }}>
+                      <span style={{
+                        fontSize: 'clamp(24px, 2.8cqw, 38px)', lineHeight: 1, fontWeight: 900,
+                        color: accentCol,
+                        transition: 'color 0.4s ease',
+                      }}>{isHigher ? '↑' : '↓'}</span>
+                      <span style={{
+                        fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
+                        color: isCorrect ? correctTextLight : accentCol,
+                        letterSpacing: '0.12em', textTransform: 'uppercase',
+                        transition: 'color 0.4s ease',
+                      }}>
+                        {isHigher
+                          ? (lang === 'en' ? 'Higher' : 'Mehr')
+                          : (lang === 'en' ? 'Lower' : 'Weniger')}
+                      </span>
+                    </div>
+                  );
+                };
+
                 return (
-                  <div key={dir} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  }}>
-                    {isHigher ? avatarRow : null}
-                    {pille}
-                    {isHigher ? null : avatarRow}
-                  </div>
+                  <>
+                    {renderAvatarSlot(higherTeams, 'higher')}
+                    {renderPille('higher', 0)}
+                    {renderAvatarSlot(undecidedTeams, 'middle')}
+                    {renderPille('lower', 1)}
+                    {renderAvatarSlot(lowerTeams, 'lower')}
+                  </>
                 );
-              })}
+              })()}
             </div>
           </div>
 
@@ -513,42 +530,12 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Team-Progress (UNTEN): zeigt NUR Teams ohne Tipp.
-            2026-05-13 v4 (Wolf 8.-Fix): Teams mit choice sind jetzt direkt an
-            ihrer Pille gerendert (siehe Pillen-Stack oben). Untere Row zeigt
-            damit nur noch „wer hat noch nicht entschieden" — und ist leer
-            sobald alle gewaehlt haben. */}
-        {hlTeams.some(tm => !hl.answers[tm.id]) && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.25s both',
-          }}>
-            <div style={{ display: 'flex', gap: 'clamp(14px, 1.8cqw, 24px)', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {hlTeams.filter(tm => !hl.answers[tm.id]).map(tm => {
-                const answered = hl.answeredThisRound.includes(tm.id);
-                return (
-                  <div key={tm.id} style={{
-                    position: 'relative',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    opacity: answered ? 1 : 0.55,
-                    filter: answered ? `drop-shadow(0 0 14px ${tm.color}88)` : 'grayscale(0.4)',
-                    transition: 'opacity 0.4s ease, filter 0.4s ease',
-                  }}>
-                    <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(70px, 7.5cqw, 110px)'} style={{
-                      boxShadow: answered
-                        ? `0 0 22px ${tm.color}88`
-                        : '0 0 14px rgba(148,163,184,0.18)',
-                      transition: 'box-shadow 0.4s ease',
-                    }} />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* 2026-05-13 v5 (Wolf-Designspec): Untere Team-Progress-Row entfernt —
+            Unentschiedene sitzen jetzt in der MITTLEREN Saeule zwischen MEHR
+            und WENIGER (im Pillen-Stack oben). Damit ist die untere Region frei
+            fuer eventuelle weitere Layer. */}
 
-        {/* 2026-05-13 (Wolf 'Timer oben rechts statt unten rechts, mehr
-            Platz unten fuer Avatar-Flug zur MEHR-Pille'): bottom 32 → top 32. */}
+        {/* 2026-05-13 (Wolf 'Timer oben rechts statt unten rechts'): top 32. */}
         {!isReveal && hl.timerEndsAt != null && (
           <div style={{
             position: 'absolute', top: 32, right: 48, zIndex: 8,

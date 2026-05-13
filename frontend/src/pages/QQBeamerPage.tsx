@@ -2071,7 +2071,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   '0 0 120px rgba(236,72,153,0.3), ' +
                   '0 6px 0 rgba(0,0,0,0.5), ' +
                   '0 18px 32px rgba(0,0,0,0.6)',
-                animation: `qqGetReadyCount 1s var(--qq-ease-bounce) ${0.1 + i * 0.45}s both`,
+                // 2026-05-13 (Wolf 'back in countdown nach pause ueberlappt sich'):
+                // Stagger 0.45 → 0.95s. Vorher: Zahl 2 fadet bei 0.73s voll ein
+                // waehrend Zahl 3 erst bei 0.82s rauszufaden begann → 90ms
+                // Overlap mit beiden Ziffern voll sichtbar uebereinander.
+                // Jetzt: 1 Sekunde pro Zahl (3 ... 2 ... 1, psychoakustisch
+                // korrekt). Letzte Zahl bei 2.0-3.0s, Overlay fadet bei 3.2s.
+                animation: `qqGetReadyCount 1s var(--qq-ease-bounce) ${0.1 + i * 0.95}s both`,
                 opacity: 0,
               }}>
                 {n}

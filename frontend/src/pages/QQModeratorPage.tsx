@@ -1697,8 +1697,12 @@ export default function QQModeratorPage() {
                           );
                         })}
                       </div>
+                      {/* 2026-05-13 (Wolf 'connect 4 mod-flow noch gefuehlt
+                          alt, da steht hinweise aufdecken'): Button-Text auf
+                          modernes Modell — Teams schalten selbst frei, Mod
+                          beendet die Frage hier nur insgesamt. */}
                       <Btn color="#EC4899" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
-                        ⏹ Alle Hinweise zeigen (Reveal)
+                        ⏩ Auflösen (Frage beenden)
                       </Btn>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>
                         Teams schalten Hinweise selbst auf /team frei. Beamer zeigt MIN-Index.

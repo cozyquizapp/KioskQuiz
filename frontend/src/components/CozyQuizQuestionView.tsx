@@ -2047,7 +2047,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                       <div key={tm.id} style={{
                         position: 'relative',
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${WINNER_BASE + idx * WINNER_STEP}s both`,
+                        // 2026-05-13 (Wolf 'man hoert sound aber keine action dazu'):
+                        // phasePop (Scale 0.94→1, sehr subtil) → revealWinnerIn
+                        // (translateY 30→0 + Scale 0.9→1.02→1, bouncy, dramatisch).
+                        // Cascade-Sound (Pentatonik-Note) trifft jetzt auf sichtbaren
+                        // Pop-In statt nur dezenten FadeIn.
+                        animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${WINNER_BASE + idx * WINNER_STEP}s both`,
                       }}>
                         <QQTeamAvatar
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}

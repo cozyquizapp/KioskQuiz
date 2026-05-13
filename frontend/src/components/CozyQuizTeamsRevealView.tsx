@@ -443,14 +443,19 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             }}>CozyQuiz</div>
                           </div>
                           {/* Vorderseite — Avatar im Color-Glow-Kreis + Name
-                              als Text in Team-Color (matcht Slot M Showreel) */}
+                              als Text in Team-Color (matcht Slot M Showreel)
+                              2026-05-13 (Wolf 'cards bei tonight teams crashen
+                              bisschen das design, glassy durchsichtig, farbe
+                              prominenter'): BG-Tint von 13%/6% auf 40%/20%
+                              hochgezogen — Team-Color liest sich jetzt klar,
+                              ohne den Reveal-Card-Charakter zu opfern. */}
                           <div style={{
                             position: 'absolute', inset: 0,
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
                             transform: 'rotateY(180deg)',
                             borderRadius: 'clamp(14px, 1.4cqw, 22px)',
-                            background: `linear-gradient(180deg, ${t.color}22, ${t.color}10)`,
+                            background: `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
                             border: `2px solid ${t.color}`,
                             boxShadow: `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 28px ${t.color}66`,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -504,7 +509,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               style={{
                                 textAlign: 'center',
                                 letterSpacing: '-0.01em',
-                                textShadow: `0 0 8px ${t.color}55`,
+                                // 2026-05-13: bei 40%-getintetem BG braucht der
+                                // Team-Color-Text einen dunklen Halo, damit Color-
+                                // on-Color nicht matscht. Pink-Glow durch Dark-
+                                // Halo ersetzt (gleiches Pattern wie Audit-Fix).
+                                textShadow: '0 2px 8px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.55)',
                                 maxWidth: '95%',
                               }}
                             />

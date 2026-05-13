@@ -25,6 +25,7 @@ import {
   startFinaleLoop, stopLobbyLoop,
   playWoodKnock, playWinnerCardReveal, playFanfare, playClimaxFinish, playTick,
   setMusicDucked,
+  playRaceCountdown, playRaceLoop, playRacePodium,
 } from '../utils/sounds';
 
 export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
@@ -1729,7 +1730,13 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     // (BEREIT 0.8s → 3 0.7s → 2 0.7s → 1 0.8s → GO! 0.5s) + 5s Race-Hold
     // = 8.5s bis erstes Team fällt.
     let cursor = 3500; // Countdown Auto-Choreo läuft
-    handles.push(window.setTimeout(() => setPhase('race'), cursor));
+    // 2026-05-13 (Wolf 'eigene mp3 slot fuer rennen'): Race-Hauptsound startet
+    // mit der Race-Phase. Bei leerem Slot still — bisherige WoodKnocks pro
+    // Team-Fall + Lobby-Background bleiben hoerbar.
+    handles.push(window.setTimeout(() => {
+      setPhase('race');
+      try { playRaceLoop(); } catch {}
+    }, cursor));
     cursor += 5000; // Race-Hold 5s
 
     // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr.
@@ -1763,10 +1770,12 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     cursor += 2000;
 
     // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s).
-    // Whoosh-Sound für den Aufstiegs-Moment.
+    // 2026-05-13 (Wolf 'eigener mp3 slot fuer treppchen'): playRacePodium —
+    // Custom-Upload bevorzugt, sonst Fallback auf playWinnerCardReveal (= Sound
+    // wie bisher).
     handles.push(window.setTimeout(() => {
       setPhase('podium-rises');
-      try { playWinnerCardReveal(); } catch {}
+      try { playRacePodium(); } catch {}
     }, cursor));
     cursor += 2500;
 
@@ -2329,12 +2338,26 @@ function RaceCountdownOverlay() {
 
   useEffect(() => {
     const handles: number[] = [];
-    // 2026-05-10 (Wolf 'mehr sounds für race'): Tick pro Countdown-Step
-    // (3-2-1 = playTick, GO = playFanfare-light via playWinnerCardReveal).
-    handles.push(window.setTimeout(() => { setStep(1); try { playTick(); } catch {} }, 800));   // → 3
-    handles.push(window.setTimeout(() => { setStep(2); try { playTick(); } catch {} }, 1500));  // → 2
-    handles.push(window.setTimeout(() => { setStep(3); try { playTick(); } catch {} }, 2200));  // → 1
-    handles.push(window.setTimeout(() => { setStep(4); try { playWinnerCardReveal(); } catch {} }, 3000));  // → GO!
+    // 2026-05-13 (Wolf 'eigene mp3 slots fuer race phase'): Wenn der
+    // raceCountdown-Slot ein Custom-Upload hat, spielt der einmal am Start
+    // alleine — die einzelnen Tick-Cues bleiben weg, damit Wolfs MP3 nicht
+    // mit den Synth-Ticks ueberlagert. Bei leerem Slot: bisheriges Tick-
+    // Tick-Tick-GO-Verhalten (Fallback fuer alle bestehenden Quizze).
+    let usedCustom = false;
+    try { usedCustom = playRaceCountdown(); } catch {}
+    if (usedCustom) {
+      handles.push(window.setTimeout(() => setStep(1), 800));   // → 3
+      handles.push(window.setTimeout(() => setStep(2), 1500));  // → 2
+      handles.push(window.setTimeout(() => setStep(3), 2200));  // → 1
+      handles.push(window.setTimeout(() => setStep(4), 3000));  // → GO!
+    } else {
+      // 2026-05-10 (Wolf 'mehr sounds für race'): Tick pro Countdown-Step
+      // (3-2-1 = playTick, GO = playFanfare-light via playWinnerCardReveal).
+      handles.push(window.setTimeout(() => { setStep(1); try { playTick(); } catch {} }, 800));   // → 3
+      handles.push(window.setTimeout(() => { setStep(2); try { playTick(); } catch {} }, 1500));  // → 2
+      handles.push(window.setTimeout(() => { setStep(3); try { playTick(); } catch {} }, 2200));  // → 1
+      handles.push(window.setTimeout(() => { setStep(4); try { playWinnerCardReveal(); } catch {} }, 3000));  // → GO!
+    }
     return () => handles.forEach(h => window.clearTimeout(h));
   }, []);
 

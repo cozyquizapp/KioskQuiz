@@ -1131,6 +1131,49 @@ export function startGameOverLoop() { startContextLoop('gameOver'); }
 /** Comeback-Loop: 'comebackMusic'-Slot oder Lobby-Fallback. */
 export function startComebackLoop() { startContextLoop('comebackMusic'); }
 
+/** 2026-05-13 (Wolf 'race phase: eigene mp3 slots fuer countdown, rennen,
+ *  treppchen'): Race-Sound-Trio. Alle drei haben Fallback-Verhalten wenn
+ *  kein Custom-Upload gesetzt ist — Wolf kann die Slots schrittweise
+ *  befuellen ohne dass der bisherige Sound-Stack still wird.
+ */
+
+/** Race-Countdown (3-2-1-GO Stinger). Returns true wenn Custom-Upload
+ *  vorhanden und gespielt — Caller (RaceCountdownOverlay) ueberspringt
+ *  dann die einzelnen Tick-Cues, damit Wolfs MP3 alleine wirkt. */
+export function playRaceCountdown(): boolean {
+  if (!isSlotEnabled('raceCountdown')) return false;
+  const url = resolveSlotUrl('raceCountdown');
+  if (!url) return false;
+  playUrlOneShot(url);
+  return true;
+}
+
+/** Race-Hauptsound (waehrend Avatare rennen + gestaffelt fallen). One-Shot
+ *  statt Loop, weil die Race-Phase Choreo ~15-25s dauert — Wolfs MP3 sollte
+ *  in dieser Range liegen. Wenn kein Custom: stumm (existierende WoodKnocks
+ *  pro Fall + Lobby-Background-Loop bleiben). */
+export function playRaceLoop(): void {
+  if (!isSlotEnabled('raceLoop')) return;
+  const url = resolveSlotUrl('raceLoop');
+  if (!url) return;
+  playUrlOneShot(url);
+}
+
+/** Race-Podium (Whoosh/Fanfare beim Treppchen-Aufstieg). Fallback auf
+ *  playWinnerCardReveal, damit bei leerem Slot der bisherige Cue laeuft. */
+export function playRacePodium(): void {
+  if (!isSlotEnabled('racePodium')) {
+    playWinnerCardReveal();
+    return;
+  }
+  const url = resolveSlotUrl('racePodium');
+  if (!url) {
+    playWinnerCardReveal();
+    return;
+  }
+  playUrlOneShot(url);
+}
+
 export function playQuestionStart() { playSlotOneShot('questionStart'); }
 export function playRoundStart()    { playSlotOneShot('roundStart'); }
 // BC-2: Music-Ducking fuer Game-Over-Cue (laut + dramatisch).

@@ -716,6 +716,12 @@ export type QQSoundSlot =
   // 2026-05-07 (Sound-Audit P2.1): Timer-Ticks customizable. Vorher Synth-only,
   // nicht im Mod-Panel sichtbar. Default leer = Synth-Fallback wie bisher.
   | 'timerTick' | 'timerUrgent'
+  // 2026-05-13 (Wolf 'fuer die race phase, sowohl countdown als auch rennen,
+  // aber auch der moment wo das treppchen reinkommt, brauche ich eigene mp3
+  // slots'): Final-Reveal Race-Phase 3-Slot-Trio. Alle drei mit Fallback auf
+  // den bisherigen Default-Cue (Tick / WoodKnock / WinnerCardReveal) wenn der
+  // Slot leer ist — Wolf kann sie schrittweise befuellen.
+  | 'raceCountdown' | 'raceLoop' | 'racePodium'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -758,6 +764,10 @@ export interface QQSoundConfig {
   timerUrgent?: string;
   finaleMusic?: string;
   comebackMusic?: string;
+  // Race-Phase im Final-Reveal (Wolf 2026-05-13).
+  raceCountdown?: string;  // 3-2-1-GO Stinger vor Race-Start
+  raceLoop?: string;       // Hauptsound waehrend Race + Avatar-Fall-Sequenz
+  racePodium?: string;     // Whoosh/Fanfare beim Treppchen-Aufstieg
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -804,6 +814,9 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   comebackMusic:       '🔥 Comeback-Musik (H/L-Mini-Game Loop)',
   timerTick:           '⏱ Timer-Tick (jede Sekunde unter 10s)',
   timerUrgent:         '⏰ Timer-Urgent-Tick (unter 5s)',
+  raceCountdown:       '🏁 Race-Countdown (3-2-1-GO vor Race)',
+  raceLoop:            '🏃 Race-Sound (während Avatare rennen + fallen)',
+  racePodium:          '🏆 Treppchen-Aufstieg (Whoosh wenn Podium reinkommt)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -865,6 +878,9 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   comebackMusic:       '',
   timerTick:           '',
   timerUrgent:         '',
+  raceCountdown:       '',
+  raceLoop:            '',
+  racePodium:          '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

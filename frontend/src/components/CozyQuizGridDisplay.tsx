@@ -581,19 +581,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Damit liegen TL und BR strukturell am Ecken-Rand, nicht
                     // mittig-versetzt.
                     //
-                    // - 2-Stack v6: avFactor 0.45, offset ±27.
-                    //   Avatar 1 Center (23, 23), Radius 22.5
-                    //     → reicht (0.5, 0.5) bis (45.5, 45.5) — TL-Edge-Puffer 0.5%
-                    //   Avatar 2 Center (77, 77)
-                    //     → reicht (54.5, 54.5) bis (99.5, 99.5) — BR-Edge-Puffer 0.5%
-                    //   Diagonal-Center-Distance: √(54² + 54²) = 76.4%
-                    //   Avatar-Avatar-Luftspalt: 76.4 - 45 = 31.4% (klare Trennung,
-                    //   keine Beruehrung im Center).
+                    // - 2-Stack v7 (Wolf 'minimal groesser ohne rand zu ueber-
+                    //   schneiden'): avFactor 0.45→0.50, offset ±27→±25.
+                    //   avRadius 25, Avatar 1 Center (25, 25)
+                    //     → reicht (0, 0) bis (50, 50) — Edge-Puffer 0% (exakt
+                    //       am Cell-Rand, MAXIMUM ohne Ueberschneidung)
+                    //   Avatar 2 Center (75, 75)
+                    //     → reicht (50, 50) bis (100, 100) — Edge-Puffer 0%
+                    //   Diagonal-Center-Distance: √(50² + 50²) = 70.7%
+                    //   Avatar-Avatar-Luftspalt diagonal: 70.7 - 50 = 20.7%
+                    //   (kleinerer Spalt als v6 = 31.4%, aber Avatare beruehren
+                    //   sich diagonal NICHT — zwischen ihren Edges bleiben ~14%
+                    //   Pixel-Luft).
                     //
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.45 : 0.86;
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.50 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
@@ -602,7 +606,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -27, ty: -27 }, { tx: 27, ty: 27 }]
+                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

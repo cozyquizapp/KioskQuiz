@@ -12,7 +12,7 @@
  * WolfUeberraschtWithBubble bleibt in QQBeamerPage (nutzt SpeechBubble +
  * AnimatedCozyWolf die dort viel mehr Caller haben) — wird re-importiert.
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
@@ -105,6 +105,43 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const hl = s.comebackHL;
   // H/L: alle tied-letzten Teams. Ohne H/L: Fallback auf altes 1-Team-Verhalten.
   const hlTeams = hl ? hl.teamIds.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams : [];
+
+  // 2026-05-13 v6 (Wolf 'smooth transition Avatare'): FLIP-Animation fuer
+  // Pillen-Stack-Avatare. Misst boundingRect-Diff zwischen renders, applied
+  // invertierten Transform sofort + animiert mit transition zurueck zu 0.
+  // Funktioniert NUR wenn Avatare im selben DOM-Parent leben (= Grid-Layout
+  // mit gridRow basierend auf choice, alle Avatare als direkte Children).
+  const pillenStackRef = useRef<HTMLDivElement>(null);
+  const prevFlipRectsRef = useRef<Map<string, DOMRect>>(new Map());
+  useLayoutEffect(() => {
+    const container = pillenStackRef.current;
+    if (!container) return;
+    const items = container.querySelectorAll<HTMLElement>('[data-flip-id]');
+    const newRects = new Map<string, DOMRect>();
+    items.forEach(el => {
+      const id = el.dataset.flipId;
+      if (id) newRects.set(id, el.getBoundingClientRect());
+    });
+    items.forEach(el => {
+      const id = el.dataset.flipId;
+      if (!id) return;
+      const prev = prevFlipRectsRef.current.get(id);
+      const now = newRects.get(id);
+      if (!prev || !now) return;
+      const dx = prev.left - now.left;
+      const dy = prev.top - now.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      // Invert: spring sofort an alte Position (ohne transition).
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      // Play: naechster Frame → transform zurueck auf 0 MIT transition.
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        el.style.transform = '';
+      });
+    });
+    prevFlipRectsRef.current = newRects;
+  });
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
   const teamColor = team?.color ?? '#EC4899';
   const step = s.comebackIntroStep ?? 0;
@@ -319,54 +356,111 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 up, falsche fadet — Avatare landen direkt an der gewählten Pille
                 und feiern dort. Direction-Big-Text-Indikator entfaellt
                 (Pille-Label zeigt's schon). */}
-            {/* 2026-05-13 v5 (Wolf-Designspec mit Screenshot-Beispiel):
-                Pillen-Stack jetzt mit DREI Avatar-Slots im linearen flex-column
-                Layout — oben (Teams mit 'higher'), mittig (Teams ohne Wahl =
-                "spielen mit"), unten (Teams mit 'lower'). Untere Team-Progress-
-                Row entfaellt — alle Avatare sind jetzt in der mittigen Saeule
-                je nach State.
-                Glow-Color je Slot:
-                  - higher → grün (#22C55E)
-                  - middle (unentschieden) → Team-Farbe
-                  - lower → pink (#EC4899)
-                Im Reveal: korrekte behalten Glow, falsche werden dim'd. */}
-            <div style={{
+            {/* 2026-05-13 v6 (Wolf 'smooth transition wenn Avatar von Mitte zu
+                MEHR/WENIGER wechselt'): CSS-Grid mit allen Avataren als DIREKTE
+                Children (gleicher Parent → React reusable DOM-Element ueber
+                Slot-Wechsel hinweg via key={tm.id}). FLIP via useLayoutEffect:
+                misst boundingRect-Diff zwischen renders, applied invertierten
+                Transform und animiert mit transition zurueck zu 0.
+                Grid-Layout: 5 rows
+                  - Row 1: higher-Avatare
+                  - Row 2: MEHR-Pille (span full)
+                  - Row 3: middle-Avatare (unentschieden)
+                  - Row 4: WENIGER-Pille (span full)
+                  - Row 5: lower-Avatare
+                gridAutoFlow:column dense → mehrere Avatare in selber Row stehen
+                horizontal nebeneinander. */}
+            <div ref={pillenStackRef} style={{
               position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              display: 'grid',
+              gridTemplateRows: 'auto auto auto auto auto',
+              gridAutoFlow: 'column dense',
+              gridAutoColumns: 'min-content',
               justifyContent: 'center',
-              gap: 'clamp(8px, 1cqh, 16px)',
+              alignContent: 'center',
+              columnGap: 'clamp(6px, 0.8cqw, 14px)',
+              rowGap: 'clamp(6px, 0.9cqh, 14px)',
               pointerEvents: 'none',
             }}>
               {(() => {
-                const higherTeams = hlTeams.filter(tm => hl.answers[tm.id] === 'higher');
-                const lowerTeams = hlTeams.filter(tm => hl.answers[tm.id] === 'lower');
-                const undecidedTeams = hlTeams.filter(tm => !hl.answers[tm.id]);
                 const avatarSize = 'clamp(54px, 5.8cqw, 88px)';
 
-                const renderAvatarSlot = (
-                  teams: typeof hlTeams,
-                  slotKind: 'higher' | 'middle' | 'lower',
-                ) => {
-                  if (teams.length === 0) return null;
-                  const slotGlow = slotKind === 'higher'
-                    ? '#22C55E'
-                    : slotKind === 'lower'
-                      ? '#EC4899'
-                      : null;  // middle: use team color
+                const renderPille = (dir: 'higher' | 'lower', row: number, idx: number) => {
+                  const isHigher = dir === 'higher';
+                  const accentCol = isHigher ? '#22C55E' : '#EC4899';
+                  const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
+                  const isCorrect = isReveal && correctChoice === dir;
+                  const isWrong = isReveal && correctChoice !== dir;
                   return (
                     <div style={{
-                      display: 'flex', gap: 'clamp(6px, 0.8cqw, 14px)',
-                      flexWrap: 'wrap', justifyContent: 'center',
-                      zIndex: 5,
-                      animation: 'contentReveal 0.4s var(--qq-ease-pop-fast) both',
+                      gridRow: row, gridColumn: '1 / -1',
+                      display: 'flex', justifyContent: 'center',
                     }}>
-                      {teams.map(tm => {
-                        const correct = correctIds.has(tm.id);
-                        const dim = isReveal && !correct;
-                        const glowCol = slotGlow ?? tm.color;
-                        return (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 12,
+                        padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
+                        borderRadius: 999,
+                        background: isCorrect ? `${accentCol}33` : `${accentCol}14`,
+                        border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
+                        boxShadow: isCorrect
+                          ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
+                          : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                        transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
+                        opacity: isWrong ? 0.4 : 1,
+                        transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
+                        animation: !isReveal
+                          ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
+                          : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),
+                        whiteSpace: 'nowrap',
+                      }}>
+                        <span style={{
+                          fontSize: 'clamp(24px, 2.8cqw, 38px)', lineHeight: 1, fontWeight: 900,
+                          color: accentCol,
+                          transition: 'color 0.4s ease',
+                        }}>{isHigher ? '↑' : '↓'}</span>
+                        <span style={{
+                          fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
+                          color: isCorrect ? correctTextLight : accentCol,
+                          letterSpacing: '0.12em', textTransform: 'uppercase',
+                          transition: 'color 0.4s ease',
+                        }}>
+                          {isHigher
+                            ? (lang === 'en' ? 'Higher' : 'Mehr')
+                            : (lang === 'en' ? 'Lower' : 'Weniger')}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                };
+
+                return (
+                  <>
+                    {renderPille('higher', 2, 0)}
+                    {renderPille('lower', 4, 1)}
+                    {hlTeams.map(tm => {
+                      const choice = hl.answers[tm.id];
+                      const row = choice === 'higher' ? 1 : choice === 'lower' ? 5 : 3;
+                      const slotGlow = choice === 'higher'
+                        ? '#22C55E'
+                        : choice === 'lower'
+                          ? '#EC4899'
+                          : tm.color;
+                      const correct = correctIds.has(tm.id);
+                      const dim = isReveal && !correct;
+                      return (
+                        <div
+                          key={tm.id}
+                          data-flip-id={tm.id}
+                          style={{
+                            gridRow: row,
+                            display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            zIndex: 5,
+                            willChange: 'transform',
+                          }}
+                        >
                           <QQTeamAvatar
-                            key={tm.id}
                             avatarId={tm.avatarId}
                             teamEmoji={tm.emoji}
                             size={avatarSize}
@@ -376,73 +470,16 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                                 ? 'grayscale(0.6)'
                                 : correct
                                   ? 'drop-shadow(0 0 22px rgba(34,197,94,0.85)) drop-shadow(0 0 8px rgba(34,197,94,0.55))'
-                                  : `drop-shadow(0 0 14px ${glowCol}aa)`,
+                                  : `drop-shadow(0 0 14px ${slotGlow}aa)`,
                               boxShadow: dim
                                 ? '0 0 14px rgba(148,163,184,0.18)'
-                                : `0 0 0 3px ${glowCol}, 0 0 22px ${glowCol}88`,
+                                : `0 0 0 3px ${slotGlow}, 0 0 22px ${slotGlow}88`,
                               transition: 'opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
                             }}
                           />
-                        );
-                      })}
-                    </div>
-                  );
-                };
-
-                const renderPille = (dir: 'higher' | 'lower', idx: number) => {
-                  const isHigher = dir === 'higher';
-                  const accentCol = isHigher ? '#22C55E' : '#EC4899';
-                  const correctTextLight = isHigher ? '#86EFAC' : '#F9A8D4';
-                  const isCorrect = isReveal && correctChoice === dir;
-                  const isWrong = isReveal && correctChoice !== dir;
-                  return (
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 12,
-                      padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
-                      borderRadius: 999,
-                      background: isCorrect
-                        ? `${accentCol}33`
-                        : `${accentCol}14`,
-                      border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
-                      boxShadow: isCorrect
-                        ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
-                        : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                      backdropFilter: 'blur(10px)',
-                      WebkitBackdropFilter: 'blur(10px)',
-                      transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',
-                      opacity: isWrong ? 0.4 : 1,
-                      transition: 'transform 0.5s var(--qq-ease-out-cubic), background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease',
-                      animation: !isReveal
-                        ? `qqVsPulse 2.4s ease-in-out ${idx * 0.3}s infinite`
-                        : (isCorrect ? 'celebShake 0.6s ease 0.45s both' : undefined),
-                      whiteSpace: 'nowrap',
-                    }}>
-                      <span style={{
-                        fontSize: 'clamp(24px, 2.8cqw, 38px)', lineHeight: 1, fontWeight: 900,
-                        color: accentCol,
-                        transition: 'color 0.4s ease',
-                      }}>{isHigher ? '↑' : '↓'}</span>
-                      <span style={{
-                        fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
-                        color: isCorrect ? correctTextLight : accentCol,
-                        letterSpacing: '0.12em', textTransform: 'uppercase',
-                        transition: 'color 0.4s ease',
-                      }}>
-                        {isHigher
-                          ? (lang === 'en' ? 'Higher' : 'Mehr')
-                          : (lang === 'en' ? 'Lower' : 'Weniger')}
-                      </span>
-                    </div>
-                  );
-                };
-
-                return (
-                  <>
-                    {renderAvatarSlot(higherTeams, 'higher')}
-                    {renderPille('higher', 0)}
-                    {renderAvatarSlot(undecidedTeams, 'middle')}
-                    {renderPille('lower', 1)}
-                    {renderAvatarSlot(lowerTeams, 'lower')}
+                        </div>
+                      );
+                    })}
                   </>
                 );
               })()}

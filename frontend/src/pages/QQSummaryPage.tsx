@@ -8,6 +8,7 @@ import { teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider } from '../avatarSetContext';
 
@@ -853,7 +854,7 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
   teams: SummaryTeam[];
   lang: Lang;
 }) {
-  const topTeam = [...teams].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0))[0];
+  const topTeam = [...teams].sort(compareTeamsForRanking)[0];
   // Cell-Größe für Mobile-First (kompakt)
   const maxBoardWidth = 320; // px
   const cellSize = Math.floor(maxBoardWidth / gridSize) - 4;

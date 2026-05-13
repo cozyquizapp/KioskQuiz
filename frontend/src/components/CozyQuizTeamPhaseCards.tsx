@@ -30,6 +30,7 @@ import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
 import { CozyCard, CozyBtn, CopyButton } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode } from '../utils/qqStammCode';
+import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 
 // ── LobbyCard ────────────────────────────────────────────────────────────────
 export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
@@ -813,7 +814,7 @@ export function FinalRevealCard({
 
 // ── GameOverCard ─────────────────────────────────────────────────────────────
 export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
-  const sorted  = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const sorted  = [...s.teams].sort(compareTeamsForRanking);
   const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
   const myTeam  = sorted.find(t => t.id === myTeamId);
   const winner  = sorted[0];

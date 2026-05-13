@@ -14,6 +14,7 @@ import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
+import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
 
@@ -3832,7 +3833,7 @@ function CollapsibleRanking({ teams, phase }: { teams: QQStateUpdate['teams']; p
       setOpen(!(phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL'));
     }
   }, [phase]);
-  const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const sorted = [...teams].sort(compareTeamsForRanking);
   const leader = sorted[0];
   return (
     <div style={{ ...card, padding: 0, overflow: 'hidden' }}>

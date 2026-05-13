@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { JokerIcon } from './JokerIcon';
+import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { QQEmojiIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';

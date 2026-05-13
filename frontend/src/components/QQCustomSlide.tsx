@@ -6,6 +6,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG as CAT_BADGE_BG, QQ_CAT_ACCENT as CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
@@ -403,7 +404,7 @@ function GridDisplay({ state: s, maxSize = 320 }: { state: QQStateUpdate; maxSiz
 }
 
 function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
-  const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  const sorted = [...teams].sort(compareTeamsForRanking);
   const maxCells = Math.max(1, ...sorted.map(t => t.largestConnected));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1174,7 +1175,7 @@ function CustomSlideElement({
     }
 
     case 'ph_game_rankings': {
-      const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+      const sorted = [...s.teams].sort(compareTeamsForRanking);
       const fs = (el.fontSize ?? 1.4) * canvasW / 100;
       return (
         <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
@@ -1360,7 +1361,7 @@ function CustomSlideElement({
 
     // ── Phase-Intro score chips ───────────────────────────────────────────────
     case 'ph_phase_scores': {
-      const sorted = [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected);
+      const sorted = [...s.teams].sort(compareTeamsForRanking);
       return (
         <div style={{
           ...baseStyle,

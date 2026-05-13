@@ -184,15 +184,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           { icon: '🎲', title: 'Each round adds', desc: 'Steal from R2, Stack from R3. Lucky Bag delivers a surprise every round.' },
         ];
 
+    // 2026-05-13 (Wolf 'in setup in der card ist text teilweise zu klein,
+    // entweder groesser oder bei mehr inhalten 2-spaltig'): Container von
+    // 720 → 900px geweitet (mehr horizontaler Platz pro Mini-Card im 2×2-
+    // Grid), Title-Schrift 20-28 → 22-32px, Desc-Schrift 15-21 → 18-26px
+    // (+25%). Auf 8m Beamer-Distanz war 15px-Min unlesbar.
     panels.push({ key: 'howItWorks', node: (
-      // 2026-05-07 v2 (Wolf 'unten beruehren sich Card und Inner-Card fast'):
-      // Title-marginBottom 28→18, Icon 36-52→30-44, Desc 17-24→15-21, Card-
-      // Padding 18/20→13/16, Grid-Gap 16→12 — Panel ~18 % kompakter, untere
-      // Inner-Cards beruehren die Outer-Card-Boden-Border nicht mehr.
       // 2026-05-07 v13 (Wolf 'mach das 2x2 grid mittig zentriert + die ueber-
-      // schrift einfach drueber, plus eigene Joker-Grafik'): Panel auf 720
-      // verschmaelert + margin 0 auto. JokerIcon (Spiel-Asset) statt 🃏 Emoji.
-      <div style={{ width: 'min(100%, 720px)', margin: '0 auto' }}>
+      // schrift einfach drueber, plus eigene Joker-Grafik'): Panel margin 0
+      // auto. JokerIcon (Spiel-Asset) statt 🃏 Emoji.
+      <div style={{ width: 'min(100%, 900px)', margin: '0 auto' }}>
         <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: '#e2e8f0', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
@@ -200,7 +201,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 12,
+          gap: 14,
           textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
           {howItems.map((it, i) => {
@@ -209,7 +210,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'flex-start', gap: 14,
-                padding: '13px 16px',
+                padding: '15px 18px',
                 borderRadius: 16,
                 background: 'rgba(255,235,200,0.04)',
                 border: '1px solid rgba(255,235,200,0.10)',
@@ -224,8 +225,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.2cqw, 28px)', color: '#EC4899', marginBottom: 4 }}>{it.title}</div>
-                  <div style={{ fontSize: 'clamp(15px, 1.7cqw, 21px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: '#EC4899', marginBottom: 6 }}>{it.title}</div>
+                  <div style={{ fontSize: 'clamp(18px, 2cqw, 26px)', color: '#cbd5e1', lineHeight: 1.35 }}>{it.desc}</div>
                 </div>
               </div>
             );

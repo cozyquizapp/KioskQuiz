@@ -3673,17 +3673,25 @@ function updateTerritories(room: QQRoomState): void {
   const results = computeTerritories(room.grid, room.gridSize);
   // 2026-05-05 (Wolf-Konzept Stapel-Bonus): Connections-Finale-Stacks addieren
   // sich auf largestConnected. Wir summen pro Team alle cell.stackBonus auf.
-  const stackBonusByTeam: Record<string, number> = {};
+  // 2026-05-13 (Wolf 'bei largest area muessen auch die gestapelten felder
+  // mitgezaehlt werden wenn finalrunde rum'): Auch Phase-3-Stapel (STAPEL_1
+  // setzt nur cell.stuck=true, KEIN stackBonus) zaehlen jetzt zur largest-
+  // Connected dazu — pro stuck-Cell +1 Bonus, unabhaengig davon ob die Cell
+  // Teil der groessten zusammenhaengenden Region ist. Vorher: isolierte stuck-
+  // Felder gingen bei der Sieger-Bewertung verloren (BFS-Doubling griff nur
+  // innerhalb der jeweiligen Region). Connections-Multi-Stack zaehlt weiter
+  // pro stackBonus-Count voll dazu.
+  const bonusByTeam: Record<string, number> = {};
   for (const row of room.grid) {
     for (const cell of row) {
-      if (cell.ownerId && cell.stackBonus) {
-        stackBonusByTeam[cell.ownerId] = (stackBonusByTeam[cell.ownerId] ?? 0) + cell.stackBonus;
-      }
+      if (!cell.ownerId) continue;
+      if (cell.stuck)      bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + 1;
+      if (cell.stackBonus) bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + cell.stackBonus;
     }
   }
   for (const id of room.joinOrder) {
     const r = results[id] ?? { total: 0, largest: 0 };
-    const bonus = stackBonusByTeam[id] ?? 0;
+    const bonus = bonusByTeam[id] ?? 0;
     room.teams[id].totalCells       = r.total;
     room.teams[id].largestConnected = r.largest + bonus;
   }

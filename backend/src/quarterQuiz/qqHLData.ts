@@ -258,6 +258,24 @@ export const QQ_HL_POOL: readonly QQHLPair[] = [
   { id: 'lebenserwartung-elefant-blauwal', kind: 'pair', category: 'nerd', unit: 'Jahre Lebenserwartung', unitEn: 'years lifespan',
     anchorLabel: 'Afrikanischer Elefant', anchorLabelEn: 'African elephant', anchorValue: 70,
     subjectLabel: 'Blauwal', subjectLabelEn: 'Blue whale', subjectValue: 90 },
+
+  // ── 🎤 Eurovision (2026-05-13, fuer Watchparty-Edition) ─────────────────
+  { id: 'esc-teilnehmer-2024-vs-2011', kind: 'anchor', category: 'eurovision',
+    unit: 'teilnehmende Länder', unitEn: 'participating countries',
+    anchorLabel: 'ESC 2024 (Malmö)', anchorLabelEn: 'ESC 2024 (Malmö)', anchorValue: 37,
+    subjectLabel: 'ESC 2011 (Düsseldorf)', subjectLabelEn: 'ESC 2011 (Düsseldorf)', subjectValue: 43,
+    customQuestion: 'Beim ESC 2024 in Malmö waren 37 Länder am Start. Waren es 2011 in Düsseldorf mehr oder weniger?',
+    customQuestionEn: 'ESC 2024 in Malmö had 37 countries. Were there more or fewer in 2011 in Düsseldorf?' },
+  { id: 'esc-lena-2010-vs-conchita-2014', kind: 'pair', category: 'eurovision',
+    unit: 'Punkte', unitEn: 'points',
+    anchorLabel: 'Lena — Satellite (2010)', anchorLabelEn: 'Lena — Satellite (2010)', anchorValue: 246,
+    subjectLabel: 'Conchita Wurst — Rise Like a Phoenix (2014)', subjectLabelEn: 'Conchita Wurst — Rise Like a Phoenix (2014)', subjectValue: 290 },
+  { id: 'esc-finale-dauer-2024-vs-1956', kind: 'anchor', category: 'eurovision',
+    unit: 'Minuten Sendezeit', unitEn: 'minutes of broadcast',
+    anchorLabel: 'ESC-Finale heute (~4 Stunden)', anchorLabelEn: 'ESC final today (~4 hours)', anchorValue: 240,
+    subjectLabel: 'Allererster ESC 1956 (Lugano)', subjectLabelEn: 'Very first ESC 1956 (Lugano)', subjectValue: 100,
+    customQuestion: 'Ein modernes ESC-Finale dauert etwa 240 Minuten. Wie lang ging der allererste ESC 1956 in Lugano — mehr oder weniger?',
+    customQuestionEn: 'A modern ESC final runs about 240 minutes. How long was the very first ESC in 1956 in Lugano — more or less?' },
 ];
 
 /** Liefert die korrekte Antwort anhand anchor/subject Werte. */

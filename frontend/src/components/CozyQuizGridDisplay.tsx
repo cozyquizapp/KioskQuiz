@@ -564,21 +564,35 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     //  stackCount 1 → 2 Avatare diagonal, getrennt
                     //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    // 2026-05-13 v4 (Wolf '12. Fix-Versuch — echte Ecken'):
-                    // Strukturell durchgerechnet statt Pixelraten.
+                    // 2026-05-13 v5 (Wolf 13. Versuch: 'mach sie etwas groesser
+                    // mach einen dritten diagonal dazu, dann nimm den in der
+                    // mitte raus'):
                     //
-                    // - 2-Stack: avFactor 0.42 → 0.36, offset ±20 → ±28.
-                    //   Avatar 1 Center (22, 22), Radius 18 → reicht (4,4)-(40,40)
-                    //     → TL-Edge-Puffer 4% (klar in der Ecke).
-                    //   Avatar 2 Center (78, 78) → reicht (60,60)-(96,96)
-                    //     → BR-Edge-Puffer 4%.
-                    //   Diagonal-Distance Center-Center: √(56² + 56²) = 79.2%
-                    //   Avatar-Avatar-Luftspalt: 79.2 - 36 = 43.2% (3× vorher!).
+                    // Ursache der bisherigen 12 Fehlschlaege: QQTeamAvatar
+                    // rendert das Emoji nur mit 60% des Wrappers (emojiFontSize
+                    // = size * 0.6) → visueller Emoji-Glyph war effektiv 0.36 ×
+                    // 0.6 = 22% von cellSize, sah "winzig in der Mitte" aus
+                    // selbst wenn der Wrapper rechnerisch in der Ecke sass.
+                    //
+                    // Fix: avFactor 0.36 → 0.50. Wrapper jetzt 50% von cellSize,
+                    // visueller Emoji-Glyph ~30%. Plus Wolfs Trick fuer
+                    // Positionen: Avatare so platzieren, als waeren es 3 entlang
+                    // der Diagonal (TL, Center, BR), und dann Center skippen.
+                    // Damit liegen TL und BR strukturell am Ecken-Rand, nicht
+                    // mittig-versetzt.
+                    //
+                    // - 2-Stack: avFactor 0.50, offset ±25.
+                    //   Avatar 1 Center (25, 25), Radius 25 → reicht (0,0)-(50,50)
+                    //     → TL-Edge-Puffer 0% (genau in der Ecke).
+                    //   Avatar 2 Center (75, 75) → reicht (50,50)-(100,100)
+                    //     → BR-Edge-Puffer 0%.
+                    //   Avatare beruehren sich diagonal exakt im Cell-Center —
+                    //   maximaler Stack-Effekt ohne Overlap.
                     //
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.36 : 0.86;
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.50 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
@@ -587,7 +601,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -28, ty: -28 }, { tx: 28, ty: 28 }]
+                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

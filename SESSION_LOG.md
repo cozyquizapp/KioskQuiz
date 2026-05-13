@@ -1515,3 +1515,39 @@ Refactored:
 ### Memory-Note
 
 Trigger 'log das' = SESSION_LOG-Append + commit + push. Chat-Wechsel danach geplant. 🦖❣️
+
+---
+
+## 2026-05-13 (Nachschlag spät) — Eurovision-Quiz-Refresh (Template + H/L-Pool)
+
+Wolf hat 15 Quiz-Fragen + 3 H/L-Pairs von externer KI bekommen (Spec aus dem Marathon-Block oben). Faktencheck, Refinements, Import.
+
+### KI-Output → Faktencheck → Refinements
+
+**Frage 5 (Top5 Sieger-Länder)**: Drift-Problem entdeckt — UK fehlte in answers obwohl tie mit Niederlande bei 5 Siegen. Plus Frage-Wording "Top 5" mathematisch unsauber (es gibt 6 Länder mit 5+ Siegen, nicht 5). Fix:
+- Text entschärft: "Nenne bis zu 5 der erfolgreichsten ESC-Sieger-Nationen"
+- 6 valide answers: Schweden/Irland (7 Siege) + Luxemburg/Frankreich/Niederlande/UK (5 Siege)
+- Top5Reveal-Code ist generisch (`n = answers.length`) → rendert automatisch 6 Cards untereinander, kein "2-in-1"-Stacking nötig.
+
+**Faktencheck-Korrektur**: Mein ursprünglicher Audit war falsch bei Israel — hat 4 ESC-Siege (1978/79/98/2018), nicht 5. Daher 6 Länder mit 5+ Wins, nicht 7. Wolf transparent korrigiert vor dem Schreiben.
+
+**Frage 9 (ZvZ) thematisch ersetzt** — Drift-Bug-Vermeidung: Vorher "Welches Land hat meiste Siege" — überlappte direkt mit Frage 5. Wolf gespottet. Neue Frage: "Wer hielt den höchsten Punkte-Score bei einem ESC-Sieg?" mit Optionen Salvador Sobral 2017 (758) / Måneskin 2021 (524) / Loreen 2023 (583). Salvador klare Spitze → schöne ZvZ-Risiko-Verteilung möglich.
+
+### Implementation
+
+- **`frontend/src/data/eurovisionDraftTemplate.ts`** komplett ersetzt (commit `98f098f3`). 15 Fragen über 3 Runden, alle Mechaniken (SCHAETZCHEN/MUCHO/ZvZ/CHEESE + BUNTE_TUETE top5/map/hotPotato), funFact + hostNote in DE+EN durchgehend. Verteilung: R1 Klassiker → R2 Mittel → R3 Hart (Pub-Knowledge → Insider).
+- **`backend/src/quarterQuiz/qqHLData.ts`** um 3 ESC-H/L-Pairs erweitert (commit `4a4b6600`). Neue category `'eurovision'`. Paare: ESC-Teilnehmer 2024 vs 2011 (37 vs 43), Lena vs Conchita Punkte (246 vs 290), ESC-Sendezeit 1956 vs heute (240 vs 100 Min).
+
+### Open
+
+- **Wolf macht im Builder**: alten Eurovision-Draft löschen → 🎤 Eurovision Quiz klicken → bekommt neuen Draft mit 15 frischen Fragen
+- **CHEESE-Bilder hochladen** (R1 Lordi Athen 2006 / R2 Måneskin Rotterdam 2021 / R3 Subwoolfer Turin 2022)
+- **Coolify-Backend-Redeploy manuell** für die neuen H/L-Pairs (sonst läuft alter Pool weiter)
+- Optional: per-Frage Musik (`musicMode: 'revealOnly'` z.B. für ABBA-Waterloo-Reveal in R1)
+- Optional: Lobby-Welcome-Sound (Beethovens "Ode an die Freude", archive.org)
+
+### Patterns
+
+- **Drift via Themen-Überlap**: Top5-Frage und ZvZ-Frage zur selben Statistik = Spieler kennt Antwort schon. Wolf erkennt's selbst, frage thematisch wechseln statt Distraktoren feilen.
+- **Mechanik-Code generisch lassen**: `top5` heißt zwar "5", Code rendert aber `n = answers.length` — keine Magic-Number 5. Macht Tie-Cases (6 valide Antworten) trivial.
+- **Externer KI-Output ist Skeleton, nicht final**: Faktencheck + Wolf-Refinement bringt 2 Verbesserungen pro Quiz raus. KI-Vertrauen sinnvoll dosieren.

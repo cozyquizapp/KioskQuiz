@@ -721,7 +721,8 @@ export type QQSoundSlot =
   // slots'): Final-Reveal Race-Phase 3-Slot-Trio. Alle drei mit Fallback auf
   // den bisherigen Default-Cue (Tick / WoodKnock / WinnerCardReveal) wenn der
   // Slot leer ist — Wolf kann sie schrittweise befuellen.
-  | 'raceCountdown' | 'raceLoop' | 'racePodium'
+  | 'raceCountdown' | 'raceLoop' | 'racePodium' | 'raceWinner' | 'raceTeamFall'
+  | 'specialAwardReveal'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -766,8 +767,11 @@ export interface QQSoundConfig {
   comebackMusic?: string;
   // Race-Phase im Final-Reveal (Wolf 2026-05-13).
   raceCountdown?: string;  // 3-2-1-GO Stinger vor Race-Start
-  raceLoop?: string;       // Hauptsound waehrend Race + Avatar-Fall-Sequenz
+  raceLoop?: string;       // Hauptsound waehrend Race (loop, stoppt bei Gewinner)
+  raceTeamFall?: string;   // Sound wenn ein Team aus dem Race faellt (pro Fall)
+  raceWinner?: string;     // Sound wenn Gewinner entschieden ist (vor Treppchen)
   racePodium?: string;     // Whoosh/Fanfare beim Treppchen-Aufstieg
+  specialAwardReveal?: string; // Pro Special-Award-Card-Flip (3x hintereinander)
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -815,8 +819,11 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   timerTick:           '⏱ Timer-Tick (jede Sekunde unter 10s)',
   timerUrgent:         '⏰ Timer-Urgent-Tick (unter 5s)',
   raceCountdown:       '🏁 Race-Countdown (3-2-1-GO vor Race)',
-  raceLoop:            '🏃 Race-Sound (während Avatare rennen + fallen)',
+  raceLoop:            '🏃 Race-Sound (Loop während Avatare rennen)',
+  raceTeamFall:        '💥 Race-Team-Fall (pro Team das rausfällt)',
+  raceWinner:          '🥇 Race-Winner (sobald Sieger entschieden)',
   racePodium:          '🏆 Treppchen-Aufstieg (Whoosh wenn Podium reinkommt)',
+  specialAwardReveal:  '🏅 Special-Award-Reveal (pro Card-Flip, 3x in Drumroll-Folge)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -880,7 +887,10 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   timerUrgent:         '',
   raceCountdown:       '',
   raceLoop:            '',
+  raceTeamFall:        '',
+  raceWinner:          '',
   racePodium:          '',
+  specialAwardReveal:  '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

@@ -1446,7 +1446,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             optionVoters.forEach((_voter, localIdx) => {
               const myRank = voterCount;
               voterCount++;
-              const delay = (optStep + 1) * 750 - 60 + localIdx * 90;
+              // 2026-05-13 (Wolf 'sound cascaden nicht passend') — Audit-Fix
+              // MUCHO: Voter-Stagger 90→180ms. Visual-CSS muchoVoterDrop nutzt
+              // `${vi*0.18}s` (= 180ms), Sound war 90ms → Sound raste doppelt
+              // so schnell durch die Voter wie das Visual.
+              const delay = (optStep + 1) * 750 - 60 + localIdx * 180;
               window.setTimeout(() => { try { playAvatarCascadeNote(myRank, cascadeTotal); } catch {} }, delay);
             });
           });

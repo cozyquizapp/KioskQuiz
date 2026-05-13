@@ -1151,11 +1151,65 @@ export function playRaceCountdown(): boolean {
 /** Race-Hauptsound (waehrend Avatare rennen + gestaffelt fallen). One-Shot
  *  statt Loop, weil die Race-Phase Choreo ~15-25s dauert — Wolfs MP3 sollte
  *  in dieser Range liegen. Wenn kein Custom: stumm (existierende WoodKnocks
- *  pro Fall + Lobby-Background-Loop bleiben). */
-export function playRaceLoop(): void {
+ *  pro Fall + Lobby-Background-Loop bleiben).
+ *
+ *  2026-05-13 v2 (Wolf 'racing sound muss nach gewinner entschieden aufhoeren,
+ *  dann muss ein neuer sound anfangen'): Race-Loop ist jetzt ein echter Loop
+ *  mit Modul-Level-Reference, damit er bei stopRaceLoop() hart abgebrochen
+ *  werden kann (statt One-Shot wie v1). Wolfs MP3-Laenge ist damit egal —
+ *  loop'd bis zum Stop. */
+let raceLoopAudioEl: HTMLAudioElement | null = null;
+export function startRaceLoop(): void {
+  if (raceLoopAudioEl) return; // bereits laufend
   if (!isSlotEnabled('raceLoop')) return;
   const url = resolveSlotUrl('raceLoop');
   if (!url) return;
+  try {
+    const el = new Audio(url);
+    el.loop = true;
+    el.volume = masterVolume;
+    el.play().catch(() => {});
+    raceLoopAudioEl = el;
+  } catch {}
+}
+export function stopRaceLoop(): void {
+  if (!raceLoopAudioEl) return;
+  try { raceLoopAudioEl.pause(); raceLoopAudioEl.currentTime = 0; } catch {}
+  raceLoopAudioEl = null;
+}
+
+/** Sound pro Team-Fall in der Race-Phase. Fallback auf playWoodKnock (das
+ *  bisherige Synth-Klack), damit der Sound nie ganz still ist. */
+export function playRaceTeamFall(): void {
+  if (!isSlotEnabled('raceTeamFall')) { playWoodKnock(); return; }
+  const url = resolveSlotUrl('raceTeamFall');
+  if (!url) { playWoodKnock(); return; }
+  playUrlOneShot(url);
+}
+
+/** Sound sobald der Sieger entschieden ist (= nach letztem Team-Fall, vor
+ *  Treppchen-Aufstieg). Ersetzt die bisherige playFanfare-Stelle in der
+ *  Winner-Slow-Mo-Phase. Fallback auf playFanfare wenn kein Custom-Upload. */
+export function playRaceWinner(): void {
+  if (!isSlotEnabled('raceWinner')) { playFanfare(); return; }
+  const url = resolveSlotUrl('raceWinner');
+  if (!url) { playFanfare(); return; }
+  playUrlOneShot(url);
+}
+
+/** Legacy-Alias: alte playRaceLoop ruft jetzt startRaceLoop, damit alte
+ *  Caller weiter funktionieren. Wird in CozyQuizFinalRevealView durch
+ *  startRaceLoop+stopRaceLoop ersetzt. */
+export function playRaceLoop(): void { startRaceLoop(); }
+
+/** 2026-05-13 (Wolf 'special awards: 1 sound slot reicht, 3x hintereinander
+ *  mit gutem timing als drumroll, fuelle ich ein'): wird pro Award-Card-Flip
+ *  einmal getriggert (= 3x ueber die Awards-Reveal-Sequenz). Fallback auf
+ *  playWinnerCardReveal damit der Cue ohne Custom-MP3 nicht stumm ist. */
+export function playSpecialAwardReveal(): void {
+  if (!isSlotEnabled('specialAwardReveal')) { playWinnerCardReveal(); return; }
+  const url = resolveSlotUrl('specialAwardReveal');
+  if (!url) { playWinnerCardReveal(); return; }
   playUrlOneShot(url);
 }
 

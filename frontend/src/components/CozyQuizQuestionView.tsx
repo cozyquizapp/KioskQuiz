@@ -2204,15 +2204,29 @@ function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en
     cascadeStartedRef.current = true;
     setRevealedMinIdx(n);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const cascadeTotal = n + 1;
+    // 2026-05-13 (Wolf 'sound cascaden nicht passend zu gesetzten avataren') —
+    // Top5-Fix: Sound nur fuer Rows MIT Hittern. Vorher 5 Toene immer, auch
+    // wenn nur 2 Rows Avatar-Drops hatten → Audio/Visual-Drift. hitOrderMap
+    // mapped jeden Cascade-Step auf den Hit-Order-Index (oder -1 fuer leere).
+    let hitAccum = 0;
+    const hitOrderMap: number[] = new Array(n);
+    for (let j = 0; j < n; j++) {
+      const tIdx = n - 1 - j;
+      const hasHit = (perAnswer[tIdx]?.hitters.length ?? 0) > 0;
+      hitOrderMap[j] = hasHit ? hitAccum++ : -1;
+    }
+    const totalHits = hitAccum;
+    const cascadeTotal = totalHits + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
-      const isTopRow = i === n - 1;
+      const hitOrder = hitOrderMap[i];
+      const hasHitters = hitOrder >= 0;
+      const isLastHit = hasHitters && hitOrder === totalHits - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
-        if (!s.sfxMuted) {
-          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
-          if (isTopRow) {
+        if (!s.sfxMuted && hasHitters) {
+          try { playAvatarCascadeNote(hitOrder, cascadeTotal); } catch {}
+          if (isLastHit) {
             try { playRevealHighlight(); } catch {}
           }
         }
@@ -2572,15 +2586,29 @@ function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'e
     cascadeStartedRef.current = true;
     setRevealedMinIdx(n);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const cascadeTotal = n + 1;
+    // 2026-05-13 (Wolf 'sound cascaden nicht passend') — Order-Fix analog zu
+    // Top5: Sound nur fuer Positionen mit Hittern. Visual-Reveal-Stepping
+    // (revealedMinIdx) bleibt ueber alle n Positionen, nur die Cascade-Notes
+    // ueberspringen leere Reihen.
+    let hitAccum = 0;
+    const hitOrderMap: number[] = new Array(n);
+    for (let j = 0; j < n; j++) {
+      const tIdx = n - 1 - j;
+      const hasHit = (perPosition[tIdx]?.hitters.length ?? 0) > 0;
+      hitOrderMap[j] = hasHit ? hitAccum++ : -1;
+    }
+    const totalHits = hitAccum;
+    const cascadeTotal = totalHits + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
-      const isTopRow = i === n - 1;
+      const hitOrder = hitOrderMap[i];
+      const hasHitters = hitOrder >= 0;
+      const isLastHit = hasHitters && hitOrder === totalHits - 1;
       const t = setTimeout(() => {
         setRevealedMinIdx(targetIdx);
-        if (!s.sfxMuted) {
-          try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
-          if (isTopRow) {
+        if (!s.sfxMuted && hasHitters) {
+          try { playAvatarCascadeNote(hitOrder, cascadeTotal); } catch {}
+          if (isLastHit) {
             try { playRevealHighlight(); } catch {}
           }
         }
@@ -4586,9 +4614,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 WebkitBackdropFilter: 'blur(8px)',
                 animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
               }}>
-                <span style={{ fontSize: 'clamp(26px, 2.8cqw, 36px)', lineHeight: 1 }}>
-                  <QQEmojiIcon emoji="🏆"/>
-                </span>
+                {/* 2026-05-13 (Wolf 'in cheese ist im gewinnerbadge ein pokal,
+                    das ist sonst nie, fuer konsistenz weg'): freistehender 🏆-
+                    Glyph direkt vor dem Avatar entfernt. Andere Modi nutzen den
+                    Pokal hoechstens als Eyebrow-Label-Praefix ("🏆 Rundensieger"),
+                    nicht als eigenes Element in der Winner-Pille. */}
                 <QQTeamAvatar
                   avatarId={winnerTeam.avatarId}
                   teamEmoji={winnerTeam.emoji}

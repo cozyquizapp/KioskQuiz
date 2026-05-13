@@ -24,8 +24,11 @@ import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import {
   startFinaleLoop, stopLobbyLoop,
   playWoodKnock, playWinnerCardReveal, playFanfare, playClimaxFinish, playTick,
+  playTeamReveal,
   setMusicDucked,
-  playRaceCountdown, playRaceLoop, playRacePodium,
+  playRaceCountdown, startRaceLoop, stopRaceLoop, playRaceTeamFall,
+  playRaceWinner, playRacePodium,
+  playSpecialAwardReveal,
 } from '../utils/sounds';
 
 export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
@@ -1081,6 +1084,16 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   const totalBonus = resolution?.totalBonus ?? 0;
   const isZero = totalBonus === 0;
 
+  // 2026-05-13 (Wolf 'kein sound bei tippte auf, animation sieht komisch aus —
+  // aktuell kommt nur von oben, vorgaenger-card wird einfach ersetzt'): Sound
+  // bei jedem Team-Mount in der Bid-Reveal-Sequenz. playTeamReveal ist der
+  // "Team-Slam"-Sound aus TeamsRevealView — passender Cue fuer den naechsten
+  // Bid-Team-Reveal.
+  useEffect(() => {
+    if (!team) return;
+    try { playTeamReveal(); } catch {}
+  }, [team?.id]);
+
   // 2026-05-09 v3 (Wolf 'Card minimal größer + per-Team-Cascade'): Card etwas
   // großzügiger gepolstert + Avatar bumped. Innen-Cascade per animation-delay:
   // Team-Card sofort, dann Tipp-Team bei +0.55s, Punkte/Sympathie bei +1.1s.
@@ -1096,7 +1109,12 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
         background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
         border: `3px solid ${team.color}`,
         boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-        animation: 'qqFRSlamDown 0.95s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+        // 2026-05-13 (Wolf 'kommt nur von oben, vorgaenger-card wird einfach
+        // ersetzt'): qqFRSlamDown (translateY -90cqh + rotate + blur) durch
+        // sanften qqFRTitleIn (fade + scale + blur-clearance) ersetzt. Kein
+        // hartes Top-Down-Slam mehr — die alte Card faded weich raus, die neue
+        // faded weich rein.
+        animation: 'qqFRTitleIn 0.65s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
           <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} />
@@ -1228,10 +1246,13 @@ function AwardsOverviewSlide({ revealMode, state: s, lang }: {
     }
     // Stagger: 0.8s → Card 1 (1.1s flip) → 2.0s pause → Card 2 → 2.0s pause → Card 3
     // Total ~8s, gibt Wolf Zeit pro Award zu moderieren.
+    // 2026-05-13 (Wolf 'special awards: 1 sound slot 3x in drumroll-folge'):
+    // playSpecialAwardReveal pro Card-Flip — Wolf fuellt den Slot mit Drumroll/
+    // Cheer-MP3, Fallback auf playWinnerCardReveal damit's nicht still ist.
     const handles: number[] = [];
-    handles.push(window.setTimeout(() => setRevealedCount(1), 800));
-    handles.push(window.setTimeout(() => setRevealedCount(2), 800 + 1100 + 2000));
-    handles.push(window.setTimeout(() => setRevealedCount(3), 800 + 1100 + 2000 + 1100 + 2000));
+    handles.push(window.setTimeout(() => { setRevealedCount(1); try { playSpecialAwardReveal(); } catch {} }, 800));
+    handles.push(window.setTimeout(() => { setRevealedCount(2); try { playSpecialAwardReveal(); } catch {} }, 800 + 1100 + 2000));
+    handles.push(window.setTimeout(() => { setRevealedCount(3); try { playSpecialAwardReveal(); } catch {} }, 800 + 1100 + 2000 + 1100 + 2000));
     return () => handles.forEach(h => window.clearTimeout(h));
   }, [revealMode]);
   return (
@@ -1730,24 +1751,31 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     // (BEREIT 0.8s → 3 0.7s → 2 0.7s → 1 0.8s → GO! 0.5s) + 5s Race-Hold
     // = 8.5s bis erstes Team fällt.
     let cursor = 3500; // Countdown Auto-Choreo läuft
-    // 2026-05-13 (Wolf 'eigene mp3 slot fuer rennen'): Race-Hauptsound startet
-    // mit der Race-Phase. Bei leerem Slot still — bisherige WoodKnocks pro
-    // Team-Fall + Lobby-Background bleiben hoerbar.
+    // 2026-05-13 v2 (Wolf 'racing sound muss nach gewinner entschieden aufhoeren,
+    // dann muss ein neuer sound anfangen; sound wenn team zurueckfaellt
+    // editierbar in moderator'): Race-Loop ist jetzt echter Loop (startRaceLoop
+    // + stopRaceLoop). Team-Falls via playRaceTeamFall (Slot mit playWoodKnock-
+    // Fallback). Winner-Sound nach letztem Fall via playRaceWinner (Slot mit
+    // playFanfare-Fallback).
     handles.push(window.setTimeout(() => {
       setPhase('race');
-      try { playRaceLoop(); } catch {}
+      try { startRaceLoop(); } catch {}
     }, cursor));
     cursor += 5000; // Race-Hold 5s
 
     // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr.
-    // 2026-05-10 (Wolf 'mehr sounds für race'): Fall-Thud bei jedem Team-Out.
     for (let rank = N; rank >= 2; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
       handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
-        try { playWoodKnock(); } catch {}
-        if (rank === 2) setPhase('p1-solo');
+        try { playRaceTeamFall(); } catch {}
+        if (rank === 2) {
+          // Letzter Fall → Gewinner entschieden → Race-Loop hart stoppen.
+          // Winner-Sound kommt 4s spaeter im winner-slowmo-Phase (siehe unten).
+          try { stopRaceLoop(); } catch {}
+          setPhase('p1-solo');
+        }
       }, cursor));
       cursor += 2000;
     }
@@ -1779,11 +1807,13 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     }, cursor));
     cursor += 2500;
 
-    // P1 Slow-Mo — Music duckt für Fanfare im Vordergrund
+    // P1 Slow-Mo — Music duckt für Winner-Sound im Vordergrund.
+    // 2026-05-13 v2: playFanfare → playRaceWinner (eigener Slot, Fallback auf
+    // playFanfare wenn Wolf den Slot leer laesst).
     handles.push(window.setTimeout(() => {
       setPhase('winner-slowmo');
       try { setMusicDucked(true); } catch {}
-      try { playFanfare(); } catch {}
+      try { playRaceWinner(); } catch {}
     }, cursor));
     cursor += 1500;
 
@@ -1797,6 +1827,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       handles.forEach(h => window.clearTimeout(h));
       // Music-Cleanup bei Unmount/Remount (Replay).
       try { stopLobbyLoop(); } catch {}
+      try { stopRaceLoop(); } catch {}
       try { setMusicDucked(false); } catch {}
     };
   // 2026-05-10 (Audit-P0): Deps auf stabile Identifier reduziert. finalRanking

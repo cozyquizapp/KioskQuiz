@@ -564,19 +564,21 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     //  stackCount 1 → 2 Avatare diagonal, getrennt
                     //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
                     const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
-                    // 2026-05-13 v3 (Wolf-Screenshots fuer +1 und +2):
-                    // - 2-Stack: 2 Avatare diagonal in oberer-linker + unterer-
-                    //   rechter "Haelfte" der Card, klare Luecke zwischen ihnen.
-                    //   Centers bei (±20, ±20), avFactor 0.42 (avRadius 21).
-                    //   Avatar-zu-Avatar-Diagonal-Distance: 20√2 + 20√2 = 56.6%,
-                    //   minus 2 Radii = 56.6 - 42 = 14.6% Luftspalt zwischen ihnen.
-                    //   TL-Edge-Puffer: 50 - 20 - 21 = 9% — sichtbar in der Ecke.
-                    // - 3-Stack: TRIANGLE-Layout (war diagonale Linie). Wolf-
-                    //   Screenshot zeigt Apex oben-mitte + 2 Basis unten.
-                    //   Apex bei (0, -28), Basis bei (±22, +15). avFactor 0.34.
-                    //   Approx. equilateral: Apex-zu-Basis ≈ 50%, Basis-zu-Basis
-                    //   = 44%. avRadius=17 → Rand-zu-Rand ~16% (gut getrennt).
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.42 : 0.86;
+                    // 2026-05-13 v4 (Wolf '12. Fix-Versuch — echte Ecken'):
+                    // Strukturell durchgerechnet statt Pixelraten.
+                    //
+                    // - 2-Stack: avFactor 0.42 → 0.36, offset ±20 → ±28.
+                    //   Avatar 1 Center (22, 22), Radius 18 → reicht (4,4)-(40,40)
+                    //     → TL-Edge-Puffer 4% (klar in der Ecke).
+                    //   Avatar 2 Center (78, 78) → reicht (60,60)-(96,96)
+                    //     → BR-Edge-Puffer 4%.
+                    //   Diagonal-Distance Center-Center: √(56² + 56²) = 79.2%
+                    //   Avatar-Avatar-Luftspalt: 79.2 - 36 = 43.2% (3× vorher!).
+                    //
+                    // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
+                    //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
+                    //   avFactor 0.34.
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.36 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
@@ -585,7 +587,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -20, ty: -20 }, { tx: 20, ty: 20 }]
+                        ? [{ tx: -28, ty: -28 }, { tx: 28, ty: 28 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

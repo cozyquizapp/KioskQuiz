@@ -17,13 +17,21 @@
 /* 2026-05-07 (Wolf-ESC 'meine brand-font ist Stinger Fit'): self-hosted aus
    /fonts/Stinger Fit Regular/. Wird im eurovisionMode fuer den CozyQuiz-
    Wordmark genutzt, kondensiert + rundlich + heavy weight, Pink-Brand. URL
-   hat Leerzeichen, deshalb URL-encoded mit %20. */
+   hat Leerzeichen, deshalb URL-encoded mit %20.
+   2026-05-13 (Wolf 'die 5 in der font sieht ja ganz komisch aus'): unicode-
+   range schliesst Ziffern (U+0030-0039) aus dem Stinger-Glyph-Set aus.
+   Stinger Fit ist eine Display-Font (Brand-Wordmark CozyQuiz), die Number-
+   Glyphs sind nicht clean fuer Body-Text/Fragen. Mit unicode-range fallen
+   Ziffern automatisch auf den naechsten Font im Stack (Bricolage Grotesque)
+   zurueck — Wordmarks bleiben Stinger, alle Quiz-Zahlen werden lesbar.
+   Alles andere bleibt unveraendert. */
 @font-face {
   font-family: 'Stinger Fit';
   src: url('/fonts/Stinger%20Fit%20Regular/Stinger%20Fit%20Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0020-002F, U+003A-FFFF;
 }
 
 @tailwind base;

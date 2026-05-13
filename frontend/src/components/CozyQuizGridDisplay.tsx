@@ -581,23 +581,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Damit liegen TL und BR strukturell am Ecken-Rand, nicht
                     // mittig-versetzt.
                     //
-                    // - 2-Stack v7 (Wolf 'minimal groesser ohne rand zu ueber-
-                    //   schneiden'): avFactor 0.45→0.50, offset ±27→±25.
-                    //   avRadius 25, Avatar 1 Center (25, 25)
-                    //     → reicht (0, 0) bis (50, 50) — Edge-Puffer 0% (exakt
-                    //       am Cell-Rand, MAXIMUM ohne Ueberschneidung)
-                    //   Avatar 2 Center (75, 75)
-                    //     → reicht (50, 50) bis (100, 100) — Edge-Puffer 0%
-                    //   Diagonal-Center-Distance: √(50² + 50²) = 70.7%
-                    //   Avatar-Avatar-Luftspalt diagonal: 70.7 - 50 = 20.7%
-                    //   (kleinerer Spalt als v6 = 31.4%, aber Avatare beruehren
-                    //   sich diagonal NICHT — zwischen ihren Edges bleiben ~14%
-                    //   Pixel-Luft).
+                    // - 2-Stack v9 (Wolf 'wenn groesser muessen beide im gleichen
+                    //   verhaeltnis mittiger sein'): avFactor 0.50→0.52, offset
+                    //   ±25→±24. Konservativer Schritt von v7: Avatare 4 % groesser
+                    //   und Center proportional 1 % zur Cell-Mitte gerueckt, damit
+                    //   Wrapper-Edge weiter 0 % Cell-Puffer hat (kein Overflow).
+                    //   avRadius 26, Center (26, 26)
+                    //     → Wrapper reicht (0, 0) bis (52, 52) — Edge-Puffer 0%
+                    //   Center (74, 74), Wrapper (48, 48) bis (100, 100)
+                    //   Diagonal-Kreis-Distance: √(48² + 48²) = 67.9%
+                    //   Kreis-Sum-Radien: 52 → Spalt zwischen Kreisen: 15.9%
+                    //   (Avatare klar getrennt, beruehren sich diagonal nicht)
                     //
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.50 : 0.86;
+                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.52 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
@@ -606,7 +605,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           { tx:  22, ty:  15 },  // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -25, ty: -25 }, { tx: 25, ty: 25 }]
+                        ? [{ tx: -24, ty: -24 }, { tx: 24, ty: 24 }]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{

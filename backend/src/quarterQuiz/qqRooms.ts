@@ -3622,6 +3622,23 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
   const newBlocks = detectNewJokers(room.grid, room.gridSize, teamId);
   if (newBlocks.length === 0) return 0;
 
+  // 2026-05-13 (Wolf-Bug 'ewig existierender Joker-Bug'): detectNewJokers
+  // iteriert geometrisch oben-links zu unten-rechts und gibt ALLE qualifizierten
+  // Patterns zurueck. Beim Cap toAward=1 wurde damit das oberstlinke Pattern
+  // markiert — auch wenn das gerade-platzierte Cell in einem anderen Pattern
+  // lag (z.B. Wolf-Test 2026-05-13: 2x2 oben-rechts geschlossen, Sterne
+  // erschienen auf altem 2x2 mittig). Fix: Patterns die das just-placed Cell
+  // enthalten kommen zuerst. Stable-Sort, also bleibt fuer Patterns ohne
+  // just-placed-Bezug die geometrische Reihenfolge erhalten.
+  const lpc = room.lastPlacedCell;
+  if (lpc) {
+    newBlocks.sort((a, b) => {
+      const aHit = a.cells.some(p => p.r === lpc.row && p.c === lpc.col) ? 0 : 1;
+      const bHit = b.cells.some(p => p.r === lpc.row && p.c === lpc.col) ? 0 : 1;
+      return aHit - bHit;
+    });
+  }
+
   const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
   let toAward = Math.min(newBlocks.length, remaining);
 

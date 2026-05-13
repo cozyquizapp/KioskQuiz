@@ -284,8 +284,21 @@ export function qqHLCorrectAnswer(pair: QQHLPair): 'higher' | 'lower' {
 }
 
 /** Zieht zufällig ein Paar aus dem Pool, das noch nicht genutzt wurde.
- *  Falls alle genutzt: recyclet komplett neu. */
-export function qqHLPickPair(usedIds: string[]): QQHLPair {
+ *  Falls alle genutzt: recyclet komplett neu.
+ *
+ *  2026-05-13 (Wolf 'in eurovision sind random fragen bei H/L, keine ESC-
+ *  edition fragen — ich hatte extra 3 erstellt'): optionaler `themeCategory`-
+ *  Bias. Wenn gesetzt, wird ZUERST aus pairs mit category===themeCategory
+ *  gezogen; erst wenn die alle verbraucht sind, faellt es auf den allgemeinen
+ *  Pool zurueck (damit Spiele mit >3 Comeback-Runden nicht festfahren).
+ *  Caller (qqComebackHLStartRound) entscheidet anhand draftTitle. */
+export function qqHLPickPair(usedIds: string[], themeCategory?: string): QQHLPair {
+  if (themeCategory) {
+    const themeUnused = QQ_HL_POOL.filter(p => p.category === themeCategory && !usedIds.includes(p.id));
+    if (themeUnused.length > 0) {
+      return themeUnused[Math.floor(Math.random() * themeUnused.length)];
+    }
+  }
   const unused = QQ_HL_POOL.filter(p => !usedIds.includes(p.id));
   const pool = unused.length > 0 ? unused : QQ_HL_POOL;
   return pool[Math.floor(Math.random() * pool.length)];

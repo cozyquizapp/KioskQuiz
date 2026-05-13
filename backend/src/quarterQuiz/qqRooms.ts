@@ -18,6 +18,7 @@ import {
   markJokerCells, findLastPlace,
 } from './qqBfs';
 import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
+import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { recordQQQuestionUsage } from '../db/schemas';
 
@@ -3002,7 +3003,12 @@ export function qqComebackComputeLeaders(room: QQRoomState, excludeIds: string[]
 export function qqComebackHLStartRound(room: QQRoomState): void {
   const hl = room.comebackHL;
   if (!hl) throw new QQError('INVALID_STATE', 'Kein H/L-State.');
-  const pair = qqHLPickPair(hl.usedPairIds);
+  // 2026-05-13 (Wolf 'in eurovision sind random fragen bei H/L, keine ESC-
+  // edition fragen'): Theme-Bias via draftTitle — Eurovision-Quizze ziehen
+  // bevorzugt aus category='eurovision' (3 ESC-spezifische Pairs in qqHLData),
+  // fallen erst zurueck wenn die alle benutzt sind.
+  const themeCategory = isEurovisionDraftTitle(room.draftTitle) ? 'eurovision' : undefined;
+  const pair = qqHLPickPair(hl.usedPairIds, themeCategory);
   hl.currentPair = pair;
   hl.usedPairIds = [...hl.usedPairIds, pair.id];
   hl.answers = {};

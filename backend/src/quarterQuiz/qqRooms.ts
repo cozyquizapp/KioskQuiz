@@ -291,6 +291,8 @@ export interface QQRoomState {
   endAwards: import('../../../shared/quarterQuizTypes').QQEndAwards | null;
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Default false. */
   finalWagerEnabled: boolean;
+  /** Setup-Toggle: aktiviert Comeback (H/L-Mini-Game vor Final). Default true. */
+  comebackEnabled: boolean;
   // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ─────────────────────────────
   /** Setup-Toggle aus Draft: aktiviert CozyGames in diesem Run. Default false. */
   cozyGamesEnabled: boolean;
@@ -472,6 +474,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalRoundScoreSnapshot: null,
       // 2026-05-09 (Wolf): Default ON — FinalBets ist der neue Standard-Quiz-Flow.
       finalWagerEnabled: true,
+      // 2026-05-17 (Wolf): Comeback-Toggle, Default ON für Backward-Compat.
+      comebackEnabled: true,
       // 2026-05-17 (CozyGames): default off, wird beim qqStartGame aus Draft gelesen.
       cozyGamesEnabled: false,
       cozyGamesPool: [],
@@ -631,6 +635,7 @@ export function qqStartGame(
   connectionsMaxFails?: number,
   cozyGamesEnabled?: boolean,
   cozyGamesPool?: string[],
+  comebackEnabled?: boolean,
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -771,6 +776,8 @@ export function qqStartGame(
   // Spiel startet mit dem Standard-Flow (Bid+Race ON, Connections-4x4 OFF).
   room.finalWagerEnabled = true;
   room.connectionsEnabled = false;
+  // 2026-05-17: Comeback-Toggle aus Draft. Default true (Backward-Compat).
+  room.comebackEnabled = comebackEnabled !== false;
   // 2026-05-17: CozyGames-Setup aus Draft. Default off, leeren Pool.
   // Mod-Quick-Toggle-State wird vom Frontend in den startGame-Args mitgesendet,
   // hat also Vorrang vor Draft (siehe QQModeratorPage liveToggleOn-Logik).
@@ -3614,8 +3621,14 @@ export function qqNextQuestion(room: QQRoomState): void {
         room.phase = 'GAME_OVER';
       }
     } else if (next === room.totalPhases) {
-      // Before final phase → comeback
-      qqTriggerComeback(room);
+      // 2026-05-17 (Wolf): Comeback-Toggle. Wenn aus, skip H/L-Mini-Game
+      // und gehe direkt zur Final-Runde.
+      if (room.comebackEnabled === false) {
+        qqBeginPhase(room, next);
+      } else {
+        // Before final phase → comeback
+        qqTriggerComeback(room);
+      }
     } else {
       qqBeginPhase(room, next);
     }
@@ -3945,6 +3958,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     cozyGamesEnabled:     room.cozyGamesEnabled ?? false,
     cozyGamesPool:        room.cozyGamesPool ?? [],
     cozyGame:             room.cozyGame ?? null,
+    comebackEnabled:      room.comebackEnabled !== false,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
@@ -4100,7 +4114,10 @@ export function qqRulesNext(room: QQRoomState): void {
   // Final-Tipp wenn CG an + Connections aus.
   const hasFinale = (room as any).connectionsEnabled !== false;
   const hasCozyGames = !!(room as any).cozyGamesEnabled;
-  const totalSlides = 8 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
+  // 2026-05-17: Comeback-Slide ausblenden wenn Toggle aus.
+  const hasComeback = (room as any).comebackEnabled !== false;
+  // Base 7 (war 8 inkl. Comeback) + jeweils +1 für aktive Module
+  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const maxIndex = totalSlides - 1;
   if (room.rulesSlideIndex >= maxIndex) return; // silent no-op statt unendlich
   room.rulesSlideIndex += 1;

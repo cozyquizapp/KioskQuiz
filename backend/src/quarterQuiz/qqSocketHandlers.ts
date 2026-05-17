@@ -1860,7 +1860,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Default 4 statt 3 — die Standard-Drafts (qq-vol-*) sind 4-Runden-Sets,
         // und ein silent-3 wenn frontend den Wert nicht sendet hat schon einmal
         // zu 'nur 3 Runden im Tree' geführt.
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails, (payload as any).cozyGamesEnabled, (payload as any).cozyGamesPool);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails, (payload as any).cozyGamesEnabled, (payload as any).cozyGamesPool, (payload as any).comebackEnabled);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -3624,7 +3624,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', async (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[] },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean },
       ack?: unknown
     ) => {
       try {
@@ -3634,6 +3634,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         if (typeof payload.shuffleQuestionsInRound === 'boolean') {
           room.shuffleQuestionsInRound = payload.shuffleQuestionsInRound;
+        }
+        if (typeof payload.comebackEnabled === 'boolean') {
+          room.comebackEnabled = payload.comebackEnabled;
         }
         // 2026-05-17 (CozyGames Live-Toggle im Mod-Setup): kann ohne Game-Restart
         // umgestellt werden. Pool ändern setzt cozyGame-Round-State nicht zurück

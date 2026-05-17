@@ -219,6 +219,12 @@ export default function QQModeratorPage() {
     const draftCozyGamesPool = liveToggleOn && liveToggledPool.length > 0
       ? liveToggledPool
       : baseDraftPool;
+    // 2026-05-17: Comeback-Toggle (Default an). Live-State hat Vorrang wenn gesetzt.
+    const liveComebackToggle = (state as any)?.comebackEnabled;
+    const draftComeback = (draft as any).comebackEnabled;
+    const draftComebackEnabled = typeof liveComebackToggle === 'boolean'
+      ? liveComebackToggle
+      : (typeof draftComeback === 'boolean' ? draftComeback : true);
     if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     // Truncate auf die gewählte Rundenzahl: nur Fragen aus phaseIndex 1..phases.
     if (questions.length > needed) {
@@ -236,7 +242,7 @@ export default function QQModeratorPage() {
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
     const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }
@@ -334,7 +340,7 @@ export default function QQModeratorPage() {
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -888,7 +894,7 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -1050,7 +1056,7 @@ export default function QQModeratorPage() {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -3890,7 +3896,8 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   // beim Runden-Intro als Überraschung enthüllt. Slide-Count: 9 mit Finale, 8 ohne.
   const hasFinale = s.connectionsEnabled !== false;
   const hasCozyGames = !!(s as any).cozyGamesEnabled;
-  const totalSlides = 8 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
+  const hasComeback = (s as any).comebackEnabled !== false;
+  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
@@ -4692,6 +4699,21 @@ function SetupView({
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {s.finalWagerEnabled ? 'Wager-Phase vor Final-Runde' : 'Spiel ohne Final-Wetten'}
+          </span>
+        </div>
+
+        {/* Comeback (Wolf 2026-05-17): H/L-Mini-Game vor Final-Runde. Toggle
+            aus → Phase wechselt direkt zur Final-Runde, keine Comeback-Choice. */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🔄 Comeback</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: true })} style={segPill((s as any).comebackEnabled !== false, '#F472B6')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: false })} style={segPill((s as any).comebackEnabled === false)}>Aus</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {(s as any).comebackEnabled !== false
+              ? 'Mehr-oder-Weniger vor Final-Runde'
+              : 'Direkt von vorletzter zur Final-Runde'}
           </span>
         </div>
 

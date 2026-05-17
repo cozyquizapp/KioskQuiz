@@ -74,7 +74,7 @@ export default function QQModPortablePage() {
     // RULES — Slide weiterschalten oder finish
     if (s.phase === 'RULES') {
       // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9/8 statt 10/9.
-      const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+      const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
       if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
         emit('qq:rulesFinish', { roomCode });
       } else {

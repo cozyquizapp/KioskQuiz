@@ -934,6 +934,11 @@ export interface QQDraft {
   /** IDs aus dem CozyGames-Katalog die für diesen Quiz aktiv sind (max 8 fürs Rad).
    *  Wird nur konsumiert wenn cozyGamesEnabled === true. */
   cozyGamesPool?: string[];
+  /** 2026-05-17 (Wolf): Comeback-Mechanik (Higher/Lower-Mini-Game vor Final-Runde)
+   *  kann pro Draft/Quiz deaktiviert werden. Default true (Backward-Compat).
+   *  Wenn false: kein Comeback-Step, Rules-Slide ausblenden, Phase wechselt
+   *  direkt von vorletzter zur Final-Runde. */
+  comebackEnabled?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -1202,6 +1207,8 @@ export interface QQStateUpdate {
   cozyGamesEnabled?: boolean;
   /** Aktive CozyGame-IDs (Builder-Auswahl, max 8). */
   cozyGamesPool?: string[];
+  /** Setup-Toggle: aktiviert Comeback-Mechanik (H/L vor Final). Default true. */
+  comebackEnabled?: boolean;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).
@@ -1266,7 +1273,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

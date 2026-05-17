@@ -54,6 +54,8 @@ type RulesSlide = {
   requiresConnections?: boolean;
   /** 2026-05-17 (Wolf): wenn true, Slide nur zeigen wenn cozyGamesEnabled aktiv. */
   requiresCozyGames?: boolean;
+  /** 2026-05-17 (Wolf): wenn true, Slide nur zeigen wenn comebackEnabled !== false. */
+  requiresComeback?: boolean;
 };
 
 // Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
@@ -140,6 +142,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🔄',
       title: t('rules.slide7.title', 'Comeback'),
       color: RULES_SLIDE_COLOR,
+      requiresComeback: true,
       lines: [
         t('rules.slide7.line1', 'Letztes Team holt vor dem Finale auf'),
         t('rules.slide7.line2', '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz'),
@@ -258,6 +261,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🔄',
       title: t('rules.slide7.title', 'Comeback'),
       color: RULES_SLIDE_COLOR,
+      requiresComeback: true,
       lines: [
         t('rules.slide7.line1', 'Last-place team catches up before the finale'),
         t('rules.slide7.line2', '„Higher or Lower?" — correct answer steals a cell from the leader'),
@@ -381,9 +385,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   // zeigen wenn der Mod das Connections-Feature aktiviert hat. Comeback bleibt.
   // 2026-05-17: Analog für requiresCozyGames.
   const cgEnabled = !!(s as any).cozyGamesEnabled;
+  const cbEnabled = (s as any).comebackEnabled !== false;
   const slides = allSlides.filter(sl => {
     if (sl.requiresConnections && s.connectionsEnabled === false) return false;
     if (sl.requiresCozyGames && !cgEnabled) return false;
+    if (sl.requiresComeback && !cbEnabled) return false;
     return true;
   });
   const totalSlides = slides.length;

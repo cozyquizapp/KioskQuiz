@@ -122,11 +122,13 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       setResultStage('wheel');
       return;
     }
-    // 2026-05-17 v4 (Wolf): Slice-Color-Wave statt Zoom
+    // 2026-05-17 v5 (Wolf 'switcht zu schnell'): Choreo mit Atmungs-Pause
     //   0.0s  spinning=false → 1.2s Stop-Snap startet
     //   1.2s  Snap fertig → Wave-Animation startet (1.5s)
-    //   2.7s  Wave fertig (Screen ist in Slice-Farbe) → Stage-Wechsel
-    const t = window.setTimeout(() => setResultStage('detail'), 2700);
+    //   2.7s  Wave fertig (Screen ist in Slice-Farbe)
+    //   2.7-3.6s  Pause — solide Slice-Farbe atmet 0.9s
+    //   3.6s  Stage-Wechsel zu Detail-View (Inhalt fadet rein)
+    const t = window.setTimeout(() => setResultStage('detail'), 3600);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 

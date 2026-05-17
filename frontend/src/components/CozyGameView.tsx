@@ -140,17 +140,21 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     );
   }
 
-  // 2026-05-17 (P2 #8): CozyWolf-Reaction-Layer pro Sub-Phase
+  // 2026-05-17 v6 (Wolf 'wolf könnte auch da bleiben, war vorher schon da'):
+  // Wolf-Avatar + Speech-Bubble jetzt EIN konstantes Layer außerhalb der
+  // phase-spezifischen Render-Branches. Bei Phase-Wechsel wird der Wolf-
+  // Container NICHT mehr unmountet → keine erneute Pop-Mount-Animation.
   const wolfMode = wolfModeForPhase(round.phase);
   const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame);
+  // SpeechBubble bekommt Key pro Phase+Stage → Bubble-Animation re-triggert
+  // bei Text-Wechsel, Wolf-Avatar bleibt konstant gemounted.
+  const speechKey = `${round.phase}-${resultStage}-${activeGame?.id ?? 'na'}`;
 
+  let phaseContent: React.ReactNode = null;
   switch (round.phase) {
     case 'INTRO':
-      return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`intro`}>
-          <IntroView width={width} height={height} slotKind={round.slotKind} />
-        </WithWolf>
-      );
+      phaseContent = <IntroView width={width} height={height} slotKind={round.slotKind} />;
+      break;
 
     case 'WHEEL_SPIN':
     case 'WHEEL_RESULT': {
@@ -158,55 +162,59 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       const showDetail = !isSpin && resultStage === 'detail';
       const targetIdx = round.wheelTargetSliceIndex ?? 0;
       const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
-      const speechKey = isSpin ? 'spin' : (showDetail ? `detail-${activeGame?.id ?? 'na'}` : `result-${activeGame?.id ?? 'na'}`);
-      return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={speechKey}>
-          {showDetail ? (
-            <GameDetailView width={width} height={height} game={activeGame} accentColor={sliceColor} />
-          ) : (
-            <WheelView
-              width={width} height={height}
-              slices={availableForWheel}
-              targetIdx={targetIdx}
-              spinning={isSpin}
-              revealedGame={isSpin ? null : activeGame}
-            />
-          )}
-        </WithWolf>
+      phaseContent = showDetail ? (
+        <GameDetailView width={width} height={height} game={activeGame} accentColor={sliceColor} />
+      ) : (
+        <WheelView
+          width={width} height={height}
+          slices={availableForWheel}
+          targetIdx={targetIdx}
+          spinning={isSpin}
+          revealedGame={isSpin ? null : activeGame}
+        />
       );
+      break;
     }
 
     case 'GAME_ACTIVE': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
-      return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`active-${activeGame?.id ?? 'na'}`}>
-          <GameActiveView
-            width={width} height={height}
-            game={activeGame}
-            gameEndsAt={round.gameEndsAt}
-            accentColor={accent}
-          />
-        </WithWolf>
+      phaseContent = (
+        <GameActiveView
+          width={width} height={height}
+          game={activeGame}
+          gameEndsAt={round.gameEndsAt}
+          accentColor={accent}
+        />
       );
+      break;
     }
 
     case 'WINNER_SELECT':
-      return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`winner`}>
-          <WinnerSelectView
-            width={width} height={height}
-            game={activeGame}
-            winnerTeamIds={round.winnerTeamIds}
-          />
-        </WithWolf>
+      phaseContent = (
+        <WinnerSelectView
+          width={width} height={height}
+          game={activeGame}
+          winnerTeamIds={round.winnerTeamIds}
+        />
       );
+      break;
 
     default:
-      return <FullScreenLayout width={width} height={height}>
-        <div style={{ color: '#94a3b8' }}>Unbekannte CozyGame-Phase: {round.phase}</div>
-      </FullScreenLayout>;
+      phaseContent = (
+        <FullScreenLayout width={width} height={height}>
+          <div style={{ color: '#94a3b8' }}>Unbekannte CozyGame-Phase: {round.phase}</div>
+        </FullScreenLayout>
+      );
   }
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {phaseContent}
+      {/* Konstanter Wolf-Layer — überlebt Phase-Wechsel, kein Re-Mount-Pop */}
+      <PersistentWolfLayer wolfMode={wolfMode} speech={wolfSpeech} speechKey={speechKey} />
+    </div>
+  );
 }
 
 // ── CozyWolf-Reaction-Layer (P2 #8) ──────────────────────────────────────────
@@ -236,44 +244,39 @@ function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame |
   }
 }
 
-function WithWolf({ wolfMode, speech, speechKey, children }: {
+function PersistentWolfLayer({ wolfMode, speech, speechKey }: {
   wolfMode: WolfMode;
   speech: string;
   speechKey: string;
-  children: React.ReactNode;
 }) {
-  // Speech-Speakms (= Mundbewegung-Dauer): grob basierend auf Textlänge.
   const speakMs = Math.max(1800, speech.length * 110);
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {children}
-      {/* 2026-05-17 v3 (Wolf 'sprechblase nicht am Wolf-Mund'): vertikales
-          Stack analog Lobby-Pattern — Bubble OBEN, Wolf DRUNTER. Tail unten
-          rechts der Bubble zeigt direkt auf den Wolf-Kopf darunter. */}
-      <div style={{
-        position: 'absolute',
-        bottom: 24, right: 32,
-        zIndex: 50,
-        pointerEvents: 'none',
-        animation: 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0,
-      }}>
-        <SpeechBubble
-          text={speech}
-          bubbleKey={speechKey}
-          enterMs={400}
-          speakMs={speakMs}
-          exitMs={400}
-          tailSide="right"
-          size="md"
-        />
-        <AnimatedCozyWolf
-          widthCss="clamp(120px, 11vw, 200px)"
-          mode={wolfMode as any}
-          speaking
-          mirror
-        />
-      </div>
+    <div style={{
+      position: 'absolute',
+      bottom: 24, right: 32,
+      zIndex: 50,
+      pointerEvents: 'none',
+      // 2026-05-17 v6 (Wolf 'wolf war vorher schon da, soll bleiben'):
+      // Pop-Mount-Animation entfernt — Wolf bleibt persistent über alle
+      // Phasen. Position konstant bottom-right. Nur Speech-Bubble re-triggert
+      // ihre Animation per bubbleKey-Wechsel.
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0,
+    }}>
+      <SpeechBubble
+        text={speech}
+        bubbleKey={speechKey}
+        enterMs={400}
+        speakMs={speakMs}
+        exitMs={400}
+        tailSide="right"
+        size="md"
+      />
+      <AnimatedCozyWolf
+        widthCss="clamp(120px, 11vw, 200px)"
+        mode={wolfMode as any}
+        speaking
+        mirror
+      />
     </div>
   );
 }

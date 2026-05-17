@@ -41,6 +41,8 @@ const SKIP_KEYS = new Set<string>([
   '_connectionsOnExpire',
   '_onlyConnectHintTimerHandle',
   '_comebackHLTimerHandle',
+  '_cozyGameTimerHandle',
+  '_cozyGameOnExpire',
 ]);
 
 function sanitize(room: QQRoomState): unknown {

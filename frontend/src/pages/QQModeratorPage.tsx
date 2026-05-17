@@ -208,6 +208,8 @@ export default function QQModeratorPage() {
     const draftConnections = draft.connections;
     const draftConnectionsDuration = draft.connectionsDurationSec;
     const draftConnectionsMaxFails = draft.connectionsMaxFails;
+    const draftCozyGamesEnabled = !!(draft as any).cozyGamesEnabled;
+    const draftCozyGamesPool = Array.isArray((draft as any).cozyGamesPool) ? (draft as any).cozyGamesPool : [];
     if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     // Truncate auf die gewählte Rundenzahl: nur Fragen aus phaseIndex 1..phases.
     if (questions.length > needed) {
@@ -225,7 +227,7 @@ export default function QQModeratorPage() {
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
     const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }
@@ -2116,9 +2118,78 @@ export default function QQModeratorPage() {
 
                 {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
-                  <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
-                    ▶ Weiter
-                  </PrimaryBtn>
+                  <>
+                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
+                      ▶ Weiter
+                    </PrimaryBtn>
+                    {(s as any).cozyGamesEnabled && Array.isArray((s as any).cozyGamesPool) && (s as any).cozyGamesPool.length > 0 && (
+                      <Btn color="#EC4899" onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
+                        🎲 CozyGame starten
+                      </Btn>
+                    )}
+                  </>
+                )}
+
+                {/* ── COZY_GAME (Mini-Game-Phase, 2026-05-17) ── */}
+                {s.phase === 'COZY_GAME' && (s as any).cozyGame && (() => {
+                  const cg = (s as any).cozyGame;
+                  if (cg.phase === 'INTRO') {
+                    return (
+                      <PrimaryBtn color="#EC4899" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                        🎯 Rad drehen
+                      </PrimaryBtn>
+                    );
+                  }
+                  if (cg.phase === 'WHEEL_SPIN') {
+                    return (
+                      <div style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 13, fontWeight: 700 }}>
+                        🌀 Rad dreht …
+                      </div>
+                    );
+                  }
+                  if (cg.phase === 'WHEEL_RESULT') {
+                    return (
+                      <PrimaryBtn color="#22C55E" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                        ▶ Spiel starten (60s)
+                      </PrimaryBtn>
+                    );
+                  }
+                  if (cg.phase === 'GAME_ACTIVE') {
+                    return (
+                      <PrimaryBtn color="#EF4444" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                        ⏹ Stop & Sieger wählen
+                      </PrimaryBtn>
+                    );
+                  }
+                  if (cg.phase === 'WINNER_SELECT') {
+                    return (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontSize: 13, color: '#94a3b8', marginRight: 6 }}>Sieger:</span>
+                        {teamList.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [t.id] })}
+                            style={{
+                              padding: '6px 12px', borderRadius: 8,
+                              border: `2px solid ${t.color}`, background: `${t.color}22`,
+                              color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                            }}
+                          >{t.emoji ?? '🎮'} {t.name}</button>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* ── COZY_GAME Cancel-Option ── */}
+                {s.phase === 'COZY_GAME' && (
+                  <Btn color="#94a3b8" outline onClick={() => {
+                    if (!window.confirm('CozyGame abbrechen? Spiel zählt nicht als gespielt.')) return;
+                    emit('qq:cozyGameCancel', { roomCode });
+                  }}>
+                    ✕ Abbrechen
+                  </Btn>
                 )}
 
                 {/* ── Separator ── */}

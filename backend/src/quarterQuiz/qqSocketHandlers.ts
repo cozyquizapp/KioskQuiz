@@ -53,6 +53,8 @@ import {
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqResolveFinalBets,
   qqSetFinalWagerEnabled,
+  qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
+  qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner, qqCozyGameCancel,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -1858,7 +1860,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Default 4 statt 3 — die Standard-Drafts (qq-vol-*) sind 4-Runden-Sets,
         // und ein silent-3 wenn frontend den Wert nicht sendet hat schon einmal
         // zu 'nur 3 Runden im Tree' geführt.
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails, (payload as any).cozyGamesEnabled, (payload as any).cozyGamesPool);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -3026,6 +3028,66 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:flyover', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         io.to(payload.roomCode).emit('qq:flyover');
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ──────────────────────────
+    // Phase 5: Manueller Mod-Trigger. Auto-Flow nach Runde 1 ist Phase 6.
+    socket.on('qq:cozyGameStart', (payload: { roomCode: string; slotKind?: 'roundPause' | 'finalSlot' }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameStart(room, payload.slotKind ?? 'roundPause');
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:cozyGameAdvance', (payload: { roomCode: string }, ack?: unknown) => {
+      // Mod-Space-Press: schaltet von der aktuellen Sub-Phase weiter.
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const cg = room.cozyGame;
+        if (!cg) { ok(ack); return; }
+        if (cg.phase === 'INTRO') {
+          qqCozyGameAdvanceFromIntro(room);
+          // Auto-Spin: nach 4s Rad landet → WHEEL_RESULT
+          setTimeout(() => {
+            const live = getQQRoom(payload.roomCode);
+            if (!live || !live.cozyGame || live.cozyGame.phase !== 'WHEEL_SPIN') return;
+            qqCozyGameWheelLanded(live);
+            broadcast(io, payload.roomCode);
+          }, 4000);
+        } else if (cg.phase === 'WHEEL_RESULT') {
+          qqCozyGameStartGame(room, () => {
+            const live = getQQRoom(payload.roomCode);
+            if (!live) return;
+            qqCozyGameStopGame(live);
+            broadcast(io, payload.roomCode);
+          });
+        } else if (cg.phase === 'GAME_ACTIVE') {
+          // Mod stoppt früher (Hybrid-Timer-Stop)
+          qqCozyGameStopGame(room);
+        }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:cozyGameSelectWinner', (payload: { roomCode: string; teamIds: string[] }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameSelectWinner(room, payload.teamIds ?? []);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    socket.on('qq:cozyGameCancel', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameCancel(room);
+        broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

@@ -290,6 +290,19 @@ export interface QQRoomState {
   endAwards: import('../../../shared/quarterQuizTypes').QQEndAwards | null;
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Default false. */
   finalWagerEnabled: boolean;
+  // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ─────────────────────────────
+  /** Setup-Toggle aus Draft: aktiviert CozyGames in diesem Run. Default false. */
+  cozyGamesEnabled: boolean;
+  /** Pool aus dem Draft: CozyGame-IDs für das Rad (max 8). */
+  cozyGamesPool: string[];
+  /** Round-State während COZY_GAME-Phase. null wenn nicht aktiv. */
+  cozyGame: import('../../../shared/cozyGameTypes').CozyGameRoundState | null;
+  /** Timer-Handle für 60s-Spiel-Countdown. Not persisted. */
+  _cozyGameTimerHandle: ReturnType<typeof setTimeout> | null;
+  /** Pause-Resume: Restzeit-ms wenn Timer beim PAUSE eingefroren wurde. */
+  _cozyGameRemainingMs?: number;
+  /** Pause-Resume: gespeicherter onExpire-Callback. */
+  _cozyGameOnExpire?: (() => void) | null;
 }
 
 // ── In-process room map ───────────────────────────────────────────────────────
@@ -452,6 +465,11 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalRoundScoreSnapshot: null,
       // 2026-05-09 (Wolf): Default ON — FinalBets ist der neue Standard-Quiz-Flow.
       finalWagerEnabled: true,
+      // 2026-05-17 (CozyGames): default off, wird beim qqStartGame aus Draft gelesen.
+      cozyGamesEnabled: false,
+      cozyGamesPool: [],
+      cozyGame: null,
+      _cozyGameTimerHandle: null,
     };
     qqRooms.set(roomCode, room);
   }
@@ -602,6 +620,8 @@ export function qqStartGame(
   connectionsPayload?: import('../../../shared/quarterQuizTypes').QQConnectionsPayload,
   connectionsDurationSec?: number,
   connectionsMaxFails?: number,
+  cozyGamesEnabled?: boolean,
+  cozyGamesPool?: string[],
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -742,6 +762,15 @@ export function qqStartGame(
   // Spiel startet mit dem Standard-Flow (Bid+Race ON, Connections-4x4 OFF).
   room.finalWagerEnabled = true;
   room.connectionsEnabled = false;
+  // 2026-05-17: CozyGames-Setup aus Draft. Default off, leeren Pool.
+  room.cozyGamesEnabled = cozyGamesEnabled === true;
+  room.cozyGamesPool = Array.isArray(cozyGamesPool) ? cozyGamesPool.slice(0, 8) : [];
+  // Round-State immer leer beim Game-Start (kein Leaking aus letztem Spiel)
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+  room.cozyGame = null;
   // 2026-05-12 (Wolf 'summary zeigt falsche teams + avatare'): persistGame-
   // Result-Guard zurueck auf false damit dieses neue Spiel einen sauberen
   // Save bekommt. Sonst wuerde der Guard vom letzten Spiel verhindern dass
@@ -3856,6 +3885,9 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     connectionsTimerSec:  room.connectionsTimerSec ?? QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
     connectionsMaxFails:  room.connectionsMaxFails ?? QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
     connectionsEnabled:   room.connectionsEnabled ?? false,
+    cozyGamesEnabled:     room.cozyGamesEnabled ?? false,
+    cozyGamesPool:        room.cozyGamesPool ?? [],
+    cozyGame:             room.cozyGame ?? null,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }
@@ -5590,6 +5622,176 @@ export function qqFinalRevealMaxStep(room: QQRoomState): number {
   // Mapping: 0=title, 1=grid, 2..betSlotsCount+1=bet, +2=awards-overview,
   // +3=awards-reveal, +4=race-final, max = betSlotsCount+5 → THANKS.
   return betSlotsCount + 5;
+}
+
+// ── CozyGames (Mini-Game-Phase) — 2026-05-17 ──────────────────────────────
+// Sub-Phasen: INTRO → WHEEL_SPIN → WHEEL_RESULT → GAME_ACTIVE → WINNER_SELECT
+// → PLACEMENT (bestehender Setz-Flow). Phase 5 implementiert manuelle Mod-
+// Trigger; Auto-Phase-Flow (nach Runde 1) ist Phase 6 wenn überhaupt.
+
+const COZY_GAME_TIMER_MS = 60 * 1000;
+const COZY_GAME_SPIN_MS = 4000; // muss zu CozyGameView Spin-Animation passen
+
+/** Verfügbare Pool-Indizes (Pool minus playedGameIds = Shrink-Logik). */
+function cozyAvailablePoolIdx(room: QQRoomState): number[] {
+  const cg = room.cozyGame;
+  if (!cg) return [];
+  const played = new Set(cg.playedGameIds);
+  const out: number[] = [];
+  for (let i = 0; i < cg.poolGameIds.length; i++) {
+    if (!played.has(cg.poolGameIds[i])) out.push(i);
+  }
+  return out;
+}
+
+/** Startet eine CozyGame-Runde. slotKind=roundPause (zwischen Runden) oder
+ *  finalSlot (Final-Kategorie zählt mit ins Bet-Resolve). */
+export function qqCozyGameStart(
+  room: QQRoomState,
+  slotKind: 'roundPause' | 'finalSlot',
+): void {
+  if (!room.cozyGamesEnabled || room.cozyGamesPool.length === 0) {
+    throw new QQError('NO_COZY_GAMES', 'CozyGames sind nicht aktiv oder Pool ist leer.');
+  }
+  // PlayedGameIds aus bestehendem State preserven (für mehrere Slots im Quiz).
+  const existingPlayed = room.cozyGame?.playedGameIds ?? [];
+  room.cozyGame = {
+    poolGameIds: room.cozyGamesPool.slice(),
+    playedGameIds: existingPlayed.slice(),
+    phase: 'INTRO',
+    activeGameId: null,
+    wheelTargetSliceIndex: null,
+    gameEndsAt: null,
+    slotKind,
+    winnerTeamIds: [],
+  };
+  room.phase = 'COZY_GAME';
+  room.lastActivityAt = Date.now();
+}
+
+/** INTRO → WHEEL_SPIN. Würfelt Target-Slice unter verfügbaren Spielen. */
+export function qqCozyGameAdvanceFromIntro(room: QQRoomState): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'INTRO') return;
+  const availableIdx = cozyAvailablePoolIdx(room);
+  if (availableIdx.length === 0) {
+    // alle Spiele schon gespielt → Phase überspringen, zurück zum vorigen Flow
+    room.cozyGame = null;
+    return;
+  }
+  // Random-Index aus den Pool-Indizes (relativ zu poolGameIds, nicht Slice-Liste)
+  const targetPoolIdx = availableIdx[Math.floor(Math.random() * availableIdx.length)];
+  room.cozyGame.phase = 'WHEEL_SPIN';
+  room.cozyGame.wheelTargetSliceIndex = targetPoolIdx;
+  room.lastActivityAt = Date.now();
+}
+
+/** WHEEL_SPIN → WHEEL_RESULT. Setzt activeGameId aus wheelTargetSliceIndex. */
+export function qqCozyGameWheelLanded(room: QQRoomState): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'WHEEL_SPIN') return;
+  const idx = room.cozyGame.wheelTargetSliceIndex ?? 0;
+  const safe = Math.max(0, Math.min(idx, room.cozyGame.poolGameIds.length - 1));
+  room.cozyGame.activeGameId = room.cozyGame.poolGameIds[safe] ?? null;
+  room.cozyGame.phase = 'WHEEL_RESULT';
+  room.lastActivityAt = Date.now();
+}
+
+/** WHEEL_RESULT → GAME_ACTIVE. Startet 60s-Timer. */
+export function qqCozyGameStartGame(
+  room: QQRoomState,
+  onExpire: () => void,
+): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'WHEEL_RESULT') return;
+  if (room._cozyGameTimerHandle) clearTimeout(room._cozyGameTimerHandle);
+  room.cozyGame.phase = 'GAME_ACTIVE';
+  room.cozyGame.gameEndsAt = Date.now() + COZY_GAME_TIMER_MS;
+  room._cozyGameOnExpire = onExpire;
+  room._cozyGameTimerHandle = setTimeout(() => {
+    room._cozyGameTimerHandle = null;
+    onExpire();
+  }, COZY_GAME_TIMER_MS);
+  room.lastActivityAt = Date.now();
+}
+
+/** GAME_ACTIVE → WINNER_SELECT. Mod-Trigger ODER Timer-Auto-Expire. */
+export function qqCozyGameStopGame(room: QQRoomState): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'GAME_ACTIVE') return;
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+  room._cozyGameOnExpire = null;
+  room.cozyGame.phase = 'WINNER_SELECT';
+  room.cozyGame.gameEndsAt = null;
+  room.lastActivityAt = Date.now();
+}
+
+/** WINNER_SELECT → PLACEMENT mit pendingAction für ersten Sieger.
+ *  Markiert Spiel als gespielt (Shrink). Bei Tie → _placementQueue für
+ *  weitere Sieger. Bei finalSlot zählen Wins ins Bet-Resolve mit. */
+export function qqCozyGameSelectWinner(
+  room: QQRoomState,
+  teamIds: string[],
+): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'WINNER_SELECT') return;
+  const validIds = teamIds.filter(id => !!room.teams[id]);
+  if (validIds.length === 0) return;
+
+  // Spiel als gespielt markieren
+  if (room.cozyGame.activeGameId) {
+    if (!room.cozyGame.playedGameIds.includes(room.cozyGame.activeGameId)) {
+      room.cozyGame.playedGameIds = [
+        ...room.cozyGame.playedGameIds,
+        room.cozyGame.activeGameId,
+      ];
+    }
+  }
+  room.cozyGame.winnerTeamIds = validIds.slice();
+
+  // Bei Final-Slot: Sieger zählen als Final-Kat-Win (siehe COZYGAMES.md).
+  if (room.cozyGame.slotKind === 'finalSlot') {
+    for (const id of validIds) {
+      room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
+    }
+  }
+
+  // ── Action-Pipeline (analog zu qqStartPlacement, ohne assertPhase-Guard) ──
+  // Bei mehreren Siegern: erster kriegt Aktion, Rest landet in _placementQueue.
+  // _currentQuestionWinners setzen für Konsistenz mit Quiz-Flow (Stats).
+  room._currentQuestionWinners = validIds.slice();
+  room.correctTeamId = validIds[0];
+  if (validIds.length > 1) {
+    room._placementQueue = validIds.slice(1);
+  }
+
+  const firstWinner = validIds[0];
+  room.pendingFor = firstWinner;
+  let action = pendingActionForPhase(room, firstWinner);
+  // PLACE_2-Degrade wie in qqStartPlacement (Anti-Stuck bei 1 freiem Feld)
+  if (action === 'PLACE_2') {
+    const freeCells = room.grid.reduce(
+      (sum, row) => sum + row.filter(c => c.ownerId === null).length, 0
+    );
+    if (freeCells <= 1) {
+      action = 'PLACE_1';
+      room.teamPhaseStats[firstWinner].placementsLeft = 0;
+    } else {
+      room.teamPhaseStats[firstWinner].placementsLeft = 2;
+    }
+  }
+  room.pendingAction = action;
+  room.phase = 'PLACEMENT';
+  room.lastActivityAt = Date.now();
+}
+
+/** Helper: räumt den Round-State auf wenn Mod abbricht (Skip-Button). */
+export function qqCozyGameCancel(room: QQRoomState): void {
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+  room._cozyGameOnExpire = null;
+  room.cozyGame = null;
+  room.lastActivityAt = Date.now();
 }
 
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */

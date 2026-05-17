@@ -225,7 +225,7 @@ function FullScreenLayout({ children, width, height }: { children: React.ReactNo
 function IntroView({ width, height, slotKind }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot' }) {
   return (
     <FullScreenLayout width={width} height={height}>
-      <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1 }}>🎯</div>
+      <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1 }}>🪅</div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',
         fontWeight: 900,
@@ -266,7 +266,7 @@ function WheelView({
     return (
       <FullScreenLayout width={width} height={height}>
         {spinning && (
-          <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>🎯</div>
+          <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>🪅</div>
         )}
         {!spinning && revealedGame && (
           <div style={{
@@ -377,7 +377,7 @@ function WheelView({
       {/* Status-Text */}
       {spinning && (
         <div style={{ fontSize: 'clamp(20px, 2vw, 36px)', fontWeight: 700, color: '#fff' }}>
-          🎯 Das Rad dreht …
+          🪅 Das Rad dreht …
         </div>
       )}
       {!spinning && revealedGame && (
@@ -469,7 +469,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds }: {
   return (
     <FullScreenLayout width={width} height={height}>
       <div style={{ fontSize: 'clamp(80px, 10vw, 160px)', lineHeight: 1 }}>
-        {game?.emoji ?? '🎯'}
+        {game?.emoji ?? '🪅'}
       </div>
       <div style={{ fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900 }}>
         Zeit abgelaufen!

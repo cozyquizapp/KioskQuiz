@@ -3,7 +3,7 @@ import { useState } from 'react';
 // 2026-05-17 (P1 #3): Mod-UI für CozyGame-WINNER_SELECT mit Multi-Select.
 // Wolf-Spec: bei Tie bekommen beide Sieger eine Aktion. Pro Klick wird ein
 // Team toggle-ausgewählt, "Bestätigen" sendet alle markierten IDs. Plus
-// "🎯 Random" für Solo-/Bot-Tests.
+// "🪅 Random" für Solo-/Bot-Tests.
 
 interface TeamLite {
   id: string;
@@ -55,7 +55,7 @@ export function CozyGameWinnerPicker({ teamList, onSelect }: {
               transition: 'all 0.15s',
             }}
           >
-            {isSel ? '✓ ' : ''}{t.emoji ?? '🎮'} {t.name}
+            {isSel ? '✓ ' : ''}{t.emoji ?? '🪅'} {t.name}
           </button>
         );
       })}
@@ -80,7 +80,7 @@ export function CozyGameWinnerPicker({ teamList, onSelect }: {
           color: '#94a3b8', fontWeight: 700, fontSize: 13, cursor: 'pointer',
         }}
         title="Random-Sieger für Solo-/Bot-Test"
-      >🎯 Random</button>
+      >🪅 Random</button>
     </div>
   );
 }

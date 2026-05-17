@@ -103,7 +103,7 @@ export function CozyGamesSetupModal({ initialEnabled, initialPool, onSave, onClo
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-          <span style={{ fontSize: 28 }}>🎯</span>
+          <span style={{ fontSize: 28 }}>🪅</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 20, fontWeight: 900 }}>CozyGames Setup</div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
@@ -161,7 +161,7 @@ export function CozyGamesSetupModal({ initialEnabled, initialPool, onSave, onClo
                 style={btnSmall(COZY_PINK)}
                 disabled={games.length === 0}
                 title="Zufällige 8 Spiele auswählen"
-              >🎯 Zufällige 8</button>
+              >🪅 Zufällige 8</button>
               <button
                 onClick={clearPool}
                 style={btnSmallGhost()}

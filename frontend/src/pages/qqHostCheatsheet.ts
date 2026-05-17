@@ -204,7 +204,7 @@ function renderCozyGamesBlock(draft: QQDraft, cozyGames?: CozyGame[]): string {
 
   return `
     <section class="cg-section">
-      <h2 class="notes-hd">🎯 CozyGames — heute mitbringen</h2>
+      <h2 class="notes-hd">🪅 CozyGames — heute mitbringen</h2>
       <div class="cg-material-pill">
         <b>Material-Checklist:</b> ${materialList.map(m => `<span class="cg-tag-big">${esc(m)}</span>`).join('')}
       </div>

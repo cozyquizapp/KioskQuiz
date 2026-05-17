@@ -126,7 +126,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
     {
-      icon: '🎯',
+      icon: '🪅',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
@@ -245,7 +245,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },
     {
-      icon: '🎯',
+      icon: '🪅',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,

@@ -455,38 +455,12 @@ export default function QQProgressTree({
               ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
             phases.forEach((p, pi) => {
-              // 2026-05-17 (Wolf-Bug): CozyGame-Label SYNC zu Dot-Render. Insert
-              // vor jedem pi >= 1 (= zwischen Runde N-1 und N).
-              // 2026-05-17 v2 (Wolf): In Rules-Showcase KEINE Label-Schrift,
-              // nur leerer Slot mit der richtigen Breite damit Phase-Labels nicht
-              // verrutschen. Live-Tree zeigt weiter "CozyGame".
+              // 2026-05-17 (Wolf v3): CG-Label IMMER als Spacer-Slot — in
+              // Rules-Showcase UND im Live-Tree. Bug "COZYGAMBIETEN"-Verschmelzung
+              // entsteht weil flex-Gap zwischen Bieten + CG-Label zu klein ist.
+              // Label komplett raus, nur Spacer wahrt Spalten-Sync zur Dot-Row.
               if (showCozyGames && pi >= 1) {
-                if (isShowcase) {
-                  // Spacer-Slot ohne Text — wahrt die Spalten-Breite synchron
-                  // zur Dot-Row, ohne dass „CozyGame" über den Würfel-Knoten
-                  // groß geschrieben wird.
-                  items.push(<div key={`cg-label-spacer-${pi}`} style={{ width: cozyGameDotSize, flexShrink: 0 }} />);
-                } else {
-                  const isCgActive = state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex;
-                  const cgLabelColor = isCgActive
-                    ? (variant === 'inline' ? '#EC4899' : '#A21247')
-                    : (variant === 'inline' ? '#94a3b8' : '#64748b');
-                  items.push(
-                    <div key={`cg-label-${pi}`} style={{
-                      width: cozyGameDotSize,
-                      textAlign: 'center',
-                      fontSize: phaseNameSize,
-                      fontWeight: 900,
-                      color: cgLabelColor,
-                      textTransform: 'uppercase',
-                      flexShrink: 0,
-                      padding: 0,
-                      transition: 'all 0.4s var(--qq-ease-out-cubic)',
-                    }}>
-                      CozyGame
-                    </div>
-                  );
-                }
+                items.push(<div key={`cg-label-spacer-${pi}`} style={{ width: cozyGameDotSize, flexShrink: 0 }} />);
               }
               // Vor letzter Phase: Bieten-Label einfuegen.
               if (showBidding && pi === phases.length - 1 && pi > 0) {
@@ -672,7 +646,7 @@ export default function QQProgressTree({
                     animation: isCozyGameActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
                     transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
-                >🎯</div>
+                >🪅</div>
               </div>
             ) : null;
             const biddingNode = insertBiddingHere ? (

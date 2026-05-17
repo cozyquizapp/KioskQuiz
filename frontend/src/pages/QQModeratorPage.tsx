@@ -2165,7 +2165,7 @@ export default function QQModeratorPage() {
                         Mod mitten in Pause noch ein CG einschieben will). */}
                     {(s as any).cozyGamesEnabled && Array.isArray((s as any).cozyGamesPool) && (s as any).cozyGamesPool.length > 0 && (
                       <Btn color="#EC4899" outline onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
-                        🎯 CG einschieben
+                        🪅 CG einschieben
                       </Btn>
                     )}
                   </>
@@ -4698,7 +4698,7 @@ function SetupView({
         {/* CozyGames (Wolf 2026-05-17): analoge Mini-Spiele nach Runde 1 +
             Final-Slot. Pool wird im Builder gesetzt, hier nur Live-On/Off-Toggle. */}
         <div style={settingRow}>
-          <span style={settingLabel}>🎯 CozyGames</span>
+          <span style={settingLabel}>🪅 CozyGames</span>
           <div style={segGroup}>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true })} style={segPill(!!(s as any).cozyGamesEnabled, '#EC4899')}>An</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: false })} style={segPill(!(s as any).cozyGamesEnabled)}>Aus</button>

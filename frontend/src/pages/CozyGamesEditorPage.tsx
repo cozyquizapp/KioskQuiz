@@ -36,7 +36,7 @@ function newGameDraft(): CozyGame {
   const now = Date.now();
   return {
     id: `cg-${Math.random().toString(36).slice(2, 8)}`,
-    emoji: '🎯',
+    emoji: '🪅',
     name: '',
     description: '',
     materialTags: [],
@@ -217,7 +217,7 @@ export default function CozyGamesEditorPage() {
       >
         <Link to="/menu" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 14 }}>← Menu</Link>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em' }}>
-          🎯 CozyGames Editor
+          🪅 CozyGames Editor
         </h1>
         <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
           Mini-Spiele-Katalog für analoge CozyGame-Slots im Quiz

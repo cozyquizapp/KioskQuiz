@@ -192,15 +192,19 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       break;
     }
 
-    case 'WINNER_SELECT':
+    case 'WINNER_SELECT': {
+      const tIdx = round.wheelTargetSliceIndex ?? 0;
+      const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
       phaseContent = (
         <WinnerSelectView
           width={width} height={height}
           game={activeGame}
           winnerTeamIds={round.winnerTeamIds}
+          accentColor={accent}
         />
       );
       break;
+    }
 
     default:
       phaseContent = (
@@ -655,11 +659,13 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
           ))}
         </div>
       )}
-      {/* Timer-Slot mit fixer Höhe damit Layout konstant zwischen WHEEL_RESULT
-          (Timer leer) und GAME_ACTIVE (Timer aktiv). Slot pop't rein wenn
-          gameEndsAt erst gesetzt wird (Phase-Wechsel zu GAME_ACTIVE). */}
+      {/* Timer-Slot mit FIXER Höhe (height statt minHeight) damit Layout
+          stable ist: bei WHEEL_RESULT ist Slot leer aber reserviert die
+          Höhe — wenn BeamerTimer in GAME_ACTIVE reinkommt, schiebt sich
+          der Rest oben NICHT hoch.
+          2026-05-17 v8 (Wolf 'rest nicht hochschieben'). */}
       <div style={{
-        minHeight: 'clamp(90px, 12vh, 150px)',
+        height: 'clamp(180px, 22vh, 260px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {gameEndsAt && (
@@ -751,28 +757,102 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 }
 
 // ── WINNER SELECT (zwischen Spiel-Ende und PLACEMENT) ────────────────────────
-function WinnerSelectView({ width, height, game, winnerTeamIds }: {
+function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor }: {
   width: number; height: number;
   game: CozyGame | null;
   winnerTeamIds: string[];
+  accentColor: string;
 }) {
+  if (!game) {
+    return <FullScreenLayout width={width} height={height}>
+      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+    </FullScreenLayout>;
+  }
+  // 2026-05-17 v8 (Wolf 'winner select im gleichen design wie game active,
+  // nur aufgelöst mit winner team'): WinnerSelectView nutzt gleiches Layout
+  // wie GameDetailView (Slice-Farbe BG + Logo + Name + Description + Tags),
+  // im Timer-Slot kommt die Zeit-abgelaufen-Card + Sieger-Status.
   return (
-    <FullScreenLayout width={width} height={height}>
-      <div style={{ fontSize: 'clamp(80px, 10vw, 160px)', lineHeight: 1 }}>
-        {game?.emoji ?? '🪅'}
+    <div style={{
+      width, height,
+      background: accentColor,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
+      color: '#fff', fontFamily: 'inherit',
+      overflow: 'hidden',
+      padding: 'clamp(20px, 3vh, 40px)',
+      boxSizing: 'border-box',
+    }}>
+      <div style={{
+        fontSize: 'clamp(96px, 14vw, 220px)',
+        lineHeight: 1,
+        filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
+      }}>
+        {game.emoji}
       </div>
-      <div style={{ fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900 }}>
-        Zeit abgelaufen!
+      <div style={{
+        fontSize: 'clamp(36px, 4.5vw, 76px)',
+        fontWeight: 900,
+        letterSpacing: '-0.02em',
+        textAlign: 'center',
+        textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+      }}>
+        {game.name}
       </div>
-      {winnerTeamIds.length === 0 ? (
-        <div style={{ fontSize: 'clamp(18px, 1.5vw, 28px)', color: '#cbd5e1', marginTop: 8 }}>
-          ⏳ Moderator wählt den Sieger …
-        </div>
-      ) : (
-        <div style={{ fontSize: 'clamp(20px, 2vw, 32px)', color: '#86efac', marginTop: 8, fontWeight: 700 }}>
-          ✨ {winnerTeamIds.length === 1 ? 'Sieger steht fest!' : `${winnerTeamIds.length} Sieger (Tie)`}
+      <div style={{
+        fontSize: 'clamp(16px, 1.6vw, 26px)',
+        color: 'rgba(255,255,255,0.92)',
+        maxWidth: 1000,
+        textAlign: 'center',
+        lineHeight: 1.4,
+        padding: '0 40px',
+      }}>
+        {game.description}
+      </div>
+      {game.materialTags.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
+          maxWidth: 900, padding: '0 40px',
+        }}>
+          {game.materialTags.map(t => (
+            <span key={t} style={{
+              padding: '4px 12px',
+              background: 'rgba(0,0,0,0.25)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              borderRadius: 999,
+              fontSize: 'clamp(12px, 1vw, 16px)',
+              fontWeight: 700,
+              color: '#fff',
+            }}>{t}</span>
+          ))}
         </div>
       )}
-    </FullScreenLayout>
+      {/* Sieger-Slot: gleiche fixe Höhe wie Timer-Slot in GameDetailView
+          damit Card+Description+Tags an gleicher Position bleiben. */}
+      <div style={{
+        height: 'clamp(180px, 22vh, 260px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          padding: '14px 28px',
+          background: 'rgba(0,0,0,0.3)',
+          border: '2px solid rgba(255,255,255,0.4)',
+          borderRadius: 16,
+          textAlign: 'center',
+          animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        }}>
+          <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900 }}>
+            ⏱️ Zeit abgelaufen!
+          </div>
+          <div style={{ fontSize: 'clamp(14px, 1.3vw, 22px)', marginTop: 6, opacity: 0.9 }}>
+            {winnerTeamIds.length === 0
+              ? '⏳ Moderator wählt den Sieger …'
+              : winnerTeamIds.length === 1
+                ? '✨ Sieger steht fest!'
+                : `✨ ${winnerTeamIds.length} Sieger (Tie)`}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

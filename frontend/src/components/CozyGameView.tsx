@@ -588,14 +588,13 @@ function GameDetailView({ width, height, game, accentColor }: {
       flexDirection: 'column', gap: 32,
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
-      animation: 'cozyGameZoomIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both',
+      // 2026-05-17 v4 (Wolf 'seite wird groß dann kommt slide'):
+      // cozyGameZoomIn entfernt — der Slice-Color-Wave füllt davor schon den
+      // Screen in der Slice-Farbe. Wenn die Detail-View dann nochmal mit
+      // scale 0.3→1 reinkommt, schrumpft das Bild erst und wird wieder groß
+      // = sichtbarer Bruch. BG bleibt nahtlos, nur Inhalt pop't.
     }}>
       <style>{`
-        @keyframes cozyGameZoomIn {
-          0%   { transform: scale(0.3); opacity: 0; filter: blur(8px); }
-          60%  { opacity: 1; filter: blur(0); }
-          100% { transform: scale(1); opacity: 1; filter: blur(0); }
-        }
         @keyframes cozyGameLogoPop {
           0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
           70%  { transform: scale(1.15) rotate(8deg); opacity: 1; }

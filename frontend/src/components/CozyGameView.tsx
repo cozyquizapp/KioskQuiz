@@ -596,16 +596,26 @@ function GameDetailView({ width, height, game, accentColor }: {
     }}>
       <style>{`
         @keyframes cozyGameLogoPop {
-          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-          70%  { transform: scale(1.15) rotate(8deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0); opacity: 1; }
+          0%   { transform: scale(0.6); opacity: 0; }
+          60%  { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cozyGameDetailFade {
+          0%   { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+      {/* 2026-05-17 v5 (Wolf 'noch nicht ganz smooth'): Stagger-Pop-Animations
+          gekürzt und synchronisiert. Vorher 0.3/0.6/0.9/1.1s Delays = Inhalt
+          baute sich über 1.4s sequenziell auf nach Stage-Wechsel → wirkte
+          zerstückelt. Jetzt: alle ohne Delay, opacity-fadeIn 0.4s. Container
+          selbst hat fade-in damit nahtloser Anschluss an Wave. */}
       <div style={{
         fontSize: 'clamp(160px, 22vw, 360px)',
         lineHeight: 1,
         filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.5))',
-        animation: 'cozyGameLogoPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
+        opacity: 0,
+        animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       }}>
         {game.emoji}
       </div>
@@ -615,7 +625,8 @@ function GameDetailView({ width, height, game, accentColor }: {
         letterSpacing: '-0.02em',
         textAlign: 'center',
         textShadow: '0 4px 24px rgba(0,0,0,0.5)',
-        animation: 'qqPhasePop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both',
+        opacity: 0,
+        animation: 'cozyGameDetailFade 0.4s ease-out 0.15s both',
       }}>
         {game.name}
       </div>
@@ -626,7 +637,8 @@ function GameDetailView({ width, height, game, accentColor }: {
         textAlign: 'center',
         lineHeight: 1.45,
         padding: '0 40px',
-        animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both',
+        opacity: 0,
+        animation: 'cozyGameDetailFade 0.4s ease-out 0.25s both',
       }}>
         {game.description}
       </div>
@@ -634,7 +646,8 @@ function GameDetailView({ width, height, game, accentColor }: {
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
           maxWidth: 1000, padding: '0 40px',
-          animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s both',
+          opacity: 0,
+          animation: 'cozyGameDetailFade 0.4s ease-out 0.35s both',
         }}>
           {game.materialTags.map(t => (
             <span key={t} style={{

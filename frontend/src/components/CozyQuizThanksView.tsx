@@ -38,12 +38,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         ? `${window.location.origin}/summary/${encodeURIComponent(roomCode)}`
         : '';
 
-  // Sieger ermitteln (höchster total = cells + bonus + awards)
-  const cellsByTeam: Record<string, number> = {};
-  for (const t of s.teams) cellsByTeam[t.id] = 0;
-  for (const row of s.grid) for (const cell of row) {
-    if (cell.ownerId) cellsByTeam[cell.ownerId] = (cellsByTeam[cell.ownerId] ?? 0) + 1;
-  }
+  // Sieger ermitteln (höchster total = score + bonus + awards).
+  // 2026-05-16 (Wolf Score-Modell-Fix): score = team.largestConnected
+  // (groesstes Cluster + stuck/stack-Bonus), nicht cellsByTeam.
   const awards = s.endAwards;
   const awardPoints: Record<string, number> = {};
   for (const t of s.teams) awardPoints[t.id] = 0;
@@ -53,7 +50,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const winnerEntry = [...s.teams]
     .map(t => ({
       team: t,
-      total: (cellsByTeam[t.id] ?? 0)
+      total: (t.largestConnected ?? 0)
         + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
         + (awardPoints[t.id] ?? 0),
     }))
@@ -77,8 +74,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const isEsc = !!s.theme?.eurovisionMode;
   const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
-  const winnerCells = winner ? (cellsByTeam[winner.id] ?? 0) : 0;
-  const winnerBonus = winner ? (s.finalBetResolution?.[winner.id]?.totalBonus ?? 0) : 0;
+  // 2026-05-16: winnerCells/winnerBonus waren Dead-Code (nirgendwo verwendet),
+  // bei der Score-Modell-Bereinigung mit entfernt.
 
   return (
     <div style={{

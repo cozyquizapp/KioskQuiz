@@ -384,9 +384,12 @@ type FinalStep =
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
+// 2026-05-16 (Wolf Score-Modell-Klaerung): `score` = groesstes zusammenhaengendes
+// Gebiet (largestConnected, inkl. stuck/stackBonus aus Backend), NICHT die
+// Gesamt-Feld-Anzahl. Bet + Awards addieren sich auf den Score-Wert.
 type RankingEntry = {
   team: QQTeam;
-  cells: number;
+  score: number;   // = team.largestConnected (groesstes Cluster + stuck/stack-Bonus)
   bonus: number;
   awards: number;
   total: number;
@@ -578,13 +581,21 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
     if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
 
+    // 2026-05-16 (Wolf Score-Modell-Fix): Final-Total basiert auf
+    // largestConnected (= groesstes zusammenhaengendes Gebiet + stuck/stack-
+    // Bonus, vom Backend berechnet), NICHT auf cellsByTeam (= Gesamt-Anzahl
+    // aller Felder verstreut+verbunden). Vorher waren verstreute Felder
+    // genauso wertvoll wie verbundene → Cluster-Strategie wurde am Ende
+    // ignoriert, widersprach Wolfs Mental-Model "groesstes Gebiet gewinnt".
+    // cellsByTeam bleibt fuer GridRevealSlide-Display (Visual-Info "X Felder
+    // gesetzt"), wird aber nicht mehr fuer Score-Sortierung benutzt.
     const finalRanking = [...s.teams]
       .map(t => ({
         team: t,
-        cells: cellsByTeam[t.id] ?? 0,
+        score: t.largestConnected ?? 0,
         bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
         awards: awardPoints[t.id] ?? 0,
-        total: (cellsByTeam[t.id] ?? 0)
+        total: (t.largestConnected ?? 0)
           + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
           + (awardPoints[t.id] ?? 0),
       }))

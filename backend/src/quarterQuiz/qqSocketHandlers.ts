@@ -3070,6 +3070,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         } else if (cg.phase === 'GAME_ACTIVE') {
           // Mod stoppt früher (Hybrid-Timer-Stop)
           qqCozyGameStopGame(room);
+        } else if (cg.phase === 'WINNER_SELECT' && cg.winnerTeamIds.length > 0) {
+          // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter zum Grid'):
+          // Mod hat „Weiter zum Grid" gedrückt → Action-Pipeline starten +
+          // maybeAutoPlace (Dummies setzen automatisch).
+          qqCozyGameAdvanceToPlacement(room);
+          broadcast(io, payload.roomCode);
+          if (room.phase === 'PLACEMENT' && room.pendingFor) {
+            maybeAutoPlace(io, payload.roomCode);
+          }
+          ok(ack);
+          return;
         }
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -3081,18 +3092,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqCozyGameSelectWinner(room, payload.teamIds ?? []);
         broadcast(io, payload.roomCode);
-        // 2026-05-17 v8 (Wolf 'reveal übersprungen + autoplay nach minigame
-        // fehlt'): 2.5s Pause → Winner-Card sichtbar. Danach Action-Pipeline
-        // starten + maybeAutoPlace (Dummies setzen automatisch).
-        setTimeout(() => {
-          const live = getQQRoom(payload.roomCode);
-          if (!live || !live.cozyGame || live.cozyGame.phase !== 'WINNER_SELECT') return;
-          qqCozyGameAdvanceToPlacement(live);
-          broadcast(io, payload.roomCode);
-          if (live.phase === 'PLACEMENT' && live.pendingFor) {
-            maybeAutoPlace(io, payload.roomCode);
-          }
-        }, 2500);
+        // 2026-05-17 v9 (Wolf 'Mod soll Weiter drücken wie sonst auch im Flow'):
+        // Kein Auto-Advance mehr. Mod sieht Winner-Avatar auf /beamer und
+        // klickt manuell „Weiter zum Grid" — Handler in qq:cozyGameAdvance
+        // (WINNER_SELECT-Branch).
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

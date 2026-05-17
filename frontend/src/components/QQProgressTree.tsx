@@ -44,113 +44,14 @@ export default function QQProgressTree({
   const phaseLabels = lang === 'en' ? PHASE_LABELS_EN : PHASE_LABELS_DE;
   const totalPhases = state.totalPhases || 4;
 
-  // Showcase-Sweep: cycelt durch alle Phasen + Bieten + Finale, hebt jede
-  // ~2.2s hervor. Wolf-Wunsch 2026-05-11: NACH komplettem Durchgang bleibt
-  // der Wolf am letzten Step (Finale) stehen — kein Reset zurück auf Pause.
-  //
-  // 2026-05-13 (Wolf 'wolf ueberspringt in der rules slide das bid-feld,
-  // laeuft ans ende der letzten runde, springt zurueck aufs bid-feld, dann
-  // wieder ans ende der letzten runde'): Sweep-Step-Reihenfolge an Visual-
-  // Reihenfolge angepasst. Bid sitzt visuell ZWISCHEN Runde N-1 und Runde N
-  // (siehe pIdx === phases.length - 1 Branch in dotCenters-Berechnung).
-  // Vorher: Sweep ging Quiz 0..N-1 → Bid → Finale (Wolf hopt rueckwaerts auf
-  // Bid nach letzter Quiz-Runde). Jetzt: Quiz 0..N-2 → Bid → Last Quiz → Finale.
-  //
-  // Step-Indizes (showBidding=true):
-  //   -1                  = initial Pause
-  //   0..totalPhases-2    = Quiz-Phasen 0..N-2
-  //   totalPhases-1       = Bieten-Knoten
-  //   totalPhases         = letzte Quiz-Phase (phases[N-1])
-  //   totalPhases+1       = 4×4 Finale (wenn aktiv)
-  // Step-Indizes (showBidding=false):
-  //   0..totalPhases-1    = Quiz-Phasen
-  //   totalPhases         = 4×4 Finale (wenn aktiv)
-  //
-  // Wolf-Wunsch 2026-05-11: 4×4 muss in JEDEM Tree der App ausgeblendet sein
-  // wenn der Mod-Toggle aus ist. `=== true` statt `!== false`, sonst leakt
-  // ein undefined-State (vor erstem State-Update) als „sichtbar".
-  const showcaseHasBidding = state.finalWagerEnabled === true;
-  const showcaseHasFinale  = state.connectionsEnabled === true;
-  // 2026-05-17 v2 (Wolf-Bug 'CG nach Runde 2/3/4 übersprungen'): CG-Knoten
-  // nach JEDER Non-Final-Phase im Sweep, nicht nur nach Phase 0.
-  const showcaseHasCozyGames = !!(state as any).cozyGamesEnabled
-    && Array.isArray((state as any).cozyGamesPool)
-    && (state as any).cozyGamesPool.length > 0;
-  // Sweep-Reihenfolge mit CG (4-Phasen Beispiel):
-  //   0: Phase 0  → 1: CG-nach-P0  → 2: Phase 1  → 3: CG-nach-P1
-  //   4: Phase 2  → 5: CG-nach-P2  → [6: Bid]    → 7: Phase 3 (last)
-  //   → [8: Finale]
-  // Map step-Idx → CG-pi (zwischen Phase pi-1 und pi). pi=1 ist erster CG.
-  const cgStepToPi = new Map<number, number>();
-  const cgPiToStep = new Map<number, number>();
-  if (showcaseHasCozyGames) {
-    // Pro Phase 0..N-2: CG-Step direkt nach Quiz-Step.
-    // Quiz-Step für Phase pi (vor Bid) = 2*pi (alternierend Quiz/CG).
-    for (let pi = 0; pi < totalPhases - 1; pi++) {
-      const cgStep = 2 * pi + 1; // = 1, 3, 5, ...
-      cgStepToPi.set(cgStep, pi + 1); // CG zwischen Phase pi und pi+1 → Key pi+1
-      cgPiToStep.set(pi + 1, cgStep);
-    }
-  }
-  const cozyGameCount = showcaseHasCozyGames ? totalPhases - 1 : 0;
-  // Bidding/Finale-Step-Indizes verschieben sich um cozyGameCount nach hinten.
-  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 + cozyGameCount : -1;
-  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases + cozyGameCount : totalPhases - 1 + cozyGameCount;
-  const finaleStepIdx      = showcaseHasFinale
-    ? (showcaseHasBidding ? totalPhases + 1 + cozyGameCount : totalPhases + cozyGameCount)
-    : -1;
-  const showcaseStepCount  = totalPhases + cozyGameCount
-    + (showcaseHasBidding ? 1 : 0)
-    + (showcaseHasFinale ? 1 : 0);
-  // Mapping Sweep-Step → Quiz-Phase-Idx (-1 wenn Bid/Finale/CG/out-of-range).
-  // CG-Step → maps zu vorhergegangener Phase (visuell bleibt Wolf am Ende
-  // dieser Phase, Pan geht auf CG-Knoten).
-  const stepToPhaseIdx = (step: number): number => {
-    if (step < 0) return -1;
-    if (showcaseHasCozyGames && cgStepToPi.has(step)) {
-      return (cgStepToPi.get(step) ?? 1) - 1; // CG nach Phase pi-1 → bleibt visuell auf pi-1
-    }
-    // Adjustierter Step (CG-Slots herausgerechnet) für lineare Phase-Mappings
-    let adjStep = step;
-    if (showcaseHasCozyGames) {
-      // Wie viele CG-Steps liegen vor diesem Step?
-      let cgBefore = 0;
-      for (const cgStep of cgStepToPi.keys()) if (cgStep < step) cgBefore++;
-      adjStep = step - cgBefore;
-    }
-    if (!showcaseHasBidding) return adjStep < totalPhases ? adjStep : -1;
-    if (adjStep < totalPhases - 1) return adjStep;
-    if (adjStep === totalPhases - 1) return -1;               // Bid
-    if (adjStep === totalPhases) return totalPhases - 1;      // letzte Quiz-Phase
-    return -1;                                                 // Finale o.a.
-  };
+  // Showcase-Sweep „Option B" (Wolf 2026-05-17): pro Dot ein Sub-Step.
+  // Wolf wandert durch JEDEN Dot der aktuellen Phase (~420ms/Dot), macht bei
+  // Phase-Wechsel einen Bogen-Sprung (translateY-Arc via qqWolfBowHop), und
+  // stoppt länger an Spezial-Knoten (CG/Bid/Finale) damit deren Pulse atmen
+  // kann. State + Helpers werden weiter unten gebaut (nach byPhase/phases/
+  // Toggle-Deklarationen) — hier nur der useState-Pin damit Hook-Order stabil
+  // bleibt. `showcaseStepMs` ist seit Option B nur noch Fallback-Hinweis.
   const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
-  useEffect(() => {
-    if (!showcaseMode) return;
-    setShowcasePhaseIdx(-1);
-    let step = -1;
-    let id: ReturnType<typeof setTimeout> | null = null;
-    const tick = () => {
-      step += 1;
-      if (step >= showcaseStepCount) {
-        // 2026-05-12/13: Nach komplettem Durchgang bleibt Wolf strukturell am
-        // letzten Quiz-Step (= lastQuizStepIdx) stehen — bei Bid-aktivem Quiz
-        // ist das totalPhases (nicht totalPhases-1!), weil die letzte Quiz-
-        // Phase im Sweep jetzt NACH Bid kommt.
-        setShowcasePhaseIdx(lastQuizStepIdx);
-        return;
-      }
-      setShowcasePhaseIdx(step);
-      id = setTimeout(tick, showcaseStepMs);
-    };
-    id = setTimeout(tick, showcaseStepMs);
-    return () => { if (id !== null) clearTimeout(id); };
-  }, [showcaseMode, showcaseStepCount, showcaseStepMs]);
-  const showcaseOnBidding = showcaseMode && showcaseHasBidding && showcasePhaseIdx === biddingStepIdx;
-  const showcaseOnFinale  = showcaseMode && showcaseHasFinale  && showcasePhaseIdx === finaleStepIdx;
-  const showcaseOnCozyGame = showcaseMode && showcaseHasCozyGames && cgStepToPi.has(showcasePhaseIdx);
-  // Welcher CG-Knoten (pi) ist im aktuellen Sweep-Step aktiv?
-  const showcaseActiveCgPi = showcaseOnCozyGame ? (cgStepToPi.get(showcasePhaseIdx) ?? 1) : 0;
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -197,6 +98,131 @@ export default function QQProgressTree({
   const phases: QQGamePhaseIndex[] = [];
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
 
+  // ── Toggles (Bid/Finale/CozyGames) — vorgezogen, weil subSteps + Layout
+  // beide darauf basieren. `=== true` statt `!== false`, sonst leakt
+  // undefined-State (vor erstem State-Update) als „sichtbar" (Wolf 2026-05-11).
+  const showBidding = state.finalWagerEnabled === true;
+  const showFinale  = state.connectionsEnabled === true;
+  // 2026-05-17 (Wolf-Feature CozyGames): Knoten nach JEDER Non-Final-Runde
+  // (Wolf-Spec "nach jeder Runde"). Bei 4-Phasen: nach 1, 2, 3.
+  const showCozyGames = !!(state as any).cozyGamesEnabled
+    && Array.isArray((state as any).cozyGamesPool)
+    && (state as any).cozyGamesPool.length > 0;
+  const DEFAULT_DOTS_PER_PHASE = 5;
+
+  // ── Showcase-Sweep „Option B" (Wolf 2026-05-17): per-Dot SubSteps ────────
+  // Vorher: 1 Step pro Phase, Wolf hopt jeweils nur ans Phasen-Ende.
+  // Jetzt: pro Dot ein Step, Wolf wandert smooth durch die Phase und macht
+  // bei Phase-/Block-Wechsel einen Bogen-Sprung (translateY-Arc).
+  //
+  // SubStep-Reihenfolge (4-Phasen + cg+bid+finale):
+  //   Phase 0: 5× dot
+  //   → cg (zwischen Runde 1 und 2)
+  //   Phase 1: 5× dot
+  //   → cg
+  //   Phase 2: 5× dot
+  //   → cg
+  //   → bid (vor letzter Runde, nur wenn showBidding)
+  //   Phase 3: 5× dot
+  //   → finale (nur wenn showFinale)
+  type SubStep =
+    | { kind: 'dot'; phaseIdx: number; globalDotIdx: number }
+    | { kind: 'cg'; pi: number }     // pi = Key in cozyGameCentersByPi (zw. Phase pi-1 und pi)
+    | { kind: 'bid' }
+    | { kind: 'finale' };
+
+  const subSteps: SubStep[] = [];
+  phases.forEach((p, pIdx) => {
+    if (showCozyGames && pIdx >= 1) {
+      subSteps.push({ kind: 'cg', pi: pIdx });
+    }
+    if (showBidding && pIdx === phases.length - 1 && pIdx > 0) {
+      subSteps.push({ kind: 'bid' });
+    }
+    const entries = byPhase.get(p) ?? [];
+    const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
+    const phaseStart = schedule.findIndex(e => e.phase === p);
+    for (let i = 0; i < renderCount; i++) {
+      subSteps.push({
+        kind: 'dot',
+        phaseIdx: pIdx,
+        globalDotIdx: phaseStart >= 0 ? phaseStart + i : -1,
+      });
+    }
+  });
+  if (showFinale) subSteps.push({ kind: 'finale' });
+  const subStepCount = subSteps.length;
+
+  useEffect(() => {
+    if (!showcaseMode) return;
+    if (subStepCount === 0) return;
+    setShowcasePhaseIdx(-1);
+    let step = -1;
+    let id: ReturnType<typeof setTimeout> | null = null;
+    const tick = () => {
+      step += 1;
+      if (step >= subStepCount) {
+        // Nach komplettem Durchgang: Wolf bleibt am letzten Step stehen.
+        setShowcasePhaseIdx(subStepCount - 1);
+        return;
+      }
+      setShowcasePhaseIdx(step);
+      const cur = subSteps[step];
+      const nxt = step + 1 < subStepCount ? subSteps[step + 1] : null;
+      const isHopNext = nxt ? (() => {
+        if (cur.kind !== 'dot' || nxt.kind !== 'dot') return true;
+        return cur.phaseIdx !== nxt.phaseIdx;
+      })() : false;
+      let duration: number;
+      if (cur.kind === 'dot') {
+        // Letzter Dot der Phase: kurz halten vor Bogen-Sprung damit der Hop
+        // visuell als eigener Beat wirkt. Sonst flotter Slide zum nächsten Dot.
+        duration = isHopNext ? 700 : 420;
+      } else {
+        // CG/Bid/Finale: lange genug, damit Pulse-Animation atmet.
+        duration = 950;
+      }
+      id = setTimeout(tick, duration);
+    };
+    // Initial-Pause damit Rules-Slide eingeblendet bevor Wolf startet.
+    id = setTimeout(tick, 600);
+    return () => { if (id !== null) clearTimeout(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showcaseMode, subStepCount]);
+
+  const currentSubStep: SubStep | null = (showcasePhaseIdx >= 0 && showcasePhaseIdx < subStepCount)
+    ? subSteps[showcasePhaseIdx]
+    : null;
+  const prevSubStep: SubStep | null = (showcasePhaseIdx > 0)
+    ? subSteps[showcasePhaseIdx - 1]
+    : null;
+  // Hop = Wechsel in einen anderen Block (Phase-Wechsel oder zu/von Spezial-
+  // Knoten). Triggert qqWolfBowHop-Animation (Bogen via translateY-Arc).
+  const isHopping = (() => {
+    if (!currentSubStep || !prevSubStep) return false;
+    if (currentSubStep.kind !== prevSubStep.kind) return true;
+    if (currentSubStep.kind === 'dot' && prevSubStep.kind === 'dot') {
+      return currentSubStep.phaseIdx !== prevSubStep.phaseIdx;
+    }
+    return true;
+  })();
+
+  const showcaseOnBidding  = showcaseMode && currentSubStep?.kind === 'bid';
+  const showcaseOnFinale   = showcaseMode && currentSubStep?.kind === 'finale';
+  const showcaseOnCozyGame = showcaseMode && currentSubStep?.kind === 'cg';
+  const showcaseActiveCgPi = (currentSubStep && currentSubStep.kind === 'cg') ? currentSubStep.pi : 0;
+
+  // Map SubStep-Idx → Phase-Idx (für Label-Highlights + Pan-Target). CG bleibt
+  // visuell auf vorheriger Phase (pi-1). Bid/Finale: keine Phase highlighted
+  // (haben eigene Labels).
+  const subStepPhaseIdx = (step: number): number => {
+    if (step < 0 || step >= subStepCount) return -1;
+    const s = subSteps[step];
+    if (s.kind === 'dot') return s.phaseIdx;
+    if (s.kind === 'cg') return s.pi - 1;
+    return -1;
+  };
+
   // Berechne exakte x-Positionen aller Dots (für Progress-Track)
   // + phaseCenters für die Showcase-Pan-Animation (Camera fliegt zu Phase).
   // 2026-05-12 (Wolf-Bug 'Runde 4 fehlt im Tree, nur Bieten zu sehen'):
@@ -207,7 +233,8 @@ export default function QQProgressTree({
   // QQ_QUESTIONS_PER_PHASE), damit Label + Layout-Slot erhalten bleiben.
   // Placeholder-Dots werden später als graue Slots ohne Schedule-Entry
   // gerendert (siehe entries-Loop unten).
-  const DEFAULT_DOTS_PER_PHASE = 5;
+  // (DEFAULT_DOTS_PER_PHASE / showBidding / showCozyGames / showFinale sind
+  // jetzt oben deklariert — werden vom SubStep-Sweep + Layout beide gebraucht.)
   const dotCenters: number[] = [];
   const phaseWidths: number[] = [];
   const phaseCenters: number[] = [];
@@ -216,12 +243,6 @@ export default function QQProgressTree({
   // (qqBeginPhase line 3239: phaseIndex===totalPhases triggert FINAL_BETTING).
   // Wolf 2026-05-12 'bid muss auf progress tree genau vor finalrunde
   // angezeigt werden'.
-  const showBidding = state.finalWagerEnabled === true;
-  // 2026-05-17 (Wolf-Feature CozyGames): Knoten nach JEDER Non-Final-Runde
-  // (Wolf-Spec "nach jeder Runde"). Bei 4-Phasen: nach 1, 2, 3.
-  const showCozyGames = !!(state as any).cozyGamesEnabled
-    && Array.isArray((state as any).cozyGamesPool)
-    && (state as any).cozyGamesPool.length > 0;
   const biddingDotSize = Math.round(dotSize * 1.2);
   const cozyGameDotSize = Math.round(dotSize * 1.2);
   let biddingCenter = 0;
@@ -258,8 +279,7 @@ export default function QQProgressTree({
   });
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
   // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
-  // unter dem FINALE-Label.
-  const showFinale = state.connectionsEnabled === true;
+  // unter dem FINALE-Label. (showFinale oben deklariert.)
   const finaleDotSize = Math.round(dotSize * 1.35);
   let finaleCenter = 0;
   if (showFinale) {
@@ -272,11 +292,11 @@ export default function QQProgressTree({
 
   // Showcase-Pan: bringt die hervorgehobene Phase (oder Bieten/Finale) ins
   // Viewport-Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.
-  // 2026-05-13 (Wolf-Bid-Bug-Fix): nutzt stepToPhaseIdx (Bid hat Step !=
-  // Phase-Idx seit dem Sweep-Reorder).
+  // 2026-05-17 (Option B): nutzt subStepPhaseIdx (per-Dot-Sweep statt
+  // per-Phase-Sweep), Pan-Target bleibt jedoch auf Phase-Granularität.
   const showcaseTargetPhase = showcaseMode
     ? (() => {
-        const p = stepToPhaseIdx(showcasePhaseIdx);
+        const p = subStepPhaseIdx(showcasePhaseIdx);
         return p >= 0 ? p : 0; // Bid/Finale → fallback auf Phase 0 fuer Pan-Default
       })()
     : -1;
@@ -294,29 +314,21 @@ export default function QQProgressTree({
   const firstCenter = dotCenters[0] ?? 0;
   const lastCenter = dotCenters[dotCenters.length - 1] ?? 0;
 
-  // Im Showcase-Mode wandert der Wolf MIT der Phasen-Highlight-Sweep mit:
-  // pro highlighteter Phase steht er am LETZTEN Dot dieser Phase.
-  // 2026-05-13: bei Bid- oder Finale-Step bleibt der Dot-Idx beim letzten
-  // davor stehen (Wolf wird visuell via wolfOnBidding/Finale auf
-  // biddingCenter/finaleCenter gesetzt — der Dot-Idx ist nur fuer Progress-
-  // Color-Picking wichtig).
+  // Showcase-Wolf-Idx (Option B 2026-05-17): pro SubStep direkt aus
+  // currentSubStep.globalDotIdx ableiten. Auf CG/Bid/Finale-Steps bleibt der
+  // Dot-Idx beim letzten erreichten Dot stehen (für Progress-Color-Picking
+  // — der visuelle Wolf-Center sitzt eh auf dem Spezial-Knoten via
+  // wolfOn*-Branches weiter unten).
   const showcaseWolfIdx = (() => {
-    if (!showcaseMode || showcasePhaseIdx < 0) return 0;
-    let phaseIdx = stepToPhaseIdx(showcasePhaseIdx);
-    if (phaseIdx < 0) {
-      // Bid → letzter Quiz-Phase-Idx vor Bid (totalPhases - 2 bei show-
-      // Bidding). Finale → letzter Quiz-Phase-Idx vor Finale (totalPhases-1).
-      if (showcasePhaseIdx === biddingStepIdx) phaseIdx = totalPhases - 2;
-      else if (showcasePhaseIdx === finaleStepIdx) phaseIdx = totalPhases - 1;
-      else return 0;
+    if (!showcaseMode || !currentSubStep) return 0;
+    if (currentSubStep.kind === 'dot') {
+      return currentSubStep.globalDotIdx >= 0 ? currentSubStep.globalDotIdx : 0;
     }
-    if (phaseIdx < 0) return 0;
-    let cum = 0;
-    for (let pi = 0; pi <= phaseIdx; pi++) {
-      const phaseEntries = byPhase.get(phases[pi]) ?? [];
-      cum += phaseEntries.length;
+    for (let i = showcasePhaseIdx - 1; i >= 0; i--) {
+      const s = subSteps[i];
+      if (s.kind === 'dot' && s.globalDotIdx >= 0) return s.globalDotIdx;
     }
-    return Math.max(0, cum - 1);
+    return 0;
   })();
   const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
   const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
@@ -511,7 +523,7 @@ export default function QQProgressTree({
                 );
               }
               const isCurrentPhase = showcaseMode
-                ? pi === stepToPhaseIdx(showcasePhaseIdx)
+                ? pi === subStepPhaseIdx(showcasePhaseIdx)
                 : state.gamePhaseIndex === p;
               items.push(
                 <div
@@ -616,7 +628,7 @@ export default function QQProgressTree({
           {phases.flatMap((p, pi) => {
             const entries = byPhase.get(p) ?? [];
             const phaseStartIdx = schedule.findIndex((e) => e.phase === p);
-            const isShowcasedPhase = showcaseMode && pi === stepToPhaseIdx(showcasePhaseIdx);
+            const isShowcasedPhase = showcaseMode && pi === subStepPhaseIdx(showcasePhaseIdx);
             // 2026-05-12: Placeholder-Dots wenn keine Schedule-Entries für
             // diese Phase (siehe Comment oben bei cursor-Berechnung).
             const renderEntries: Array<QQScheduleEntry | null> = entries.length > 0
@@ -633,7 +645,11 @@ export default function QQProgressTree({
             const cozyGameColor = '#EC4899';
             // Active = state.phase=COZY_GAME UND der Slot zwischen aktueller
             // Phase und nächster (= pi === state.gamePhaseIndex).
-            const isCozyGameActive = state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex;
+            // 2026-05-17 (Option B): auch im Showcase aktivieren wenn Wolf auf
+            // diesem CG-Knoten sitzt, damit Pulse-Animation in der Rules-Roadmap
+            // mitspielt (vorher nur live highlighted).
+            const isCozyGameActive = (state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex)
+              || (showcaseOnCozyGame && showcaseActiveCgPi === pi);
             // "Past" = der CG-Slot vor pi wurde bereits gespielt
             // (state.cozyGamesPlayedAfterPhases enthält die Phase-Indizes vor diesem Slot).
             const playedSlots = (state as any).cozyGamesPlayedAfterPhases ?? [];
@@ -840,10 +856,16 @@ export default function QQProgressTree({
             );
           })()}
 
-          {/* Wolf-Avatar — sitzt auf dem aktuellen Dot, springt bei Wechsel
-              im Bogen zum neuen Dot. 2026-05-09 (Wolf-Wunsch): pink.png statt
-              logo.png (3D-Wolf vom Desktop), continuous Bounce-Loop während
-              der Tree sichtbar ist, plus großer Hop bei Phase-Wechsel. */}
+          {/* Wolf-Avatar — sitzt auf dem aktuellen Dot, slidet horizontal
+              zwischen Dots derselben Phase, macht bei Phase-/Block-Wechsel
+              einen Bogen-Sprung (Option B 2026-05-17).
+              Struktur:
+              - outer-positioner: position+left+top+transition (slidet horizontal)
+              - hop-wrapper (key remounted on jeder Hop-Step → bowHop-Animation
+                triggert sich neu): translateY-Arc nur bei Hop
+              - wolf-circle: rounded border, overflow hidden für die Wolf-Img.
+              2026-05-09 (Wolf-Wunsch): pink.png statt logo.png (3D-Wolf vom
+              Desktop), continuous Bounce-Loop des Kopfes via qqWolfHeadBob. */}
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
             // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
@@ -856,32 +878,36 @@ export default function QQProgressTree({
                 left: currentCenter,
                 width: wolfSize,
                 height: wolfSize,
-                borderRadius: '50%',
-                background: 'transparent',
-                border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
-                boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
                 transform: 'translate(-50%, -50%)',
-                // 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen, linie ist fix'):
-                // Outer-Bounce + roundMiniHop entfernt. Kreis sitzt fix auf der
-                // Linie, slidet horizontal zum nächsten Dot via transition. Der
-                // KOPF (innen) wackelt subtil via qqWolfHeadBob — alive-Feeling
-                // ohne dass der Kreis von der Linie abhebt.
-                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1)',
                 zIndex: 3,
                 pointerEvents: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden',
               }}>
-                <img
-                  src="/avatars/cozywolf/pink.png"
-                  alt=""
-                  draggable={false}
+                <div
+                  key={isHopping ? `hop-${showcasePhaseIdx}` : 'rest'}
                   style={{
-                    width: '94%', height: '94%', objectFit: 'contain',
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
-                    animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: 'transparent',
+                    border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
+                    boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
+                    animation: isHopping ? 'qqWolfBowHop 0.65s cubic-bezier(0.5, 0, 0.5, 1)' : undefined,
                   }}
-                />
+                >
+                  <img
+                    src="/avatars/cozywolf/pink.png"
+                    alt=""
+                    draggable={false}
+                    style={{
+                      width: '94%', height: '94%', objectFit: 'contain',
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+                      animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
+                    }}
+                  />
+                </div>
               </div>
             );
           })()}
@@ -892,6 +918,15 @@ export default function QQProgressTree({
         @keyframes qqTreePulse {
           0%, 100% { box-shadow: 0 0 0 4px rgba(236,72,153,0.35), 0 6px 14px rgba(0,0,0,0.2); }
           50%      { box-shadow: 0 0 0 10px rgba(236,72,153,0.10), 0 6px 14px rgba(0,0,0,0.2); }
+        }
+        /* Bogen-Sprung des Wolf bei Phase-/Block-Wechsel im Showcase-Sweep
+           (Option B 2026-05-17). Wolf-Circle wird per key-Remount neu-getriggert,
+           daher fest 0% → 45% → 100% statt fade-loop. translateY peakt etwas
+           später als 50% damit der Landungs-Anteil weicher wirkt. */
+        @keyframes qqWolfBowHop {
+          0%   { transform: translateY(0); }
+          45%  { transform: translateY(-26px); }
+          100% { transform: translateY(0); }
         }
       `}</style>
     </div>

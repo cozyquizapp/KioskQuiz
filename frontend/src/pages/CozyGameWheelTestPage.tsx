@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import CozyGameView from '../components/CozyGameView';
 import type { CozyGame, CozyGameRoundState, CozyGameRoundPhase } from '@shared/cozyGameTypes';
 import { COZY_GAME_V1_SEED } from '@shared/cozyGameTypes';
+import type { QQTeam } from '@shared/quarterQuizTypes';
 
 // 2026-05-17 (Wolf): Standalone-Testpage für das CozyGame-Glücksrad +
 // Sub-Phasen. Mock-State, kein Backend nötig. Slice-Count-Slider,
@@ -10,10 +11,26 @@ import { COZY_GAME_V1_SEED } from '@shared/cozyGameTypes';
 
 const PHASE_ORDER: CozyGameRoundPhase[] = ['INTRO', 'WHEEL_SPIN', 'WHEEL_RESULT', 'GAME_ACTIVE', 'WINNER_SELECT'];
 
+// 2026-05-17 v13 (Wolf 'es gibt keinen winner reveal slide'): Mock-Teams für
+// Winner-Reveal-Test. avatarId entspricht den 8 Slots aus QQ_AVATARS (shiba,
+// faultier, etc.) — Reihenfolge matched QQ_TEAM_PALETTE damit die team.color
+// zur Slot-Farbe passt.
+const MOCK_TEAMS: QQTeam[] = [
+  { id: 't0', name: 'Die Wölfe',        color: '#FA507F', avatarId: 'shiba',     connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't1', name: 'Faule Fünf',       color: '#9DCB2F', avatarId: 'faultier',  connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't2', name: 'Pinguin-Crew',     color: '#266FD3', avatarId: 'pinguin',   connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't3', name: 'Koala-Kombo',      color: '#9A65D5', avatarId: 'koala',     connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't4', name: 'Lange Hälse',      color: '#FEC814', avatarId: 'giraffe',   connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't5', name: 'Waschbären',       color: '#68B4A5', avatarId: 'waschbaer', connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't6', name: 'Mu-Hu-Truppe',     color: '#FF751F', avatarId: 'kuh',       connected: true, totalCells: 0, largestConnected: 0 },
+  { id: 't7', name: 'Capy-Connection',  color: '#F84326', avatarId: 'capybara',  connected: true, totalCells: 0, largestConnected: 0 },
+];
+
 export default function CozyGameWheelTestPage() {
   const [poolSize, setPoolSize] = useState(8);
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [targetIdx, setTargetIdx] = useState(3);
+  const [winnerCount, setWinnerCount] = useState(1);
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight - 120 });
 
   useEffect(() => {
@@ -45,6 +62,15 @@ export default function CozyGameWheelTestPage() {
     return () => { window.fetch = original; };
   }, []);
 
+  // Winner-Teams: bei WINNER_SELECT-Phase die ersten N Teams als Sieger
+  // simulieren. winnerCount=0 → Wartebild ("Mod wählt"). winnerCount>0 →
+  // Hero-Reveal mit Avataren.
+  const winnerTeamIds = useMemo(() => (
+    phase === 'WINNER_SELECT'
+      ? MOCK_TEAMS.slice(0, Math.max(0, Math.min(winnerCount, MOCK_TEAMS.length))).map(t => t.id)
+      : []
+  ), [phase, winnerCount]);
+
   const round: CozyGameRoundState = useMemo(() => ({
     poolGameIds: poolIds,
     playedGameIds: [],
@@ -53,8 +79,8 @@ export default function CozyGameWheelTestPage() {
     wheelTargetSliceIndex: targetIdx,
     gameEndsAt: phase === 'GAME_ACTIVE' ? Date.now() + 60000 : null,
     slotKind: 'roundPause',
-    winnerTeamIds: [],
-  }), [poolIds, phase, targetIdx, phaseIdx, pool]);
+    winnerTeamIds,
+  }), [poolIds, phase, targetIdx, phaseIdx, pool, winnerTeamIds]);
 
   function autoSpinDemo() {
     setPhaseIdx(0);
@@ -123,6 +149,22 @@ export default function CozyGameWheelTestPage() {
           ))}
         </div>
 
+        {/* Winner-Slider nur in WINNER_SELECT relevant — 0 = Wartebild,
+            1-8 = Hero-Reveal mit N Sieger(n). */}
+        {phase === 'WINNER_SELECT' && (
+          <label style={{ fontSize: 13, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6 }}>
+            Winner:
+            <input
+              type="range"
+              min={0} max={8} step={1}
+              value={winnerCount}
+              onChange={e => setWinnerCount(Number(e.target.value))}
+              style={{ width: 80, accentColor: '#EC4899' }}
+            />
+            <b>{winnerCount}</b>
+          </label>
+        )}
+
         <button
           onClick={autoSpinDemo}
           style={{
@@ -135,7 +177,7 @@ export default function CozyGameWheelTestPage() {
 
       {/* Bühne */}
       <div style={{ width: '100%', height: winSize.h, position: 'relative' }}>
-        <CozyGameView round={round} width={winSize.w} height={winSize.h} />
+        <CozyGameView round={round} width={winSize.w} height={winSize.h} teams={MOCK_TEAMS} />
       </div>
 
       {/* Info-Footer */}

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
+import type { QQTeam } from '@shared/quarterQuizTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare } from '../utils/sounds';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
+import { Fireflies } from './CozyQuizAmbient';
+import { QQTeamAvatar } from './QQTeamAvatar';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -16,14 +19,38 @@ import { BeamerTimer } from './CozyQuizBeamerTimer';
 const COZY_NAVY = '#1E2A5A';
 const COZY_PINK = '#EC4899';
 
+// 2026-05-17 v11 (Wolf 'CG-slides fallen aus dem raster, andere bgs sind dunkler
+// mit fireflies'): Standard-Brand-BG analog PausedView etc. — dunkler Grund
+// (#0A0814) mit subtilen accent-Radial-Gradients. Akzent-Farbe variabel pro
+// Sub-View (COZY_PINK für Intro/Wheel, Slice-Color für Result/Active/Winner).
+//
+// 2026-05-17 v14 (Wolf 'farben sind nicht dunkler und keine fireflies'):
+// Helper gibt jetzt SEPARATE backgroundColor + backgroundImage zurück — der
+// kombinierte `background:`-Shorthand mit Hex-Color am Ende parst in manchen
+// Browsern unzuverlässig (zeigt solide Slice-Farbe statt Layern). Alpha-Tints
+// hochgezogen (50/30 statt 30/1A) damit Slice-Color noch sichtbar bleibt
+// trotz dunklerem Grund.
+function darkBgWithAccent(accent: string): { backgroundColor: string; backgroundImage: string } {
+  return {
+    backgroundColor: '#0A0814',
+    backgroundImage:
+      `radial-gradient(ellipse at 50% -10%, ${accent}50, transparent 55%), ` +
+      `radial-gradient(ellipse at 85% 110%, ${accent}30, transparent 55%), ` +
+      `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.06), transparent 50%)`,
+  };
+}
+
 export interface CozyGameViewProps {
   round: CozyGameRoundState;
   /** Bildschirm-Größe wird vom Parent reingegeben (z.B. via useWindowDimensions). */
   width: number;
   height: number;
+  /** 2026-05-17 v13: Team-Liste für Winner-Reveal-Slide (Avatare + Namen).
+   *  Wird vom QQBeamerPage als renderState.teams durchgereicht. */
+  teams?: QQTeam[];
 }
 
-export default function CozyGameView({ round, width, height }: CozyGameViewProps) {
+export default function CozyGameView({ round, width, height, teams }: CozyGameViewProps) {
   const [games, setGames] = useState<CozyGame[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -201,6 +228,7 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
           game={activeGame}
           winnerTeamIds={round.winnerTeamIds}
           accentColor={accent}
+          teams={teams ?? []}
         />
       );
       break;
@@ -288,16 +316,24 @@ function PersistentWolfLayer({ wolfMode, speech, speechKey }: {
 }
 
 // ── Full-Screen-Wrapper ──────────────────────────────────────────────────────
-function FullScreenLayout({ children, width, height }: { children: React.ReactNode; width: number; height: number }) {
+// 2026-05-17 v11 (Wolf): Standard-Brand-BG statt Navy-Gradient. Fireflies in
+// COZY_PINK damit Intro/Wheel optisch ins Quiz passt (gleicher Look wie Pause/
+// Comeback/Question-Views). `position: relative` damit absolute Children
+// (Wheel-Pointer, Wave-Overlay, Fireflies) auf FullScreenLayout anchorn.
+function FullScreenLayout({ children, width, height, accent = COZY_PINK }: {
+  children: React.ReactNode; width: number; height: number; accent?: string;
+}) {
   return (
     <div style={{
       width, height,
-      background: `linear-gradient(180deg, ${COZY_NAVY} 0%, #0F1736 100%)`,
+      ...darkBgWithAccent(accent),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 24,
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
+      position: 'relative',
     }}>
+      <Fireflies color={`${accent}55`} />
       {children}
     </div>
   );
@@ -412,31 +448,55 @@ function WheelView({
     return () => window.clearTimeout(handle);
   }, [finalAngle]);
 
-  const size = Math.min(width * 0.5, height * 0.7);
+  // 2026-05-17 v10 (Wolf 'mittig + größer'): Rad-Größe + Layout neu strukturiert.
+  // Vorher: container size×(size+60), Pointer oben drin → Wheel-Kreis lag
+  // 30px unter container-Mid → wirkte nach unten verschoben in FullScreenLayout.
+  // Jetzt: container size×size (= Wheel-Kreis), Pointer stickt absolut OBEN
+  // RAUS via negative top → Wheel ist exakt der zentrierte Block in FullScreenLayout.
+  // 2026-05-17 v15 (Wolf 'wheel noch etwas größer'): 0.62/0.82 → 0.68/0.86.
+  const size = Math.min(width * 0.68, height * 0.86);
 
-  // 2026-05-17 v3 (Wolf): Team-Farben-Palette (8 Slots, deckt sich mit
-  // Avatar-Slots) — visuelle Konsistenz zur Team-Brand.
-  const SLICE_PALETTE = QQ_TEAM_PALETTE;
+  // 2026-05-17 v15 (Wolf 'farben auf dem wheel gleich dunkel wie im bg'):
+  // Pre-computed Dark-Versionen der QQ_TEAM_PALETTE (35% bright + 65% #0A0814).
+  // Slices nehmen die dunkle Variante (matched dem BG-Look), Pointer-Wave +
+  // accent-Tint im Detail-View nutzen weiter die bright-Farben für den
+  // Reveal-Kontrast (dunkel → bright flood → dunkel + bright tint).
+  const SLICE_PALETTE = [
+    '#5F2139', // shiba (was #FA507F)
+    '#3D4C1D', // faultier (was #9DCB2F)
+    '#142C57', // pinguin (was #266FD3)
+    '#3C2958', // koala (was #9A65D5)
+    '#5F4B14', // giraffe (was #FEC814)
+    '#2B4447', // waschbaer (was #68B4A5)
+    '#602E18', // kuh (was #FF751F)
+    '#5D1D1A', // capybara (was #F84326)
+  ];
 
   // 2026-05-17 v4 (Wolf): Zoom-Approach verworfen — SVG-Rotation + Container-
   // Scale beißen sich. Stattdessen Slice-Color-Wave (siehe wash-Overlay unten).
   const sliceColorForWave = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
   const waveActive = !spinning && !!revealedGame;
+  // 2026-05-17 v11: BG-Akzent folgt der Slice-Farbe wenn revealed, sonst
+  // brand-pink. So nimmt der dunkle Hintergrund schon im Wheel-Result die
+  // spätere Detail-Farbe an — schmiert smooth zur Wave-Reveal.
+  const bgAccent = !spinning && revealedGame ? sliceColorForWave : COZY_PINK;
   return (
-    <FullScreenLayout width={width} height={height}>
-      {/* Pointer oben mit Pulse beim Stop */}
+    <FullScreenLayout width={width} height={height} accent={bgAccent}>
+      {/* Wheel-Container: exakt size×size, Pointer ragt absolut nach oben raus
+          (negative top), damit der Wheel-Kreis selbst der flex-zentrierte Block
+          ist und visuell mittig sitzt. */}
       <div style={{
-        position: 'relative', width: size, height: size + 60,
+        position: 'relative', width: size, height: size,
       }}>
         <div style={{
           position: 'absolute',
-          top: 0,
+          top: -44,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 0, height: 0,
-          borderLeft: '24px solid transparent',
-          borderRight: '24px solid transparent',
-          borderTop: `40px solid ${COZY_PINK}`,
+          borderLeft: '26px solid transparent',
+          borderRight: '26px solid transparent',
+          borderTop: `44px solid ${COZY_PINK}`,
           zIndex: 2,
           // 2026-05-17 v7 (Wolf 'lichtkegel über feld sieht weird aus'):
           // Pink-Glow nach Stop entfernt — Pointer bleibt clean ohne Strahl
@@ -449,7 +509,7 @@ function WheelView({
           viewBox="-100 -100 200 200"
           style={{
             position: 'absolute',
-            top: 60, left: 0,
+            top: 0, left: 0,
             transform: `rotate(${renderAngle}deg)`,
             transition: spinning
               ? 'transform 6.5s cubic-bezier(0.14, 0.6, 0.2, 1)'
@@ -510,13 +570,10 @@ function WheelView({
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
-      {/* 2026-05-17 v7 (Wolf 'rad dreht sich text überflüssig'): Status-Text
-          entfernt. Bottom-Slot bleibt nur als minHeight-Platzhalter damit
-          Rad-Position konstant zwischen spinning und post-spin. */}
-      <div style={{
-        minHeight: 'clamp(120px, 18vh, 200px)',
-        width: '100%',
-      }} />
+      {/* 2026-05-17 v10 (Wolf 'mittig + größer'): Bottom-Placeholder entfernt.
+          Vorher hatte er das Rad nach oben gedrückt (justifyContent:center
+          mittete den Stack wheel+placeholder, nicht das Rad). Jetzt ist das
+          Rad das einzige flex-Item → exakt mittig zentriert. */}
       {/* 2026-05-17 (Wolf): Konfetti-Burst beim Stop für extra Pop. */}
       {!spinning && revealedGame && (
         <>
@@ -534,20 +591,31 @@ function WheelView({
               15%  { opacity: 1; }
               100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
             }
+            /* 2026-05-17 v11 (Wolf 'CG-slides dunkler + fireflies'): Wave
+               fadet am Ende aus statt solid stehen zu bleiben, damit der
+               darunterliegende dunkle Brand-BG durchscheint und kein harter
+               Cut zum GameDetailView entsteht. */
+            @keyframes cozyGameWaveFadeOut {
+              0%   { opacity: 1; }
+              100% { opacity: 0; }
+            }
           `}</style>
           <ConfettiOverlay />
           {/* Slice-Color-Wave: solide Slice-Farbe expandiert via clip-path
               vom Pointer-Position (oben) zu Vollbild.
               2026-05-17 v6 (Wolf 'farbe direkt deckend'): plain solid color,
-              kein Gradient mehr zu Navy. Plus Detail-View-BG identisch
-              solid → kein Schimmer-Bruch beim Stage-Wechsel. */}
+              kein Gradient mehr zu Navy.
+              2026-05-17 v11 (Wolf 'dunkler + fireflies'): Nach Wave-Fill
+              (2.7s) fadet die Welle in 0.9s aus → darunterliegender Dark-BG
+              wird sichtbar → seamless Übergang zu GameDetailView (das den
+              gleichen Dark-BG nutzt). */}
           {waveActive && (
             <div style={{
               position: 'absolute', inset: 0,
               background: sliceColorForWave,
               pointerEvents: 'none',
               zIndex: 40,
-              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',
+              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both, cozyGameWaveFadeOut 0.9s ease-out 2.7s both',
             }} />
           )}
         </>
@@ -575,14 +643,18 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
   return (
     <div style={{
       width, height,
-      background: accentColor,
+      // 2026-05-17 v11 (Wolf 'CG-slides dunkler + fireflies wie restliches quiz'):
+      // Dunkler Brand-BG mit Slice-Color-Radial-Tint statt voller Slice-Farbe.
+      ...darkBgWithAccent(accentColor),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
+      position: 'relative',
     }}>
+      <Fireflies color={`${accentColor}55`} />
       <style>{`
         @keyframes cozyGameLogoPop {
           0%   { transform: scale(0.6); opacity: 0; }
@@ -598,6 +670,14 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
           70%  { opacity: 1; transform: scale(1.08); }
           100% { opacity: 1; transform: scale(1); }
         }
+        /* 2026-05-17 v12 (Wolf 'lass die avatare hovern auf den minigame
+           pages'): Game-Emoji floatet sanft auf/ab — wirkt lebendig statt
+           still stehend. Wrapper macht Hover, Inner macht Pop-In → Transforms
+           komponieren sich via DOM-Nesting (keine Animation-Konflikte). */
+        @keyframes cozyGameEmojiFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-14px); }
+        }
       `}</style>
       {/* 2026-05-17 v5 (Wolf 'noch nicht ganz smooth'): Stagger-Pop-Animations
           gekürzt und synchronisiert. Vorher 0.3/0.6/0.9/1.1s Delays = Inhalt
@@ -606,15 +686,22 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
           selbst hat fade-in damit nahtloser Anschluss an Wave. */}
       {/* 2026-05-17 v8 (Wolf 'größe noch anpassen'): Gesamt-Layout verkleinert
           damit Logo + Name + Description + Tags + Timer alle in 1080p Beamer
-          passen ohne Overflow. */}
+          passen ohne Overflow.
+          2026-05-17 v12 (Wolf 'avatare sollen hovern'): Hover-Wrapper + Pop-In
+          Inner — Transforms komponieren ohne Konflikt. Hover startet nach
+          Pop-In-Dauer (0.5s delay). */}
       <div style={{
-        fontSize: 'clamp(96px, 14vw, 220px)',
-        lineHeight: 1,
-        filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
-        opacity: 0,
-        animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        animation: 'cozyGameEmojiFloat 3s ease-in-out 0.5s infinite',
       }}>
-        {game.emoji}
+        <div style={{
+          fontSize: 'clamp(96px, 14vw, 220px)',
+          lineHeight: 1,
+          filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
+          opacity: 0,
+          animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        }}>
+          {game.emoji}
+        </div>
       </div>
       <div style={{
         fontSize: 'clamp(36px, 4.5vw, 76px)',
@@ -757,102 +844,177 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 }
 
 // ── WINNER SELECT (zwischen Spiel-Ende und PLACEMENT) ────────────────────────
-function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor }: {
+// 2026-05-17 v13 (Wolf 'es gibt keinen winner reveal slide? auf dem das
+// gewinnerteam mit avatar angezeigt werden würde'): Zwei distinct States:
+//   1. winnerTeamIds.length === 0 → Wartebild ("Zeit abgelaufen, Mod wählt")
+//      mit Game-Info als Kontext.
+//   2. winnerTeamIds.length > 0 → Winner-Hero-Slide: große Avatar(e) + Name(n)
+//      mit 🏆-Headline + Game-Caption. Game-Info tritt zurück.
+function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, teams }: {
   width: number; height: number;
   game: CozyGame | null;
   winnerTeamIds: string[];
   accentColor: string;
+  teams: QQTeam[];
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
       <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
     </FullScreenLayout>;
   }
-  // 2026-05-17 v8 (Wolf 'winner select im gleichen design wie game active,
-  // nur aufgelöst mit winner team'): WinnerSelectView nutzt gleiches Layout
-  // wie GameDetailView (Slice-Farbe BG + Logo + Name + Description + Tags),
-  // im Timer-Slot kommt die Zeit-abgelaufen-Card + Sieger-Status.
+  const winners = winnerTeamIds
+    .map(id => teams.find(t => t.id === id))
+    .filter((t): t is QQTeam => !!t);
+  const hasWinners = winners.length > 0;
   return (
     <div style={{
       width, height,
-      background: accentColor,
+      ...darkBgWithAccent(accentColor),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
+      position: 'relative',
     }}>
-      <div style={{
-        fontSize: 'clamp(96px, 14vw, 220px)',
-        lineHeight: 1,
-        filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
-      }}>
-        {game.emoji}
-      </div>
-      <div style={{
-        fontSize: 'clamp(36px, 4.5vw, 76px)',
-        fontWeight: 900,
-        letterSpacing: '-0.02em',
-        textAlign: 'center',
-        textShadow: '0 4px 24px rgba(0,0,0,0.5)',
-      }}>
-        {game.name}
-      </div>
-      <div style={{
-        fontSize: 'clamp(16px, 1.6vw, 26px)',
-        color: 'rgba(255,255,255,0.92)',
-        maxWidth: 1000,
-        textAlign: 'center',
-        lineHeight: 1.4,
-        padding: '0 40px',
-      }}>
-        {game.description}
-      </div>
-      {game.materialTags.length > 0 && (
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
-          maxWidth: 900, padding: '0 40px',
-        }}>
-          {game.materialTags.map(t => (
-            <span key={t} style={{
-              padding: '4px 12px',
-              background: 'rgba(0,0,0,0.25)',
-              border: '1.5px solid rgba(255,255,255,0.35)',
-              borderRadius: 999,
-              fontSize: 'clamp(12px, 1vw, 16px)',
-              fontWeight: 700,
-              color: '#fff',
-            }}>{t}</span>
-          ))}
-        </div>
+      <Fireflies color={`${accentColor}55`} />
+      <style>{`
+        @keyframes cozyGameTimerSlotIn {
+          0%   { opacity: 0; transform: scale(0.4); }
+          70%  { opacity: 1; transform: scale(1.08); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes cozyGameEmojiFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-14px); }
+        }
+        /* Winner-Avatar Pop+Hover: pop-in (0.6s), dann floaten. Wrapper
+           macht Float, Inner macht Pop — Transforms komponieren via DOM. */
+        @keyframes cozyGameWinnerPop {
+          0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+          60%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes cozyGameWinnerHeadline {
+          0%   { opacity: 0; transform: translateY(-20px) scale(0.9); }
+          60%  { opacity: 1; transform: translateY(0) scale(1.05); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+
+      {hasWinners ? (
+        // ── HERO: Winner-Reveal mit Avataren + Namen ──────────────────────
+        <>
+          {/* 🏆 Headline */}
+          <div style={{
+            fontSize: 'clamp(56px, 6.5vw, 110px)',
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
+            textAlign: 'center',
+            textShadow: '0 6px 28px rgba(0,0,0,0.55)',
+            animation: 'cozyGameWinnerHeadline 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          }}>
+            🏆 {winners.length === 1 ? 'Gewonnen!' : `${winners.length} Sieger!`}
+          </div>
+          {/* Avatar-Row (1 oder N — bei Tie nebeneinander) */}
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 'clamp(20px, 3vw, 56px)',
+            alignItems: 'flex-start', justifyContent: 'center',
+            maxWidth: '90%', marginTop: 'clamp(8px, 1vh, 18px)',
+          }}>
+            {winners.map((t, i) => (
+              <div key={t.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 'clamp(8px, 1.2vh, 16px)',
+                animation: `cozyGameEmojiFloat 3s ease-in-out ${i * 0.15}s infinite`,
+              }}>
+                <div style={{
+                  width: 'clamp(140px, 18vw, 240px)',
+                  height: 'clamp(140px, 18vw, 240px)',
+                  animation: `cozyGameWinnerPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.15 + i * 0.1}s both`,
+                  filter: 'drop-shadow(0 10px 28px rgba(0,0,0,0.55))',
+                }}>
+                  <QQTeamAvatar
+                    avatarId={t.avatarId}
+                    teamEmoji={t.emoji}
+                    size="100%"
+                    bgColor={t.color}
+                  />
+                </div>
+                <div style={{
+                  fontSize: 'clamp(22px, 2.4vw, 42px)',
+                  fontWeight: 900,
+                  letterSpacing: '-0.01em',
+                  textAlign: 'center',
+                  textShadow: '0 4px 16px rgba(0,0,0,0.45)',
+                  maxWidth: 'clamp(160px, 20vw, 280px)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  animation: `cozyGameWinnerHeadline 0.5s ease-out ${0.3 + i * 0.1}s both`,
+                }}>
+                  {t.name}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Game-Caption (klein, Kontext) */}
+          <div style={{
+            marginTop: 'clamp(10px, 1.5vh, 22px)',
+            fontSize: 'clamp(16px, 1.6vw, 26px)',
+            color: 'rgba(255,255,255,0.85)',
+            textAlign: 'center',
+            display: 'flex', alignItems: 'center', gap: 10,
+            opacity: 0,
+            animation: 'cozyGameWinnerHeadline 0.4s ease-out 0.5s both',
+          }}>
+            <span style={{ fontSize: 'clamp(28px, 3vw, 48px)', lineHeight: 1 }}>{game.emoji}</span>
+            <span><strong>{game.name}</strong> — gewinnt 1 Aktion auf dem Grid</span>
+          </div>
+        </>
+      ) : (
+        // ── WAITING: Mod hat noch keinen Sieger gewählt ───────────────────
+        <>
+          <div style={{
+            fontSize: 'clamp(96px, 14vw, 220px)',
+            lineHeight: 1,
+            filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
+            animation: 'cozyGameEmojiFloat 3s ease-in-out infinite',
+          }}>
+            {game.emoji}
+          </div>
+          <div style={{
+            fontSize: 'clamp(36px, 4.5vw, 76px)',
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
+            textAlign: 'center',
+            textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          }}>
+            {game.name}
+          </div>
+          <div style={{
+            height: 'clamp(180px, 22vh, 260px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{
+              padding: '14px 28px',
+              background: 'rgba(0,0,0,0.3)',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderRadius: 16,
+              textAlign: 'center',
+              animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            }}>
+              <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900 }}>
+                ⏱️ Zeit abgelaufen!
+              </div>
+              <div style={{ fontSize: 'clamp(14px, 1.3vw, 22px)', marginTop: 6, opacity: 0.9 }}>
+                ⏳ Moderator wählt den Sieger …
+              </div>
+            </div>
+          </div>
+        </>
       )}
-      {/* Sieger-Slot: gleiche fixe Höhe wie Timer-Slot in GameDetailView
-          damit Card+Description+Tags an gleicher Position bleiben. */}
-      <div style={{
-        height: 'clamp(180px, 22vh, 260px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          padding: '14px 28px',
-          background: 'rgba(0,0,0,0.3)',
-          border: '2px solid rgba(255,255,255,0.4)',
-          borderRadius: 16,
-          textAlign: 'center',
-          animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-        }}>
-          <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900 }}>
-            ⏱️ Zeit abgelaufen!
-          </div>
-          <div style={{ fontSize: 'clamp(14px, 1.3vw, 22px)', marginTop: 6, opacity: 0.9 }}>
-            {winnerTeamIds.length === 0
-              ? '⏳ Moderator wählt den Sieger …'
-              : winnerTeamIds.length === 1
-                ? '✨ Sieger steht fest!'
-                : `✨ ${winnerTeamIds.length} Sieger (Tie)`}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

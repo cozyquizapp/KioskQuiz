@@ -1984,6 +1984,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   round={renderState.cozyGame}
                   width={typeof window !== 'undefined' ? window.innerWidth : 1920}
                   height={typeof window !== 'undefined' ? window.innerHeight : 1080}
+                  teams={renderState.teams}
                 />
               )}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}

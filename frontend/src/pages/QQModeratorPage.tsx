@@ -593,14 +593,22 @@ export default function QQModeratorPage() {
           delayMs = 3000;
           action = () => emit('qq:cozyGameAdvance', { roomCode });
         } else if (cg.phase === 'WINNER_SELECT') {
-          // Random Sieger aus connected echten Teams. Bei reiner Bot-Lobby
-          // (alle disconnected) fallback auf alle Teams.
-          const connectedReal = s.teams.filter((t: any) => t.connected);
-          const pool = connectedReal.length > 0 ? connectedReal : s.teams;
-          if (pool.length > 0) {
-            const winner = pool[Math.floor(Math.random() * pool.length)];
-            delayMs = 1200;
-            action = () => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [winner.id] });
+          const winnerIds: string[] = cg.winnerTeamIds ?? [];
+          if (winnerIds.length === 0) {
+            // Random Sieger aus connected echten Teams. Bei reiner Bot-Lobby
+            // (alle disconnected) fallback auf alle Teams.
+            const connectedReal = s.teams.filter((t: any) => t.connected);
+            const pool = connectedReal.length > 0 ? connectedReal : s.teams;
+            if (pool.length > 0) {
+              const winner = pool[Math.floor(Math.random() * pool.length)];
+              delayMs = 1200;
+              action = () => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [winner.id] });
+            }
+          } else {
+            // 2026-05-17 v9: Winner steht → kurze Reveal-Pause, dann auto-
+            // advance zum Grid (entspricht „Weiter zum Grid"-Klick des Mods).
+            delayMs = 2500;
+            action = () => emit('qq:cozyGameAdvance', { roomCode });
           }
         }
         // WHEEL_SPIN + GAME_ACTIVE: keine Mod-Action nötig (Backend-Timer)
@@ -2222,6 +2230,18 @@ export default function QQModeratorPage() {
                     );
                   }
                   if (cg.phase === 'WINNER_SELECT') {
+                    // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter
+                    // zum Grid'): Nach Winner-Pick erscheint statt des Pickers
+                    // ein „Weiter zum Grid"-Button — gleicher Flow wie sonst
+                    // im Quiz (Mod kontrolliert den Übergang manuell).
+                    const winnerIds: string[] = cg.winnerTeamIds ?? [];
+                    if (winnerIds.length > 0) {
+                      return (
+                        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                          ▶ Weiter zum Grid
+                        </PrimaryBtn>
+                      );
+                    }
                     return (
                       <CozyGameWinnerPicker
                         teamList={teamList}

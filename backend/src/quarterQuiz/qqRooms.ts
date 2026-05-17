@@ -5831,7 +5831,6 @@ export function qqCozyGameSelectWinner(
     }
     room.cozyGameFinalSlotPlayed = true;
   } else {
-    // roundPause: aktuelle Phase als gespielt markieren
     if (!Array.isArray(room.cozyGamesPlayedAfterPhases)) {
       room.cozyGamesPlayedAfterPhases = [];
     }
@@ -5839,10 +5838,25 @@ export function qqCozyGameSelectWinner(
       room.cozyGamesPlayedAfterPhases.push(room.gamePhaseIndex);
     }
   }
+  // 2026-05-17 v8 (Wolf 'reveal wird übersprungen'): Phase bleibt COZY_GAME /
+  // WINNER_SELECT — Beamer zeigt Winner-Reveal-Card. Socket-Handler setTimeout
+  // 2.5s → qqCozyGameAdvanceToPlacement.
+  room.lastActivityAt = Date.now();
+}
 
-  // ── Action-Pipeline (analog zu qqStartPlacement, ohne assertPhase-Guard) ──
-  // Bei mehreren Siegern: erster kriegt Aktion, Rest landet in _placementQueue.
-  // _currentQuestionWinners setzen für Konsistenz mit Quiz-Flow (Stats).
+/** 2026-05-17 v8: nach Winner-Reveal-Pause → Action-Pipeline starten.
+ *  Setzt pendingFor + pendingAction analog zu qqStartPlacement,
+ *  Phase wechselt zu PLACEMENT. */
+export function qqCozyGameAdvanceToPlacement(room: QQRoomState): void {
+  if (!room.cozyGame || room.cozyGame.phase !== 'WINNER_SELECT') return;
+  const validIds = room.cozyGame.winnerTeamIds.filter(id => !!room.teams[id]);
+  if (validIds.length === 0) {
+    // Kein Sieger → CG-State auf null, zurück zu vorherigem Phase-Flow
+    room.cozyGame = null;
+    return;
+  }
+
+  // Action-Pipeline (analog zu qqStartPlacement):
   room._currentQuestionWinners = validIds.slice();
   room.correctTeamId = validIds[0];
   if (validIds.length > 1) {
@@ -5852,7 +5866,6 @@ export function qqCozyGameSelectWinner(
   const firstWinner = validIds[0];
   room.pendingFor = firstWinner;
   let action = pendingActionForPhase(room, firstWinner);
-  // PLACE_2-Degrade wie in qqStartPlacement (Anti-Stuck bei 1 freiem Feld)
   if (action === 'PLACE_2') {
     const freeCells = room.grid.reduce(
       (sum, row) => sum + row.filter(c => c.ownerId === null).length, 0

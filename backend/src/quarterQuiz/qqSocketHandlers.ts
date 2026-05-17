@@ -54,7 +54,8 @@ import {
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqResolveFinalBets,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
-  qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner, qqCozyGameCancel,
+  qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
+  qqCozyGameAdvanceToPlacement, qqCozyGameCancel,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -3080,6 +3081,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqCozyGameSelectWinner(room, payload.teamIds ?? []);
         broadcast(io, payload.roomCode);
+        // 2026-05-17 v8 (Wolf 'reveal übersprungen + autoplay nach minigame
+        // fehlt'): 2.5s Pause → Winner-Card sichtbar. Danach Action-Pipeline
+        // starten + maybeAutoPlace (Dummies setzen automatisch).
+        setTimeout(() => {
+          const live = getQQRoom(payload.roomCode);
+          if (!live || !live.cozyGame || live.cozyGame.phase !== 'WINNER_SELECT') return;
+          qqCozyGameAdvanceToPlacement(live);
+          broadcast(io, payload.roomCode);
+          if (live.phase === 'PLACEMENT' && live.pendingFor) {
+            maybeAutoPlace(io, payload.roomCode);
+          }
+        }, 2500);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

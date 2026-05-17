@@ -108,10 +108,13 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          ['A', 'A', '⭐',  'A'],   // ⭐ neben 2×2-Block oben rechts (Bonus-Feld)
-          ['A', 'A',  null, 'A'],
+          // 2026-05-17 (Wolf): Joker sitzt ON dem Muster, nicht daneben.
+          // 2×2-Block oben links mit ⭐ als eine seiner 4 Zellen (1,0).
+          // 4er-Reihe rechts mit ⭐ als eine seiner 4 Zellen (3,2).
+          ['A',  '⭐', null, 'A'],
+          ['A',  'A',  null, 'A'],
+          [null, null, null, '⭐'],
           [null, null, null, 'A'],
-          [null, null, '⭐', 'A'],   // ⭐ neben 4er-Reihe unten links (Bonus-Feld)
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
@@ -228,10 +231,13 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          ['A', 'A', '⭐',  'A'],   // ⭐ next to 2×2 block top-right (bonus tile)
-          ['A', 'A',  null, 'A'],
+          // 2026-05-17 (Wolf): Joker sits ON the pattern, not beside it.
+          // 2×2 block top-left with ⭐ as one of its 4 cells (1,0).
+          // 4-in-a-row right with ⭐ as one of its 4 cells (3,2).
+          ['A',  '⭐', null, 'A'],
+          ['A',  'A',  null, 'A'],
+          [null, null, null, '⭐'],
           [null, null, null, 'A'],
-          [null, null, '⭐', 'A'],   // ⭐ next to 4-row bottom-left (bonus tile)
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Both patterns count'),

@@ -122,12 +122,11 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       setResultStage('wheel');
       return;
     }
-    // 2026-05-17 v3 (Wolf): Zoom-Choreo
-    //   0.0s  spinning=false → 1.2s Stop-Snap (overshoot) startet
-    //   1.2s  Stop-Snap fertig → 1.2s Zoom-In startet
-    //   2.4s  Zoom-In fertig → Stage-Wechsel
-    // Stage 'wheel' bleibt also 2.6s damit Detail-View erst NACH Zoom kommt.
-    const t = window.setTimeout(() => setResultStage('detail'), 2600);
+    // 2026-05-17 v4 (Wolf): Slice-Color-Wave statt Zoom
+    //   0.0s  spinning=false → 1.2s Stop-Snap startet
+    //   1.2s  Snap fertig → Wave-Animation startet (1.5s)
+    //   2.7s  Wave fertig (Screen ist in Slice-Farbe) → Stage-Wechsel
+    const t = window.setTimeout(() => setResultStage('detail'), 2700);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 
@@ -246,30 +245,26 @@ function WithWolf({ wolfMode, speech, speechKey, children }: {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {children}
+      {/* 2026-05-17 v3 (Wolf 'sprechblase nicht am Wolf-Mund'): vertikales
+          Stack analog Lobby-Pattern — Bubble OBEN, Wolf DRUNTER. Tail unten
+          rechts der Bubble zeigt direkt auf den Wolf-Kopf darunter. */}
       <div style={{
         position: 'absolute',
         bottom: 24, right: 32,
         zIndex: 50,
         pointerEvents: 'none',
         animation: 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-        // 2026-05-17 (Wolf 'sprechblase nicht in nähe von wolfs mund'):
-        // Bubble-Tail-Anker auf Wolf-Mund-Höhe. Wolf-Mund liegt grob bei
-        // 35-45% Höhe des Avatars (von oben). Container alignItems:flex-end
-        // war zu tief (Tail zeigte aufs Kinn statt Mund). Jetzt: Bubble
-        // direkt am Wolf-Mund-Bereich positionieren.
-        display: 'flex', alignItems: 'flex-start', gap: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0,
       }}>
-        <div style={{ marginTop: 'clamp(20px, 3vw, 50px)' }}>
-          <SpeechBubble
-            text={speech}
-            bubbleKey={speechKey}
-            enterMs={400}
-            speakMs={speakMs}
-            exitMs={400}
-            tailSide="right"
-            size="md"
-          />
-        </div>
+        <SpeechBubble
+          text={speech}
+          bubbleKey={speechKey}
+          enterMs={400}
+          speakMs={speakMs}
+          exitMs={400}
+          tailSide="right"
+          size="md"
+        />
         <AnimatedCozyWolf
           widthCss="clamp(120px, 11vw, 200px)"
           mode={wolfMode as any}
@@ -398,20 +393,15 @@ function WheelView({
   // Avatar-Slots) — visuelle Konsistenz zur Team-Brand.
   const SLICE_PALETTE = QQ_TEAM_PALETTE;
 
-  // 2026-05-17 v3 (Wolf 'sieht nicht wirklich wie zoom aus'): dramatischer
-  // Zoom — scale 4 + translateY 35% schiebt den Winner-Slice (oben am Pointer)
-  // ins Bild-Zentrum und füllt den Screen. Delay 1.2s damit Stop-Snap-Overshoot
-  // fertig läuft bevor Zoom startet. Dauer 1.2s mit Ease-Out → fühlt sich
-  // wie reinfliegen an.
-  const zoomingIn = !spinning && !!revealedGame;
+  // 2026-05-17 v4 (Wolf): Zoom-Approach verworfen — SVG-Rotation + Container-
+  // Scale beißen sich. Stattdessen Slice-Color-Wave (siehe wash-Overlay unten).
+  const sliceColorForWave = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+  const waveActive = !spinning && !!revealedGame;
   return (
     <FullScreenLayout width={width} height={height}>
       {/* Pointer oben mit Pulse beim Stop */}
       <div style={{
         position: 'relative', width: size, height: size + 60,
-        transform: zoomingIn ? 'scale(4) translateY(35%)' : 'scale(1) translateY(0)',
-        transition: 'transform 1.2s cubic-bezier(0.32, 0, 0.18, 1) 1.2s',
-        transformOrigin: 'center top',
       }}>
         <div style={{
           position: 'absolute',
@@ -552,8 +542,25 @@ function WheelView({
               75%  { opacity: 1; }
               100% { transform: translateY(100vh) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
             }
+            @keyframes cozyGameColorWave {
+              0%   { clip-path: circle(0% at 50% 8%); opacity: 0; }
+              15%  { opacity: 1; }
+              100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
+            }
           `}</style>
           <ConfettiOverlay />
+          {/* Slice-Color-Wave: radialer Wash von der Pointer-Position aus,
+              expandiert mit clip-path zu Vollbild in Slice-Farbe. Startet
+              1.2s nach spinning=false (Stop-Snap fertig), läuft 1.5s. */}
+          {waveActive && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `radial-gradient(circle at 50% 50%, ${sliceColorForWave} 0%, ${sliceColorForWave}ee 60%, ${sliceColorForWave}aa 100%)`,
+              pointerEvents: 'none',
+              zIndex: 40,
+              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',
+            }} />
+          )}
         </>
       )}
     </FullScreenLayout>

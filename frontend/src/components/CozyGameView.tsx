@@ -122,8 +122,12 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       setResultStage('wheel');
       return;
     }
-    // 2026-05-17 v2 (Wolf): 1s Zoom auf Pizzastück, dann Slide-Wechsel.
-    const t = window.setTimeout(() => setResultStage('detail'), 1000);
+    // 2026-05-17 v3 (Wolf): Zoom-Choreo
+    //   0.0s  spinning=false → 1.2s Stop-Snap (overshoot) startet
+    //   1.2s  Stop-Snap fertig → 1.2s Zoom-In startet
+    //   2.4s  Zoom-In fertig → Stage-Wechsel
+    // Stage 'wheel' bleibt also 2.6s damit Detail-View erst NACH Zoom kommt.
+    const t = window.setTimeout(() => setResultStage('detail'), 2600);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 
@@ -394,17 +398,20 @@ function WheelView({
   // Avatar-Slots) — visuelle Konsistenz zur Team-Brand.
   const SLICE_PALETTE = QQ_TEAM_PALETTE;
 
-  // 2026-05-17 v2 (Wolf 'zoom rein ins pizzastück'): nach Stop-Snap zoomt
-  // das Rad auf den Winner-Slice (oben am Pointer durch die Spin-Rotation).
-  // Translate Y +30% schiebt die Mitte zum Pointer-Bereich, scale verstärkt.
+  // 2026-05-17 v3 (Wolf 'sieht nicht wirklich wie zoom aus'): dramatischer
+  // Zoom — scale 4 + translateY 35% schiebt den Winner-Slice (oben am Pointer)
+  // ins Bild-Zentrum und füllt den Screen. Delay 1.2s damit Stop-Snap-Overshoot
+  // fertig läuft bevor Zoom startet. Dauer 1.2s mit Ease-Out → fühlt sich
+  // wie reinfliegen an.
   const zoomingIn = !spinning && !!revealedGame;
   return (
     <FullScreenLayout width={width} height={height}>
       {/* Pointer oben mit Pulse beim Stop */}
       <div style={{
         position: 'relative', width: size, height: size + 60,
-        transform: zoomingIn ? 'scale(2.2) translateY(20%)' : 'scale(1) translateY(0)',
-        transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1) 0.4s',
+        transform: zoomingIn ? 'scale(4) translateY(35%)' : 'scale(1) translateY(0)',
+        transition: 'transform 1.2s cubic-bezier(0.32, 0, 0.18, 1) 1.2s',
+        transformOrigin: 'center top',
       }}>
         <div style={{
           position: 'absolute',

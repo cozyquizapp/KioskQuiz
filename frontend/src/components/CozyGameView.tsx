@@ -3,6 +3,7 @@ import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart } from '../utils/sounds';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
+import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -415,37 +416,47 @@ function WheelView({
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
-      {/* Status-Text */}
-      {spinning && (
-        <div style={{
-          fontSize: 'clamp(20px, 2vw, 36px)',
-          fontWeight: 700,
-          color: '#fff',
-          animation: 'qqSpinSlow 1.2s ease-in-out infinite',
-        }}>
-          🪅 Das Rad dreht …
-        </div>
-      )}
-      {!spinning && revealedGame && (
-        <div style={{
-          padding: '24px 40px',
-          background: 'rgba(255,255,255,0.08)',
-          border: `3px solid ${COZY_PINK}`,
-          borderRadius: 20,
-          display: 'flex', alignItems: 'center', gap: 20,
-          marginTop: 12,
-          boxShadow: `0 0 60px ${COZY_PINK}55, 0 0 20px ${COZY_PINK}33`,
-          animation: 'qqPhasePop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
-        }}>
-          <span style={{ fontSize: 64 }}>{revealedGame.emoji}</span>
-          <div>
-            <div style={{ fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900 }}>{revealedGame.name}</div>
-            <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#cbd5e1', marginTop: 4 }}>
-              {revealedGame.description}
+      {/* 2026-05-17 (Wolf 'nach reveal nicht verschieben'): Bottom-Slot mit
+          fixer minHeight damit Rad-Position konstant bleibt, egal ob Status-
+          Text oder Reveal-Card sichtbar ist. */}
+      <div style={{
+        minHeight: 'clamp(120px, 18vh, 200px)',
+        width: '100%',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        marginTop: 8,
+      }}>
+        {spinning && (
+          <div style={{
+            fontSize: 'clamp(20px, 2vw, 36px)',
+            fontWeight: 700,
+            color: '#fff',
+            animation: 'qqSpinSlow 1.2s ease-in-out infinite',
+          }}>
+            🪅 Das Rad dreht …
+          </div>
+        )}
+        {!spinning && revealedGame && (
+          <div style={{
+            padding: '24px 40px',
+            background: 'rgba(255,255,255,0.08)',
+            border: `3px solid ${COZY_PINK}`,
+            borderRadius: 20,
+            display: 'flex', alignItems: 'center', gap: 20,
+            boxShadow: `0 0 60px ${COZY_PINK}55, 0 0 20px ${COZY_PINK}33`,
+            animation: 'qqPhasePop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
+          }}>
+            <span style={{ fontSize: 64 }}>{revealedGame.emoji}</span>
+            <div>
+              <div style={{ fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900 }}>{revealedGame.name}</div>
+              <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#cbd5e1', marginTop: 4 }}>
+                {revealedGame.description}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+      {/* 2026-05-17 (Wolf): Konfetti-Burst beim Stop für extra Pop. */}
+      {!spinning && revealedGame && <ConfettiOverlay />}
     </FullScreenLayout>
   );
 }

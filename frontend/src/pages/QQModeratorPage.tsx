@@ -4695,6 +4695,21 @@ function SetupView({
           </span>
         </div>
 
+        {/* CozyGames (Wolf 2026-05-17): analoge Mini-Spiele nach Runde 1 +
+            Final-Slot. Pool wird im Builder gesetzt, hier nur Live-On/Off-Toggle. */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🎲 CozyGames</span>
+          <div style={segGroup}>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true })} style={segPill(!!(s as any).cozyGamesEnabled, '#EC4899')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: false })} style={segPill(!(s as any).cozyGamesEnabled)}>Aus</button>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+            {(s as any).cozyGamesEnabled
+              ? `${((s as any).cozyGamesPool ?? []).length} Spiele im Rad — manueller Trigger via Pause-Button`
+              : 'Quiz ohne CozyGames'}
+          </span>
+        </div>
+
         {/* Reihenfolge der Fragen innerhalb der Runde */}
         <div style={settingRow}>
           <span style={settingLabel}>🔀 Reihenfolge</span>

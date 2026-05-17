@@ -3624,7 +3624,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[] },
       ack?: unknown
     ) => {
       try {
@@ -3634,6 +3634,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         if (typeof payload.shuffleQuestionsInRound === 'boolean') {
           room.shuffleQuestionsInRound = payload.shuffleQuestionsInRound;
+        }
+        // 2026-05-17 (CozyGames Live-Toggle im Mod-Setup): kann ohne Game-Restart
+        // umgestellt werden. Pool ändern setzt cozyGame-Round-State nicht zurück
+        // (falls gerade aktiv) — nur Setup-Defaults für neue Spiele.
+        if (typeof payload.cozyGamesEnabled === 'boolean') {
+          room.cozyGamesEnabled = payload.cozyGamesEnabled;
+        }
+        if (Array.isArray(payload.cozyGamesPool)) {
+          room.cozyGamesPool = payload.cozyGamesPool.slice(0, 8);
         }
         broadcast(io, payload.roomCode);
         ok(ack);

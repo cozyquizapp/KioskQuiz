@@ -122,6 +122,24 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
   const wolfMode = wolfModeForPhase(round.phase);
   const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame);
 
+  // 2026-05-17 (Wolf-Bug 'rad wird nach drehen nochmal getriggert'):
+  // WHEEL_RESULT war ein anderer Component (WheelResultPhase) → React
+  // mountete WheelView neu → renderAngle reset auf 0 → Re-Spin. Fix:
+  // WHEEL_SPIN und WHEEL_RESULT-Stage-1 nutzen DASSELBE WheelView-Element
+  // (gleiche Position im Tree → keine Re-Mount-Animation). Stage-Switch
+  // zu Detail-View nach ~2.8s im WHEEL_RESULT.
+  const inWheelPhase = round.phase === 'WHEEL_SPIN' || round.phase === 'WHEEL_RESULT';
+  const [resultStage, setResultStage] = useState<'wheel' | 'detail'>('wheel');
+  useEffect(() => {
+    if (round.phase !== 'WHEEL_RESULT') {
+      setResultStage('wheel');
+      return;
+    }
+    // ~2.8s im Stage 'wheel' bleiben, dann Zoom zu Detail-View.
+    const t = window.setTimeout(() => setResultStage('detail'), 2800);
+    return () => window.clearTimeout(t);
+  }, [round.phase]);
+
   switch (round.phase) {
     case 'INTRO':
       return (
@@ -131,28 +149,28 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       );
 
     case 'WHEEL_SPIN':
+    case 'WHEEL_RESULT': {
+      const isSpin = round.phase === 'WHEEL_SPIN';
+      const showDetail = !isSpin && resultStage === 'detail';
+      const targetIdx = round.wheelTargetSliceIndex ?? 0;
+      const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+      const speechKey = isSpin ? 'spin' : (showDetail ? `detail-${activeGame?.id ?? 'na'}` : `result-${activeGame?.id ?? 'na'}`);
       return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`spin`}>
-          <WheelView
-            width={width} height={height}
-            slices={availableForWheel}
-            targetIdx={round.wheelTargetSliceIndex ?? 0}
-            spinning={true}
-          />
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={speechKey}>
+          {showDetail ? (
+            <GameDetailView width={width} height={height} game={activeGame} accentColor={sliceColor} />
+          ) : (
+            <WheelView
+              width={width} height={height}
+              slices={availableForWheel}
+              targetIdx={targetIdx}
+              spinning={isSpin}
+              revealedGame={isSpin ? null : activeGame}
+            />
+          )}
         </WithWolf>
       );
-
-    case 'WHEEL_RESULT':
-      return (
-        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`result-${activeGame?.id ?? 'na'}`}>
-          <WheelResultPhase
-            width={width} height={height}
-            slices={availableForWheel}
-            targetIdx={round.wheelTargetSliceIndex ?? 0}
-            game={activeGame}
-          />
-        </WithWolf>
-      );
+    }
 
     case 'GAME_ACTIVE':
       return (
@@ -227,17 +245,24 @@ function WithWolf({ wolfMode, speech, speechKey, children }: {
         zIndex: 50,
         pointerEvents: 'none',
         animation: 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-        display: 'flex', alignItems: 'flex-end', gap: 8,
+        // 2026-05-17 (Wolf 'sprechblase nicht in nähe von wolfs mund'):
+        // Bubble-Tail-Anker auf Wolf-Mund-Höhe. Wolf-Mund liegt grob bei
+        // 35-45% Höhe des Avatars (von oben). Container alignItems:flex-end
+        // war zu tief (Tail zeigte aufs Kinn statt Mund). Jetzt: Bubble
+        // direkt am Wolf-Mund-Bereich positionieren.
+        display: 'flex', alignItems: 'flex-start', gap: 0,
       }}>
-        <SpeechBubble
-          text={speech}
-          bubbleKey={speechKey}
-          enterMs={400}
-          speakMs={speakMs}
-          exitMs={400}
-          tailSide="right"
-          size="md"
-        />
+        <div style={{ marginTop: 'clamp(20px, 3vw, 50px)' }}>
+          <SpeechBubble
+            text={speech}
+            bubbleKey={speechKey}
+            enterMs={400}
+            speakMs={speakMs}
+            exitMs={400}
+            tailSide="right"
+            size="md"
+          />
+        </div>
         <AnimatedCozyWolf
           widthCss="clamp(120px, 11vw, 200px)"
           mode={wolfMode as any}
@@ -517,36 +542,9 @@ function WheelView({
   );
 }
 
-// ── WHEEL_RESULT Phase: 2-Stages-Reveal ──────────────────────────────────────
-// Stage 1 (~2.8s): Rad steht still mit Reveal-Card unten (Wolf liest Spielname).
-// Stage 2: Zoom-Transition zu full-screen Slice-Farbe-Card mit großem Logo +
-// Description. Prezi-like Slide-Wechsel.
-function WheelResultPhase({ width, height, slices, targetIdx, game }: {
-  width: number; height: number;
-  slices: CozyGame[]; targetIdx: number;
-  game: CozyGame | null;
-}) {
-  const [stage, setStage] = useState<'wheel' | 'detail'>('wheel');
-  useEffect(() => {
-    const t = window.setTimeout(() => setStage('detail'), 2800);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
-
-  if (stage === 'wheel') {
-    return (
-      <WheelView
-        width={width} height={height}
-        slices={slices} targetIdx={targetIdx}
-        spinning={false} revealedGame={game}
-      />
-    );
-  }
-  return <GameDetailView width={width} height={height} game={game} accentColor={sliceColor} />;
-}
-
 // ── Game-Detail-Card: full-screen mit Slice-Farbe ────────────────────────────
+// Stage-2-Reveal nach Rad-Stop. Wird vom äußeren CozyGameView gerendert
+// (NICHT von einer Wrapper-Komponente — sonst remount → Re-Spin-Bug).
 function GameDetailView({ width, height, game, accentColor }: {
   width: number; height: number;
   game: CozyGame | null;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
+import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart } from '../utils/sounds';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 
@@ -321,18 +322,9 @@ function WheelView({
 
   const size = Math.min(width * 0.5, height * 0.7);
 
-  // 2026-05-17 (Wolf 'verschiedene farben'): 8-Farben-Brand-Palette statt
-  // Pink/Magenta-alternierend. Wechsel pro Slice, repeat wenn n > 8.
-  const SLICE_PALETTE = [
-    '#EC4899', // pink
-    '#A78BFA', // violet
-    '#FACC15', // amber
-    '#34D399', // mint
-    '#60A5FA', // sky
-    '#FB923C', // orange
-    '#F472B6', // light pink
-    '#A21247', // magenta-dark
-  ];
+  // 2026-05-17 v3 (Wolf): Team-Farben-Palette (8 Slots, deckt sich mit
+  // Avatar-Slots) — visuelle Konsistenz zur Team-Brand.
+  const SLICE_PALETTE = QQ_TEAM_PALETTE;
 
   return (
     <FullScreenLayout width={width} height={height}>

@@ -330,13 +330,18 @@ export default function QQProgressTree({
   })();
   const wolfOnFinale = showFinale && (showcaseOnFinale || wolfPhaseTarget === 'finale');
   const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding || wolfPhaseTarget === 'bidding');
-  const wolfOnCozyGame = !wolfOnFinale && !wolfOnBidding && showCozyGames && wolfPhaseTarget === 'cozyGame';
-  // Aktiver CG-Knoten: zwischen aktueller Phase und nächster. gamePhaseIndex
-  // ist 1-basiert (1..N) — pi ist 0-basiert. CG-Knoten zwischen Phase pi-1
-  // und pi steht bei key=pi. Wenn state.gamePhaseIndex=1 (= Runde 1 abgeschlossen),
-  // ist der CG-Knoten dazwischen bei pi=1 → cozyGameCentersByPi.get(1).
+  // 2026-05-17 (Wolf-Bug 'wolf überspringt minigame im showcase'):
+  // showcaseOnCozyGame muss Wolf-Pos auch auf den CG-Knoten setzen, nicht nur
+  // den Pan. Vorher: Wolf-Pos sprang von Phase 0 direkt zu Phase 1 (= übersprang CG).
+  const wolfOnCozyGame = !wolfOnFinale && !wolfOnBidding && showCozyGames
+    && (showcaseOnCozyGame || wolfPhaseTarget === 'cozyGame');
+  // Aktiver CG-Knoten:
+  // - Showcase-Mode (Rules-Roadmap): erster CG-Knoten (nur 1 Step im Sweep)
+  // - Live-Mode: CG-Knoten zwischen aktueller Phase und nächster (state.gamePhaseIndex)
   const activeCozyGameCenter = wolfOnCozyGame
-    ? (cozyGameCentersByPi.get(state.gamePhaseIndex) ?? cozyGameCentersByPi.values().next().value ?? 0)
+    ? (showcaseOnCozyGame
+        ? (cozyGameCentersByPi.values().next().value ?? 0)
+        : (cozyGameCentersByPi.get(state.gamePhaseIndex) ?? cozyGameCentersByPi.values().next().value ?? 0))
     : 0;
   const currentCenter = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter

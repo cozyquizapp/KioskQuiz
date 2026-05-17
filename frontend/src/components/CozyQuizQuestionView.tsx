@@ -2099,11 +2099,12 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           ausgestellt wurden (Anti-Public-Shaming). Sieger sind im Reveal-Card
           oben rechts; auf welchem Hinweis sie es hatten siehst du an den
           Hint-Cards mit Gold-Ring. */}
-      {/* 2026-05-09 v2 (Wolf-Reform): Submit-Status-Reihe — pre-reveal pro Team
-          Avatar mit ✓ wenn submitted (richtig) oder ✕ wenn locked.
-          2026-05-17 (Wolf): Konsistent zum Rest — grüner Glow + grüner Border
-          statt ✓-Badge (analog Bluff-Pattern). Anti-Spoiler bleibt: kein
-          Unterschied zwischen Hit/Locked von außen. */}
+      {/* 2026-05-09 v2 (Wolf-Reform): Submit-Status-Reihe — pre-reveal pro Team.
+          2026-05-17 v3 (Wolf): Anti-Spoiler nicht mehr nötig (alle 4 Hinweise
+          gleichzeitig sichtbar). Klare Differenzierung:
+            Sieger (correct)  → grüner Glow + grüner Ring
+            Locked (raus)     → roter Glow + roter Ring
+            nicht submitted   → grayscale + dim */}
       {!revealed && (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2114,23 +2115,26 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         {s.teams.map((tm) => {
           const isLocked = lockedSet.has(tm.id);
           const isWinner = winnerSet.has(tm.id);
-          const hasSubmitted = isLocked || isWinner;
+          const ringColor = isWinner ? '#22C55E' : isLocked ? '#EF4444' : `${tm.color}55`;
+          const glowFilter = isWinner
+            ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
+            : isLocked
+              ? 'drop-shadow(0 0 10px rgba(239,68,68,0.55)) drop-shadow(0 0 3px rgba(239,68,68,0.4))'
+              : 'grayscale(0.4)';
           return (
             <div key={tm.id} title={tm.name} style={{
               position: 'relative',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
-              opacity: hasSubmitted ? 1 : 0.55,
-              filter: hasSubmitted
-                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
-                : 'grayscale(0.4)',
+              opacity: (isWinner || isLocked) ? 1 : 0.55,
+              filter: glowFilter,
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5cqw, 72px)'} style={{
                 background: '#0A0814',
-                boxShadow: hasSubmitted
-                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
-                  : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                boxShadow: (isWinner || isLocked)
+                  ? `0 0 0 3px ${ringColor}, 0 4px 10px rgba(0,0,0,0.55)`
+                  : `0 0 0 2px ${ringColor}, 0 4px 10px rgba(0,0,0,0.55)`,
                 transition: 'box-shadow 0.45s ease',
               }} />
             </div>

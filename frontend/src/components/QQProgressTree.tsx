@@ -71,23 +71,35 @@ export default function QQProgressTree({
   // ein undefined-State (vor erstem State-Update) als „sichtbar".
   const showcaseHasBidding = state.finalWagerEnabled === true;
   const showcaseHasFinale  = state.connectionsEnabled === true;
-  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 : -1;
-  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases : totalPhases - 1;
+  // 2026-05-17 (P2 #7): CozyGame-Step nach Phase 0 (Runde 1) im Sweep.
+  const showcaseHasCozyGames = !!(state as any).cozyGamesEnabled
+    && Array.isArray((state as any).cozyGamesPool)
+    && (state as any).cozyGamesPool.length > 0;
+  // CozyGame-Step kommt direkt nach Phase 0 (Step-Idx 1, wenn aktiv).
+  const cozyGameStepIdx = showcaseHasCozyGames ? 1 : -1;
+  // Bidding/Finale verschieben sich um +1 wenn CozyGame aktiv.
+  const cozyGameOffset = showcaseHasCozyGames ? 1 : 0;
+  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 + cozyGameOffset : -1;
+  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases + cozyGameOffset : totalPhases - 1 + cozyGameOffset;
   const finaleStepIdx      = showcaseHasFinale
-    ? (showcaseHasBidding ? totalPhases + 1 : totalPhases)
+    ? (showcaseHasBidding ? totalPhases + 1 + cozyGameOffset : totalPhases + cozyGameOffset)
     : -1;
   const showcaseStepCount  = totalPhases
     + (showcaseHasBidding ? 1 : 0)
-    + (showcaseHasFinale ? 1 : 0);
-  // Mapping Sweep-Step → Quiz-Phase-Idx (-1 wenn Bid/Finale/out-of-range).
+    + (showcaseHasFinale ? 1 : 0)
+    + (showcaseHasCozyGames ? 1 : 0);
+  // Mapping Sweep-Step → Quiz-Phase-Idx (-1 wenn Bid/Finale/CG/out-of-range).
   // Verwendet weiter unten in showcaseTargetPhase + showcaseWolfIdx.
+  // 2026-05-17 (P2 #7): CG-Step (Idx 1 wenn aktiv) → Phase 0 visuell.
   const stepToPhaseIdx = (step: number): number => {
     if (step < 0) return -1;
-    if (!showcaseHasBidding) return step < totalPhases ? step : -1;
-    if (step < totalPhases - 1) return step;              // Quiz-Phasen 0..N-2
-    if (step === biddingStepIdx) return -1;               // Bid
-    if (step === lastQuizStepIdx) return totalPhases - 1; // letzte Quiz-Phase
-    return -1;                                            // Finale o.a.
+    if (showcaseHasCozyGames && step === cozyGameStepIdx) return 0; // CG → Phase 0
+    const adjStep = showcaseHasCozyGames && step > cozyGameStepIdx ? step - 1 : step;
+    if (!showcaseHasBidding) return adjStep < totalPhases ? adjStep : -1;
+    if (adjStep < totalPhases - 1) return adjStep;
+    if (adjStep === totalPhases - 1) return -1;               // Bid
+    if (adjStep === totalPhases) return totalPhases - 1;      // letzte Quiz-Phase
+    return -1;                                                 // Finale o.a.
   };
   const [showcasePhaseIdx, setShowcasePhaseIdx] = useState<number>(-1);
   useEffect(() => {
@@ -113,6 +125,7 @@ export default function QQProgressTree({
   }, [showcaseMode, showcaseStepCount, showcaseStepMs]);
   const showcaseOnBidding = showcaseMode && showcaseHasBidding && showcasePhaseIdx === biddingStepIdx;
   const showcaseOnFinale  = showcaseMode && showcaseHasFinale  && showcasePhaseIdx === finaleStepIdx;
+  const showcaseOnCozyGame = showcaseMode && showcaseHasCozyGames && showcasePhaseIdx === cozyGameStepIdx;
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -242,6 +255,7 @@ export default function QQProgressTree({
   const showcaseTargetCenter = isShowcase
     ? (showcaseOnFinale ? finaleCenter
         : showcaseOnBidding ? biddingCenter
+        : showcaseOnCozyGame ? cozyGameCenter
         : phaseCenters[showcaseTargetPhase] ?? null)
     : null;
   const panOffset = (showcaseTargetCenter != null)

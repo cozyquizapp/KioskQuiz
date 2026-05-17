@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart } from '../utils/sounds';
+import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -103,47 +104,62 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     );
   }
 
+  // 2026-05-17 (P2 #8): CozyWolf-Reaction-Layer pro Sub-Phase
+  const wolfMode = wolfModeForPhase(round.phase);
+
   switch (round.phase) {
     case 'INTRO':
-      return <IntroView width={width} height={height} slotKind={round.slotKind} />;
+      return (
+        <WithWolf wolfMode={wolfMode}>
+          <IntroView width={width} height={height} slotKind={round.slotKind} />
+        </WithWolf>
+      );
 
     case 'WHEEL_SPIN':
       return (
-        <WheelView
-          width={width} height={height}
-          slices={availableForWheel}
-          targetIdx={round.wheelTargetSliceIndex ?? 0}
-          spinning={true}
-        />
+        <WithWolf wolfMode={wolfMode}>
+          <WheelView
+            width={width} height={height}
+            slices={availableForWheel}
+            targetIdx={round.wheelTargetSliceIndex ?? 0}
+            spinning={true}
+          />
+        </WithWolf>
       );
 
     case 'WHEEL_RESULT':
       return (
-        <WheelView
-          width={width} height={height}
-          slices={availableForWheel}
-          targetIdx={round.wheelTargetSliceIndex ?? 0}
-          spinning={false}
-          revealedGame={activeGame}
-        />
+        <WithWolf wolfMode={wolfMode}>
+          <WheelView
+            width={width} height={height}
+            slices={availableForWheel}
+            targetIdx={round.wheelTargetSliceIndex ?? 0}
+            spinning={false}
+            revealedGame={activeGame}
+          />
+        </WithWolf>
       );
 
     case 'GAME_ACTIVE':
       return (
-        <GameActiveView
-          width={width} height={height}
-          game={activeGame}
-          gameEndsAt={round.gameEndsAt}
-        />
+        <WithWolf wolfMode={wolfMode}>
+          <GameActiveView
+            width={width} height={height}
+            game={activeGame}
+            gameEndsAt={round.gameEndsAt}
+          />
+        </WithWolf>
       );
 
     case 'WINNER_SELECT':
       return (
-        <WinnerSelectView
-          width={width} height={height}
-          game={activeGame}
-          winnerTeamIds={round.winnerTeamIds}
-        />
+        <WithWolf wolfMode={wolfMode}>
+          <WinnerSelectView
+            width={width} height={height}
+            game={activeGame}
+            winnerTeamIds={round.winnerTeamIds}
+          />
+        </WithWolf>
       );
 
     default:
@@ -151,6 +167,42 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
         <div style={{ color: '#94a3b8' }}>Unbekannte CozyGame-Phase: {round.phase}</div>
       </FullScreenLayout>;
   }
+}
+
+// ── CozyWolf-Reaction-Layer (P2 #8) ──────────────────────────────────────────
+type WolfMode = 'winken' | 'ueberrascht' | 'jubel' | 'daumen';
+
+function wolfModeForPhase(phase: CozyGameRoundState['phase']): WolfMode {
+  switch (phase) {
+    case 'INTRO':         return 'winken';
+    case 'WHEEL_SPIN':    return 'ueberrascht';
+    case 'WHEEL_RESULT':  return 'jubel';
+    case 'GAME_ACTIVE':   return 'ueberrascht';
+    case 'WINNER_SELECT': return 'jubel';
+    default:              return 'winken';
+  }
+}
+
+function WithWolf({ wolfMode, children }: { wolfMode: WolfMode; children: React.ReactNode }) {
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {children}
+      <div style={{
+        position: 'absolute',
+        bottom: 24, right: 32,
+        zIndex: 50,
+        pointerEvents: 'none',
+        animation: 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+      }}>
+        <AnimatedCozyWolf
+          widthCss="clamp(120px, 11vw, 200px)"
+          mode={wolfMode as any}
+          speaking={wolfMode === 'jubel' || wolfMode === 'winken'}
+          mirror
+        />
+      </div>
+    </div>
+  );
 }
 
 // ── Full-Screen-Wrapper ──────────────────────────────────────────────────────
@@ -208,6 +260,39 @@ function WheelView({
   slices: CozyGame[]; targetIdx: number;
   spinning: boolean; revealedGame?: CozyGame | null;
 }) {
+  // 2026-05-17 (P2 #6): Adaptive Anzeige — bei ≤3 Spielen kein vollwertiges
+  // Rad-Theater (Pizza-Effekt), sondern direkter Card-Pop wenn revealed.
+  if (slices.length <= 3) {
+    return (
+      <FullScreenLayout width={width} height={height}>
+        {spinning && (
+          <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>🎲</div>
+        )}
+        {!spinning && revealedGame && (
+          <div style={{
+            padding: '40px 60px',
+            background: 'rgba(255,255,255,0.06)',
+            border: `3px solid ${COZY_PINK}`,
+            borderRadius: 24,
+            display: 'flex', alignItems: 'center', gap: 24,
+            boxShadow: `0 0 60px ${COZY_PINK}55, 0 20px 60px rgba(0,0,0,0.4)`,
+            animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          }}>
+            <span style={{ fontSize: 96 }}>{revealedGame.emoji}</span>
+            <div>
+              <div style={{ fontSize: 'clamp(36px, 4vw, 72px)', fontWeight: 900 }}>{revealedGame.name}</div>
+              <div style={{ fontSize: 'clamp(16px, 1.4vw, 26px)', color: '#cbd5e1', marginTop: 8, maxWidth: 700 }}>
+                {revealedGame.description}
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#64748b', fontStyle: 'italic', marginTop: 24 }}>
+          {spinning ? `Wählt aus ${slices.length} Spielen …` : ''}
+        </div>
+      </FullScreenLayout>
+    );
+  }
   const n = Math.max(slices.length, 1);
   const anglePerSlice = 360 / n;
   // Target-Winkel: damit der Pointer (oben) auf den Slice mit targetIdx zeigt,

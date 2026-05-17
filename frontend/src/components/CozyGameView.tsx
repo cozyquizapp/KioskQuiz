@@ -418,10 +418,10 @@ function WheelView({
           borderRight: '24px solid transparent',
           borderTop: `40px solid ${COZY_PINK}`,
           zIndex: 2,
-          filter: spinning
-            ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
-            : `drop-shadow(0 0 18px ${COZY_PINK}) drop-shadow(0 4px 8px rgba(0,0,0,0.4))`,
-          animation: spinning ? undefined : 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          // 2026-05-17 v7 (Wolf 'lichtkegel über feld sieht weird aus'):
+          // Pink-Glow nach Stop entfernt — Pointer bleibt clean ohne Strahl
+          // der wie Lichtkegel über das Winner-Slice wirkt.
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
         }} />
         {/* Rad */}
         <svg
@@ -457,22 +457,16 @@ function WheelView({
             const lx = labelR * Math.cos(midAngle);
             const ly = labelR * Math.sin(midAngle);
             return (
-              <g key={g.id} style={{
-                filter: isWinnerSlice ? `drop-shadow(0 0 14px ${fillColor})` : undefined,
-                transition: 'filter 0.6s ease',
-                // 2026-05-17 (Wolf-Polish): Winner-Slice pulsiert brightness
-                // damit er „lebt" auch nach Stop. qqGlow ist bestehender
-                // Keyframe (brightness 1.0 → 1.2 → 1.0).
-                animation: isWinnerSlice ? 'qqGlow 1.6s ease-in-out infinite' : undefined,
-              }}>
+              <g key={g.id}>
+                {/* 2026-05-17 v7 (Wolf): Winner-Slice-Glow + Stroke-Verdickung
+                    entfernt — die V-Form aus schwarzem Stroke wirkte wie
+                    Lichtkegel-Strahlung. Slice ist clean, Slice-Color-Wave
+                    übernimmt den Reveal-Moment. */}
                 <path
                   d={path}
                   fill={fillColor}
                   stroke="#0F1736"
-                  strokeWidth={isWinnerSlice ? 3 : 1.5}
-                  style={{
-                    transition: 'stroke-width 0.6s ease',
-                  }}
+                  strokeWidth={1.5}
                 />
                 <text
                   x={lx} y={ly}
@@ -496,28 +490,13 @@ function WheelView({
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
-      {/* 2026-05-17 v5 (Wolf 'card unten soll erst kommen nach wave'):
-          Reveal-Card im WheelView entfernt — die Detail-View nach Stage-
-          Wechsel hat eh schon die volle Spiel-Info als full-screen. Bottom-
-          Slot mit minHeight bleibt damit Rad-Position konstant. Nur Status-
-          Text während Spin. */}
+      {/* 2026-05-17 v7 (Wolf 'rad dreht sich text überflüssig'): Status-Text
+          entfernt. Bottom-Slot bleibt nur als minHeight-Platzhalter damit
+          Rad-Position konstant zwischen spinning und post-spin. */}
       <div style={{
         minHeight: 'clamp(120px, 18vh, 200px)',
         width: '100%',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        marginTop: 8,
-      }}>
-        {spinning && (
-          <div style={{
-            fontSize: 'clamp(20px, 2vw, 36px)',
-            fontWeight: 700,
-            color: '#fff',
-            animation: 'qqSpinSlow 1.2s ease-in-out infinite',
-          }}>
-            🪅 Das Rad dreht …
-          </div>
-        )}
-      </div>
+      }} />
       {/* 2026-05-17 (Wolf): Konfetti-Burst beim Stop für extra Pop. */}
       {!spinning && revealedGame && (
         <>

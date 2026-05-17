@@ -1333,39 +1333,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           // 1-3px tiefer sitzen.
           height: 'clamp(460px, 60cqh, 660px)',
         }}>
-          {!isEsc && (
-            // SVG-Border-Trace, Stroke 1px innerhalb der Bounds. Drop-Shadow
-            // entfernt (vorher: 6px blur extended visibly into the
-            // inner-card's eigene 0 14px 48px shadow zone unter der Card →
-            // wirkte wie der Stroke wäre nach unten versetzt). Stroke 2.5px
-            // + alpha 0.7 kompensiert das fehlende Glow.
-            <svg
-              aria-hidden
-              style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0, bottom: 0,
-                width: '100%', height: '100%',
-                pointerEvents: 'none', zIndex: 2,
-                overflow: 'visible',
-                display: 'block',
-                verticalAlign: 'top',
-              }}
-            >
-              <rect
-                pathLength={100}
-                style={{
-                  x: '1px', y: '1px',
-                  width: 'calc(100% - 2px)', height: 'calc(100% - 2px)',
-                  rx: '23px', ry: '23px',
-                  fill: 'none',
-                  stroke: 'rgba(236,72,153,0.7)',
-                  strokeWidth: 2.5,
-                  strokeDasharray: '9 91',
-                  animation: 'qqStarBorderTrace 3.6s linear infinite',
-                }}
-              />
-            </svg>
-          )}
+          {/* 2026-05-17 (Wolf): qqStarBorderTrace SVG-Sweep entfernt — too much
+              in Lobby/Setup/Pause. Card-Glow + soft Border reichen als visuelles
+              Anchor. Keyframe bleibt in qqShared.ts für Thanks-View und ggf.
+              Re-Aktivierung später. */}
           <div style={{
             position: 'relative', zIndex: 1,
             background: cardBg,

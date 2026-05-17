@@ -27,6 +27,7 @@ const cozyQuizTestLinks: LinkItem[] = [
   { path: '/finalreveal-test', label: 'Treppchen Test',     emoji: '🎬', note: 'Endgame-Choreografie scrubben — Step-Slider 0..N+8 + Quick-Jumps zu Crescendo-Akten (Stage/Fill/Drop 🏆)' },
   { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams, Submit-Count Slider, Sprache' },
   { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — 1-5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, 4 Pair-Beispiele' },
+  { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Standalone-Test: Glücksrad-Spin + alle 5 Sub-Phasen, Slice-Slider 3-8, Auto-Demo-Button' },
   { path: '/summary-test',     label: 'Summary Test',       emoji: '📊', note: 'Public-Summary-Page nach QR-Scan — 3/5/8 Teams, Awards, ESC-Mode-Toggle' },
   { path: '/testpage',         label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
 ];

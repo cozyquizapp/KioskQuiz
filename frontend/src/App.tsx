@@ -24,6 +24,7 @@ const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'))
 const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage'));
 const QQRulesEditorPage   = React.lazy(() => import('./pages/QQRulesEditorPage'));
 const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage'));
+const CozyGameWheelTestPage = React.lazy(() => import('./pages/CozyGameWheelTestPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
@@ -187,6 +188,7 @@ function App() {
           <Route path="/bet-test" element={<PinGate><QQBetTestPage /></PinGate>} />
           <Route path="/summary-test" element={<PinGate><QQSummaryTestPage /></PinGate>} />
           <Route path="/hl-test" element={<PinGate><QQHigherLowerTestPage /></PinGate>} />
+          <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/fragen"       element={<QuestionEditorPage />} />

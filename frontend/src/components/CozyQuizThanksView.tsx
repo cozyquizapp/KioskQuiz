@@ -351,40 +351,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         isolation: 'isolate',
         height: 'clamp(460px, 60cqh, 660px)',
       }}>
-        {!isEsc && (
-          // 2026-05-10 (Wolf 'border sparkle funktioniert nicht'): Sparkle
-          // deutlicher gemacht — Stroke 2.5→4px, Dasharray '9 91'→'24 76'
-          // (Spur 24% statt 9% Umfang sichtbar, also 2-3× größerer Comet),
-          // brand.accentHex direkt statt 0.7-Alpha, drop-shadow-Glow auf
-          // dem SVG für sichtbares „Funkeln". Speed leicht runter (3.6s →
-          // 4.5s) damit die Spur ruhiger wirkt.
-          <svg
-            aria-hidden
-            style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              width: '100%', height: '100%',
-              pointerEvents: 'none', zIndex: 3,
-              overflow: 'visible', display: 'block', verticalAlign: 'top',
-              filter: `drop-shadow(0 0 6px rgba(${brand.accentRgb},0.85)) drop-shadow(0 0 14px rgba(${brand.accentRgb},0.5))`,
-            }}
-          >
-            <rect
-              pathLength={100}
-              style={{
-                x: '2px', y: '2px',
-                width: 'calc(100% - 4px)', height: 'calc(100% - 4px)',
-                rx: '22px', ry: '22px',
-                fill: 'none',
-                stroke: brand.accentHex,
-                strokeWidth: 4,
-                strokeLinecap: 'round',
-                strokeDasharray: '24 76',
-                animation: 'qqStarBorderTrace 4.5s linear infinite',
-              }}
-            />
-          </svg>
-        )}
+        {/* 2026-05-17 (Wolf): Star-Border-Sweep auch hier raus — too much.
+            Card-Glow + soft Border reichen. Keyframe bleibt in qqShared.ts. */}
         <div style={{
           position: 'relative', zIndex: 1,
           background: cardBg,

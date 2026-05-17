@@ -439,7 +439,33 @@ export default function QQProgressTree({
             const biddingLabelColor = isBiddingActive
               ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
+            const isCozyGameActiveLbl = state.phase === 'COZY_GAME' || showcaseOnCozyGame;
+            const cozyGameLabelColor = isCozyGameActiveLbl
+              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
+              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
             phases.forEach((p, pi) => {
+              // 2026-05-17 (Wolf-Bug): CozyGame-Label muss SYNCHRON zum Dot-Render
+              // sein, sonst verschieben sich alle nachfolgenden Phase-Labels und
+              // sehen aus als wäre CG zwischen jeder Runde. Insert vor Phase 1.
+              if (showCozyGames && pi === 1) {
+                items.push(
+                  <div key="cg-label" style={{
+                    width: cozyGameDotSize,
+                    textAlign: 'center',
+                    fontSize: phaseNameSize,
+                    fontWeight: 900,
+                    color: cozyGameLabelColor,
+                    textTransform: 'uppercase',
+                    flexShrink: 0,
+                    padding: 0,
+                    textShadow: (isShowcase && isCozyGameActiveLbl) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                    transform: (isShowcase && isCozyGameActiveLbl) ? 'translateY(-2px)' : 'translateY(0)',
+                    transition: 'all 0.4s var(--qq-ease-out-cubic)',
+                  }}>
+                    {lang === 'de' ? 'CozyGame' : 'CozyGame'}
+                  </div>
+                );
+              }
               // Vor letzter Phase: Bieten-Label einfuegen.
               if (showBidding && pi === phases.length - 1 && pi > 0) {
                 items.push(

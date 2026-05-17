@@ -110,6 +110,22 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     [games, round.playedGameIds]
   );
 
+  // 2026-05-17 (Wolf-Bug 'rad wird nach drehen nochmal getriggert'):
+  // Stage-State im äußeren Component damit WheelView stable mounted bleibt
+  // beim Phase-Wechsel WHEEL_SPIN → WHEEL_RESULT.
+  // WICHTIG: useState/useEffect MUSS vor early-return (loading) stehen,
+  // sonst React #310 "Rendered more hooks than during the previous render".
+  const [resultStage, setResultStage] = useState<'wheel' | 'detail'>('wheel');
+  useEffect(() => {
+    if (round.phase !== 'WHEEL_RESULT') {
+      setResultStage('wheel');
+      return;
+    }
+    // ~2.8s im Stage 'wheel' bleiben, dann Zoom zu Detail-View.
+    const t = window.setTimeout(() => setResultStage('detail'), 2800);
+    return () => window.clearTimeout(t);
+  }, [round.phase]);
+
   if (loading) {
     return (
       <FullScreenLayout width={width} height={height}>
@@ -121,24 +137,6 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
   // 2026-05-17 (P2 #8): CozyWolf-Reaction-Layer pro Sub-Phase
   const wolfMode = wolfModeForPhase(round.phase);
   const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame);
-
-  // 2026-05-17 (Wolf-Bug 'rad wird nach drehen nochmal getriggert'):
-  // WHEEL_RESULT war ein anderer Component (WheelResultPhase) → React
-  // mountete WheelView neu → renderAngle reset auf 0 → Re-Spin. Fix:
-  // WHEEL_SPIN und WHEEL_RESULT-Stage-1 nutzen DASSELBE WheelView-Element
-  // (gleiche Position im Tree → keine Re-Mount-Animation). Stage-Switch
-  // zu Detail-View nach ~2.8s im WHEEL_RESULT.
-  const inWheelPhase = round.phase === 'WHEEL_SPIN' || round.phase === 'WHEEL_RESULT';
-  const [resultStage, setResultStage] = useState<'wheel' | 'detail'>('wheel');
-  useEffect(() => {
-    if (round.phase !== 'WHEEL_RESULT') {
-      setResultStage('wheel');
-      return;
-    }
-    // ~2.8s im Stage 'wheel' bleiben, dann Zoom zu Detail-View.
-    const t = window.setTimeout(() => setResultStage('detail'), 2800);
-    return () => window.clearTimeout(t);
-  }, [round.phase]);
 
   switch (round.phase) {
     case 'INTRO':

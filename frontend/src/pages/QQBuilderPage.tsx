@@ -1156,7 +1156,7 @@ export default function QQBuilderPage() {
                 onClick={() => setShowCozyGames(true)}
                 style={btnStyle(activeDraft.cozyGamesEnabled ? '#EC4899' : '#64748B')}
                 title={activeDraft.cozyGamesEnabled ? `CozyGames aktiv — ${(activeDraft.cozyGamesPool ?? []).length} Spiele im Rad` : 'CozyGames konfigurieren (analoge Mini-Spiele nach Runde 1)'}
-              >🎲 CozyGames {activeDraft.cozyGamesEnabled ? `✓ (${(activeDraft.cozyGamesPool ?? []).length})` : ''}</button>
+              >🎯 CozyGames {activeDraft.cozyGamesEnabled ? `✓ (${(activeDraft.cozyGamesPool ?? []).length})` : ''}</button>
               <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
               <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
             </>

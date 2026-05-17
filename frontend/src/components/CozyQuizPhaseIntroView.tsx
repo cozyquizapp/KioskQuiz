@@ -335,13 +335,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       de: cozyGamesActive
         ? [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
            getRuleText('round.1.line2', 'de', 'Sichert euch eure ersten Felder!'),
-           getRuleText('round.1.line3_cg', 'de', '🎲 Nach dieser Runde wartet ein CozyGame auf euch!')]
+           getRuleText('round.1.line3_cg', 'de', '🎯 Nach dieser Runde wartet ein CozyGame auf euch!')]
         : [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
            getRuleText('round.1.line2', 'de', 'Sichert euch eure ersten Felder!')],
       en: cozyGamesActive
         ? [getRuleText('round.1.line1', 'en', 'Your action this round:'),
            getRuleText('round.1.line2', 'en', 'Claim your first cells!'),
-           getRuleText('round.1.line3_cg', 'en', '🎲 After this round a CozyGame awaits you!')]
+           getRuleText('round.1.line3_cg', 'en', '🎯 After this round a CozyGame awaits you!')]
         : [getRuleText('round.1.line1', 'en', 'Your action this round:'),
            getRuleText('round.1.line2', 'en', 'Claim your first cells!')],
     },

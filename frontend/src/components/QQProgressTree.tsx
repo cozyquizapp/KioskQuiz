@@ -667,7 +667,7 @@ export default function QQProgressTree({
                     animation: isCozyGameActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
                     transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
-                >🎲</div>
+                >🎯</div>
               </div>
             ) : null;
             const biddingNode = insertBiddingHere ? (

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
-import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart } from '../utils/sounds';
-import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
+import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare } from '../utils/sounds';
+import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
@@ -38,6 +38,14 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       // Phase-Transition: one-shot Sounds
       if (cur === 'WHEEL_RESULT' && prev === 'WHEEL_SPIN') {
         try { playCozyGameWheelStop(); } catch {}
+        // 2026-05-17 (Wolf 'cheer'): zusätzlicher Fanfare-Cue ~600ms nach
+        // Stop-Snap. Macht den Moment akustisch zum Crescendo (Konfetti +
+        // Snap + Cheer übereinander).
+        const cheer = window.setTimeout(() => {
+          try { playFanfare(); } catch {}
+        }, 600);
+        // Cleanup wenn unmount/transition zwischendurch
+        return () => window.clearTimeout(cheer);
       }
       if (cur === 'GAME_ACTIVE' && prev === 'WHEEL_RESULT') {
         try { playCozyGameStart(); } catch {}
@@ -112,18 +120,19 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
 
   // 2026-05-17 (P2 #8): CozyWolf-Reaction-Layer pro Sub-Phase
   const wolfMode = wolfModeForPhase(round.phase);
+  const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame);
 
   switch (round.phase) {
     case 'INTRO':
       return (
-        <WithWolf wolfMode={wolfMode}>
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`intro`}>
           <IntroView width={width} height={height} slotKind={round.slotKind} />
         </WithWolf>
       );
 
     case 'WHEEL_SPIN':
       return (
-        <WithWolf wolfMode={wolfMode}>
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`spin`}>
           <WheelView
             width={width} height={height}
             slices={availableForWheel}
@@ -135,7 +144,7 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
 
     case 'WHEEL_RESULT':
       return (
-        <WithWolf wolfMode={wolfMode}>
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`result-${activeGame?.id ?? 'na'}`}>
           <WheelView
             width={width} height={height}
             slices={availableForWheel}
@@ -148,7 +157,7 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
 
     case 'GAME_ACTIVE':
       return (
-        <WithWolf wolfMode={wolfMode}>
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`active-${activeGame?.id ?? 'na'}`}>
           <GameActiveView
             width={width} height={height}
             game={activeGame}
@@ -159,7 +168,7 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
 
     case 'WINNER_SELECT':
       return (
-        <WithWolf wolfMode={wolfMode}>
+        <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`winner`}>
           <WinnerSelectView
             width={width} height={height}
             game={activeGame}
@@ -189,7 +198,27 @@ function wolfModeForPhase(phase: CozyGameRoundState['phase']): WolfMode {
   }
 }
 
-function WithWolf({ wolfMode, children }: { wolfMode: WolfMode; children: React.ReactNode }) {
+// 2026-05-17 (Wolf): Sprechblase pro Sub-Phase. Spielname dynamisch im
+// Result/Active-Slot. Texte kurz + spielerisch.
+function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame | null): string {
+  switch (phase) {
+    case 'INTRO':         return 'Welches Spiel wirds heute?';
+    case 'WHEEL_SPIN':    return 'Spannend, spannend!';
+    case 'WHEEL_RESULT':  return game ? `Oho — ${game.name}!` : 'Aha!';
+    case 'GAME_ACTIVE':   return 'Los geht\'s, 60 Sekunden!';
+    case 'WINNER_SELECT': return 'Wer hat gewonnen?';
+    default:              return 'Lasst uns spielen!';
+  }
+}
+
+function WithWolf({ wolfMode, speech, speechKey, children }: {
+  wolfMode: WolfMode;
+  speech: string;
+  speechKey: string;
+  children: React.ReactNode;
+}) {
+  // Speech-Speakms (= Mundbewegung-Dauer): grob basierend auf Textlänge.
+  const speakMs = Math.max(1800, speech.length * 110);
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {children}
@@ -199,11 +228,21 @@ function WithWolf({ wolfMode, children }: { wolfMode: WolfMode; children: React.
         zIndex: 50,
         pointerEvents: 'none',
         animation: 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        display: 'flex', alignItems: 'flex-end', gap: 8,
       }}>
+        <SpeechBubble
+          text={speech}
+          bubbleKey={speechKey}
+          enterMs={400}
+          speakMs={speakMs}
+          exitMs={400}
+          tailSide="right"
+          size="md"
+        />
         <AnimatedCozyWolf
           widthCss="clamp(120px, 11vw, 200px)"
           mode={wolfMode as any}
-          speaking={wolfMode === 'jubel' || wolfMode === 'winken'}
+          speaking
           mirror
         />
       </div>
@@ -384,6 +423,10 @@ function WheelView({
               <g key={g.id} style={{
                 filter: isWinnerSlice ? `drop-shadow(0 0 14px ${fillColor})` : undefined,
                 transition: 'filter 0.6s ease',
+                // 2026-05-17 (Wolf-Polish): Winner-Slice pulsiert brightness
+                // damit er „lebt" auch nach Stop. qqGlow ist bestehender
+                // Keyframe (brightness 1.0 → 1.2 → 1.0).
+                animation: isWinnerSlice ? 'qqGlow 1.6s ease-in-out infinite' : undefined,
               }}>
                 <path
                   d={path}

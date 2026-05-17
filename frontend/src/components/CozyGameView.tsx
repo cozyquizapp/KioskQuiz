@@ -44,14 +44,18 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     }
     // Tick-Interval nur während WHEEL_SPIN
     if (cur !== 'WHEEL_SPIN') return;
-    // Tick-Schema: schneller Anfang, langsamer Ende (analog zum CSS-Easing 4s)
+    // 2026-05-17 v2 (Wolf 'langsamer'): Tick-Schema 6.5s mit klarer
+    // Verlangsamung am Ende. Start 70ms (schnell ratternd) → 380ms (träge
+    // tickend bei verlangsamtem Rad). Easing kubisch damit der Slowdown
+    // im letzten Drittel hörbar wird.
     let elapsed = 0;
-    const total = 4000;
+    const total = 6500;
     const handles: number[] = [];
     function scheduleNext() {
       const progress = elapsed / total;
-      // Easing: tick-Interval steigt von 80ms → 280ms (verlangsamt mit Spin)
-      const interval = 80 + progress * 200;
+      // Easing: interval steigt nicht-linear (cubic) → letzte Sekunde tickt
+      // deutlich langsamer als die erste.
+      const interval = 70 + Math.pow(progress, 1.5) * 310;
       elapsed += interval;
       if (elapsed > total) return;
       const h = window.setTimeout(() => {
@@ -299,15 +303,29 @@ function WheelView({
   // muss der Slice „nach oben" rotiert werden. Slice 0 startet bei 0° (oben),
   // weitere im Uhrzeigersinn.
   const targetAngle = -(targetIdx * anglePerSlice) - (anglePerSlice / 2);
-  // Spin: 4 volle Umdrehungen + Target. Easing rein über CSS.
-  const fullSpins = spinning ? 4 : 5;
+  // 2026-05-17 (Wolf 'langsamer + mehr effekt'): 4s → 6.5s, 5 → 6 volle
+  // Umdrehungen für mehr Dramatik. Stop-Snap: 0.6s → 1.2s mit overshoot.
+  const fullSpins = spinning ? 6 : 7;
   const finalAngle = fullSpins * 360 + targetAngle;
 
   const size = Math.min(width * 0.5, height * 0.7);
 
+  // 2026-05-17 (Wolf 'verschiedene farben'): 8-Farben-Brand-Palette statt
+  // Pink/Magenta-alternierend. Wechsel pro Slice, repeat wenn n > 8.
+  const SLICE_PALETTE = [
+    '#EC4899', // pink
+    '#A78BFA', // violet
+    '#FACC15', // amber
+    '#34D399', // mint
+    '#60A5FA', // sky
+    '#FB923C', // orange
+    '#F472B6', // light pink
+    '#A21247', // magenta-dark
+  ];
+
   return (
     <FullScreenLayout width={width} height={height}>
-      {/* Pointer oben */}
+      {/* Pointer oben mit Pulse beim Stop */}
       <div style={{ position: 'relative', width: size, height: size + 60 }}>
         <div style={{
           position: 'absolute',
@@ -319,7 +337,10 @@ function WheelView({
           borderRight: '24px solid transparent',
           borderTop: `40px solid ${COZY_PINK}`,
           zIndex: 2,
-          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+          filter: spinning
+            ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+            : `drop-shadow(0 0 18px ${COZY_PINK}) drop-shadow(0 4px 8px rgba(0,0,0,0.4))`,
+          animation: spinning ? undefined : 'qqPhasePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }} />
         {/* Rad */}
         <svg
@@ -330,9 +351,9 @@ function WheelView({
             top: 60, left: 0,
             transform: `rotate(${finalAngle}deg)`,
             transition: spinning
-              ? 'transform 4s cubic-bezier(0.17, 0.67, 0.32, 0.99)'
-              : 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.4))',
+              ? 'transform 6.5s cubic-bezier(0.14, 0.6, 0.2, 1)'
+              : 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))',
           }}
         >
           {slices.map((g, i) => {
@@ -347,49 +368,72 @@ function WheelView({
             const y1 = r * Math.sin(rad1);
             const largeArc = anglePerSlice > 180 ? 1 : 0;
             const path = `M 0 0 L ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1} Z`;
-            const fillColor = i % 2 === 0 ? COZY_PINK : '#A21247';
+            const fillColor = SLICE_PALETTE[i % SLICE_PALETTE.length];
+            const isWinnerSlice = !spinning && i === targetIdx;
             // Slice-Label Position
             const midAngle = ((a0 + a1) / 2 - 90) * Math.PI / 180;
             const labelR = 60;
             const lx = labelR * Math.cos(midAngle);
             const ly = labelR * Math.sin(midAngle);
             return (
-              <g key={g.id}>
-                <path d={path} fill={fillColor} stroke="#0F1736" strokeWidth={1.5} />
+              <g key={g.id} style={{
+                filter: isWinnerSlice ? `drop-shadow(0 0 14px ${fillColor})` : undefined,
+                transition: 'filter 0.6s ease',
+              }}>
+                <path
+                  d={path}
+                  fill={fillColor}
+                  stroke="#0F1736"
+                  strokeWidth={isWinnerSlice ? 3 : 1.5}
+                  style={{
+                    transition: 'stroke-width 0.6s ease',
+                  }}
+                />
                 <text
                   x={lx} y={ly}
-                  fontSize={n <= 4 ? 22 : n <= 6 ? 18 : 14}
+                  fontSize={n <= 4 ? 24 : n <= 6 ? 20 : 16}
                   fontWeight={900}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="#fff"
                   transform={`rotate(${a0 + anglePerSlice / 2} ${lx} ${ly})`}
+                  style={{
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                  }}
                 >
                   {g.emoji}
                 </text>
               </g>
             );
           })}
-          {/* Center hub */}
-          <circle cx={0} cy={0} r={12} fill="#0F1736" stroke={COZY_PINK} strokeWidth={2} />
+          {/* Center hub mit Glow */}
+          <circle cx={0} cy={0} r={14} fill="#0F1736" stroke="#fff" strokeWidth={2.5} />
+          <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
       {/* Status-Text */}
       {spinning && (
-        <div style={{ fontSize: 'clamp(20px, 2vw, 36px)', fontWeight: 700, color: '#fff' }}>
+        <div style={{
+          fontSize: 'clamp(20px, 2vw, 36px)',
+          fontWeight: 700,
+          color: '#fff',
+          animation: 'qqSpinSlow 1.2s ease-in-out infinite',
+        }}>
           🪅 Das Rad dreht …
         </div>
       )}
       {!spinning && revealedGame && (
         <div style={{
-          padding: '20px 32px',
-          background: 'rgba(255,255,255,0.06)',
-          border: `2px solid ${COZY_PINK}`,
-          borderRadius: 16,
-          display: 'flex', alignItems: 'center', gap: 16,
-          marginTop: 8,
+          padding: '24px 40px',
+          background: 'rgba(255,255,255,0.08)',
+          border: `3px solid ${COZY_PINK}`,
+          borderRadius: 20,
+          display: 'flex', alignItems: 'center', gap: 20,
+          marginTop: 12,
+          boxShadow: `0 0 60px ${COZY_PINK}55, 0 0 20px ${COZY_PINK}33`,
+          animation: 'qqPhasePop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
         }}>
-          <span style={{ fontSize: 56 }}>{revealedGame.emoji}</span>
+          <span style={{ fontSize: 64 }}>{revealedGame.emoji}</span>
           <div>
             <div style={{ fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900 }}>{revealedGame.name}</div>
             <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#cbd5e1', marginTop: 4 }}>

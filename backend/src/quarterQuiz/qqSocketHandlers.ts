@@ -3051,13 +3051,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (!cg) { ok(ack); return; }
         if (cg.phase === 'INTRO') {
           qqCozyGameAdvanceFromIntro(room);
-          // Auto-Spin: nach 4s Rad landet → WHEEL_RESULT
+          // 2026-05-17 v2 (Wolf 'langsamer'): Auto-Spin 4s → 6.5s
+          // matched zu CozyGameView CSS-Spin-Dauer (siehe WheelView).
           setTimeout(() => {
             const live = getQQRoom(payload.roomCode);
             if (!live || !live.cozyGame || live.cozyGame.phase !== 'WHEEL_SPIN') return;
             qqCozyGameWheelLanded(live);
             broadcast(io, payload.roomCode);
-          }, 4000);
+          }, 6500);
         } else if (cg.phase === 'WHEEL_RESULT') {
           qqCozyGameStartGame(room, () => {
             const live = getQQRoom(payload.roomCode);

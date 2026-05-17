@@ -535,14 +535,14 @@ function WheelView({
           `}</style>
           <ConfettiOverlay />
           {/* Slice-Color-Wave: solide Slice-Farbe expandiert via clip-path
-              vom Pointer-Position (oben) zu Vollbild. 2026-05-17 v5 (Wolf
-              'hintergrund scheint durch'): BG ist jetzt solid linear-gradient
-              in Slice-Farbe (vorher radial mit alpha-Rand → durchsichtig).
-              Match zur Detail-View-BG damit der Übergang nahtlos ist. */}
+              vom Pointer-Position (oben) zu Vollbild.
+              2026-05-17 v6 (Wolf 'farbe direkt deckend'): plain solid color,
+              kein Gradient mehr zu Navy. Plus Detail-View-BG identisch
+              solid → kein Schimmer-Bruch beim Stage-Wechsel. */}
           {waveActive && (
             <div style={{
               position: 'absolute', inset: 0,
-              background: `linear-gradient(135deg, ${sliceColorForWave} 0%, ${sliceColorForWave}cc 50%, #0F1736 100%)`,
+              background: sliceColorForWave,
               pointerEvents: 'none',
               zIndex: 40,
               animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',
@@ -570,16 +570,13 @@ function GameDetailView({ width, height, game, accentColor }: {
   return (
     <div style={{
       width, height,
-      background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 50%, #0F1736 100%)`,
+      // 2026-05-17 v6 (Wolf 'farbe direkt deckend'): solid Slice-Farbe statt
+      // Gradient zu Navy. Match zum Wave-BG damit kein Schimmer-Bruch.
+      background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 32,
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
-      // 2026-05-17 v4 (Wolf 'seite wird groß dann kommt slide'):
-      // cozyGameZoomIn entfernt — der Slice-Color-Wave füllt davor schon den
-      // Screen in der Slice-Farbe. Wenn die Detail-View dann nochmal mit
-      // scale 0.3→1 reinkommt, schrumpft das Bild erst und wird wieder groß
-      // = sichtbarer Bruch. BG bleibt nahtlos, nur Inhalt pop't.
     }}>
       <style>{`
         @keyframes cozyGameLogoPop {
@@ -670,7 +667,9 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
   return (
     <div style={{
       width, height,
-      background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 50%, #0F1736 100%)`,
+      // 2026-05-17 v6 (Wolf): solid Slice-Farbe (kein Navy-Gradient), match
+      // zur Detail-View damit Übergang ohne Bruch.
+      background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 28,
       color: '#fff', fontFamily: 'inherit',

@@ -1551,3 +1551,80 @@ Wolf hat 15 Quiz-Fragen + 3 H/L-Pairs von externer KI bekommen (Spec aus dem Mar
 - **Drift via Themen-Überlap**: Top5-Frage und ZvZ-Frage zur selben Statistik = Spieler kennt Antwort schon. Wolf erkennt's selbst, frage thematisch wechseln statt Distraktoren feilen.
 - **Mechanik-Code generisch lassen**: `top5` heißt zwar "5", Code rendert aber `n = answers.length` — keine Magic-Number 5. Macht Tie-Cases (6 valide Antworten) trivial.
 - **Externer KI-Output ist Skeleton, nicht final**: Faktencheck + Wolf-Refinement bringt 2 Verbesserungen pro Quiz raus. KI-Vertrauen sinnvoll dosieren.
+
+## 2026-05-16 — Polish-Sweep + Score-Modell-Klärung + Mini-Game-Brainstorm
+
+Eurovision-Test-Quiz für heute Abend kurzfristig abgesagt. Edition stand fertig bereit (Template + HL-Pairs + Theme + Audit-gefixter Kontrast), bleibt ungenutzt für nächste Gelegenheit. Wolf entsprechend enttäuscht. Stattdessen Polish-Tag mit mehreren Audit-Fixes + tieferer Score-Modell-Klärung + Mini-Game-Konzept-Brainstorm.
+
+### Polish-Fixes (mehrere Bereiche)
+
+- **Cascade-Sound-Audit** über 8 Reveal-Modi durchgezogen via Background-Agent. Findings: Top5 + Order spielten 5 Töne immer, auch bei leeren Rows → Sound nur noch für Rows mit Hittern. MUCHO Voter-Stagger 90→180ms (matched CSS `vi*0.18s`). 6 andere Modi waren sauber.
+- **Race-Phase Sound-Choreographie**: `startRaceLoop` / `stopRaceLoop` als echter Loop (statt One-Shot), stoppt hart wenn letzter Team-Fall → Gewinner entschieden. 3 neue Slots: `raceTeamFall` (statt Synth-`playWoodKnock`), `raceWinner` (statt `playFanfare` bei winner-slowmo), plus existierende `raceCountdown` + `racePodium`. Alle im Mod-Panel editierbar mit Fallback aufs bisherige Verhalten.
+- **Special-Award-Sound**: 1 Slot `specialAwardReveal`, wird pro Card-Flip einmal gespielt (3× über die Sequenz). Wolf füllt mit Drumroll/Cheer-MP3.
+- **Tippte-auf-Animation** in Final-Bet-Reveal: `qqFRSlamDown` (Top-Slam + Rotate + Blur) durch sanften `qqFRTitleIn` (Fade+Scale) ersetzt. Plus `playTeamReveal` bei jedem Team-Mount.
+- **Pause-Countdown 3-2-1** Stagger 0.45→0.95s. Bei 0.73-0.82s waren Zahl 2 + Zahl 3 vorher beide voll sichtbar übereinander (gleiche absolute Position).
+- **OnlyConnect Mod-Button** "⏹ Alle Hinweise zeigen (Reveal)" → "⏩ Auflösen (Frage beenden)". Plus Winner-Avatare `phasePop` → `revealWinnerIn` (sichtbarer Pop statt subtiler FadeIn).
+- **Hot-Potato Doppel-Cue**: bei Eliminate spielten `playWrong` + `playTick` parallel (Backend sendet `hpElim++` UND `hpActive=nextTeam` im selben Frame). `hpElimGrew`-Guard verhindert das jetzt.
+- **Setup-"Wie funktioniert's"-Card**: Container 720→900px, Description 15-21→18-26px. War auf 8m Beamer-Distanz unleserlich.
+- **Cheese Winner-Badge**: 🏆-Glyph vor Avatar entfernt — Konsistenz mit anderen Modi.
+
+### 2-Stack-Avatare — 15-Versuche-Marathon abgeschlossen
+
+Wolf-Bug der seit Wochen offen war: Stack-Avatare landeten nie wie im Mock-Screenshot (TL/BR-Ecken mit Spalt). 15. Versuch endlich struktureller Durchbruch — der Bug lag nicht in der Math, sondern im **Centering-Pattern**:
+
+Outer-Wrapper ist `display: flex + alignItems: center + justifyContent: center` (= Cell-Avatar-Wrapper für 1-Avatar-Fall). Das `inset:0 + margin:auto`-Centering der Stack-Avatar-Wrapper kollidierte mit dem flex-Context — abs-positioned children sollten zwar aus flex-flow raus, aber margin-auto-Centering verhielt sich unzuverlässig. Avatare clusterten in der Mitte statt in den Ecken, egal welche offsets/avFactor.
+
+Fix v6 hyperexplizites Centering: `top: 50% + left: 50% + transform: translate(-50%, -50%) translate(offsetX, offsetY)`. Keine flex-/margin-Magic. v6 (0.45/±27) → v7 (0.50/±25) → v8 (0.55/±22.5, revert: nicht mittig) → v9 (0.52/±24) → v10 (0.54/±23, final). 🦖❣️.
+
+### Quiz-Score-Modell — Klärung + Bug-Fix
+
+Wolf hat sein Mental-Model explizit erklärt: "während dem quiz sammelt man felder und das größte feld gewinnt, die bets gehen aber nicht auf das grid, sondern werden direkt auf die punkte gezählt die geloggt wurden, des größten zusammenhängenden feldes".
+
+Code-Audit zeigte echten Bug: Final-Race + Thanks-View berechneten `total = cellsByTeam + bonus + awards` (= alle Felder verstreut+verbunden), NICHT `largestConnected + bonus + awards`. Cluster-Strategie wurde am Ende ignoriert.
+
+Beispiel: Team A 8 Felder alle verbunden, Team B 8 Felder 2 Cluster (5+3). Alter Code: tied bei 8. Wolfs Modell: A gewinnt (8 vs 5).
+
+Fix in `CozyQuizFinalRevealView.tsx` (RankingEntry-Type + finalRanking) und `CozyQuizThanksView.tsx` (winnerEntry). `cellsByTeam` bleibt für GridRevealSlide-Display (Visual-Info "X Felder gesetzt"), nicht mehr für Score.
+
+Konsistenz jetzt: In-Game-Standings sortieren nach `largestConnected`, Final-Race + Treppchen sortieren nach `largestConnected + bonus + awards`. Kein Sprung von "Cluster-Score" zu "Cell-Count" mehr beim Übergang Quiz → Race.
+
+### Mini-Game-Konzept (Brainstorm, Wolf arbeitet aus)
+
+Wolf will analoge Real-Life-Spiele (Bierdeckel / Münze / Pantomime) als Brand-Differenziator weg vom klassischen Pubquiz — Hauptlocation ist Café/Kiosk/Bar, passt zu "Cozy"-DNA. Brand-Ziele: Auflockerung + Wissen-Geschick-Ausgleich + Anfeuern.
+
+Setup-Toggle (adaptiv): Off / 1× zwischen Runden (= Pause-Variante) / ganze Runde durch Mini-Games ersetzt (= Event-Modus).
+
+**Hartes Don't (Wolf-Entscheidung)**: KEINE neuen Bonus-Mechaniken (Schild, Stapel-Bonus, Joker-Trigger-Erleichterung). Belohnungen müssen mit bestehenden Mitteln auskommen (Felder, Joker, Klauen).
+
+Erkenntnis im Brainstorm: bei 3-Runden-Quiz ist Mini-Game-Runde schwierig (Position 2 zu früh — keine Klau-Mechanik aktiv, Position 3 letzte Runde). Bei 4-Runden-Quiz wäre Position 3 organisch. Wolf erarbeitet konkrete Spiele + Belohnungs-Modell + Timing selbst. Bauen erst nach Spec.
+
+Status: 2 neue Memory-Files — `project_minigames_adaptive.md` (Konzept-Skelett) + `project_qq_score_model.md` (Score-Modell-Doku + Fix-Stand).
+
+### Eurovision-Edition + Render-Status
+
+- Eurovision-Edition bleibt fertig bereit (Template 15 Fragen + 3 HL-Pairs + ESC-Theme + Kontrast-Patches): bei nächstem ESC-Anlass direkt einsatzbereit.
+- Render-Backend kann abgestellt werden — seit 2026-05-09 ist alles auf Coolify, MongoDB Atlas hält die Daten. Wolf prüft Vercel-Env-Vars + macht Live-Test, dann Render weg.
+
+### Patterns die heute zugeschlagen haben
+
+- **Drift-Bug-Pattern bei doppelten Flags**: Backend setzt `cell.stuck=true` UND `cell.stackBonus+=1` für Connections-Stack ("optisch konsistent"). Frontend zählte beide naiv addiert. Auch Hot-Potato hatte ein paralleles Doppel-Cue-Problem (hpElim + hpActive im selben Frame).
+- **Audit statt Stochern bei 15-Versuche-Stalls**: Stack-Avatar-Bug wurde nicht durch weitere offset/avFactor-Justierung gelöst, sondern durch Diagnose des Centering-Patterns. Memory `feedback_audit_when_stuck` schlug wieder zu.
+- **Mental-Model-Klärung lohnt sich**: Score-Modell-Diskrepanz war seit Monaten im Code, niemand hat's gemerkt weil's kein Live-Symptom hatte. Erst Wolfs explizite Modell-Erklärung machte den Bug sichtbar.
+
+### Files
+
+- `frontend/src/pages/QQBeamerPage.tsx` (Pause-Countdown-Stagger, MUCHO-Voter-Stagger, Hot-Potato-Guard)
+- `frontend/src/components/CozyQuizQuestionView.tsx` (Cheese-Pokal weg, Top5+Order Cascade-Sound-Filter, OnlyConnect Winner-Animation)
+- `frontend/src/components/CozyQuizFinalRevealView.tsx` (Race-Sound-Choreo + RankingEntry-Type + finalRanking auf largestConnected + Special-Award-Sound + Tippte-auf-Animation)
+- `frontend/src/components/CozyQuizThanksView.tsx` (winnerEntry auf largestConnected, Dead-Code weg)
+- `frontend/src/components/CozyQuizPausedView.tsx` (Setup-Wie-funktioniert's-Card lesbar)
+- `frontend/src/components/CozyQuizGridDisplay.tsx` (2-Stack v6-v10, hyperexplizites Centering)
+- `frontend/src/utils/sounds.ts` (startRaceLoop/stopRaceLoop + playRaceTeamFall + playRaceWinner + playSpecialAwardReveal)
+- `frontend/src/pages/QQModeratorPage.tsx` (OnlyConnect-Button-Text)
+- `shared/quarterQuizTypes.ts` (5 neue Sound-Slot-Definitionen)
+
+### Open
+
+- Mini-Game-Konzept (Wolf erarbeitet Spec)
+- Render-Service abstellen nach Live-Verifikation (Wolfs To-Do)
+- Eurovision-Edition wartet auf nächste Gelegenheit

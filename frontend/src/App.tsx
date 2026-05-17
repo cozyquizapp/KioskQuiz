@@ -23,6 +23,7 @@ const QQLibraryPage       = React.lazy(() => import('./pages/QQLibraryPage'));
 const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'));
 const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage'));
 const QQRulesEditorPage   = React.lazy(() => import('./pages/QQRulesEditorPage'));
+const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
@@ -166,6 +167,7 @@ function App() {
           <Route path="/host-sheets" element={<PinGate><QQHostSheetsPage /></PinGate>} />
           <Route path="/slides"     element={<PinGate><QQSlideEditorPage /></PinGate>} />
           <Route path="/rules-editor" element={<PinGate><QQRulesEditorPage /></PinGate>} />
+          <Route path="/cozygames"   element={<PinGate><CozyGamesEditorPage /></PinGate>} />
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
           {/* 2026-05-10 (Wolf-Fix stabile Spieler-Links): per-Game-ID-Lookup
               zusätzlich zum roomCode-Pfad. Vorher hat der RoomCode-Path

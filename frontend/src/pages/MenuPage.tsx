@@ -13,6 +13,7 @@ const cozyQuizLinks: LinkItem[] = [
   { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
   { path: '/builder',     label: 'CozyBuilder',        emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
   { path: '/library',     label: 'CozyLibrary',        emoji: '📚', note: 'Alle Fragen + Topic-Filter + wie oft schon gespielt' },
+  { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots im Quiz' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
   { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
 ];

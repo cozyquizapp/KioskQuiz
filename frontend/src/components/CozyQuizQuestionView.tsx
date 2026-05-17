@@ -5515,7 +5515,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             flexShrink: 0,
                           }} />
                         )}
-                        <span>{named ? (tier === 'xs' || tier === 'sm' ? '✓' : '✓ ') : ''}{a}</span>
+                        {/* 2026-05-17 (Wolf): ✓-Häkchen raus — Avatar + grüne
+                            Farbe + Border zeigen schon klar dass die Antwort
+                            genannt wurde. Redundantes Symbol-Lärm reduziert. */}
+                        <span>{a}</span>
                       </div>
                     );
                   })}

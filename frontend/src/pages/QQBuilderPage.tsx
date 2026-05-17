@@ -44,6 +44,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { compressImageIfNeeded } from '../utils/imageCompress';
 import { ConnectionsEditorModal } from '../components/ConnectionsEditor';
+import { CozyGamesSetupModal } from '../components/CozyGamesSetupModal';
 import { CozyWolfImage } from '../components/CozyWolfImage';
 import {
   playCozyClick, playCozySave, playCozyUpload, playCozyMilestone,
@@ -367,6 +368,7 @@ export default function QQBuilderPage() {
   const [showRestore, setShowRestore] = useState<{ draft: QQDraft; savedAt: number } | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
+  const [showCozyGames, setShowCozyGames] = useState(false);
   const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
   const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
   // 2026-05-10 CozyBuilder Pack A #4: kurze Save-Success-Cascade nach Save.
@@ -947,6 +949,24 @@ export default function QQBuilderPage() {
           onClose={() => setShowConnections(false)}
         />
       )}
+      {showCozyGames && activeDraft && (
+        <CozyGamesSetupModal
+          initialEnabled={!!activeDraft.cozyGamesEnabled}
+          initialPool={activeDraft.cozyGamesPool ?? []}
+          onSave={(enabled, pool) => {
+            const newDraft = {
+              ...activeDraft,
+              cozyGamesEnabled: enabled,
+              cozyGamesPool: pool,
+              updatedAt: Date.now(),
+            };
+            setActiveDraft(newDraft);
+            saveDraftRaw(newDraft);
+            setShowCozyGames(false);
+          }}
+          onClose={() => setShowCozyGames(false)}
+        />
+      )}
       {/* Validation prompt modal */}
       {validationPrompt && (() => {
         const v = validateDraft(validationPrompt.draft);
@@ -1132,6 +1152,11 @@ export default function QQBuilderPage() {
                 style={btnStyle(activeDraft.connections ? '#A855F7' : '#64748B')}
                 title={activeDraft.connections ? '4×4 Finale anpassen — eigenes Set gespeichert' : '4×4 Finale erstellen (sonst Default-Set)'}
               >🏆 4×4 Finale {activeDraft.connections ? '✓' : ''}</button>
+              <button
+                onClick={() => setShowCozyGames(true)}
+                style={btnStyle(activeDraft.cozyGamesEnabled ? '#EC4899' : '#64748B')}
+                title={activeDraft.cozyGamesEnabled ? `CozyGames aktiv — ${(activeDraft.cozyGamesPool ?? []).length} Spiele im Rad` : 'CozyGames konfigurieren (analoge Mini-Spiele nach Runde 1)'}
+              >🎲 CozyGames {activeDraft.cozyGamesEnabled ? `✓ (${(activeDraft.cozyGamesPool ?? []).length})` : ''}</button>
               <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
               <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
             </>

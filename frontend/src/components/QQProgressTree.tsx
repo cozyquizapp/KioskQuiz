@@ -192,29 +192,32 @@ export default function QQProgressTree({
   // Wolf 2026-05-12 'bid muss auf progress tree genau vor finalrunde
   // angezeigt werden'.
   const showBidding = state.finalWagerEnabled === true;
-  // 2026-05-17 (Wolf-Feature CozyGames): Knoten NACH Phase 0 (= zwischen
-  // Runde 1 und Runde 2). Nur wenn Toggle an + Pool > 0.
+  // 2026-05-17 (Wolf-Feature CozyGames): Knoten nach JEDER Non-Final-Runde
+  // (Wolf-Spec "nach jeder Runde"). Bei 4-Phasen: nach 1, 2, 3.
   const showCozyGames = !!(state as any).cozyGamesEnabled
     && Array.isArray((state as any).cozyGamesPool)
     && (state as any).cozyGamesPool.length > 0;
   const biddingDotSize = Math.round(dotSize * 1.2);
   const cozyGameDotSize = Math.round(dotSize * 1.2);
   let biddingCenter = 0;
-  let cozyGameCenter = 0;
+  // Pro Phase-Übergang ein eigener CG-Center. Index = Phase-Index VOR dem CG.
+  // Z.B. cozyGameCentersByPi[1] = CG zwischen Phase 0 und Phase 1 (= nach Runde 1).
+  const cozyGameCentersByPi = new Map<number, number>();
   let cursor = 0;
   phases.forEach((p, pIdx) => {
+    // CG-Knoten zwischen Runde N-1 und N (vor jedem Phase-Render außer dem ersten).
+    // pIdx > 0 = wir sind ab Phase 1 (2. Runde). Bei `pIdx === phases.length - 1`
+    // (= vor Final) kommt CG zuerst, dann Bidding, dann Final-Phase.
+    if (showCozyGames && pIdx >= 1) {
+      cursor += phaseGap;
+      cozyGameCentersByPi.set(pIdx, cursor + cozyGameDotSize / 2);
+      cursor += cozyGameDotSize;
+    }
     // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
     if (showBidding && pIdx === phases.length - 1 && pIdx > 0) {
       cursor += phaseGap;
       biddingCenter = cursor + biddingDotSize / 2;
       cursor += biddingDotSize;
-    }
-    // Nach Phase 0 (= nach 1. Quiz-Runde): CozyGame-Knoten einfuegen.
-    if (showCozyGames && pIdx === 1) {
-      // pIdx === 1 = bevor Phase 1 (= 2. Runde) gerendert wird → Knoten zwischen Phase 0 und 1.
-      cursor += phaseGap;
-      cozyGameCenter = cursor + cozyGameDotSize / 2;
-      cursor += cozyGameDotSize;
     }
     if (pIdx > 0) cursor += phaseGap;
     const entries = byPhase.get(p) ?? [];
@@ -255,7 +258,7 @@ export default function QQProgressTree({
   const showcaseTargetCenter = isShowcase
     ? (showcaseOnFinale ? finaleCenter
         : showcaseOnBidding ? biddingCenter
-        : showcaseOnCozyGame ? cozyGameCenter
+        : showcaseOnCozyGame ? (cozyGameCentersByPi.values().next().value ?? null)
         : phaseCenters[showcaseTargetPhase] ?? null)
     : null;
   const panOffset = (showcaseTargetCenter != null)
@@ -328,14 +331,21 @@ export default function QQProgressTree({
   const wolfOnFinale = showFinale && (showcaseOnFinale || wolfPhaseTarget === 'finale');
   const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding || wolfPhaseTarget === 'bidding');
   const wolfOnCozyGame = !wolfOnFinale && !wolfOnBidding && showCozyGames && wolfPhaseTarget === 'cozyGame';
+  // Aktiver CG-Knoten: zwischen aktueller Phase und nächster. gamePhaseIndex
+  // ist 1-basiert (1..N) — pi ist 0-basiert. CG-Knoten zwischen Phase pi-1
+  // und pi steht bei key=pi. Wenn state.gamePhaseIndex=1 (= Runde 1 abgeschlossen),
+  // ist der CG-Knoten dazwischen bei pi=1 → cozyGameCentersByPi.get(1).
+  const activeCozyGameCenter = wolfOnCozyGame
+    ? (cozyGameCentersByPi.get(state.gamePhaseIndex) ?? cozyGameCentersByPi.values().next().value ?? 0)
+    : 0;
   const currentCenter = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
-    : wolfOnCozyGame ? cozyGameCenter
+    : wolfOnCozyGame ? activeCozyGameCenter
     : (dotCenters[wolfDotIdx] ?? firstCenter);
   const trackStart = firstCenter;
   const trackEnd = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
-    : wolfOnCozyGame ? cozyGameCenter
+    : wolfOnCozyGame ? activeCozyGameCenter
     : lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
@@ -439,32 +449,39 @@ export default function QQProgressTree({
             const biddingLabelColor = isBiddingActive
               ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
               : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
-            const isCozyGameActiveLbl = state.phase === 'COZY_GAME' || showcaseOnCozyGame;
-            const cozyGameLabelColor = isCozyGameActiveLbl
-              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
-              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
             phases.forEach((p, pi) => {
-              // 2026-05-17 (Wolf-Bug): CozyGame-Label muss SYNCHRON zum Dot-Render
-              // sein, sonst verschieben sich alle nachfolgenden Phase-Labels und
-              // sehen aus als wäre CG zwischen jeder Runde. Insert vor Phase 1.
-              if (showCozyGames && pi === 1) {
-                items.push(
-                  <div key="cg-label" style={{
-                    width: cozyGameDotSize,
-                    textAlign: 'center',
-                    fontSize: phaseNameSize,
-                    fontWeight: 900,
-                    color: cozyGameLabelColor,
-                    textTransform: 'uppercase',
-                    flexShrink: 0,
-                    padding: 0,
-                    textShadow: (isShowcase && isCozyGameActiveLbl) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
-                    transform: (isShowcase && isCozyGameActiveLbl) ? 'translateY(-2px)' : 'translateY(0)',
-                    transition: 'all 0.4s var(--qq-ease-out-cubic)',
-                  }}>
-                    {lang === 'de' ? 'CozyGame' : 'CozyGame'}
-                  </div>
-                );
+              // 2026-05-17 (Wolf-Bug): CozyGame-Label SYNC zu Dot-Render. Insert
+              // vor jedem pi >= 1 (= zwischen Runde N-1 und N).
+              // 2026-05-17 v2 (Wolf): In Rules-Showcase KEINE Label-Schrift,
+              // nur leerer Slot mit der richtigen Breite damit Phase-Labels nicht
+              // verrutschen. Live-Tree zeigt weiter "CozyGame".
+              if (showCozyGames && pi >= 1) {
+                if (isShowcase) {
+                  // Spacer-Slot ohne Text — wahrt die Spalten-Breite synchron
+                  // zur Dot-Row, ohne dass „CozyGame" über den Würfel-Knoten
+                  // groß geschrieben wird.
+                  items.push(<div key={`cg-label-spacer-${pi}`} style={{ width: cozyGameDotSize, flexShrink: 0 }} />);
+                } else {
+                  const isCgActive = state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex;
+                  const cgLabelColor = isCgActive
+                    ? (variant === 'inline' ? '#EC4899' : '#A21247')
+                    : (variant === 'inline' ? '#94a3b8' : '#64748b');
+                  items.push(
+                    <div key={`cg-label-${pi}`} style={{
+                      width: cozyGameDotSize,
+                      textAlign: 'center',
+                      fontSize: phaseNameSize,
+                      fontWeight: 900,
+                      color: cgLabelColor,
+                      textTransform: 'uppercase',
+                      flexShrink: 0,
+                      padding: 0,
+                      transition: 'all 0.4s var(--qq-ease-out-cubic)',
+                    }}>
+                      CozyGame
+                    </div>
+                  );
+                }
               }
               // Vor letzter Phase: Bieten-Label einfuegen.
               if (showBidding && pi === phases.length - 1 && pi > 0) {
@@ -606,16 +623,19 @@ export default function QQProgressTree({
             const biddingColor = '#EC4899';
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
-            // CozyGame-Knoten — vor Phase 1 (= zwischen Runde 1 und Runde 2)
-            const insertCozyGameHere = showCozyGames && pi === 1;
+            // CozyGame-Knoten — vor jedem pi >= 1 (= zwischen Runde N-1 und N).
+            // Wolf-Spec: nach JEDER Runde ein CG (außer der letzten = Final).
+            const insertCozyGameHere = showCozyGames && pi >= 1;
             const cozyGameColor = '#EC4899';
-            const isCozyGameActive = state.phase === 'COZY_GAME';
-            // "Past" = wir sind bereits in einer späteren Quiz-Phase ODER haben gespielt
-            const isCozyGamePast = !isCozyGameActive
-              && (state.gamePhaseIndex >= 2
-                  || ((state as any).cozyGame?.playedGameIds?.length ?? 0) > 0);
+            // Active = state.phase=COZY_GAME UND der Slot zwischen aktueller
+            // Phase und nächster (= pi === state.gamePhaseIndex).
+            const isCozyGameActive = state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex;
+            // "Past" = der CG-Slot vor pi wurde bereits gespielt
+            // (state.cozyGamesPlayedAfterPhases enthält die Phase-Indizes vor diesem Slot).
+            const playedSlots = (state as any).cozyGamesPlayedAfterPhases ?? [];
+            const isCozyGamePast = !isCozyGameActive && playedSlots.includes(pi);
             const cozyGameNode = insertCozyGameHere ? (
-              <div key="cg-knoten" style={{
+              <div key={`cg-knoten-${pi}`} style={{
                 width: cozyGameDotSize,
                 flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

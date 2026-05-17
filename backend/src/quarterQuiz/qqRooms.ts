@@ -298,9 +298,10 @@ export interface QQRoomState {
   cozyGamesPool: string[];
   /** Round-State während COZY_GAME-Phase. null wenn nicht aktiv. */
   cozyGame: import('../../../shared/cozyGameTypes').CozyGameRoundState | null;
-  /** 2026-05-17 (P0 Auto-Flow): Per-Quiz-Flag damit CG nach Runde 1 nur EINMAL
-   *  pro Spiel triggert. Reset bei Game-Start. */
-  cozyGameRoundPausePlayed: boolean;
+  /** 2026-05-17 (P0 Auto-Flow): Liste der Phase-Indizes nach denen schon ein
+   *  roundPause-CG getriggert wurde. Wolf-Spec: nach JEDER Non-Final-Runde
+   *  ein CG. Reset bei Game-Start. */
+  cozyGamesPlayedAfterPhases: number[];
   /** Per-Quiz-Flag für Final-Slot (vor FINAL_REVEAL). */
   cozyGameFinalSlotPlayed: boolean;
   /** Timer-Handle für 60s-Spiel-Countdown. Not persisted. */
@@ -475,7 +476,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       cozyGamesEnabled: false,
       cozyGamesPool: [],
       cozyGame: null,
-      cozyGameRoundPausePlayed: false,
+      cozyGamesPlayedAfterPhases: [],
       cozyGameFinalSlotPlayed: false,
       _cozyGameTimerHandle: null,
     };
@@ -788,7 +789,7 @@ export function qqStartGame(
     room._cozyGameTimerHandle = null;
   }
   room.cozyGame = null;
-  room.cozyGameRoundPausePlayed = false;
+  room.cozyGamesPlayedAfterPhases = [];
   room.cozyGameFinalSlotPlayed = false;
   // 2026-05-12 (Wolf 'summary zeigt falsche teams + avatare'): persistGame-
   // Result-Guard zurueck auf false damit dieses neue Spiel einen sauberen
@@ -3549,16 +3550,20 @@ export function qqNextQuestion(room: QQRoomState): void {
   const isEndOfPhase = nextIndex >= room.gamePhaseIndex * QQ_QUESTIONS_PER_PHASE;
 
   // ── CozyGames Auto-Flow (Wolf 2026-05-17) ──────────────────────────────
-  // Nach Frage 5 einer Runde (= bevor Phase-Wechsel), wenn CG aktiv und passender
-  // Slot noch nicht gespielt: CG-Phase einschieben. Mod-Space nach CG-Sieger ruft
-  // qqNextQuestion erneut → diesmal sind Flags gesetzt → normaler Phase-Wechsel.
+  // Nach JEDER Runde (außer der letzten = Final), wenn CG aktiv und noch nicht
+  // für diesen Phase-Index getriggert: CG-Phase einschieben. Nach Sieger-
+  // Aktion ruft Mod-Space qqNextQuestion erneut → Flag ist gesetzt → normaler
+  // Phase-Wechsel (zu Comeback / nächste Runde / FINAL_REVEAL).
   if (
     isEndOfPhase
     && room.cozyGamesEnabled
     && Array.isArray(room.cozyGamesPool) && room.cozyGamesPool.length > 0
   ) {
-    // (a) Nach Runde 1: roundPause-Slot — vor Phase-Wechsel zu Runde 2.
-    if (room.gamePhaseIndex === 1 && !room.cozyGameRoundPausePlayed) {
+    const currentPhase = room.gamePhaseIndex;
+    const phasesPlayed = Array.isArray(room.cozyGamesPlayedAfterPhases)
+      ? room.cozyGamesPlayedAfterPhases : [];
+    // (a) Nach Non-Final-Runde: roundPause-Slot — vor Phase-Wechsel oder Comeback.
+    if (currentPhase < room.totalPhases && !phasesPlayed.includes(currentPhase)) {
       qqStopTimer(room);
       qqFlushQuestionToHistory(room);
       qqCozyGameStart(room, 'roundPause');
@@ -3567,7 +3572,7 @@ export function qqNextQuestion(room: QQRoomState): void {
     // (b) Vor FINAL_REVEAL: finalSlot — letzte Phase, finalWager aktiv, noch
     //     keine Final-Resolution. Zählt als zusätzlicher Final-Kat-Win.
     if (
-      room.gamePhaseIndex === room.totalPhases
+      currentPhase === room.totalPhases
       && !room.cozyGameFinalSlotPlayed
       && room.finalWagerEnabled
       && room.finalRoundScoreSnapshot !== null
@@ -5806,7 +5811,13 @@ export function qqCozyGameSelectWinner(
     }
     room.cozyGameFinalSlotPlayed = true;
   } else {
-    room.cozyGameRoundPausePlayed = true;
+    // roundPause: aktuelle Phase als gespielt markieren
+    if (!Array.isArray(room.cozyGamesPlayedAfterPhases)) {
+      room.cozyGamesPlayedAfterPhases = [];
+    }
+    if (!room.cozyGamesPlayedAfterPhases.includes(room.gamePhaseIndex)) {
+      room.cozyGamesPlayedAfterPhases.push(room.gamePhaseIndex);
+    }
   }
 
   // ── Action-Pipeline (analog zu qqStartPlacement, ohne assertPhase-Guard) ──

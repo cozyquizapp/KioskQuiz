@@ -562,6 +562,35 @@ export default function QQModeratorPage() {
       case 'PAUSED':
         // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
         break;
+      case 'COZY_GAME': {
+        // 2026-05-17 Autoplay-Handler für CozyGame-Sub-Phasen:
+        // INTRO (1.8s) → Rad drehen
+        // WHEEL_SPIN → 4s Auto-Stop läuft im Backend, nichts tun
+        // WHEEL_RESULT (3s) → Spiel starten
+        // GAME_ACTIVE → 60s-Timer im Backend, Auto-Expire ruft StopGame
+        // WINNER_SELECT (1.2s) → Random Sieger aus connected real teams
+        const cg = (s as any).cozyGame;
+        if (!cg) break;
+        if (cg.phase === 'INTRO') {
+          delayMs = 1800;
+          action = () => emit('qq:cozyGameAdvance', { roomCode });
+        } else if (cg.phase === 'WHEEL_RESULT') {
+          delayMs = 3000;
+          action = () => emit('qq:cozyGameAdvance', { roomCode });
+        } else if (cg.phase === 'WINNER_SELECT') {
+          // Random Sieger aus connected echten Teams. Bei reiner Bot-Lobby
+          // (alle disconnected) fallback auf alle Teams.
+          const connectedReal = s.teams.filter((t: any) => t.connected);
+          const pool = connectedReal.length > 0 ? connectedReal : s.teams;
+          if (pool.length > 0) {
+            const winner = pool[Math.floor(Math.random() * pool.length)];
+            delayMs = 1200;
+            action = () => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [winner.id] });
+          }
+        }
+        // WHEEL_SPIN + GAME_ACTIVE: keine Mod-Action nötig (Backend-Timer)
+        break;
+      }
       case 'FINAL_BETTING': {
         // Auto-Advance nur wenn alle Teams gesetzt haben — sonst auf Mod
         // warten (er will evtl noch warten oder manuell triggern).
@@ -2176,6 +2205,22 @@ export default function QQModeratorPage() {
                             }}
                           >{t.emoji ?? '🎮'} {t.name}</button>
                         ))}
+                        <button
+                          onClick={() => {
+                            const pool = teamList.length > 0 ? teamList : [];
+                            if (pool.length === 0) return;
+                            const winner = pool[Math.floor(Math.random() * pool.length)];
+                            emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [winner.id] });
+                          }}
+                          style={{
+                            padding: '6px 12px', borderRadius: 8,
+                            border: '2px dashed rgba(255,255,255,0.25)',
+                            background: 'rgba(255,255,255,0.04)',
+                            color: '#94a3b8', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                            marginLeft: 8,
+                          }}
+                          title="Random-Sieger für Solo-/Bot-Test"
+                        >🎲 Random</button>
                       </div>
                     );
                   }

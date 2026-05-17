@@ -71,30 +71,53 @@ export default function QQProgressTree({
   // ein undefined-State (vor erstem State-Update) als „sichtbar".
   const showcaseHasBidding = state.finalWagerEnabled === true;
   const showcaseHasFinale  = state.connectionsEnabled === true;
-  // 2026-05-17 (P2 #7): CozyGame-Step nach Phase 0 (Runde 1) im Sweep.
+  // 2026-05-17 v2 (Wolf-Bug 'CG nach Runde 2/3/4 übersprungen'): CG-Knoten
+  // nach JEDER Non-Final-Phase im Sweep, nicht nur nach Phase 0.
   const showcaseHasCozyGames = !!(state as any).cozyGamesEnabled
     && Array.isArray((state as any).cozyGamesPool)
     && (state as any).cozyGamesPool.length > 0;
-  // CozyGame-Step kommt direkt nach Phase 0 (Step-Idx 1, wenn aktiv).
-  const cozyGameStepIdx = showcaseHasCozyGames ? 1 : -1;
-  // Bidding/Finale verschieben sich um +1 wenn CozyGame aktiv.
-  const cozyGameOffset = showcaseHasCozyGames ? 1 : 0;
-  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 + cozyGameOffset : -1;
-  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases + cozyGameOffset : totalPhases - 1 + cozyGameOffset;
+  // Sweep-Reihenfolge mit CG (4-Phasen Beispiel):
+  //   0: Phase 0  → 1: CG-nach-P0  → 2: Phase 1  → 3: CG-nach-P1
+  //   4: Phase 2  → 5: CG-nach-P2  → [6: Bid]    → 7: Phase 3 (last)
+  //   → [8: Finale]
+  // Map step-Idx → CG-pi (zwischen Phase pi-1 und pi). pi=1 ist erster CG.
+  const cgStepToPi = new Map<number, number>();
+  const cgPiToStep = new Map<number, number>();
+  if (showcaseHasCozyGames) {
+    // Pro Phase 0..N-2: CG-Step direkt nach Quiz-Step.
+    // Quiz-Step für Phase pi (vor Bid) = 2*pi (alternierend Quiz/CG).
+    for (let pi = 0; pi < totalPhases - 1; pi++) {
+      const cgStep = 2 * pi + 1; // = 1, 3, 5, ...
+      cgStepToPi.set(cgStep, pi + 1); // CG zwischen Phase pi und pi+1 → Key pi+1
+      cgPiToStep.set(pi + 1, cgStep);
+    }
+  }
+  const cozyGameCount = showcaseHasCozyGames ? totalPhases - 1 : 0;
+  // Bidding/Finale-Step-Indizes verschieben sich um cozyGameCount nach hinten.
+  const biddingStepIdx     = showcaseHasBidding ? totalPhases - 1 + cozyGameCount : -1;
+  const lastQuizStepIdx    = showcaseHasBidding ? totalPhases + cozyGameCount : totalPhases - 1 + cozyGameCount;
   const finaleStepIdx      = showcaseHasFinale
-    ? (showcaseHasBidding ? totalPhases + 1 + cozyGameOffset : totalPhases + cozyGameOffset)
+    ? (showcaseHasBidding ? totalPhases + 1 + cozyGameCount : totalPhases + cozyGameCount)
     : -1;
-  const showcaseStepCount  = totalPhases
+  const showcaseStepCount  = totalPhases + cozyGameCount
     + (showcaseHasBidding ? 1 : 0)
-    + (showcaseHasFinale ? 1 : 0)
-    + (showcaseHasCozyGames ? 1 : 0);
+    + (showcaseHasFinale ? 1 : 0);
   // Mapping Sweep-Step → Quiz-Phase-Idx (-1 wenn Bid/Finale/CG/out-of-range).
-  // Verwendet weiter unten in showcaseTargetPhase + showcaseWolfIdx.
-  // 2026-05-17 (P2 #7): CG-Step (Idx 1 wenn aktiv) → Phase 0 visuell.
+  // CG-Step → maps zu vorhergegangener Phase (visuell bleibt Wolf am Ende
+  // dieser Phase, Pan geht auf CG-Knoten).
   const stepToPhaseIdx = (step: number): number => {
     if (step < 0) return -1;
-    if (showcaseHasCozyGames && step === cozyGameStepIdx) return 0; // CG → Phase 0
-    const adjStep = showcaseHasCozyGames && step > cozyGameStepIdx ? step - 1 : step;
+    if (showcaseHasCozyGames && cgStepToPi.has(step)) {
+      return (cgStepToPi.get(step) ?? 1) - 1; // CG nach Phase pi-1 → bleibt visuell auf pi-1
+    }
+    // Adjustierter Step (CG-Slots herausgerechnet) für lineare Phase-Mappings
+    let adjStep = step;
+    if (showcaseHasCozyGames) {
+      // Wie viele CG-Steps liegen vor diesem Step?
+      let cgBefore = 0;
+      for (const cgStep of cgStepToPi.keys()) if (cgStep < step) cgBefore++;
+      adjStep = step - cgBefore;
+    }
     if (!showcaseHasBidding) return adjStep < totalPhases ? adjStep : -1;
     if (adjStep < totalPhases - 1) return adjStep;
     if (adjStep === totalPhases - 1) return -1;               // Bid
@@ -125,7 +148,9 @@ export default function QQProgressTree({
   }, [showcaseMode, showcaseStepCount, showcaseStepMs]);
   const showcaseOnBidding = showcaseMode && showcaseHasBidding && showcasePhaseIdx === biddingStepIdx;
   const showcaseOnFinale  = showcaseMode && showcaseHasFinale  && showcasePhaseIdx === finaleStepIdx;
-  const showcaseOnCozyGame = showcaseMode && showcaseHasCozyGames && showcasePhaseIdx === cozyGameStepIdx;
+  const showcaseOnCozyGame = showcaseMode && showcaseHasCozyGames && cgStepToPi.has(showcasePhaseIdx);
+  // Welcher CG-Knoten (pi) ist im aktuellen Sweep-Step aktiv?
+  const showcaseActiveCgPi = showcaseOnCozyGame ? (cgStepToPi.get(showcasePhaseIdx) ?? 1) : 0;
 
   // Gruppiere Schedule-Einträge nach Phase
   const byPhase = new Map<QQGamePhaseIndex, QQScheduleEntry[]>();
@@ -258,7 +283,7 @@ export default function QQProgressTree({
   const showcaseTargetCenter = isShowcase
     ? (showcaseOnFinale ? finaleCenter
         : showcaseOnBidding ? biddingCenter
-        : showcaseOnCozyGame ? (cozyGameCentersByPi.values().next().value ?? null)
+        : showcaseOnCozyGame ? (cozyGameCentersByPi.get(showcaseActiveCgPi) ?? null)
         : phaseCenters[showcaseTargetPhase] ?? null)
     : null;
   const panOffset = (showcaseTargetCenter != null)
@@ -336,11 +361,11 @@ export default function QQProgressTree({
   const wolfOnCozyGame = !wolfOnFinale && !wolfOnBidding && showCozyGames
     && (showcaseOnCozyGame || wolfPhaseTarget === 'cozyGame');
   // Aktiver CG-Knoten:
-  // - Showcase-Mode (Rules-Roadmap): erster CG-Knoten (nur 1 Step im Sweep)
+  // - Showcase-Mode (Rules-Roadmap): nutze showcaseActiveCgPi (cgStepToPi)
   // - Live-Mode: CG-Knoten zwischen aktueller Phase und nächster (state.gamePhaseIndex)
   const activeCozyGameCenter = wolfOnCozyGame
     ? (showcaseOnCozyGame
-        ? (cozyGameCentersByPi.values().next().value ?? 0)
+        ? (cozyGameCentersByPi.get(showcaseActiveCgPi) ?? cozyGameCentersByPi.values().next().value ?? 0)
         : (cozyGameCentersByPi.get(state.gamePhaseIndex) ?? cozyGameCentersByPi.values().next().value ?? 0))
     : 0;
   const currentCenter = wolfOnFinale ? finaleCenter

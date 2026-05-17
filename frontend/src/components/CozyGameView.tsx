@@ -145,12 +145,11 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     case 'WHEEL_RESULT':
       return (
         <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`result-${activeGame?.id ?? 'na'}`}>
-          <WheelView
+          <WheelResultPhase
             width={width} height={height}
             slices={availableForWheel}
             targetIdx={round.wheelTargetSliceIndex ?? 0}
-            spinning={false}
-            revealedGame={activeGame}
+            game={activeGame}
           />
         </WithWolf>
       );
@@ -499,8 +498,136 @@ function WheelView({
         )}
       </div>
       {/* 2026-05-17 (Wolf): Konfetti-Burst beim Stop für extra Pop. */}
-      {!spinning && revealedGame && <ConfettiOverlay />}
+      {!spinning && revealedGame && (
+        <>
+          {/* confettiFall-Keyframe lokal injizieren falls Test-Page oder
+              embed-Context die qqShared-Globals nicht geladen hat. 100vh
+              funktioniert immer, unabhängig von container-type. */}
+          <style>{`
+            @keyframes confettiFall {
+              0%   { transform: translateY(var(--cy, -60px)) rotate(0deg) scale(1); opacity: 1; }
+              75%  { opacity: 1; }
+              100% { transform: translateY(100vh) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
+            }
+          `}</style>
+          <ConfettiOverlay />
+        </>
+      )}
     </FullScreenLayout>
+  );
+}
+
+// ── WHEEL_RESULT Phase: 2-Stages-Reveal ──────────────────────────────────────
+// Stage 1 (~2.8s): Rad steht still mit Reveal-Card unten (Wolf liest Spielname).
+// Stage 2: Zoom-Transition zu full-screen Slice-Farbe-Card mit großem Logo +
+// Description. Prezi-like Slide-Wechsel.
+function WheelResultPhase({ width, height, slices, targetIdx, game }: {
+  width: number; height: number;
+  slices: CozyGame[]; targetIdx: number;
+  game: CozyGame | null;
+}) {
+  const [stage, setStage] = useState<'wheel' | 'detail'>('wheel');
+  useEffect(() => {
+    const t = window.setTimeout(() => setStage('detail'), 2800);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+
+  if (stage === 'wheel') {
+    return (
+      <WheelView
+        width={width} height={height}
+        slices={slices} targetIdx={targetIdx}
+        spinning={false} revealedGame={game}
+      />
+    );
+  }
+  return <GameDetailView width={width} height={height} game={game} accentColor={sliceColor} />;
+}
+
+// ── Game-Detail-Card: full-screen mit Slice-Farbe ────────────────────────────
+function GameDetailView({ width, height, game, accentColor }: {
+  width: number; height: number;
+  game: CozyGame | null;
+  accentColor: string;
+}) {
+  if (!game) {
+    return <FullScreenLayout width={width} height={height}>
+      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+    </FullScreenLayout>;
+  }
+  return (
+    <div style={{
+      width, height,
+      background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 50%, #0F1736 100%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 32,
+      color: '#fff', fontFamily: 'inherit',
+      overflow: 'hidden',
+      animation: 'cozyGameZoomIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both',
+    }}>
+      <style>{`
+        @keyframes cozyGameZoomIn {
+          0%   { transform: scale(0.3); opacity: 0; filter: blur(8px); }
+          60%  { opacity: 1; filter: blur(0); }
+          100% { transform: scale(1); opacity: 1; filter: blur(0); }
+        }
+        @keyframes cozyGameLogoPop {
+          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+          70%  { transform: scale(1.15) rotate(8deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+      `}</style>
+      <div style={{
+        fontSize: 'clamp(160px, 22vw, 360px)',
+        lineHeight: 1,
+        filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.5))',
+        animation: 'cozyGameLogoPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
+      }}>
+        {game.emoji}
+      </div>
+      <div style={{
+        fontSize: 'clamp(48px, 6vw, 96px)',
+        fontWeight: 900,
+        letterSpacing: '-0.02em',
+        textAlign: 'center',
+        textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        animation: 'qqPhasePop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both',
+      }}>
+        {game.name}
+      </div>
+      <div style={{
+        fontSize: 'clamp(20px, 2vw, 32px)',
+        color: 'rgba(255,255,255,0.92)',
+        maxWidth: 1100,
+        textAlign: 'center',
+        lineHeight: 1.45,
+        padding: '0 40px',
+        animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both',
+      }}>
+        {game.description}
+      </div>
+      {game.materialTags.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
+          maxWidth: 1000, padding: '0 40px',
+          animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s both',
+        }}>
+          {game.materialTags.map(t => (
+            <span key={t} style={{
+              padding: '6px 14px',
+              background: 'rgba(0,0,0,0.25)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              borderRadius: 999,
+              fontSize: 'clamp(13px, 1.2vw, 18px)',
+              fontWeight: 700,
+              color: '#fff',
+            }}>{t}</span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

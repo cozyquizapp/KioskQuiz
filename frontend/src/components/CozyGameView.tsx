@@ -179,12 +179,14 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
     case 'GAME_ACTIVE': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
+      // 2026-05-17 v7: Gleiche View wie WHEEL_RESULT 'detail', nur mit
+      // gesetztem gameEndsAt → Timer pop't rein. Card bleibt stable mounted.
       phaseContent = (
-        <GameActiveView
+        <GameDetailView
           width={width} height={height}
           game={activeGame}
-          gameEndsAt={round.gameEndsAt}
           accentColor={accent}
+          gameEndsAt={round.gameEndsAt}
         />
       );
       break;
@@ -301,7 +303,21 @@ function FullScreenLayout({ children, width, height }: { children: React.ReactNo
 function IntroView({ width, height, slotKind }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot' }) {
   return (
     <FullScreenLayout width={width} height={height}>
-      <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1 }}>🪅</div>
+      {/* 2026-05-17 v7 (Wolf 'pinata darf hovern oder satisfying effect'):
+          Hover-Animation — 3s ease-in-out infinite, leichte Drift up/down
+          + leichtes Rotate. Wirkt wie eine Pinata die in der Luft baumelt. */}
+      <style>{`
+        @keyframes cozyGamePinataHover {
+          0%, 100% { transform: translateY(0) rotate(-3deg); }
+          50%      { transform: translateY(-14px) rotate(3deg); }
+        }
+      `}</style>
+      <div style={{
+        fontSize: 'clamp(80px, 12vw, 200px)',
+        lineHeight: 1,
+        filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
+        animation: 'cozyGamePinataHover 3s ease-in-out infinite',
+      }}>🪅</div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',
         fontWeight: 900,
@@ -537,12 +553,15 @@ function WheelView({
 }
 
 // ── Game-Detail-Card: full-screen mit Slice-Farbe ────────────────────────────
-// Stage-2-Reveal nach Rad-Stop. Wird vom äußeren CozyGameView gerendert
-// (NICHT von einer Wrapper-Komponente — sonst remount → Re-Spin-Bug).
-function GameDetailView({ width, height, game, accentColor }: {
+// 2026-05-17 v7 (Wolf 'wheel-result wie game-active mit inaktivem timer'):
+// Eine gemeinsame Reveal-View für beide Phasen. Card + Description bleiben
+// stable mounted, beim Wechsel WHEEL_RESULT→GAME_ACTIVE fadet nur der Timer
+// rein. React-Instanz bleibt gleich → keine erneute Card-Animation.
+function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
   width: number; height: number;
   game: CozyGame | null;
   accentColor: string;
+  gameEndsAt?: number | null;
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
@@ -552,8 +571,6 @@ function GameDetailView({ width, height, game, accentColor }: {
   return (
     <div style={{
       width, height,
-      // 2026-05-17 v6 (Wolf 'farbe direkt deckend'): solid Slice-Farbe statt
-      // Gradient zu Navy. Match zum Wave-BG damit kein Schimmer-Bruch.
       background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 32,
@@ -569,6 +586,11 @@ function GameDetailView({ width, height, game, accentColor }: {
         @keyframes cozyGameDetailFade {
           0%   { opacity: 0; transform: translateY(8px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes cozyGameTimerSlotIn {
+          0%   { opacity: 0; transform: scale(0.4); }
+          70%  { opacity: 1; transform: scale(1.08); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
       {/* 2026-05-17 v5 (Wolf 'noch nicht ganz smooth'): Stagger-Pop-Animations
@@ -628,6 +650,23 @@ function GameDetailView({ width, height, game, accentColor }: {
           ))}
         </div>
       )}
+      {/* Timer-Slot mit fixer Höhe damit Layout konstant zwischen WHEEL_RESULT
+          (Timer leer) und GAME_ACTIVE (Timer aktiv). Slot pop't rein wenn
+          gameEndsAt erst gesetzt wird (Phase-Wechsel zu GAME_ACTIVE). */}
+      <div style={{
+        minHeight: 'clamp(120px, 16vh, 200px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginTop: 8,
+      }}>
+        {gameEndsAt && (
+          <div
+            key={`timer-${gameEndsAt}`}
+            style={{ animation: 'cozyGameTimerSlotIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+          >
+            <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

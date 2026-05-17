@@ -670,20 +670,34 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
   return (
     <div style={{
       width, height,
-      // 2026-05-17 v6 (Wolf): solid Slice-Farbe (kein Navy-Gradient), match
-      // zur Detail-View damit Übergang ohne Bruch.
       background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 28,
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
     }}>
+      {/* 2026-05-17 v7 (Wolf 'timer + card sollen animation haben'):
+          Card fadet von oben rein (slide-down + opacity), Timer pop't von
+          unten mit Scale-Bounce. Gestaffelt damit es nacheinander wirkt. */}
+      <style>{`
+        @keyframes cozyGameActiveCardIn {
+          0%   { opacity: 0; transform: translateY(-30px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes cozyGameActiveTimerIn {
+          0%   { opacity: 0; transform: scale(0.3); }
+          70%  { opacity: 1; transform: scale(1.08); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 24,
         padding: '20px 40px',
         background: 'rgba(0,0,0,0.25)',
         border: '2px solid rgba(255,255,255,0.18)',
         borderRadius: 24,
+        opacity: 0,
+        animation: 'cozyGameActiveCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both',
       }}>
         <span style={{ fontSize: 'clamp(72px, 8vw, 128px)', lineHeight: 1 }}>{game.emoji}</span>
         <div>
@@ -703,7 +717,11 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
       </div>
 
       {/* Runder BeamerTimer (analog Standard-Quiz) */}
-      <div style={{ marginTop: 12 }}>
+      <div style={{
+        marginTop: 12,
+        opacity: 0,
+        animation: 'cozyGameActiveTimerIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both',
+      }}>
         <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
       </div>
     </div>

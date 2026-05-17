@@ -1,0 +1,362 @@
+import { useEffect, useMemo, useState } from 'react';
+import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
+
+// 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
+// Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
+// Polish kommt im separaten Block, sobald End-to-End-Flow steht.
+//
+// Sub-Phasen (siehe shared/cozyGameTypes.ts CozyGameRoundPhase):
+//   INTRO → WHEEL_SPIN → WHEEL_RESULT → GAME_ACTIVE → WINNER_SELECT
+
+const COZY_NAVY = '#1E2A5A';
+const COZY_PINK = '#EC4899';
+
+export interface CozyGameViewProps {
+  round: CozyGameRoundState;
+  /** Bildschirm-Größe wird vom Parent reingegeben (z.B. via useWindowDimensions). */
+  width: number;
+  height: number;
+}
+
+export default function CozyGameView({ round, width, height }: CozyGameViewProps) {
+  const [games, setGames] = useState<CozyGame[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Spiele aus Pool laden (für Rad-Slices + Spiel-Card)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/cozygames');
+        if (!res.ok) throw new Error('load failed');
+        const data: CozyGame[] = await res.json();
+        if (!cancelled) {
+          const inPool = data.filter(g => round.poolGameIds.includes(g.id) && !g.archived);
+          setGames(inPool);
+        }
+      } catch {
+        // ignore — Skelett ohne harten Error-State
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [round.poolGameIds]);
+
+  const activeGame = useMemo(
+    () => round.activeGameId ? games.find(g => g.id === round.activeGameId) ?? null : null,
+    [games, round.activeGameId]
+  );
+
+  // Verbleibende Spiele fürs Rad (Shrink-Logik aus Wolfs Entscheidung)
+  const availableForWheel = useMemo(
+    () => games.filter(g => !round.playedGameIds.includes(g.id)),
+    [games, round.playedGameIds]
+  );
+
+  if (loading) {
+    return (
+      <FullScreenLayout width={width} height={height}>
+        <div style={{ color: '#94a3b8', fontSize: 24 }}>Lade Mini-Spiele…</div>
+      </FullScreenLayout>
+    );
+  }
+
+  switch (round.phase) {
+    case 'INTRO':
+      return <IntroView width={width} height={height} slotKind={round.slotKind} />;
+
+    case 'WHEEL_SPIN':
+      return (
+        <WheelView
+          width={width} height={height}
+          slices={availableForWheel}
+          targetIdx={round.wheelTargetSliceIndex ?? 0}
+          spinning={true}
+        />
+      );
+
+    case 'WHEEL_RESULT':
+      return (
+        <WheelView
+          width={width} height={height}
+          slices={availableForWheel}
+          targetIdx={round.wheelTargetSliceIndex ?? 0}
+          spinning={false}
+          revealedGame={activeGame}
+        />
+      );
+
+    case 'GAME_ACTIVE':
+      return (
+        <GameActiveView
+          width={width} height={height}
+          game={activeGame}
+          gameEndsAt={round.gameEndsAt}
+        />
+      );
+
+    case 'WINNER_SELECT':
+      return (
+        <WinnerSelectView
+          width={width} height={height}
+          game={activeGame}
+          winnerTeamIds={round.winnerTeamIds}
+        />
+      );
+
+    default:
+      return <FullScreenLayout width={width} height={height}>
+        <div style={{ color: '#94a3b8' }}>Unbekannte CozyGame-Phase: {round.phase}</div>
+      </FullScreenLayout>;
+  }
+}
+
+// ── Full-Screen-Wrapper ──────────────────────────────────────────────────────
+function FullScreenLayout({ children, width, height }: { children: React.ReactNode; width: number; height: number }) {
+  return (
+    <div style={{
+      width, height,
+      background: `linear-gradient(180deg, ${COZY_NAVY} 0%, #0F1736 100%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 24,
+      color: '#fff', fontFamily: 'inherit',
+      overflow: 'hidden',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── INTRO ────────────────────────────────────────────────────────────────────
+function IntroView({ width, height, slotKind }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot' }) {
+  return (
+    <FullScreenLayout width={width} height={height}>
+      <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1 }}>🎲</div>
+      <div style={{
+        fontSize: 'clamp(48px, 6vw, 96px)',
+        fontWeight: 900,
+        letterSpacing: '-0.02em',
+        background: `linear-gradient(90deg, ${COZY_PINK} 0%, #A21247 100%)`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+      }}>
+        CozyGame
+      </div>
+      <div style={{
+        fontSize: 'clamp(20px, 2vw, 32px)',
+        color: '#cbd5e1', marginTop: -8, fontWeight: 600,
+      }}>
+        {slotKind === 'finalSlot' ? '🏆 Final-Kategorie' : 'Energy-Reset zwischen den Runden'}
+      </div>
+      <div style={{
+        marginTop: 32,
+        fontSize: 'clamp(14px, 1.3vw, 22px)', color: '#64748b', fontStyle: 'italic',
+      }}>
+        Gleich geht's los — das Glücksrad entscheidet, welches Spiel ihr spielt.
+      </div>
+    </FullScreenLayout>
+  );
+}
+
+// ── WHEEL (Skelett — einfache rotation, kein Bezier-Easing) ───────────────────
+function WheelView({
+  width, height, slices, targetIdx, spinning, revealedGame,
+}: {
+  width: number; height: number;
+  slices: CozyGame[]; targetIdx: number;
+  spinning: boolean; revealedGame?: CozyGame | null;
+}) {
+  const n = Math.max(slices.length, 1);
+  const anglePerSlice = 360 / n;
+  // Target-Winkel: damit der Pointer (oben) auf den Slice mit targetIdx zeigt,
+  // muss der Slice „nach oben" rotiert werden. Slice 0 startet bei 0° (oben),
+  // weitere im Uhrzeigersinn.
+  const targetAngle = -(targetIdx * anglePerSlice) - (anglePerSlice / 2);
+  // Spin: 4 volle Umdrehungen + Target. Easing rein über CSS.
+  const fullSpins = spinning ? 4 : 5;
+  const finalAngle = fullSpins * 360 + targetAngle;
+
+  const size = Math.min(width * 0.5, height * 0.7);
+
+  return (
+    <FullScreenLayout width={width} height={height}>
+      {/* Pointer oben */}
+      <div style={{ position: 'relative', width: size, height: size + 60 }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 0, height: 0,
+          borderLeft: '24px solid transparent',
+          borderRight: '24px solid transparent',
+          borderTop: `40px solid ${COZY_PINK}`,
+          zIndex: 2,
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+        }} />
+        {/* Rad */}
+        <svg
+          width={size} height={size}
+          viewBox="-100 -100 200 200"
+          style={{
+            position: 'absolute',
+            top: 60, left: 0,
+            transform: `rotate(${finalAngle}deg)`,
+            transition: spinning
+              ? 'transform 4s cubic-bezier(0.17, 0.67, 0.32, 0.99)'
+              : 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.4))',
+          }}
+        >
+          {slices.map((g, i) => {
+            const a0 = i * anglePerSlice;
+            const a1 = (i + 1) * anglePerSlice;
+            const rad0 = (a0 - 90) * Math.PI / 180;
+            const rad1 = (a1 - 90) * Math.PI / 180;
+            const r = 95;
+            const x0 = r * Math.cos(rad0);
+            const y0 = r * Math.sin(rad0);
+            const x1 = r * Math.cos(rad1);
+            const y1 = r * Math.sin(rad1);
+            const largeArc = anglePerSlice > 180 ? 1 : 0;
+            const path = `M 0 0 L ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1} Z`;
+            const fillColor = i % 2 === 0 ? COZY_PINK : '#A21247';
+            // Slice-Label Position
+            const midAngle = ((a0 + a1) / 2 - 90) * Math.PI / 180;
+            const labelR = 60;
+            const lx = labelR * Math.cos(midAngle);
+            const ly = labelR * Math.sin(midAngle);
+            return (
+              <g key={g.id}>
+                <path d={path} fill={fillColor} stroke="#0F1736" strokeWidth={1.5} />
+                <text
+                  x={lx} y={ly}
+                  fontSize={n <= 4 ? 22 : n <= 6 ? 18 : 14}
+                  fontWeight={900}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#fff"
+                  transform={`rotate(${a0 + anglePerSlice / 2} ${lx} ${ly})`}
+                >
+                  {g.emoji}
+                </text>
+              </g>
+            );
+          })}
+          {/* Center hub */}
+          <circle cx={0} cy={0} r={12} fill="#0F1736" stroke={COZY_PINK} strokeWidth={2} />
+        </svg>
+      </div>
+      {/* Status-Text */}
+      {spinning && (
+        <div style={{ fontSize: 'clamp(20px, 2vw, 36px)', fontWeight: 700, color: '#fff' }}>
+          🎯 Das Rad dreht …
+        </div>
+      )}
+      {!spinning && revealedGame && (
+        <div style={{
+          padding: '20px 32px',
+          background: 'rgba(255,255,255,0.06)',
+          border: `2px solid ${COZY_PINK}`,
+          borderRadius: 16,
+          display: 'flex', alignItems: 'center', gap: 16,
+          marginTop: 8,
+        }}>
+          <span style={{ fontSize: 56 }}>{revealedGame.emoji}</span>
+          <div>
+            <div style={{ fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900 }}>{revealedGame.name}</div>
+            <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#cbd5e1', marginTop: 4 }}>
+              {revealedGame.description}
+            </div>
+          </div>
+        </div>
+      )}
+    </FullScreenLayout>
+  );
+}
+
+// ── GAME ACTIVE (Spiel-Card + 60s-Timer) ────────────────────────────────────
+function GameActiveView({ width, height, game, gameEndsAt }: {
+  width: number; height: number;
+  game: CozyGame | null;
+  gameEndsAt: number | null;
+}) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(t);
+  }, []);
+  const remainMs = gameEndsAt ? Math.max(0, gameEndsAt - now) : 0;
+  const remainSec = Math.ceil(remainMs / 1000);
+  const urgent = remainSec <= 10;
+
+  if (!game) {
+    return <FullScreenLayout width={width} height={height}>
+      <div style={{ color: '#94a3b8' }}>Kein aktives Spiel</div>
+    </FullScreenLayout>;
+  }
+
+  return (
+    <FullScreenLayout width={width} height={height}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 24,
+        padding: '20px 36px',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        borderRadius: 20,
+      }}>
+        <span style={{ fontSize: 96 }}>{game.emoji}</span>
+        <div>
+          <div style={{ fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900 }}>{game.name}</div>
+          <div style={{ fontSize: 'clamp(16px, 1.5vw, 24px)', color: '#cbd5e1', marginTop: 6, maxWidth: 700 }}>
+            {game.description}
+          </div>
+        </div>
+      </div>
+
+      {/* Timer */}
+      <div style={{
+        marginTop: 12,
+        fontSize: 'clamp(120px, 18vw, 280px)',
+        fontWeight: 900,
+        color: urgent ? '#EF4444' : '#fff',
+        textShadow: urgent ? '0 0 32px #EF4444aa' : '0 4px 24px rgba(0,0,0,0.4)',
+        lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {remainSec}
+      </div>
+      <div style={{ fontSize: 'clamp(18px, 1.5vw, 28px)', color: '#94a3b8', marginTop: -8 }}>
+        Sekunden
+      </div>
+    </FullScreenLayout>
+  );
+}
+
+// ── WINNER SELECT (zwischen Spiel-Ende und PLACEMENT) ────────────────────────
+function WinnerSelectView({ width, height, game, winnerTeamIds }: {
+  width: number; height: number;
+  game: CozyGame | null;
+  winnerTeamIds: string[];
+}) {
+  return (
+    <FullScreenLayout width={width} height={height}>
+      <div style={{ fontSize: 'clamp(80px, 10vw, 160px)', lineHeight: 1 }}>
+        {game?.emoji ?? '🎲'}
+      </div>
+      <div style={{ fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900 }}>
+        Zeit abgelaufen!
+      </div>
+      {winnerTeamIds.length === 0 ? (
+        <div style={{ fontSize: 'clamp(18px, 1.5vw, 28px)', color: '#cbd5e1', marginTop: 8 }}>
+          ⏳ Moderator wählt den Sieger …
+        </div>
+      ) : (
+        <div style={{ fontSize: 'clamp(20px, 2vw, 32px)', color: '#86efac', marginTop: 8, fontWeight: 700 }}>
+          ✨ {winnerTeamIds.length === 1 ? 'Sieger steht fest!' : `${winnerTeamIds.length} Sieger (Tie)`}
+        </div>
+      )}
+    </FullScreenLayout>
+  );
+}

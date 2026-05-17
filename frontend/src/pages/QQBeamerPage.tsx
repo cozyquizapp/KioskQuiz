@@ -43,6 +43,7 @@ import { ComebackView } from '../components/CozyQuizComebackView';
 import { ThanksView } from '../components/CozyQuizThanksView';
 import { GameOverView } from '../components/CozyQuizGameOverView';
 import { ConnectionsBeamerView } from '../components/CozyQuizConnectionsBeamerView';
+import CozyGameView from '../components/CozyGameView';
 import { FinalBettingView } from '../components/CozyQuizFinalBettingView';
 import { LobbyView } from '../components/CozyQuizLobbyView';
 import { TeamsRevealView } from '../components/CozyQuizTeamsRevealView';
@@ -1978,6 +1979,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
               {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
               {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
+              {renderState.phase === 'COZY_GAME'       && renderState.cozyGame && (
+                <CozyGameView
+                  round={renderState.cozyGame}
+                  width={typeof window !== 'undefined' ? window.innerWidth : 1920}
+                  height={typeof window !== 'undefined' ? window.innerHeight : 1080}
+                />
+              )}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
               {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
               {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}

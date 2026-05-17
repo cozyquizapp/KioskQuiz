@@ -724,6 +724,8 @@ export type QQSoundSlot =
   // Slot leer ist — Wolf kann sie schrittweise befuellen.
   | 'raceCountdown' | 'raceLoop' | 'racePodium' | 'raceWinner' | 'raceTeamFall'
   | 'specialAwardReveal'
+  // 2026-05-17 (Wolf-Feature CozyGames): Glücksrad-Spin + Stop-Snap.
+  | 'cozyGameWheelTick' | 'cozyGameWheelStop' | 'cozyGameStart'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -773,6 +775,10 @@ export interface QQSoundConfig {
   raceWinner?: string;     // Sound wenn Gewinner entschieden ist (vor Treppchen)
   racePodium?: string;     // Whoosh/Fanfare beim Treppchen-Aufstieg
   specialAwardReveal?: string; // Pro Special-Award-Card-Flip (3x hintereinander)
+  // CozyGame-Sounds (2026-05-17). Synth-Fallback wenn leer.
+  cozyGameWheelTick?: string;  // tickender Pointer waehrend Spin
+  cozyGameWheelStop?: string;  // Final-Snap beim Rad-Stopp
+  cozyGameStart?: string;       // 60s-Timer-Start ("Los geht's"-Cue)
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
   correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
@@ -825,6 +831,9 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   raceWinner:          '🥇 Race-Winner (sobald Sieger entschieden)',
   racePodium:          '🏆 Treppchen-Aufstieg (Whoosh wenn Podium reinkommt)',
   specialAwardReveal:  '🏅 Special-Award-Reveal (pro Card-Flip, 3x in Drumroll-Folge)',
+  cozyGameWheelTick:   '🎲 CozyGame-Rad-Tick (Pointer-Tick während Spin)',
+  cozyGameWheelStop:   '🎲 CozyGame-Rad-Stop (Final-Snap-Sound bei Rad-Landung)',
+  cozyGameStart:       '🎲 CozyGame-Start (Los-geht\'s-Cue bei Timer-Start)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
   correctSchaetzchen:   '✅ Richtig · Schätzchen',
   correctMucho:         '✅ Richtig · Mu-Cho',
@@ -892,6 +901,9 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   raceWinner:          '',
   racePodium:          '',
   specialAwardReveal:  '',
+  cozyGameWheelTick:   '',
+  cozyGameWheelStop:   '',
+  cozyGameStart:       '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
   correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
   wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',

@@ -19,6 +19,7 @@ import {
 } from './qqBfs';
 import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
 import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
+import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { recordQQQuestionUsage } from '../db/schemas';
 
@@ -763,8 +764,17 @@ export function qqStartGame(
   room.finalWagerEnabled = true;
   room.connectionsEnabled = false;
   // 2026-05-17: CozyGames-Setup aus Draft. Default off, leeren Pool.
+  // Mod-Quick-Toggle-State wird vom Frontend in den startGame-Args mitgesendet,
+  // hat also Vorrang vor Draft (siehe QQModeratorPage liveToggleOn-Logik).
   room.cozyGamesEnabled = cozyGamesEnabled === true;
   room.cozyGamesPool = Array.isArray(cozyGamesPool) ? cozyGamesPool.slice(0, 8) : [];
+  // Safety-Net: wenn Toggle an aber Pool leer → 8 random Seed-IDs aus dem
+  // V1-Pool. Vermeidet "0 Spiele im Rad" wenn Migration noch nicht durch.
+  if (room.cozyGamesEnabled && room.cozyGamesPool.length === 0) {
+    const seedIds = COZY_GAME_V1_SEED.map(g => g.id);
+    const shuffled = [...seedIds].sort(() => Math.random() - 0.5);
+    room.cozyGamesPool = shuffled.slice(0, 8);
+  }
   // Round-State immer leer beim Game-Start (kein Leaking aus letztem Spiel)
   if (room._cozyGameTimerHandle) {
     clearTimeout(room._cozyGameTimerHandle);

@@ -2100,8 +2100,10 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           oben rechts; auf welchem Hinweis sie es hatten siehst du an den
           Hint-Cards mit Gold-Ring. */}
       {/* 2026-05-09 v2 (Wolf-Reform): Submit-Status-Reihe — pre-reveal pro Team
-          Avatar mit ✓ wenn submitted (richtig) oder ✕ wenn locked. Anti-Spoiler:
-          ✓ und ✕ sehen identisch aus von außen, nur Team weiß ob's richtig war. */}
+          Avatar mit ✓ wenn submitted (richtig) oder ✕ wenn locked.
+          2026-05-17 (Wolf): Konsistent zum Rest — grüner Glow + grüner Border
+          statt ✓-Badge (analog Bluff-Pattern). Anti-Spoiler bleibt: kein
+          Unterschied zwischen Hit/Locked von außen. */}
       {!revealed && (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2116,28 +2118,21 @@ function OnlyConnectBeamerView({ state: s, lang, revealed }: {
           return (
             <div key={tm.id} title={tm.name} style={{
               position: 'relative',
-              display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
               opacity: hasSubmitted ? 1 : 0.55,
-              filter: hasSubmitted ? 'none' : 'grayscale(0.4)',
+              filter: hasSubmitted
+                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
+                : 'grayscale(0.4)',
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5cqw, 72px)'} style={{
                 background: '#0A0814',
                 boxShadow: hasSubmitted
-                  ? `0 0 0 2px ${tm.color}, 0 0 14px ${tm.color}88, 0 4px 10px rgba(0,0,0,0.55)`
+                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
                   : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                transition: 'box-shadow 0.45s ease',
               }} />
-              {hasSubmitted && (
-                <div style={{
-                  position: 'absolute', bottom: -4, right: -4,
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: '#0A0814', border: `2px solid ${tm.color}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, lineHeight: 1, color: tm.color, fontWeight: 900,
-                  animation: 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
-                }}>✓</div>
-              )}
             </div>
           );
         })}

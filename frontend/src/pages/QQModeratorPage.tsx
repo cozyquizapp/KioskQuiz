@@ -208,8 +208,16 @@ export default function QQModeratorPage() {
     const draftConnections = draft.connections;
     const draftConnectionsDuration = draft.connectionsDurationSec;
     const draftConnectionsMaxFails = draft.connectionsMaxFails;
-    const draftCozyGamesEnabled = !!(draft as any).cozyGamesEnabled;
-    const draftCozyGamesPool = Array.isArray((draft as any).cozyGamesPool) ? (draft as any).cozyGamesPool : [];
+    // 2026-05-17: Mod-Quick-Setting-Toggle (in LOBBY vor Start) hat Vorrang vor
+    // Draft-Setting. Wenn Wolf den Toggle aktiviert hat aber im Builder aus
+    // war, nutzen wir den Mod-State + dessen Pool (vom Auto-Fill befüllt).
+    const liveToggleOn = !!(state as any)?.cozyGamesEnabled;
+    const liveToggledPool = Array.isArray((state as any)?.cozyGamesPool) ? (state as any).cozyGamesPool : [];
+    const draftCozyGamesEnabled = !!(draft as any).cozyGamesEnabled || liveToggleOn;
+    const baseDraftPool = Array.isArray((draft as any).cozyGamesPool) ? (draft as any).cozyGamesPool : [];
+    const draftCozyGamesPool = liveToggleOn && liveToggledPool.length > 0
+      ? liveToggledPool
+      : baseDraftPool;
     if (questions.length === 0) { alert('Draft hat keine Fragen'); return; }
     // Truncate auf die gewählte Rundenzahl: nur Fragen aus phaseIndex 1..phases.
     if (questions.length > needed) {

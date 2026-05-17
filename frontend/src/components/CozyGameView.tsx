@@ -304,10 +304,11 @@ function WheelView({
   // muss der Slice „nach oben" rotiert werden. Slice 0 startet bei 0° (oben),
   // weitere im Uhrzeigersinn.
   const targetAngle = -(targetIdx * anglePerSlice) - (anglePerSlice / 2);
-  // 2026-05-17 (Wolf 'langsamer + mehr effekt'): 4s → 6.5s, 5 → 6 volle
-  // Umdrehungen für mehr Dramatik. Stop-Snap: 0.6s → 1.2s mit overshoot.
-  const fullSpins = spinning ? 6 : 7;
-  const finalAngle = fullSpins * 360 + targetAngle;
+  // 2026-05-17 (Wolf 'langsamer + mehr effekt'): 6 volle Umdrehungen +
+  // Target-Winkel. Stop-Snap nutzt overshoot-Bezier statt zusätzliche
+  // Umdrehung — sonst dreht das Rad beim Übergang WHEEL_SPIN→RESULT
+  // ein weiteres Mal komplett um (Wolf-Bug 'rad dreht nochmal los').
+  const finalAngle = 6 * 360 + targetAngle;
 
   // 2026-05-17 (Wolf-Bug 'rad dreht sich nicht sichtbar'): initial Mount mit
   // finalAngle hat keinen Transition-Start-Wert → keine Animation. Lösung:

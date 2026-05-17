@@ -19,6 +19,25 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 const COZY_NAVY = '#1E2A5A';
 const COZY_PINK = '#EC4899';
 
+// 2026-05-17 v15 (Wolf 'farben auf dem wheel gleich dunkel wie im bg'):
+// Pre-computed Dark-Versionen der QQ_TEAM_PALETTE (35% bright + 65% #0A0814).
+// Slices nehmen die dunkle Variante (matched dem BG-Look), Pointer-Wave +
+// accent-Tint im Detail-View nutzen weiter die bright-Farben für den
+// Reveal-Kontrast.
+// 2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe aus slice
+// bis zum öffnen des grids'): Modul-Level damit GameDetailView + WinnerSelectView
+// + WheelView denselben Lookup nutzen können.
+const SLICE_PALETTE_DARK = [
+  '#5F2139', // shiba (was #FA507F)
+  '#3D4C1D', // faultier (was #9DCB2F)
+  '#142C57', // pinguin (was #266FD3)
+  '#3C2958', // koala (was #9A65D5)
+  '#5F4B14', // giraffe (was #FEC814)
+  '#2B4447', // waschbaer (was #68B4A5)
+  '#602E18', // kuh (was #FF751F)
+  '#5D1D1A', // capybara (was #F84326)
+];
+
 // 2026-05-17 v11 (Wolf 'CG-slides fallen aus dem raster, andere bgs sind dunkler
 // mit fireflies'): Standard-Brand-BG analog PausedView etc. — dunkler Grund
 // (#0A0814) mit subtilen accent-Radial-Gradients. Akzent-Farbe variabel pro
@@ -189,8 +208,14 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
       const showDetail = !isSpin && resultStage === 'detail';
       const targetIdx = round.wheelTargetSliceIndex ?? 0;
       const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+      const darkSliceColor = SLICE_PALETTE_DARK[targetIdx % SLICE_PALETTE_DARK.length];
       phaseContent = showDetail ? (
-        <GameDetailView width={width} height={height} game={activeGame} accentColor={sliceColor} />
+        <GameDetailView
+          width={width} height={height}
+          game={activeGame}
+          accentColor={sliceColor}
+          darkAccentColor={darkSliceColor}
+        />
       ) : (
         <WheelView
           width={width} height={height}
@@ -206,6 +231,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
     case 'GAME_ACTIVE': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
+      const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
       // 2026-05-17 v7: Gleiche View wie WHEEL_RESULT 'detail', nur mit
       // gesetztem gameEndsAt → Timer pop't rein. Card bleibt stable mounted.
       phaseContent = (
@@ -213,6 +239,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
           width={width} height={height}
           game={activeGame}
           accentColor={accent}
+          darkAccentColor={darkAccent}
           gameEndsAt={round.gameEndsAt}
         />
       );
@@ -222,12 +249,14 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
     case 'WINNER_SELECT': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
+      const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
       phaseContent = (
         <WinnerSelectView
           width={width} height={height}
           game={activeGame}
           winnerTeamIds={round.winnerTeamIds}
           accentColor={accent}
+          darkAccentColor={darkAccent}
           teams={teams ?? []}
         />
       );
@@ -456,21 +485,7 @@ function WheelView({
   // 2026-05-17 v15 (Wolf 'wheel noch etwas größer'): 0.62/0.82 → 0.68/0.86.
   const size = Math.min(width * 0.68, height * 0.86);
 
-  // 2026-05-17 v15 (Wolf 'farben auf dem wheel gleich dunkel wie im bg'):
-  // Pre-computed Dark-Versionen der QQ_TEAM_PALETTE (35% bright + 65% #0A0814).
-  // Slices nehmen die dunkle Variante (matched dem BG-Look), Pointer-Wave +
-  // accent-Tint im Detail-View nutzen weiter die bright-Farben für den
-  // Reveal-Kontrast (dunkel → bright flood → dunkel + bright tint).
-  const SLICE_PALETTE = [
-    '#5F2139', // shiba (was #FA507F)
-    '#3D4C1D', // faultier (was #9DCB2F)
-    '#142C57', // pinguin (was #266FD3)
-    '#3C2958', // koala (was #9A65D5)
-    '#5F4B14', // giraffe (was #FEC814)
-    '#2B4447', // waschbaer (was #68B4A5)
-    '#602E18', // kuh (was #FF751F)
-    '#5D1D1A', // capybara (was #F84326)
-  ];
+  const SLICE_PALETTE = SLICE_PALETTE_DARK;
 
   // 2026-05-17 v4 (Wolf): Zoom-Approach verworfen — SVG-Rotation + Container-
   // Scale beißen sich. Stattdessen Slice-Color-Wave (siehe wash-Overlay unten).
@@ -597,31 +612,22 @@ function WheelView({
               15%  { opacity: 1; }
               100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
             }
-            /* 2026-05-17 v11 (Wolf 'CG-slides dunkler + fireflies'): Wave
-               fadet am Ende aus statt solid stehen zu bleiben, damit der
-               darunterliegende dunkle Brand-BG durchscheint und kein harter
-               Cut zum GameDetailView entsteht. */
-            @keyframes cozyGameWaveFadeOut {
-              0%   { opacity: 1; }
-              100% { opacity: 0; }
-            }
           `}</style>
           <ConfettiOverlay />
-          {/* Slice-Color-Wave: solide Slice-Farbe expandiert via clip-path
-              vom Pointer-Position (oben) zu Vollbild.
-              2026-05-17 v6 (Wolf 'farbe direkt deckend'): plain solid color,
-              kein Gradient mehr zu Navy.
-              2026-05-17 v11 (Wolf 'dunkler + fireflies'): Nach Wave-Fill
-              (2.7s) fadet die Welle in 0.9s aus → darunterliegender Dark-BG
-              wird sichtbar → seamless Übergang zu GameDetailView (das den
-              gleichen Dark-BG nutzt). */}
+          {/* Slice-Color-Wave: solide DUNKLE Slice-Farbe expandiert via
+              clip-path vom Pointer-Position (oben) zu Vollbild.
+              2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe
+              aus slice bis zum öffnen des grids'): Wave bleibt am Ende voll
+              opaque mit der dunklen Slice-Farbe → GameDetailView mountet
+              direkt darüber mit identischer Solid-Color. Kein Fade-Out mehr
+              (würde die darunterliegende pink-radial BG kurz zeigen → Flash). */}
           {waveActive && (
             <div style={{
               position: 'absolute', inset: 0,
               background: sliceColorForWave,
               pointerEvents: 'none',
               zIndex: 40,
-              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both, cozyGameWaveFadeOut 0.9s ease-out 2.7s both',
+              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',
             }} />
           )}
         </>
@@ -635,10 +641,11 @@ function WheelView({
 // Eine gemeinsame Reveal-View für beide Phasen. Card + Description bleiben
 // stable mounted, beim Wechsel WHEEL_RESULT→GAME_ACTIVE fadet nur der Timer
 // rein. React-Instanz bleibt gleich → keine erneute Card-Animation.
-function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
+function GameDetailView({ width, height, game, accentColor, darkAccentColor, gameEndsAt }: {
   width: number; height: number;
   game: CozyGame | null;
   accentColor: string;
+  darkAccentColor: string;
   gameEndsAt?: number | null;
 }) {
   if (!game) {
@@ -649,9 +656,10 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
   return (
     <div style={{
       width, height,
-      // 2026-05-17 v11 (Wolf 'CG-slides dunkler + fireflies wie restliches quiz'):
-      // Dunkler Brand-BG mit Slice-Color-Radial-Tint statt voller Slice-Farbe.
-      ...darkBgWithAccent(accentColor),
+      // 2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe aus slice
+      // bis zum öffnen des grids'): Solid dark Slice-Color als BG, kein Radial-
+      // Tint mehr. Konsistente Farbe von WHEEL_RESULT bis WINNER_SELECT.
+      backgroundColor: darkAccentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
       color: '#fff', fontFamily: 'inherit',
@@ -660,7 +668,8 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
       boxSizing: 'border-box',
       position: 'relative',
     }}>
-      <Fireflies color={`${accentColor}55`} />
+      {/* Fireflies in heller Slice-Farbe für Kontrast auf dunklem Slice-BG. */}
+      <Fireflies color={`${accentColor}66`} />
       <style>{`
         @keyframes cozyGameLogoPop {
           0%   { transform: scale(0.6); opacity: 0; }
@@ -856,11 +865,12 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 //      mit Game-Info als Kontext.
 //   2. winnerTeamIds.length > 0 → Winner-Hero-Slide: große Avatar(e) + Name(n)
 //      mit 🏆-Headline + Game-Caption. Game-Info tritt zurück.
-function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, teams }: {
+function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, darkAccentColor, teams }: {
   width: number; height: number;
   game: CozyGame | null;
   winnerTeamIds: string[];
   accentColor: string;
+  darkAccentColor: string;
   teams: QQTeam[];
 }) {
   if (!game) {
@@ -875,7 +885,9 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, tea
   return (
     <div style={{
       width, height,
-      ...darkBgWithAccent(accentColor),
+      // 2026-05-17 v17: Solid dark Slice-Color als BG, matched GameDetailView
+      // → seamless Übergang von Game-Active zu Winner-Reveal.
+      backgroundColor: darkAccentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
       color: '#fff', fontFamily: 'inherit',
@@ -884,7 +896,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, tea
       boxSizing: 'border-box',
       position: 'relative',
     }}>
-      <Fireflies color={`${accentColor}55`} />
+      <Fireflies color={`${accentColor}66`} />
       <style>{`
         @keyframes cozyGameTimerSlotIn {
           0%   { opacity: 0; transform: scale(0.4); }
@@ -935,26 +947,30 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, tea
                 gap: 'clamp(8px, 1.2vh, 16px)',
                 animation: `cozyGameEmojiFloat 3s ease-in-out ${i * 0.15}s infinite`,
               }}>
+                {/* 2026-05-17 v17 (Wolf 'avatar zu klein'): size direkt als
+                    CSS-Längen-String an QQTeamAvatar, NICHT "100%". QQTeamAvatar
+                    berechnet die Emoji-Font-Size intern via calc(size * 0.6) —
+                    bei size="100%" landet das bei calc(100% * 0.6) = 60% der
+                    geerbten font-size (winzig). Mit clamp() funktioniert's. */}
                 <div style={{
-                  width: 'clamp(140px, 18vw, 240px)',
-                  height: 'clamp(140px, 18vw, 240px)',
+                  display: 'inline-block',
                   animation: `cozyGameWinnerPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.15 + i * 0.1}s both`,
                   filter: 'drop-shadow(0 10px 28px rgba(0,0,0,0.55))',
                 }}>
                   <QQTeamAvatar
                     avatarId={t.avatarId}
                     teamEmoji={t.emoji}
-                    size="100%"
+                    size="clamp(200px, 26vw, 380px)"
                     bgColor={t.color}
                   />
                 </div>
                 <div style={{
-                  fontSize: 'clamp(22px, 2.4vw, 42px)',
+                  fontSize: 'clamp(28px, 3vw, 56px)',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
                   textAlign: 'center',
                   textShadow: '0 4px 16px rgba(0,0,0,0.45)',
-                  maxWidth: 'clamp(160px, 20vw, 280px)',
+                  maxWidth: 'clamp(200px, 26vw, 400px)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',

@@ -308,6 +308,17 @@ function WheelView({
   const fullSpins = spinning ? 6 : 7;
   const finalAngle = fullSpins * 360 + targetAngle;
 
+  // 2026-05-17 (Wolf-Bug 'rad dreht sich nicht sichtbar'): initial Mount mit
+  // finalAngle hat keinen Transition-Start-Wert → keine Animation. Lösung:
+  // rotation startet bei 0, nach Mount via useEffect auf finalAngle setzen.
+  // Das gibt Browser einen Frame mit rotate(0) bevor CSS-Transition feuert.
+  const [renderAngle, setRenderAngle] = useState(0);
+  useEffect(() => {
+    // Nach Mount: kurz warten dann auf Endwinkel setzen → CSS-Transition läuft.
+    const handle = window.setTimeout(() => setRenderAngle(finalAngle), 30);
+    return () => window.clearTimeout(handle);
+  }, [finalAngle]);
+
   const size = Math.min(width * 0.5, height * 0.7);
 
   // 2026-05-17 (Wolf 'verschiedene farben'): 8-Farben-Brand-Palette statt
@@ -349,7 +360,7 @@ function WheelView({
           style={{
             position: 'absolute',
             top: 60, left: 0,
-            transform: `rotate(${finalAngle}deg)`,
+            transform: `rotate(${renderAngle}deg)`,
             transition: spinning
               ? 'transform 6.5s cubic-bezier(0.14, 0.6, 0.2, 1)'
               : 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',

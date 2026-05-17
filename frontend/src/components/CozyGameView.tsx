@@ -474,12 +474,18 @@ function WheelView({
 
   // 2026-05-17 v4 (Wolf): Zoom-Approach verworfen — SVG-Rotation + Container-
   // Scale beißen sich. Stattdessen Slice-Color-Wave (siehe wash-Overlay unten).
-  const sliceColorForWave = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+  // 2026-05-17 v16 (Wolf 'jetzt kommt der helle bg noch dazwischen?'): Wave
+  // nutzt jetzt die DUNKLE Slice-Farbe (matched dem Wheel-Slice) statt der
+  // hellen — sonst flasht zwischen dunklem Wheel und dunklem Detail-View ein
+  // bright color rein. BG-Accent für die Radial-Tint bleibt die HELLE Farbe,
+  // weil die nur als subtiler Glow an den Rändern wirkt, nicht als Vollbild.
+  const sliceColorForWave = SLICE_PALETTE[targetIdx % SLICE_PALETTE.length];
+  const sliceColorBright = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
   const waveActive = !spinning && !!revealedGame;
-  // 2026-05-17 v11: BG-Akzent folgt der Slice-Farbe wenn revealed, sonst
-  // brand-pink. So nimmt der dunkle Hintergrund schon im Wheel-Result die
-  // spätere Detail-Farbe an — schmiert smooth zur Wave-Reveal.
-  const bgAccent = !spinning && revealedGame ? sliceColorForWave : COZY_PINK;
+  // BG-Akzent folgt der HELLEN Slice-Farbe (für Radial-Glow im Detail-View) wenn
+  // revealed, sonst brand-pink. So bleibt ein Hauch Slice-Identität sichtbar
+  // im dunklen BG, ohne dass die Wave selbst hell flutet.
+  const bgAccent = !spinning && revealedGame ? sliceColorBright : COZY_PINK;
   return (
     <FullScreenLayout width={width} height={height} accent={bgAccent}>
       {/* Wheel-Container: exakt size×size, Pointer ragt absolut nach oben raus

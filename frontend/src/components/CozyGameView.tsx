@@ -491,9 +491,11 @@ function WheelView({
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
-      {/* 2026-05-17 (Wolf 'nach reveal nicht verschieben'): Bottom-Slot mit
-          fixer minHeight damit Rad-Position konstant bleibt, egal ob Status-
-          Text oder Reveal-Card sichtbar ist. */}
+      {/* 2026-05-17 v5 (Wolf 'card unten soll erst kommen nach wave'):
+          Reveal-Card im WheelView entfernt — die Detail-View nach Stage-
+          Wechsel hat eh schon die volle Spiel-Info als full-screen. Bottom-
+          Slot mit minHeight bleibt damit Rad-Position konstant. Nur Status-
+          Text während Spin. */}
       <div style={{
         minHeight: 'clamp(120px, 18vh, 200px)',
         width: '100%',
@@ -508,25 +510,6 @@ function WheelView({
             animation: 'qqSpinSlow 1.2s ease-in-out infinite',
           }}>
             🪅 Das Rad dreht …
-          </div>
-        )}
-        {!spinning && revealedGame && (
-          <div style={{
-            padding: '24px 40px',
-            background: 'rgba(255,255,255,0.08)',
-            border: `3px solid ${COZY_PINK}`,
-            borderRadius: 20,
-            display: 'flex', alignItems: 'center', gap: 20,
-            boxShadow: `0 0 60px ${COZY_PINK}55, 0 0 20px ${COZY_PINK}33`,
-            animation: 'qqPhasePop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
-          }}>
-            <span style={{ fontSize: 64 }}>{revealedGame.emoji}</span>
-            <div>
-              <div style={{ fontSize: 'clamp(28px, 3vw, 48px)', fontWeight: 900 }}>{revealedGame.name}</div>
-              <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#cbd5e1', marginTop: 4 }}>
-                {revealedGame.description}
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -549,13 +532,15 @@ function WheelView({
             }
           `}</style>
           <ConfettiOverlay />
-          {/* Slice-Color-Wave: radialer Wash von der Pointer-Position aus,
-              expandiert mit clip-path zu Vollbild in Slice-Farbe. Startet
-              1.2s nach spinning=false (Stop-Snap fertig), läuft 1.5s. */}
+          {/* Slice-Color-Wave: solide Slice-Farbe expandiert via clip-path
+              vom Pointer-Position (oben) zu Vollbild. 2026-05-17 v5 (Wolf
+              'hintergrund scheint durch'): BG ist jetzt solid linear-gradient
+              in Slice-Farbe (vorher radial mit alpha-Rand → durchsichtig).
+              Match zur Detail-View-BG damit der Übergang nahtlos ist. */}
           {waveActive && (
             <div style={{
               position: 'absolute', inset: 0,
-              background: `radial-gradient(circle at 50% 50%, ${sliceColorForWave} 0%, ${sliceColorForWave}ee 60%, ${sliceColorForWave}aa 100%)`,
+              background: `linear-gradient(135deg, ${sliceColorForWave} 0%, ${sliceColorForWave}cc 50%, #0F1736 100%)`,
               pointerEvents: 'none',
               zIndex: 40,
               animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',

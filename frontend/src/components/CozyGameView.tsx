@@ -162,19 +162,23 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
   // beim Phase-Wechsel WHEEL_SPIN → WHEEL_RESULT.
   // WICHTIG: useState/useEffect MUSS vor early-return (loading) stehen,
   // sonst React #310 "Rendered more hooks than during the previous render".
+  //
+  // 2026-05-17 v18 (Wolf 'wheel kommt nochmal rein anstatt card bei game active'):
+  // resultStage ist jetzt STICKY — nur bei INTRO/WHEEL_SPIN zurück auf 'wheel'
+  // gesetzt. Bei GAME_ACTIVE/WINNER_SELECT bleibt 'detail' erhalten, damit der
+  // Card-Stage-State über Phasen hinweg konsistent ist (vorher: setResultStage
+  // beim Phase-Wechsel zu GAME_ACTIVE reset auf 'wheel' → falls währenddessen
+  // ein erneuter Render mit phase=WHEEL_RESULT auftrat, wurde Wheel statt Card
+  // gerendert).
+  // Stage-Flip-Delay: 3.6s → 1.5s (Wave-Choreo raus, kein Atmungs-Pause mehr).
   const [resultStage, setResultStage] = useState<'wheel' | 'detail'>('wheel');
   useEffect(() => {
-    if (round.phase !== 'WHEEL_RESULT') {
+    if (round.phase === 'INTRO' || round.phase === 'WHEEL_SPIN') {
       setResultStage('wheel');
       return;
     }
-    // 2026-05-17 v5 (Wolf 'switcht zu schnell'): Choreo mit Atmungs-Pause
-    //   0.0s  spinning=false → 1.2s Stop-Snap startet
-    //   1.2s  Snap fertig → Wave-Animation startet (1.5s)
-    //   2.7s  Wave fertig (Screen ist in Slice-Farbe)
-    //   2.7-3.6s  Pause — solide Slice-Farbe atmet 0.9s
-    //   3.6s  Stage-Wechsel zu Detail-View (Inhalt fadet rein)
-    const t = window.setTimeout(() => setResultStage('detail'), 3600);
+    if (round.phase !== 'WHEEL_RESULT') return; // GAME_ACTIVE / WINNER_SELECT: keep current
+    const t = window.setTimeout(() => setResultStage('detail'), 1500);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 
@@ -349,20 +353,30 @@ function PersistentWolfLayer({ wolfMode, speech, speechKey }: {
 // COZY_PINK damit Intro/Wheel optisch ins Quiz passt (gleicher Look wie Pause/
 // Comeback/Question-Views). `position: relative` damit absolute Children
 // (Wheel-Pointer, Wave-Overlay, Fireflies) auf FullScreenLayout anchorn.
-function FullScreenLayout({ children, width, height, accent = COZY_PINK }: {
-  children: React.ReactNode; width: number; height: number; accent?: string;
+// 2026-05-17 v18 (Wolf 'ab moment wo gewählt nicht später hellere farbe'):
+// Optional `solid`-Prop für solide BG-Farbe (z.B. dark Slice-Color). Wenn
+// gesetzt, ersetzt es darkBgWithAccent komplett — kein Radial-Tint mehr.
+// Fireflies-Farbe folgt weiter dem `accent` (heller Slice für Kontrast auf
+// dunklem Solid-BG).
+function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }: {
+  children: React.ReactNode; width: number; height: number;
+  accent?: string;
+  solid?: string;
 }) {
+  const bgStyle = solid
+    ? { backgroundColor: solid, backgroundImage: 'none' }
+    : darkBgWithAccent(accent);
   return (
     <div style={{
       width, height,
-      ...darkBgWithAccent(accent),
+      ...bgStyle,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 24,
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
       position: 'relative',
     }}>
-      <Fireflies color={`${accent}55`} />
+      <Fireflies color={`${accent}66`} />
       {children}
     </div>
   );
@@ -487,22 +501,20 @@ function WheelView({
 
   const SLICE_PALETTE = SLICE_PALETTE_DARK;
 
-  // 2026-05-17 v4 (Wolf): Zoom-Approach verworfen — SVG-Rotation + Container-
-  // Scale beißen sich. Stattdessen Slice-Color-Wave (siehe wash-Overlay unten).
-  // 2026-05-17 v16 (Wolf 'jetzt kommt der helle bg noch dazwischen?'): Wave
-  // nutzt jetzt die DUNKLE Slice-Farbe (matched dem Wheel-Slice) statt der
-  // hellen — sonst flasht zwischen dunklem Wheel und dunklem Detail-View ein
-  // bright color rein. BG-Accent für die Radial-Tint bleibt die HELLE Farbe,
-  // weil die nur als subtiler Glow an den Rändern wirkt, nicht als Vollbild.
-  const sliceColorForWave = SLICE_PALETTE[targetIdx % SLICE_PALETTE.length];
+  // 2026-05-17 v18 (Wolf 'ab moment wo gewählt nicht später hellere farbe'):
+  // Wave komplett raus. Beim Wheel-Stop wechselt der FullScreenLayout-BG
+  // direkt auf die SOLIDE dunkle Slice-Farbe (kein Radial-Tint mehr). Ab dem
+  // Moment der Wahl bis zum Grid-Öffnen ist die BG-Farbe identisch.
+  // Fireflies-Akzent folgt der hellen Slice-Color für sichtbaren Kontrast.
   const sliceColorBright = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
-  const waveActive = !spinning && !!revealedGame;
-  // BG-Akzent folgt der HELLEN Slice-Farbe (für Radial-Glow im Detail-View) wenn
-  // revealed, sonst brand-pink. So bleibt ein Hauch Slice-Identität sichtbar
-  // im dunklen BG, ohne dass die Wave selbst hell flutet.
-  const bgAccent = !spinning && revealedGame ? sliceColorBright : COZY_PINK;
+  const sliceColorDark = SLICE_PALETTE[targetIdx % SLICE_PALETTE.length];
+  const revealed = !spinning && !!revealedGame;
+  // accent = Fireflies-Farbe (heller Slice nach Reveal, sonst Brand-Pink)
+  const bgAccent = revealed ? sliceColorBright : COZY_PINK;
+  // solid = Solid-BG-Farbe (dark Slice nach Reveal, sonst undefined = darkBgWithAccent)
+  const solidBg = revealed ? sliceColorDark : undefined;
   return (
-    <FullScreenLayout width={width} height={height} accent={bgAccent}>
+    <FullScreenLayout width={width} height={height} accent={bgAccent} solid={solidBg}>
       {/* Wheel-Container: exakt size×size, Pointer ragt absolut nach oben raus
           (negative top), damit der Wheel-Kreis selbst der flex-zentrierte Block
           ist und visuell mittig sitzt. */}
@@ -591,45 +603,20 @@ function WheelView({
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
       </div>
-      {/* 2026-05-17 v10 (Wolf 'mittig + größer'): Bottom-Placeholder entfernt.
-          Vorher hatte er das Rad nach oben gedrückt (justifyContent:center
-          mittete den Stack wheel+placeholder, nicht das Rad). Jetzt ist das
-          Rad das einzige flex-Item → exakt mittig zentriert. */}
-      {/* 2026-05-17 (Wolf): Konfetti-Burst beim Stop für extra Pop. */}
-      {!spinning && revealedGame && (
+      {/* 2026-05-17 v18 (Wolf 'wheel kommt nochmal rein, helle farbe später'):
+          Wave-Overlay komplett raus. BG ist ab Wheel-Stop bereits die dunkle
+          Slice-Farbe (via solidBg → FullScreenLayout). Kein Color-Flood mehr,
+          kein nachträglich hellerer Tint. Konfetti bleibt für den Pop-Moment. */}
+      {revealed && (
         <>
-          {/* confettiFall-Keyframe lokal injizieren falls Test-Page oder
-              embed-Context die qqShared-Globals nicht geladen hat. 100vh
-              funktioniert immer, unabhängig von container-type. */}
           <style>{`
             @keyframes confettiFall {
               0%   { transform: translateY(var(--cy, -60px)) rotate(0deg) scale(1); opacity: 1; }
               75%  { opacity: 1; }
               100% { transform: translateY(100vh) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
             }
-            @keyframes cozyGameColorWave {
-              0%   { clip-path: circle(0% at 50% 8%); opacity: 0; }
-              15%  { opacity: 1; }
-              100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
-            }
           `}</style>
           <ConfettiOverlay />
-          {/* Slice-Color-Wave: solide DUNKLE Slice-Farbe expandiert via
-              clip-path vom Pointer-Position (oben) zu Vollbild.
-              2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe
-              aus slice bis zum öffnen des grids'): Wave bleibt am Ende voll
-              opaque mit der dunklen Slice-Farbe → GameDetailView mountet
-              direkt darüber mit identischer Solid-Color. Kein Fade-Out mehr
-              (würde die darunterliegende pink-radial BG kurz zeigen → Flash). */}
-          {waveActive && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: sliceColorForWave,
-              pointerEvents: 'none',
-              zIndex: 40,
-              animation: 'cozyGameColorWave 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both',
-            }} />
-          )}
         </>
       )}
     </FullScreenLayout>

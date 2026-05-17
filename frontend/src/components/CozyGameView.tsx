@@ -573,9 +573,11 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
       width, height,
       background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'column', gap: 32,
+      flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
       color: '#fff', fontFamily: 'inherit',
       overflow: 'hidden',
+      padding: 'clamp(20px, 3vh, 40px)',
+      boxSizing: 'border-box',
     }}>
       <style>{`
         @keyframes cozyGameLogoPop {
@@ -598,17 +600,20 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
           baute sich über 1.4s sequenziell auf nach Stage-Wechsel → wirkte
           zerstückelt. Jetzt: alle ohne Delay, opacity-fadeIn 0.4s. Container
           selbst hat fade-in damit nahtloser Anschluss an Wave. */}
+      {/* 2026-05-17 v8 (Wolf 'größe noch anpassen'): Gesamt-Layout verkleinert
+          damit Logo + Name + Description + Tags + Timer alle in 1080p Beamer
+          passen ohne Overflow. */}
       <div style={{
-        fontSize: 'clamp(160px, 22vw, 360px)',
+        fontSize: 'clamp(96px, 14vw, 220px)',
         lineHeight: 1,
-        filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.5))',
+        filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
         opacity: 0,
         animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       }}>
         {game.emoji}
       </div>
       <div style={{
-        fontSize: 'clamp(48px, 6vw, 96px)',
+        fontSize: 'clamp(36px, 4.5vw, 76px)',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         textAlign: 'center',
@@ -619,11 +624,11 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
         {game.name}
       </div>
       <div style={{
-        fontSize: 'clamp(20px, 2vw, 32px)',
+        fontSize: 'clamp(16px, 1.6vw, 26px)',
         color: 'rgba(255,255,255,0.92)',
-        maxWidth: 1100,
+        maxWidth: 1000,
         textAlign: 'center',
-        lineHeight: 1.45,
+        lineHeight: 1.4,
         padding: '0 40px',
         opacity: 0,
         animation: 'cozyGameDetailFade 0.4s ease-out 0.25s both',
@@ -632,18 +637,18 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
       </div>
       {game.materialTags.length > 0 && (
         <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
-          maxWidth: 1000, padding: '0 40px',
+          display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
+          maxWidth: 900, padding: '0 40px',
           opacity: 0,
           animation: 'cozyGameDetailFade 0.4s ease-out 0.35s both',
         }}>
           {game.materialTags.map(t => (
             <span key={t} style={{
-              padding: '6px 14px',
+              padding: '4px 12px',
               background: 'rgba(0,0,0,0.25)',
               border: '1.5px solid rgba(255,255,255,0.35)',
               borderRadius: 999,
-              fontSize: 'clamp(13px, 1.2vw, 18px)',
+              fontSize: 'clamp(12px, 1vw, 16px)',
               fontWeight: 700,
               color: '#fff',
             }}>{t}</span>
@@ -654,9 +659,8 @@ function GameDetailView({ width, height, game, accentColor, gameEndsAt }: {
           (Timer leer) und GAME_ACTIVE (Timer aktiv). Slot pop't rein wenn
           gameEndsAt erst gesetzt wird (Phase-Wechsel zu GAME_ACTIVE). */}
       <div style={{
-        minHeight: 'clamp(120px, 16vh, 200px)',
+        minHeight: 'clamp(90px, 12vh, 150px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginTop: 8,
       }}>
         {gameEndsAt && (
           <div

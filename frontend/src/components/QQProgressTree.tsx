@@ -179,8 +179,15 @@ export default function QQProgressTree({
   // Wolf 2026-05-12 'bid muss auf progress tree genau vor finalrunde
   // angezeigt werden'.
   const showBidding = state.finalWagerEnabled === true;
+  // 2026-05-17 (Wolf-Feature CozyGames): Knoten NACH Phase 0 (= zwischen
+  // Runde 1 und Runde 2). Nur wenn Toggle an + Pool > 0.
+  const showCozyGames = !!(state as any).cozyGamesEnabled
+    && Array.isArray((state as any).cozyGamesPool)
+    && (state as any).cozyGamesPool.length > 0;
   const biddingDotSize = Math.round(dotSize * 1.2);
+  const cozyGameDotSize = Math.round(dotSize * 1.2);
   let biddingCenter = 0;
+  let cozyGameCenter = 0;
   let cursor = 0;
   phases.forEach((p, pIdx) => {
     // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
@@ -188,6 +195,13 @@ export default function QQProgressTree({
       cursor += phaseGap;
       biddingCenter = cursor + biddingDotSize / 2;
       cursor += biddingDotSize;
+    }
+    // Nach Phase 0 (= nach 1. Quiz-Runde): CozyGame-Knoten einfuegen.
+    if (showCozyGames && pIdx === 1) {
+      // pIdx === 1 = bevor Phase 1 (= 2. Runde) gerendert wird → Knoten zwischen Phase 0 und 1.
+      cursor += phaseGap;
+      cozyGameCenter = cursor + cozyGameDotSize / 2;
+      cursor += cozyGameDotSize;
     }
     if (pIdx > 0) cursor += phaseGap;
     const entries = byPhase.get(p) ?? [];
@@ -280,7 +294,10 @@ export default function QQProgressTree({
   // Bei Spielende ohne 4×4 bleibt er strukturell am Bid (letzter erreichter
   // Step). Bei Spielende ohne Bid UND ohne 4×4 am letzten Quiz-Dot (kein
   // Sprung moeglich, da nichts dahinter).
-  const wolfPhaseTarget: 'quiz' | 'bidding' | 'finale' = (() => {
+  const wolfPhaseTarget: 'quiz' | 'bidding' | 'finale' | 'cozyGame' = (() => {
+    if (state.phase === 'COZY_GAME') {
+      return showCozyGames ? 'cozyGame' : 'quiz';
+    }
     if (state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL') {
       return showBidding ? 'bidding' : 'quiz';
     }
@@ -296,12 +313,15 @@ export default function QQProgressTree({
   })();
   const wolfOnFinale = showFinale && (showcaseOnFinale || wolfPhaseTarget === 'finale');
   const wolfOnBidding = !wolfOnFinale && showBidding && (showcaseOnBidding || wolfPhaseTarget === 'bidding');
+  const wolfOnCozyGame = !wolfOnFinale && !wolfOnBidding && showCozyGames && wolfPhaseTarget === 'cozyGame';
   const currentCenter = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
+    : wolfOnCozyGame ? cozyGameCenter
     : (dotCenters[wolfDotIdx] ?? firstCenter);
   const trackStart = firstCenter;
   const trackEnd = wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
+    : wolfOnCozyGame ? cozyGameCenter
     : lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
 
@@ -546,6 +566,50 @@ export default function QQProgressTree({
             const biddingColor = '#EC4899';
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
+            // CozyGame-Knoten — vor Phase 1 (= zwischen Runde 1 und Runde 2)
+            const insertCozyGameHere = showCozyGames && pi === 1;
+            const cozyGameColor = '#EC4899';
+            const isCozyGameActive = state.phase === 'COZY_GAME';
+            // "Past" = wir sind bereits in einer späteren Quiz-Phase ODER haben gespielt
+            const isCozyGamePast = !isCozyGameActive
+              && (state.gamePhaseIndex >= 2
+                  || ((state as any).cozyGame?.playedGameIds?.length ?? 0) > 0);
+            const cozyGameNode = insertCozyGameHere ? (
+              <div key="cg-knoten" style={{
+                width: cozyGameDotSize,
+                flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+              }}>
+                <div
+                  title={lang === 'de' ? 'CozyGame — analoges Mini-Spiel' : 'CozyGame — analog mini-game'}
+                  style={{
+                    width: cozyGameDotSize,
+                    height: cozyGameDotSize,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: Math.round(cozyGameDotSize * 0.55),
+                    background: isCozyGameActive
+                      ? cozyGameColor
+                      : isCozyGamePast
+                        ? 'rgba(148,163,184,0.18)'
+                        : 'rgba(30,41,59,0.85)',
+                    border: isCozyGameActive
+                      ? '2.5px solid #fff'
+                      : isCozyGamePast
+                        ? 'none'
+                        : '1.5px solid rgba(148,163,184,0.35)',
+                    boxShadow: isCozyGameActive
+                      ? `0 0 0 4px ${cozyGameColor}55, 0 6px 14px ${cozyGameColor}88, 0 0 28px ${cozyGameColor}aa`
+                      : 'none',
+                    opacity: isCozyGamePast ? 0.55 : 1,
+                    filter: isCozyGamePast ? 'grayscale(1)' : 'none',
+                    animation: isCozyGameActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
+                    transition: 'all 0.45s var(--qq-ease-out-cubic)',
+                  }}
+                >🎲</div>
+              </div>
+            ) : null;
             const biddingNode = insertBiddingHere ? (
               <div key="bid-knoten" style={{
                 // 2026-05-13 (Wolf 'BIETEN nicht mittig ueber Dot'): explizite
@@ -652,7 +716,14 @@ export default function QQProgressTree({
               </div>
             );
             // Bieten-Node VOR der Phase einfuegen wenn diese die letzte ist
-            return biddingNode ? [biddingNode, phaseElem] : [phaseElem];
+            // Render-Reihenfolge: ggf. Bid-Knoten + CozyGame-Knoten + Phase
+            // CozyGame ist VOR Phase 1 (zwischen Runde 1 und Runde 2),
+            // Bid ist VOR letzter Phase. Beide vor der Phase rendern.
+            const nodes: React.ReactNode[] = [];
+            if (cozyGameNode) nodes.push(cozyGameNode);
+            if (biddingNode) nodes.push(biddingNode);
+            nodes.push(phaseElem);
+            return nodes;
           })}
 
           {/* Großes Finale (4×4 Connections) — separater Bonus-Knoten am

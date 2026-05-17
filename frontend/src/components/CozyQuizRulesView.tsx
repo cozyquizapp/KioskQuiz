@@ -52,6 +52,8 @@ type RulesSlide = {
   /** 2026-05-09 (Wolf): wenn true, Slide nur zeigen wenn connectionsEnabled
    *  im State true ist. Bisher fest verdrahtet für Slide 8 (4×4-Finale). */
   requiresConnections?: boolean;
+  /** 2026-05-17 (Wolf): wenn true, Slide nur zeigen wenn cozyGamesEnabled aktiv. */
+  requiresCozyGames?: boolean;
 };
 
 // Wolf 2026-05-05: Slide-Texte sind editierbar via /rules-editor (localStorage-
@@ -122,6 +124,17 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
+    },
+    {
+      icon: '🎲',
+      title: t('rules.slide_cozygames.title', 'CozyGame'),
+      color: RULES_SLIDE_COLOR,
+      requiresCozyGames: true,
+      lines: [
+        t('rules.slide_cozygames.line1', 'Nach Runde 1 dreht das Glücksrad — ein analoges Mini-Spiel'),
+        t('rules.slide_cozygames.line2', 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen'),
+      ],
+      extra: t('rules.slide_cozygames.extra', 'Beispiele: Wattebausch pusten · Becher stapeln · Stäbchen-Eimer · Ringwurf'),
     },
     {
       icon: '🔄',
@@ -230,6 +243,17 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
       ],
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
+    },
+    {
+      icon: '🎲',
+      title: t('rules.slide_cozygames.title', 'CozyGame'),
+      color: RULES_SLIDE_COLOR,
+      requiresCozyGames: true,
+      lines: [
+        t('rules.slide_cozygames.line1', 'After round 1 the wheel spins — one analog mini-game'),
+        t('rules.slide_cozygames.line2', 'Winner places 1 action on the board · skill > knowledge'),
+      ],
+      extra: t('rules.slide_cozygames.extra', 'Examples: blow cotton balls · stack cups · chopstick bucket · ring toss'),
     },
     {
       icon: '🔄',
@@ -357,9 +381,13 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const allSlides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
   // 2026-05-09 (Wolf): Slides mit requiresConnections (z.B. 4×4-Finale) nur
   // zeigen wenn der Mod das Connections-Feature aktiviert hat. Comeback bleibt.
-  const slides = s.connectionsEnabled === false
-    ? allSlides.filter(sl => !sl.requiresConnections)
-    : allSlides;
+  // 2026-05-17: Analog für requiresCozyGames.
+  const cgEnabled = !!(s as any).cozyGamesEnabled;
+  const slides = allSlides.filter(sl => {
+    if (sl.requiresConnections && s.connectionsEnabled === false) return false;
+    if (sl.requiresCozyGames && !cgEnabled) return false;
+    return true;
+  });
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
   // idx<0 = Overlay-Phase (Willkommen/Regel-Intro). Nichts rendern, damit der

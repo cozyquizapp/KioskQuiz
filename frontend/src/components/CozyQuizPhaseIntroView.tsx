@@ -324,12 +324,25 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Subtitle ueber den Action-Cards. Beschreibt knapp wie die Wahl funktioniert,
   // die exakte Anzahl pro Aktion steht direkt auf den Cards (× N).
   // Wolf 2026-05-05: Texte editierbar via /rules-editor — Defaults als Fallback.
+  // 2026-05-17: bei aktiven CozyGames Hinweis dass nach Runde 1 das Mini-Spiel kommt.
+  const cozyGamesActive = !!(s as any).cozyGamesEnabled
+    && Array.isArray((s as any).cozyGamesPool)
+    && (s as any).cozyGamesPool.length > 0;
+
   const ROUND_RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
     1: {
       emoji: '🏁',
-      de: [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
+      de: cozyGamesActive
+        ? [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
+           getRuleText('round.1.line2', 'de', 'Sichert euch eure ersten Felder!'),
+           getRuleText('round.1.line3_cg', 'de', '🎲 Nach dieser Runde wartet ein CozyGame auf euch!')]
+        : [getRuleText('round.1.line1', 'de', 'Eure Aktion diese Runde:'),
            getRuleText('round.1.line2', 'de', 'Sichert euch eure ersten Felder!')],
-      en: [getRuleText('round.1.line1', 'en', 'Your action this round:'),
+      en: cozyGamesActive
+        ? [getRuleText('round.1.line1', 'en', 'Your action this round:'),
+           getRuleText('round.1.line2', 'en', 'Claim your first cells!'),
+           getRuleText('round.1.line3_cg', 'en', '🎲 After this round a CozyGame awaits you!')]
+        : [getRuleText('round.1.line1', 'en', 'Your action this round:'),
            getRuleText('round.1.line2', 'en', 'Claim your first cells!')],
     },
     2: {

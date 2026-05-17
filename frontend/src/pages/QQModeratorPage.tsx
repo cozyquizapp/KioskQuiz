@@ -325,7 +325,7 @@ export default function QQModeratorPage() {
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
+        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -879,7 +879,7 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
+        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -1041,7 +1041,7 @@ export default function QQModeratorPage() {
       e.preventDefault(); playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = (s.connectionsEnabled !== false) ? 9 : 8;
+        const totalSlides = 8 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -3890,7 +3890,8 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → R2/R3-Abilities werden
   // beim Runden-Intro als Überraschung enthüllt. Slide-Count: 9 mit Finale, 8 ohne.
   const hasFinale = s.connectionsEnabled !== false;
-  const totalSlides = hasFinale ? 9 : 8;
+  const hasCozyGames = !!(s as any).cozyGamesEnabled;
+  const totalSlides = 8 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;

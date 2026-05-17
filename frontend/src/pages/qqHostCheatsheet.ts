@@ -7,6 +7,7 @@ import {
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
+import type { CozyGame } from '@shared/cozyGameTypes';
 
 // Duplicate of HOST_NOTES_DE from QQModeratorPage.tsx — keep in sync.
 const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
@@ -156,7 +157,7 @@ function renderQuestion(q: QQQuestion, globalIdx: number): string {
   </section>`;
 }
 
-function renderCoverPage(draft: QQDraft): string {
+function renderCoverPage(draft: QQDraft, cozyGames?: CozyGame[]): string {
   const phases = draft.phases ?? 3;
   const totalQ = draft.questions.length;
   const coverNotes = ['LOBBY', 'RULES', 'PHASE_INTRO', 'QUESTION_ACTIVE', 'QUESTION_REVEAL', 'PLACEMENT', 'COMEBACK_CHOICE', 'PAUSED', 'GAME_OVER']
@@ -165,6 +166,10 @@ function renderCoverPage(draft: QQDraft): string {
       return `<div class="note"><div class="note-hd">${esc(n.title)}</div><div class="note-body">${esc(n.text)}</div></div>`;
     }).join('');
 
+  // 2026-05-17 (Wolf-Feature CozyGames): Pool + Material-Liste auf Cover —
+  // hilft Wolf zu sehen was er heute physisch dabei haben muss.
+  const cgBlock = renderCozyGamesBlock(draft, cozyGames);
+
   return `
   <section class="cover">
     <div class="cover-top">
@@ -172,20 +177,62 @@ function renderCoverPage(draft: QQDraft): string {
       <div class="cover-title">${esc(draft.title || 'Host Cheatsheet')}</div>
       <div class="cover-sub">${phases} Phasen · ${totalQ} Fragen · Stand: ${new Date().toLocaleDateString('de-DE')}</div>
     </div>
+    ${cgBlock}
     <h2 class="notes-hd">Moderator-Tipps pro Phase</h2>
     <div class="notes">${coverNotes}</div>
   </section>`;
+}
+
+function renderCozyGamesBlock(draft: QQDraft, cozyGames?: CozyGame[]): string {
+  const enabled = !!(draft as any).cozyGamesEnabled;
+  const poolIds = Array.isArray((draft as any).cozyGamesPool) ? (draft as any).cozyGamesPool : [];
+  if (!enabled || poolIds.length === 0) return '';
+  const pool = (cozyGames ?? []).filter(g => poolIds.includes(g.id) && !g.archived);
+  if (pool.length === 0) return '';
+  // Aggregierte Material-Liste (unique)
+  const materialSet = new Set<string>();
+  for (const g of pool) for (const t of g.materialTags) materialSet.add(t);
+  const materialList = Array.from(materialSet).sort();
+
+  const gameItems = pool.map(g => `
+    <div class="cg-game">
+      <div class="cg-game-hd"><span class="cg-emoji">${esc(g.emoji)}</span> <b>${esc(g.name)}</b></div>
+      <div class="cg-game-body">${esc(g.description)}</div>
+      ${g.materialTags.length > 0 ? `<div class="cg-game-tags">Material: ${g.materialTags.map(t => `<span class="cg-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${g.scoringNote ? `<div class="cg-game-note">${esc(g.scoringNote)}</div>` : ''}
+    </div>`).join('');
+
+  return `
+    <section class="cg-section">
+      <h2 class="notes-hd">🎲 CozyGames — heute mitbringen</h2>
+      <div class="cg-material-pill">
+        <b>Material-Checklist:</b> ${materialList.map(m => `<span class="cg-tag-big">${esc(m)}</span>`).join('')}
+      </div>
+      <div class="cg-games">${gameItems}</div>
+    </section>`;
 }
 
 function renderPhaseHeader(phaseIndex: number): string {
   return `<section class="phasehead"><div class="phasehead-big">Phase ${phaseIndex}</div></section>`;
 }
 
-export function exportHostCheatsheet(draft: QQDraft): void {
+export async function exportHostCheatsheet(draft: QQDraft): Promise<void> {
   const win = window.open('', '_blank', 'width=900,height=1200');
   if (!win) {
     alert('Popup blockiert — bitte Popups für diese Seite erlauben.');
     return;
+  }
+
+  // 2026-05-17: CozyGames-Liste vom Backend laden, wenn Toggle an.
+  // Race-Condition mit window-open: solange laden, schreiben wir Loading-State.
+  let cozyGames: CozyGame[] | undefined;
+  if ((draft as any).cozyGamesEnabled && Array.isArray((draft as any).cozyGamesPool) && (draft as any).cozyGamesPool.length > 0) {
+    try {
+      const res = await fetch('/api/cozygames');
+      if (res.ok) cozyGames = await res.json();
+    } catch {
+      // ignore — Cheatsheet rendert dann ohne CozyGames-Block
+    }
   }
 
   // Sort questions by phase then index
@@ -260,6 +307,19 @@ export function exportHostCheatsheet(draft: QQDraft): void {
   .funfact-hd { font-size: 9pt; font-weight: 800; color: #7e22ce; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
   .funfact-en { font-size: 10pt; color: #6b7280; font-style: italic; margin-top: 3px; }
 
+  /* 2026-05-17 CozyGames-Block */
+  .cg-section { page-break-inside: avoid; margin: 16px 0 22px; padding: 14px 16px; border: 1px solid #fbcfe8; border-radius: 8px; background: #fdf2f8; }
+  .cg-material-pill { font-size: 10pt; color: #831843; margin-bottom: 10px; padding: 6px 10px; background: #fff; border-radius: 6px; border: 1px solid #fbcfe8; }
+  .cg-tag-big { display: inline-block; margin: 2px 4px; padding: 2px 8px; background: #fce7f3; color: #be185d; border-radius: 999px; font-size: 9.5pt; font-weight: 700; }
+  .cg-games { display: grid; gap: 8px; }
+  .cg-game { padding: 8px 10px; background: #fff; border: 1px solid #fbcfe8; border-radius: 6px; }
+  .cg-game-hd { font-size: 11pt; color: #831843; margin-bottom: 3px; }
+  .cg-emoji { font-size: 14pt; }
+  .cg-game-body { font-size: 10pt; color: #334155; margin-bottom: 4px; }
+  .cg-game-tags { font-size: 9.5pt; color: #475569; }
+  .cg-tag { display: inline-block; margin: 1px 3px; padding: 1px 6px; background: #f1f5f9; color: #475569; border-radius: 4px; font-size: 9pt; }
+  .cg-game-note { font-size: 9pt; color: #64748b; font-style: italic; margin-top: 3px; }
+
   @media print {
     .no-print { display: none !important; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -275,7 +335,7 @@ export function exportHostCheatsheet(draft: QQDraft): void {
     <button class="btn-print" onclick="window.print()">🖨️ Drucken / PDF speichern</button>
     <button class="btn-close" onclick="window.close()">Schließen</button>
   </div>
-  ${renderCoverPage(draft)}
+  ${renderCoverPage(draft, cozyGames)}
   ${blocks.join('\n')}
   <script>
     // Auto-trigger print dialog after render

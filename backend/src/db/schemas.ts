@@ -259,6 +259,101 @@ export async function deleteQQDraftFromDB(draftId: string): Promise<boolean> {
   }
 }
 
+// ============= COZY GAMES (Mini-Game-Katalog) =============
+// 2026-05-17 (Wolf-Feature CozyGames): Katalog analoger Real-Life-Mini-Spiele
+// die als Brand-Differenziator ins Quiz eingebaut werden. Seed mit 12 V1-Spielen
+// erfolgt beim ersten Backend-Start, Wolf kann via /cozygames-Editor erweitern.
+// Doku: COZYGAMES.md + shared/cozyGameTypes.ts.
+
+const CozyGameSchema = new mongoose.Schema({
+  id:           { type: String, required: true, unique: true, index: true },
+  emoji:        { type: String, default: '🎲' },
+  name:         { type: String, required: true },
+  description:  { type: String, default: '' },
+  materialTags: { type: [String], default: [] },
+  setting:      { type: String, default: 'tisch' },     // tisch|steh|wand|boden
+  noiseLevel:   { type: String, default: 'leise' },     // leise|mittel|laut
+  scoringType:  { type: String, default: 'countIn60s' },// countIn60s|timeToFinish|distance|height|lastStanding
+  scoringNote:  { type: String, default: '' },
+  isSeed:       { type: Boolean, default: false },
+  archived:     { type: Boolean, default: false },
+  createdAt:    { type: Number, default: Date.now },
+  updatedAt:    { type: Number, default: Date.now },
+}, { strict: false });
+
+export const CozyGameModel = mongoose.model('CozyGame', CozyGameSchema);
+
+export async function getAllCozyGamesFromDB(): Promise<any[]> {
+  try {
+    return await CozyGameModel.find({}).lean().sort({ createdAt: 1 });
+  } catch (err) {
+    console.error('Fehler beim Laden aller CozyGames:', err);
+    return [];
+  }
+}
+
+export async function getCozyGameFromDB(id: string): Promise<any | null> {
+  try {
+    return await CozyGameModel.findOne({ id }).lean();
+  } catch (err) {
+    console.error('Fehler beim Laden CozyGame:', err);
+    return null;
+  }
+}
+
+export async function saveCozyGameToDB(game: any): Promise<any> {
+  try {
+    const existing = await CozyGameModel.findOne({ id: game.id });
+    if (existing) {
+      const updated = await CozyGameModel.findOneAndUpdate(
+        { id: game.id },
+        { ...game, updatedAt: Date.now() },
+        { new: true }
+      );
+      return updated;
+    } else {
+      const newGame = new CozyGameModel({
+        ...game,
+        createdAt: game.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+      });
+      await newGame.save();
+      return game;
+    }
+  } catch (err) {
+    console.error('Fehler beim Speichern CozyGame:', err);
+    throw err;
+  }
+}
+
+export async function deleteCozyGameFromDB(id: string): Promise<boolean> {
+  try {
+    const result = await CozyGameModel.deleteOne({ id });
+    return result.deletedCount > 0;
+  } catch (err) {
+    console.error('Fehler beim Löschen CozyGame:', err);
+    return false;
+  }
+}
+
+/** Seed-Funktion: idempotent. Für jedes V1-Spiel: in DB anlegen wenn nicht da.
+ *  Bestehende DB-Einträge (z.B. von Wolf editiert) bleiben unangetastet. */
+export async function seedCozyGamesIfMissing(seedGames: any[]): Promise<number> {
+  let inserted = 0;
+  for (const g of seedGames) {
+    try {
+      const existing = await CozyGameModel.findOne({ id: g.id });
+      if (existing) continue;
+      const newGame = new CozyGameModel({ ...g });
+      await newGame.save();
+      inserted++;
+    } catch (err) {
+      console.warn(`[cozygames-seed] failed to insert ${g.id}:`, err);
+    }
+  }
+  return inserted;
+}
+
 // ============= QUARTER QUIZ GAME RESULTS =============
 
 const QQGameResultSchema = new mongoose.Schema({

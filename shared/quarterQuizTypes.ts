@@ -104,6 +104,7 @@ export type QQPhase =
   | 'CONNECTIONS_4X4'   // 4×4 Connections Finalrunde (eigenes Mini-Game, Sub-Phase via state.connections.phase)
   | 'FINAL_BETTING'     // Vor Final-Phase: Teams setzen Wetten auf andere Teams. State in finalBets.
   | 'FINAL_REVEAL'      // Nach Final-Phase: dramatische Score-Cascade-Auflösung. State in finalBetResolution.
+  | 'COZY_GAME'         // CozyGame-Round (analog Real-Life-Mini-Spiel). Sub-Phasen in cozyGame.phase. Siehe shared/cozyGameTypes.ts.
   | 'PAUSED'            // Moderator-triggered pause — shows records/leaderboard
   | 'GAME_OVER'         // Final state, territory winner shown
   | 'THANKS';           // Danke-fürs-Spielen-Folie mit QR nach der Siegerehrung
@@ -915,6 +916,12 @@ export interface QQDraft {
   theme?: QQTheme;
   slideTemplates?: QQSlideTemplates;
   soundConfig?: QQSoundConfig;
+  /** 2026-05-17 (Wolf-Wunsch): CozyGames aktivieren — analoge Real-Life-Mini-Spiele
+   *  nach Runde 1 + als Final-Kategorie-Slot. Doku: COZYGAMES.md im Repo-Root. */
+  cozyGamesEnabled?: boolean;
+  /** IDs aus dem CozyGames-Katalog die für diesen Quiz aktiv sind (max 8 fürs Rad).
+   *  Wird nur konsumiert wenn cozyGamesEnabled === true. */
+  cozyGamesPool?: string[];
   createdAt: number;
   updatedAt: number;
 }
@@ -1175,6 +1182,14 @@ export interface QQStateUpdate {
    *  `/summary/{roomCode}`, damit jeder geteilte Link stabil bleibt — auch
    *  wenn der RoomCode (SINGLE_SESSION_MODE = MAIN) wieder verwendet wird. */
   lastGameResultId?: string | null;
+  /** 2026-05-17 (Wolf-Feature CozyGames): Round-State während COZY_GAME-Phase.
+   *  null wenn nicht aktiv. Doku: COZYGAMES.md im Repo-Root, Types in
+   *  shared/cozyGameTypes.ts. */
+  cozyGame?: import('./cozyGameTypes').CozyGameRoundState | null;
+  /** Setup-Toggle: aktiviert CozyGames in diesem Run. Default false. */
+  cozyGamesEnabled?: boolean;
+  /** Aktive CozyGame-IDs (Builder-Auswahl, max 8). */
+  cozyGamesPool?: string[];
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).

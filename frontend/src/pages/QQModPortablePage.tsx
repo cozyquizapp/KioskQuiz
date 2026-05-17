@@ -265,6 +265,7 @@ function PhaseHeader({ state: s }: { state: QQStateUpdate }) {
     CONNECTIONS_4X4: '🧩 4×4 Finale',
     FINAL_BETTING: '🪙 Final-Tipp',
     FINAL_REVEAL: '🏆 Final-Reveal',
+    COZY_GAME: '🎲 CozyGame',
     GAME_OVER: '🏆 Game-Over',
     THANKS: '👋 Thanks',
   };

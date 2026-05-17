@@ -131,6 +131,11 @@ import {
   getQQDraftFromDB,
   saveQQDraftToDB,
   deleteQQDraftFromDB,
+  getAllCozyGamesFromDB,
+  getCozyGameFromDB,
+  saveCozyGameToDB,
+  deleteCozyGameFromDB,
+  seedCozyGamesIfMissing,
   getQQGameResults,
   deleteQQGameResult,
   deleteAllQQGameResults,
@@ -147,6 +152,7 @@ import {
   getQQLibraryTopics,
 } from './db/schemas';
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
+import { COZY_GAME_V1_SEED } from '../../shared/cozyGameTypes';
 import {
   runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems,
   getTranslationStats, testDeeplConnection,
@@ -7712,6 +7718,14 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
           } catch (err) {
             console.warn('CozyLibrary Seed fehlgeschlagen:', err);
           }
+          // 2026-05-17: CozyGames V1-Seed (12 Spiele). Idempotent — nur Spiele die
+          // noch nicht in der DB sind werden eingefügt. Wolf-Edits bleiben unangetastet.
+          try {
+            const cgInserted = await seedCozyGamesIfMissing(COZY_GAME_V1_SEED);
+            if (cgInserted > 0) console.log(`✓ CozyGames Seed: ${cgInserted} V1-Spiele eingefügt`);
+          } catch (err) {
+            console.warn('CozyGames Seed fehlgeschlagen:', err);
+          }
           console.log('✓ MongoDB bereit');
         } else {
           console.warn('⚠️ MongoDB nicht verfügbar, nutze In-Memory Fallback');
@@ -8848,6 +8862,114 @@ app.delete('/api/qq/drafts/:id', async (req, res) => {
   persistQQDrafts();
   cache.del('qqDrafts');
   res.json({ ok: true });
+});
+
+// ── CozyGames Katalog (Mini-Game-Bibliothek) ─────────────────────────────────
+// 2026-05-17: Editor unter /cozygames im Frontend. CRUD analog QQ-Drafts.
+// V1-Seed (12 Spiele) wird beim ersten Backend-Start eingefügt. Wolf kann via
+// Editor neue Spiele anlegen, V1-Seed-Spiele archivieren (isSeed bleibt true →
+// nicht löschbar, nur archived-Flag setzen).
+
+app.get('/api/cozygames', async (_req, res) => {
+  if (await ensureDraftDbConnection()) {
+    try {
+      const games = await getAllCozyGamesFromDB();
+      return res.json(games);
+    } catch (err) {
+      console.error('[cozygames] GET-list failed:', err);
+      return res.status(500).json({ error: 'Fehler beim Laden CozyGames' });
+    }
+  }
+  // Fallback ohne DB: V1-Seed direkt zurückgeben.
+  res.json(COZY_GAME_V1_SEED);
+});
+
+app.get('/api/cozygames/:id', async (req, res) => {
+  if (await ensureDraftDbConnection()) {
+    const game = await getCozyGameFromDB(req.params.id);
+    if (!game) return res.status(404).json({ error: 'Spiel nicht gefunden' });
+    return res.json(game);
+  }
+  const fallback = COZY_GAME_V1_SEED.find(g => g.id === req.params.id);
+  if (!fallback) return res.status(404).json({ error: 'Spiel nicht gefunden' });
+  res.json(fallback);
+});
+
+app.post('/api/cozygames', async (req, res) => {
+  const body = req.body ?? {};
+  if (!body.id || typeof body.id !== 'string') {
+    return res.status(400).json({ error: 'id-Feld fehlt' });
+  }
+  if (!body.name || typeof body.name !== 'string') {
+    return res.status(400).json({ error: 'name-Feld fehlt' });
+  }
+  const now = Date.now();
+  const game = {
+    id: body.id,
+    emoji: typeof body.emoji === 'string' ? body.emoji : '🎲',
+    name: body.name,
+    description: typeof body.description === 'string' ? body.description : '',
+    materialTags: Array.isArray(body.materialTags) ? body.materialTags.filter((t: any) => typeof t === 'string') : [],
+    setting: typeof body.setting === 'string' ? body.setting : 'tisch',
+    noiseLevel: typeof body.noiseLevel === 'string' ? body.noiseLevel : 'leise',
+    scoringType: typeof body.scoringType === 'string' ? body.scoringType : 'countIn60s',
+    scoringNote: typeof body.scoringNote === 'string' ? body.scoringNote : '',
+    isSeed: body.isSeed === true,
+    archived: body.archived === true,
+    createdAt: typeof body.createdAt === 'number' ? body.createdAt : now,
+    updatedAt: now,
+  };
+  if (await ensureDraftDbConnection()) {
+    try {
+      await saveCozyGameToDB(game);
+      return res.json(game);
+    } catch (err) {
+      console.error('[cozygames] POST failed:', err);
+      return res.status(500).json({ error: 'Fehler beim Speichern' });
+    }
+  }
+  res.status(503).json({ error: 'DB nicht verfügbar' });
+});
+
+app.put('/api/cozygames/:id', async (req, res) => {
+  const body = req.body ?? {};
+  const id = req.params.id;
+  if (!(await ensureDraftDbConnection())) {
+    return res.status(503).json({ error: 'DB nicht verfügbar' });
+  }
+  const existing = await getCozyGameFromDB(id);
+  if (!existing) return res.status(404).json({ error: 'Spiel nicht gefunden' });
+  const merged = {
+    ...existing,
+    ...body,
+    id,                                 // id darf nicht überschrieben werden
+    isSeed: existing.isSeed === true,   // isSeed-Flag bleibt erhalten (Source-of-Truth-Marker)
+    createdAt: existing.createdAt,      // createdAt nicht überschreibbar
+    updatedAt: Date.now(),
+  };
+  try {
+    await saveCozyGameToDB(merged);
+    res.json(merged);
+  } catch (err) {
+    console.error('[cozygames] PUT failed:', err);
+    res.status(500).json({ error: 'Fehler beim Speichern' });
+  }
+});
+
+app.delete('/api/cozygames/:id', async (req, res) => {
+  if (!(await ensureDraftDbConnection())) {
+    return res.status(503).json({ error: 'DB nicht verfügbar' });
+  }
+  const existing = await getCozyGameFromDB(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Spiel nicht gefunden' });
+  // V1-Seed-Spiele werden nicht hart gelöscht — nur via archived=true ausgeblendet.
+  if (existing.isSeed === true) {
+    const archived = { ...existing, archived: true, updatedAt: Date.now() };
+    await saveCozyGameToDB(archived);
+    return res.json({ ok: true, archived: true });
+  }
+  const ok = await deleteCozyGameFromDB(req.params.id);
+  res.json({ ok });
 });
 
 // QQ Game Results — history & stats

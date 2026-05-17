@@ -4,6 +4,7 @@ import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare } from '../utils/sounds';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
+import { BeamerTimer } from './CozyQuizBeamerTimer';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -121,8 +122,8 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       setResultStage('wheel');
       return;
     }
-    // ~2.8s im Stage 'wheel' bleiben, dann Zoom zu Detail-View.
-    const t = window.setTimeout(() => setResultStage('detail'), 2800);
+    // 2026-05-17 v2 (Wolf): 1s Zoom auf Pizzastück, dann Slide-Wechsel.
+    const t = window.setTimeout(() => setResultStage('detail'), 1000);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 
@@ -170,16 +171,20 @@ export default function CozyGameView({ round, width, height }: CozyGameViewProps
       );
     }
 
-    case 'GAME_ACTIVE':
+    case 'GAME_ACTIVE': {
+      const tIdx = round.wheelTargetSliceIndex ?? 0;
+      const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
       return (
         <WithWolf wolfMode={wolfMode} speech={wolfSpeech} speechKey={`active-${activeGame?.id ?? 'na'}`}>
           <GameActiveView
             width={width} height={height}
             game={activeGame}
             gameEndsAt={round.gameEndsAt}
+            accentColor={accent}
           />
         </WithWolf>
       );
+    }
 
     case 'WINNER_SELECT':
       return (
@@ -389,10 +394,18 @@ function WheelView({
   // Avatar-Slots) — visuelle Konsistenz zur Team-Brand.
   const SLICE_PALETTE = QQ_TEAM_PALETTE;
 
+  // 2026-05-17 v2 (Wolf 'zoom rein ins pizzastück'): nach Stop-Snap zoomt
+  // das Rad auf den Winner-Slice (oben am Pointer durch die Spin-Rotation).
+  // Translate Y +30% schiebt die Mitte zum Pointer-Bereich, scale verstärkt.
+  const zoomingIn = !spinning && !!revealedGame;
   return (
     <FullScreenLayout width={width} height={height}>
       {/* Pointer oben mit Pulse beim Stop */}
-      <div style={{ position: 'relative', width: size, height: size + 60 }}>
+      <div style={{
+        position: 'relative', width: size, height: size + 60,
+        transform: zoomingIn ? 'scale(2.2) translateY(20%)' : 'scale(1) translateY(0)',
+        transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1) 0.4s',
+      }}>
         <div style={{
           position: 'absolute',
           top: 0,
@@ -627,61 +640,58 @@ function GameDetailView({ width, height, game, accentColor }: {
   );
 }
 
-// ── GAME ACTIVE (Spiel-Card + 60s-Timer) ────────────────────────────────────
-function GameActiveView({ width, height, game, gameEndsAt }: {
+// ── GAME ACTIVE (Spiel-Card + BeamerTimer-Ring) ─────────────────────────────
+// 2026-05-17 v2 (Wolf): Runder Timer wie im Standard-Quiz (BeamerTimer-Ring
+// mit Multi-Stage-Urgency) statt großer Countdown-Zahl.
+function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
   width: number; height: number;
   game: CozyGame | null;
   gameEndsAt: number | null;
+  accentColor: string;
 }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(t);
-  }, []);
-  const remainMs = gameEndsAt ? Math.max(0, gameEndsAt - now) : 0;
-  const remainSec = Math.ceil(remainMs / 1000);
-  const urgent = remainSec <= 10;
-
-  if (!game) {
+  if (!game || !gameEndsAt) {
     return <FullScreenLayout width={width} height={height}>
       <div style={{ color: '#94a3b8' }}>Kein aktives Spiel</div>
     </FullScreenLayout>;
   }
-
   return (
-    <FullScreenLayout width={width} height={height}>
+    <div style={{
+      width, height,
+      background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}cc 50%, #0F1736 100%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 28,
+      color: '#fff', fontFamily: 'inherit',
+      overflow: 'hidden',
+    }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 24,
-        padding: '20px 36px',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: 20,
+        padding: '20px 40px',
+        background: 'rgba(0,0,0,0.25)',
+        border: '2px solid rgba(255,255,255,0.18)',
+        borderRadius: 24,
       }}>
-        <span style={{ fontSize: 96 }}>{game.emoji}</span>
+        <span style={{ fontSize: 'clamp(72px, 8vw, 128px)', lineHeight: 1 }}>{game.emoji}</span>
         <div>
-          <div style={{ fontSize: 'clamp(36px, 4vw, 64px)', fontWeight: 900 }}>{game.name}</div>
-          <div style={{ fontSize: 'clamp(16px, 1.5vw, 24px)', color: '#cbd5e1', marginTop: 6, maxWidth: 700 }}>
+          <div style={{
+            fontSize: 'clamp(36px, 4vw, 72px)',
+            fontWeight: 900,
+            textShadow: '0 4px 16px rgba(0,0,0,0.45)',
+          }}>{game.name}</div>
+          <div style={{
+            fontSize: 'clamp(14px, 1.3vw, 22px)',
+            color: 'rgba(255,255,255,0.88)',
+            marginTop: 6, maxWidth: 800,
+          }}>
             {game.description}
           </div>
         </div>
       </div>
 
-      {/* Timer */}
-      <div style={{
-        marginTop: 12,
-        fontSize: 'clamp(120px, 18vw, 280px)',
-        fontWeight: 900,
-        color: urgent ? '#EF4444' : '#fff',
-        textShadow: urgent ? '0 0 32px #EF4444aa' : '0 4px 24px rgba(0,0,0,0.4)',
-        lineHeight: 1,
-        fontVariantNumeric: 'tabular-nums',
-      }}>
-        {remainSec}
+      {/* Runder BeamerTimer (analog Standard-Quiz) */}
+      <div style={{ marginTop: 12 }}>
+        <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
       </div>
-      <div style={{ fontSize: 'clamp(18px, 1.5vw, 28px)', color: '#94a3b8', marginTop: -8 }}>
-        Sekunden
-      </div>
-    </FullScreenLayout>
+    </div>
   );
 }
 

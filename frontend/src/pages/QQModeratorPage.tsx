@@ -7,6 +7,7 @@ import {
   QQStateUpdate, QQSoundConfig,
 } from '../../../shared/quarterQuizTypes';
 import { QQSoundPanel } from '../components/QQSoundPanel';
+import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
@@ -2159,12 +2160,28 @@ export default function QQModeratorPage() {
                     <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
                       ▶ Weiter
                     </PrimaryBtn>
+                    {/* 2026-05-17 (P0): Auto-Flow triggert CozyGame nach Frage 5
+                        automatisch. Manueller Start nur als Override (z.B. wenn
+                        Mod mitten in Pause noch ein CG einschieben will). */}
                     {(s as any).cozyGamesEnabled && Array.isArray((s as any).cozyGamesPool) && (s as any).cozyGamesPool.length > 0 && (
-                      <Btn color="#EC4899" onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
-                        🎲 CozyGame starten
+                      <Btn color="#EC4899" outline onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
+                        🎲 CG einschieben
                       </Btn>
                     )}
                   </>
+                )}
+
+                {/* ── Live-Toggle für CozyGames (P1 #4): nach LOBBY sichtbar in
+                    aktiven Phasen, damit Mod das Feature bei Bedarf abschalten
+                    kann ohne Settings-Card zu öffnen. */}
+                {!['LOBBY', 'RULES', 'TEAMS_REVEAL', 'GAME_OVER', 'THANKS', 'COZY_GAME', 'FINAL_REVEAL'].includes(s.phase) && (
+                  <Btn
+                    color={(s as any).cozyGamesEnabled ? '#EC4899' : '#64748B'}
+                    outline
+                    onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: !(s as any).cozyGamesEnabled })}
+                  >
+                    🎲 {(s as any).cozyGamesEnabled ? `An (${((s as any).cozyGamesPool ?? []).length})` : 'Aus'}
+                  </Btn>
                 )}
 
                 {/* ── COZY_GAME (Mini-Game-Phase, 2026-05-17) ── */}
@@ -2200,36 +2217,10 @@ export default function QQModeratorPage() {
                   }
                   if (cg.phase === 'WINNER_SELECT') {
                     return (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span style={{ fontSize: 13, color: '#94a3b8', marginRight: 6 }}>Sieger:</span>
-                        {teamList.map(t => (
-                          <button
-                            key={t.id}
-                            onClick={() => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [t.id] })}
-                            style={{
-                              padding: '6px 12px', borderRadius: 8,
-                              border: `2px solid ${t.color}`, background: `${t.color}22`,
-                              color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                            }}
-                          >{t.emoji ?? '🎮'} {t.name}</button>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const pool = teamList.length > 0 ? teamList : [];
-                            if (pool.length === 0) return;
-                            const winner = pool[Math.floor(Math.random() * pool.length)];
-                            emit('qq:cozyGameSelectWinner', { roomCode, teamIds: [winner.id] });
-                          }}
-                          style={{
-                            padding: '6px 12px', borderRadius: 8,
-                            border: '2px dashed rgba(255,255,255,0.25)',
-                            background: 'rgba(255,255,255,0.04)',
-                            color: '#94a3b8', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                            marginLeft: 8,
-                          }}
-                          title="Random-Sieger für Solo-/Bot-Test"
-                        >🎲 Random</button>
-                      </div>
+                      <CozyGameWinnerPicker
+                        teamList={teamList}
+                        onSelect={ids => emit('qq:cozyGameSelectWinner', { roomCode, teamIds: ids })}
+                      />
                     );
                   }
                   return null;

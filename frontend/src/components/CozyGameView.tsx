@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
+import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart } from '../utils/sounds';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -21,6 +22,46 @@ export interface CozyGameViewProps {
 export default function CozyGameView({ round, width, height }: CozyGameViewProps) {
   const [games, setGames] = useState<CozyGame[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 2026-05-17 (P1 #5): Sounds pro Sub-Phase.
+  // - WHEEL_SPIN: Tick-Interval (~110ms slow → 220ms fast je nach Spin-Easing)
+  // - WHEEL_RESULT: einmaliger Stop-Snap (beim Phase-Wechsel)
+  // - GAME_ACTIVE: einmaliger Start-Cue (beim Timer-Beginn)
+  const lastPhaseRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = lastPhaseRef.current;
+    const cur = round.phase;
+    if (prev !== cur) {
+      // Phase-Transition: one-shot Sounds
+      if (cur === 'WHEEL_RESULT' && prev === 'WHEEL_SPIN') {
+        try { playCozyGameWheelStop(); } catch {}
+      }
+      if (cur === 'GAME_ACTIVE' && prev === 'WHEEL_RESULT') {
+        try { playCozyGameStart(); } catch {}
+      }
+      lastPhaseRef.current = cur;
+    }
+    // Tick-Interval nur während WHEEL_SPIN
+    if (cur !== 'WHEEL_SPIN') return;
+    // Tick-Schema: schneller Anfang, langsamer Ende (analog zum CSS-Easing 4s)
+    let elapsed = 0;
+    const total = 4000;
+    const handles: number[] = [];
+    function scheduleNext() {
+      const progress = elapsed / total;
+      // Easing: tick-Interval steigt von 80ms → 280ms (verlangsamt mit Spin)
+      const interval = 80 + progress * 200;
+      elapsed += interval;
+      if (elapsed > total) return;
+      const h = window.setTimeout(() => {
+        try { playCozyGameWheelTick(); } catch {}
+        scheduleNext();
+      }, interval);
+      handles.push(h);
+    }
+    scheduleNext();
+    return () => { handles.forEach(h => clearTimeout(h)); };
+  }, [round.phase]);
 
   // Spiele aus Pool laden (für Rad-Slices + Spiel-Card)
   useEffect(() => {

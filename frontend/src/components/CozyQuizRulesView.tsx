@@ -131,10 +131,10 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
       lines: [
-        t('rules.slide_cozygames.line1', 'Nach Runde 1 dreht das Glücksrad — ein analoges Mini-Spiel'),
+        t('rules.slide_cozygames.line1', 'Nach jeder Runde dreht das Glücksrad — ein analoges Mini-Spiel'),
         t('rules.slide_cozygames.line2', 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen'),
       ],
-      extra: t('rules.slide_cozygames.extra', 'Beispiele: Wattebausch pusten · Becher stapeln · Stäbchen-Eimer · Ringwurf'),
+      // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
     },
     {
       icon: '🔄',
@@ -156,7 +156,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_final_tip.line1', 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'),
         t('rules.slide_final_tip.line2', 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'),
       ],
-      extra: t('rules.slide_final_tip.extra', 'Kein Verlust — niedrigster Bonus = 0, alle Felder bleiben am Brett'),
+      // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
     },
     {
       // 2026-05-09 (Rules-Audit Wolf): Fair Play / Anti-Google
@@ -250,10 +250,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
       lines: [
-        t('rules.slide_cozygames.line1', 'After round 1 the wheel spins — one analog mini-game'),
+        t('rules.slide_cozygames.line1', 'After every round the wheel spins — one analog mini-game'),
         t('rules.slide_cozygames.line2', 'Winner places 1 action on the board · skill > knowledge'),
       ],
-      extra: t('rules.slide_cozygames.extra', 'Examples: blow cotton balls · stack cups · chopstick bucket · ring toss'),
     },
     {
       icon: '🔄',
@@ -272,7 +271,6 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_final_tip.line1', 'Before the finale every team tips on another (or own) team'),
         t('rules.slide_final_tip.line2', 'Per final-category win of your tip = +1 bonus'),
       ],
-      extra: t('rules.slide_final_tip.extra', 'No loss — lowest bonus is 0, all cells stay on the board'),
     },
     {
       icon: '🤝',

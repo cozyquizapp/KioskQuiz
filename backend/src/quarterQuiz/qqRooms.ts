@@ -4093,11 +4093,14 @@ export function qqStartRules(room: QQRoomState): void {
 /** Advance to next rules slide (wraps at end). */
 export function qqRulesNext(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
-  // 2026-05-10 (Audit-P0 State-Race): Max-Index-Clamp. Vorher unbegrenzt
-  // increment möglich (rulesSlideIndex 99 wenn Frontend bei Max nicht
-  // rulesFinish schickt + Backend-Roundtrip-Lag mehrere rulesNext durchläuft).
-  // 9 Slides bei connectionsEnabled, sonst 8. Frontend-Logic dieselbe.
-  const totalSlides = (room as any).connectionsEnabled !== false ? 9 : 8;
+  // 2026-05-10 (Audit-P0 State-Race): Max-Index-Clamp.
+  // 2026-05-17 (Wolf-Bug 'finaltipp slide hängt'): cozyGamesEnabled hat
+  // eine eigene Rules-Slide → Slide-Count entsprechend +1 wenn aktiv.
+  // Vorher wurde max-Index zu niedrig berechnet → Backend silent no-op bei
+  // Final-Tipp wenn CG an + Connections aus.
+  const hasFinale = (room as any).connectionsEnabled !== false;
+  const hasCozyGames = !!(room as any).cozyGamesEnabled;
+  const totalSlides = 8 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const maxIndex = totalSlides - 1;
   if (room.rulesSlideIndex >= maxIndex) return; // silent no-op statt unendlich
   room.rulesSlideIndex += 1;

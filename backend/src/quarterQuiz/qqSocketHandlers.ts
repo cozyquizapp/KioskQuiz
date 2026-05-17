@@ -1,7 +1,7 @@
 // ── Quarter Quiz — Socket event handlers ─────────────────────────────────────
 
 import { Server as SocketIOServer } from 'socket.io';
-import { saveQQGameResult, getQQRegularTeam, upsertQQRegularTeams } from '../db/schemas';
+import { saveQQGameResult, getQQRegularTeam, upsertQQRegularTeams, getAllCozyGamesFromDB } from '../db/schemas';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
   QQStartGamePayload, QQRevealAnswerPayload, QQShowImagePayload, QQMarkCorrectPayload,
@@ -3623,7 +3623,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     });
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
-    socket.on('qq:setQuizOptions', (
+    socket.on('qq:setQuizOptions', async (
       payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[] },
       ack?: unknown
     ) => {
@@ -3640,6 +3640,19 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // (falls gerade aktiv) — nur Setup-Defaults für neue Spiele.
         if (typeof payload.cozyGamesEnabled === 'boolean') {
           room.cozyGamesEnabled = payload.cozyGamesEnabled;
+          // 2026-05-17 (Auto-Fill): Wenn Toggle auf An gesetzt wird und der
+          // aktuelle Room-Pool leer ist, default mit 8 random Seed-Spielen
+          // aus der DB. Wolf hat dann sofort etwas im Rad ohne Builder-Detour.
+          if (payload.cozyGamesEnabled === true && (!Array.isArray(room.cozyGamesPool) || room.cozyGamesPool.length === 0)) {
+            try {
+              const all = await getAllCozyGamesFromDB();
+              const active = (all ?? []).filter((g: any) => !g.archived);
+              const shuffled = [...active].sort(() => Math.random() - 0.5);
+              room.cozyGamesPool = shuffled.slice(0, 8).map((g: any) => g.id);
+            } catch {
+              // ignore — bleibt leer, Wolf muss manuell wählen
+            }
+          }
         }
         if (Array.isArray(payload.cozyGamesPool)) {
           room.cozyGamesPool = payload.cozyGamesPool.slice(0, 8);

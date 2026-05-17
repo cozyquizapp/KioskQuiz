@@ -8644,6 +8644,35 @@ app.get('/api/qq/drafts', async (_req, res) => {
     if (dbCheeseEnriched > 0) {
       console.log(`[migration] Enriched CHEESE images in ${dbCheeseEnriched} DB drafts via Wikipedia`);
     }
+    // 2026-05-17 (CozyGames-Auto-Fill): Drafts ohne cozyGamesPool bekommen
+    // 8 random Seed-Spiele. Idempotent — nur fehlende/leere Pools werden
+    // befüllt. cozyGamesEnabled bleibt unverändert (Wolf entscheidet pro
+    // Quiz im Builder oder Mod-Quick-Settings).
+    let dbCozyGamesAutoFilled = 0;
+    const cozyGameSeedIds = COZY_GAME_V1_SEED.map(g => g.id);
+    for (let i = 0; i < cleanDbDrafts.length; i++) {
+      const d: any = cleanDbDrafts[i];
+      const hasPool = Array.isArray(d.cozyGamesPool) && d.cozyGamesPool.length > 0;
+      if (hasPool) continue;
+      const shuffled = [...cozyGameSeedIds].sort(() => Math.random() - 0.5);
+      d.cozyGamesPool = shuffled.slice(0, 8);
+      d.updatedAt = Date.now();
+      try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+      dbCozyGamesAutoFilled++;
+    }
+    if (dbCozyGamesAutoFilled > 0) {
+      console.log(`[migration] Auto-filled CozyGames-Pool in ${dbCozyGamesAutoFilled} DB drafts (8 random Seed-Spiele pro Draft)`);
+    }
+    // Same für File-Drafts
+    for (let i = 0; i < qqDrafts.length; i++) {
+      const d: any = qqDrafts[i];
+      const hasPool = Array.isArray(d.cozyGamesPool) && d.cozyGamesPool.length > 0;
+      if (hasPool) continue;
+      const shuffled = [...cozyGameSeedIds].sort(() => Math.random() - 0.5);
+      d.cozyGamesPool = shuffled.slice(0, 8);
+      d.updatedAt = Date.now();
+    }
+    persistQQDrafts();
     // Merge any file-backed drafts that aren't yet in DB
     const dbIds = new Set(cleanDbDrafts.map((d: any) => d.id));
     const fileDrafts = qqDrafts.filter(d => !dbIds.has(d.id));

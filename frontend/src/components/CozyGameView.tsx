@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
-import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare } from '../utils/sounds';
+import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish } from '../utils/sounds';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
@@ -1149,6 +1149,24 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
   darkAccentColor: string;
   teams: QQTeam[];
 }) {
+  // 2026-05-17 P4 (Wolf 'kein sound bei cozygame gewinnerauflösung'):
+  // Climax-Akkord + Fanfare wenn winnerTeamIds von leer → gefüllt
+  // transitioniert (= Mod hat Sieger gepickt, Hero-Reveal startet).
+  // useEffect MUSS vor early-return stehen (React Hook Order).
+  const prevHadWinnersRef = useRef(false);
+  useEffect(() => {
+    const has = winnerTeamIds.length > 0;
+    const prev = prevHadWinnersRef.current;
+    prevHadWinnersRef.current = has;
+    if (has && !prev) {
+      try { playClimaxFinish(); } catch {}
+      const fanfare = window.setTimeout(() => {
+        try { playFanfare(); } catch {}
+      }, 400);
+      return () => window.clearTimeout(fanfare);
+    }
+  }, [winnerTeamIds.length]);
+
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
       <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>

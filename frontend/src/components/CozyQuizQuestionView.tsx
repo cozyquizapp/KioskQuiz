@@ -2971,7 +2971,12 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
+            // 2026-05-17 P4 (Wolf 'kein sound am ende bei schätzchen'):
+            // Top-Row (= Sieger) bekommt jetzt zusätzlich den ClimaxFinish-
+            // Akkord wie MUCHO/ZVZ/CHEESE. Vorher nur RevealHighlight, was
+            // im langen Cascade-Verlauf kaum als Climax wahrgenommen wurde.
             try { playRevealHighlight(); } catch {}
+            try { playClimaxFinish(); } catch {}
           }
         }
       }, INITIAL_DELAY_MS + i * STEP_MS);
@@ -3968,7 +3973,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     const winnerIds = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
     const hasRenderableWinner = !!s.teams.find(t => t.id === s.correctTeamId)
       || winnerIds.some(id => s.teams.find(t => t.id === id));
-    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && hasRenderableWinner) {
+    const earlyCat = s.currentQuestion?.category;
+    // 2026-05-17 P4 (Wolf 'kein sound am ende bei schätzchen'): Parent-Climax
+    // bei SCHAETZCHEN suppressen — die SchaetzchenReveal-Cascade feuert ihren
+    // eigenen Climax beim Top-Row-Reveal, parent-640ms-Climax wäre zu früh
+    // (Cascade dauert ~7s, fired-bei-Reveal-Start verpufft).
+    if (!s.sfxMuted && showUnifiedWinner && !prev && revealed && hasRenderableWinner && earlyCat !== 'SCHAETZCHEN') {
       const cat = s.currentQuestion?.category;
       const subKind = (s.currentQuestion?.bunteTuete as { kind?: string } | undefined)?.kind;
       const isCascadeCategory =

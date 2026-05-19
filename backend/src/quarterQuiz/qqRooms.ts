@@ -5772,20 +5772,173 @@ export function qqCozyGameWheelLanded(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-/** WHEEL_RESULT → GAME_ACTIVE. Startet 60s-Timer. */
+/** Sortiert Teams für Sequence-Mode: bestes Team (largestConnected, dann
+ *  totalCells, random tie-break) zuerst. Wolf 2026-05-17. */
+function sortTeamsForSequence(teams: Record<string, QQTeam>): string[] {
+  return Object.values(teams)
+    .slice()
+    .sort((a, b) => {
+      if (b.largestConnected !== a.largestConnected) return b.largestConnected - a.largestConnected;
+      if (b.totalCells !== a.totalCells) return b.totalCells - a.totalCells;
+      return Math.random() - 0.5;
+    })
+    .map(t => t.id);
+}
+
+/** WHEEL_RESULT → GAME_ACTIVE. Startet 60s-Timer.
+ *  2026-05-17 (Wolf): `playMode` = 'parallel' (default) oder 'sequence'.
+ *  Bei sequence: sortTeamsForSequence + currentIdx=0, Timer für 1. Team.
+ *  Bei parallel: 1 Timer für alle Teams gleichzeitig (altes Verhalten). */
 export function qqCozyGameStartGame(
   room: QQRoomState,
+  playMode: 'parallel' | 'sequence',
   onExpire: () => void,
 ): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'WHEEL_RESULT') return;
   if (room._cozyGameTimerHandle) clearTimeout(room._cozyGameTimerHandle);
   room.cozyGame.phase = 'GAME_ACTIVE';
+  room.cozyGame.playMode = playMode;
+  room.cozyGame.timerDurationSec = COZY_GAME_TIMER_MS / 1000;
+  room.cozyGame.timerPausedRemainingMs = undefined;
+  if (playMode === 'sequence') {
+    room.cozyGame.sequenceOrder = sortTeamsForSequence(room.teams);
+    room.cozyGame.sequenceCurrentIdx = 0;
+    room.cozyGame.sequenceCompletedTeamIds = [];
+  }
   room.cozyGame.gameEndsAt = Date.now() + COZY_GAME_TIMER_MS;
   room._cozyGameOnExpire = onExpire;
   room._cozyGameTimerHandle = setTimeout(() => {
     room._cozyGameTimerHandle = null;
     onExpire();
   }, COZY_GAME_TIMER_MS);
+  room.lastActivityAt = Date.now();
+}
+
+/** Bei Sequence-Mode: aktuelles Team beenden, nächstes Team starten.
+ *  Letztes Team → Phase wechselt zu WINNER_SELECT.
+ *  Wolf 2026-05-17: Mod-Trigger via qq:cozyGameNextSequenceTeam. */
+export function qqCozyGameNextSequenceTeam(
+  room: QQRoomState,
+  onExpire: () => void,
+): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE' || cg.playMode !== 'sequence') return;
+  const order = cg.sequenceOrder ?? [];
+  const curIdx = cg.sequenceCurrentIdx ?? 0;
+
+  // Aktuelles Team als completed markieren
+  const currentTeamId = order[curIdx];
+  if (currentTeamId) {
+    const done = cg.sequenceCompletedTeamIds ?? [];
+    if (!done.includes(currentTeamId)) {
+      cg.sequenceCompletedTeamIds = [...done, currentTeamId];
+    }
+  }
+
+  // Timer stoppen
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+
+  if (curIdx + 1 < order.length) {
+    // Nächstes Team — Timer neu starten (volle Dauer)
+    cg.sequenceCurrentIdx = curIdx + 1;
+    const durationMs = (cg.timerDurationSec ?? COZY_GAME_TIMER_MS / 1000) * 1000;
+    cg.gameEndsAt = Date.now() + durationMs;
+    cg.timerPausedRemainingMs = undefined;
+    room._cozyGameOnExpire = onExpire;
+    room._cozyGameTimerHandle = setTimeout(() => {
+      room._cozyGameTimerHandle = null;
+      onExpire();
+    }, durationMs);
+  } else {
+    // Alle Teams durch → WINNER_SELECT
+    cg.phase = 'WINNER_SELECT';
+    cg.gameEndsAt = null;
+    cg.timerPausedRemainingMs = undefined;
+    room._cozyGameOnExpire = null;
+  }
+  room.lastActivityAt = Date.now();
+}
+
+/** Mod pausiert den Timer. gameEndsAt → null, Rest-ms in timerPausedRemainingMs. */
+export function qqCozyGameTimerPause(room: QQRoomState): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE') return;
+  if (cg.gameEndsAt == null) return; // bereits pausiert oder Timer ausgelaufen
+  const remaining = Math.max(0, cg.gameEndsAt - Date.now());
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+  cg.gameEndsAt = null;
+  cg.timerPausedRemainingMs = remaining;
+  room.lastActivityAt = Date.now();
+}
+
+/** Mod startet pausierten Timer wieder. */
+export function qqCozyGameTimerResume(room: QQRoomState, onExpire: () => void): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE') return;
+  const remaining = cg.timerPausedRemainingMs;
+  if (remaining == null || remaining <= 0) return;
+  cg.timerPausedRemainingMs = undefined;
+  cg.gameEndsAt = Date.now() + remaining;
+  room._cozyGameOnExpire = onExpire;
+  room._cozyGameTimerHandle = setTimeout(() => {
+    room._cozyGameTimerHandle = null;
+    onExpire();
+  }, remaining);
+  room.lastActivityAt = Date.now();
+}
+
+/** Mod resettet Timer auf volle Dauer. Wirkt sowohl bei laufendem als auch
+ *  bei pausiertem Timer (Pause → läuft danach mit voller Dauer weiter). */
+export function qqCozyGameTimerReset(room: QQRoomState, onExpire: () => void): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE') return;
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+  }
+  const durationMs = (cg.timerDurationSec ?? COZY_GAME_TIMER_MS / 1000) * 1000;
+  cg.gameEndsAt = Date.now() + durationMs;
+  cg.timerPausedRemainingMs = undefined;
+  room._cozyGameOnExpire = onExpire;
+  room._cozyGameTimerHandle = setTimeout(() => {
+    room._cozyGameTimerHandle = null;
+    onExpire();
+  }, durationMs);
+  room.lastActivityAt = Date.now();
+}
+
+/** Mod erweitert/verkürzt Timer um deltaSec (kann negativ sein).
+ *  Wirkt bei laufendem Timer (endsAt verschoben) UND bei pausiertem
+ *  Timer (pausedRemainingMs angepasst). Mindest-Rest 1s. */
+export function qqCozyGameTimerAdjust(
+  room: QQRoomState,
+  deltaSec: number,
+  onExpire: () => void,
+): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE') return;
+  const deltaMs = deltaSec * 1000;
+  if (cg.gameEndsAt != null) {
+    // Timer läuft → endsAt verschieben + Handle neu schedulen
+    const newEndsAt = Math.max(Date.now() + 1000, cg.gameEndsAt + deltaMs);
+    cg.gameEndsAt = newEndsAt;
+    if (room._cozyGameTimerHandle) clearTimeout(room._cozyGameTimerHandle);
+    const remaining = newEndsAt - Date.now();
+    room._cozyGameOnExpire = onExpire;
+    room._cozyGameTimerHandle = setTimeout(() => {
+      room._cozyGameTimerHandle = null;
+      onExpire();
+    }, remaining);
+  } else if (cg.timerPausedRemainingMs != null) {
+    // Pausiert → Rest-ms anpassen
+    cg.timerPausedRemainingMs = Math.max(1000, cg.timerPausedRemainingMs + deltaMs);
+  }
   room.lastActivityAt = Date.now();
 }
 

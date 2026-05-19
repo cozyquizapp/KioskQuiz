@@ -66,6 +66,14 @@ export interface CozyGame {
   isSeed?: boolean;
   /** True wenn Wolf das Spiel im Editor deaktiviert hat (nicht mehr auswählbar im Builder). */
   archived?: boolean;
+  /**
+   * 2026-05-17 (Wolf): Manche Spiele können nicht parallel gespielt werden
+   * (z.B. nur ein Stäbchen-Set, oder ein Reaktions-Buzzer). Bei `false`
+   * spielen Teams nacheinander (Sequence-Modus) — sortiert nach
+   * largestConnected DESC, totalCells DESC, random bei Tie. Default
+   * (undefined/true) = parallel (aktuelles Verhalten).
+   */
+  parallel?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -95,12 +103,36 @@ export interface CozyGameRoundState {
   activeGameId: string | null;
   /** RNG-Seed für deterministischen Spin (Backend würfelt, Frontend rendert) — Slice-Index 0..N-1. */
   wheelTargetSliceIndex: number | null;
-  /** ms-Timestamp wann Spiel-Timer endet (für 60s-Countdown im GAME_ACTIVE). */
+  /** ms-Timestamp wann Spiel-Timer endet (für 60s-Countdown im GAME_ACTIVE).
+   *  Bei pausiertem Timer: null + timerPausedRemainingMs gesetzt. */
   gameEndsAt: number | null;
   /** Slot im Quiz: 'roundPause' = nach Runde 1, 'finalSlot' = Final-Runde-Kategorie. */
   slotKind: 'roundPause' | 'finalSlot';
   /** Sieger-Team-IDs (1 bei Klar-Sieg, mehrere bei Tie). Wird in WINNER_SELECT befüllt. */
   winnerTeamIds: string[];
+
+  // ── Play-Mode (2026-05-17 Wolf): Parallel vs. Sequence ──────────────────
+  /**
+   * 'parallel' = alle Teams gleichzeitig (1 Timer, aktuelles Verhalten).
+   * 'sequence' = Teams nacheinander (1 Timer pro Team-Turn).
+   * Wird beim qqCozyGameStartGame aus CozyGame.parallel abgeleitet.
+   */
+  playMode?: 'parallel' | 'sequence';
+  /** Bei sequence: sortierte Team-IDs (largestConnected DESC, totalCells DESC, random bei Tie). */
+  sequenceOrder?: string[];
+  /** Bei sequence: 0-based Index des Teams das gerade spielt. */
+  sequenceCurrentIdx?: number;
+  /** Bei sequence: Team-IDs die ihren Turn schon hatten (für „fertig"-Anzeige). */
+  sequenceCompletedTeamIds?: string[];
+
+  // ── Timer-Controls (2026-05-17 Wolf): Mod-anpassbar ─────────────────────
+  /**
+   * Bei Pause: verbleibende ms (gameEndsAt ist dann null).
+   * Bei Resume: zurück auf null setzen, gameEndsAt neu rechnen.
+   */
+  timerPausedRemainingMs?: number;
+  /** Initiale Timer-Dauer in Sekunden (für Reset-Button). Default 60. */
+  timerDurationSec?: number;
 }
 
 // ── V1-Seed: 12 Spiele ───────────────────────────────────────────────────────

@@ -56,6 +56,9 @@ import {
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
   qqCozyGameAdvanceToPlacement, qqCozyGameCancel,
+  qqCozyGameNextSequenceTeam,
+  qqCozyGameTimerPause, qqCozyGameTimerResume,
+  qqCozyGameTimerReset, qqCozyGameTimerAdjust,
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
@@ -3044,7 +3047,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    socket.on('qq:cozyGameAdvance', (payload: { roomCode: string }, ack?: unknown) => {
+    // 2026-05-17 (Wolf Sequence-Mode): Helper für mode-aware onExpire.
+    // parallel: Timer-Ende → WINNER_SELECT (alle gleichzeitig gespielt).
+    // sequence: Timer-Ende → nur Timer stoppen, Mod muss „Nächstes Team" klicken.
+    const makeCozyGameOnExpire = (roomCode: string) => () => {
+      const live = getQQRoom(roomCode);
+      if (!live || !live.cozyGame) return;
+      if (live.cozyGame.playMode === 'sequence') {
+        if (live._cozyGameTimerHandle) {
+          clearTimeout(live._cozyGameTimerHandle);
+          live._cozyGameTimerHandle = null;
+        }
+        live.cozyGame.gameEndsAt = null;
+      } else {
+        qqCozyGameStopGame(live);
+      }
+      broadcast(io, roomCode);
+    };
+
+    socket.on('qq:cozyGameAdvance', async (payload: { roomCode: string }, ack?: unknown) => {
       // Mod-Space-Press: schaltet von der aktuellen Sub-Phase weiter.
       try {
         const room = ensureQQRoom(payload.roomCode);
@@ -3061,14 +3082,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
             broadcast(io, payload.roomCode);
           }, 6500);
         } else if (cg.phase === 'WHEEL_RESULT') {
-          qqCozyGameStartGame(room, () => {
-            const live = getQQRoom(payload.roomCode);
-            if (!live) return;
-            qqCozyGameStopGame(live);
-            broadcast(io, payload.roomCode);
-          });
+          // 2026-05-17 (Wolf Sequence-Mode): parallel-Flag des aktiven Spiels
+          // aus DB ziehen → playMode bestimmen. Fallback bei DB-Fehler: parallel.
+          let parallel = true;
+          try {
+            const allGames = await getAllCozyGamesFromDB();
+            const active = (allGames ?? []).find((g: any) => g.id === cg.activeGameId);
+            parallel = active?.parallel !== false;
+          } catch { /* fall back to parallel */ }
+          const playMode = parallel ? 'parallel' : 'sequence';
+          qqCozyGameStartGame(room, playMode, makeCozyGameOnExpire(payload.roomCode));
         } else if (cg.phase === 'GAME_ACTIVE') {
-          // Mod stoppt früher (Hybrid-Timer-Stop)
+          // Mod stoppt früher (Hybrid-Timer-Stop). In sequence-mode überspringt
+          // das die übrigen Teams direkt zu WINNER_SELECT — bewusst (Notlösung
+          // wenn Mod abbrechen will). Reguläres Vorrücken via cozyGameNextSequenceTeam.
           qqCozyGameStopGame(room);
         } else if (cg.phase === 'WINNER_SELECT' && cg.winnerTeamIds.length > 0) {
           // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter zum Grid'):
@@ -3082,6 +3109,50 @@ export function registerQQHandlers(io: SocketIOServer): void {
           ok(ack);
           return;
         }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-17 (Wolf Sequence-Mode): Mod-Trigger für „Nächstes Team".
+    socket.on('qq:cozyGameNextSequenceTeam', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameNextSequenceTeam(room, makeCozyGameOnExpire(payload.roomCode));
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-17 (Wolf Timer-Controls): Pause / Resume / Reset / Adjust (±sec).
+    socket.on('qq:cozyGameTimerPause', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameTimerPause(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+    socket.on('qq:cozyGameTimerResume', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameTimerResume(room, makeCozyGameOnExpire(payload.roomCode));
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+    socket.on('qq:cozyGameTimerReset', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameTimerReset(room, makeCozyGameOnExpire(payload.roomCode));
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+    socket.on('qq:cozyGameTimerAdjust', (payload: { roomCode: string; deltaSec: number }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameTimerAdjust(room, payload.deltaSec, makeCozyGameOnExpire(payload.roomCode));
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

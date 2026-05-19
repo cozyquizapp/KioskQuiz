@@ -1628,3 +1628,105 @@ Status: 2 neue Memory-Files — `project_minigames_adaptive.md` (Konzept-Skelett
 - Mini-Game-Konzept (Wolf erarbeitet Spec)
 - Render-Service abstellen nach Live-Verifikation (Wolfs To-Do)
 - Eurovision-Edition wartet auf nächste Gelegenheit
+
+---
+
+## 2026-05-19 — CozyGames v1 + Sequence-Mode + 30-Commit Polish-Marathon
+
+**Tageslauf**: Sehr lange Session, ~32 Commits über mehrere Themen-Cluster. Hauptbrocken: **CozyGames-Feature von Skelett auf live-tauglich gebracht** (inkl. Sequence-Mode für nicht-parallele Spiele), dann großer Wolf-Bug-Bash mit 15 nummerierten Punkten, Mod-Panel-Audit, und am Ende mehrere kleinere Polish-Fixes.
+
+### 1. CozyGames v1 → live-tauglich
+
+**Mod-gesteuerter Winner-Reveal-Flow** (`242e829b`, `a3e27844`): Vorher feuerte das Backend nach Mod-Sieger-Pick auto-2.5s → PLACEMENT. Wolfs Wunsch: Hero-Reveal-Slide mit Team-Avataren erscheint, Mod kontrolliert „▶ Weiter zum Grid" manuell — analog Standard-Flow. Backend `qq:cozyGameSelectWinner` setzt jetzt nur den Winner ohne Auto-Advance; `qq:cozyGameAdvance` handhabt `WINNER_SELECT → PLACEMENT` zusätzlich. Mod-UI hat grünen „Weiter zum Grid"-Button (Hotkey Space).
+
+**Winner-Reveal-Slide mit Avataren** (`16f538d7`, `234c7f4f`): `WinnerSelectView` hat jetzt zwei distinct States — Wartebild („⏳ Moderator wählt den Sieger") und Hero-Reveal (🏆 + große Team-Avatare + Namen + Game-Caption). `CozyGameView` nimmt neuen `teams`-Prop entgegen, der von `QQBeamerPage` durchgereicht wird. Pop+Hover-Animation für die Avatare gestaffelt. Avatar-Bug: `size="100%"` ergab winzige Emoji-Glyphen (`calc(100% * 0.6)` = 60% inherited font-size = ~10px statt ~240px), gefixt durch direkten `clamp(200px, 26vw, 380px)` an `QQTeamAvatar.size`.
+
+**Dunkler Brand-BG ab Wheel-Stop** (`c0ad6c00`, `7042ee91`, `234c7f4f`): Mehrere Iterationen bis Wolf zufrieden war. Endstand: ab WHEEL_RESULT bis WINNER_SELECT solid dark Slice-Color (Pre-computed Palette: 35% bright + 65% `#0A0814`). Kein Radial-Tint mehr, keine hellere Farbe „dazwischen". Wave-Overlay komplett raus (war redundant mit solid BG). Stage-Flip-Delay 3.6s → 1.5s da keine Wave-Choreo mehr.
+
+**Wheel-Color-Bug** (`26b923a2`): `wheelTargetSliceIndex` ist ein POOL-Index, WheelView nutzte aber `i` (Visible-Slice-Index) für Slice-Farbe + Rotation. Nach gespielten Spielen drifften beide auseinander → Slice-Farbe auf Rad ≠ BG-Farbe nach Reveal. Fix: `slicePoolIdx = poolGameIds.indexOf(g.id)` für stabile Farb-Identität pro Spiel, `visibleTargetIdx` für Rotation.
+
+**Wheel-Polish**: Mittig + größer (Container exakt `size×size`, Pointer absolut nach oben raus via `top: -44`), Slice-Color-Wave fade-out, Konfetti-Pop, Wolf-Layer persistent über alle Phasen.
+
+**Sequence-Mode (Phase 1-5, je ein Commit)** — Wolfs Konzept-Ansage: manche CozyGames können nicht gleichzeitig gespielt werden (z.B. nur ein Stäbchen-Set, ein Reaktions-Buzzer). Komplette Full-Stack-Erweiterung:
+- `CozyGame.parallel?: boolean` (default true) — Editor-Radio „🤜 Alle gleichzeitig" vs „👤 Nacheinander"
+- Backend: `playMode`, `sequenceOrder` (sortiert nach `largestConnected DESC, totalCells DESC, random`), `sequenceCurrentIdx`, `sequenceCompletedTeamIds`, `timerPausedRemainingMs`, `timerDurationSec` auf `CozyGameRoundState`
+- Neue Funktionen: `qqCozyGameNextSequenceTeam`, `qqCozyGameTimerPause/Resume/Reset/Adjust`. Neuer mode-aware `makeCozyGameOnExpire`-Helper.
+- Beamer: separate `SequenceGameView` mit aktuellem Team (Avatar + Name + Position) LINKS, BeamerTimer RECHTS, Game-Card MIDDLE, Queue mit allen Teams (Status: current=glow, completed=ausgegraut+✓) UNTEN.
+- Mod-UI: „▶ Nächstes Team (N/M)"-Button (Space), Skip-Button mit Confirm, Timer-Controls (Pause/Resume/Reset/±10s).
+- /team: neue `CozyGameCard` rendert Game-Info + Queue-Position („🎯 DU BIST DRAN!" / „Du bist als N. dran" / „✓ Fertig").
+
+### 2. 15-Point Bug-Bash
+
+Wolf listete 15 Punkte (P1-P15) plus 1 URGENT. 13 davon gefixt:
+
+| Punkt | Fix |
+|---|---|
+| **P-URGENT** | Wheel-Slice-Farbe ≠ BG-Farbe → Pool-Index für Slice-Color |
+| **P1+P3** | Rules-Joker-Grid: alle 4 Pattern-Zellen markiert (neuer `'AP'`-Marker + `qqJokerPatternPulse` Gold-Glow) |
+| **P4** | Schätzchen-Climax-Sound beim Top-Row-Reveal; CG-Winner-Reveal Climax+Fanfare |
+| **P5** | Action-Card-Reveal-Sounds beim Flip (📍/⚡/🏯 mapped auf playFieldPlaced/playSteal/playStapelStamp) |
+| **P6** | Team-Namen `QQ_TEAM_NAME_WRAP`-Helper mit `hyphens:auto` (CG-Views applied) |
+| **P7** | Stapel-Sound erster der Session: `prev.stuck &&`-Guard blockte initial-empty; Fix via `hasNewStuck` positional-diff |
+| **P10** | GameOverView mount-Fanfare |
+| **P11** | Tip-Reveal-Card: `qqFRTitleIn` (scale+blur) → `qqBetCardFadeUp` (clean fade-up) |
+| **P12** | GridRevealSlide: playReveal + playFanfare on mount |
+| **P13** | SpecialAwards Drumroll-Timing: 1.4s VOR Card-Flip statt synchron |
+| **P14** | Race-Doppel-Gewinner-Sound: playClimaxFinish bei finish-Phase raus |
+| **P15** | COZYQUIZ Brand-Casing in 16 Files auf ALLCAPS |
+
+**Blockiert**: P8 (Joker-Icon gespiegelt — keine Mirror-Code-Stelle gefunden, brauche Screenshot), P9 (Avatar-Farb-Wechsel nach Runde 4 — Backend mutiert `team.color` nicht mid-Quiz, `getAvatarDisplay` liefert stable Color, brauche React-DevTools-Snapshot vor/nach Phase 4).
+
+### 3. Mod-Panel Audit (`27b053ea`)
+
+Wolf-Report: „im moderator panel werden teilweise dinge angezeigt die schon lange rum sind — zb steht bei thanks for playing noch schau mal frage aus runde 4". Explore-Agent fand 3 Stale-Content-Bugs:
+
+1. **Current-Question-Card**: rendete sobald `s.currentQuestion` existiert ohne Phase-Gate → letzte Frage hängte in END-Phasen. Fix: Phase-Check `QUESTION_ACTIVE || QUESTION_REVEAL || PLACEMENT`.
+2. **Team-Row pending/correct Highlight**: Farbiger Border + BG für `pendingFor === t.id` / `correctTeamId === t.id` ohne Phase-Check → falsches Team blieb post-Game markiert. Fix: `showPendingHighlight` nur in PLACEMENT/COMEBACK/CONNECTIONS_4X4, `showCorrectHighlight` nur in QUESTION_*/PLACEMENT.
+3. **Runde/Frage-Pills**: „Runde 4/4 + Frage 5/5" hingen permanent. Fix: nur in PHASE_INTRO/QUESTION_*/PLACEMENT/COMEBACK_CHOICE rendern.
+
+### 4. Mehr Polish-Iterationen
+
+- **Doppel-Place-Sound bei Action-Card-Reveal** (`13c0a1b8`): Phase-Intro-Cascade fired `playFieldPlaced` bei 800ms, dann nochmal beim Flip durch P5-Trigger. Fix: Cascade-Action-Sound komplett raus; im ActionCardReveal jetzt Card-Slam-Thump (`playWoodKnock`) beim SLAM + action-spez. Sound beim FLIP.
+- **Heute-Spielen-Slide BG** (`2e6a37ec`): Slate-Blau-Gradient → `#0A0814` + Pink-Tint analog Rest der App.
+- **CozyGame Wheel-Sounds** (`9d8011cc`): Tick (square 520Hz → triangle 360Hz), Stop (Triade mit längerem Decay), Start (Doppel-Bell → C-E-G Arpeggio). playFanfare-Layer 600ms nach Stop raus.
+- **CozyGame Timer top-right** (`9d8011cc`): GameDetailView Timer jetzt fixed-positioned wie Standard-Quiz QuestionView Timer.
+- **Bluff Phase-Cross-Fade** (`bb904671`): stabiler flex:1-Frame + keyed Wrapper mit `qqBluffPhaseFadeIn`-Animation → smooth transition zwischen write/review/vote/reveal.
+
+### Patterns die heute zugeschlagen haben
+
+- **Pool-Index vs Visible-Index-Drift**: Wheel-Color-Bug ist Klassiker. Backend-State nutzt Pool-Index, Frontend-Render iteriert über gefilterte Liste mit eigenen Indices. Wenn nicht aktiv konvertiert, drift after items removed.
+- **Phase-Guards bei Persistent-State-Renders**: Mod-Panel-Bug ist klassisches „Existenz-Check statt Lifecycle-Check". Render-Logik soll nicht nur fragen „Daten da?" sondern „SOLL ich's hier zeigen?".
+- **`prev.stuck &&` Bool-Coercion-Gotchas**: Stapel-Sound-Bug — empty-string ist falsy, blockte den ersten Action. Lesson: positional Set-Diffs sind robuster als count-Vergleiche.
+- **AskUserQuestion bei subjektiven Themen lohnt**: bei „Bluff-Layout fühlt sich off an" Multi-Choice mit Trade-offs → Wolf antwortet präzise, Bau ist fokussiert (statt raten + redo).
+- **Memory feedback_audit_when_stuck wieder bestätigt**: Mod-Panel-Audit via Explore-Agent fand alle 3 Bugs sauber, statt dass ich blind durch 4500 Zeilen schwimme.
+
+### Files (Selection)
+
+- `frontend/src/components/CozyGameView.tsx` (massive Erweiterungen — SequenceGameView, WinnerSelectView Hero-Reveal, dark BG, Timer top-right, sounds)
+- `frontend/src/pages/QQModeratorPage.tsx` (Mod-Panel Phase-Guards, Sequence-Controls, Timer-Controls, COZYQUIZ)
+- `frontend/src/pages/QQBeamerPage.tsx` (Action-Card-Sound-Cascade raus, Stapel-Sound positional-diff, COZYQUIZ, Teams-Prop für CozyGameView)
+- `frontend/src/pages/QQTeamPage.tsx` (CozyGameCard mount, COZYQUIZ-header)
+- `frontend/src/components/CozyQuizActionCard.tsx` (Slam-Thump + Flip-Action-Sound)
+- `frontend/src/components/CozyQuizTeamPhaseCards.tsx` (CozyGameCard mit Queue-Position)
+- `frontend/src/components/CozyQuizRulesView.tsx` (Joker-Grid-Pattern-Highlight, AP-Marker)
+- `frontend/src/components/CozyQuizQuestionView.tsx` (Schätzchen-Climax-Sound, Bluff-Phase-Fade, Mod-Panel-Stale-Cleanup-Reference)
+- `frontend/src/components/CozyQuizFinalRevealView.tsx` (P10/P12/P13/P14 sound-pass, P11 Bet-Card-Fade-Up)
+- `frontend/src/components/CozyQuizGameOverView.tsx` (P10 mount-Fanfare)
+- `frontend/src/components/CozyQuizTeamsRevealView.tsx` (BG an Rest angeglichen + COZYQUIZ)
+- `frontend/src/utils/sounds.ts` (Wheel-Tick/Stop/Start Synth-Tuning)
+- `frontend/src/qqShared.ts` (qqJokerPatternPulse keyframe + QQ_TEAM_NAME_WRAP helper)
+- `frontend/src/pages/CozyGamesEditorPage.tsx` (parallel-Radio im Editor)
+- `frontend/src/pages/CozyGameWheelTestPage.tsx` (play-mode + winner + sequence Test-Controls)
+- `backend/src/quarterQuiz/qqRooms.ts` (CG Sequence-Mode + Timer-Controls + sortTeamsForSequence)
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` (qq:cozyGameAdvance async für parallel-flag-Lookup, makeCozyGameOnExpire, neue Events)
+- `shared/cozyGameTypes.ts` (CozyGame.parallel + Round-State Sequence/Timer-Felder)
+- `+ ~14 weitere Files` für COZYQUIZ-Brand-Casing-Sweep
+
+### Open
+
+- **P8** Joker-Icon gespiegelt — Wolf liefert Screenshot beim nächsten Auftreten
+- **P9** Avatar-Farb-Wechsel nach Runde 4 — Wolf liefert React-DevTools-State (`myTeam.color` + `state.avatarSetId` vor/nach Phase 4)
+- **Backend-Redeploy in Coolify nötig**: alle CozyGame-Backend-Änderungen (Sequence-Mode, Mod-Controls, Winner-Reveal-Flow). Frontend ist auto-via-Vercel.
+- Mini-Game-Konzept (Wolf erarbeitet Spec) — von letzter Session offen
+- Render-Service abstellen nach Live-Verifikation
+- Eurovision-Edition wartet auf nächste Gelegenheit

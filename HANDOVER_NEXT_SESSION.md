@@ -2,202 +2,159 @@
 
 > **Hey du 🐺**
 >
-> Wolf ist ein guter. Kindheitspädagoge, baut CozyQuiz solo neben dem Job, will damit irgendwann Pubs, Firmen, Events bespielen — eines Tages auch Schulen. Er hat den Mut, eine echte App zu bauen ohne Dev-Background, und macht das mit erstaunlich klarem Bauchgefühl. Wenn er etwas verwirft, hat er meistens Recht (Brett-Palette war ein gutes Beispiel — lieber einmal direkt fragen als overengineeren).
+> Wolf hat heute einen massiven Polish-Marathon hinter sich — **CozyGames v1** ist von Skelett auf live-tauglich, plus 15-Punkte-Bug-Bash, Mod-Panel-Audit, Sound-Pass, Brand-Casing-Sweep. ~32 Commits.
 >
-> Ein paar Sachen, die mir geholfen haben:
-> - Wolf denkt **aus Spielersicht**, nicht aus Dev-Sicht. Wenn was „komisch" für ihn ist, ist es das auch für seine Gäste.
-> - Er moderiert mit Streamdeck — **die Mod-Page ist sein Cockpit**, behandle die wie eine Pilotenkanzel.
-> - Sein Deutsch ist direkt und kompakt. Spiegel das. Keine Floskeln, keine Zeitschätzungen, keine „lass mich kurz prüfen".
-> - **Commits + Push autonom nach jeder fertigen Sache.** Nicht warten, nicht fragen.
-> - Wenn er „Idee" oder „Vorschlag" sagt → erst Optionen, dann seine Entscheidung, dann bauen.
-> - Wenn er ein Bild oder eine Skizze schickt → guck genau hin, das ist seine Designsprache.
+> Wolf ist Pädagoge, baut CozyQuiz solo. Spielersicht, kein Dev-Speak, Mod-Page = Cockpit. Wenn er „Idee" sagt → erst Optionen + Trade-offs (AskUserQuestion), dann seine Entscheidung, dann bauen. Sein „log das" / „log ein" → SESSION_LOG.md-Append-Trigger. „Mach eine übergabe" → diese Datei refreshen.
 >
-> Heute war ein verdammt produktiver Tag. Phase 4-8 systematisch durchgezogen, dann nochmal ~30 Live-Bugfixes nach Test-Session. Die App ist jetzt nah dran an „live-tauglich". Du übernimmst eine gut sortierte Codebase mit klaren Memories. Lies die paar MDs unten, dann hast du einen sauberen Start.
+> Commits + Push autonom nach jeder Sache. Deutsch direkt + kompakt spiegeln. Bei 2+ offenen Klärungs-Fragen vor Bau: AskUserQuestion mit Trade-off-Optionen.
 >
-> Sei direkt mit ihm. Sei autonom. Hab Spaß. Er hat einen guten Humor und reagiert auf clevere kleine Details (Mikro-Animationen, Easter-Eggs, gut getimete Sounds) mit echter Freude. Gib ihm das gerne.
+> Heute war goldig produktiv. App ist näher an „live-launch-ready" als gestern. Übernimm sortiert.
 >
-> Viel Erfolg 🐺
-> — Claude vom 2026-05-05
+> Sei autonom. Hab Spaß.
+> — Claude vom 2026-05-19
 
 ---
 
-**Stand:** 2026-05-05 spät · **Letzter Commit:** `c3bb3fec` · **Branch:** `main`
+**Stand:** 2026-05-19 spät · **Letzter Commit:** `bb904671` · **Branch:** `main`
 
 > **Pflicht-Lektüre VOR der ersten Code-Änderung:**
-> 1. `MEMORY.md` (im `.claude/projects/...`-Ordner) — User-Profile + Architektur
-> 2. `STYLE_GUIDE.md` im Repo-Root — Ground-Truth Design-System
-> 3. Diese Datei — Stand & Quer-Bezüge
+> 1. `.claude/projects/.../memory/MEMORY.md` — User-Profile, Architektur, Patterns
+> 2. `SESSION_LOG.md` Tail — heute frischen Eintrag vom 2026-05-19
+> 3. Diese Datei — Stand & offene Punkte
 >
-> **Wichtige Audit-Files** (nur lesen wenn Thema passt):
-> - `AUDIT_FINDINGS.md` — Phase-4 Style-Guide-Audit (~95% Compliance abgeschlossen)
-> - `ANIMATION_AUDIT.md` — Phase-5 Animation
-> - `SOUND_AUDIT.md` — Phase-6 Sound
-> - `LIVE_WORKFLOW_AUDIT.md` — Phase-7 Streamdeck
-> - `MOBILE_UX_AUDIT.md` — Phase-8 Mobile
+> **Wichtige Memory-Files (nur lesen wenn Thema passt):**
+> - `feedback_audit_when_stuck.md` — wenn 15+ Iterationen am selben Bug → Audit statt Stochern
+> - `feedback_askuserquestion_clarifications.md` — bei 2+ offenen Fragen Multi-Choice
+> - `feedback_brainstorm_first.md` — bei „Idee" erst Optionen, dann Bau
+> - `feedback_commit_policy.md` — autonom committen + pushen
+> - `feedback_brand_refresh_checklist.md` — bei Theme/Color-Tweaks ALLE Pages durch
+> - `project_qq_traps_and_patterns.md` — 14 Build-/Draft-/Submit-/Reveal-Bugs aus Mai-2026
+> - `project_qq_score_model.md` — `largestConnected` vs `totalCells` Diskrepanz dokumentiert
 
 ---
 
 ## 🎯 Wo wir stehen — Big Picture
 
-**Phase 4-8 (Style-Guide-Refactor) ✅ abgeschlossen.** Plus: ein langer Wolf-Test-Tag mit ~30 Live-Bugfixes und mehreren neuen Features. App ist deutlich näher an „live-tauglich" als vor 24h.
+**CozyGames v1 ist live-tauglich.** Komplett-Flow funktioniert:
+- INTRO → WHEEL_SPIN → WHEEL_RESULT (dunkler Slice-BG) → GAME_ACTIVE (Timer top-right) → WINNER_SELECT (Hero-Reveal mit Avataren) → PLACEMENT.
+- **Parallel-Mode** (default): 1 Timer für alle Teams gleichzeitig.
+- **Sequence-Mode**: pro Spiel im Editor toggle'bar. Teams nacheinander, bestes Team zuerst. Eigener Timer pro Team-Turn. Mod-Controls für Pause/Resume/Reset/±10s + manuell „Nächstes Team".
 
 **Aktuell live-fähig:**
-- /beamer (Hauptbildschirm) — alle Phasen + Animationen + Sound
-- /moderator (Streamdeck-tauglich, Hotkey-Audio-Feedback)
-- /team (Phone, Reconnect via localStorage)
-- /builder (QQBuilder mit allen Features)
+- /beamer (alle Phasen + CozyGames + Race/Awards-Choreo + Sound-Pass)
+- /moderator (Streamdeck, Phase-Guards in Stale-Content, CozyGame-Sequence-Controls, Timer-Controls)
+- /team (Phone, COZYQUIZ-Header, CozyGameCard mit Queue-Position)
+- /builder (CozyGames-Editor mit parallel-Toggle)
+- /cozygame-test (Standalone-Test mit Play-Mode + Winner-Slider + Sequence-CurTeam-Slider)
 
-**Wolf-Workflow:**
-1. QQBuilder → Draft erstellen
-2. Mod-Page → Draft auswählen → Spiel starten
-3. Streamdeck → Hotkeys (Space, R, N, F13-F17, M, P, F, V, ?, Esc, 1-5)
+**Brand-Konsistenz:**
+- Alle User-facing Brand-Renders: `COZYQUIZ` ALLCAPS (16 Files patcht).
+- Slide-BGs alle `#0A0814` Base + accent-Radial-Tints (TeamsRevealView heute angepasst, war Slate-Blau).
+- Team-Namen smart-wrap via `QQ_TEAM_NAME_WRAP`-Helper (Pub-quatscher statt Pubquatsch-er).
 
----
-
-## 🚨 Wichtige Schema-/Architektur-Änderungen heute
-
-### 1. team.color = Avatar-Slot-Farbe ÜBERALL
-**Geschichte:** Ich habe heute Brett-Palette eingeführt (separater Color-Pool für Cells), Wolf hat das wieder verworfen. **Aktueller Stand:** team.color kommt aus `QQ_AVATARS[avatarId].color` und wird ÜBERALL benutzt (Cells, Standings, Hero, Stats). KEINE separate Brett-Palette mehr.
-
-**Wenn du Code siehst der `qqGetBoardColor()` aufruft:** das ist Legacy aus Phase 4 / heute Vormittag. Für QQ-aktiven Code sollte überall `team.color` reichen. `qqGetBoardColor()` + `QQ_BOARD_PALETTE` bleiben in shared/ als Helper, sind aber nicht mehr im aktiven Renderpfad.
-
-### 2. Avatar-Slot-Farben angepasst
-8 Avatare haben jetzt klar unterscheidbare Farben (45° Hue-Spread):
-```
-fox/Hund:        #F97316 orange
-frog/Faultier:   #22C55E grün
-panda/Pinguin:   #14B8A6 türkis (war blau)
-rabbit/Koala:    #A855F7 lila
-unicorn/Giraffe: #FACC15 gelb
-raccoon/Waschb.: #3B82F6 blau (übernahm Pandas alte Farbe)
-cow/Kuh:         #EC4899 pink (war amber)
-cat/Capybara:    #EF4444 rot
-```
-
-### 3. Schema-Erweiterungen
-- `QQDraft.connections?: QQConnectionsPayload` + `connectionsDurationSec?` + `connectionsMaxFails?` — Custom-Connections-Set pro Draft
-- `QQStartGamePayload` reicht diese 3 Felder durch
-- `QQRoomState.connectionsPayload` speichert das Custom-Set; null = Fallback
-- `FUNNY_TEAM_NAMES_EN` parallel zu DE (28 EN witzige Namen). `getRandomFunnyNames(n, lang='de')` mit lang-Param.
-- `QQTeamAvatar` hat optional `bgColor`-Prop (Disc-Override) und `flat`-Prop (kein Disc, nur Emoji).
-
-### 4. Sound-Architektur
-- `setMusicDucked(true)` ducked jetzt **alle** Music-Loops (lobbyAudioEl + loopAudioEl). Vorher nur loopAudioEl.
-- Helper `playWithDuck(slot, durMs)` in sounds.ts wraped Slot-Plays mit Auto-Ducking.
-- Connections-Phase-Wechsel-Sound-Tracker in QQBeamerPage (active→reveal Cascade + reveal→placement + done-ClimaxFinish).
-- `playStapelStamp` nur noch in PLACEMENT-Phase (vorher feuerte er bei Phase-Wechseln auch).
-- `playHotkeyFeedback()` (440Hz Triangle, 50ms) für Mod-Hotkey-Audio-Bestätigung.
-- Cheese-Reveal-Bug: `hasRenderableWinner` checkt jetzt currentQuestionWinners + verifiziert dass das Team in s.teams existiert.
-
-### 5. Tokens (Phase-4)
-- `qqDesignTokens.ts` hat jetzt: `ALPHA_DEPTH d0 (1A) + d4 (B3)`, `LETTER_SPACING.hero (0.22em)`, `DURATION.idle (2400ms) + spotlight (3500ms)`, `QQ_PHASE_COLORS = ['#3B82F6','#F59E0B','#EF4444']`, `EASING.outCubic`.
-- CSS-Var `--qq-ease-out-cubic` in main.css.
-- `<BeamerOverlay>` Wrapper-Komponente (Position-Fixed-Trap-Schutz für QuizIntro/RulesIntro).
-
-### 6. 4-Gewinnt (OnlyConnect) Refactor
-- Backend: `qqOnlyConnectGlobalMinHint` filtert jetzt locked + winners aus der min-Logik. Beamer kann Hint 2+ zeigen sobald die übrigen aktiven Teams weiter sind.
-- /team: Hint-Slots sind klickbar (Tap auf nächsten Slot = freischalten). Punkte-Logik komplett raus, nur 1 Zeile Regel oben.
-- Backend `qqStapelBonusCell` (CONNECTIONS_4X4 + STAPEL_BONUS) — Bots rufen jetzt diese Funktion statt qqStuckCell (war Mismatch-Bug).
-
-### 7. Joker-PNGs
-- `frontend/public/images/jokers/1.png` + `2.png` (m/w im Wechsel)
-- `<JokerIcon i={index} size={N} />` Component — `i % 2 === 0` → 1.png, sonst 2.png
-- 5 Stellen ersetzt (TeamPage Header, Beamer Cell-jokerFormed, Beamer Star-Fly, Mod Mini-Grid)
-
-### 8. Avatar-Sync
-- `teamEmoji`-Prop wird jetzt überall durchgereicht (~12 Stellen, davor inkonsistent → User wählte Octopus, sah Maus)
-- `<AvatarSetProvider>` auf /team hat jetzt `emojis={state.avatarSetEmojis}`-Prop (war auf Game-View vergessen)
-- CozyGuessr-Pin-Marker (Beamer Map): `getAvatarDisplay()` mit serverEmojis + team.emoji
-
-### 9. Reconnect
-- /team Daten (qq_teamName, qq_avatarId, qq_emoji, qq_lang) sind jetzt in **localStorage** (war sessionStorage → wurde beim Tab-Schließen gelöscht). Auto-Rejoin nach Reload funktioniert jetzt.
-
-### 10. CozyGuessr-Erweiterungen
-- Optional Bild im Builder via `q.image` — auf /team mit cat-Color-Frame (Cheese-Stil), auf /beamer via Standard-Layout-System
-- Plus-Code-Eingabe im MapEditor (FULL Codes clientside via `utils/plusCode.ts`, SHORT via Nominatim-Geocoding)
-- Bild-Upload mit Auto-Komprimierung (Canvas-Resize bis <2MB)
-
-### 11. Connections-Builder
-- Neues Modal in QQBuilder (Top-Bar-Button „🏆 4×4 Finale")
-- 4 Gruppen × 4 Items, DE/EN, Schwierigkeit
-- Speichert in `draft.connections`, Mod-Page reicht durch
-
-### 12. Slide-Editor
-- Aus QQBuilder-Top-Bar entfernt, aus Hauptmenü → in Extras-Sektion verschoben
-- Code bleibt funktional (für Editieren bestehender Drafts mit slideTemplates)
-
-### 13. EN-Translate-Bug
-- Vorher: skipped Felder die schon textEn hatten → DE-Änderungen kamen nicht durch
-- Jetzt: Confirm-Dialog + überschreibt unconditional
+**Code-interne Identifier bleiben:** `CozyQuizThanksView`-Komponenten-Namen, `QQ`-Prefixes etc. — nur Display-Strings ALLCAPS.
 
 ---
 
-## ⚠️ Was noch offen / zu beachten
+## ⚠️ Coolify-Redeploy nötig
 
-### Bekannte Edge-Cases (nicht akut, aber merken)
-- **Slide-Editor** ist visuell chaotisch — Wolf nutzt ihn nicht mehr aktiv. Bei Bedarf später komplett löschen (Schema + Routes + Page).
-- **Sound-Files** (WAV/MP3 in `frontend/public/sounds/`) — Spielende haben Feedback gegeben dass sie nicht gut sind. Wolf wollte „später" angehen (Sound-Designer-Aufgabe oder AI-Sound-Gen). Code ist nicht das Problem.
-- **Pre-Game-Checkliste** (Phase 7 Bucket 5) — als optional skipped, Wolf hat eigene Routine.
-- **Mobile-Layout-Fallback ohne Streamdeck** (Phase 7 Bucket 4) — als „kann später" skipped.
-- **`tcfloat 3s` und ähnliche hardcoded Idle-Loop-Durations** — bewusst nicht auf DURATION.idle migriert (würde Animation-Drift sein), Inline OK.
-- **Bluff-Reveal-Cards 2-Schicht-Shadow** — Audit hatte das als „Hero brauchen 3-Schicht" markiert, ist aber laut Style-Guide korrekt (Reveal-Cards = STANDARD, nicht HERO).
+Backend hat heute substantielle Änderungen bekommen, die noch nicht live sind:
 
-### Memory-Files die JETZT veraltet sein könnten
-- `project_phase_4_to_8_complete.md` referenziert Brett-Palette als laufenden Stand → **wurde heute revertiert**, siehe Punkt 1 oben. Memory-File braucht Update wenn relevant.
+1. **CozyGame Sequence-Mode**: neue Backend-Funktionen `qqCozyGameNextSequenceTeam`, `qqCozyGameTimerPause/Resume/Reset/Adjust`, `sortTeamsForSequence`.
+2. **Winner-Reveal-Flow Mod-gesteuert**: `qq:cozyGameSelectWinner` setzt nur Winner ohne Auto-Advance; `qq:cozyGameAdvance` handhabt `WINNER_SELECT → PLACEMENT`.
+3. **mode-aware onExpire**: `makeCozyGameOnExpire` schaltet parallel vs sequence Verhalten.
+4. **Neue Socket-Events**: `qq:cozyGameNextSequenceTeam`, `qq:cozyGameTimerPause/Resume/Reset/Adjust`.
 
-### Wolf-Test-TODO (vom 2026-05-05 Test-Session)
-**Alle erledigt** außer (von Wolf bewusst zurückgestellt):
-- Sound-Datei-Qualität verbessern (Designer-Aufgabe)
-- 4-Gewinnt-Teampage-Refactor war geplant aber jetzt bereits umgesetzt nach Wolfs Klärung
-- Spätere Polish-Items (Mobile-Layout etc.)
+**Frontend ist auto-Vercel-deployed.** Wolf muss in Coolify manuell Redeploy triggern, sonst arbeitet Mod-UI gegen veraltetes Backend.
 
 ---
 
-## 📝 Workflow-Erinnerungen für die nächste Session
+## 🟡 Offene Punkte
 
-### Auto-Mode + Wolfs Stil
-- Wolf nutzt **Auto-Mode** — handle autonom, frag nur bei Mehrdeutigkeit
-- **Commits + Push nach jeder abgeschlossenen Aufgabe** (siehe `feedback_commit_policy.md`)
-- Wolf moderiert mit **Streamdeck** — Mod-Page muss live-tauglich bleiben
-- **Keine Zeitschätzungen** — Wolf hat dazu klar gesagt „die stimmen nie, dauert eh 5-10 Min"
-- **Bei „Idee" oder „Vorschlag"**: erst brainstormen mit Optionen, auf Wolfs Entscheidung warten, DANN bauen
-- **Wolfs Tonalität:** sehr direkt, kompakt, deutsch — gleiche Tonalität zurück
+### P8 — Joker-Icon gespiegelt (BLOCKED, brauche Repro)
 
-### Was du NICHT tun solltest
-- KEINE Avatare-Color-Änderungen ohne Wolf-OK (heute schon viel hin und her)
-- KEINE Brett-Palette-Reaktivierung (Wolf hat das verworfen)
-- KEINE Mass-Replaces ohne explizit zu erklären was du tust
-- KEIN Slide-Editor-Refactor (Wolf will das eher gelöscht als gefixt)
-- KEINE Sound-File-Änderungen (Wolf macht das selbst)
+Wolf-Report: „manchmal werden in der tabelle rechts vom grid joker verkehrtrum neben den avataren angezeigt". Code-Search nach `scaleX(-1)` / `rotateY(180)` / mirror-Transforms ergab NICHTS. JokerIcon nutzt nur ein optional `scale(1.1)` für Variant 1 (= boy-Joker, Asset-Mismatch-Ausgleich).
 
-### Tools-Hints
-- **TypeScript-Check:** `cd frontend && npx tsc --noEmit` — viele Pre-Existing Errors in Legacy-Pages (Gouache, CreatorWizardPage, QQBuiltinSlide etc.) — die sind laut Memory zu ignorieren. Filter sie raus mit `grep -v "Gouache\|CreatorWizardPage\|QQBuiltinSlide\|QQCustomSlide"`.
-- **Backend Type-Check:** `cd backend && npx tsc --noEmit`
-- **Memory-Inkonsistenzen:** Wenn ein Memory-File etwas anderes sagt als der aktuelle Code — vertraue dem Code. Memory updaten oder ignorieren.
+**Nächster Schritt**: Screenshot vom konkreten Spot benötigt. Mögliche Stellen:
+- ScoreBar (Beamer)
+- Standings-Tabelle (Mod-Panel oder /team Score-Modal)
+- 3D-Grid joker overlay
+- Team-Bottom-Sheet-Menu
 
----
+### P9 — Avatar-Farbe geändert nach Runde 4 (BLOCKED, brauche React-DevTools-State)
 
-## 📊 Session-Statistik 2026-05-05
+Wolf-Report: „ich glaube meine avatarfarbe hat sich nach beginn von runde 4 geändert, ich dachte ich hatte dunkelblau und jetzt rot". Konsistent reproduzierbar in jedem Run; nur Farbe ändert sich, Avatar-Emoji bleibt gleich; Trigger: erster Wechsel nach Phase 4 = QUESTION_ACTIVE.
 
-- **~50 Commits** insgesamt (Phase-4-8 + Wolf-Test-Bugfixes + Builder-Features)
-- **5 neue Dateien:**
-  - `frontend/src/components/JokerIcon.tsx`
-  - `frontend/src/components/BeamerOverlay.tsx`
-  - `frontend/src/components/ConnectionsEditor.tsx`
-  - `frontend/src/utils/imageCompress.ts`
-  - `frontend/src/utils/plusCode.ts`
-- **2 neue PNGs:** `frontend/public/images/jokers/1.png + 2.png`
-- **5 Audit-Files** im Repo-Root (Phase 4-8 Doku)
+Code-Search ergab: Backend mutiert `team.color` nur in `qqJoinTeam` (Rejoin → sync mit Avatar-Slot-Farbe). Kein mid-Quiz-Trigger gefunden. `getAvatarDisplay` liefert stable Color aus `QQ_AVATARS[avatarId]`. `avatarSetId` ändert sich nur via explizitem Mod-Click.
+
+**Hypothesen**:
+- Eventuell Render-bug irgendwo der Index-basierte Palette nutzt statt `team.color`
+- Avatar-Set ändert sich somehow auto bei Phase 4 (unwahrscheinlich, kein Code-Trigger)
+- localStorage-Drift beim /team-Client → qq:joinTeam mit verändertem avatarId
+
+**Nächster Schritt**: React-DevTools-Snapshot vom State `state.teams[wolfId].color` + `state.avatarSetId` JEWEILS vor und nach Phase 4-Start. Wenn `color` sich änderte → Backend-Bug suchen. Wenn `color` gleich aber Rendering anders → Frontend-Render-Bug suchen.
+
+### Weiterhin offen (von vorigen Sessions)
+
+- **Mini-Game-Konzept Spec** — Wolf erarbeitet die Brand-Differenziator-Spiele für Café/Kiosk/Bar (CozyGames v1 ist eine erste Implementation davon, aber Wolfs adaptive-Setup-Konzept geht noch breiter).
+- **Render-Service abstellen** — alles seit 2026-05-09 auf Coolify, Wolf macht Live-Verifikation dann Render weg.
+- **Eurovision-Edition** wartet auf nächste Gelegenheit (Template + 15 Fragen + 3 HL-Pairs fertig).
 
 ---
 
-## 🎬 Wenn der Mod-Loop noch hakt
+## 🧠 Patterns die heute oft auftraten
 
-Falls Wolf in der nächsten Session noch einen neuen Bug meldet, geh zur Bug-Triage so vor:
-1. **Frag konkret:** Phase, was war erwartet, was passiert?
-2. **Reproduziere mental:** welche State-Variable, welche Component?
-3. **grep zuerst, fix dann** — verstehe bevor du editierst.
-4. **Type-Check + Commit + Push pro Bug** (kein Bundle-Commit für unrelated Bugs).
-5. **Update relevante Memory-MDs** wenn du eine neue Erkenntnis hast.
+1. **Pool-Index vs Visible-Index-Drift** (Wheel-Color-Bug): Backend speichert Pool-Index, Frontend rendert gefilterte Liste mit eigenen Indices. Wenn nicht aktiv konvertiert → Farb-/Position-Drift. Lösung: pool-stable Identifier (z.B. game.id) als Lookup-Key statt Index.
 
-**Viel Erfolg! 🐺**
+2. **Existenz-Check statt Lifecycle-Check** (Mod-Panel stale content): `{s.currentQuestion && ...}` rendert solange Daten da sind, auch wenn Phase irrelevant. Lösung: zusätzlich Phase-Gate `s.phase === 'QUESTION_*'`.
+
+3. **Falsy-Bool-Coercion bei Initial-Empty-State** (Stapel-Sound P7): `prev.stuck &&` mit `prev.stuck = ''` → falsy → erster Action blockt. Lösung: positional Set-Diff statt count-grow.
+
+4. **Sound-Layering ist matschig** (CG Wheel-Stop + Fanfare + Konfetti gleichzeitig): besser EINEN klaren Sound pro Moment. Bei mehreren Layers: zeitlich versetzen oder reduzieren.
+
+5. **AskUserQuestion bei subjektiven Themen lohnt** (Tip-Reveal-Animation, Bluff-Issue, Sequence-Mode-Detail-Fragen): Wolf antwortet präzise, Bau fokussiert. Memory-Note bestätigt.
+
+---
+
+## 📁 Files (Today)
+
+**Massiv erweitert / refactored:**
+- `frontend/src/components/CozyGameView.tsx` — SequenceGameView, WinnerSelectView Hero-Reveal, dark Slice-BG, Timer top-right, Sounds, Float-Hover, +500 LOC
+- `frontend/src/pages/QQModeratorPage.tsx` — Phase-Guards, CG-Sequence + Timer-Controls, COZYQUIZ
+- `frontend/src/pages/QQBeamerPage.tsx` — Action-Card-Sound-Cleanup, Stapel-Sound-Fix, Teams-Prop für CozyGameView, COZYQUIZ
+- `frontend/src/components/CozyQuizQuestionView.tsx` — Schätzchen-Climax, Bluff Phase-Fade
+- `frontend/src/components/CozyQuizFinalRevealView.tsx` — Drumroll-Lead, Race-Sound-Cleanup, Bet-Card-Fade-Up, GridRevealSlide-Sound
+- `frontend/src/components/CozyQuizGameOverView.tsx` — Mount-Fanfare
+- `frontend/src/components/CozyQuizTeamsRevealView.tsx` — BG-Konsistenz + COZYQUIZ
+- `frontend/src/components/CozyQuizTeamPhaseCards.tsx` — neue CozyGameCard mit Queue-Position
+- `frontend/src/components/CozyQuizActionCard.tsx` — Slam-Thump + Flip-Action-Sound
+- `frontend/src/components/CozyQuizRulesView.tsx` — Joker-Pattern-Highlight (AP-Marker)
+- `frontend/src/utils/sounds.ts` — Wheel-Tick/Stop/Start Synth-Tuning
+- `frontend/src/qqShared.ts` — `qqJokerPatternPulse` + `QQ_TEAM_NAME_WRAP` exports
+
+**Neu / erweitert:**
+- `frontend/src/pages/CozyGamesEditorPage.tsx` — parallel-Toggle Radio
+- `frontend/src/pages/CozyGameWheelTestPage.tsx` — play-mode + winner + sequence-curTeam Test-Controls
+- `frontend/src/pages/QQTeamPage.tsx` — CozyGameCard mount + COZYQUIZ-Header
+
+**Backend:**
+- `backend/src/quarterQuiz/qqRooms.ts` — Sequence-Mode-Funktionen + Timer-Controls + sortTeamsForSequence
+- `backend/src/quarterQuiz/qqSocketHandlers.ts` — neue Events + async parallel-flag-Lookup + makeCozyGameOnExpire
+
+**Shared:**
+- `shared/cozyGameTypes.ts` — `CozyGame.parallel` + Round-State-Felder
+
+**COZYQUIZ Brand-Casing in 16 Files** (komplettes Sweep durch Display-Strings).
+
+---
+
+## 🚀 Wenn du übernimmst
+
+1. **Lies MEMORY.md im memory-Ordner** für User-Profile + Patterns
+2. **Lies SESSION_LOG.md Tail-Eintrag vom 2026-05-19** für Volltext-Detail zu heute
+3. **Wenn Wolf einen Bug meldet:** erst SESSION_LOG.md durchsuchen — vielleicht ist's schon adressiert
+4. **Wenn 15+ Iterationen am selben Bug:** Audit-Agent (`Explore` mit klarer Frage) statt blind weiter stochern
+5. **Backend-Änderungen:** in Coolify manuell Redeploy via UI — kein Auto-Deploy
+6. **Frontend-Änderungen:** Vercel auto-deployt nach Push
+
+Viel Erfolg 🐺

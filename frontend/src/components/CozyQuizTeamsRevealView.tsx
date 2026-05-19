@@ -112,9 +112,19 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative',
-      background: isEsc
-        ? 'radial-gradient(ellipse at center, #2d1644 0%, #1f0f3d 55%, #0d0820 100%)'
-        : 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 55%, #020617 100%)',
+      // 2026-05-17 (Wolf 'heute spielen slide wirkt irgendwie off zum rest der
+      // app'): BG an restliche App angeglichen — vorher Slate-Blau-Gradient
+      // (#1e293b/#0f172a/#020617), das wirkte fremd zwischen den anderen
+      // dunklen Pink-Tint-Slides. Jetzt #0A0814 Base + Pink-Radial-Glow analog
+      // PausedView/ComebackView/QuestionView. ESC-Variante behält Lila-Glow.
+      backgroundColor: '#0A0814',
+      backgroundImage: isEsc
+        ? 'radial-gradient(ellipse at 50% 30%, rgba(255,45,123,0.18), transparent 55%),' +
+          'radial-gradient(ellipse at 85% 110%, rgba(167,139,250,0.10), transparent 55%),' +
+          'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.06), transparent 50%)'
+        : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.16), transparent 55%),' +
+          'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%),' +
+          'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: fontFam, overflow: 'hidden',
       minHeight: 0,

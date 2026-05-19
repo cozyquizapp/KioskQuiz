@@ -421,6 +421,27 @@ export default function CozyGamesEditorPage() {
                 </div>
               </Field>
 
+              <Field label="Spielmodus">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cbd5e1', fontSize: 14, marginBottom: 4 }}>
+                  <input
+                    type="radio"
+                    name="parallel-mode"
+                    checked={draft.parallel !== false}
+                    onChange={() => patchDraft('parallel', true)}
+                  />
+                  🤜 Alle gleichzeitig (default) — 1 Timer, alle Teams parallel
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cbd5e1', fontSize: 14 }}>
+                  <input
+                    type="radio"
+                    name="parallel-mode"
+                    checked={draft.parallel === false}
+                    onChange={() => patchDraft('parallel', false)}
+                  />
+                  👤 Nacheinander — Teams spielen sequenziell (z.B. wenn nur 1 Material-Set vorhanden). Bestes Team zuerst.
+                </label>
+              </Field>
+
               <Field label="">
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cbd5e1', fontSize: 14 }}>
                   <input

@@ -236,17 +236,38 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
       const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
-      // 2026-05-17 v7: Gleiche View wie WHEEL_RESULT 'detail', nur mit
-      // gesetztem gameEndsAt → Timer pop't rein. Card bleibt stable mounted.
-      phaseContent = (
-        <GameDetailView
-          width={width} height={height}
-          game={activeGame}
-          accentColor={accent}
-          darkAccentColor={darkAccent}
-          gameEndsAt={round.gameEndsAt}
-        />
-      );
+      // 2026-05-17 (Wolf Sequence-Mode): bei sequence → SequenceGameView mit
+      // aktuellem Team links + Timer rechts + Queue unten. Sonst standard
+      // parallel-Layout via GameDetailView.
+      if (round.playMode === 'sequence') {
+        phaseContent = (
+          <SequenceGameView
+            width={width} height={height}
+            game={activeGame}
+            accentColor={accent}
+            darkAccentColor={darkAccent}
+            gameEndsAt={round.gameEndsAt}
+            timerPausedRemainingMs={round.timerPausedRemainingMs}
+            timerDurationSec={round.timerDurationSec ?? 60}
+            sequenceOrder={round.sequenceOrder ?? []}
+            sequenceCurrentIdx={round.sequenceCurrentIdx ?? 0}
+            sequenceCompletedTeamIds={round.sequenceCompletedTeamIds ?? []}
+            teams={teams ?? []}
+          />
+        );
+      } else {
+        // 2026-05-17 v7: Gleiche View wie WHEEL_RESULT 'detail', nur mit
+        // gesetztem gameEndsAt → Timer pop't rein. Card bleibt stable mounted.
+        phaseContent = (
+          <GameDetailView
+            width={width} height={height}
+            game={activeGame}
+            accentColor={accent}
+            darkAccentColor={darkAccent}
+            gameEndsAt={round.gameEndsAt}
+          />
+        );
+      }
       break;
     }
 
@@ -840,6 +861,255 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
         animation: 'cozyGameActiveTimerIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both',
       }}>
         <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+      </div>
+    </div>
+  );
+}
+
+// ── SEQUENCE GAME VIEW (Wolf 2026-05-17): Layout für playMode='sequence' ────
+// Teams spielen nacheinander. Aktuelles Team groß links (Avatar + Name),
+// Timer rechts. Queue unten zeigt alle Teams mit Status (gespielt/aktuell/wartend).
+function SequenceGameView({
+  width, height, game, accentColor, darkAccentColor, gameEndsAt,
+  timerPausedRemainingMs, timerDurationSec,
+  sequenceOrder, sequenceCurrentIdx, sequenceCompletedTeamIds, teams,
+}: {
+  width: number; height: number;
+  game: CozyGame | null;
+  accentColor: string;
+  darkAccentColor: string;
+  gameEndsAt: number | null;
+  timerPausedRemainingMs?: number;
+  timerDurationSec: number;
+  sequenceOrder: string[];
+  sequenceCurrentIdx: number;
+  sequenceCompletedTeamIds: string[];
+  teams: QQTeam[];
+}) {
+  if (!game) {
+    return <FullScreenLayout width={width} height={height}>
+      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+    </FullScreenLayout>;
+  }
+  const teamById = new Map(teams.map(t => [t.id, t]));
+  const currentTeam = teamById.get(sequenceOrder[sequenceCurrentIdx]);
+  const isPaused = gameEndsAt == null && (timerPausedRemainingMs ?? 0) > 0;
+
+  return (
+    <div style={{
+      width, height,
+      backgroundColor: darkAccentColor,
+      display: 'flex', flexDirection: 'column',
+      color: '#fff', fontFamily: 'inherit',
+      overflow: 'hidden',
+      padding: 'clamp(20px, 3vh, 40px)',
+      boxSizing: 'border-box',
+      position: 'relative',
+      gap: 'clamp(16px, 2vh, 28px)',
+    }}>
+      <Fireflies color={`${accentColor}66`} />
+      <style>{`
+        @keyframes cozyGameSeqTeamIn {
+          0%   { opacity: 0; transform: translateX(-30px) scale(0.95); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes cozyGameSeqTimerIn {
+          0%   { opacity: 0; transform: translateX(30px) scale(0.95); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes cozyGameSeqQueueIn {
+          0%   { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        /* Lokale Definition damit Emoji auch ohne GameDetailView-Style-Block hovert. */
+        @keyframes cozyGameEmojiFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-12px); }
+        }
+      `}</style>
+
+      {/* TOP: Team links — Timer rechts */}
+      <div style={{
+        flex: '0 0 auto',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto',
+        gap: 'clamp(20px, 3vw, 56px)',
+        alignItems: 'center',
+        padding: 'clamp(20px, 2.5vh, 40px) clamp(20px, 3vw, 56px)',
+        background: 'rgba(0,0,0,0.25)',
+        borderRadius: 24,
+        border: '2px solid rgba(255,255,255,0.18)',
+      }}>
+        {/* Team-Bereich (links) */}
+        <div
+          key={`seq-team-${sequenceCurrentIdx}`}
+          style={{
+            display: 'flex', alignItems: 'center',
+            gap: 'clamp(16px, 2vw, 32px)',
+            animation: 'cozyGameSeqTeamIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
+            minWidth: 0,
+          }}
+        >
+          {currentTeam ? (
+            <>
+              <QQTeamAvatar
+                avatarId={currentTeam.avatarId}
+                teamEmoji={currentTeam.emoji}
+                size="clamp(120px, 14vw, 200px)"
+                bgColor={currentTeam.color}
+              />
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 'clamp(14px, 1.4vw, 22px)',
+                  fontWeight: 800,
+                  color: 'rgba(255,255,255,0.7)',
+                  letterSpacing: '0.05em', textTransform: 'uppercase',
+                  marginBottom: 4,
+                }}>
+                  {sequenceCurrentIdx + 1} / {sequenceOrder.length} · jetzt dran
+                </div>
+                <div style={{
+                  fontSize: 'clamp(32px, 4vw, 64px)',
+                  fontWeight: 900,
+                  letterSpacing: '-0.02em',
+                  textShadow: '0 4px 16px rgba(0,0,0,0.45)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 'clamp(280px, 35vw, 600px)',
+                }}>
+                  {currentTeam.name}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ color: '#94a3b8' }}>Kein Team</div>
+          )}
+        </div>
+
+        {/* Timer-Bereich (rechts) */}
+        <div
+          key={`seq-timer-${sequenceCurrentIdx}`}
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            animation: 'cozyGameSeqTimerIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both',
+          }}
+        >
+          {gameEndsAt ? (
+            <BeamerTimer endsAt={gameEndsAt} durationSec={timerDurationSec} accent="#fff" />
+          ) : isPaused ? (
+            <div style={{
+              fontSize: 'clamp(48px, 6vw, 96px)',
+              fontWeight: 900,
+              padding: '20px 36px',
+              border: '4px solid rgba(255,255,255,0.6)',
+              borderRadius: '50%',
+              minWidth: 'clamp(140px, 16vw, 220px)',
+              minHeight: 'clamp(140px, 16vw, 220px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: 0.7,
+            }}>
+              ⏸
+            </div>
+          ) : (
+            <div style={{
+              fontSize: 'clamp(28px, 3vw, 48px)',
+              fontWeight: 900,
+              padding: '20px 36px',
+              border: '4px solid rgba(255,255,255,0.4)',
+              borderRadius: '50%',
+              minWidth: 'clamp(140px, 16vw, 220px)',
+              minHeight: 'clamp(140px, 16vw, 220px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: 0.55,
+            }}>
+              0
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MIDDLE: Game-Card (Emoji + Name + Description) */}
+      <div style={{
+        flex: '1 1 auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(8px, 1vh, 16px)',
+        minHeight: 0,
+      }}>
+        <div style={{
+          fontSize: 'clamp(72px, 10vw, 160px)',
+          lineHeight: 1,
+          filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.5))',
+          animation: 'cozyGameEmojiFloat 3s ease-in-out infinite',
+        }}>
+          {game.emoji}
+        </div>
+        <div style={{
+          fontSize: 'clamp(28px, 3.5vw, 56px)',
+          fontWeight: 900,
+          letterSpacing: '-0.02em',
+          textAlign: 'center',
+          textShadow: '0 3px 16px rgba(0,0,0,0.45)',
+        }}>
+          {game.name}
+        </div>
+        <div style={{
+          fontSize: 'clamp(14px, 1.3vw, 22px)',
+          color: 'rgba(255,255,255,0.88)',
+          maxWidth: '80%',
+          textAlign: 'center',
+          lineHeight: 1.4,
+        }}>
+          {game.description}
+        </div>
+      </div>
+
+      {/* BOTTOM: Queue (alle Teams mit Status) */}
+      <div style={{
+        flex: '0 0 auto',
+        display: 'flex', flexWrap: 'wrap', gap: 'clamp(8px, 1vw, 16px)',
+        justifyContent: 'center', alignItems: 'center',
+        padding: 'clamp(12px, 1.5vh, 20px)',
+        background: 'rgba(0,0,0,0.20)',
+        borderRadius: 16,
+        animation: 'cozyGameSeqQueueIn 0.5s ease-out 0.3s both',
+      }}>
+        {sequenceOrder.map((tid, i) => {
+          const t = teamById.get(tid);
+          if (!t) return null;
+          const isCurrent = i === sequenceCurrentIdx;
+          const isCompleted = sequenceCompletedTeamIds.includes(tid);
+          return (
+            <div key={tid} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 14px 6px 6px',
+              borderRadius: 999,
+              background: isCurrent ? `${accentColor}33` : isCompleted ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)',
+              border: isCurrent ? `2px solid ${accentColor}` : '2px solid transparent',
+              opacity: isCompleted ? 0.5 : 1,
+              filter: isCompleted ? 'grayscale(0.5)' : 'none',
+              transition: 'all 0.3s ease',
+            }}>
+              <div style={{ width: 'clamp(32px, 3vw, 48px)', height: 'clamp(32px, 3vw, 48px)' }}>
+                <QQTeamAvatar
+                  avatarId={t.avatarId}
+                  teamEmoji={t.emoji}
+                  size="100%"
+                  bgColor={t.color}
+                />
+              </div>
+              <div style={{
+                fontSize: 'clamp(13px, 1.1vw, 18px)',
+                fontWeight: 800,
+                color: isCompleted ? 'rgba(255,255,255,0.55)' : '#fff',
+                maxWidth: 'clamp(80px, 10vw, 160px)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {isCompleted ? '✓ ' : ''}{t.name}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

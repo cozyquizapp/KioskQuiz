@@ -31,6 +31,8 @@ export default function CozyGameWheelTestPage() {
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [targetIdx, setTargetIdx] = useState(3);
   const [winnerCount, setWinnerCount] = useState(1);
+  const [playMode, setPlayMode] = useState<'parallel' | 'sequence'>('parallel');
+  const [seqCurIdx, setSeqCurIdx] = useState(0);
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight - 120 });
 
   useEffect(() => {
@@ -71,6 +73,14 @@ export default function CozyGameWheelTestPage() {
       : []
   ), [phase, winnerCount]);
 
+  // Sequence-Mode Mock: bei GAME_ACTIVE + sequence eine sortierte Team-Order
+  // (Mock = MOCK_TEAMS-Reihenfolge) + curIdx, completedIds aus dem Slider.
+  const sequenceOrder = useMemo(() => MOCK_TEAMS.map(t => t.id), []);
+  const sequenceCompletedTeamIds = useMemo(
+    () => sequenceOrder.slice(0, Math.max(0, seqCurIdx)),
+    [sequenceOrder, seqCurIdx]
+  );
+
   const round: CozyGameRoundState = useMemo(() => ({
     poolGameIds: poolIds,
     playedGameIds: [],
@@ -80,7 +90,14 @@ export default function CozyGameWheelTestPage() {
     gameEndsAt: phase === 'GAME_ACTIVE' ? Date.now() + 60000 : null,
     slotKind: 'roundPause',
     winnerTeamIds,
-  }), [poolIds, phase, targetIdx, phaseIdx, pool, winnerTeamIds]);
+    playMode,
+    ...(playMode === 'sequence' ? {
+      sequenceOrder,
+      sequenceCurrentIdx: seqCurIdx,
+      sequenceCompletedTeamIds,
+      timerDurationSec: 60,
+    } : {}),
+  }), [poolIds, phase, targetIdx, phaseIdx, pool, winnerTeamIds, playMode, sequenceOrder, seqCurIdx, sequenceCompletedTeamIds]);
 
   function autoSpinDemo() {
     setPhaseIdx(0);
@@ -148,6 +165,37 @@ export default function CozyGameWheelTestPage() {
             >{p.replace('_', ' ')}</button>
           ))}
         </div>
+
+        {/* Play-Mode Toggle (parallel = aktuelles Verhalten, sequence = Teams nacheinander) */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['parallel', 'sequence'] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setPlayMode(m)}
+              style={{
+                padding: '6px 10px', borderRadius: 6,
+                border: playMode === m ? '2px solid #22C55E' : '1px solid rgba(255,255,255,0.12)',
+                background: playMode === m ? 'rgba(34,197,94,0.2)' : 'transparent',
+                color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              }}
+            >{m === 'parallel' ? '🤜 Parallel' : '👤 Sequence'}</button>
+          ))}
+        </div>
+
+        {/* Sequence-Slider: nur bei GAME_ACTIVE + sequence relevant */}
+        {phase === 'GAME_ACTIVE' && playMode === 'sequence' && (
+          <label style={{ fontSize: 13, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6 }}>
+            CurTeam:
+            <input
+              type="range"
+              min={0} max={MOCK_TEAMS.length - 1} step={1}
+              value={seqCurIdx}
+              onChange={e => setSeqCurIdx(Number(e.target.value))}
+              style={{ width: 80, accentColor: '#22C55E' }}
+            />
+            <b>{seqCurIdx + 1}/{MOCK_TEAMS.length}</b>
+          </label>
+        )}
 
         {/* Winner-Slider nur in WINNER_SELECT relevant — 0 = Wartebild,
             1-8 = Hero-Reveal mit N Sieger(n). */}

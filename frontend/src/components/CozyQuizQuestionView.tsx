@@ -1048,19 +1048,41 @@ function BluffBeamerView({ state: s, lang, revealed }: {
         </div>
       </div>
 
-      {/* Phase-spezifischer Inhalt — bei reveal stapeln wir vorher die
-          Reveal-Header-Cards (Echte Antwort + Sieger-Pille) damit sie OBEN
-          sichtbar sind und das Options-Grid den Rest fuellt. */}
-      {phase === 'write' && <BluffWriteScreen state={s} accent={accent} lang={lang} />}
-      {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
-      {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
-
-      {/* 2026-05-09 (Konzept-D Refactor): Reveal-Layout neu:
-          1) Hero-Real-Card mittig (RIESIG, dominantes Element)
-          2) Sieger-Banner direkt drunter (compact, eine Reihe)
-          3) Mini-Bluff-Pills horizontal unten
-          Alles in einer einzigen `BluffRevealHero`-Komponente. */}
-      {phase === 'reveal' && <BluffRevealHero state={s} lang={lang} />}
+      {/* 2026-05-17 (Wolf 'bluff layout-struktur wirkt unruhig durch 3 phasen-
+          wechsel'): Stabiler Frame mit Cross-Fade zwischen Phasen-Contents.
+          Vorher: jede Phase rendert direkt unter Question-Card → harter Cut
+          beim Wechsel write→review→vote→reveal. Jetzt: keyed Wrapper mit
+          qqBluffPhaseFadeIn-Animation → smooth transition + flex:1-Frame
+          gibt jedem Phase-Content den gleichen verfügbaren Platz. */}
+      <style>{`
+        @keyframes qqBluffPhaseFadeIn {
+          0%   { opacity: 0; transform: translateY(10px) scale(0.985); }
+          100% { opacity: 1; transform: translateY(0)    scale(1);     }
+        }
+      `}</style>
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        minHeight: 0, position: 'relative', zIndex: 4,
+      }}>
+        <div
+          key={`bluff-phase-${phase}`}
+          style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            minHeight: 0,
+            animation: 'qqBluffPhaseFadeIn 0.45s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+          }}
+        >
+          {phase === 'write' && <BluffWriteScreen state={s} accent={accent} lang={lang} />}
+          {phase === 'review' && <BluffReviewScreen state={s} accent={accent} lang={lang} />}
+          {phase === 'vote' && <BluffVoteWaitingScreen state={s} accent={accent} lang={lang} />}
+          {/* 2026-05-09 (Konzept-D Refactor): Reveal-Layout neu:
+              1) Hero-Real-Card mittig (RIESIG, dominantes Element)
+              2) Sieger-Banner direkt drunter (compact, eine Reihe)
+              3) Mini-Bluff-Pills horizontal unten
+              Alles in einer einzigen `BluffRevealHero`-Komponente. */}
+          {phase === 'reveal' && <BluffRevealHero state={s} lang={lang} />}
+        </div>
+      </div>
 
     </div>
   );

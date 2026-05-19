@@ -122,6 +122,34 @@ function assertOwnTeam(socket: any, payloadTeamId: unknown): void {
   }
 }
 
+/**
+ * 2026-05-19 (Security-Audit S5): Per-Socket Rate-Limit auf Team-Self-Actions.
+ * Verhindert DoS: ein boswilliger Client kann nicht 1000 submitAnswer/Sek
+ * spammen. Bucket pro (socket-id, event-name) mit Sliding-Window.
+ *
+ * Limits sind grosszuegig fuer legit-User (Streamdeck, schnelle Klicks ok),
+ * aber blocken offensichtlichen Spam. Bei Limit-Hit: stille Drop, kein Throw —
+ * UI bekommt einen Ack-Error, normale Spieler merken's nicht.
+ */
+const rateLimitBuckets: Map<string, Map<string, number[]>> = new Map();
+function assertRateLimit(socket: any, event: string, maxPerSec: number): void {
+  const sid = socket?.id;
+  if (!sid) return; // kein socket → kein Limit
+  let bucket = rateLimitBuckets.get(sid);
+  if (!bucket) { bucket = new Map(); rateLimitBuckets.set(sid, bucket); }
+  const now = Date.now();
+  const cutoff = now - 1000;
+  const history = (bucket.get(event) ?? []).filter(ts => ts > cutoff);
+  if (history.length >= maxPerSec) {
+    throw new QQError('RATE_LIMIT', `Zu viele ${event}-Requests (max ${maxPerSec}/s).`);
+  }
+  history.push(now);
+  bucket.set(event, history);
+}
+function cleanupRateLimitBucket(socketId: string): void {
+  rateLimitBuckets.delete(socketId);
+}
+
 // ── Live-Reactions State (in-memory) ──────────────────────────────────────
 // Pro Room und Team eine Liste der letzten Reaction-Timestamps fürs Rate-Limit.
 // Reines Anti-Spam-Memo, lebt nicht in qqRooms (zu ephemer).
@@ -2241,6 +2269,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:submitAnswer', (payload: QQSubmitAnswerPayload, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:submitAnswer', 5);
         if (typeof payload.answer !== 'string' || payload.answer.length > 1000) throw new QQError('INVALID_ANSWER', 'Antwort zu lang (max 1000 Zeichen).');
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitAnswer(room, payload.teamId, payload.answer);
@@ -2254,6 +2283,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:buzzIn', (payload: QQBuzzInPayload, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:buzzIn', 10);
         const room = ensureQQRoom(payload.roomCode);
         qqBuzzIn(room, payload.teamId);
         broadcast(io, payload.roomCode);
@@ -2378,6 +2408,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     ) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:hotPotatoAnswer', 5);
         const room = ensureQQRoom(payload.roomCode);
         const trimmed = payload.answer.slice(0, 500);
         if (room.phase !== 'QUESTION_ACTIVE') { ok(ack); return; }
@@ -2501,6 +2532,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     ) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:imposterChoose', 3);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqImposterChoose(room, payload.teamId, payload.statementIndex);
 
@@ -2702,6 +2734,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:placeCell', (payload: QQPlaceCellPayload, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:placeCell', 3);
         const room = ensureQQRoom(payload.roomCode);
         // 2026-05-03 (Wolf-Bug 'Connections-Finale Steal->Place'): wenn der Bug
         // hier landet obwohl Wolf Steal gewaehlt hat, sehen wir's hier in den Logs.
@@ -2751,6 +2784,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:stealCell', (payload: QQStealCellPayload, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:stealCell', 3);
         const room = ensureQQRoom(payload.roomCode);
         if (room.phase === 'CONNECTIONS_4X4' || room.connections?.phase === 'placement') {
           console.log('[conn-debug] qq:stealCell:', JSON.stringify({
@@ -3021,6 +3055,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:submitFinalBet', (payload: QQSubmitFinalBetPayload, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:submitFinalBet', 3);
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitFinalBet(room, payload.teamId, payload.bet);
         broadcast(io, payload.roomCode);
@@ -3568,6 +3603,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     ) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:onlyConnectGuess', 5);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqOnlyConnectSubmitGuess(room, payload.teamId, payload.text);
         // Multi-Winner: wenn alle Teams entweder richtig oder gesperrt sind,
@@ -3635,6 +3671,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     ) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:bluffSubmit', 5);
         const room = ensureQQRoom(payload.roomCode);
         qqBluffSubmit(room, payload.teamId, payload.text);
         // Wenn alle (echten) Teams submitted haben, früher zur nächsten Phase
@@ -3697,6 +3734,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     ) => {
       try {
         assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:bluffVote', 3);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqBluffVote(room, payload.teamId, payload.optionId);
         if (result.ok && room.bluffPhase === 'vote' && qqBluffAllVoted(room)) {
@@ -3946,6 +3984,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     // ── Disconnect ──────────────────────────────────────────────────────────
     socket.on('disconnect', () => {
+      // 2026-05-19 (Security-Audit S5): rate-limit-Bucket beim disconnect
+      // freigeben, sonst waechst die Modul-Map ueber lange Sessions.
+      try { cleanupRateLimitBucket(socket.id); } catch {}
       const { qqTeamId, qqRoomCode } = socket.data;
       if (qqTeamId && qqRoomCode) {
         const room = getQQRoom(qqRoomCode);

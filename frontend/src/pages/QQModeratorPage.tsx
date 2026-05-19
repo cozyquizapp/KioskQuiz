@@ -1870,6 +1870,15 @@ export default function QQModeratorPage() {
                           <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
                             👮 Bluffs prüfen — ✕ klicken um zu zensieren
                           </div>
+                          {/* 2026-05-19 (Cockpit-Audit MC2): bei vielen Submissions
+                              scrollable Container (max 5 Rows à ~36px sichtbar,
+                              ~180px Cap). Vorher: alle 8 Rows = ~256px push
+                              den Voting-Button unter den Fold. */}
+                          <div style={{
+                            display: 'flex', flexDirection: 'column', gap: 4,
+                            maxHeight: 200, overflowY: 'auto',
+                            paddingRight: 4,
+                          }}>
                           {submissions.map(([teamId, text]) => {
                             const tm = s.teams.find(t => t.id === teamId);
                             const rejected = (s.bluffRejected ?? []).includes(teamId);
@@ -1900,6 +1909,7 @@ export default function QQModeratorPage() {
                               </div>
                             );
                           })}
+                          </div>
                           <PrimaryBtn color="#22C55E" onClick={() => emit('qq:bluffFinishReview', { roomCode })} hotkey="Space">
                             ▶ Voting starten
                           </PrimaryBtn>
@@ -3116,6 +3126,14 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
   // Sync forceOpen — wenn Mit-Gewinner waehrend des Spiels hinzukommen, Panel automatisch oeffnen
   useEffect(() => { if (forceOpen) setOpen(true); }, [forceOpen]);
   if (nonWinners.length === 0 && coWinners.length === 0) return null;
+  // 2026-05-19 (Cockpit-Audit MC1): compact-Mode bei >5 Teams. Buttons
+  // schmaler, Section-Headings weg, Avatar nur ohne Plus-Symbol-Text.
+  // Verhindert 200px+ Scroll-Section auf 1080p bei 8 Teams.
+  const compact = (nonWinners.length + coWinners.length) > 5;
+  const btnMinH = compact ? 28 : 36;
+  const btnPad = compact ? '4px 8px' : '8px 14px';
+  const btnFs = compact ? 12 : 14;
+  const avSize = compact ? 16 : 20;
 
   const toggleLabel = open ? '▼ Sieger anpassen' : '▶ Sieger anpassen';
   const summary = coWinners.length > 0
@@ -3164,16 +3182,16 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                       emit('qq:markCorrect', { roomCode, teamId: t.id });
                     }}
                     style={{
-                      minHeight: 36, padding: '8px 14px', borderRadius: 8,
+                      minHeight: btnMinH, padding: btnPad, borderRadius: 8,
                       border: `1.5px solid ${t.color}88`,
                       background: `${t.color}18`, color: t.color,
-                      fontFamily: 'inherit', fontWeight: 900, fontSize: 14,
+                      fontFamily: 'inherit', fontWeight: 900, fontSize: btnFs,
                       cursor: 'pointer',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
                     title={`Gewinner zu ${t.name} ändern (Undo + Mark Correct)`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avSize} />
                     {t.name}
                   </button>
                 ))}
@@ -3201,16 +3219,16 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                     key={`co-${t.id}`}
                     onClick={() => emit('qq:modAddCoWinner', { roomCode, teamId: t.id })}
                     style={{
-                      minHeight: 36, padding: '8px 14px', borderRadius: 8,
+                      minHeight: btnMinH, padding: btnPad, borderRadius: 8,
                       border: `1.5px dashed ${t.color}99`,
                       background: 'rgba(255,255,255,0.02)', color: t.color,
-                      fontFamily: 'inherit', fontWeight: 900, fontSize: 14,
+                      fontFamily: 'inherit', fontWeight: 900, fontSize: btnFs,
                       cursor: 'pointer',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
                     title={`${t.name} als Mit-Gewinner hinzufuegen — setzt nach primaerem Sieger`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avSize} />
                     + {t.name}
                   </button>
                 ))}
@@ -3241,16 +3259,16 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
                       emit('qq:modRemoveWinner', { roomCode, teamId: t.id });
                     }}
                     style={{
-                      minHeight: 36, padding: '8px 14px', borderRadius: 8,
+                      minHeight: btnMinH, padding: btnPad, borderRadius: 8,
                       border: `2px solid ${t.color}`,
                       background: `${t.color}25`, color: t.color,
-                      fontFamily: 'inherit', fontWeight: 900, fontSize: 14,
+                      fontFamily: 'inherit', fontWeight: 900, fontSize: btnFs,
                       cursor: 'pointer',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
                     title={`${t.name} entfernen`}
                   >
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={20} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avSize} />
                     ✓ {t.name} ✕
                   </button>
                 ))}

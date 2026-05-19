@@ -13,7 +13,7 @@
  * Padding/Shadow + Card-Inhalt). Drift ist strukturell unmöglich.
  */
 import { useEffect, useState } from 'react';
-import { playFieldPlaced, playSteal, playStapelStamp } from '../utils/sounds';
+import { playFieldPlaced, playSteal, playStapelStamp, playWoodKnock } from '../utils/sounds';
 
 export type ActionCardData = {
   count: number;
@@ -225,7 +225,16 @@ function ActionCardReveal({ cardData, iconNode, iconSize, cardCount, lang, delay
     // dann soll der jeweilige sound abgespielt werden'): beim Flip (Card zeigt
     // Vorderseite zum ersten Mal) den Action-typ-spezifischen Sound aus dem
     // Grid abspielen. Detection via emoji-Marker (📍 Place, ⚡ Steal, 🏯 Stack).
-    const t1 = window.setTimeout(() => setPhase('slamming'), startDelayMs);
+    // 2026-05-17 v2 (Wolf 'doppel sound place'): Beim SLAM (Card landet
+    // face-down auf dem Tisch) zusätzlich ein Card-Slam-Thump (playWoodKnock)
+    // ~150ms in den Slam — das ersetzt den vorherigen Cascade-Action-Sound,
+    // der inkonsistent mit dem Flip-Sound war. Beats: Thump → Settle → Flip-Sound.
+    const t1 = window.setTimeout(() => {
+      setPhase('slamming');
+      window.setTimeout(() => {
+        try { playWoodKnock(); } catch { /* ignore */ }
+      }, 150);
+    }, startDelayMs);
     const t2 = window.setTimeout(() => {
       setPhase('flipping');
       // Sound synchron zum Flip (Card zeigt Vorderseite ~mid-flip an = 500ms in).

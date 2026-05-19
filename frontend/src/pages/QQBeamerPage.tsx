@@ -946,20 +946,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // er kam in Phase 2+ als Action-Card-Sound aber bei Fragen ohne
       // Steal-Aktion (CozyGuessr/Cheese/Top5/...) wirkte er fremdartig.
       // Action-Sounds bleiben beim ECHTEN Triggern in PLACEMENT.
-      const sounds: Array<() => void> = [];
-      if (hasFreeCells) sounds.push(() => playFieldPlaced());
-      void ph; // keep variable referenced for ESLint
-      const cardBaseMs = 800;
-      const cardStaggerMs = 1500;
-      const handles: number[] = [];
-      for (let i = 0; i < sounds.length; i++) {
-        const delay = cardBaseMs + i * cardStaggerMs;
-        const fn = sounds[i];
-        handles.push(window.setTimeout(() => {
-          try { fn(); } catch {}
-        }, delay));
-      }
-      return () => { handles.forEach(h => window.clearTimeout(h)); };
+      // 2026-05-17 (Wolf 'doppel sound place: erst cascade, dann nochmal
+      // bei drehung'): Cascade-Action-Sound komplett raus. ActionCardReveal
+      // feuert beim Slam einen Card-Slam-Thump (playWoodKnock) und beim
+      // Flip den action-spez. Sound (playFieldPlaced/playSteal/playStapel).
+      // Plain Cards (= keine NEU-Karte) bleiben still — sie führen keine
+      // neue Aktion ein, brauchen keinen Sound-Highlight.
+      void hasFreeCells; void ph; // keep referenced for ESLint
+      return () => { /* no-op */ };
     } else if (s.introStep === 2 && prev !== 2) {
       // Category-Reveal-Substep — kategorie-spez. Question-Start-Sound
       try { playQuestionStartFor(s.currentQuestion?.category); } catch {}

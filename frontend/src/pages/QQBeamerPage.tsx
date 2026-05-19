@@ -1232,11 +1232,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const teamIdsKey = s.teams.map(t => t.id).sort().join(',');
     const prev = prevFlagsRef.current;
     const grew = (a: string, b: string) => b.split(',').filter(Boolean).length > a.split(',').filter(Boolean).length;
-    // Stapel-Stamp nur bei echtem Stapeln in PLACEMENT — sonst triggert
-    // er beim Phase-Wechsel falsch (Wolf-Bug 'bei 4 gewinn intro kommt
-    // stabelsound' kam u.a. von hier wenn alte stuck-cells aus voriger
-    // Runde im neuen Phase-Render auftauchen).
-    if (s.phase === 'PLACEMENT' && prev.stuck && grew(prev.stuck, stuckKey)) playStapelStamp();
+    // 2026-05-17 P7 (Wolf 'stapel sound nicht immer zu hören in grid wenn
+    // aus /team gesetzt'): hasNew = positional Diff — fired wenn aktuell
+    // ein stuck-Key existiert der vorher nicht da war. Vorteile gg. `grew`:
+    //   - first stapel der Session fired (vorher: prev.stuck='' → falsy-
+    //     guard `prev.stuck &&` blockte den ersten Stapel komplett)
+    //   - kein false-fire wenn Cell-Count gleich bleibt aber Position wechselt
+    // Phase-Check bleibt (PLACEMENT only) — Phase-Wechsel-False-Fires bleiben
+    // unterbunden weil prev/current bei Phase-Wechsel identisch sind.
+    const hasNewStuck = (prevStr: string, curStr: string): boolean => {
+      const prevSet = new Set(prevStr.split(',').filter(Boolean));
+      return curStr.split(',').filter(Boolean).some(k => !prevSet.has(k));
+    };
+    if (s.phase === 'PLACEMENT' && hasNewStuck(prev.stuck, stuckKey)) playStapelStamp();
     if (prev.teamIds && grew(prev.teamIds, teamIdsKey) && s.phase === 'LOBBY') playTeamJoin();
     prevFlagsRef.current = { stuck: stuckKey, teamIds: teamIdsKey };
   }, [s.grid, s.teams, s.phase, s.sfxMuted]); // eslint-disable-line react-hooks/exhaustive-deps

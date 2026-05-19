@@ -13,6 +13,7 @@
  * Padding/Shadow + Card-Inhalt). Drift ist strukturell unmöglich.
  */
 import { useEffect, useState } from 'react';
+import { playFieldPlaced, playSteal, playStapelStamp } from '../utils/sounds';
 
 export type ActionCardData = {
   count: number;
@@ -220,11 +221,27 @@ function ActionCardReveal({ cardData, iconNode, iconSize, cardCount, lang, delay
   const startDelayMs = delayMs + 600;
   const [phase, setPhase] = useState<'hidden' | 'slamming' | 'flipping' | 'done'>('hidden');
   useEffect(() => {
+    // 2026-05-17 P5 (Wolf 'wenn neue aktionen aufgedeckt wurden mit den karten
+    // dann soll der jeweilige sound abgespielt werden'): beim Flip (Card zeigt
+    // Vorderseite zum ersten Mal) den Action-typ-spezifischen Sound aus dem
+    // Grid abspielen. Detection via emoji-Marker (📍 Place, ⚡ Steal, 🏯 Stack).
     const t1 = window.setTimeout(() => setPhase('slamming'), startDelayMs);
-    const t2 = window.setTimeout(() => setPhase('flipping'), startDelayMs + SLAM_DUR + SETTLE);
+    const t2 = window.setTimeout(() => {
+      setPhase('flipping');
+      // Sound synchron zum Flip (Card zeigt Vorderseite ~mid-flip an = 500ms in).
+      window.setTimeout(() => {
+        try {
+          switch (cardData.emoji) {
+            case '📍': playFieldPlaced(); break;
+            case '⚡': playSteal(); break;
+            case '🏯': playStapelStamp(); break;
+          }
+        } catch { /* ignore */ }
+      }, 500);
+    }, startDelayMs + SLAM_DUR + SETTLE);
     const t3 = window.setTimeout(() => setPhase('done'), startDelayMs + SLAM_DUR + SETTLE + FLIP_DUR);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); window.clearTimeout(t3); };
-  }, [startDelayMs]);
+  }, [startDelayMs, cardData.emoji]);
   const isFlipped = phase === 'flipping' || phase === 'done';
   const isVisible = phase !== 'hidden';
   return (

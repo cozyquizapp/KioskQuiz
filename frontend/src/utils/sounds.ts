@@ -1235,6 +1235,28 @@ export function playRoundStart()    { playSlotOneShot('roundStart'); }
 // Tick = kurzer pointer-Klick. Stop = Final-Snap (Bell/Chime). Start = Cue.
 // Slot-Custom-Upload via QQSoundConfig hat Vorrang, sonst Synth-Fallback.
 
+export function playCozyGameIntro(): void {
+  if (!isSlotEnabled('cozyGameIntro')) return;
+  const url = resolveSlotUrl('cozyGameIntro');
+  if (url) { playUrlOneShot(url); return; }
+  // 2026-05-19 (Wolf): Anticipation-Chime beim 🪅-Pinata-Mount. Soll Lust
+  // auf das Mini-Spiel machen ohne den eigentlichen Spin-Moment zu klauen.
+  // Charakter: warmer Wood-Knock ("Pinata wackelt") + zarter aufsteigender
+  // Bell-Glissando — F4 → A4 → C5 → F5-Sparkle. Bewusst leiser als wheel-
+  // stop/card-reveal, damit Choreo gestaffelt wirkt: leise → laut → laut.
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Wood-Knock (kurzer Bass-Thud)
+  tone(180, 'sine',     t,        0.18, 0.12, 0.004, 0.05, ac);
+  // Bell-Glissando aufsteigend
+  tone(349.23, 'triangle', t + 0.10, 0.08, 0.22, 0.01, 0.10, ac); // F4
+  tone(440.00, 'triangle', t + 0.20, 0.08, 0.24, 0.01, 0.10, ac); // A4
+  tone(523.25, 'sine',     t + 0.30, 0.10, 0.30, 0.01, 0.14, ac); // C5
+  // High-Bell-Sparkle obenauf
+  tone(1396.9, 'sine',     t + 0.40, 0.06, 0.30, 0.005, 0.16, ac); // F6
+}
+
 export function playCozyGameWheelTick(): void {
   if (!isSlotEnabled('cozyGameWheelTick')) return;
   const url = resolveSlotUrl('cozyGameWheelTick');

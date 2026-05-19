@@ -725,7 +725,8 @@ export type QQSoundSlot =
   | 'raceCountdown' | 'raceLoop' | 'racePodium' | 'raceWinner' | 'raceTeamFall'
   | 'specialAwardReveal'
   // 2026-05-17 (Wolf-Feature CozyGames): Glücksrad-Spin + Stop-Snap.
-  | 'cozyGameWheelTick' | 'cozyGameWheelStop' | 'cozyGameStart'
+  // 2026-05-19 (Wolf): cozyGameIntro = Anticipation-Chime beim 🪅-Mount.
+  | 'cozyGameIntro' | 'cozyGameWheelTick' | 'cozyGameWheelStop' | 'cozyGameStart'
   // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
   // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
   | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
@@ -776,6 +777,7 @@ export interface QQSoundConfig {
   racePodium?: string;     // Whoosh/Fanfare beim Treppchen-Aufstieg
   specialAwardReveal?: string; // Pro Special-Award-Card-Flip (3x hintereinander)
   // CozyGame-Sounds (2026-05-17). Synth-Fallback wenn leer.
+  cozyGameIntro?: string;       // 🪅 Intro-Mount-Anticipation
   cozyGameWheelTick?: string;  // tickender Pointer waehrend Spin
   cozyGameWheelStop?: string;  // Final-Snap beim Rad-Stopp
   cozyGameStart?: string;       // 60s-Timer-Start ("Los geht's"-Cue)
@@ -831,6 +833,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   raceWinner:          '🥇 Race-Winner (sobald Sieger entschieden)',
   racePodium:          '🏆 Treppchen-Aufstieg (Whoosh wenn Podium reinkommt)',
   specialAwardReveal:  '🏅 Special-Award-Reveal (pro Card-Flip, 3x in Drumroll-Folge)',
+  cozyGameIntro:       '🪅 CozyGame-Intro (Anticipation-Chime beim Mount)',
   cozyGameWheelTick:   '🎲 CozyGame-Rad-Tick (Pointer-Tick während Spin)',
   cozyGameWheelStop:   '🎲 CozyGame-Rad-Stop (Final-Snap-Sound bei Rad-Landung)',
   cozyGameStart:       '🎲 CozyGame-Start (Los-geht\'s-Cue bei Timer-Start)',
@@ -901,6 +904,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   raceWinner:          '',
   racePodium:          '',
   specialAwardReveal:  '',
+  cozyGameIntro:       '',
   cozyGameWheelTick:   '',
   cozyGameWheelStop:   '',
   cozyGameStart:       '',
@@ -945,6 +949,11 @@ export interface QQDraft {
 
 // ── State broadcast (server → all clients) ────────────────────────────────────
 export interface QQStateUpdate {
+  /** 2026-05-19: Server-Date.now() zum Zeitpunkt des Builds. Frontend rechnet
+   *  daraus einen Clock-Offset (Client-PC vs Server-PC) und nutzt diesen für
+   *  Timer-Berechnungen via `getServerNow()`. Verhindert Anzeige-Drift wenn
+   *  z.B. der Beamer-PC eine schiefe Systemuhr hat. */
+  serverTime: number;
   roomCode: string;
   phase: QQPhase;
   gamePhaseIndex: QQGamePhaseIndex;

@@ -7,6 +7,7 @@ import {
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG as CAT_BADGE_BG, QQ_CAT_ACCENT as CAT_ACCENT } from '../qqShared';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
+import { getServerNow } from '../utils/serverTime';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
@@ -320,12 +321,13 @@ export function makePreviewState(templateType: QQSlideTemplateType, questions?: 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; durationSec: number; accent: string }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-05-19: getServerNow statt Date.now (siehe utils/serverTime.ts).
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   const urgent = remaining <= 5;
 
   useEffect(() => {
     const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
       setRemaining(r);
       if (r === 0) clearInterval(iv);
     }, 100);

@@ -33,6 +33,7 @@ import {
 import { Fireflies } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
+import { getServerNow } from '../utils/serverTime';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -989,6 +990,32 @@ function BluffBeamerView({ state: s, lang, revealed }: {
     }}>
       <Fireflies color={`${accent}55`} />
 
+      {/* 2026-05-19 (Wolf 'bluff hat anderen timer als die anderen kategorien
+          keinen runden rechts oben'): Runder BeamerTimer-Ring rechts oben, wie
+          bei Standard-Quiz + CHEESE-Reveal. Vorher: inline-Pille im Header
+          (BluffTimer, jetzt deprecated). Position-fixed, dark Backdrop-Kreis
+          fuer Kontrast. */}
+      {!revealed && (phase === 'write' || phase === 'vote') && (() => {
+        const ends = phase === 'write' ? s.bluffWriteEndsAt : s.bluffVoteEndsAt;
+        if (!ends) return null;
+        const duration = phase === 'write'
+          ? (s.bluffWriteDurationSec ?? 60)
+          : (s.bluffVoteDurationSec ?? 30);
+        return (
+          <div style={{
+            position: 'fixed', top: 'var(--qq-safe-margin)', right: 'var(--qq-safe-margin)', zIndex: 70,
+            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.2s both',
+            padding: 12, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
+          }}>
+            <BeamerTimer endsAt={ends} durationSec={duration} accent={accent} />
+          </div>
+        );
+      })()}
+
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -1024,8 +1051,6 @@ function BluffBeamerView({ state: s, lang, revealed }: {
               {phase === 'reveal' && (lang === 'de' ? `🎉 Auflösung` : `🎉 Reveal`)}
             </div>
           )}
-          {phase === 'write' && s.bluffWriteEndsAt && <BluffTimer endsAt={s.bluffWriteEndsAt} accent={accent} />}
-          {phase === 'vote' && s.bluffVoteEndsAt && <BluffTimer endsAt={s.bluffVoteEndsAt} accent={accent} />}
         </div>
       </div>
 
@@ -1352,9 +1377,10 @@ function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang: 'de' 
 }
 
 function BluffTimer({ endsAt, accent }: { endsAt: number; accent: string }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-05-19: getServerNow statt Date.now (siehe utils/serverTime.ts).
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   useEffect(() => {
-    const iv = setInterval(() => setRemaining(Math.max(0, (endsAt - Date.now()) / 1000)), 250);
+    const iv = setInterval(() => setRemaining(Math.max(0, (endsAt - getServerNow()) / 1000)), 250);
     return () => clearInterval(iv);
   }, [endsAt]);
   const sec = Math.ceil(remaining);

@@ -14,6 +14,7 @@
  * qqShared — werden global gemounted durch QQBeamerPage's <style>{BEAMER_CSS}</style>.
  */
 import { useEffect, useState } from 'react';
+import { getServerNow } from '../utils/serverTime';
 
 export function BeamerTimer({
   endsAt, durationSec, accent, expireNow,
@@ -23,15 +24,18 @@ export function BeamerTimer({
   accent: string;
   expireNow?: boolean;
 }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-05-19 (Wolf 'beamer timer +6s vs moderator'): Server-Clock statt
+  // lokales Date.now(), damit alle Clients dasselbe Zeit-Referenzsystem
+  // teilen — egal wie schief deren System-Uhr eingestellt ist.
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   // 2026-05-04 (Wolf): Outro-Animation wenn Timer NATUERLICH auf 0 laeuft
   // ODER frueher beendet wird (alle Teams haben geantwortet → expireNow=true).
   // Kurzer Pop + Schrumpfen + Fade. Einmal-Latch verhindert Re-Trigger.
-  const [expired, setExpired] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000) === 0);
+  const [expired, setExpired] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000) === 0);
 
   useEffect(() => {
     const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
       setRemaining(r);
       if (r === 0) {
         setExpired(true);

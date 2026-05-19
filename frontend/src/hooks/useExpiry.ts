@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getServerNow } from '../utils/serverTime';
 
 /**
  * useExpiry — sticky deadline-Hook fuer Auto-Submit + Input-Lock.
@@ -13,13 +14,14 @@ import { useEffect, useState } from 'react';
  * PinItInput, HotPotatoInput) sowie ConnectionsTeamCard.
  *
  * Extrahiert aus QQTeamPage.tsx 2026-05-13 (Refactor Phase 2.1).
+ * 2026-05-19: getServerNow() statt Date.now() — siehe utils/serverTime.ts.
  */
 export function useExpiry(endsAt: number | null | undefined): boolean {
   const [expired, setExpired] = useState(false);
   useEffect(() => {
     if (!endsAt) { setExpired(false); return; }
     const lead = 150;
-    const ms = endsAt - lead - Date.now();
+    const ms = endsAt - lead - getServerNow();
     if (ms <= 0) { setExpired(true); return; }
     setExpired(false);
     const t = setTimeout(() => setExpired(true), ms);

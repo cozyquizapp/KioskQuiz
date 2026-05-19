@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
-import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal } from '../utils/sounds';
+import { playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
+import { getServerNow } from '../utils/serverTime';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
@@ -84,6 +85,11 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
     const cur = round.phase;
     if (prev !== cur) {
       // Phase-Transition: one-shot Sounds
+      // 2026-05-19 (Wolf 'intro keinen sound?'): Anticipation-Chime beim
+      // Pinata-Mount. Nur bei Eintritt in INTRO (nicht bei jedem Re-Render).
+      if (cur === 'INTRO' && prev !== 'INTRO') {
+        try { playCozyGameIntro(); } catch {}
+      }
       if (cur === 'WHEEL_RESULT' && prev === 'WHEEL_SPIN') {
         try { playCozyGameWheelStop(); } catch {}
         // 2026-05-17 v2 (Wolf 'sounds bei wheel passen nicht'): playFanfare-
@@ -121,6 +127,21 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
     scheduleNext();
     return () => { handles.forEach(h => clearTimeout(h)); };
   }, [round.phase]);
+
+  // 2026-05-19 (Wolf 'timer waehrend cozygame hat keinen sound'):
+  // GAME_ACTIVE Timer-Ticks analog zum Standard-Quiz — rem<=10 normaler Tick,
+  // rem<=5 urgent, rem=0 times-up. Stoppt bei Pause (gameEndsAt=null).
+  useEffect(() => {
+    if (round.phase !== 'GAME_ACTIVE' || !round.gameEndsAt) return;
+    const endsAt = round.gameEndsAt;
+    const iv = window.setInterval(() => {
+      const rem = Math.max(0, (endsAt - getServerNow()) / 1000);
+      if (rem <= 0) { try { playTimesUp(); } catch {} window.clearInterval(iv); return; }
+      if (rem <= 5) { try { playUrgentTick(); } catch {} }
+      else if (rem <= 10) { try { playTick(); } catch {} }
+    }, 1000);
+    return () => window.clearInterval(iv);
+  }, [round.phase, round.gameEndsAt]);
 
   // Spiele aus Pool laden (für Rad-Slices + Spiel-Card)
   useEffect(() => {

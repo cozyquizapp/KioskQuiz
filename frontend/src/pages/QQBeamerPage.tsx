@@ -67,6 +67,7 @@ import {
   playWoodKnock, playWinnerCardReveal,
   preloadSoundDefaults,
 } from '../utils/sounds';
+import { getServerNow } from '../utils/serverTime';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -1117,7 +1118,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     const inComeback = s.phase === 'COMEBACK_CHOICE'
       && s.comebackHL?.phase === 'question'
       && !!s.comebackHL?.timerEndsAt
-      && Date.now() < s.comebackHL.timerEndsAt;
+      && getServerNow() < s.comebackHL.timerEndsAt;
     const inGameOver = s.phase === 'GAME_OVER';
     const inThanks = s.phase === 'THANKS';
     const shouldLoop = !s.musicMuted && (inLobby || s.phase === 'PAUSED' || inRules || inFinale || inComeback || inGameOver || inThanks);
@@ -1203,7 +1204,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   useEffect(() => {
     if (s.sfxMuted || !s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') return;
     const iv = setInterval(() => {
-      const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
+      const rem = Math.max(0, (s.timerEndsAt! - getServerNow()) / 1000);
       if (rem <= 0) { stopTimerLoop(); playTimesUp(); clearInterval(iv); return; }
       if (rem <= 5) playUrgentTick();
       else if (rem <= 10) playTick();
@@ -1310,7 +1311,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       return;
     }
     const tick = () => {
-      const rem = Math.max(0, (s.timerEndsAt! - Date.now()) / 1000);
+      const rem = Math.max(0, (s.timerEndsAt! - getServerNow()) / 1000);
       setTimerUrgent(rem > 0 && rem <= 5);
     };
     tick();

@@ -3928,6 +3928,9 @@ function finishPlacement(room: QQRoomState): void {
 // ── Broadcast payload builder ─────────────────────────────────────────────────
 export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
   return {
+    // 2026-05-19 (Wolf 'beamer-timer +6s'): Server-Clock-Stempel pro Update.
+    // Frontend (utils/serverTime.ts) rechnet daraus den Client-Offset.
+    serverTime:       Date.now(),
     roomCode:         room.roomCode,
     phase:            room.phase,
     gamePhaseIndex:   room.gamePhaseIndex,

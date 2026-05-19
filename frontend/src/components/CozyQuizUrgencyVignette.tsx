@@ -12,12 +12,14 @@
  * Keyframes (urgencyFlashGold, urgencyVignettePulse): in BEAMER_CSS global.
  */
 import { useEffect, useState } from 'react';
+import { getServerNow } from '../utils/serverTime';
 
 export function UrgencyVignette({ endsAt }: { endsAt: number }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-05-19: getServerNow statt Date.now (siehe utils/serverTime.ts).
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   useEffect(() => {
     const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
       setRemaining(r);
       if (r === 0) clearInterval(iv);
     }, 100);

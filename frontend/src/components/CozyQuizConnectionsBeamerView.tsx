@@ -18,6 +18,7 @@ import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies } from './CozyQuizAmbient';
 import { PlacementView } from './CozyQuizPlacementView';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { getServerNow } from '../utils/serverTime';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4×4 CONNECTIONS — Finalrunde (Beamer)
@@ -146,10 +147,11 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
 }
 
 function ConnectionsTimer({ endsAt }: { endsAt: number }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-05-19 (Wolf 'beamer timer +6s vs moderator'): getServerNow statt Date.now.
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   useEffect(() => {
     const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
       setRemaining(r);
     }, 250);
     return () => clearInterval(iv);

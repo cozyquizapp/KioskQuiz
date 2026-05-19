@@ -126,7 +126,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr'),
+        t('rules.slide6.line2', 'Jede Runde ein anderes Mini-Spiel'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
@@ -249,7 +249,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr'),
+        t('rules.slide6.line2', 'A different mini-game each round'),
       ],
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },

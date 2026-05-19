@@ -173,7 +173,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // Slide 6: Bunte Tüte
       { key: 'rules.slide6.title',  label: '6 · Bunte Tüte — Titel', defaultDe: 'Bunte Tüte', defaultEn: 'Lucky Bag' },
       { key: 'rules.slide6.line1',  label: '6 · Bunte Tüte — Zeile 1', defaultDe: 'Eine Kategorie pro Runde ist eine Überraschung', defaultEn: 'One category per round is a surprise' },
-      { key: 'rules.slide6.line2',  label: '6 · Bunte Tüte — Zeile 2', defaultDe: '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr', defaultEn: 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr' },
+      { key: 'rules.slide6.line2',  label: '6 · Bunte Tüte — Zeile 2', defaultDe: 'Jede Runde ein anderes Mini-Spiel', defaultEn: 'A different mini-game each round' },
       { key: 'rules.slide6.extra',  label: '6 · Bunte Tüte — Extra-Hinweis', defaultDe: 'Regeln werden vor jeder Frage kurz erklärt', defaultEn: 'Rules explained before each question' },
 
       // Slide CozyGame (zwischen Bunte Tüte und Comeback, nur sichtbar wenn cozyGamesEnabled)

@@ -25,7 +25,7 @@ import {
   getBrandColors, getStandingAvatarSize, type Slogan,
 } from '../pages/QQBeamerPage';
 import {
-  playAvatarCascadeNote, playClimaxFinish, playWolfHowl,
+  playAvatarCascadeNote, playClimaxFinish, playWolfHowl, playFanfare,
 } from '../utils/sounds';
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
@@ -63,6 +63,15 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     }, 3500);
     return () => window.clearTimeout(t);
   }, [revealIdx, paused, isRecap, sorted.length]);
+
+  // 2026-05-17 P10 (Wolf 'wenn final standings tabelle kommt, ist kein sound'):
+  // Mount-Fanfare als „Final Standings"-Announce-Cue. Cascade-Notes pro Team
+  // bleiben wie vorher, Mount-Sound bringt einen klaren Auftakt-Moment.
+  useEffect(() => {
+    if (s.sfxMuted) return;
+    try { playFanfare(); } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 2026-05-05 (Wolf 'Sound pro Team in Tabelle, Extra-Sound Platz 1'):
   // Pro Recap-Stage einen Cascade-Note (psychoakustisch aufsteigend).

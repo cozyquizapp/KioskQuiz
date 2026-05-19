@@ -24,7 +24,7 @@ import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import {
   startFinaleLoop, stopLobbyLoop,
   playWoodKnock, playWinnerCardReveal, playFanfare, playClimaxFinish, playTick,
-  playTeamReveal,
+  playTeamReveal, playReveal,
   setMusicDucked,
   playRaceCountdown, startRaceLoop, stopRaceLoop, playRaceTeamFall,
   playRaceWinner, playRacePodium,
@@ -887,6 +887,17 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
 }) {
   const de = lang === 'de';
 
+  // 2026-05-17 P12 (Wolf 'kein sound bei reveal von größtem grid'):
+  // Reveal-Sound + Fanfare beim Mount der Lock-View. Vorher stille Anzeige,
+  // jetzt klares „Brett-Stand fixiert"-Cue.
+  useEffect(() => {
+    if (s.sfxMuted) return;
+    try { playReveal(); } catch {}
+    const t = window.setTimeout(() => { try { playFanfare(); } catch {} }, 600);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Per-Team Largest-Region-Cells. Matched backend (qqBfs.ts computeTerritories):
   // 4-Nachbarschaft, stuck-cells zählen 2 Punkte. Wir behalten die Cells der
   // höchstwertigen Komponente pro Team → die kommen visuell „nach vorne".
@@ -1260,10 +1271,23 @@ function AwardsOverviewSlide({ revealMode, state: s, lang }: {
     // 2026-05-13 (Wolf 'special awards: 1 sound slot 3x in drumroll-folge'):
     // playSpecialAwardReveal pro Card-Flip — Wolf fuellt den Slot mit Drumroll/
     // Cheer-MP3, Fallback auf playWinnerCardReveal damit's nicht still ist.
+    // 2026-05-17 P13 (Wolf 'drumroll kommt NACH reveal bei den special awards'):
+    // Sound feuert jetzt ~1.4s VOR dem Card-Flip damit die Drumroll-Build-up-
+    // Phase die Spannung vorm Reveal aufbaut statt nach. DRUMROLL_LEAD min(800,
+    // delay) damit erste Card nicht negativ-time bekommt.
+    const REVEAL_1 = 800;
+    const REVEAL_2 = 800 + 1100 + 2000;
+    const REVEAL_3 = 800 + 1100 + 2000 + 1100 + 2000;
+    const DRUMROLL_LEAD = 1400;
     const handles: number[] = [];
-    handles.push(window.setTimeout(() => { setRevealedCount(1); try { playSpecialAwardReveal(); } catch {} }, 800));
-    handles.push(window.setTimeout(() => { setRevealedCount(2); try { playSpecialAwardReveal(); } catch {} }, 800 + 1100 + 2000));
-    handles.push(window.setTimeout(() => { setRevealedCount(3); try { playSpecialAwardReveal(); } catch {} }, 800 + 1100 + 2000 + 1100 + 2000));
+    // Sounds — feuern vor dem Reveal (Drumroll-Build-up)
+    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_1 - DRUMROLL_LEAD)));
+    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_2 - DRUMROLL_LEAD)));
+    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_3 - DRUMROLL_LEAD)));
+    // Reveals — Card-Flip nach Drumroll-Build-up
+    handles.push(window.setTimeout(() => setRevealedCount(1), REVEAL_1));
+    handles.push(window.setTimeout(() => setRevealedCount(2), REVEAL_2));
+    handles.push(window.setTimeout(() => setRevealedCount(3), REVEAL_3));
     return () => handles.forEach(h => window.clearTimeout(h));
   }, [revealMode]);
   return (
@@ -1829,9 +1853,11 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     cursor += 1500;
 
     // Finish — P1 lands auf Mitte-Stufe + Crown + Konfetti
+    // 2026-05-17 P14 (Wolf 'gewinnersound da nur einmal nicht 2x abspielen'):
+    // playClimaxFinish hier raus — playRaceWinner oben ist bereits der dedicated
+    // Sieger-Sound. Doppel-Layered macht's matschig.
     handles.push(window.setTimeout(() => {
       setPhase('finish');
-      try { playClimaxFinish(); } catch {}
     }, cursor));
 
     return () => {

@@ -224,6 +224,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
         <WheelView
           width={width} height={height}
           slices={availableForWheel}
+          poolGameIds={round.poolGameIds}
           targetIdx={targetIdx}
           spinning={isSpin}
           revealedGame={isSpin ? null : activeGame}
@@ -449,11 +450,16 @@ function IntroView({ width, height, slotKind }: { width: number; height: number;
 }
 
 // ── WHEEL (Skelett — einfache rotation, kein Bezier-Easing) ───────────────────
+// 2026-05-17 v19 (Wolf 'mm strohhalm zeigt auf dem rad dunkelblau, aber als
+// bg rot? irgendwas stimmt nicht'): Wheel-Slice-Color folgt jetzt der POOL-
+// Position des jeweiligen Spiels (stabile Farb-Identität pro Spiel) statt
+// der Visible-Slice-Position. Vorher konnte nach gespielten Spielen der
+// Slice-Index zur Pool-Position drifften → Slice-Farbe ≠ BG-Farbe nach Reveal.
 function WheelView({
-  width, height, slices, targetIdx, spinning, revealedGame,
+  width, height, slices, poolGameIds, targetIdx, spinning, revealedGame,
 }: {
   width: number; height: number;
-  slices: CozyGame[]; targetIdx: number;
+  slices: CozyGame[]; poolGameIds: string[]; targetIdx: number;
   spinning: boolean; revealedGame?: CozyGame | null;
 }) {
   // 2026-05-17 (P2 #6): Adaptive Anzeige — bei ≤3 Spielen kein vollwertiges
@@ -491,10 +497,17 @@ function WheelView({
   }
   const n = Math.max(slices.length, 1);
   const anglePerSlice = 360 / n;
-  // Target-Winkel: damit der Pointer (oben) auf den Slice mit targetIdx zeigt,
+  // 2026-05-17 v19 (Wolf 'mm strohhalm zeigt auf rad dunkelblau, bg rot'):
+  // targetIdx ist ein POOL-Index. Nach gespielten Spielen != Visible-Slice-Index.
+  // Für die Rotation brauchen wir den Visible-Slice-Index des gewinnenden Spiels.
+  const targetGameId = poolGameIds[targetIdx] ?? null;
+  const visibleTargetIdx = targetGameId
+    ? Math.max(0, slices.findIndex(g => g.id === targetGameId))
+    : 0;
+  // Target-Winkel: damit der Pointer (oben) auf den Slice mit visibleTargetIdx zeigt,
   // muss der Slice „nach oben" rotiert werden. Slice 0 startet bei 0° (oben),
   // weitere im Uhrzeigersinn.
-  const targetAngle = -(targetIdx * anglePerSlice) - (anglePerSlice / 2);
+  const targetAngle = -(visibleTargetIdx * anglePerSlice) - (anglePerSlice / 2);
   // 2026-05-17 (Wolf 'langsamer + mehr effekt'): 6 volle Umdrehungen +
   // Target-Winkel. Stop-Snap nutzt overshoot-Bezier statt zusätzliche
   // Umdrehung — sonst dreht das Rad beim Übergang WHEEL_SPIN→RESULT
@@ -583,8 +596,14 @@ function WheelView({
             const y1 = r * Math.sin(rad1);
             const largeArc = anglePerSlice > 180 ? 1 : 0;
             const path = `M 0 0 L ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1} Z`;
-            const fillColor = SLICE_PALETTE[i % SLICE_PALETTE.length];
-            const isWinnerSlice = !spinning && i === targetIdx;
+            // 2026-05-17 v19: Slice-Farbe folgt POOL-Position (stabile Identität
+            // pro Spiel), nicht der Visible-Slice-Position. Sonst driftet die
+            // Slice-Farbe nach gespielten Spielen weg von der BG-Farbe (Wolf-Bug
+            // 'mm strohhalm zeigt auf rad dunkelblau, bg rot').
+            const slicePoolIdx = poolGameIds.indexOf(g.id);
+            const safePoolIdx = slicePoolIdx >= 0 ? slicePoolIdx : i;
+            const fillColor = SLICE_PALETTE[safePoolIdx % SLICE_PALETTE.length];
+            const isWinnerSlice = !spinning && i === visibleTargetIdx;
             // Slice-Label Position
             const midAngle = ((a0 + a1) / 2 - 90) * Math.PI / 180;
             const labelR = 60;

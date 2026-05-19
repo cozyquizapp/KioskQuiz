@@ -967,3 +967,145 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
     </CozyCard>
   );
 }
+
+// ── CozyGameCard ─────────────────────────────────────────────────────────────
+// 2026-05-17 (Wolf '/team view ist komplett leer während cozygame'):
+// Phone-Card für COZY_GAME-Phase mit Game-Info + Queue-Position bei Sequence-
+// Mode. Lädt das aktive Spiel via /api/cozygames (cached pro Mount).
+export function CozyGameCard({
+  state: s, myTeamId, lang = 'de',
+}: {
+  state: QQStateUpdate;
+  myTeamId: string;
+  lang?: 'de' | 'en';
+}) {
+  const cg = (s as any).cozyGame;
+  const [activeGame, setActiveGame] = useState<{ emoji: string; name: string; description: string; parallel?: boolean } | null>(null);
+  const activeGameId = cg?.activeGameId ?? null;
+
+  useEffect(() => {
+    if (!activeGameId) { setActiveGame(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/cozygames');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const g = (data ?? []).find((x: any) => x.id === activeGameId);
+        if (g) setActiveGame({ emoji: g.emoji, name: g.name, description: g.description, parallel: g.parallel });
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [activeGameId]);
+
+  const de = lang === 'de';
+  if (!cg) {
+    return (
+      <CozyCard>
+        <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
+          {de ? 'CozyGame lädt …' : 'CozyGame loading …'}
+        </div>
+      </CozyCard>
+    );
+  }
+
+  const sub = cg.phase as string;
+  const playMode = cg.playMode as 'parallel' | 'sequence' | undefined;
+  const order: string[] = cg.sequenceOrder ?? [];
+  const curIdx: number = cg.sequenceCurrentIdx ?? 0;
+  const completed: string[] = cg.sequenceCompletedTeamIds ?? [];
+  const myPos = order.indexOf(myTeamId);
+  const isMyTurn = playMode === 'sequence' && myPos === curIdx;
+  const iAmCompleted = playMode === 'sequence' && completed.includes(myTeamId);
+  const iAmWaiting = playMode === 'sequence' && myPos > curIdx;
+
+  // Sub-Phase Headlines
+  let headline = '';
+  let subline = '';
+  if (sub === 'INTRO') {
+    headline = de ? '🪅 CozyGame!' : '🪅 CozyGame!';
+    subline = de ? 'Gleich geht\'s los — das Glücksrad entscheidet.' : 'Here we go — the wheel will pick a game.';
+  } else if (sub === 'WHEEL_SPIN') {
+    headline = de ? '🎡 Rad dreht sich …' : '🎡 Wheel spinning …';
+    subline = de ? 'Welches Spiel wirds?' : 'Which game will it be?';
+  } else if (sub === 'WHEEL_RESULT' || sub === 'GAME_ACTIVE') {
+    headline = activeGame ? `${activeGame.emoji} ${activeGame.name}` : (de ? 'Spiel ausgewählt' : 'Game picked');
+    if (playMode === 'sequence') {
+      if (isMyTurn) subline = de ? '🎯 DU BIST DRAN! Spielt jetzt am Beamer.' : '🎯 YOUR TURN! Play at the beamer now.';
+      else if (iAmCompleted) subline = de ? '✓ Du bist fertig — gut gemacht!' : '✓ You\'re done — well played!';
+      else if (iAmWaiting) {
+        const remaining = myPos - curIdx;
+        subline = de ? `Du bist als ${remaining + 1}. dran (Position ${myPos + 1} / ${order.length})` : `You're up in ${remaining} (position ${myPos + 1} / ${order.length})`;
+      } else subline = de ? 'Du bist nicht im Spiel-Pool.' : 'You\'re not in the play pool.';
+    } else {
+      subline = sub === 'GAME_ACTIVE'
+        ? (de ? '🤜 Alle Teams spielen gleichzeitig — Beamer zeigt den Timer!' : '🤜 All teams play simultaneously — see beamer for timer!')
+        : (de ? '👀 Gleich startet das Spiel …' : '👀 Game starts in a moment …');
+    }
+  } else if (sub === 'WINNER_SELECT') {
+    headline = activeGame ? `${activeGame.emoji} ${activeGame.name}` : (de ? 'Sieger-Reveal' : 'Winner reveal');
+    subline = de ? '🏆 Sieger steht gleich fest — Blick auf den Beamer!' : '🏆 Winner reveal coming — watch the beamer!';
+  }
+
+  return (
+    <CozyCard>
+      <div style={{
+        padding: 'clamp(20px, 4vw, 32px)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(14px, 2vh, 22px)', textAlign: 'center',
+      }}>
+        {/* Headline (Game-Emoji + Name) */}
+        <div style={{
+          fontSize: 'clamp(28px, 5.5vw, 44px)',
+          fontWeight: 900,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.15,
+        }}>
+          {headline}
+        </div>
+
+        {/* Subline (Sub-Phase / Queue-Status) */}
+        <div style={{
+          fontSize: 'clamp(15px, 3vw, 20px)',
+          color: isMyTurn ? '#22C55E' : iAmCompleted ? '#94a3b8' : '#e2e8f0',
+          fontWeight: isMyTurn ? 900 : 600,
+          lineHeight: 1.35,
+          maxWidth: 460,
+        }}>
+          {subline}
+        </div>
+
+        {/* Game-Description (nur bei WHEEL_RESULT/GAME_ACTIVE) */}
+        {activeGame && (sub === 'WHEEL_RESULT' || sub === 'GAME_ACTIVE' || sub === 'WINNER_SELECT') && (
+          <div style={{
+            fontSize: 'clamp(13px, 2.4vw, 17px)',
+            color: '#cbd5e1',
+            lineHeight: 1.4,
+            maxWidth: 480,
+            padding: '12px 14px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+          }}>
+            {activeGame.description}
+          </div>
+        )}
+
+        {/* Mode-Pill */}
+        {playMode && sub === 'GAME_ACTIVE' && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 12px', borderRadius: 999,
+            background: playMode === 'sequence' ? 'rgba(34,197,94,0.18)' : 'rgba(236,72,153,0.18)',
+            border: `1px solid ${playMode === 'sequence' ? '#22C55E55' : '#EC489955'}`,
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+            color: playMode === 'sequence' ? '#86EFAC' : '#F9A8D4',
+          }}>
+            {playMode === 'sequence' ? (de ? '👤 Nacheinander' : '👤 Take turns') : (de ? '🤜 Parallel' : '🤜 All at once')}
+          </div>
+        )}
+      </div>
+    </CozyCard>
+  );
+}

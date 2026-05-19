@@ -40,7 +40,7 @@ import {
 import {
   LobbyCard, RulesCard, TeamsRevealCard, PhaseIntroCard,
   PausedCard, FinalBettingCard, FinalRecapHintCard, FinalRevealCard,
-  GameOverCard,
+  GameOverCard, CozyGameCard,
 } from '../components/CozyQuizTeamPhaseCards';
 import { QuestionCard } from '../components/CozyQuizTeamQuestionCard';
 import {
@@ -1707,6 +1707,9 @@ function TeamGameView({
         )}
         {s.phase === 'FINAL_REVEAL' && (
           <FinalRevealCard state={s} myTeamId={myTeamId} lang={lang} />
+        )}
+        {s.phase === 'COZY_GAME' && (
+          <CozyGameCard state={s} myTeamId={myTeamId} lang={lang} />
         )}
         {s.phase === 'PAUSED' && <PausedCard state={s} myTeamId={myTeamId} lang={lang} />}
         {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}

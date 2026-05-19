@@ -14,7 +14,7 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
-import { playAvatarCascadeNote, playGoodLuckFanfare, playFanfare } from '../utils/sounds';
+import { playAvatarCascadeNote, playGoodLuckFanfare, playFanfare, playWoodKnock } from '../utils/sounds';
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -34,19 +34,21 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
 
   // 2026-05-09 v3: WELCOME-Hero + Subtitle + Teams-Parallel.
   // 2026-05-11 (Wolf-Bug 'kurzer Herzlich-Willkommen-Flash vor Heute spielen
-  // weg'): WELCOME-Hero komplett deaktiviert — startet jetzt direkt mit
-  // „Heute spielen…" + Team-Cascade. Welcome-Moment bleibt im Pre-Rules-
-  // QuizIntroOverlay (rulesSlideIndex === -2), an dieser Stelle war's doppelt.
+  // weg'): WELCOME-Hero deaktiviert — Welcome lebt im Pre-Rules-Overlay.
+  // 2026-05-19 (Wolf 'lange pause am anfang, animation wirkt langweilig'):
+  // Slam von 1400→850ms, Settle 300→150ms, Stagger 280→180ms. Pro Team jetzt
+  // ~1.9s statt ~2.6s. Bei 8 Teams: 3.2s statt 4.6s bis Good-Luck — mehr
+  // Energie, weniger Dead-Time vor dem ersten Reveal.
   const titleDelay = 0;
   const titleDur = 800;
-  const WELCOME_DUR = 0;               // war 1400 — deaktiviert
-  const WELCOME_FADE = 0;              // war 400 — deaktiviert
-  const TITLE_HOLD = 0;                // Teams starten sofort (vorher = 1800)
-  const SLAM_DUR = 1400;
-  const SETTLE = 300;                  // Settle gekürzt 500→300 (mehr Energie)
-  const FLIP_DUR = 900;                // Flip gekürzt 1000→900
-  const TEAM_STAGGER = 280;            // Team-zu-Team-Stagger (parallel, nicht sequentiell)
-  const PER_TEAM_TOTAL = SLAM_DUR + SETTLE + FLIP_DUR; // 2600 für ein Team
+  const WELCOME_DUR = 0;
+  const WELCOME_FADE = 0;
+  const TITLE_HOLD = 0;
+  const SLAM_DUR = 850;
+  const SETTLE = 150;
+  const FLIP_DUR = 900;
+  const TEAM_STAGGER = 180;
+  const PER_TEAM_TOTAL = SLAM_DUR + SETTLE + FLIP_DUR; // 1900 für ein Team
   const teamStart = (i: number) => TITLE_HOLD + i * TEAM_STAGGER;
   const flipStartFor = (i: number) => teamStart(i) + SLAM_DUR + SETTLE;
   const holdEndFor = (i: number) => flipStartFor(i) + FLIP_DUR;
@@ -71,9 +73,17 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     const cascadeTotal = teams.length + 1;
     const timers: number[] = [];
     for (let i = 0; i < teams.length; i++) {
-      // 2026-05-09 (Game-Show-Reveal): Cascade-Note feuert jetzt beim
-      // FLIP-Start (= Avatar wird sichtbar) statt beim Slam-Start. Sync zum
-      // visuellen Reveal-Moment, nicht zum „Mystery-Card-fällt-rein".
+      // 2026-05-19 (Wolf 'sounds wirken langweilig'): Slam-Thud beim Card-
+      // Impact (55% des Slam-Keyframes = ~467ms nach Slam-Start). WoodKnock
+      // ist dezent + brand-fitting; layered nicht mit der CascadeNote, weil
+      // die erst beim Flip-Reveal (~1.0s spaeter) feuert.
+      const slamImpactAt = anchor + teamStart(i) + Math.round(SLAM_DUR * 0.55);
+      const slamDelay = Math.max(0, slamImpactAt - Date.now());
+      timers.push(window.setTimeout(() => {
+        try { playWoodKnock(); } catch {}
+      }, slamDelay));
+      // 2026-05-09 (Game-Show-Reveal): Cascade-Note feuert beim FLIP-Start
+      // (= Avatar wird sichtbar). Sync zum visuellen Reveal-Moment.
       const fireAt = anchor + flipStartFor(i);
       const delay = Math.max(0, fireAt - Date.now());
       timers.push(window.setTimeout(() => {

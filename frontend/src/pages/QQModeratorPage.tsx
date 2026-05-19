@@ -1485,8 +1485,15 @@ export default function QQModeratorPage() {
                       </span>
                     </div>
                   )}
-                  <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
-                  <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
+                  {/* 2026-05-17 (Wolf-Audit): Phase/Frage-Pills nur in Gameplay-
+                      Phasen — sonst stehen veraltete „Runde 4 / Frage 5"-Werte
+                      im Mod-Panel während THANKS/GAME_OVER/Final-Phasen. */}
+                  {(s.phase === 'PHASE_INTRO' || s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (
+                    <>
+                      <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
+                      <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
+                    </>
+                  )}
                   {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
                 </div>
               </div>
@@ -2377,8 +2384,13 @@ export default function QQModeratorPage() {
               </div>
             )}
 
-            {/* Current question */}
-            {s.currentQuestion && (
+            {/* Current question — 2026-05-17 (Wolf 'thanks zeigt noch schau mal
+                frage aus runde 4'): Phase-Guard hinzugefügt damit die Frage-
+                Card nur während aktiver Frage-Phasen rendert. Vorher: nur
+                s.currentQuestion-Existenz-Check → letzte Frage hängte in
+                END-Phasen (GAME_OVER, THANKS, FINAL_BETTING, FINAL_REVEAL,
+                CONNECTIONS_4X4) noch im Mod-Panel. */}
+            {s.currentQuestion && (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT') && (
               <div style={{ ...card, borderColor: `${QQ_CATEGORY_COLORS[s.currentQuestion.category]}44` }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
                   <span style={{
@@ -2440,18 +2452,27 @@ export default function QQModeratorPage() {
                   const isActive = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
                   const isSchaetz = s.currentQuestion?.category === 'SCHAETZCHEN';
                   const isOffline = !t.connected;
+                  // 2026-05-17 (Wolf-Audit): pendingFor/correctTeamId-Highlight
+                  // nur in Phasen wo das relevant ist (PLACEMENT + COMEBACK
+                  // für pendingFor; QUESTION_ACTIVE/REVEAL für correctTeamId).
+                  // Sonst hängt der Highlight von der letzten Runde noch in
+                  // GAME_OVER/THANKS etc.
+                  const showPendingHighlight = s.pendingFor === t.id
+                    && (s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE' || s.phase === 'CONNECTIONS_4X4');
+                  const showCorrectHighlight = s.correctTeamId === t.id
+                    && (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT');
                   return (
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 8,
                       border: `2px solid ${
-                        s.pendingFor === t.id && isOffline ? '#EF4444'
-                          : s.pendingFor === t.id ? t.color
+                        showPendingHighlight && isOffline ? '#EF4444'
+                          : showPendingHighlight ? t.color
                           : isOffline ? 'rgba(239,68,68,0.5)'
-                          : s.correctTeamId === t.id ? `${t.color}88`
+                          : showCorrectHighlight ? `${t.color}88`
                           : 'rgba(255,255,255,0.07)'
                       }`,
                       background: isOffline ? 'rgba(239,68,68,0.08)'
-                        : s.correctTeamId === t.id ? `${t.color}18`
+                        : showCorrectHighlight ? `${t.color}18`
                         : 'rgba(255,255,255,0.03)',
                       opacity: isOffline ? 0.85 : 1,
                     }}>

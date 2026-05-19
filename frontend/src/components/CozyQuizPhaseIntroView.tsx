@@ -14,7 +14,7 @@
  * Helpers — wurde durch fruehere Extraktionen schon verkleinert).
  * 4 externe Importer.
  */
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import {
   QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
@@ -27,7 +27,7 @@ import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
 import { ActionCard, type ActionCardData } from './CozyQuizActionCard';
 import QQProgressTree from './QQProgressTree';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
-import { playActionMenuReveal } from '../utils/sounds';
+import { playActionMenuReveal, playRevealHighlight, playTick } from '../utils/sounds';
 
 export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor: string }) {
   const schedule = s.schedule ?? [];
@@ -392,6 +392,27 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // - digitFallStartMs/digitFallDurMs: New-Digit faellt von oben rein.
   //   Start ~1150ms, Dauer 760ms.
   // - transitionEndMs: Endgueltig auf neue Runde gewechselt (2500ms).
+  // 2026-05-19 (Wolf-Audit P1.3 'cat-reveal/explain ohne sound'):
+  // Sub-Step-Sounds bei step-Transitionen.
+  // - step 2 (Cat-Reveal): playRevealHighlight — kurzer Auflösungs-Akkord
+  //   markiert „Kategorie ist da", anstelle bisheriger Stille.
+  // - step 3 (Cat-Explain): playTick — ganz dezenter Akzent zum Wechsel,
+  //   damit Spieler-Aufmerksamkeit auf die Erklärung zieht.
+  const prevIntroStepRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (s.sfxMuted) { prevIntroStepRef.current = s.introStep; return; }
+    const prev = prevIntroStepRef.current;
+    const cur = s.introStep ?? 0;
+    if (prev !== cur) {
+      if (cur === 2 && prev !== null && prev < 2) {
+        try { playRevealHighlight(); } catch {}
+      } else if (cur === 3 && prev !== null && prev < 3) {
+        try { playTick(); } catch {}
+      }
+      prevIntroStepRef.current = cur;
+    }
+  }, [s.introStep, s.sfxMuted]);
+
   const hasRoundTransition = isFirstOfRound && s.introStep === 0 && s.gamePhaseIndex > 1;
   const [transitioning, setTransitioning] = useState(hasRoundTransition);
   const [treeShowsPrev, setTreeShowsPrev] = useState(hasRoundTransition);

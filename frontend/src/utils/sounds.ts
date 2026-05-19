@@ -1527,6 +1527,9 @@ export function playWolfHowl(): void {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
+  // 2026-05-19 (Wolf-Audit P1.5 'wolfHowl zu leise fuer Beamer'):
+  // Lautstaerke-Boost gain 0.18 → 0.36 (2x) + sub-Layer 0.08 → 0.18.
+  // Audio-Context-Master-Volume bleibt unangetastet, nur dieser Sound.
   // Tiefer warmer Grundton, langsam ansteigend
   const osc = ac.createOscillator();
   const gain = ac.createGain();
@@ -1542,19 +1545,19 @@ export function playWolfHowl(): void {
   lfo.frequency.value = 5.5;
   lfoGain.gain.value = 8;
   lfo.connect(lfoGain).connect(osc.frequency);
-  // Hülle (Attack/Sustain/Release)
+  // Hülle (Attack/Sustain/Release) — gain verdoppelt fuer Beamer-Praesenz
   gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(0.18, t + 0.5);
-  gain.gain.exponentialRampToValueAtTime(0.14, t + 1.6);
+  gain.gain.exponentialRampToValueAtTime(0.36, t + 0.5);
+  gain.gain.exponentialRampToValueAtTime(0.28, t + 1.6);
   gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.8);
-  // Sub-Bass-Layer für Wärme
+  // Sub-Bass-Layer für Wärme — auch lauter
   const sub = ac.createOscillator();
   const subGain = ac.createGain();
   sub.type = 'sine';
   sub.frequency.setValueAtTime(110, t);
   sub.frequency.exponentialRampToValueAtTime(165, t + 1.5);
   subGain.gain.setValueAtTime(0.0001, t);
-  subGain.gain.exponentialRampToValueAtTime(0.08, t + 0.4);
+  subGain.gain.exponentialRampToValueAtTime(0.18, t + 0.4);
   subGain.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
   osc.connect(gain).connect(ac.destination);
   sub.connect(subGain).connect(ac.destination);

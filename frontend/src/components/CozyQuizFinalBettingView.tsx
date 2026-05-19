@@ -7,10 +7,11 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 4).
  * 2 externe Importer (QQBuiltinSlide + BetTestPage).
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { playGoodLuckFanfare, playTeamJoin } from '../utils/sounds';
 
 export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -18,6 +19,24 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   const submittedIds = Object.entries(s.finalBettingSubmitted ?? {}).filter(([_, v]) => v).map(([id]) => id);
   const totalTeams = s.teams.length;
   const submittedCount = submittedIds.length;
+
+  // 2026-05-19 (Wolf-Audit P0.1 'place your tip ist ohne sound'):
+  // Phase-Entry-Fanfare beim Mount + sanfter Tick pro neu eingegangenem Tipp.
+  // GoodLuck-Fanfare hat Music-Ducking → laeuft sauber ueber dem Background.
+  const fanfareFiredRef = useRef(false);
+  useEffect(() => {
+    if (fanfareFiredRef.current || s.sfxMuted) return;
+    fanfareFiredRef.current = true;
+    try { playGoodLuckFanfare(); } catch {}
+  }, [s.sfxMuted]);
+  const prevSubmittedRef = useRef<number>(submittedCount);
+  useEffect(() => {
+    if (s.sfxMuted) { prevSubmittedRef.current = submittedCount; return; }
+    if (submittedCount > prevSubmittedRef.current) {
+      try { playTeamJoin(); } catch {}
+    }
+    prevSubmittedRef.current = submittedCount;
+  }, [submittedCount, s.sfxMuted]);
 
   return (
     <div style={{

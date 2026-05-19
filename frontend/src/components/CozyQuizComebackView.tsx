@@ -21,6 +21,8 @@ import { QQEmojiIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { WolfUeberraschtWithBubble } from '../pages/QQBeamerPage';
+import { playClimaxFinish, playGoodLuckFanfare } from '../utils/sounds';
+import { getServerNow } from '../utils/serverTime';
 
 function SlotMachineNumber({ value, fontSize, color, glow, isYear }: {
   value: number;
@@ -145,6 +147,24 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
   const teamColor = team?.color ?? '#EC4899';
   const step = s.comebackIntroStep ?? 0;
+
+  // 2026-05-19 (Wolf-Audit P1.4 'comeback hat keinen eigenen cue'):
+  // Phase-Entry-Sound beim BAM (step 0). Climax-Finish ist dramatischer
+  // als die generische GoodLuck-Fanfare und passt zum „COMEBACK!"-Slam.
+  // Step 1 (Team-Hero + Klauen-bei): kurzer Reveal-Cue.
+  const prevStepRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (s.sfxMuted) { prevStepRef.current = step; return; }
+    const prev = prevStepRef.current;
+    if (prev === null && step === 0) {
+      // Erster Mount in step 0: BAM-Sound feuert
+      try { playClimaxFinish(); } catch {}
+    } else if (prev === 0 && step === 1) {
+      // Wechsel BAM → Team-Hero
+      try { playGoodLuckFanfare(); } catch {}
+    }
+    prevStepRef.current = step;
+  }, [step, s.sfxMuted]);
   const targets = s.comebackStealTargets ?? [];
   const leaderTeams = targets.map(id => s.teams.find(tm => tm.id === id)).filter(Boolean) as typeof s.teams;
   const showTeam = step >= 1;

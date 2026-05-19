@@ -12,13 +12,14 @@
  * lokale Helpers nur fuer diese View).
  * 1 externer Importer.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies } from './CozyQuizAmbient';
 import { PlacementView } from './CozyQuizPlacementView';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { getServerNow } from '../utils/serverTime';
+import { playGoodLuckFanfare, playWinnerCardReveal } from '../utils/sounds';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4×4 CONNECTIONS — Finalrunde (Beamer)
@@ -29,6 +30,42 @@ const CONNECTIONS_GROUP_COLORS = ['#EC4899', '#22C55E', '#60A5FA', '#A78BFA']; /
 export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections;
+
+  // 2026-05-19 (Wolf-Audit P0.2 'connections intro/reveal ohne sound'):
+  // Phase-Transition-Sounds. Intro → Active: GoodLuck-Fanfare (Final-Beginn).
+  // Pro neu gefundene Gruppe (irgendein Team): kurzer Reveal-Coronation-Akkord.
+  const prevPhaseRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!c || s.sfxMuted) return;
+    const cur = c.phase;
+    const prev = prevPhaseRef.current;
+    if (prev !== cur) {
+      if (prev === 'intro' && cur === 'active') {
+        try { playGoodLuckFanfare(); } catch {}
+      }
+      prevPhaseRef.current = cur;
+    }
+  }, [c?.phase, s.sfxMuted]);
+
+  // Group-Match-Tracking: pro Team merken wieviele Gruppen schon gefunden waren.
+  // Bei jedem Anstieg → Reveal-Sound (= "diese Gruppe ist erkannt worden").
+  const prevFoundRef = useRef<Record<string, number>>({});
+  const isFirstFoundRunRef = useRef(true);
+  useEffect(() => {
+    if (!c || !c.teamProgress || s.sfxMuted) return;
+    let triggered = 0;
+    for (const teamId of Object.keys(c.teamProgress)) {
+      const now = c.teamProgress[teamId]?.foundGroupIds?.length ?? 0;
+      const before = prevFoundRef.current[teamId] ?? 0;
+      if (!isFirstFoundRunRef.current && now > before) triggered++;
+      prevFoundRef.current[teamId] = now;
+    }
+    isFirstFoundRunRef.current = false;
+    if (triggered > 0) {
+      try { playWinnerCardReveal(); } catch {}
+    }
+  }, [c?.teamProgress, s.sfxMuted]);
+
   if (!c) {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>

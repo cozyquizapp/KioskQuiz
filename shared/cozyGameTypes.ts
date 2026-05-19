@@ -178,6 +178,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     setting: 'steh',
     noiseLevel: 'leise',
     scoringType: 'lastStanding',
+    parallel: false, // lastStanding parallel kaum sauber messbar (8 Ballons gleichzeitig)
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -207,6 +208,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     setting: 'tisch',
     noiseLevel: 'leise',
     scoringType: 'timeToFinish',
+    parallel: false, // timeToFinish — Zeit nur sequentiell sauber stoppbar
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -220,6 +222,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     setting: 'tisch',
     noiseLevel: 'leise',
     scoringType: 'timeToFinish',
+    parallel: false, // timeToFinish — sequentielle Messung
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -235,6 +238,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     setting: 'tisch',
     noiseLevel: 'leise',
     scoringType: 'countIn60s',
+    parallel: false, // Wasserbecken-Setup zentral, kein Material-Sharing
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -261,6 +265,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     setting: 'tisch',
     noiseLevel: 'leise',
     scoringType: 'countIn60s',
+    parallel: false, // 1 Flasche zentral, nacheinander
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -288,6 +293,7 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     noiseLevel: 'leise',
     scoringType: 'countIn60s',
     scoringNote: 'Sonderfall: bei mehreren Teams die alle Becher abräumen → schnellste Zeit entscheidet.',
+    parallel: false, // 1 Pyramide pro Spiel, nacheinander
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,

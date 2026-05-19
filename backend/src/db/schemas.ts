@@ -354,6 +354,32 @@ export async function seedCozyGamesIfMissing(seedGames: any[]): Promise<number> 
   return inserted;
 }
 
+/** 2026-05-19 Migration: Syncs `parallel`-Flag aus Seed → DB für Seed-Spiele.
+ *  Hintergrund: das parallel-Feld wurde nach dem initialen Seed eingefuehrt;
+ *  bestehende DB-Einträge haben es noch auf `undefined` (= parallel default).
+ *  Diese Migration zieht die seed-File-Werte einmalig nach. Sicher weil das
+ *  parallel-Feld bisher keine UI-Edits hatte. */
+export async function syncCozyGameSeedFlags(seedGames: any[]): Promise<number> {
+  let updated = 0;
+  for (const g of seedGames) {
+    try {
+      const existing = await CozyGameModel.findOne({ id: g.id });
+      if (!existing) continue;
+      const seedParallel = g.parallel;
+      const dbParallel = (existing as any).parallel;
+      // Nur updaten wenn sich der Wert tatsaechlich aendert (undefined != false beachten)
+      if (seedParallel !== dbParallel) {
+        (existing as any).parallel = seedParallel;
+        await existing.save();
+        updated++;
+      }
+    } catch (err) {
+      console.warn(`[cozygames-sync] failed to sync ${g.id}:`, err);
+    }
+  }
+  return updated;
+}
+
 // ============= QUARTER QUIZ GAME RESULTS =============
 
 const QQGameResultSchema = new mongoose.Schema({

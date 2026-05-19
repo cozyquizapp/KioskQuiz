@@ -1846,10 +1846,13 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 2000;
     }
 
-    // P1 schwebt 4s alleine — Solo-Moment, Spannung
-    cursor += 4000;
+    // 2026-05-19 (Wolf 'P1 braucht sehr lange bis er auf Treppchen landet,
+    // dazwischen ist random Stille'): P1-Solo-Hold von 4s → 2s, Post-Drift-
+    // Pause von 2s → 0.8s. Gesamt-Wartezeit Race-Ende → Treppchen sinkt von
+    // 7.5s auf 4.3s. Spannungs-Moment bleibt, dead-air verkuerzt.
+    cursor += 2000;
 
-    // P1 driftet zur Mitte (1.5s)
+    // P1 driftet zur Mitte (1.5s, Animations-Dauer unveraendert)
     if (p1) {
       const p1Id = p1.team.id;
       handles.push(window.setTimeout(() => {
@@ -1858,10 +1861,8 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
       cursor += 1500;
     }
 
-    // 2026-05-09 v8.1 (Wolf 'Sprung von Drift-Ende zu Treppchen zu schnell'):
-    // P1 schwebt nach Drift noch 2s in der Mitte — Spannung, Anticipation,
-    // dann erst kommt das Treppchen aus dem Boden.
-    cursor += 2000;
+    // P1 schwebt kurz in der Mitte — Anticipation, dann Treppchen.
+    cursor += 800;
 
     // Treppchen steigt von unten mit ALLEN Avataren P2..PN drauf (2.5s).
     // 2026-05-13 (Wolf 'eigener mp3 slot fuer treppchen'): playRacePodium —

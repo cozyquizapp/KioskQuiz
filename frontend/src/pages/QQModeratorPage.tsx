@@ -671,7 +671,11 @@ export default function QQModeratorPage() {
         } else if (step === 2 + betSlotsCount) {
           delayMs = 2500; // awards-overview
         } else if (step === 3 + betSlotsCount) {
-          delayMs = 8500; // awards-reveal (Card-Flip-Cascade ~8s)
+          // 2026-05-19 (Wolf 'special awards werden sehr schnell weitergeskippt'):
+          // Autoplay deaktiviert (delayMs=0 + null action = kein Auto-Advance).
+          // Wolf moderiert die 3 Awards manuell mit Space — kein Time-Pressure.
+          delayMs = 0;
+          break;
         } else {
           // race-final (step === 4 + betSlotsCount). RaceFinalSlide-Choreo:
           // countdown 3.5s + race-hold 5s + (N-1)×2s falls + p1-solo 4s +
@@ -1243,6 +1247,21 @@ export default function QQModeratorPage() {
         return { text: '🪙 FINAL-WETTEN', color: '#F472B6', sub: `${submitted}/${s.teams.length} Teams gesetzt` };
       }
       case 'FINAL_REVEAL': return { text: '🏆 FINAL-AUFLÖSUNG', color: '#FBBF24', sub: 'Score-Cascade am Beamer' };
+      case 'COZY_GAME': {
+        // 2026-05-19 (Wolf 'cozygames werden im moderator noch nicht beruecksichtigt'):
+        // Pro Sub-Phase eigener Sub-Text damit das Mod-Panel den aktuellen
+        // CozyGame-State zeigt statt des vorigen Quiz-Phase-Labels.
+        const cg = (s as any).cozyGame;
+        const subPhase: string = cg?.phase ?? '';
+        const subMap: Record<string, string> = {
+          'INTRO':         'Pinata-Intro · Glücksrad dreht gleich',
+          'WHEEL_SPIN':    '🌀 Rad dreht …',
+          'WHEEL_RESULT':  '🎯 Spiel ausgelost — Spiel starten',
+          'GAME_ACTIVE':   cg?.playMode === 'sequence' ? '⏱ Sequenz-Modus · Team-Turn läuft' : '⏱ Alle Teams parallel · Timer läuft',
+          'WINNER_SELECT': '🏆 Sieger auswählen',
+        };
+        return { text: '🪅 COZY-GAME', color: '#F472B6', sub: subMap[subPhase] ?? subPhase };
+      }
       case 'PAUSED': return { text: '⏸ PAUSE', color: '#EC4899' };
       case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
       case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#EC4899', sub: 'QR-Code für Summary' };
@@ -1534,6 +1553,32 @@ export default function QQModeratorPage() {
                     onStartGame={startGame}
                   />
                 )}
+
+                {/* ── FINAL_REVEAL (Space-Button) ──
+                    2026-05-19 (Wolf 'ich habe nach dem race keine space taste mehr
+                    im moderator'): waehrend FINAL_REVEAL gab's keinen sichtbaren
+                    Mod-Button, nur das Info-Panel weiter unten. Space wurde global
+                    durch line 992 emittiert, war aber visuell unsichtbar. */}
+                {s.phase === 'FINAL_REVEAL' && (() => {
+                  const N = s.teams.length;
+                  const step = (s as any).finalRevealStep ?? 0;
+                  const max = 2 * N + 8;
+                  const isLast = step >= max;
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
+                      <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                        🏆 Auflösung · Step {step}/{max}
+                      </div>
+                      <PrimaryBtn
+                        color={isLast ? '#22C55E' : '#FBBF24'}
+                        onClick={() => emit('qq:nextQuestion', { roomCode })}
+                        hotkey="Space"
+                      >
+                        {isLast ? '▶ Zur THANKS-Folie' : '▶ Nächster Step'}
+                      </PrimaryBtn>
+                    </div>
+                  );
+                })()}
 
                 {/* ── TEAMS REVEAL ── */}
                 {s.phase === 'TEAMS_REVEAL' && (

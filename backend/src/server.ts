@@ -136,6 +136,7 @@ import {
   saveCozyGameToDB,
   deleteCozyGameFromDB,
   seedCozyGamesIfMissing,
+  syncCozyGameSeedFlags,
   getQQGameResults,
   deleteQQGameResult,
   deleteAllQQGameResults,
@@ -7725,6 +7726,14 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
             if (cgInserted > 0) console.log(`✓ CozyGames Seed: ${cgInserted} V1-Spiele eingefügt`);
           } catch (err) {
             console.warn('CozyGames Seed fehlgeschlagen:', err);
+          }
+          // 2026-05-19: parallel-Flag-Migration. Zieht das neue parallel-Feld
+          // aus dem Seed-File auf existing DB-Einträge nach (war vorher undefined).
+          try {
+            const cgSynced = await syncCozyGameSeedFlags(COZY_GAME_V1_SEED);
+            if (cgSynced > 0) console.log(`✓ CozyGames parallel-Sync: ${cgSynced} Spiele aktualisiert`);
+          } catch (err) {
+            console.warn('CozyGames parallel-Sync fehlgeschlagen:', err);
           }
           console.log('✓ MongoDB bereit');
         } else {

@@ -181,11 +181,10 @@ export function imgFilter(img: { brightness?: number; contrast?: number; blur?: 
 
 /**
  * Formatiert die aufgelöste Antwort für den Beamer.
- * - lang='de': nur DE
- * - lang='en' + DE existiert separat: 'EN / DE' (damit Spieler die DE auf
- *   ihren Phones spielen die Lösung wiedererkennen, auch wenn der Beamer
- *   auf EN steht)
- * - lang='en' + nur EN: nur EN
+ * 2026-05-19 (Wolf 'connect 4 zeigt DE+EN beim reveal, soll wie sonst sein'):
+ * Vorher kombinierte EN-Mode 'EN / DE'. Jetzt: nur die aktive Sprache, sonst
+ * Fallback auf die andere. Bei 'both' wird useLangFlip mitwechseln, an dieser
+ * Stelle wird `lang` schon DE/EN sein → keine Doppel-Anzeige mehr.
  */
 export function formatRevealedAnswer(
   lang: 'de' | 'en',
@@ -194,10 +193,6 @@ export function formatRevealedAnswer(
 ): string {
   const deTrim = (de ?? '').trim();
   const enTrim = (en ?? '').trim();
-  if (lang === 'de') return deTrim || enTrim;
-  // EN-Modus
-  if (enTrim && deTrim && enTrim.toLowerCase() !== deTrim.toLowerCase()) {
-    return `${enTrim} / ${deTrim}`;
-  }
-  return enTrim || deTrim;
+  if (lang === 'en') return enTrim || deTrim;
+  return deTrim || enTrim;
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
-import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish } from '../utils/sounds';
+import { playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal } from '../utils/sounds';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
@@ -175,7 +175,13 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
       return;
     }
     if (round.phase !== 'WHEEL_RESULT') return; // GAME_ACTIVE / WINNER_SELECT: keep current
-    const t = window.setTimeout(() => setResultStage('detail'), 1500);
+    const t = window.setTimeout(() => {
+      setResultStage('detail');
+      // 2026-05-19 (Wolf 'aufloesungssound wenn spiel gezogen wurde?'):
+      // Card pop't 1.5s nach wheel-stop — bisher stumm. Warmer Coronation-
+      // Akkord (playWinnerCardReveal) macht den Visual-Reveal hoerbar.
+      try { playWinnerCardReveal(); } catch {}
+    }, 1500);
     return () => window.clearTimeout(t);
   }, [round.phase]);
 
@@ -785,15 +791,11 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
           ))}
         </div>
       )}
-      {/* Timer-Slot bleibt als layout-stabilizer (clamp-Höhe), aber Timer
-          selbst rendert jetzt OBEN-RECHTS fixed-positioned wie im Standard-
-          Quiz (Wolf 2026-05-17 'timer bei cozy game gerne auch rechts oben
-          wie sonst'). Slot bleibt visuell leer aber reserviert die Höhe
-          damit Card+Description+Tags nicht hochrutschen wenn Timer kommt. */}
-      <div style={{
-        height: 'clamp(180px, 22vh, 260px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }} />
+      {/* 2026-05-19 (Wolf 'card mittig zentrieren'): Layout-Stabilizer-Slot
+          (180-260px hoch) hier raus. Timer ist seit v7 absolute top-right —
+          der Slot war seither tote Reserve und hat den Card-Inhalt ueber die
+          Bildschirmmitte gepusht. Ohne Slot zentriert die Flex-Spalte
+          natuerlich, Card+Timer kollidieren nicht (Timer ist absolute). */}
 
       {/* Top-right Timer-Ring — gleiche Position wie Standard-Quiz Question-
           View Timer (top:var(--qq-safe-margin), right:var(--qq-safe-margin)).

@@ -1239,13 +1239,15 @@ export function playCozyGameWheelTick(): void {
   if (!isSlotEnabled('cozyGameWheelTick')) return;
   const url = resolveSlotUrl('cozyGameWheelTick');
   if (url) { playUrlOneShot(url); return; }
-  // 2026-05-17 (Wolf 'sounds bei wheel passen nicht'): square-wave 520Hz war
-  // zu scharf/clicky für Cozy-Brand. Jetzt triangle 360Hz mit weicherem Decay
-  // — wirkt wie satter Wood-Click statt sharp game-tick.
+  // 2026-05-17: triangle 360Hz mit weichem Decay (satter Wood-Click).
+  // 2026-05-19 (Wolf 'spinning wheel sound?'): gain 0.015 war nahezu lautlos
+  // gegenueber Confetti/Voice. Auf 0.05 (3.3x) + leichte Pitch-Variation pro
+  // Tick (350-380Hz) damit Spin-Sequenz lebendiger wirkt statt monoton.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(360, 'triangle', t, 0.015, 0.045, 0.0008, 0.016, ac);
+  const pitch = 350 + Math.random() * 30;
+  tone(pitch, 'triangle', t, 0.05, 0.055, 0.001, 0.02, ac);
 }
 
 export function playCozyGameWheelStop(): void {

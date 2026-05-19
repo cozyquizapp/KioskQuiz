@@ -8,6 +8,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -987,15 +988,13 @@ function SequenceGameView({
                 }}>
                   {sequenceCurrentIdx + 1} / {sequenceOrder.length} · jetzt dran
                 </div>
-                <div style={{
+                <div lang="de" style={{
                   fontSize: 'clamp(32px, 4vw, 64px)',
                   fontWeight: 900,
                   letterSpacing: '-0.02em',
                   textShadow: '0 4px 16px rgba(0,0,0,0.45)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
                   maxWidth: 'clamp(280px, 35vw, 600px)',
+                  ...QQ_TEAM_NAME_WRAP,
                 }}>
                   {currentTeam.name}
                 </div>
@@ -1258,16 +1257,18 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
                     bgColor={t.color}
                   />
                 </div>
-                <div style={{
+                {/* 2026-05-17 P6 (Wolf 'team-name smart wrap'): hyphens:auto +
+                    overflow-wrap:anywhere → lange Composite-Wörter wie
+                    „Pubquatscher" brechen sinnvoll (Pub-quatscher), keine
+                    Orphan-Letters mehr. nowrap+ellipsis raus. */}
+                <div lang="de" style={{
                   fontSize: 'clamp(28px, 3vw, 56px)',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
                   textAlign: 'center',
                   textShadow: '0 4px 16px rgba(0,0,0,0.45)',
                   maxWidth: 'clamp(200px, 26vw, 400px)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  ...QQ_TEAM_NAME_WRAP,
                   animation: `cozyGameWinnerHeadline 0.5s ease-out ${0.3 + i * 0.1}s both`,
                 }}>
                   {t.name}

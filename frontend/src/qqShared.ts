@@ -1,5 +1,20 @@
 // ── Shared Quarter Quiz constants (used by BeamerPage + CustomSlide) ──────────
 
+/**
+ * 2026-05-17 P6 (Wolf 'team-namen wrap: Pub-quatscher statt Pubquatsch-er'):
+ * Style-Set für mehrzeilige Team-Namen mit smart-break. Inline-spread'bar:
+ *   <div style={{ ...QQ_TEAM_NAME_WRAP, fontSize: '...' }}>
+ * Browser nutzt Hyphenation-Dict (DE/EN) für Syllable-Breaks bei langen
+ * Composite-Wörtern. Fallback overflow-wrap:anywhere für extreme Fälle.
+ */
+export const QQ_TEAM_NAME_WRAP = {
+  whiteSpace: 'normal' as const,
+  wordBreak: 'normal' as const,
+  overflowWrap: 'anywhere' as const,
+  hyphens: 'auto' as const,
+  WebkitHyphens: 'auto' as const,
+};
+
 export const QQ_BEAMER_CSS = `
   @keyframes cfloat  { 0%,100%{transform:translateY(0) rotate(var(--r,0deg))} 50%{transform:translateY(-12px) rotate(var(--r,0deg))} }
   /* Subtileres Bobben fuer Kategorie-Badge-Icon waehrend Question — selbe

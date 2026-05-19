@@ -885,14 +885,17 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     background: `${lt.color}18`, border: `2px solid ${lt.color}55`,
                   }}>
                     <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={48} />
+                    {/* 2026-05-19 (Wolf 'teamname von dem geklaut wird soll
+                        ausgeschrieben werden'): maxWidth 220 → keine Truncation
+                        mehr. maxLines 1 → 2 (Bricht statt zu kuerzen). Wraps
+                        nach Worten via QQ_TEAM_NAME_WRAP (Pubquatscher etc). */}
                     <TeamNameLabel
                       name={lt.name}
-                      maxLines={1}
+                      maxLines={2}
                       shrinkAfter={14}
                       color={lt.color}
                       fontWeight={900}
                       fontSize="clamp(20px, 2.2cqw, 30px)"
-                      style={{ maxWidth: 220 }}
                     />
                   </div>
                 ))}

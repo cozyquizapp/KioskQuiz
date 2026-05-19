@@ -640,8 +640,18 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           lang={lang}
         />
       )}
-      {phase.kind === 'awards-overview' && <AwardsOverviewSlide revealMode="closed" state={s} lang={lang} />}
-      {phase.kind === 'awards-reveal' && <AwardsOverviewSlide revealMode="auto-reveal" state={s} lang={lang} />}
+      {/* 2026-05-19 (Wolf 'special awards kommen rein und dann direkt nochmal'):
+          Vorher 2 separate JSX-Mounts (closed vs auto-reveal) → bei Phase-
+          Wechsel hat React den AwardsOverviewSlide unmounted + neu gemounted,
+          Mount-Animationen + useEffect liefen 2x. Jetzt EIN Mount der ueber
+          beide Phasen lebt; revealMode wechselt als Prop, useEffect sieht
+          den dep-change und startet die Reveal-Choreo genau einmal. */}
+      {(phase.kind === 'awards-overview' || phase.kind === 'awards-reveal') && (
+        <AwardsOverviewSlide
+          revealMode={phase.kind === 'awards-reveal' ? 'auto-reveal' : 'closed'}
+          state={s} lang={lang}
+        />
+      )}
       {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
     </div>
   );
@@ -1277,14 +1287,16 @@ function AwardsOverviewSlide({ revealMode, state: s, lang }: {
     // 2026-05-13 (Wolf 'special awards: 1 sound slot 3x in drumroll-folge'):
     // playSpecialAwardReveal pro Card-Flip — Wolf fuellt den Slot mit Drumroll/
     // Cheer-MP3, Fallback auf playWinnerCardReveal damit's nicht still ist.
-    // 2026-05-17 P13 (Wolf 'drumroll kommt NACH reveal bei den special awards'):
-    // Sound feuert jetzt ~1.4s VOR dem Card-Flip damit die Drumroll-Build-up-
-    // Phase die Spannung vorm Reveal aufbaut statt nach. DRUMROLL_LEAD min(800,
-    // delay) damit erste Card nicht negativ-time bekommt.
+    // 2026-05-17 P13: Sound feuert VOR dem Card-Flip damit die Drumroll-Build-
+    // up-Phase die Spannung vorm Reveal aufbaut.
+    // 2026-05-19 (Wolf 'drumroll noch nicht perfekt on point'): Lead 1400 →
+    // 900ms reduziert — die Drumroll-MP3-Build-up scheint kuerzer als der
+    // bisherige Vorlauf, der Bang traf zu frueh. Falls weiterhin off: Lead
+    // weiter runter (oder pro-MP3 konfigurierbar machen).
     const REVEAL_1 = 800;
     const REVEAL_2 = 800 + 1100 + 2000;
     const REVEAL_3 = 800 + 1100 + 2000 + 1100 + 2000;
-    const DRUMROLL_LEAD = 1400;
+    const DRUMROLL_LEAD = 900;
     const handles: number[] = [];
     // Sounds — feuern vor dem Reveal (Drumroll-Build-up)
     handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_1 - DRUMROLL_LEAD)));
@@ -1800,14 +1812,27 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
     // playFanfare-Fallback).
     handles.push(window.setTimeout(() => {
       setPhase('race');
+      // 2026-05-19 (Wolf 'race musik laeuft weiter wenn treppchen schon da'):
+      // GameOverLoop (laeuft seit GAME_OVER-Mount im Hintergrund) muss VOR
+      // dem Race-Loop-Start stoppen, sonst kommen 2 Tracks parallel raus.
+      try { stopLobbyLoop(); } catch {}
       try { startRaceLoop(); } catch {}
     }, cursor));
     cursor += 5000; // Race-Hold 5s
 
     // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr.
+    // 2026-05-19 (Wolf 'final zw 1+2 spannender, kopf an kopf laenger'):
+    // Wenn nur noch 1 vs 2 uebrig sind (= rank===2 Drop), bekommt der
+    // letzte Fall einen extra Spannungs-Beat von 2s ON TOP der normalen 2s
+    // (= 4s zwischen vorletztem und letztem Fall). Dazwischen schwebt das
+    // 1-vs-2-Paar im Race — Mitfieber-Moment.
     for (let rank = N; rank >= 2; rank--) {
       const teamId = finalRanking[rank - 1]?.team.id;
       if (!teamId) continue;
+      if (rank === 2 && N >= 3) {
+        // Extra-Wait vor dem letzten Fall (nur wenn ueberhaupt rank>=3 gefallen ist).
+        cursor += 2000;
+      }
       handles.push(window.setTimeout(() => {
         setFallenIds(prev => { const next = new Set(prev); next.add(teamId); return next; });
         try { playRaceTeamFall(); } catch {}

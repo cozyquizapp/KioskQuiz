@@ -1213,19 +1213,25 @@ export function playSpecialAwardReveal(): void {
   playUrlOneShot(url);
 }
 
-/** Race-Podium (Whoosh/Fanfare beim Treppchen-Aufstieg). Fallback auf
- *  playWinnerCardReveal, damit bei leerem Slot der bisherige Cue laeuft. */
+/** Race-Podium (Whoosh beim Treppchen-Aufstieg).
+ *  2026-05-19 (Wolf 'nach race kommt zweimal ein winning sound'): Fallback
+ *  war playWinnerCardReveal (Coronation-Akkord) — kollidierte mit dem
+ *  Winner-Sound 1.5s spaeter (playRaceWinner → playFanfare). Jetzt
+ *  dedicated Synth: rising whoosh ohne Bell-Charakter, fuegt sich als
+ *  Animations-Akzent statt als Doppel-Sieger-Fanfare ein. */
 export function playRacePodium(): void {
-  if (!isSlotEnabled('racePodium')) {
-    playWinnerCardReveal();
-    return;
-  }
+  if (!isSlotEnabled('racePodium')) return;
   const url = resolveSlotUrl('racePodium');
-  if (!url) {
-    playWinnerCardReveal();
-    return;
-  }
-  playUrlOneShot(url);
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Rising whoosh: aufsteigender Slide ohne Tonika — wirkt wie
+  // „Etwas-bewegt-sich-hoch", nicht wie „Sieg".
+  tone(180, 'triangle', t,        0.10, 0.20, 0.04, 0.10, ac);
+  tone(280, 'triangle', t + 0.18, 0.10, 0.20, 0.02, 0.10, ac);
+  tone(420, 'triangle', t + 0.36, 0.10, 0.22, 0.02, 0.12, ac);
+  tone(620, 'sine',     t + 0.54, 0.08, 0.30, 0.02, 0.16, ac);
 }
 
 export function playQuestionStart() { playSlotOneShot('questionStart'); }

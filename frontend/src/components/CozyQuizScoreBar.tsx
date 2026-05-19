@@ -118,15 +118,22 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   }, [teams]);
 
   // B2: jokersEarned tracking pro Team. Beim Anstieg: Stern fliegt auf Avatar.
+  // 2026-05-19 (Wolf 'gedrehter joker taucht beim grid oeffnen auf'):
+  // Beim ersten Mount-Run war prevJokers leer → before=0, now>0 fuer alle
+  // Teams die in vorigen Runden Joker verdient hatten → falscher Stern-Flug
+  // bei jedem ScoreBar-Remount (z.B. Grid-Reopen). isFirstRunRef skippt die
+  // Animation beim allerersten Snapshot.
+  const isFirstJokerRunRef = useRef(true);
   useEffect(() => {
     if (!teamPhaseStats) return;
     const newEarners = new Set<string>();
     for (const t of teams) {
       const now = teamPhaseStats[t.id]?.jokersEarned ?? 0;
       const before = prevJokers.current[t.id] ?? 0;
-      if (now > before) newEarners.add(t.id);
+      if (!isFirstJokerRunRef.current && now > before) newEarners.add(t.id);
       prevJokers.current[t.id] = now;
     }
+    isFirstJokerRunRef.current = false;
     if (newEarners.size > 0) {
       setJokerEarners(newEarners);
       setTimeout(() => setJokerEarners(new Set()), 1600);

@@ -219,15 +219,15 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center',
-        // 2026-05-13 v3 (Wolf 'Frage-Card hoch, andere unten, Avatar hat
-        // Platz dazwischen'): justifyContent center → flex-start. Frage-Card
-        // kriegt marginBottom:auto → schubst Card-Row + Team-Progress an den
-        // parent-bottom. Dadurch entsteht ein grosser Spalt zwischen Frage-
-        // Card und MEHR-Pille, in dem der hochfliegende Avatar landet ohne
-        // jemals zu ueberlappen.
-        justifyContent: 'flex-start',
-        padding: 'max(var(--qq-safe-margin), clamp(100px, 13cqh, 160px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(20px, 3cqh, 40px))',
-        gap: 'clamp(14px, 2cqh, 28px)',
+        // 2026-05-13 v3: Frage-Card oben, Cards unten, Spalt fuer Avatar-Flight.
+        // 2026-05-19 (Wolf 'der abstand sieht komisch aus'): Avatare landen
+        // direkt in der mittleren Pillen-Stack-Saeule (v5-Umbau), nicht mehr
+        // im Vertikal-Spalt. Layout-Gap ist Legacy → wieder zentriert mit
+        // normalem gap, top-Padding reduziert (war 100-160px Reserve fuer
+        // den alten Avatar-Flight-Path).
+        justifyContent: 'center',
+        padding: 'max(var(--qq-safe-margin), clamp(48px, 7cqh, 96px)) max(var(--qq-safe-margin), clamp(28px, 3.5cqw, 56px)) max(var(--qq-safe-margin), clamp(20px, 3cqh, 40px))',
+        gap: 'clamp(20px, 3cqh, 44px)',
         position: 'relative', overflow: 'hidden',
         minHeight: 0,
       }}>
@@ -264,10 +264,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             Rundenwechsel, Card selbst bleibt stabil. */}
         <div style={{
           maxWidth: 1400, width: '94%',
-          // 2026-05-13 v3 (Wolf 'Frage-Card oben, andere Cards unten'):
-          // marginBottom:auto schubst alle folgenden Geschwister (Card-Row,
-          // Team-Progress) an den parent-bottom. Frage-Card sitzt fest oben.
-          marginBottom: 'auto',
+          // 2026-05-19 (Wolf): vorher marginBottom:auto fuer Avatar-Flight-Spalt.
+          // Avatare laufen aber im Pillen-Stack-Grid, nicht durch den Spalt —
+          // Layout darf jetzt natuerlich zentriert sitzen.
           padding: 'clamp(18px, 2.6cqh, 36px) clamp(28px, 3.5cqw, 56px)',
           borderRadius: 24,
           background: 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',

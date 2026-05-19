@@ -5131,14 +5131,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       )}
                       {/* 2026-05-09 v2 (Wolf): Box weg, große Zahl in
                           Option-Color statt Container-Box. Bei isCorrect
-                          grün, bei isWrong gedimmt grau, sonst optColor. */}
+                          grün, bei isWrong gedimmt grau, sonst optColor.
+                          2026-05-19 (Wolf-Live 'bei 10v10 geht 1/2/3 unter'):
+                          Größe drastisch erhöht (fontSize 56→clamp 7cqw, bis
+                          124px) + kräftigerer Glow, damit die Zahl auf dem
+                          Beamer dominanter als der Option-Text wirkt. */}
                       <div style={{
                         position: 'relative', zIndex: 1,
-                        width: 56, height: 56,
+                        minWidth: 'clamp(64px, 7cqw, 110px)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 56, fontWeight: 900, flexShrink: 0,
+                        fontSize: 'clamp(72px, 8cqw, 124px)', fontWeight: 900, flexShrink: 0,
+                        lineHeight: 1,
                         color: isCorrect ? '#22C55E' : isWrong ? '#475569' : optColor,
-                        textShadow: isCorrect ? '0 0 18px rgba(34,197,94,0.6)' : `0 0 12px ${optColor}55`,
+                        textShadow: isCorrect
+                          ? '0 0 28px rgba(34,197,94,0.75), 0 0 60px rgba(34,197,94,0.35)'
+                          : `0 0 22px ${optColor}88, 0 0 50px ${optColor}44`,
                         letterSpacing: '-0.04em',
                         transition: 'all 0.3s ease',
                       }}>{label}</div>

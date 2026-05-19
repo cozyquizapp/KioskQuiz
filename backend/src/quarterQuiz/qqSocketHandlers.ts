@@ -102,6 +102,26 @@ function broadcast(io: SocketIOServer, roomCode: string): void {
   broadcastQQ(io, roomCode);
 }
 
+/**
+ * 2026-05-19 (Security-Audit S2): Verhindert Team-Spoofing via Socket.
+ * Backend speichert `socket.data.qqTeamId` beim qq:joinTeam-Handshake.
+ * Team-Self-Actions (Submit/Buzz/Place/Steal/Bet/HP/Imposter/OnlyConnect)
+ * muessen mit dieser ID matchen, sonst koennte Team A via DevTools
+ * payload.teamId auf Team B aendern und in dessen Namen agieren.
+ *
+ * Mod-Actions (markCorrect, kickTeam, etc.) sind hier NICHT geguarded —
+ * payload.teamId ist dort das Ziel-Team, nicht der Sender.
+ */
+function assertOwnTeam(socket: any, payloadTeamId: unknown): void {
+  const ownTeamId = socket?.data?.qqTeamId;
+  if (!ownTeamId) {
+    throw new QQError('NOT_JOINED', 'Du bist keinem Team beigetreten.');
+  }
+  if (typeof payloadTeamId !== 'string' || payloadTeamId !== ownTeamId) {
+    throw new QQError('NOT_YOUR_TEAM', 'Aktion nur für eigenes Team erlaubt.');
+  }
+}
+
 // ── Live-Reactions State (in-memory) ──────────────────────────────────────
 // Pro Room und Team eine Liste der letzten Reaction-Timestamps fürs Rate-Limit.
 // Reines Anti-Spam-Memo, lebt nicht in qqRooms (zu ephemer).
@@ -2220,6 +2240,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // ── Answer submission (teams) ──────────────────────────────────────────
     socket.on('qq:submitAnswer', (payload: QQSubmitAnswerPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         if (typeof payload.answer !== 'string' || payload.answer.length > 1000) throw new QQError('INVALID_ANSWER', 'Antwort zu lang (max 1000 Zeichen).');
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitAnswer(room, payload.teamId, payload.answer);
@@ -2232,6 +2253,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // ── Buzz in (teams, for Hot Potato) ───────────────────────────────────
     socket.on('qq:buzzIn', (payload: QQBuzzInPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqBuzzIn(room, payload.teamId);
         broadcast(io, payload.roomCode);
@@ -2355,6 +2377,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown,
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const trimmed = payload.answer.slice(0, 500);
         if (room.phase !== 'QUESTION_ACTIVE') { ok(ack); return; }
@@ -2477,6 +2500,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown,
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqImposterChoose(room, payload.teamId, payload.statementIndex);
 
@@ -2677,6 +2701,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // ── Placement ───────────────────────────────────────────────────────────
     socket.on('qq:placeCell', (payload: QQPlaceCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         // 2026-05-03 (Wolf-Bug 'Connections-Finale Steal->Place'): wenn der Bug
         // hier landet obwohl Wolf Steal gewaehlt hat, sehen wir's hier in den Logs.
@@ -2725,6 +2750,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:stealCell', (payload: QQStealCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         if (room.phase === 'CONNECTIONS_4X4' || room.connections?.phase === 'placement') {
           console.log('[conn-debug] qq:stealCell:', JSON.stringify({
@@ -2994,6 +3020,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:submitFinalBet', (payload: QQSubmitFinalBetPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitFinalBet(room, payload.teamId, payload.bet);
         broadcast(io, payload.roomCode);
@@ -3540,6 +3567,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqOnlyConnectSubmitGuess(room, payload.teamId, payload.text);
         // Multi-Winner: wenn alle Teams entweder richtig oder gesperrt sind,
@@ -3606,6 +3634,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqBluffSubmit(room, payload.teamId, payload.text);
         // Wenn alle (echten) Teams submitted haben, früher zur nächsten Phase
@@ -3667,6 +3696,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqBluffVote(room, payload.teamId, payload.optionId);
         if (result.ok && room.bluffPhase === 'vote' && qqBluffAllVoted(room)) {

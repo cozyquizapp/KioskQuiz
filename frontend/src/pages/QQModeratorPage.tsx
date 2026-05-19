@@ -1059,11 +1059,13 @@ export default function QQModeratorPage() {
     // Number keys 1–8 → mark team correct. 2026-05-11 (Audit P0): von 1-5 auf
     // 1-8 erweitert. Wolf moderiert bis zu 8 Teams; Slot 6-8 brauchten vorher
     // Mausgriff. Streamdeck-Pad jetzt komplett abgedeckt.
+    // 2026-05-19 (Cockpit-Audit M2): canFire('team-mark')-Lock — Streamdeck-Bounce
+    // konnte vorher Doppel-Mark triggern bei eng beieinanderliegenden Keys.
     if (['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8'].includes(e.code)) {
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
         const idx = parseInt(e.code.replace('Digit', '')) - 1;
         const team = s.teams[idx];
-        if (team) {
+        if (team && canFire('team-mark')) {
           playHotkeyFeedback();
           emitRef.current('qq:markCorrect', { roomCode, teamId: team.id });
         }
@@ -1072,8 +1074,14 @@ export default function QQModeratorPage() {
     }
 
     // F13 — Nächste Aktion (= Space)
+    // 2026-05-19 (Reliability-Audit R1): canFire-Lock wie auf der Space/Enter-
+    // Variante — sonst kann Streamdeck-Bounce auf F13 Doppel-Emits ausloesen
+    // (z.B. qq:finishFinalBetting 2x). Backend wirft auf 2. Call WRONG_PHASE,
+    // aber sauberer ist gar nicht erst doppelt zu emitten.
     if (e.code === 'F13') {
-      e.preventDefault(); playHotkeyFeedback();
+      e.preventDefault();
+      if (!canFire('space-advance')) return;
+      playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
         const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
@@ -1133,10 +1141,11 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // F14 — Team 1 korrekt (schnellster Buzz-Winner bestätigen)
+    // F14 — Team 1 korrekt (schnellster Buzz-Winner bestätigen).
+    // 2026-05-19 (Cockpit-Audit M2): canFire-Lock wie bei Digit1-8.
     if (e.code === 'F14') {
       e.preventDefault(); playHotkeyFeedback();
-      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.teams[0])
+      if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.teams[0] && canFire('team-mark'))
         emitRef.current('qq:markCorrect', { roomCode, teamId: s.teams[0].id });
       return;
     }
@@ -1192,8 +1201,17 @@ export default function QQModeratorPage() {
       return;
     }
 
-    // F18 — Reset (Notfall)
-    // F20 — reserviert
+    // F20 — Reset-Notfall (Wolf 2026-05-19, Cockpit-Audit M1):
+    // direkter Streamdeck-Hotkey für qq:resetRoom. Mit window.confirm
+    // damit kein Streamdeck-Bounce versehentlich das ganze Spiel killt.
+    // Standard-Reset-Buttons im DangerMenu bleiben als Alternativen.
+    if (e.code === 'F20') {
+      e.preventDefault(); playHotkeyFeedback();
+      if (window.confirm('🚨 Notfall-Reset: laufendes Spiel komplett zurücksetzen?\n\nAlle Teams müssen neu joinen, Score geht verloren.')) {
+        emitRef.current('qq:resetRoom', { roomCode });
+      }
+      return;
+    }
   }, [roomCode, canFire]);
 
   useEffect(() => {

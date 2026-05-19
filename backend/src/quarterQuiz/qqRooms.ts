@@ -5754,8 +5754,12 @@ export function qqCozyGameAdvanceFromIntro(room: QQRoomState): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'INTRO') return;
   const availableIdx = cozyAvailablePoolIdx(room);
   if (availableIdx.length === 0) {
-    // alle Spiele schon gespielt → Phase überspringen, zurück zum vorigen Flow
+    // 2026-05-19 (Reliability-Audit R2): vorher nur `room.cozyGame=null`,
+    // aber `room.phase` blieb 'COZY_GAME' → Beamer rendert nichts, Mod-UI
+    // strandet. Jetzt sauberer Cleanup mit Phase-Reset zu PAUSED, damit Mod
+    // manuell weiterklicken kann.
     room.cozyGame = null;
+    room.phase = 'PAUSED';
     return;
   }
   // Random-Index aus den Pool-Indizes (relativ zu poolGameIds, nicht Slice-Liste)
@@ -6007,8 +6011,10 @@ export function qqCozyGameAdvanceToPlacement(room: QQRoomState): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'WINNER_SELECT') return;
   const validIds = room.cozyGame.winnerTeamIds.filter(id => !!room.teams[id]);
   if (validIds.length === 0) {
-    // Kein Sieger → CG-State auf null, zurück zu vorherigem Phase-Flow
+    // 2026-05-19 (Reliability-Audit R2): Phase-Reset wie in
+    // qqCozyGameAdvanceFromIntro — sonst strandet die App.
     room.cozyGame = null;
+    room.phase = 'PAUSED';
     return;
   }
 
@@ -6046,6 +6052,9 @@ export function qqCozyGameCancel(room: QQRoomState): void {
   }
   room._cozyGameOnExpire = null;
   room.cozyGame = null;
+  // 2026-05-19 (Reliability-Audit R2): Phase-Reset zu PAUSED — sonst bleibt
+  // room.phase='COZY_GAME' haengen ohne CG-State → Beamer rendert nichts.
+  if (room.phase === 'COZY_GAME') room.phase = 'PAUSED';
   room.lastActivityAt = Date.now();
 }
 

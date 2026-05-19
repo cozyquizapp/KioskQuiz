@@ -9596,8 +9596,12 @@ app.post('/api/qq/crashReport', (req, res) => {
 });
 
 // ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
-// TEMP: auf `true` gesetzt für 8-Team-Test in Production. Nach Test zurück auf `process.env.NODE_ENV !== 'production'`.
-const QQ_DEV_ENABLED = true;
+// 2026-05-19 (Security-Audit S3): zurueck auf NODE_ENV-Gate. Dev-Endpoints
+// (/dev/fillTeams, /dev/simAnswers, /dev/autoPlace) sind ungeschuetzt und
+// erlauben jedem Pub-Gast Room-Spam → strikt dev-only.
+// Wenn doch mal kurz in Prod gebraucht: ENV-Var QQ_DEV_FORCE_ENABLED=true setzen.
+const QQ_DEV_ENABLED = process.env.NODE_ENV !== 'production'
+  || process.env.QQ_DEV_FORCE_ENABLED === 'true';
 app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
   const { roomCode } = req.params;

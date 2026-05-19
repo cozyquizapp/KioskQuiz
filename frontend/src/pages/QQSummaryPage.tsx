@@ -213,7 +213,7 @@ const T = {
   partnerInsta:  { de: '\uD83D\uDCF8 @cozywolf.events', en: '\uD83D\uDCF8 @cozywolf.events' },
 
   // Footer
-  footerBy:      { de: 'CozyQuiz von', en: 'CozyQuiz by' },
+  footerBy:      { de: 'COZYQUIZ von', en: 'COZYQUIZ by' },
 
   // 2026-05-10 (Audit-P1): Web-Share-Button — Acquisition-Hebel im Moment
   // wo Spieler gerade ihre Stats offen haben.

@@ -1274,7 +1274,7 @@ export default function QQModeratorPage() {
               title="Zurück zum Setup (Fragenset, Runden, Timer)"
             >⚙ Setup</button>
           )}
-          <span style={badgeStyle('#3B82F6')}>CozyQuiz</span>
+          <span style={badgeStyle('#3B82F6')}>COZYQUIZ</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

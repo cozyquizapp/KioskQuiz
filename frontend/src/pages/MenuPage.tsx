@@ -196,7 +196,7 @@ const MenuPage = () => {
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         <AppPanel
-          label="CozyQuiz"
+          label="COZYQUIZ"
           emoji="🗺️"
           tagline="Live-Spiel — Moderator, Beamer, Team, Builder"
           accent="#3B82F6"
@@ -205,7 +205,7 @@ const MenuPage = () => {
         />
 
         <AppPanel
-          label="CozyQuiz · Test-Pages"
+          label="COZYQUIZ · Test-Pages"
           emoji="🧪"
           tagline="Standalone-Vorschauen einzelner Quiz-Slides — Thanks, Treppchen, Summary, Avatar-Picker"
           accent="#EC4899"

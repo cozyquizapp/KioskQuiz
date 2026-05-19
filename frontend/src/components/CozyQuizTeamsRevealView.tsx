@@ -440,7 +440,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               textShadow: '0 0 14px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
                               lineHeight: 1,
                               position: 'relative',
-                            }}>CozyQuiz</div>
+                              textTransform: 'uppercase',
+                            }}>COZYQUIZ</div>
                           </div>
                           {/* Vorderseite — Avatar im Color-Glow-Kreis + Name
                               als Text in Team-Color (matcht Slot M Showreel)

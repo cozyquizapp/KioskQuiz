@@ -1177,7 +1177,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
-            }}>CozyQuiz</span>
+              textTransform: 'uppercase',
+            }}>COZYQUIZ</span>
           </div>
         )}
         {(mode === 'preGame' || mode === 'pause') && s.theme?.eurovisionMode && (s.theme.logoUrl ? (

@@ -66,7 +66,7 @@ import type { QQAck } from '../../../shared/quarterQuizTypes';
 
 // ── Übersetzungen ─────────────────────────────────────────────────────────────
 const t = {
-  header: { de: 'CozyQuiz', en: 'CozyQuiz' },
+  header: { de: 'COZYQUIZ', en: 'COZYQUIZ' },
   setup: {
     chooseAvatar: { de: 'Wähle deinen Avatar', en: 'Choose your avatar' },
     teamName: { de: 'Team-Name', en: 'Team name' },

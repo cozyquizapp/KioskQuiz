@@ -173,7 +173,7 @@ function renderCoverPage(draft: QQDraft, cozyGames?: CozyGame[]): string {
   return `
   <section class="cover">
     <div class="cover-top">
-      <div class="brand">CozyQuiz</div>
+      <div class="brand">COZYQUIZ</div>
       <div class="cover-title">${esc(draft.title || 'Host Cheatsheet')}</div>
       <div class="cover-sub">${phases} Phasen · ${totalQ} Fragen · Stand: ${new Date().toLocaleDateString('de-DE')}</div>
     </div>
@@ -258,7 +258,7 @@ export async function exportHostCheatsheet(draft: QQDraft): Promise<void> {
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>Host Cheatsheet — ${esc(draft.title || 'CozyQuiz')}</title>
+<title>Host Cheatsheet — ${esc(draft.title || 'COZYQUIZ')}</title>
 <style>
   @page { size: A4; margin: 16mm 14mm; }
   * { box-sizing: border-box; }

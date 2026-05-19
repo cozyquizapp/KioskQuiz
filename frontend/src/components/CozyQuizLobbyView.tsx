@@ -504,7 +504,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             );
           }
 
-          const wordmark = customWelcome.length > 0 ? customWelcome : 'CozyQuiz';
+          const wordmark = customWelcome.length > 0 ? customWelcome : 'COZYQUIZ';
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));

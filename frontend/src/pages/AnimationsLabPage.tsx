@@ -1267,7 +1267,8 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                     textShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
                     lineHeight: 1,
                     position: 'relative',
-                  }}>CozyQuiz</div>
+                    textTransform: 'uppercase',
+                  }}>COZYQUIZ</div>
                 </div>
                 {/* Vorderseite — Avatar + Name */}
                 <div style={{

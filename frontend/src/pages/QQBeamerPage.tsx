@@ -3697,7 +3697,7 @@ export function MuchoOptionsReveal({
 // ─────────────────────────────────────────────────────────────────────────────
 function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
   const lang = useLangFlip(language);
-  const title = 'CozyQuiz';
+  const title = 'COZYQUIZ';
   const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
   const greeting = lang === 'en'
     ? 'Get comfy — here we go!'

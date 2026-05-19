@@ -29,7 +29,7 @@ const FORMATS: Format[] = [
   {
     id: 'standard',
     emoji: '🎯',
-    name: 'CozyQuiz Standard',
+    name: 'COZYQUIZ Standard',
     status: 'live',
     tagline: 'Das Herzstück — klassisches Team-Quiz mit Grid',
     capacity: '4–6 Teams × max 4 Pers · bis ~24 Spieler',

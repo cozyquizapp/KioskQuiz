@@ -654,6 +654,13 @@ function FinalRevealSharedKeyframes() {
         0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
         100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
       }
+      /* 2026-05-17 P11 (Wolf 'animation von tip reveal cards gefällt mir
+         nicht — clean fade-up'): subtile fade + translateY für Bet-Reveal-
+         Cards. Kein Scale, kein Blur, kein Bounce — ruhig+lesbar. */
+      @keyframes qqBetCardFadeUp {
+        0%   { opacity: 0; transform: translateY(16px); }
+        100% { opacity: 1; transform: translateY(0);    }
+      }
       @keyframes qqFRSlamDown {
         0%   { opacity: 0; transform: translateY(-90cqh) scale(0.6) rotate(-3deg); filter: blur(8px); }
         55%  { opacity: 1; transform: translateY(8%)    scale(1.06) rotate(1deg);  filter: blur(0); }
@@ -1131,12 +1138,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
         background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
         border: `3px solid ${team.color}`,
         boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-        // 2026-05-13 (Wolf 'kommt nur von oben, vorgaenger-card wird einfach
-        // ersetzt'): qqFRSlamDown (translateY -90cqh + rotate + blur) durch
-        // sanften qqFRTitleIn (fade + scale + blur-clearance) ersetzt. Kein
-        // hartes Top-Down-Slam mehr — die alte Card faded weich raus, die neue
-        // faded weich rein.
-        animation: 'qqFRTitleIn 0.65s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+        // 2026-05-17 P11 (Wolf 'animation von tip reveal cards gefällt mir
+        // nicht'): qqFRTitleIn (scale + blur) durch cleane fade-up ersetzt.
+        // opacity 0→1 + translateY 16→0 in 0.5s ease-out. Ruhig, lesbar,
+        // kein Scale-Bounce.
+        animation: 'qqBetCardFadeUp 0.5s ease-out both',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
           <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} />

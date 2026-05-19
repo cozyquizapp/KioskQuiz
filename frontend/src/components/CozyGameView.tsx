@@ -86,14 +86,10 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
       // Phase-Transition: one-shot Sounds
       if (cur === 'WHEEL_RESULT' && prev === 'WHEEL_SPIN') {
         try { playCozyGameWheelStop(); } catch {}
-        // 2026-05-17 (Wolf 'cheer'): zusätzlicher Fanfare-Cue ~600ms nach
-        // Stop-Snap. Macht den Moment akustisch zum Crescendo (Konfetti +
-        // Snap + Cheer übereinander).
-        const cheer = window.setTimeout(() => {
-          try { playFanfare(); } catch {}
-        }, 600);
-        // Cleanup wenn unmount/transition zwischendurch
-        return () => window.clearTimeout(cheer);
+        // 2026-05-17 v2 (Wolf 'sounds bei wheel passen nicht'): playFanfare-
+        // Layer 600ms nach Stop-Snap entfernt. Triade-Stop alleine ist clean
+        // genug; zusätzliche Fanfare machte den Moment matschig (Konfetti +
+        // Triade + Fanfare gleichzeitig = sound-overload).
       }
       if (cur === 'GAME_ACTIVE' && prev === 'WHEEL_RESULT') {
         try { playCozyGameStart(); } catch {}
@@ -789,24 +785,39 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
           ))}
         </div>
       )}
-      {/* Timer-Slot mit FIXER Höhe (height statt minHeight) damit Layout
-          stable ist: bei WHEEL_RESULT ist Slot leer aber reserviert die
-          Höhe — wenn BeamerTimer in GAME_ACTIVE reinkommt, schiebt sich
-          der Rest oben NICHT hoch.
-          2026-05-17 v8 (Wolf 'rest nicht hochschieben'). */}
+      {/* Timer-Slot bleibt als layout-stabilizer (clamp-Höhe), aber Timer
+          selbst rendert jetzt OBEN-RECHTS fixed-positioned wie im Standard-
+          Quiz (Wolf 2026-05-17 'timer bei cozy game gerne auch rechts oben
+          wie sonst'). Slot bleibt visuell leer aber reserviert die Höhe
+          damit Card+Description+Tags nicht hochrutschen wenn Timer kommt. */}
       <div style={{
         height: 'clamp(180px, 22vh, 260px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {gameEndsAt && (
-          <div
-            key={`timer-${gameEndsAt}`}
-            style={{ animation: 'cozyGameTimerSlotIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
-          >
-            <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
-          </div>
-        )}
-      </div>
+      }} />
+
+      {/* Top-right Timer-Ring — gleiche Position wie Standard-Quiz Question-
+          View Timer (top:var(--qq-safe-margin), right:var(--qq-safe-margin)).
+          Nur sichtbar wenn gameEndsAt gesetzt (= GAME_ACTIVE-Phase). */}
+      {gameEndsAt && (
+        <div
+          key={`cg-timer-${gameEndsAt}`}
+          style={{
+            position: 'absolute',
+            top: 'var(--qq-safe-margin, 32px)',
+            right: 'var(--qq-safe-margin, 32px)',
+            zIndex: 30,
+            padding: 12,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
+            animation: 'cozyGameTimerSlotIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          }}
+        >
+          <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+        </div>
+      )}
     </div>
   );
 }

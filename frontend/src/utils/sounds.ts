@@ -1239,37 +1239,44 @@ export function playCozyGameWheelTick(): void {
   if (!isSlotEnabled('cozyGameWheelTick')) return;
   const url = resolveSlotUrl('cozyGameWheelTick');
   if (url) { playUrlOneShot(url); return; }
-  // Synth-Fallback: kurzer Tick (analog playWoodKnock aber höher + leiser)
+  // 2026-05-17 (Wolf 'sounds bei wheel passen nicht'): square-wave 520Hz war
+  // zu scharf/clicky für Cozy-Brand. Jetzt triangle 360Hz mit weicherem Decay
+  // — wirkt wie satter Wood-Click statt sharp game-tick.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(520, 'square', t, 0.012, 0.035, 0.0005, 0.012, ac);
+  tone(360, 'triangle', t, 0.015, 0.045, 0.0008, 0.016, ac);
 }
 
 export function playCozyGameWheelStop(): void {
   if (!isSlotEnabled('cozyGameWheelStop')) { playWinnerCardReveal(); return; }
   const url = resolveSlotUrl('cozyGameWheelStop');
   if (url) { playUrlOneShot(url); return; }
-  // Synth-Fallback: Snap-Chord (Pink-Glow-feeling)
+  // 2026-05-17 (Wolf): Triade reicht — die zusätzliche playFanfare-Layerung
+  // im CozyGameView ist raus (siehe dort). Triade selbst leicht warmer/voller
+  // mit längerem Decay für „angekommen"-Feeling.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Aufsteigende Triade D-F#-A (Wolf-Brand-Sound)
-  tone(587, 'triangle', t,        0.08, 0.20, 0.005, 0.08, ac);
-  tone(740, 'triangle', t + 0.05, 0.08, 0.18, 0.005, 0.08, ac);
-  tone(880, 'sine',     t + 0.10, 0.08, 0.16, 0.005, 0.10, ac);
+  // Aufsteigende Triade D-F#-A (Wolf-Brand-Sound) mit längerem Tail
+  tone(587, 'triangle', t,        0.10, 0.32, 0.008, 0.12, ac);
+  tone(740, 'triangle', t + 0.06, 0.10, 0.30, 0.008, 0.12, ac);
+  tone(880, 'sine',     t + 0.12, 0.12, 0.28, 0.008, 0.16, ac);
 }
 
 export function playCozyGameStart(): void {
   if (!isSlotEnabled('cozyGameStart')) { playFanfare(); return; }
   const url = resolveSlotUrl('cozyGameStart');
   if (url) { playUrlOneShot(url); return; }
-  // Synth-Fallback: kurzer Doppel-Cue (Bell)
+  // 2026-05-17 (Wolf): Doppel-Bell wirkte zu zart für „GO!"-Moment. Jetzt
+  // 3-Ton-Arpeggio C-E-G aufsteigend (positiver Start-Cue) mit triangle-
+  // Wave für warm-energetisches „Spiel los"-Gefühl.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(660, 'sine', t,        0.10, 0.22, 0.008, 0.10, ac);
-  tone(990, 'sine', t + 0.08, 0.12, 0.20, 0.008, 0.10, ac);
+  tone(523, 'triangle', t,        0.10, 0.20, 0.008, 0.10, ac); // C5
+  tone(659, 'triangle', t + 0.08, 0.10, 0.22, 0.008, 0.10, ac); // E5
+  tone(784, 'sine',     t + 0.16, 0.14, 0.26, 0.008, 0.14, ac); // G5 (sine = bell-tail)
 }
 // BC-2: Music-Ducking fuer Game-Over-Cue (laut + dramatisch).
 export function playGameOver()      { playWithDuck('gameOver', 2500); }

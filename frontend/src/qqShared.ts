@@ -102,6 +102,15 @@ export const QQ_BEAMER_CSS = `
     0%, 100% { transform: rotate(-3deg) scale(1);    }
     50%      { transform: rotate( 3deg) scale(1.06); }
   }
+  /* 2026-05-17 (Wolf 'alle 4 felder markiert die zu joker geführt haben'):
+     Pattern-Zellen rund um den Joker bekommen einen dezenten Gold-Glow-Pulse
+     synchron zum Joker-Wiggle — visuelles Signal „dieses 4er-Muster hat den
+     Joker ausgelöst". Pulse nur am box-shadow (keine Transform-Konflikte
+     mit dem gridCellIn-Mount), damit der Goldglow atmet ohne Cell-Größe. */
+  @keyframes qqJokerPatternPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(251,191,36,0.45), 0 0 0 rgba(251,191,36,0); }
+    50%      { box-shadow: 0 0 22px rgba(251,191,36,0.70), 0 0 6px rgba(251,191,36,0.35); }
+  }
   /* 2026-05-09 (Slot P live in HP): Bouncing-Kartoffel über aktivem Team.
      Bounce + Spin kombiniert, weil Doppel-Animation auf transform sonst
      einander überschreiben würde.

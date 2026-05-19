@@ -108,13 +108,14 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          // 2026-05-17 (Wolf): Joker sitzt ON dem Muster, nicht daneben.
-          // 2×2-Block oben links mit ⭐ als eine seiner 4 Zellen (1,0).
-          // 4er-Reihe rechts mit ⭐ als eine seiner 4 Zellen (3,2).
-          ['A',  '⭐', null, 'A'],
-          ['A',  'A',  null, 'A'],
+          // 2026-05-17 v2 (Wolf): ALLE 4 Pattern-Zellen markiert (mit gold-glow),
+          // genau wie im echten Spiel via jokerFormed. 'AP' = Team-A IN Pattern.
+          // 2×2-Block oben links + 4er-Reihe rechts; Joker ⭐ ist je 1 Zelle des
+          // Patterns. Die anderen 3 Pattern-Zellen pro Muster bekommen 'AP'.
+          ['AP', '⭐', null, 'AP'],
+          ['AP', 'AP', null, 'AP'],
           [null, null, null, '⭐'],
-          [null, null, null, 'A'],
+          [null, null, null, 'AP'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
@@ -231,13 +232,12 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          // 2026-05-17 (Wolf): Joker sits ON the pattern, not beside it.
-          // 2×2 block top-left with ⭐ as one of its 4 cells (1,0).
-          // 4-in-a-row right with ⭐ as one of its 4 cells (3,2).
-          ['A',  '⭐', null, 'A'],
-          ['A',  'A',  null, 'A'],
+          // 2026-05-17 v2 (Wolf): ALL 4 pattern cells marked (gold-glow) like
+          // in-game via jokerFormed. 'AP' = Team-A IN Pattern.
+          ['AP', '⭐', null, 'AP'],
+          ['AP', 'AP', null, 'AP'],
           [null, null, null, '⭐'],
-          [null, null, null, 'A'],
+          [null, null, null, 'AP'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Both patterns count'),
@@ -326,16 +326,29 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
       }}>
         {grid.cells.flatMap((row, r) => row.map((cell, c) => {
           const isTeamA = cell === 'A';
+          // 2026-05-17 (Wolf): 'AP' = Team-A IN Pattern (mit Goldglow-Highlight
+          // wie im echten Spiel via jokerFormed). Verhält sich wie 'A' (gleiche
+          // BG-Farbe), bekommt zusätzlich gold border + pulsierenden Glow um
+          // „Pattern-Vollendet" zu signalisieren.
+          const isTeamAP = cell === 'AP';
           const isStar = cell === '⭐';
           const isPin = cell === '🏯';
-          const filled = isTeamA || isStar || isPin;
+          const filled = isTeamA || isTeamAP || isStar || isPin;
           const bg = isStar
             ? `linear-gradient(135deg, ${grid.colorA}cc, #EC4899cc)`
             : isPin
               ? `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`
-              : isTeamA
+              : (isTeamA || isTeamAP)
                 ? `${grid.colorA}aa`
                 : 'rgba(255,255,255,0.06)';
+          const borderColor = isStar ? '#EC4899'
+            : isPin ? '#10B981'
+            : isTeamAP ? '#FBBF24'   // Gold-Border für Pattern-Zellen
+            : grid.colorA;
+          const glowColor = isStar ? '#EC489988'
+            : isPin ? '#10B98144'
+            : isTeamAP ? '#FBBF2477'  // Gold-Glow für Pattern-Zellen
+            : grid.colorA + '44';
           // 2026-05-09 (Wolf-Wunsch): Joker-Cells nutzen die echten Joker-PNGs
           // (boy/girl alternierend per row+col-index) statt 🃏-Emoji + Wiggle-
           // Animation für „der Joker leuchtet auf, wenn das Pattern gebildet ist".
@@ -346,15 +359,18 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
               width: cellSz, height: cellSz,
               borderRadius: Math.max(4, cellSz * 0.18),
               background: bg,
-              border: filled ? `2px solid ${isStar ? '#EC4899' : isPin ? '#10B981' : grid.colorA}` : '1px solid rgba(255,255,255,0.08)',
+              border: filled ? `2px solid ${borderColor}` : '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: cellSz * 0.5,
-              boxShadow: filled ? `0 0 12px ${isStar ? '#EC489988' : isPin ? '#10B98144' : grid.colorA + '44'}` : 'none',
+              boxShadow: filled ? `0 0 12px ${glowColor}` : 'none',
               animation: filled
                 ? isStar
                   // Joker: erst rein-fade, dann wiggle-Pulse infinite
                   ? `gridCellIn 0.4s ease ${inDelay}s both, qqJokerWiggle 2.4s ease-in-out ${inDelay + 0.5}s infinite`
-                  : `gridCellIn 0.4s ease ${inDelay}s both`
+                  : isTeamAP
+                    // Pattern-Zelle: rein-fade + dezenter Gold-Glow-Pulse
+                    ? `gridCellIn 0.4s ease ${inDelay}s both, qqJokerPatternPulse 2.4s ease-in-out ${inDelay + 0.5}s infinite`
+                    : `gridCellIn 0.4s ease ${inDelay}s both`
                 : undefined,
               overflow: 'hidden',
             }}>

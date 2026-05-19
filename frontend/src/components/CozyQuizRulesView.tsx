@@ -108,14 +108,13 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          // 2026-05-17 v2 (Wolf): ALLE 4 Pattern-Zellen markiert (mit gold-glow),
-          // genau wie im echten Spiel via jokerFormed. 'AP' = Team-A IN Pattern.
-          // 2×2-Block oben links + 4er-Reihe rechts; Joker ⭐ ist je 1 Zelle des
-          // Patterns. Die anderen 3 Pattern-Zellen pro Muster bekommen 'AP'.
-          ['AP', '⭐', null, 'AP'],
-          ['AP', 'AP', null, 'AP'],
+          // 2026-05-19 (Wolf): Im echten Spiel wird beim Joker-Trigger JEDE Zelle
+          // des erkannten Musters mit einem Joker-PNG belegt — Rules-Beispiel
+          // zieht jetzt nach. 2×2 oben links (4 Joker) + 4er-Reihe rechts (4 Joker).
+          ['⭐', '⭐', null, '⭐'],
+          ['⭐', '⭐', null, '⭐'],
           [null, null, null, '⭐'],
-          [null, null, null, 'AP'],
+          [null, null, null, '⭐'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
@@ -175,7 +174,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
         t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Spielfreude > Punkte. Habt Spaß!'),
+      extra: t('rules.slide_fairplay.extra', 'Habt Spaß! Punkte sind nur Beilage.'),
     },
     {
       icon: '🧩',
@@ -184,9 +183,9 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       requiresConnections: true,
       lines: [
         t('rules.slide8.line1', '16 Begriffe · 4 Gruppen finden'),
-        t('rules.slide8.line2', 'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder'),
+        t('rules.slide8.line2', 'Pro Gruppe = +1 Punkt auf ein Feld eurer Wahl'),
       ],
-      extra: t('rules.slide8.extra', '🏆 Größtes Gebiet + Boni danach gewinnt'),
+      extra: t('rules.slide8.extra', '🏆 Größtes Gebiet + alle Bonus-Punkte gewinnt'),
     },
   ];
 }
@@ -232,12 +231,13 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       ],
       grid: {
         cells: [
-          // 2026-05-17 v2 (Wolf): ALL 4 pattern cells marked (gold-glow) like
-          // in-game via jokerFormed. 'AP' = Team-A IN Pattern.
-          ['AP', '⭐', null, 'AP'],
-          ['AP', 'AP', null, 'AP'],
+          // 2026-05-19 (Wolf): Every cell of a triggered pattern becomes a joker
+          // in-game — preview now mirrors that. 2×2 top-left (4 jokers) + right
+          // column (4 jokers).
+          ['⭐', '⭐', null, '⭐'],
+          ['⭐', '⭐', null, '⭐'],
           [null, null, null, '⭐'],
-          [null, null, null, 'AP'],
+          [null, null, null, '⭐'],
         ],
         colorA: '#3B82F6', colorB: '#EF4444',
         label: t('rules.slide4.gridLabel', 'Both patterns count'),
@@ -291,7 +291,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
         t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Fun > points. Enjoy!'),
+      extra: t('rules.slide_fairplay.extra', 'Have fun! Points are just the side dish.'),
     },
     {
       icon: '🧩',
@@ -300,9 +300,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       requiresConnections: true,
       lines: [
         t('rules.slide8.line1', '16 terms · find 4 hidden groups'),
-        t('rules.slide8.line2', 'Each group = 1 stack-bonus (+1 pt) on your cells'),
+        t('rules.slide8.line2', 'Each group = +1 point on a cell of your choice'),
       ],
-      extra: t('rules.slide8.extra', '🏆 Largest area + bonuses wins'),
+      extra: t('rules.slide8.extra', '🏆 Largest area + all bonus points wins'),
     },
   ];
 }

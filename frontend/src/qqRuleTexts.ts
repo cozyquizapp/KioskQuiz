@@ -162,17 +162,13 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // Slide 4: Joker
       { key: 'rules.slide4.title',  label: '4 · Joker — Titel', defaultDe: 'Joker-Bonus', defaultEn: 'Joker Bonus' },
       { key: 'rules.slide4.line1',  label: '4 · Joker — Zeile 1', defaultDe: '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld', defaultEn: '2×2 block or 4 in a row = 1 bonus tile' },
-      { key: 'rules.slide4.line2',  label: '4 · Joker — Zeile 2', defaultDe: 'Max. 2 Joker pro Team · 1 pro Runde', defaultEn: 'Max 2 jokers per team · 1 per round' },
+      { key: 'rules.slide4.line2',  label: '4 · Joker — Zeile 2', defaultDe: 'Max. 2 Joker pro Team', defaultEn: 'Max 2 jokers per team' },
       { key: 'rules.slide4.gridLabel', label: '4 · Joker — Grid-Label', defaultDe: 'Beide Muster zählen', defaultEn: 'Both patterns count' },
 
-      // Slide 5: Fähigkeiten (lines hängen von totalPhases ab — wir editieren pro Runde)
-      { key: 'rules.slide5.title',  label: '5 · Fähigkeiten — Titel', defaultDe: 'Neue Fähigkeiten', defaultEn: 'New Abilities' },
-      { key: 'rules.slide5.r2',     label: '5 · Fähigkeiten — Runde 2', defaultDe: 'Runde 2: Klauen freigeschaltet', defaultEn: 'Round 2: Steal unlocked' },
-      { key: 'rules.slide5.r3',     label: '5 · Fähigkeiten — Runde 3', defaultDe: 'Runde 3: Stapeln — Feld dauerhaft sichern + 1 Bonus-Punkt', defaultEn: 'Round 3: Stack — lock your tile + 1 bonus pt' },
-      { key: 'rules.slide5.r4',     label: '5 · Fähigkeiten — Runde 4 (nur 4-Runden-Modus)', defaultDe: 'Runde 4: alles bleibt — letzte Quiz-Runde', defaultEn: 'Round 4: everything stays — last quiz round' },
-      { key: 'rules.slide5.r3short',label: '5 · Fähigkeiten — Runde 3 (3-Runden-Modus)', defaultDe: 'Runde 3: Stapeln — sichert euer Feld dauerhaft + 1 Bonus-Punkt', defaultEn: 'Round 3: Stack — lock your tile + 1 bonus pt' },
-      { key: 'rules.slide5.abil1',  label: '5 · Fähigkeiten — Badge 1', defaultDe: 'Klauen', defaultEn: 'Steal' },
-      { key: 'rules.slide5.abil2',  label: '5 · Fähigkeiten — Badge 2', defaultDe: 'Stapeln', defaultEn: 'Stack' },
+      // Slide 5 „Neue Fähigkeiten" 2026-05-09 entfernt — Klauen/Stapeln werden
+      // beim Runden-Intro (R2/R3) als Überraschung enthüllt (3D-Card-Flip mit
+      // NEU-Badge). Editor-Keys mit raus, sonst sieht Wolf hier Items, die im
+      // Render nirgends auftauchen.
 
       // Slide 6: Bunte Tüte
       { key: 'rules.slide6.title',  label: '6 · Bunte Tüte — Titel', defaultDe: 'Bunte Tüte', defaultEn: 'Lucky Bag' },
@@ -180,16 +176,33 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'rules.slide6.line2',  label: '6 · Bunte Tüte — Zeile 2', defaultDe: '4 gewinnt · Bluff · Hot Potato · Top 5 · Reihenfolge · CozyGuessr', defaultEn: 'Connect 4 · Bluff · Hot Potato · Top 5 · Order · CozyGuessr' },
       { key: 'rules.slide6.extra',  label: '6 · Bunte Tüte — Extra-Hinweis', defaultDe: 'Regeln werden vor jeder Frage kurz erklärt', defaultEn: 'Rules explained before each question' },
 
+      // Slide CozyGame (zwischen Bunte Tüte und Comeback, nur sichtbar wenn cozyGamesEnabled)
+      { key: 'rules.slide_cozygames.title', label: 'CozyGame — Titel', defaultDe: 'CozyGame', defaultEn: 'CozyGame' },
+      { key: 'rules.slide_cozygames.line1', label: 'CozyGame — Zeile 1', defaultDe: 'Nach jeder Runde dreht das Glücksrad — ein analoges Mini-Spiel', defaultEn: 'After every round the wheel spins — one analog mini-game' },
+      { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen', defaultEn: 'Winner places 1 action on the board · skill > knowledge' },
+
       // Slide 7: Comeback
       { key: 'rules.slide7.title',  label: '7 · Comeback — Titel', defaultDe: 'Comeback', defaultEn: 'Comeback' },
       { key: 'rules.slide7.line1',  label: '7 · Comeback — Zeile 1', defaultDe: 'Letztes Team holt vor dem Finale auf', defaultEn: 'Last-place team catches up before the finale' },
-      { key: 'rules.slide7.line2',  label: '7 · Comeback — Zeile 2', defaultDe: '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz', defaultEn: '"Higher or Lower?" — each hit steals from the leader' },
+      { key: 'rules.slide7.line2',  label: '7 · Comeback — Zeile 2', defaultDe: '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz', defaultEn: '„Higher or Lower?" — correct answer steals a cell from the leader' },
+
+      // Slide Final-Tipp (vor dem Finale)
+      { key: 'rules.slide_final_tip.title', label: 'Final-Tipp — Titel', defaultDe: 'Final-Tipp', defaultEn: 'Final Tip' },
+      { key: 'rules.slide_final_tip.line1', label: 'Final-Tipp — Zeile 1', defaultDe: 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team', defaultEn: 'Before the finale every team tips on another (or own) team' },
+      { key: 'rules.slide_final_tip.line2', label: 'Final-Tipp — Zeile 2', defaultDe: 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus', defaultEn: 'Per final-category win of your tip = +1 bonus' },
+
+      // Slide Fair Play (Anti-Google + Tonfall)
+      { key: 'rules.slide_fairplay.title', label: 'Fair Play — Titel', defaultDe: 'Fair Play', defaultEn: 'Fair Play' },
+      { key: 'rules.slide_fairplay.line1', label: 'Fair Play — Zeile 1', defaultDe: 'Kein Googeln · Smartphone in die Hosentasche', defaultEn: 'No googling · phones in your pocket' },
+      { key: 'rules.slide_fairplay.line2', label: 'Fair Play — Zeile 2', defaultDe: 'Antworten nicht zwischen Teams spoilern', defaultEn: 'Don\'t spoil answers between teams' },
+      { key: 'rules.slide_fairplay.line3', label: 'Fair Play — Zeile 3', defaultDe: 'Im Zweifel zählt der Moderator-Wolf 🐺', defaultEn: 'When in doubt, the wolf decides 🐺' },
+      { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Habt Spaß! Punkte sind nur Beilage.', defaultEn: 'Have fun! Points are just the side dish.' },
 
       // Slide 8: Finale
       { key: 'rules.slide8.title',  label: '8 · Finale — Titel', defaultDe: 'Großes Finale', defaultEn: 'Grand Finale' },
       { key: 'rules.slide8.line1',  label: '8 · Finale — Zeile 1', defaultDe: '16 Begriffe · 4 Gruppen finden', defaultEn: '16 terms · find 4 hidden groups' },
-      { key: 'rules.slide8.line2',  label: '8 · Finale — Zeile 2', defaultDe: 'Pro Gruppe = 1 Stapel-Bonus (+1 Pkt) auf eure Felder', defaultEn: 'Each group = 1 stack-bonus (+1 pt) on your cells' },
-      { key: 'rules.slide8.extra',  label: '8 · Finale — Extra-Hinweis', defaultDe: '🏆 Größtes Gebiet + Boni danach gewinnt', defaultEn: '🏆 Largest area + bonuses wins' },
+      { key: 'rules.slide8.line2',  label: '8 · Finale — Zeile 2', defaultDe: 'Pro Gruppe = +1 Punkt auf ein Feld eurer Wahl', defaultEn: 'Each group = +1 point on a cell of your choice' },
+      { key: 'rules.slide8.extra',  label: '8 · Finale — Extra-Hinweis', defaultDe: '🏆 Größtes Gebiet + alle Bonus-Punkte gewinnt', defaultEn: '🏆 Largest area + all bonus points wins' },
 
       // Header-Strings
       { key: 'rules.header',        label: 'Header — „Spielregeln" Pille', defaultDe: 'Spielregeln', defaultEn: 'Game Rules' },
@@ -229,8 +242,8 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'bunte.top5.name',           label: 'Top 5 — Name',        defaultDe: 'Top 5',         defaultEn: 'Top 5' },
       { key: 'bunte.top5.explain',        label: 'Top 5 — Erkl.',       defaultDe: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.', defaultEn: 'Guess the most common answers — higher rank, more points.' },
 
-      { key: 'bunte.oneOfEight.name',     label: 'Imposter — Name',     defaultDe: 'Imposter',      defaultEn: 'Imposter' },
-      { key: 'bunte.oneOfEight.explain',  label: 'Imposter — Erkl.',    defaultDe: 'Findet die EINE falsche Aussage zwischen 7 wahren.', defaultEn: 'Spot the ONE false statement among 7 true ones.' },
+      // Imposter (oneOfEight) ist deaktiviert (Mai 2026) — keine Editor-Items,
+      // sonst irritiert es Wolf, weil sich die Mechanik im Quiz nirgends zeigt.
 
       { key: 'bunte.order.name',          label: 'Reihenfolge — Name',  defaultDe: 'Reihenfolge',   defaultEn: 'Order' },
       { key: 'bunte.order.explain',       label: 'Reihenfolge — Erkl.', defaultDe: 'Sortiert in der richtigen Reihenfolge.', defaultEn: 'Sort in the correct order.' },

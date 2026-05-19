@@ -582,7 +582,8 @@ export default function QQModeratorPage() {
         // INTRO (1.8s) → Rad drehen
         // WHEEL_SPIN → 4s Auto-Stop läuft im Backend, nichts tun
         // WHEEL_RESULT (3s) → Spiel starten
-        // GAME_ACTIVE → 60s-Timer im Backend, Auto-Expire ruft StopGame
+        // GAME_ACTIVE parallel → 60s-Timer im Backend, Auto-Expire ruft StopGame
+        // GAME_ACTIVE sequence → bei Timer=0 auto-advance Nächstes Team
         // WINNER_SELECT (1.2s) → Random Sieger aus connected real teams
         const cg = (s as any).cozyGame;
         if (!cg) break;
@@ -592,6 +593,13 @@ export default function QQModeratorPage() {
         } else if (cg.phase === 'WHEEL_RESULT') {
           delayMs = 3000;
           action = () => emit('qq:cozyGameAdvance', { roomCode });
+        } else if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence') {
+          // Bei sequence + abgelaufenem Timer: Auto-Nächstes-Team
+          // (parallel: Backend auto-stops via onExpire)
+          if (cg.gameEndsAt == null && (cg.timerPausedRemainingMs ?? 0) === 0) {
+            delayMs = 1000;
+            action = () => emit('qq:cozyGameNextSequenceTeam', { roomCode });
+          }
         } else if (cg.phase === 'WINNER_SELECT') {
           const winnerIds: string[] = cg.winnerTeamIds ?? [];
           if (winnerIds.length === 0) {
@@ -2223,10 +2231,62 @@ export default function QQModeratorPage() {
                     );
                   }
                   if (cg.phase === 'GAME_ACTIVE') {
+                    // 2026-05-17 (Wolf Sequence-Mode): unterschiedliche Mod-
+                    // Controls je nach playMode + Timer-Controls (Pause/Resume/
+                    // Reset/±10s) für beide Modes.
+                    const isSequence = cg.playMode === 'sequence';
+                    const isPaused = cg.gameEndsAt == null && (cg.timerPausedRemainingMs ?? 0) > 0;
+                    const order: string[] = cg.sequenceOrder ?? [];
+                    const curIdx: number = cg.sequenceCurrentIdx ?? 0;
+                    const isLastTeam = isSequence && curIdx >= order.length - 1;
                     return (
-                      <PrimaryBtn color="#EF4444" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
-                        ⏹ Stop & Sieger wählen
-                      </PrimaryBtn>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                          {isSequence ? (
+                            <PrimaryBtn
+                              color="#22C55E"
+                              onClick={() => emit('qq:cozyGameNextSequenceTeam', { roomCode })}
+                              hotkey="Space"
+                            >
+                              {isLastTeam ? '▶ Sieger wählen' : `▶ Nächstes Team (${curIdx + 1}/${order.length})`}
+                            </PrimaryBtn>
+                          ) : (
+                            <PrimaryBtn color="#EF4444" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                              ⏹ Stop & Sieger wählen
+                            </PrimaryBtn>
+                          )}
+                        </div>
+                        {/* Timer-Controls: Pause/Resume/Reset/±10s */}
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
+                          <span style={{ color: '#94a3b8', fontWeight: 700, marginRight: 4 }}>Timer:</span>
+                          {isPaused ? (
+                            <Btn color="#22C55E" outline onClick={() => emit('qq:cozyGameTimerResume', { roomCode })}>
+                              ▶ Resume
+                            </Btn>
+                          ) : (
+                            <Btn color="#F59E0B" outline onClick={() => emit('qq:cozyGameTimerPause', { roomCode })}>
+                              ⏸ Pause
+                            </Btn>
+                          )}
+                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerReset', { roomCode })}>
+                            ↻ Reset
+                          </Btn>
+                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: -10 })}>
+                            −10s
+                          </Btn>
+                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: +10 })}>
+                            +10s
+                          </Btn>
+                          {isSequence && !isLastTeam && (
+                            <Btn color="#94A3B8" outline onClick={() => {
+                              if (!window.confirm('Alle übrigen Teams überspringen und direkt zum Sieger-Pick?')) return;
+                              emit('qq:cozyGameAdvance', { roomCode });
+                            }}>
+                              ⏭ Sieger-Pick (Rest überspringen)
+                            </Btn>
+                          )}
+                        </div>
+                      </div>
                     );
                   }
                   if (cg.phase === 'WINNER_SELECT') {

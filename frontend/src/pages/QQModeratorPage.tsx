@@ -4879,7 +4879,8 @@ function SetupView({
           </div>
         </div>
 
-        {/* Sprache */}
+        {/* Sprache — 2026-05-20 (Setup-Audit P0.1): Klartext-Labels neben
+            Flaggen, weil reine Icons untergehen zwischen den anderen Toggles. */}
         <div style={settingRow}>
           <span style={settingLabel}>🌐 Sprache</span>
           <div style={segGroup}>
@@ -4887,24 +4888,31 @@ function SetupView({
               <button
                 key={lang}
                 onClick={() => emit('qq:setLanguage', { roomCode, language: lang })}
-                style={{ ...segPill(s.language === lang), fontSize: 18, padding: '4px 12px' }}
-                title={lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'Beide (Flip)'}
-              >{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</button>
+                style={{ ...segPill(s.language === lang), fontSize: 13, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                title={lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'Beide Sprachen im Wechsel'}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{lang === 'de' ? '🇩🇪' : lang === 'en' ? '🇬🇧' : '🌐'}</span>
+                <span style={{ fontWeight: 900 }}>{lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'Beide'}</span>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Finalrunde 4×4 Connections */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🔗 Finale (4×4)</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#EC4899')}>An</button>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
+        {/* Finalrunde 4×4 Connections — 2026-05-20 (Setup-Audit P1):
+            nur bei phases===4 zeigen. Bei 3-Runden-Quizzes ist Connections
+            irrelevant (kein „nach Runde 4"). */}
+        {phases === 4 && (
+          <div style={settingRow}>
+            <span style={settingLabel}>🔗 Finale (4×4)</span>
+            <div style={segGroup}>
+              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#EC4899')}>An</button>
+              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
+            </div>
+            <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+              {s.connectionsEnabled !== false ? '4×4 nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
+            </span>
           </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {s.connectionsEnabled !== false ? '4×4 nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
-          </span>
-        </div>
+        )}
 
         {/* Final-Wetten (Wolf 2026-05-09): vor letzter Runde tippen Teams Felder
             auf andere Teams. Bonus-Coins beim Final-Reveal. Toggle live nur im
@@ -4920,18 +4928,19 @@ function SetupView({
           </span>
         </div>
 
-        {/* Comeback (Wolf 2026-05-17): H/L-Mini-Game vor Final-Runde. Toggle
-            aus → Phase wechselt direkt zur Final-Runde, keine Comeback-Choice. */}
+        {/* Comeback — 2026-05-20 (Setup-Audit P0.5): Label-Klartext statt
+            kryptisches „H/L". Letztes Team holt auf via Mehr-oder-Weniger-
+            Mini-Game vor Final-Runde. */}
         <div style={settingRow}>
-          <span style={settingLabel}>🔄 Comeback</span>
+          <span style={settingLabel}>🔄 Comeback (Mehr-oder-Weniger)</span>
           <div style={segGroup}>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: true })} style={segPill((s as any).comebackEnabled !== false, '#F472B6')}>An</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: false })} style={segPill((s as any).comebackEnabled === false)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {(s as any).comebackEnabled !== false
-              ? 'Mehr-oder-Weniger vor Final-Runde'
-              : 'Direkt von vorletzter zur Final-Runde'}
+              ? 'Letztes Team kann via Mehr-oder-Weniger Felder klauen'
+              : 'Kein Comeback — direkt zur Final-Runde'}
           </span>
         </div>
 
@@ -4962,9 +4971,10 @@ function SetupView({
           </span>
         </div>
 
-        {/* Bluff: Moderator-Review-Toggle */}
+        {/* Bluff — 2026-05-20 (Setup-Audit P1): Label-Klartext „Bluff-Check"
+            war zu vage. Jetzt: „Bluffs vorab pruefen". */}
         <div style={settingRow}>
-          <span style={settingLabel}>🎭 Bluff-Check</span>
+          <span style={settingLabel}>🎭 Bluffs vorab prüfen</span>
           <div style={segGroup}>
             <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: false })} style={segPill(!s.bluffModeratorReview)}>Aus</button>
             <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: true })} style={segPill(!!s.bluffModeratorReview, '#F472B6')}>An</button>
@@ -5030,8 +5040,10 @@ function SetupView({
           </span>
         </div>
 
-        {/* Sound: Mute + Volume + Custom-Toggle in einer Reihe */}
-        <div style={{ ...settingRow, flexWrap: 'wrap' }}>
+        {/* Sound — 2026-05-20 (Setup-Audit P0.3): nur Musik+SFX-Toggles in
+            Quick-Settings. Volume-Slider in Advanced verlegt (90% der Mods
+            nutzen 100% oder 0%, fein-tuning ist Edge-Case). */}
+        <div style={settingRow}>
           <span style={settingLabel}>🔊 Sound</span>
           <div style={segGroup}>
             <button
@@ -5044,17 +5056,6 @@ function SetupView({
               style={segPill(!s.sfxMuted, '#22C55E')}
               title="SFX an/aus"
             >{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 160 }}>
-            <input
-              type="range" min={0} max={100} step={5}
-              value={Math.round((s.volume ?? 0.8) * 100)}
-              onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
-              style={{ flex: 1, accentColor: GOLD }}
-            />
-            <span style={{ fontSize: 12, color: '#fef3c7', minWidth: 36, fontWeight: 900, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
-              {Math.round((s.volume ?? 0.8) * 100)}%
-            </span>
           </div>
         </div>
       </div>
@@ -5091,6 +5092,24 @@ function SetupView({
 
         {advancedOpen && (
           <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Volume-Slider — 2026-05-20 (Setup-Audit P0.3): aus Quick-
+                Settings hierhin verlegt. Fein-Tuning ist Edge-Case, die
+                meisten Mods nutzen 100% oder An/Aus. */}
+            <div>
+              <div style={fieldLabel}>🔊 Gesamt-Lautstärke</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 320 }}>
+                <input
+                  type="range" min={0} max={100} step={5}
+                  value={Math.round((s.volume ?? 0.8) * 100)}
+                  onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
+                  style={{ flex: 1, accentColor: GOLD }}
+                />
+                <span style={{ fontSize: 13, color: '#fef3c7', minWidth: 42, fontWeight: 900, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                  {Math.round((s.volume ?? 0.8) * 100)}%
+                </span>
+              </div>
+            </div>
 
             {/* Comeback Timer */}
             <div>

@@ -4383,6 +4383,24 @@ function badgeStyle(color: string): React.CSSProperties {
 
 // ── Danger-Menu (Reset-Aktionen) ──────────────────────────────────────────────
 
+/** 2026-05-20: PIN-Holder fuer Dev-Endpoints in Production.
+ *  Wolf gibt einmal pro Session ein, danach session-storage-Cache.
+ *  Backend-Audit S3 (2026-05-19) hat /dev/fillTeams hinter ADMIN_PIN gepackt,
+ *  damit Pub-Gaeste nicht spammen koennen. Wolf-Mod gibt den PIN ein. */
+function getDevPin(): string | null {
+  const STORAGE_KEY = 'qq-admin-pin';
+  let pin = sessionStorage.getItem(STORAGE_KEY);
+  if (pin) return pin;
+  pin = window.prompt('Admin-PIN für Dev-Aktion (Bots / Auto-Antworten):');
+  if (!pin) return null;
+  sessionStorage.setItem(STORAGE_KEY, pin);
+  return pin;
+}
+
+function clearDevPin(): void {
+  sessionStorage.removeItem('qq-admin-pin');
+}
+
 function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: {
   onRestart: () => void; onBackToSetup: () => void;
   roomCode: string; phase: string;
@@ -4407,9 +4425,6 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
     try {
       // 2026-05-07 (Wolf-Bug 'dummys benutzen nicht das gewaehlte Set'):
       // Bot-Avatar-Pool aus aktivem Avatar-Set ableiten.
-      // - 'all'    → MEGA_EMOJI_POOL (bunter Mix, ohne Flaggen)
-      // - 'esc'    → ESC_FLAG_POOL (~47 ESC-Teilnehmer-Flaggen, voller Pool)
-      // - sonst    → set.avatars[] (8 Default-Slots des Sets)
       const setId = avatarSetId ?? 'all';
       const set = AVATAR_SETS.find(s => s.id === setId);
       const setAvatars: string[] = setId === 'all'
@@ -4417,12 +4432,19 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
         : setId === 'esc'
           ? ESC_FLAG_POOL
           : (set?.avatars ?? []);
+      const pin = getDevPin();
+      if (!pin) return;
       const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 8, setAvatars }),
+        body: JSON.stringify({ count: 8, setAvatars, pin }),
       });
       const data = await r.json();
-      if (!r.ok) alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+      if (r.status === 403) {
+        clearDevPin();
+        alert('PIN falsch — beim nächsten Klick erneut eingeben.');
+      } else if (!r.ok) {
+        alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+      }
     } finally { setBusy(null); }
   }
   return (
@@ -5550,11 +5572,16 @@ function LobbyView({
                           : setId === 'esc'
                             ? ESC_FLAG_POOL
                             : (set?.avatars ?? []);
+                        const pin = getDevPin();
+                        if (!pin) return;
                         const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
                           method: 'POST', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ count: n, setAvatars }),
+                          body: JSON.stringify({ count: n, setAvatars, pin }),
                         });
-                        if (!r.ok) {
+                        if (r.status === 403) {
+                          clearDevPin();
+                          alert('PIN falsch — beim nächsten Klick erneut eingeben.');
+                        } else if (!r.ok) {
                           const d = await r.json().catch(() => ({}));
                           alert(`Fehler: ${d.error ?? r.statusText}`);
                         }

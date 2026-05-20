@@ -9596,14 +9596,25 @@ app.post('/api/qq/crashReport', (req, res) => {
 });
 
 // ── Dev-only: Fill room with dummy teams for layout testing ──────────────────
-// 2026-05-19 (Security-Audit S3): zurueck auf NODE_ENV-Gate. Dev-Endpoints
-// (/dev/fillTeams, /dev/simAnswers, /dev/autoPlace) sind ungeschuetzt und
-// erlauben jedem Pub-Gast Room-Spam → strikt dev-only.
-// Wenn doch mal kurz in Prod gebraucht: ENV-Var QQ_DEV_FORCE_ENABLED=true setzen.
-const QQ_DEV_ENABLED = process.env.NODE_ENV !== 'production'
-  || process.env.QQ_DEV_FORCE_ENABLED === 'true';
+// 2026-05-19 (Security-Audit S3): vorher hardcoded true → jeder Pub-Gast
+// konnte /dev/fillTeams spammen. NODE_ENV-Gate blockierte aber Wolf-Mod
+// in Prod auch.
+// 2026-05-20: PIN-Gate statt Env-Gate. Endpoints bleiben in Prod erreichbar,
+// brauchen aber den ADMIN_PIN (kommt vom Frontend-Mod-Panel mit Adminrechten).
+// Pub-Gaeste sehen 403, Wolf-Mod kann weiter Bots adden.
+// In Dev (NODE_ENV !== 'production') wird der PIN-Check ueberspringt fuer
+// schnellere Iteration.
+function assertDevAccess(req: any, res: any): boolean {
+  if (process.env.NODE_ENV !== 'production') return true; // dev: kein Check
+  const pin = req.body?.pin ?? req.query?.pin ?? req.headers?.['x-admin-pin'];
+  if (!pin || pin !== ADMIN_PIN) {
+    res.status(403).json({ error: 'PIN erforderlich' });
+    return false;
+  }
+  return true;
+}
 app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
-  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  if (!assertDevAccess(req, res)) return;
   const { roomCode } = req.params;
   const room = getQQRoom(roomCode);
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
@@ -9662,7 +9673,7 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
 });
 
 app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
-  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  if (!assertDevAccess(req, res)) return;
   const { roomCode } = req.params;
   const room = getQQRoom(roomCode);
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
@@ -9755,7 +9766,7 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
 });
 
 app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
-  if (!QQ_DEV_ENABLED) return res.status(403).json({ error: 'Dev mode disabled' });
+  if (!assertDevAccess(req, res)) return;
   const { roomCode } = req.params;
   const room = getQQRoom(roomCode);
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });

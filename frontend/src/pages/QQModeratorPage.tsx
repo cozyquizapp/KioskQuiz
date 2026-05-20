@@ -4384,21 +4384,26 @@ function badgeStyle(color: string): React.CSSProperties {
 // ── Danger-Menu (Reset-Aktionen) ──────────────────────────────────────────────
 
 /** 2026-05-20: PIN-Holder fuer Dev-Endpoints in Production.
- *  Wolf gibt einmal pro Session ein, danach session-storage-Cache.
- *  Backend-Audit S3 (2026-05-19) hat /dev/fillTeams hinter ADMIN_PIN gepackt,
- *  damit Pub-Gaeste nicht spammen koennen. Wolf-Mod gibt den PIN ein. */
+ *  Wolf gibt einmal pro Browser ein (localStorage), danach nie wieder bis
+ *  Cache-Clear oder PIN-falsch (clearDevPin nach 403). Vorher sessionStorage
+ *  → Tab-Refresh hat Cache geleert, Wolf musste mehrfach eingeben. */
+const DEV_PIN_STORAGE_KEY = 'qq-admin-pin';
+
+function hasDevPin(): boolean {
+  return !!localStorage.getItem(DEV_PIN_STORAGE_KEY);
+}
+
 function getDevPin(): string | null {
-  const STORAGE_KEY = 'qq-admin-pin';
-  let pin = sessionStorage.getItem(STORAGE_KEY);
+  let pin = localStorage.getItem(DEV_PIN_STORAGE_KEY);
   if (pin) return pin;
-  pin = window.prompt('Admin-PIN für Dev-Aktion (Bots / Auto-Antworten):');
+  pin = window.prompt('Admin-PIN für Dev-Aktionen (Bots / Auto-Antworten):');
   if (!pin) return null;
-  sessionStorage.setItem(STORAGE_KEY, pin);
+  localStorage.setItem(DEV_PIN_STORAGE_KEY, pin);
   return pin;
 }
 
 function clearDevPin(): void {
-  sessionStorage.removeItem('qq-admin-pin');
+  localStorage.removeItem(DEV_PIN_STORAGE_KEY);
 }
 
 function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: {
@@ -4450,7 +4455,16 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
   return (
     <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => {
+          const willOpen = !open;
+          // 2026-05-20 (Wolf): PIN beim Oeffnen des Menues abfragen, damit
+          // die Buttons drinnen direkt klickbar sind ohne Mid-Action-Prompt.
+          if (willOpen && !hasDevPin()) {
+            const pin = getDevPin();
+            if (!pin) return; // User hat Prompt abgebrochen → Menue bleibt zu
+          }
+          setOpen(willOpen);
+        }}
         style={{
           padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
           border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)',

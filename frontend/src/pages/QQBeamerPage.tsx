@@ -1988,6 +1988,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   width={typeof window !== 'undefined' ? window.innerWidth : 1920}
                   height={typeof window !== 'undefined' ? window.innerHeight : 1080}
                   teams={renderState.teams}
+                  language={renderState.language}
                 />
               )}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}

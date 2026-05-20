@@ -380,6 +380,39 @@ export async function syncCozyGameSeedFlags(seedGames: any[]): Promise<number> {
   return updated;
 }
 
+/** 2026-05-20 Migration: Syncs `nameEn` + `descriptionEn` aus Seed → DB.
+ *  Hintergrund: i18n-Audit hat aufgedeckt dass alle 12 Seed-Spiele bisher nur
+ *  DE-Strings hatten. Seed-File hat jetzt EN-Varianten, diese Migration zieht
+ *  sie auf existing DB-Eintraege nach. Pro Feld: nur setzen wenn DB-Wert leer
+ *  (undefined). Wolf-Edits bleiben unangetastet. */
+export async function syncCozyGameSeedI18n(seedGames: any[]): Promise<number> {
+  let updated = 0;
+  for (const g of seedGames) {
+    try {
+      const existing = await CozyGameModel.findOne({ id: g.id });
+      if (!existing) continue;
+      let dirty = false;
+      const seedNameEn = g.nameEn;
+      const seedDescEn = g.descriptionEn;
+      if (seedNameEn && !(existing as any).nameEn) {
+        (existing as any).nameEn = seedNameEn;
+        dirty = true;
+      }
+      if (seedDescEn && !(existing as any).descriptionEn) {
+        (existing as any).descriptionEn = seedDescEn;
+        dirty = true;
+      }
+      if (dirty) {
+        await existing.save();
+        updated++;
+      }
+    } catch (err) {
+      console.warn(`[cozygames-i18n] failed to sync ${g.id}:`, err);
+    }
+  }
+  return updated;
+}
+
 // ============= QUARTER QUIZ GAME RESULTS =============
 
 const QQGameResultSchema = new mongoose.Schema({

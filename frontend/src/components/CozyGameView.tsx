@@ -10,6 +10,17 @@ import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
+import { useLangFlip } from '../cozyQuizShared';
+
+/** Helper: lang-aware Spiel-Name + Beschreibung mit Fallback. */
+function cgName(game: CozyGame | null, lang: 'de' | 'en'): string {
+  if (!game) return '';
+  return lang === 'en' && game.nameEn ? game.nameEn : game.name;
+}
+function cgDesc(game: CozyGame | null, lang: 'de' | 'en'): string {
+  if (!game) return '';
+  return lang === 'en' && game.descriptionEn ? game.descriptionEn : game.description;
+}
 
 // 2026-05-17 (Wolf-Feature CozyGames Phase 4): Beamer-Sub-View für COZY_GAME-Phase.
 // Skelett-Variante (Option A) — funktional, kein Polish-Glücksrad mit Bezier-Easing.
@@ -69,9 +80,13 @@ export interface CozyGameViewProps {
   /** 2026-05-17 v13: Team-Liste für Winner-Reveal-Slide (Avatare + Namen).
    *  Wird vom QQBeamerPage als renderState.teams durchgereicht. */
   teams?: QQTeam[];
+  /** 2026-05-20 (i18n-Audit): aus QQStateUpdate.language. 'both' wechselt
+   *  via useLangFlip alle 12s. Default 'de' wenn Parent nicht weitergibt. */
+  language?: string;
 }
 
-export default function CozyGameView({ round, width, height, teams }: CozyGameViewProps) {
+export default function CozyGameView({ round, width, height, teams, language }: CozyGameViewProps) {
+  const lang = useLangFlip(language ?? 'de');
   const [games, setGames] = useState<CozyGame[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -209,7 +224,9 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
   if (loading) {
     return (
       <FullScreenLayout width={width} height={height}>
-        <div style={{ color: '#94a3b8', fontSize: 24 }}>Lade Mini-Spiele…</div>
+        <div style={{ color: '#94a3b8', fontSize: 24 }}>
+          {lang === 'en' ? 'Loading mini-games…' : 'Lade Mini-Spiele…'}
+        </div>
       </FullScreenLayout>
     );
   }
@@ -219,7 +236,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
   // phase-spezifischen Render-Branches. Bei Phase-Wechsel wird der Wolf-
   // Container NICHT mehr unmountet → keine erneute Pop-Mount-Animation.
   const wolfMode = wolfModeForPhase(round.phase);
-  const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame);
+  const wolfSpeech = wolfSpeechForPhase(round.phase, activeGame, lang);
   // SpeechBubble bekommt Key pro Phase+Stage → Bubble-Animation re-triggert
   // bei Text-Wechsel, Wolf-Avatar bleibt konstant gemounted.
   const speechKey = `${round.phase}-${resultStage}-${activeGame?.id ?? 'na'}`;
@@ -227,7 +244,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
   let phaseContent: React.ReactNode = null;
   switch (round.phase) {
     case 'INTRO':
-      phaseContent = <IntroView width={width} height={height} slotKind={round.slotKind} />;
+      phaseContent = <IntroView width={width} height={height} slotKind={round.slotKind} lang={lang} />;
       break;
 
     case 'WHEEL_SPIN':
@@ -243,6 +260,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
           game={activeGame}
           accentColor={sliceColor}
           darkAccentColor={darkSliceColor}
+          lang={lang}
         />
       ) : (
         <WheelView
@@ -252,6 +270,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
           targetIdx={targetIdx}
           spinning={isSpin}
           revealedGame={isSpin ? null : activeGame}
+          lang={lang}
         />
       );
       break;
@@ -261,9 +280,6 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
       const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
-      // 2026-05-17 (Wolf Sequence-Mode): bei sequence → SequenceGameView mit
-      // aktuellem Team links + Timer rechts + Queue unten. Sonst standard
-      // parallel-Layout via GameDetailView.
       if (round.playMode === 'sequence') {
         phaseContent = (
           <SequenceGameView
@@ -278,11 +294,10 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
             sequenceCurrentIdx={round.sequenceCurrentIdx ?? 0}
             sequenceCompletedTeamIds={round.sequenceCompletedTeamIds ?? []}
             teams={teams ?? []}
+            lang={lang}
           />
         );
       } else {
-        // 2026-05-17 v7: Gleiche View wie WHEEL_RESULT 'detail', nur mit
-        // gesetztem gameEndsAt → Timer pop't rein. Card bleibt stable mounted.
         phaseContent = (
           <GameDetailView
             width={width} height={height}
@@ -290,6 +305,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
             accentColor={accent}
             darkAccentColor={darkAccent}
             gameEndsAt={round.gameEndsAt}
+            lang={lang}
           />
         );
       }
@@ -308,6 +324,7 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
           accentColor={accent}
           darkAccentColor={darkAccent}
           teams={teams ?? []}
+          lang={lang}
         />
       );
       break;
@@ -316,7 +333,9 @@ export default function CozyGameView({ round, width, height, teams }: CozyGameVi
     default:
       phaseContent = (
         <FullScreenLayout width={width} height={height}>
-          <div style={{ color: '#94a3b8' }}>Unbekannte CozyGame-Phase: {round.phase}</div>
+          <div style={{ color: '#94a3b8' }}>
+            {lang === 'en' ? 'Unknown CozyGame phase: ' : 'Unbekannte CozyGame-Phase: '}{round.phase}
+          </div>
         </FullScreenLayout>
       );
   }
@@ -346,11 +365,23 @@ function wolfModeForPhase(phase: CozyGameRoundState['phase']): WolfMode {
 
 // 2026-05-17 (Wolf): Sprechblase pro Sub-Phase. Spielname dynamisch im
 // Result/Active-Slot. Texte kurz + spielerisch.
-function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame | null): string {
+// 2026-05-20 (i18n-Audit): lang-Param ergaenzt. Vorher nur DE → englische
+// Spieler sahen deutsche Sprechblasen am Beamer.
+function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame | null, lang: 'de' | 'en'): string {
+  if (lang === 'en') {
+    switch (phase) {
+      case 'INTRO':         return "Which game will it be today?";
+      case 'WHEEL_SPIN':    return 'So exciting!';
+      case 'WHEEL_RESULT':  return game ? `Oho — ${cgName(game, 'en')}!` : 'Aha!';
+      case 'GAME_ACTIVE':   return "Let's go — 60 seconds!";
+      case 'WINNER_SELECT': return 'Who won?';
+      default:              return "Let's play!";
+    }
+  }
   switch (phase) {
     case 'INTRO':         return 'Welches Spiel wirds heute?';
     case 'WHEEL_SPIN':    return 'Spannend, spannend!';
-    case 'WHEEL_RESULT':  return game ? `Oho — ${game.name}!` : 'Aha!';
+    case 'WHEEL_RESULT':  return game ? `Oho — ${cgName(game, 'de')}!` : 'Aha!';
     case 'GAME_ACTIVE':   return 'Los geht\'s, 60 Sekunden!';
     case 'WINNER_SELECT': return 'Wer hat gewonnen?';
     default:              return 'Lasst uns spielen!';
@@ -429,12 +460,15 @@ function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }
 }
 
 // ── INTRO ────────────────────────────────────────────────────────────────────
-function IntroView({ width, height, slotKind }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot' }) {
+function IntroView({ width, height, slotKind, lang }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot'; lang: 'de' | 'en' }) {
+  const subtitle = slotKind === 'finalSlot'
+    ? (lang === 'en' ? '🏆 Final category' : '🏆 Final-Kategorie')
+    : (lang === 'en' ? 'Energy reset between rounds' : 'Energy-Reset zwischen den Runden');
+  const hint = lang === 'en'
+    ? "Get ready — the wheel decides which game you play."
+    : "Gleich geht's los — das Glücksrad entscheidet, welches Spiel ihr spielt.";
   return (
     <FullScreenLayout width={width} height={height}>
-      {/* 2026-05-17 v7 (Wolf 'pinata darf hovern oder satisfying effect'):
-          Hover-Animation — 3s ease-in-out infinite, leichte Drift up/down
-          + leichtes Rotate. Wirkt wie eine Pinata die in der Luft baumelt. */}
       <style>{`
         @keyframes cozyGamePinataHover {
           0%, 100% { transform: translateY(0) rotate(-3deg); }
@@ -461,13 +495,13 @@ function IntroView({ width, height, slotKind }: { width: number; height: number;
         fontSize: 'clamp(20px, 2vw, 32px)',
         color: '#cbd5e1', marginTop: -8, fontWeight: 600,
       }}>
-        {slotKind === 'finalSlot' ? '🏆 Final-Kategorie' : 'Energy-Reset zwischen den Runden'}
+        {subtitle}
       </div>
       <div style={{
         marginTop: 32,
         fontSize: 'clamp(14px, 1.3vw, 22px)', color: '#64748b', fontStyle: 'italic',
       }}>
-        Gleich geht's los — das Glücksrad entscheidet, welches Spiel ihr spielt.
+        {hint}
       </div>
     </FullScreenLayout>
   );
@@ -480,11 +514,12 @@ function IntroView({ width, height, slotKind }: { width: number; height: number;
 // der Visible-Slice-Position. Vorher konnte nach gespielten Spielen der
 // Slice-Index zur Pool-Position drifften → Slice-Farbe ≠ BG-Farbe nach Reveal.
 function WheelView({
-  width, height, slices, poolGameIds, targetIdx, spinning, revealedGame,
+  width, height, slices, poolGameIds, targetIdx, spinning, revealedGame, lang,
 }: {
   width: number; height: number;
   slices: CozyGame[]; poolGameIds: string[]; targetIdx: number;
   spinning: boolean; revealedGame?: CozyGame | null;
+  lang: 'de' | 'en';
 }) {
   // 2026-05-17 (P2 #6): Adaptive Anzeige — bei ≤3 Spielen kein vollwertiges
   // Rad-Theater (Pizza-Effekt), sondern direkter Card-Pop wenn revealed.
@@ -506,15 +541,15 @@ function WheelView({
           }}>
             <span style={{ fontSize: 96 }}>{revealedGame.emoji}</span>
             <div>
-              <div style={{ fontSize: 'clamp(36px, 4vw, 72px)', fontWeight: 900 }}>{revealedGame.name}</div>
+              <div style={{ fontSize: 'clamp(36px, 4vw, 72px)', fontWeight: 900 }}>{cgName(revealedGame, lang)}</div>
               <div style={{ fontSize: 'clamp(16px, 1.4vw, 26px)', color: '#cbd5e1', marginTop: 8, maxWidth: 700 }}>
-                {revealedGame.description}
+                {cgDesc(revealedGame, lang)}
               </div>
             </div>
           </div>
         )}
         <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#64748b', fontStyle: 'italic', marginTop: 24 }}>
-          {spinning ? `Wählt aus ${slices.length} Spielen …` : ''}
+          {spinning ? (lang === 'en' ? `Choosing from ${slices.length} games …` : `Wählt aus ${slices.length} Spielen …`) : ''}
         </div>
       </FullScreenLayout>
     );
@@ -692,16 +727,17 @@ function WheelView({
 // Eine gemeinsame Reveal-View für beide Phasen. Card + Description bleiben
 // stable mounted, beim Wechsel WHEEL_RESULT→GAME_ACTIVE fadet nur der Timer
 // rein. React-Instanz bleibt gleich → keine erneute Card-Animation.
-function GameDetailView({ width, height, game, accentColor, darkAccentColor, gameEndsAt }: {
+function GameDetailView({ width, height, game, accentColor, darkAccentColor, gameEndsAt, lang }: {
   width: number; height: number;
   game: CozyGame | null;
   accentColor: string;
   darkAccentColor: string;
   gameEndsAt?: number | null;
+  lang: 'de' | 'en';
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   return (
@@ -778,7 +814,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
         opacity: 0,
         animation: 'cozyGameDetailFade 0.4s ease-out 0.15s both',
       }}>
-        {game.name}
+        {cgName(game, lang)}
       </div>
       <div style={{
         fontSize: 'clamp(16px, 1.6vw, 26px)',
@@ -790,7 +826,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
         opacity: 0,
         animation: 'cozyGameDetailFade 0.4s ease-out 0.25s both',
       }}>
-        {game.description}
+        {cgDesc(game, lang)}
       </div>
       {game.materialTags.length > 0 && (
         <div style={{
@@ -926,7 +962,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 function SequenceGameView({
   width, height, game, accentColor, darkAccentColor, gameEndsAt,
   timerPausedRemainingMs, timerDurationSec,
-  sequenceOrder, sequenceCurrentIdx, sequenceCompletedTeamIds, teams,
+  sequenceOrder, sequenceCurrentIdx, sequenceCompletedTeamIds, teams, lang,
 }: {
   width: number; height: number;
   game: CozyGame | null;
@@ -939,10 +975,11 @@ function SequenceGameView({
   sequenceCurrentIdx: number;
   sequenceCompletedTeamIds: string[];
   teams: QQTeam[];
+  lang: 'de' | 'en';
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   const teamById = new Map(teams.map(t => [t.id, t]));
@@ -1020,7 +1057,7 @@ function SequenceGameView({
                   letterSpacing: '0.05em', textTransform: 'uppercase',
                   marginBottom: 4,
                 }}>
-                  {sequenceCurrentIdx + 1} / {sequenceOrder.length} · jetzt dran
+                  {sequenceCurrentIdx + 1} / {sequenceOrder.length} · {lang === 'en' ? 'now playing' : 'jetzt dran'}
                 </div>
                 <div lang="de" style={{
                   fontSize: 'clamp(32px, 4vw, 64px)',
@@ -1035,7 +1072,7 @@ function SequenceGameView({
               </div>
             </>
           ) : (
-            <div style={{ color: '#94a3b8' }}>Kein Team</div>
+            <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'No team' : 'Kein Team'}</div>
           )}
         </div>
 
@@ -1103,7 +1140,7 @@ function SequenceGameView({
           textAlign: 'center',
           textShadow: '0 3px 16px rgba(0,0,0,0.45)',
         }}>
-          {game.name}
+          {cgName(game, lang)}
         </div>
         <div style={{
           fontSize: 'clamp(14px, 1.3vw, 22px)',
@@ -1112,7 +1149,7 @@ function SequenceGameView({
           textAlign: 'center',
           lineHeight: 1.4,
         }}>
-          {game.description}
+          {cgDesc(game, lang)}
         </div>
       </div>
 
@@ -1174,13 +1211,14 @@ function SequenceGameView({
 //      mit Game-Info als Kontext.
 //   2. winnerTeamIds.length > 0 → Winner-Hero-Slide: große Avatar(e) + Name(n)
 //      mit 🏆-Headline + Game-Caption. Game-Info tritt zurück.
-function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, darkAccentColor, teams }: {
+function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, darkAccentColor, teams, lang }: {
   width: number; height: number;
   game: CozyGame | null;
   winnerTeamIds: string[];
   accentColor: string;
   darkAccentColor: string;
   teams: QQTeam[];
+  lang: 'de' | 'en';
 }) {
   // 2026-05-17 P4 (Wolf 'kein sound bei cozygame gewinnerauflösung'):
   // Climax-Akkord + Fanfare wenn winnerTeamIds von leer → gefüllt
@@ -1202,7 +1240,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
 
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>Lade Spiel-Details…</div>
+      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   const winners = winnerTeamIds
@@ -1260,7 +1298,9 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             textShadow: '0 6px 28px rgba(0,0,0,0.55)',
             animation: 'cozyGameWinnerHeadline 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}>
-            🏆 {winners.length === 1 ? 'Gewonnen!' : `${winners.length} Sieger!`}
+            🏆 {winners.length === 1
+              ? (lang === 'en' ? 'You won!' : 'Gewonnen!')
+              : (lang === 'en' ? `${winners.length} winners!` : `${winners.length} Sieger!`)}
           </div>
           {/* Avatar-Row (1 oder N — bei Tie nebeneinander) */}
           <div style={{
@@ -1321,7 +1361,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             animation: 'cozyGameWinnerHeadline 0.4s ease-out 0.5s both',
           }}>
             <span style={{ fontSize: 'clamp(28px, 3vw, 48px)', lineHeight: 1 }}>{game.emoji}</span>
-            <span><strong>{game.name}</strong> — gewinnt 1 Aktion auf dem Grid</span>
+            <span><strong>{cgName(game, lang)}</strong> — {lang === 'en' ? 'wins 1 action on the grid' : 'gewinnt 1 Aktion auf dem Grid'}</span>
           </div>
         </>
       ) : (
@@ -1342,7 +1382,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             textAlign: 'center',
             textShadow: '0 4px 24px rgba(0,0,0,0.5)',
           }}>
-            {game.name}
+            {cgName(game, lang)}
           </div>
           <div style={{
             height: 'clamp(180px, 22vh, 260px)',
@@ -1357,10 +1397,10 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
               animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
             }}>
               <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900 }}>
-                ⏱️ Zeit abgelaufen!
+                ⏱️ {lang === 'en' ? "Time's up!" : 'Zeit abgelaufen!'}
               </div>
               <div style={{ fontSize: 'clamp(14px, 1.3vw, 22px)', marginTop: 6, opacity: 0.9 }}>
-                ⏳ Moderator wählt den Sieger …
+                ⏳ {lang === 'en' ? 'Moderator picks the winner …' : 'Moderator wählt den Sieger …'}
               </div>
             </div>
           </div>

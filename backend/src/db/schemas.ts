@@ -355,22 +355,18 @@ export async function seedCozyGamesIfMissing(seedGames: any[]): Promise<number> 
 }
 
 /** 2026-05-19 Migration: Syncs `parallel`-Flag aus Seed → DB für Seed-Spiele.
- *  Hintergrund: das parallel-Feld wurde nach dem initialen Seed eingefuehrt;
- *  bestehende DB-Einträge haben es noch auf `undefined` (= parallel default).
- *  Diese Migration zieht die seed-File-Werte einmalig nach. Sicher weil das
- *  parallel-Feld bisher keine UI-Edits hatte. */
+ *  2026-05-20: auf findOneAndUpdate+$set umgestellt — direct-assignment auf
+ *  strict:false-Docs registriert Mongoose den Change nicht zuverlaessig. */
 export async function syncCozyGameSeedFlags(seedGames: any[]): Promise<number> {
   let updated = 0;
   for (const g of seedGames) {
     try {
-      const existing = await CozyGameModel.findOne({ id: g.id });
+      const existing = await CozyGameModel.findOne({ id: g.id }).lean();
       if (!existing) continue;
       const seedParallel = g.parallel;
       const dbParallel = (existing as any).parallel;
-      // Nur updaten wenn sich der Wert tatsaechlich aendert (undefined != false beachten)
       if (seedParallel !== dbParallel) {
-        (existing as any).parallel = seedParallel;
-        await existing.save();
+        await CozyGameModel.updateOne({ id: g.id }, { $set: { parallel: seedParallel } });
         updated++;
       }
     } catch (err) {
@@ -381,29 +377,21 @@ export async function syncCozyGameSeedFlags(seedGames: any[]): Promise<number> {
 }
 
 /** 2026-05-20 Migration: Syncs `nameEn` + `descriptionEn` aus Seed → DB.
- *  Hintergrund: i18n-Audit hat aufgedeckt dass alle 12 Seed-Spiele bisher nur
- *  DE-Strings hatten. Seed-File hat jetzt EN-Varianten, diese Migration zieht
- *  sie auf existing DB-Eintraege nach. Pro Feld: nur setzen wenn DB-Wert leer
- *  (undefined). Wolf-Edits bleiben unangetastet. */
+ *  Wolf-Edits bleiben unangetastet (nur leere Felder werden gefuellt).
+ *  Nutzt updateOne+$set statt save() — siehe Kommentar bei syncCozyGameSeedFlags. */
 export async function syncCozyGameSeedI18n(seedGames: any[]): Promise<number> {
   let updated = 0;
   for (const g of seedGames) {
     try {
-      const existing = await CozyGameModel.findOne({ id: g.id });
+      const existing = await CozyGameModel.findOne({ id: g.id }).lean();
       if (!existing) continue;
-      let dirty = false;
       const seedNameEn = g.nameEn;
       const seedDescEn = g.descriptionEn;
-      if (seedNameEn && !(existing as any).nameEn) {
-        (existing as any).nameEn = seedNameEn;
-        dirty = true;
-      }
-      if (seedDescEn && !(existing as any).descriptionEn) {
-        (existing as any).descriptionEn = seedDescEn;
-        dirty = true;
-      }
-      if (dirty) {
-        await existing.save();
+      const patch: Record<string, string> = {};
+      if (seedNameEn && !(existing as any).nameEn) patch.nameEn = seedNameEn;
+      if (seedDescEn && !(existing as any).descriptionEn) patch.descriptionEn = seedDescEn;
+      if (Object.keys(patch).length > 0) {
+        await CozyGameModel.updateOne({ id: g.id }, { $set: patch });
         updated++;
       }
     } catch (err) {

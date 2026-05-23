@@ -1686,7 +1686,7 @@ function getOrderedRanks(N: number): number[] {
 //   2. Spotlight-Cone (goldener Lichtkegel von oben auf P1)
 //   3. Headline-Banner („SIEGER: {Name}") gold/pink, slide-down
 // Greift NUR bei isFinish — kein Conflict mit der Race-Choreo davor.
-function RaceFinishHero({ winner }: { winner: QQTeam }) {
+function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' }) {
   const pennantColors = ['#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899'];
   return (
     <>
@@ -1755,7 +1755,7 @@ function RaceFinishHero({ winner }: { winner: QQTeam }) {
           textTransform: 'uppercase',
           textShadow: '0 0 14px rgba(251,191,36,0.8), 0 2px 6px rgba(0,0,0,0.7)',
         }}>
-          🏆 Sieger
+          🏆 {lang === 'de' ? 'Sieger' : 'Winner'}
         </div>
         <div style={{
           fontSize: 'clamp(38px, 4.6cqw, 76px)',
@@ -1777,7 +1777,7 @@ function RaceFinishHero({ winner }: { winner: QQTeam }) {
   );
 }
 
-function RaceFinalSlide({ finalRanking, lang: _lang }: {
+function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const N = finalRanking.length;
@@ -2031,7 +2031,7 @@ function RaceFinalSlide({ finalRanking, lang: _lang }: {
 
       {/* 2026-05-11 Design-Audit Top-3-Pack — füllt die tote Top-Zone bei Finish.
           Greift NUR bei isFinish, damit Race-Choreo unverändert bleibt. */}
-      {isFinish && p1 && <RaceFinishHero winner={p1.team} />}
+      {isFinish && p1 && <RaceFinishHero winner={p1.team} lang={lang} />}
 
       {/* 2026-05-10 (Wolf 'Countdown 3-2-1 vor Race'): Auto-Choreo-Overlay
           während phase==='countdown'. Avatare schweben im Hintergrund, der

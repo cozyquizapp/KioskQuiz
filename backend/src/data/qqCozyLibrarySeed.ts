@@ -716,6 +716,18 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Eiskunstlauf', answerEn: 'Figure Skating',
     funFact: 'Alysa Liu (USA, *2005) holte bei den Olympischen Winterspielen 2026 in Mailand-Cortina Gold im Eiskunstlauf. Mit 13 wurde sie 2019 jüngste US-Meisterin der Geschichte — pausierte 2022 ihre Karriere und kam 2024 stärker zurück. Sie widerspricht vielen Klassik-Klischees des Eiskunstlaufs: kurze Haare, asiatisch-amerikanisch, vegan, sehr fokussiert auf Athletik statt Glamour.',
   }),
+  item('first-animal-space', 'BUNTE_TUETE', 'Wissenschaft', {
+    text: 'Welches Tier war 1947 das erste Lebewesen, das die offizielle Weltraum-Grenze (Kármán-Linie, 100 km) überquert hat?',
+    textEn: 'Which animal in 1947 became the first living being to cross the official space boundary (Kármán line, 100 km)?',
+    answer: 'Fruchtfliegen',
+    answerEn: 'Fruit flies',
+    bunteTuete: {
+      kind: 'bluff',
+      realAnswer: 'Fruchtfliegen',
+      realAnswerEn: 'Fruit flies',
+    },
+    funFact: 'Am 20. Februar 1947 startete die US-Rakete V-2 (Nr. 20) mit Fruchtfliegen (Drosophila melanogaster) auf 109 km Höhe — knapp über der Kármán-Linie. Sie überlebten dank Fallschirm. Häufige Falle: Laika (Hund, Sowjet 1957) war das erste Tier in der ERDUMLAUFBAHN, nicht das erste im Weltall. Das erste Säugetier im All war 1949 der Rhesusaffe Albert II — er überlebte den Flug nicht.',
+  }),
   item('flags-no-red', 'BUNTE_TUETE', 'Geographie', {
     text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',
     textEn: 'Name a country whose national flag contains no red!',

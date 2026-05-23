@@ -3998,7 +3998,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackStealsDone:   room.comebackStealsDone ?? [],
     comebackStealPaused:  !!room._comebackStealPaused,
     comebackHL:           room.comebackHL ?? null,
-    comebackHLTimerSec:   room.comebackHLTimerSec ?? 10,
+    comebackHLTimerSec:   room.comebackHLTimerSec ?? QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
     connections:          room.connections ?? null,
     connectionsTimerSec:  room.connectionsTimerSec ?? QQ_CONNECTIONS_TIMER_DEFAULT_SEC,
     connectionsMaxFails:  room.connectionsMaxFails ?? QQ_CONNECTIONS_MAX_FAILS_DEFAULT,

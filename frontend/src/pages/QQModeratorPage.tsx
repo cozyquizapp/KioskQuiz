@@ -5150,9 +5150,9 @@ function SetupView({
                   type="number"
                   min={3}
                   max={60}
-                  value={s.comebackHLTimerSec ?? 10}
+                  value={s.comebackHLTimerSec ?? 20}
                   onChange={e => {
-                    const v = Math.max(3, Math.min(60, Number(e.target.value) || 10));
+                    const v = Math.max(3, Math.min(60, Number(e.target.value) || 20));
                     emit('qq:comebackHLTimer', { roomCode, seconds: v });
                   }}
                   style={{

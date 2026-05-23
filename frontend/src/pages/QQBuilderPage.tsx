@@ -426,6 +426,16 @@ export default function QQBuilderPage() {
   const [showImport, setShowImport] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [showCozyGames, setShowCozyGames] = useState(false);
+  // 2026-05-20 (Wolf-Wunsch): inline Library-Side-Panel mit Click-to-Insert.
+  // Vorher: Wolf musste zur /library wechseln, Ziel-Draft waehlen, kopieren,
+  // zurueckwechseln. Jetzt: Drawer rechts im Builder, ein Klick fuegt ein.
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryItems, setLibraryItems] = useState<any[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libSearch, setLibSearch] = useState('');
+  const [libCategory, setLibCategory] = useState<string>('');
+  const [libTopic, setLibTopic] = useState<string>('');
+  const [libTopics, setLibTopics] = useState<string[]>([]);
   const [validationPrompt, setValidationPrompt] = useState<{ draft: QQDraft } | null>(null);
   const [optionUploadTarget, setOptionUploadTarget] = useState<{ questionId: string; optionIndex: number } | null>(null);
   // 2026-05-10 CozyBuilder Pack A #4: kurze Save-Success-Cascade nach Save.
@@ -709,6 +719,53 @@ export default function QQBuilderPage() {
     }
     await saveDraftRaw(draft);
   }
+  // ── 2026-05-20: Library-Side-Panel Loader ─────────────────────────────────
+  useEffect(() => {
+    if (!showLibrary) return;
+    let cancelled = false;
+    setLibraryLoading(true);
+    const params = new URLSearchParams();
+    if (libSearch.trim()) params.set('search', libSearch.trim());
+    if (libCategory) params.set('category', libCategory);
+    if (libTopic) params.set('topic', libTopic);
+    params.set('limit', '200');
+    fetch(`/api/qq/library/items?${params.toString()}`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        setLibraryItems(Array.isArray(data.items) ? data.items : []);
+      })
+      .catch(() => { if (!cancelled) setLibraryItems([]); })
+      .finally(() => { if (!cancelled) setLibraryLoading(false); });
+    return () => { cancelled = true; };
+  }, [showLibrary, libSearch, libCategory, libTopic]);
+
+  // Topics nur einmal beim ersten Oeffnen laden.
+  useEffect(() => {
+    if (!showLibrary || libTopics.length > 0) return;
+    fetch('/api/qq/library/topics').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setLibTopics(d);
+    }).catch(() => {});
+  }, [showLibrary, libTopics.length]);
+
+  /**
+   * Click-to-Insert: Library-Item in ersten leeren Slot des aktiven Drafts.
+   * Gleiche Logik wie /library:copyQuestionToDraft, aber auf activeDraft.
+   */
+  async function insertLibraryItem(item: any) {
+    if (!activeDraft) return;
+    const slotIndex = activeDraft.questions.findIndex(q => !q.text.trim());
+    if (slotIndex === -1) {
+      alert('Kein freier Slot im Draft — erst eine Frage leeren oder Draft erweitern.');
+      return;
+    }
+    const newQ = { ...item, id: `${item.id}-copy-${Date.now().toString(36)}` };
+    const newQuestions = [...activeDraft.questions];
+    newQuestions[slotIndex] = newQ as QQQuestion;
+    const newDraft = { ...activeDraft, questions: newQuestions, updatedAt: Date.now() };
+    await saveDraftRaw(newDraft);
+  }
+
   /**
    * 2026-05-20: Per-Draft DeepL-Translate (bidirektional, nur fehlende Felder).
    * Spart DeepL-Kontingent gegenueber dem Library-weiten Re-Translate, weil
@@ -1296,6 +1353,13 @@ export default function QQBuilderPage() {
               >🪅 CozyGames {activeDraft.cozyGamesEnabled ? `✓ (${(activeDraft.cozyGamesPool ?? []).length})` : ''}</button>
               <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
               <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+              {/* 2026-05-20 (Wolf): Library-Side-Panel Toggle. Click → Drawer
+                  rechts mit Suche + Filter + Click-to-Insert. */}
+              <button
+                onClick={() => setShowLibrary(v => !v)}
+                style={btnStyle(showLibrary ? '#A78BFA' : '#64748B')}
+                title="Fragenbibliothek einblenden — Click auf Item fügt es in leeren Slot ein"
+              >📚 Bibliothek {showLibrary ? '✕' : ''}</button>
               {/* 2026-05-20 (Wolf-Wunsch): Per-Draft DeepL-Translate, nur
                   fehlende Felder. Counter im Label zeigt direkt wieviele
                   Felder noch ohne Pair sind. Bidirektional. */}
@@ -1540,6 +1604,141 @@ export default function QQBuilderPage() {
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={() => activeQ && uploadImage(activeQ.id)} />
       <input ref={optionFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadOptionImage} />
+
+      {/* 2026-05-20 (Wolf): Library-Side-Drawer rechts. Click-to-Insert.
+          Fixed position, schiebt sich von rechts rein wenn showLibrary=true. */}
+      {showLibrary && activeDraft && (
+        <div style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(420px, 90vw)',
+          background: '#0f172a', borderLeft: '1px solid rgba(167,139,250,0.35)',
+          boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
+          display: 'flex', flexDirection: 'column',
+          zIndex: 200,
+          animation: 'qqLibSlideIn 0.25s ease-out both',
+        }}>
+          <style>{`@keyframes qqLibSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+          {/* Header */}
+          <div style={{
+            padding: '14px 16px', borderBottom: '1px solid rgba(167,139,250,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#A78BFA' }}>📚 Fragenbibliothek</div>
+            <button
+              onClick={() => setShowLibrary(false)}
+              style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 22, cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit' }}
+              title="Schließen"
+            >✕</button>
+          </div>
+          {/* Filter */}
+          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <input
+              type="text"
+              placeholder="🔍 Suche (Text / Antwort)"
+              value={libSearch}
+              onChange={e => setLibSearch(e.target.value)}
+              style={{
+                padding: '8px 12px', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(0,0,0,0.3)', color: '#e2e8f0',
+                fontFamily: 'inherit', fontSize: 13,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(['', 'SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'] as const).map(cat => (
+                <button
+                  key={cat || 'all'}
+                  onClick={() => setLibCategory(cat)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800,
+                    border: `1px solid ${libCategory === cat ? '#A78BFA' : 'rgba(255,255,255,0.12)'}`,
+                    background: libCategory === cat ? 'rgba(167,139,250,0.18)' : 'transparent',
+                    color: libCategory === cat ? '#A78BFA' : '#94a3b8',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >{cat || 'Alle'}</button>
+              ))}
+            </div>
+            {libTopics.length > 0 && (
+              <select
+                value={libTopic}
+                onChange={e => setLibTopic(e.target.value)}
+                style={{
+                  padding: '6px 10px', borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'rgba(0,0,0,0.3)', color: '#e2e8f0',
+                  fontFamily: 'inherit', fontSize: 12,
+                }}
+              >
+                <option value="">🏷️ Alle Topics</option>
+                {libTopics.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            )}
+          </div>
+          {/* Items-Liste */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {libraryLoading && (
+              <div style={{ color: '#64748b', fontSize: 12, textAlign: 'center', padding: 16 }}>⏳ Lade…</div>
+            )}
+            {!libraryLoading && libraryItems.length === 0 && (
+              <div style={{ color: '#64748b', fontSize: 12, textAlign: 'center', padding: 16 }}>
+                Keine Items gefunden — Filter zurücksetzen?
+              </div>
+            )}
+            {libraryItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => insertLibraryItem(item)}
+                style={{
+                  display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch',
+                  textAlign: 'left',
+                  padding: '8px 10px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#e2e8f0', fontFamily: 'inherit', cursor: 'pointer',
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(167,139,250,0.12)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#A78BFA';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }}
+                title={`Click → in leeren Slot einfügen (${item.text})`}
+              >
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 10, fontWeight: 800, opacity: 0.7 }}>
+                  <span style={{
+                    padding: '1px 6px', borderRadius: 4,
+                    background: 'rgba(167,139,250,0.18)', color: '#A78BFA',
+                  }}>{item.category}</span>
+                  {item.topic && (
+                    <span style={{
+                      padding: '1px 6px', borderRadius: 4,
+                      background: 'rgba(255,255,255,0.06)', color: '#94a3b8',
+                    }}>{item.topic}</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3, color: '#e2e8f0' }}>
+                  {item.text || item.textEn || '(ohne Text)'}
+                </div>
+                {item.answer && (
+                  <div style={{ fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
+                    → {item.answer}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          {/* Footer-Hint */}
+          <div style={{
+            padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,0.06)',
+            fontSize: 10, color: '#64748b', textAlign: 'center',
+          }}>
+            Click auf Item → fügt es in ersten leeren Slot des Drafts ein
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5674,42 +5674,59 @@ export function qqResolveFinalBets(room: QQRoomState): void {
     }
   }
   if (meisterklauerCount === 0) meisterklauer = null;
-  // Speedy: niedrigste avg(submittedAt - firstAnswerOfQuestion) bei korrekten
-  // Antworten. Aus questionHistory.
+  // Speedy Gonzales: am OEFTESTEN am schnellsten. Pro Frage zaehlt, wer
+  // als ERSTER eingereicht hat (nur korrekte Antworten zaehlen). Team mit
+  // hoechstem Count gewinnt.
+  // 2026-05-23 (Wolf-Live-Test #N): Vorher avg(reaction-time) bei correct-
+  // Antworten — das machte den 0,0s-Bug-Eindruck (#F). Jetzt count-basiert
+  // (intuitiver: "X × zuerst"). avgMs als Sekundaer-Stat behalten fuer
+  // Tie-Break + Anzeige im FunFact.
+  const firstCount: Record<string, number> = {};
   const speedSum: Record<string, number> = {};
   const speedCount: Record<string, number> = {};
   for (const h of room.questionHistory) {
     const answers = (h as any).answers as Array<{ teamId: string; submittedAt: number }> | undefined;
     if (!answers || answers.length === 0) continue;
-    // 2026-05-23 (Live-Test-Bug #F): Baseline ist Question-Start (gespeichert
-    // in h.startedAt seit Live-Test), Fallback auf min(submittedAt) für alte
-    // Spiele ohne startedAt. Vorher hatte das schnellste Team immer 0,0s
-    // weil es als Baseline für alle anderen diente — jetzt zeigt es seine
-    // ECHTE Reaktionszeit gegen den Question-Start an.
     const baseline = (h as any).startedAt ?? Math.min(...answers.map(a => a.submittedAt));
     const correctSet = new Set([...((h as any).correctTeamIds ?? []), ...(h.correctTeamId ? [h.correctTeamId] : [])]);
+    // Avg-Reaction-Stats (Tie-Break + FunFact).
     for (const a of answers) {
       if (!correctSet.has(a.teamId)) continue;
       speedSum[a.teamId] = (speedSum[a.teamId] ?? 0) + Math.max(0, a.submittedAt - baseline);
       speedCount[a.teamId] = (speedCount[a.teamId] ?? 0) + 1;
     }
+    // Count-Win-Logic: wer war als ERSTER unter den korrekten Antworten?
+    const correctAnswers = answers.filter(a => correctSet.has(a.teamId));
+    if (correctAnswers.length === 0) continue;
+    const firstCorrect = correctAnswers.reduce((earliest, cur) =>
+      cur.submittedAt < earliest.submittedAt ? cur : earliest
+    );
+    firstCount[firstCorrect.teamId] = (firstCount[firstCorrect.teamId] ?? 0) + 1;
   }
   let speedy: string | null = null;
+  let speedyFirstCount = 0;
   let speedyAvgMs = 0;
-  let bestAvg = Infinity;
+  let bestCount = 0;
+  let tieBestAvg = Infinity;
   for (const id of teamIds) {
-    if (!speedCount[id] || speedCount[id] === 0) continue;
-    const avg = speedSum[id] / speedCount[id];
-    if (avg < bestAvg) {
-      bestAvg = avg;
+    const cnt = firstCount[id] ?? 0;
+    if (cnt === 0) continue;
+    const avg = speedCount[id] ? speedSum[id] / speedCount[id] : Infinity;
+    // Primary: hoechster firstCount. Tie-Break: niedrigster avg (snelleres avg).
+    if (cnt > bestCount || (cnt === bestCount && avg < tieBestAvg)) {
+      bestCount = cnt;
+      tieBestAvg = avg;
       speedy = id;
+      speedyFirstCount = cnt;
       speedyAvgMs = avg;
     }
   }
   room.endAwards = {
     underdog,
     meisterklauer, meisterklauerCount,
-    speedy, speedyAvgMs,
+    // speedyAvgMs als Legacy-Feld behalten (Frontend-Backward-Compat),
+    // speedyFirstCount als primaerer Award-Wert ("X × zuerst").
+    speedy, speedyAvgMs, speedyFirstCount,
   };
 
   // KEIN Cell-Removal mehr — alle Felder bleiben am Brett (Tipp-Variante).

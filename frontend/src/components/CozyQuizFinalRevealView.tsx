@@ -1450,6 +1450,11 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
   const metric = !winner ? null
     : awardIndex === 1 && awards?.meisterklauerCount
       ? (de ? `${awards.meisterklauerCount}× geklaut` : `${awards.meisterklauerCount}× stolen`)
+    // 2026-05-23 (Wolf-Live-Test #N): Speedy-Gonzales jetzt count-basiert
+    // ("am öftesten zuerst"). speedyFirstCount > 0 = neu, sonst Fallback
+    // auf alten avgMs-Look fuer Pre-2026-05-23-Spiele.
+    : awardIndex === 2 && (awards as any)?.speedyFirstCount
+      ? (de ? `${(awards as any).speedyFirstCount}× zuerst` : `${(awards as any).speedyFirstCount}× first`)
     : awardIndex === 2 && awards?.speedyAvgMs ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
     : null;
 

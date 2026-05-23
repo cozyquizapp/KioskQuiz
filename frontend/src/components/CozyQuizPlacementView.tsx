@@ -213,6 +213,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             teamPhaseStats={s.teamPhaseStats}
             correctTeamId={s.correctTeamId}
             eurovisionMode={!!s.theme?.eurovisionMode}
+            lang={lang}
           />
         </div>
       </div>

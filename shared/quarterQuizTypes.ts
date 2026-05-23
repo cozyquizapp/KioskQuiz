@@ -1235,11 +1235,16 @@ export interface QQEndAwards {
   meisterklauer: string | null;
   /** Anzahl Klaus des Meisterklauers (zur Anzeige). */
   meisterklauerCount: number;
-  /** Team mit kürzester avg-Antwortzeit relativ zur ersten korrekten Antwort
-   *  pro Frage. null wenn keine Daten. */
+  /** Speedy-Gonzales-Award: Team das am ÖFTESTEN als Erster (mit korrekter
+   *  Antwort) eingereicht hat. Tie-Break: niedrigste avg-Reaktionszeit.
+   *  null wenn keine Daten. */
   speedy: string | null;
-  /** Avg-Zeit in ms. */
+  /** Avg-Reaktionszeit in ms (Tie-Break + FunFact-Stat). */
   speedyAvgMs: number;
+  /** 2026-05-23 (Wolf-Live-Test #N): Count "wie oft war Team als erstes
+   *  Korrekt-Submitter". Primärer Award-Wert. Optional für Backward-Compat
+   *  mit alten Game-Results vor diesem Date. */
+  speedyFirstCount?: number;
 }
 
 /** Pro Team aufgelöstes Final-Tipp-Ergebnis.

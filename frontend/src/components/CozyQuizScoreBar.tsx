@@ -18,7 +18,7 @@ import { QQEmojiIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 
-export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode }: {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];
   activeTeamId?: string | null;
   teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
@@ -27,6 +27,8 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   activeActionDesc?: string;
   /** 2026-05-07 (Wolf-ESC): wenn true, Joker-Pile nutzt EU-Star-Variante. */
   eurovisionMode?: boolean;
+  /** 2026-05-23 (Live-Test #J): Lang fuer Feld/cell-Unit-Label. Default 'de'. */
+  lang?: 'de' | 'en';
 }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
   const prevScores = useRef<Record<string, number>>({});
@@ -344,7 +346,9 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               textAlign: 'left',
               fontVariantNumeric: 'tabular-nums',
             }}>
-              {t.largestConnected === 1 ? 'Feld' : 'Felder'}
+              {lang === 'en'
+                ? (t.largestConnected === 1 ? 'cell' : 'cells')
+                : (t.largestConnected === 1 ? 'Feld' : 'Felder')}
             </span>
             {/* Float +N — knapp über der Zahl */}
             {floaters.filter(f => f.teamId === t.id).map(f => (

@@ -1076,18 +1076,23 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
     }
   }
 
-  // ⚡ Speedy Gonzales — schnellste Antworten (avg ms)
+  // ⚡ Speedy Gonzales — am öftesten als Erster (mit korrekter Antwort).
+  // 2026-05-23 (Wolf-Live-Test #N): Vorher avg(reaction-time), jetzt count-
+  // basiert. Fallback auf avgMs-Display fuer alte Spiele ohne firstCount.
   if (endAwards.speedy) {
     const team = teams.find(t => t.id === endAwards.speedy);
     if (team) {
+      const firstCount = (endAwards as any).speedyFirstCount ?? null;
       const avgMs = endAwards.speedyAvgMs ?? null;
-      const metric = avgMs != null
-        ? `Ø ${(avgMs / 1000).toFixed(1)}s`
-        : (lang === 'de' ? 'Schnellste Antworten' : 'Fastest answers');
+      const metric = firstCount != null && firstCount > 0
+        ? (lang === 'de' ? `${firstCount}× zuerst` : `${firstCount}× first`)
+        : avgMs != null
+          ? `Ø ${(avgMs / 1000).toFixed(1)}s`
+          : (lang === 'de' ? 'Schnellste Antworten' : 'Fastest answers');
       titles.push({
         emoji: '⚡',
         titleDe: 'Speedy Gonzales', titleEn: 'Speedy Gonzales',
-        descDe: 'Schnellste Antworten', descEn: 'Fastest answers',
+        descDe: 'Am öftesten als Erste:r', descEn: 'Most often first',
         winner: team,
         metric,
         accent: '#F472B6',

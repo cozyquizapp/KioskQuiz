@@ -626,24 +626,22 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
   }),
 
   item('singer-real-names', 'ZEHN_VON_ZEHN', 'Popkultur', {
-    text: 'Eine dieser Personen ist KEINE bekannte Sängerin — welche? Die gebürtigen Namen lauten:',
-    textEn: 'One of these people is NOT a famous singer — which one? Their birth names are:',
-    answer: 'Mark Sinclair Vincent (= Vin Diesel)',
-    answerEn: 'Mark Sinclair Vincent (= Vin Diesel)',
+    text: 'Eine dieser Personen ist KEINE bekannte Sängerin — welche?',
+    textEn: 'One of these people is NOT a famous singer — which one?',
+    answer: 'Melissa Benoist',
+    answerEn: 'Melissa Benoist',
     options: [
       'Robyn Rajad Fenty',
       'Ashley Nicolette Frangipane',
-      'Stefani Joanne Germanotta',
-      'Mark Sinclair Vincent',
+      'Melissa Benoist',
     ],
     optionsEn: [
       'Robyn Rajad Fenty',
       'Ashley Nicolette Frangipane',
-      'Stefani Joanne Germanotta',
-      'Mark Sinclair Vincent',
+      'Melissa Benoist',
     ],
-    correctOptionIndex: 3,
-    funFact: 'Auflösung: Robyn Rajad Fenty = Rihanna · Ashley Nicolette Frangipane = Halsey · Stefani Joanne Germanotta = Lady Gaga · Mark Sinclair Vincent = Vin Diesel (Schauspieler, kein Sänger). Halseys Künstlername ist übrigens ein Anagramm ihres Vornamens „Ashley".',
+    correctOptionIndex: 2,
+    funFact: 'Auflösung: Robyn Rajad Fenty = Rihanna · Ashley Nicolette Frangipane = Halsey · Melissa Benoist = US-Schauspielerin (Supergirl, Glee, Whiplash). Halseys Künstlername ist übrigens ein Anagramm ihres Vornamens „Ashley".',
   }),
 
   item('vegan-top5-countries', 'BUNTE_TUETE', 'Essen & Trinken', {

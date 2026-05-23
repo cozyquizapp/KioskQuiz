@@ -1816,3 +1816,44 @@ Wolf-Report: „im moderator panel werden teilweise dinge angezeigt die schon la
 - **P2** Answer-Revoke während Timer
 - **P2** Rules kürzen + Grid-Preview am Anfang
 - **Langfrist-Wunsch** Spielende: lieber iPads zum Antworten für Teams statt persönlicher Smartphones (Setup/Hardware-Frage)
+- **Markt-Empfehlung Spielende**: App auch im Corporate-Umfeld anbieten — passt zur Prio 2 in market_strategy.md + zum iPad-Wunsch (Corporate hat Hardware-Budget). Sales-Deck vorbereiten.
+
+---
+
+## 2026-05-24 — Day-After-Test Fix-Marathon (16 Findings P0-P2)
+
+Wolf-Anfrage: alle Live-Test-Findings durcharbeiten — „P0+P1+P2 alle bitte". 6 Commits in einem Rutsch:
+
+### Batch 1 — Content (3695505c)
+- B EU-Euro-Mucho neu: Bulgarien hat seit 1.1.2026 Euro → Frage umformuliert auf „Welches EU-Land hat KEIN Euro" mit Schweden/Slowakei/Slowenien → Schweden
+- L Bluff-Kategorie temp aus Library + Builder-Dropdown raus, first-mammal-space von Bluff → Mucho (Hund/Rhesusaffe/Schimpanse/Maus)
+- M Flaggen-ohne-Rot: Guatemala/Honduras/Nigeria/Jamaika ergänzt
+
+### Batch 2 — Score+UI (5cf7abec)
+- K ZvZ-Anzeige auf /team „1,10,15" → „A: 1 · B: 10 · C: 15"
+- I Underdog-Award nach largestConnected statt totalCells (Bug: matched nicht das Ranking)
+- H Joker-Stars verschwinden jetzt auch nach Comeback-Placement (finishPlacement-Early-Return hat jokerFormed-Cleanup übersprungen)
+- E Schätzchen-Tie-Marker („⚡ zuerst" / „+x.x s") bei gleicher Distanz
+
+### Batch 3 — Score+Visual (f4be7865) — Wolf's `!!!!`-Frust gefixt
+- A Frontend-BFS bei End-Grid zählte cell.stackBonus nicht — Double-Stack-Cells fielen aus Largest-Region. Backend war korrekt, Visualisierung passte nicht zum Score
+- C Bot/Dummy-Teams werden aus Summary-DB-Save gefiltert
+- F 0,0s-Counter-Bug — Speedy misst jetzt relativ zu QUESTION_ACTIVE-Start (neues Feld `_currentQuestionStartedAt` + `questionHistory.startedAt`)
+
+### Batch 4 — Translation+Award (6d0fdd1c)
+- J ScoreBar „Feld/Felder" → lang-Prop + EN „cell/cells" (PlacementView reicht durch)
+- N Speedy-Gonzales count-basiert „X × zuerst" statt avg-ms. Backend `speedyFirstCount`-Feld, Frontend Recap-Card + Summary-Strip updated. Tie-Break auf avg-Reaction. Backward-Compat für alte Game-Results
+
+### Batch 5 — Fuzzy+Revoke (c1df8627)
+- G textNormalization.similarityScore: maxLen ≤ 8 + distance ≥ 1 → kein Fuzzy-Match (Iceland↔Ireland war 0.857 → falsch-positiv)
+- O Answer-Revoke „↩ Antwort ändern"-Button. Backend `qq:revokeAnswer` (Phase + Timer-Check + assertOwnTeam + Rate-Limit), SubmittedBadge onRevoke-Prop, schließt komplexe BT-Mechaniken (bluff/onlyConnect/oneOfEight/hotPotato) vom Revoke aus
+
+### Batch 6 — Rules+Sieger (62e37199 + 480ca90a)
+- P Grid-Preview auf Rules-Slide-1 (Beispiel: 5 verbundene Felder = größte Region) DE+EN. Slide-Anzahl unverändert
+- 🏆 „Sieger" auf RaceFinishHero (FinalRevealView:1689) hardcoded → lang-Prop nachgezogen + durch RaceFinalSlide reaktiviertes lang-Param durchgereicht
+
+### Open (D + EN-Casing + NBC-Phönix)
+- **D** Team-Color rot↔blau-Swap am Final-Start: Wolf hatte mid-Quiz keinen DevTools-Zugang. Beim nächsten Auftreten: F12 + Network-Tab → `qq:stateUpdate`-Snapshot von `teams[i].color` vor/nach
+- **EN-Capitalization-Audit** partiell: einige Strings Sentence-case, andere Title-Case (z.B. „Real answer" vs „Top 5 — Reveal"). Wolf-Screenshots gewünscht für gezielte Fixes
+- **NBC-Phönix-trotz-Auto-Translate**: Library + Tonight-Draft haben explicit `optionsEn: ['Eagle', 'Peacock', 'Phoenix']` — bedeutet ein User-erstelltes Draft mit DeepL-Quirk (Proper-Nouns werden manchmal nicht übersetzt). Workaround: nach Auto-Translate manuell prüfen, insb. bei Eigennamen
+- **Joker auf gestohlenen Feldern**: Code (qqStealCell reset jokerCounted=false) ist korrekt. Bei nächstem Vorkommen 1-Joker-pro-Phase-Cap und 2-Joker-Game-Cap checken

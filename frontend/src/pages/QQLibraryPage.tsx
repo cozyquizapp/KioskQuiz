@@ -509,18 +509,30 @@ export default function QQLibraryPage() {
       const res = await fetch(`/api/qq/drafts/${targetDraftId}`);
       if (!res.ok) { setToast('Fehler: Draft nicht gefunden'); return; }
       const draft: QQDraft = await res.json();
-      const slotIndex = draft.questions.findIndex(q => !q.text.trim());
-      if (slotIndex === -1) { alert('Kein freier Slot im Ziel-Draft'); return; }
+      // Bug-Fix 2026-05-23: Slot muss zur Kategorie passen + Slot-Koordinaten
+      // (phaseIndex/questionIndexInPhase/category) behalten. Sonst landet das
+      // Item unsichtbar in Phase 1 (Default aus dem Library-Seed).
+      const slotIndex = draft.questions.findIndex(q =>
+        !q.text.trim() && q.category === (question as any).category
+      );
+      if (slotIndex === -1) {
+        setToast(`Kein leerer ${(question as any).category}-Slot im Draft`);
+        return;
+      }
+      const slot = draft.questions[slotIndex];
       const updatedQuestions = [...draft.questions];
       updatedQuestions[slotIndex] = {
         ...question,
-        id: `${question.id}-copy-${Date.now().toString(36)}`,
+        id: slot.id,
+        phaseIndex: slot.phaseIndex,
+        questionIndexInPhase: slot.questionIndexInPhase,
+        category: slot.category,
       };
       const putRes = await fetch(`/api/qq/drafts/${targetDraftId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...draft, questions: updatedQuestions, updatedAt: Date.now() }),
       });
-      setToast(putRes.ok ? `✓ Eingefügt in Slot ${slotIndex + 1}` : 'Fehler beim Speichern');
+      setToast(putRes.ok ? `✓ Eingefügt in Phase ${slot.phaseIndex}/${slot.category}` : 'Fehler beim Speichern');
     } catch {
       setToast('Fehler beim Kopieren');
     }
@@ -547,17 +559,22 @@ export default function QQLibraryPage() {
       }
       const updatedQuestions = [...draft.questions];
       let inserted = 0;
-      let nextSlot = 0;
+      // Bug-Fix 2026-05-23: pro Kategorie passenden leeren Slot finden,
+      // Slot-Koordinaten behalten. Sonst landen Items unsichtbar in Phase 1.
       for (const q of questionsToInsert) {
-        // Nächster freier Slot
-        while (nextSlot < updatedQuestions.length && updatedQuestions[nextSlot].text.trim() !== '') nextSlot++;
-        if (nextSlot >= updatedQuestions.length) break;
-        updatedQuestions[nextSlot] = {
+        const slotIndex = updatedQuestions.findIndex(s =>
+          !s.text.trim() && s.category === (q as any).category
+        );
+        if (slotIndex === -1) continue; // kein passender freier Slot → skip
+        const slot = updatedQuestions[slotIndex];
+        updatedQuestions[slotIndex] = {
           ...q,
-          id: `${q.id}-copy-${Date.now().toString(36)}-${inserted}`,
+          id: slot.id,
+          phaseIndex: slot.phaseIndex,
+          questionIndexInPhase: slot.questionIndexInPhase,
+          category: slot.category,
         };
         inserted++;
-        nextSlot++;
       }
       const putRes = await fetch(`/api/qq/drafts/${targetDraftId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },

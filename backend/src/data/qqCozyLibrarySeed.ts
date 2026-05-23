@@ -612,6 +612,24 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     funFact: 'Hamburg hat 190 verschiedene PLZ-Bereiche (Stand 2024) — von 20095 (Altstadt) bis 22769 (Altona). Berlin hat 198, München 91. Die kleinste PLZ-Stadt Deutschlands ist Ottenhöfen im Schwarzwald mit nur einer einzigen.',
   }),
 
+  item('columbus-century', 'MUCHO', 'Geschichte', {
+    text: 'Nach langem Segeln traf Christoph Kolumbus in der Karibik erstmals auf Land und „entdeckte" Amerika — in welchem Jahrhundert?',
+    textEn: 'After a long voyage, Christopher Columbus first landed in the Caribbean and „discovered" America — in which century?',
+    answer: '15. Jahrhundert', answerEn: '15th century',
+    options: ['14. Jahrhundert', '15. Jahrhundert', '16. Jahrhundert', '17. Jahrhundert'],
+    optionsEn: ['14th century', '15th century', '16th century', '17th century'],
+    correctOptionIndex: 1,
+    funFact: 'Kolumbus landete am 12. Oktober 1492 auf einer Bahamas-Insel (vermutlich Guanahaní). Trugschluss-Falle: viele tippen 14. Jh., weil 1492 mit „14" anfängt — das 15. Jahrhundert deckt aber 1401-1500 ab. Kolumbus glaubte zeitlebens, er sei in Asien gelandet (deshalb „Indianer" = Indios). Erst Amerigo Vespucci erkannte 1502, dass es ein neuer Kontinent ist — daher der Name Amerika.',
+  }),
+  item('montgolfier-balloon', 'MUCHO', 'Geschichte', {
+    text: 'Welches berühmte Brüder-Paar erfand 1783 den Heißluftballon?',
+    textEn: 'Which famous pair of brothers invented the hot air balloon in 1783?',
+    answer: 'Brüder Montgolfier', answerEn: 'The Montgolfier brothers',
+    options: ['Brüder Montgolfier', 'Brüder Lumière', 'Brüder Wright', 'Brüder Lilienthal'],
+    optionsEn: ['Montgolfier brothers', 'Lumière brothers', 'Wright brothers', 'Lilienthal brothers'],
+    correctOptionIndex: 0,
+    funFact: 'Joseph-Michel + Jacques-Étienne Montgolfier (Papierfabrikanten aus Annonay/Frankreich) ließen am 4. Juni 1783 den ersten unbemannten Heißluftballon steigen. Ursprünglich dachten sie, es sei „elektrischer Rauch", der den Sack hebt — sie verstanden nicht, dass es einfach erhitzte Luft war. Erste bemannte Fahrt: 21. November 1783 in Paris vor Ludwig XVI. — mit einem Schaf, einer Ente und einem Hahn als Test-Crew zuvor. Distraktoren: Brüder Lumière = Kino (1895), Brüder Wright = Motorflug (1903), Brüder Lilienthal = Gleitflug (1890er).',
+  }),
   item('aristotle-alexander', 'MUCHO', 'Geschichte', {
     text: 'Welcher Philosoph war der Lehrer von Alexander dem Großen?',
     textEn: 'Which philosopher was the teacher of Alexander the Great?',
@@ -695,17 +713,17 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Melissa Benoist',
     answerEn: 'Melissa Benoist',
     options: [
-      'Robyn Rajad Fenty',
+      'Robyn Fenty',
       'Ashley Nicolette Frangipane',
       'Melissa Benoist',
     ],
     optionsEn: [
-      'Robyn Rajad Fenty',
+      'Robyn Fenty',
       'Ashley Nicolette Frangipane',
       'Melissa Benoist',
     ],
     correctOptionIndex: 2,
-    funFact: 'Auflösung: Robyn Rajad Fenty = Rihanna · Ashley Nicolette Frangipane = Halsey · Melissa Benoist = US-Schauspielerin (Supergirl, Glee, Whiplash). Halseys Künstlername ist übrigens ein Anagramm ihres Vornamens „Ashley".',
+    funFact: 'Auflösung: Robyn Fenty = Rihanna (vollständig: Robyn Rihanna Fenty — „Rihanna" ist eigentlich ihr Mittelname) · Ashley Nicolette Frangipane = Halsey · Melissa Benoist = US-Schauspielerin (Supergirl, Glee, Whiplash). Halseys Künstlername ist übrigens ein Anagramm ihres Vornamens „Ashley".',
   }),
 
   item('vegan-top5-countries', 'BUNTE_TUETE', 'Essen & Trinken', {

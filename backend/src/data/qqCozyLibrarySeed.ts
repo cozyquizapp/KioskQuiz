@@ -625,6 +625,43 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     funFact: 'Kapitän James Cook brachte das Wort 1769 von Tahiti mit nach Europa. Vorher gab es im Englischen nur „pricking" oder „staining". Im Deutschen wurde es als „Tätowierung" eingedeutscht — die ursprüngliche Klopf-Lautmalerei steckt noch drin.',
   }),
 
+  item('eu-euro-country', 'ZEHN_VON_ZEHN', 'Geographie', {
+    text: 'Welches dieser EU-Länder hat den Euro als offizielle Währung eingeführt?',
+    textEn: 'Which of these EU countries has officially adopted the Euro?',
+    answer: 'Kroatien', answerEn: 'Croatia',
+    options: ['Kroatien', 'Bulgarien', 'Rumänien'],
+    optionsEn: ['Croatia', 'Bulgaria', 'Romania'],
+    correctOptionIndex: 0,
+    funFact: 'Kroatien hat am 1. Januar 2023 den Euro eingeführt — als 20. Mitglied der Eurozone und gleichzeitig dem Schengen-Raum beigetreten. Bulgarien und Rumänien haben den Euro-Beitritt geplant, aber noch nicht vollzogen — sie nutzen weiter Lew bzw. Leu. (Stand 2026)',
+  }),
+  item('disney-first-feature', 'ZEHN_VON_ZEHN', 'Popkultur', {
+    text: 'Welcher dieser Disney-Trickfilme erschien zuerst?',
+    textEn: 'Which of these Disney animated features came out first?',
+    answer: 'Schneewittchen und die sieben Zwerge',
+    answerEn: 'Snow White and the Seven Dwarfs',
+    options: ['Pinocchio', 'Schneewittchen und die sieben Zwerge', 'Bambi'],
+    optionsEn: ['Pinocchio', 'Snow White and the Seven Dwarfs', 'Bambi'],
+    correctOptionIndex: 1,
+    funFact: 'Schneewittchen (1937) war der allererste abendfüllende Disney-Trickfilm überhaupt. Pinocchio folgte 1940, Bambi 1942. Schneewittchen wurde intern als „Disney\'s Folly" verspottet, weil niemand glaubte, dass Erwachsene 83 Minuten Zeichentrick anschauen würden — wurde dann der bis dahin erfolgreichste Tonfilm überhaupt.',
+  }),
+  item('google-logo-color-order', 'ZEHN_VON_ZEHN', 'Technologie', {
+    text: 'In welcher Reihenfolge erscheinen die Farben im Google-Logo (Buchstaben G-o-o-g-l-e von links nach rechts)?',
+    textEn: 'In which order do the colors appear in the Google logo (letters G-o-o-g-l-e, left to right)?',
+    answer: 'Blau, Rot, Gelb, Blau, Grün, Rot',
+    answerEn: 'Blue, Red, Yellow, Blue, Green, Red',
+    options: [
+      'Blau, Rot, Gelb, Blau, Grün, Rot',
+      'Blau, Gelb, Rot, Blau, Grün, Rot',
+      'Rot, Gelb, Blau, Grün, Blau, Rot',
+    ],
+    optionsEn: [
+      'Blue, Red, Yellow, Blue, Green, Red',
+      'Blue, Yellow, Red, Blue, Green, Red',
+      'Red, Yellow, Blue, Green, Blue, Red',
+    ],
+    correctOptionIndex: 0,
+    funFact: 'Die korrekte Reihenfolge ist Blau-Rot-Gelb-Blau-Grün-Rot. Die meisten erkennen die 4 Primärfarben (Blau, Rot, Gelb, Grün), aber niemand merkt sich die exakte Permutation. Das aktuelle Logo („Product Sans") gibt es seit 2015 — die Farbreihenfolge hat sich seit dem Original von 1998 nicht geändert.',
+  }),
   item('singer-real-names', 'ZEHN_VON_ZEHN', 'Popkultur', {
     text: 'Eine dieser Personen ist KEINE bekannte Sängerin — welche?',
     textEn: 'One of these people is NOT a famous singer — which one?',

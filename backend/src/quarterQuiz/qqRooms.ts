@@ -3203,12 +3203,12 @@ export function qqComebackStealAfterOne(room: QQRoomState): void {
   if (!hl || !hl.currentStealer) return;
   hl.currentStealerRemaining = Math.max(0, hl.currentStealerRemaining - 1);
   // placementsLeft wurde vom Caller (qqSteal) bereits dekrementiert.
-  // 2026-05-24 (Wolf-Live-Test): Pause nur WENN das aktuelle Team fertig ist
-  // (currentStealerRemaining <= 0) — dann wartet der Mod auf Bestaetigung
-  // bevor das naechste Team in der Queue dran kommt (Beamer kann verkuenden
-  // „X ist fertig", Mod kann moderieren). Bei verbleibenden Steals des
-  // SELBEN Teams: direkt weiter — keine kuenstliche Mod-Wartezeit zwischen
-  // Klicks des Teams. Leader-Recompute weil Punktstand geaendert.
+  // 2026-05-24 (Wolf-Live-Test): KEINE Mod-Pause mehr — analog zum normalen
+  // Placement-Flow (Team A setzt → Team B sofort dran). Bei verbleibenden
+  // Steals desselben Teams: Leader-Recompute inline + pendingAction setzen.
+  // Bei currentStealerRemaining=0: direkt zum naechsten Team in der Queue
+  // springen (qqComebackStealStartNext). qqComebackStealStartNext beendet
+  // automatisch das Comeback wenn keine Teams mehr in der Queue sind.
   if (hl.currentStealerRemaining > 0) {
     const leaders = qqComebackComputeLeaders(room, hl.teamIds);
     room.comebackStealTargets = leaders;
@@ -3218,19 +3218,16 @@ export function qqComebackStealAfterOne(room: QQRoomState): void {
       && !cell.stuck && !cell.shielded && !cell.frozen
     ));
     if (leaders.length === 0 || !hasStealable) {
-      // Nichts mehr zu klauen → pausieren, Mod-Space weiter zum nächsten Team.
-      room._comebackStealPaused = true;
-      room.pendingFor = null;
+      // Nichts mehr fuer das aktuelle Team — naechstes Team in der Queue.
+      qqComebackStealStartNext(room);
     } else {
       // Team klaut direkt weiter — gleiche pendingFor + Action.
       const hasFree = room.grid.some(r => r.some(c => c.ownerId === null));
       room.pendingAction = hasFree ? 'FREE' : 'COMEBACK';
     }
   } else {
-    // Team ist fertig — pausieren, Mod-Space wechselt zum naechsten Team /
-    // beendet das Comeback.
-    room._comebackStealPaused = true;
-    room.pendingFor = null;
+    // Team ist fertig — naechstes Team in der Queue (oder Comeback-Ende).
+    qqComebackStealStartNext(room);
   }
   room.lastActivityAt = Date.now();
 }

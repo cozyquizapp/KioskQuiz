@@ -485,11 +485,14 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             {/* Avatar — 1:1 wie Slot M Showreel: Color-Tinted-
                                 Circle mit großem Emoji DIREKT (nicht via
                                 QQTeamAvatar). emoji-fontSize ~54% des Wrappers,
-                                damit's wie im Showreel kraftvoll wirkt. */}
+                                damit's wie im Showreel kraftvoll wirkt.
+                                2026-05-23 (Wolf): BG solid statt 20%-glassy —
+                                matcht den Avatar-Kreis-BG aus QQTeamAvatar
+                                (background: color) im Rest der App. */}
                             <div style={{
                               width: avatarSize, height: avatarSize,
                               borderRadius: '50%',
-                              background: `${t.color}33`,
+                              background: t.color,
                               border: `2.5px solid ${t.color}`,
                               boxShadow: `0 0 28px ${t.color}99`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',

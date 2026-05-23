@@ -2994,6 +2994,18 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   const n = top5.length;
   const winner = ranked[0] ?? null;
 
+  // 2026-05-23 (Live-Test-Bug #E): Tie-Group-Logik wie bei CozyGuessrReveal —
+  // bei gleichem Δ (z.B. 2002 vs 2004 für Target 2003) zeigt der schnellere
+  // ein „⚡ zuerst"-Marker, die langsameren ein „+x.x s". Sonst wurde der
+  // 2.-Platz-Reveal als „verdient" wahrgenommen, obwohl's reiner Speed-Tiebreak war.
+  const tieGroups: Record<string, number> = {};
+  const tieEarliest: Record<string, number> = {};
+  ranked.forEach(r => {
+    const k = String(r.delta);
+    tieGroups[k] = (tieGroups[k] ?? 0) + 1;
+    if (tieEarliest[k] == null || r.submittedAt < tieEarliest[k]) tieEarliest[k] = r.submittedAt;
+  });
+
   // 2026-05-03 (Wolf-Bug 'Schaetzchen Cascade-Sound aber alle Avatare gleichzeitig'):
   // Initial-State auf n-fest-init brach bei Race: wenn Component mountet bevor
   // Answers eintreffen → n=0 → revealedMinIdx=0 → alle Rows sofort sichtbar
@@ -3333,16 +3345,40 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   </div>
                 </div>
                 <div style={{
-                  padding: '8px 18px', borderRadius: 999,
-                  background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
-                  border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
-                  fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
-                  color: isTop ? '#FBCFE8' : '#e2e8f0',
-                  fontVariantNumeric: 'tabular-nums',
-                  flexShrink: 0,
-                  animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0,
                 }}>
-                  {r.delta === 0 ? '🎯 0' : `Δ ${fmt(r.delta)}`}
+                  <div style={{
+                    padding: '8px 18px', borderRadius: 999,
+                    background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
+                    border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
+                    fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
+                    color: isTop ? '#FBCFE8' : '#e2e8f0',
+                    fontVariantNumeric: 'tabular-nums',
+                    animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
+                  }}>
+                    {r.delta === 0 ? '🎯 0' : `Δ ${fmt(r.delta)}`}
+                  </div>
+                  {/* 2026-05-23 (Live-Test #E): Tie-Marker — bei gleicher Distanz zeigen
+                      wer schneller war (⚡ zuerst) bzw. um wieviel langsamer (+x.x s). */}
+                  {(() => {
+                    const k = String(r.delta);
+                    const isTied = (tieGroups[k] ?? 0) > 1;
+                    if (!isTied) return null;
+                    const deltaMs = r.submittedAt - (tieEarliest[k] ?? r.submittedAt);
+                    const label = deltaMs === 0
+                      ? (lang === 'de' ? '⚡ zuerst' : '⚡ first')
+                      : `+${(deltaMs / 1000).toFixed(1)} s`;
+                    return (
+                      <span style={{
+                        fontWeight: 900, fontSize: 'clamp(11px, 1.05cqw, 14px)',
+                        padding: '2px 8px', borderRadius: 999,
+                        background: deltaMs === 0 ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)',
+                        border: deltaMs === 0 ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(148,163,184,0.35)',
+                        color: deltaMs === 0 ? '#86EFAC' : '#cbd5e1',
+                        whiteSpace: 'nowrap',
+                      }}>{label}</span>
+                    );
+                  })()}
                 </div>
               </div>
             );

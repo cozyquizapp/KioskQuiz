@@ -3845,6 +3845,20 @@ function finishPlacement(room: QQRoomState): void {
   // sondern in PLACEMENT bleiben (mit pendingFor=null), damit der Moderator per
   // Space-Druck die Finalphase auslöst (qqNextQuestion erkennt den Zustand).
   if (room.pendingAction === 'COMEBACK' || room.phase === 'COMEBACK_CHOICE') {
+    // 2026-05-23 (Live-Test-Bug #H): vorher wurde hier early-returned ohne
+    // jokerFormed-Cleanup → Joker-Sterne auf Cells blieben sichtbar nach
+    // Comeback-Placement, verschwanden erst beim nächsten Action-Trigger.
+    // Jetzt: jokerFormed für alle Cells des comebackenden Teams resetten.
+    const comebackTeam = room.pendingFor;
+    if (comebackTeam) {
+      for (let r = 0; r < room.gridSize; r++) {
+        for (let c = 0; c < room.gridSize; c++) {
+          if (room.grid[r][c].ownerId === comebackTeam) {
+            room.grid[r][c].jokerFormed = false;
+          }
+        }
+      }
+    }
     room.pendingFor    = null;
     room.pendingAction = null;
     room.phase         = 'PLACEMENT';
@@ -5619,13 +5633,27 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   // ── End-Awards (Mario-Party-Style) berechnen ─────────────────────────────
   const teamIds = Object.keys(room.teams);
   const cells = countCellsByTeam(room);
-  // Underdog: niedrigster totalCells. null wenn alle gleichauf.
+  // Underdog: letzter Platz im FINALEN RANKING (= kleinstes largestConnected,
+  // Tiebreak kleinstes totalCells — selbe Sort-Logik wie Sieger-Bestimmung).
+  // 2026-05-23 (Live-Test-Bug #I): vorher wurde nur totalCells genommen, das
+  // matchte aber nicht das Ranking (das geht nach largestConnected). Underdog
+  // wurde dann oft nicht für den tatsächlich Letzten vergeben.
   let underdog: string | null = null;
   if (teamIds.length > 0) {
-    const sorted = [...teamIds].sort((a, b) => (cells[a] ?? 0) - (cells[b] ?? 0));
-    const min = cells[sorted[0]] ?? 0;
-    const allTied = teamIds.every(id => cells[id] === min);
-    underdog = allTied ? null : sorted[0];
+    const sorted = [...teamIds].sort((a, b) => {
+      const ta = room.teams[a]; const tb = room.teams[b];
+      const lA = ta?.largestConnected ?? 0; const lB = tb?.largestConnected ?? 0;
+      if (lA !== lB) return lA - lB; // asc: kleinstes zuerst
+      const cA = cells[a] ?? 0; const cB = cells[b] ?? 0;
+      return cA - cB; // asc
+    });
+    const lastId = sorted[0];
+    const lastTeam = room.teams[lastId];
+    const lastL = lastTeam?.largestConnected ?? 0;
+    const lastC = cells[lastId] ?? 0;
+    // null wenn ALLE teams identisches (largestConnected, totalCells) haben
+    const allTied = teamIds.every(id => (room.teams[id]?.largestConnected ?? 0) === lastL && (cells[id] ?? 0) === lastC);
+    underdog = allTied ? null : lastId;
   }
   // Meisterklauer: max teamTotalSteals. null wenn niemand geklaut.
   let meisterklauer: string | null = null;

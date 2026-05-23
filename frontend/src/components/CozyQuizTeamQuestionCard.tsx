@@ -109,6 +109,19 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
       }
     }
+    // 2026-05-23 (Live-Test-Bug #K): ZEHN_VON_ZEHN-Bets sind als „n,n,n" gespeichert
+    // — vorher pur als „1,10,15" angezeigt was unklar war. Jetzt Punkte-Verteilung
+    // pro Option lesbar: „A: 1 · B: 10 · C: 15" mit Original-Optionstext im Reveal.
+    if (q && q.category === 'ZEHN_VON_ZEHN' && q.options) {
+      const parts = myAnswer.text.split(',').map(s => s.trim());
+      const labels = ['A','B','C','D'];
+      const formatted = parts.map((p, i) => {
+        const pts = parseInt(p, 10);
+        if (isNaN(pts) || pts === 0) return null;
+        return `${labels[i] ?? i + 1}: ${pts}`;
+      }).filter(Boolean).join(' · ');
+      if (formatted) displayText = formatted;
+    }
     // CozyGuessr map: raw coordinates are meaningless to players
     if (q && q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'map') {
       displayText = lang === 'de' ? '📍 Pin auf Karte gesetzt' : '📍 Pin placed on map';

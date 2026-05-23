@@ -523,6 +523,125 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     funFact: '3000 Jahre alter Honig in Pyramiden — noch essbar. Salz und Zucker sind Konservierungsmittel an sich. Essig + Sojasauce sind durch Fermentation/Säure bereits konserviert.',
   }),
 
+  // ═══ WOLF-BATCH 2026-05-20 ═══════════════════════════════════════════════════
+  item('cargo-ship-hh-vancouver', 'SCHAETZCHEN', 'Geographie', {
+    text: 'Wie lange braucht ein Containerschiff von Hamburg nach Vancouver durchschnittlich?',
+    textEn: 'How long does a container ship take from Hamburg to Vancouver on average?',
+    answer: '~30 Tage', answerEn: '~30 days',
+    targetValue: 30, unit: 'Tage', unitEn: 'days',
+    funFact: 'Standard-Route via Panama-Kanal: 28-32 Tage. Über den Suez-Kanal + Pazifik dauerts ~45 Tage. Schnellste Express-Frachter schaffen Hamburg-Vancouver in 22 Tagen — aber Bunker-Diesel kostet dann 2× so viel.',
+  }),
+
+  item('feta-rules', 'MUCHO', 'Essen & Trinken', {
+    text: 'Was macht einen Feta aus, dass er den Namen tragen darf?',
+    textEn: 'What does a feta need to legally carry that name?',
+    answer: 'Aus Schafs- und Ziegenmilch in bestimmten Regionen Griechenlands',
+    options: [
+      'Aus Schafs- und Ziegenmilch in bestimmten Regionen Griechenlands',
+      'Aus Kuhmilch, beliebige Herkunft',
+      'Aus jeder Milchsorte, solange er weiß und in Salzlake ist',
+      'Aus Schafsmilch, EU-weit produziert',
+    ],
+    optionsEn: [
+      'Sheep and goat milk, from specific regions of Greece',
+      'Cow milk, any origin',
+      'Any milk, as long as it\'s white and in brine',
+      'Sheep milk, produced anywhere in the EU',
+    ],
+    correctOptionIndex: 0,
+    funFact: 'Seit 2002 EU-geschützte Ursprungsbezeichnung. Mind. 70% Schafsmilch, max. 30% Ziegenmilch, aus Festland-Griechenland oder Insel Lesbos. Dänischer „Feta" musste nach EuGH-Urteil 2022 umbenannt werden.',
+  }),
+
+  item('mount-rushmore-map', 'BUNTE_TUETE', 'Geographie', {
+    text: 'Wo liegt Mount Rushmore? Setz einen Pin auf der Karte!',
+    textEn: 'Where is Mount Rushmore? Place a pin on the map!',
+    answer: 'Black Hills, South Dakota, USA',
+    answerEn: 'Black Hills, South Dakota, USA',
+    bunteTuete: { kind: 'map', lat: 43.8791, lng: -103.4591, targetLabel: 'Mount Rushmore' },
+    funFact: 'Geplant war ursprünglich ein „Garten der Helden" mit westlichen Pionieren. Aus Geld-Gründen wurde es auf 4 Präsidenten reduziert. Granit-Erosion: ~2,5 cm in 10.000 Jahren — die Gesichter überstehen das nächste Eiszeit-Zyklus locker.',
+  }),
+
+  item('not-commonwealth', 'MUCHO', 'Geographie', {
+    text: 'Welches Land ist NICHT Teil des Commonwealth?',
+    textEn: 'Which country is NOT part of the Commonwealth?',
+    answer: 'Irland',
+    options: ['Kanada', 'Australien', 'Indien', 'Irland'],
+    optionsEn: ['Canada', 'Australia', 'India', 'Ireland'],
+    correctOptionIndex: 3,
+    funFact: 'Irland trat 1949 aus — als das Land Republik wurde, war eine Mitgliedschaft mit dem damaligen Statut nicht mehr vereinbar. Indien blieb trotz Republik-Status drin (Spezialregel 1949). Kanada + Australien sind sogar noch Commonwealth-Realms mit König Charles als Staatsoberhaupt.',
+  }),
+
+  item('el-nino-explained', 'MUCHO', 'Wissenschaft', {
+    text: 'Was ist El Niño?',
+    textEn: 'What is El Niño?',
+    answer: 'Ein periodisches Klimaphänomen mit Erwärmung des Pazifiks',
+    options: [
+      'Ein periodisches Klimaphänomen mit Erwärmung des Pazifiks',
+      'Ein tropischer Wirbelsturm in der Karibik',
+      'Ein Erdbeben-Frühwarnsystem in Chile',
+      'Ein spanischer Kinderchor',
+    ],
+    optionsEn: [
+      'A periodic climate phenomenon with Pacific warming',
+      'A tropical hurricane in the Caribbean',
+      'An earthquake early-warning system in Chile',
+      'A Spanish children\'s choir',
+    ],
+    correctOptionIndex: 0,
+    funFact: 'Name kommt von peruanischen Fischern: „El Niño" = das Christkind, weil das Phänomen meist um Weihnachten beginnt. Tritt alle 2-7 Jahre auf, dauert 9-12 Monate. Globale Folgen: Dürren in Australien, Fluten in Südamerika, milde Winter in Europa.',
+  }),
+
+  item('hamburg-plz-count', 'SCHAETZCHEN', 'Geographie', {
+    text: 'Wie viele Postleitzahlen hat Hamburg?',
+    textEn: 'How many postal codes does Hamburg have?',
+    answer: '190', answerEn: '190',
+    targetValue: 190, unit: 'PLZ', unitEn: 'postal codes',
+    funFact: 'Hamburg hat 190 verschiedene PLZ-Bereiche (Stand 2024) — von 20095 (Altstadt) bis 22769 (Altona). Berlin hat 198, München 91. Die kleinste PLZ-Stadt Deutschlands ist Ottenhöfen im Schwarzwald mit nur einer einzigen.',
+  }),
+
+  item('tattoo-origin', 'MUCHO', 'Sprache & Etymologie', {
+    text: 'Woher kommt der Name „Tattoo"?',
+    textEn: 'Where does the word „Tattoo" come from?',
+    answer: 'Vom polynesischen „tatau" (Klopfgeräusch beim Stechen)',
+    options: [
+      'Vom polynesischen „tatau" (Klopfgeräusch beim Stechen)',
+      'Vom italienischen „tato" (= geliebt)',
+      'Vom englischen „tatter" (= Stoff-Fetzen)',
+      'Vom japanischen „tatō" (= Symbol)',
+    ],
+    optionsEn: [
+      'From Polynesian „tatau" (tapping sound when stippling)',
+      'From Italian „tato" (= beloved)',
+      'From English „tatter" (= rag/scrap)',
+      'From Japanese „tatō" (= symbol)',
+    ],
+    correctOptionIndex: 0,
+    funFact: 'Kapitän James Cook brachte das Wort 1769 von Tahiti mit nach Europa. Vorher gab es im Englischen nur „pricking" oder „staining". Im Deutschen wurde es als „Tätowierung" eingedeutscht — die ursprüngliche Klopf-Lautmalerei steckt noch drin.',
+  }),
+
+  item('robyn-fenty', 'MUCHO', 'Popkultur', {
+    text: 'Wer ist Robyn Fenty?',
+    textEn: 'Who is Robyn Fenty?',
+    answer: 'Rihanna',
+    options: ['Rihanna', 'Lady Gaga', 'Beyoncé', 'Adele'],
+    optionsEn: ['Rihanna', 'Lady Gaga', 'Beyoncé', 'Adele'],
+    correctOptionIndex: 0,
+    funFact: 'Robyn Rihanna Fenty, geboren 1988 in Barbados. „Fenty Beauty" + „Savage X Fenty" sind ihre Make-up- und Wäsche-Marken — die haben sie 2021 zur jüngsten weiblichen Self-Made-Milliardärin Amerikas gemacht (Vermögen $1,7 Mrd.).',
+  }),
+
+  item('vegan-top5-countries', 'BUNTE_TUETE', 'Essen & Trinken', {
+    text: 'Nenne eines der 5 Länder mit den meisten Veganer:innen — prozentual zur Bevölkerung!',
+    textEn: 'Name one of the top 5 countries with the highest share of vegans!',
+    answer: 'Israel, Großbritannien, Schweden, Deutschland, Österreich',
+    answerEn: 'Israel, United Kingdom, Sweden, Germany, Austria',
+    bunteTuete: {
+      kind: 'top5',
+      answers: ['Israel', 'Großbritannien', 'Schweden', 'Deutschland', 'Österreich'],
+      answersEn: ['Israel', 'United Kingdom', 'Sweden', 'Germany', 'Austria'],
+    },
+    funFact: 'Israel ist seit Jahren weltweit führend (~5% Veganer:innen) — Tel Aviv gilt als „vegane Hauptstadt der Welt". Deutschland hat den größten veganen Produktmarkt Europas (~3 Mrd. €/Jahr), trotz „nur" 2-3% Veganer-Anteil.',
+  }),
+
   // ═══ POPKULTUR & FILM ════════════════════════════════════════════════════════
   item('longest-detective-series', 'BUNTE_TUETE', 'Film & TV', {
     text: 'Nenne eine der 5 längsten Krimi-Reihen im deutschsprachigen Fernsehen!',

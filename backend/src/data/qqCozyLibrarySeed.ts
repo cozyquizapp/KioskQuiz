@@ -679,14 +679,14 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     funFact: 'Kapitän James Cook brachte das Wort 1769 von Tahiti mit nach Europa — „tatau" ist das Klopfgeräusch beim Stechen mit Knochen-Nadeln. Vorher gab es im Englischen nur „pricking" oder „staining". Im Deutschen wurde es als „Tätowierung" eingedeutscht — die ursprüngliche Klopf-Lautmalerei steckt noch drin.',
   }),
 
-  item('eu-euro-country', 'ZEHN_VON_ZEHN', 'Geographie', {
-    text: 'Welches dieser EU-Länder hat den Euro als offizielle Währung eingeführt?',
-    textEn: 'Which of these EU countries has officially adopted the Euro?',
-    answer: 'Kroatien', answerEn: 'Croatia',
-    options: ['Kroatien', 'Bulgarien', 'Rumänien'],
-    optionsEn: ['Croatia', 'Bulgaria', 'Romania'],
+  item('eu-no-euro-country', 'ZEHN_VON_ZEHN', 'Geographie', {
+    text: 'Welches dieser EU-Länder hat den Euro NICHT als offizielle Währung?',
+    textEn: 'Which of these EU countries does NOT use the Euro?',
+    answer: 'Schweden', answerEn: 'Sweden',
+    options: ['Schweden', 'Slowakei', 'Slowenien'],
+    optionsEn: ['Sweden', 'Slovakia', 'Slovenia'],
     correctOptionIndex: 0,
-    funFact: 'Kroatien hat am 1. Januar 2023 den Euro eingeführt — als 20. Mitglied der Eurozone und gleichzeitig dem Schengen-Raum beigetreten. Bulgarien und Rumänien haben den Euro-Beitritt geplant, aber noch nicht vollzogen — sie nutzen weiter Lew bzw. Leu. (Stand 2026)',
+    funFact: 'Schweden ist seit 1995 EU-Mitglied, hat aber bei einer Volksabstimmung 2003 den Euro abgelehnt und bezahlt weiter mit Schwedischen Kronen (SEK). Slowakei führte den Euro 2009 ein, Slowenien schon 2007. Weitere EU-Länder ohne Euro (Stand Mai 2026): Dänemark, Polen, Tschechien, Ungarn, Rumänien. Bulgarien ist seit 1. Januar 2026 als 21. Mitglied der Eurozone beigetreten.',
   }),
   item('disney-first-feature', 'ZEHN_VON_ZEHN', 'Popkultur', {
     text: 'Welcher dieser Disney-Trickfilme erschien zuerst?',
@@ -798,24 +798,27 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Eiskunstlauf', answerEn: 'Figure Skating',
     funFact: 'Alysa Liu (USA, *2005) holte bei den Olympischen Winterspielen 2026 in Mailand-Cortina Gold im Eiskunstlauf. Mit 13 wurde sie 2019 jüngste US-Meisterin der Geschichte — pausierte 2022 ihre Karriere und kam 2024 stärker zurück. Sie widerspricht vielen Klassik-Klischees des Eiskunstlaufs: kurze Haare, asiatisch-amerikanisch, vegan, sehr fokussiert auf Athletik statt Glamour.',
   }),
-  item('first-mammal-space', 'BUNTE_TUETE', 'Wissenschaft', {
+  // 2026-05-23 (Wolf-Live-Test-Decision): Bluff temporär aus dem Quiz —
+  // 1 Phone pro Team macht's schwierig, alle müssen am selben Smartphone
+  // tippen + die echte Antwort raten. Frage zu MUCHO konvertiert mit
+  // 4 Tier-Optionen. Bluff-Mechanik bleibt im Code, falls Wolf später
+  // wieder reaktiviert (z.B. mit iPad-Setup pro Person).
+  item('first-mammal-space', 'MUCHO', 'Wissenschaft', {
     text: 'Welches Tier war das erste Säugetier im Weltall (über der Kármán-Linie, 100 km)?',
     textEn: 'Which animal was the first mammal in space (above the Kármán line, 100 km)?',
-    answer: 'Albert II (Rhesusaffe)',
-    answerEn: 'Albert II (Rhesus monkey)',
-    bunteTuete: {
-      kind: 'bluff',
-      realAnswer: 'Albert II (Rhesusaffe)',
-      realAnswerEn: 'Albert II (Rhesus monkey)',
-    },
-    funFact: 'Am 14. Juni 1949 erreichte der Rhesusaffe Albert II in einer US-V-2-Rakete eine Höhe von ~134 km — das erste Säugetier über der Kármán-Linie. Er überlebte den Flug nicht (Fallschirm-Versagen beim Aufprall). Sein Vorgänger Albert I (1948) starb schon vor Erreichen der Weltraum-Grenze. Häufige Falle: die berühmte Hündin Laika kam erst 1957 — und war das erste Tier in der Erdumlaufbahn, nicht das erste Säugetier im All. Die ersten Tiere überhaupt im All (1947) waren Fruchtfliegen.',
+    answer: 'Rhesusaffe (Albert II)',
+    answerEn: 'Rhesus monkey (Albert II)',
+    options: ['Hund (Laika)', 'Rhesusaffe (Albert II)', 'Schimpanse (Ham)', 'Maus'],
+    optionsEn: ['Dog (Laika)', 'Rhesus monkey (Albert II)', 'Chimpanzee (Ham)', 'Mouse'],
+    correctOptionIndex: 1,
+    funFact: 'Am 14. Juni 1949 erreichte der Rhesusaffe Albert II in einer US-V-2-Rakete eine Höhe von ~134 km. Häufige Falle: die berühmte Hündin Laika kam erst 1957 — und war das erste Tier in der ERDUMLAUFBAHN, nicht das erste Säugetier im All. Schimpanse Ham flog erst 1961, ein Jahr nach Belka & Strelka (Hunde). Die ersten Tiere überhaupt im All (1947) waren Fruchtfliegen.',
   }),
   item('flags-no-red', 'BUNTE_TUETE', 'Geographie', {
     text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',
     textEn: 'Name a country whose national flag contains no red!',
-    answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan',
-    answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan',
+    answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan, Guatemala, Honduras, Nigeria, Jamaika',
+    answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan, Guatemala, Honduras, Nigeria, Jamaica',
     bunteTuete: { kind: 'hotPotato' },
-    funFact: 'Rund 75% aller Nationalflaggen enthalten Rot — eine der häufigsten Farben weltweit. Orange zählt NICHT als Rot (Irland, Niger, Indien, Bhutan ok). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz — alle haben Rot drin, auch wenn man sie mit Grün oder Orange assoziiert.',
+    funFact: 'Rund 75% aller Nationalflaggen enthalten Rot — eine der häufigsten Farben weltweit. Orange zählt NICHT als Rot (Irland, Niger, Indien, Bhutan ok). Mittelamerika hat viele blau-weiß-Flaggen (Argentinien, Guatemala, Honduras, El Salvador). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz — alle haben Rot drin, auch wenn man sie mit Grün oder Orange assoziiert.',
   }),
 ];

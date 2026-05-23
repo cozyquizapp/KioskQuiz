@@ -753,19 +753,31 @@ export default function QQBuilderPage() {
   }, [showLibrary, libTopics.length]);
 
   /**
-   * Click-to-Insert: Library-Item in ersten leeren Slot des aktiven Drafts.
-   * Gleiche Logik wie /library:copyQuestionToDraft, aber auf activeDraft.
+   * Click-to-Insert: Library-Item in ersten leeren Slot DERSELBEN KATEGORIE.
+   * Wichtig: Slot-Koordinaten (phaseIndex / questionIndexInPhase / category /
+   * id) behalten — das Grid filtert per phaseIndex+category, sonst landet das
+   * Item unsichtbar in Phase 1 (Default aus dem Library-Seed).
    */
   async function insertLibraryItem(item: any) {
     if (!activeDraft) return;
-    const slotIndex = activeDraft.questions.findIndex(q => !q.text.trim());
+    const slotIndex = activeDraft.questions.findIndex(q =>
+      !q.text.trim() && q.category === item.category
+    );
     if (slotIndex === -1) {
-      alert('Kein freier Slot im Draft — erst eine Frage leeren oder Draft erweitern.');
+      alert(`Kein leerer ${item.category}-Slot — erst eine ${item.category}-Frage leeren oder Draft erweitern.`);
       return;
     }
-    const newQ = { ...item, id: `${item.id}-copy-${Date.now().toString(36)}` };
+    const slot = activeDraft.questions[slotIndex];
+    // Slot-Koordinaten beibehalten, nur Content vom Library-Item übernehmen.
+    const newQ: QQQuestion = {
+      ...item,
+      id: slot.id,
+      phaseIndex: slot.phaseIndex,
+      questionIndexInPhase: slot.questionIndexInPhase,
+      category: slot.category,
+    };
     const newQuestions = [...activeDraft.questions];
-    newQuestions[slotIndex] = newQ as QQQuestion;
+    newQuestions[slotIndex] = newQ;
     const newDraft = { ...activeDraft, questions: newQuestions, updatedAt: Date.now() };
     await saveDraftRaw(newDraft);
   }

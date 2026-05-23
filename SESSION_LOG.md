@@ -1730,3 +1730,89 @@ Wolf-Report: „im moderator panel werden teilweise dinge angezeigt die schon la
 - Mini-Game-Konzept (Wolf erarbeitet Spec) — von letzter Session offen
 - Render-Service abstellen nach Live-Verifikation
 - Eurovision-Edition wartet auf nächste Gelegenheit
+
+---
+
+## 2026-05-23 — Live-Test mit 5 Teams + Pre-Quiz-Marathon
+
+**Spielegruppe-Test:** 5 Personen, 5 Smartphones als 5 Teams, Tonight-Draft („Spielegruppe Quiz · 23.05.2026", 4 Phasen × 5 Cats, 20 Fragen). Wolf hatte vor dem Spiel großen Polish-Marathon mit Audit/Cleanup/Fixes durchgezogen.
+
+### Pre-Quiz-Marathon (vor dem Spiel)
+
+- **20-Fragen-Draft via API erstellt** + fact-checked Audit (16/20 sauber, 3 Fehler vor Submit gefixt: Rihanna-Name „Rajad" → „Fenty", Monopoly-funFact „3 Steuerfelder" → 2, Aristoteles ↔ Brüder Montgolfier getauscht für Geschichte-Mucho)
+- **Library-Items erweitert** (9 neue Cheese-Bildfragen + ZvZ-NBC-Pfau + BMTH-Schätzchen + Singer-Real-Names + 3 Muchos History/Buchgenre/Sport + Hot-Potato „Flaggen ohne Rot" + Bluff „erstes Säugetier im Weltall" + Schätzchen Griechen-Inseln)
+- **Rules-Texte gefixt** (DE+EN + Fallback-Strings): „Speed decides ties" → „Fastest correct answer places first", „phones in your pocket" → „phones only for answering", „mini-game" → „format" für Bunte-Tüte (CozyGame bleibt „mini-game" da's wirklich eins ist)
+- **Wolf-Progress-Tree** Sweep-Timing 55% länger (420/700/950→650/1050/1400ms)
+- **Sound-Map** generiert (`SOUND_MAP.md`, alle Slot-Trigger-Locations dokumentiert)
+- **Dead-Code-Sounds entfernt** (4× nie aufgerufene play-Functions: lobbyWelcome/gameOver/actionMenuReveal/correctFor). Slot-Definitionen + Wolf-MP3-Uploads bleiben sicher.
+- **Synth-Polish (Variante A)**: playAvatarCascadeNote Release 60→140ms + Reverb-Wash-Layer; playWoodKnock voller (Noise 0.06→0.11) + warmer (Lowpass 800→580Hz) + Mid-Tap 220Hz
+- **2 Akkord-Crashes gefixt**: Schätzchen-Reveal Top-Row hatte playRevealHighlight (G-Dur) + playClimaxFinish (C-Dur) simultan; „Viel Glück"-Moment hatte playGoodLuckFanfare + playFanfare simultan — beide entzogen, nur jeweils einer bleibt
+- **Place-Sound-Async-Bug**: Card-Slam-Thump feuerte bei 150ms statt 770ms (= 55% SLAM_DUR, visueller Impact-Moment im Keyframe) — auf 770ms verschoben
+- **Avatar-Kreis-BG** in TeamsReveal von 20%-glassy auf solid (matcht Standard-QQTeamAvatar im Rest der App)
+- **/team Mobile-Audit + 2 Critical-Fixes**: `key={q.id}` auf AnswerInput (Stale-Input-State zwischen Fragen) + Inline-Sanitize für Schätzchen-Numeric-Input (Komma→Punkt, integerOnly für Jahres-Fragen)
+- **Library-Drawer fixed**: React-#31-Crash bei Drawer-Open (Topics-Endpoint liefert `{topic,count}`-Objekte) + Slot-Coordinates-Bug beim Library-Insert (Items hatten Default-phaseIndex=1, landeten unsichtbar im Grid) — in Builder UND `/library:copyQuestionToDraft/bulkCopyToDraft`
+- **CozyGames Live-Toggle OFF wird respektiert**: OR-Logic in QQModeratorPage:217 hat den Mod-Toggle ignoriert wenn Draft cozyGamesEnabled=true gespeichert hatte — gefixt analog zu comebackEnabled-Pattern
+
+### Live-Test-Bugs + Learnings (Spielegruppe-Feedback)
+
+🔴 **Critical Bugs:**
+- **Double-Stack at End-Grid Score-Anzeige** (Wolf: `!!!!`) — größte connected-Areas-Berechnung am Spielende ignorierte die gestapelten Cells obwohl sie zur Connected-Area zählen. Falscher Sieger möglich.
+- **EU-Euro-Mucho war faktisch falsch**: Bulgarien + Rumänien haben inzwischen ALLE den Euro. Frage hat keine eindeutige Antwort mehr → ersetzen mit Ländern die in EU aber NICHT Euro (z.B. Schweden, Dänemark, Polen, Tschechien)
+- **Summary-Page zeigt Bot-Teams**: nach dem Spiel waren auf Summary-Page Bot-Teams sichtbar statt nur die echten 5 Teams
+- **Team-Logout Color-Change rot/blau** — bekannt aus früherer Memory, jetzt wieder aufgetreten
+
+🟡 **UX-Bugs:**
+- **Schätzchen 2003-Tie-Display**: bei 2004 vs 2002 (gleich nah an 2003) sollte vermerkt sein wer schneller war
+- **0,0 seconds für ein Team**: vermutlich startet der Reaktionszeit-Zähler erst beim ersten Submit, dadurch hat das schnellste Team 0,0s (Theorie)
+- **Iceland/Ireland Fuzzy-Match-Bug**: Akzeptiert beide als gleich? oder Falsch-positiver Match?
+- **Joker-Display Comeback-Placement**: Joker verschwindet nicht nach Placement während Comeback-Phase — erst beim nächsten Action-Trigger
+- **Underdog-Award** war nicht für letzten Platz vergeben
+- **Translation-Bugs**: Slides DE während Beamer EN sein soll (z.B. Felder neben Grid + andere)
+- **ZvZ-Anzeige auf /team** war „1,10,15" — schlechte Darstellung
+- **Bluff zu knapp**: 30s Bedenkzeit zu wenig für ein Team an einem Smartphone
+
+🟢 **Feature-Requests + Findings:**
+- **Bluff-Kategorie temporär raus**: 1-Phone-pro-Team macht's zu schwierig (alle müssen am selben Phone tippen + die echte Antwort raten)
+- **Flaggen-ohne-Rot Hot-Potato erweitern**: Guatemala, Honduras, Nigeria fehlen
+- **„Am öftesten am schnellsten"-Award (Speedy Gonzales)**: neuer Award gewünscht
+- **Antwort revoken während Timer läuft**: Wunsch der Teilnehmenden — eingeloggte Antwort widerrufen können
+- **Grid am Anfang in Rules zeigen**: Teams hatten keine Vorstellung worum es geht
+- **Rules waren ZU LANG**: häufige Rückmeldung — kürzen!
+
+### Files (Pre-Quiz Polish, vor Bug-Liste)
+
+- `frontend/src/components/CozyQuizActionCard.tsx` (Slam-Thump 770ms)
+- `frontend/src/components/CozyQuizQuestionView.tsx` (Schätzchen-Reveal Akkord-Crash)
+- `frontend/src/components/CozyQuizTeamsRevealView.tsx` (Viel-Glück-Doppel-Fanfare + Avatar-Kreis solid)
+- `frontend/src/components/CozyQuizTeamQuestionCard.tsx` (key={q.id} stale-input fix)
+- `frontend/src/components/CozyQuizTeamQuestionInputs.tsx` (Numeric-Input Sanitize)
+- `frontend/src/components/QQProgressTree.tsx` (Sweep-Timing langsamer)
+- `frontend/src/components/CozyQuizRulesView.tsx` (Fallback-Strings + filter-CG-slide)
+- `frontend/src/qqRuleTexts.ts` (3 Rules-Texte gefixt)
+- `frontend/src/utils/sounds.ts` (Synth-Polish + 4× Dead-Code raus)
+- `frontend/src/pages/QQModeratorPage.tsx` (CozyGames-Live-Toggle-Priority + Imports cleanup)
+- `frontend/src/pages/QQBuilderPage.tsx` (Library-Drawer Topics-Object-Fix + Slot-Coords)
+- `frontend/src/pages/QQLibraryPage.tsx` (copyQuestionToDraft+bulkCopyToDraft Slot-Coords)
+- `backend/src/data/qqCozyLibrarySeed.ts` (Massive Erweiterung + Audit-Fixes)
+- `scripts/create-tonight-draft.mjs` + `scripts/fix-tonight-draft.mjs` (One-Shot API-Helpers)
+- `SOUND_MAP.md` (neu, im Repo-Root)
+
+### Open (vor Tomorrow-Session)
+
+- **P0** Double-Stack-Score-Bug (End-Grid-Berechnung)
+- **P0** EU-Euro-Mucho Library-Frage neu (Ländern OHNE Euro auswählen)
+- **P0** Summary-Page Bot-Teams-Filter
+- **P0** Team-Logout-Color rot/blau (existing, jetzt reproduziert in Live-Test)
+- **P1** Schätzchen-Tie-Display („schneller war" markieren bei gleicher Distanz)
+- **P1** Iceland/Ireland Fuzzy-Match (Repro-Case nötig)
+- **P1** 0,0 seconds-Bug (Reaktionszeit-Counter-Start)
+- **P1** Joker-Display Comeback-Placement persistiert zu lang
+- **P1** Underdog-Award falsche Auswahl
+- **P1** Translation-Leaks (DE auf EN-Beamer)
+- **P1** ZvZ-Anzeige auf /team verbessern (1,10,15 → bessere UI)
+- **P2** Bluff temporär aus Library + Rules (Wolf-Decision)
+- **P2** Flaggen-ohne-Rot ergänzen (Guatemala/Honduras/Nigeria)
+- **P2** Speedy-Gonzales-Award neu
+- **P2** Answer-Revoke während Timer
+- **P2** Rules kürzen + Grid-Preview am Anfang
+- **Langfrist-Wunsch** Spielende: lieber iPads zum Antworten für Teams statt persönlicher Smartphones (Setup/Hardware-Frage)

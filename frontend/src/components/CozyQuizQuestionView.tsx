@@ -3019,11 +3019,12 @@ function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
         if (!s.sfxMuted) {
           try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
           if (isTopRow) {
-            // 2026-05-17 P4 (Wolf 'kein sound am ende bei schätzchen'):
-            // Top-Row (= Sieger) bekommt jetzt zusätzlich den ClimaxFinish-
-            // Akkord wie MUCHO/ZVZ/CHEESE. Vorher nur RevealHighlight, was
-            // im langen Cascade-Verlauf kaum als Climax wahrgenommen wurde.
-            try { playRevealHighlight(); } catch {}
+            // 2026-05-17 P4: Top-Row bekommt ClimaxFinish-Akkord wie MUCHO/
+            // ZVZ/CHEESE als Krönung.
+            // 2026-05-23 (Wolf 'komischer sound bei schätzchen reveal'):
+            // playRevealHighlight() entfernt — feuerte simultan mit
+            // playClimaxFinish() in unterschiedlicher Tonart (G-Dur vs
+            // C-Dur) → Akkord-Crash. ClimaxFinish reicht als Climax allein.
             try { playClimaxFinish(); } catch {}
           }
         }

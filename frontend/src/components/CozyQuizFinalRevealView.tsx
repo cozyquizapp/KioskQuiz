@@ -1426,7 +1426,7 @@ function BetZeroGroupSlide({ teams, lang }: {
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
       }}>{de
-        ? 'Heute lief der Tipp nicht ganz auf 🤞'
+        ? 'Der Tipp ist heute nicht aufgegangen 🤞'
         : 'Today’s tip didn’t quite hit 🤞'}
       </div>
     </div>

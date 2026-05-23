@@ -126,16 +126,11 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         label: t('rules.slide4.gridLabel', 'Beide Muster zählen'),
       },
     },
-    {
-      icon: '🎁',
-      title: t('rules.slide6.title', 'Bunte Tüte'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', 'Jede Runde ein anderes Format'),
-      ],
-      extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
-    },
+    // 2026-05-24 (Wolf-Live-Test Feedback „rules waren zu lang, energy-stopper"):
+    // Bunte Tüte / Comeback / Final-Tipp aus Rules entfernt. Werden alle direkt
+    // im Spiel-Flow vom Moderator-Wolf erklaert (Comeback → vor Comeback-Phase,
+    // Final-Tipp → als Intro-Slide vor Bets, Bunte Tüte → ohnehin pro Frage
+    // mit eigener Regelpille erklaert).
     {
       icon: '🪅',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
@@ -144,29 +139,6 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide_cozygames.line1', 'Nach jeder Runde dreht das Glücksrad — ein analoges Mini-Spiel'),
         t('rules.slide_cozygames.line2', 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen'),
-      ],
-      // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
-    },
-    {
-      icon: '🔄',
-      title: t('rules.slide7.title', 'Comeback'),
-      color: RULES_SLIDE_COLOR,
-      requiresComeback: true,
-      lines: [
-        t('rules.slide7.line1', 'Letztes Team holt vor dem Finale auf'),
-        t('rules.slide7.line2', '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz'),
-      ],
-    },
-    {
-      // 2026-05-09 (Rules-Audit Wolf): Final-Tipp ist seit Tipp-Variante-
-      // Refactor neue Mechanik. Sympathie-Bonus bewusst NICHT erwähnt —
-      // Wolf möchte den als Überraschung beim End-Reveal lassen.
-      icon: '🎰',
-      title: t('rules.slide_final_tip.title', 'Final-Tipp'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide_final_tip.line1', 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'),
-        t('rules.slide_final_tip.line2', 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'),
       ],
       // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
     },
@@ -261,16 +233,10 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
         label: t('rules.slide4.gridLabel', 'Both patterns count'),
       },
     },
-    {
-      icon: '🎁',
-      title: t('rules.slide6.title', 'Lucky Bag'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'A different format each round'),
-      ],
-      extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
-    },
+    // 2026-05-24 (Wolf-Live-Test): Lucky Bag / Comeback / Final Tip removed
+    // from Rules. Explained inline in the game flow by the moderator (Comeback
+    // before Comeback-phase, Final Tip as intro-slide before bets, Lucky Bag
+    // per-question with its own rules-pill).
     {
       icon: '🪅',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
@@ -279,25 +245,6 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide_cozygames.line1', 'After every round the wheel spins — one analog mini-game'),
         t('rules.slide_cozygames.line2', 'Winner places 1 action on the board · skill > knowledge'),
-      ],
-    },
-    {
-      icon: '🔄',
-      title: t('rules.slide7.title', 'Comeback'),
-      color: RULES_SLIDE_COLOR,
-      requiresComeback: true,
-      lines: [
-        t('rules.slide7.line1', 'Last-place team catches up before the finale'),
-        t('rules.slide7.line2', '„Higher or Lower?" — correct answer steals a cell from the leader'),
-      ],
-    },
-    {
-      icon: '🎰',
-      title: t('rules.slide_final_tip.title', 'Final Tip'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide_final_tip.line1', 'Before the finale every team tips on another (or own) team'),
-        t('rules.slide_final_tip.line2', 'Per final-category win of your tip = +1 bonus'),
       ],
     },
     {

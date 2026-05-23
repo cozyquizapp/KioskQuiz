@@ -348,7 +348,7 @@ export default function QQModeratorPage() {
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 5 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -922,7 +922,7 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 5 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -1092,7 +1092,7 @@ export default function QQModeratorPage() {
       playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 7 + ((s as any).comebackEnabled !== false ? 1 : 0) + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        const totalSlides = 5 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -4086,8 +4086,13 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   // beim Runden-Intro als Überraschung enthüllt. Slide-Count: 9 mit Finale, 8 ohne.
   const hasFinale = s.connectionsEnabled !== false;
   const hasCozyGames = !!(s as any).cozyGamesEnabled;
+  // 2026-05-24 (Wolf-Live-Test): Comeback-Slide raus aus Rules (in-game
+  // erklaert). hasComeback bleibt fuer andere Mod-Logik, aber nicht mehr
+  // im Slide-Count.
   const hasComeback = (s as any).comebackEnabled !== false;
-  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
+  void hasComeback;
+  // Base 4 = Ziel/Läufts/Roadmap/Joker + immer Fair Play = 5. Plus CG + Finale optional.
+  const totalSlides = 5 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
@@ -4095,14 +4100,14 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
   const isLast = idx >= totalSlides - 1;
   // Live-Spiegel der Regel-Folien (synchron mit buildRulesSlidesDe in
   // QQBeamerPage). Hilft dem Mod zu sehen WAS gerade auf dem Beamer steht.
+  // 2026-05-24 (Wolf-Live-Test): Bunte Tüte / Comeback / Final-Tipp aus
+  // Rules-Slides raus. Reihenfolge matcht CozyQuizRulesView buildRulesSlidesDe.
   const slideTitles = [
     '🏆 Das Ziel',
     '⚡ So läuft\'s',
     '🗺 Roadmap',
     '⭐ Joker-Bonus',
-    '🎁 Bunte Tüte',
-    '🔄 Comeback',
-    '🪙 Final-Tipp',
+    ...(hasCozyGames ? ['🪅 CozyGame'] : []),
     '🤝 Fair Play',
     ...(hasFinale ? ['🧩 Großes Finale'] : []),
   ];

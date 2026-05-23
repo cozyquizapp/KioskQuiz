@@ -716,4 +716,12 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Eiskunstlauf', answerEn: 'Figure Skating',
     funFact: 'Alysa Liu (USA, *2005) holte bei den Olympischen Winterspielen 2026 in Mailand-Cortina Gold im Eiskunstlauf. Mit 13 wurde sie 2019 jüngste US-Meisterin der Geschichte — pausierte 2022 ihre Karriere und kam 2024 stärker zurück. Sie widerspricht vielen Klassik-Klischees des Eiskunstlaufs: kurze Haare, asiatisch-amerikanisch, vegan, sehr fokussiert auf Athletik statt Glamour.',
   }),
+  item('flags-no-red', 'BUNTE_TUETE', 'Geographie', {
+    text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',
+    textEn: 'Name a country whose national flag contains no red!',
+    answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan',
+    answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan',
+    bunteTuete: { kind: 'hotPotato' },
+    funFact: 'Rund 75% aller Nationalflaggen enthalten Rot — eine der häufigsten Farben weltweit. Orange zählt NICHT als Rot (Irland, Niger, Indien, Bhutan ok). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz — alle haben Rot drin, auch wenn man sie mit Grün oder Orange assoziiert.',
+  }),
 ];

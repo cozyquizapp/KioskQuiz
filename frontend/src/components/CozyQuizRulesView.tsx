@@ -86,7 +86,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
         t('rules.slide2.line2', 'Richtige Antwort → Feld setzen'),
-        t('rules.slide2.line3', 'Tempo entscheidet bei Gleichstand'),
+        t('rules.slide2.line3', 'Schnellste richtige Antwort setzt zuerst'),
       ],
     },
     {
@@ -126,7 +126,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'Eine Kategorie pro Runde ist eine Überraschung'),
-        t('rules.slide6.line2', 'Jede Runde ein anderes Mini-Spiel'),
+        t('rules.slide6.line2', 'Jede Runde ein anderes Format'),
       ],
       extra: t('rules.slide6.extra', 'Regeln werden vor jeder Frage kurz erklärt'),
     },
@@ -170,7 +170,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.slide_fairplay.line1', 'Kein Googeln · Smartphone in die Hosentasche'),
+        t('rules.slide_fairplay.line1', 'Kein Googeln · Handy nur fürs Antworten'),
         t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
         t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
@@ -210,7 +210,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
         t('rules.slide2.line2', 'Right answer → place a cell'),
-        t('rules.slide2.line3', 'Speed decides ties'),
+        t('rules.slide2.line3', 'Fastest correct answer places first'),
       ],
     },
     {
@@ -249,7 +249,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide6.line1', 'One category per round is a surprise'),
-        t('rules.slide6.line2', 'A different mini-game each round'),
+        t('rules.slide6.line2', 'A different format each round'),
       ],
       extra: t('rules.slide6.extra', 'Rules are briefly explained before each question'),
     },
@@ -287,7 +287,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.slide_fairplay.line1', 'No googling · phones in your pocket'),
+        t('rules.slide_fairplay.line1', 'No googling · phones only for answering'),
         t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
         t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
       ],

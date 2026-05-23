@@ -519,8 +519,12 @@ export default function QQModeratorPage() {
           // mit Tickup + Position-Swap + Glow (~3s Anim + Lese-Zeit). Längerer
           // Delay als Standard-Placement, damit Standings lesbar sind, bevor
           // Autoplay zur nächsten Final-Frage weiterschaltet.
+          // 2026-05-24 (Wolf-Live-Test): Comeback-Steal-Pause hat eigenen
+          // kürzeren Delay (1.8s statt 3.5s), weil der Beamer den Steal-Effekt
+          // schon zeigt und Mod nicht zwischen jedem Steal lange warten will.
           const inFinalRecap = (s as any).finalRecapStep === 1;
-          delayMs = inFinalRecap ? 8000 : 3500; // Slam-Down + Placement-Flash abwarten
+          const inComebackStealPause = !!(s as any).comebackStealPaused;
+          delayMs = inFinalRecap ? 8000 : inComebackStealPause ? 1800 : 3500;
           action = () => emit('qq:nextQuestion', { roomCode });
         } else {
           // 2026-05-03 (Wolf-Bug 'Comeback haengt'): wenn pendingFor offline ist

@@ -744,7 +744,11 @@ export default function QQBuilderPage() {
   useEffect(() => {
     if (!showLibrary || libTopics.length > 0) return;
     fetch('/api/qq/library/topics').then(r => r.json()).then(d => {
-      if (Array.isArray(d)) setLibTopics(d);
+      if (Array.isArray(d)) {
+        // Endpoint returns Array<{topic, count}> — map to strings.
+        const topics = d.map((t: any) => typeof t === 'string' ? t : t?.topic).filter(Boolean);
+        setLibTopics(topics);
+      }
     }).catch(() => {});
   }, [showLibrary, libTopics.length]);
 

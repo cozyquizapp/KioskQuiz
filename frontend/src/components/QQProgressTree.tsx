@@ -45,7 +45,7 @@ export default function QQProgressTree({
   const totalPhases = state.totalPhases || 4;
 
   // Showcase-Sweep „Option B" (Wolf 2026-05-17): pro Dot ein Sub-Step.
-  // Wolf wandert durch JEDEN Dot der aktuellen Phase (~420ms/Dot), macht bei
+  // Wolf wandert durch JEDEN Dot der aktuellen Phase (~650ms/Dot), macht bei
   // Phase-Wechsel einen Bogen-Sprung (translateY-Arc via qqWolfBowHop), und
   // stoppt länger an Spezial-Knoten (CG/Bid/Finale) damit deren Pulse atmen
   // kann. State + Helpers werden weiter unten gebaut (nach byPhase/phases/
@@ -177,15 +177,17 @@ export default function QQProgressTree({
       if (cur.kind === 'dot') {
         // Letzter Dot der Phase: kurz halten vor Bogen-Sprung damit der Hop
         // visuell als eigener Beat wirkt. Sonst flotter Slide zum nächsten Dot.
-        duration = isHopNext ? 700 : 420;
+        // 2026-05-23: Wolf-Feedback „springt etwas schnell" — alle Timings
+        // um ~55% verlängert damit der Tree besser lesbar ist.
+        duration = isHopNext ? 1050 : 650;
       } else {
         // CG/Bid/Finale: lange genug, damit Pulse-Animation atmet.
-        duration = 950;
+        duration = 1400;
       }
       id = setTimeout(tick, duration);
     };
     // Initial-Pause damit Rules-Slide eingeblendet bevor Wolf startet.
-    id = setTimeout(tick, 600);
+    id = setTimeout(tick, 800);
     return () => { if (id !== null) clearTimeout(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showcaseMode, subStepCount]);

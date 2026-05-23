@@ -153,7 +153,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'rules.slide2.title',  label: '2 · So läuft\'s — Titel',   defaultDe: 'So läuft\'s', defaultEn: 'How It Works' },
       { key: 'rules.slide2.line1',  label: '2 · So läuft\'s — Zeile 1 (mit {phases})', defaultDe: '{phases} Runden · 5 Kategorien', defaultEn: '{phases} rounds · 5 categories' },
       { key: 'rules.slide2.line2',  label: '2 · So läuft\'s — Zeile 2', defaultDe: 'Richtige Antwort → Feld setzen', defaultEn: 'Right answer → place a cell' },
-      { key: 'rules.slide2.line3',  label: '2 · So läuft\'s — Zeile 3', defaultDe: 'Tempo entscheidet bei Gleichstand', defaultEn: 'Speed decides ties' },
+      { key: 'rules.slide2.line3',  label: '2 · So läuft\'s — Zeile 3', defaultDe: 'Schnellste richtige Antwort setzt zuerst', defaultEn: 'Fastest correct answer places first' },
 
       // Slide 3: Roadmap (treeShowcase — kein Body-Text außer Title)
       { key: 'rules.slide3.title',  label: '3 · Roadmap — Titel', defaultDe: 'Dein Weg durchs Quiz', defaultEn: 'Your Quiz Roadmap' },
@@ -193,7 +193,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
 
       // Slide Fair Play (Anti-Google + Tonfall)
       { key: 'rules.slide_fairplay.title', label: 'Fair Play — Titel', defaultDe: 'Fair Play', defaultEn: 'Fair Play' },
-      { key: 'rules.slide_fairplay.line1', label: 'Fair Play — Zeile 1', defaultDe: 'Kein Googeln · Smartphone in die Hosentasche', defaultEn: 'No googling · phones in your pocket' },
+      { key: 'rules.slide_fairplay.line1', label: 'Fair Play — Zeile 1', defaultDe: 'Kein Googeln · Handy nur fürs Antworten', defaultEn: 'No googling · phones only for answering' },
       { key: 'rules.slide_fairplay.line2', label: 'Fair Play — Zeile 2', defaultDe: 'Antworten nicht zwischen Teams spoilern', defaultEn: 'Don\'t spoil answers between teams' },
       { key: 'rules.slide_fairplay.line3', label: 'Fair Play — Zeile 3', defaultDe: 'Im Zweifel zählt der Moderator-Wolf 🐺', defaultEn: 'When in doubt, the wolf decides 🐺' },
       { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Habt Spaß! Punkte sind nur Beilage.', defaultEn: 'Have fun! Points are just the side dish.' },

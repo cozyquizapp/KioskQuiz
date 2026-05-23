@@ -150,7 +150,9 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       : unit
       ? (lang === 'de' ? `Deine Schätzung (${unit})` : `Your estimate (${unit})`)
       : (lang === 'de' ? 'Deine Schätzung' : 'Your estimate');
-    return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={placeholder} lang={lang} timerEndsAt={tEnd} />;
+    // 2026-05-23 (Mobile-Audit #8): integerOnly bei Jahres-Fragen — verhindert
+    // Dezimalpunkt-Eingabe auf Android-Keyboards.
+    return <TextInput catColor={catColor} onSubmit={submitText} numeric integerOnly={!!q.isYearAnswer} placeholder={placeholder} lang={lang} timerEndsAt={tEnd} />;
   }
   if (q.category === 'CHEESE') return <TextInput catColor={catColor} onSubmit={submitText} placeholder={enterAnswerPlaceholder} lang={lang} timerEndsAt={tEnd} />;
   if (q.category === 'BUNTE_TUETE') {
@@ -335,7 +337,12 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         </div>
       )}
       {!isRevealed && (
-        <AnswerInput state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />
+        // 2026-05-23 (Mobile-Audit #2): key={q.id} forciert React-Remount der
+        // gesamten Input-Subtree wenn die Frage wechselt. Sonst persistiert
+        // lokaler useState in TextInput/MuchoInput/AllInInput/etc. über
+        // Question-Wechsel hinweg (z.B. 2 SCHAETZCHEN hintereinander) und
+        // zeigt stale Eingaben aus der vorherigen Frage.
+        <AnswerInput key={s.currentQuestion?.id ?? 'no-q'} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} catColor={catColor} lang={lang} />
       )}
 
       {/* Team answer progress (shown when not yet submitted & others answering) */}

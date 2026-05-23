@@ -20,12 +20,38 @@ import { useExpiry } from '../hooks/useExpiry';
 import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
 
 // ── Text input (Schaetzchen + Picture This fallback) ──────────────────────────
-export function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de', timerEndsAt }: {
-  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; lang?: 'de' | 'en'; timerEndsAt?: number | null;
+export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnly, lang = 'de', timerEndsAt }: {
+  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; integerOnly?: boolean; lang?: 'de' | 'en'; timerEndsAt?: number | null;
 }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { setTimeout(() => ref.current?.focus({ preventScroll: true }), 120); }, []);
+  // 2026-05-23 (Mobile-Audit #8): Android-Keyboards lassen Dezimalpunkte durch
+  // auch wenn type=number+inputMode=numeric. Bei Jahres-Fragen schickte ein
+  // versehentlicher Tipp (z.B. „1989.") nicht parsbar ans Backend → silent
+  // fail. Inline-Sanitize: Buchstaben weg, Komma → Punkt, bei integerOnly
+  // (Jahres-Modus) zusätzlich Dezimalpunkt weg.
+  const handleChange = (raw: string) => {
+    if (!numeric) { setVal(raw); return; }
+    // Komma als Dezimaltrenner (DE-Tastatur) → Punkt für Backend-Parsing
+    let cleaned = raw.replace(/,/g, '.');
+    // Erlaubt: 0-9, optional führendes -, ein Punkt für Dezimal
+    if (integerOnly) {
+      cleaned = cleaned.replace(/[^0-9-]/g, '');
+    } else {
+      cleaned = cleaned.replace(/[^0-9.\-]/g, '');
+      // Nur einen Dezimalpunkt erlauben
+      const firstDot = cleaned.indexOf('.');
+      if (firstDot !== -1) {
+        cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+      }
+    }
+    // Minus nur am Anfang
+    if (cleaned.includes('-')) {
+      cleaned = (cleaned.startsWith('-') ? '-' : '') + cleaned.replace(/-/g, '');
+    }
+    setVal(cleaned);
+  };
   // B7: Bei Timer-Ende Auto-Submit (falls Text vorhanden) + Button-Lock.
   const expired = useExpiry(timerEndsAt ?? null);
   const valRef = useRef(val); valRef.current = val;
@@ -43,12 +69,12 @@ export function TextInput({ catColor, onSubmit, placeholder, numeric, lang = 'de
       <StandardInput
         ref={ref}
         value={val}
-        onChange={setVal}
+        onChange={handleChange}
         onEnter={() => val.trim() && onSubmit(val)}
         catColor={catColor}
         type={numeric ? 'number' : 'text'}
-        inputMode={numeric ? 'numeric' : 'text'}
-        pattern={numeric ? '[0-9]*' : undefined}
+        inputMode={numeric ? (integerOnly ? 'numeric' : 'decimal') : 'text'}
+        pattern={numeric ? (integerOnly ? '[0-9]*' : '[0-9.]*') : undefined}
         placeholder={placeholder ?? defaultPlaceholder}
         ariaLabel={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
         disabled={expired}

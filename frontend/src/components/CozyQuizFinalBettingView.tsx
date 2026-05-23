@@ -20,6 +20,16 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   const totalTeams = s.teams.length;
   const submittedCount = submittedIds.length;
 
+  // 2026-05-24 (Wolf-Live-Test): Erklärslide direkt vor Bets als „Introseite".
+  // Final-Tipp-Slide ist aus Rules raus (zu lang) und wird stattdessen hier
+  // automatisch fuer 7 Sekunden gezeigt, dann fadet die normale Betting-View
+  // ein. Mod muss nichts klicken — Auto-Choreo.
+  const [introDone, setIntroDone] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setIntroDone(true), 7000);
+    return () => window.clearTimeout(t);
+  }, []);
+
   // 2026-05-19 (Wolf-Audit P0.1 'place your tip ist ohne sound'):
   // Phase-Entry-Fanfare beim Mount + sanfter Tick pro neu eingegangenem Tipp.
   // GoodLuck-Fanfare hat Music-Ducking → laeuft sauber ueber dem Background.
@@ -37,6 +47,79 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
     }
     prevSubmittedRef.current = submittedCount;
   }, [submittedCount, s.sfxMuted]);
+
+  // 2026-05-24: Intro-Slide (Erklär-Phase) vor der eigentlichen Betting-View.
+  if (!introDone) {
+    return (
+      <div style={{
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: 'max(var(--qq-safe-margin), 8cqh) max(var(--qq-safe-margin), 6cqw)',
+        background: COZY_CARD_BG,
+        position: 'relative',
+        minHeight: 0, overflow: 'hidden',
+        gap: 'clamp(28px, 4cqh, 56px)',
+      }}>
+        {/* Top-Label */}
+        <div style={{
+          fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: '#F9A8D4',
+          textTransform: 'uppercase', letterSpacing: '0.18em', opacity: 0.85,
+          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.1s both',
+        }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
+
+        {/* Großer Hero-Title */}
+        <div style={{
+          fontSize: 'clamp(72px, 8cqw, 160px)', lineHeight: 1,
+          textAlign: 'center',
+          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both',
+        }}>🎰</div>
+
+        <div style={{
+          fontSize: 'clamp(40px, 5cqw, 84px)', fontWeight: 900, color: '#F1F5F9',
+          lineHeight: 1.05, letterSpacing: '-0.025em', textAlign: 'center',
+          textShadow: '0 0 36px rgba(236,72,153,0.45)',
+          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
+        }}>
+          {de ? 'So funktioniert\'s' : 'How it works'}
+        </div>
+
+        {/* Erklär-Lines (gleiche Struktur wie Rules-Slides) */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(16px, 2cqh, 28px)',
+          maxWidth: 1200,
+        }}>
+          <div style={{
+            fontSize: 'clamp(22px, 2.4cqw, 38px)', color: '#CBD5E1', fontWeight: 700,
+            textAlign: 'center', lineHeight: 1.4,
+            animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.55s both',
+          }}>
+            {de
+              ? 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'
+              : 'Before the finale every team tips on another (or own) team'}
+          </div>
+          <div style={{
+            fontSize: 'clamp(22px, 2.4cqw, 38px)', color: '#FBCFE8', fontWeight: 900,
+            textAlign: 'center', lineHeight: 1.4,
+            animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.75s both',
+          }}>
+            {de
+              ? '🎯 Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'
+              : '🎯 Per final-category win of your tip = +1 bonus'}
+          </div>
+        </div>
+
+        {/* Hinweis dass es gleich losgeht */}
+        <div style={{
+          fontSize: 'clamp(13px, 1.2cqw, 18px)', color: '#94a3b8', fontWeight: 700,
+          letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 'auto',
+          animation: 'tcpulse 1.5s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 1.5s both',
+          paddingTop: '4cqh',
+        }}>
+          {de ? '↓ Gleich seid ihr dran ↓' : '↓ Your turn in a sec ↓'}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{

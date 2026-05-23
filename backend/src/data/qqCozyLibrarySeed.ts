@@ -716,17 +716,17 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Eiskunstlauf', answerEn: 'Figure Skating',
     funFact: 'Alysa Liu (USA, *2005) holte bei den Olympischen Winterspielen 2026 in Mailand-Cortina Gold im Eiskunstlauf. Mit 13 wurde sie 2019 jüngste US-Meisterin der Geschichte — pausierte 2022 ihre Karriere und kam 2024 stärker zurück. Sie widerspricht vielen Klassik-Klischees des Eiskunstlaufs: kurze Haare, asiatisch-amerikanisch, vegan, sehr fokussiert auf Athletik statt Glamour.',
   }),
-  item('first-animal-space', 'BUNTE_TUETE', 'Wissenschaft', {
-    text: 'Welches Tier war 1947 das erste Lebewesen, das die offizielle Weltraum-Grenze (Kármán-Linie, 100 km) überquert hat?',
-    textEn: 'Which animal in 1947 became the first living being to cross the official space boundary (Kármán line, 100 km)?',
-    answer: 'Fruchtfliegen',
-    answerEn: 'Fruit flies',
+  item('first-mammal-space', 'BUNTE_TUETE', 'Wissenschaft', {
+    text: 'Welches Tier war das erste Säugetier im Weltall (über der Kármán-Linie, 100 km)?',
+    textEn: 'Which animal was the first mammal in space (above the Kármán line, 100 km)?',
+    answer: 'Albert II (Rhesusaffe)',
+    answerEn: 'Albert II (Rhesus monkey)',
     bunteTuete: {
       kind: 'bluff',
-      realAnswer: 'Fruchtfliegen',
-      realAnswerEn: 'Fruit flies',
+      realAnswer: 'Albert II (Rhesusaffe)',
+      realAnswerEn: 'Albert II (Rhesus monkey)',
     },
-    funFact: 'Am 20. Februar 1947 startete die US-Rakete V-2 (Nr. 20) mit Fruchtfliegen (Drosophila melanogaster) auf 109 km Höhe — knapp über der Kármán-Linie. Sie überlebten dank Fallschirm. Häufige Falle: Laika (Hund, Sowjet 1957) war das erste Tier in der ERDUMLAUFBAHN, nicht das erste im Weltall. Das erste Säugetier im All war 1949 der Rhesusaffe Albert II — er überlebte den Flug nicht.',
+    funFact: 'Am 14. Juni 1949 erreichte der Rhesusaffe Albert II in einer US-V-2-Rakete eine Höhe von ~134 km — das erste Säugetier über der Kármán-Linie. Er überlebte den Flug nicht (Fallschirm-Versagen beim Aufprall). Sein Vorgänger Albert I (1948) starb schon vor Erreichen der Weltraum-Grenze. Häufige Falle: die berühmte Hündin Laika kam erst 1957 — und war das erste Tier in der Erdumlaufbahn, nicht das erste Säugetier im All. Die ersten Tiere überhaupt im All (1947) waren Fruchtfliegen.',
   }),
   item('flags-no-red', 'BUNTE_TUETE', 'Geographie', {
     text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',

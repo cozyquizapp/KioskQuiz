@@ -214,7 +214,15 @@ export default function QQModeratorPage() {
     // war, nutzen wir den Mod-State + dessen Pool (vom Auto-Fill befüllt).
     const liveToggleOn = !!(state as any)?.cozyGamesEnabled;
     const liveToggledPool = Array.isArray((state as any)?.cozyGamesPool) ? (state as any).cozyGamesPool : [];
-    const draftCozyGamesEnabled = !!(draft as any).cozyGamesEnabled || liveToggleOn;
+    // 2026-05-23 (Wolf-Bug 'minigames im moderator aus, aber im progress
+    // tree drin'): Vorher hat OR-Logic den Live-Toggle ignoriert wenn der
+    // Draft cozyGamesEnabled=true gespeichert hatte → Game startete mit
+    // CG=true trotz Mod-Aus. Jetzt: Live-Toggle explizit-OFF wird respektiert
+    // (selbes Pattern wie comebackEnabled darunter).
+    const liveCozyToggle = (state as any)?.cozyGamesEnabled;
+    const draftCozyGamesEnabled = typeof liveCozyToggle === 'boolean'
+      ? liveCozyToggle
+      : !!(draft as any).cozyGamesEnabled;
     const baseDraftPool = Array.isArray((draft as any).cozyGamesPool) ? (draft as any).cozyGamesPool : [];
     const draftCozyGamesPool = liveToggleOn && liveToggledPool.length > 0
       ? liveToggledPool

@@ -497,6 +497,13 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: '88', targetValue: 88, unit: 'Tasten', unitEn: 'keys',
     funFact: '52 weiße + 36 schwarze. Davor experimentierte man mit bis zu 97 Tasten — aber das menschliche Ohr unterscheidet die extremen Frequenzen kaum noch. Steinway etablierte 88 um 1880 als Standard.',
   }),
+  item('greek-inhabited-islands', 'SCHAETZCHEN', 'Geographie', {
+    text: 'Wie viele der ca. 6.000 Inseln Griechenlands sind tatsächlich bewohnt?',
+    textEn: 'Of the roughly 6,000 islands in Greece, how many are actually inhabited?',
+    answer: '~227', answerEn: '~227',
+    targetValue: 227, unit: 'Inseln', unitEn: 'islands',
+    funFact: 'Griechenland hat etwa 6.000 Inseln und Inselchen — aber nur rund 227 sind tatsächlich bewohnt. Davon haben sogar nur ca. 130 mehr als 100 Einwohner:innen. Die größten: Kreta (~620.000), Euböa (~190.000), Lesbos und Rhodos (je ~85.000). Mehr als 5.700 Inseln sind komplett unbewohnt — viele sind nur einzelne Felsen über dem Meerespiegel.',
+  }),
   item('bmth-founded', 'SCHAETZCHEN', 'Musik', {
     text: 'In welchem Jahr wurde die Band Bring Me The Horizon gegründet?',
     textEn: 'In what year was the band Bring Me The Horizon founded?',
